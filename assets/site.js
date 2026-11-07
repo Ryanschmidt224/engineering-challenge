@@ -113,11 +113,31 @@ function setupAssemblyTrees(){
   }
   // Separate workspace route; the existing assembly overview remains unchanged.
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
-  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article><h2>Work instructions</h2><p>Not added yet</p></article><article><h2>Pictures</h2><p>Not added yet</p></article><article><h2>Recipes / procedures</h2><p>Not added yet</p></article><article><h2>Notes</h2><p>Not added yet</p></article></section>';
+  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article><h2>Work instructions</h2><textarea class="field workspace-instructions" placeholder="Add build steps, tools, measurements and checks…" rows="8"></textarea></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article><h2>Recipes / procedures</h2><textarea class="field workspace-procedures" placeholder="Add settings, recipes and procedures…" rows="5"></textarea></article><article><h2>Notes</h2><textarea class="field workspace-notes" placeholder="Add notes…" rows="5"></textarea></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
   const workspaceRoute=()=>location.hash.slice(1).startsWith(project+"/workspace/");
   let workspacePhotoVersion=0;
   async function loadWorkspaceCover(){const id=selected,version=++workspacePhotoVersion,cover=workspace.querySelector(".workspace-cover");cover.replaceChildren();const placeholder=document.createElement("span");placeholder.textContent="No photo yet";cover.append(placeholder);try{const r=await fetch("/api/photos?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(id??"__root__"));if(!r.ok)return;const data=await r.json();if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;const photo=(data.photos||[]).find(p=>(p.assembly??null)===id);if(photo){const img=document.createElement("img");img.src=photo.url;img.alt="Assembly photo";cover.replaceChildren(img)}}catch(e){/* cover is optional */}}
+  let workspaceLoadVersion=0;
+  const workspaceFields=["instructions","procedures","notes"];
+  const workspaceStatus=workspace.querySelector(".workspace-status");
+  const workspaceUrl=()=>"/api/workspace?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(selected??"__root__");
+  async function loadWorkspace(){
+   const version=++workspaceLoadVersion,url=workspaceUrl();workspaceStatus.textContent="Loading…";
+   try{const res=await fetch(url,{credentials:"same-origin",cache:"no-store"});const data=await res.json();if(!res.ok)throw Error(data.error||"Unable to load workspace");
+    if(version!==workspaceLoadVersion||url!==workspaceUrl())return;
+    for(const name of workspaceFields)workspace.querySelector(".workspace-"+name).value=data.workspace?.[name]||"";
+    workspaceStatus.textContent="";
+   }catch(e){workspaceStatus.textContent=e.message}
+  }
+  workspace.querySelector(".workspace-save").onclick=async()=>{
+   if(!adminAuthenticated){workspaceStatus.textContent="Use Admin login at the top of the website to save.";return}
+   const button=workspace.querySelector(".workspace-save"),url=workspaceUrl(),data={};
+   for(const name of workspaceFields)data[name]=workspace.querySelector(".workspace-"+name).value;
+   button.disabled=true;workspaceStatus.textContent="Saving…";
+   try{const res=await fetch(url,{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});const result=await res.json();if(!res.ok)throw Error(result.error||"Save failed (HTTP "+res.status+")");workspaceStatus.textContent="Saved."}
+   catch(e){workspaceStatus.textContent=e.message}finally{button.disabled=false}
+  };
   function openWorkspace(){history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));showAssemblyPage();window.scrollTo(0,0)}
   workspace.querySelector(".workspace-back").onclick=()=>{history.pushState(null,"",selected===null?"#"+project:"#"+project+"/assembly/"+encodeURIComponent(selected));showAssemblyPage();window.scrollTo(0,0)};
   async function showAssemblyPage(){
@@ -125,7 +145,7 @@ function setupAssemblyTrees(){
    const isAssembly=selected!==null;
    const bom=main.querySelector(".component-section")||detail.querySelector(".component-section");
    if(bom){if(isAssembly)detail.querySelector(".assembly-content-tiles").append(bom);else (main.querySelector(".assembly-unified-body")||main).append(bom)}
-   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();return;}
+   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();loadWorkspace();return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
@@ -334,6 +354,8 @@ function setupComponents(){
  const importPanel=root.querySelector(".component-admin");
  if(!field("extract")||!field("description")||!field("add-spec")||!field("save")){say("Component editor is incomplete. Please refresh the page.");return;}
  if(importPanel){const manual=document.createElement("button");manual.type="button";manual.className="btn component-manual";manual.textContent="Add component manually";manual.onclick=()=>{review.classList.remove("hide");say("Enter component details below, then save to this tile.")};field("extract").after(manual)}
+ const extractionButton=field("extract");
+ extractionButton.addEventListener("click",()=>{if(!adminAuthenticated)say("Please use Admin login at the top of the page before extracting.");},true);
  field("extract").onclick=async()=>{
   const description=field("description").value.trim();if(!description){say("Paste a product description.");return}
   if(!adminAuthenticated){say("Log in using Admin login at the top of the website.");return}
