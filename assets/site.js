@@ -311,7 +311,7 @@ function setupComponents(){
  const project=root.dataset.components,list=root.querySelector(".component-list"),status=root.querySelector(".component-status"),review=root.querySelector(".component-review"),specs=root.querySelector(".component-specs");
 
  const field=name=>root.querySelector(".component-"+name);
- const say=message=>status.textContent=message;
+ const say=message=>{status.textContent=message;status.hidden=false;status.style.display="block";status.setAttribute("aria-live","polite");};
  function specRow(name="",value="",source="explicit"){
   const row=document.createElement("div");row.className="row component-spec-row";
   const a=document.createElement("input"),b=document.createElement("input"),c=document.createElement("select"),del=document.createElement("button");
@@ -332,13 +332,14 @@ function setupComponents(){
   }catch(e){list.textContent="Components unavailable."}
  }
  const importPanel=root.querySelector(".component-admin");
+ if(!field("extract")||!field("description")||!field("add-spec")||!field("save")){say("Component editor is incomplete. Please refresh the page.");return;}
  if(importPanel){const manual=document.createElement("button");manual.type="button";manual.className="btn component-manual";manual.textContent="Add component manually";manual.onclick=()=>{review.classList.remove("hide");say("Enter component details below, then save to this tile.")};field("extract").after(manual)}
  field("extract").onclick=async()=>{
   const description=field("description").value.trim();if(!description){say("Paste a product description.");return}
   if(!adminAuthenticated){say("Log in using Admin login at the top of the website.");return}
   field("extract").disabled=true;say("Extracting specifications…");
-  try{const res=await fetch("/api/components/extract",{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+photoToken()},body:JSON.stringify({description})}),data=await res.json();if(!res.ok)throw Error(data.error||"Extraction failed");
-   const c=data.component;for(const name of ["name","manufacturer","model","category","supplier","asin"])field(name).value=c[name]||"";
+  try{const res=await fetch("/api/components/extract",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({description})});const raw=await res.text();let data;try{data=JSON.parse(raw)}catch{throw Error("Server returned an unexpected response (HTTP "+res.status+"). Check the Worker deployment.")}if(!res.ok)throw Error(data.error||"Extraction failed (HTTP "+res.status+")");
+   const c=data.component;if(!c||typeof c!=="object")throw Error("The extraction service returned no component data");for(const name of ["name","manufacturer","model","category","supplier","asin"])field(name).value=c[name]||"";
    specs.replaceChildren();for(const s of c.specifications||[])specRow(s.name,s.value,s.source);review.classList.remove("hide");say("Review and correct the fields before saving.")
   }catch(e){review.classList.remove("hide");say((e.message||"Extraction unavailable")+". Enter the component fields manually below, then save.")}finally{field("extract").disabled=false}
  };
