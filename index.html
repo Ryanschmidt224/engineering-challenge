@@ -142,6 +142,24 @@ function setupAssemblyTrees(){
   const title=view.querySelector(".assembly-main h1")?.textContent||"Project";let nodes=[],selected=null,expanded=new Set([null]);
   const detail=view.querySelector(".assembly-detail"),main=view.querySelector(".assembly-main"),detailStatus=detail.querySelector(".assembly-detail-status");
   let detailVersion=0;
+  // Shared image tile renderer for root projects and all subassemblies.
+  function makeAssemblyPhotoStage(photos,name,onAdd,onDelete){
+   let active=0;
+   const stage=document.createElement("div");stage.className="assembly-photo-stage";
+   const picture=document.createElement("img");picture.className="assembly-stage-image";picture.alt="";
+   const empty=document.createElement("div");empty.className="assembly-photo-placeholder";empty.textContent="No photo yet";
+   const prev=document.createElement("button"),next=document.createElement("button");
+   prev.type=next.type="button";prev.className="assembly-photo-arrow previous";next.className="assembly-photo-arrow next";prev.textContent="‹";next.textContent="›";prev.setAttribute("aria-label","Previous photo");next.setAttribute("aria-label","Next photo");
+   const label=document.createElement("span");label.className="assembly-photo-name";label.textContent=name;
+   const actions=document.createElement("div");actions.className="assembly-photo-actions";
+   const add=document.createElement("button");add.type="button";add.className="assembly-photo-icon";add.textContent="+";add.title="Add photo";add.setAttribute("aria-label","Add photo");add.onclick=onAdd;
+   const del=document.createElement("button");del.type="button";del.className="assembly-photo-icon";del.textContent="×";del.title="Delete current photo";del.setAttribute("aria-label","Delete current photo");del.onclick=()=>onDelete(photos[active]);
+   if(adminAuthenticated)actions.append(add,del);
+   const show=()=>{const p=photos[active];picture.hidden=!p;empty.hidden=!!p;if(p){picture.src=p.url;picture.alt=p.caption||name}else picture.removeAttribute("src");prev.hidden=next.hidden=photos.length<2;del.hidden=!p};
+   prev.onclick=()=>{active=(active+photos.length-1)%photos.length;show()};
+   next.onclick=()=>{active=(active+1)%photos.length;show()};
+   stage.append(picture,empty,prev,next,label,actions);show();return stage;
+  }
   async function showAssemblyPage(){
    const version=++detailVersion;
    const isAssembly=selected!==null;
@@ -161,23 +179,8 @@ function setupAssemblyTrees(){
    description.textContent="Loading…";
    try{const r=await fetch("/api/tree?project="+project+"&assembly="+encodeURIComponent(assemblyId)),data=await r.json();if(!r.ok)throw Error(data.error);if(version!==detailVersion)return;description.textContent=data.page.description||"";input.value=data.page.description||"";description.classList.toggle("hide",adminAuthenticated);input.placeholder="Description"}catch(e){if(version===detailVersion)description.textContent="Unable to load description: "+e.message}
    const gallery=detail.querySelector(".assembly-photos");gallery.textContent="";
-   try{const r=await fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(assemblyId)),data=await r.json();if(!r.ok)throw Error(data.error);if(version!==detailVersion)return;gallery.replaceChildren();const photos=data.photos||[];let active=0;
-    const stage=document.createElement("div");stage.className="assembly-photo-stage";
-    const picture=document.createElement("img");picture.className="assembly-stage-image";picture.alt="";
-    const empty=document.createElement("div");empty.className="assembly-photo-placeholder";empty.textContent="No photo yet";
-    const prev=document.createElement("button"),next=document.createElement("button");
-    prev.type=next.type="button";prev.className="assembly-photo-arrow previous";next.className="assembly-photo-arrow next";prev.textContent="‹";next.textContent="›";prev.setAttribute("aria-label","Previous photo");next.setAttribute("aria-label","Next photo");
-    const label=document.createElement("span");label.className="assembly-photo-name";label.textContent=node.name;
-    const actions=document.createElement("div");actions.className="assembly-photo-actions";
-    const add=document.createElement("button");add.type="button";add.className="assembly-photo-icon";add.textContent="+";add.title="Add photo";add.setAttribute("aria-label","Add photo");add.onclick=()=>assemblyUpload.click();
-    const del=document.createElement("button");del.type="button";del.className="assembly-photo-icon";del.textContent="×";del.title="Delete current photo";del.setAttribute("aria-label","Delete current photo");
-    del.onclick=async()=>{const p=photos[active];if(!p||!confirm("Delete this photo?"))return;const r=await fetch("/api/photos?id="+encodeURIComponent(p.id),{method:"DELETE"});if(!r.ok){detailStatus.textContent="Delete failed";return}showAssemblyPage()};
-    if(adminAuthenticated)actions.append(add,del);
-    const show=()=>{const p=photos[active];picture.hidden=!p;empty.hidden=!!p;if(p){picture.src=p.url;picture.alt=p.caption||node.name}else picture.removeAttribute("src");prev.hidden=next.hidden=photos.length<2;del.hidden=!p;};
-    prev.onclick=()=>{active=(active+photos.length-1)%photos.length;show()};
-    next.onclick=()=>{active=(active+1)%photos.length;show()};
-    stage.append(picture,empty,prev,next,label,actions);gallery.append(stage);show();
-   }catch(e){if(version===detailVersion)gallery.textContent="Unable to load photos: "+e.message}
+   try{const r=await fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(assemblyId)),data=await r.json();if(!r.ok)throw Error(data.error);if(version!==detailVersion)return;gallery.replaceChildren();const photos=data.photos||[];const stage=makeAssemblyPhotoStage(photos,node.name,()=>assemblyUpload.click(),async p=>{if(!p||!confirm("Delete this photo?"))return;try{const r=await fetch("/api/photos?id="+encodeURIComponent(p.id),{method:"DELETE",credentials:"same-origin"});if(!r.ok)throw Error("Delete failed (HTTP "+r.status+")");await showAssemblyPage()}catch(e){detailStatus.textContent=e.message}});gallery.replaceChildren(stage);
+    }catch(e){if(version===detailVersion)gallery.textContent="Unable to load photos: "+e.message}
   }
   detail.querySelector(".assembly-back").onclick=()=>{selected=null;render();notify()};
   detail.querySelector(".assembly-description-save").onclick=async()=>{const id=selected;if(!id)return;detailStatus.textContent="Saving…";try{const r=await fetch("/api/tree?project="+project+"&assembly="+encodeURIComponent(id),{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({description:detail.querySelector(".assembly-description-input").value})});const data=await r.json();if(!r.ok)throw Error(data.error);detailStatus.textContent="Saved.";showAssemblyPage()}catch(e){detailStatus.textContent=e.message}};
@@ -210,16 +213,8 @@ function setupAssemblyTrees(){
    rootPhoto.querySelector(".assembly-photo-admin").classList.toggle("hide",!adminAuthenticated);
    try{
     const response=await fetch("/api/photos?project="+encodeURIComponent(project));const data=await response.json();if(!response.ok)throw Error(data.error||"Unable to load photos");
-    const photos=(data.photos||[]).filter(p=>!p.assembly);let active=0;
-    const stage=document.createElement("div");stage.className="assembly-photo-stage";
-    const picture=document.createElement("img");picture.className="assembly-stage-image";picture.alt="";
-    const empty=document.createElement("div");empty.className="assembly-photo-placeholder";empty.textContent="No photo yet";
-    const prev=document.createElement("button"),next=document.createElement("button");prev.type=next.type="button";prev.className="assembly-photo-arrow previous";next.className="assembly-photo-arrow next";prev.textContent="‹";next.textContent="›";prev.setAttribute("aria-label","Previous photo");next.setAttribute("aria-label","Next photo");
-    const label=document.createElement("span");label.className="assembly-photo-name";label.textContent=title;
-    const actions=document.createElement("div");actions.className="assembly-photo-actions";
-    const add=document.createElement("button");add.type="button";add.className="assembly-photo-icon";add.textContent="+";add.title="Add photo";add.setAttribute("aria-label","Add photo");add.onclick=()=>rootInput.click();
-    const del=document.createElement("button");del.type="button";del.className="assembly-photo-icon";del.textContent="×";del.title="Delete current photo";del.setAttribute("aria-label","Delete current photo");
-    del.onclick=async()=>{const p=photos[active];if(!p||!confirm("Delete this photo?"))return;try{const r=await fetch("/api/photos?id="+encodeURIComponent(p.id),{method:"DELETE",credentials:"same-origin"});if(!r.ok)throw Error("Delete failed (HTTP "+r.status+")");await renderRootPhotos()}catch(e){rootStatus.textContent=e.message}};
+    const photos=(data.photos||[]).filter(p=>!p.assembly);const stage=makeAssemblyPhotoStage(photos,title,()=>rootInput.click(),async p=>{if(!p||!confirm("Delete this photo?"))return;try{const r=await fetch("/api/photos?id="+encodeURIComponent(p.id),{method:"DELETE",credentials:"same-origin"});if(!r.ok)throw Error("Delete failed (HTTP "+r.status+")");await renderRootPhotos()}catch(e){rootStatus.textContent=e.message}});rootGallery.replaceChildren(stage);
+    }catch(e){rootStatus.textContent=e.message}};
     if(adminAuthenticated)actions.append(add,del);
     const show=()=>{const p=photos[active];picture.hidden=!p;empty.hidden=!!p;if(p){picture.src=p.url;picture.alt=p.caption||title}else picture.removeAttribute("src");prev.hidden=next.hidden=photos.length<2;del.hidden=!p};
     prev.onclick=()=>{active=(active+photos.length-1)%photos.length;show()};next.onclick=()=>{active=(active+1)%photos.length;show()};
