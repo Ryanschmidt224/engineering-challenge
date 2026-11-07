@@ -16,9 +16,9 @@ const byId=id=>tiles.find(t=>t.id===id);const safe=s=>String(s||"").replace(/[&<
 const store=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){alert("Browser storage is unavailable. Export your notes instead.")}};
 const load=k=>{try{return JSON.parse(localStorage.getItem(k))||[]}catch(e){return []}};
 let notes=load("bs_notes"),drafts=load("bs_drafts"),feedback=load("bs_feedback"),hintIndex=0,selectionText="";
-function navigate(page){if(page==="challenge"||page==="workshop")page="launcher";if(page==="community")page="learn";if(!document.getElementById(page))page="home";document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===page));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.nav===page));location.hash=page;window.scrollTo({top:0,behavior:"instant"});if(page==="learn")renderTiles()}
+function navigate(page){const route=page.match(/^([a-z]+)\/assembly\/([^/]+)$/);if(route)page=route[1];if(page==="challenge"||page==="workshop")page="launcher";if(page==="community")page="learn";if(!document.getElementById(page))page="home";document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===page));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.nav===page));location.hash=page;window.scrollTo({top:0,behavior:"instant"});if(page==="learn")renderTiles()}
 document.addEventListener("click",e=>{const nav=e.target.closest("[data-nav]");if(nav){e.preventDefault();navigate(nav.dataset.nav)}const topic=e.target.closest("[data-topic]");if(topic)openTile(topic.dataset.topic);const project=e.target.closest("[data-project]");if(project)navigate(project.dataset.project)});
-window.addEventListener("hashchange",()=>navigate(location.hash.slice(1)||"home"));
+window.addEventListener("hashchange",()=>{const hash=location.hash.slice(1)||"home";navigate(hash);const match=hash.match(/^([a-z]+)\/assembly\/([^/]+)$/);if(match){const project=match[1],id=decodeURIComponent(match[2]);document.querySelector(`[data-assembly-tree="${project}"] .assembly-node[data-id="${CSS.escape(id)}"]`)?.click()}});
 function renderTiles(){const q=document.getElementById("search").value.toLowerCase().trim();document.getElementById("topicFilters").innerHTML=disciplines.map(d=>'<button class="filter'+(d===activeDiscipline?' selected':'')+'" data-filter="'+d+'" aria-pressed="'+(d===activeDiscipline)+'">'+d+'</button>').join("");const found=tiles.filter(t=>(activeDiscipline==="All"||topicDisciplines[t.id].includes(activeDiscipline))&&(t.title+" "+t.category+" "+t.short+" "+topicDisciplines[t.id].join(" ")).toLowerCase().includes(q));document.getElementById("tileList").innerHTML=found.map(t=>'<article class="card"><div class="project-tags">'+topicDisciplines[t.id].map(d=>'<span>'+d+'</span>').join("")+'</div><h3 style="margin-top:12px">'+safe(t.title)+'</h3><p>'+safe(t.short)+'</p><button class="btn" data-topic="'+t.id+'">Open</button></article>').join("")||'<p>No results.</p>'}
 document.getElementById("topicFilters").addEventListener("click",e=>{const b=e.target.closest("[data-filter]");if(b){activeDiscipline=b.dataset.filter;renderTiles()}});
 document.getElementById("search").addEventListener("input",renderTiles);
@@ -127,7 +127,7 @@ function setupAssemblyTrees(){
    await loadDescription(assemblyId,detail,detailStatus);
    await detailPhotoController.refresh();
   }
-  detail.querySelector(".assembly-back").onclick=()=>{selected=null;render();notify()};
+  detail.querySelector(".assembly-back").onclick=()=>{selected=null;render();notify();history.pushState(null,"","#"+project);window.scrollTo(0,0)};
   // One description loader/saver for the same tile at every depth.
   async function loadDescription(id,container,message){
    const editor=container.querySelector(".assembly-description-edit");
@@ -232,7 +232,7 @@ function setupAssemblyTrees(){
     const tile=document.createElement("article");tile.className="assembly-tile";
     const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=data.photos[0].url;img.alt="";cover.replaceChildren(img,overlay)}).catch(()=>{});
     const stage=document.createElement("span");stage.className="assembly-tile-stage";stage.textContent=n.stage==="integration"?"Integration":n.dependsOn?.length?"Dependent":"";
-    const button=document.createElement("button");button.type="button";button.className="assembly-tile-title";button.textContent=n.name;button.onclick=()=>{selected=n.id;expanded.add(n.parentId);render();notify()};
+    const button=document.createElement("button");button.type="button";button.className="assembly-tile-title";button.textContent=n.name;const openAssembly=()=>{selected=n.id;expanded.add(n.parentId);render();notify();history.pushState(null,"","#"+project+"/assembly/"+encodeURIComponent(n.id));window.scrollTo(0,0)};button.onclick=openAssembly;cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
     tile.append(stage,button);
     if(n.dependsOn?.length){const deps=document.createElement("p");deps.className="assembly-tile-deps";deps.textContent="Requires: "+n.dependsOn.map(id=>nodes.find(x=>x.id===id)?.name||"Unknown").join(", ");tile.append(deps)}
     if(adminAuthenticated){const edit=document.createElement("button");edit.type="button";edit.className="btn assembly-tile-edit";edit.textContent="Order";edit.onclick=async()=>{const options=nodes.filter(x=>x.id!==n.id);const help=options.map((x,i)=>(i+1)+". "+x.name).join("\\n");const answer=prompt("Enter prerequisite assembly numbers, separated by commas. Leave blank for independent work.\\n"+help,(n.dependsOn||[]).map(id=>options.findIndex(x=>x.id===id)+1).join(","));if(answer===null)return;const indices=answer.trim()?answer.split(",").map(v=>Number(v.trim())-1):[];if(indices.some(i=>!Number.isInteger(i)||i<0||i>=options.length)){status.textContent="Invalid prerequisite numbers.";return}const deps=[...new Set(indices.map(i=>options[i].id))];const stage=prompt("Work type: independent, sequential, or integration",n.stage||"independent");if(stage===null)return;try{await save(nodes.map(x=>x.id===n.id?{...x,dependsOn:deps,stage:stage.trim().toLowerCase()}:x))}catch(e){status.textContent=e.message}};tile.append(edit)}
@@ -261,7 +261,7 @@ function setupAssemblyTrees(){
   }
   const validSelection=()=>selected===null||nodes.some(n=>n.id===selected);
   const notify=()=>{showAssemblyPage();renderTiles();assemblySelections[project]=selected;view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));};
-  async function load(){try{const r=await fetch("/api/tree?project="+project),data=await r.json();if(!r.ok)throw Error(data.error);nodes=data.nodes||[];if(!validSelection())selected=null;render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
+  async function load(){try{const r=await fetch("/api/tree?project="+project),data=await r.json();if(!r.ok)throw Error(data.error);nodes=data.nodes||[];if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/assembly/([^/]+)$"));if(deepLink&&nodes.some(n=>n.id===deepLink[1]))selected=deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
   async function save(next){const r=await fetch("/api/tree?project="+project,{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({nodes:next})});const data=await r.json();if(!r.ok)throw Error(data.error||"Save failed");nodes=next;render();notify()}
   function render(){nodesEl.replaceChildren();controls.classList.toggle("hide",!adminAuthenticated);const row=(node,depth)=>{
    const id=node?.id??null,children=nodes.filter(n=>n.parentId===id),el=document.createElement("div");el.className="assembly-node"+(selected===id?" selected":"");el.style.paddingLeft=(depth*17+3)+"px";
@@ -294,8 +294,8 @@ function setupComponents(){
  async function refresh(){
   try{const res=await fetch("/api/components?project="+project),data=await res.json();if(!res.ok)throw Error(data.error);
   list.replaceChildren();
-  const selected=assemblySelections[project]??null;const visible=selected===null?data.components:data.components.filter(c=>c.assemblyId===selected);
-  if(!visible.length){list.textContent="No components saved for this selection.";return}
+  const selected=assemblySelections[project]??null;const visible=data.components.filter(c=>(c.assemblyId??null)===selected);
+  if(!visible.length){list.textContent="No components yet.";return}
   const table=document.createElement("table"),head=document.createElement("tr");
   for(const label of ["Component","Qty","Model","Supplier","Specifications"]){const th=document.createElement("th");th.textContent=label;head.append(th)}table.append(head);
   for(const c of visible){const tr=document.createElement("tr");const cells=[c.name,c.quantity||1,[c.manufacturer,c.model].filter(Boolean).join(" · "),[c.supplier,c.asin].filter(Boolean).join(" · "),c.specifications.map(s=>s.name+": "+s.value+(s.source==="inferred"?" (inferred)":"")).join("; ")];for(const v of cells){const td=document.createElement("td");td.textContent=v;tr.append(td)}
@@ -310,7 +310,7 @@ function setupComponents(){
   try{const res=await fetch("/api/components/extract",{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+photoToken()},body:JSON.stringify({description})}),data=await res.json();if(!res.ok)throw Error(data.error||"Extraction failed");
    const c=data.component;for(const name of ["name","manufacturer","model","category","supplier","asin"])field(name).value=c[name]||"";
    specs.replaceChildren();for(const s of c.specifications||[])specRow(s.name,s.value,s.source);review.classList.remove("hide");say("Review and correct the fields before saving.")
-  }catch(e){say(e.message)}finally{field("extract").disabled=false}
+  }catch(e){review.classList.remove("hide");say((e.message||"Extraction unavailable")+". Enter the component fields manually below, then save.")}finally{field("extract").disabled=false}
  };
  field("add-spec").onclick=()=>specRow();
  field("save").onclick=async()=>{
@@ -319,7 +319,7 @@ function setupComponents(){
   if(!c.name){say("Component name is required.");return}
   field("save").disabled=true;try{const res=await fetch("/api/components?project="+project,{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+photoToken()},body:JSON.stringify(c)}),data=await res.json();if(!res.ok)throw Error(data.error||"Save failed");review.classList.add("hide");field("description").value="";if(field("quantity"))field("quantity").value="1";say("Component saved.");await refresh()}catch(e){say(e.message)}finally{field("save").disabled=false}
  };
- root.addEventListener("assemblychange",refresh);
+ root.addEventListener("assemblychange",()=>{review.classList.add("hide");field("description").value="";specs.replaceChildren();refresh()});
  refresh();
  })
 }
