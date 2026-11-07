@@ -1,9 +1,12 @@
+import {handleComponents,handleExtract} from "./functions/api/components.js";
 import {onRequestGet as listPhotos,onRequestPost as uploadPhoto,onRequestDelete as deletePhoto} from "./functions/api/photos.js";
 import {onRequestGet as getPhoto} from "./functions/api/photo.js";
 export default {
   async fetch(request,env,ctx){
     const path=new URL(request.url).pathname;
     try{
+      if(path==="/api/components")return handleComponents(request,env);
+      if(path==="/api/components/extract")return handleExtract(request,env);
       if(path==="/api/photos"){
         const args={request,env,ctx};
         if(request.method==="GET")return listPhotos(args);
