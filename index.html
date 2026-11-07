@@ -187,62 +187,70 @@ function setupAssemblyTrees(){
    const description=detail.querySelector(".assembly-description"),input=detail.querySelector(".assembly-description-input");
    description.textContent="Loading…";
    try{const r=await fetch("/api/tree?project="+project+"&assembly="+encodeURIComponent(assemblyId)),data=await r.json();if(!r.ok)throw Error(data.error);if(version!==detailVersion)return;description.textContent=data.page.description||"";input.value=data.page.description||"";description.classList.toggle("hide",adminAuthenticated);input.placeholder="Description"}catch(e){if(version===detailVersion)description.textContent="Unable to load description: "+e.message}
-   const gallery=detail.querySelector(".assembly-photos");gallery.textContent="";
-   try{const r=await fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(assemblyId)),data=await r.json();if(!r.ok)throw Error(data.error);if(version!==detailVersion)return;gallery.replaceChildren();const photos=data.photos||[];const stage=makeAssemblyPhotoStage(photos,node.name,()=>assemblyUpload.click(),async p=>{if(!p||!confirm("Delete this photo?"))return;try{const r=await fetch("/api/photos?id="+encodeURIComponent(p.id),{method:"DELETE",credentials:"same-origin"});if(!r.ok)throw Error("Delete failed (HTTP "+r.status+")");await showAssemblyPage()}catch(e){detailStatus.textContent=e.message}});gallery.replaceChildren(stage);
-    }catch(e){if(version===detailVersion)gallery.textContent="Unable to load photos: "+e.message}
+   await detailPhotoController.refresh();
   }
   detail.querySelector(".assembly-back").onclick=()=>{selected=null;render();notify()};
   detail.querySelector(".assembly-description-save").onclick=async()=>{const id=selected;if(!id)return;detailStatus.textContent="Saving…";try{const r=await fetch("/api/tree?project="+project+"&assembly="+encodeURIComponent(id),{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({description:detail.querySelector(".assembly-description-input").value})});const data=await r.json();if(!r.ok)throw Error(data.error);detailStatus.textContent="Saved.";showAssemblyPage()}catch(e){detailStatus.textContent=e.message}};
-  const assemblyUpload=detail.querySelector(".assembly-photo-input"),assemblyPhotoZone=detail.querySelector(".assembly-photo-zone"),assemblyPick=detail.querySelector(".assembly-photo-pick");
-  assemblyPick.onclick=()=>{detailStatus.textContent="";assemblyUpload.click()};
-  async function uploadAssemblyPhoto(file){
-   const id=selected;if(!file||!id)return;
-   if(!adminAuthenticated){detailStatus.textContent="Sign in as administrator to upload.";return}
-   if(file.size>10*1024*1024){detailStatus.textContent="Maximum photo size: 10 MB.";return}
-   const type=file.type||({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",heic:"image/heic",heif:"image/heif"}[file.name.split(".").pop().toLowerCase()]||"");
-   if(!type){detailStatus.textContent="Choose an image file.";return}
-   assemblyPhotoZone.setAttribute("aria-busy","true");detailStatus.textContent="Uploading photo…";
-   try{
-    const r=await fetch("/api/photos",{method:"POST",credentials:"same-origin",headers:{"content-type":type,"x-photo-project":project,"x-photo-assembly":id,"x-photo-caption":encodeURIComponent(detail.querySelector(".assembly-photo-caption").value),"x-photo-name":encodeURIComponent(file.name)},body:file});
-    const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={error:raw.slice(0,160)||"Unexpected server response"}}
-    if(!r.ok)throw Error((data.error||"Upload failed")+" (HTTP "+r.status+")");
-    assemblyUpload.value="";detail.querySelector(".assembly-photo-caption").value="";
-    await showAssemblyPage();detailStatus.textContent="Photo uploaded.";
-   }catch(err){detailStatus.textContent=err.message||"Upload failed."}
-   finally{assemblyPhotoZone.removeAttribute("aria-busy")}
+  // One controller for every project tile, including the root and nested assemblies.
+  function createPhotoController(tile, getAssemblyId, statusElement){
+   const gallery=tile.querySelector(".assembly-photos");
+   const admin=tile.querySelector(".assembly-photo-admin");
+   const input=tile.querySelector(".assembly-photo-input");
+   const zone=tile.querySelector(".assembly-photo-zone");
+   const caption=tile.querySelector(".assembly-photo-caption");
+   const pick=tile.querySelector(".assembly-photo-pick");
+   let busy=false;
+   const report=message=>{statusElement.textContent=message};
+   const currentId=()=>getAssemblyId();
+   async function refresh(){
+    const id=currentId();
+    admin.classList.toggle("hide",!adminAuthenticated);
+    const url="/api/photos?project="+encodeURIComponent(project)+(id?"&assembly="+encodeURIComponent(id):"");
+    try{
+     const r=await fetch(url),data=await r.json();
+     if(!r.ok)throw Error(data.error||"Unable to load photos");
+     if(id!==currentId())return;
+     const photos=(data.photos||[]).filter(p=>id?p.assembly===id:!p.assembly);
+     const name=id?nodes.find(n=>n.id===id)?.name||title:title;
+     gallery.replaceChildren(makeAssemblyPhotoStage(photos,name,()=>input.click(),async p=>{
+      if(!p||!confirm("Delete this photo?"))return;
+      try{
+       const r=await fetch("/api/photos?id="+encodeURIComponent(p.id),{method:"DELETE",credentials:"same-origin"});
+       if(!r.ok)throw Error("Delete failed (HTTP "+r.status+")");
+       await refresh();
+      }catch(e){report(e.message)}
+     }));
+    }catch(e){report(e.message)}
+   }
+   async function upload(file){
+    if(!file||busy)return;
+    const id=currentId();
+    if(!adminAuthenticated){report("Sign in as administrator to upload.");return}
+    if(file.size>10*1024*1024){report("Maximum photo size: 10 MB.");return}
+    const type=file.type||({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",heic:"image/heic",heif:"image/heif"}[file.name.split(".").pop().toLowerCase()]||"");
+    if(!type){report("Choose an image file.");return}
+    busy=true;zone.setAttribute("aria-busy","true");report("Uploading photo…");
+    try{
+     const headers={"content-type":type,"x-photo-project":project,"x-photo-caption":encodeURIComponent(caption.value),"x-photo-name":encodeURIComponent(file.name)};
+     if(id)headers["x-photo-assembly"]=id;
+     const r=await fetch("/api/photos",{method:"POST",credentials:"same-origin",headers,body:file});
+     const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={error:raw.slice(0,160)||"Unexpected server response"}}
+     if(!r.ok)throw Error((data.error||"Upload failed")+" (HTTP "+r.status+")");
+     input.value="";caption.value="";
+     await refresh();report("Photo uploaded.");
+    }catch(e){report(e.message||"Upload failed.")}
+    finally{busy=false;zone.removeAttribute("aria-busy")}
+   }
+   pick.onclick=()=>input.click();
+   input.onchange=()=>upload(input.files?.[0]);
+   zone.ondragover=e=>{e.preventDefault();zone.classList.add("drag-over")};
+   zone.ondragleave=()=>zone.classList.remove("drag-over");
+   zone.ondrop=e=>{e.preventDefault();zone.classList.remove("drag-over");upload(e.dataTransfer.files?.[0])};
+   return {refresh};
   }
-  assemblyUpload.onchange=e=>{const file=e.target.files?.[0];if(file)uploadAssemblyPhoto(file);};
-  assemblyPhotoZone.ondragover=e=>{e.preventDefault();assemblyPhotoZone.classList.add("drag-over")};
-  assemblyPhotoZone.ondragleave=()=>assemblyPhotoZone.classList.remove("drag-over");
-  assemblyPhotoZone.ondrop=e=>{e.preventDefault();assemblyPhotoZone.classList.remove("drag-over");uploadAssemblyPhoto(e.dataTransfer.files?.[0])};
-  // Root gallery is independent: never modify the working subassembly renderer.
-  const rootPhoto=main.querySelector(".root-photo-ui"),rootGallery=rootPhoto.querySelector(".assembly-photos"),rootInput=rootPhoto.querySelector(".assembly-photo-input"),rootZone=rootPhoto.querySelector(".assembly-photo-zone"),rootCaption=rootPhoto.querySelector(".assembly-photo-caption"),rootStatus=main.querySelector(".root-photo-status");
-  rootPhoto.querySelector(".assembly-photo-pick").onclick=()=>rootInput.click();
-  async function renderRootPhotos(){
-   rootPhoto.querySelector(".assembly-photo-admin").classList.toggle("hide",!adminAuthenticated);
-   try{
-    const response=await fetch("/api/photos?project="+encodeURIComponent(project));const data=await response.json();if(!response.ok)throw Error(data.error||"Unable to load photos");
-    const photos=(data.photos||[]).filter(p=>!p.assembly);const stage=makeAssemblyPhotoStage(photos,title,()=>rootInput.click(),async p=>{if(!p||!confirm("Delete this photo?"))return;try{const r=await fetch("/api/photos?id="+encodeURIComponent(p.id),{method:"DELETE",credentials:"same-origin"});if(!r.ok)throw Error("Delete failed (HTTP "+r.status+")");await renderRootPhotos()}catch(e){rootStatus.textContent=e.message}});rootGallery.replaceChildren(stage);
-   }catch(e){rootStatus.textContent=e.message}
-  }
-  async function uploadRootPhoto(file){
-   if(!file)return;
-   if(!adminAuthenticated){rootStatus.textContent="Sign in as administrator to upload.";return}
-   if(file.size>10*1024*1024){rootStatus.textContent="Maximum photo size: 10 MB.";return}
-   const type=file.type||({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",heic:"image/heic",heif:"image/heif"}[file.name.split(".").pop().toLowerCase()]||"");
-   if(!type){rootStatus.textContent="Choose an image file.";return}
-   rootZone.setAttribute("aria-busy","true");rootStatus.textContent="Uploading photo…";
-   try{
-    const r=await fetch("/api/photos",{method:"POST",credentials:"same-origin",headers:{"content-type":type,"x-photo-project":project,"x-photo-caption":encodeURIComponent(rootCaption.value),"x-photo-name":encodeURIComponent(file.name)},body:file});
-    const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={error:raw.slice(0,160)||"Unexpected server response"}}
-    if(!r.ok)throw Error((data.error||"Upload failed")+" (HTTP "+r.status+")");
-    rootInput.value="";rootCaption.value="";await renderRootPhotos();rootStatus.textContent="Photo uploaded.";
-   }catch(e){rootStatus.textContent=e.message}finally{rootZone.removeAttribute("aria-busy")}
-  }
-  rootInput.onchange=e=>uploadRootPhoto(e.target.files?.[0]);
-  rootZone.ondragover=e=>{e.preventDefault();rootZone.classList.add("drag-over")};
-  rootZone.ondragleave=()=>rootZone.classList.remove("drag-over");
-  rootZone.ondrop=e=>{e.preventDefault();rootZone.classList.remove("drag-over");uploadRootPhoto(e.dataTransfer.files?.[0])};
+  const rootPhotoController=createPhotoController(main,()=>null,main.querySelector(".root-photo-status"));
+  const detailPhotoController=createPhotoController(detail,()=>selected,detailStatus);
+  async function renderRootPhotos(){await rootPhotoController.refresh()}
   function renderTiles(){
    const target=(selected===null?main:detail).querySelector(".assembly-workflow");if(!target)return;
    target.replaceChildren();const children=nodes.filter(n=>n.parentId===selected);
