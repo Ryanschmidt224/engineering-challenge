@@ -181,6 +181,26 @@ function setupAssemblyTrees(){
     tile.append(stage,button);
     if(n.dependsOn?.length){const deps=document.createElement("p");deps.className="assembly-tile-deps";deps.textContent="Requires: "+n.dependsOn.map(id=>nodes.find(x=>x.id===id)?.name||"Unknown").join(", ");tile.append(deps)}
     if(adminAuthenticated){const edit=document.createElement("button");edit.type="button";edit.className="btn assembly-tile-edit";edit.textContent="Order";edit.onclick=async()=>{const options=nodes.filter(x=>x.id!==n.id);const help=options.map((x,i)=>(i+1)+". "+x.name).join("\\n");const answer=prompt("Enter prerequisite assembly numbers, separated by commas. Leave blank for independent work.\\n"+help,(n.dependsOn||[]).map(id=>options.findIndex(x=>x.id===id)+1).join(","));if(answer===null)return;const indices=answer.trim()?answer.split(",").map(v=>Number(v.trim())-1):[];if(indices.some(i=>!Number.isInteger(i)||i<0||i>=options.length)){status.textContent="Invalid prerequisite numbers.";return}const deps=[...new Set(indices.map(i=>options[i].id))];const stage=prompt("Work type: independent, sequential, or integration",n.stage||"independent");if(stage===null)return;try{await save(nodes.map(x=>x.id===n.id?{...x,dependsOn:deps,stage:stage.trim().toLowerCase()}:x))}catch(e){status.textContent=e.message}};tile.append(edit)}
+    if(adminAuthenticated){
+     const pick=document.createElement("button");pick.type="button";pick.className="btn assembly-tile-photo-button";pick.textContent="＋ Photo";pick.title="Upload a photo to "+n.name;
+     const input=document.createElement("input");input.type="file";input.accept="image/*,.heic,.heif";input.hidden=true;
+     pick.onclick=()=>input.click();
+     input.onchange=async()=>{
+      const file=input.files?.[0];if(!file)return;
+      const type=file.type||({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",heic:"image/heic",heif:"image/heif"}[file.name.split(".").pop().toLowerCase()]||"");
+      if(!type||file.size>10*1024*1024){status.textContent="Choose an image under 10 MB.";input.value="";return}
+      pick.disabled=true;pick.textContent="Uploading…";
+      try{
+       const response=await fetch("/api/photos",{method:"POST",credentials:"same-origin",headers:{"content-type":type,"x-photo-project":project,"x-photo-assembly":n.id,"x-photo-caption":"","x-photo-name":encodeURIComponent(file.name)},body:file});
+       const data=await response.json();
+       if(!response.ok)throw Error(data.error||"Upload failed (HTTP "+response.status+")");
+       const img=document.createElement("img");img.src="/api/photo?id="+encodeURIComponent(data.id);img.alt=n.name;cover.replaceChildren(img);
+       status.textContent="Photo added to "+n.name+".";
+      }catch(error){status.textContent="Photo upload failed: "+error.message}
+      finally{pick.disabled=false;pick.textContent="＋ Photo";input.value=""}
+     };
+     tile.append(pick,input);
+    }
     grid.append(tile)
    }target.append(grid)
   }
