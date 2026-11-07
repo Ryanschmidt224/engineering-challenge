@@ -1,0 +1,8 @@
+worker.js
+wrangler.jsonc
+functions/**
+PHOTO_SETUP.md
+.assetsignore
+.git/**
+.github/**
+node_modules/**
