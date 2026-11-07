@@ -13,7 +13,7 @@ export async function handleComponents(request,env){
   const input=await request.json().catch(()=>null);
   if(!input||typeof input.name!=="string"||!input.name.trim()||input.name.length>180||!Array.isArray(input.specifications)||input.specifications.length>35)return json({error:"Invalid component"},400);
   const clean=s=>String(s??"").slice(0,300);
-  const record={id:crypto.randomUUID(),name:clean(input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
+  const record={assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,quantity:Number.isInteger(input.quantity)&&input.quantity>0&&input.quantity<=100000?input.quantity:1,id:crypto.randomUUID(),name:clean(input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
   const items=await read(env,project);if(items.length>=300)return json({error:"Component limit reached"},400);items.push(record);await env.PHOTOS.put(key(project),JSON.stringify(items));return json({component:record},201);
  }
  if(request.method==="DELETE"){
