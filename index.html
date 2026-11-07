@@ -214,11 +214,6 @@ function setupAssemblyTrees(){
    try{
     const response=await fetch("/api/photos?project="+encodeURIComponent(project));const data=await response.json();if(!response.ok)throw Error(data.error||"Unable to load photos");
     const photos=(data.photos||[]).filter(p=>!p.assembly);const stage=makeAssemblyPhotoStage(photos,title,()=>rootInput.click(),async p=>{if(!p||!confirm("Delete this photo?"))return;try{const r=await fetch("/api/photos?id="+encodeURIComponent(p.id),{method:"DELETE",credentials:"same-origin"});if(!r.ok)throw Error("Delete failed (HTTP "+r.status+")");await renderRootPhotos()}catch(e){rootStatus.textContent=e.message}});rootGallery.replaceChildren(stage);
-    }catch(e){rootStatus.textContent=e.message}};
-    if(adminAuthenticated)actions.append(add,del);
-    const show=()=>{const p=photos[active];picture.hidden=!p;empty.hidden=!!p;if(p){picture.src=p.url;picture.alt=p.caption||title}else picture.removeAttribute("src");prev.hidden=next.hidden=photos.length<2;del.hidden=!p};
-    prev.onclick=()=>{active=(active+photos.length-1)%photos.length;show()};next.onclick=()=>{active=(active+1)%photos.length;show()};
-    stage.append(picture,empty,prev,next,label,actions);rootGallery.replaceChildren(stage);show();
    }catch(e){rootStatus.textContent=e.message}
   }
   async function uploadRootPhoto(file){
