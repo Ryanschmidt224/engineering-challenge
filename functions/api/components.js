@@ -1,6 +1,6 @@
 const projects=new Set(["launcher","linear","robot","buck","motorlab","coiltest"]);
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
-async function authorized(request,env){const token=request.headers.get("authorization")?.replace(/^Bearer /,"")||"";if(!env.admin_password||env.admin_password.length<24||!token)return false;const hash=async s=>new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)));const [a,b]=await Promise.all([hash(token),hash(env.admin_password)]);let diff=0;for(let i=0;i<a.length;i++)diff|=a[i]^b[i];return diff===0}
+async function authorized(request,env){const token=request.headers.get("authorization")?.replace(/^Bearer /,"")||"";if(!env.admin_password||env.admin_password.length<10||!token)return false;const hash=async s=>new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)));const [a,b]=await Promise.all([hash(token),hash(env.admin_password)]);let diff=0;for(let i=0;i<a.length;i++)diff|=a[i]^b[i];return diff===0}
 const key=project=>"components/"+project+".json";
 const read=async(env,project)=>{const obj=await env.PHOTOS.get(key(project));return obj?JSON.parse(await obj.text()):[]};
 export async function handleComponents(request,env){
