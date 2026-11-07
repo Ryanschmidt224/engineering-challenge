@@ -7,10 +7,10 @@ export async function handleTree(request,env){
  if(!env.PHOTOS)return reply({error:"Storage unavailable"},503);
  const assemblyId=new URL(request.url).searchParams.get("assembly");
  if(assemblyId!==null){
-  if(!/^[a-zA-Z0-9-]{1,80}$/.test(assemblyId))return reply({error:"Invalid assembly"},400);
+  if(assemblyId!=="__root__"&&!/^[a-zA-Z0-9-]{1,80}$/.test(assemblyId))return reply({error:"Invalid assembly"},400);
   const treeObj=await env.PHOTOS.get("trees/"+project+".json");
   const tree=treeObj?JSON.parse(await treeObj.text()):[];
-  if(!tree.some(n=>n.id===assemblyId))return reply({error:"Assembly not found"},404);
+  if(assemblyId!=="__root__"&&!tree.some(n=>n.id===assemblyId))return reply({error:"Assembly not found"},404);
   const contentKey="assembly-pages/"+project+"/"+assemblyId+".json";
   if(request.method==="GET"){
    const obj=await env.PHOTOS.get(contentKey);
