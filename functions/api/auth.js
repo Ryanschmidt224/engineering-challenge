@@ -1,7 +1,7 @@
 const enc=new TextEncoder();
 const b64=bytes=>btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 const unb64=s=>Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")),c=>c.charCodeAt(0));
-async function key(env){return crypto.subtle.importKey("raw",enc.encode(env.admin_password),"HMAC",{hash:"SHA-256"},false,["sign","verify"])}
+async function key(env){return crypto.subtle.importKey("raw",enc.encode(env.admin_password),{name:"HMAC",hash:"SHA-256"},false,["sign","verify"])}
 async function digest(value){return new Uint8Array(await crypto.subtle.digest("SHA-256",enc.encode(value)))}
 export async function isAdmin(request,env){
  if(!env.admin_password||env.admin_password.length<10)return false;
