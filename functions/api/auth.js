@@ -21,7 +21,8 @@ export async function auth(request,env){
  const url=new URL(request.url);if(request.headers.get("origin")!==url.origin)return json({error:"Invalid origin"},403);
  if(method==="DELETE")return json({authenticated:false},200,{"set-cookie":cookie("",0)});
  const body=await request.json().catch(()=>null),password=body?.password;
- if(typeof password!=="string"||password.length>256||!env.admin_password||env.admin_password.length<10)return json({error:"Incorrect password"},401);
+ if(!env.admin_password||env.admin_password.length<10)return json({error:"Administrator password secret is missing or shorter than 10 characters in this Worker deployment."},503);
+ if(typeof password!=="string"||password.length>256)return json({error:"Invalid password input"},400);
  const a=await digest(password),b=await digest(env.admin_password);if(a.length!==b.length||!a.every((x,i)=>x===b[i]))return json({error:"Incorrect password"},401);
  const payload=b64(enc.encode(JSON.stringify({exp:Date.now()+30*86400000,version:b64(b)})));
  const sig=b64(new Uint8Array(await crypto.subtle.sign("HMAC",await key(env),enc.encode(payload))));
