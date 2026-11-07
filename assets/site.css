@@ -49,3 +49,13 @@
 .assembly-main .assembly-main-description textarea::placeholder,.assembly-detail .assembly-description-input::placeholder{color:#7893a1;opacity:.8}
 .assembly-main .assembly-main-description textarea:hover,.assembly-main .assembly-main-description textarea:focus,.assembly-detail .assembly-description-input:hover,.assembly-detail .assembly-description-input:focus{border-color:#486879;outline:none}
 @media(max-width:700px){.assembly-main .assembly-unified-tile,.assembly-detail .assembly-unified-tile{max-width:100%;width:100%}.assembly-main .assembly-photo-stage,.assembly-detail .assembly-photo-stage{height:300px}}
+
+/* Explicit workspace entry and compact cover on the separate page */
+.assembly-photo-stage{position:relative}
+.assembly-open-workspace{position:absolute;left:14px;top:14px;z-index:5;border:0;border-radius:7px;padding:8px 12px;background:rgba(10,26,36,.78);color:#f0f7fb;font:inherit;font-size:13px;font-weight:650;cursor:pointer}
+.assembly-open-workspace:hover{background:rgba(35,78,99,.95)}
+.workspace-heading{display:flex;align-items:flex-start;gap:20px;margin:20px 0 26px}
+.workspace-cover{width:132px;height:104px;flex:none;border:1px solid #365261;border-radius:9px;overflow:hidden;background:#122735;display:flex;align-items:center;justify-content:center;color:#9cb6c4;font-size:12px}
+.workspace-cover img{width:100%;height:100%;object-fit:cover}
+.workspace-heading h1{margin:0}
+@media(max-width:600px){.workspace-cover{width:94px;height:78px}.workspace-heading{gap:12px}}
