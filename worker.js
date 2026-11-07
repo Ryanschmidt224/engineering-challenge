@@ -1,4 +1,5 @@
 import {handleTree} from "./functions/api/tree.js";
+import {handleWorkspace} from "./functions/api/workspace.js";
 import {auth} from "./functions/api/auth.js";
 import {handleComponents,handleExtract} from "./functions/api/components.js";
 import {onRequestGet as listPhotos,onRequestPost as uploadPhoto,onRequestDelete as deletePhoto} from "./functions/api/photos.js";
@@ -8,6 +9,7 @@ export default {
     const path=new URL(request.url).pathname;
     try{
       if(path==="/api/tree")return handleTree(request,env);
+      if(path==="/api/workspace")return handleWorkspace(request,env);
       if(path==="/api/auth")return auth(request,env);
       if(path==="/api/components")return handleComponents(request,env);
       if(path==="/api/components/extract")return handleExtract(request,env);
