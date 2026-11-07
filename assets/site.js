@@ -113,9 +113,11 @@ function setupAssemblyTrees(){
   }
   // Separate workspace route; the existing assembly overview remains unchanged.
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
-  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><h1 class="workspace-title"></h1><p class="muted">Workspace</p><section class="workspace-panels"><article><h2>Work instructions</h2><p>Not added yet</p></article><article><h2>Pictures</h2><p>Not added yet</p></article><article><h2>Recipes / procedures</h2><p>Not added yet</p></article><article><h2>Notes</h2><p>Not added yet</p></article></section>';
+  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article><h2>Work instructions</h2><p>Not added yet</p></article><article><h2>Pictures</h2><p>Not added yet</p></article><article><h2>Recipes / procedures</h2><p>Not added yet</p></article><article><h2>Notes</h2><p>Not added yet</p></article></section>';
   detail.after(workspace);
   const workspaceRoute=()=>location.hash.slice(1).startsWith(project+"/workspace/");
+  let workspacePhotoVersion=0;
+  async function loadWorkspaceCover(){const id=selected,version=++workspacePhotoVersion,cover=workspace.querySelector(".workspace-cover");cover.replaceChildren();const placeholder=document.createElement("span");placeholder.textContent="No photo yet";cover.append(placeholder);try{const r=await fetch("/api/photos?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(id));if(!r.ok)return;const data=await r.json();if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;const photo=(data.photos||[]).find(p=>p.assembly===id);if(photo){const img=document.createElement("img");img.src=photo.url;img.alt="Assembly photo";cover.replaceChildren(img)}}catch(e){/* cover is optional */}}
   function openWorkspace(){if(selected===null)return;history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected));showAssemblyPage();window.scrollTo(0,0)}
   workspace.querySelector(".workspace-back").onclick=()=>{history.pushState(null,"","#"+project+"/assembly/"+encodeURIComponent(selected));showAssemblyPage();window.scrollTo(0,0)};
   async function showAssemblyPage(){
@@ -123,7 +125,7 @@ function setupAssemblyTrees(){
    const isAssembly=selected!==null;
    const bom=main.querySelector(".component-section")||detail.querySelector(".component-section");
    if(bom){if(isAssembly)detail.querySelector(".assembly-content-tiles").append(bom);else (main.querySelector(".assembly-unified-body")||main).append(bom)}
-   const inWorkspace=isAssembly&&workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=nodes.find(n=>n.id===selected)?.name||"Assembly";return;}
+   const inWorkspace=isAssembly&&workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=nodes.find(n=>n.id===selected)?.name||"Assembly";loadWorkspaceCover();return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
@@ -135,7 +137,7 @@ function setupAssemblyTrees(){
    detailStatus.textContent="";
    await loadDescription(assemblyId,detail,detailStatus);
    await detailPhotoController.refresh();
-   detail.querySelector(".assembly-photo-stage")?.addEventListener("click",e=>{if(e.target.closest("button"))return;openWorkspace()},{once:true});
+
   }
   detail.querySelector(".assembly-back").onclick=()=>{selected=null;render();notify();history.pushState(null,"","#"+project);window.scrollTo(0,0)};
   // One description loader/saver for the same tile at every depth.
@@ -228,6 +230,20 @@ function setupAssemblyTrees(){
    zone.ondrop=e=>{e.preventDefault();zone.classList.remove("drag-over");upload(e.dataTransfer.files?.[0])};
    return {refresh};
   }
+  // A single explicit entry point on the large assembly photo, not on child tiles.
+  function addWorkspaceEntry(container){
+   const gallery=container.querySelector(".assembly-photos");
+   if(!gallery)return;
+   const install=()=>{
+    const stage=gallery.querySelector(".assembly-photo-stage");
+    if(!stage||stage.querySelector(".assembly-open-workspace"))return;
+    const btn=document.createElement("button");btn.type="button";btn.className="assembly-open-workspace";btn.textContent="New page";btn.title="Open the separate details page";
+    btn.onclick=e=>{e.stopPropagation();if(selected===null)return;openWorkspace()};
+    stage.append(btn);
+   };
+   new MutationObserver(install).observe(gallery,{childList:true});install();
+  }
+  addWorkspaceEntry(detail);
   const rootPhotoController=createPhotoController(main,()=>null,main.querySelector(".root-photo-status"));
   const detailPhotoController=createPhotoController(detail,()=>selected,detailStatus);
   async function renderRootPhotos(){await rootPhotoController.refresh()}
@@ -242,7 +258,7 @@ function setupAssemblyTrees(){
     const tile=document.createElement("article");tile.className="assembly-tile";
     const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=data.photos[0].url;img.alt="";cover.replaceChildren(img,overlay)}).catch(()=>{});
     const stage=document.createElement("span");stage.className="assembly-tile-stage";stage.textContent=n.stage==="integration"?"Integration":n.dependsOn?.length?"Dependent":"";
-    const button=document.createElement("button");button.type="button";button.className="assembly-tile-title";button.textContent=n.name;const openAssembly=()=>{selected=n.id;expanded.add(n.parentId);render();history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(n.id));notify();window.scrollTo(0,0)};button.onclick=openAssembly;cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" workspace";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
+    const button=document.createElement("button");button.type="button";button.className="assembly-tile-title";button.textContent=n.name;const openAssembly=()=>{selected=n.id;expanded.add(n.parentId);render();history.pushState(null,"","#"+project+"/assembly/"+encodeURIComponent(n.id));notify();window.scrollTo(0,0)};button.onclick=openAssembly;cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" overview";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
     tile.append(stage,button);
     if(n.dependsOn?.length){const deps=document.createElement("p");deps.className="assembly-tile-deps";deps.textContent="Requires: "+n.dependsOn.map(id=>nodes.find(x=>x.id===id)?.name||"Unknown").join(", ");tile.append(deps)}
     if(adminAuthenticated){const edit=document.createElement("button");edit.type="button";edit.className="btn assembly-tile-edit";edit.textContent="Order";edit.onclick=async()=>{const options=nodes.filter(x=>x.id!==n.id);const help=options.map((x,i)=>(i+1)+". "+x.name).join("\\n");const answer=prompt("Enter prerequisite assembly numbers, separated by commas. Leave blank for independent work.\\n"+help,(n.dependsOn||[]).map(id=>options.findIndex(x=>x.id===id)+1).join(","));if(answer===null)return;const indices=answer.trim()?answer.split(",").map(v=>Number(v.trim())-1):[];if(indices.some(i=>!Number.isInteger(i)||i<0||i>=options.length)){status.textContent="Invalid prerequisite numbers.";return}const deps=[...new Set(indices.map(i=>options[i].id))];const stage=prompt("Work type: independent, sequential, or integration",n.stage||"independent");if(stage===null)return;try{await save(nodes.map(x=>x.id===n.id?{...x,dependsOn:deps,stage:stage.trim().toLowerCase()}:x))}catch(e){status.textContent=e.message}};tile.append(edit)}
