@@ -5,6 +5,24 @@ export async function handleTree(request,env){
  const project=new URL(request.url).searchParams.get("project");
  if(!projects.has(project))return reply({error:"Unknown project"},400);
  if(!env.PHOTOS)return reply({error:"Storage unavailable"},503);
+ const assemblyId=new URL(request.url).searchParams.get("assembly");
+ if(assemblyId!==null){
+  if(!/^[a-zA-Z0-9-]{1,80}$/.test(assemblyId))return reply({error:"Invalid assembly"},400);
+  const treeObj=await env.PHOTOS.get("trees/"+project+".json");
+  const tree=treeObj?JSON.parse(await treeObj.text()):[];
+  if(!tree.some(n=>n.id===assemblyId))return reply({error:"Assembly not found"},404);
+  const contentKey="assembly-pages/"+project+"/"+assemblyId+".json";
+  if(request.method==="GET"){
+   const obj=await env.PHOTOS.get(contentKey);
+   return reply({page:obj?JSON.parse(await obj.text()):{description:""}});
+  }
+  if(request.method!=="PUT")return reply({error:"Method not allowed"},405);
+  if(!await isAdmin(request,env))return reply({error:"Admin login required"},401);
+  const body=await request.json().catch(()=>null);
+  if(typeof body?.description!=="string"||body.description.length>20000)return reply({error:"Invalid description"},400);
+  await env.PHOTOS.put(contentKey,JSON.stringify({description:body.description}));
+  return reply({ok:true});
+ }
  const key="trees/"+project+".json";
  if(request.method==="GET"){
   const obj=await env.PHOTOS.get(key);
