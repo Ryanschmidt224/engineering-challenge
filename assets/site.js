@@ -144,8 +144,8 @@ function setupAssemblyTrees(){
    const version=++detailVersion;
    const isAssembly=selected!==null;
    const bom=main.querySelector(".component-section")||detail.querySelector(".component-section")||workspace.querySelector(".component-section");
-   if(bom){if(workspaceRoute())workspace.querySelector(".workspace-bom-mount").append(bom);else if(isAssembly)detail.querySelector(".assembly-content-tiles").append(bom);else (main.querySelector(".assembly-unified-body")||main).append(bom)}
-   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();loadWorkspace();if(bom){const details=bom.querySelector("details");if(details)details.open=true;}return;}
+   if(bom){workspace.querySelector(".workspace-bom-mount").append(bom)}
+   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();loadWorkspace();if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
@@ -356,7 +356,8 @@ function setupComponents(){
  if(importPanel){const manual=document.createElement("button");manual.type="button";manual.className="btn component-manual";manual.textContent="Add part manually";manual.onclick=()=>{review.classList.remove("hide");say("Enter component details below, then save to this tile.")};field("extract").after(manual);const summary=importPanel.querySelector("summary");if(summary)summary.textContent="Add part to BOM";}
  const extractionButton=field("extract");
  extractionButton.hidden=false;
- extractionButton.addEventListener("click",()=>{if(!adminAuthenticated)say("Please use Admin login at the top of the page before extracting.");},true);
+ extractionButton.type="button";
+ extractionButton.addEventListener("click",()=>{say("Extraction button clicked. Checking input and administrator login…");},true);
  field("extract").onclick=async()=>{
   const description=field("description").value.trim();if(!description){say("Paste a product description or product page URL.");return}
   if(!adminAuthenticated){say("Log in using Admin login at the top of the website.");return}
