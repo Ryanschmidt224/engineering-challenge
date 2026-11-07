@@ -63,3 +63,7 @@
 /* The picture itself is the assembly's entry point to its build instructions. */
 .assembly-open-workspace{left:50%;top:50%;bottom:auto;transform:translate(-50%,-50%);width:auto;max-width:calc(100% - 32px);white-space:nowrap;border:1px solid rgba(230,245,251,.45);background:rgba(9,29,40,.78);padding:12px 18px;border-radius:9px;font-size:14px;box-shadow:0 3px 15px rgba(0,0,0,.2)}
 .assembly-open-workspace:hover,.assembly-open-workspace:focus-visible{background:rgba(28,78,95,.95);outline:2px solid rgba(200,240,245,.7);outline-offset:2px}
+
+/* Shared tile photo overlays: name upper-left, instructions lower-right. */
+.assembly-main .assembly-photo-name,.assembly-detail .assembly-photo-name{top:14px;left:15px;right:auto;bottom:auto;text-align:left;z-index:8}
+.assembly-main .assembly-open-workspace,.assembly-detail .assembly-open-workspace{top:auto;left:auto;right:14px;bottom:14px;transform:none;z-index:8}
