@@ -143,7 +143,7 @@ function setupAssemblyTrees(){
   async function showAssemblyPage(){
    const version=++detailVersion;
    const isAssembly=selected!==null;
-   const bom=main.querySelector(".component-section")||detail.querySelector(".component-section");
+   const bom=main.querySelector(".component-section")||detail.querySelector(".component-section")||workspace.querySelector(".component-section");
    if(bom){if(workspaceRoute())workspace.querySelector(".workspace-bom-mount").append(bom);else if(isAssembly)detail.querySelector(".assembly-content-tiles").append(bom);else (main.querySelector(".assembly-unified-body")||main).append(bom)}
    const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();loadWorkspace();if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
@@ -347,7 +347,7 @@ function setupComponents(){
   const table=document.createElement("table"),head=document.createElement("tr");
   for(const label of ["Component","Qty","Model","Supplier","Specifications"]){const th=document.createElement("th");th.textContent=label;head.append(th)}table.append(head);
   for(const c of visible){const tr=document.createElement("tr");const cells=[c.name,c.quantity||1,[c.manufacturer,c.model].filter(Boolean).join(" · "),[c.supplier,c.asin].filter(Boolean).join(" · "),c.specifications.map(s=>s.name+": "+s.value+(s.source==="inferred"?" (inferred)":"")).join("; ")];for(const v of cells){const td=document.createElement("td");td.textContent=v;tr.append(td)}
-  if(adminAuthenticated){const td=document.createElement("td"),btn=document.createElement("button");btn.className="btn";btn.textContent="Delete";btn.onclick=async()=>{if(!confirm("Delete component?"))return;const res=await fetch("/api/components?project="+project+"&id="+encodeURIComponent(c.id),{method:"DELETE",headers:{authorization:"Bearer "+photoToken()}});if(res.ok)refresh();else say("Delete failed.")};td.append(btn);tr.append(td)}
+  if(adminAuthenticated){const td=document.createElement("td"),btn=document.createElement("button");btn.className="btn";btn.textContent="Delete";btn.onclick=async()=>{if(!confirm("Delete component?"))return;const res=await fetch("/api/components?project="+project+"&id="+encodeURIComponent(c.id),{method:"DELETE",credentials:"same-origin"});if(res.ok)refresh();else say("Delete failed.")};td.append(btn);tr.append(td)}
   table.append(tr)}list.append(table)
   }catch(e){list.textContent="Components unavailable."}
  }
