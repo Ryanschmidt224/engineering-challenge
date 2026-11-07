@@ -32,7 +32,7 @@ export async function handleExtract(request,env){
   // Only fetch ordinary public HTTPS websites. No automatic redirect following.
   let url;try{url=new URL(source)}catch{return json({error:"Invalid product URL"},400)}
   const host=url.hostname.toLowerCase();
-  if(url.protocol!=="https:"||url.username||url.password||url.port&&url.port!=="443"||host==="localhost"||host.endsWith(".localhost")||host.endsWith(".local")||host.endsWith(".internal")||host.endsWith(".test")||host.endsWith(".example")||host.endsWith(".invalid")||host.endsWith(".onion")||host.includes(":")||/^\\d+(?:\\.\\d+){0,3}$/.test(host)||!host.includes("."))return json({error:"Enter a public HTTPS product page URL."},400);
+  if(url.protocol!=="https:"||url.username||url.password||url.port&&url.port!=="443"||host==="localhost"||host.endsWith(".localhost")||host.endsWith(".local")||host.endsWith(".internal")||host.endsWith(".test")||host.endsWith(".example")||host.endsWith(".invalid")||host.endsWith(".onion")||host.includes(":")||/^\d+(?:\.\d+){0,3}$/.test(host)||!host.includes("."))return json({error:"Enter a public HTTPS product page URL."},400);
   try{
    const page=await fetch(url.toString(),{redirect:"manual",headers:{"accept":"text/html","user-agent":"Mozilla/5.0 (compatible; BuildingSchmidt/1.0)"} ,signal:AbortSignal.timeout(8000)});
    if(page.status>=300&&page.status<400)return json({error:"This website redirects its product page. Open the final URL and try again, or paste the product description."},422);
@@ -42,8 +42,8 @@ export async function handleExtract(request,env){
    const reader=page.body?.getReader();if(!reader)return json({error:"No page content returned."},422);
    let bytes=0,chunks=[];try{while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.byteLength;if(bytes>500000){await reader.cancel();return json({error:"Page is too large to import. Paste the product description."},422)}chunks.push(part.value)}}finally{reader.releaseLock()}
    const html=new TextDecoder().decode(Uint8Array.from(chunks.flatMap(c=>Array.from(c))));
-   const cleaned=html.replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi," ").replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/&(?:nbsp|amp|quot|lt|gt);/gi," ").replace(/\\s+/g," ").trim();
-   description=("Product page: "+url.hostname+" "+url.pathname+"\\n"+cleaned).slice(0,3000);
+   const cleaned=html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi," ").replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/&(?:nbsp|amp|quot|lt|gt);/gi," ").replace(/\s+/g," ").trim();
+   description=("Product page: "+url.hostname+" "+url.pathname+"\n"+cleaned).slice(0,3000);
    if(description.length<80)return json({error:"The website did not expose readable product details. Paste the product description instead."},422);
   }catch(e){return json({error:"Could not retrieve that website. It may block automated access. Paste the product description instead."},422)}
  }
