@@ -73,3 +73,17 @@
 .assembly-description-inline .assembly-description-edit{align-items:center}
 .assembly-description-inline .assembly-description{min-height:22px;line-height:22px}
 .component-status:not(:empty){display:block!important;margin:10px 0;padding:8px 10px;border-left:3px solid #7bc5c5;background:rgba(24,70,82,.45);color:#e3f6f8}
+
+/* Compact workspace typography and integrated assembly BOM. */
+.assembly-workspace-page .workspace-heading h1{font-size:clamp(1.65rem,3vw,2.35rem);line-height:1.16}
+.assembly-workspace-page .workspace-panels h2{font-size:1.15rem;line-height:1.3;margin:20px 0 10px}
+.assembly-workspace-page .workspace-panels{max-width:900px}
+.assembly-workspace-page .workspace-panels textarea{width:100%;font-size:.9rem;line-height:1.5}
+.assembly-workspace-page .workspace-bom .component-section{margin:0;padding:0;width:100%;max-width:100%}
+.assembly-workspace-page .workspace-bom .component-admin{margin-top:12px}
+.assembly-workspace-page .workspace-bom .component-status{white-space:pre-wrap}
+.assembly-workspace-page .workspace-bom .component-list{overflow-x:auto}
+.assembly-workspace-page .workspace-bom .component-review{display:grid;gap:10px;margin-top:14px}
+.assembly-workspace-page .workspace-bom .component-review.hide{display:none}
+.assembly-workspace-page .workspace-bom .component-review label{display:block}
+.assembly-workspace-page .workspace-bom .component-description{width:100%}
