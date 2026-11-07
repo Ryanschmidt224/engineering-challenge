@@ -6,3 +6,5 @@ PHOTO_SETUP.md
 .git/**
 .github/**
 node_modules/**
+tests/**
+package.json
