@@ -50,7 +50,7 @@ document.getElementById("explainSelection").onclick=()=>{const selected=selectio
 let adminAuthenticated=false;
 const photoToken=()=>adminAuthenticated?"session":"";
 const adminButton=document.getElementById("adminLoginButton"),adminDialog=document.getElementById("adminDialog"),adminForm=document.getElementById("adminLoginForm"),adminStatus=document.getElementById("adminLoginStatus");
-function refreshAdminUI(){adminButton.textContent=adminAuthenticated?"Log out":"Admin login";document.querySelectorAll(".photo-admin,.component-section").forEach(el=>{el.querySelectorAll(".photo-upload,.component-extract,.component-save").forEach(control=>control.hidden=!adminAuthenticated)});}
+function refreshAdminUI(){adminButton.textContent=adminAuthenticated?"Log out":"Admin login";document.querySelectorAll(".photo-admin,.component-section").forEach(el=>{el.querySelectorAll(".photo-upload,.component-save").forEach(control=>control.hidden=!adminAuthenticated);el.querySelectorAll(".component-extract").forEach(control=>control.hidden=false)});}
 async function checkAdmin(){try{const r=await fetch("/api/auth",{cache:"no-store"});adminAuthenticated=!!(await r.json()).authenticated}catch{adminAuthenticated=false}refreshAdminUI()}
 adminButton.onclick=async()=>{if(adminAuthenticated){await fetch("/api/auth",{method:"DELETE"});adminAuthenticated=false;refreshAdminUI();location.reload()}else{adminStatus.textContent="";adminDialog.showModal()}};
 document.getElementById("adminCancel").onclick=()=>adminDialog.close();
