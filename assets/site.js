@@ -117,15 +117,15 @@ function setupAssemblyTrees(){
   detail.after(workspace);
   const workspaceRoute=()=>location.hash.slice(1).startsWith(project+"/workspace/");
   let workspacePhotoVersion=0;
-  async function loadWorkspaceCover(){const id=selected,version=++workspacePhotoVersion,cover=workspace.querySelector(".workspace-cover");cover.replaceChildren();const placeholder=document.createElement("span");placeholder.textContent="No photo yet";cover.append(placeholder);try{const r=await fetch("/api/photos?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(id));if(!r.ok)return;const data=await r.json();if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;const photo=(data.photos||[]).find(p=>p.assembly===id);if(photo){const img=document.createElement("img");img.src=photo.url;img.alt="Assembly photo";cover.replaceChildren(img)}}catch(e){/* cover is optional */}}
-  function openWorkspace(){if(selected===null)return;history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected));showAssemblyPage();window.scrollTo(0,0)}
-  workspace.querySelector(".workspace-back").onclick=()=>{history.pushState(null,"","#"+project+"/assembly/"+encodeURIComponent(selected));showAssemblyPage();window.scrollTo(0,0)};
+  async function loadWorkspaceCover(){const id=selected,version=++workspacePhotoVersion,cover=workspace.querySelector(".workspace-cover");cover.replaceChildren();const placeholder=document.createElement("span");placeholder.textContent="No photo yet";cover.append(placeholder);try{const r=await fetch("/api/photos?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(id??"__root__"));if(!r.ok)return;const data=await r.json();if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;const photo=(data.photos||[]).find(p=>(p.assembly??null)===id);if(photo){const img=document.createElement("img");img.src=photo.url;img.alt="Assembly photo";cover.replaceChildren(img)}}catch(e){/* cover is optional */}}
+  function openWorkspace(){history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));showAssemblyPage();window.scrollTo(0,0)}
+  workspace.querySelector(".workspace-back").onclick=()=>{history.pushState(null,"",selected===null?"#"+project:"#"+project+"/assembly/"+encodeURIComponent(selected));showAssemblyPage();window.scrollTo(0,0)};
   async function showAssemblyPage(){
    const version=++detailVersion;
    const isAssembly=selected!==null;
    const bom=main.querySelector(".component-section")||detail.querySelector(".component-section");
    if(bom){if(isAssembly)detail.querySelector(".assembly-content-tiles").append(bom);else (main.querySelector(".assembly-unified-body")||main).append(bom)}
-   const inWorkspace=isAssembly&&workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=nodes.find(n=>n.id===selected)?.name||"Assembly";loadWorkspaceCover();return;}
+   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
@@ -238,12 +238,13 @@ function setupAssemblyTrees(){
     const stage=gallery.querySelector(".assembly-photo-stage");
     if(!stage||stage.querySelector(".assembly-open-workspace"))return;
     const btn=document.createElement("button");btn.type="button";btn.className="assembly-open-workspace";btn.textContent="Build instructions →";btn.title="Open build instructions, procedures and notes";
-    btn.onclick=e=>{e.stopPropagation();if(selected===null)return;openWorkspace()};
+    btn.onclick=e=>{e.stopPropagation();openWorkspace()};
     stage.append(btn);
    };
    new MutationObserver(install).observe(gallery,{childList:true});install();
   }
   addWorkspaceEntry(detail);
+  addWorkspaceEntry(main);
   const rootPhotoController=createPhotoController(main,()=>null,main.querySelector(".root-photo-status"));
   const detailPhotoController=createPhotoController(detail,()=>selected,detailStatus);
   async function renderRootPhotos(){await rootPhotoController.refresh()}
@@ -285,7 +286,7 @@ function setupAssemblyTrees(){
     grid.append(tile)
    }target.append(grid)
   }
-  root.addEventListener("openassembly",e=>{const id=e.detail;if(!nodes.some(n=>n.id===id))return;selected=id;let cursor=nodes.find(n=>n.id===id);while(cursor){expanded.add(cursor.parentId);cursor=nodes.find(n=>n.id===cursor.parentId)}render();notify()});
+  root.addEventListener("openassembly",e=>{const id=e.detail;if(id==="__root__"){selected=null;render();notify();return}if(!nodes.some(n=>n.id===id))return;selected=id;let cursor=nodes.find(n=>n.id===id);while(cursor){expanded.add(cursor.parentId);cursor=nodes.find(n=>n.id===cursor.parentId)}render();notify()});
   const validSelection=()=>selected===null||nodes.some(n=>n.id===selected);
   const notify=()=>{showAssemblyPage();renderTiles();assemblySelections[project]=selected;view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));};
   async function load(){try{const r=await fetch("/api/tree?project="+project),data=await r.json();if(!r.ok)throw Error(data.error);nodes=data.nodes||[];if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/(?:assembly|workspace)/([^/]+)$"));if(deepLink&&nodes.some(n=>n.id===deepLink[1]))selected=deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
