@@ -113,8 +113,19 @@ function setupAssemblyTrees(){
   }
   // Separate workspace route; the existing assembly overview remains unchanged.
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
-  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article><h2>Work instructions</h2><textarea class="field workspace-instructions" placeholder="Add build steps, tools, measurements and checks…" rows="8"></textarea></article><article class="workspace-bom"><h2>Bill of materials</h2><div class="workspace-bom-mount"></div></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article><h2>Recipes / procedures</h2><textarea class="field workspace-procedures" placeholder="Add settings, recipes and procedures…" rows="5"></textarea></article><article><h2>Notes</h2><textarea class="field workspace-notes" placeholder="Add notes…" rows="5"></textarea></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
+  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-bom-mount"></div></article><article><h2>Work instructions</h2><textarea class="field workspace-instructions" placeholder="Add build steps, tools, measurements and checks…" rows="8"></textarea></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article><h2>Recipes / procedures</h2><textarea class="field workspace-procedures" placeholder="Add settings, recipes and procedures…" rows="5"></textarea></article><article><h2>Notes</h2><textarea class="field workspace-notes" placeholder="Add notes…" rows="5"></textarea></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
+  workspace.querySelector(".workspace-new-part").onclick=()=>{
+   const root=workspace.querySelector(".component-section");
+   if(!root){workspace.querySelector(".workspace-status").textContent="BOM editor is not available. Refresh the page.";return;}
+   const outer=root.querySelector("details"),form=root.querySelector(".component-admin"),review=root.querySelector(".component-review");
+   if(outer)outer.open=true;
+   if(form)form.open=true;
+   if(review)review.classList.remove("hide");
+   const status=root.querySelector(".component-status");
+   if(status){status.hidden=false;status.style.display="block";status.textContent="Enter a part manually, or paste a product description or URL and select Extract specifications. Save part adds it to this assembly.";}
+   root.querySelector(".component-name")?.focus();
+  };
   const workspaceRoute=()=>location.hash.slice(1).startsWith(project+"/workspace/");
   let workspacePhotoVersion=0;
   async function loadWorkspaceCover(){const id=selected,version=++workspacePhotoVersion,cover=workspace.querySelector(".workspace-cover");cover.replaceChildren();const placeholder=document.createElement("span");placeholder.textContent="No photo yet";cover.append(placeholder);try{const r=await fetch("/api/photos?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(id??"__root__"));if(!r.ok)return;const data=await r.json();if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;const photo=(data.photos||[]).find(p=>(p.assembly??null)===id);if(photo){const img=document.createElement("img");img.src=photo.url;img.alt="Assembly photo";cover.replaceChildren(img)}}catch(e){/* cover is optional */}}
@@ -326,6 +337,57 @@ function setupAssemblyTrees(){
 }
 setupAssemblyTrees();
 
+// Capture extraction clicks independently of the BOM editor's lifecycle.
+// The BOM moves between the assembly controller and workspace; delegation remains reliable.
+document.addEventListener("click",async event=>{
+ const button=event.target instanceof Element?event.target.closest(".component-extract"):null;
+ if(!button)return;
+ event.preventDefault();
+ event.stopImmediatePropagation();
+ const root=button.closest(".component-section");
+ const status=root?.querySelector(".component-status");
+ const report=message=>{if(status){status.hidden=false;status.style.display="block";status.setAttribute("aria-live","assertive");status.textContent=message}};
+ if(!root){return}
+ const description=root.querySelector(".component-description")?.value.trim()||"";
+ report("Extract button recognized. Checking product information…");
+ if(!description){report("Paste a product description or a public HTTPS product URL first.");return}
+ button.disabled=true;
+ report("Contacting extraction service…");
+ try{
+  const res=await fetch("/api/components/extract",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({description})});
+  const raw=await res.text();
+  let data;
+  try{data=JSON.parse(raw)}catch{throw Error("Unexpected server response (HTTP "+res.status+"): "+raw.slice(0,140))}
+  if(!res.ok)throw Error((data.error||"Extraction failed")+" (HTTP "+res.status+")");
+  const part=data.component;
+  if(!part||typeof part!=="object")throw Error("The extraction service returned no component fields.");
+  for(const name of ["name","manufacturer","model","category","supplier","asin"]){
+   const field=root.querySelector(".component-"+name);if(field)field.value=part[name]||"";
+  }
+  const specs=root.querySelector(".component-specs");
+  if(specs){
+   specs.replaceChildren();
+   for(const spec of part.specifications||[]){
+    const row=document.createElement("div");row.className="row component-spec-row";
+    const label=document.createElement("input"),value=document.createElement("input"),source=document.createElement("select"),remove=document.createElement("button");
+    label.className=value.className="field";label.placeholder="Specification";value.placeholder="Value";
+    label.value=spec.name||"";value.value=spec.value||"";
+    for(const v of ["explicit","inferred"]){const option=document.createElement("option");option.value=v;option.textContent=v==="explicit"?"Stated in listing":"Inferred";source.append(option)}
+    source.value=spec.source==="inferred"?"inferred":"explicit";
+    remove.className="btn";remove.type="button";remove.textContent="Remove";remove.onclick=()=>row.remove();
+    row.append(label,value,source,remove);specs.append(row);
+   }
+  }
+  root.querySelector(".component-admin").open=true;
+  root.querySelector(".component-review")?.classList.remove("hide");
+  report("Specifications extracted. Review the fields, then select Save component to add this part.");
+ }catch(error){
+  root.querySelector(".component-admin").open=true;
+  root.querySelector(".component-review")?.classList.remove("hide");
+  report("Extraction failed: "+(error.message||"Unknown error")+". You can enter the fields manually.");
+ }finally{button.disabled=false}
+},true);
+
 function setupComponents(){
  document.querySelectorAll("[data-components]").forEach(root=>{
  const project=root.dataset.components,list=root.querySelector(".component-list"),status=root.querySelector(".component-status"),review=root.querySelector(".component-review"),specs=root.querySelector(".component-specs");
@@ -354,19 +416,6 @@ function setupComponents(){
  const importPanel=root.querySelector(".component-admin");
  if(!field("extract")||!field("description")||!field("add-spec")||!field("save")){say("Component editor is incomplete. Please refresh the page.");return;}
  if(importPanel){const manual=document.createElement("button");manual.type="button";manual.className="btn component-manual";manual.textContent="Add part manually";manual.onclick=()=>{review.classList.remove("hide");say("Enter component details below, then save to this tile.")};field("extract").after(manual);const summary=importPanel.querySelector("summary");if(summary)summary.textContent="Add part to BOM";}
- const extractionButton=field("extract");
- extractionButton.hidden=false;
- extractionButton.type="button";
- extractionButton.addEventListener("click",()=>{say("Extraction button clicked. Checking input and administrator login…");},true);
- field("extract").onclick=async()=>{
-  const description=field("description").value.trim();if(!description){say("Paste a product description or product page URL.");return}
-  if(!adminAuthenticated){say("Log in using Admin login at the top of the website.");return}
-  field("extract").disabled=true;say("Extracting specifications…");
-  try{const res=await fetch("/api/components/extract",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({description})});const raw=await res.text();let data;try{data=JSON.parse(raw)}catch{throw Error("Server returned an unexpected response (HTTP "+res.status+"). Check the Worker deployment.")}if(!res.ok)throw Error(data.error||"Extraction failed (HTTP "+res.status+")");
-   const c=data.component;if(!c||typeof c!=="object")throw Error("The extraction service returned no component data");for(const name of ["name","manufacturer","model","category","supplier","asin"])field(name).value=c[name]||"";
-   specs.replaceChildren();for(const s of c.specifications||[])specRow(s.name,s.value,s.source);review.classList.remove("hide");say("Review and correct the fields before saving.")
-  }catch(e){review.classList.remove("hide");say((e.message||"Extraction unavailable")+". Enter the component fields manually below, then save.")}finally{field("extract").disabled=false}
- };
  field("add-spec").onclick=()=>specRow();
  field("save").onclick=async()=>{
   const c={assemblyId:assemblySelections[project]??null,quantity:Math.max(1,Math.floor(Number(field("quantity")?.value)||1))};for(const name of ["name","manufacturer","model","category","supplier","asin"])c[name]=field(name).value.trim();
