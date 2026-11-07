@@ -121,6 +121,9 @@ function setupAssemblyTrees(){
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
    detail.querySelector(".assembly-detail-title").textContent=node.name;
+   let workspace=detail.querySelector(".assembly-workspace");
+   if(!workspace){workspace=document.createElement("section");workspace.className="assembly-workspace";workspace.innerHTML='<h2>Project workspace</h2><div class="assembly-workspace-grid"><div><h3>Work instructions</h3><p>Not added yet</p></div><div><h3>Recipes / procedures</h3><p>Not added yet</p></div><div><h3>Notes</h3><p>Not added yet</p></div></div>';detail.querySelector(".assembly-unified-tile").after(workspace)}
+
    const path=[node.name];let cursor=node;while(cursor.parentId){cursor=nodes.find(n=>n.id===cursor.parentId);if(!cursor)break;path.unshift(cursor.name)}
    detail.querySelector(".assembly-breadcrumb").textContent=[title,...path].join(" / ");
    detailStatus.textContent="";
@@ -232,7 +235,7 @@ function setupAssemblyTrees(){
     const tile=document.createElement("article");tile.className="assembly-tile";
     const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=data.photos[0].url;img.alt="";cover.replaceChildren(img,overlay)}).catch(()=>{});
     const stage=document.createElement("span");stage.className="assembly-tile-stage";stage.textContent=n.stage==="integration"?"Integration":n.dependsOn?.length?"Dependent":"";
-    const button=document.createElement("button");button.type="button";button.className="assembly-tile-title";button.textContent=n.name;const openAssembly=()=>{selected=n.id;expanded.add(n.parentId);render();notify();history.pushState(null,"","#"+project+"/assembly/"+encodeURIComponent(n.id));window.scrollTo(0,0)};button.onclick=openAssembly;cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
+    const button=document.createElement("button");button.type="button";button.className="assembly-tile-title";button.textContent=n.name;const openAssembly=()=>{selected=n.id;expanded.add(n.parentId);render();notify();history.pushState(null,"","#"+project+"/assembly/"+encodeURIComponent(n.id));window.scrollTo(0,0)};button.onclick=openAssembly;cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" workspace";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
     tile.append(stage,button);
     if(n.dependsOn?.length){const deps=document.createElement("p");deps.className="assembly-tile-deps";deps.textContent="Requires: "+n.dependsOn.map(id=>nodes.find(x=>x.id===id)?.name||"Unknown").join(", ");tile.append(deps)}
     if(adminAuthenticated){const edit=document.createElement("button");edit.type="button";edit.className="btn assembly-tile-edit";edit.textContent="Order";edit.onclick=async()=>{const options=nodes.filter(x=>x.id!==n.id);const help=options.map((x,i)=>(i+1)+". "+x.name).join("\\n");const answer=prompt("Enter prerequisite assembly numbers, separated by commas. Leave blank for independent work.\\n"+help,(n.dependsOn||[]).map(id=>options.findIndex(x=>x.id===id)+1).join(","));if(answer===null)return;const indices=answer.trim()?answer.split(",").map(v=>Number(v.trim())-1):[];if(indices.some(i=>!Number.isInteger(i)||i<0||i>=options.length)){status.textContent="Invalid prerequisite numbers.";return}const deps=[...new Set(indices.map(i=>options[i].id))];const stage=prompt("Work type: independent, sequential, or integration",n.stage||"independent");if(stage===null)return;try{await save(nodes.map(x=>x.id===n.id?{...x,dependsOn:deps,stage:stage.trim().toLowerCase()}:x))}catch(e){status.textContent=e.message}};tile.append(edit)}
@@ -304,6 +307,8 @@ function setupComponents(){
   table.append(tr)}list.append(table)
   }catch(e){list.textContent="Components unavailable."}
  }
+ const importPanel=root.querySelector(".component-admin");
+ if(importPanel){const manual=document.createElement("button");manual.type="button";manual.className="btn component-manual";manual.textContent="Add component manually";manual.onclick=()=>{review.classList.remove("hide");say("Enter component details below, then save to this tile.")};field("extract").after(manual)}
  field("extract").onclick=async()=>{
   const description=field("description").value.trim();if(!description){say("Paste a product description.");return}
   if(!adminAuthenticated){say("Log in using Admin login at the top of the website.");return}
