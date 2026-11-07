@@ -25,8 +25,29 @@ export async function handleExtract(request,env){
  if(request.method!=="POST")return json({error:"Method not allowed"},405);
  if(!await authorized(request,env))return json({error:"Administrator token required"},401);
  if(!env.OPENAI_API_KEY)return json({error:"AI extraction is not configured: add an OPENAI_API_KEY secret to this Cloudflare Worker. You can still add components manually."},503);
- const body=await request.json().catch(()=>null),description=body?.description;
- if(typeof description!=="string"||description.trim().length<15||description.length>3000)return json({error:"Paste a product description (15–3000 characters)"},400);
+ const body=await request.json().catch(()=>null);
+ let description=typeof body?.description==="string"?body.description.trim():"";
+ const source=description.match(/^https?:\/\/\S+$/i)?.[0];
+ if(source){
+  // Only fetch ordinary public HTTPS websites. No automatic redirect following.
+  let url;try{url=new URL(source)}catch{return json({error:"Invalid product URL"},400)}
+  const host=url.hostname.toLowerCase();
+  if(url.protocol!=="https:"||url.username||url.password||url.port&&url.port!=="443"||host==="localhost"||host.endsWith(".localhost")||host.endsWith(".local")||host.endsWith(".internal")||host.endsWith(".test")||host.endsWith(".example")||host.endsWith(".invalid")||host.endsWith(".onion")||host.includes(":")||/^\\d+(?:\\.\\d+){0,3}$/.test(host)||!host.includes("."))return json({error:"Enter a public HTTPS product page URL."},400);
+  try{
+   const page=await fetch(url.toString(),{redirect:"manual",headers:{"accept":"text/html","user-agent":"Mozilla/5.0 (compatible; BuildingSchmidt/1.0)"} ,signal:AbortSignal.timeout(8000)});
+   if(page.status>=300&&page.status<400)return json({error:"This website redirects its product page. Open the final URL and try again, or paste the product description."},422);
+   if(!page.ok)return json({error:"Website could not be read (HTTP "+page.status+"). Paste its product description instead."},422);
+   if(!(page.headers.get("content-type")||"").toLowerCase().includes("text/html"))return json({error:"URL must point to an HTML product page."},422);
+   const length=Number(page.headers.get("content-length")||0);if(length>500000)return json({error:"Page is too large to import. Paste the product description."},422);
+   const reader=page.body?.getReader();if(!reader)return json({error:"No page content returned."},422);
+   let bytes=0,chunks=[];try{while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.byteLength;if(bytes>500000){await reader.cancel();return json({error:"Page is too large to import. Paste the product description."},422)}chunks.push(part.value)}}finally{reader.releaseLock()}
+   const html=new TextDecoder().decode(Uint8Array.from(chunks.flatMap(c=>Array.from(c))));
+   const cleaned=html.replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi," ").replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/&(?:nbsp|amp|quot|lt|gt);/gi," ").replace(/\\s+/g," ").trim();
+   description=("Product page: "+url.hostname+" "+url.pathname+"\\n"+cleaned).slice(0,3000);
+   if(description.length<80)return json({error:"The website did not expose readable product details. Paste the product description instead."},422);
+  }catch(e){return json({error:"Could not retrieve that website. It may block automated access. Paste the product description instead."},422)}
+ }
+ if(description.length<15||description.length>3000)return json({error:"Paste a product description (15–3000 characters) or a public HTTPS product URL."},400);
  // Conservative site-side request allowance, independent of OpenAI billing limits.
  // R2 read/modify/write is not atomic: concurrent requests can exceed this allowance.
  if(!env.PHOTOS)return json({error:"Storage not configured"},503);
