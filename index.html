@@ -170,6 +170,24 @@ function setupAssemblyTrees(){
   const title=view.querySelector(".assembly-main h1")?.textContent||"Project";let nodes=[],selected=null,expanded=new Set([null]);
   const detail=view.querySelector(".assembly-detail"),main=view.querySelector(".assembly-main"),detailStatus=detail.querySelector(".assembly-detail-status");
   let detailVersion=0;
+  // All project and subassembly pages now instantiate the exact same tile DOM.
+  // Preserve the existing BOM widget (and its event handlers) when replacing root markup.
+  function createUnifiedTile(){
+   const tile=detail.querySelector(".assembly-unified-tile").cloneNode(true);
+   tile.querySelector(".assembly-photos").replaceChildren();
+   tile.querySelector(".assembly-description").textContent="";
+   tile.querySelector(".assembly-description-input").value="";
+   tile.querySelector(".assembly-content-tiles").replaceChildren();
+   return tile;
+  }
+  const oldRootTile=main.querySelector(".assembly-unified-tile");
+  const rootBom=oldRootTile.querySelector(".component-section");
+  const rootStatus=oldRootTile.querySelector(".root-photo-status");
+  const newRootTile=createUnifiedTile();
+  newRootTile.classList.add("assembly-main-tile");
+  newRootTile.querySelector(".assembly-content-tiles").append(rootBom);
+  oldRootTile.replaceWith(newRootTile);
+  if(rootStatus)main.insertBefore(rootStatus,newRootTile.nextSibling);
   // Shared image tile renderer for root projects and all subassemblies.
   function makeAssemblyPhotoStage(photos,name,onAdd,onDelete){
    let active=0;
@@ -194,22 +212,50 @@ function setupAssemblyTrees(){
    const bom=main.querySelector(".component-section")||detail.querySelector(".component-section");
    if(bom){if(isAssembly)detail.querySelector(".assembly-content-tiles").append(bom);else (main.querySelector(".assembly-unified-body")||main).append(bom)}
    detail.classList.toggle("hide",!isAssembly);main.classList.toggle("hide",isAssembly);
-   if(!isAssembly){await renderRootPhotos();return;}
+   if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
    detail.querySelector(".assembly-detail-title").textContent=node.name;
    const path=[node.name];let cursor=node;while(cursor.parentId){cursor=nodes.find(n=>n.id===cursor.parentId);if(!cursor)break;path.unshift(cursor.name)}
    detail.querySelector(".assembly-breadcrumb").textContent=[title,...path].join(" / ");
    detailStatus.textContent="";
-   const edit=detail.querySelector(".assembly-description-edit"),photoAdmin=detail.querySelector(".assembly-photo-admin");
-   edit.classList.toggle("hide",!adminAuthenticated);photoAdmin.classList.toggle("hide",!adminAuthenticated);
-   const description=detail.querySelector(".assembly-description"),input=detail.querySelector(".assembly-description-input");
-   description.textContent="Loading…";
-   try{const r=await fetch("/api/tree?project="+project+"&assembly="+encodeURIComponent(assemblyId)),data=await r.json();if(!r.ok)throw Error(data.error);if(version!==detailVersion)return;description.textContent=data.page.description||"";input.value=data.page.description||"";description.classList.toggle("hide",adminAuthenticated);input.placeholder="Description"}catch(e){if(version===detailVersion)description.textContent="Unable to load description: "+e.message}
+   await loadDescription(assemblyId,detail,detailStatus);
    await detailPhotoController.refresh();
   }
   detail.querySelector(".assembly-back").onclick=()=>{selected=null;render();notify()};
-  detail.querySelector(".assembly-description-save").onclick=async()=>{const id=selected;if(!id)return;detailStatus.textContent="Saving…";try{const r=await fetch("/api/tree?project="+project+"&assembly="+encodeURIComponent(id),{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({description:detail.querySelector(".assembly-description-input").value})});const data=await r.json();if(!r.ok)throw Error(data.error);detailStatus.textContent="Saved.";showAssemblyPage()}catch(e){detailStatus.textContent=e.message}};
+  // One description loader/saver for the same tile at every depth.
+  async function loadDescription(id,container,message){
+   const editor=container.querySelector(".assembly-description-edit");
+   const display=container.querySelector(".assembly-description");
+   const input=container.querySelector(".assembly-description-input");
+   editor.classList.toggle("hide",!adminAuthenticated);
+   container.querySelector(".assembly-photo-admin").classList.toggle("hide",!adminAuthenticated);
+   display.textContent="Loading…";
+   const url="/api/tree?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(id??"__root__");
+   try{
+    const r=await fetch(url),data=await r.json();
+    if(!r.ok)throw Error(data.error||"Unable to load description");
+    if(id!==selected)return;
+    display.textContent=data.page?.description||"";
+    input.value=data.page?.description||"";
+    display.classList.toggle("hide",adminAuthenticated);
+   }catch(e){display.textContent="Unable to load description: "+e.message}
+  }
+  function bindDescriptionSave(container,getId,message){
+   container.querySelector(".assembly-description-save").onclick=async()=>{
+    const id=getId();
+    message.textContent="Saving…";
+    try{
+     const r=await fetch("/api/tree?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(id??"__root__"),{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({description:container.querySelector(".assembly-description-input").value})});
+     const data=await r.json();
+     if(!r.ok)throw Error(data.error||"Save failed");
+     message.textContent="Saved.";
+     await loadDescription(id,container,message);
+    }catch(e){message.textContent=e.message}
+   };
+  }
+  bindDescriptionSave(main,()=>null,main.querySelector(".root-photo-status"));
+  bindDescriptionSave(detail,()=>selected,detailStatus);
   // One controller for every project tile, including the root and nested assemblies.
   function createPhotoController(tile, getAssemblyId, statusElement){
    const gallery=tile.querySelector(".assembly-photos");
