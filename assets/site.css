@@ -67,3 +67,9 @@
 /* Shared tile photo overlays: name upper-left, instructions lower-right. */
 .assembly-main .assembly-photo-name,.assembly-detail .assembly-photo-name{top:14px;left:15px;right:auto;bottom:auto;text-align:left;z-index:8}
 .assembly-main .assembly-open-workspace,.assembly-detail .assembly-open-workspace{top:auto;left:auto;right:14px;bottom:14px;transform:none;z-index:8}
+
+/* Compact shared assembly description at every hierarchy level. */
+.assembly-description-inline .assembly-description-input{height:38px;min-height:38px;max-height:38px;line-height:20px;resize:none;overflow-y:auto}
+.assembly-description-inline .assembly-description-edit{align-items:center}
+.assembly-description-inline .assembly-description{min-height:22px;line-height:22px}
+.component-status:not(:empty){display:block!important;margin:10px 0;padding:8px 10px;border-left:3px solid #7bc5c5;background:rgba(24,70,82,.45);color:#e3f6f8}
