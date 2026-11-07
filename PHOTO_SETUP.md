@@ -4,7 +4,7 @@ Project pages now have a public photo gallery and administrator-only uploads. Th
 
 1. In Cloudflare dashboard, open **Storage & databases → R2**. Enable R2 billing if requested, then create a **Standard** bucket named `building-schmidt-photos`.
 2. Open **Workers & Pages → engineering-challenge → Settings → Bindings**. Add an **R2 bucket** binding: variable name `PHOTOS`, bucket `building-schmidt-photos`. Add the binding to production (and preview if desired).
-3. Under the Pages project's **Settings → Variables and Secrets**, create a **secret** named `PHOTO_ADMIN_TOKEN`. Generate a random value of at least 32 characters; keep it private. Never commit this token to GitHub. Use a password manager to store it.
+3. Under the Pages project's **Settings → Variables and Secrets**, create a **secret** named `admin_password`. Generate a random value of at least 32 characters; keep it private. Never commit this token to GitHub. Use a password manager to store it.
 4. **Redeploy** the Pages project so the Functions receive the binding and secret.
 5. On any project page, expand **Manage photos**, enter the token, select a photo edited in the iPad/Android native photo editor, optionally enter a caption, and press **Upload photo**.
 
