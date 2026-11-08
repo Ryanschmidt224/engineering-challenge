@@ -192,7 +192,57 @@ function setupAssemblyTrees(){
    }catch(error){archiveStatus.textContent="Backup check failed: "+error.message}
    finally{inspectButton.disabled=false}
   };
-  archiveActions.append(backupButton,inspectButton,archiveInput,archiveStatus);
+  // An archive can be inspected entirely locally, or explicitly staged in a
+  // separate recovery namespace. Neither operation overwrites project data.
+  const recoveryButton=document.createElement("button");recoveryButton.type="button";
+  recoveryButton.className="btn";recoveryButton.textContent="Create safe recovery copy";
+  const recoveryInput=document.createElement("input");recoveryInput.type="file";
+  recoveryInput.accept=".bsproject,application/json";recoveryInput.hidden=true;
+  recoveryButton.onclick=()=>{if(!adminAuthenticated){archiveStatus.textContent="Administrator login required.";return}recoveryInput.click()};
+  recoveryInput.onchange=async()=>{
+   const file=recoveryInput.files?.[0];recoveryInput.value="";if(!file)return;
+   recoveryButton.disabled=true;archiveStatus.textContent="Verifying archive locally…";
+   try{
+    if(!window.BSArchiveCheck)throw Error("Archive checker not loaded");
+    const verified=await window.BSArchiveCheck.inspect(file,project);
+    if(!confirm("Upload this verified archive ("+verified.objectCount+" records) as a SEPARATE recovery copy in Cloudflare? The active project will NOT be overwritten. No records will be deleted."))return;
+    archiveStatus.textContent="Creating isolated recovery copy…";
+    const response=await fetch("/api/project/staging?project="+encodeURIComponent(project),{
+     method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:await file.text()
+    });
+    const data=await response.json();if(!response.ok)throw Error(data.error||"Recovery copy failed");
+    archiveStatus.textContent="Isolated recovery copy verified. Recovery ID: "+data.id+". Active project unchanged.";
+   }catch(error){archiveStatus.textContent="Recovery copy failed: "+error.message}
+   finally{recoveryButton.disabled=false}
+  };
+  const historyButton=document.createElement("button");historyButton.type="button";
+  historyButton.className="btn";historyButton.textContent="Automatic backups";
+  const historyList=document.createElement("div");historyList.className="workspace-backup-history hide";
+  historyButton.onclick=async()=>{
+   if(!adminAuthenticated){archiveStatus.textContent="Administrator login required.";return}
+   if(!historyList.classList.contains("hide")){historyList.classList.add("hide");return}
+   historyButton.disabled=true;archiveStatus.textContent="Loading backup history…";
+   try{
+    const response=await fetch("/api/project/backups?project="+encodeURIComponent(project),{credentials:"same-origin",cache:"no-store"});
+    const data=await response.json();if(!response.ok)throw Error(data.error||"Backups unavailable");
+    historyList.replaceChildren();
+    if(!data.backups?.length){historyList.textContent="No scheduled backups have been saved yet."}
+    for(const entry of data.backups||[]){
+     const row=document.createElement("div");row.className="workspace-backup-item";
+     const label=document.createElement("span");
+     label.textContent=(entry.date?new Date(entry.date).toLocaleDateString():"Backup")+" · "+entry.count+" records · "+Math.round(entry.size/1024)+" KB";
+     const download=document.createElement("a");download.className="btn";
+     download.textContent="Download";download.href="/api/project/backups?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(entry.id);
+     download.download=project+"-"+entry.id+".bsproject";
+     row.append(label,download);historyList.append(row);
+    }
+    historyList.classList.remove("hide");
+    archiveStatus.textContent="These copies remain in Cloudflare. Download one for an independent backup.";
+   }catch(error){archiveStatus.textContent=error.message}
+   finally{historyButton.disabled=false}
+  };
+  archiveActions.append(backupButton,inspectButton,recoveryButton,historyButton,archiveInput,recoveryInput,archiveStatus);
+  archiveActions.after(historyList);
   workspace.querySelector(".workspace-heading").after(archiveActions);
   const assemblyDrawingPanel=window.BSDrawings?.mount(workspace.querySelector(".workspace-drawing-panel"),()=>adminAuthenticated);
   const partDrawingPanel=window.BSDrawings?.mount(partWorkspace.querySelector(".part-drawing-panel"),()=>adminAuthenticated);
