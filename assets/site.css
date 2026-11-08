@@ -840,3 +840,55 @@
 .part-workspace-cover[role="button"]{cursor:pointer;position:relative;outline-offset:3px}
 .part-workspace-cover.part-image-dragover{outline:3px dashed #8addbf;background:rgba(63,139,132,.35)}
 .part-workspace-cover.part-image-dragover:after{content:"Drop image to upload";position:absolute;inset:auto 5px 5px;padding:7px;background:#153e39;color:#fff;border-radius:7px;text-align:center;font-size:.8rem}
+
+
+/* Edit Part: keep descriptor and editable value on the same horizontal row. */
+.assembly-workspace-page .workspace-bom .component-review>label{
+ display:grid;
+ grid-template-columns:minmax(150px,215px) minmax(0,1fr);
+ align-items:center;
+ column-gap:18px;
+ row-gap:5px;
+ width:100%;
+ margin:0;
+ text-align:left;
+}
+.assembly-workspace-page .workspace-bom .component-review>label>.field{
+ width:100%;
+ min-width:0;
+ max-width:100%;
+ margin:0;
+}
+.assembly-workspace-page .workspace-bom .component-review>h3,
+.assembly-workspace-page .workspace-bom .component-review>.component-specs,
+.assembly-workspace-page .workspace-bom .component-review>.btn{
+ justify-self:start;
+}
+@media(max-width:620px){
+ .assembly-workspace-page .workspace-bom .component-review>label{
+  grid-template-columns:minmax(0,1fr);
+  gap:5px;
+ }
+}
+
+/* Workshop browser: feature-tree navigation instead of long flat tool tiles. */
+#workshop-essentials-list.workshop-tree{display:flex;flex-direction:column;gap:9px}
+.workshop-tree-branch{border:1px solid #365a67;border-radius:10px;overflow:hidden;background:#142b36}
+.workshop-tree-branch>summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;padding:13px 15px;font-weight:650;font-size:1.01rem}
+.workshop-tree-branch>summary::-webkit-details-marker{display:none}
+.workshop-tree-branch>summary:before{content:"▸";font-size:1.05rem;color:#9ed5cf;flex:0 0 12px}
+.workshop-tree-branch[open]>summary:before{content:"▾"}
+.workshop-tree-branch[open]>summary{border-bottom:1px solid #365a67}
+.workshop-tree-branch-count{margin-left:auto;font-size:.76rem;color:#b4cbd2;font-weight:400}
+.workshop-tree-children{display:flex;flex-direction:column;gap:8px;padding:9px 12px 12px 20px}
+.workshop-tree-branch-nested{border:1px solid #2c4b57;background:#172f3b}
+.workshop-tree-branch-nested>summary{font-size:.92rem;padding:9px 12px}
+.workshop-tree-branch-nested>.workshop-tree-children{padding:10px 12px 12px 22px}
+.workshop-tree .workshop-standard-list{display:grid;grid-template-columns:minmax(0,1fr);gap:7px}
+.workshop-tree .workshop-standard-item{width:100%;margin:0;min-width:0}
+.workshop-tree .workshop-standard-item>summary{padding:10px 12px}
+.workshop-tree .workshop-standard-body{padding:10px 12px}
+.workshop-tree .workshop-purchased{margin:0}
+.workshop-tree .workshop-saved-details{margin:0}
+.workshop-tree .workshop-purchased-results{margin:8px 0}
+.workshop-tree .workshop-tree-branch:focus-within{border-color:#5b9697}
