@@ -18,10 +18,12 @@ const folders=project=>[
  "part-workspaces/"+project+"/",
  "harnesses/"+project+"/",
  "drawings/"+project+"/",
- "component-thumbnails/"+project+"/"
+ "component-thumbnails/"+project+"/",
+ "part-files/"+project+"/",
+ "part-pages/"+project+"/"
 ];
 const singles=project=>["trees/"+project+".json","components/"+project+".json",
- "libraries/wires.json","libraries/common-parts.json"];
+ "libraries/wires.json","libraries/common-parts.json","libraries/purchased-parts.json"];
 export const isAllowedKey=(project,key)=>folders(project).some(x=>key.startsWith(x))||singles(project).includes(key);
 
 async function listAll(r2,prefix){
