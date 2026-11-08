@@ -115,7 +115,7 @@ function setupAssemblyTrees(){
   }
   // Separate workspace route; the existing assembly overview remains unchanged.
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
-  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-bom-mount"></div></article><article><h2>Work instructions</h2><textarea class="field workspace-instructions" placeholder="Add build steps, tools, measurements and checks…" rows="8"></textarea></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article><h2>Recipes / procedures</h2><textarea class="field workspace-procedures" placeholder="Add settings, recipes and procedures…" rows="5"></textarea></article><article><h2>Notes</h2><textarea class="field workspace-notes" placeholder="Add notes…" rows="5"></textarea></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
+  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article><h2>Work instructions</h2><textarea class="field workspace-instructions" placeholder="Add build steps, tools, measurements and checks…" rows="8"></textarea></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article><h2>Recipes / procedures</h2><textarea class="field workspace-procedures" placeholder="Add settings, recipes and procedures…" rows="5"></textarea></article><article><h2>Notes</h2><textarea class="field workspace-notes" placeholder="Add notes…" rows="5"></textarea></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
   // Workspace-owned extraction handler. Runs even when the legacy component
   // editor failed to initialize; captured before the editor's click listeners.
@@ -176,6 +176,84 @@ function setupAssemblyTrees(){
     notify(message);
    }finally{button.disabled=false}
   },true);
+  // Display saved parts independently of the legacy editor's <details> DOM.
+  let bomDisplayVersion=0;
+  async function renderWorkspaceParts(){
+   const version=++bomDisplayVersion,assemblyId=selected;
+   const container=workspace.querySelector(".workspace-saved-parts");
+   container.replaceChildren();
+   const pending=document.createElement("p");pending.className="bom-count";pending.textContent="Loading saved parts…";container.append(pending);
+   try{
+    const res=await fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"});
+    const data=await res.json();
+    if(!res.ok)throw Error(data.error||"HTTP "+res.status);
+    if(version!==bomDisplayVersion||assemblyId!==selected||!workspaceRoute())return;
+    const available=Array.isArray(data.components)?data.components:[];
+    const ids=[assemblyId],seen=new Set(ids);
+    const walk=parent=>{
+     for(const node of nodes.filter(n=>n.parentId===parent)){
+      if(seen.has(node.id))continue;
+      seen.add(node.id);ids.push(node.id);walk(node.id);
+     }
+    };
+    walk(assemblyId);
+    container.replaceChildren();
+    const groups=ids.map(id=>({id,name:id===null?title:(nodes.find(n=>n.id===id)?.name||"Assembly"),parts:available.filter(p=>(p.assemblyId??null)===id)})).filter(g=>g.parts.length);
+    if(!groups.length){
+     const empty=document.createElement("p");empty.className="bom-empty";
+     empty.textContent="No parts saved in this assembly or its subassemblies. Select + New part to add one.";
+     container.append(empty);return;
+    }
+    const count=document.createElement("p");count.className="bom-count";
+    const countParts=groups.reduce((sum,g)=>sum+g.parts.length,0);
+    count.textContent=countParts+" saved part"+(countParts===1?"":"s")+" in this assembly and its subassemblies";container.append(count);
+    for(const group of groups){
+     const section=document.createElement("section");section.className="bom-origin-group";
+     const heading=document.createElement("h3");heading.className="bom-origin-title";
+     heading.textContent=group.name+(group.id===assemblyId?" · This assembly":" · Subassembly");section.append(heading);
+     const stack=document.createElement("div");stack.className="bom-part-stack";
+     for(const part of group.parts){
+      const item=document.createElement("details");item.className="bom-part";
+      const summary=document.createElement("summary");summary.className="bom-part-summary";
+      const partName=document.createElement("span");partName.className="bom-part-name";partName.textContent=part.name;
+      const quantity=document.createElement("span");quantity.className="bom-part-meta";quantity.textContent="Qty "+(part.quantity||1)+(part.model?" · "+part.model:"");
+      const detail=document.createElement("span");detail.className="bom-part-toggle-label";detail.textContent="Details";
+      summary.append(partName,quantity,detail);item.append(summary);
+      const body=document.createElement("div");body.className="bom-part-body";
+      for(const [name,value] of [["Manufacturer",part.manufacturer],["Model",part.model],["Supplier",part.supplier],["ASIN",part.asin],["Category",part.category]]){
+       if(!value)continue;const line=document.createElement("p"),strong=document.createElement("strong");strong.textContent=name+": ";line.append(strong,document.createTextNode(value));body.append(line);
+      }
+      if(part.specifications?.length){
+       const heading=document.createElement("strong");heading.textContent="Specifications";body.append(heading);
+       const list=document.createElement("ul");
+       for(const spec of part.specifications){const li=document.createElement("li");li.textContent=spec.name+": "+spec.value+(spec.source==="inferred"?" (inferred)":"");list.append(li)}
+       body.append(list);
+      }
+      if(adminAuthenticated){
+       const remove=document.createElement("button");remove.type="button";remove.className="btn";remove.textContent="Delete part";
+       remove.onclick=async()=>{
+        if(!confirm("Delete "+part.name+" from "+group.name+"?"))return;
+        remove.disabled=true;
+        try{
+         const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{method:"DELETE",credentials:"same-origin"});
+         const result=await response.json().catch(()=>({}));
+         if(!response.ok)throw Error(result.error||"Delete failed");
+         await renderWorkspaceParts();
+        }catch(e){bomReport("Delete failed: "+e.message);remove.disabled=false}
+       };
+       body.append(remove);
+      }
+      item.append(body);stack.append(item);
+     }
+     section.append(stack);container.append(section);
+    }
+   }catch(error){
+    if(version!==bomDisplayVersion)return;
+    container.replaceChildren();
+    const failure=document.createElement("p");failure.className="bom-error";failure.textContent="Could not load parts: "+error.message;
+    container.append(failure);
+   }
+  }
   // Workspace owns its part editor actions. Keep the mini-project component
   // editors separate; this panel saves one assembly part per request.
   const bomRoot=()=>workspace.querySelector(".component-section");
@@ -222,6 +300,7 @@ function setupAssemblyTrees(){
     const editor=bomRoot()?.querySelector(".component-admin");if(editor)editor.open=false;
     bomRoot()?.querySelector(".component-review")?.classList.add("hide");
     bomRoot()?.dispatchEvent(new Event("bom:refresh"));
+    await renderWorkspaceParts();
     bomReport(name+" saved to the BOM.");
     return true;
    }catch(error){bomReport("Could not save part: "+error.message);return false}
@@ -293,7 +372,7 @@ function setupAssemblyTrees(){
    const isAssembly=selected!==null;
    const bom=main.querySelector(".component-section")||detail.querySelector(".component-section")||workspace.querySelector(".component-section");
    if(bom){workspace.querySelector(".workspace-bom-mount").append(bom)}
-   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();loadWorkspace();if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
+   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();loadWorkspace();void renderWorkspaceParts();if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
