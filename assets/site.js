@@ -260,7 +260,7 @@ function setupAssemblyTrees(){
      const children=nodes.filter(n=>n.parentId===parentId);
      for(const part of ownParts)mount.append(createSavedPart(part,parentId));
      for(const node of children){
-      const item=document.createElement("details");item.className="bom-part bom-subassembly";item.dataset.assemblyId=node.id;
+      const item=document.createElement("details");item.className="bom-part bom-subassembly";item.dataset.assemblyId=node.id;item.open=false;item.setAttribute("aria-label",node.name+" subassembly BOM");
       const summary=document.createElement("summary");summary.className="bom-part-summary";
       const image=makeBomThumbnail("","Assembly image");
       image.classList.add("bom-thumbnail-empty");
@@ -268,8 +268,13 @@ function setupAssemblyTrees(){
        .then(r=>r.ok?r.json():null).then(data=>{if(data?.photos?.[0]){image.classList.remove("bom-thumbnail-empty");image.src=data.photos[0].url}}).catch(()=>{});
       const name=document.createElement("span");name.className="bom-part-name";name.textContent=node.name;
       const label=document.createElement("span");label.className="bom-subassembly-label";label.textContent="– Subassembly";
-      const hint=document.createElement("span");hint.className="bom-part-toggle-label";hint.textContent="Expand";
-      summary.append(image,name,label,hint);item.append(summary);
+      const hint=document.createElement("span");hint.className="bom-part-toggle-label";hint.textContent="Show BOM";hint.setAttribute("aria-label","Show or hide this subassembly BOM");
+      const descendantIds=new Set([node.id]);const collect=id=>{for(const child of nodes.filter(x=>x.parentId===id))if(!descendantIds.has(child.id)){descendantIds.add(child.id);collect(child.id)}};collect(node.id);
+      const count=document.createElement("span");count.className="bom-subassembly-count";
+      const nParts=parts.filter(part=>descendantIds.has(part.assemblyId??null)).length;
+      count.textContent=nParts+" part"+(nParts===1?"":"s");
+      summary.append(image,name,label,count,hint);item.append(summary);
+      item.addEventListener("toggle",()=>{hint.textContent=item.open?"Hide BOM":"Show BOM"});
       const body=document.createElement("div");body.className="bom-part-body bom-subassembly-children";
       const inner=document.createElement("div");inner.className="bom-part-stack";
       renderAssembly(node.id,inner,level+1);
