@@ -40,9 +40,9 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(page).toHaveURL(/#launcher\/assembly\/smoke-motor/);
  await expect(page.locator("#launcher .assembly-detail-title")).toContainText("Motor and Motor Control");
  await page.locator("#launcher .assembly-detail .assembly-open-workspace").click();
- await expect(page.locator("#launcher .assembly-workspace-page")).toBeVisible();
- await page.locator("#launcher .assembly-workspace-page .bom-view-button", {hasText:"List view"}).click();
- const cards=page.locator("#launcher .assembly-workspace-page .bom-compact-list tbody tr");
+ await expect(page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)")).toBeVisible();
+ await page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace) .bom-view-button", {hasText:"List view"}).click();
+ const cards=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace) .bom-compact-list tbody tr");
  await expect(cards).toHaveCount(2);
  await expect(cards.first()).toContainText("C2822 Brushless Motor");
  await expect(cards.nth(1)).toContainText("20A ESC");
