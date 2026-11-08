@@ -36,7 +36,7 @@ This is a **target logical schema**, not a claim that current records already fo
 ## Portable archive format
 
 - File extension `.bsproject`, UTF-8 JSON in v1. Root has `format`, `schemaVersion`, `projectId`, `exportedAt`, and `objects`.
-- Each object contains the original storage key, media type, optional custom metadata, content length, SHA-256, and base64-encoded bytes. R2 keys must be inside the project's allowlisted namespaces, or the specifically declared shared-library dependencies.
+- Each object contains the original storage key, media type, HTTP metadata, optional custom metadata, content length, SHA-256, and base64-encoded bytes. R2 keys must be inside the project's allowlisted namespaces, or the specifically declared shared-library dependencies.
 - The archive is lossless for **every supported project storage record**. It must fail loudly on missing, malformed, truncated, unsupported, or oversized data; never silently omit items.
 - Shared libraries are currently global. An export may include the entire shared wire and common-part libraries, which can contain references unrelated to the selected project. Treat exports as confidential until this is normalized.
 - Exported data is never automatically published, committed to GitHub, or transmitted to third-party services.
@@ -71,3 +71,13 @@ This is a **target logical schema**, not a claim that current records already fo
 3. Add durable, immutable, transaction-aware live restore/rollback before exposing any overwrite-capable import.
 4. Implement schema transformations for part definitions versus occurrences only after fixture-based reversible migrations pass.
 5. Add local/desktop adapter and privately hosted mode; do not assume either is already available.
+
+## Implementation status (2026-11-08)
+
+- Implemented: read-only server export, exact R2 prefix enumeration with pagination, per-object hashes, full-archive length checks, a browser-only archive checker, and explicit failure if a record disappears or an export limit is reached.
+- Implemented: non-destructive, administrator-only server inspection endpoint (for API consumers). The **website's backup checker runs locally** and does not send the archive back to the server.
+- Implemented: workspace revisions and optional optimistic concurrency tokens for assembly and part instructions, with a 409 response on stale saves.
+- Code recovery: the `safety/pre-data-architecture-2026-11-08` Git branch preserves the implementation before this work. It does **not** contain private Cloudflare data.
+- Not implemented: overwrite-capable archive import, coordinated transactional project snapshots, automatic offsite backups, migration of legacy part/BOM records into separate tables, offline desktop use.
+- Current archive exporter has explicit memory/size limits. Larger projects will require a streaming archive implementation; the exporter refuses oversized projects rather than returning a partial backup.
+- Archival exports are taken while storage is live and are **not point-in-time consistent** if other changes occur during export. Avoid editing a project while exporting.
