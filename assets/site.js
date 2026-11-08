@@ -595,8 +595,8 @@ function setupAssemblyTrees(){
     }
     controls.append(edit,pick,remove,input);body.append(controls);
    }
-   const instructions=document.createElement("button");instructions.type="button";instructions.className="btn bom-part-instructions";instructions.textContent="Build instructions →";
-   instructions.onclick=()=>openPartInstructions(part,originId);
+   const instructions=document.createElement("button");instructions.type="button";instructions.className="btn bom-part-instructions";instructions.textContent=part.generatedFrom?"View source wire →":"Build instructions →";
+   instructions.onclick=()=>openPartInstructions(part.generatedFrom?{id:part.generatedFrom}:part,originId);
    body.prepend(instructions);
    item.append(body);return item;
   }
