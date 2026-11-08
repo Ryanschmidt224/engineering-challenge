@@ -76,7 +76,7 @@
  };
  const workshopReferences=[...workshopSupplies,...workshopEquipment];
  const catalog={tools:workshopEquipment.map(x=>({id:x.id,name:x.name,subtitle:"Workshop standard",detail:x.spec+" "+x.use,caution:x.caution})),calculators,parts:[...baseParts,...workshopSupplies.map(x=>({id:x.id,name:x.name,subtitle:x.subtitle,detail:x.spec+" "+x.use,caution:x.caution}))]};
- let wires=[],commonRecords=[],listeners=new Set(),admin=false;
+ let wires=[],commonRecords=[],purchasedRecords=[],listeners=new Set(),admin=false;
  const byId=(kind,id)=>catalog[kind]?.find(item=>item.id===id);
  const wireName=w=>[w.name,w.awg?w.awg+" AWG":"",w.color,w.partNumber].filter(Boolean).join(" · ");
  function all(kind){
@@ -273,6 +273,50 @@
   for(const item of [...workshopSupplies,...workshopEquipment].filter(x=>x.tier==="conditional"))list.append(makeCard(item));
   extras.append(list);mount.append(extras);
  }
+ const allProjects=[["launcher","Foam-dart launcher"],["linear","Linear actuator"],["robot","Robotic arm"],["buck","Buck converter"],["motorlab","Brushless motor"],["coiltest","Switch a coil"]];
+ async function reloadPurchased(){
+  const status=document.querySelector(".workshop-purchased-status");
+  if(!admin){purchasedRecords=[];renderPurchased();return}
+  try{
+   const response=await fetch("/api/purchased-parts",{cache:"no-store",credentials:"same-origin"});
+   const data=await response.json();if(!response.ok)throw Error(data.error||"Unable to load purchased parts");
+   purchasedRecords=Array.isArray(data.parts)?data.parts:[];renderPurchased();
+  }catch(error){if(status)status.textContent=error.message}
+ }
+ function renderPurchased(){
+  const section=document.querySelector(".workshop-purchased"),list=document.querySelector(".workshop-purchased-results");
+  if(!section||!list)return;
+  section.classList.toggle("hide",!admin);
+  list.replaceChildren();
+  if(!admin)return;
+  const search=document.querySelector(".workshop-purchased-search")?.value.toLowerCase().trim()||"";
+  const found=purchasedRecords.filter(p=>[p.name,p.manufacturer,p.model,p.category,p.asin,p.supplier,...(p.specifications||[]).map(x=>x.name+" "+x.value)].join(" ").toLowerCase().includes(search));
+  if(!found.length){list.append(element("p","muted",purchasedRecords.length?"No matching purchased parts.":"No purchases recorded yet. Use Record as purchased on a BOM part."));return}
+  for(const part of found){
+   const row=element("article","workshop-purchase-item");
+   row.append(element("strong","",part.name),element("span","muted",[part.manufacturer,part.model,part.category].filter(Boolean).join(" · ")));
+   const linked=element("small","muted","Recorded from "+(part.sources||[]).map(s=>s.project).filter((v,i,a)=>a.indexOf(v)===i).join(", "));
+   row.append(linked);
+   const tools=element("div","workshop-purchase-actions");
+   const choose=element("select","field");choose.setAttribute("aria-label","Choose project for "+part.name);
+   for(const [id,name] of allProjects){const option=element("option","",name);option.value=id;choose.append(option)}
+   const reuse=element("button","btn","Reuse in project");reuse.type="button";reuse.onclick=async()=>{
+    if(!admin)return;
+    reuse.disabled=true;
+    try{
+     const payload={name:part.name,manufacturer:part.manufacturer||"",model:part.model||"",supplier:part.supplier||"",
+      asin:part.asin||"",category:part.category||"",specifications:part.specifications||[],
+      assemblyId:null,bomOnly:true,quantity:null,quantityUnit:"pcs",sharedPartRef:"purchased:"+part.id};
+     const response=await fetch("/api/components?project="+encodeURIComponent(choose.value),{
+      method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(payload)});
+     const data=await response.json();if(!response.ok)throw Error(data.error||"Unable to reuse purchased part");
+     document.querySelector(".workshop-purchased-status").textContent=part.name+" added to "+choose.options[choose.selectedIndex].text+". Quantity not specified; edit its BOM entry when needed.";
+    }catch(error){document.querySelector(".workshop-purchased-status").textContent=error.message}
+    finally{reuse.disabled=false}
+   };
+   tools.append(choose,reuse);row.append(tools);list.append(row);
+  }
+ }
  function renderCommonParts(){
   // Workshop standards are already displayed above; keep this optional catalog focused on user-saved parts.
   renderCatalog("resource-commonparts",all("parts").filter(item=>!item.id.startsWith("workshop:")),"part");
@@ -375,7 +419,7 @@
  function setAdmin(value){admin=!!value;const button=document.querySelector(".resource-wire-new");if(button)button.classList.toggle("hide",!admin);const form=document.querySelector(".resource-wire-form");if(form&&!admin)form.classList.add("hide");
  const commonButton=document.querySelector(".resource-common-new");if(commonButton)commonButton.classList.toggle("hide",!admin);
  const commonForm=document.querySelector(".resource-common-form");if(commonForm&&!admin)commonForm.classList.add("hide");
- renderCommonParts()}
+ renderCommonParts();renderPurchased();if(admin)void reloadPurchased()}
  let initialized=false;
  function init(){
   if(initialized)return;
@@ -389,6 +433,7 @@
    setAdmin(admin);
    void reloadWires();
    void reloadCommonParts();
+   document.querySelector(".workshop-purchased-search")?.addEventListener("input",renderPurchased);
    // Shared-resource pages must not depend on any other project script.
    fetch("/api/auth",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(data=>{if(data)setAdmin(!!data.authenticated)}).catch(()=>{});
   }catch(error){
@@ -400,7 +445,7 @@
    }
   }
  }
- window.BSResources={catalog,all,mount,reloadWires,reloadCommonParts,init,normalize,setAdmin,focusWorkshopItem};
+ window.BSResources={catalog,all,mount,reloadWires,reloadCommonParts,reloadPurchased,init,normalize,setAdmin,focusWorkshopItem};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
  else init();
 })();
