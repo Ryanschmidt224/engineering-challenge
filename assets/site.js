@@ -136,14 +136,12 @@ function setupAssemblyTrees(){
   const partResourcePicker=window.BSResources?.mount(partWorkspace.querySelector(".part-linked-resources"));
 
   const partTools=document.createElement("div");partTools.className="part-workspace-tools";
-  partTools.innerHTML='<button type="button" class="btn primary part-workspace-view">View part details</button><button type="button" class="btn part-workspace-picture">Add / change picture</button><input type="file" class="part-workspace-file" accept="image/jpeg,image/png,image/webp" hidden>';
+  partTools.innerHTML='<button type="button" class="btn part-workspace-picture">Add / change picture</button><input type="file" class="part-workspace-file" accept="image/jpeg,image/png,image/webp" hidden>';
   partWorkspace.querySelector(".workspace-heading").after(partTools);
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
   detailsPanel.innerHTML='<div class="part-details-view-heading"><h2>Part details</h2><span class="part-details-view-mode">View mode</span></div><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div>';
   partTools.before(detailsPanel);
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
-  const viewPartButton=partTools.querySelector(".part-workspace-view");
-  viewPartButton.onclick=()=>{detailsPanel.classList.remove("hide");detailsPanel.scrollIntoView({behavior:"smooth",block:"nearest"})};
   const renderPartDetails=part=>{
    detailRows.replaceChildren();
    const fields=[["Qty",part.quantity??1],...(part.historicalPrice!==null&&part.historicalPrice!==undefined&&Number.isFinite(Number(part.historicalPrice))?[["Historical price","$"+Number(part.historicalPrice).toFixed(2)+" USD per unit"+(part.historicalPriceDate?" (recorded "+part.historicalPriceDate+")":"")]]:[]),["Manufacturer",part.manufacturer],["Model",part.model],["Category",part.category],["Supplier",part.supplier],["ASIN",part.asin]];
@@ -247,6 +245,7 @@ function setupAssemblyTrees(){
    const part=currentPartInfo;if(!part)return;
    const linked=nodes.find(n=>isPartNode(n)&&n.partId===part.id);
    selected=linked?linked.parentId:(part.assemblyId??null);
+   partEditReturn={id:part.id,scrollY:window.scrollY};
    partBackAssembly=selected;
    history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));
    render();notify();
@@ -256,7 +255,13 @@ function setupAssemblyTrees(){
 
 
   const partRoute=()=>location.hash.slice(1).match(new RegExp("^"+project+"/part/([0-9a-f-]{36})$","i"))?.[1]||null;
-  let partLoadVersion=0,partBackAssembly=null;
+  let partLoadVersion=0,partBackAssembly=null,partEditReturn=null;
+  function returnToEditedPart(){
+   if(!partEditReturn)return;
+   const id=partEditReturn.id;
+   history.replaceState(null,"","#"+project+"/part/"+encodeURIComponent(id));
+   render();notify();
+  }
   const partStatus=partWorkspace.querySelector(".part-workspace-status");
   async function showPartWorkspace(){
    const partId=partRoute();if(!partId)return;
@@ -289,6 +294,10 @@ function setupAssemblyTrees(){
     const img=document.createElement("img");img.alt=part.name;img.src=partPhotoUrl(partId);
     img.onload=()=>{if(partRoute()===partId)cover.replaceChildren(img)};
     partStatus.textContent="";
+    if(partEditReturn?.id===partId){
+     const y=partEditReturn.scrollY;partEditReturn=null;
+     requestAnimationFrame(()=>window.scrollTo(0,y));
+    }
    }catch(e){if(version===partLoadVersion)partStatus.textContent=e.message}
   }
   partWorkspace.querySelector(".part-workspace-back").onclick=()=>{
@@ -590,6 +599,7 @@ function setupAssemblyTrees(){
    if(form)form.open=false;
    bomRoot()?.querySelector(".component-review")?.classList.add("hide");
    bomReport("Part editing cancelled.");
+   returnToEditedPart();
   };
   const bomRoot=()=>workspace.querySelector(".component-section");
   const bomField=name=>bomRoot()?.querySelector(".component-"+name);
@@ -690,6 +700,7 @@ function setupAssemblyTrees(){
     bomRoot()?.dispatchEvent(new Event("bom:refresh"));
     await renderWorkspaceParts();
     bomReport(name+(wasEdit?" updated.":" saved to the BOM.")+photoMessage);
+    if(wasEdit)returnToEditedPart();
     return true;
    }catch(error){bomReport("Could not save part: "+error.message);return false}
    finally{savingBom=false;if(saveButton)saveButton.disabled=false}
@@ -728,6 +739,7 @@ function setupAssemblyTrees(){
     const form=bomRoot()?.querySelector(".component-admin");if(form)form.open=false;
     clearBomDraft();bomRoot()?.querySelector(".component-review")?.classList.add("hide");
     bomReport("Part editor collapsed.");
+    returnToEditedPart();
    }
   },true);
   const workspaceRoute=()=>location.hash.slice(1).startsWith(project+"/workspace/");
