@@ -261,8 +261,8 @@ function setupAssemblyTrees(){
   async function showPartWorkspace(){
    const partId=partRoute();if(!partId)return;
    const version=++partLoadVersion;
-   partTools.classList.toggle("hide",!adminAuthenticated);
-   viewPartButton.classList.remove("hide");
+   partTools.classList.remove("hide");
+   for(const button of partTools.querySelectorAll(".part-workspace-picture,.part-workspace-delete-picture,.part-workspace-delete"))button.classList.toggle("hide",!adminAuthenticated);
    detailsPanel.querySelector(".part-details-view-actions").classList.toggle("hide",!adminAuthenticated);
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
