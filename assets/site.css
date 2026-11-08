@@ -130,3 +130,10 @@
 .bom-part:not([open]) .bom-part-toggle-label::after{content:"  ▼"}
 .assembly-workspace-page .workspace-bom .component-cancel{margin-top:12px;display:inline-block}
 .assembly-workspace-page .workspace-bom .component-admin[open]::before{content:"New part (unsaved)";display:block;font-weight:650;font-size:.95rem;margin-bottom:12px}
+
+/* Work-instructions BOM: group direct parts and inherited subassembly parts. */
+.bom-count{font-size:.82rem;color:#a9c5d0;margin:8px 0 14px}
+.bom-origin-group{margin:12px 0 18px}
+.assembly-workspace-page .workspace-bom .bom-origin-title{font-size:.86rem;font-weight:650;color:#a8ceda;margin:10px 0 8px}
+.bom-empty{padding:12px 0;color:#a9c5d0;font-size:.85rem}
+.bom-error{padding:10px 12px;border:1px solid #bd716c;border-radius:6px;color:#ffceca;font-size:.85rem}
