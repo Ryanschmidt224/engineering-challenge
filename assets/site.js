@@ -541,6 +541,12 @@ function setupComponents(){
  document.querySelectorAll("[data-components]").forEach(root=>{
  const project=root.dataset.components,list=root.querySelector(".component-list"),status=root.querySelector(".component-status"),review=root.querySelector(".component-review"),specs=root.querySelector(".component-specs");
 
+ // The old markup nested the part list inside a collapsible <details>.
+ // Keep the saved parts in a permanent visible region, independent of the editor.
+ if(["launcher","linear","robot"].includes(project)){
+  root.prepend(list);
+  list.classList.add("bom-visible-parts");
+ }
  const field=name=>root.querySelector(".component-"+name);
  const say=message=>{status.textContent=message;status.hidden=false;status.style.display="block";status.setAttribute("aria-live","polite");};
  function specRow(name="",value="",source="explicit"){
