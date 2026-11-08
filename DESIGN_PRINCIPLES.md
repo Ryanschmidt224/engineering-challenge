@@ -39,3 +39,13 @@ Before adding a visible field, button or question, ask:
 - Does the implementation preserve user data and explain any remaining engineering uncertainties?
 
 If the answer is no, simplify the design before implementation.
+
+## Standard shop materials
+
+- The full technical BOM still contains consumables, but default Thumbnail and List views put commonly owned supplies in one collapsed **Standard shop materials** section.
+- Assume generic ferrules, solder, heat shrink, and common 18/22 AWG raw copper wire are already available; do **not** claim actual inventory was measured.
+- Crimped wire assemblies stay as real BOM parts. Automatically derived raw-wire cut length and ferrules are displayed as shop materials when they match preferred standards.
+- Nonstandard gauges and manufacturer-specific materials are purchasing items by default.
+- Provide exactly one override per material usage: **Treat as purchase item** or **Assume on hand**. This should not require editing the full BOM form.
+- A source wire edit must update its derived supplies without losing their explicit purchase/stock preference.
+- Do not silently rewrite legacy manually entered consumables. Recognize them by name when safe; leave reconciliation to deliberate edits.
