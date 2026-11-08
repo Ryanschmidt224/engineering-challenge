@@ -325,7 +325,7 @@ function setupAssemblyTrees(){
   let currentPartInfo=null;
   const partFile=partTools.querySelector(".part-workspace-file"),pictureButton=partTools.querySelector(".part-workspace-picture");
   const photoEditPreview=partTools.querySelector(".part-photo-edit-preview");
-  const photoEditingId=()=>editingPart||null;
+  const photoEditingId=()=>editingPart||currentPartInfo?.id||null;
   const photoFeedback=message=>{if(photoEditingId())bomReport(message);else partStatus.textContent=message};
   function refreshEditPhoto(){
    const id=photoEditingId();photoEditPreview.replaceChildren();if(!id)return;
@@ -384,6 +384,42 @@ function setupAssemblyTrees(){
   }
   pictureButton.onclick=()=>partFile.click();
   partFile.onchange=()=>void uploadPartPicture(partFile.files?.[0]);
+  // The visible part cover supports click and file drops; the hidden editor
+  // is not a prerequisite for uploading a picture.
+  pictureCover.title="Click to add a part picture; double-click an existing image to enlarge";
+  pictureCover.setAttribute("role","button");pictureCover.tabIndex=0;
+  pictureCover.setAttribute("aria-label","Add or change part picture");
+  pictureCover.addEventListener("click",event=>{
+   if(adminAuthenticated&&currentPartInfo&&event.detail===1)partFile.click();
+  });
+  pictureCover.addEventListener("keydown",event=>{
+   if(adminAuthenticated&&currentPartInfo&&(event.key==="Enter"||event.key===" ")){
+    event.preventDefault();partFile.click();
+   }
+  });
+  // Do not intercept drops intended for CAD files or PDF drawings.
+  function partImageDropAllowed(event){
+   return adminAuthenticated&&!!currentPartInfo&&
+    Array.from(event.dataTransfer?.types||[]).includes("Files")&&
+    !event.target.closest(".drawing-library,.part-files-panel");
+  }
+  partWorkspace.addEventListener("dragover",event=>{
+   if(!partImageDropAllowed(event))return;
+   event.preventDefault();event.dataTransfer.dropEffect="copy";
+   pictureCover.classList.add("part-image-dragover");
+  });
+  partWorkspace.addEventListener("dragleave",event=>{
+   if(!partWorkspace.contains(event.relatedTarget))pictureCover.classList.remove("part-image-dragover");
+  });
+  partWorkspace.addEventListener("drop",event=>{
+   pictureCover.classList.remove("part-image-dragover");
+   if(!partImageDropAllowed(event))return;
+   event.preventDefault();event.stopPropagation();
+   const image=Array.from(event.dataTransfer?.files||[]).find(file=>
+    file.type.startsWith("image/")||["jpg","jpeg","png","webp"].includes(file.name.split(".").pop().toLowerCase()));
+   if(!image){partStatus.textContent="Drop a JPG, PNG, or WebP image under 3 MB.";return}
+   void uploadPartPicture(image);
+  });
   detailsPanel.querySelector(".part-details-edit").onclick=()=>{
    const part=currentPartInfo;if(!part)return;
    const linked=nodes.find(n=>isPartNode(n)&&n.partId===part.id);
