@@ -157,3 +157,39 @@ test("solder-removal tools are not mistaken for consumable solder",async()=>{
  const loaded=await (await components(request("GET",componentsUrl),env)).json();
  assert.equal(loaded.components.find(item=>item.id===part.id).assumedOnHand,false);
 });
+
+
+test("recipes save discrete steps, survive legacy-only saves, and restore through revision history",async()=>{
+ const {env}=storage();
+ const url="/api/workspace?project=launcher&assembly=__root__";
+ const stepA={id:"step-A",title:"Cut wire",standard:"Cut to 12 inches.",detail:"Check the insulation rating.",kind:"action"};
+ const stepB={id:"step-B",title:"Check polarity",standard:"Verify the negative terminal.",detail:"Use a multimeter.",kind:"inspection"};
+ const base={instructions:"Original full written instructions",procedures:"Legacy procedure",notes:"",resources:{tools:[],calculators:[],parts:[]}};
+ const first=await workspace(request("PUT",url,{...base,recipe:[stepA,stepB]}),env);
+ assert.equal(first.status,200);
+ let saved=(await (await workspace(request("GET",url),env)).json()).workspace;
+ assert.equal(saved.recipe.length,2);
+ assert.equal(saved.instructions,base.instructions);
+ // Other existing workspace editors need not send recipe to preserve it.
+ const legacy=await workspace(request("PUT",url,{...base,notes:"Updated legacy note"}),env);
+ assert.equal(legacy.status,200);
+ saved=(await (await workspace(request("GET",url),env)).json()).workspace;
+ assert.equal(saved.recipe[0].id,"step-A");
+ // Reordering changes positions, never step IDs.
+ const reordered=await workspace(request("PUT",url,{...base,notes:"Updated legacy note",recipe:[stepB,stepA]}),env);
+ assert.equal(reordered.status,200);
+ saved=(await (await workspace(request("GET",url),env)).json()).workspace;
+ assert.equal(saved.recipe[0].id,"step-B");
+ assert.equal(saved.recipe[1].id,"step-A");
+ assert.ok(saved.history.some(item=>item.recipe?.[0]?.id==="step-A"));
+});
+
+test("recipe validation rejects duplicate step IDs and oversized instructions",async()=>{
+ const {env}=storage();
+ const url="/api/workspace?project=launcher&assembly=__root__";
+ const step={id:"test-step",title:"Verify polarity",standard:"Check with meter",detail:"",kind:"inspection"};
+ const fields={instructions:"",procedures:"",notes:""};
+ assert.equal((await workspace(request("PUT",url,{...fields,recipe:[step,{...step}]}),env)).status,400);
+ assert.equal((await workspace(request("PUT",url,{...fields,recipe:[{...step,detail:"x".repeat(8001)}]}),env)).status,400);
+ assert.equal((await workspace(request("PUT",url,{...fields,recipe:[step]}),env)).status,200);
+});
