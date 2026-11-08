@@ -115,6 +115,65 @@ function setupAssemblyTrees(){
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
   workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-bom-mount"></div></article><article><h2>Work instructions</h2><textarea class="field workspace-instructions" placeholder="Add build steps, tools, measurements and checks…" rows="8"></textarea></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article><h2>Recipes / procedures</h2><textarea class="field workspace-procedures" placeholder="Add settings, recipes and procedures…" rows="5"></textarea></article><article><h2>Notes</h2><textarea class="field workspace-notes" placeholder="Add notes…" rows="5"></textarea></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
+  // Workspace-owned extraction handler. Runs even when the legacy component
+  // editor failed to initialize; captured before the editor's click listeners.
+  const bomNotice=document.createElement("p");
+  bomNotice.className="workspace-bom-notice";
+  bomNotice.setAttribute("role","status");
+  bomNotice.setAttribute("aria-live","assertive");
+  workspace.querySelector(".workspace-bom-heading").after(bomNotice);
+  workspace.querySelector(".workspace-bom").addEventListener("click",async event=>{
+   const target=event.target;
+   if(!(target instanceof Element))return;
+   const button=target.closest(".component-extract");
+   if(!button)return;
+   event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
+   const section=workspace.querySelector(".component-section");
+   const notify=message=>{
+    bomNotice.textContent=message;
+    bomNotice.classList.add("visible");
+    const status=section?.querySelector(".component-status");
+    if(status){status.textContent=message;status.style.display="block";status.hidden=false}
+   };
+   notify("Extract clicked — checking the product information.");
+   if(!section){notify("BOM form missing. Refresh the website.");return}
+   const description=section.querySelector(".component-description")?.value.trim();
+   if(!description){notify("Paste a product description or an HTTPS product URL.");return}
+   if(!adminAuthenticated){notify("Sign in using Admin login to extract product specifications.");return}
+   button.disabled=true;notify("Connecting to the extraction API…");
+   try{
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),25000);
+    let response;
+    try{response=await fetch("/api/components/extract",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({description}),signal:controller.signal})}finally{clearTimeout(timeout)}
+    const raw=await response.text();
+    let data;try{data=JSON.parse(raw)}catch{throw Error("Server returned HTTP "+response.status+" instead of valid JSON: "+raw.slice(0,120))}
+    if(!response.ok)throw Error((data.error||"Extraction failed")+" (HTTP "+response.status+")");
+    if(!data.component||typeof data.component!=="object")throw Error("No product data returned");
+    const part=data.component;
+    for(const fieldName of ["name","manufacturer","model","category","supplier","asin"]){
+     const field=section.querySelector(".component-"+fieldName);if(field)field.value=part[fieldName]||""
+    }
+    const specs=section.querySelector(".component-specs");if(specs){
+     specs.replaceChildren();
+     for(const spec of part.specifications||[]){
+      const row=document.createElement("div");row.className="row component-spec-row";
+      const name=document.createElement("input"),value=document.createElement("input"),source=document.createElement("select"),remove=document.createElement("button");
+      name.className=value.className="field";name.placeholder="Specification";value.placeholder="Value";name.value=spec.name||"";value.value=spec.value||"";
+      for(const optionValue of ["explicit","inferred"]){const option=document.createElement("option");option.value=optionValue;option.textContent=optionValue==="explicit"?"Stated in listing":"Inferred";source.append(option)}
+      source.value=spec.source==="inferred"?"inferred":"explicit";
+      remove.type="button";remove.className="btn";remove.textContent="Remove";remove.onclick=()=>row.remove();
+      row.append(name,value,source,remove);specs.append(row);
+     }
+    }
+    section.querySelector(".component-review")?.classList.remove("hide");
+    notify("Specifications extracted. Review them and click Save component.");
+   }catch(error){
+    section.querySelector(".component-review")?.classList.remove("hide");
+    const message="Extraction failed: "+(error.name==="AbortError"?"The request timed out":error.message);
+    notify(message);
+   }finally{button.disabled=false}
+  },true);
   workspace.querySelector(".workspace-new-part").onclick=()=>{
    const root=workspace.querySelector(".component-section");
    if(!root){workspace.querySelector(".workspace-status").textContent="BOM editor is not available. Refresh the page.";return;}
@@ -368,7 +427,7 @@ function setupAssemblyTrees(){
     el.draggable=true;el.title="Drag to reorder or drop into another assembly";
     el.ondragstart=event=>{event.dataTransfer.setData("text/plain",node.id);event.dataTransfer.effectAllowed="move";el.classList.add("assembly-dragging")};
     el.ondragend=()=>el.classList.remove("assembly-dragging");
-    el.ondragover=event=>{const dragged=event.dataTransfer.types.includes("text/plain");if(!dragged)return;event.preventDefault();el.classList.add("assembly-drop-target");event.dataTransfer.dropEffect="move"};
+    el.ondragover=event=>{const dragged=Array.from(event.dataTransfer.types).includes("text/plain");if(!dragged)return;event.preventDefault();el.classList.add("assembly-drop-target");event.dataTransfer.dropEffect="move"};
     el.ondragleave=()=>el.classList.remove("assembly-drop-target");
     el.ondrop=async event=>{
      event.preventDefault();event.stopPropagation();el.classList.remove("assembly-drop-target");
