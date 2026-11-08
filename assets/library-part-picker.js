@@ -134,8 +134,8 @@ function open({onCreate,bomOnly=false}){
   status.textContent="Wizard applied "+selectedRecommendation+" AWG "+construction.input.value+" copper and "+length.input.value+" mm cut length. Review the wire and termination details before creating the part; ampacity is not verified.";
  };
  unit.input.value="pcs";
- mode.input.onchange=()=>{if(bomOnly&&mode.input.value==="library"&&category.input.value==="wire"&&unit.input.value==="pcs")unit.input.value="m";update()};
- category.input.onchange=()=>{if(bomOnly&&category.input.value==="wire"&&mode.input.value==="library"&&unit.input.value==="pcs")unit.input.value="m";update()};wireType.input.onchange=update;search.input.oninput=refreshMaterials;material.input.onchange=applyWire;gauge.input.onchange=()=>{material.input.value=""};construction.input.onchange=()=>{material.input.value=""};commonCategory.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
+ mode.input.onchange=update;
+ category.input.onchange=update;wireType.input.onchange=update;search.input.oninput=refreshMaterials;material.input.onchange=applyWire;gauge.input.onchange=()=>{material.input.value=""};construction.input.onchange=()=>{material.input.value=""};commonCategory.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
  form.addEventListener("submit",async e=>{
   e.preventDefault();
   if(!form.reportValidity())return;
