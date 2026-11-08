@@ -41,19 +41,19 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(page.locator("#launcher .assembly-detail-title")).toContainText("Motor and Motor Control");
  await page.locator("#launcher .assembly-detail .assembly-open-workspace").click();
  await expect(page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)")).toBeVisible();
- await page.locator("#launcher .assembly-sidebar .bom-view-button", {hasText:"List view"}).click();
- const cards=page.locator("#launcher .assembly-sidebar .bom-compact-list tbody tr");
- await expect(cards).toHaveCount(2);
- await expect(cards.first()).toContainText("C2822 Brushless Motor");
- await expect(cards.nth(1)).toContainText("20A ESC");
- const appearance=await cards.evaluateAll(rows=>rows.map(row=>{
-  const first=row.querySelector("td"),box=row.getBoundingClientRect();
-  const css=getComputedStyle(first);
-  return {top:box.top,bottom:box.bottom,color:css.backgroundColor,border:css.borderLeftWidth};
- }));
- expect(appearance[1].top-appearance[0].bottom).toBeGreaterThanOrEqual(4);
- expect(appearance[0].color).not.toBe("rgba(0, 0, 0, 0)");
- expect(appearance[0].color).not.toBe(appearance[1].color);
+ // The BOM has one text-first hierarchical view (no thumbnails or view switch).
+ const bomList=page.locator("#launcher .assembly-sidebar .workspace-saved-parts");
+ const rows=bomList.locator(".bom-part-stack > .bom-part");
+ await expect(rows).toHaveCount(2);
+ await expect(rows.first()).toContainText("C2822 Brushless Motor");
+ await expect(rows.nth(1)).toContainText("20A ESC");
+ await expect(page.locator("#launcher .assembly-sidebar .bom-view-switch")).toHaveCount(0);
+ await expect(bomList.locator(".bom-row-thumbnail")).toHaveCount(0);
+ await expect(rows.first().locator(".bom-part-name")).toBeVisible();
+ await expect(rows.first().locator(".bom-part-meta")).toContainText("Qty 2");
+ // A readable part row still opens its expanded details.
+ await rows.first().locator(".bom-part-summary").click();
+ await expect(rows.first()).toHaveAttribute("open", "");
  // BOM occupies the left column and can be resized by a visible divider.
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
  const sidebar=page.locator("#launcher .assembly-sidebar");
