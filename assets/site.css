@@ -1720,3 +1720,41 @@
 }
 .project-card>.project-card-edit.hide{display:none!important}
 .project-card>.project-card-edit:hover{background:#294553}
+
+
+/* Backup/recovery controls are secondary project maintenance tools. */
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details{
+ margin:34px 0 16px;
+ padding:0;
+ border:1px solid #344b57;
+ border-radius:8px;
+ background:#111e28;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details>summary{
+ cursor:pointer;
+ padding:13px 17px;
+ color:#aabdc7;
+ font-size:.82rem;
+ font-weight:550;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details>summary:hover{
+ background:#1c303b;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details[open]>summary{
+ border-bottom:1px solid #344b57;
+ color:#d8e5e8;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details .workspace-archive-actions{
+ padding:15px 17px 8px;
+ margin:0;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details .workspace-backup-history{
+ padding:0 17px 16px;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details .btn{
+ background:#223642;
+ border:1px solid #3b5360;
+ color:#d9e4e9;
+ font-size:.79rem;
+ font-weight:500;
+}
