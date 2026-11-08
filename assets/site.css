@@ -458,3 +458,31 @@
 .workspace-bom-mount .part-photo-edit-preview img{
   width:100%;height:100%;object-fit:contain;
 }
+
+
+/* Feature-tree library part picker, including wire selection and gauge helper. */
+.library-part-dialog{
+  width:min(680px,calc(100vw - 28px));max-height:min(90vh,850px);
+  overflow:auto;border:1px solid #446777;border-radius:14px;
+  background:#101f2a;color:#e2eef4;padding:0;
+  box-shadow:0 20px 70px rgba(0,0,0,.55);
+}
+.library-part-dialog::backdrop{background:rgba(3,11,17,.76)}
+.library-part-form{padding:22px;display:flex;flex-direction:column;gap:15px}
+.library-part-form h2{margin:0}
+.library-part-form>.muted{margin:0;font-size:.87rem}
+.library-field{display:flex;flex-direction:column;gap:6px;font-size:.87rem;font-weight:600;min-width:0}
+.library-field .field{width:100%;font-weight:400;min-height:38px}
+.library-picker-section,.library-wire-section,.library-components{display:grid;gap:13px;min-width:0}
+.library-picker-section{padding:14px;border:1px solid #375666;border-radius:10px;background:rgba(35,69,85,.16)}
+.library-part-form .hide,.library-picker-section .hide,.library-wire-section .hide{display:none!important}
+.library-picker-hint{font-size:.8rem;line-height:1.5;margin:0}
+.wire-gauge-helper{border:1px solid #456777;border-radius:9px;padding:12px}
+.wire-gauge-helper summary{font-weight:650;cursor:pointer}
+.wire-gauge-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.wire-gauge-result,.wire-gauge-grid>.muted{grid-column:1/-1}
+.wire-gauge-result{font-weight:600;line-height:1.45}
+.wire-gauge-grid>.muted{font-size:.78rem;line-height:1.5;margin:0}
+.library-dialog-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.library-dialog-status{font-size:.84rem;color:#b6d9e5;margin:0;min-height:1em}
+@media(max-width:520px){.wire-gauge-grid{grid-template-columns:1fr}.library-part-form{padding:15px}}
