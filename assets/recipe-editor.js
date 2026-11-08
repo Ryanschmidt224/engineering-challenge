@@ -128,7 +128,7 @@
    }
    if(admin()){
     const add=button("+ Add step",()=>{
-     const item={id:newId(),title:"",standard:"",detail:"",kind:"action"};
+     const item={id:newId(),title:"New step",standard:"",detail:"",kind:"action"};
      steps.push(item);expanded=item.id;changed();saveHint();render();
      const newCard=[...content.querySelectorAll(".recipe-one-step")].find(x=>x.dataset.stepId===item.id);
      newCard?.querySelector("input")?.focus();
