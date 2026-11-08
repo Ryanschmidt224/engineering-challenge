@@ -127,7 +127,7 @@ function setupAssemblyTrees(){
   detail.after(workspace);
   // Each saved BOM part has its own independent instructions document.
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
-  partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article><h2>Build instructions</h2><textarea class="field part-instructions" rows="9" placeholder="Build steps, tools, measurements and checks…"></textarea></article><article class="part-drawing-panel"></article><article class="part-harness"><h2>Wire harness / cutting list</h2><p class="muted">Choose reusable wire materials from the website-wide wire library. These cuts and terminations belong only to this part. <a href="#commonparts">Manage wire types in Common Parts</a>.</p><div class="harness-cuts"></div><div class="harness-summary"></div><div class="row harness-actions"><button class="btn harness-add" type="button">+ Wire cut</button><button class="btn primary harness-save" type="button">Save cutting list</button><span class="harness-status" role="status"></span></div><details class="harness-wire-library"><summary>Wire material library (shared across all projects)</summary><div class="wire-library-list"></div><div class="wire-library-editor"><h3>New wire type</h3><div class="wire-library-fields"></div><div class="row"><button class="btn primary wire-library-save" type="button">Save wire type</button><button class="btn wire-library-cancel" type="button">Cancel edit</button></div><p class="wire-library-status" role="status"></p></div></details></article><article><h2>Recipes / procedures</h2><textarea class="field part-procedures" rows="5" placeholder="Settings and procedures…"></textarea></article><article><h2>Notes</h2><textarea class="field part-notes" rows="5" placeholder="Additional notes…"></textarea></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
+  partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article><h2>Build instructions</h2><textarea class="field part-instructions" rows="9" placeholder="Build steps, tools, measurements and checks…"></textarea></article><article class="part-drawing-panel"></article><article><h2>Recipes / procedures</h2><textarea class="field part-procedures" rows="5" placeholder="Settings and procedures…"></textarea></article><article><h2>Notes</h2><textarea class="field part-notes" rows="5" placeholder="Additional notes…"></textarea></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
   workspace.after(partWorkspace);
   const assemblyDrawingPanel=window.BSDrawings?.mount(workspace.querySelector(".workspace-drawing-panel"),()=>adminAuthenticated);
   const partDrawingPanel=window.BSDrawings?.mount(partWorkspace.querySelector(".part-drawing-panel"),()=>adminAuthenticated);
@@ -225,165 +225,6 @@ function setupAssemblyTrees(){
   };
 
 
-  const harnessPanel=partWorkspace.querySelector(".part-harness");
-  const cutsElement=harnessPanel.querySelector(".harness-cuts");
-  const summaryElement=harnessPanel.querySelector(".harness-summary");
-  const libraryElement=harnessPanel.querySelector(".wire-library-list");
-  const harnessStatus=harnessPanel.querySelector(".harness-status");
-  const wireStatus=harnessPanel.querySelector(".wire-library-status");
-  const wireFields=harnessPanel.querySelector(".wire-library-fields");
-  const wireInputFields=[
-   ["name","Wire type / description","e.g. 18 AWG stranded hookup wire"],
-   ["awg","Wire size (AWG)","18"],
-   ["construction","Construction / stranding","e.g. 16/30 stranded"],
-   ["insulation","Insulation / rating","e.g. silicone, 200 C"],
-   ["color","Color","red"],
-   ["manufacturer","Manufacturer",""],
-   ["partNumber","Manufacturer part number",""],
-   ["notes","Notes",""]
-  ];
-  for(const [key,labelText,placeholder] of wireInputFields){
-   const label=document.createElement("label");label.textContent=labelText;
-   const control=document.createElement("input");control.className="field wire-field";control.dataset.wireKey=key;control.placeholder=placeholder;
-   label.append(control);wireFields.append(label);
-  }
-  let wireCatalog=[],cutDraft=[],editingWireId=null,harnessVersion=0;
-  const wireLabel=wire=>[wire?.name,wire?.awg?wire.awg+" AWG":"",wire?.color,wire?.partNumber].filter(Boolean).join(" · ");
-  const numberInput=(value,min,step)=>{
-   const field=document.createElement("input");field.type="number";field.className="field";field.min=String(min);field.step=String(step);field.value=String(value);return field;
-  };
-  const wireField=key=>wireFields.querySelector('[data-wire-key="'+key+'"]');
-  const refreshWireOptions=()=>{
-   cutsElement.querySelectorAll(".harness-wire-id").forEach(select=>{
-    const value=select.value;
-    select.replaceChildren();
-    for(const wire of wireCatalog){const option=document.createElement("option");option.value=wire.id;option.textContent=wireLabel(wire);select.append(option)}
-    if(wireCatalog.some(w=>w.id===value))select.value=value;
-   });
-  };
-  const renderHarnessSummary=()=>{
-   const totals=new Map();
-   let pieces=0;
-   for(const row of cutsElement.querySelectorAll(".harness-cut-row")){
-    const wireId=row.querySelector(".harness-wire-id")?.value;
-    const qty=Number(row.querySelector(".harness-qty")?.value),length=Number(row.querySelector(".harness-length")?.value);
-    if(!wireId||!Number.isFinite(qty)||!Number.isFinite(length)||qty<=0||length<=0)continue;
-    pieces+=qty;totals.set(wireId,(totals.get(wireId)||0)+qty*length);
-   }
-   summaryElement.replaceChildren();
-   const intro=document.createElement("p");intro.className="small";intro.textContent=pieces+" cut pieces · "+totals.size+" wire types";summaryElement.append(intro);
-   for(const [id,mm] of totals){
-    const wire=wireCatalog.find(w=>w.id===id);
-    const line=document.createElement("p");line.className="small";line.textContent=(wire?.name||"Unlisted wire")+" — "+(mm/1000).toFixed(3)+" m total cut length";summaryElement.append(line);
-   }
-  };
-  const addHarnessRow=entry=>{
-   const line=document.createElement("div");line.className="harness-cut-row";
-   const select=document.createElement("select");select.className="field harness-wire-id";
-   for(const wire of wireCatalog){const opt=document.createElement("option");opt.value=wire.id;opt.textContent=wireLabel(wire);select.append(opt)}
-   if(entry?.wireId)select.value=entry.wireId;
-   const fields=[
-    ["qty","Qty",entry?.qty??1,1,1],
-    ["length","Cut length (mm)",entry?.cutLengthMm??150,0.1,0.1],
-    ["strip-a","Strip A (mm)",entry?.stripAmm??0,0,0.1],
-    ["strip-b","Strip B (mm)",entry?.stripBmm??0,0,0.1]
-   ];
-   const cell=(name,field)=>{
-    const label=document.createElement("label");label.textContent=name;label.append(field);line.append(label);return field;
-   };
-   cell("Wire material",select);
-   for(const [key,label,value,min,step] of fields){const field=numberInput(value,min,step);field.classList.add("harness-"+key);cell(label,field)}
-   for(const [key,label,value] of [["end-a","End A / terminal",entry?.endA||""],["end-b","End B / terminal",entry?.endB||""],["notes","Crimp / assembly notes",entry?.notes||""]]){
-    const input=document.createElement("input");input.className="field harness-"+key;input.value=value;input.placeholder=label;cell(label,input);
-   }
-   const remove=document.createElement("button");remove.type="button";remove.className="btn";remove.textContent="Remove cut";
-   remove.disabled=!adminAuthenticated;remove.onclick=()=>{line.remove();renderHarnessSummary()};
-   line.append(remove);
-   line.querySelectorAll("input,select").forEach(input=>{input.disabled=!adminAuthenticated;input.addEventListener("input",renderHarnessSummary);input.addEventListener("change",renderHarnessSummary)});
-   cutsElement.append(line);
-   renderHarnessSummary();
-  };
-  const editWireType=wire=>{
-   editingWireId=wire?.id||null;
-   for(const [key] of wireInputFields)wireField(key).value=wire?.[key]||"";
-   harnessPanel.querySelector(".wire-library-editor h3").textContent=editingWireId?"Edit shared wire type":"New wire type";
-   harnessPanel.querySelector(".harness-wire-library").open=true;
-   wireField("name").focus();
-  };
-  const renderWireCatalog=()=>{
-   libraryElement.replaceChildren();
-   if(!wireCatalog.length){const empty=document.createElement("p");empty.className="muted";empty.textContent="No wire materials yet. Add the first reusable type below.";libraryElement.append(empty)}
-   for(const wire of wireCatalog){
-    const row=document.createElement("div");row.className="wire-library-item";
-    const label=document.createElement("span");label.textContent=wireLabel(wire)+(wire.construction?" · "+wire.construction:"")+(wire.insulation?" · "+wire.insulation:"");
-    row.append(label);
-    if(adminAuthenticated){const edit=document.createElement("button");edit.type="button";edit.className="btn";edit.textContent="Edit";edit.onclick=()=>editWireType(wire);row.append(edit)}
-    libraryElement.append(row);
-   }
-   refreshWireOptions();
-  };
-  harnessPanel.querySelector(".wire-library-cancel").onclick=()=>{editWireType(null);wireStatus.textContent=""};
-  harnessPanel.querySelector(".wire-library-save").onclick=async()=>{
-   if(!adminAuthenticated){wireStatus.textContent="Administrator login required.";return}
-   const input={};for(const [key] of wireInputFields)input[key]=wireField(key).value.trim();
-   if(!input.name){wireStatus.textContent="Enter a wire type name.";return}
-   const button=harnessPanel.querySelector(".wire-library-save");button.disabled=true;wireStatus.textContent="Saving wire type…";
-   try{
-    const res=await fetch("/api/wires"+(editingWireId?"?id="+encodeURIComponent(editingWireId):""),{
-     method:editingWireId?"PUT":"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(input)
-    });
-    const data=await res.json();if(!res.ok)throw Error(data.error||"Could not save wire type");
-    const index=wireCatalog.findIndex(w=>w.id===data.wire.id);
-    if(index<0)wireCatalog.push(data.wire);else wireCatalog[index]=data.wire;
-    const savedId=data.wire.id;editWireType(null);renderWireCatalog();wireStatus.textContent="Shared wire type saved.";
-    if(!cutsElement.childElementCount){addHarnessRow({wireId:savedId})}
-   }catch(e){wireStatus.textContent=e.message}finally{button.disabled=false}
-  };
-  harnessPanel.querySelector(".harness-add").onclick=()=>{
-   if(!wireCatalog.length){harnessStatus.textContent="No wire types yet. Add them in the Common Parts tab, then reopen these instructions.";return}
-   addHarnessRow({wireId:wireCatalog[0].id});harnessStatus.textContent="New unsaved wire cut.";
-  };
-  harnessPanel.querySelector(".harness-save").onclick=async()=>{
-   const id=partRoute();if(!id)return;
-   if(!adminAuthenticated){harnessStatus.textContent="Administrator login required.";return}
-   const cuts=[...cutsElement.querySelectorAll(".harness-cut-row")].map(row=>({
-    wireId:row.querySelector(".harness-wire-id").value,
-    qty:Number(row.querySelector(".harness-qty").value),
-    cutLengthMm:Number(row.querySelector(".harness-length").value),
-    stripAmm:Number(row.querySelector(".harness-strip-a").value),
-    stripBmm:Number(row.querySelector(".harness-strip-b").value),
-    endA:row.querySelector(".harness-end-a").value,
-    endB:row.querySelector(".harness-end-b").value,
-    notes:row.querySelector(".harness-notes").value
-   }));
-   const button=harnessPanel.querySelector(".harness-save");button.disabled=true;harnessStatus.textContent="Saving cutting list…";
-   try{
-    const res=await fetch("/api/harness?project="+encodeURIComponent(project)+"&part="+encodeURIComponent(id),{
-     method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({cuts})
-    });
-    const data=await res.json();if(!res.ok)throw Error(data.error||"Unable to save cutting list");
-    harnessStatus.textContent="Cutting list saved. "+data.cuts.length+" operations.";
-   }catch(e){harnessStatus.textContent=e.message}finally{button.disabled=false}
-  };
-  async function loadHarness(partId){
-   const version=++harnessVersion;
-   cutsElement.replaceChildren();summaryElement.replaceChildren();
-   harnessStatus.textContent="Loading wire materials and cuts…";
-   try{
-    const [wireResponse,cutResponse]=await Promise.all([
-     fetch("/api/wires",{cache:"no-store"}),fetch("/api/harness?project="+encodeURIComponent(project)+"&part="+encodeURIComponent(partId),{cache:"no-store"})
-    ]);
-    const [materials,cutData]=await Promise.all([wireResponse.json(),cutResponse.json()]);
-    if(!wireResponse.ok)throw Error(materials.error||"Wire library unavailable");
-    if(!cutResponse.ok)throw Error(cutData.error||"Harness cuts unavailable");
-    if(version!==harnessVersion||partRoute()!==partId)return;
-    wireCatalog=materials.wires||[];renderWireCatalog();
-    for(const cut of cutData.cuts||[])addHarnessRow(cut);
-    renderHarnessSummary();
-    harnessStatus.textContent="";
-   }catch(e){if(version===harnessVersion)harnessStatus.textContent=e.message}
-  }
-
   const partRoute=()=>location.hash.slice(1).match(new RegExp("^"+project+"/part/([0-9a-f-]{36})$","i"))?.[1]||null;
   let partLoadVersion=0,partBackAssembly=null;
   const partStatus=partWorkspace.querySelector(".part-workspace-status");
@@ -391,8 +232,6 @@ function setupAssemblyTrees(){
    const partId=partRoute();if(!partId)return;
    const version=++partLoadVersion;
    partTools.classList.toggle("hide",!adminAuthenticated);
-   harnessPanel.querySelector(".harness-actions").classList.toggle("hide",!adminAuthenticated);
-   harnessPanel.querySelector(".wire-library-editor").classList.toggle("hide",!adminAuthenticated);
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
    heading.textContent="Loading part…";currentPartInfo=null;partStatus.textContent="Loading instructions…";
@@ -410,7 +249,6 @@ function setupAssemblyTrees(){
     heading.textContent=part.name;
     currentPartInfo=part;
     void partDrawingPanel?.load(project,"part",partId);
-    void loadHarness(partId);
     if(partBackAssembly===null)partBackAssembly=part.assemblyId??null;
     for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value=data.workspace?.[name]||"";
     partResourcePicker?.setData(data.workspace?.resources,adminAuthenticated);
