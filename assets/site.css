@@ -810,3 +810,33 @@
 .workspace-archive-actions{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:10px 0 20px}
 .workspace-archive-actions>.btn{font-size:.82rem;padding:8px 11px}
 .workspace-archive-status{font-size:.81rem;line-height:1.45;flex:1 1 240px}
+
+
+/* Part detail disclosure and engineering attachments */
+.bom-part-workspace .part-details-collapse>summary{cursor:pointer;list-style:none}
+.bom-part-workspace .part-details-collapse>summary::-webkit-details-marker{display:none}
+.bom-part-workspace .part-details-collapse>summary:focus-visible{outline:2px solid #87c7bd;outline-offset:-2px}
+.bom-part-workspace .part-details-collapse:not([open])>summary{border-bottom:0}
+.bom-part-workspace .part-details-toggle-label{font-size:.86rem;font-weight:650;color:#a9dfd5;border:1px solid #4d8d88;border-radius:8px;padding:7px 11px}
+.bom-part-workspace .part-drawing-panel,.bom-part-workspace .part-files-panel{padding:15px 16px;border-top:1px solid #365762}
+.part-files-panel h3{margin:0 0 7px;font-size:1.05rem}
+.part-file-item{display:flex;align-items:center;gap:9px 14px;flex-wrap:wrap;border-bottom:1px solid #365762;padding:9px 0;overflow-wrap:anywhere}
+.part-file-item>span:first-child{flex:1 1 240px;min-width:0}
+.part-file-item>.btn{font-size:.81rem}
+.part-saved-pages{margin-top:8px}
+.part-files-panel .part-file-controls{margin:10px 0}
+.bom-part-summary .bom-part-toggle-label{min-width:110px;text-align:center}
+.bom-part[open] .bom-part-toggle-label::after,.bom-part:not([open]) .bom-part-toggle-label::after{content:""}
+.bom-record-purchase{margin:0 8px 12px 0}
+.workshop-purchased{margin:14px 0 22px}
+.workshop-purchased-search{width:100%;max-width:520px;margin:10px 0}
+.workshop-purchased-results{display:grid;gap:9px}
+.workshop-purchase-item{display:flex;align-items:start;flex-wrap:wrap;gap:6px 15px;background:#193541;border:1px solid #3b6871;border-radius:9px;padding:12px}
+.workshop-purchase-item>strong{flex:1 1 260px}
+.workshop-purchase-item>.muted{font-size:.82rem}
+.workshop-purchase-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%}
+.workshop-purchase-actions>.field{max-width:235px}
+.workshop-purchase-actions>.btn{font-size:.85rem}
+.part-workspace-cover[role="button"]{cursor:pointer;position:relative;outline-offset:3px}
+.part-workspace-cover.part-image-dragover{outline:3px dashed #8addbf;background:rgba(63,139,132,.35)}
+.part-workspace-cover.part-image-dragover:after{content:"Drop image to upload";position:absolute;inset:auto 5px 5px;padding:7px;background:#153e39;color:#fff;border-radius:7px;text-align:center;font-size:.8rem}
