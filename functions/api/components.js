@@ -4,6 +4,16 @@ const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:
 const authorized=isAdmin;
 const key=project=>"components/"+project+".json";
 const read=async(env,project)=>{const obj=await env.PHOTOS.get(key(project));return obj?JSON.parse(await obj.text()):[]};
+// A manually recorded, historical USD unit price. Never represents live pricing.
+const historicalPrice=input=>{
+ const raw=input?.historicalPrice;
+ if(raw===undefined||raw===null||raw==="")return {price:null,date:null};
+ const price=Number(raw);
+ const date=input?.historicalPriceDate;
+ if(!Number.isFinite(price)||price<0||price>10000000||Math.round(price*100)!==price*100&&Math.abs(Math.round(price*100)-price*100)>1e-6)return null;
+ if(typeof date!=="string"||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)||!Number.isFinite(Date.parse(date))||new Date(date).toISOString().slice(0,10)!==date)return null;
+ return {price,date};
+};
 const safePublicImageUrl=value=>{
  try{
   if(typeof value!=="string"||value.length>1800)return null;
@@ -22,8 +32,10 @@ export async function handleComponents(request,env){
  if(request.method==="POST"){
   const input=await request.json().catch(()=>null);
   if(!input||typeof input.name!=="string"||!input.name.trim()||input.name.length>180||!Array.isArray(input.specifications)||input.specifications.length>35)return json({error:"Invalid component"},400);
+  const price=historicalPrice(input);
+  if(!price)return json({error:"Historical price must be a nonnegative USD amount (2 decimals) with a valid recorded date"},400);
   const clean=s=>String(s??"").slice(0,300);
-  const record={assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,quantity:Number.isInteger(input.quantity)&&input.quantity>0&&input.quantity<=100000?input.quantity:1,id:crypto.randomUUID(),name:clean(input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
+  const record={assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,quantity:Number.isInteger(input.quantity)&&input.quantity>0&&input.quantity<=100000?input.quantity:1,id:crypto.randomUUID(),name:clean(input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
   const items=await read(env,project);if(items.length>=300)return json({error:"Component limit reached"},400);items.push(record);await env.PHOTOS.put(key(project),JSON.stringify(items));return json({component:record},201);
  }
  if(request.method==="PUT"){
@@ -33,7 +45,10 @@ export async function handleComponents(request,env){
   const items=await read(env,project),index=items.findIndex(part=>part.id===id);
   if(index<0)return json({error:"Part not found"},404);
   const clean=value=>String(value??"").slice(0,300),previous=items[index];
-  const updated={...previous,name:clean(input.name.trim()),quantity:Number.isInteger(input.quantity)&&input.quantity>0&&input.quantity<=100000?input.quantity:1};
+  const price=historicalPrice(input);
+  if(!price)return json({error:"Historical price must be a nonnegative USD amount (2 decimals) with a valid recorded date"},400);
+
+  const updated={...previous,name:clean(input.name.trim()),quantity:Number.isInteger(input.quantity)&&input.quantity>0&&input.quantity<=100000?input.quantity:1,historicalPrice:price.price,historicalPriceDate:price.date};
   if(Object.prototype.hasOwnProperty.call(input,"assemblyId")){
    if(input.assemblyId!==null&&!(typeof input.assemblyId==="string"&&/^[a-zA-Z0-9-]{1,80}$/.test(input.assemblyId)))return json({error:"Invalid parent assembly"},400);
    updated.assemblyId=input.assemblyId;
