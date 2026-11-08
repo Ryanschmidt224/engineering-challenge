@@ -85,7 +85,7 @@ const mimeFor=(key,object)=>{
  if(key.endsWith(".jpg"))return "image/jpeg";
  return "application/octet-stream";
 };
-async function exportProject(r2,project){
+export async function exportProject(r2,project){
  const keys=await allKeys(r2,project),objects=[];
  if(!keys.length)throw Error("No saved project records found; there is nothing to back up");
  let bytesTotal=0;
