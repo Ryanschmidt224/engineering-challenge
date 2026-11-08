@@ -123,7 +123,7 @@ function setupAssemblyTrees(){
   }
   // Separate workspace route; the existing assembly overview remains unchanged.
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
-  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article><h2>Work instructions</h2><textarea class="field workspace-instructions" placeholder="Add build steps, tools, measurements and checks…" rows="8"></textarea></article><article class="workspace-drawing-panel"></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article><h2>Recipes / procedures</h2><textarea class="field workspace-procedures" placeholder="Add settings, recipes and procedures…" rows="5"></textarea></article><article><h2>Notes</h2><textarea class="field workspace-notes" placeholder="Add notes…" rows="5"></textarea></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
+  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New non-inventory part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article><h2>Work instructions</h2><textarea class="field workspace-instructions" placeholder="Add build steps, tools, measurements and checks…" rows="8"></textarea></article><article class="workspace-drawing-panel"></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article><h2>Recipes / procedures</h2><textarea class="field workspace-procedures" placeholder="Add settings, recipes and procedures…" rows="5"></textarea></article><article><h2>Notes</h2><textarea class="field workspace-notes" placeholder="Add notes…" rows="5"></textarea></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
   // Each saved BOM part has its own independent instructions document.
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
@@ -144,7 +144,7 @@ function setupAssemblyTrees(){
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
   const renderPartDetails=part=>{
    detailRows.replaceChildren();
-   const fields=[["Qty",part.quantity??1],...(part.historicalPrice!==null&&part.historicalPrice!==undefined&&Number.isFinite(Number(part.historicalPrice))?[["Historical price","$"+Number(part.historicalPrice).toFixed(2)+" USD per unit"+(part.historicalPriceDate?" (recorded "+part.historicalPriceDate+")":"")]]:[]),["Manufacturer",part.manufacturer],["Model",part.model],["Category",part.category],["Supplier",part.supplier],["ASIN",part.asin]];
+   const fields=[["Qty",part.quantity===null||part.quantity===undefined?"Not specified":String(part.quantity)+(part.quantityUnit?" "+part.quantityUnit:"")],...(part.historicalPrice!==null&&part.historicalPrice!==undefined&&Number.isFinite(Number(part.historicalPrice))?[["Historical price","$"+Number(part.historicalPrice).toFixed(2)+" USD per unit"+(part.historicalPriceDate?" (recorded "+part.historicalPriceDate+")":"")]]:[]),["Manufacturer",part.manufacturer],["Model",part.model],["Category",part.category],["Supplier",part.supplier],["ASIN",part.asin]];
    for(const [title,value] of fields){
     if(value===null||value===undefined||String(value).trim()==="")continue;
     const line=document.createElement("div");line.className="part-details-view-row";
@@ -416,7 +416,7 @@ function setupAssemblyTrees(){
    const summary=document.createElement("summary");summary.className="bom-part-summary";
    const photo=makeBomThumbnail(partPhotoUrl(part.id),part.name);
    const name=document.createElement("span");name.className="bom-part-name";name.textContent=part.name;
-   const qty=document.createElement("span");qty.className="bom-part-meta";qty.textContent="Qty "+(part.quantity||1)+(part.model?" · "+part.model:"");
+   const qty=document.createElement("span");qty.className="bom-part-meta";qty.textContent=(part.quantity===null||part.quantity===undefined?"Qty not specified":"Qty "+part.quantity+(part.quantityUnit?" "+part.quantityUnit:""))+(part.model?" · "+part.model:"");
    const expand=document.createElement("span");expand.className="bom-part-toggle-label";expand.textContent="Details";
    summary.append(photo,name,qty,expand);item.append(summary);
    const body=document.createElement("div");body.className="bom-part-body";
@@ -628,7 +628,8 @@ function setupAssemblyTrees(){
    extractedPictureUrl=null;
    editingPart=null;editingPartAssembly=null;
    for(const name of ["name","manufacturer","model","category","supplier","asin","description","historical-price","historical-price-date"]){const el=bomField(name);if(el)el.value=""}
-   const qty=bomField("quantity");if(qty)qty.value="1";
+   const qty=bomField("quantity");if(qty)qty.value="";
+   const unit=bomField("quantity-unit");if(unit)unit.value="pcs";
    bomRoot()?.querySelector(".component-specs")?.replaceChildren();
    bomRoot()?.querySelector(".component-review")?.classList.remove("hide");
    const save=bomField("save");if(save)save.textContent="Save part";
@@ -637,7 +638,8 @@ function setupAssemblyTrees(){
    if(savingBom)return;
    clearBomDraft();editingPart=part.id;editingPartAssembly=originId;
    for(const key of ["name","manufacturer","model","supplier","asin","category"]){const field=bomField(key);if(field)field.value=part[key]||""}
-   const qty=bomField("quantity");if(qty)qty.value=String(part.quantity||1);
+   const qty=bomField("quantity");if(qty)qty.value=part.quantity??"";
+   const unit=bomField("quantity-unit");if(unit)unit.value=part.quantityUnit??"pcs";
    const price=bomField("historical-price"),date=bomField("historical-price-date");
    if(price)price.value=part.historicalPrice??"";
    if(date)date.value=part.historicalPriceDate||"";
@@ -672,7 +674,10 @@ function setupAssemblyTrees(){
    const name=bomField("name")?.value.trim()||"";
    if(!name){bomReport("Enter a part name before saving.");openBomDraft();return false}
    if(!adminAuthenticated){bomReport("Use Admin login before saving BOM parts.");return false}
-   const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:Math.max(1,Math.floor(Number(bomField("quantity")?.value)||1))};
+   const rawQty=bomField("quantity")?.value.trim()??"";
+   const amount=rawQty===""?null:Number(rawQty);
+   if(amount!==null&&(!Number.isFinite(amount)||amount<=0||amount>10000000)){bomReport("Quantity must be positive or left blank.");return false}
+   const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:amount,quantityUnit:bomField("quantity-unit")?.value??"pcs"};
    const priceInput=bomField("historical-price")?.value.trim()||"";
    const dateInput=bomField("historical-price-date")?.value||"";
    if(priceInput&&(!Number.isFinite(Number(priceInput))||Number(priceInput)<0||Math.round(Number(priceInput)*100)!==Number(priceInput)*100&&Math.abs(Math.round(Number(priceInput)*100)-Number(priceInput)*100)>1e-6)){
@@ -721,17 +726,48 @@ function setupAssemblyTrees(){
    }catch(error){bomReport("Could not save part: "+error.message);return false}
    finally{savingBom=false;if(saveButton)saveButton.disabled=false}
   }
+  // BOM-only items share the library/manual/wire wizard, but never create a feature-tree node.
   workspace.querySelector(".workspace-new-part").onclick=async()=>{
    if(savingBom)return;
-   const active=bomRoot()?.querySelector(".component-admin")?.open;
-   const name=bomField("name")?.value.trim()||"";
-   if(active&&name){
-    if(!await saveBomDraft())return;
-   }else if(active&&(bomField("description")?.value.trim()||bomRoot()?.querySelectorAll(".component-spec-row").length)){
-    bomReport("The unfinished part needs a name. Save it before adding another part.");openBomDraft();return;
-   }
-   clearBomDraft();openBomDraft();
-   bomReport("New part — add details and save. Selecting New part again automatically saves this part and opens another.");
+   if(!window.BSLibraryPartPicker){bomReport("Part library unavailable. Refresh and try again.");return}
+   const targetAssembly=selected;
+   await window.BSLibraryPartPicker.open({bomOnly:true,onCreate:async payload=>{
+    const {wireInfo,...part}=payload;
+    let newPart=null,wireId=wireInfo?.wireId||null;
+    try{
+     if(wireInfo&&!wireId){
+      const r=await fetch("/api/wires",{cache:"no-store"}),data=await r.json();
+      if(!r.ok)throw Error(data.error||"Unable to load wire library");
+      const matched=(data.wires||[]).find(w=>String(w.awg).replace(/\\s*awg/i,"").trim()===String(wireInfo.gauge)&&
+       (wireInfo.construction==="solid"?/solid/i.test(w.construction||""):wireInfo.construction==="braided"?/braid/i.test(w.construction||""):/strand/i.test(w.construction||"")));
+      if(matched)wireId=matched.id;
+      else{
+       const response=await fetch("/api/wires",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},
+        body:JSON.stringify({name:wireInfo.gauge+" AWG "+wireInfo.construction+" copper (verify)",awg:String(wireInfo.gauge),construction:wireInfo.construction,notes:"Created through BOM-only library selection. Verify insulation and terminal compatibility."})});
+       const data=await response.json();if(!response.ok)throw Error(data.error||"Could not save wire library material");
+       wireId=data.wire.id;
+      }
+     }
+     if(wireId&&!part.specifications.some(spec=>spec.name==="Library wire ID"))part.specifications.push({name:"Library wire ID",value:wireId,source:"explicit"});
+     const response=await fetch("/api/components?project="+encodeURIComponent(project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({...part,assemblyId:targetAssembly})});
+     const data=await response.json();if(!response.ok)throw Error(data.error||"Could not create BOM-only part");
+     newPart=data.component;
+     // A cutting list needs an integer wire count; do not invent a count for unspecified quantities.
+     if(wireInfo?.crimp&&wireId&&Number.isInteger(part.quantity)&&part.quantity>0&&Number.isFinite(wireInfo.mm)&&wireInfo.mm>0){
+      const res=await fetch("/api/harness?project="+encodeURIComponent(project)+"&part="+encodeURIComponent(newPart.id),{
+       method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},
+       body:JSON.stringify({cuts:[{wireId,qty:part.quantity,cutLengthMm:wireInfo.mm,stripAmm:0,stripBmm:0,endA:wireInfo.endA,endB:wireInfo.endB}]})
+      });
+      const data=await res.json();if(!res.ok)throw Error(data.error||"Could not save wire cutting list");
+     }
+     await renderWorkspaceParts();
+     bomReport(newPart.name+" saved to this assembly's BOM only (not the feature tree).");
+    }catch(error){
+     if(newPart)await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(newPart.id),{method:"DELETE",credentials:"same-origin"}).catch(()=>{});
+     bomReport("Could not create BOM-only part: "+error.message);
+     throw error;
+    }
+   }});
   };
   workspace.querySelector(".workspace-bom").addEventListener("click",event=>{
    const target=event.target;
@@ -1173,7 +1209,7 @@ function setupComponents(){
      summary.title="Click to expand or collapse part details";
      summary.setAttribute("aria-label","Show or hide details for "+c.name);
      const label=document.createElement("span");label.className="bom-part-name";label.textContent=c.name;
-     const meta=document.createElement("span");meta.className="bom-part-meta";meta.textContent="Qty "+(c.quantity||1)+(c.model?" · "+c.model:"");
+     const meta=document.createElement("span");meta.className="bom-part-meta";meta.textContent=(c.quantity===null||c.quantity===undefined?"Qty not specified":"Qty "+c.quantity+(c.quantityUnit?" "+c.quantityUnit:""))+(c.model?" · "+c.model:"");
      const hint=document.createElement("span");hint.className="bom-part-toggle-label";hint.textContent="Details";
      summary.append(label,meta,hint);item.append(summary);
      const body=document.createElement("div");body.className="bom-part-body";
