@@ -273,8 +273,7 @@ function setupAssemblyTrees(){
    const logDetails=document.createElement("details");logDetails.className="instruction-log";
    const logSummary=document.createElement("summary");logSummary.textContent="Experiments & decisions";
    const logEntries=document.createElement("div");logEntries.className="instruction-log-entries";
-   const addLog=document.createElement("button");addLog.type="button";addLog.className="btn";addLog.textContent="+ Record a test";
-   logDetails.append(logSummary,logEntries,addLog);article.append(logDetails);
+   logDetails.append(logSummary,logEntries);article.append(logDetails);
    let experiments=[];
    const renderLogs=()=>{
     logEntries.replaceChildren();
@@ -286,15 +285,7 @@ function setupAssemblyTrees(){
      if(adminAuthenticated){const remove=document.createElement("button");remove.type="button";remove.className="btn";remove.textContent="Remove";remove.onclick=()=>{experiments=experiments.filter(x=>x.id!==entry.id);renderLogs()};row.append(remove)}
      logEntries.append(row);
     }
-    if(!experiments.length){const empty=document.createElement("p");empty.className="muted";empty.textContent="No tests recorded yet.";logEntries.append(empty)}
-   };
-   addLog.onclick=()=>{
-    if(!adminAuthenticated)return;
-    const value=prompt("What did you test, observe or decide?");
-    if(!value?.trim())return;
-    experiments.push({id:crypto.randomUUID(),text:value.trim().slice(0,3000),createdAt:new Date().toISOString()});
-    renderLogs();logDetails.open=true;
-    const feedback=panel.querySelector(prefix==="part"?".part-workspace-status":".workspace-status");if(feedback)feedback.textContent="Test noted. Save the workspace to keep it.";
+    logDetails.classList.toggle("hide",experiments.length===0);
    };
    const historyDetails=document.createElement("details");historyDetails.className="instruction-history";
    const historySummary=document.createElement("summary");historySummary.textContent="Recent changes";
@@ -320,7 +311,7 @@ function setupAssemblyTrees(){
      }
      historyList.append(item);
     }
-    if(!history.length)historyList.textContent="Older saved versions will appear here after edits.";
+    historyDetails.classList.toggle("hide",history.length===0);
    }
    return {setData,getExperiments:()=>experiments};
   }
