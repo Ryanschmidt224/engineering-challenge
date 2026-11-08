@@ -186,9 +186,9 @@ function setupAssemblyTrees(){
    const file=archiveInput.files?.[0];archiveInput.value="";if(!file)return;
    inspectButton.disabled=true;archiveStatus.textContent="Checking archive contents and checksums…";
    try{
-    const response=await fetch(archiveUrl(),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:await file.text()});
-    const data=await response.json();if(!response.ok)throw Error(data.error||"Archive validation failed");
-    archiveStatus.textContent="Verified "+data.objectCount+" records ("+Math.round(data.totalBytes/1024)+" KB). No live data was changed.";
+    if(!window.BSArchiveCheck)throw Error("Archive checker not loaded");
+    const data=await window.BSArchiveCheck.inspect(file,project);
+    archiveStatus.textContent="Verified locally: "+data.objectCount+" records ("+Math.round(data.totalBytes/1024)+" KB). No upload or data changes.";
    }catch(error){archiveStatus.textContent="Backup check failed: "+error.message}
    finally{inspectButton.disabled=false}
   };
