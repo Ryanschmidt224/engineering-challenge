@@ -85,6 +85,7 @@ const mimeFor=(key,object)=>{
 };
 async function exportProject(r2,project){
  const keys=await allKeys(r2,project),objects=[];
+ if(!keys.length)throw Error("No saved project records found; there is nothing to back up");
  let bytesTotal=0;
  for(const key of keys){
   const object=await r2.get(key);
