@@ -16,10 +16,44 @@ export async function handleComponents(request,env){
   const record={assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,quantity:Number.isInteger(input.quantity)&&input.quantity>0&&input.quantity<=100000?input.quantity:1,id:crypto.randomUUID(),name:clean(input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
   const items=await read(env,project);if(items.length>=300)return json({error:"Component limit reached"},400);items.push(record);await env.PHOTOS.put(key(project),JSON.stringify(items));return json({component:record},201);
  }
+ if(request.method==="PUT"){
+  const id=url.searchParams.get("id");
+  const input=await request.json().catch(()=>null);
+  if(!id||!input||typeof input.name!=="string"||!input.name.trim()||input.name.length>180||!Array.isArray(input.specifications)||input.specifications.length>35)return json({error:"Invalid part update"},400);
+  const items=await read(env,project),index=items.findIndex(part=>part.id===id);
+  if(index<0)return json({error:"Part not found"},404);
+  const clean=value=>String(value??"").slice(0,300),previous=items[index];
+  const updated={...previous,name:clean(input.name.trim()),quantity:Number.isInteger(input.quantity)&&input.quantity>0&&input.quantity<=100000?input.quantity:1};
+  for(const field of ["manufacturer","model","supplier","asin","category"])updated[field]=clean(input[field]);
+  updated.specifications=input.specifications.map(spec=>({name:clean(spec.name),value:clean(spec.value),source:spec.source==="inferred"?"inferred":"explicit"})).filter(spec=>spec.name&&spec.value);
+  // Existing assembly association is immutable during an ordinary edit.
+  items[index]=updated;await env.PHOTOS.put(key(project),JSON.stringify(items));
+  return json({component:updated});
+ }
  if(request.method==="DELETE"){
-  const id=url.searchParams.get("id"),items=await read(env,project),remaining=items.filter(x=>x.id!==id);if(remaining.length===items.length)return json({error:"Not found"},404);await env.PHOTOS.put(key(project),JSON.stringify(remaining));return json({ok:true});
+  const id=url.searchParams.get("id"),items=await read(env,project),remaining=items.filter(x=>x.id!==id);if(remaining.length===items.length)return json({error:"Not found"},404);await env.PHOTOS.put(key(project),JSON.stringify(remaining));await env.PHOTOS.delete("component-thumbnails/"+project+"/"+id);return json({ok:true});
  }
  return json({error:"Method not allowed"},405)
+}
+// Small, dedicated part thumbnails are not assembly gallery photos.
+export async function handleComponentPhoto(request,env){
+ const url=new URL(request.url),project=url.searchParams.get("project"),id=url.searchParams.get("id");
+ if(!projects.has(project)||!/^[0-9a-f-]{36}$/i.test(id||""))return json({error:"Invalid part"},400);
+ if(!env.PHOTOS)return json({error:"Photo storage unavailable"},503);
+ const photoKey="component-thumbnails/"+project+"/"+id;
+ if(request.method==="GET"){
+  const object=await env.PHOTOS.get(photoKey);if(!object)return new Response("Not found",{status:404});
+  const headers=new Headers();object.writeHttpMetadata(headers);headers.set("cache-control","no-store");headers.set("x-content-type-options","nosniff");
+  return new Response(object.body,{headers});
+ }
+ if(request.method!=="POST")return json({error:"Method not allowed"},405);
+ if(!await authorized(request,env))return json({error:"Admin login required"},401);
+ const records=await read(env,project);if(!records.some(part=>part.id===id))return json({error:"Part not found"},404);
+ const mime=(request.headers.get("content-type")||"").split(";")[0].toLowerCase();
+ if(!["image/jpeg","image/png","image/webp"].includes(mime))return json({error:"Use a JPG, PNG or WebP picture"},415);
+ const bytes=await request.arrayBuffer();if(!bytes.byteLength||bytes.byteLength>3*1024*1024)return json({error:"Picture must be under 3 MB"},413);
+ await env.PHOTOS.put(photoKey,bytes,{httpMetadata:{contentType:mime}});
+ return json({ok:true});
 }
 export async function handleExtract(request,env){
  if(request.method!=="POST")return json({error:"Method not allowed"},405);
