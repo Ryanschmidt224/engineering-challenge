@@ -511,6 +511,50 @@ function setupAssemblyTrees(){
    if(url)image.src=url;else{image.src=missingPicture;image.classList.add("bom-thumbnail-empty")}
    return image;
   }
+  // Default to the Workshop's two stocking gauges, with specific heat-shrink and solder choices.
+  function recommendedWorkshop(part){
+   const name=String(part.name||"").toLowerCase();
+   const specs=part.specifications||[];
+   const insulation=String(specs.find(x=>String(x.name).toLowerCase()==="insulation")?.value||"").toLowerCase();
+   if(/silicone/.test(insulation)||/silicone/.test(name))return "workshop:silicone";
+   if(/ferrule/.test(name)){
+    if(/\\b22\\s*awg\\b/.test(name))return "workshop:ferrule22";
+    if(/\\b18\\s*awg\\b/.test(name))return "workshop:ferrule18";
+    return null;
+   }
+   if(/heat[- ]?shrink/.test(name))return /adhesive|dual.wall|waterproof|seal/.test(name)?"workshop:sealshrink":"workshop:heatshrink";
+   if(/\\bsolder\\b/.test(name))return "workshop:solder";
+   if(/\\bwire\\b|\\bcable\\b/.test(name)){
+    if(/\\b18\\s*awg\\b/.test(name))return "workshop:wire18";
+    if(/\\b22\\s*awg\\b/.test(name))return "workshop:wire22";
+    return "workshop:wire22";
+   }
+   return null;
+  }
+  function workshopLink(part){
+   const link=document.createElement("button");link.type="button";link.className="btn bom-workshop-link";
+   link.textContent=part.workshopChoice?"Change selection":"Choose recommended";
+   link.onclick=async e=>{
+    e.preventDefault();e.stopPropagation();
+    const original=location.hash.slice(1);
+    const initial=part.workshopChoice||recommendedWorkshop(part);
+    navigate("commonparts");
+    const choose=async item=>{
+     const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{
+      method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},
+      body:JSON.stringify({workshopChoice:item.id})
+     });
+     const data=await response.json().catch(()=>({}));
+     if(!response.ok)throw Error(data.error||"Could not save Workshop selection");
+     navigate(original);
+     bomReport(item.name+" selected from The Workshop for "+part.name+".");
+    };
+    if(!window.BSResources?.focusWorkshopItem(initial,choose)){
+     window.BSResources?.focusWorkshopItem("workshop:wire22",choose);
+    }
+   };
+   return link;
+  }
   const shopCandidate=part=>part.generatedKind==="ferrule"||part.generatedKind==="wire"||/\b(?:ferrules?|solder|heat[- ]?shrink|wire|cable)\b/i.test(part.name||"");
   const materialQuantity=part=>part.quantity===null||part.quantity===undefined?"Quantity not specified":String(part.quantity)+(part.quantityUnit?" "+part.quantityUnit:"");
   function preferenceButton(part){
@@ -548,6 +592,7 @@ function setupAssemblyTrees(){
     name.onclick=()=>openPartInstructions(part.generatedFrom?{id:part.generatedFrom}:part,part.assemblyId??null);
     const quantity=document.createElement("span");quantity.className="bom-shop-qty";quantity.textContent=materialQuantity(part);
     row.append(name,quantity);
+    row.append(workshopLink(part));
     const change=preferenceButton(part);if(change)row.append(change);
     rows.append(row);
    }
@@ -572,6 +617,7 @@ function setupAssemblyTrees(){
     const title=document.createElement("strong");title.textContent="Specifications";body.append(title);
     const ul=document.createElement("ul");for(const entry of part.specifications){const li=document.createElement("li");li.textContent=entry.name+": "+entry.value+(entry.source==="inferred"?" (inferred)":"");ul.append(li)}body.append(ul);
    }
+   if(part.assumedOnHand)body.append(workshopLink(part));
    const preference=preferenceButton(part);if(preference)body.append(preference);
    if(part.generatedFrom){
     const automatic=document.createElement("p");automatic.className="muted bom-auto-note";
