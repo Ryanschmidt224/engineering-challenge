@@ -92,7 +92,10 @@ test("project feature tree and workspace initialize without browser errors", asy
  const right=await instructions.boundingBox();
  expect(before.x).toBeLessThan(right.x);
  const sidebarGap=await splitter.boundingBox();
- expect(sidebarGap.x-(before.x+before.width)).toBeGreaterThanOrEqual(10);
+ // Splitter gets 7px on each side; all pages retain ~22px total clearance.
+ expect(sidebarGap.x-(before.x+before.width)).toBeGreaterThanOrEqual(6);
+ const contentBox=await page.locator("#launcher .assembly-layout > .assembly-content").boundingBox();
+ expect(Math.abs((contentBox.x-(before.x+before.width))-23)).toBeLessThanOrEqual(2);
  const handle=await splitter.boundingBox();
  await page.mouse.move(handle.x+handle.width/2,handle.y+70);
  await page.mouse.down();
@@ -131,6 +134,18 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(sidebar.locator(".assembly-rename")).toBeHidden();
  await expect(sidebar.locator(".assembly-remove")).toBeHidden();
  const row=sidebar.locator(".assembly-node",{hasText:"Motor and Motor Control"});
+ const name=row.locator(".assembly-name");
+ const prior=await name.boundingBox();
+ // Hovering reveals the context-menu affordance without shifting tree text.
+ await row.hover();
+ const hovered=await name.boundingBox();
+ expect(Math.abs(hovered.x-prior.x)).toBeLessThan(0.5);
+ expect(Math.abs(hovered.width-prior.width)).toBeLessThan(0.5);
+ await expect(row.locator(".assembly-row-menu-trigger")).toBeVisible();
+ // Overview and workspace should share the same desktop gutter.
+ const overviewSidebar=await sidebar.boundingBox();
+ const overviewContent=await page.locator("#launcher .assembly-layout > .assembly-content").boundingBox();
+ expect(Math.abs((overviewContent.x-(overviewSidebar.x+overviewSidebar.width))-22)).toBeLessThanOrEqual(2);
  await row.click({button:"right"});
  const menu=page.locator(".assembly-context-menu:visible").last();
  await expect(menu).toBeVisible();
