@@ -343,3 +343,44 @@
 .drawing-status{font-size:.81rem;color:#add0d9;min-height:1em}
 .drawing-error{color:#ebaea9;font-size:.83rem}
 @media(max-width:560px){.drawing-actions{flex-direction:column;align-items:stretch}.drawing-drop{min-width:0}.drawing-row-actions{width:100%}}
+
+/* Move the active part form above the BOM and make the edit state unmistakable. */
+.assembly-workspace-page .workspace-bom .workspace-bom-mount.is-editing{
+ order:0;
+ margin:14px 0 20px;
+ padding:18px;
+ border:2px solid #6eabb7;
+ border-radius:12px;
+ background:rgba(45,97,114,.18);
+ scroll-margin-top:90px;
+ box-shadow:0 10px 35px rgba(0,0,0,.18);
+}
+.assembly-workspace-page .workspace-bom .workspace-bom-editor-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:12px;
+ padding-bottom:12px;
+ margin-bottom:12px;
+ border-bottom:1px solid #527783;
+}
+.assembly-workspace-page .workspace-bom .workspace-bom-editor-header.hide{display:none}
+.assembly-workspace-page .workspace-bom .workspace-bom-editor-title{
+ margin:0;
+ font-size:1.25rem;
+ color:#d5f0f2;
+}
+.assembly-workspace-page .workspace-bom .workspace-bom-editor-cancel{
+ white-space:nowrap;
+}
+.assembly-workspace-page .workspace-bom .workspace-bom-mount.is-editing .component-section{
+ width:100%;
+ max-width:none;
+}
+.assembly-workspace-page .workspace-bom .workspace-bom-mount.is-editing .component-admin>summary{
+ font-weight:650;
+}
+@media(max-width:600px){
+ .assembly-workspace-page .workspace-bom .workspace-bom-mount.is-editing{padding:12px}
+ .assembly-workspace-page .workspace-bom .workspace-bom-editor-header{flex-wrap:wrap}
+}
