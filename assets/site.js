@@ -338,10 +338,22 @@ function setupAssemblyTrees(){
     container.replaceChildren();
     // A real subassembly is shown once as an expandable BOM row, not duplicated as a normal part.
     const renderAssembly=(parentId,mount,level)=>{
-     const ownParts=parts.filter(p=>(p.assemblyId??null)===parentId);
+     const linkedIds=new Set(nodes.filter(n=>isPartNode(n)).map(n=>n.partId));
+     const ownParts=parts.filter(p=>(p.assemblyId??null)===parentId&&!linkedIds.has(p.id));
      const children=nodes.filter(n=>n.parentId===parentId);
      for(const part of ownParts)mount.append(createSavedPart(part,parentId));
      for(const node of children){
+      if(isPartNode(node)){
+       const part=parts.find(p=>p.id===node.partId);
+       if(part){
+        const entry=createSavedPart(part,node.parentId);
+        entry.classList.add("bom-feature-part");
+        const badge=document.createElement("span");badge.className="bom-subassembly-label";badge.textContent="– Part";
+        entry.querySelector(".bom-part-summary .bom-part-name")?.after(badge);
+        mount.append(entry);
+       }
+       continue;
+      }
       const item=document.createElement("details");item.className="bom-part bom-subassembly";item.dataset.assemblyId=node.id;item.open=false;item.setAttribute("aria-label",node.name+" subassembly BOM");
       const summary=document.createElement("summary");summary.className="bom-part-summary";
       const image=makeBomThumbnail("","Assembly image");
@@ -353,7 +365,7 @@ function setupAssemblyTrees(){
       const hint=document.createElement("span");hint.className="bom-part-toggle-label";hint.textContent="Show BOM";hint.setAttribute("aria-label","Show or hide this subassembly BOM");
       const descendantIds=new Set([node.id]);const collect=id=>{for(const child of nodes.filter(x=>x.parentId===id))if(!descendantIds.has(child.id)){descendantIds.add(child.id);collect(child.id)}};collect(node.id);
       const count=document.createElement("span");count.className="bom-subassembly-count";
-      const nParts=parts.filter(part=>descendantIds.has(part.assemblyId??null)).length;
+      const nParts=parts.filter(part=>descendantIds.has(part.assemblyId??null)||nodes.some(x=>isPartNode(x)&&x.partId===part.id&&descendantIds.has(x.parentId))).length;
       count.textContent=nParts+" part"+(nParts===1?"":"s");
       summary.append(image,name,label,count,hint);item.append(summary);
       item.addEventListener("toggle",()=>{hint.textContent=item.open?"Hide BOM":"Show BOM"});
@@ -369,8 +381,8 @@ function setupAssemblyTrees(){
     const count=document.createElement("p");count.className="bom-count";
     const treeIds=new Set([assemblyId]);
     const visit=id=>{for(const node of nodes.filter(n=>n.parentId===id))if(!treeIds.has(node.id)){treeIds.add(node.id);visit(node.id)}};visit(assemblyId);
-    const partCount=parts.filter(p=>treeIds.has(p.assemblyId??null)).length;
-    count.textContent=partCount+" saved part"+(partCount===1?"":"s")+" · "+nodes.filter(n=>treeIds.has(n.id)&&n.id!==assemblyId).length+" subassemblies";
+    const partCount=parts.filter(p=>(treeIds.has(p.assemblyId??null)&&!nodes.some(n=>isPartNode(n)&&n.partId===p.id))||nodes.some(n=>isPartNode(n)&&n.partId===p.id&&treeIds.has(n.parentId))).length;
+    count.textContent=partCount+" saved part"+(partCount===1?"":"s")+" · "+nodes.filter(n=>!isPartNode(n)&&treeIds.has(n.id)&&n.id!==assemblyId).length+" subassemblies";
     container.append(count);
     const stack=document.createElement("div");stack.className="bom-part-stack";
     renderAssembly(assemblyId,stack,0);
