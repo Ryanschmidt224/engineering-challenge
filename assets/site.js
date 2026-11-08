@@ -1026,24 +1026,47 @@ function setupAssemblyTrees(){
   newPartButton.onclick=async()=>{
    const parent=nodes.find(node=>node.id===selected);
    if(isPartNode(parent)){status.textContent="Select an assembly, not a part, before adding a new part.";return}
-   const partName=prompt("New part name");
-   if(!partName?.trim())return;
-   if(partName.trim().length>100){status.textContent="Part names must be 100 characters or less.";return}
-   newPartButton.disabled=true;status.textContent="Creating part…";
-   let newPart=null;
-   try{
-    const res=await fetch("/api/components?project="+encodeURIComponent(project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({assemblyId:selected,quantity:1,name:partName.trim(),specifications:[]})});
-    const data=await res.json();if(!res.ok)throw Error(data.error||"Unable to create part");
-    newPart=data.component;
-    const next=[...nodes,{id:crypto.randomUUID(),kind:"part",partId:newPart.id,name:newPart.name,parentId:selected}];
-    await save(next);
-    expanded.add(selected);
-    status.textContent="Part added to the feature tree and BOM.";
-    openTreePart(next[next.length-1]);
-   }catch(error){
-    if(newPart){await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(newPart.id),{method:"DELETE",credentials:"same-origin"}).catch(()=>{})}
-    status.textContent="Could not add part: "+error.message;
-   }finally{newPartButton.disabled=false}
+   if(!window.BSLibraryPartPicker){status.textContent="Part library is still loading. Refresh and try again.";return}
+   await window.BSLibraryPartPicker.open({onCreate:async payload=>{
+    newPartButton.disabled=true;status.textContent="Creating part…";
+    let newPart=null;
+    try{
+     const info=payload.wireInfo||null;
+     let wireId=info?.wireId||null;
+     if(info&&!wireId){
+      const listResponse=await fetch("/api/wires",{cache:"no-store"}),listData=await listResponse.json();
+      if(!listResponse.ok)throw Error(listData.error||"Unable to load wire library");
+      const existing=(listData.wires||[]).find(w=>String(w.awg).replace(/\\s*awg/i,"").trim()===String(info.gauge)&&
+       (info.construction==="solid"?/solid/i.test(w.construction||""):/strand|braid/i.test(w.construction||"")));
+      if(existing)wireId=existing.id;
+      else{
+       const label=info.gauge+" AWG "+info.construction+" copper (construction to verify)";
+       const newWire=await fetch("/api/wires",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({name:label,awg:String(info.gauge),construction:info.construction,notes:"Created through feature-tree part selection. Verify conductor material, insulation and crimp compatibility before use."})});
+       const wireData=await newWire.json();if(!newWire.ok)throw Error(wireData.error||"Unable to save wire material");
+       wireId=wireData.wire.id;
+      }
+     }
+     const {wireInfo,...part}=payload;
+     if(wireId)part.specifications.push({name:"Library wire ID",value:wireId,source:"explicit"});
+     const res=await fetch("/api/components?project="+encodeURIComponent(project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({assemblyId:selected,...part})});
+     const data=await res.json();if(!res.ok)throw Error(data.error||"Unable to create part");
+     newPart=data.component;
+     if(info?.crimp&&wireId){
+      const harnessResponse=await fetch("/api/harness?project="+encodeURIComponent(project)+"&part="+encodeURIComponent(newPart.id),{
+       method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},
+       body:JSON.stringify({cuts:[{wireId,qty:part.quantity,cutLengthMm:info.mm,endA:info.endA,endB:info.endB,stripAmm:0,stripBmm:0}]})
+      });
+      const harnessData=await harnessResponse.json();
+      if(!harnessResponse.ok)throw Error(harnessData.error||"Unable to save harness cutting list");
+     }
+     const next=[...nodes,{id:crypto.randomUUID(),kind:"part",partId:newPart.id,name:newPart.name,parentId:selected}];
+     await save(next);expanded.add(selected);status.textContent="Part added to the feature tree and BOM.";
+     openTreePart(next[next.length-1]);
+    }catch(error){
+     if(newPart)await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(newPart.id),{method:"DELETE",credentials:"same-origin"}).catch(()=>{});
+     status.textContent="Could not add part: "+error.message;throw error;
+    }finally{newPartButton.disabled=false}
+   }});
   };
   root.querySelector(".assembly-add").onclick=async()=>{if(isPartNode(nodes.find(n=>n.id===selected))){status.textContent="Select an assembly first; parts cannot contain children.";return}const name=prompt("New subassembly name");if(!name?.trim())return;const id=crypto.randomUUID();try{await save([...nodes,{id,name:name.trim(),parentId:selected}]);expanded.add(selected);selected=id;render();notify()}catch(e){status.textContent=e.message}};
   root.querySelector(".assembly-rename").onclick=async()=>{if(selected===null){status.textContent="Select a subassembly to rename.";return}const node=nodes.find(n=>n.id===selected),name=prompt("Rename subassembly",node.name);if(!name?.trim())return;try{await save(nodes.map(n=>n.id===selected?{...n,name:name.trim()}:n))}catch(e){status.textContent=e.message}};
