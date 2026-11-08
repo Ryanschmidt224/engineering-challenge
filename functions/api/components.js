@@ -27,6 +27,21 @@ const quantityData=(input,previous)=>{
  if(unit.length>32||(!/^[a-zA-Z0-9 °µ²³/_-]*$/.test(unit)))return null;
  return {quantity,quantityUnit:unit};
 };
+// Global, zero-setup shop defaults. An explicit override belongs to each BOM
+// usage; it never pretends to be a live inventory count.
+const standardShopMaterial=part=>{
+ const name=String(part.name||"").toLowerCase();
+ const category=String(part.category||"").toLowerCase();
+ const generic=!String(part.manufacturer||"").trim()&&!String(part.model||"").trim();
+ if(!generic)return false;
+ if(part.generatedKind==="ferrule")return true;
+ if(part.generatedKind==="wire")return /\b(?:18|22)\s*awg\b/i.test(name);
+ if(/\bcrimped\s+wire\b/.test(name)||category.includes("crimped wire"))return false;
+ if(/\b(?:solder|soldering wire|solder paste|heat[- ]?shrink|heat shrink tubing)\b/.test(name))return true;
+ if(/\bferrules?\b/.test(name)||category==="wire termination"&&/ferrule/.test(name))return true;
+ return /\b(?:18|22)\s*awg\b/.test(name)&&/\b(?:wire|cable)\b/.test(name);
+};
+const presentPart=part=>({...part,assumedOnHand:part.purchaseOverride===true?false:part.purchaseOverride===false?true:standardShopMaterial(part)});
 // Derived consumables remain tied to their source part. Never require the
 // learner to enter ferrule counts or create a second independent BOM item.
 function syncDerived(items,source){
@@ -70,7 +85,7 @@ const safePublicImageUrl=value=>{
 export async function handleComponents(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project");
  if(!projects.has(project))return json({error:"Invalid project"},400);
- if(request.method==="GET")return json({components:await read(env,project)});
+ if(request.method==="GET")return json({components:(await read(env,project)).map(presentPart)});
  if(!await authorized(request,env))return json({error:"Administrator token required"},401);
  if(request.method==="POST"){
   const input=await request.json().catch(()=>null);
@@ -79,8 +94,18 @@ export async function handleComponents(request,env){
   if(!price)return json({error:"Historical price must be a nonnegative USD amount (2 decimals) with a valid recorded date"},400);
   const amount=quantityData(input);if(!amount)return json({error:"Quantity must be a positive number or blank, with a valid unit"},400);
   const clean=s=>String(s??"").slice(0,300);
-  const record={assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,bomOnly:input.bomOnly===true,sharedPartRef:cleanPartRef(input.sharedPartRef),id:crypto.randomUUID(),name:clean(input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
-  const items=await read(env,project);if(items.length>=300)return json({error:"Component limit reached"},400);items.push(record);syncDerived(items,record);await env.PHOTOS.put(key(project),JSON.stringify(items));return json({component:record},201);
+  const record={assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,bomOnly:input.bomOnly===true,purchaseOverride:input.purchaseOverride===true||input.purchaseOverride===false?input.purchaseOverride:null,sharedPartRef:cleanPartRef(input.sharedPartRef),id:crypto.randomUUID(),name:clean(input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
+  const items=await read(env,project);if(items.length>=300)return json({error:"Component limit reached"},400);items.push(record);syncDerived(items,record);await env.PHOTOS.put(key(project),JSON.stringify(items));return json({component:presentPart(record)},201);
+ }
+ // Tiny opt-in override: no requirement to re-enter part specifications.
+ if(request.method==="PATCH"){
+  const id=url.searchParams.get("id"),input=await request.json().catch(()=>null);
+  if(!id||!input||!(input.purchaseOverride===null||typeof input.purchaseOverride==="boolean"))return json({error:"Invalid shop material preference"},400);
+  const items=await read(env,project),entry=items.find(item=>item.id===id);
+  if(!entry)return json({error:"Part not found"},404);
+  entry.purchaseOverride=input.purchaseOverride;
+  await env.PHOTOS.put(key(project),JSON.stringify(items));
+  return json({component:presentPart(entry)});
  }
  if(request.method==="PUT"){
   const id=url.searchParams.get("id");
@@ -95,6 +120,7 @@ export async function handleComponents(request,env){
 
   const amount=quantityData(input,previous);if(!amount)return json({error:"Quantity must be a positive number or blank, with a valid unit"},400);
   const updated={...previous,name:clean(input.name.trim()),...amount,historicalPrice:price.price,historicalPriceDate:price.date};
+  if(input.purchaseOverride===true||input.purchaseOverride===false||input.purchaseOverride===null)updated.purchaseOverride=input.purchaseOverride;
   // BOM-only classification persists through normal edits. Only a dedicated move action may change it.
   if(Object.prototype.hasOwnProperty.call(input,"assemblyId")){
    if(input.assemblyId!==null&&!(typeof input.assemblyId==="string"&&/^[a-zA-Z0-9-]{1,80}$/.test(input.assemblyId)))return json({error:"Invalid parent assembly"},400);
@@ -105,7 +131,7 @@ export async function handleComponents(request,env){
   // Keep the original shared part reference unless a new valid reference is supplied.
   if(Object.prototype.hasOwnProperty.call(input,"sharedPartRef"))updated.sharedPartRef=cleanPartRef(input.sharedPartRef);
   items[index]=updated;syncDerived(items,updated);await env.PHOTOS.put(key(project),JSON.stringify(items));
-  return json({component:updated});
+  return json({component:presentPart(updated)});
  }
  if(request.method==="DELETE"){
   const id=url.searchParams.get("id"),items=await read(env,project),target=items.find(x=>x.id===id);if(!target)return json({error:"Not found"},404);if(target.generatedFrom)return json({error:"This material is calculated from its wire. Delete or edit the wire instead."},409);const remaining=items.filter(x=>x.id!==id&&x.generatedFrom!==id);await env.PHOTOS.put(key(project),JSON.stringify(remaining));await env.PHOTOS.delete("component-thumbnails/"+project+"/"+id);await env.PHOTOS.delete("part-workspaces/"+project+"/"+id+".json");await env.PHOTOS.delete("harnesses/"+project+"/"+id+".json");return json({ok:true});
