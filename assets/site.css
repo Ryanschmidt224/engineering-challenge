@@ -422,3 +422,20 @@
  .bom-part-workspace .part-details-view-rows{padding:0 12px}
  .bom-part-workspace .part-details-view-actions{padding:10px 12px}
 }
+
+
+/* Consistent alignment for individual part workspaces. */
+/* Keep the header, part details, action buttons, instructions and drawings
+   on a shared column instead of mixing full-width and 900px sections. */
+.bom-part-workspace > .workspace-heading,
+.bom-part-workspace > .part-details-view,
+.bom-part-workspace > .part-workspace-tools,
+.bom-part-workspace > .workspace-panels {
+  width:100%;
+  max-width:1100px;
+  margin-left:0;
+  margin-right:0;
+}
+.bom-part-workspace > .workspace-panels {
+  max-width:1100px;
+}
