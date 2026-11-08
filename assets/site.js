@@ -123,7 +123,7 @@ function setupAssemblyTrees(){
   }
   // Separate workspace route; the existing assembly overview remains unchanged.
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
-  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New non-inventory part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article><h2>Work instructions</h2><textarea class="field workspace-instructions" placeholder="Add build steps, tools, measurements and checks…" rows="8"></textarea></article><article class="workspace-drawing-panel"></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article><h2>Recipes / procedures</h2><textarea class="field workspace-procedures" placeholder="Add settings, recipes and procedures…" rows="5"></textarea></article><article><h2>Notes</h2><textarea class="field workspace-notes" placeholder="Add notes…" rows="5"></textarea></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
+  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New BOM-only part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article><h2>Work instructions</h2><textarea class="field workspace-instructions" placeholder="Add build steps, tools, measurements and checks…" rows="8"></textarea></article><article class="workspace-drawing-panel"></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article><h2>Recipes / procedures</h2><textarea class="field workspace-procedures" placeholder="Add settings, recipes and procedures…" rows="5"></textarea></article><article><h2>Notes</h2><textarea class="field workspace-notes" placeholder="Add notes…" rows="5"></textarea></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
   // Each saved BOM part has its own independent instructions document.
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
@@ -727,6 +727,30 @@ function setupAssemblyTrees(){
    }catch(error){bomReport("Could not save part: "+error.message);return false}
    finally{savingBom=false;if(saveButton)saveButton.disabled=false}
   }
+  // Add ferrules selected on either crimped-wire end as BOM-only consumables.
+  async function addWireFerrules(info, quantity, unit, assemblyId){
+   if(!info?.crimp)return "";
+   const ends=Number(info.endA==="ferrule")+Number(info.endB==="ferrule");
+   if(!ends)return "";
+   const known=unit==="pcs"&&Number.isInteger(quantity)&&quantity>0;
+   const count=known?quantity*ends:null;
+   const name="Ferrule — "+info.gauge+" AWG";
+   const response=await fetch("/api/components?project="+encodeURIComponent(project),{
+    method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},
+    body:JSON.stringify({
+     assemblyId,bomOnly:true,name,quantity:count,quantityUnit:"pcs",
+     category:"Wire termination",
+     specifications:[
+      {name:"Wire gauge",value:String(info.gauge)+" AWG"},
+      {name:"Termination",value:"Ferrule"},
+      {name:"Ferrule ends per wire",value:String(ends)}
+     ]
+    })
+   });
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok)throw Error(data.error||"Could not add ferrule");
+   return name+(count===null?" (quantity unspecified)":" × "+count+" pcs");
+  }
   // BOM-only items share the library/manual/wire wizard, but never create a feature-tree node.
   workspace.querySelector(".workspace-new-part").onclick=async()=>{
    if(savingBom)return;
@@ -761,8 +785,11 @@ function setupAssemblyTrees(){
       });
       const data=await res.json();if(!res.ok)throw Error(data.error||"Could not save wire cutting list");
      }
+     let ferruleNotice="";
+     try{ferruleNotice=await addWireFerrules(wireInfo,part.quantity,part.quantityUnit,targetAssembly)}
+     catch(error){ferruleNotice="Warning: wire saved, but ferrule not added: "+error.message}
      await renderWorkspaceParts();
-     bomReport(newPart.name+" saved to this assembly's BOM only (not the feature tree).");
+     bomReport(newPart.name+" saved to this assembly's BOM only (not the feature tree)."+(ferruleNotice?" "+ferruleNotice:""));
     }catch(error){
      if(newPart)await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(newPart.id),{method:"DELETE",credentials:"same-origin"}).catch(()=>{});
      bomReport("Could not create BOM-only part: "+error.message);
@@ -1124,8 +1151,12 @@ function setupAssemblyTrees(){
       if(!harnessResponse.ok)throw Error(harnessData.error||"Unable to save harness cutting list");
      }
      const next=[...nodes,{id:crypto.randomUUID(),kind:"part",partId:newPart.id,name:newPart.name,parentId:selected}];
-     await save(next);expanded.add(selected);status.textContent="Part added to the feature tree and BOM.";
+     await save(next);expanded.add(selected);
+     let ferruleNotice="";
+     try{ferruleNotice=await addWireFerrules(info,part.quantity,part.quantityUnit,selected)}
+     catch(error){ferruleNotice="Warning: part saved, but ferrule not added: "+error.message}
      openTreePart(next[next.length-1]);
+     status.textContent="Part added to the feature tree and BOM."+(ferruleNotice?" "+ferruleNotice:"");
     }catch(error){
      if(newPart)await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(newPart.id),{method:"DELETE",credentials:"same-origin"}).catch(()=>{});
      status.textContent="Could not add part: "+error.message;throw error;
