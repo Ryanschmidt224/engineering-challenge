@@ -518,15 +518,15 @@ function setupAssemblyTrees(){
    const insulation=String(specs.find(x=>String(x.name).toLowerCase()==="insulation")?.value||"").toLowerCase();
    if(/silicone/.test(insulation)||/silicone/.test(name))return "workshop:silicone";
    if(/ferrule/.test(name)){
-    if(/\\b22\\s*awg\\b/.test(name))return "workshop:ferrule22";
-    if(/\\b18\\s*awg\\b/.test(name))return "workshop:ferrule18";
+    if(/\b22\s*awg\b/.test(name))return "workshop:ferrule22";
+    if(/\b18\s*awg\b/.test(name))return "workshop:ferrule18";
     return null;
    }
    if(/heat[- ]?shrink/.test(name))return /adhesive|dual.wall|waterproof|seal/.test(name)?"workshop:sealshrink":"workshop:heatshrink";
-   if(/\\bsolder\\b/.test(name))return "workshop:solder";
-   if(/\\bwire\\b|\\bcable\\b/.test(name)){
-    if(/\\b18\\s*awg\\b/.test(name))return "workshop:wire18";
-    if(/\\b22\\s*awg\\b/.test(name))return "workshop:wire22";
+   if(/\bsolder\b/.test(name))return "workshop:solder";
+   if(/\bwire\b|\bcable\b/.test(name)){
+    if(/\b18\s*awg\b/.test(name))return "workshop:wire18";
+    if(/\b22\s*awg\b/.test(name))return "workshop:wire22";
     return "workshop:wire22";
    }
    return null;
