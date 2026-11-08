@@ -303,7 +303,7 @@ function setupAssemblyTrees(){
     const byId=new Map((wireData.wires||[]).map(w=>[w.id,w]));
     for(const cut of cuts){
      const wire=byId.get(cut.wireId),row=document.createElement("div");row.className="part-harness-cut";
-     const title=document.createElement("strong");title.textContent=(wire?.name||"Wire material")+" · "+cut.qty+" × "+cut.cutLengthMm+" mm";
+     const title=document.createElement("strong");title.textContent=(wire?.name||"Wire material")+" · "+cut.qty+" × "+Number((cut.cutLengthMm/25.4).toFixed(3))+" in";
      const detail=document.createElement("span");detail.textContent=[wire?.awg?wire.awg+" AWG":"",wire?.construction||"",cut.endA?"A: "+cut.endA:"",cut.endB?"B: "+cut.endB:""].filter(Boolean).join(" · ");
      row.append(title,detail);body.append(row);
     }
