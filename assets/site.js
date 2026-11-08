@@ -901,25 +901,25 @@ function setupAssemblyTrees(){
     if(listView){
      // A compact tabular representation of the same BOM, not a different purchasing calculation.
      const items=parts.filter(p=>included.has(p.assemblyId??null)&&!shopIds.has(p.id));
-     const table=document.createElement("table");table.className="bom-shopping-table";
+     const table=document.createElement("table");table.className="bom-shopping-table bom-compact-list";
      const head=document.createElement("thead"),headRow=document.createElement("tr");
-     for(const label of ["Part / material","Assembly","Quantity"]){const th=document.createElement("th");th.textContent=label;headRow.append(th)}
+     for(const label of ["Part / material","Assembly","Quantity","Details"]){const th=document.createElement("th");th.textContent=label;headRow.append(th)}
      head.append(headRow);table.append(head);
      const body=document.createElement("tbody");
      for(const p of items){
-      const tr=document.createElement("tr"),name=document.createElement("td"),assembly=document.createElement("td"),quantity=document.createElement("td");
+      const tr=document.createElement("tr"),name=document.createElement("td"),assembly=document.createElement("td"),quantity=document.createElement("td"),details=document.createElement("td");
       const label=document.createElement("span");label.className="bom-list-part-name";label.textContent=p.name;
       name.append(label);
       const openPart=document.createElement("button");openPart.type="button";openPart.className="btn bom-open-part-details";openPart.textContent="Open part details";
       openPart.onclick=()=>openPartInstructions(p,p.assemblyId??null);
-      name.append(openPart);
+      details.append(openPart);
       const preference=preferenceButton(p);if(preference)name.append(preference);
       if(p.generatedFrom){const marker=document.createElement("small");marker.className="muted";marker.textContent=" · calculated";name.append(marker)}
       assembly.textContent=p.assemblyId===assemblyId?(assemblyId===null?"Project":"This assembly"):(nodes.find(n=>n.id===p.assemblyId)?.name||"Project");
       quantity.textContent=p.quantity===null||p.quantity===undefined?"Not specified":String(p.quantity)+(p.quantityUnit?" "+p.quantityUnit:"");
-      tr.append(name,assembly,quantity);body.append(tr);
+      tr.append(name,assembly,quantity,details);body.append(tr);
      }
-     if(!items.length){const row=document.createElement("tr"),cell=document.createElement("td");cell.colSpan=3;cell.textContent="No materials yet.";row.append(cell);body.append(row)}
+     if(!items.length){const row=document.createElement("tr"),cell=document.createElement("td");cell.colSpan=4;cell.textContent="No materials yet.";row.append(cell);body.append(row)}
      table.append(body);container.append(table);
      const shopSection=shopMaterialsPanel(shopItems);if(shopSection)container.append(shopSection);
      return;
