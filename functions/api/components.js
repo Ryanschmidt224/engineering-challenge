@@ -37,8 +37,8 @@ const standardShopMaterial=part=>{
  if(part.generatedKind==="ferrule")return true;
  if(part.generatedKind==="wire")return /\b(?:18|22)\s*awg\b/i.test(name)&&!(part.specifications||[]).some(x=>String(x.name).toLowerCase()==="insulation"&&/silicone|other/i.test(x.value));
  if(/\bcrimped\s+wire\b/.test(name)||category.includes("crimped wire"))return false;
- if(/\b(?:solder|soldering wire|solder paste|heat[- ]?shrink|heat shrink tubing)\b/.test(name))return true;
- if(/\bferrules?\b/.test(name)||category==="wire termination"&&/ferrule/.test(name))return true;
+ if(/\b(?:solder|soldering wire|solder paste|heat[- ]?shrink|heat shrink tubing)\b/.test(name)&&!/\b(?:sucker|desolder(?:ing)?|iron|station|tool|pump|wick|extractor)\b/.test(name))return true;
+ if((/\bferrules?\b/.test(name)||category==="wire termination"&&/ferrule/.test(name))&&/\b(?:18|22)\s*awg\b/.test(name))return true;
  return /\b(?:18|22)\s*awg\b/.test(name)&&/\b(?:wire|cable)\b/.test(name);
 };
 const recommendedWorkshopIds=new Set([
