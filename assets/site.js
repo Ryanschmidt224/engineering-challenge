@@ -155,6 +155,67 @@ function setupAssemblyTrees(){
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
   workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New BOM-only part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-drawing-panel"></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
+  // Adjustable BOM sidebar. This controls presentation only; no BOM data changes.
+  const workspacePanels=workspace.querySelector(".workspace-panels");
+  const bomPanel=workspace.querySelector(".workspace-bom");
+  const bomResizer=document.createElement("div");
+  bomResizer.className="workspace-bom-resizer";
+  bomResizer.setAttribute("role","separator");
+  bomResizer.setAttribute("tabindex","0");
+  bomResizer.setAttribute("aria-orientation","vertical");
+  bomResizer.setAttribute("aria-label","Resize bill of materials panel");
+  bomResizer.setAttribute("aria-valuemin","20");
+  bomResizer.setAttribute("aria-valuemax","80");
+  bomPanel.after(bomResizer);
+  const bomWidthKey="bs-workspace-bom-width";
+  const sidebarWidth=width=>{
+   const available=workspacePanels.getBoundingClientRect().width;
+   // Keep the instructions usable regardless of the desktop window width.
+   return Math.round(Math.max(330,Math.min(Number(width)||available*.42,available-390)));
+  };
+  const setBomWidth=width=>{
+   const clamped=sidebarWidth(width);
+   workspacePanels.style.setProperty("--bom-panel-width",clamped+"px");
+   const total=workspacePanels.getBoundingClientRect().width;
+   bomResizer.setAttribute("aria-valuenow",String(Math.round(clamped/total*100)));
+   return clamped;
+  };
+  try{
+   const stored=Number(localStorage.getItem(bomWidthKey));
+   if(Number.isFinite(stored)&&stored>0)workspacePanels.style.setProperty("--bom-panel-width",stored+"px");
+  }catch{/* Storage may be disabled; resizing still works. */}
+  let draggingBom=false;
+  bomResizer.addEventListener("pointerdown",event=>{
+   if(event.button!==0||matchMedia("(max-width:1099px)").matches)return;
+   draggingBom=true;
+   bomResizer.setPointerCapture(event.pointerId);
+   document.body.classList.add("is-resizing-bom");
+   event.preventDefault();
+  });
+  bomResizer.addEventListener("pointermove",event=>{
+   if(!draggingBom)return;
+   const left=workspacePanels.getBoundingClientRect().left;
+   setBomWidth(event.clientX-left-5);
+  });
+  const endBomDrag=()=>{
+   if(!draggingBom)return;
+   draggingBom=false;
+   document.body.classList.remove("is-resizing-bom");
+   try{localStorage.setItem(bomWidthKey,String(bomPanel.getBoundingClientRect().width))}catch{}
+  };
+  bomResizer.addEventListener("pointerup",endBomDrag);
+  bomResizer.addEventListener("pointercancel",endBomDrag);
+  bomResizer.addEventListener("lostpointercapture",endBomDrag);
+  bomResizer.addEventListener("keydown",event=>{
+   if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;
+   event.preventDefault();
+   const available=workspacePanels.getBoundingClientRect().width;
+   const current=bomPanel.getBoundingClientRect().width;
+   const next=event.key==="Home"?330:event.key==="End"?available-390:
+    current+(event.key==="ArrowRight"?32:-32);
+   const width=setBomWidth(next);
+   try{localStorage.setItem(bomWidthKey,String(width))}catch{}
+  });
   // Each saved BOM part has its own independent instructions document.
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
   partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article class="recipe-instructions"><h2>Build instructions</h2></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
