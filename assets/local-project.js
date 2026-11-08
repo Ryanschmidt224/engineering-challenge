@@ -4,7 +4,10 @@
  */
 (function(root){
  "use strict";
- const allowed=(p,key)=>{
+ const safeKey=key=>typeof key==="string"&&key.length<=1000&&
+  !/[\\\x00-\x1f\x7f]/.test(key)&&
+  key.split("/").every(segment=>segment!==""&&segment!=="."&&segment!=="..");
+ const allowed=(p,key)=>{if(!safeKey(key))return false;
   const dirs=[p+"/","assembly-pages/"+p+"/","workspaces/"+p+"/","part-workspaces/"+p+"/",
    "harnesses/"+p+"/","drawings/"+p+"/","component-thumbnails/"+p+"/",
    "part-files/"+p+"/","part-pages/"+p+"/"];
