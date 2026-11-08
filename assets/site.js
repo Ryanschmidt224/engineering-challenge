@@ -188,7 +188,22 @@ function setupAssemblyTrees(){
    try{
     if(!window.BSArchiveCheck)throw Error("Archive checker not loaded");
     const data=await window.BSArchiveCheck.inspect(file,project);
-    archiveStatus.textContent="Verified locally: "+data.objectCount+" records ("+Math.round(data.totalBytes/1024)+" KB). No upload or data changes.";
+    if(!window.BSLocalProject)throw Error("Local project reader unavailable");
+    // Actually hydrate every record into an independent local store and rebuild
+    // a project archive to prove that export/import retains the same bytes.
+    const local=await window.BSLocalProject.open(JSON.parse(await file.text()));
+    const recovered=await local.exportArchive();
+    if(recovered.objectCount!==data.objectCount||recovered.totalBytes!==data.totalBytes)
+     throw Error("Local recovery round-trip mismatch");
+    const expected=JSON.parse(await file.text());
+    const before=new Map(expected.objects.map(o=>[o.key,o.sha256]));
+    for(const entry of recovered.objects){
+     if(before.get(entry.key)!==entry.sha256)throw Error("Local recovery changed "+entry.key);
+    }
+    const model=local.model();
+    archiveStatus.textContent="Verified and reopened locally: "+data.objectCount+" records, "+
+     (model?.partDefinitions.length||0)+" parts, "+(model?.bomOccurrences.length||0)+" BOM entries. "+
+     "All file checksums survived export/import. No upload or live data changes.";
    }catch(error){archiveStatus.textContent="Backup check failed: "+error.message}
    finally{inspectButton.disabled=false}
   };
