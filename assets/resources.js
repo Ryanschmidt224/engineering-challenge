@@ -235,10 +235,31 @@
  const commonButton=document.querySelector(".resource-common-new");if(commonButton)commonButton.classList.toggle("hide",!admin);
  const commonForm=document.querySelector(".resource-common-form");if(commonForm&&!admin)commonForm.classList.add("hide");
  renderCommonParts()}
+ let initialized=false;
  function init(){
-  renderCatalog("resource-tools",tools,"tool");
-  renderCatalog("resource-calculators",calculators,"calculator");
-  renderCommonParts();initWireForm();initCommonForm();setAdmin(admin);void reloadWires();void reloadCommonParts();
+  if(initialized)return;
+  initialized=true;
+  try{
+   renderCatalog("resource-tools",tools,"tool");
+   renderCatalog("resource-calculators",calculators,"calculator");
+   renderCommonParts();
+   initWireForm();
+   initCommonForm();
+   setAdmin(admin);
+   void reloadWires();
+   void reloadCommonParts();
+   // Shared-resource pages must not depend on any other project script.
+   fetch("/api/auth",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(data=>{if(data)setAdmin(!!data.authenticated)}).catch(()=>{});
+  }catch(error){
+   initialized=false;
+   console.error("Shared resource pages did not initialize:",error);
+   for(const [id,label] of [["resource-tools","Tools"],["resource-calculators","Calculators"],["resource-commonparts","Common Parts"]]){
+    const panel=document.getElementById(id);
+    if(panel&&!panel.children.length)panel.textContent=label+" could not load. Refresh the page or report the browser console error.";
+   }
+  }
  }
  window.BSResources={catalog,all,mount,reloadWires,reloadCommonParts,init,normalize,setAdmin};
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
+ else init();
 })();
