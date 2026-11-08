@@ -1064,7 +1064,7 @@ function setupAssemblyTrees(){
       const listResponse=await fetch("/api/wires",{cache:"no-store"}),listData=await listResponse.json();
       if(!listResponse.ok)throw Error(listData.error||"Unable to load wire library");
       const existing=(listData.wires||[]).find(w=>String(w.awg).replace(/\\s*awg/i,"").trim()===String(info.gauge)&&
-       (info.construction==="solid"?/solid/i.test(w.construction||""):/strand|braid/i.test(w.construction||"")));
+       (info.construction==="solid"?/solid/i.test(w.construction||""):info.construction==="braided"?/braid/i.test(w.construction||""):/strand/i.test(w.construction||"")));
       if(existing)wireId=existing.id;
       else{
        const label=info.gauge+" AWG "+info.construction+" copper (construction to verify)";
