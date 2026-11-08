@@ -38,13 +38,40 @@ export async function handleExtract(request,env){
    if(page.status>=300&&page.status<400)return json({error:"This website redirects its product page. Open the final URL and try again, or paste the product description."},422);
    if(!page.ok)return json({error:"Website could not be read (HTTP "+page.status+"). Paste its product description instead."},422);
    if(!(page.headers.get("content-type")||"").toLowerCase().includes("text/html"))return json({error:"URL must point to an HTML product page."},422);
-   const length=Number(page.headers.get("content-length")||0);if(length>500000)return json({error:"Page is too large to import. Paste the product description."},422);
+   // Large storefront pages often embed megabytes of scripts and tracking data.
+   // Read at most 1.5 MB, then extract only product-oriented snippets.
    const reader=page.body?.getReader();if(!reader)return json({error:"No page content returned."},422);
-   let bytes=0,chunks=[];try{while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.byteLength;if(bytes>500000){await reader.cancel();return json({error:"Page is too large to import. Paste the product description."},422)}chunks.push(part.value)}}finally{reader.releaseLock()}
-   const html=new TextDecoder().decode(Uint8Array.from(chunks.flatMap(c=>Array.from(c))));
-   const cleaned=html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi," ").replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/&(?:nbsp|amp|quot|lt|gt);/gi," ").replace(/\s+/g," ").trim();
-   description=("Product page: "+url.hostname+" "+url.pathname+"\n"+cleaned).slice(0,3000);
-   if(description.length<80)return json({error:"The website did not expose readable product details. Paste the product description instead."},422);
+   const MAX_BYTES=1500000;let bytes=0;const chunks=[];
+   try{
+    while(bytes<MAX_BYTES){
+     const part=await reader.read();
+     if(part.done)break;
+     const amount=Math.min(part.value.byteLength,MAX_BYTES-bytes);
+     chunks.push(part.value.subarray(0,amount));bytes+=amount;
+     if(amount<part.value.byteLength||bytes>=MAX_BYTES){await reader.cancel();break}
+    }
+   }finally{reader.releaseLock()}
+   const html=new TextDecoder().decode(Uint8Array.from(chunks.flatMap(chunk=>Array.from(chunk))));
+   const decode=str=>str.replace(/&(?:nbsp|amp|quot|lt|gt|#39|#x27);/gi,match=>({"&nbsp;":" ","&amp;":"&","&quot;":'"',"&lt;":"<","&gt;":">","&#39;":"'","&#x27;":"'"}[match.toLowerCase()]||" ")).replace(/\s+/g," ").trim();
+   const strip=str=>decode(str.replace(/<[^>]*>/g," "));
+   const pieces=[];
+   const title=html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1];
+   if(title)pieces.push("Title: "+strip(title).slice(0,450));
+   for(const tag of html.matchAll(/<meta\b[^>]*>/gi)){
+    const element=tag[0],name=element.match(/(?:name|property)\s*=\s*["']([^"']+)["']/i)?.[1]||"";
+    if(!/^(?:description|og:title|og:description|twitter:title|twitter:description)$/i.test(name))continue;
+    const content=element.match(/content\s*=\s*["']([^"']+)["']/i)?.[1]||"";
+    if(content)pieces.push(name+": "+decode(content).slice(0,650));
+   }
+   // Product titles and details can occur well after storefront boilerplate.
+   for(const match of html.matchAll(/<(?:span|div|h1|ul)[^>]*(?:id|class)=["'][^"']*(?:productTitle|feature-bullets|productDescription|detailBullets|aplus|productOverview)[^"']*["'][^>]*>([\s\S]{0,15000}?)<\/(?:span|div|h1|ul)>/gi)){
+    const value=strip(match[1]);if(value.length>12)pieces.push("Product details: "+value.slice(0,1300));
+    if(pieces.join(" ").length>6500)break;
+   }
+   // Do not send raw HTML or unrelated navigation/tracking boilerplate to the model.
+   const extracted=pieces.join("\n");
+   if(extracted.length<60)return json({error:"Product details were not available in the readable portion of this page. The store may limit automated access; paste the product title and specifications instead."},422);
+   description=("Source: "+url.hostname+" "+url.pathname+"\n"+extracted).slice(0,3000);
   }catch(e){return json({error:"Could not retrieve that website. It may block automated access. Paste the product description instead."},422)}
  }
  if(description.length<15||description.length>3000)return json({error:"Paste a product description (15–3000 characters) or a public HTTPS product URL."},400);
