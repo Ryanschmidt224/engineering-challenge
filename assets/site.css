@@ -643,3 +643,52 @@
  .bom-shop-material-row>.bom-shop-qty{grid-column:1/-1;justify-self:start}
  .bom-shop-material-row>.bom-workshop-link,.bom-shop-material-row>.bom-material-preference{grid-column:auto}
 }
+
+
+/* Standard shop materials: left-align every row element, including button text.
+   Do not distribute entries across the full panel width. */
+.bom-shop-material-rows{justify-items:stretch;text-align:left}
+.bom-shop-material-row{
+  display:flex;
+  flex-flow:row wrap;
+  align-items:center;
+  justify-content:flex-start;
+  column-gap:18px;
+  row-gap:10px;
+  text-align:left;
+}
+.bom-shop-material-row>.bom-list-part-link{
+  flex:0 1 340px;
+  width:auto;
+  min-width:160px;
+  max-width:100%;
+  margin:0;
+  text-align:left;
+  justify-content:flex-start;
+}
+.bom-shop-material-row>.bom-shop-qty{
+  flex:0 0 165px;
+  justify-self:start;
+  text-align:left;
+  white-space:normal;
+}
+.bom-shop-material-row>.bom-workshop-link,
+.bom-shop-material-row>.bom-material-preference{
+  flex:0 0 auto;
+  margin:0;
+  justify-self:start;
+}
+.bom-shop-material-row>.bom-workshop-selected{
+  flex:1 0 100%;
+  text-align:left;
+}
+@media(max-width:900px){
+  .bom-shop-material-row>.bom-list-part-link{flex:1 1 210px;min-width:0}
+  .bom-shop-material-row>.bom-shop-qty{flex:0 0 150px}
+}
+@media(max-width:620px){
+  .bom-shop-material-row>.bom-list-part-link{flex:1 0 100%;min-width:0}
+  .bom-shop-material-row>.bom-shop-qty{flex:1 0 100%;min-width:0}
+  .bom-shop-material-row>.bom-workshop-link,
+  .bom-shop-material-row>.bom-material-preference{flex:0 1 auto}
+}
