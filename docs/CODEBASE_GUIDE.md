@@ -12,8 +12,9 @@ This is a plain JavaScript / HTML / CSS site deployed on Cloudflare. There is **
 | --- | --- | --- |
 | HTML and load order | `index.html` | Navigation and page scaffolding; includes browser scripts |
 | Site entrypoint | `assets/site.js` | Main navigation, learning tiles, admin/login, photo setup, controller initialization |
-| Assembly and workspace | `assets/site-assembly.js` | Assembly tree interactions, workspace rendering, BOM views, part-detail UI, associated drawings and resource links |
-| Part/component editor | `assets/site-components.js` | Component editor form, review and save flow, component API interaction |
+| Assembly and workspace | `assets/site.js` | Assembly tree interactions, workspace rendering, BOM views, part-detail UI (currently a large controller) |
+| Part/component editor | `assets/site.js` | Component editor form, review and save flow, component API interaction (still in the main script) |
+| Pure BOM selector | `assets/bom-model.js` | Assembly descendants, visible purchased parts vs shop stock, quantity/assembly display labels; no browser or storage dependencies |
 | Recipes / work instructions | `assets/recipe-editor.js` | Discrete instruction steps, editing, local recipe UI state |
 | Workshop | `assets/resources.js` | Shared reference resources and Workshop category tree |
 | BOM selection | `assets/library-part-picker.js` | Choosing library/Workshop parts |
@@ -32,10 +33,9 @@ index.html
   ├─ feature services: resources, drawings, library-part-picker,
   │                   engineering-core, local-project, archive-check,
   │                   part-files, recipe-editor
-  ├─ site-assembly.js      defines setupAssemblyTrees()
-  ├─ site-components.js    defines setupComponents()
-  └─ site.js               initializes login/photos, calls controllers,
-                           initializes resources and renders page
+  ├─ bom-model.js          exports BSBomModel (pure BOM selectors)
+  └─ site.js               defines/initializes assembly and component controllers,
+                           login/photos, resources and navigation
 
 User interaction
   └─ assembly/workspace/part editor
@@ -50,20 +50,21 @@ User interaction
 ## Common change paths
 
 ### Change BOM list layout or behavior
-1. Start in `assets/site-assembly.js` and find `renderWorkspaceParts`, `bom-shopping-table`, or `listView`.
-2. Style the table with `assets/site.css` rules for `.bom-shopping-table`.
-3. Confirm both thumbnail and list views, nested assembly quantities, and the standard shop-materials section.
-4. Do not alter quantities or persistent records for a purely visual change.
+1. Start in `assets/site.js` and find `renderWorkspaceParts`, `bom-shopping-table`, or `listView`.
+2. Style the table with `assets/site.css` rules for `.bom-shopping-table`; discrete row colors live at the bottom of the stylesheet.
+3. Change filtering/quantity labels in `assets/bom-model.js`, then run `tests/bom-model.test.mjs`.
+4. Confirm both thumbnail and list views, nested assembly quantities, and the standard shop-materials section.
+5. Do not alter quantities or persistent records for a purely visual change.
 
 ### Change part details or part editing
-- Workspace part detail display: `assets/site-assembly.js`.
-- Component edit/review/save controller: `assets/site-components.js`.
+- Workspace part detail display: `assets/site.js`.
+- Component edit/review/save controller: `assets/site.js`.
 - Server writes/validation: `functions/api/components.js`; workspace data: `functions/api/workspace.js`.
 - Always distinguish display-only values from saved data and generated BOM entries.
 
 ### Change work-instruction steps
 - Main editable recipe UI: `assets/recipe-editor.js`.
-- Workspace mounting and data loading: `assets/site-assembly.js`.
+- Workspace mounting and data loading: `assets/site.js`.
 - Data structure contract: `docs/DATA_ARCHITECTURE.md`.
 - Avoid bringing back obsolete blank instructions fields; steps should reveal optional fields only when needed.
 
@@ -86,7 +87,7 @@ From the repository root:
 npm run check
 ```
 
-This includes syntax checking of the site scripts and Node's test suite. The tests are useful safeguards but **not proof** that every browser workflow works. After modifying UI, manually verify login/admin, project navigation, assembly expansion, BOM display, opening a part, saving part details, recipes, drawings, and project backup/download. Verify the Cloudflare deployment build status before reporting live deployment success.
+This includes syntax checking of the site scripts and Node's test suite. A separate GitHub Actions browser regression runs Playwright with mocked project data, confirming feature-tree navigation and the BOM's distinct list rows. The tests are useful safeguards but **not proof** that every browser workflow works. After modifying UI, manually verify login/admin, project navigation, assembly expansion, BOM display, opening a part, saving part details, recipes, drawings, and project backup/download. Verify the Cloudflare deployment build status before reporting live deployment success.
 
 ## Maintenance rules
 
@@ -101,7 +102,7 @@ This includes syntax checking of the site scripts and Node's test suite. The tes
 
 ## Known architectural debt
 
-This was a **conservative extraction**, not a full modular redesign. In particular, `site-assembly.js` still contains a very large `setupAssemblyTrees()` closure with nested UI and data-flow logic. Breaking up that closure safely requires:
+A previous broad source-file extraction was reverted after a production startup failure. The current implementation uses a **conservative pure-function extraction** for BOM selection only, not a full modular redesign. In particular, `site.js` still contains a very large `setupAssemblyTrees()` closure with nested UI and data-flow logic. Breaking up that closure safely requires:
 - naming its state and passing dependencies explicitly;
 - extracting pure assembly/BOM calculations and unit-testing them;
 - isolating tree navigation, workspace UI, part details, and persistence;
