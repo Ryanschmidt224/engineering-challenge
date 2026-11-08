@@ -800,7 +800,18 @@ function setupAssemblyTrees(){
    if(newParent===id||wouldCycle(id,newParent)||isPartNode(nodes.find(n=>n.id===newParent)))throw Error("Cannot move an assembly inside a part or one of its descendants.");
    if(node.parentId===newParent)return;
    const next=nodes.map(n=>n.id===id?{...n,parentId:newParent}:n);
-   await save(next);expanded.add(newParent);if(isPartNode(node)){openTreePart({...node,parentId:newParent});status.textContent="Part moved."}else{selected=id;render();notify();status.textContent="Subassembly moved."}
+   await save(next);expanded.add(newParent);
+   if(isPartNode(node)){
+    let warning="";
+    try{
+     const response=await fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"});
+     const data=await response.json();if(!response.ok)throw Error(data.error||"Could not load part");
+     const part=data.components?.find(item=>item.id===node.partId);if(!part)throw Error("Linked BOM part not found");
+     const update=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({...part,assemblyId:newParent})});
+     const result=await update.json();if(!update.ok)throw Error(result.error||"Unable to update BOM parent");
+    }catch(error){warning=" Tree moved, but BOM parent could not be updated: "+error.message}
+    openTreePart({...node,parentId:newParent});status.textContent="Part moved."+warning;
+   }else{selected=id;render();notify();status.textContent="Subassembly moved."}
   }
   async function moveToChoice(){
    if(selected===null){status.textContent="Select a subassembly first.";return}
