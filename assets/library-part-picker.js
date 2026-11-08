@@ -15,7 +15,7 @@ function recommend(voltage,current,length,dropPercent=3){
 function open({onCreate,bomOnly=false}){
  return new Promise(resolve=>{
  const dialog=el("dialog","library-part-dialog"),form=el("form","library-part-form");form.method="dialog";
- const heading=el("h2","",bomOnly?"New non-inventory part":"New feature-tree part"),subtitle=el("p","muted",bomOnly?"Create a BOM-only material or consumable. It will not appear in the feature tree.":"Enter the details for any part, whether purchased or made, or choose a reusable part or wire configuration.");
+ const heading=el("h2","",bomOnly?"New BOM-only part":"New feature-tree part"),subtitle=el("p","muted",bomOnly?"Create a BOM-only material or consumable. It will not appear in the feature tree.":"Enter the details for any part, whether purchased or made, or choose a reusable part or wire configuration.");
  const mode=field("How would you like to add this part?","select");option(mode.input,"custom","Enter part details");option(mode.input,"library","Choose from saved parts / wire tools");
  const customName=field("Part name");
  const chooser=el("div","library-picker-section hide");
