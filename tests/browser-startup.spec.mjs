@@ -49,6 +49,13 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(rows.nth(1)).toContainText("20A ESC");
  await expect(page.locator("#launcher .assembly-sidebar .bom-view-switch")).toHaveCount(0);
  await expect(bomList.locator(".bom-row-thumbnail")).toHaveCount(0);
+ // Legacy component UI must not create a second, competing BOM listing.
+ const legacyLists=page.locator("#launcher .assembly-sidebar .workspace-bom .component-section > .component-list");
+ const legacyCount=await legacyLists.count();
+ for(let i=0;i<legacyCount;i++)await expect(legacyLists.nth(i)).toBeHidden();
+ const legacyEditor=page.locator("#launcher .assembly-sidebar .workspace-bom .component-admin");
+ if(await legacyEditor.count())await expect(legacyEditor.first()).toBeHidden();
+
  await expect(rows.first().locator(".bom-part-name")).toBeVisible();
  await expect(rows.first().locator(".bom-part-meta")).toContainText("Qty 2");
  // A readable part row still opens its expanded details.
