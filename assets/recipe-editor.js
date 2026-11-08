@@ -1,180 +1,152 @@
-/* Discrete recipe editor and learner-controlled instructions.
-   The workspace API owns persistence; this module never saves independently. */
+/* Discrete, progressively disclosed recipe steps. Existing API/schema unchanged. */
 (function(){
  "use strict";
- const make=(tag,className,text)=>{
-  const node=document.createElement(tag);
-  if(className)node.className=className;
-  if(text!==undefined)node.textContent=text;
-  return node;
- };
- const addButton=(label,handler,className="btn")=>{
-  const button=make("button",className,label);button.type="button";button.onclick=handler;return button;
- };
- const copyStep=step=>({id:step.id,title:step.title,standard:step.standard||"",detail:step.detail||"",kind:step.kind||"action"});
+ const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node};
+ const button=(label,fn,cls="btn")=>{const node=el("button",cls,label);node.type="button";node.onclick=fn;return node};
+ const normalize=x=>({id:x.id,title:x.title||"",standard:x.standard||"",detail:x.detail||"",kind:x.kind||"action"});
  const kinds=[["action","Action"],["inspection","Inspection"],["measurement","Measurement"],["explanation","Explanation"]];
+ const newId=()=>crypto?.randomUUID?.()||"step_"+Date.now()+"_"+Math.random().toString(36).slice(2);
  function mount(article,options={}){
   if(!article)return null;
-  const panel=make("section","recipe-editor");
-  const head=make("div","recipe-heading"),headline=make("h3","","Recipe steps");
-  const subtitle=make("p","muted","One action per step. Learners choose how much detail to see.");
-  const actions=make("div","recipe-heading-actions");
-  const toggle=addButton("Edit recipe",()=>{if(!isAdmin()){feedback.textContent="Sign in as administrator to edit recipe steps.";return}editing=!editing;render()},"btn");
-  actions.append(toggle);head.append(headline,actions);
-  const content=make("div","recipe-content");
-  panel.append(head,subtitle,content);
-  const instruction=article.querySelector("textarea");
-  if(instruction){
-   const legacy=make("details","recipe-legacy");
-   const summary=make("summary","","Original written instructions");
-   const hint=make("p","muted","These are preserved separately. You can copy them into recipe steps whenever you choose.");
-   instruction.before(legacy);legacy.append(summary,hint,instruction);
+  const panel=el("section","recipe-editor recipe-compact"),content=el("div","recipe-content"),feedback=el("p","recipe-feedback muted");
+  panel.append(content,feedback);
+  const original=article.querySelector("textarea");
+  let legacy=null;
+  if(original){
+   legacy=el("details","recipe-legacy");
+   legacy.append(el("summary","","Previous written instructions"));
+   original.before(legacy);legacy.append(original);
    article.querySelector("h2")?.after(panel);
   }else article.append(panel);
-  let preferred="standard";
-  try{const stored=localStorage.getItem("bs-recipe-detail");if(["brief","standard","detailed"].includes(stored))preferred=stored}catch{}
-  let steps=[],editing=false,selectedStep=0,level=preferred,dirty=false;
-  const isAdmin=()=>!!options.admin?.();
-  const noteChange=()=>{dirty=true;options.onChange?.();};
-  const textfield=(value,placeholder,onChange,rows=0)=>{
-   const field=make(rows?"textarea":"input","field recipe-input");
+  const admin=()=>!!options.admin?.();
+  let steps=[],expanded=null,dirty=false,level="standard";
+  try{const saved=localStorage.getItem("bs-recipe-detail");if(["brief","standard","detailed"].includes(saved))level=saved}catch{}
+  const changed=()=>{dirty=true;options.onChange?.()};
+  const saveHint=()=>{feedback.textContent="Step edited. Use Save instructions below to keep your changes."};
+  const editField=(value,placeholder,onValue,rows=0)=>{
+   const field=el(rows?"textarea":"input","field recipe-input");
    if(rows)field.rows=rows;else field.type="text";
    field.value=value;field.placeholder=placeholder;
-   field.oninput=()=>{onChange(field.value);noteChange()};
+   field.oninput=()=>{onValue(field.value);changed();saveHint()};
    return field;
   };
-  const select=(value,onChange)=>{
-   const sel=make("select","field recipe-kind");
-   for(const [id,label] of kinds){const opt=make("option","",label);opt.value=id;sel.append(opt)}
-   sel.value=value;sel.onchange=()=>{onChange(sel.value);noteChange()};return sel;
-  };
-  const newId=()=>typeof crypto!=="undefined"&&crypto.randomUUID?crypto.randomUUID():"step_"+Date.now()+"_"+Math.random().toString(36).slice(2);
-  const levelButtons=(mount)=>{
-   const control=make("div","recipe-detail-controls");
-   control.append(make("span","muted","Detail"));
-   for(const [id,label] of [["brief","Brief"],["standard","Standard"],["detailed","Detailed"]]){
-    const btn=addButton(label,()=>{level=id;try{localStorage.setItem("bs-recipe-detail",id)}catch{}render()},"btn recipe-detail-button"+(level===id?" active":""));
-    btn.setAttribute("aria-pressed",String(level===id));
-    control.append(btn);
-   }
-   mount.append(control);
-  };
-  const selectedText=(element)=>{
+  const selectedText=area=>{
    const selection=window.getSelection?.();
    if(!selection||selection.isCollapsed)return "";
    const text=String(selection).trim();
-   if(!text||text.length>220)return "";
-   const range=selection.getRangeAt(0);
-   if(!element.contains(range.commonAncestorContainer))return "";
+   if(!text||text.length>220||!area.contains(selection.getRangeAt(0).commonAncestorContainer))return "";
    return text;
   };
-  function renderBuilder(target){
-   const layout=make("div","recipe-builder");
-   if(!steps.length){layout.append(make("p","muted","No recipe steps yet. Add your first step below."))}
-   for(let index=0;index<steps.length;index++){
-    const step=steps[index],card=make("article","recipe-edit-step");
-    const bar=make("div","recipe-step-toolbar");
-    bar.append(make("strong","",String(index+1)+". "+(step.title||"Untitled")));
-    const controls=make("div","recipe-edit-controls");
-    const move=(direction)=>{const targetIndex=index+direction;if(targetIndex<0||targetIndex>=steps.length)return;[steps[index],steps[targetIndex]]=[steps[targetIndex],steps[index]];selectedStep=targetIndex;noteChange();render()};
-    const up=addButton("↑",()=>move(-1),"btn");up.title="Move step up";up.disabled=index===0;
-    const down=addButton("↓",()=>move(1),"btn");down.title="Move step down";down.disabled=index===steps.length-1;
-    const duplicate=addButton("Duplicate",()=>{steps.splice(index+1,0,{...copyStep(step),id:newId()});noteChange();render()});
-    const remove=addButton("Remove",()=>{if(!window.confirm("Remove this recipe step?"))return;steps.splice(index,1);selectedStep=Math.min(selectedStep,Math.max(0,steps.length-1));noteChange();render()});
-    const grip=make("span","recipe-drag-handle","⠿");
-    grip.draggable=true;grip.title="Drag to reorder";grip.setAttribute("aria-label","Drag step to reorder");
-    grip.addEventListener("dragstart",event=>{event.dataTransfer.setData("text/plain",step.id);event.dataTransfer.effectAllowed="move"});
-    card.addEventListener("dragover",event=>{if(!event.dataTransfer.types.includes("text/plain"))return;event.preventDefault();card.classList.add("recipe-drag-over")});
-    card.addEventListener("dragleave",()=>card.classList.remove("recipe-drag-over"));
-    card.addEventListener("drop",event=>{
-     event.preventDefault();card.classList.remove("recipe-drag-over");
-     const sourceId=event.dataTransfer.getData("text/plain");
-     const source=steps.findIndex(item=>item.id===sourceId);
-     if(source<0||source===index)return;
-     const [moved]=steps.splice(source,1);
-     const at=steps.findIndex(item=>item.id===step.id);
-     steps.splice(at,0,moved);selectedStep=at;noteChange();render();
-    });
-    controls.prepend(grip);
-    controls.append(up,down,duplicate,remove);bar.append(controls);card.append(bar);
-    const fields=make("div","recipe-step-fields");
-    const title=make("label","","Action / short title");
-    title.append(textfield(step.title,"e.g. Strip 6 mm of insulation",v=>{step.title=v;bar.querySelector("strong").textContent=String(index+1)+". "+v}));
-    const kind=make("label","","Step type");kind.append(select(step.kind,v=>step.kind=v));
-    const standard=make("label","recipe-wide-field","Standard instructions (optional)");
-    standard.append(textfield(step.standard,"Describe how to perform this action.",v=>step.standard=v,3));
-    const detail=make("label","recipe-wide-field","Extra guidance (optional)");
-    detail.append(textfield(step.detail,"Add the extra steps, checks or context a beginner might need.",v=>step.detail=v,3));
-    fields.append(title,kind,standard,detail);card.append(fields);layout.append(card);
-   }
-   const add=addButton("+ Add step",()=>{steps.push({id:newId(),title:"New step",standard:"",detail:"",kind:"action"});selectedStep=steps.length-1;noteChange();render();content.querySelector(".recipe-edit-step:last-of-type input")?.focus()},"btn primary");
-   const importExisting=addButton("Import original instructions",()=>{
-    const raw=instruction?.value?.trim()||"";
-    if(!raw)return;
-    if(steps.length&&!confirm("Add the original written instructions as more steps? Existing recipe steps will be kept."))return;
-    const chunks=raw.split(/\n\s*\n|\n(?=\s*\d+[.)]\s)/).map(x=>x.trim().replace(/^\d+[.)]\s*/,"")).filter(Boolean);
-    for(const chunk of chunks)steps.push({id:newId(),title:chunk.split("\n")[0].slice(0,120),standard:chunk,detail:"",kind:"action"});
-    noteChange();render();
-   });
-   importExisting.disabled=!instruction?.value?.trim();
-   const footer=make("div","recipe-edit-footer");footer.append(add,importExisting);layout.append(footer);
-   target.append(layout);
-  }
-  function renderBuild(target){
-   try{const saved=localStorage.getItem("bs-recipe-detail");if(["brief","standard","detailed"].includes(saved))level=saved}catch{}
-   const body=make("section","recipe-builder-view");
-   if(!steps.length){
-    body.append(make("p","muted","No recipe steps yet. Existing written instructions remain available below."));
-    target.append(body);return;
-   }
-   selectedStep=Math.max(0,Math.min(selectedStep,steps.length-1));
-   levelButtons(body);
-   const current=steps[selectedStep],bar=make("div","recipe-reader-heading");
-   bar.append(make("span","muted","Step "+(selectedStep+1)+" of "+steps.length));
-   bar.append(make("span","recipe-step-type",kinds.find(x=>x[0]===current.kind)?.[1]||"Action"));
-   body.append(bar);
-   body.append(make("h4","recipe-reader-title",current.title));
-   const selectedArea=make("div","recipe-reader-text");
-   let highlightedText="";
-   if(level!=="brief"&&current.standard?.trim())selectedArea.append(make("p","",current.standard));
-   if(level==="detailed"&&current.detail?.trim())selectedArea.append(make("p","",current.detail));
-   if(!selectedArea.childElementCount&&level!=="brief")selectedArea.append(make("p","muted","No additional guidance for this step."));
-   const captureSelection=()=>{highlightedText=selectedText(selectedArea)||selectedText(body)||highlightedText};
-   selectedArea.addEventListener("mouseup",captureSelection);
-   selectedArea.addEventListener("keyup",captureSelection);
-   body.append(selectedArea);
-   const explain=addButton("Please explain this",()=>{
-    const text=selectedText(selectedArea)||selectedText(body)||highlightedText;
-    if(!text){feedback.textContent="Highlight a word or phrase in the instructions first.";return}
-    feedback.textContent="";
-    const context={stepId:current.id,stepTitle:current.title,fullText:current.standard+"\n"+current.detail};
-    if(typeof window.BSExplainText==="function")window.BSExplainText(text,context);
-    else feedback.textContent="Explanation lookup isn't available yet.";
-   },"btn recipe-explain");
-   body.append(explain);
-   body.append(make("p","recipe-selection-hint muted","Highlight any phrase above, then choose Please explain this."));
-   const nav=make("div","recipe-reader-nav");
-   const previous=addButton("← Previous",()=>{selectedStep--;render()}),next=addButton("Next →",()=>{selectedStep++;render()},"btn primary");
-   previous.disabled=selectedStep===0;next.disabled=selectedStep===steps.length-1;
-   nav.append(previous,next);body.append(nav);
-   target.append(body);
-  }
-  const feedback=make("p","recipe-feedback muted");panel.append(feedback);
+  const move=(index,offset)=>{
+   const destination=index+offset;if(destination<0||destination>=steps.length)return;
+   [steps[index],steps[destination]]=[steps[destination],steps[index]];
+   expanded=steps[destination].id;changed();saveHint();render();
+  };
   function render(){
-   toggle.classList.remove("hide");
-   toggle.textContent=editing?"View recipe":"Edit recipe";
    content.replaceChildren();
-   if(editing&&isAdmin())renderBuilder(content);else renderBuild(content);
+   const hasDetail=steps.some(s=>s.standard?.trim()||s.detail?.trim());
+   if(hasDetail){
+    const preferences=el("div","recipe-detail-controls");
+    preferences.append(el("span","muted","Show"));
+    for(const [key,label] of [["brief","Brief"],["standard","Standard"],["detailed","Detailed"]]){
+     const choice=button(label,()=>{level=key;try{localStorage.setItem("bs-recipe-detail",key)}catch{}render()},"btn recipe-detail-button"+(key===level?" active":""));
+     choice.setAttribute("aria-pressed",String(key===level));preferences.append(choice);
+    }
+    content.append(preferences);
+   }
+   for(let i=0;i<steps.length;i++){
+    const step=steps[i],card=el("details","recipe-one-step");
+    card.dataset.stepId=step.id;card.open=expanded===step.id;
+    const summary=el("summary","recipe-one-step-summary");
+    const name=el("span","recipe-one-step-title",(i+1)+". "+(step.title||"Untitled step"));
+    summary.append(name);
+    if(step.kind!=="action")summary.append(el("small","recipe-kind-caption",kinds.find(k=>k[0]===step.kind)?.[1]||step.kind));
+    card.append(summary);
+    card.addEventListener("toggle",()=>{if(card.open)expanded=step.id;else if(expanded===step.id)expanded=null});
+    const body=el("div","recipe-one-step-body");
+    if(admin()){
+     const title=el("label","recipe-one-field","Step");
+     const nameInput=editField(step.title,"Describe the action",v=>{step.title=v;name.textContent=(i+1)+". "+(v||"Untitled step")});
+     nameInput.maxLength=180;title.append(nameInput);body.append(title);
+     const optional=(property,label,placeholder)=>{
+      const present=!!step[property]?.trim();
+      if(present){
+       const fieldLabel=el("label","recipe-one-field",label);
+       const input=editField(step[property],placeholder,v=>step[property]=v,3);
+       input.maxLength=property==="standard"?4000:8000;
+       fieldLabel.append(input);body.append(fieldLabel);
+       const clear=button("Remove "+label.toLowerCase(),()=>{step[property]="";changed();saveHint();render()},"btn recipe-small-action");
+       body.append(clear);
+      }else{
+       body.append(button("+ Add "+label.toLowerCase(),()=>{
+        const fieldLabel=el("label","recipe-one-field",label);
+        const input=editField("",placeholder,v=>step[property]=v,3);
+        input.maxLength=property==="standard"?4000:8000;
+        fieldLabel.append(input);
+        // Replace this single optional action with its editor without re-rendering the step.
+        fieldLabel.dataset.property=property;
+        const action=[...body.querySelectorAll("button")].find(b=>b.dataset.addField===property);
+        action?.replaceWith(fieldLabel);input.focus();
+       },"btn recipe-small-action"));
+       body.lastElementChild.dataset.addField=property;
+      }
+     };
+     optional("standard","Instructions","How to perform this action");
+     optional("detail","Extra guidance","Optional clarification for learners who want more detail");
+     if(step.kind!=="action"){
+      const kind=el("label","recipe-one-field","Type"),select=el("select","field");
+      for(const [value,label] of kinds){const option=el("option","",label);option.value=value;select.append(option)}
+      select.value=step.kind;select.onchange=()=>{step.kind=select.value;changed();saveHint();render()};
+      kind.append(select);body.append(kind);
+     }else{
+      const setType=button("+ Set step type",()=>{step.kind="inspection";changed();saveHint();render()},"btn recipe-small-action");
+      body.append(setType);
+     }
+     const actions=el("div","recipe-edit-controls");
+     const up=button("↑",()=>move(i,-1));up.disabled=i===0;up.title="Move up";
+     const down=button("↓",()=>move(i,1));down.disabled=i===steps.length-1;down.title="Move down";
+     const duplicate=button("Duplicate",()=>{const copy={...normalize(step),id:newId()};steps.splice(i+1,0,copy);expanded=copy.id;changed();saveHint();render()});
+     const remove=button("Remove",()=>{if(!confirm("Remove this step?"))return;steps.splice(i,1);expanded=null;changed();saveHint();render()});
+     actions.append(up,down,duplicate,remove);body.append(actions);
+    }else{
+     const displayed=el("div","recipe-reader-text");
+     if(level!=="brief"&&step.standard.trim())displayed.append(el("p","",step.standard));
+     if(level==="detailed"&&step.detail.trim())displayed.append(el("p","",step.detail));
+     if(displayed.childElementCount){
+      body.append(displayed);
+      let highlighted="";
+      displayed.addEventListener("mouseup",()=>{highlighted=selectedText(displayed)||highlighted});
+      displayed.addEventListener("keyup",()=>{highlighted=selectedText(displayed)||highlighted});
+      body.append(button("Please explain this",()=>{
+       const selected=selectedText(displayed)||highlighted;
+       if(!selected){feedback.textContent="Highlight an instruction phrase first.";return}
+       if(window.BSExplainText)window.BSExplainText(selected,{stepId:step.id,stepTitle:step.title,fullText:step.standard+"\n"+step.detail});
+      },"btn recipe-explain"));
+     }
+    }
+    card.append(body);content.append(card);
+   }
+   if(admin()){
+    const add=button("+ Add step",()=>{
+     const item={id:newId(),title:"",standard:"",detail:"",kind:"action"};
+     steps.push(item);expanded=item.id;changed();saveHint();render();
+     const newCard=[...content.querySelectorAll(".recipe-one-step")].find(x=>x.dataset.stepId===item.id);
+     newCard?.querySelector("input")?.focus();
+    },"btn recipe-add-step");
+    content.append(add);
+   }
+   if(legacy){
+    const hasLegacy=!!original?.value?.trim();
+    legacy.classList.toggle("hide",!hasLegacy);
+   }
   }
   function setData(data){
-   steps=Array.isArray(data?.recipe)?data.recipe.map(copyStep):[];
-   selectedStep=0;editing=false;dirty=false;feedback.textContent="";
-   const legacy=panel.parentElement?.querySelector(".recipe-legacy");
-   if(legacy)legacy.open=!steps.length&&!!instruction?.value?.trim();
+   steps=Array.isArray(data?.recipe)?data.recipe.map(normalize):[];
+   dirty=false;expanded=null;feedback.textContent="";
    render();
   }
   render();
-  return {setData,getData:()=>steps.map(copyStep),isDirty:()=>dirty,render};
+  return {setData,getData:()=>steps.map(normalize),isDirty:()=>dirty,render};
  }
  window.BSRecipes={mount};
 })();
