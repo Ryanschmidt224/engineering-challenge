@@ -49,7 +49,7 @@ export async function handleComponents(request,env){
   if(!price)return json({error:"Historical price must be a nonnegative USD amount (2 decimals) with a valid recorded date"},400);
   const amount=quantityData(input);if(!amount)return json({error:"Quantity must be a positive number or blank, with a valid unit"},400);
   const clean=s=>String(s??"").slice(0,300);
-  const record={assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,id:crypto.randomUUID(),name:clean(input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
+  const record={assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,bomOnly:input.bomOnly===true,id:crypto.randomUUID(),name:clean(input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
   const items=await read(env,project);if(items.length>=300)return json({error:"Component limit reached"},400);items.push(record);await env.PHOTOS.put(key(project),JSON.stringify(items));return json({component:record},201);
  }
  if(request.method==="PUT"){
@@ -64,6 +64,7 @@ export async function handleComponents(request,env){
 
   const amount=quantityData(input,previous);if(!amount)return json({error:"Quantity must be a positive number or blank, with a valid unit"},400);
   const updated={...previous,name:clean(input.name.trim()),...amount,historicalPrice:price.price,historicalPriceDate:price.date};
+  // BOM-only classification persists through normal edits. Only a dedicated move action may change it.
   if(Object.prototype.hasOwnProperty.call(input,"assemblyId")){
    if(input.assemblyId!==null&&!(typeof input.assemblyId==="string"&&/^[a-zA-Z0-9-]{1,80}$/.test(input.assemblyId)))return json({error:"Invalid parent assembly"},400);
    updated.assemblyId=input.assemblyId;
