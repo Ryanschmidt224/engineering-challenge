@@ -575,9 +575,12 @@ function setupAssemblyTrees(){
    };
    return button;
   }
+  let shopPanelExpanded=false;
   function shopMaterialsPanel(items){
    if(!items.length)return null;
    const section=document.createElement("details");section.className="bom-shop-materials";
+   section.open=shopPanelExpanded;
+   section.addEventListener("toggle",()=>{shopPanelExpanded=section.open});
    const summary=document.createElement("summary");
    summary.textContent="Standard shop materials · "+items.length+" item"+(items.length===1?"":"s")+" (assumed available)";
    const description=document.createElement("p");description.className="muted bom-shop-note";
@@ -590,6 +593,11 @@ function setupAssemblyTrees(){
     name.onclick=()=>openPartInstructions(part.generatedFrom?{id:part.generatedFrom}:part,part.assemblyId??null);
     const quantity=document.createElement("span");quantity.className="bom-shop-qty";quantity.textContent=materialQuantity(part);
     row.append(name,quantity);
+    if(part.workshopChoice){
+     const selected=document.createElement("span");selected.className="bom-workshop-selected";
+     selected.textContent="Selected: "+(window.BSResources?.all("parts").find(x=>x.id===part.workshopChoice)?.name||"Workshop standard");
+     row.append(selected);
+    }
     row.append(workshopLink(part));
     const change=preferenceButton(part);if(change)row.append(change);
     rows.append(row);
