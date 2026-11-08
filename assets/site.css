@@ -1616,3 +1616,58 @@
 @media(hover:none), (pointer:coarse){
  .assembly-node .assembly-row-menu-trigger{display:block}
 }
+
+
+/* Consistent assembly-page gutters and motion-free tree interactions.
+ * The workspace has an extra 9px splitter column, so 7px gaps on either
+ * side produce the same ~22px sidebar/content clearance as overview pages. */
+@media(min-width:1100px){
+ #launcher .assembly-layout,
+ #linear .assembly-layout,
+ #robot .assembly-layout{
+  column-gap:22px;
+ }
+ #launcher .assembly-layout:has(>.assembly-sidebar.bom-sidebar-active),
+ #linear .assembly-layout:has(>.assembly-sidebar.bom-sidebar-active),
+ #robot .assembly-layout:has(>.assembly-sidebar.bom-sidebar-active){
+  column-gap:7px;
+ }
+}
+/* Do not insert a menu button on hover. Keep its layout width stable and
+ * reveal with opacity, preventing adjacent names from shifting or reflowing. */
+.assembly-node .assembly-row-menu-trigger{
+ display:block;
+ visibility:hidden;
+ opacity:0;
+ width:23px;
+ min-width:23px;
+ flex:0 0 23px;
+ padding:2px 4px!important;
+ transition:none!important;
+ transform:none!important;
+}
+.assembly-node:hover .assembly-row-menu-trigger,
+.assembly-node:focus-within .assembly-row-menu-trigger{
+ display:block;
+ visibility:visible;
+ opacity:1;
+}
+.assembly-node,
+.assembly-node .assembly-name,
+.assembly-node .assembly-expander,
+.assembly-node .assembly-row-menu-trigger,
+.assembly-sidebar .assembly-edit .btn,
+.assembly-content .btn{
+ transform:none!important;
+ transition:none!important;
+ animation:none!important;
+}
+.assembly-page .btn:hover{
+ filter:none;
+}
+@media(hover:none),(pointer:coarse){
+ .assembly-node .assembly-row-menu-trigger{
+  visibility:visible;
+  opacity:1;
+ }
+}
