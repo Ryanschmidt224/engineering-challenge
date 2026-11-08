@@ -1003,7 +1003,7 @@
  transition:background .15s ease,border-color .15s ease;
  overflow-wrap:anywhere;
 }
-.assembly-workspace-page .workspace-saved-parts .bom-compact-list tbody tr:nth-child(even) td{background:#203a48}
+.assembly-workspace-page .workspace-saved-parts .bom-compact-list tbody tr:nth-child(even):not(:has(td[colspan])) td{background:#203a48}
 .assembly-workspace-page .workspace-saved-parts .bom-compact-list tbody tr:hover td{
  background:#274d59;
  border-color:#5e9eaa;
