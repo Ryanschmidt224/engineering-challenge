@@ -7,9 +7,10 @@
  const allowed=(project,key)=>[
   project+"/","assembly-pages/"+project+"/","workspaces/"+project+"/",
   "part-workspaces/"+project+"/","harnesses/"+project+"/","drawings/"+project+"/",
-  "component-thumbnails/"+project+"/"
+  "component-thumbnails/"+project+"/",
+  "part-files/"+project+"/","part-pages/"+project+"/"
  ].some(prefix=>key.startsWith(prefix))||
- ["trees/"+project+".json","components/"+project+".json","libraries/wires.json","libraries/common-parts.json"].includes(key);
+ ["trees/"+project+".json","components/"+project+".json","libraries/wires.json","libraries/common-parts.json","libraries/purchased-parts.json"].includes(key);
  async function inspect(file,project){
   if(!supported.has(project))throw Error("Unknown project");
   if(!window.crypto?.subtle)throw Error("A secure browser connection is required for checksum verification");
