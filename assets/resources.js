@@ -101,7 +101,7 @@
   const onLibraryUpdate=()=>render();listeners.add(onLibraryUpdate);
   function render(){
    body.replaceChildren();
-   const kinds=[["tools","Tool","Tools"],["calculators","Calculator","Calculators"],["parts","Part from library","Common Parts"]];
+   const kinds=[["tools","Tool","Tools"],["calculators","Calculator","Calculators"],["parts","Part from library","Library Parts"]];
    for(const [kind,singular,section] of kinds){
     const group=element("div","linked-resource-group");
     group.append(element("h3","",section));
@@ -198,7 +198,7 @@
   const form=document.querySelector(".resource-common-form");if(!form)return;
   editingCommonId=part?.id||null;
   for(const [key] of commonFields)form.querySelector('[data-common-field="'+key+'"]').value=part?.[key]||(key==="category"?"screws":"");
-  form.querySelector(".resource-common-form-title").textContent=editingCommonId?"Edit common part":"New common part";
+  form.querySelector(".resource-common-form-title").textContent=editingCommonId?"Edit library part":"New library part";
   form.classList.remove("hide");form.querySelector('[data-common-field="name"]').focus();
  }
  function initCommonForm(){
@@ -253,7 +253,7 @@
   }catch(error){
    initialized=false;
    console.error("Shared resource pages did not initialize:",error);
-   for(const [id,label] of [["resource-tools","Tools"],["resource-calculators","Calculators"],["resource-commonparts","Common Parts"]]){
+   for(const [id,label] of [["resource-tools","Tools"],["resource-calculators","Calculators"],["resource-commonparts","Library Parts"]]){
     const panel=document.getElementById(id);
     if(panel&&!panel.children.length)panel.textContent=label+" could not load. Refresh the page or report the browser console error.";
    }
