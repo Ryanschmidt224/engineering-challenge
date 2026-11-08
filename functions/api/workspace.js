@@ -1,5 +1,5 @@
 import {isAdmin} from "./auth.js";
-const projects=new Set(["launcher","linear","robot"]);
+const projects=new Set(["launcher","linear","robot","buck","motorlab","coiltest"]);
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});
 const emptyResources=()=>({tools:[],calculators:[],parts:[]});
 const validateResources=input=>{
