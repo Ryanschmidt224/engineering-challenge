@@ -20,6 +20,13 @@ function open({onCreate}){
  const customName=field("Part name");
  const chooser=el("div","library-picker-section hide");
  const category=field("Category","select");option(category.input,"wire","Wire & cable");option(category.input,"components","Fasteners, converters & other library parts");
+ const workflow=el("div","wire-workflow-choice");
+ const manualButton=el("button","btn","Manual Entry");manualButton.type="button";
+ const wizardButton=el("button","btn","Wire Wizard");wizardButton.type="button";
+ workflow.append(manualButton,wizardButton);
+ const manualFields=el("div","wire-manual-fields hide");
+ const wizardFields=el("div","wire-wizard-fields hide");
+ const workflowHint=el("p","muted wire-workflow-hint","Choose Manual Entry to specify a wire, or Wire Wizard to calculate a preliminary size from your electrical requirements.");
  const wireType=field("Wire part type","select");option(wireType.input,"crimped","Crimped wire (wire assembly)");option(wireType.input,"raw","Wire / cable material");
  const search=field("Filter saved materials (name, AWG, construction)");
  search.input.placeholder="e.g. 18 AWG, stranded, black";
@@ -31,17 +38,22 @@ function open({onCreate}){
  const endB=field("End B termination");endB.input.placeholder="e.g. ferrule, JST crimp, bare";
  const qty=field("Quantity");qty.input.type="number";qty.input.min="1";qty.input.max="10000";qty.input.step="1";qty.input.value="1";
  const results=el("p","library-picker-hint muted","Wire templates are selectable without an existing saved wire; a matching wire material will be reused or created in the shared wire library.");
- const calc=el("details","wire-gauge-helper");
- calc.append(el("summary","","Wire gauge calculator · voltage drop"));
+ const calc=el("section","wire-gauge-helper");
+ calc.append(el("h3","","Wire Wizard · electrical requirements"));
  const calcGrid=el("div","wire-gauge-grid");
- const voltage=field("Supply voltage (V)");voltage.input.type="number";voltage.input.min="0.01";voltage.input.step="any";voltage.input.value="24";
- const current=field("Current (A)");current.input.type="number";current.input.min="0.001";current.input.step="any";current.input.value="2";
+ const voltage=field("DC supply voltage (V)");voltage.input.type="number";voltage.input.min="0.01";voltage.input.step="any";voltage.input.value="24";
+ const current=field("Maximum continuous current (A)");current.input.type="number";current.input.min="0.001";current.input.step="any";current.input.value="2";
  const run=field("One-way wire length (m)");run.input.type="number";run.input.min="0.001";run.input.step="any";run.input.value="1";
  const drop=field("Maximum voltage drop (%)");drop.input.type="number";drop.input.min="0.1";drop.input.max="20";drop.input.step="0.1";drop.input.value="3";
+ const useCase=field("Mechanical use","select");
+ option(useCase.input,"moving","Moving, flexible, or subject to vibration");
+ option(useCase.input,"stationary","Stationary, protected installation");
  const calcResult=el("div","wire-gauge-result");
- const apply=el("button","btn","Use suggested AWG");apply.type="button";apply.disabled=true;
- const calcNote=el("p","muted","Electrical estimate only: copper at 20°C, two-conductor DC round trip. Does not determine safe ampacity, insulation temperature rating, connector/crimp suitability, or regulatory compliance. Verify these separately; stranded conductors generally suit crimp terminals better than solid wire.");
- calcGrid.append(voltage.label,current.label,run.label,drop.label,calcResult,apply,calcNote);calc.append(calcGrid);
+ const apply=el("button","btn primary","Apply recommendation & review");apply.type="button";apply.disabled=true;
+ const wizardBack=el("button","btn","Back to choices");wizardBack.type="button";
+ const calcNote=el("p","muted","Preliminary DC copper voltage-drop sizing at 20°C, assuming equal outbound and return wire lengths. NOT an ampacity or safety rating. Before building, verify wire current rating, operating temperature, installation/bundling, insulation, and terminal/crimp compatibility against manufacturer specifications. Crimped and moving wires generally use stranded conductors.");
+ calcGrid.append(voltage.label,current.label,run.label,drop.label,useCase.label,calcResult,apply,wizardBack,calcNote);
+ calc.append(calcGrid);wizardFields.append(calc);
  const compSection=el("div","library-components hide");
  const commonCategory=field("Filter parts","select");[["all","All"],["screws","Fasteners"],["buck-converters","Buck converters"],["other","Other"]].forEach(([v,n])=>option(commonCategory.input,v,n));
  const commonSearch=field("Search saved library parts");commonSearch.input.placeholder="Search name, manufacturer, model";
@@ -50,11 +62,13 @@ function open({onCreate}){
  const status=el("p","library-dialog-status");status.setAttribute("role","status");
  const footer=el("div","library-dialog-actions"),save=el("button","btn primary","Create part"),cancel=el("button","btn","Cancel");
  save.type="submit";cancel.type="button";footer.append(cancel,save);
- const wireSection=el("div","library-wire-section");wireSection.append(wireType.label,search.label,material.label,gauge.label,construction.label,length.label,endA.label,endB.label,results,calc);
+ const wireSection=el("div","library-wire-section");
+ manualFields.append(wireType.label,search.label,material.label,gauge.label,construction.label,length.label,endA.label,endB.label,results);
+ wireSection.append(workflow,workflowHint,manualFields,wizardFields);
  chooser.append(category.label,wireSection,compSection);
  form.append(heading,subtitle,mode.label,customName.label,chooser,qty.label,status,footer);
  dialog.append(form);document.body.append(dialog);
- let wires=[],commons=[],selectedRecommendation=null,finished=false;
+ let wires=[],commons=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
  cancel.onclick=()=>close(null);dialog.addEventListener("cancel",e=>{e.preventDefault();close(null)});
  const selectedWire=()=>wires.find(w=>w.id===material.input.value)||null;
@@ -70,6 +84,18 @@ function open({onCreate}){
   commonSelect.input.replaceChildren();option(commonSelect.input,"",filtered.length?"Select a saved part":"No saved parts match this filter");
   filtered.forEach(p=>option(commonSelect.input,p.id,p.name+(p.partNumber?" · "+p.partNumber:"")));
  };
+ const selectWorkflow=value=>{
+  wireWorkflow=value;
+  manualFields.classList.toggle("hide",value!=="manual");
+  wizardFields.classList.toggle("hide",value!=="wizard");
+  workflowHint.classList.toggle("hide",value!==null);
+  manualButton.classList.toggle("primary",value==="manual");
+  wizardButton.classList.toggle("primary",value==="wizard");
+  update();
+ };
+ manualButton.onclick=()=>selectWorkflow("manual");
+ wizardButton.onclick=()=>{selectWorkflow("wizard");updateCalc()};
+ wizardBack.onclick=()=>selectWorkflow(null);
  const update=()=>{
   const lib=mode.input.value==="library",wire=category.input.value==="wire";
   customName.label.classList.toggle("hide",lib);
@@ -78,7 +104,7 @@ function open({onCreate}){
   compSection.classList.toggle("hide",!lib||wire);
   const crimp=wireType.input.value==="crimped";
   for(const f of [length,endA,endB])f.label.classList.toggle("hide",!crimp);
-  calc.classList.toggle("hide",!lib||!wire);
+  save.classList.toggle("hide",lib&&wire&&wireWorkflow!=="manual");
  };
  const applyWire=()=>{
   const w=selectedWire();if(!w)return;
@@ -90,10 +116,19 @@ function open({onCreate}){
   const r=recommend(+voltage.input.value,+current.input.value,+run.input.value,+drop.input.value);
   selectedRecommendation=r?.chosen?.g??null;apply.disabled=selectedRecommendation===null;
   if(!r){calcResult.textContent="Enter positive voltage, current, wire length and voltage-drop percentage.";return}
-  calcResult.textContent=r.chosen?"Suggested by voltage drop: "+r.chosen.g+" AWG copper (estimated "+r.drop.toFixed(3)+" V drop, "+(100*r.drop/(+voltage.input.value)).toFixed(2)+"%). Verify ampacity and terminations.":"No gauge in this 24–8 AWG range meets the selected drop target. Increase conductor size, reduce length/current, or reassess the design.";
+  calcResult.textContent=r.chosen?"Preliminary recommendation: "+r.chosen.g+" AWG copper, "+(useCase.input.value==="moving"?"stranded / flexible":"solid for fixed, protected wiring (stranded also acceptable)")+". Estimated DC voltage drop "+r.drop.toFixed(3)+" V ("+(100*r.drop/(+voltage.input.value)).toFixed(2)+"%). This is not an ampacity check.":"No gauge in this 24–8 AWG range meets the selected voltage-drop target. Consider a larger wire, shorter run, or a different design.";
  }
  [voltage.input,current.input,run.input,drop.input].forEach(e=>e.addEventListener("input",updateCalc));
- apply.onclick=()=>{if(selectedRecommendation!==null){gauge.input.value=String(selectedRecommendation);material.input.value="";status.textContent="Applied "+selectedRecommendation+" AWG. Check ampacity and terminal compatibility before building."}};
+ useCase.input.onchange=updateCalc;
+ apply.onclick=()=>{
+  if(selectedRecommendation===null)return;
+  gauge.input.value=String(selectedRecommendation);
+  construction.input.value=useCase.input.value==="moving"?"stranded":"solid";
+  material.input.value="";
+  length.input.value=String(Math.max(1,Math.round(Number(run.input.value)*1000)));
+  selectWorkflow("manual");
+  status.textContent="Wizard applied "+selectedRecommendation+" AWG "+construction.input.value+" copper and "+length.input.value+" mm cut length. Review the wire and termination details before creating the part; ampacity is not verified.";
+ };
  mode.input.onchange=update;category.input.onchange=update;wireType.input.onchange=update;search.input.oninput=refreshMaterials;material.input.onchange=applyWire;gauge.input.onchange=()=>{material.input.value=""};construction.input.onchange=()=>{material.input.value=""};commonCategory.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
  form.addEventListener("submit",async e=>{
   e.preventDefault();
@@ -107,6 +142,7 @@ function open({onCreate}){
    const p=commons.find(p=>p.id===commonSelect.input.value);if(!p){status.textContent="Select a saved library part.";return}
    payload={name:p.name,quantity:count,manufacturer:p.manufacturer||"",model:p.partNumber||"",category:p.category||"Library part",specifications:[{name:"Library part ID",value:p.id},{name:"Library specifications",value:p.specifications||"Shared library component"}]};
   }else{
+   if(wireWorkflow!=="manual"){status.textContent="Choose Manual Entry or apply the Wire Wizard recommendation first.";return}
    const g=Number(gauge.input.value),str=construction.input.value,crimp=wireType.input.value==="crimped";
    const mm=Number(length.input.value);
    if(crimp&&(!Number.isFinite(mm)||mm<=0||mm>1000000)){status.textContent="Enter a valid cut length between 1 and 1,000,000 mm.";return}
