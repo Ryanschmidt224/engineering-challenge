@@ -34,7 +34,7 @@ const standardShopMaterial=part=>{
  const category=String(part.category||"").toLowerCase();
  const generic=!String(part.manufacturer||"").trim()&&!String(part.model||"").trim();
  if(!generic)return false;
- if(part.generatedKind==="ferrule")return true;
+ if(part.generatedKind==="ferrule")return /\b(?:18|22)\s*awg\b/i.test(name);
  if(part.generatedKind==="wire")return /\b(?:18|22)\s*awg\b/i.test(name)&&!(part.specifications||[]).some(x=>String(x.name).toLowerCase()==="insulation"&&/silicone|other/i.test(x.value));
  if(/\bcrimped\s+wire\b/.test(name)||category.includes("crimped wire"))return false;
  if(/\b(?:solder|soldering wire|solder paste|heat[- ]?shrink|heat shrink tubing)\b/.test(name)&&!/\b(?:sucker|desolder(?:ing)?|iron|station|tool|pump|wick|extractor)\b/.test(name))return true;
