@@ -629,7 +629,8 @@ function setupAssemblyTrees(){
      const groups=new Map();
      for(const p of items){
       // Distinct specifications must not be accidentally combined (e.g. wire lengths).
-      const signature=(p.sharedPartRef||p.name.toLowerCase())+"|"+(p.model||"")+"|"+(p.quantityUnit||"")+"|"+JSON.stringify(p.specifications||[]);
+      const sameReusablePart=!!p.generatedKind||String(p.sharedPartRef||"").startsWith("common:");
+      const signature=(p.sharedPartRef||p.name.toLowerCase())+"|"+(p.model||"")+"|"+(p.quantityUnit||"")+(sameReusablePart?"":"|"+JSON.stringify(p.specifications||[]));
       let group=groups.get(signature);
       if(!group){group={name:p.name,model:p.model||"",unit:p.quantityUnit||"",qty:0,unknown:false,count:0};groups.set(signature,group)}
       group.count++;
@@ -882,7 +883,7 @@ function setupAssemblyTrees(){
        wireId=data.wire.id;
       }
      }
-     if(wireId&&!part.specifications.some(spec=>spec.name==="Library wire ID"))part.specifications.push({name:"Library wire ID",value:wireId,source:"explicit"});
+     if(wireId){part.sharedPartRef="wire:"+wireId;if(!part.specifications.some(spec=>spec.name==="Library wire ID"))part.specifications.push({name:"Library wire ID",value:wireId,source:"explicit"})}
      const response=await fetch("/api/components?project="+encodeURIComponent(project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({...part,assemblyId:targetAssembly,bomOnly:true})});
      const data=await response.json();if(!response.ok)throw Error(data.error||"Could not create BOM-only part");
      newPart=data.component;
@@ -1245,7 +1246,7 @@ function setupAssemblyTrees(){
       }
      }
      const {wireInfo,...part}=payload;
-     if(wireId)part.specifications.push({name:"Library wire ID",value:wireId,source:"explicit"});
+     if(wireId){part.sharedPartRef="wire:"+wireId;part.specifications.push({name:"Library wire ID",value:wireId,source:"explicit"})}
      const res=await fetch("/api/components?project="+encodeURIComponent(project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({assemblyId:selected,...part})});
      const data=await res.json();if(!res.ok)throw Error(data.error||"Unable to create part");
      newPart=data.component;
