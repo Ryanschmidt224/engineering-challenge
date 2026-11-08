@@ -129,15 +129,50 @@ function setupAssemblyTrees(){
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
   partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article><h2>Build instructions</h2><textarea class="field part-instructions" rows="9" placeholder="Build steps, tools, measurements and checks…"></textarea></article><article><h2>Recipes / procedures</h2><textarea class="field part-procedures" rows="5" placeholder="Settings and procedures…"></textarea></article><article><h2>Notes</h2><textarea class="field part-notes" rows="5" placeholder="Additional notes…"></textarea></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
   workspace.after(partWorkspace);
+  const partTools=document.createElement("div");partTools.className="part-workspace-tools";
+  partTools.innerHTML='<button type="button" class="btn part-workspace-edit">Edit part details</button><button type="button" class="btn part-workspace-picture">Add / change picture</button><input type="file" class="part-workspace-file" accept="image/jpeg,image/png,image/webp" hidden>';
+  partWorkspace.querySelector(".workspace-heading").after(partTools);
+  let currentPartInfo=null;
+  const partFile=partTools.querySelector(".part-workspace-file"),pictureButton=partTools.querySelector(".part-workspace-picture");
+  async function uploadPartPicture(file){
+   const partId=partRoute();if(!file||!partId)return;
+   const mime=file.type||({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"}[file.name.split(".").pop().toLowerCase()]||"");
+   if(!["image/jpeg","image/png","image/webp"].includes(mime)||file.size>3*1024*1024){partStatus.textContent="Choose JPG, PNG or WebP under 3 MB.";return}
+   pictureButton.disabled=true;partStatus.textContent="Uploading picture…";
+   try{
+    const response=await fetch(partPhotoUrl(partId),{method:"POST",credentials:"same-origin",headers:{"content-type":mime},body:file});
+    const data=await response.json();if(!response.ok)throw Error(data.error||"Upload failed");
+    const image=document.createElement("img");image.src=partPhotoUrl(partId)+"&v="+Date.now();image.alt=currentPartInfo?.name||"Part picture";
+    partWorkspace.querySelector(".part-workspace-cover").replaceChildren(image);partStatus.textContent="Picture saved.";
+   }catch(e){partStatus.textContent=e.message}finally{pictureButton.disabled=false;partFile.value=""}
+  }
+  pictureButton.onclick=()=>partFile.click();
+  partFile.onchange=()=>void uploadPartPicture(partFile.files?.[0]);
+  const pictureDrop=partWorkspace.querySelector(".part-workspace-cover");
+  pictureDrop.addEventListener("dragover",event=>{if(!adminAuthenticated||!event.dataTransfer.types.includes("Files"))return;event.preventDefault();pictureDrop.classList.add("is-dragover");event.dataTransfer.dropEffect="copy"});
+  pictureDrop.addEventListener("dragleave",()=>pictureDrop.classList.remove("is-dragover"));
+  pictureDrop.addEventListener("drop",event=>{if(!adminAuthenticated)return;event.preventDefault();pictureDrop.classList.remove("is-dragover");void uploadPartPicture(event.dataTransfer.files?.[0])});
+  partTools.querySelector(".part-workspace-edit").onclick=()=>{
+   const part=currentPartInfo;if(!part)return;
+   const linked=nodes.find(n=>isPartNode(n)&&n.partId===part.id);
+   selected=linked?linked.parentId:(part.assemblyId??null);
+   partBackAssembly=selected;
+   history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));
+   render();notify();
+   editBomPart(part,selected);
+   window.scrollTo(0,0);
+  };
+
   const partRoute=()=>location.hash.slice(1).match(new RegExp("^"+project+"/part/([0-9a-f-]{36})$","i"))?.[1]||null;
   let partLoadVersion=0,partBackAssembly=null;
   const partStatus=partWorkspace.querySelector(".part-workspace-status");
   async function showPartWorkspace(){
    const partId=partRoute();if(!partId)return;
    const version=++partLoadVersion;
+   partTools.classList.toggle("hide",!adminAuthenticated);
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
-   heading.textContent="Loading part…";partStatus.textContent="Loading instructions…";
+   heading.textContent="Loading part…";currentPartInfo=null;partStatus.textContent="Loading instructions…";
    cover.replaceChildren();
    const placeholder=document.createElement("span");placeholder.textContent="No picture yet";cover.append(placeholder);
    for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value="";
@@ -150,6 +185,7 @@ function setupAssemblyTrees(){
     const part=partData.components?.find(item=>item.id===partId);
     if(!part)throw Error("Part not found");
     heading.textContent=part.name;
+    currentPartInfo=part;
     if(partBackAssembly===null)partBackAssembly=part.assemblyId??null;
     for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value=data.workspace?.[name]||"";
     const img=document.createElement("img");img.alt=part.name;img.src=partPhotoUrl(partId);
