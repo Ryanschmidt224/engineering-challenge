@@ -23,7 +23,8 @@ function setupAssemblyTrees(){
   let detailVersion=0;
   // All project and subassembly pages now instantiate the exact same tile DOM.
   // Preserve the existing BOM widget (and its event handlers) when replacing root markup.
-  function createUnifiedTile(){
+  // ── Shared assembly/part tile rendering ──
+function createUnifiedTile(){
    const tile=detail.querySelector(".assembly-unified-tile").cloneNode(true);
    tile.querySelector(".assembly-photos").replaceChildren();
    tile.querySelector(".assembly-description").textContent="";
@@ -177,7 +178,8 @@ function setupAssemblyTrees(){
 
   // Optional progressive disclosure: the textarea remains the simplest authoring tool.
   // Steps, test logs and history never require separate forms or mandatory fields.
-  function installInstructionExtras(panel,prefix,onRestoreResources,onRestoreRecipe){
+  // ── Work-instruction integration and linked resources ──
+function installInstructionExtras(panel,prefix,onRestoreResources,onRestoreRecipe){
    const article=panel.querySelector(".recipe-instructions");
    const logDetails=document.createElement("details");logDetails.className="instruction-log";
    const logSummary=document.createElement("summary");logSummary.textContent="Experiments & decisions";
@@ -383,7 +385,8 @@ function setupAssemblyTrees(){
   }
   const partStatus=partWorkspace.querySelector(".part-workspace-status");
   let partSavedRevision=null;
-  async function showPartWorkspace(){
+  async // ── Part details workspace, specifications and files ──
+function showPartWorkspace(){
    const partId=partRoute();if(!partId)return;
    const version=++partLoadVersion;
    detailsPanel.querySelector(".part-details-view-actions").classList.toggle("hide",!adminAuthenticated);
@@ -467,7 +470,8 @@ function setupAssemblyTrees(){
     partStatus.textContent="Part instructions saved.";
    }catch(e){partStatus.textContent=e.message}finally{button.disabled=false}
   };
-  function openPartInstructions(part,originId){
+  // ── Part instruction routing ──
+function openPartInstructions(part,originId){
    partBackAssembly=selected;
    history.pushState(null,"","#"+project+"/part/"+encodeURIComponent(part.id));
    void showAssemblyPage();window.scrollTo(0,0);
@@ -558,7 +562,8 @@ function setupAssemblyTrees(){
   const partPhotoUrl=id=>"/api/components/photo?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id);
   // Local SVG fallback: always show a clear frowny face when a thumbnail is missing.
   const missingPicture="data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><rect width="160" height="160" rx="18" fill="#243642"/><circle cx="80" cy="80" r="53" fill="#667b87" stroke="#718894" stroke-width="3"/><circle cx="61" cy="70" r="5" fill="#354b57"/><circle cx="99" cy="70" r="5" fill="#354b57"/><path d="M54 108 Q80 87 106 108" fill="none" stroke="#354b57" stroke-width="6" stroke-linecap="round"/></svg>');
-  function makeBomThumbnail(url,alt){
+  // ── BOM presentation helpers, shop materials and part rows ──
+function makeBomThumbnail(url,alt){
    const image=document.createElement("img");image.className="bom-row-thumbnail";image.alt=alt||"Part picture";image.loading="lazy";
    image.onerror=()=>{image.onerror=null;image.src=missingPicture;image.classList.add("bom-thumbnail-empty");image.alt="Picture unavailable";};
    if(url)image.src=url;else{image.src=missingPicture;image.classList.add("bom-thumbnail-empty")}
@@ -792,7 +797,8 @@ function setupAssemblyTrees(){
    list.querySelectorAll(".bom-thumbnail-active").forEach(other=>other.classList.remove("bom-thumbnail-active"));
    entry.classList.add("bom-thumbnail-active");
   },true);
-  async function renderWorkspaceParts(){
+  async // ── Assembly BOM rendering: list view, thumbnails and rollups ──
+function renderWorkspaceParts(){
    const version=++bomDisplayVersion,assemblyId=selected,container=workspace.querySelector(".workspace-saved-parts");
    container.replaceChildren();
    const pending=document.createElement("p");pending.className="bom-count";pending.textContent="Loading saved parts…";container.append(pending);
@@ -938,7 +944,8 @@ function setupAssemblyTrees(){
    const el=bomRoot()?.querySelector(".component-status");
    if(el){el.textContent=message;el.hidden=false;el.style.display="block"}
   };
-  function clearBomDraft(){
+  // ── BOM-only part editing and save flow ──
+function clearBomDraft(){
    dismissBomEditor();
    extractedPictureUrl=null;
    editingPart=null;editingPartAssembly=null;
@@ -1123,7 +1130,8 @@ function setupAssemblyTrees(){
   let workspaceSavedRevision=null;
   const workspaceStatus=workspace.querySelector(".workspace-status");
   const workspaceUrl=()=>"/api/workspace?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(selected??"__root__");
-  async function loadWorkspace(){
+  async // ── Assembly workspace loading, routing and metadata ──
+function loadWorkspace(){
    const version=++workspaceLoadVersion,url=workspaceUrl();workspaceSavedRevision=null;workspaceStatus.textContent="Loading…";
    try{const res=await fetch(url,{credentials:"same-origin",cache:"no-store"});const data=await res.json();if(!res.ok)throw Error(data.error||"Unable to load workspace");
     if(version!==workspaceLoadVersion||url!==workspaceUrl())return;
@@ -1144,7 +1152,8 @@ function setupAssemblyTrees(){
   };
   function openWorkspace(){history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));showAssemblyPage();window.scrollTo(0,0)}
   workspace.querySelector(".workspace-back").onclick=()=>{history.pushState(null,"",selected===null?"#"+project:"#"+project+"/assembly/"+encodeURIComponent(selected));showAssemblyPage();window.scrollTo(0,0)};
-  async function showAssemblyPage(){
+  async // ── Assembly overview routing ──
+function showAssemblyPage(){
    const version=++detailVersion;
    const isAssembly=selected!==null;
    const bom=main.querySelector(".component-section")||detail.querySelector(".component-section")||workspace.querySelector(".component-section");
@@ -1184,7 +1193,8 @@ function setupAssemblyTrees(){
     display.classList.toggle("hide",adminAuthenticated);
    }catch(e){display.textContent="Unable to load description: "+e.message}
   }
-  function bindDescriptionSave(container,getId,message){
+  // ── Description persistence ──
+function bindDescriptionSave(container,getId,message){
    container.querySelector(".assembly-description-save").onclick=async()=>{
     const id=getId();
     message.textContent="Saving…";
@@ -1200,7 +1210,8 @@ function setupAssemblyTrees(){
   bindDescriptionSave(main,()=>null,main.querySelector(".root-photo-status"));
   bindDescriptionSave(detail,()=>selected,detailStatus);
   // One controller for every project tile, including the root and nested assemblies.
-  function createPhotoController(tile, getAssemblyId, statusElement){
+  // ── Photos and uploads ──
+function createPhotoController(tile, getAssemblyId, statusElement){
    const gallery=tile.querySelector(".assembly-photos");
    const admin=tile.querySelector(".assembly-photo-admin");
    const input=tile.querySelector(".assembly-photo-input");
@@ -1264,7 +1275,8 @@ function setupAssemblyTrees(){
    return {refresh};
   }
   // A single explicit entry point on the large assembly photo, not on child tiles.
-  function addWorkspaceEntry(container){
+  // ── Entry actions and project tile rendering ──
+function addWorkspaceEntry(container){
    const gallery=container.querySelector(".assembly-photos");
    if(!gallery)return;
    const install=()=>{
