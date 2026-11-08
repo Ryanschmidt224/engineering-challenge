@@ -193,3 +193,18 @@ test("recipe validation rejects duplicate step IDs and oversized instructions",a
  assert.equal((await workspace(request("PUT",url,{...fields,recipe:[{...step,detail:"x".repeat(8001)}]}),env)).status,400);
  assert.equal((await workspace(request("PUT",url,{...fields,recipe:[step]}),env)).status,200);
 });
+
+test("stale recipe editors cannot silently overwrite another saved revision",async()=>{
+ const {env}=storage(),url="/api/workspace?project=launcher&assembly=__root__";
+ const base={instructions:"",procedures:"",notes:"",recipe:[{id:"stepA",title:"Wire",standard:"Use 18 AWG",detail:"",kind:"action"}]};
+ const first=await workspace(request("PUT",url,{...base,expectedRevision:null}),env);
+ assert.equal(first.status,200);
+ const revision=(await first.json()).revision;assert.ok(revision);
+ const stale=await workspace(request("PUT",url,{...base,notes:"Outdated tab edit",expectedRevision:null}),env);
+ assert.equal(stale.status,409);
+ const good=await workspace(request("PUT",url,{...base,notes:"Updated safely",expectedRevision:revision}),env);
+ assert.equal(good.status,200);
+ const saved=(await (await workspace(request("GET",url),env)).json()).workspace;
+ assert.equal(saved.notes,"Updated safely");
+ assert.notEqual(saved.revision,revision);
+});
