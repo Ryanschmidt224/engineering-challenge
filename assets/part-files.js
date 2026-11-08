@@ -58,7 +58,7 @@
    const from={...location};upload.disabled=true;status.textContent="Saving files…";
    try{
     for(const file of files){
-     if(!extensions.test(file.name)||file.size===0||file.size>35*1024*1024)throw Error("Unsupported format or size above 35 MB: "+file.name);
+     if(!extensions.test(file.name)||file.size===0||file.size>20*1024*1024)throw Error("Unsupported format or size above 20 MB: "+file.name);
      if(location.project!==from.project||location.id!==from.id)throw Error("Part changed during upload");
      const result=await fetch(url(),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/octet-stream","x-file-name":encodeURIComponent(file.name)},body:file});
      const data=await result.json();if(!result.ok)throw Error(data.error||"File upload failed");
