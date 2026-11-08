@@ -274,3 +274,46 @@
 .part-harness .wire-library-fields label{display:flex;flex-direction:column;gap:5px;color:#b3ccd6;font-size:.8rem}
 @media(max-width:850px){.part-harness .harness-cut-row{grid-template-columns:repeat(2,minmax(0,1fr))}.part-harness .harness-cut-row label:first-child{grid-column:1/-1}.part-harness .harness-cut-row label:nth-of-type(n+6){grid-column:span 1}}
 @media(max-width:480px){.part-harness .harness-cut-row{grid-template-columns:1fr}.part-harness .harness-cut-row label:nth-of-type(n){grid-column:1/-1}}
+
+/* Global reference-library tabs and calculators. */
+.top nav{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.top nav button{white-space:nowrap}
+.resource-page{max-width:1160px}
+.resource-heading{margin-bottom:22px}
+.resource-heading h1{margin:6px 0 8px}
+.resource-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:15px}
+.resource-card{border:1px solid #395260;background:#11222d;border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.resource-card h2{font-size:1.17rem;margin:0}
+.resource-card p{margin:0;line-height:1.55}
+.resource-subtitle{color:#93bfca;font-size:.86rem;font-weight:600}
+.resource-footnote{color:#9aaeb8;font-size:.77rem}
+.resource-caution{color:#d1bd95;font-size:.81rem}
+.calculator-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-top:auto;padding-top:10px}
+.calculator-label{display:flex;flex-direction:column;gap:5px;font-size:.82rem;color:#b7cbd3}
+.calculator-fields input{width:100%;min-width:0}
+.calculator-output{grid-column:1/-1;border-top:1px solid #385563;padding-top:12px;font-size:1.02rem;color:#b9e3d8;font-weight:650}
+.resource-wire-manager{border-top:1px solid #415865;margin-top:30px;padding-top:22px}
+.resource-wire-manager h2{font-size:1.14rem}
+.resource-wire-list{display:flex;flex-direction:column;gap:7px;margin:15px 0}
+.resource-wire-item{border:1px solid #385561;border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.82rem}
+.resource-wire-item span:first-child{flex:1;font-weight:650;min-width:190px}
+.resource-wire-item span:nth-child(2){flex:2}
+.resource-wire-form{max-width:900px;border:1px solid #395765;background:#142a36;border-radius:10px;padding:17px}
+.resource-wire-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:14px 0}
+.resource-wire-fields label{display:flex;flex-direction:column;gap:5px;font-size:.83rem}
+.resource-wire-status{font-size:.84rem;color:#aacbd5}
+.linked-resources h2{margin-bottom:8px}
+.linked-resource-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:12px}
+.linked-resource-group{border:1px solid #355260;border-radius:8px;padding:12px;min-width:0}
+.linked-resource-group h3{font-size:.9rem;margin:0 0 10px}
+.linked-resource-items{display:flex;flex-direction:column;gap:8px}
+.linked-resource-items>.muted{font-size:.81rem}
+.linked-resource-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:.83rem}
+.linked-resource-row span{flex:1;min-width:130px;overflow-wrap:anywhere}
+.linked-resource-row .btn{font-size:.76rem;padding:5px 8px}
+.linked-resource-actions{display:flex;flex-direction:column;align-items:stretch;gap:7px;margin-top:10px}
+.linked-resource-actions .field{min-width:0;width:100%}
+.linked-resource-actions .btn{align-self:start}
+.part-harness .harness-wire-library{display:none}
+@media(max-width:850px){.top nav{gap:2px}.top nav button{font-size:.78rem;padding:6px 9px}}
+@media(max-width:570px){.resource-grid,.linked-resource-groups{grid-template-columns:1fr}.top .topin{flex-wrap:wrap}.top nav{order:3;width:100%;justify-content:flex-start}}
