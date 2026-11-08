@@ -613,3 +613,33 @@
 #commonparts .workshop-standard-item:focus-within,#commonparts .workshop-optional-group:focus-within{outline-offset:2px}
 @media(max-width:750px){.workshop-standard-list{grid-template-columns:minmax(0,1fr)}.workshop-standard-item>summary{min-height:0}.workshop-optional-group>.workshop-standard-list{padding:0 12px 14px}}
 @media(max-width:460px){.workshop-standard-item>summary{padding:13px 34px 13px 13px}.workshop-standard-body{padding:13px}.workshop-saved-details>#resource-commonparts{padding:0 12px 14px}.workshop-saved-details>.resource-wire-manager,.workshop-saved-details>.resource-common-manager{margin:0 12px 18px}}
+
+
+/* Compact Workshop tiles, and clear BOM-to-Workshop material selection. */
+.workshop-standard-item>summary{min-height:0;padding:12px 36px 12px 15px}
+.workshop-standard-name{font-size:.96rem;line-height:1.35}
+.workshop-standard-body{gap:10px;padding:12px 15px 15px}
+.workshop-quick-spec{font-size:.91rem;line-height:1.5}
+.workshop-technical-notes{font-size:.83rem;color:#bbccd3;min-width:0}
+.workshop-technical-notes>summary{padding:3px 0;cursor:pointer;color:#9fcbd2}
+.workshop-technical-notes>p{margin:8px 0 0;line-height:1.5}
+.workshop-use-choice{justify-self:start;margin-top:2px}
+.workshop-featured-item{border-color:#78d7c1!important;box-shadow:0 0 0 2px rgba(120,215,193,.15)}
+.bom-shop-material-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(90px,auto) auto auto;gap:8px 14px;align-items:center}
+.bom-shop-material-row>.bom-list-part-link{min-width:0;max-width:100%;text-align:left;justify-self:start;overflow-wrap:anywhere}
+.bom-shop-material-row>.bom-shop-qty{text-align:right;justify-self:end;white-space:nowrap}
+.bom-shop-material-row>.bom-workshop-link,.bom-shop-material-row>.bom-material-preference{justify-self:end;margin:0}
+.bom-workshop-link{font-size:.8rem;padding:6px 10px;border-color:#5a908b}
+.bom-workshop-selected{grid-column:1/-1;color:#9ecfc3;font-size:.81rem}
+@media(max-width:880px){
+ .bom-shop-material-row{grid-template-columns:minmax(0,1fr) auto;gap:8px}
+ .bom-shop-material-row>.bom-list-part-link{min-width:0}
+ .bom-shop-material-row>.bom-workshop-link{grid-column:1;justify-self:start}
+ .bom-shop-material-row>.bom-material-preference{grid-column:2;justify-self:end}
+ .bom-workshop-selected{grid-column:1/-1}
+}
+@media(max-width:490px){
+ .bom-shop-material-row>.bom-list-part-link{grid-column:1/-1}
+ .bom-shop-material-row>.bom-shop-qty{grid-column:1/-1;justify-self:start}
+ .bom-shop-material-row>.bom-workshop-link,.bom-shop-material-row>.bom-material-preference{grid-column:auto}
+}
