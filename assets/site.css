@@ -238,3 +238,10 @@
   width:192px;height:192px;min-width:192px;max-width:192px;
  }
 }
+
+/* Feature-tree part controls and individual part workspace. */
+.assembly-sidebar .assembly-add-part{white-space:nowrap;font-weight:650}
+.bom-feature-part > .bom-part-summary{background:rgba(60,110,126,.09)}
+.part-workspace-tools{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:10px 0 18px}
+.part-workspace-tools .btn{font-size:.85rem}
+.bom-part-workspace .part-workspace-cover.is-dragover{outline:2px dashed #79bbca;outline-offset:3px;background:rgba(80,137,160,.12)}
