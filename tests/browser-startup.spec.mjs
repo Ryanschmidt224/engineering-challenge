@@ -108,3 +108,40 @@ test("project feature tree and workspace initialize without browser errors", asy
  expect(await page.evaluate(()=>Number(localStorage.getItem("bs-workspace-bom-width")))).toBeGreaterThan(0);
  expect(errors,"Unexpected JavaScript errors during startup/navigation").toEqual([]);
 });
+
+
+test("admin tree right-click menu replaces rename/delete toolbar and main page has rounded frame",async({page})=>{
+ const errors=[];
+ page.on("pageerror",error=>errors.push(error.message));
+ await page.route("**/api/**",async route=>{
+  const url=new URL(route.request().url());
+  let data={};
+  if(url.pathname==="/api/auth")data={authenticated:true,isAdmin:true};
+  if(url.pathname==="/api/tree")data={nodes:[
+   {id:"smoke-motor",parentId:null,name:"Motor and Motor Control",kind:"assembly"},
+   {id:"smoke-part",parentId:"smoke-motor",name:"Linked Motor",kind:"part",partId:"p1"}
+  ],revision:"test"};
+  if(url.pathname==="/api/components")data={components:[]};
+  if(url.pathname==="/api/photos")data={photos:[]};
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
+ });
+ await page.goto("/");
+ await page.locator('.project-link[data-nav="launcher"]').click();
+ const sidebar=page.locator("#launcher .assembly-sidebar");
+ await expect(sidebar.locator(".assembly-rename")).toBeHidden();
+ await expect(sidebar.locator(".assembly-remove")).toBeHidden();
+ const row=sidebar.locator(".assembly-node",{hasText:"Motor and Motor Control"});
+ await row.click({button:"right"});
+ const menu=page.locator(".assembly-context-menu:visible").last();
+ await expect(menu).toBeVisible();
+ await expect(menu.getByRole("menuitem",{name:"Add part"})).toBeVisible();
+ await expect(menu.getByRole("menuitem",{name:"Add subassembly"})).toBeVisible();
+ await expect(menu.getByRole("menuitem",{name:"Rename"})).toBeVisible();
+ await expect(menu.getByRole("menuitem",{name:"Delete",exact:true})).toBeVisible();
+ await page.keyboard.press("Escape");
+ await expect(menu).toBeHidden();
+ const frame=page.locator("#launcher .assembly-layout > .assembly-content");
+ const radius=await frame.evaluate(el=>parseFloat(getComputedStyle(el).borderTopLeftRadius));
+ expect(radius).toBeGreaterThanOrEqual(8);
+ expect(errors).toEqual([]);
+});
