@@ -400,6 +400,15 @@ function setupAssemblyTrees(){
   },true);
   // Display saved parts independently of the legacy editor's <details> DOM.
   let bomDisplayVersion=0;
+  let shoppingView=false;
+  const shoppingToggle=document.createElement("button");shoppingToggle.type="button";shoppingToggle.className="btn bom-shopping-toggle";
+  shoppingToggle.textContent="Shopping list";
+  workspace.querySelector(".workspace-bom-heading").append(shoppingToggle);
+  shoppingToggle.onclick=()=>{
+   shoppingView=!shoppingView;
+   shoppingToggle.textContent=shoppingView?"Assembly view":"Shopping list";
+   void renderWorkspaceParts();
+  };
   let editingPart=null;
   let editingPartAssembly=null;
   const partPhotoUrl=id=>"/api/components/photo?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id);
@@ -417,6 +426,7 @@ function setupAssemblyTrees(){
    const photo=makeBomThumbnail(partPhotoUrl(part.id),part.name);
    const name=document.createElement("span");name.className="bom-part-name";name.textContent=part.name;
    if(part.bomOnly)item.classList.add("bom-only-part");
+   if(part.generatedFrom)item.classList.add("bom-generated-part");
    const qty=document.createElement("span");qty.className="bom-part-meta";qty.textContent=(part.quantity===null||part.quantity===undefined?"Qty not specified":"Qty "+part.quantity+(part.quantityUnit?" "+part.quantityUnit:""))+(part.model?" · "+part.model:"");
    const expand=document.createElement("span");expand.className="bom-part-toggle-label";expand.textContent="Details";
    summary.append(photo,name,qty,expand);item.append(summary);
@@ -429,7 +439,12 @@ function setupAssemblyTrees(){
     const title=document.createElement("strong");title.textContent="Specifications";body.append(title);
     const ul=document.createElement("ul");for(const entry of part.specifications){const li=document.createElement("li");li.textContent=entry.name+": "+entry.value+(entry.source==="inferred"?" (inferred)":"");ul.append(li)}body.append(ul);
    }
-   if(adminAuthenticated){
+   if(part.generatedFrom){
+    const automatic=document.createElement("p");automatic.className="muted bom-auto-note";
+    automatic.textContent="Calculated automatically from the wire configuration. Edit the wire to change this quantity or termination.";
+    body.append(automatic);
+   }
+   if(adminAuthenticated&&!part.generatedFrom){
     const controls=document.createElement("div");controls.className="bom-part-actions";
     const edit=document.createElement("button");edit.type="button";edit.className="btn";edit.textContent="Edit part";
     edit.onclick=()=>{editBomPart(part,originId)};
@@ -521,6 +536,40 @@ function setupAssemblyTrees(){
     if(version!==bomDisplayVersion||assemblyId!==selected||!workspaceRoute())return;
     const parts=Array.isArray(result.components)?result.components:[];
     container.replaceChildren();
+    if(shoppingView){
+     // Flatten selected assembly and descendants without additional user input.
+     const included=new Set([assemblyId]);
+     const descendants=id=>{for(const n of nodes.filter(n=>n.parentId===id&&!isPartNode(n))){if(!included.has(n.id)){included.add(n.id);descendants(n.id)}}};
+     descendants(assemblyId);
+     const items=parts.filter(p=>included.has(p.assemblyId??null));
+     const groups=new Map();
+     for(const p of items){
+      // Distinct specifications must not be accidentally combined (e.g. wire lengths).
+      const signature=(p.sharedPartRef||p.name.toLowerCase())+"|"+(p.model||"")+"|"+(p.quantityUnit||"")+"|"+JSON.stringify(p.specifications||[]);
+      let group=groups.get(signature);
+      if(!group){group={name:p.name,model:p.model||"",unit:p.quantityUnit||"",qty:0,unknown:false,count:0};groups.set(signature,group)}
+      group.count++;
+      if(p.quantity===null||p.quantity===undefined)group.unknown=true;
+      else group.qty+=Number(p.quantity);
+     }
+     const note=document.createElement("p");note.className="muted bom-count";
+     note.textContent="Combined materials for this assembly and its subassemblies. Quantities without an estimate stay unspecified.";
+     container.append(note);
+     const table=document.createElement("table");table.className="bom-shopping-table";
+     const head=document.createElement("thead"),heads=document.createElement("tr");
+     for(const title of ["Part / material","Required"]){const cell=document.createElement("th");cell.textContent=title;heads.append(cell)}head.append(heads);table.append(head);
+     const body=document.createElement("tbody");
+     const rows=[...groups.values()].sort((a,b)=>a.name.localeCompare(b.name));
+     for(const group of rows){
+      const tr=document.createElement("tr"),part=document.createElement("td"),qty=document.createElement("td");
+      part.textContent=group.name+(group.model?" · "+group.model:"");
+      qty.textContent=group.unknown?"To confirm"+(group.qty?" (at least "+Number(group.qty.toFixed(4))+" "+group.unit+")":""):Number(group.qty.toFixed(4))+(group.unit?" "+group.unit:"");
+      tr.append(part,qty);body.append(tr);
+     }
+     if(!rows.length){const empty=document.createElement("tr"),cell=document.createElement("td");cell.colSpan=2;cell.textContent="No materials yet.";empty.append(cell);body.append(empty)}
+     table.append(body);container.append(table);
+     return;
+    }
     // A real subassembly is shown once as an expandable BOM row, not duplicated as a normal part.
     const renderAssembly=(parentId,mount,level)=>{
      const linkedIds=new Set(nodes.filter(n=>isPartNode(n)).map(n=>n.partId));
