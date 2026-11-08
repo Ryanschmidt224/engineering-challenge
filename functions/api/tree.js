@@ -42,8 +42,13 @@ export async function handleTree(request,env){
   let cursor=n.parentId,seen=new Set([n.id]);
   while(cursor!==null){if(seen.has(cursor))return reply({error:"Circular tree"},400);seen.add(cursor);cursor=nodes.find(x=>x.id===cursor)?.parentId??null}
  }
+ for(const n of nodes){
+  if(n.kind!==undefined&&!["assembly","part"].includes(n.kind))return reply({error:"Invalid node type"},400);
+  if(n.kind==="part"&&(!/^[0-9a-f-]{36}$/i.test(n.partId||"")||nodes.some(child=>child.parentId===n.id)))return reply({error:"A part must link to a BOM record and cannot contain children"},400);
+  if(n.parentId!==null&&nodes.find(parent=>parent.id===n.parentId)?.kind==="part")return reply({error:"Parts cannot contain subassemblies"},400);
+ }
  for(const n of nodes){if(n.dependsOn!==undefined&&(!Array.isArray(n.dependsOn)||n.dependsOn.some(id=>typeof id!=="string"||id===n.id||!ids.has(id))))return reply({error:"Invalid dependencies"},400);if(n.stage!==undefined&&!["independent","sequential","integration"].includes(n.stage))return reply({error:"Invalid stage"},400)}
  for(const n of nodes){const seen=new Set([n.id]),visit=id=>{if(seen.has(id))return false;seen.add(id);const item=nodes.find(x=>x.id===id);for(const dep of item?.dependsOn||[])if(!visit(dep))return false;seen.delete(id);return true};for(const dep of n.dependsOn||[])if(!visit(dep))return reply({error:"Circular dependencies"},400)}
- await env.PHOTOS.put(key,JSON.stringify(nodes.map(n=>({id:n.id,name:n.name.trim(),parentId:n.parentId,dependsOn:n.dependsOn||[],stage:n.stage||"independent"}))));
+ await env.PHOTOS.put(key,JSON.stringify(nodes.map(n=>({id:n.id,name:n.name.trim(),parentId:n.parentId,dependsOn:n.dependsOn||[],stage:n.stage||"independent",kind:n.kind==="part"?"part":"assembly",...(n.kind==="part"?{partId:n.partId}:{})}))));
  return reply({ok:true});
 }
