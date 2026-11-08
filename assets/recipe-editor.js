@@ -19,7 +19,7 @@
   const head=make("div","recipe-heading"),headline=make("h3","","Recipe steps");
   const subtitle=make("p","muted","One action per step. Learners choose how much detail to see.");
   const actions=make("div","recipe-heading-actions");
-  const toggle=addButton("Edit recipe",()=>{editing=!editing;render()},"btn");
+  const toggle=addButton("Edit recipe",()=>{if(!isAdmin()){feedback.textContent="Sign in as administrator to edit recipe steps.";return}editing=!editing;render()},"btn");
   actions.append(toggle);head.append(headline,actions);
   const content=make("div","recipe-content");
   panel.append(head,subtitle,content);
@@ -31,7 +31,9 @@
    instruction.before(legacy);legacy.append(summary,hint,instruction);
    article.querySelector("h2")?.after(panel);
   }else article.append(panel);
-  let steps=[],editing=false,selectedStep=0,level="standard",dirty=false;
+  let preferred="standard";
+  try{const stored=localStorage.getItem("bs-recipe-detail");if(["brief","standard","detailed"].includes(stored))preferred=stored}catch{}
+  let steps=[],editing=false,selectedStep=0,level=preferred,dirty=false;
   const isAdmin=()=>!!options.admin?.();
   const noteChange=()=>{dirty=true;options.onChange?.();};
   const textfield=(value,placeholder,onChange,rows=0)=>{
@@ -51,7 +53,7 @@
    const control=make("div","recipe-detail-controls");
    control.append(make("span","muted","Detail"));
    for(const [id,label] of [["brief","Brief"],["standard","Standard"],["detailed","Detailed"]]){
-    const btn=addButton(label,()=>{level=id;render()},"btn recipe-detail-button"+(level===id?" active":""));
+    const btn=addButton(label,()=>{level=id;try{localStorage.setItem("bs-recipe-detail",id)}catch{}render()},"btn recipe-detail-button"+(level===id?" active":""));
     btn.setAttribute("aria-pressed",String(level===id));
     control.append(btn);
    }
@@ -139,7 +141,7 @@
   }
   const feedback=make("p","recipe-feedback muted");panel.append(feedback);
   function render(){
-   toggle.classList.toggle("hide",!isAdmin());
+   toggle.classList.remove("hide");
    toggle.textContent=editing?"View recipe":"Edit recipe";
    content.replaceChildren();
    if(editing&&isAdmin())renderBuilder(content);else renderBuild(content);
