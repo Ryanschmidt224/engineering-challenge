@@ -727,30 +727,6 @@ function setupAssemblyTrees(){
    }catch(error){bomReport("Could not save part: "+error.message);return false}
    finally{savingBom=false;if(saveButton)saveButton.disabled=false}
   }
-  // Add ferrules selected on either crimped-wire end as BOM-only consumables.
-  async function addWireFerrules(info, quantity, unit, assemblyId){
-   if(!info?.crimp)return "";
-   const ends=Number(info.endA==="ferrule")+Number(info.endB==="ferrule");
-   if(!ends)return "";
-   const known=unit==="pcs"&&Number.isInteger(quantity)&&quantity>0;
-   const count=known?quantity*ends:null;
-   const name="Ferrule — "+info.gauge+" AWG";
-   const response=await fetch("/api/components?project="+encodeURIComponent(project),{
-    method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},
-    body:JSON.stringify({
-     assemblyId,bomOnly:true,name,quantity:count,quantityUnit:"pcs",
-     category:"Wire termination",
-     specifications:[
-      {name:"Wire gauge",value:String(info.gauge)+" AWG"},
-      {name:"Termination",value:"Ferrule"},
-      {name:"Ferrule ends per wire",value:String(ends)}
-     ]
-    })
-   });
-   const data=await response.json().catch(()=>({}));
-   if(!response.ok)throw Error(data.error||"Could not add ferrule");
-   return name+(count===null?" (quantity unspecified)":" × "+count+" pcs");
-  }
   // BOM-only items share the library/manual/wire wizard, but never create a feature-tree node.
   workspace.querySelector(".workspace-new-part").onclick=async()=>{
    if(savingBom)return;
@@ -785,11 +761,8 @@ function setupAssemblyTrees(){
       });
       const data=await res.json();if(!res.ok)throw Error(data.error||"Could not save wire cutting list");
      }
-     let ferruleNotice="";
-     try{ferruleNotice=await addWireFerrules(wireInfo,part.quantity,part.quantityUnit,targetAssembly)}
-     catch(error){ferruleNotice="Warning: wire saved, but ferrule not added: "+error.message}
      await renderWorkspaceParts();
-     bomReport(newPart.name+" saved to this assembly's BOM only (not the feature tree)."+(ferruleNotice?" "+ferruleNotice:""));
+     bomReport(newPart.name+" saved to the BOM. Required ferrules are calculated automatically.");
     }catch(error){
      if(newPart)await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(newPart.id),{method:"DELETE",credentials:"same-origin"}).catch(()=>{});
      bomReport("Could not create BOM-only part: "+error.message);
@@ -1152,11 +1125,8 @@ function setupAssemblyTrees(){
      }
      const next=[...nodes,{id:crypto.randomUUID(),kind:"part",partId:newPart.id,name:newPart.name,parentId:selected}];
      await save(next);expanded.add(selected);
-     let ferruleNotice="";
-     try{ferruleNotice=await addWireFerrules(info,part.quantity,part.quantityUnit,selected)}
-     catch(error){ferruleNotice="Warning: part saved, but ferrule not added: "+error.message}
      openTreePart(next[next.length-1]);
-     status.textContent="Part added to the feature tree and BOM."+(ferruleNotice?" "+ferruleNotice:"");
+     status.textContent="Part added to the feature tree and BOM. Required ferrules are calculated automatically.";
     }catch(error){
      if(newPart)await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(newPart.id),{method:"DELETE",credentials:"same-origin"}).catch(()=>{});
      status.textContent="Could not add part: "+error.message;throw error;
