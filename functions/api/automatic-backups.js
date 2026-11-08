@@ -25,10 +25,12 @@ export async function backupAllProjects(env,date=new Date()){
    const id=date.toISOString().slice(0,19).replace(/:/g,"-")+"Z-"+crypto.randomUUID();
    const key=scopeKey(project,id);
    const serialized=JSON.stringify(archive);
-   await env.PHOTOS.put(key,serialized,{
+   const written=await env.PHOTOS.put(key,serialized,{
+    onlyIf:{etagDoesNotMatch:"*"},
     httpMetadata:{contentType:"application/octet-stream"},
     customMetadata:{project,objectCount:String(archive.objectCount),backupDate:date.toISOString()}
    });
+   if(written===null)throw Error("Backup already exists; never overwrite a recovery snapshot");
    const stored=await env.PHOTOS.get(key);
    if(!stored||stored.size!==new TextEncoder().encode(serialized).length)
     throw Error("Stored backup failed size verification");
