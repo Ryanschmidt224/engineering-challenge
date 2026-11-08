@@ -653,7 +653,7 @@ function setupAssemblyTrees(){
     bomReport("Historical price must be a positive USD amount with at most two decimal places.");return false;
    }
    component.historicalPrice=priceInput===""?null:Number(priceInput);
-   component.historicalPriceDate=priceInput===""?null:(dateInput||new Date().toLocaleDateString("en-CA"));
+   component.historicalPriceDate=priceInput===""?null:(dateInput||new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10));
    for(const key of ["name","manufacturer","model","category","supplier","asin"])component[key]=bomField(key)?.value.trim()||"";
    component.specifications=[...(bomRoot()?.querySelectorAll(".component-spec-row")||[])].map(row=>({
     name:row.children[0]?.value.trim()||"",value:row.children[1]?.value.trim()||"",source:row.children[2]?.value==="inferred"?"inferred":"explicit"
@@ -1228,7 +1228,7 @@ function setupComponents(){
   const priceInput=field("historical-price")?.value.trim()||"";
   const dateInput=field("historical-price-date")?.value||"";
   const c={assemblyId:assemblySelections[project]??null,quantity:Math.max(1,Math.floor(Number(field("quantity")?.value)||1)),
-   historicalPrice:priceInput===""?null:Number(priceInput),historicalPriceDate:priceInput===""?null:(dateInput||new Date().toLocaleDateString("en-CA"))};for(const name of ["name","manufacturer","model","category","supplier","asin"])c[name]=field(name).value.trim();
+   historicalPrice:priceInput===""?null:Number(priceInput),historicalPriceDate:priceInput===""?null:(dateInput||new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10))};for(const name of ["name","manufacturer","model","category","supplier","asin"])c[name]=field(name).value.trim();
   c.specifications=[...specs.querySelectorAll(".component-spec-row")].map(row=>({name:row.children[0].value.trim(),value:row.children[1].value.trim(),source:row.children[2].value})).filter(s=>s.name&&s.value);
   if(!c.name){say("Component name is required.");return}
   field("save").disabled=true;try{const res=await fetch("/api/components?project="+project,{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",body:JSON.stringify(c)}),data=await res.json();if(!res.ok)throw Error(data.error||"Save failed");review.classList.add("hide");field("description").value="";if(field("quantity"))field("quantity").value="1";say("Part added to BOM.");feedback.textContent="";clearPartEditor();if(importPanel)importPanel.open=false;review.classList.add("hide");await refresh()}catch(e){say(e.message)}finally{field("save").disabled=false}
