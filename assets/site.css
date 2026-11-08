@@ -179,3 +179,24 @@
   width:96px;height:96px;min-width:96px;max-width:96px;
  }
 }
+
+/* Hierarchical work-instructions BOM: descendants are indented and collapsed by default. */
+.assembly-workspace-page .workspace-saved-parts .bom-subassembly > .bom-part-summary{background:rgba(58,107,127,.13)}
+.assembly-workspace-page .workspace-saved-parts .bom-subassembly > .bom-subassembly-children{padding:12px 14px 14px 24px}
+.assembly-workspace-page .workspace-saved-parts .bom-subassembly > .bom-subassembly-children > .bom-part-stack{
+ margin:0 0 0 6px;padding-left:16px;border-left:2px solid #5a8da0;gap:8px
+}
+.assembly-workspace-page .workspace-saved-parts .bom-subassembly .bom-subassembly > .bom-subassembly-children{padding-left:24px}
+.bom-subassembly-count{font-size:.73rem;color:#91b6c6;white-space:nowrap}
+.assembly-workspace-page .workspace-saved-parts .bom-subassembly[open] > .bom-part-summary > .bom-row-thumbnail{
+ width:114px;height:114px;min-width:114px;max-width:114px;
+ transition:width .16s ease,height .16s ease;
+}
+.assembly-workspace-page .workspace-saved-parts .bom-subassembly:not([open]) > .bom-subassembly-children{display:none}
+@media(max-width:650px){
+ .assembly-workspace-page .workspace-saved-parts .bom-subassembly[open] > .bom-part-summary > .bom-row-thumbnail{
+  width:96px;height:96px;min-width:96px;max-width:96px
+ }
+ .assembly-workspace-page .workspace-saved-parts .bom-subassembly > .bom-subassembly-children{padding-left:12px}
+ .assembly-workspace-page .workspace-saved-parts .bom-subassembly > .bom-subassembly-children > .bom-part-stack{padding-left:10px}
+}
