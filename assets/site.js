@@ -136,8 +136,8 @@ function setupAssemblyTrees(){
   const partResourcePicker=window.BSResources?.mount(partWorkspace.querySelector(".part-linked-resources"));
 
   const partTools=document.createElement("div");partTools.className="part-workspace-tools";
-  partTools.innerHTML='<button type="button" class="btn part-workspace-picture">Add / change picture</button><input type="file" class="part-workspace-file" accept="image/jpeg,image/png,image/webp" hidden>';
-  partWorkspace.querySelector(".workspace-heading").after(partTools);
+  partTools.classList.add("hide");
+  partTools.innerHTML='<div class="part-photo-edit-label">Part picture</div><div class="part-photo-edit-preview"></div><button type="button" class="btn part-workspace-picture">Add / change picture</button><input type="file" class="part-workspace-file" accept="image/jpeg,image/png,image/webp" hidden>';
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
   detailsPanel.innerHTML='<div class="part-details-view-heading"><h2>Part details</h2><span class="part-details-view-mode">View mode</span></div><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div>';
   partTools.before(detailsPanel);
@@ -168,6 +168,15 @@ function setupAssemblyTrees(){
 
   let currentPartInfo=null;
   const partFile=partTools.querySelector(".part-workspace-file"),pictureButton=partTools.querySelector(".part-workspace-picture");
+  const photoEditPreview=partTools.querySelector(".part-photo-edit-preview");
+  const photoEditingId=()=>editingPart||null;
+  const photoFeedback=message=>{if(photoEditingId())bomReport(message);else partStatus.textContent=message};
+  function refreshEditPhoto(){
+   const id=photoEditingId();photoEditPreview.replaceChildren();if(!id)return;
+   const img=document.createElement("img");img.alt="Current part picture";img.src=partPhotoUrl(id)+"&v="+Date.now();
+   img.onerror=()=>{if(img.isConnected)photoEditPreview.replaceChildren(Object.assign(document.createElement("span"),{textContent:"No picture yet"}))};
+   photoEditPreview.append(img);
+  }
   const deletePictureButton=document.createElement("button");deletePictureButton.type="button";deletePictureButton.className="btn part-workspace-delete-picture";deletePictureButton.textContent="Delete picture";partTools.append(deletePictureButton);
   const partPictureDialog=document.createElement("dialog");partPictureDialog.className="part-picture-dialog";
   const pictureClose=document.createElement("button");pictureClose.type="button";pictureClose.className="btn part-picture-close";pictureClose.textContent="Close ✕";
@@ -193,54 +202,32 @@ function setupAssemblyTrees(){
    if(typeof feedback==="function")feedback();
   }
   deletePictureButton.onclick=async()=>{
-   const partId=partRoute();if(!partId)return;
+   const partId=photoEditingId();if(!partId)return;
    deletePictureButton.disabled=true;
    try{
     await deletePartPicture(partId,()=>{
      pictureCover.replaceChildren(Object.assign(document.createElement("span"),{textContent:"No picture yet"}));
+     refreshEditPhoto();
      if(partPictureDialog.open)partPictureDialog.close();
-     partStatus.textContent="Part picture deleted.";
+     photoFeedback("Part picture deleted.");
     });
-   }catch(error){partStatus.textContent=error.message}
+   }catch(error){photoFeedback(error.message)}
    finally{deletePictureButton.disabled=false}
   };
   async function uploadPartPicture(file){
-   const partId=partRoute();if(!file||!partId)return;
+   const partId=photoEditingId();if(!file||!partId)return;
    const mime=file.type||({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"}[file.name.split(".").pop().toLowerCase()]||"");
-   if(!["image/jpeg","image/png","image/webp"].includes(mime)||file.size>3*1024*1024){partStatus.textContent="Choose JPG, PNG or WebP under 3 MB.";return}
-   pictureButton.disabled=true;partStatus.textContent="Uploading picture…";
+   if(!["image/jpeg","image/png","image/webp"].includes(mime)||file.size>3*1024*1024){photoFeedback("Choose JPG, PNG or WebP under 3 MB.");return}
+   pictureButton.disabled=true;photoFeedback("Uploading picture…");
    try{
     const response=await fetch(partPhotoUrl(partId),{method:"POST",credentials:"same-origin",headers:{"content-type":mime},body:file});
     const data=await response.json();if(!response.ok)throw Error(data.error||"Upload failed");
     const image=document.createElement("img");image.src=partPhotoUrl(partId)+"&v="+Date.now();image.alt=currentPartInfo?.name||"Part picture";
-    partWorkspace.querySelector(".part-workspace-cover").replaceChildren(image);partStatus.textContent="Picture saved.";
-   }catch(e){partStatus.textContent=e.message}finally{pictureButton.disabled=false;partFile.value=""}
+    partWorkspace.querySelector(".part-workspace-cover").replaceChildren(image);refreshEditPhoto();photoFeedback("Picture saved.");
+   }catch(e){photoFeedback(e.message)}finally{pictureButton.disabled=false;partFile.value=""}
   }
   pictureButton.onclick=()=>partFile.click();
   partFile.onchange=()=>void uploadPartPicture(partFile.files?.[0]);
-  const pictureDrop=partWorkspace.querySelector(".part-workspace-cover");
-  pictureDrop.addEventListener("dragover",event=>{if(!adminAuthenticated||!event.dataTransfer.types.includes("Files"))return;event.preventDefault();pictureDrop.classList.add("is-dragover");event.dataTransfer.dropEffect="copy"});
-  pictureDrop.addEventListener("dragleave",()=>pictureDrop.classList.remove("is-dragover"));
-  pictureDrop.addEventListener("drop",event=>{if(!adminAuthenticated)return;event.preventDefault();pictureDrop.classList.remove("is-dragover");void uploadPartPicture(event.dataTransfer.files?.[0])});
-  const partDelete=document.createElement("button");partDelete.type="button";partDelete.className="btn part-workspace-delete";partDelete.textContent="Delete part";
-  partTools.append(partDelete);
-  partDelete.onclick=async()=>{
-   const part=currentPartInfo;if(!part||!adminAuthenticated)return;
-   if(!confirm("Delete "+part.name+" from the BOM and feature tree? This also deletes its saved instructions and thumbnail."))return;
-   partDelete.disabled=true;
-   try{
-    const linked=nodes.filter(n=>isPartNode(n)&&n.partId===part.id);
-    if(linked.length)await save(nodes.filter(n=>!linked.some(x=>x.id===n.id)));
-    const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{method:"DELETE",credentials:"same-origin"});
-    const result=await response.json().catch(()=>({}));
-    if(!response.ok)throw Error(result.error||"Could not delete part");
-    selected=linked[0]?.parentId??part.assemblyId??null;
-    partBackAssembly=null;currentPartInfo=null;
-    history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));
-    render();notify();window.scrollTo(0,0);
-   }catch(error){partStatus.textContent="Delete failed: "+error.message}
-   finally{partDelete.disabled=false}
-  };
   detailsPanel.querySelector(".part-details-edit").onclick=()=>{
    const part=currentPartInfo;if(!part)return;
    const linked=nodes.find(n=>isPartNode(n)&&n.partId===part.id);
@@ -266,8 +253,6 @@ function setupAssemblyTrees(){
   async function showPartWorkspace(){
    const partId=partRoute();if(!partId)return;
    const version=++partLoadVersion;
-   partTools.classList.remove("hide");
-   for(const button of partTools.querySelectorAll(".part-workspace-picture,.part-workspace-delete-picture,.part-workspace-delete"))button.classList.toggle("hide",!adminAuthenticated);
    detailsPanel.querySelector(".part-details-view-actions").classList.toggle("hide",!adminAuthenticated);
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
@@ -569,6 +554,7 @@ function setupAssemblyTrees(){
   // Workspace owns its part editor actions. Keep the mini-project component
   // editors separate; this panel saves one assembly part per request.
   const bomEditorMount=workspace.querySelector(".workspace-bom-mount");
+  bomEditorMount.prepend(partTools);
   const bomSavedList=workspace.querySelector(".workspace-saved-parts");
   const bomEditorHeader=document.createElement("div");
   bomEditorHeader.className="workspace-bom-editor-header hide";
@@ -590,6 +576,7 @@ function setupAssemblyTrees(){
   const dismissBomEditor=()=>{
    bomEditorMount.classList.remove("is-editing");
    bomEditorHeader.classList.add("hide");
+   partTools.classList.add("hide");
    bomSavedList.after(bomEditorMount);
   };
   bomEditorCancel.onclick=()=>{
@@ -638,6 +625,8 @@ function setupAssemblyTrees(){
     row.append(a,b,c,remove);specs.append(row);
    }}
    openBomDraft();
+   partTools.classList.remove("hide");
+   refreshEditPhoto();
    const save=bomField("save");if(save)save.textContent="Save changes";
    bomReport("Editing "+part.name+". Changes will update this part without creating a duplicate.");
   }
