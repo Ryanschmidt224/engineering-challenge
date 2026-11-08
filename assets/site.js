@@ -47,6 +47,23 @@ document.getElementById("exportDrafts").onclick=()=>exportData(drafts,"building-
 document.addEventListener("selectionchange",()=>{return;const s=String(window.getSelection()).trim();if(s&&s.length<220&&!document.getElementById("modalRoot").classList.contains("modalback")){selectionText=s;document.getElementById("explainSelection").classList.remove("hide")}else if(!s){document.getElementById("explainSelection").classList.add("hide")}});
 document.getElementById("explainSelection").onclick=()=>{const selected=selectionText;window.getSelection().removeAllRanges();document.getElementById("explainSelection").classList.add("hide");const found=tiles.find(t=>(t.title+" "+t.short+" "+t.deep).toLowerCase().includes(selected.toLowerCase())&&selected.length>3);if(found){openTile(found.id)}else{modal('<h2>Please explain this</h2><p class="muted">Selected term or phrase:</p><p><strong>'+safe(selected)+'</strong></p><p>No matching tile yet. Add one.</p><button class="btn primary" id="proposeSelected">Add draft</button>');document.getElementById("proposeSelected").onclick=()=>{closeModal();navigate("community");document.getElementById("proposalTitle").value=selected;document.getElementById("proposalText").focus()}}};
 
+// Reuse the site's knowledge tiles for precisely highlighted recipe terms.
+window.BSExplainText=(selected,context={})=>{
+ const term=String(selected||"").trim().slice(0,220);
+ if(!term)return;
+ const found=tiles.find(t=>t.title.toLowerCase()===term.toLowerCase())||
+  tiles.find(t=>term.length>3&&(t.title+" "+t.short+" "+t.deep).toLowerCase().includes(term.toLowerCase()));
+ if(found){openTile(found.id);return}
+ const step=String(context.stepTitle||"");
+ modal('<h2>Please explain this</h2><p class="muted">Selected from '+safe(step||"the recipe")+':</p><p><strong>'+safe(term)+'</strong></p><p>There is no matching knowledge tile yet.</p><button class="btn primary" id="proposeSelected">Request an explanation</button>');
+ document.getElementById("proposeSelected").onclick=()=>{
+  closeModal();navigate("community");
+  const title=document.getElementById("proposalTitle"),body=document.getElementById("proposalText");
+  if(title)title.value=term;
+  if(body){body.value="Please explain \""+term+"\" in the context of: "+step+".";body.focus()}
+ };
+};
+
 let adminAuthenticated=false;
 const photoToken=()=>adminAuthenticated?"session":"";
 const adminButton=document.getElementById("adminLoginButton"),adminDialog=document.getElementById("adminDialog"),adminForm=document.getElementById("adminLoginForm"),adminStatus=document.getElementById("adminLoginStatus");
@@ -137,7 +154,7 @@ function setupAssemblyTrees(){
 
   // Optional progressive disclosure: the textarea remains the simplest authoring tool.
   // Steps, test logs and history never require separate forms or mandatory fields.
-  function installInstructionExtras(panel,prefix,onRestoreResources){
+  function installInstructionExtras(panel,prefix,onRestoreResources,onRestoreRecipe){
    const instruction=panel.querySelector("."+prefix+"-instructions");
    const article=instruction.closest("article");
    const previewButton=document.createElement("button");previewButton.type="button";previewButton.className="btn instruction-preview-toggle";previewButton.textContent="Preview steps";
@@ -203,7 +220,7 @@ function setupAssemblyTrees(){
       restore.onclick=()=>{
        for(const name of ["instructions","procedures","notes"])panel.querySelector("."+prefix+"-"+name).value=snapshot[name]||"";
        experiments=Array.isArray(snapshot.experiments)?snapshot.experiments.map(x=>({...x})):[];
-       renderLogs();onRestoreResources?.(snapshot.resources);
+       renderLogs();onRestoreResources?.(snapshot.resources);onRestoreRecipe?.(snapshot);
        if(!preview.classList.contains("hide"))renderPreview();
        panel.querySelector(prefix==="part"?".part-workspace-status":".workspace-status").textContent="Previous version loaded. Click Save to keep it.";
       };
@@ -215,8 +232,10 @@ function setupAssemblyTrees(){
    }
    return {setData,getExperiments:()=>experiments};
   }
-  const assemblyExtras=installInstructionExtras(workspace,"workspace",resources=>assemblyResourcePicker?.setData(resources,adminAuthenticated));
-  const partExtras=installInstructionExtras(partWorkspace,"part",resources=>partResourcePicker?.setData(resources,adminAuthenticated));
+  const assemblyRecipe=window.BSRecipes?.mount(workspace.querySelector(".workspace-instructions").closest("article"),{admin:()=>adminAuthenticated});
+  const partRecipe=window.BSRecipes?.mount(partWorkspace.querySelector(".part-instructions").closest("article"),{admin:()=>adminAuthenticated});
+  const assemblyExtras=installInstructionExtras(workspace,"workspace",resources=>assemblyResourcePicker?.setData(resources,adminAuthenticated),snapshot=>assemblyRecipe?.setData(snapshot));
+  const partExtras=installInstructionExtras(partWorkspace,"part",resources=>partResourcePicker?.setData(resources,adminAuthenticated),snapshot=>partRecipe?.setData(snapshot));
 
   const partTools=document.createElement("div");partTools.className="part-workspace-tools";
   partTools.classList.add("hide");
@@ -361,6 +380,7 @@ function setupAssemblyTrees(){
     if(partBackAssembly===null)partBackAssembly=part.assemblyId??null;
     for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value=data.workspace?.[name]||"";
     partResourcePicker?.setData(data.workspace?.resources,adminAuthenticated);
+    partRecipe?.setData(data.workspace);
     partExtras.setData(data.workspace);
     const img=document.createElement("img");img.alt=part.name;img.src=partPhotoUrl(partId);
     img.onload=()=>{if(partRoute()===partId)cover.replaceChildren(img)};
@@ -406,7 +426,7 @@ function setupAssemblyTrees(){
    const id=partRoute();if(!id)return;
    if(!adminAuthenticated){partStatus.textContent="Sign in as administrator to save.";return}
    const data={};for(const name of ["instructions","procedures","notes"])data[name]=partWorkspace.querySelector(".part-"+name).value;
-   data.resources=partResourcePicker?.getData();data.experiments=partExtras.getExperiments();
+   data.resources=partResourcePicker?.getData();data.experiments=partExtras.getExperiments();data.recipe=partRecipe?.getData()||[];
    const button=partWorkspace.querySelector(".part-workspace-save");button.disabled=true;partStatus.textContent="Saving…";
    try{
     const response=await fetch("/api/workspace?project="+encodeURIComponent(project)+"&part="+encodeURIComponent(id),{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});
@@ -1052,6 +1072,7 @@ function setupAssemblyTrees(){
     if(version!==workspaceLoadVersion||url!==workspaceUrl())return;
     for(const name of workspaceFields)workspace.querySelector(".workspace-"+name).value=data.workspace?.[name]||"";
     assemblyResourcePicker?.setData(data.workspace?.resources,adminAuthenticated);
+    assemblyRecipe?.setData(data.workspace);
     assemblyExtras.setData(data.workspace);
     workspaceStatus.textContent="";
    }catch(e){workspaceStatus.textContent=e.message}
@@ -1060,7 +1081,7 @@ function setupAssemblyTrees(){
    if(!adminAuthenticated){workspaceStatus.textContent="Use Admin login at the top of the website to save.";return}
    const button=workspace.querySelector(".workspace-save"),url=workspaceUrl(),data={};
    for(const name of workspaceFields)data[name]=workspace.querySelector(".workspace-"+name).value;
-   data.resources=assemblyResourcePicker?.getData();data.experiments=assemblyExtras.getExperiments();
+   data.resources=assemblyResourcePicker?.getData();data.experiments=assemblyExtras.getExperiments();data.recipe=assemblyRecipe?.getData()||[];
    button.disabled=true;workspaceStatus.textContent="Saving…";
    try{const res=await fetch(url,{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});const result=await res.json();if(!res.ok)throw Error(result.error||"Save failed (HTTP "+res.status+")");workspaceStatus.textContent="Saved."}
    catch(e){workspaceStatus.textContent=e.message}finally{button.disabled=false}
