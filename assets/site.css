@@ -137,3 +137,9 @@
 .assembly-workspace-page .workspace-bom .bom-origin-title{font-size:.86rem;font-weight:650;color:#a8ceda;margin:10px 0 8px}
 .bom-empty{padding:12px 0;color:#a9c5d0;font-size:.85rem}
 .bom-error{padding:10px 12px;border:1px solid #bd716c;border-radius:6px;color:#ffceca;font-size:.85rem}
+
+/* Saved BOM items are always visible above the collapsible add-part editor. */
+.assembly-workspace-page .workspace-bom .component-section>.bom-visible-parts{display:block!important;visibility:visible!important;height:auto!important;min-height:28px;overflow:visible;margin:8px 0 12px;padding:0}
+.assembly-workspace-page .workspace-bom .bom-visible-parts .bom-part{display:block}
+.assembly-workspace-page .workspace-bom .bom-visible-parts .bom-part-summary{display:flex}
+.assembly-workspace-page .workspace-bom .bom-visible-parts .bom-origin-group{margin:10px 0 15px}
