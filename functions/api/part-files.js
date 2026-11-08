@@ -2,7 +2,7 @@ import {isAdmin} from "./auth.js";
 const PROJECTS=new Set(["launcher","linear","robot","buck","motorlab","coiltest"]);
 const EXTENSIONS=new Set(["x_t","x_b","stl","step","stp","iges","igs","sldprt","sldasm","dxf","dwg","zip","pdf","3mf","obj","csv","txt"]);
 const json=(x,status=200)=>new Response(JSON.stringify(x),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
-const MAX_BYTES=35*1024*1024;
+const MAX_BYTES=20*1024*1024;
 const uuid=s=>typeof s==="string"&&/^[a-f0-9-]{36}$/i.test(s);
 export async function handlePartFiles(request,env){
  const u=new URL(request.url),project=u.searchParams.get("project"),partId=u.searchParams.get("id"),file=u.searchParams.get("file");
@@ -47,7 +47,7 @@ export async function handlePartFiles(request,env){
  const ext=name.split(".").pop().toLowerCase();
  if(!EXTENSIONS.has(ext))return json({error:"Unsupported file type. Use CAD, mesh, drawing or archive formats."},415);
  const bytes=await request.arrayBuffer();
- if(!bytes.byteLength||bytes.byteLength>MAX_BYTES)return json({error:"Files must be below 35 MB"},413);
+ if(!bytes.byteLength||bytes.byteLength>MAX_BYTES)return json({error:"Files must be below 20 MB"},413);
  const id=crypto.randomUUID();
  await env.PHOTOS.put(prefix+id+"."+ext,bytes,{httpMetadata:{contentType:"application/octet-stream"},
   customMetadata:{filename:name}});
