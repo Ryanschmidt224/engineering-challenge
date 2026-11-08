@@ -139,13 +139,14 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(sidebar.locator(".assembly-move-button").first()).toBeHidden();
  const renameProject=page.locator("#launcher .project-root-rename");
  const coverProject=page.locator("#launcher .project-root-cover");
+ await expect(page.locator('.project-card:has(.project-link[data-nav="launcher"]) > .project-card-edit')).toBeVisible();
  await expect(renameProject).toBeVisible();
  await expect(coverProject).toBeVisible();
  page.once("dialog",dialog=>dialog.accept("Renamed Foam Dart Project"));
  await renameProject.click();
  await expect(page.locator("#launcher .assembly-main h1")).toContainText("Renamed Foam Dart Project");
  await expect(page.locator('#launcher .assembly-tree-nodes .assembly-name').first()).toContainText("Renamed Foam Dart Project");
- await expect(page.locator('.project-link[data-project="launcher"] .project-copy h2')).toContainText("Renamed Foam Dart Project");
+ await expect(page.locator('.project-link[data-nav="launcher"] .project-copy h2')).toContainText("Renamed Foam Dart Project");
 
  await expect(sidebar.locator(".assembly-remove")).toBeHidden();
  const row=sidebar.locator(".assembly-node",{hasText:"Motor and Motor Control"});
