@@ -9,7 +9,7 @@ const safePublicImageUrl=value=>{
   if(typeof value!=="string"||value.length>1800)return null;
   const u=new URL(value);
   const host=u.hostname.toLowerCase();
-  if(u.protocol!=="https:"||u.username||u.password||u.port&&u.port!=="443"||!host.includes(".")||host==="localhost"||host.endsWith(".localhost")||host.endsWith(".local")||host.endsWith(".internal")||host.endsWith(".test")||host.endsWith(".example")||host.endsWith(".invalid")||host.endsWith(".onion")||host.includes(":")||/^\\d+(?:\\.\\d+){0,3}$/.test(host))return null;
+  if(u.protocol!=="https:"||u.username||u.password||u.port&&u.port!=="443"||!host.includes(".")||host==="localhost"||host.endsWith(".localhost")||host.endsWith(".local")||host.endsWith(".internal")||host.endsWith(".test")||host.endsWith(".example")||host.endsWith(".invalid")||host.endsWith(".onion")||host.includes(":")||/^\d+(?:\.\d+){0,3}$/.test(host))return null;
   return u.toString();
  }catch{return null}
 };
@@ -128,10 +128,10 @@ export async function handleExtract(request,env){
     try{const absolute=new URL(decode(raw.trim()),url).toString();const safe=safePublicImageUrl(absolute);if(safe)imageCandidates.push(safe)}catch{/* ignore invalid image metadata */}
    };
    // First choice: the product's image in Open Graph / Twitter / itemprop metadata.
-   for(const meta of html.matchAll(/<meta\\b[^>]*>/gi)){
-    const tag=meta[0],name=tag.match(/(?:name|property|itemprop)\\s*=\\s*["']([^"']+)["']/i)?.[1]||"";
+   for(const meta of html.matchAll(/<meta\b[^>]*>/gi)){
+    const tag=meta[0],name=tag.match(/(?:name|property|itemprop)\s*=\s*["']([^"']+)["']/i)?.[1]||"";
     if(!/^(?:og:image(?::secure_url|:url)?|twitter:image(?::src)?|image)$/i.test(name))continue;
-    const content=tag.match(/content\\s*=\\s*["']([^"']+)["']/i)?.[1]||"";
+    const content=tag.match(/content\s*=\s*["']([^"']+)["']/i)?.[1]||"";
     chooseImage(content);
    }
    const pieces=[];
