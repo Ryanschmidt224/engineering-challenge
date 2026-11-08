@@ -150,6 +150,19 @@ function setupAssemblyTrees(){
   projectMetaStatus.className="project-root-status";projectMetaStatus.setAttribute("role","status");
   projectActions.append(editProjectName,changeProjectCover,projectMetaStatus);
   projectHeading.after(projectActions);
+  // The Projects landing page also exposes a small editing entry point.
+  // Editing occurs on the project overview so all root settings stay together.
+  const landingCard=document.querySelector('.project-link[data-project="'+project+'"]')?.closest(".project-card");
+  const cardEdit=document.createElement("button");
+  cardEdit.type="button";cardEdit.className="btn project-card-edit hide";
+  cardEdit.textContent="Edit project";
+  cardEdit.setAttribute("aria-label","Edit project name and cover picture");
+  if(landingCard)landingCard.append(cardEdit);
+  cardEdit.onclick=()=>{
+   navigate(project);
+   main.scrollIntoView({block:"start",behavior:"instant"});
+   editProjectName.focus();
+  };
   const updateProjectTitle=value=>{
    title=value;
    projectHeading.textContent=value;
@@ -1650,7 +1663,7 @@ function setupAssemblyTrees(){
    if(trigger)treeMenu.dataset.target=trigger.textContent.trim();
    treeMenu.querySelector('button:not([disabled])')?.focus();
   };
-  function render(){nodesEl.replaceChildren();controls.classList.toggle("hide",!adminAuthenticated);projectActions.classList.toggle("hide",!adminAuthenticated);const row=(node,depth)=>{
+  function render(){nodesEl.replaceChildren();controls.classList.toggle("hide",!adminAuthenticated);projectActions.classList.toggle("hide",!adminAuthenticated);cardEdit.classList.toggle("hide",!adminAuthenticated);const row=(node,depth)=>{
    const id=node?.id??null,children=nodes.filter(n=>n.parentId===id),el=document.createElement("div");el.className="assembly-node"+(selected===id?" selected":"");el.style.paddingLeft=(depth*17+3)+"px";
    const expand=document.createElement("button");expand.type="button";expand.className="assembly-expander";expand.textContent=children.length?(expanded.has(id)?"▾":"▸"):" ";expand.setAttribute("aria-label",expanded.has(id)?"Collapse":"Expand");expand.onclick=()=>{expanded.has(id)?expanded.delete(id):expanded.add(id);render()};
    const name=document.createElement("button");name.type="button";name.className="assembly-name";name.textContent=node?(isPartNode(node)?"🔩  ":"📦  ")+node.name:"🟨  "+title;
