@@ -416,6 +416,7 @@ function setupAssemblyTrees(){
    const summary=document.createElement("summary");summary.className="bom-part-summary";
    const photo=makeBomThumbnail(partPhotoUrl(part.id),part.name);
    const name=document.createElement("span");name.className="bom-part-name";name.textContent=part.name;
+   if(part.bomOnly)item.classList.add("bom-only-part");
    const qty=document.createElement("span");qty.className="bom-part-meta";qty.textContent=(part.quantity===null||part.quantity===undefined?"Qty not specified":"Qty "+part.quantity+(part.quantityUnit?" "+part.quantityUnit:""))+(part.model?" · "+part.model:"");
    const expand=document.createElement("span");expand.className="bom-part-toggle-label";expand.textContent="Details";
    summary.append(photo,name,qty,expand);item.append(summary);
@@ -479,7 +480,7 @@ function setupAssemblyTrees(){
       await renderWorkspaceParts();
      }catch(error){bomReport("Delete failed: "+error.message);remove.disabled=false}
     };
-    if(!nodes.some(n=>isPartNode(n)&&n.partId===part.id)){
+    if(!part.bomOnly&&!nodes.some(n=>isPartNode(n)&&n.partId===part.id)){
      const link=document.createElement("button");link.type="button";link.className="btn";link.textContent="Add to feature tree";
      link.onclick=async()=>{
       link.disabled=true;
@@ -749,7 +750,7 @@ function setupAssemblyTrees(){
       }
      }
      if(wireId&&!part.specifications.some(spec=>spec.name==="Library wire ID"))part.specifications.push({name:"Library wire ID",value:wireId,source:"explicit"});
-     const response=await fetch("/api/components?project="+encodeURIComponent(project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({...part,assemblyId:targetAssembly})});
+     const response=await fetch("/api/components?project="+encodeURIComponent(project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({...part,assemblyId:targetAssembly,bomOnly:true})});
      const data=await response.json();if(!response.ok)throw Error(data.error||"Could not create BOM-only part");
      newPart=data.component;
      // A cutting list needs an integer wire count; do not invent a count for unspecified quantities.
