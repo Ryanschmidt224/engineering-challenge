@@ -146,7 +146,7 @@ function setupAssemblyTrees(){
   viewPartButton.onclick=()=>{detailsPanel.classList.remove("hide");detailsPanel.scrollIntoView({behavior:"smooth",block:"nearest"})};
   const renderPartDetails=part=>{
    detailRows.replaceChildren();
-   const fields=[["Qty",part.quantity??1],["Manufacturer",part.manufacturer],["Model",part.model],["Category",part.category],["Supplier",part.supplier],["ASIN",part.asin]];
+   const fields=[["Qty",part.quantity??1],...(part.historicalPrice!==null&&part.historicalPrice!==undefined&&Number.isFinite(Number(part.historicalPrice))?[["Historical price","$"+Number(part.historicalPrice).toFixed(2)+" USD per unit"+(part.historicalPriceDate?" (recorded "+part.historicalPriceDate+")":"")]]:[]),["Manufacturer",part.manufacturer],["Model",part.model],["Category",part.category],["Supplier",part.supplier],["ASIN",part.asin]];
    for(const [title,value] of fields){
     if(value===null||value===undefined||String(value).trim()==="")continue;
     const line=document.createElement("div");line.className="part-details-view-row";
@@ -603,7 +603,7 @@ function setupAssemblyTrees(){
    dismissBomEditor();
    extractedPictureUrl=null;
    editingPart=null;editingPartAssembly=null;
-   for(const name of ["name","manufacturer","model","category","supplier","asin","description"]){const el=bomField(name);if(el)el.value=""}
+   for(const name of ["name","manufacturer","model","category","supplier","asin","description","historical-price","historical-price-date"]){const el=bomField(name);if(el)el.value=""}
    const qty=bomField("quantity");if(qty)qty.value="1";
    bomRoot()?.querySelector(".component-specs")?.replaceChildren();
    bomRoot()?.querySelector(".component-review")?.classList.remove("hide");
@@ -614,6 +614,9 @@ function setupAssemblyTrees(){
    clearBomDraft();editingPart=part.id;editingPartAssembly=originId;
    for(const key of ["name","manufacturer","model","supplier","asin","category"]){const field=bomField(key);if(field)field.value=part[key]||""}
    const qty=bomField("quantity");if(qty)qty.value=String(part.quantity||1);
+   const price=bomField("historical-price"),date=bomField("historical-price-date");
+   if(price)price.value=part.historicalPrice??"";
+   if(date)date.value=part.historicalPriceDate||"";
    const specs=bomRoot()?.querySelector(".component-specs");
    if(specs){for(const spec of part.specifications||[]){
     const row=document.createElement("div");row.className="row component-spec-row";
@@ -644,6 +647,13 @@ function setupAssemblyTrees(){
    if(!name){bomReport("Enter a part name before saving.");openBomDraft();return false}
    if(!adminAuthenticated){bomReport("Use Admin login before saving BOM parts.");return false}
    const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:Math.max(1,Math.floor(Number(bomField("quantity")?.value)||1))};
+   const priceInput=bomField("historical-price")?.value.trim()||"";
+   const dateInput=bomField("historical-price-date")?.value||"";
+   if(priceInput&&(!Number.isFinite(Number(priceInput))||Number(priceInput)<0||Math.round(Number(priceInput)*100)!==Number(priceInput)*100&&Math.abs(Math.round(Number(priceInput)*100)-Number(priceInput)*100)>1e-6)){
+    bomReport("Historical price must be a positive USD amount with at most two decimal places.");return false;
+   }
+   component.historicalPrice=priceInput===""?null:Number(priceInput);
+   component.historicalPriceDate=priceInput===""?null:(dateInput||new Date().toLocaleDateString("en-CA"));
    for(const key of ["name","manufacturer","model","category","supplier","asin"])component[key]=bomField(key)?.value.trim()||"";
    component.specifications=[...(bomRoot()?.querySelectorAll(".component-spec-row")||[])].map(row=>({
     name:row.children[0]?.value.trim()||"",value:row.children[1]?.value.trim()||"",source:row.children[2]?.value==="inferred"?"inferred":"explicit"
@@ -1116,7 +1126,7 @@ function setupComponents(){
      const hint=document.createElement("span");hint.className="bom-part-toggle-label";hint.textContent="Details";
      summary.append(label,meta,hint);item.append(summary);
      const body=document.createElement("div");body.className="bom-part-body";
-     for(const [fieldName,value] of [["Manufacturer",c.manufacturer],["Model",c.model],["Supplier",c.supplier],["ASIN",c.asin],["Category",c.category]]){
+     for(const [fieldName,value] of [["Historical price",c.historicalPrice!==null&&c.historicalPrice!==undefined?"$"+Number(c.historicalPrice).toFixed(2)+" USD per unit"+(c.historicalPriceDate?" (recorded "+c.historicalPriceDate+")":""):null],["Manufacturer",c.manufacturer],["Model",c.model],["Supplier",c.supplier],["ASIN",c.asin],["Category",c.category]]){
       if(!value)continue;
       const line=document.createElement("p"),strong=document.createElement("strong");
       strong.textContent=fieldName+": ";line.append(strong,document.createTextNode(value));body.append(line);
@@ -1157,7 +1167,7 @@ function setupComponents(){
  // A fresh part is a fresh draft. Only Save component writes a new BOM record.
  function clearPartEditor(){
   for(const name of ["name","manufacturer","model","category","supplier","asin"]){const control=field(name);if(control)control.value=""}
-  field("description").value="";if(field("quantity"))field("quantity").value="1";
+  field("description").value="";if(field("quantity"))field("quantity").value="1";if(field("historical-price"))field("historical-price").value="";if(field("historical-price-date"))field("historical-price-date").value="";
   specs.replaceChildren();review.classList.remove("hide");
  }
  root.addEventListener("bom:new-part",()=>{
@@ -1215,7 +1225,10 @@ function setupComponents(){
  };
  field("add-spec").onclick=()=>specRow();
  field("save").onclick=async()=>{
-  const c={assemblyId:assemblySelections[project]??null,quantity:Math.max(1,Math.floor(Number(field("quantity")?.value)||1))};for(const name of ["name","manufacturer","model","category","supplier","asin"])c[name]=field(name).value.trim();
+  const priceInput=field("historical-price")?.value.trim()||"";
+  const dateInput=field("historical-price-date")?.value||"";
+  const c={assemblyId:assemblySelections[project]??null,quantity:Math.max(1,Math.floor(Number(field("quantity")?.value)||1)),
+   historicalPrice:priceInput===""?null:Number(priceInput),historicalPriceDate:priceInput===""?null:(dateInput||new Date().toLocaleDateString("en-CA"))};for(const name of ["name","manufacturer","model","category","supplier","asin"])c[name]=field(name).value.trim();
   c.specifications=[...specs.querySelectorAll(".component-spec-row")].map(row=>({name:row.children[0].value.trim(),value:row.children[1].value.trim(),source:row.children[2].value})).filter(s=>s.name&&s.value);
   if(!c.name){say("Component name is required.");return}
   field("save").disabled=true;try{const res=await fetch("/api/components?project="+project,{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",body:JSON.stringify(c)}),data=await res.json();if(!res.ok)throw Error(data.error||"Save failed");review.classList.add("hide");field("description").value="";if(field("quantity"))field("quantity").value="1";say("Part added to BOM.");feedback.textContent="";clearPartEditor();if(importPanel)importPanel.open=false;review.classList.add("hide");await refresh()}catch(e){say(e.message)}finally{field("save").disabled=false}
