@@ -172,6 +172,7 @@ function setupAssemblyTrees(){
    history.pushState(null,"","#"+project+"/part/"+encodeURIComponent(part.id));
    void showAssemblyPage();window.scrollTo(0,0);
   }
+  let extractedPictureUrl=null;
   // Workspace-owned extraction handler. Runs even when the legacy component
   // editor failed to initialize; captured before the editor's click listeners.
   const bomNotice=document.createElement("p");
@@ -197,6 +198,7 @@ function setupAssemblyTrees(){
    const description=section.querySelector(".component-description")?.value.trim();
    if(!description){notify("Paste a product description or an HTTPS product URL.");return}
    if(!adminAuthenticated){notify("Sign in using Admin login to extract product specifications.");return}
+   extractedPictureUrl=null;
    button.disabled=true;notify("Connecting to the extraction API…");
    try{
     const controller=new AbortController();
@@ -208,6 +210,7 @@ function setupAssemblyTrees(){
     if(!response.ok)throw Error((data.error||"Extraction failed")+" (HTTP "+response.status+")");
     if(!data.component||typeof data.component!=="object")throw Error("No product data returned");
     const part=data.component;
+    extractedPictureUrl=typeof data.imageUrl==="string"?data.imageUrl:null;
     for(const fieldName of ["name","manufacturer","model","category","supplier","asin"]){
      const field=section.querySelector(".component-"+fieldName);if(field)field.value=part[fieldName]||""
     }
@@ -224,7 +227,7 @@ function setupAssemblyTrees(){
      }
     }
     section.querySelector(".component-review")?.classList.remove("hide");
-    notify("Specifications extracted. Review them and click Save component.");
+    notify("Specifications extracted."+(extractedPictureUrl?" Product picture found and will be added when saved.":" No product picture found.")+" Review and save the part.");
    }catch(error){
     section.querySelector(".component-review")?.classList.remove("hide");
     const message="Extraction failed: "+(error.name==="AbortError"?"The request timed out":error.message);
@@ -236,10 +239,13 @@ function setupAssemblyTrees(){
   let editingPart=null;
   let editingPartAssembly=null;
   const partPhotoUrl=id=>"/api/components/photo?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id);
+  // Local SVG fallback: always show a clear frowny face when a thumbnail is missing.
+  const missingPicture="data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><rect width="160" height="160" rx="18" fill="#203b49"/><circle cx="80" cy="80" r="56" fill="#f7c65c" stroke="#e5a92a" stroke-width="4"/><circle cx="59" cy="67" r="6" fill="#324653"/><circle cx="101" cy="67" r="6" fill="#324653"/><path d="M51 111 Q80 82 109 111" fill="none" stroke="#324653" stroke-width="7" stroke-linecap="round"/></svg>');
   function makeBomThumbnail(url,alt){
    const image=document.createElement("img");image.className="bom-row-thumbnail";image.alt=alt||"Part picture";image.loading="lazy";
-   image.onerror=()=>{image.removeAttribute("src");image.classList.add("bom-thumbnail-empty");image.alt="No picture";};
-   if(url)image.src=url;else image.classList.add("bom-thumbnail-empty");return image;
+   image.onerror=()=>{image.onerror=null;image.src=missingPicture;image.classList.add("bom-thumbnail-empty");image.alt="Picture unavailable";};
+   if(url)image.src=url;else{image.src=missingPicture;image.classList.add("bom-thumbnail-empty")}
+   return image;
   }
   function createSavedPart(part,originId){
    const item=document.createElement("details");item.className="bom-part";
@@ -369,6 +375,7 @@ function setupAssemblyTrees(){
    if(el){el.textContent=message;el.hidden=false;el.style.display="block"}
   };
   function clearBomDraft(){
+   extractedPictureUrl=null;
    editingPart=null;editingPartAssembly=null;
    for(const name of ["name","manufacturer","model","category","supplier","asin","description"]){const el=bomField(name);if(el)el.value=""}
    const qty=bomField("quantity");if(qty)qty.value="1";
@@ -418,17 +425,26 @@ function setupAssemblyTrees(){
    bomReport("Saving "+name+"…");
    try{
     const wasEdit=!!editingPart;
+    const imageToImport=extractedPictureUrl;
     const address="/api/components?project="+encodeURIComponent(project)+(editingPart?"&id="+encodeURIComponent(editingPart):"");
     const response=await fetch(address,{method:wasEdit?"PUT":"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(component)});
     const raw=await response.text();let result;
     try{result=JSON.parse(raw)}catch{throw Error("Unexpected save response (HTTP "+response.status+")")}
     if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
+    let photoMessage="";
+    if(imageToImport&&result.component?.id){
+     try{
+      const photoResponse=await fetch(partPhotoUrl(result.component.id),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({imageUrl:imageToImport})});
+      const photoData=await photoResponse.json().catch(()=>({}));
+      photoMessage=photoResponse.ok?" Product picture added.":" Product picture unavailable; you can upload one manually.";
+     }catch{photoMessage=" Product picture unavailable; you can upload one manually."}
+    }
     clearBomDraft();
     const editor=bomRoot()?.querySelector(".component-admin");if(editor)editor.open=false;
     bomRoot()?.querySelector(".component-review")?.classList.add("hide");
     bomRoot()?.dispatchEvent(new Event("bom:refresh"));
     await renderWorkspaceParts();
-    bomReport(name+(wasEdit?" updated.":" saved to the BOM."));
+    bomReport(name+(wasEdit?" updated.":" saved to the BOM.")+photoMessage);
     return true;
    }catch(error){bomReport("Could not save part: "+error.message);return false}
    finally{savingBom=false;if(saveButton)saveButton.disabled=false}
