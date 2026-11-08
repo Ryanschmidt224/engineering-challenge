@@ -81,6 +81,21 @@
     const down=addButton("↓",()=>move(1),"btn");down.title="Move step down";down.disabled=index===steps.length-1;
     const duplicate=addButton("Duplicate",()=>{steps.splice(index+1,0,{...copyStep(step),id:newId()});noteChange();render()});
     const remove=addButton("Remove",()=>{if(!window.confirm("Remove this recipe step?"))return;steps.splice(index,1);selectedStep=Math.min(selectedStep,Math.max(0,steps.length-1));noteChange();render()});
+    const grip=make("span","recipe-drag-handle","⠿");
+    grip.draggable=true;grip.title="Drag to reorder";grip.setAttribute("aria-label","Drag step to reorder");
+    grip.addEventListener("dragstart",event=>{event.dataTransfer.setData("text/plain",step.id);event.dataTransfer.effectAllowed="move"});
+    card.addEventListener("dragover",event=>{if(!event.dataTransfer.types.includes("text/plain"))return;event.preventDefault();card.classList.add("recipe-drag-over")});
+    card.addEventListener("dragleave",()=>card.classList.remove("recipe-drag-over"));
+    card.addEventListener("drop",event=>{
+     event.preventDefault();card.classList.remove("recipe-drag-over");
+     const sourceId=event.dataTransfer.getData("text/plain");
+     const source=steps.findIndex(item=>item.id===sourceId);
+     if(source<0||source===index)return;
+     const [moved]=steps.splice(source,1);
+     const at=steps.findIndex(item=>item.id===step.id);
+     steps.splice(at,0,moved);selectedStep=at;noteChange();render();
+    });
+    controls.prepend(grip);
     controls.append(up,down,duplicate,remove);bar.append(controls);card.append(bar);
     const fields=make("div","recipe-step-fields");
     const title=make("label","","Action / short title");
@@ -92,7 +107,7 @@
     detail.append(textfield(step.detail,"Add the extra steps, checks or context a beginner might need.",v=>step.detail=v,3));
     fields.append(title,kind,standard,detail);card.append(fields);layout.append(card);
    }
-   const add=addButton("+ Add step",()=>{steps.push({id:newId(),title:"New step",standard:"",detail:"",kind:"action"});selectedStep=steps.length-1;noteChange();render();layout.querySelector(".recipe-edit-step:last-of-type input")?.focus()},"btn primary");
+   const add=addButton("+ Add step",()=>{steps.push({id:newId(),title:"New step",standard:"",detail:"",kind:"action"});selectedStep=steps.length-1;noteChange();render();content.querySelector(".recipe-edit-step:last-of-type input")?.focus()},"btn primary");
    const importExisting=addButton("Import original instructions",()=>{
     const raw=instruction?.value?.trim()||"";
     if(!raw)return;
@@ -119,12 +134,16 @@
    body.append(bar);
    body.append(make("h4","recipe-reader-title",current.title));
    const selectedArea=make("div","recipe-reader-text");
+   let highlightedText="";
    if(level!=="brief"&&current.standard?.trim())selectedArea.append(make("p","",current.standard));
    if(level==="detailed"&&current.detail?.trim())selectedArea.append(make("p","",current.detail));
    if(!selectedArea.childElementCount&&level!=="brief")selectedArea.append(make("p","muted","No additional guidance for this step."));
+   const captureSelection=()=>{highlightedText=selectedText(selectedArea)||selectedText(body)||highlightedText};
+   selectedArea.addEventListener("mouseup",captureSelection);
+   selectedArea.addEventListener("keyup",captureSelection);
    body.append(selectedArea);
    const explain=addButton("Please explain this",()=>{
-    const text=selectedText(selectedArea)||selectedText(body);
+    const text=selectedText(selectedArea)||selectedText(body)||highlightedText;
     if(!text){feedback.textContent="Highlight a word or phrase in the instructions first.";return}
     feedback.textContent="";
     const context={stepId:current.id,stepTitle:current.title,fullText:current.standard+"\n"+current.detail};
