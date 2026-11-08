@@ -4,6 +4,16 @@ const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:
 const authorized=isAdmin;
 const key=project=>"components/"+project+".json";
 const read=async(env,project)=>{const obj=await env.PHOTOS.get(key(project));return obj?JSON.parse(await obj.text()):[]};
+const safePublicImageUrl=value=>{
+ try{
+  if(typeof value!=="string"||value.length>1800)return null;
+  const u=new URL(value);
+  const host=u.hostname.toLowerCase();
+  if(u.protocol!=="https:"||u.username||u.password||u.port&&u.port!=="443"||!host.includes(".")||host==="localhost"||host.endsWith(".localhost")||host.endsWith(".local")||host.endsWith(".internal")||host.endsWith(".test")||host.endsWith(".example")||host.endsWith(".invalid")||host.endsWith(".onion")||host.includes(":")||/^\\d+(?:\\.\\d+){0,3}$/.test(host))return null;
+  return u.toString();
+ }catch{return null}
+};
+
 export async function handleComponents(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project");
  if(!projects.has(project))return json({error:"Invalid project"},400);
@@ -48,7 +58,30 @@ export async function handleComponentPhoto(request,env){
  }
  if(request.method!=="POST")return json({error:"Method not allowed"},405);
  if(!await authorized(request,env))return json({error:"Admin login required"},401);
- const records=await read(env,project);if(!records.some(part=>part.id===id))return json({error:"Part not found"},404);
+ const records=await read(env,project);
+ const incomingType=(request.headers.get("content-type")||"").split(";")[0].toLowerCase();
+ if(incomingType==="application/json"){
+  const payload=await request.json().catch(()=>null),remote=safePublicImageUrl(payload?.imageUrl);
+  if(!remote)return json({error:"No valid public HTTPS image URL"},400);
+  // The image is copied to R2 once. Do not hotlink the seller's server.
+  let response;try{
+   response=await fetch(remote,{redirect:"manual",headers:{"accept":"image/jpeg,image/png,image/webp"},signal:AbortSignal.timeout(8000)});
+  }catch{return json({error:"The product website did not allow image download"},422)}
+  if(!response.ok)return json({error:"Product image unavailable (HTTP "+response.status+")"},422);
+  const mime=(response.headers.get("content-type")||"").split(";")[0].toLowerCase();
+  if(!["image/jpeg","image/png","image/webp"].includes(mime))return json({error:"Product image format unsupported"},415);
+  if(Number(response.headers.get("content-length"))>3*1024*1024)return json({error:"Product image is larger than 3 MB"},413);
+  const buffer=await response.arrayBuffer();
+  if(!buffer.byteLength||buffer.byteLength>3*1024*1024)return json({error:"Product image is larger than 3 MB"},413);
+  const signature=new Uint8Array(buffer);
+  const valid=mime==="image/jpeg"?signature[0]===255&&signature[1]===216&&signature[2]===255:
+   mime==="image/png"?signature[0]===137&&signature[1]===80&&signature[2]===78&&signature[3]===71:
+   String.fromCharCode(...signature.slice(0,4))==="RIFF"&&String.fromCharCode(...signature.slice(8,12))==="WEBP";
+  if(!valid)return json({error:"Website returned an invalid image"},422);
+  await env.PHOTOS.put(photoKey,buffer,{httpMetadata:{contentType:mime}});
+  return json({ok:true,imported:true});
+ }
+if(!records.some(part=>part.id===id))return json({error:"Part not found"},404);
  const mime=(request.headers.get("content-type")||"").split(";")[0].toLowerCase();
  if(!["image/jpeg","image/png","image/webp"].includes(mime))return json({error:"Use a JPG, PNG or WebP picture"},415);
  const bytes=await request.arrayBuffer();if(!bytes.byteLength||bytes.byteLength>3*1024*1024)return json({error:"Picture must be under 3 MB"},413);
@@ -61,6 +94,7 @@ export async function handleExtract(request,env){
  if(!env.OPENAI_API_KEY)return json({error:"AI extraction is not configured: add an OPENAI_API_KEY secret to this Cloudflare Worker. You can still add components manually."},503);
  const body=await request.json().catch(()=>null);
  let description=typeof body?.description==="string"?body.description.trim():"";
+ let imageUrl=null;
  const source=description.match(/^https?:\/\/\S+$/i)?.[0];
  if(source){
   // Only fetch ordinary public HTTPS websites. No automatic redirect following.
@@ -88,6 +122,18 @@ export async function handleExtract(request,env){
    const html=new TextDecoder().decode(Uint8Array.from(chunks.flatMap(chunk=>Array.from(chunk))));
    const decode=str=>str.replace(/&(?:nbsp|amp|quot|lt|gt|#39|#x27);/gi,match=>({"&nbsp;":" ","&amp;":"&","&quot;":'"',"&lt;":"<","&gt;":">","&#39;":"'","&#x27;":"'"}[match.toLowerCase()]||" ")).replace(/\s+/g," ").trim();
    const strip=str=>decode(str.replace(/<[^>]*>/g," "));
+   const imageCandidates=[];
+   const chooseImage=raw=>{
+    if(typeof raw!=="string"||!raw.trim())return;
+    try{const absolute=new URL(decode(raw.trim()),url).toString();const safe=safePublicImageUrl(absolute);if(safe)imageCandidates.push(safe)}catch{/* ignore invalid image metadata */}
+   };
+   // First choice: the product's image in Open Graph / Twitter / itemprop metadata.
+   for(const meta of html.matchAll(/<meta\\b[^>]*>/gi)){
+    const tag=meta[0],name=tag.match(/(?:name|property|itemprop)\\s*=\\s*["']([^"']+)["']/i)?.[1]||"";
+    if(!/^(?:og:image(?::secure_url|:url)?|twitter:image(?::src)?|image)$/i.test(name))continue;
+    const content=tag.match(/content\\s*=\\s*["']([^"']+)["']/i)?.[1]||"";
+    chooseImage(content);
+   }
    const pieces=[];
    const title=html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1];
    if(title)pieces.push("Page title: "+strip(title).slice(0,400));
@@ -108,6 +154,8 @@ export async function handleExtract(request,env){
      if(Array.isArray(value)){for(const item of value.slice(0,50))visit(item,depth+1);return}
      const type=String(value["@type"]||"").toLowerCase();
      if(type.includes("product")){
+      const images=Array.isArray(value.image)?value.image:[value.image];
+      for(const candidate of images.slice(0,5))chooseImage(typeof candidate==="string"?candidate:candidate?.url||candidate?.contentUrl||"");
       for(const key of ["name","description","sku","mpn","gtin","gtin13","gtin12","color","material","size","category"]){
        if(typeof value[key]==="string"&&value[key])pieces.push("Product "+key+": "+decode(value[key]).slice(0,900));
       }
@@ -139,6 +187,7 @@ export async function handleExtract(request,env){
     if(visible.length>70)pieces.push("Page text: "+visible.slice(0,2100));
    }
    const extracted=[...new Set(pieces)].join("\n");
+   imageUrl=imageCandidates[0]||null;
    if(extracted.length<60)return json({error:"Product details were not available in the readable portion of this page. The store may limit automated access; paste the product title and specifications instead."},422);
    description=("Source: "+url.hostname+" "+url.pathname+"\n"+extracted).slice(0,3000);
   }catch(e){return json({error:"Could not retrieve that website. It may block automated access. Paste the product description instead."},422)}
@@ -156,5 +205,5 @@ export async function handleExtract(request,env){
  const schema={type:"object",additionalProperties:false,required:["name","manufacturer","model","supplier","asin","category","specifications"],properties:{name:{type:"string"},manufacturer:{type:"string"},model:{type:"string"},supplier:{type:"string"},asin:{type:"string"},category:{type:"string"},specifications:{type:"array",items:{type:"object",additionalProperties:false,required:["name","value","source"],properties:{name:{type:"string"},value:{type:"string"},source:{type:"string",enum:["explicit","inferred"]}}}}}};
  const response=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"authorization":"Bearer "+env.OPENAI_API_KEY,"content-type":"application/json"},body:JSON.stringify({model:"gpt-4o-mini",temperature:0,max_tokens:700,messages:[{role:"system",content:"Extract technical component information from a product description. Return concise, accurate fields. Do not invent missing specifications. Empty string for missing scalar fields. Only mark inferred when a detail is reasonably inferred; omit speculative values. ASIN only if explicitly present. Manufacturer and model must not be guessed. Use the source domain to identify the retailer when available; do not assume Amazon. Prefer the product manufacturer over the retailer for manufacturer. Never invent specifications."},{role:"user",content:description}],response_format:{type:"json_schema",json_schema:{name:"component",strict:true,schema}}})});
  const result=await response.json().catch(()=>({}));if(!response.ok)return json({error:"AI extraction failed: "+(result.error?.message||"Provider error"),providerStatus:response.status},502);
- try{return json({component:JSON.parse(result.choices[0].message.content)})}catch{return json({error:"Invalid AI response"},502)}
+ try{return json({component:JSON.parse(result.choices[0].message.content),imageUrl})}catch{return json({error:"Invalid AI response"},502)}
 }
