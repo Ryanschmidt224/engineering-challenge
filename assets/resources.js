@@ -56,7 +56,7 @@
   "workshop:oscilloscope":"Suitable bandwidth and probes · Safe grounding setup"
  };
  const workshopReferences=[...workshopSupplies,...workshopEquipment];
- const catalog={tools:[...tools,...workshopEquipment.map(x=>({id:x.id,name:x.name,subtitle:"Workshop standard",detail:x.spec+" "+x.use,caution:x.caution}))],calculators,parts:[...baseParts,...workshopSupplies.map(x=>({id:x.id,name:x.name,subtitle:x.subtitle,detail:x.spec+" "+x.use,caution:x.caution}))]};
+ const catalog={tools:workshopEquipment.map(x=>({id:x.id,name:x.name,subtitle:"Workshop standard",detail:x.spec+" "+x.use,caution:x.caution})),calculators,parts:[...baseParts,...workshopSupplies.map(x=>({id:x.id,name:x.name,subtitle:x.subtitle,detail:x.spec+" "+x.use,caution:x.caution}))]};
  let wires=[],commonRecords=[],listeners=new Set(),admin=false;
  const byId=(kind,id)=>catalog[kind]?.find(item=>item.id===id);
  const wireName=w=>[w.name,w.awg?w.awg+" AWG":"",w.color,w.partNumber].filter(Boolean).join(" · ");
@@ -64,7 +64,7 @@
   if(kind==="parts")return [...catalog.parts,...wires.map(w=>({id:"wire:"+w.id,name:wireName(w),subtitle:"Shared wire type",detail:[w.construction,w.insulation,w.manufacturer,w.notes].filter(Boolean).join(" · ")})),...commonRecords.map(p=>({id:"common:"+p.id,name:p.name,subtitle:p.category==="screws"?"Shared fastener":p.category==="buck-converters"?"Shared buck converter":"Shared component",detail:[p.manufacturer,p.partNumber,p.specifications,p.notes].filter(Boolean).join(" · ")}))];
   return catalog[kind]||[];
  }
- function label(kind,id){return all(kind).find(item=>item.id===id)?.name||"Unavailable Workshop item ("+id+")"}
+ function label(kind,id){return all(kind).find(item=>item.id===id)?.name||(kind==="tools"?tools.find(item=>item.id===id)?.name:null)||"Unavailable Workshop item ("+id+")"}
  function notify(){listeners.forEach(fn=>fn());renderCommonParts();}
  async function reloadWires(){
   try{const response=await fetch("/api/wires",{cache:"no-store"});const data=await response.json();if(!response.ok)throw Error(data.error||"Wire library unavailable");wires=data.wires||[];notify();return wires}
