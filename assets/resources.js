@@ -16,7 +16,7 @@
   {id:"common-buck",name:"DC–DC buck converters",subtitle:"Step-down switching power modules",detail:"Reusable power-converter reference. Record input/output ranges, current, ripple, protection and manufacturer part number. Check startup transients and ratings."}
  ];
  const catalog={tools,calculators,parts:baseParts};
- let wires=[],listeners=new Set();
+ let wires=[],listeners=new Set(),admin=false;
  const byId=(kind,id)=>catalog[kind]?.find(item=>item.id===id);
  const wireName=w=>[w.name,w.awg?w.awg+" AWG":"",w.color,w.partNumber].filter(Boolean).join(" · ");
  function all(kind){
@@ -132,7 +132,7 @@
   for(const wire of wires){
    const row=element("div","resource-wire-item");
    row.append(element("span","",wireName(wire)),element("span","muted",[wire.construction,wire.insulation].filter(Boolean).join(" · ")));
-   const edit=element("button","btn","Edit");edit.type="button";edit.onclick=()=>editWire(wire);row.append(edit);
+   if(admin){const edit=element("button","btn","Edit");edit.type="button";edit.onclick=()=>editWire(wire);row.append(edit)}
    mount.append(row);
   }
  }
@@ -151,7 +151,7 @@
   for(const [key,title] of wireFields){
    const label=element("label","",title),input=element("input","field");input.dataset.field=key;input.name=key;label.append(input);fields.append(label);
   }
-  document.querySelector(".resource-wire-new").onclick=()=>editWire(null);
+  document.querySelector(".resource-wire-new").onclick=()=>{if(admin)editWire(null)};
   form.querySelector(".resource-wire-cancel").onclick=()=>form.classList.add("hide");
   form.onsubmit=async event=>{
    event.preventDefault();const status=document.querySelector(".resource-wire-status");
@@ -168,10 +168,11 @@
    }catch(e){status.textContent=e.message}finally{button.disabled=false}
   };
  }
+ function setAdmin(value){admin=!!value;const button=document.querySelector(".resource-wire-new");if(button)button.classList.toggle("hide",!admin);const form=document.querySelector(".resource-wire-form");if(form&&!admin)form.classList.add("hide");renderCommonParts()}
  function init(){
   renderCatalog("resource-tools",tools,"tool");
   renderCatalog("resource-calculators",calculators,"calculator");
   renderCommonParts();initWireForm();void reloadWires();
  }
- window.BSResources={catalog,all,mount,reloadWires,init,normalize};
+ window.BSResources={catalog,all,mount,reloadWires,init,normalize,setAdmin};
 })();
