@@ -240,7 +240,7 @@ function setupAssemblyTrees(){
   let editingPartAssembly=null;
   const partPhotoUrl=id=>"/api/components/photo?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id);
   // Local SVG fallback: always show a clear frowny face when a thumbnail is missing.
-  const missingPicture="data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><rect width="160" height="160" rx="18" fill="#203b49"/><circle cx="80" cy="80" r="56" fill="#f7c65c" stroke="#e5a92a" stroke-width="4"/><circle cx="59" cy="67" r="6" fill="#324653"/><circle cx="101" cy="67" r="6" fill="#324653"/><path d="M51 111 Q80 82 109 111" fill="none" stroke="#324653" stroke-width="7" stroke-linecap="round"/></svg>');
+  const missingPicture="data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><rect width="160" height="160" rx="18" fill="#243642"/><circle cx="80" cy="80" r="53" fill="#667b87" stroke="#718894" stroke-width="3"/><circle cx="61" cy="70" r="5" fill="#354b57"/><circle cx="99" cy="70" r="5" fill="#354b57"/><path d="M54 108 Q80 87 106 108" fill="none" stroke="#354b57" stroke-width="6" stroke-linecap="round"/></svg>');
   function makeBomThumbnail(url,alt){
    const image=document.createElement("img");image.className="bom-row-thumbnail";image.alt=alt||"Part picture";image.loading="lazy";
    image.onerror=()=>{image.onerror=null;image.src=missingPicture;image.classList.add("bom-thumbnail-empty");image.alt="Picture unavailable";};
@@ -308,6 +308,16 @@ function setupAssemblyTrees(){
    body.prepend(instructions);
    item.append(body);return item;
   }
+  // Only the most recently opened BOM entry has an enlarged thumbnail.
+  // Keep other <details> open so nested subassembly BOMs remain visible.
+  workspace.querySelector(".workspace-saved-parts").addEventListener("toggle",event=>{
+   const entry=event.target;
+   if(!(entry instanceof HTMLDetailsElement)||!entry.classList.contains("bom-part"))return;
+   if(!entry.open){entry.classList.remove("bom-thumbnail-active");return}
+   const list=workspace.querySelector(".workspace-saved-parts");
+   list.querySelectorAll(".bom-thumbnail-active").forEach(other=>other.classList.remove("bom-thumbnail-active"));
+   entry.classList.add("bom-thumbnail-active");
+  },true);
   async function renderWorkspaceParts(){
    const version=++bomDisplayVersion,assemblyId=selected,container=workspace.querySelector(".workspace-saved-parts");
    container.replaceChildren();
