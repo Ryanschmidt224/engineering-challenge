@@ -47,26 +47,40 @@ const presentPart=part=>({...part,assumedOnHand:part.purchaseOverride===true?fal
 function syncDerived(items,source){
  if(source.generatedFrom)return;
  const spec=new Map((source.specifications||[]).map(x=>[String(x.name).toLowerCase(),String(x.value).trim()]));
- const ferrules=["end a","end b"].filter(key=>spec.get(key)?.toLowerCase()==="ferrule").length;
+ const crimped=String(source.category||"").toLowerCase().includes("crimped wire");
  const gauge=spec.get("awg");
- const previous=items.findIndex(x=>x.generatedFrom===source.id&&x.generatedKind==="ferrule");
- if(!ferrules||!gauge||!/^\d{1,2}$/.test(gauge)||!source.category?.toLowerCase().includes("crimped")){
-  if(previous>=0)items.splice(previous,1);
-  return;
- }
- const qty=source.quantityUnit==="pcs"&&Number.isInteger(source.quantity)?source.quantity*ferrules:null;
- const data={
-  name:"Ferrule — "+gauge+" AWG",assemblyId:source.assemblyId??null,
-  quantity:qty,quantityUnit:"pcs",bomOnly:true,
-  category:"Wire termination",generatedFrom:source.id,generatedKind:"ferrule",
-  sharedPartRef:"standard:ferrule:"+gauge,manufacturer:"",model:"",supplier:"",asin:"",
+ const validGauge=crimped&&/^\d{1,2}$/.test(gauge||"");
+ const updateGenerated=(kind,data)=>{
+  const index=items.findIndex(x=>x.generatedFrom===source.id&&x.generatedKind===kind);
+  if(!data){if(index>=0)items.splice(index,1);return}
+  if(index>=0)items[index]={...items[index],...data};
+  else items.push({id:crypto.randomUUID(),createdAt:new Date().toISOString(),...data});
+ };
+ const ferrules=["end a","end b"].filter(key=>spec.get(key)?.toLowerCase()==="ferrule").length;
+ const qty=source.quantityUnit==="pcs"&&Number.isInteger(source.quantity)&&source.quantity>0?source.quantity:null;
+ const base={assemblyId:source.assemblyId??null,bomOnly:true,generatedFrom:source.id,
+  manufacturer:"",model:"",supplier:"",asin:"",historicalPrice:null,historicalPriceDate:null};
+ updateGenerated("ferrule",validGauge&&ferrules?{
+  ...base,name:"Ferrule — "+gauge+" AWG",quantity:qty===null?null:qty*ferrules,quantityUnit:"pcs",
+  category:"Wire termination",generatedKind:"ferrule",sharedPartRef:"standard:ferrule:"+gauge,
   specifications:[
    {name:"Wire gauge",value:gauge+" AWG",source:"explicit"},
    {name:"Ferrules per wire",value:String(ferrules),source:"explicit"}
-  ],historicalPrice:null,historicalPriceDate:null
- };
- if(previous>=0)items[previous]={...items[previous],...data};
- else items.push({id:crypto.randomUUID(),createdAt:new Date().toISOString(),...data});
+  ]
+ }:null);
+ // A wire assembly consumes raw wire even though the crimped assembly itself
+ // remains a significant BOM part. Cut lengths are measured in inches.
+ const cut=Number(spec.get("cut length (in)"));
+ const conductor=/^(solid|braided|stranded)$/.test(spec.get("conductor")||"")?spec.get("conductor"):"stranded";
+ updateGenerated("wire",validGauge&&Number.isFinite(cut)&&cut>0&&cut<=40000?{
+  ...base,name:"Wire — "+gauge+" AWG "+conductor+" copper",
+  quantity:qty===null?null:Number((qty*cut).toFixed(4)),quantityUnit:"in",
+  category:"Wire & cable",generatedKind:"wire",sharedPartRef:source.sharedPartRef||null,
+  specifications:[
+   {name:"AWG",value:gauge,source:"explicit"},
+   {name:"Conductor",value:conductor,source:"explicit"}
+  ]
+ }:null);
 }
 const cleanPartRef=value=>{
  if(typeof value!=="string")return null;
