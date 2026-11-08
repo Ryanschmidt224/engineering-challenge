@@ -159,29 +159,44 @@ test("solder-removal tools are not mistaken for consumable solder",async()=>{
 });
 
 
-test("recipes save discrete steps, survive legacy-only saves, and restore through revision history",async()=>{
+test("recipes save discrete steps and restore through revision history without legacy fields",async()=>{
  const {env}=storage();
  const url="/api/workspace?project=launcher&assembly=__root__";
- const stepA={id:"step-A",title:"Cut wire",standard:"Cut to 12 inches.",detail:"Check the insulation rating.",kind:"action"};
+ const stepA={id:"step-A",title:"Cut wire",standard:"Cut to 12 inches.",detail:"Check insulation.",kind:"action"};
  const stepB={id:"step-B",title:"Check polarity",standard:"Verify the negative terminal.",detail:"Use a multimeter.",kind:"inspection"};
- const base={instructions:"Original full written instructions",procedures:"Legacy procedure",notes:"",resources:{tools:[],calculators:[],parts:[]}};
- const first=await workspace(request("PUT",url,{...base,recipe:[stepA,stepB]}),env);
+ const first=await workspace(request("PUT",url,{recipe:[stepA,stepB]}),env);
  assert.equal(first.status,200);
  let saved=(await (await workspace(request("GET",url),env)).json()).workspace;
  assert.equal(saved.recipe.length,2);
- assert.equal(saved.instructions,base.instructions);
- // Other existing workspace editors need not send recipe to preserve it.
- const legacy=await workspace(request("PUT",url,{...base,notes:"Updated legacy note"}),env);
- assert.equal(legacy.status,200);
+ assert.equal(Object.hasOwn(saved,"instructions"),false);
+ assert.equal(Object.hasOwn(saved,"procedures"),false);
+ assert.equal(Object.hasOwn(saved,"notes"),false);
+ // Other workspace updates preserve steps without sending them.
+ const another=await workspace(request("PUT",url,{experiments:[]}),env);
+ assert.equal(another.status,200);
  saved=(await (await workspace(request("GET",url),env)).json()).workspace;
  assert.equal(saved.recipe[0].id,"step-A");
- // Reordering changes positions, never step IDs.
- const reordered=await workspace(request("PUT",url,{...base,notes:"Updated legacy note",recipe:[stepB,stepA]}),env);
+ const reordered=await workspace(request("PUT",url,{recipe:[stepB,stepA]}),env);
  assert.equal(reordered.status,200);
  saved=(await (await workspace(request("GET",url),env)).json()).workspace;
  assert.equal(saved.recipe[0].id,"step-B");
  assert.equal(saved.recipe[1].id,"step-A");
  assert.ok(saved.history.some(item=>item.recipe?.[0]?.id==="step-A"));
+});
+test("obsolete freeform instructions are pruned on next save",async()=>{
+ const {env}=storage(),url="/api/workspace?project=launcher&assembly=__root__";
+ const key="workspaces/launcher/__root__.json";
+ await env.PHOTOS.put(key,JSON.stringify({
+  instructions:"Old note",procedures:"Old machine settings",notes:"",
+  recipe:[],history:[{savedAt:"2026-11-01T00:00:00Z",instructions:"Prior steps",notes:""}]
+ }));
+ const result=await workspace(request("PUT",url,{recipe:[]}),env);
+ assert.equal(result.status,200);
+ const stored=JSON.parse(await (await env.PHOTOS.get(key)).text());
+ assert.equal(Object.hasOwn(stored,"instructions"),false);
+ assert.equal(Object.hasOwn(stored,"procedures"),false);
+ assert.equal(Object.hasOwn(stored,"notes"),false);
+ assert.ok(stored.history.every(item=>!Object.hasOwn(item,"instructions")&&!Object.hasOwn(item,"notes")));
 });
 
 test("recipe validation rejects duplicate step IDs and oversized instructions",async()=>{
@@ -196,15 +211,15 @@ test("recipe validation rejects duplicate step IDs and oversized instructions",a
 
 test("stale recipe editors cannot silently overwrite another saved revision",async()=>{
  const {env}=storage(),url="/api/workspace?project=launcher&assembly=__root__";
- const base={instructions:"",procedures:"",notes:"",recipe:[{id:"stepA",title:"Wire",standard:"Use 18 AWG",detail:"",kind:"action"}]};
+ const base={recipe:[{id:"stepA",title:"Wire",standard:"Use 18 AWG",detail:"",kind:"action"}]};
  const first=await workspace(request("PUT",url,{...base,expectedRevision:null}),env);
  assert.equal(first.status,200);
  const revision=(await first.json()).revision;assert.ok(revision);
- const stale=await workspace(request("PUT",url,{...base,notes:"Outdated tab edit",expectedRevision:null}),env);
+ const stale=await workspace(request("PUT",url,{...base,recipe:[{...base.recipe[0],title:"Outdated edit"}],expectedRevision:null}),env);
  assert.equal(stale.status,409);
- const good=await workspace(request("PUT",url,{...base,notes:"Updated safely",expectedRevision:revision}),env);
+ const good=await workspace(request("PUT",url,{...base,recipe:[{...base.recipe[0],title:"Updated safely"}],expectedRevision:revision}),env);
  assert.equal(good.status,200);
  const saved=(await (await workspace(request("GET",url),env)).json()).workspace;
- assert.equal(saved.notes,"Updated safely");
+ assert.equal(saved.recipe[0].title,"Updated safely");
  assert.notEqual(saved.revision,revision);
 });
