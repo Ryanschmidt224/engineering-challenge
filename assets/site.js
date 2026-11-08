@@ -184,7 +184,7 @@ function setupAssemblyTrees(){
   function makeBomThumbnail(url,alt){
    const image=document.createElement("img");image.className="bom-row-thumbnail";image.alt=alt||"Part picture";image.loading="lazy";
    image.onerror=()=>{image.removeAttribute("src");image.classList.add("bom-thumbnail-empty");image.alt="No picture";};
-   image.src=url;return image;
+   if(url)image.src=url;else image.classList.add("bom-thumbnail-empty");return image;
   }
   function createSavedPart(part,originId){
    const item=document.createElement("details");item.className="bom-part";
@@ -295,10 +295,31 @@ function setupAssemblyTrees(){
    if(el){el.textContent=message;el.hidden=false;el.style.display="block"}
   };
   function clearBomDraft(){
+   editingPart=null;editingPartAssembly=null;
    for(const name of ["name","manufacturer","model","category","supplier","asin","description"]){const el=bomField(name);if(el)el.value=""}
    const qty=bomField("quantity");if(qty)qty.value="1";
    bomRoot()?.querySelector(".component-specs")?.replaceChildren();
    bomRoot()?.querySelector(".component-review")?.classList.remove("hide");
+   const save=bomField("save");if(save)save.textContent="Save part";
+  }
+  function editBomPart(part,originId){
+   if(savingBom)return;
+   clearBomDraft();editingPart=part.id;editingPartAssembly=originId;
+   for(const key of ["name","manufacturer","model","supplier","asin","category"]){const field=bomField(key);if(field)field.value=part[key]||""}
+   const qty=bomField("quantity");if(qty)qty.value=String(part.quantity||1);
+   const specs=bomRoot()?.querySelector(".component-specs");
+   if(specs){for(const spec of part.specifications||[]){
+    const row=document.createElement("div");row.className="row component-spec-row";
+    const a=document.createElement("input"),b=document.createElement("input"),c=document.createElement("select"),remove=document.createElement("button");
+    a.className=b.className="field";a.placeholder="Specification";b.placeholder="Value";a.value=spec.name;b.value=spec.value;
+    for(const v of ["explicit","inferred"]){const opt=document.createElement("option");opt.value=v;opt.textContent=v==="explicit"?"Stated in listing":"Inferred";c.append(opt)}
+    c.value=spec.source==="inferred"?"inferred":"explicit";
+    remove.type="button";remove.className="btn";remove.textContent="Remove";remove.onclick=()=>row.remove();
+    row.append(a,b,c,remove);specs.append(row);
+   }}
+   openBomDraft();
+   const save=bomField("save");if(save)save.textContent="Save changes";
+   bomReport("Editing "+part.name+". Changes will update this part without creating a duplicate.");
   }
   function openBomDraft(){
    const root=bomRoot();if(!root){bomReport("BOM editor unavailable. Refresh the page.");return}
@@ -313,7 +334,7 @@ function setupAssemblyTrees(){
    const name=bomField("name")?.value.trim()||"";
    if(!name){bomReport("Enter a part name before saving.");openBomDraft();return false}
    if(!adminAuthenticated){bomReport("Use Admin login before saving BOM parts.");return false}
-   const component={assemblyId:selected,quantity:Math.max(1,Math.floor(Number(bomField("quantity")?.value)||1))};
+   const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:Math.max(1,Math.floor(Number(bomField("quantity")?.value)||1))};
    for(const key of ["name","manufacturer","model","category","supplier","asin"])component[key]=bomField(key)?.value.trim()||"";
    component.specifications=[...(bomRoot()?.querySelectorAll(".component-spec-row")||[])].map(row=>({
     name:row.children[0]?.value.trim()||"",value:row.children[1]?.value.trim()||"",source:row.children[2]?.value==="inferred"?"inferred":"explicit"
@@ -322,7 +343,9 @@ function setupAssemblyTrees(){
    const saveButton=bomField("save");if(saveButton)saveButton.disabled=true;
    bomReport("Saving "+name+"…");
    try{
-    const response=await fetch("/api/components?project="+encodeURIComponent(project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(component)});
+    const wasEdit=!!editingPart;
+    const address="/api/components?project="+encodeURIComponent(project)+(editingPart?"&id="+encodeURIComponent(editingPart):"");
+    const response=await fetch(address,{method:wasEdit?"PUT":"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(component)});
     const raw=await response.text();let result;
     try{result=JSON.parse(raw)}catch{throw Error("Unexpected save response (HTTP "+response.status+")")}
     if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
@@ -331,7 +354,7 @@ function setupAssemblyTrees(){
     bomRoot()?.querySelector(".component-review")?.classList.add("hide");
     bomRoot()?.dispatchEvent(new Event("bom:refresh"));
     await renderWorkspaceParts();
-    bomReport(name+" saved to the BOM.");
+    bomReport(name+(wasEdit?" updated.":" saved to the BOM."));
     return true;
    }catch(error){bomReport("Could not save part: "+error.message);return false}
    finally{savingBom=false;if(saveButton)saveButton.disabled=false}
