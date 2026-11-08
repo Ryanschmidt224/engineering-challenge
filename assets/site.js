@@ -152,7 +152,7 @@ function setupAssemblyTrees(){
   projectHeading.after(projectActions);
   // The Projects landing page also exposes a small editing entry point.
   // Editing occurs on the project overview so all root settings stay together.
-  const landingCard=document.querySelector('.project-link[data-project="'+project+'"]')?.closest(".project-card");
+  const landingCard=document.querySelector('.project-link[data-nav="'+project+'"]')?.closest(".project-card");
   const cardEdit=document.createElement("button");
   cardEdit.type="button";cardEdit.className="btn project-card-edit hide";
   cardEdit.textContent="Edit project";
@@ -166,14 +166,14 @@ function setupAssemblyTrees(){
   const updateProjectTitle=value=>{
    title=value;
    projectHeading.textContent=value;
-   const card=document.querySelector('.project-link[data-project="'+project+'"]');
+   const card=document.querySelector('.project-link[data-nav="'+project+'"]');
    const cardHeading=card?.querySelector(".project-copy h2");
    if(cardHeading)cardHeading.textContent=value;
    if(card)card.setAttribute("aria-label","Open "+value+" project");
    render();
   };
   const refreshProjectCover=async()=>{
-   const card=document.querySelector('.project-link[data-project="'+project+'"]');
+   const card=document.querySelector('.project-link[data-nav="'+project+'"]');
    const art=card?.querySelector(".project-art");
    if(!art)return;
    try{
