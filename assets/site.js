@@ -285,7 +285,7 @@ function setupAssemblyTrees(){
    
    if(!children.length)return;
    const grid=document.createElement("div");grid.className="assembly-tile-grid";
-   const sorted=[...children].sort((a,b)=>{const depth=n=>{const seen=new Set();const walk=id=>{if(seen.has(id))return 0;seen.add(id);const x=nodes.find(n=>n.id===id);return x?.dependsOn?.length?1+Math.max(...x.dependsOn.map(walk)):0};return walk(n.id)};return depth(a)-depth(b)});
+   const sorted=[...children];
    for(const n of sorted){
     const tile=document.createElement("article");tile.className="assembly-tile";
     const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=data.photos[0].url;img.alt="";cover.replaceChildren(img,overlay)}).catch(()=>{});
@@ -322,11 +322,74 @@ function setupAssemblyTrees(){
   const notify=()=>{assemblySelections[project]=selected;showAssemblyPage();renderTiles();view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));};
   async function load(){try{const r=await fetch("/api/tree?project="+project),data=await r.json();if(!r.ok)throw Error(data.error);nodes=data.nodes||[];if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/(?:assembly|workspace)/([^/]+)$"));if(deepLink&&nodes.some(n=>n.id===deepLink[1]))selected=deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
   async function save(next){const r=await fetch("/api/tree?project="+project,{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({nodes:next})});const data=await r.json();if(!r.ok)throw Error(data.error||"Save failed");nodes=next;render();notify()}
+  // Tree ordering is the order of node records; moving a node keeps its permanent ID.
+  const siblings=parent=>nodes.filter(n=>n.parentId===parent);
+  async function moveSelected(direction){
+   if(selected===null){status.textContent="Select a subassembly first.";return}
+   const node=nodes.find(n=>n.id===selected);if(!node)return;
+   const group=siblings(node.parentId),position=group.findIndex(n=>n.id===selected),other=group[position+direction];
+   if(!other){status.textContent=direction<0?"Already first in this assembly.":"Already last in this assembly.";return}
+   const a=nodes.findIndex(n=>n.id===node.id),b=nodes.findIndex(n=>n.id===other.id);
+   const next=[...nodes];[next[a],next[b]]=[next[b],next[a]];
+   try{await save(next);status.textContent="Subassembly reordered."}catch(e){status.textContent=e.message}
+  }
+  const wouldCycle=(id,newParent)=>{
+   let cursor=newParent;while(cursor!==null){if(cursor===id)return true;cursor=nodes.find(n=>n.id===cursor)?.parentId??null}return false
+  };
+  async function reparent(id,newParent){
+   const node=nodes.find(n=>n.id===id);
+   if(!node)return;
+   if(newParent===id||wouldCycle(id,newParent))throw Error("Cannot move a subassembly inside itself or one of its children.");
+   if(node.parentId===newParent)return;
+   const next=nodes.map(n=>n.id===id?{...n,parentId:newParent}:n);
+   await save(next);expanded.add(newParent);selected=id;render();notify();status.textContent="Subassembly moved.";
+  }
+  async function moveToChoice(){
+   if(selected===null){status.textContent="Select a subassembly first.";return}
+   const options=[{id:null,name:"Top-level project"},...nodes.filter(n=>n.id!==selected&&!wouldCycle(selected,n.id))];
+   const help=options.map((n,i)=>(i+1)+". "+n.name).join("\\n");
+   const answer=prompt("Move the selected subassembly into:\\n"+help);
+   if(answer===null)return;
+   const choice=Number(answer)-1;
+   if(!Number.isInteger(choice)||choice<0||choice>=options.length){status.textContent="Enter a number from the list.";return}
+   try{await reparent(selected,options[choice].id)}catch(e){status.textContent=e.message}
+  }
+  const reorderControls=document.createElement("span");reorderControls.className="assembly-reorder-controls";
+  for(const [label,title,action] of [["↑","Move up",()=>moveSelected(-1)],["↓","Move down",()=>moveSelected(1)],["Move to…","Change parent assembly",moveToChoice]]){
+   const button=document.createElement("button");button.type="button";button.className="btn assembly-move-button";button.textContent=label;button.title=title;button.setAttribute("aria-label",title);button.onclick=action;reorderControls.append(button)
+  }
+  controls.append(reorderControls);
   function render(){nodesEl.replaceChildren();controls.classList.toggle("hide",!adminAuthenticated);const row=(node,depth)=>{
    const id=node?.id??null,children=nodes.filter(n=>n.parentId===id),el=document.createElement("div");el.className="assembly-node"+(selected===id?" selected":"");el.style.paddingLeft=(depth*17+3)+"px";
    const expand=document.createElement("button");expand.type="button";expand.className="assembly-expander";expand.textContent=children.length?(expanded.has(id)?"▾":"▸"):" ";expand.setAttribute("aria-label",expanded.has(id)?"Collapse":"Expand");expand.onclick=()=>{expanded.has(id)?expanded.delete(id):expanded.add(id);render()};
    const name=document.createElement("button");name.type="button";name.className="assembly-name";name.textContent=node?"📦  "+node.name:"🟨  "+title;name.onclick=()=>{selected=id;render();notify()};
-   el.append(expand,name);nodesEl.append(el);
+   el.append(expand,name);
+   if(node&&adminAuthenticated){
+    el.draggable=true;el.title="Drag to reorder or drop into another assembly";
+    el.ondragstart=event=>{event.dataTransfer.setData("text/plain",node.id);event.dataTransfer.effectAllowed="move";el.classList.add("assembly-dragging")};
+    el.ondragend=()=>el.classList.remove("assembly-dragging");
+    el.ondragover=event=>{const dragged=event.dataTransfer.types.includes("text/plain");if(!dragged)return;event.preventDefault();el.classList.add("assembly-drop-target");event.dataTransfer.dropEffect="move"};
+    el.ondragleave=()=>el.classList.remove("assembly-drop-target");
+    el.ondrop=async event=>{
+     event.preventDefault();event.stopPropagation();el.classList.remove("assembly-drop-target");
+     const sourceId=event.dataTransfer.getData("text/plain"),source=nodes.find(n=>n.id===sourceId);
+     if(!source||source.id===node.id)return;
+     try{
+      // Dropping on a sibling's upper/lower edge reorders it; dropping in the middle nests it.
+      const rect=el.getBoundingClientRect(),fraction=(event.clientY-rect.top)/rect.height;
+      if(source.parentId===node.parentId&&(fraction<.25||fraction>.75)){
+       const next=[...nodes],from=next.findIndex(n=>n.id===source.id);
+       const item=next.splice(from,1)[0];let to=next.findIndex(n=>n.id===node.id);
+       if(fraction>.75)to++;next.splice(to,0,item);await save(next);status.textContent="Subassembly reordered.";
+      }else await reparent(source.id,node.id);
+     }catch(e){status.textContent=e.message}
+    };
+   }else if(!node&&adminAuthenticated){
+    el.ondragover=event=>{event.preventDefault();el.classList.add("assembly-drop-target")};
+    el.ondragleave=()=>el.classList.remove("assembly-drop-target");
+    el.ondrop=async event=>{event.preventDefault();el.classList.remove("assembly-drop-target");const sourceId=event.dataTransfer.getData("text/plain");if(nodes.some(n=>n.id===sourceId))try{await reparent(sourceId,null)}catch(e){status.textContent=e.message}};
+   }
+   nodesEl.append(el);
    if(expanded.has(id))children.forEach(child=>row(child,depth+1));
   };row(null,0);status.textContent="";renderTiles()}
   root.querySelector(".assembly-add").onclick=async()=>{const name=prompt("New subassembly name");if(!name?.trim())return;const id=crypto.randomUUID();try{await save([...nodes,{id,name:name.trim(),parentId:selected}]);expanded.add(selected);selected=id;render();notify()}catch(e){status.textContent=e.message}};
