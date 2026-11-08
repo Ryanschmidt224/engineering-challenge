@@ -35,6 +35,24 @@ export async function handleWorkspace(request,env){
  if(resources===null)return json({error:"Invalid linked resources"},400);
  const existing=await env.PHOTOS.get(key);
  const previous=existing?JSON.parse(await existing.text()):{};
- const workspace={instructions:data.instructions,procedures:data.procedures,notes:data.notes,resources:resources===undefined?(previous.resources||emptyResources()):resources};
- await env.PHOTOS.put(key,JSON.stringify(workspace));return json({ok:true});
+ // Keep recent published edits automatically: no revision numbers or forms to fill out.
+ const experiments=data.experiments===undefined?(previous.experiments||[]):data.experiments;
+ if(!Array.isArray(experiments)||experiments.length>100||experiments.some(entry=>
+  !entry||typeof entry.text!=="string"||!entry.text.trim()||entry.text.length>3000||
+  typeof entry.createdAt!=="string"||entry.createdAt.length>50))return json({error:"Invalid experiment notes"},400);
+ const workspace={
+  instructions:data.instructions,procedures:data.procedures,notes:data.notes,
+  resources:resources===undefined?(previous.resources||emptyResources()):resources,
+  experiments:experiments.map(entry=>({id:typeof entry.id==="string"&&entry.id.length<=80?entry.id:crypto.randomUUID(),
+   text:entry.text,createdAt:entry.createdAt}))
+ };
+ const before={instructions:previous.instructions||"",procedures:previous.procedures||"",notes:previous.notes||"",
+  resources:previous.resources||emptyResources(),experiments:previous.experiments||[]};
+ const changed=JSON.stringify(before)!==JSON.stringify(workspace);
+ const history=Array.isArray(previous.history)?previous.history.slice(-19):[];
+ if(changed&&(existing||before.instructions||before.procedures||before.notes||before.experiments.length)){
+  history.push({savedAt:previous.updatedAt||new Date().toISOString(),...before});
+ }
+ workspace.history=history;workspace.updatedAt=changed?new Date().toISOString():(previous.updatedAt||new Date().toISOString());
+ await env.PHOTOS.put(key,JSON.stringify(workspace));return json({ok:true,updatedAt:workspace.updatedAt});
 }
