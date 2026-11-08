@@ -34,6 +34,10 @@ export async function handleComponents(request,env){
   if(index<0)return json({error:"Part not found"},404);
   const clean=value=>String(value??"").slice(0,300),previous=items[index];
   const updated={...previous,name:clean(input.name.trim()),quantity:Number.isInteger(input.quantity)&&input.quantity>0&&input.quantity<=100000?input.quantity:1};
+  if(Object.prototype.hasOwnProperty.call(input,"assemblyId")){
+   if(input.assemblyId!==null&&!(typeof input.assemblyId==="string"&&/^[a-zA-Z0-9-]{1,80}$/.test(input.assemblyId)))return json({error:"Invalid parent assembly"},400);
+   updated.assemblyId=input.assemblyId;
+  }
   for(const field of ["manufacturer","model","supplier","asin","category"])updated[field]=clean(input[field]);
   updated.specifications=input.specifications.map(spec=>({name:clean(spec.name),value:clean(spec.value),source:spec.source==="inferred"?"inferred":"explicit"})).filter(spec=>spec.name&&spec.value);
   // Existing assembly association is immutable during an ordinary edit.
@@ -41,7 +45,7 @@ export async function handleComponents(request,env){
   return json({component:updated});
  }
  if(request.method==="DELETE"){
-  const id=url.searchParams.get("id"),items=await read(env,project),remaining=items.filter(x=>x.id!==id);if(remaining.length===items.length)return json({error:"Not found"},404);await env.PHOTOS.put(key(project),JSON.stringify(remaining));await env.PHOTOS.delete("component-thumbnails/"+project+"/"+id);return json({ok:true});
+  const id=url.searchParams.get("id"),items=await read(env,project),remaining=items.filter(x=>x.id!==id);if(remaining.length===items.length)return json({error:"Not found"},404);await env.PHOTOS.put(key(project),JSON.stringify(remaining));await env.PHOTOS.delete("component-thumbnails/"+project+"/"+id);await env.PHOTOS.delete("part-workspaces/"+project+"/"+id+".json");return json({ok:true});
  }
  return json({error:"Method not allowed"},405)
 }
