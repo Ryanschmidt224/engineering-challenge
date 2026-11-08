@@ -4,6 +4,18 @@ const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:
 const authorized=isAdmin;
 const key=project=>"components/"+project+".json";
 const read=async(env,project)=>{const obj=await env.PHOTOS.get(key(project));return obj?JSON.parse(await obj.text()):[]};
+const readEditable=async(env,project)=>{
+ const obj=await env.PHOTOS.get(key(project));
+ return {items:obj?JSON.parse(await obj.text()):[],etag:obj?.etag||null,exists:!!obj};
+};
+const saveEditable=async(env,project,items,previous)=>{
+ const condition=previous.etag?{onlyIf:{etagMatches:previous.etag}}:
+  !previous.exists?{onlyIf:{etagDoesNotMatch:"*"}}:undefined;
+ const saved=await env.PHOTOS.put(key(project),JSON.stringify(items),condition);
+ return saved!==null;
+};
+const conflict=()=>json({error:"The project BOM was changed in another tab. Reload before saving."},409);
+
 // A manually recorded, historical USD unit price. Never represents live pricing.
 const historicalPrice=input=>{
  const raw=input?.historicalPrice;
@@ -116,24 +128,28 @@ export async function handleComponents(request,env){
   const amount=quantityData(input);if(!amount)return json({error:"Quantity must be a positive number or blank, with a valid unit"},400);
   const clean=s=>String(s??"").slice(0,300);
   const record={assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,bomOnly:input.bomOnly===true,purchaseOverride:input.purchaseOverride===true||input.purchaseOverride===false?input.purchaseOverride:null,workshopChoice:recommendedWorkshopIds.has(input.workshopChoice)?input.workshopChoice:null,sharedPartRef:cleanPartRef(input.sharedPartRef),id:crypto.randomUUID(),name:clean(input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
-  const items=await read(env,project);if(items.length>=300)return json({error:"Component limit reached"},400);items.push(record);syncDerived(items,record);await env.PHOTOS.put(key(project),JSON.stringify(items));return json({component:presentPart(record)},201);
+  const state=await readEditable(env,project),items=state.items;
+  if(items.length>=300)return json({error:"Component limit reached"},400);
+  items.push(record);syncDerived(items,record);
+  if(!await saveEditable(env,project,items,state))return conflict();
+  return json({component:presentPart(record)},201);
  }
  // Tiny opt-in override: no requirement to re-enter part specifications.
  if(request.method==="PATCH"){
   const id=url.searchParams.get("id"),input=await request.json().catch(()=>null);
   if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))))return json({error:"Invalid shop material preference"},400);
-  const items=await read(env,project),entry=items.find(item=>item.id===id);
+  const state=await readEditable(env,project),items=state.items,entry=items.find(item=>item.id===id);
   if(!entry)return json({error:"Part not found"},404);
   if(Object.prototype.hasOwnProperty.call(input,"purchaseOverride"))entry.purchaseOverride=input.purchaseOverride;
   if(Object.prototype.hasOwnProperty.call(input,"workshopChoice"))entry.workshopChoice=input.workshopChoice;
-  await env.PHOTOS.put(key(project),JSON.stringify(items));
+  if(!await saveEditable(env,project,items,state))return conflict();
   return json({component:presentPart(entry)});
  }
  if(request.method==="PUT"){
   const id=url.searchParams.get("id");
   const input=await request.json().catch(()=>null);
   if(!id||!input||typeof input.name!=="string"||!input.name.trim()||input.name.length>180||!Array.isArray(input.specifications)||input.specifications.length>35)return json({error:"Invalid part update"},400);
-  const items=await read(env,project),index=items.findIndex(part=>part.id===id);
+  const state=await readEditable(env,project),items=state.items,index=items.findIndex(part=>part.id===id);
   if(index<0)return json({error:"Part not found"},404);
   if(items[index].generatedFrom)return json({error:"This material is calculated from its wire. Edit the wire instead."},409);
   const clean=value=>String(value??"").slice(0,300),previous=items[index];
@@ -153,11 +169,31 @@ export async function handleComponents(request,env){
   updated.specifications=input.specifications.map(spec=>({name:clean(spec.name),value:clean(spec.value),source:spec.source==="inferred"?"inferred":"explicit"})).filter(spec=>spec.name&&spec.value);
   // Keep the original shared part reference unless a new valid reference is supplied.
   if(Object.prototype.hasOwnProperty.call(input,"sharedPartRef"))updated.sharedPartRef=cleanPartRef(input.sharedPartRef);
-  items[index]=updated;syncDerived(items,updated);await env.PHOTOS.put(key(project),JSON.stringify(items));
+  items[index]=updated;syncDerived(items,updated);
+  if(!await saveEditable(env,project,items,state))return conflict();
   return json({component:presentPart(updated)});
  }
  if(request.method==="DELETE"){
-  const id=url.searchParams.get("id"),items=await read(env,project),target=items.find(x=>x.id===id);if(!target)return json({error:"Not found"},404);if(target.generatedFrom)return json({error:"This material is calculated from its wire. Delete or edit the wire instead."},409);const remaining=items.filter(x=>x.id!==id&&x.generatedFrom!==id);await env.PHOTOS.put(key(project),JSON.stringify(remaining));await env.PHOTOS.delete("component-thumbnails/"+project+"/"+id);await env.PHOTOS.delete("part-workspaces/"+project+"/"+id+".json");await env.PHOTOS.delete("harnesses/"+project+"/"+id+".json");return json({ok:true});
+  const id=url.searchParams.get("id"),state=await readEditable(env,project),items=state.items,target=items.find(x=>x.id===id);if(!target)return json({error:"Not found"},404);if(target.generatedFrom)return json({error:"This material is calculated from its wire. Delete or edit the wire instead."},409);const remaining=items.filter(x=>x.id!==id&&x.generatedFrom!==id);
+  // Preserve the deleted definition and its linked original bytes before
+  // removing anything. Recycle records are never automatically purged.
+  const recycle="recycle-bin/"+project+"/"+id+"/"+crypto.randomUUID()+"/";
+  const linked=["component-thumbnails/"+project+"/"+id,
+   "part-workspaces/"+project+"/"+id+".json","harnesses/"+project+"/"+id+".json"];
+  const originals=[];
+  for(const originalKey of linked){
+   const object=await env.PHOTOS.get(originalKey);
+   if(object)originals.push({key:originalKey,bytes:await object.arrayBuffer(),
+    httpMetadata:object.httpMetadata||{},customMetadata:object.customMetadata||{}});
+  }
+  const deletion={part:target,generated:items.filter(x=>x.generatedFrom===id),
+   keys:originals.map(x=>x.key),deletedAt:new Date().toISOString()};
+  await env.PHOTOS.put(recycle+"part.json",JSON.stringify(deletion));
+  for(const original of originals)await env.PHOTOS.put(recycle+encodeURIComponent(original.key),original.bytes,{
+   httpMetadata:original.httpMetadata,customMetadata:original.customMetadata});
+  if(!await saveEditable(env,project,remaining,state))return conflict();
+  for(const original of originals)await env.PHOTOS.delete(original.key);
+  return json({ok:true,recoveryPrefix:recycle});
  }
  return json({error:"Method not allowed"},405)
 }
