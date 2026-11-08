@@ -403,13 +403,14 @@ function setupAssemblyTrees(){
    render();notify();
   }
   const partStatus=partWorkspace.querySelector(".part-workspace-status");
+  let partSavedRevision=null;
   async function showPartWorkspace(){
    const partId=partRoute();if(!partId)return;
    const version=++partLoadVersion;
    detailsPanel.querySelector(".part-details-view-actions").classList.toggle("hide",!adminAuthenticated);
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
-   heading.textContent="Loading part…";currentPartInfo=null;partStatus.textContent="Loading instructions…";
+   heading.textContent="Loading part…";currentPartInfo=null;partSavedRevision=null;partStatus.textContent="Loading instructions…";
    detailRows.replaceChildren();detailsPanel.classList.add("hide");
    partWorkspace.querySelector(".part-harness-preview").classList.add("hide");
    cover.replaceChildren();
@@ -432,6 +433,7 @@ function setupAssemblyTrees(){
     for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value=data.workspace?.[name]||"";
     partResourcePicker?.setData(data.workspace?.resources,adminAuthenticated);
     partRecipe?.setData(data.workspace);
+    partSavedRevision=data.workspace?.revision??null;
     partExtras.setData(data.workspace);
     const img=document.createElement("img");img.alt=part.name;img.src=partPhotoUrl(partId);
     img.onload=()=>{if(partRoute()===partId)cover.replaceChildren(img)};
@@ -477,12 +479,13 @@ function setupAssemblyTrees(){
    const id=partRoute();if(!id)return;
    if(!adminAuthenticated){partStatus.textContent="Sign in as administrator to save.";return}
    const data={};for(const name of ["instructions","procedures","notes"])data[name]=partWorkspace.querySelector(".part-"+name).value;
-   data.resources=partResourcePicker?.getData();data.experiments=partExtras.getExperiments();data.recipe=partRecipe?.getData()||[];
+   data.resources=partResourcePicker?.getData();data.experiments=partExtras.getExperiments();data.recipe=partRecipe?.getData()||[];data.expectedRevision=partSavedRevision;
    const button=partWorkspace.querySelector(".part-workspace-save");button.disabled=true;partStatus.textContent="Saving…";
    try{
     const response=await fetch("/api/workspace?project="+encodeURIComponent(project)+"&part="+encodeURIComponent(id),{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});
     const result=await response.json();
     if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
+    partSavedRevision=result.revision??partSavedRevision;
     partStatus.textContent="Part instructions saved.";
    }catch(e){partStatus.textContent=e.message}finally{button.disabled=false}
   };
@@ -1115,15 +1118,17 @@ function setupAssemblyTrees(){
   async function loadWorkspaceCover(){const id=selected,version=++workspacePhotoVersion,cover=workspace.querySelector(".workspace-cover");cover.replaceChildren();const placeholder=document.createElement("span");placeholder.textContent="No photo yet";cover.append(placeholder);try{const r=await fetch("/api/photos?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(id??"__root__"));if(!r.ok)return;const data=await r.json();if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;const photo=(data.photos||[]).find(p=>(p.assembly??null)===id);if(photo){const img=document.createElement("img");img.src=photo.url;img.alt="Assembly photo";cover.replaceChildren(img)}}catch(e){/* cover is optional */}}
   let workspaceLoadVersion=0;
   const workspaceFields=["instructions","procedures","notes"];
+  let workspaceSavedRevision=null;
   const workspaceStatus=workspace.querySelector(".workspace-status");
   const workspaceUrl=()=>"/api/workspace?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(selected??"__root__");
   async function loadWorkspace(){
-   const version=++workspaceLoadVersion,url=workspaceUrl();workspaceStatus.textContent="Loading…";
+   const version=++workspaceLoadVersion,url=workspaceUrl();workspaceSavedRevision=null;workspaceStatus.textContent="Loading…";
    try{const res=await fetch(url,{credentials:"same-origin",cache:"no-store"});const data=await res.json();if(!res.ok)throw Error(data.error||"Unable to load workspace");
     if(version!==workspaceLoadVersion||url!==workspaceUrl())return;
     for(const name of workspaceFields)workspace.querySelector(".workspace-"+name).value=data.workspace?.[name]||"";
     assemblyResourcePicker?.setData(data.workspace?.resources,adminAuthenticated);
     assemblyRecipe?.setData(data.workspace);
+    workspaceSavedRevision=data.workspace?.revision??null;
     assemblyExtras.setData(data.workspace);
     workspaceStatus.textContent="";
    }catch(e){workspaceStatus.textContent=e.message}
@@ -1132,9 +1137,9 @@ function setupAssemblyTrees(){
    if(!adminAuthenticated){workspaceStatus.textContent="Use Admin login at the top of the website to save.";return}
    const button=workspace.querySelector(".workspace-save"),url=workspaceUrl(),data={};
    for(const name of workspaceFields)data[name]=workspace.querySelector(".workspace-"+name).value;
-   data.resources=assemblyResourcePicker?.getData();data.experiments=assemblyExtras.getExperiments();data.recipe=assemblyRecipe?.getData()||[];
+   data.resources=assemblyResourcePicker?.getData();data.experiments=assemblyExtras.getExperiments();data.recipe=assemblyRecipe?.getData()||[];data.expectedRevision=workspaceSavedRevision;
    button.disabled=true;workspaceStatus.textContent="Saving…";
-   try{const res=await fetch(url,{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});const result=await res.json();if(!res.ok)throw Error(result.error||"Save failed (HTTP "+res.status+")");workspaceStatus.textContent="Saved."}
+   try{const res=await fetch(url,{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});const result=await res.json();if(!res.ok)throw Error(result.error||"Save failed (HTTP "+res.status+")");workspaceSavedRevision=result.revision??workspaceSavedRevision;workspaceStatus.textContent="Saved."}
    catch(e){workspaceStatus.textContent=e.message}finally{button.disabled=false}
   };
   function openWorkspace(){history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));showAssemblyPage();window.scrollTo(0,0)}
