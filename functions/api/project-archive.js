@@ -57,7 +57,7 @@ async function allKeys(r2,project){
  }
  return [...keys].sort();
 }
-const encodeBytes=bytes=>{
+export const encodeBytes=bytes=>{
  const CHUNK=32766; // divisible by three: concatenated base64 chunks stay valid
  let out="";
  for(let i=0;i<bytes.length;i+=CHUNK){
