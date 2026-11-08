@@ -17,8 +17,7 @@ const downloadHeaders=(name,download)=>{
   "content-type":"application/pdf",
   "content-disposition":(download?"attachment":"inline")+"; filename*=UTF-8''"+encodeURIComponent(fileName),
   "cache-control":"no-store",
-  "x-content-type-options":"nosniff",
-  "content-security-policy":"sandbox"
+  "x-content-type-options":"nosniff"
  });
  return headers;
 };
@@ -93,7 +92,9 @@ export async function handleDrawings(request,env){
  // Confirm PDF signature instead of accepting arbitrary files renamed .pdf.
  const header=new TextDecoder().decode(bytes.subarray(0,8));
  if(!header.startsWith("%PDF-"))return json({error:"File is not a valid PDF export"},415);
- const newId=file||crypto.randomUUID(),filename=sanitizeName(request.headers.get("x-drawing-name")||"drawing.pdf");
+ let suppliedName="drawing.pdf";
+ try{suppliedName=decodeURIComponent(request.headers.get("x-drawing-name")||"drawing.pdf")}catch{return json({error:"Invalid drawing filename"},400)}
+ const newId=file||crypto.randomUUID(),filename=sanitizeName(suppliedName);
  await env.PHOTOS.put(keyFor(project,type,id,newId),bytes,{
   httpMetadata:{contentType:"application/pdf"},
   customMetadata:{filename}
