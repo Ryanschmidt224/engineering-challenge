@@ -41,8 +41,8 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(page.locator("#launcher .assembly-detail-title")).toContainText("Motor and Motor Control");
  await page.locator("#launcher .assembly-detail .assembly-open-workspace").click();
  await expect(page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)")).toBeVisible();
- await page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace) .bom-view-button", {hasText:"List view"}).click();
- const cards=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace) .bom-compact-list tbody tr");
+ await page.locator("#launcher .assembly-sidebar .bom-view-button", {hasText:"List view"}).click();
+ const cards=page.locator("#launcher .assembly-sidebar .bom-compact-list tbody tr");
  await expect(cards).toHaveCount(2);
  await expect(cards.first()).toContainText("C2822 Brushless Motor");
  await expect(cards.nth(1)).toContainText("20A ESC");
@@ -56,11 +56,17 @@ test("project feature tree and workspace initialize without browser errors", asy
  expect(appearance[0].color).not.toBe(appearance[1].color);
  // BOM occupies the left column and can be resized by a visible divider.
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
- const bom=workspace.locator(".workspace-bom");
+ const sidebar=page.locator("#launcher .assembly-sidebar");
+ const bom=sidebar.locator(".workspace-bom");
  const instructions=workspace.locator(".recipe-instructions");
- const splitter=workspace.locator(".workspace-bom-resizer");
+ const splitter=page.locator("#launcher .assembly-layout > .workspace-bom-resizer");
+ await expect(sidebar).toHaveClass(/bom-sidebar-active/);
+ expect(await bom.evaluate(el=>el.parentElement.classList.contains("assembly-sidebar"))).toBe(true);
+ const treeBounds=await tree.boundingBox();
+ const bomStart=await bom.boundingBox();
+ expect(bomStart.y).toBeGreaterThan(treeBounds.y+treeBounds.height-1);
  await expect(splitter).toBeVisible();
- const before=await bom.boundingBox();
+ const before=await sidebar.boundingBox();
  const right=await instructions.boundingBox();
  expect(before.x).toBeLessThan(right.x);
  const handle=await splitter.boundingBox();
@@ -68,12 +74,12 @@ test("project feature tree and workspace initialize without browser errors", asy
  await page.mouse.down();
  await page.mouse.move(handle.x+handle.width/2+85,handle.y+70,{steps:6});
  await page.mouse.up();
- const after=await bom.boundingBox();
+ const after=await sidebar.boundingBox();
  expect(after.width).toBeGreaterThan(before.width+40);
  // Keyboard resize is available for accessibility, and persists in storage.
  await splitter.focus();
  await page.keyboard.press("ArrowLeft");
- const keyboard=await bom.boundingBox();
+ const keyboard=await sidebar.boundingBox();
  expect(keyboard.width).toBeLessThan(after.width);
  expect(await page.evaluate(()=>Number(localStorage.getItem("bs-workspace-bom-width")))).toBeGreaterThan(0);
  expect(errors,"Unexpected JavaScript errors during startup/navigation").toEqual([]);
