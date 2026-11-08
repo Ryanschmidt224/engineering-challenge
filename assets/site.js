@@ -135,6 +135,89 @@ function setupAssemblyTrees(){
   const assemblyResourcePicker=window.BSResources?.mount(workspace.querySelector(".workspace-resources"));
   const partResourcePicker=window.BSResources?.mount(partWorkspace.querySelector(".part-linked-resources"));
 
+  // Optional progressive disclosure: the textarea remains the simplest authoring tool.
+  // Steps, test logs and history never require separate forms or mandatory fields.
+  function installInstructionExtras(panel,prefix,onRestoreResources){
+   const instruction=panel.querySelector("."+prefix+"-instructions");
+   const article=instruction.closest("article");
+   const previewButton=document.createElement("button");previewButton.type="button";previewButton.className="btn instruction-preview-toggle";previewButton.textContent="Preview steps";
+   article.querySelector("h2").after(previewButton);
+   const preview=document.createElement("div");preview.className="instruction-steps-preview hide";article.append(preview);
+   const renderPreview=()=>{
+    preview.replaceChildren();
+    const chunks=instruction.value.trim().split(/\n\s*\n|\n(?=\s*\d+[.)]\s)/).map(x=>x.trim()).filter(Boolean);
+    if(!chunks.length){preview.textContent="Write instructions above to preview the steps.";return}
+    const list=document.createElement("ol");
+    for(const chunk of chunks){
+     const entry=document.createElement("li");entry.textContent=chunk.replace(/^\d+[.)]\s*/,"");list.append(entry);
+    }
+    preview.append(list);
+   };
+   previewButton.onclick=()=>{
+    const show=preview.classList.contains("hide");preview.classList.toggle("hide",!show);
+    previewButton.textContent=show?"Hide preview":"Preview steps";if(show)renderPreview();
+   };
+   instruction.addEventListener("input",()=>{if(!preview.classList.contains("hide"))renderPreview()});
+   const notes=panel.querySelector("."+prefix+"-notes").closest("article");
+   const logDetails=document.createElement("details");logDetails.className="instruction-log";
+   const logSummary=document.createElement("summary");logSummary.textContent="Experiments & decisions";
+   const logEntries=document.createElement("div");logEntries.className="instruction-log-entries";
+   const addLog=document.createElement("button");addLog.type="button";addLog.className="btn";addLog.textContent="+ Record a test";
+   logDetails.append(logSummary,logEntries,addLog);notes.append(logDetails);
+   let experiments=[];
+   const renderLogs=()=>{
+    logEntries.replaceChildren();
+    for(const entry of experiments){
+     const row=document.createElement("div");row.className="instruction-log-item";
+     const timestamp=document.createElement("small");timestamp.textContent=new Date(entry.createdAt).toLocaleDateString();
+     const text=document.createElement("p");text.textContent=entry.text;
+     row.append(timestamp,text);
+     if(adminAuthenticated){const remove=document.createElement("button");remove.type="button";remove.className="btn";remove.textContent="Remove";remove.onclick=()=>{experiments=experiments.filter(x=>x.id!==entry.id);renderLogs()};row.append(remove)}
+     logEntries.append(row);
+    }
+    if(!experiments.length){const empty=document.createElement("p");empty.className="muted";empty.textContent="No tests recorded yet.";logEntries.append(empty)}
+   };
+   addLog.onclick=()=>{
+    if(!adminAuthenticated)return;
+    const value=prompt("What did you test, observe or decide?");
+    if(!value?.trim())return;
+    experiments.push({id:crypto.randomUUID(),text:value.trim().slice(0,3000),createdAt:new Date().toISOString()});
+    renderLogs();logDetails.open=true;
+    const feedback=panel.querySelector("."+prefix+"-status");if(feedback)feedback.textContent="Test noted. Save the workspace to keep it.";
+   };
+   const historyDetails=document.createElement("details");historyDetails.className="instruction-history";
+   const historySummary=document.createElement("summary");historySummary.textContent="Recent changes";
+   const historyList=document.createElement("div");historyList.className="instruction-history-list";
+   historyDetails.append(historySummary,historyList);panel.querySelector("."+prefix+"-save").after(historyDetails);
+   function setData(data){
+    experiments=Array.isArray(data?.experiments)?data.experiments.map(x=>({...x})):[];
+    renderLogs();historyList.replaceChildren();
+    const history=Array.isArray(data?.history)?[...data.history].reverse():[];
+    for(const snapshot of history){
+     const item=document.createElement("div");item.className="instruction-history-item";
+     const label=document.createElement("span");
+     label.textContent=new Date(snapshot.savedAt).toLocaleString();
+     item.append(label);
+     if(adminAuthenticated){
+      const restore=document.createElement("button");restore.type="button";restore.className="btn";restore.textContent="Load this version";
+      restore.onclick=()=>{
+       for(const name of ["instructions","procedures","notes"])panel.querySelector("."+prefix+"-"+name).value=snapshot[name]||"";
+       experiments=Array.isArray(snapshot.experiments)?snapshot.experiments.map(x=>({...x})):[];
+       renderLogs();onRestoreResources?.(snapshot.resources);
+       if(!preview.classList.contains("hide"))renderPreview();
+       panel.querySelector("."+prefix+"-status").textContent="Previous version loaded. Click Save to keep it.";
+      };
+      item.append(restore);
+     }
+     historyList.append(item);
+    }
+    if(!history.length)historyList.textContent="Older saved versions will appear here after edits.";
+   }
+   return {setData,getExperiments:()=>experiments};
+  }
+  const assemblyExtras=installInstructionExtras(workspace,"workspace",resources=>assemblyResourcePicker?.setData(resources,adminAuthenticated));
+  const partExtras=installInstructionExtras(partWorkspace,"part",resources=>partResourcePicker?.setData(resources,adminAuthenticated));
+
   const partTools=document.createElement("div");partTools.className="part-workspace-tools";
   partTools.classList.add("hide");
   partTools.innerHTML='<div class="part-photo-edit-label">Part picture</div><div class="part-photo-edit-preview"></div><button type="button" class="btn part-workspace-picture">Add / change picture</button><input type="file" class="part-workspace-file" accept="image/jpeg,image/png,image/webp" hidden>';
@@ -278,6 +361,7 @@ function setupAssemblyTrees(){
     if(partBackAssembly===null)partBackAssembly=part.assemblyId??null;
     for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value=data.workspace?.[name]||"";
     partResourcePicker?.setData(data.workspace?.resources,adminAuthenticated);
+    partExtras.setData(data.workspace);
     const img=document.createElement("img");img.alt=part.name;img.src=partPhotoUrl(partId);
     img.onload=()=>{if(partRoute()===partId)cover.replaceChildren(img)};
     partStatus.textContent="";
@@ -322,7 +406,7 @@ function setupAssemblyTrees(){
    const id=partRoute();if(!id)return;
    if(!adminAuthenticated){partStatus.textContent="Sign in as administrator to save.";return}
    const data={};for(const name of ["instructions","procedures","notes"])data[name]=partWorkspace.querySelector(".part-"+name).value;
-   data.resources=partResourcePicker?.getData();
+   data.resources=partResourcePicker?.getData();data.experiments=partExtras.getExperiments();
    const button=partWorkspace.querySelector(".part-workspace-save");button.disabled=true;partStatus.textContent="Saving…";
    try{
     const response=await fetch("/api/workspace?project="+encodeURIComponent(project)+"&part="+encodeURIComponent(id),{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});
@@ -857,6 +941,7 @@ function setupAssemblyTrees(){
     if(version!==workspaceLoadVersion||url!==workspaceUrl())return;
     for(const name of workspaceFields)workspace.querySelector(".workspace-"+name).value=data.workspace?.[name]||"";
     assemblyResourcePicker?.setData(data.workspace?.resources,adminAuthenticated);
+    assemblyExtras.setData(data.workspace);
     workspaceStatus.textContent="";
    }catch(e){workspaceStatus.textContent=e.message}
   }
@@ -864,7 +949,7 @@ function setupAssemblyTrees(){
    if(!adminAuthenticated){workspaceStatus.textContent="Use Admin login at the top of the website to save.";return}
    const button=workspace.querySelector(".workspace-save"),url=workspaceUrl(),data={};
    for(const name of workspaceFields)data[name]=workspace.querySelector(".workspace-"+name).value;
-   data.resources=assemblyResourcePicker?.getData();
+   data.resources=assemblyResourcePicker?.getData();data.experiments=assemblyExtras.getExperiments();
    button.disabled=true;workspaceStatus.textContent="Saving…";
    try{const res=await fetch(url,{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});const result=await res.json();if(!res.ok)throw Error(result.error||"Save failed (HTTP "+res.status+")");workspaceStatus.textContent="Saved."}
    catch(e){workspaceStatus.textContent=e.message}finally{button.disabled=false}
