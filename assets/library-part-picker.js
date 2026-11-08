@@ -179,7 +179,7 @@ function open({onCreate,bomOnly=false}){
    payload={name,quantity:count,specifications:[]};
   }else if(category.input.value==="components"){
    const p=commons.find(p=>p.id===commonSelect.input.value);if(!p){status.textContent="Select a saved library part.";return}
-   payload={name:p.name,quantity:count,manufacturer:p.manufacturer||"",model:p.partNumber||"",category:p.category||"Library part",specifications:[{name:"Library part ID",value:p.id},{name:"Library specifications",value:p.specifications||"Shared library component"}]};
+   payload={name:p.name,quantity:count,sharedPartRef:"common:"+p.id,manufacturer:p.manufacturer||"",model:p.partNumber||"",category:p.category||"Library part",specifications:[{name:"Library part ID",value:p.id},{name:"Library specifications",value:p.specifications||"Shared library component"}]};
   }else{
    if(wireWorkflow!=="manual"){status.textContent="Choose Manual Entry or apply the Wire Wizard recommendation first.";return}
    const g=Number(gauge.input.value),str=construction.input.value,crimp=wireType.input.value==="crimped";
