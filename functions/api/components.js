@@ -27,6 +27,36 @@ const quantityData=(input,previous)=>{
  if(unit.length>32||(!/^[a-zA-Z0-9 °µ²³/_-]*$/.test(unit)))return null;
  return {quantity,quantityUnit:unit};
 };
+// Derived consumables remain tied to their source part. Never require the
+// learner to enter ferrule counts or create a second independent BOM item.
+function syncDerived(items,source){
+ if(source.generatedFrom)return;
+ const spec=new Map((source.specifications||[]).map(x=>[String(x.name).toLowerCase(),String(x.value).trim()]));
+ const ferrules=["end a","end b"].filter(key=>spec.get(key)?.toLowerCase()==="ferrule").length;
+ const gauge=spec.get("awg");
+ const previous=items.findIndex(x=>x.generatedFrom===source.id&&x.generatedKind==="ferrule");
+ if(!ferrules||!gauge||!/^\d{1,2}$/.test(gauge)||!source.category?.toLowerCase().includes("crimped")){
+  if(previous>=0)items.splice(previous,1);
+  return;
+ }
+ const qty=source.quantityUnit==="pcs"&&Number.isInteger(source.quantity)?source.quantity*ferrules:null;
+ const data={
+  name:"Ferrule — "+gauge+" AWG",assemblyId:source.assemblyId??null,
+  quantity:qty,quantityUnit:"pcs",bomOnly:true,
+  category:"Wire termination",generatedFrom:source.id,generatedKind:"ferrule",
+  sharedPartRef:"standard:ferrule:"+gauge,manufacturer:"",model:"",supplier:"",asin:"",
+  specifications:[
+   {name:"Wire gauge",value:gauge+" AWG",source:"explicit"},
+   {name:"Ferrules per wire",value:String(ferrules),source:"explicit"}
+  ],historicalPrice:null,historicalPriceDate:null
+ };
+ if(previous>=0)items[previous]={...items[previous],...data};
+ else items.push({id:crypto.randomUUID(),createdAt:new Date().toISOString(),...data});
+}
+const cleanPartRef=value=>{
+ if(typeof value!=="string")return null;
+ return /^(?:common|wire):[0-9a-f-]{36}$/i.test(value)||/^standard:ferrule:\d{1,2}$/.test(value)?value:null;
+};
 const safePublicImageUrl=value=>{
  try{
   if(typeof value!=="string"||value.length>1800)return null;
@@ -49,8 +79,8 @@ export async function handleComponents(request,env){
   if(!price)return json({error:"Historical price must be a nonnegative USD amount (2 decimals) with a valid recorded date"},400);
   const amount=quantityData(input);if(!amount)return json({error:"Quantity must be a positive number or blank, with a valid unit"},400);
   const clean=s=>String(s??"").slice(0,300);
-  const record={assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,bomOnly:input.bomOnly===true,id:crypto.randomUUID(),name:clean(input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
-  const items=await read(env,project);if(items.length>=300)return json({error:"Component limit reached"},400);items.push(record);await env.PHOTOS.put(key(project),JSON.stringify(items));return json({component:record},201);
+  const record={assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,bomOnly:input.bomOnly===true,sharedPartRef:cleanPartRef(input.sharedPartRef),id:crypto.randomUUID(),name:clean(input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
+  const items=await read(env,project);if(items.length>=300)return json({error:"Component limit reached"},400);items.push(record);syncDerived(items,record);await env.PHOTOS.put(key(project),JSON.stringify(items));return json({component:record},201);
  }
  if(request.method==="PUT"){
   const id=url.searchParams.get("id");
@@ -58,6 +88,7 @@ export async function handleComponents(request,env){
   if(!id||!input||typeof input.name!=="string"||!input.name.trim()||input.name.length>180||!Array.isArray(input.specifications)||input.specifications.length>35)return json({error:"Invalid part update"},400);
   const items=await read(env,project),index=items.findIndex(part=>part.id===id);
   if(index<0)return json({error:"Part not found"},404);
+  if(items[index].generatedFrom)return json({error:"This material is calculated from its wire. Edit the wire instead."},409);
   const clean=value=>String(value??"").slice(0,300),previous=items[index];
   const price=historicalPrice(input);
   if(!price)return json({error:"Historical price must be a nonnegative USD amount (2 decimals) with a valid recorded date"},400);
@@ -71,12 +102,13 @@ export async function handleComponents(request,env){
   }
   for(const field of ["manufacturer","model","supplier","asin","category"])updated[field]=clean(input[field]);
   updated.specifications=input.specifications.map(spec=>({name:clean(spec.name),value:clean(spec.value),source:spec.source==="inferred"?"inferred":"explicit"})).filter(spec=>spec.name&&spec.value);
-  // Existing assembly association is immutable during an ordinary edit.
-  items[index]=updated;await env.PHOTOS.put(key(project),JSON.stringify(items));
+  // Keep the original shared part reference unless a new valid reference is supplied.
+  if(Object.prototype.hasOwnProperty.call(input,"sharedPartRef"))updated.sharedPartRef=cleanPartRef(input.sharedPartRef);
+  items[index]=updated;syncDerived(items,updated);await env.PHOTOS.put(key(project),JSON.stringify(items));
   return json({component:updated});
  }
  if(request.method==="DELETE"){
-  const id=url.searchParams.get("id"),items=await read(env,project),remaining=items.filter(x=>x.id!==id);if(remaining.length===items.length)return json({error:"Not found"},404);await env.PHOTOS.put(key(project),JSON.stringify(remaining));await env.PHOTOS.delete("component-thumbnails/"+project+"/"+id);await env.PHOTOS.delete("part-workspaces/"+project+"/"+id+".json");await env.PHOTOS.delete("harnesses/"+project+"/"+id+".json");return json({ok:true});
+  const id=url.searchParams.get("id"),items=await read(env,project),target=items.find(x=>x.id===id);if(!target)return json({error:"Not found"},404);if(target.generatedFrom)return json({error:"This material is calculated from its wire. Delete or edit the wire instead."},409);const remaining=items.filter(x=>x.id!==id&&x.generatedFrom!==id);await env.PHOTOS.put(key(project),JSON.stringify(remaining));await env.PHOTOS.delete("component-thumbnails/"+project+"/"+id);await env.PHOTOS.delete("part-workspaces/"+project+"/"+id+".json");await env.PHOTOS.delete("harnesses/"+project+"/"+id+".json");return json({ok:true});
  }
  return json({error:"Method not allowed"},405)
 }
