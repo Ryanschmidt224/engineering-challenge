@@ -533,7 +533,7 @@ function setupAssemblyTrees(){
   }
   function workshopLink(part){
    const link=document.createElement("button");link.type="button";link.className="btn bom-workshop-link";
-   link.textContent=part.workshopChoice?"Change selection":"Choose recommended";
+   link.textContent=part.workshopChoice?"Change selection":recommendedWorkshop(part)?"Choose recommended":"Browse Workshop";
    link.onclick=async e=>{
     e.preventDefault();e.stopPropagation();
     const original=location.hash.slice(1);
@@ -549,9 +549,7 @@ function setupAssemblyTrees(){
      navigate(original);
      bomReport(item.name+" selected from The Workshop for "+part.name+".");
     };
-    if(!window.BSResources?.focusWorkshopItem(initial,choose)){
-     window.BSResources?.focusWorkshopItem("workshop:wire22",choose);
-    }
+    window.BSResources?.focusWorkshopItem(initial,choose);
    };
    return link;
   }
