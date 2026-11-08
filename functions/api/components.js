@@ -228,7 +228,8 @@ export async function handleExtract(request,env){
  if(!env.OPENAI_API_KEY)return json({error:"AI extraction is not configured: add an OPENAI_API_KEY secret to this Cloudflare Worker. You can still add components manually."},503);
  const body=await request.json().catch(()=>null);
  let description=typeof body?.description==="string"?body.description.trim():"";
- let imageUrl=null;
+ let imageUrl=null,pageSnapshot=null,sourceUrl=null;
+ const requestedProject=typeof body?.project==="string"&&projects.has(body.project)?body.project:null;
  const source=description.match(/^https?:\/\/\S+$/i)?.[0];
  if(source){
   // Only fetch ordinary public HTTPS websites. No automatic redirect following.
@@ -254,6 +255,7 @@ export async function handleExtract(request,env){
     }
    }finally{reader.releaseLock()}
    const html=new TextDecoder().decode(Uint8Array.from(chunks.flatMap(chunk=>Array.from(chunk))));
+   if(requestedProject){pageSnapshot=html;sourceUrl=url.toString()}
    const decode=str=>str.replace(/&(?:nbsp|amp|quot|lt|gt|#39|#x27);/gi,match=>({"&nbsp;":" ","&amp;":"&","&quot;":'"',"&lt;":"<","&gt;":">","&#39;":"'","&#x27;":"'"}[match.toLowerCase()]||" ")).replace(/\s+/g," ").trim();
    const strip=str=>decode(str.replace(/<[^>]*>/g," "));
    const imageCandidates=[];
@@ -339,5 +341,15 @@ export async function handleExtract(request,env){
  const schema={type:"object",additionalProperties:false,required:["name","manufacturer","model","supplier","asin","category","specifications"],properties:{name:{type:"string"},manufacturer:{type:"string"},model:{type:"string"},supplier:{type:"string"},asin:{type:"string"},category:{type:"string"},specifications:{type:"array",items:{type:"object",additionalProperties:false,required:["name","value","source"],properties:{name:{type:"string"},value:{type:"string"},source:{type:"string",enum:["explicit","inferred"]}}}}}};
  const response=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"authorization":"Bearer "+env.OPENAI_API_KEY,"content-type":"application/json"},body:JSON.stringify({model:"gpt-4o-mini",temperature:0,max_tokens:700,messages:[{role:"system",content:"Extract technical component information from a product description. Return concise, accurate fields. Do not invent missing specifications. Empty string for missing scalar fields. Only mark inferred when a detail is reasonably inferred; omit speculative values. ASIN only if explicitly present. Manufacturer and model must not be guessed. Use the source domain to identify the retailer when available; do not assume Amazon. Prefer the product manufacturer over the retailer for manufacturer. Never invent specifications."},{role:"user",content:description}],response_format:{type:"json_schema",json_schema:{name:"component",strict:true,schema}}})});
  const result=await response.json().catch(()=>({}));if(!response.ok)return json({error:"AI extraction failed: "+(result.error?.message||"Provider error"),providerStatus:response.status},502);
- try{return json({component:JSON.parse(result.choices[0].message.content),imageUrl})}catch{return json({error:"Invalid AI response"},502)}
+ try{
+  const extracted=JSON.parse(result.choices[0].message.content);
+  let snapshotId=null;
+  if(pageSnapshot&&requestedProject){
+   snapshotId=crypto.randomUUID();
+   await env.PHOTOS.put("extraction-snapshots/"+requestedProject+"/"+snapshotId+".html",pageSnapshot,{
+    httpMetadata:{contentType:"application/octet-stream"},
+    customMetadata:{sourceUrl:sourceUrl.slice(0,900),savedAt:new Date().toISOString()}});
+  }
+  return json({component:extracted,imageUrl,snapshotId});
+ }catch(error){return json({error:"Extraction succeeded but the product-page snapshot could not be safely saved: "+String(error.message||error)},502)}
 }
