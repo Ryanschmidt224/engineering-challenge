@@ -739,3 +739,33 @@
   text-underline-offset:3px;
 }
 .bom-open-part-details{margin:0 0 12px;font-size:.83rem}
+
+
+/* Explicit Part Details action on every BOM row; names are plain text. */
+.bom-part-summary>.bom-open-part-details{
+  flex:0 0 auto;
+  font-size:.82rem;
+  padding:7px 11px;
+  white-space:nowrap;
+}
+.bom-shopping-table .bom-list-part-name{display:block;font-weight:650;line-height:1.4}
+.bom-shopping-table .bom-open-part-details{display:inline-flex;margin-top:7px;font-size:.8rem;padding:6px 10px}
+.bom-shop-material-row>.bom-shop-material-name{
+  flex:0 1 340px;
+  width:auto;
+  min-width:160px;
+  max-width:100%;
+  font-weight:650;
+  line-height:1.4;
+  text-align:left;
+  overflow-wrap:anywhere;
+}
+.bom-shop-material-row>.bom-open-part-details{flex:0 0 auto;justify-self:start;margin:0;font-size:.8rem;padding:7px 10px}
+@media(max-width:900px){
+ .bom-shop-material-row>.bom-shop-material-name{flex:1 1 210px;min-width:0}
+ .bom-part-summary>.bom-open-part-details{white-space:normal}
+}
+@media(max-width:620px){
+ .bom-shop-material-row>.bom-shop-material-name{flex:1 0 100%;min-width:0}
+ .bom-shop-material-row>.bom-open-part-details{flex:0 1 auto}
+}
