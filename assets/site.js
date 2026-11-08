@@ -210,17 +210,26 @@ function setupAssemblyTrees(){
     const pick=document.createElement("button");pick.type="button";pick.className="btn";pick.textContent="Add / change picture";
     const input=document.createElement("input");input.type="file";input.accept="image/jpeg,image/png,image/webp";input.hidden=true;
     pick.onclick=()=>input.click();
-    input.onchange=async()=>{
-     const file=input.files?.[0];if(!file)return;
-     if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>3*1024*1024){bomReport("Use JPG, PNG or WebP under 3 MB.");return}
+    const uploadThumbnail=async file=>{
+     if(!file)return;
+     const mime=file.type||({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"}[file.name.split(".").pop().toLowerCase()]||"");
+     if(!["image/jpeg","image/png","image/webp"].includes(mime)||file.size>3*1024*1024){bomReport("Use JPG, PNG or WebP under 3 MB.");return}
      pick.disabled=true;pick.textContent="Uploading…";
      try{
-      const response=await fetch(partPhotoUrl(part.id),{method:"POST",credentials:"same-origin",headers:{"content-type":file.type},body:file});
+      const response=await fetch(partPhotoUrl(part.id),{method:"POST",credentials:"same-origin",headers:{"content-type":mime},body:file});
       const result=await response.json();if(!response.ok)throw Error(result.error||"Upload failed");
       photo.classList.remove("bom-thumbnail-empty");photo.src=partPhotoUrl(part.id)+"&v="+Date.now();pick.textContent="Change picture";bomReport("Picture saved for "+part.name+".");
      }catch(error){bomReport("Picture upload failed: "+error.message);pick.textContent="Add / change picture"}
      finally{pick.disabled=false;input.value=""}
     };
+    input.onchange=()=>{void uploadThumbnail(input.files?.[0]);input.value=""};
+    // Drop a file on the thumbnail or its upload button.
+    for(const target of [photo,pick]){
+     target.classList.add("bom-picture-drop");
+     target.addEventListener("dragover",event=>{if(!event.dataTransfer.types.includes("Files"))return;event.preventDefault();event.stopPropagation();event.dataTransfer.dropEffect="copy";target.classList.add("is-dragover")});
+     target.addEventListener("dragleave",event=>{event.preventDefault();target.classList.remove("is-dragover")});
+     target.addEventListener("drop",event=>{event.preventDefault();event.stopPropagation();target.classList.remove("is-dragover");void uploadThumbnail(event.dataTransfer.files?.[0])});
+    }
     const remove=document.createElement("button");remove.type="button";remove.className="btn";remove.textContent="Delete part";
     remove.onclick=async()=>{
      if(!confirm("Delete "+part.name+"?"))return;
@@ -527,9 +536,16 @@ function setupAssemblyTrees(){
    }
    pick.onclick=()=>input.click();
    input.onchange=()=>upload(input.files?.[0]);
+   // The zone is hidden in the modern photo-first layout; bind drops to the visible stage.
+   const dropTarget=tile.querySelector(".assembly-unified-photo");
+   if(dropTarget){
+    dropTarget.addEventListener("dragover",event=>{if(!adminAuthenticated||!event.dataTransfer.types.includes("Files"))return;event.preventDefault();event.stopPropagation();event.dataTransfer.dropEffect="copy";dropTarget.classList.add("is-dragover")});
+    dropTarget.addEventListener("dragleave",event=>{if(!dropTarget.contains(event.relatedTarget))dropTarget.classList.remove("is-dragover")});
+    dropTarget.addEventListener("drop",event=>{if(!adminAuthenticated)return;event.preventDefault();event.stopPropagation();dropTarget.classList.remove("is-dragover");void upload(event.dataTransfer.files?.[0])});
+   }
    zone.ondragover=e=>{e.preventDefault();zone.classList.add("drag-over")};
    zone.ondragleave=()=>zone.classList.remove("drag-over");
-   zone.ondrop=e=>{e.preventDefault();zone.classList.remove("drag-over");upload(e.dataTransfer.files?.[0])};
+   zone.ondrop=e=>{e.preventDefault();zone.classList.remove("drag-over");void upload(e.dataTransfer.files?.[0])};
    return {refresh};
   }
   // A single explicit entry point on the large assembly photo, not on child tiles.
