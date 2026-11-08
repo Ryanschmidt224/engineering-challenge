@@ -24,7 +24,11 @@ export const folders=project=>[
 ];
 export const singles=project=>["trees/"+project+".json","components/"+project+".json",
  "libraries/wires.json","libraries/common-parts.json","libraries/purchased-parts.json"];
-export const isAllowedKey=(project,key)=>folders(project).some(x=>key.startsWith(x))||singles(project).includes(key);
+export const isAllowedKey=(project,key)=>
+ typeof key==="string"&&key.length>0&&key.length<=1000&&
+ !/[\\\x00-\x1f\x7f]/.test(key)&&
+ key.split("/").every(segment=>segment!==""&&segment!=="."&&segment!=="..")&&
+ (folders(project).some(x=>key.startsWith(x))||singles(project).includes(key));
 
 async function listAll(r2,prefix){
  const keys=[],seen=new Set();
