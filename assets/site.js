@@ -525,6 +525,38 @@ function setupAssemblyTrees(){
   }
   // Workspace owns its part editor actions. Keep the mini-project component
   // editors separate; this panel saves one assembly part per request.
+  const bomEditorMount=workspace.querySelector(".workspace-bom-mount");
+  const bomSavedList=workspace.querySelector(".workspace-saved-parts");
+  const bomEditorHeader=document.createElement("div");
+  bomEditorHeader.className="workspace-bom-editor-header hide";
+  const bomEditorHeading=document.createElement("h3");
+  bomEditorHeading.className="workspace-bom-editor-title";
+  const bomEditorCancel=document.createElement("button");
+  bomEditorCancel.type="button";
+  bomEditorCancel.className="btn workspace-bom-editor-cancel";
+  bomEditorCancel.textContent="Cancel editing";
+  bomEditorHeader.append(bomEditorHeading,bomEditorCancel);
+  bomEditorMount.prepend(bomEditorHeader);
+  const moveBomEditorToTop=()=>{
+   bomSavedList.before(bomEditorMount);
+   bomEditorMount.classList.add("is-editing");
+   bomEditorHeading.textContent=editingPart?"Edit part: "+(bomField("name")?.value||"Part"):"Add new BOM part";
+   bomEditorCancel.textContent=editingPart?"Cancel editing":"Cancel new part";
+   bomEditorHeader.classList.remove("hide");
+  };
+  const dismissBomEditor=()=>{
+   bomEditorMount.classList.remove("is-editing");
+   bomEditorHeader.classList.add("hide");
+   bomSavedList.after(bomEditorMount);
+  };
+  bomEditorCancel.onclick=()=>{
+   if(savingBom)return;
+   clearBomDraft();
+   const form=bomRoot()?.querySelector(".component-admin");
+   if(form)form.open=false;
+   bomRoot()?.querySelector(".component-review")?.classList.add("hide");
+   bomReport("Part editing cancelled.");
+  };
   const bomRoot=()=>workspace.querySelector(".component-section");
   const bomField=name=>bomRoot()?.querySelector(".component-"+name);
   const bomReport=message=>{
@@ -534,6 +566,7 @@ function setupAssemblyTrees(){
    if(el){el.textContent=message;el.hidden=false;el.style.display="block"}
   };
   function clearBomDraft(){
+   dismissBomEditor();
    extractedPictureUrl=null;
    editingPart=null;editingPartAssembly=null;
    for(const name of ["name","manufacturer","model","category","supplier","asin","description"]){const el=bomField(name);if(el)el.value=""}
@@ -563,10 +596,12 @@ function setupAssemblyTrees(){
   }
   function openBomDraft(){
    const root=bomRoot();if(!root){bomReport("BOM editor unavailable. Refresh the page.");return}
+   moveBomEditorToTop();
    root.querySelector("details")?.setAttribute("open","");
    const form=root.querySelector(".component-admin");if(form)form.open=true;
    root.querySelector(".component-review")?.classList.remove("hide");
-   bomField("name")?.focus();
+   bomEditorMount.scrollIntoView({behavior:"smooth",block:"start"});
+   bomField("name")?.focus({preventScroll:true});
   }
   let savingBom=false;
   async function saveBomDraft(){
