@@ -5,12 +5,22 @@ const AWG=[{g:24,r:84.22},{g:22,r:53},{g:20,r:33.3},{g:18,r:20.95},{g:16,r:13.17
 const el=(tag,cls,txt)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(txt!==undefined)x.textContent=txt;return x};
 const field=(label,tag="input",value="")=>{const l=el("label","library-field",label),v=el(tag,"field");if(tag==="input"){v.type="text";v.value=value}l.append(v);return {label:l,input:v}};
 const option=(sel,value,label)=>{const o=el("option","",label);o.value=value;sel.append(o)};
-function recommend(voltage,current,length,dropPercent=3){
+// Conservative planning thresholds, NOT rated ampacity values. Manufacturer
+// wire, insulation, routing, bundling, terminations and applicable codes govern.
+const PLANNING_AMPS={24:1,22:2,20:3,18:5,16:8,14:12,12:15,10:20,8:30};
+function recommend(voltage,current,length,dropPercent=3,purpose="power"){
  if(![voltage,current,length,dropPercent].every(n=>Number.isFinite(n)&&n>0))return null;
+ const preferred=purpose==="signal"?22:18;
  const maxDrop=voltage*dropPercent/100;
- const matches=AWG.filter(({r})=>current*(2*length*r/1000)<=maxDrop);
- const chosen=matches[0]||null;
- return {chosen,drop:chosen?current*(2*length*chosen.r/1000):null,maxDrop};
+ const candidates=AWG.filter(({g,r})=>g<=preferred&&
+  current<=PLANNING_AMPS[g]&&current*(2*length*r/1000)<=maxDrop);
+ const chosen=candidates[0]||null;
+ const pref=AWG.find(w=>w.g===preferred);
+ const preferredDrop=current*(2*length*pref.r/1000);
+ const reasons=[];
+ if(current>PLANNING_AMPS[preferred])reasons.push("the planning current threshold ("+PLANNING_AMPS[preferred]+" A)");
+ if(preferredDrop>maxDrop)reasons.push("the voltage-drop limit ("+preferredDrop.toFixed(3)+" V estimated)");
+ return {chosen,drop:chosen?current*(2*length*chosen.r/1000):null,maxDrop,preferred,reasons};
 }
 function open({onCreate,bomOnly=false}){
  return new Promise(resolve=>{
@@ -54,14 +64,17 @@ function open({onCreate,bomOnly=false}){
  const current=field("Maximum continuous current (A)");current.input.type="number";current.input.min="0.001";current.input.step="any";current.input.value="2";
  const run=field("One-way wire length (inches)");run.input.type="number";run.input.min="0.001";run.input.step="any";run.input.value="36";
  const drop=field("Maximum voltage drop (%)");drop.input.type="number";drop.input.min="0.1";drop.input.max="20";drop.input.step="0.1";drop.input.value="3";
+ const purpose=field("Circuit purpose","select");
+ option(purpose.input,"power","Power · prefer 18 AWG");
+ option(purpose.input,"signal","Signal / control · prefer 22 AWG");
  const useCase=field("Mechanical use","select");
  option(useCase.input,"moving","Moving, flexible, or subject to vibration");
  option(useCase.input,"stationary","Stationary, protected installation");
  const calcResult=el("div","wire-gauge-result");
  const apply=el("button","btn primary","Apply recommendation & review");apply.type="button";apply.disabled=true;
  const wizardBack=el("button","btn","Back to choices");wizardBack.type="button";
- const calcNote=el("p","muted","Preliminary DC copper voltage-drop sizing at 20°C using the entered one-way length in inches and an equal-length return conductor. NOT an ampacity or safety rating. Before building, verify wire current rating, operating temperature, installation/bundling, insulation, and terminal/crimp compatibility against manufacturer specifications. Crimped and moving wires generally use stranded conductors.");
- calcGrid.append(voltage.label,current.label,run.label,drop.label,useCase.label,calcResult,apply,wizardBack,calcNote);
+ const calcNote=el("p","muted","Preferred standards: 22 AWG signal, 18 AWG power. The Wizard chooses the preferred size unless it fails voltage drop or conservative planning-current thresholds (22: 2 A, 18: 5 A; larger sizes have separate thresholds). These thresholds are NOT approved ampacity ratings. Sizing assumes copper at 20°C and equal outbound/return DC lengths. Verify manufacturer ampacity, heating, insulation, routing, fusing, and terminal/crimp compatibility before building.");
+ calcGrid.append(purpose.label,voltage.label,current.label,run.label,drop.label,useCase.label,calcResult,apply,wizardBack,calcNote);
  calc.append(calcGrid);wizardFields.append(calc);
  const compSection=el("div","library-components hide");
  const commonCategory=field("Filter parts","select");[["all","All"],["screws","Fasteners"],["buck-converters","Buck converters"],["other","Other"]].forEach(([v,n])=>option(commonCategory.input,v,n));
@@ -113,13 +126,14 @@ function open({onCreate,bomOnly=false}){
   save.classList.toggle("hide",lib&&wire&&wireWorkflow!=="manual");
  };
  function updateCalc(){
-  const r=recommend(+voltage.input.value,+current.input.value,+run.input.value*0.0254,+drop.input.value);
+  const r=recommend(+voltage.input.value,+current.input.value,+run.input.value*0.0254,+drop.input.value,purpose.input.value);
   selectedRecommendation=r?.chosen?.g??null;apply.disabled=selectedRecommendation===null;
   if(!r){calcResult.textContent="Enter positive voltage, current, wire length and voltage-drop percentage.";return}
-  calcResult.textContent=r.chosen?"Preliminary recommendation: "+r.chosen.g+" AWG copper, "+((useCase.input.value==="moving"||wireType.input.value==="crimped")?"stranded / flexible":"solid for fixed, protected wiring (stranded also acceptable)")+". Estimated DC voltage drop "+r.drop.toFixed(3)+" V ("+(100*r.drop/(+voltage.input.value)).toFixed(2)+"%). This is not an ampacity check.":"No gauge in this 24–8 AWG range meets the selected voltage-drop target. Consider a larger wire, shorter run, or a different design.";
+  calcResult.textContent=r.chosen?"Preliminary recommendation: "+r.chosen.g+" AWG copper "+((useCase.input.value==="moving"||wireType.input.value==="crimped")?"stranded / flexible":"solid or stranded for fixed wiring")+". "+(r.chosen.g===r.preferred?"Uses preferred "+r.preferred+" AWG standard.":"Larger than preferred "+r.preferred+" AWG because of "+r.reasons.join(" and ")+".")+" Estimated round-trip DC voltage drop "+r.drop.toFixed(3)+" V ("+(100*r.drop/(+voltage.input.value)).toFixed(2)+"%). Check actual wire and terminal ampacity.":"No 8–"+r.preferred+" AWG conductor meets both the provisional current screening and voltage-drop criteria. A different wire or circuit design needs review.";
  }
  [voltage.input,current.input,run.input,drop.input].forEach(e=>e.addEventListener("input",updateCalc));
  useCase.input.onchange=updateCalc;
+ purpose.input.onchange=updateCalc;
  wireType.input.addEventListener("change",updateCalc);
  apply.onclick=()=>{
   if(selectedRecommendation===null)return;
