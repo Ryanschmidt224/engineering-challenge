@@ -154,7 +154,7 @@ function setupAssemblyTrees(){
   detail.after(workspace);
   // Each saved BOM part has its own independent instructions document.
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
-  partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article><h2>Build instructions</h2><textarea class="field part-instructions" rows="9" placeholder="Build steps, tools, measurements and checks…"></textarea></article><article class="part-drawing-panel"></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article><h2>Machine settings / procedures</h2><textarea class="field part-procedures" rows="5" placeholder="Settings and procedures…"></textarea></article><article><h2>Notes</h2><textarea class="field part-notes" rows="5" placeholder="Additional notes…"></textarea></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
+  partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article><h2>Build instructions</h2><textarea class="field part-instructions" rows="9" placeholder="Build steps, tools, measurements and checks…"></textarea></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article><h2>Machine settings / procedures</h2><textarea class="field part-procedures" rows="5" placeholder="Settings and procedures…"></textarea></article><article><h2>Notes</h2><textarea class="field part-notes" rows="5" placeholder="Additional notes…"></textarea></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
   workspace.after(partWorkspace);
   // Safe project portability: export is read-only; import currently verifies only.
   // No operation here can overwrite or delete Cloudflare project records.
@@ -196,6 +196,7 @@ function setupAssemblyTrees(){
   workspace.querySelector(".workspace-heading").after(archiveActions);
   const assemblyDrawingPanel=window.BSDrawings?.mount(workspace.querySelector(".workspace-drawing-panel"),()=>adminAuthenticated);
   const partDrawingPanel=window.BSDrawings?.mount(partWorkspace.querySelector(".part-drawing-panel"),()=>adminAuthenticated);
+  const partFilesPanel=window.BSPartFiles?.mount(partWorkspace.querySelector(".part-files-panel"),()=>adminAuthenticated);
 
   const assemblyResourcePicker=window.BSResources?.mount(workspace.querySelector(".workspace-resources"));
   const partResourcePicker=window.BSResources?.mount(partWorkspace.querySelector(".part-linked-resources"));
@@ -292,7 +293,9 @@ function setupAssemblyTrees(){
   partTools.classList.add("hide");
   partTools.innerHTML='<div class="part-photo-edit-label">Part picture</div><div class="part-photo-edit-preview"></div><button type="button" class="btn part-workspace-picture">Add / change picture</button><input type="file" class="part-workspace-file" accept="image/jpeg,image/png,image/webp" hidden>';
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
-  detailsPanel.innerHTML='<div class="part-details-view-heading"><h2>Part details</h2><span class="part-details-view-mode">View mode</span></div><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div>';
+  detailsPanel.innerHTML='<details class="part-details-collapse"><summary class="part-details-view-heading"><h2>Part details</h2><span class="part-details-toggle-label">Show details</span></summary><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div><div class="part-drawing-panel"></div><div class="part-files-panel"></div></details>';
+  const partDetailsCollapse=detailsPanel.querySelector(".part-details-collapse");
+  partDetailsCollapse.addEventListener("toggle",()=>{partDetailsCollapse.querySelector(".part-details-toggle-label").textContent=partDetailsCollapse.open?"Minimize details":"Show details"});
   partWorkspace.querySelector(".workspace-heading").after(detailsPanel);
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
   const renderPartDetails=part=>{
@@ -410,7 +413,7 @@ function setupAssemblyTrees(){
    detailsPanel.querySelector(".part-details-view-actions").classList.toggle("hide",!adminAuthenticated);
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
-   heading.textContent="Loading part…";currentPartInfo=null;partSavedRevision=null;partStatus.textContent="Loading instructions…";
+   heading.textContent="Loading part…";currentPartInfo=null;partSavedRevision=null;partStatus.textContent="Loading instructions…";partDetailsCollapse.open=false;
    detailRows.replaceChildren();detailsPanel.classList.add("hide");
    partWorkspace.querySelector(".part-harness-preview").classList.add("hide");
    cover.replaceChildren();
@@ -428,6 +431,7 @@ function setupAssemblyTrees(){
     currentPartInfo=part;
     renderPartDetails(part);
     void partDrawingPanel?.load(project,"part",partId);
+    void partFilesPanel?.load(project,partId);
     void showHarnessPreview(partId,version);
     if(partBackAssembly===null)partBackAssembly=part.assemblyId??null;
     for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value=data.workspace?.[name]||"";
@@ -699,7 +703,8 @@ function setupAssemblyTrees(){
    if(part.bomOnly)item.classList.add("bom-only-part");
    if(part.generatedFrom)item.classList.add("bom-generated-part");
    const qty=document.createElement("span");qty.className="bom-part-meta";qty.textContent=(part.quantity===null||part.quantity===undefined?"Qty not specified":"Qty "+part.quantity+(part.quantityUnit?" "+part.quantityUnit:""))+(part.model?" · "+part.model:"");
-   const expand=document.createElement("span");expand.className="bom-part-toggle-label";expand.textContent="Details";
+   const expand=document.createElement("span");expand.className="bom-part-toggle-label";expand.textContent="Show details";
+   item.addEventListener("toggle",()=>{expand.textContent=item.open?"Minimize details":"Show details"});
    summary.append(photo,name,qty,openPart,expand);item.append(summary);
    const body=document.createElement("div");body.className="bom-part-body";
    if(!part.generatedFrom){
