@@ -800,7 +800,7 @@ function setupAssemblyTrees(){
    if(newParent===id||wouldCycle(id,newParent)||isPartNode(nodes.find(n=>n.id===newParent)))throw Error("Cannot move an assembly inside a part or one of its descendants.");
    if(node.parentId===newParent)return;
    const next=nodes.map(n=>n.id===id?{...n,parentId:newParent}:n);
-   await save(next);expanded.add(newParent);selected=id;render();notify();status.textContent="Subassembly moved.";
+   await save(next);expanded.add(newParent);if(isPartNode(node)){openTreePart({...node,parentId:newParent});status.textContent="Part moved."}else{selected=id;render();notify();status.textContent="Subassembly moved."}
   }
   async function moveToChoice(){
    if(selected===null){status.textContent="Select a subassembly first.";return}
