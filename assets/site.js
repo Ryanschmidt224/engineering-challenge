@@ -498,7 +498,7 @@ function setupAssemblyTrees(){
    history.pushState(null,"","#"+project+"/part/"+encodeURIComponent(part.id));
    void showAssemblyPage();window.scrollTo(0,0);
   }
-  let extractedPictureUrl=null;
+  let extractedPictureUrl=null,extractedSnapshotId=null;
   // Workspace-owned extraction handler. Runs even when the legacy component
   // editor failed to initialize; captured before the editor's click listeners.
   const bomNotice=document.createElement("p");
@@ -524,19 +524,20 @@ function setupAssemblyTrees(){
    const description=section.querySelector(".component-description")?.value.trim();
    if(!description){notify("Paste a product description or an HTTPS product URL.");return}
    if(!adminAuthenticated){notify("Sign in using Admin login to extract product specifications.");return}
-   extractedPictureUrl=null;
+   extractedPictureUrl=null;extractedSnapshotId=null;
    button.disabled=true;notify("Connecting to the extraction API…");
    try{
     const controller=new AbortController();
     const timeout=setTimeout(()=>controller.abort(),25000);
     let response;
-    try{response=await fetch("/api/components/extract",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({description}),signal:controller.signal})}finally{clearTimeout(timeout)}
+    try{response=await fetch("/api/components/extract",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({description,project}),signal:controller.signal})}finally{clearTimeout(timeout)}
     const raw=await response.text();
     let data;try{data=JSON.parse(raw)}catch{throw Error("Server returned HTTP "+response.status+" instead of valid JSON: "+raw.slice(0,120))}
     if(!response.ok)throw Error((data.error||"Extraction failed")+" (HTTP "+response.status+")");
     if(!data.component||typeof data.component!=="object")throw Error("No product data returned");
     const part=data.component;
     extractedPictureUrl=typeof data.imageUrl==="string"?data.imageUrl:null;
+    extractedSnapshotId=typeof data.snapshotId==="string"?data.snapshotId:null;
     for(const fieldName of ["name","manufacturer","model","category","supplier","asin"]){
      const field=section.querySelector(".component-"+fieldName);if(field)field.value=part[fieldName]||""
     }
@@ -1034,13 +1035,20 @@ function setupAssemblyTrees(){
    bomReport("Saving "+name+"…");
    try{
     const wasEdit=!!editingPart;
-    const imageToImport=extractedPictureUrl;
+    const imageToImport=extractedPictureUrl,snapshotToAttach=extractedSnapshotId;
     const address="/api/components?project="+encodeURIComponent(project)+(editingPart?"&id="+encodeURIComponent(editingPart):"");
     const response=await fetch(address,{method:wasEdit?"PUT":"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(component)});
     const raw=await response.text();let result;
     try{result=JSON.parse(raw)}catch{throw Error("Unexpected save response (HTTP "+response.status+")")}
     if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
     let photoMessage="";
+    if(snapshotToAttach&&result.component?.id){
+     try{
+      const snapshotResponse=await fetch("/api/part-pages?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(result.component.id),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({snapshotId:snapshotToAttach})});
+      const snapshotData=await snapshotResponse.json();if(!snapshotResponse.ok)throw Error(snapshotData.error||"Could not attach saved product page");
+      photoMessage+=" Product webpage archived with part details.";
+     }catch(error){photoMessage+=" Warning: product webpage was not attached: "+error.message}
+    }
     if(imageToImport&&result.component?.id){
      try{
       const photoResponse=await fetch(partPhotoUrl(result.component.id),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({imageUrl:imageToImport})});
