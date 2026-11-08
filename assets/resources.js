@@ -34,7 +34,8 @@
   {id:"workshop:heatgun",kind:"tool",tier:"core",name:"Temperature-controlled heat gun",spec:"Variable temperature and airflow, narrow nozzle preferred; use the tubing manufacturer's recovery temperature.",use:"Heat shrink installation without a flame."},
   {id:"workshop:meter",kind:"tool",tier:"core",name:"Digital multimeter",spec:"DC voltage, resistance, continuity; appropriate measurement category and rated leads.",use:"Check polarity, shorts and continuity before first power-up."},
   {id:"workshop:solderstation",kind:"tool",tier:"core",name:"Temperature-controlled soldering station",spec:"Adjustable temperature, replaceable tips, stand, brass wool/sponge and suitable work ventilation.",use:"PCB work and soldered connections."},
-  {id:"workshop:safety",kind:"tool",tier:"core",name:"Eye protection and bench ventilation",spec:"Safety glasses plus effective solder-fume removal or local exhaust appropriate to the work.",use:"Cutting, crimping, soldering and heating materials."}
+  {id:"workshop:safety",kind:"tool",tier:"core",name:"Eye protection and bench ventilation",spec:"Safety glasses plus effective solder-fume removal or local exhaust appropriate to the work.",use:"Cutting, crimping, soldering and heating materials."},
+  {id:"workshop:oscilloscope",kind:"tool",tier:"conditional",name:"Oscilloscope",spec:"Bench or USB scope with appropriate bandwidth, probes and isolated or correctly grounded measurement setup.",use:"For PWM, ripple and switching waveforms.",caution:"A bench scope ground clip may be earth-referenced. Never attach it to an arbitrary live circuit node."}
  ];
  const workshopReferences=[...workshopSupplies,...workshopEquipment];
  const catalog={tools:[...tools,...workshopEquipment.map(x=>({id:x.id,name:x.name,subtitle:"Workshop standard",detail:x.spec+" "+x.use,caution:x.caution}))],calculators,parts:[...baseParts,...workshopSupplies.map(x=>({id:x.id,name:x.name,subtitle:x.subtitle,detail:x.spec+" "+x.use,caution:x.caution}))]};
@@ -156,43 +157,61 @@
   render();
   return {setData,getData:()=>normalize(refs),destroy:()=>listeners.delete(onLibraryUpdate)};
  }
+ let workshopChoiceContext=null;
+ function focusWorkshopItem(id,choose=null){
+  workshopChoiceContext=typeof choose==="function"?choose:null;
+  renderWorkshopEssentials();
+  const entry=document.querySelector('[data-workshop-id="'+id+'"]');
+  if(!entry)return false;
+  const parent=entry.closest(".workshop-optional-group");
+  if(parent)parent.open=true;
+  entry.open=true;
+  requestAnimationFrame(()=>entry.scrollIntoView({block:"center",behavior:"smooth"}));
+  entry.classList.add("workshop-featured-item");
+  return true;
+ }
  function renderWorkshopEssentials(){
   const mount=document.getElementById("workshop-essentials-list");if(!mount)return;
   mount.replaceChildren();
-  const section=(name,items)=>{
-   const group=element("section","workshop-group");
-   group.append(element("h3","",name));
-   const list=element("div","workshop-standard-list");
-   for(const item of items){
-    const details=element("details","workshop-standard-item");
-    const summary=element("summary","","");
-    const heading=element("span","workshop-standard-name",item.name);
-    const meta=element("span","workshop-standard-caption",item.subtitle||item.use);
-    const badge=item.tier==="core"?element("span","workshop-standard-tag","Standard"):null;
-    summary.append(heading,meta);if(badge)summary.append(badge);
-    const body=element("div","workshop-standard-body");
-    body.append(element("p","",item.spec),element("p","muted",item.use));
-    if(item.caution)body.append(element("p","resource-caution",item.caution));
-    if(item.source){const link=element("a","workshop-spec-source","Example manufacturer specifications");link.href=item.source;link.target="_blank";link.rel="noopener noreferrer";body.append(link)}
-    details.append(summary,body);list.append(details);
+  const makeCard=item=>{
+   const details=element("details","workshop-standard-item");
+   details.dataset.workshopId=item.id;
+   const summary=element("summary","","");
+   const heading=element("span","workshop-standard-name",item.name);
+   summary.append(heading);
+   const body=element("div","workshop-standard-body");
+   body.append(element("p","",item.spec));
+   if(item.caution)body.append(element("p","resource-caution",item.caution));
+   if(item.source){
+    const link=element("a","workshop-spec-source","Example specification");
+    link.href=item.source;link.target="_blank";link.rel="noopener noreferrer";body.append(link);
    }
+   if(workshopChoiceContext&&item.kind==="material"){
+    const choose=element("button","btn primary workshop-use-choice","Use this for BOM item");
+    choose.type="button";
+    choose.onclick=async()=>{
+     choose.disabled=true;choose.textContent="Saving…";
+     try{await workshopChoiceContext(item);workshopChoiceContext=null}
+     catch(error){choose.disabled=false;choose.textContent="Use this for BOM item";
+      const errorLine=element("p","resource-caution",error.message||String(error));body.append(errorLine)}
+    };
+    body.append(choose);
+   }
+   details.append(summary,body);return details;
+  };
+  const section=(title,items)=>{
+   const group=element("section","workshop-group");
+   group.append(element("h3","",title));
+   const list=element("div","workshop-standard-list");
+   for(const item of items)list.append(makeCard(item));
    group.append(list);mount.append(group);
   };
-  section("Core materials to keep on hand",workshopSupplies.filter(x=>x.tier==="core"));
-  section("Basic equipment",workshopEquipment);
+  section("Standard materials",workshopSupplies.filter(x=>x.tier==="core"));
+  section("Basic tools",workshopEquipment.filter(x=>x.tier==="core"));
   const extras=element("details","workshop-optional-group");
-  const heading=element("summary","","Special-purpose materials (only when needed)");
-  extras.append(heading);
+  extras.append(element("summary","","Special-purpose options"));
   const list=element("div","workshop-standard-list");
-  for(const item of workshopSupplies.filter(x=>x.tier==="conditional")){
-   const details=element("details","workshop-standard-item");
-   details.append(element("summary","",item.name+" — "+item.subtitle));
-   const body=element("div","workshop-standard-body");
-   body.append(element("p","",item.spec),element("p","muted",item.use));
-   if(item.caution)body.append(element("p","resource-caution",item.caution));
-   if(item.source){const link=element("a","workshop-spec-source","Example manufacturer specifications");link.href=item.source;link.target="_blank";link.rel="noopener noreferrer";body.append(link)}
-   details.append(body);list.append(details);
-  }
+  for(const item of [...workshopSupplies,...workshopEquipment].filter(x=>x.tier==="conditional"))list.append(makeCard(item));
   extras.append(list);mount.append(extras);
  }
  function renderCommonParts(){
@@ -322,7 +341,7 @@
    }
   }
  }
- window.BSResources={catalog,all,mount,reloadWires,reloadCommonParts,init,normalize,setAdmin};
+ window.BSResources={catalog,all,mount,reloadWires,reloadCommonParts,init,normalize,setAdmin,focusWorkshopItem};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
  else init();
 })();
