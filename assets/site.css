@@ -948,77 +948,110 @@
  .bom-shopping-table.bom-compact-list .bom-open-part-details{padding:5px 6px;font-size:.72rem}
 }
 
-/* Assembly workspace: resizable BOM sidebar on the left.
- * Width can be changed with the splitter or arrow keys; it stacks on mobile.
- */
+/* The feature tree and BOM live in the SAME left sidebar on assembly workspaces. */
+.assembly-sidebar>.workspace-bom{display:none}
+.assembly-sidebar.bom-sidebar-active>.workspace-bom{
+ display:block;
+ padding:11px 9px 16px;
+ border-top:2px solid #426677;
+ background:#102633;
+ min-width:0;
+}
+.assembly-sidebar.bom-sidebar-active>.workspace-bom .workspace-bom-heading{
+ display:flex;
+ flex-wrap:wrap;
+ gap:8px;
+ align-items:center;
+}
+.assembly-sidebar>.workspace-bom .workspace-bom-heading h2{
+ font-size:.85rem;
+ margin:0 auto 0 0;
+}
+.assembly-sidebar>.workspace-bom .workspace-new-part{
+ font-size:.73rem;
+ padding:6px 8px;
+}
+.assembly-sidebar>.workspace-bom .bom-view-button{font-size:.75rem;padding:6px 8px}
+.assembly-sidebar>.workspace-bom .workspace-saved-parts{
+ display:block;
+ min-width:0;
+ width:100%;
+ overflow-x:auto;
+ padding:0;
+ margin:8px 0 12px;
+ font-size:.82rem;
+}
+.assembly-sidebar>.workspace-bom .bom-part-stack{display:flex;flex-direction:column;gap:6px}
+.assembly-sidebar>.workspace-bom .bom-part{
+ border:1px solid #416675;
+ border-left:3px solid #6bacae;
+ border-radius:7px;
+ background:#193443;
+ overflow:hidden;
+}
+.assembly-sidebar>.workspace-bom .bom-part:nth-child(even){background:#203a48}
+.assembly-sidebar>.workspace-bom .bom-part-summary{
+ display:flex;
+ flex-wrap:wrap;
+ gap:7px;
+ padding:8px;
+ min-height:48px;
+ font-size:.82rem;
+}
+.assembly-sidebar>.workspace-bom .bom-row-thumbnail{
+ width:42px;height:42px;min-width:42px;max-width:42px;
+}
+.assembly-sidebar>.workspace-bom .bom-part-name{font-size:.82rem}
+.assembly-sidebar>.workspace-bom .bom-part-actions .btn,
+.assembly-sidebar>.workspace-bom .bom-open-part-details,
+.assembly-sidebar>.workspace-bom .bom-part-toggle-label{font-size:.72rem;padding:5px 7px}
+.assembly-sidebar>.workspace-bom .bom-subassembly-children{padding:9px}
+.assembly-sidebar>.workspace-bom .bom-compact-list{font-size:.78rem;min-width:510px}
+.assembly-sidebar>.workspace-bom .bom-compact-list tbody tr td{padding:8px 7px}
+.assembly-sidebar>.workspace-bom .bom-shop-materials{margin-top:10px}
+.assembly-sidebar>.workspace-bom .bom-shop-materials>summary{padding:10px;font-size:.77rem}
+.workspace-bom-resizer{display:none}
+.is-resizing-bom{cursor:col-resize!important;user-select:none}
 @media(min-width:1100px){
+ .assembly-layout:has(>.assembly-sidebar.bom-sidebar-active){
+  grid-template-columns:minmax(290px,var(--assembly-sidebar-width,clamp(300px,27vw,480px))) 9px minmax(0,1fr);
+ }
+ .assembly-layout>.assembly-sidebar.bom-sidebar-active{
+  grid-column:1;
+  min-width:0;
+ }
+ .assembly-layout>.assembly-sidebar.bom-sidebar-active + .workspace-bom-resizer{
+  grid-column:2;
+  display:block;
+  position:relative;
+  cursor:col-resize;
+  align-self:stretch;
+  min-height:400px;
+  touch-action:none;
+  outline-offset:2px;
+ }
+ .assembly-layout>.workspace-bom-resizer:after{
+  content:"";position:absolute;left:3px;top:8px;bottom:8px;
+  width:3px;border-radius:3px;background:#365360;
+ }
+ .assembly-layout>.workspace-bom-resizer:hover:after,
+ .assembly-layout>.workspace-bom-resizer:focus-visible:after,
+ .is-resizing-bom .workspace-bom-resizer:after{background:#81c9be}
+ .assembly-layout>.assembly-content{min-width:0}
  .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels{
-  display:grid;
-  grid-template-columns:minmax(330px,var(--bom-panel-width,42%)) 10px minmax(0,1fr);
-  column-gap:0;
-  row-gap:18px;
-  align-items:start;
+  display:block;
   max-width:none;
   width:100%;
  }
- .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-bom{
-  grid-column:1;
-  grid-row:1 / span 6;
-  min-width:0;
-  padding:10px 12px 14px;
-  background:#102633;
-  border:1px solid #345869;
-  border-radius:11px;
- }
- .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-bom-resizer{
-  grid-column:2;
-  grid-row:1 / span 6;
-  align-self:stretch;
-  min-height:360px;
-  cursor:col-resize;
-  touch-action:none;
-  position:relative;
-  outline-offset:1px;
- }
- .workspace-bom-resizer:after{
-  content:"";
-  position:absolute;
-  width:3px;
-  left:3px;
-  top:10px;
-  bottom:10px;
-  background:#365360;
-  border-radius:5px;
-  transition:background .16s ease;
- }
- .workspace-bom-resizer:hover:after,
- .workspace-bom-resizer:focus-visible:after,
- .is-resizing-bom .workspace-bom-resizer:after{background:#80cabb}
- .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>:not(.workspace-bom):not(.workspace-bom-resizer){
-  grid-column:3;
-  min-width:0;
-  margin-left:22px;
+ .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
+  margin-bottom:20px;
  }
  .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels h2{margin-top:0}
- .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels .bom-shopping-table{width:100%}
- .assembly-workspace-page:not(.bom-part-workspace) .workspace-bom-heading h2{
-  font-size:.96rem;
-  letter-spacing:.005em;
- }
- .assembly-workspace-page:not(.bom-part-workspace) .workspace-bom,
- .assembly-workspace-page:not(.bom-part-workspace) .workspace-saved-parts{
-  font-size:.84rem;
- }
- .assembly-workspace-page:not(.bom-part-workspace) .workspace-saved-parts .bom-compact-list{
-  font-size:.81rem;
- }
- .assembly-workspace-page:not(.bom-part-workspace) .workspace-saved-parts .bom-part-summary{
-  font-size:.84rem;
- }
 }
-.workspace-bom-resizer{display:none}
-@media(min-width:1100px){.assembly-workspace-page:not(.bom-part-workspace) .workspace-bom-resizer{display:block}}
-.is-resizing-bom{cursor:col-resize!important;user-select:none}
+@media(max-width:1099px){
+ .assembly-sidebar.bom-sidebar-active{max-height:none}
+ .assembly-sidebar>.workspace-bom .bom-compact-list{min-width:510px}
+}
 
 /* BOM visual system: discrete, feature-tree-inspired entries.
  * List and thumbnail views share the same cool blue/teal surfaces.
