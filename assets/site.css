@@ -516,11 +516,6 @@
 .bom-shopping-table tbody tr:last-child td{border-bottom:0}
 .bom-generated-part .bom-part-meta{opacity:.8}
 .bom-auto-note{font-size:.86rem;margin:8px 0}
-.instruction-preview-toggle{margin:0 0 12px}
-.instruction-steps-preview{padding:12px 18px;border:1px solid #3e5c69;border-radius:10px;margin:0 0 12px}
-.instruction-steps-preview.hide{display:none!important}
-.instruction-steps-preview ol{margin:0;padding-left:20px;display:grid;gap:12px}
-.instruction-steps-preview li{white-space:pre-wrap;line-height:1.6}
 .instruction-log,.instruction-history{border:1px solid #395563;border-radius:8px;padding:11px 14px;margin-top:12px;min-width:0}
 .instruction-log summary,.instruction-history summary{font-weight:650;cursor:pointer}
 .instruction-log-entries,.instruction-history-list{display:grid;gap:10px;margin:12px 0}
@@ -776,9 +771,6 @@
 .recipe-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .recipe-heading h3{margin:0;font-size:1.12rem}
 .recipe-editor>.muted{font-size:.84rem;line-height:1.5;margin:7px 0 13px}
-.recipe-legacy{border-top:1px solid #36515e;margin-top:12px;padding:12px 0}
-.recipe-legacy>summary{cursor:pointer;font-weight:600;margin-bottom:9px}
-.recipe-legacy>textarea{display:block;width:100%;max-width:100%}
 .recipe-content{min-width:0}
 .recipe-detail-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 17px}
 .recipe-detail-controls>span{margin-right:8px;font-size:.83rem}
@@ -804,7 +796,7 @@
 .recipe-step-fields .field{width:100%;max-width:100%;font-weight:400}
 .recipe-wide-field{grid-column:1/-1}
 .recipe-edit-footer{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
-@media(max-width:650px){.recipe-step-fields{grid-template-columns:minmax(0,1fr)}.recipe-legacy>summary{font-size:.9rem}.recipe-editor{padding:12px}}
+@media(max-width:650px){.recipe-step-fields{grid-template-columns:minmax(0,1fr)}.recipe-editor{padding:12px}}
 
 /* Project portability actions are secondary to BOM/recipe authoring. */
 .workspace-archive-actions{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:10px 0 20px}
@@ -939,4 +931,3 @@
 .recipe-compact .recipe-reader-text{width:100%}
 .recipe-compact+.recipe-feedback{font-size:.81rem}
 .recipe-compact .recipe-feedback:empty{display:none}
-.recipe-legacy.hide{display:none!important}
