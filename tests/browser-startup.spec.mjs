@@ -68,6 +68,17 @@ test("project feature tree and workspace initialize without browser errors", asy
  const instructions=workspace.locator(".recipe-instructions");
  const splitter=page.locator("#launcher .assembly-layout > .workspace-bom-resizer");
  await expect(sidebar).toHaveClass(/bom-sidebar-active/);
+ // The feature tree, BOM, and content groups have separate visible frames.
+ const treeFrame=sidebar.locator(".feature-tree-frame");
+ await expect(treeFrame).toBeVisible();
+ expect(await treeFrame.evaluate(el=>getComputedStyle(el).borderTopStyle)).toBe("solid");
+ expect(await bom.evaluate(el=>getComputedStyle(el).borderTopStyle)).toBe("solid");
+ const panels=workspace.locator(".workspace-panels > article");
+ await expect(panels).toHaveCount(4);
+ for(let i=0;i<await panels.count();i++){
+  expect(await panels.nth(i).evaluate(el=>getComputedStyle(el).borderTopStyle)).toBe("solid");
+ }
+
  expect(await bom.evaluate(el=>el.parentElement.classList.contains("assembly-sidebar"))).toBe(true);
  const treeBounds=await tree.boundingBox();
  const bomStart=await bom.boundingBox();
