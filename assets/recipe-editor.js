@@ -121,6 +121,7 @@
    target.append(layout);
   }
   function renderBuild(target){
+   try{const saved=localStorage.getItem("bs-recipe-detail");if(["brief","standard","detailed"].includes(saved))level=saved}catch{}
    const body=make("section","recipe-builder-view");
    if(!steps.length){
     body.append(make("p","muted","No recipe steps yet. Existing written instructions remain available below."));
