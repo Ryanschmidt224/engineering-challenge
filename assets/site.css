@@ -252,3 +252,25 @@
 .part-picture-dialog::backdrop{background:rgba(3,10,15,.85)}
 .part-picture-dialog .part-picture-close{display:block;margin:0 0 12px auto}
 .part-picture-dialog .part-picture-full{display:block;width:auto;height:auto;max-width:calc(95vw - 36px);max-height:calc(95vh - 92px);object-fit:contain}
+
+/* Shared wire-material library and per-part wire-harness cutting toolkit. */
+.bom-part-workspace .part-harness{margin-top:8px}
+.part-harness .harness-cuts{display:flex;flex-direction:column;gap:10px}
+.part-harness .harness-cut-row{display:grid;grid-template-columns:minmax(165px,2fr) repeat(4,minmax(90px,1fr));gap:9px;align-items:end;padding:12px;border:1px solid #3e5a67;border-radius:8px;background:rgba(39,72,87,.22)}
+.part-harness .harness-cut-row label{display:flex;flex-direction:column;gap:5px;font-size:.76rem;color:#b4cad3;min-width:0}
+.part-harness .harness-cut-row label:nth-of-type(n+6){grid-column:span 2}
+.part-harness .harness-cut-row .field{width:100%;min-width:0}
+.part-harness .harness-cut-row > button{justify-self:start;margin-top:3px}
+.part-harness .harness-actions{align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}
+.part-harness .harness-summary{font-size:.84rem;margin:10px 0;padding:8px 12px;border-left:2px solid #426779}
+.part-harness .harness-summary p{margin:3px 0}
+.part-harness .harness-status,.part-harness .wire-library-status{color:#a9c9d6;font-size:.82rem}
+.part-harness .harness-wire-library{border-top:1px solid #35505c;margin-top:16px;padding-top:12px}
+.part-harness .harness-wire-library > summary{font-weight:600;cursor:pointer}
+.part-harness .wire-library-list{display:flex;flex-direction:column;gap:5px;margin:12px 0}
+.part-harness .wire-library-item{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:7px 10px;border:1px solid #35505c;border-radius:6px;font-size:.82rem}
+.part-harness .wire-library-editor{margin:15px 0;padding:12px;border:1px solid #35505c;border-radius:9px}
+.part-harness .wire-library-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:10px 0}
+.part-harness .wire-library-fields label{display:flex;flex-direction:column;gap:5px;color:#b3ccd6;font-size:.8rem}
+@media(max-width:850px){.part-harness .harness-cut-row{grid-template-columns:repeat(2,minmax(0,1fr))}.part-harness .harness-cut-row label:first-child{grid-column:1/-1}.part-harness .harness-cut-row label:nth-of-type(n+6){grid-column:span 1}}
+@media(max-width:480px){.part-harness .harness-cut-row{grid-template-columns:1fr}.part-harness .harness-cut-row label:nth-of-type(n){grid-column:1/-1}}
