@@ -91,7 +91,7 @@ function syncDerived(items,source){
 }
 const cleanPartRef=value=>{
  if(typeof value!=="string")return null;
- return /^(?:common|wire):[0-9a-f-]{36}$/i.test(value)||/^standard:ferrule:\d{1,2}$/.test(value)?value:null;
+ return /^(?:common|wire|purchased):[0-9a-f-]{36}$/i.test(value)||/^standard:ferrule:\d{1,2}$/.test(value)?value:null;
 };
 const safePublicImageUrl=value=>{
  try{
