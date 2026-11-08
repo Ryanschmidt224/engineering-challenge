@@ -337,57 +337,6 @@ function setupAssemblyTrees(){
 }
 setupAssemblyTrees();
 
-// Capture extraction clicks independently of the BOM editor's lifecycle.
-// The BOM moves between the assembly controller and workspace; delegation remains reliable.
-document.addEventListener("click",async event=>{
- const button=event.target instanceof Element?event.target.closest(".component-extract"):null;
- if(!button)return;
- event.preventDefault();
- event.stopImmediatePropagation();
- const root=button.closest(".component-section");
- const status=root?.querySelector(".component-status");
- const report=message=>{if(status){status.hidden=false;status.style.display="block";status.setAttribute("aria-live","assertive");status.textContent=message}};
- if(!root){return}
- const description=root.querySelector(".component-description")?.value.trim()||"";
- report("Extract button recognized. Checking product information…");
- if(!description){report("Paste a product description or a public HTTPS product URL first.");return}
- button.disabled=true;
- report("Contacting extraction service…");
- try{
-  const res=await fetch("/api/components/extract",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({description})});
-  const raw=await res.text();
-  let data;
-  try{data=JSON.parse(raw)}catch{throw Error("Unexpected server response (HTTP "+res.status+"): "+raw.slice(0,140))}
-  if(!res.ok)throw Error((data.error||"Extraction failed")+" (HTTP "+res.status+")");
-  const part=data.component;
-  if(!part||typeof part!=="object")throw Error("The extraction service returned no component fields.");
-  for(const name of ["name","manufacturer","model","category","supplier","asin"]){
-   const field=root.querySelector(".component-"+name);if(field)field.value=part[name]||"";
-  }
-  const specs=root.querySelector(".component-specs");
-  if(specs){
-   specs.replaceChildren();
-   for(const spec of part.specifications||[]){
-    const row=document.createElement("div");row.className="row component-spec-row";
-    const label=document.createElement("input"),value=document.createElement("input"),source=document.createElement("select"),remove=document.createElement("button");
-    label.className=value.className="field";label.placeholder="Specification";value.placeholder="Value";
-    label.value=spec.name||"";value.value=spec.value||"";
-    for(const v of ["explicit","inferred"]){const option=document.createElement("option");option.value=v;option.textContent=v==="explicit"?"Stated in listing":"Inferred";source.append(option)}
-    source.value=spec.source==="inferred"?"inferred":"explicit";
-    remove.className="btn";remove.type="button";remove.textContent="Remove";remove.onclick=()=>row.remove();
-    row.append(label,value,source,remove);specs.append(row);
-   }
-  }
-  root.querySelector(".component-admin").open=true;
-  root.querySelector(".component-review")?.classList.remove("hide");
-  report("Specifications extracted. Review the fields, then select Save component to add this part.");
- }catch(error){
-  root.querySelector(".component-admin").open=true;
-  root.querySelector(".component-review")?.classList.remove("hide");
-  report("Extraction failed: "+(error.message||"Unknown error")+". You can enter the fields manually.");
- }finally{button.disabled=false}
-},true);
-
 function setupComponents(){
  document.querySelectorAll("[data-components]").forEach(root=>{
  const project=root.dataset.components,list=root.querySelector(".component-list"),status=root.querySelector(".component-status"),review=root.querySelector(".component-review"),specs=root.querySelector(".component-specs");
@@ -406,24 +355,74 @@ function setupComponents(){
   list.replaceChildren();
   const selected=assemblySelections[project]??null;const visible=data.components.filter(c=>(c.assemblyId??null)===selected);
   if(!visible.length){list.textContent="No components yet.";return}
-  const table=document.createElement("table"),head=document.createElement("tr");
-  for(const label of ["Component","Qty","Model","Supplier","Specifications"]){const th=document.createElement("th");th.textContent=label;head.append(th)}table.append(head);
-  for(const c of visible){const tr=document.createElement("tr");const cells=[c.name,c.quantity||1,[c.manufacturer,c.model].filter(Boolean).join(" · "),[c.supplier,c.asin].filter(Boolean).join(" · "),c.specifications.map(s=>s.name+": "+s.value+(s.source==="inferred"?" (inferred)":"")).join("; ")];for(const v of cells){const td=document.createElement("td");td.textContent=v;tr.append(td)}
-  if(adminAuthenticated){const td=document.createElement("td"),btn=document.createElement("button");btn.className="btn";btn.textContent="Delete";btn.onclick=async()=>{if(!confirm("Delete component?"))return;const res=await fetch("/api/components?project="+project+"&id="+encodeURIComponent(c.id),{method:"DELETE",credentials:"same-origin"});if(res.ok)refresh();else say("Delete failed.")};td.append(btn);tr.append(td)}
-  table.append(tr)}list.append(table)
+  const stack=document.createElement("div");stack.className="bom-part-stack";
+  for(const c of visible){
+   const item=document.createElement("details");item.className="bom-part";item.dataset.partId=c.id;
+   const summary=document.createElement("summary");summary.className="bom-part-summary";
+   const label=document.createElement("span");label.className="bom-part-name";label.textContent=c.name;
+   const meta=document.createElement("span");meta.className="bom-part-meta";meta.textContent="Qty "+(c.quantity||1)+(c.model?" · "+c.model:"");
+   summary.append(label,meta);item.append(summary);
+   const body=document.createElement("div");body.className="bom-part-body";
+   for(const [labelText,value] of [["Manufacturer",c.manufacturer],["Model",c.model],["Supplier",c.supplier],["ASIN",c.asin],["Category",c.category]]){
+    if(!value)continue;const row=document.createElement("p");const title=document.createElement("strong");title.textContent=labelText+": ";row.append(title,document.createTextNode(value));body.append(row)
+   }
+   if(c.specifications?.length){const h=document.createElement("strong");h.textContent="Specifications";body.append(h);
+    const ul=document.createElement("ul");for(const spec of c.specifications){const li=document.createElement("li");li.textContent=spec.name+": "+spec.value+(spec.source==="inferred"?" (inferred)":"");ul.append(li)}body.append(ul)}
+   if(adminAuthenticated){const del=document.createElement("button");del.type="button";del.className="btn";del.textContent="Delete part";del.onclick=async()=>{if(!confirm("Delete "+c.name+"?"))return;del.disabled=true;try{const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(c.id),{method:"DELETE",credentials:"same-origin"});const result=await response.json().catch(()=>({}));if(!response.ok)throw Error(result.error||"Delete failed");say("Part deleted.");await refresh()}catch(e){say(e.message);del.disabled=false}};body.append(del)}
+   item.append(body);stack.append(item);
+  }
+  list.append(stack);
   }catch(e){list.textContent="Components unavailable."}
  }
  const importPanel=root.querySelector(".component-admin");
- if(!field("extract")||!field("description")||!field("add-spec")||!field("save")){say("Component editor is incomplete. Please refresh the page.");return;}
- if(importPanel){const manual=document.createElement("button");manual.type="button";manual.className="btn component-manual";manual.textContent="Add part manually";manual.onclick=()=>{review.classList.remove("hide");say("Enter component details below, then save to this tile.")};field("extract").after(manual);const summary=importPanel.querySelector("summary");if(summary)summary.textContent="Add part to BOM";}
+ const extract=field("extract"),description=field("description"),addSpec=field("add-spec"),save=field("save");
+ if(!extract||!description||!addSpec||!save){say("Component editor is incomplete. Please refresh this page.");return}
+ // Put status immediately beside the action and mirror errors above the workspace.
+ const feedback=document.createElement("p");feedback.className="component-extraction-feedback";feedback.setAttribute("role","status");feedback.setAttribute("aria-live","assertive");
+ extract.after(feedback);
+ const extractStatus=message=>{
+  say(message);feedback.textContent=message;
+  const workspaceStatus=root.closest(".assembly-workspace-page")?.querySelector(".workspace-status");
+  if(workspaceStatus)workspaceStatus.textContent=message;
+ };
+ if(importPanel){
+  const manual=document.createElement("button");manual.type="button";manual.className="btn component-manual";manual.textContent="Enter manually";
+  manual.onclick=()=>{review.classList.remove("hide");extractStatus("Enter the part details below, then save.")};
+  feedback.after(manual);
+  const summary=importPanel.querySelector("summary");if(summary)summary.textContent="Add part to BOM";
+ }
+ extract.hidden=false;extract.type="button";
+ extract.onclick=async event=>{
+  event.preventDefault();
+  extractStatus("Extract clicked — checking input…");
+  const value=description.value.trim();
+  if(!value){extractStatus("Paste a product description or public HTTPS product URL first.");return}
+  if(!adminAuthenticated){extractStatus("Sign in using Admin login, then try extracting.");return}
+  extract.disabled=true;
+  extractStatus("Requesting product specifications…");
+  try{
+   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
+   let response;
+   try{response=await fetch("/api/components/extract",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({description:value}),signal:controller.signal})}finally{clearTimeout(timeout)}
+   const raw=await response.text();let data;
+   try{data=JSON.parse(raw)}catch{throw Error("The server returned non-JSON data (HTTP "+response.status+"): "+raw.slice(0,120))}
+   if(!response.ok)throw Error((data.error||"Extraction request failed")+" (HTTP "+response.status+")");
+   const component=data.component;
+   if(!component||typeof component!=="object")throw Error("The service returned no product information.");
+   for(const name of ["name","manufacturer","model","category","supplier","asin"]){const el=field(name);if(el)el.value=component[name]||""}
+   specs.replaceChildren();for(const spec of component.specifications||[])specRow(spec.name,spec.value,spec.source);
+   review.classList.remove("hide");extractStatus("Specifications extracted. Review them, then select Save component.");
+  }catch(e){review.classList.remove("hide");extractStatus("Extraction failed: "+(e.name==="AbortError"?"The service did not respond within 20 seconds":e.message)+". You can enter this part manually.")}
+  finally{extract.disabled=false}
+ };
  field("add-spec").onclick=()=>specRow();
  field("save").onclick=async()=>{
   const c={assemblyId:assemblySelections[project]??null,quantity:Math.max(1,Math.floor(Number(field("quantity")?.value)||1))};for(const name of ["name","manufacturer","model","category","supplier","asin"])c[name]=field(name).value.trim();
   c.specifications=[...specs.querySelectorAll(".component-spec-row")].map(row=>({name:row.children[0].value.trim(),value:row.children[1].value.trim(),source:row.children[2].value})).filter(s=>s.name&&s.value);
   if(!c.name){say("Component name is required.");return}
-  field("save").disabled=true;try{const res=await fetch("/api/components?project="+project,{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",body:JSON.stringify(c)}),data=await res.json();if(!res.ok)throw Error(data.error||"Save failed");review.classList.add("hide");field("description").value="";if(field("quantity"))field("quantity").value="1";say("Component saved.");await refresh()}catch(e){say(e.message)}finally{field("save").disabled=false}
+  field("save").disabled=true;try{const res=await fetch("/api/components?project="+project,{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",body:JSON.stringify(c)}),data=await res.json();if(!res.ok)throw Error(data.error||"Save failed");review.classList.add("hide");field("description").value="";if(field("quantity"))field("quantity").value="1";say("Component saved.");feedback.textContent="";if(importPanel)importPanel.open=false;review.classList.add("hide");await refresh()}catch(e){say(e.message)}finally{field("save").disabled=false}
  };
- root.addEventListener("assemblychange",()=>{review.classList.add("hide");field("description").value="";specs.replaceChildren();refresh()});
+ root.addEventListener("assemblychange",()=>{review.classList.add("hide");field("description").value="";feedback.textContent="";if(importPanel)importPanel.open=false;specs.replaceChildren();refresh()});
  refresh();
  })
 }
