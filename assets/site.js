@@ -176,14 +176,17 @@ function setupAssemblyTrees(){
   },true);
   workspace.querySelector(".workspace-new-part").onclick=()=>{
    const root=workspace.querySelector(".component-section");
-   if(!root){workspace.querySelector(".workspace-status").textContent="BOM editor is not available. Refresh the page.";return;}
-   const outer=root.querySelector("details"),form=root.querySelector(".component-admin"),review=root.querySelector(".component-review");
-   if(outer)outer.open=true;
-   if(form)form.open=true;
-   if(review)review.classList.remove("hide");
-   const status=root.querySelector(".component-status");
-   if(status){status.hidden=false;status.style.display="block";status.textContent="Enter a part manually, or paste a product description or URL and select Extract specifications. Save part adds it to this assembly.";}
-   root.querySelector(".component-name")?.focus();
+   if(!root){workspace.querySelector(".workspace-status").textContent="BOM editor unavailable. Refresh this page.";return}
+   // Ask before discarding an unfinished entry. A saved item is always a separate BOM row.
+   const editor=root.querySelector(".component-admin");
+   const name=root.querySelector(".component-name");
+   const description=root.querySelector(".component-description");
+   if(editor?.open&&(name?.value.trim()||description?.value.trim())&&!confirm("Discard the unfinished part and start a new one?"))return;
+   root.dispatchEvent(new Event("bom:new-part"));
+   root.querySelector("details")?.setAttribute("open","");
+   if(editor)editor.open=true;
+   root.querySelector(".component-review")?.classList.remove("hide");
+   name?.focus();
   };
   const workspaceRoute=()=>location.hash.slice(1).startsWith(project+"/workspace/");
   let workspacePhotoVersion=0;
@@ -480,10 +483,11 @@ function setupComponents(){
   const stack=document.createElement("div");stack.className="bom-part-stack";
   for(const c of visible){
    const item=document.createElement("details");item.className="bom-part";item.dataset.partId=c.id;
-   const summary=document.createElement("summary");summary.className="bom-part-summary";
+   const summary=document.createElement("summary");summary.className="bom-part-summary";summary.title="Click to expand or collapse part details";summary.setAttribute("aria-label","Show or hide details for "+c.name);
    const label=document.createElement("span");label.className="bom-part-name";label.textContent=c.name;
    const meta=document.createElement("span");meta.className="bom-part-meta";meta.textContent="Qty "+(c.quantity||1)+(c.model?" · "+c.model:"");
-   summary.append(label,meta);item.append(summary);
+   const hint=document.createElement("span");hint.className="bom-part-toggle-label";hint.textContent="Details";
+   summary.append(label,meta,hint);item.append(summary);
    const body=document.createElement("div");body.className="bom-part-body";
    for(const [labelText,value] of [["Manufacturer",c.manufacturer],["Model",c.model],["Supplier",c.supplier],["ASIN",c.asin],["Category",c.category]]){
     if(!value)continue;const row=document.createElement("p");const title=document.createElement("strong");title.textContent=labelText+": ";row.append(title,document.createTextNode(value));body.append(row)
@@ -497,9 +501,28 @@ function setupComponents(){
   }catch(e){list.textContent="Components unavailable."}
  }
  const importPanel=root.querySelector(".component-admin");
+ // A fresh part is a fresh draft. Only Save component writes a new BOM record.
+ function clearPartEditor(){
+  for(const name of ["name","manufacturer","model","category","supplier","asin"]){const control=field(name);if(control)control.value=""}
+  field("description").value="";if(field("quantity"))field("quantity").value="1";
+  specs.replaceChildren();review.classList.remove("hide");
+ }
+ root.addEventListener("bom:new-part",()=>{
+  clearPartEditor();
+  feedback.textContent="";
+  say("New part — enter the fields or extract specifications, then click Save part to add it to this BOM.");
+  if(importPanel)importPanel.open=true;
+ });
+
  const extract=field("extract"),description=field("description"),addSpec=field("add-spec"),save=field("save");
+ save.textContent="Save part";
  if(!extract||!description||!addSpec||!save){say("Component editor is incomplete. Please refresh this page.");return}
  // Put status immediately beside the action and mirror errors above the workspace.
+ if(importPanel){
+  const cancel=document.createElement("button");cancel.type="button";cancel.className="btn component-cancel";cancel.textContent="Cancel / Collapse";
+  cancel.onclick=()=>{importPanel.open=false;review.classList.add("hide");say("");feedback.textContent="";};
+  importPanel.append(cancel);
+ }
  const feedback=document.createElement("p");feedback.className="component-extraction-feedback";feedback.setAttribute("role","status");feedback.setAttribute("aria-live","assertive");
  extract.after(feedback);
  const extractStatus=message=>{
@@ -542,9 +565,9 @@ function setupComponents(){
   const c={assemblyId:assemblySelections[project]??null,quantity:Math.max(1,Math.floor(Number(field("quantity")?.value)||1))};for(const name of ["name","manufacturer","model","category","supplier","asin"])c[name]=field(name).value.trim();
   c.specifications=[...specs.querySelectorAll(".component-spec-row")].map(row=>({name:row.children[0].value.trim(),value:row.children[1].value.trim(),source:row.children[2].value})).filter(s=>s.name&&s.value);
   if(!c.name){say("Component name is required.");return}
-  field("save").disabled=true;try{const res=await fetch("/api/components?project="+project,{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",body:JSON.stringify(c)}),data=await res.json();if(!res.ok)throw Error(data.error||"Save failed");review.classList.add("hide");field("description").value="";if(field("quantity"))field("quantity").value="1";say("Component saved.");feedback.textContent="";if(importPanel)importPanel.open=false;review.classList.add("hide");await refresh()}catch(e){say(e.message)}finally{field("save").disabled=false}
+  field("save").disabled=true;try{const res=await fetch("/api/components?project="+project,{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",body:JSON.stringify(c)}),data=await res.json();if(!res.ok)throw Error(data.error||"Save failed");review.classList.add("hide");field("description").value="";if(field("quantity"))field("quantity").value="1";say("Part added to BOM.");feedback.textContent="";clearPartEditor();if(importPanel)importPanel.open=false;review.classList.add("hide");await refresh()}catch(e){say(e.message)}finally{field("save").disabled=false}
  };
- root.addEventListener("assemblychange",()=>{review.classList.add("hide");field("description").value="";feedback.textContent="";if(importPanel)importPanel.open=false;specs.replaceChildren();refresh()});
+ root.addEventListener("assemblychange",()=>{clearPartEditor();review.classList.add("hide");feedback.textContent="";if(importPanel)importPanel.open=false;refresh()});
  refresh();
  })
 }
