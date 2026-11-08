@@ -34,6 +34,7 @@ export async function backupAllProjects(env,date=new Date()){
    const stored=await env.PHOTOS.get(key);
    if(!stored||stored.size!==new TextEncoder().encode(serialized).length)
     throw Error("Stored backup failed size verification");
+   await inspectArchive(JSON.parse(await stored.text()),project);
    summary.push({project,status:"saved",key,objects:archive.objectCount});
   }catch(error){
    const message=String(error?.message||error);
