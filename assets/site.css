@@ -1544,3 +1544,75 @@
 #launcher .assembly-sidebar .workspace-bom .workspace-saved-parts .bom-subassembly[open] > .bom-part-summary:hover{
  background:#304c5b;
 }
+
+
+/* Matching outer frame for the main assembly page. */
+.assembly-layout>.assembly-content{
+ border:1px solid #415663;
+ border-radius:10px;
+ background:#101c26;
+ overflow:visible;
+}
+@media(max-width:800px){
+ .assembly-layout>.assembly-content{
+  padding:16px;
+  border:1px solid #415663;
+  border-radius:10px;
+ }
+}
+/* Right-click is the primary tree editing surface; old buttons stay wired
+   internally so the assembly actions have only one implementation. */
+.assembly-sidebar .assembly-edit>.assembly-rename,
+.assembly-sidebar .assembly-edit>.assembly-remove{
+ display:none!important;
+}
+.assembly-row-menu-trigger{
+ display:none;
+ flex:0 0 auto;
+ min-width:23px;
+ text-align:center;
+ border-radius:4px!important;
+ padding:2px 4px!important;
+ color:#9bb3c1!important;
+ font-size:1rem!important;
+}
+.assembly-node:hover .assembly-row-menu-trigger,
+.assembly-node:focus-within .assembly-row-menu-trigger{
+ display:block;
+}
+.assembly-row-menu-trigger:hover,
+.assembly-row-menu-trigger:focus-visible{background:#304757!important;color:#fff!important}
+.assembly-context-menu{
+ position:fixed;
+ z-index:10000;
+ min-width:185px;
+ padding:5px;
+ background:#1b2c38;
+ border:1px solid #4a6371;
+ border-radius:8px;
+ box-shadow:0 12px 28px rgba(0,0,0,.4);
+}
+.assembly-context-menu[hidden]{display:none!important}
+.assembly-context-menu button{
+ display:block;
+ width:100%;
+ border:0;
+ border-radius:5px;
+ background:transparent;
+ text-align:left;
+ color:#e1e8ed;
+ padding:9px 12px;
+ font:inherit;
+ font-size:.84rem;
+ cursor:pointer;
+}
+.assembly-context-menu button:hover,
+.assembly-context-menu button:focus-visible{background:#304957;outline:0}
+.assembly-context-menu button:disabled{opacity:.4;cursor:not-allowed}
+.assembly-context-separator{
+ border-top:1px solid #3a505d;
+ margin:4px 5px;
+}
+@media(hover:none), (pointer:coarse){
+ .assembly-node .assembly-row-menu-trigger{display:block}
+}
