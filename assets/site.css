@@ -505,3 +505,27 @@
 .wire-gauge-helper h3{margin:0 0 12px;font-size:1.03rem}
 .wire-gauge-grid .btn{justify-self:start}
 @media(max-width:480px){.wire-workflow-choice{grid-template-columns:1fr}}
+
+
+/* Progressive disclosure: one alternate BOM view, optional instruction tools. */
+.workspace-bom-heading{flex-wrap:wrap;gap:10px}
+.bom-shopping-toggle{margin-left:auto}
+.bom-shopping-table{width:100%;border-collapse:collapse;font-size:.91rem}
+.bom-shopping-table th,.bom-shopping-table td{padding:11px 13px;border-bottom:1px solid var(--line, #385263);text-align:left;vertical-align:top}
+.bom-shopping-table th:last-child,.bom-shopping-table td:last-child{text-align:right;white-space:nowrap}
+.bom-shopping-table tbody tr:last-child td{border-bottom:0}
+.bom-generated-part .bom-part-meta{opacity:.8}
+.bom-auto-note{font-size:.86rem;margin:8px 0}
+.instruction-preview-toggle{margin:0 0 12px}
+.instruction-steps-preview{padding:12px 18px;border:1px solid #3e5c69;border-radius:10px;margin:0 0 12px}
+.instruction-steps-preview.hide{display:none!important}
+.instruction-steps-preview ol{margin:0;padding-left:20px;display:grid;gap:12px}
+.instruction-steps-preview li{white-space:pre-wrap;line-height:1.6}
+.instruction-log,.instruction-history{border:1px solid #395563;border-radius:8px;padding:11px 14px;margin-top:12px;min-width:0}
+.instruction-log summary,.instruction-history summary{font-weight:650;cursor:pointer}
+.instruction-log-entries,.instruction-history-list{display:grid;gap:10px;margin:12px 0}
+.instruction-log-item,.instruction-history-item{padding:10px;border:1px solid #395563;border-radius:8px}
+.instruction-log-item small{display:block;opacity:.75}
+.instruction-log-item p{white-space:pre-wrap;margin:6px 0}
+.instruction-log-item .btn,.instruction-history-item .btn{margin-top:6px}
+@media(max-width:620px){.bom-shopping-toggle{margin-left:0}.bom-shopping-table th,.bom-shopping-table td{padding:9px 6px}}
