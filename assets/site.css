@@ -162,3 +162,9 @@
 .bom-open-subassembly{margin-top:12px}
 .assembly-workspace-page .workspace-saved-parts .bom-part .bom-part{margin:5px 0}
 @media(max-width:650px){.bom-row-thumbnail{width:32px;height:32px;min-width:32px;max-width:32px}.bom-part-meta{font-size:.69rem}.bom-subassembly-label{font-size:.67rem}}
+
+/* Highlight visible photo upload targets while a file is dragged over them. */
+.assembly-unified-photo.is-dragover{outline:3px dashed #72d7be;outline-offset:-4px;background:rgba(103,206,179,.12)}
+.bom-picture-drop{transition:outline-color .12s,background-color .12s}
+.bom-picture-drop.is-dragover{outline:3px dashed #72d7be;outline-offset:2px;background:rgba(103,206,179,.18)}
+.assembly-unified-photo.is-dragover .assembly-photo-stage{opacity:.8}
