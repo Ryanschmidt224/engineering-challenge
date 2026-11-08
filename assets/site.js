@@ -511,7 +511,7 @@ function setupAssemblyTrees(){
    if(url)image.src=url;else{image.src=missingPicture;image.classList.add("bom-thumbnail-empty")}
    return image;
   }
-  const shopCandidate=part=>part.generatedKind==="ferrule"||part.generatedKind==="wire"||/\\b(?:ferrules?|solder|heat[- ]?shrink|wire|cable)\\b/i.test(part.name||"");
+  const shopCandidate=part=>part.generatedKind==="ferrule"||part.generatedKind==="wire"||/\b(?:ferrules?|solder|heat[- ]?shrink|wire|cable)\b/i.test(part.name||"");
   const materialQuantity=part=>part.quantity===null||part.quantity===undefined?"Quantity not specified":String(part.quantity)+(part.quantityUnit?" "+part.quantityUnit:"");
   function preferenceButton(part){
    if(!shopCandidate(part)||!adminAuthenticated)return null;
