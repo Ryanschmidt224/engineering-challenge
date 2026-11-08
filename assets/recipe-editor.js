@@ -10,14 +10,7 @@
   if(!article)return null;
   const panel=el("section","recipe-editor recipe-compact"),content=el("div","recipe-content"),feedback=el("p","recipe-feedback muted");
   panel.append(content,feedback);
-  const original=article.querySelector("textarea");
-  let legacy=null;
-  if(original){
-   legacy=el("details","recipe-legacy");
-   legacy.append(el("summary","","Previous written instructions"));
-   original.before(legacy);legacy.append(original);
-   article.querySelector("h2")?.after(panel);
-  }else article.append(panel);
+  article.querySelector("h2")?.after(panel);
   const admin=()=>!!options.admin?.();
   let steps=[],expanded=null,dirty=false,level="standard";
   try{const saved=localStorage.getItem("bs-recipe-detail");if(["brief","standard","detailed"].includes(saved))level=saved}catch{}
@@ -134,10 +127,6 @@
      newCard?.querySelector("input")?.focus();
     },"btn recipe-add-step");
     content.append(add);
-   }
-   if(legacy){
-    const hasLegacy=!!original?.value?.trim();
-    legacy.classList.toggle("hide",!hasLegacy);
    }
   }
   function setData(data){
