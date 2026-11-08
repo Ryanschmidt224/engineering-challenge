@@ -200,3 +200,23 @@
  .assembly-workspace-page .workspace-saved-parts .bom-subassembly > .bom-subassembly-children{padding-left:12px}
  .assembly-workspace-page .workspace-saved-parts .bom-subassembly > .bom-subassembly-children > .bom-part-stack{padding-left:10px}
 }
+
+/* BOM thumbnails: double the previous dimensions in both states. */
+.assembly-workspace-page .workspace-saved-parts .bom-part > .bom-part-summary > .bom-row-thumbnail{
+ width:76px;height:76px;min-width:76px;max-width:76px;
+}
+.assembly-workspace-page .workspace-saved-parts .bom-part[open] > .bom-part-summary > .bom-row-thumbnail{
+ width:228px;height:228px;min-width:228px;max-width:228px;
+}
+.assembly-workspace-page .workspace-saved-parts .bom-part > .bom-part-summary{min-height:88px}
+.assembly-workspace-page .workspace-saved-parts .bom-part[open] > .bom-part-summary{align-items:center}
+.bom-part-instructions{margin:0 0 12px;font-size:.83rem}
+.bom-part-workspace .part-workspace-cover img{height:100%;width:100%;object-fit:contain}
+@media(max-width:650px){
+ .assembly-workspace-page .workspace-saved-parts .bom-part > .bom-part-summary > .bom-row-thumbnail{
+  width:64px;height:64px;min-width:64px;max-width:64px;
+ }
+ .assembly-workspace-page .workspace-saved-parts .bom-part[open] > .bom-part-summary > .bom-row-thumbnail{
+  width:192px;height:192px;min-width:192px;max-width:192px;
+ }
+}
