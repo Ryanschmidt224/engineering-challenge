@@ -920,11 +920,11 @@ function setupAssemblyTrees(){
       const r=await fetch("/api/wires",{cache:"no-store"}),data=await r.json();
       if(!r.ok)throw Error(data.error||"Unable to load wire library");
       const matched=(data.wires||[]).find(w=>String(w.awg).replace(/\\s*awg/i,"").trim()===String(wireInfo.gauge)&&
-       (wireInfo.construction==="solid"?/solid/i.test(w.construction||""):wireInfo.construction==="braided"?/braid/i.test(w.construction||""):/strand/i.test(w.construction||"")));
+       (wireInfo.construction==="solid"?/solid/i.test(w.construction||""):wireInfo.construction==="braided"?/braid/i.test(w.construction||""):/strand/i.test(w.construction||""))&&String(w.insulation||"")===String(wireInfo.insulation||""));
       if(matched)wireId=matched.id;
       else{
        const response=await fetch("/api/wires",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},
-        body:JSON.stringify({name:wireInfo.gauge+" AWG "+wireInfo.construction+" copper (verify)",awg:String(wireInfo.gauge),construction:wireInfo.construction,notes:"Created through BOM-only library selection. Verify insulation and terminal compatibility."})});
+        body:JSON.stringify({name:wireInfo.gauge+" AWG "+wireInfo.construction+" copper (verify)",awg:String(wireInfo.gauge),construction:wireInfo.construction,insulation:wireInfo.insulation,notes:"Created through BOM-only library selection. Verify insulation and terminal compatibility."})});
        const data=await response.json();if(!response.ok)throw Error(data.error||"Could not save wire library material");
        wireId=data.wire.id;
       }
@@ -1282,11 +1282,11 @@ function setupAssemblyTrees(){
       const listResponse=await fetch("/api/wires",{cache:"no-store"}),listData=await listResponse.json();
       if(!listResponse.ok)throw Error(listData.error||"Unable to load wire library");
       const existing=(listData.wires||[]).find(w=>String(w.awg).replace(/\\s*awg/i,"").trim()===String(info.gauge)&&
-       (info.construction==="solid"?/solid/i.test(w.construction||""):info.construction==="braided"?/braid/i.test(w.construction||""):/strand/i.test(w.construction||"")));
+       (info.construction==="solid"?/solid/i.test(w.construction||""):info.construction==="braided"?/braid/i.test(w.construction||""):/strand/i.test(w.construction||""))&&String(w.insulation||"")===String(info.insulation||""));
       if(existing)wireId=existing.id;
       else{
        const label=info.gauge+" AWG "+info.construction+" copper (construction to verify)";
-       const newWire=await fetch("/api/wires",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({name:label,awg:String(info.gauge),construction:info.construction,notes:"Created through feature-tree part selection. Verify conductor material, insulation and crimp compatibility before use."})});
+       const newWire=await fetch("/api/wires",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({name:label,awg:String(info.gauge),construction:info.construction,insulation:info.insulation,notes:"Created through feature-tree part selection. Verify conductor material, insulation and crimp compatibility before use."})});
        const wireData=await newWire.json();if(!newWire.ok)throw Error(wireData.error||"Unable to save wire material");
        wireId=wireData.wire.id;
       }
