@@ -155,35 +155,36 @@ function setupAssemblyTrees(){
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
   workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New BOM-only part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-drawing-panel"></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
-  // Adjustable BOM sidebar. This controls presentation only; no BOM data changes.
-  const workspacePanels=workspace.querySelector(".workspace-panels");
+  // The feature tree and the assembly BOM share one persistent left sidebar.
+  // The BOM is shown only on an assembly workspace, never on its overview.
+  const assemblyLayout=view.querySelector(".assembly-layout");
+  const sidebar=root;
   const bomPanel=workspace.querySelector(".workspace-bom");
+  sidebar.append(bomPanel);
   const bomResizer=document.createElement("div");
   bomResizer.className="workspace-bom-resizer";
   bomResizer.setAttribute("role","separator");
   bomResizer.setAttribute("tabindex","0");
   bomResizer.setAttribute("aria-orientation","vertical");
-  bomResizer.setAttribute("aria-label","Resize bill of materials panel");
+  bomResizer.setAttribute("aria-label","Resize feature tree and BOM sidebar");
   bomResizer.setAttribute("aria-valuemin","20");
-  bomResizer.setAttribute("aria-valuemax","80");
-  bomPanel.after(bomResizer);
+  bomResizer.setAttribute("aria-valuemax","70");
+  assemblyLayout.insertBefore(bomResizer,view.querySelector(".assembly-content"));
   const bomWidthKey="bs-workspace-bom-width";
-  const sidebarWidth=width=>{
-   const available=workspacePanels.getBoundingClientRect().width;
-   // Keep the instructions usable regardless of the desktop window width.
-   return Math.round(Math.max(330,Math.min(Number(width)||available*.42,available-390)));
+  const clampSidebarWidth=value=>{
+   const available=assemblyLayout.getBoundingClientRect().width;
+   return Math.round(Math.max(290,Math.min(Number(value)||available*.30,available-390)));
   };
-  const setBomWidth=width=>{
-   const clamped=sidebarWidth(width);
-   workspacePanels.style.setProperty("--bom-panel-width",clamped+"px");
-   const total=workspacePanels.getBoundingClientRect().width;
-   bomResizer.setAttribute("aria-valuenow",String(Math.round(clamped/total*100)));
-   return clamped;
+  const setBomWidth=value=>{
+   const width=clampSidebarWidth(value);
+   assemblyLayout.style.setProperty("--assembly-sidebar-width",width+"px");
+   bomResizer.setAttribute("aria-valuenow",String(Math.round(width/assemblyLayout.getBoundingClientRect().width*100)));
+   return width;
   };
   try{
    const stored=Number(localStorage.getItem(bomWidthKey));
-   if(Number.isFinite(stored)&&stored>0)workspacePanels.style.setProperty("--bom-panel-width",stored+"px");
-  }catch{/* Storage may be disabled; resizing still works. */}
+   if(Number.isFinite(stored)&&stored>0)setBomWidth(stored);
+  }catch{/* Storage may be disabled. */}
   let draggingBom=false;
   bomResizer.addEventListener("pointerdown",event=>{
    if(event.button!==0||matchMedia("(max-width:1099px)").matches)return;
@@ -194,14 +195,14 @@ function setupAssemblyTrees(){
   });
   bomResizer.addEventListener("pointermove",event=>{
    if(!draggingBom)return;
-   const left=workspacePanels.getBoundingClientRect().left;
+   const left=assemblyLayout.getBoundingClientRect().left;
    setBomWidth(event.clientX-left-5);
   });
   const endBomDrag=()=>{
    if(!draggingBom)return;
    draggingBom=false;
    document.body.classList.remove("is-resizing-bom");
-   try{localStorage.setItem(bomWidthKey,String(bomPanel.getBoundingClientRect().width))}catch{}
+   try{localStorage.setItem(bomWidthKey,String(sidebar.getBoundingClientRect().width))}catch{}
   };
   bomResizer.addEventListener("pointerup",endBomDrag);
   bomResizer.addEventListener("pointercancel",endBomDrag);
@@ -209,9 +210,9 @@ function setupAssemblyTrees(){
   bomResizer.addEventListener("keydown",event=>{
    if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;
    event.preventDefault();
-   const available=workspacePanels.getBoundingClientRect().width;
-   const current=bomPanel.getBoundingClientRect().width;
-   const next=event.key==="Home"?330:event.key==="End"?available-390:
+   const available=assemblyLayout.getBoundingClientRect().width;
+   const current=sidebar.getBoundingClientRect().width;
+   const next=event.key==="Home"?290:event.key==="End"?available-390:
     current+(event.key==="ArrowRight"?32:-32);
    const width=setBomWidth(next);
    try{localStorage.setItem(bomWidthKey,String(width))}catch{}
@@ -634,14 +635,14 @@ function setupAssemblyTrees(){
   bomNotice.className="workspace-bom-notice";
   bomNotice.setAttribute("role","status");
   bomNotice.setAttribute("aria-live","assertive");
-  workspace.querySelector(".workspace-bom-heading").after(bomNotice);
-  workspace.querySelector(".workspace-bom").addEventListener("click",async event=>{
+  bomPanel.querySelector(".workspace-bom-heading").after(bomNotice);
+  bomPanel.addEventListener("click",async event=>{
    const target=event.target;
    if(!(target instanceof Element))return;
    const button=target.closest(".component-extract");
    if(!button)return;
    event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
-   const section=workspace.querySelector(".component-section");
+   const section=bomPanel.querySelector(".component-section");
    const notify=message=>{
     bomNotice.textContent=message;
     bomNotice.classList.add("visible");
@@ -693,7 +694,7 @@ function setupAssemblyTrees(){
   // Display saved parts independently of the legacy editor's <details> DOM.
   let bomDisplayVersion=0;
   let listView=false;
-  const bomHeader=workspace.querySelector(".workspace-bom-heading");
+  const bomHeader=bomPanel.querySelector(".workspace-bom-heading");
   const viewSwitch=document.createElement("div");viewSwitch.className="bom-view-switch";viewSwitch.setAttribute("role","group");viewSwitch.setAttribute("aria-label","BOM display");
   const thumbButton=document.createElement("button");thumbButton.type="button";thumbButton.className="btn bom-view-button";thumbButton.textContent="Thumbnail view";
   const listButton=document.createElement("button");listButton.type="button";listButton.className="btn bom-view-button";listButton.textContent="List view";
@@ -939,16 +940,16 @@ function setupAssemblyTrees(){
   }
   // Only the most recently opened BOM entry has an enlarged thumbnail.
   // Keep other <details> open so nested subassembly BOMs remain visible.
-  workspace.querySelector(".workspace-saved-parts").addEventListener("toggle",event=>{
+  bomPanel.querySelector(".workspace-saved-parts").addEventListener("toggle",event=>{
    const entry=event.target;
    if(!(entry instanceof HTMLDetailsElement)||!entry.classList.contains("bom-part"))return;
    if(!entry.open){entry.classList.remove("bom-thumbnail-active");return}
-   const list=workspace.querySelector(".workspace-saved-parts");
+   const list=bomPanel.querySelector(".workspace-saved-parts");
    list.querySelectorAll(".bom-thumbnail-active").forEach(other=>other.classList.remove("bom-thumbnail-active"));
    entry.classList.add("bom-thumbnail-active");
   },true);
   async function renderWorkspaceParts(){
-   const version=++bomDisplayVersion,assemblyId=selected,container=workspace.querySelector(".workspace-saved-parts");
+   const version=++bomDisplayVersion,assemblyId=selected,container=bomPanel.querySelector(".workspace-saved-parts");
    container.replaceChildren();
    const pending=document.createElement("p");pending.className="bom-count";pending.textContent="Loading saved parts…";container.append(pending);
    try{
@@ -1046,9 +1047,9 @@ function setupAssemblyTrees(){
   }
   // Workspace owns its part editor actions. Keep the mini-project component
   // editors separate; this panel saves one assembly part per request.
-  const bomEditorMount=workspace.querySelector(".workspace-bom-mount");
+  const bomEditorMount=bomPanel.querySelector(".workspace-bom-mount");
   bomEditorMount.prepend(partTools);
-  const bomSavedList=workspace.querySelector(".workspace-saved-parts");
+  const bomSavedList=bomPanel.querySelector(".workspace-saved-parts");
   const bomEditorHeader=document.createElement("div");
   bomEditorHeader.className="workspace-bom-editor-header hide";
   const bomEditorHeading=document.createElement("h3");
@@ -1081,10 +1082,10 @@ function setupAssemblyTrees(){
    bomReport("Part editing cancelled.");
    returnToEditedPart();
   };
-  const bomRoot=()=>workspace.querySelector(".component-section");
+  const bomRoot=()=>bomPanel.querySelector(".component-section");
   const bomField=name=>bomRoot()?.querySelector(".component-"+name);
   const bomReport=message=>{
-   const label=workspace.querySelector(".workspace-bom-notice");
+   const label=bomPanel.querySelector(".workspace-bom-notice");
    if(label){label.textContent=message;label.classList.toggle("visible",!!message)}
    const el=bomRoot()?.querySelector(".component-status");
    if(el){el.textContent=message;el.hidden=false;el.style.display="block"}
@@ -1200,7 +1201,7 @@ function setupAssemblyTrees(){
    finally{savingBom=false;if(saveButton)saveButton.disabled=false}
   }
   // BOM-only items share the library/manual/wire wizard, but never create a feature-tree node.
-  workspace.querySelector(".workspace-new-part").onclick=async()=>{
+  bomPanel.querySelector(".workspace-new-part").onclick=async()=>{
    if(savingBom)return;
    if(!window.BSLibraryPartPicker){bomReport("Part library unavailable. Refresh and try again.");return}
    const targetAssembly=selected;
@@ -1242,7 +1243,7 @@ function setupAssemblyTrees(){
     }
    }});
   };
-  workspace.querySelector(".workspace-bom").addEventListener("click",event=>{
+  bomPanel.addEventListener("click",event=>{
    const target=event.target;
    if(!(target instanceof Element))return;
    if(target.closest(".component-add-spec")){
@@ -1298,9 +1299,9 @@ function setupAssemblyTrees(){
   async function showAssemblyPage(){
    const version=++detailVersion;
    const isAssembly=selected!==null;
-   const bom=main.querySelector(".component-section")||detail.querySelector(".component-section")||workspace.querySelector(".component-section");
-   if(bom){workspace.querySelector(".workspace-bom-mount").append(bom)}
-   const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);if(inPart){void showPartWorkspace();return;}
+   const bom=main.querySelector(".component-section")||detail.querySelector(".component-section")||bomPanel.querySelector(".component-section");
+   if(bom){bomPanel.querySelector(".workspace-bom-mount").append(bom)}
+   const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);sidebar.classList.toggle("bom-sidebar-active",workspaceRoute()&&!inPart);if(inPart){void showPartWorkspace();return;}
    const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();loadWorkspace();void assemblyDrawingPanel?.load(project,"assembly",selected??"__root__");void renderWorkspaceParts();if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
