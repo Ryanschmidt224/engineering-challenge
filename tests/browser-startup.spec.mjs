@@ -4,7 +4,7 @@ import {test,expect} from "@playwright/test";
 
 test("project feature tree and workspace initialize without browser errors", async ({page}) => {
  const errors=[];
- page.on("pageerror", error=>errors.push(error.message));
+ page.on("pageerror", error=>errors.push(error.stack||error.message));
  await page.route("**/api/**", async route=>{
   const url=new URL(route.request().url());
   let data={};
