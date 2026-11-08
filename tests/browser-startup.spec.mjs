@@ -120,7 +120,9 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
   const url=new URL(route.request().url());
   let data={};
   if(url.pathname==="/api/auth")data={authenticated:true,isAdmin:true};
-  if(url.pathname==="/api/tree")data={nodes:[
+  if(url.pathname==="/api/tree"&&url.searchParams.has("metadata")){
+   data=route.request().method()==="PUT"?{ok:true,title:"Renamed Foam Dart Project",revision:"v2"}:{title:null,revision:null};
+  }else if(url.pathname==="/api/tree")data={nodes:[
    {id:"smoke-motor",parentId:null,name:"Motor and Motor Control",kind:"assembly"},
    {id:"smoke-part",parentId:"smoke-motor",name:"Linked Motor",kind:"part",partId:"p1"}
   ],revision:"test"};
@@ -132,6 +134,19 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await page.locator('.project-link[data-nav="launcher"]').click();
  const sidebar=page.locator("#launcher .assembly-sidebar");
  await expect(sidebar.locator(".assembly-rename")).toBeHidden();
+ await expect(sidebar.locator(".assembly-add")).toBeHidden();
+ await expect(sidebar.locator(".assembly-add-part")).toBeHidden();
+ await expect(sidebar.locator(".assembly-move-button").first()).toBeHidden();
+ const renameProject=page.locator("#launcher .project-root-rename");
+ const coverProject=page.locator("#launcher .project-root-cover");
+ await expect(renameProject).toBeVisible();
+ await expect(coverProject).toBeVisible();
+ page.once("dialog",dialog=>dialog.accept("Renamed Foam Dart Project"));
+ await renameProject.click();
+ await expect(page.locator("#launcher .assembly-main h1")).toContainText("Renamed Foam Dart Project");
+ await expect(page.locator('#launcher .assembly-tree-nodes .assembly-name').first()).toContainText("Renamed Foam Dart Project");
+ await expect(page.locator('.project-link[data-project="launcher"] .project-copy h2')).toContainText("Renamed Foam Dart Project");
+
  await expect(sidebar.locator(".assembly-remove")).toBeHidden();
  const row=sidebar.locator(".assembly-node",{hasText:"Motor and Motor Control"});
  const name=row.locator(".assembly-name");
@@ -153,6 +168,8 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(menu.getByRole("menuitem",{name:"Add subassembly"})).toBeVisible();
  await expect(menu.getByRole("menuitem",{name:"Rename"})).toBeVisible();
  await expect(menu.getByRole("menuitem",{name:"Delete",exact:true})).toBeVisible();
+ await expect(menu.getByRole("menuitem",{name:"Move to…"})).toBeVisible();
+ await expect(menu.getByRole("menuitem",{name:"Move up"})).toBeVisible();
  await page.keyboard.press("Escape");
  await expect(menu).toBeHidden();
  const frame=page.locator("#launcher .assembly-layout > .assembly-content");
