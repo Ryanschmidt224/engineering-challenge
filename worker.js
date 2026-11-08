@@ -7,6 +7,7 @@ import {handlePartPages} from "./functions/api/part-pages.js";
 import {handleWorkspace} from "./functions/api/workspace.js";
 import {handleProjectArchive} from "./functions/api/project-archive.js";
 import {handleArchiveStaging} from "./functions/api/archive-staging.js";
+import {backupAllProjects,handleAutomaticBackups} from "./functions/api/automatic-backups.js";
 import {handleDrawings} from "./functions/api/drawings.js";
 import {auth} from "./functions/api/auth.js";
 import {handleComponents,handleExtract,handleComponentPhoto} from "./functions/api/components.js";
@@ -26,6 +27,7 @@ export default {
       if(path==="/api/workspace")return handleWorkspace(request,env);
       if(path==="/api/project/archive")return handleProjectArchive(request,env);
       if(path==="/api/project/staging")return handleArchiveStaging(request,env);
+      if(path==="/api/project/backups")return handleAutomaticBackups(request,env);
       if(path==="/api/drawings")return handleDrawings(request,env);
       if(path==="/api/auth")return auth(request,env);
       if(path==="/api/components")return handleComponents(request,env);
@@ -47,5 +49,10 @@ export default {
       console.error("Request failed",error);
       return new Response("Internal server error",{status:500});
     }
+  },
+  async scheduled(event,env,ctx){
+    ctx.waitUntil(backupAllProjects(env,new Date(event.scheduledTime)).then(result=>{
+     console.log("Building Schmidt scheduled backup result",JSON.stringify(result));
+    }));
   }
 };
