@@ -4,7 +4,10 @@
  "use strict";
  const MAX_OBJECTS=1500,MAX_TOTAL=72*1024*1024,MAX_SINGLE=24*1024*1024;
  const supported=new Set(["launcher","linear","robot","buck","motorlab","coiltest"]);
- const allowed=(project,key)=>[
+ const safeKey=key=>typeof key==="string"&&key.length<=1000&&
+  !/[\\\x00-\x1f\x7f]/.test(key)&&
+  key.split("/").every(segment=>segment!==""&&segment!=="."&&segment!=="..");
+ const allowed=(project,key)=>safeKey(key)&&[
   project+"/","assembly-pages/"+project+"/","workspaces/"+project+"/",
   "part-workspaces/"+project+"/","harnesses/"+project+"/","drawings/"+project+"/",
   "component-thumbnails/"+project+"/",
