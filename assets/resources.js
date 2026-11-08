@@ -16,11 +16,11 @@
   {id:"common-buck",name:"DC–DC buck converters",subtitle:"Step-down switching power modules",detail:"Reusable power-converter reference. Record input/output ranges, current, ripple, protection and manufacturer part number. Check startup transients and ratings."}
  ];
  const catalog={tools,calculators,parts:baseParts};
- let wires=[],listeners=new Set(),admin=false;
+ let wires=[],commonRecords=[],listeners=new Set(),admin=false;
  const byId=(kind,id)=>catalog[kind]?.find(item=>item.id===id);
  const wireName=w=>[w.name,w.awg?w.awg+" AWG":"",w.color,w.partNumber].filter(Boolean).join(" · ");
  function all(kind){
-  if(kind==="parts")return [...baseParts,...wires.map(w=>({id:"wire:"+w.id,name:wireName(w),subtitle:"Shared wire type",detail:[w.construction,w.insulation,w.manufacturer,w.notes].filter(Boolean).join(" · ")}))];
+  if(kind==="parts")return [...baseParts,...wires.map(w=>({id:"wire:"+w.id,name:wireName(w),subtitle:"Shared wire type",detail:[w.construction,w.insulation,w.manufacturer,w.notes].filter(Boolean).join(" · ")})),...commonRecords.map(p=>({id:"common:"+p.id,name:p.name,subtitle:p.category==="screws"?"Shared fastener":p.category==="buck-converters"?"Shared buck converter":"Shared component",detail:[p.manufacturer,p.partNumber,p.specifications,p.notes].filter(Boolean).join(" · ")}))];
   return catalog[kind]||[];
  }
  function label(kind,id){return all(kind).find(item=>item.id===id)?.name||"Unavailable library item ("+id+")"}
@@ -28,6 +28,16 @@
  async function reloadWires(){
   try{const response=await fetch("/api/wires",{cache:"no-store"});const data=await response.json();if(!response.ok)throw Error(data.error||"Wire library unavailable");wires=data.wires||[];notify();return wires}
   catch(e){const status=document.querySelector(".resource-wire-status");if(status)status.textContent="Unable to load wire library: "+e.message;return []}
+ }
+ async function reloadCommonParts(){
+  try{
+   const response=await fetch("/api/commonparts",{cache:"no-store"}),data=await response.json();
+   if(!response.ok)throw Error(data.error||"Common parts unavailable");
+   commonRecords=data.parts||[];notify();return commonRecords;
+  }catch(e){
+   const status=document.querySelector(".resource-common-status");if(status)status.textContent="Unable to load shared parts: "+e.message;
+   return [];
+  }
  }
  function element(tag,className,text){
   const el=document.createElement(tag);if(className)el.className=className;if(text!==undefined)el.textContent=text;return el;
@@ -134,6 +144,17 @@
    row.append(element("span","",wireName(wire)),element("span","muted",[wire.construction,wire.insulation].filter(Boolean).join(" · ")));
    if(admin){const edit=element("button","btn","Edit");edit.type="button";edit.onclick=()=>editWire(wire);row.append(edit)}
    mount.append(row);
+  }  const commonList=document.querySelector(".resource-common-list");
+  if(commonList){
+   commonList.replaceChildren();
+   if(!commonRecords.length)commonList.append(element("p","muted","No specific screws or converters saved yet. Add a common part to define one."));
+   for(const part of commonRecords){
+    const row=element("div","resource-wire-item");
+    const category=part.category==="screws"?"Screw / fastener":part.category==="buck-converters"?"Buck converter":"Other";
+    row.append(element("span","",part.name),element("span","muted",category+" · "+[part.partNumber,part.specifications].filter(Boolean).join(" · ")));
+    if(admin){const edit=element("button","btn","Edit");edit.type="button";edit.onclick=()=>editCommon(part);row.append(edit)}
+    commonList.append(row);
+   }
   }
  }
  const wireFields=[["name","Wire description"],["awg","AWG"],["construction","Construction / stranding"],["insulation","Insulation"],["color","Color"],["manufacturer","Manufacturer"],["partNumber","Part number"],["notes","Notes"]];
@@ -168,11 +189,56 @@
    }catch(e){status.textContent=e.message}finally{button.disabled=false}
   };
  }
- function setAdmin(value){admin=!!value;const button=document.querySelector(".resource-wire-new");if(button)button.classList.toggle("hide",!admin);const form=document.querySelector(".resource-wire-form");if(form&&!admin)form.classList.add("hide");renderCommonParts()}
+ const commonFields=[
+  ["category","Category"],["name","Part name"],["manufacturer","Manufacturer"],
+  ["partNumber","Part number"],["specifications","Specifications"],["notes","Notes"]
+ ];
+ let editingCommonId=null;
+ function editCommon(part){
+  const form=document.querySelector(".resource-common-form");if(!form)return;
+  editingCommonId=part?.id||null;
+  for(const [key] of commonFields)form.querySelector('[data-common-field="'+key+'"]').value=part?.[key]||(key==="category"?"screws":"");
+  form.querySelector(".resource-common-form-title").textContent=editingCommonId?"Edit common part":"New common part";
+  form.classList.remove("hide");form.querySelector('[data-common-field="name"]').focus();
+ }
+ function initCommonForm(){
+  const form=document.querySelector(".resource-common-form");if(!form)return;
+  const mount=form.querySelector(".resource-common-fields");
+  for(const [key,name] of commonFields){
+   const label=element("label","",name);
+   let field;
+   if(key==="category"){
+    field=element("select","field");
+    for(const [value,title] of [["screws","Screws / fasteners"],["buck-converters","Buck converters"],["other","Other shared components"]]){
+     const opt=element("option","",title);opt.value=value;field.append(opt);
+    }
+   }else{field=element("input","field");field.type="text";field.maxLength=key==="notes"||key==="specifications"?1000:100}
+   field.dataset.commonField=key;label.append(field);mount.append(label);
+  }
+  document.querySelector(".resource-common-new").onclick=()=>{if(admin)editCommon(null)};
+  form.querySelector(".resource-common-cancel").onclick=()=>form.classList.add("hide");
+  form.onsubmit=async event=>{
+   event.preventDefault();const status=document.querySelector(".resource-common-status");
+   if(!admin){status.textContent="Administrator login required.";return}
+   const input={};for(const [key] of commonFields)input[key]=form.querySelector('[data-common-field="'+key+'"]').value.trim();
+   if(!input.name){status.textContent="Enter a common part name.";return}
+   const button=form.querySelector('[type="submit"]');button.disabled=true;status.textContent="Saving common part…";
+   try{
+    const res=await fetch("/api/commonparts"+(editingCommonId?"?id="+encodeURIComponent(editingCommonId):""),{method:editingCommonId?"PUT":"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(input)});
+    const data=await res.json();if(!res.ok)throw Error(data.error||"Unable to save common part");
+    form.classList.add("hide");status.textContent=input.name+" saved to shared Common Parts.";
+    await reloadCommonParts();
+   }catch(e){status.textContent=e.message}finally{button.disabled=false}
+  };
+ }
+ function setAdmin(value){admin=!!value;const button=document.querySelector(".resource-wire-new");if(button)button.classList.toggle("hide",!admin);const form=document.querySelector(".resource-wire-form");if(form&&!admin)form.classList.add("hide");
+ const commonButton=document.querySelector(".resource-common-new");if(commonButton)commonButton.classList.toggle("hide",!admin);
+ const commonForm=document.querySelector(".resource-common-form");if(commonForm&&!admin)commonForm.classList.add("hide");
+ renderCommonParts()}
  function init(){
   renderCatalog("resource-tools",tools,"tool");
   renderCatalog("resource-calculators",calculators,"calculator");
-  renderCommonParts();initWireForm();void reloadWires();
+  renderCommonParts();initWireForm();initCommonForm();setAdmin(admin);void reloadWires();void reloadCommonParts();
  }
- window.BSResources={catalog,all,mount,reloadWires,init,normalize,setAdmin};
+ window.BSResources={catalog,all,mount,reloadWires,reloadCommonParts,init,normalize,setAdmin};
 })();
