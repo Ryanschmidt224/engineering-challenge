@@ -117,6 +117,61 @@ function setupAssemblyTrees(){
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
   workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article><h2>Work instructions</h2><textarea class="field workspace-instructions" placeholder="Add build steps, tools, measurements and checks…" rows="8"></textarea></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article><h2>Recipes / procedures</h2><textarea class="field workspace-procedures" placeholder="Add settings, recipes and procedures…" rows="5"></textarea></article><article><h2>Notes</h2><textarea class="field workspace-notes" placeholder="Add notes…" rows="5"></textarea></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
+  // Each saved BOM part has its own independent instructions document.
+  const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
+  partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article><h2>Build instructions</h2><textarea class="field part-instructions" rows="9" placeholder="Build steps, tools, measurements and checks…"></textarea></article><article><h2>Recipes / procedures</h2><textarea class="field part-procedures" rows="5" placeholder="Settings and procedures…"></textarea></article><article><h2>Notes</h2><textarea class="field part-notes" rows="5" placeholder="Additional notes…"></textarea></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
+  workspace.after(partWorkspace);
+  const partRoute=()=>location.hash.slice(1).match(new RegExp("^"+project+"/part/([0-9a-f-]{36})$","i"))?.[1]||null;
+  let partLoadVersion=0,partBackAssembly=null;
+  const partStatus=partWorkspace.querySelector(".part-workspace-status");
+  async function showPartWorkspace(){
+   const partId=partRoute();if(!partId)return;
+   const version=++partLoadVersion;
+   partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
+   const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
+   heading.textContent="Loading part…";partStatus.textContent="Loading instructions…";
+   cover.replaceChildren();
+   const placeholder=document.createElement("span");placeholder.textContent="No picture yet";cover.append(placeholder);
+   for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value="";
+   try{
+    const [partResponse,response]=await Promise.all([fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}),fetch("/api/workspace?project="+encodeURIComponent(project)+"&part="+encodeURIComponent(partId),{cache:"no-store"})]);
+    const partData=await partResponse.json(),data=await response.json();
+    if(!partResponse.ok)throw Error(partData.error||"Unable to load part");
+    if(!response.ok)throw Error(data.error||"Unable to load instructions");
+    if(version!==partLoadVersion||partRoute()!==partId)return;
+    const part=partData.components?.find(item=>item.id===partId);
+    if(!part)throw Error("Part not found");
+    heading.textContent=part.name;
+    if(partBackAssembly===null)partBackAssembly=part.assemblyId??null;
+    for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value=data.workspace?.[name]||"";
+    const img=document.createElement("img");img.alt=part.name;img.src=partPhotoUrl(partId);
+    img.onload=()=>{if(partRoute()===partId)cover.replaceChildren(img)};
+    partStatus.textContent="";
+   }catch(e){if(version===partLoadVersion)partStatus.textContent=e.message}
+  }
+  partWorkspace.querySelector(".part-workspace-back").onclick=()=>{
+   selected=partBackAssembly;
+   partBackAssembly=null;
+   history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));
+   render();notify();window.scrollTo(0,0);
+  };
+  partWorkspace.querySelector(".part-workspace-save").onclick=async()=>{
+   const id=partRoute();if(!id)return;
+   if(!adminAuthenticated){partStatus.textContent="Sign in as administrator to save.";return}
+   const data={};for(const name of ["instructions","procedures","notes"])data[name]=partWorkspace.querySelector(".part-"+name).value;
+   const button=partWorkspace.querySelector(".part-workspace-save");button.disabled=true;partStatus.textContent="Saving…";
+   try{
+    const response=await fetch("/api/workspace?project="+encodeURIComponent(project)+"&part="+encodeURIComponent(id),{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});
+    const result=await response.json();
+    if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
+    partStatus.textContent="Part instructions saved.";
+   }catch(e){partStatus.textContent=e.message}finally{button.disabled=false}
+  };
+  function openPartInstructions(part,originId){
+   partBackAssembly=selected;
+   history.pushState(null,"","#"+project+"/part/"+encodeURIComponent(part.id));
+   void showAssemblyPage();window.scrollTo(0,0);
+  }
   // Workspace-owned extraction handler. Runs even when the legacy component
   // editor failed to initialize; captured before the editor's click listeners.
   const bomNotice=document.createElement("p");
@@ -242,6 +297,9 @@ function setupAssemblyTrees(){
     };
     controls.append(edit,pick,remove,input);body.append(controls);
    }
+   const instructions=document.createElement("button");instructions.type="button";instructions.className="btn bom-part-instructions";instructions.textContent="Build instructions →";
+   instructions.onclick=()=>openPartInstructions(part,originId);
+   body.prepend(instructions);
    item.append(body);return item;
   }
   async function renderWorkspaceParts(){
@@ -441,6 +499,7 @@ function setupAssemblyTrees(){
    const isAssembly=selected!==null;
    const bom=main.querySelector(".component-section")||detail.querySelector(".component-section")||workspace.querySelector(".component-section");
    if(bom){workspace.querySelector(".workspace-bom-mount").append(bom)}
+   const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);if(inPart){void showPartWorkspace();return;}
    const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();loadWorkspace();void renderWorkspaceParts();if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
@@ -612,7 +671,7 @@ function setupAssemblyTrees(){
   root.addEventListener("openassembly",e=>{const id=e.detail;if(id==="__root__"){selected=null;render();notify();return}if(!nodes.some(n=>n.id===id))return;selected=id;let cursor=nodes.find(n=>n.id===id);while(cursor){expanded.add(cursor.parentId);cursor=nodes.find(n=>n.id===cursor.parentId)}render();notify()});
   const validSelection=()=>selected===null||nodes.some(n=>n.id===selected);
   const notify=()=>{assemblySelections[project]=selected;assemblyTreeSnapshots[project]={nodes:[...nodes],title};showAssemblyPage();renderTiles();view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));};
-  async function load(){try{const r=await fetch("/api/tree?project="+project),data=await r.json();if(!r.ok)throw Error(data.error);nodes=data.nodes||[];if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/(?:assembly|workspace)/([^/]+)$"));if(deepLink&&nodes.some(n=>n.id===deepLink[1]))selected=deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
+  async function load(){try{const r=await fetch("/api/tree?project="+project),data=await r.json();if(!r.ok)throw Error(data.error);nodes=data.nodes||[];if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/(?:assembly|workspace)/([^/]+)$"));if(deepLink&&(deepLink[1]==="__root__"||nodes.some(n=>n.id===deepLink[1])))selected=deepLink[1]==="__root__"?null:deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
   async function save(next){const r=await fetch("/api/tree?project="+project,{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({nodes:next})});const data=await r.json();if(!r.ok)throw Error(data.error||"Save failed");nodes=next;render();notify()}
   // Tree ordering is the order of node records; moving a node keeps its permanent ID.
   const siblings=parent=>nodes.filter(n=>n.parentId===parent);
