@@ -895,15 +895,11 @@ function setupAssemblyTrees(){
     const result=await response.json();if(!response.ok)throw Error(result.error||"Unable to load parts");
     if(version!==bomDisplayVersion||assemblyId!==selected||!workspaceRoute())return;
     const parts=Array.isArray(result.components)?result.components:[];
-    const included=new Set([assemblyId]);
-    const gather=id=>{for(const node of nodes.filter(n=>n.parentId===id&&!isPartNode(n))){if(!included.has(node.id)){included.add(node.id);gather(node.id)}}};
-    gather(assemblyId);
-    const shopItems=parts.filter(p=>included.has(p.assemblyId??null)&&p.assumedOnHand);
-    const shopIds=new Set(shopItems.map(p=>p.id));
+    const {included,shopItems,shopIds,listItems}=window.BSBomModel.selectWorkspaceParts(parts,nodes,assemblyId);
     container.replaceChildren();
     if(listView){
      // A compact tabular representation of the same BOM, not a different purchasing calculation.
-     const items=parts.filter(p=>included.has(p.assemblyId??null)&&!shopIds.has(p.id));
+     const items=listItems;
      const table=document.createElement("table");table.className="bom-shopping-table bom-compact-list";
      const head=document.createElement("thead"),headRow=document.createElement("tr");
      for(const label of ["Part / material","Assembly","Quantity","Details"]){const th=document.createElement("th");th.textContent=label;headRow.append(th)}
@@ -918,8 +914,8 @@ function setupAssemblyTrees(){
       details.append(openPart);
       const preference=preferenceButton(p);if(preference)name.append(preference);
       if(p.generatedFrom){const marker=document.createElement("small");marker.className="muted";marker.textContent=" · calculated";name.append(marker)}
-      assembly.textContent=p.assemblyId===assemblyId?(assemblyId===null?"Project":"This assembly"):(nodes.find(n=>n.id===p.assemblyId)?.name||"Project");
-      quantity.textContent=p.quantity===null||p.quantity===undefined?"Not specified":String(p.quantity)+(p.quantityUnit?" "+p.quantityUnit:"");
+      assembly.textContent=window.BSBomModel.assemblyText(p,assemblyId,nodes);
+      quantity.textContent=window.BSBomModel.quantityText(p);
       tr.append(name,assembly,quantity,details);body.append(tr);
      }
      if(!items.length){const row=document.createElement("tr"),cell=document.createElement("td");cell.colSpan=4;cell.textContent="No materials yet.";row.append(cell);body.append(row)}
