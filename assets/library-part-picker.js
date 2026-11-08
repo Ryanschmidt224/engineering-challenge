@@ -12,10 +12,10 @@ function recommend(voltage,current,length,dropPercent=3){
  const chosen=matches[0]||null;
  return {chosen,drop:chosen?current*(2*length*chosen.r/1000):null,maxDrop};
 }
-function open({onCreate}){
+function open({onCreate,bomOnly=false}){
  return new Promise(resolve=>{
  const dialog=el("dialog","library-part-dialog"),form=el("form","library-part-form");form.method="dialog";
- const heading=el("h2","","New feature-tree part"),subtitle=el("p","muted","Create a custom part, or start from a reusable library part or wire assembly.");
+ const heading=el("h2","",bomOnly?"New non-inventory part":"New feature-tree part"),subtitle=el("p","muted",bomOnly?"Create a BOM-only material or consumable. It will not appear in the feature tree.":"Create a custom part, or start from a reusable library part or wire assembly.");
  const mode=field("Part source","select");option(mode.input,"custom","Custom part");option(mode.input,"library","Library part");
  const customName=field("Part name");
  const chooser=el("div","library-picker-section hide");
@@ -36,7 +36,10 @@ function open({onCreate}){
  const length=field("Cut length (mm)");length.input.type="number";length.input.min="1";length.input.step="1";length.input.value="300";
  const endA=field("End A termination");endA.input.placeholder="e.g. ferrule, JST crimp, bare";
  const endB=field("End B termination");endB.input.placeholder="e.g. ferrule, JST crimp, bare";
- const qty=field("Quantity");qty.input.type="number";qty.input.min="1";qty.input.max="10000";qty.input.step="1";qty.input.value="1";
+ const qty=field(bomOnly?"Quantity (optional)":"Quantity");qty.input.type="number";qty.input.min="0.000001";qty.input.max="10000000";qty.input.step="any";qty.input.placeholder=bomOnly?"Leave blank if unknown":"1";qty.input.value=bomOnly?"":"1";
+ const unit=field("Unit (optional)","select");
+ for(const [value,title] of [["pcs","pieces (pcs)"],["m","meters (m)"],["mm","millimeters (mm)"],["ft","feet (ft)"],["g","grams (g)"],["kg","kilograms (kg)"],["mL","milliliters (mL)"],["L","liters (L)"],["","unspecified"]])option(unit.input,value,title);
+ const hintUnits=el("p","muted library-picker-hint","Optional: leave quantity blank for consumables such as solder when usage is not yet known.");
  const results=el("p","library-picker-hint muted","Wire templates are selectable without an existing saved wire; a matching wire material will be reused or created in the shared wire library.");
  const calc=el("section","wire-gauge-helper");
  calc.append(el("h3","","Wire Wizard · electrical requirements"));
@@ -66,7 +69,7 @@ function open({onCreate}){
  manualFields.append(wireType.label,search.label,material.label,gauge.label,construction.label,length.label,endA.label,endB.label,results);
  wireSection.append(workflow,workflowHint,manualFields,wizardFields);
  chooser.append(category.label,wireSection,compSection);
- form.append(heading,subtitle,mode.label,customName.label,chooser,qty.label,status,footer);
+ form.append(heading,subtitle,mode.label,customName.label,chooser,qty.label,unit.label,hintUnits,status,footer);
  dialog.append(form);document.body.append(dialog);
  let wires=[],commons=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
@@ -130,12 +133,15 @@ function open({onCreate}){
   selectWorkflow("manual");
   status.textContent="Wizard applied "+selectedRecommendation+" AWG "+construction.input.value+" copper and "+length.input.value+" mm cut length. Review the wire and termination details before creating the part; ampacity is not verified.";
  };
- mode.input.onchange=update;category.input.onchange=update;wireType.input.onchange=update;search.input.oninput=refreshMaterials;material.input.onchange=applyWire;gauge.input.onchange=()=>{material.input.value=""};construction.input.onchange=()=>{material.input.value=""};commonCategory.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
+ unit.input.value="pcs";
+ mode.input.onchange=()=>{if(bomOnly&&mode.input.value==="library"&&category.input.value==="wire"&&unit.input.value==="pcs")unit.input.value="m";update()};
+ category.input.onchange=()=>{if(bomOnly&&category.input.value==="wire"&&mode.input.value==="library"&&unit.input.value==="pcs")unit.input.value="m";update()};wireType.input.onchange=update;search.input.oninput=refreshMaterials;material.input.onchange=applyWire;gauge.input.onchange=()=>{material.input.value=""};construction.input.onchange=()=>{material.input.value=""};commonCategory.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
  form.addEventListener("submit",async e=>{
   e.preventDefault();
   if(!form.reportValidity())return;
   let payload;
-  const count=Number(qty.input.value);if(!Number.isInteger(count)||count<1||count>10000){status.textContent="Quantity must be between 1 and 10000.";return}
+  const rawCount=qty.input.value.trim();const count=rawCount===""?null:Number(rawCount);
+  if(count!==null&&(!Number.isFinite(count)||count<=0||count>10000000)){status.textContent="Quantity must be positive, or left blank.";return}
   if(mode.input.value==="custom"){
    const name=customName.input.value.trim();if(!name||name.length>100){status.textContent="Enter a part name (up to 100 characters).";return}
    payload={name,quantity:count,specifications:[]};
@@ -155,6 +161,7 @@ function open({onCreate}){
    payload={name,quantity:count,category:crimp?"Crimped wire":"Wire & cable",manufacturer:w?.manufacturer||"",model:w?.partNumber||"",specifications:specs};
    payload.wireInfo={gauge:g,construction:str,crimp,mm,endA:endA.input.value.trim(),endB:endB.input.value.trim(),wireId:w?.id||null};
   }
+  payload.quantityUnit=unit.input.value;
   save.disabled=true;status.textContent="Creating part…";
   try{await onCreate(payload);close({created:true})}catch(err){status.textContent=err.message||String(err);save.disabled=false}
  });
