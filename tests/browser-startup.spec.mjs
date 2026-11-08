@@ -54,5 +54,27 @@ test("project feature tree and workspace initialize without browser errors", asy
  expect(appearance[1].top-appearance[0].bottom).toBeGreaterThanOrEqual(4);
  expect(appearance[0].color).not.toBe("rgba(0, 0, 0, 0)");
  expect(appearance[0].color).not.toBe(appearance[1].color);
+ // BOM occupies the left column and can be resized by a visible divider.
+ const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
+ const bom=workspace.locator(".workspace-bom");
+ const instructions=workspace.locator(".recipe-instructions");
+ const splitter=workspace.locator(".workspace-bom-resizer");
+ await expect(splitter).toBeVisible();
+ const before=await bom.boundingBox();
+ const right=await instructions.boundingBox();
+ expect(before.x).toBeLessThan(right.x);
+ const handle=await splitter.boundingBox();
+ await page.mouse.move(handle.x+handle.width/2,handle.y+70);
+ await page.mouse.down();
+ await page.mouse.move(handle.x+handle.width/2+85,handle.y+70,{steps:6});
+ await page.mouse.up();
+ const after=await bom.boundingBox();
+ expect(after.width).toBeGreaterThan(before.width+40);
+ // Keyboard resize is available for accessibility, and persists in storage.
+ await splitter.focus();
+ await page.keyboard.press("ArrowLeft");
+ const keyboard=await bom.boundingBox();
+ expect(keyboard.width).toBeLessThan(after.width);
+ expect(await page.evaluate(()=>Number(localStorage.getItem("bs-workspace-bom-width")))).toBeGreaterThan(0);
  expect(errors,"Unexpected JavaScript errors during startup/navigation").toEqual([]);
 });
