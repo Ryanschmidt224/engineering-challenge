@@ -486,3 +486,11 @@
 .library-dialog-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
 .library-dialog-status{font-size:.84rem;color:#b6d9e5;margin:0;min-height:1em}
 @media(max-width:520px){.wire-gauge-grid{grid-template-columns:1fr}.library-part-form{padding:15px}}
+
+
+/* Saved harness cuts displayed on individual wire-part workspaces. */
+.part-harness-preview.hide{display:none!important}
+.part-harness-preview-content{display:grid;gap:8px}
+.part-harness-cut{display:flex;flex-direction:column;gap:5px;padding:11px 13px;border:1px solid #395866;border-radius:8px;background:rgba(36,66,80,.18)}
+.part-harness-cut strong{font-size:.9rem}
+.part-harness-cut span{font-size:.82rem;color:#aac8d4}
