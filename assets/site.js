@@ -76,6 +76,14 @@ function setupAssemblyTrees(){
   const project=root.dataset.assemblyTree,view=document.getElementById(project),nodesEl=root.querySelector(".assembly-tree-nodes"),status=root.querySelector(".assembly-tree-status"),controls=root.querySelector(".assembly-edit");
   const title=view.querySelector(".assembly-main h1")?.textContent||"Project";let nodes=[],selected=null,expanded=new Set([null]);
   const detail=view.querySelector(".assembly-detail"),main=view.querySelector(".assembly-main"),detailStatus=detail.querySelector(".assembly-detail-status");
+  const isPartNode=node=>node?.kind==="part"&&!!node.partId;
+  const openTreePart=node=>{
+   if(!isPartNode(node))return;
+   partBackAssembly=node.parentId;
+   selected=node.parentId;
+   history.pushState(null,"","#"+project+"/part/"+encodeURIComponent(node.partId));
+   render();void showAssemblyPage();window.scrollTo(0,0);
+  };
   let detailVersion=0;
   // All project and subassembly pages now instantiate the exact same tile DOM.
   // Preserve the existing BOM widget (and its event handlers) when replacing root markup.
@@ -665,13 +673,14 @@ function setupAssemblyTrees(){
    const sorted=[...children];
    for(const n of sorted){
     const tile=document.createElement("article");tile.className="assembly-tile";
-    const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=data.photos[0].url;img.alt="";cover.replaceChildren(img,overlay)}).catch(()=>{});
-    const stage=document.createElement("span");stage.className="assembly-tile-stage";stage.textContent=n.stage==="integration"?"Integration":n.dependsOn?.length?"Dependent":"";
-    const button=document.createElement("button");button.type="button";button.className="assembly-tile-title";button.textContent=n.name;const openAssembly=()=>{selected=n.id;expanded.add(n.parentId);render();history.pushState(null,"","#"+project+"/assembly/"+encodeURIComponent(n.id));notify();window.scrollTo(0,0)};button.onclick=openAssembly;cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" overview";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
+    const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);if(isPartNode(n)){const img=document.createElement("img");img.src=partPhotoUrl(n.partId);img.alt="";img.onerror=()=>{img.src=missingPicture;img.onerror=null};cover.replaceChildren(img,overlay)}
+    else fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=data.photos[0].url;img.alt="";cover.replaceChildren(img,overlay)}).catch(()=>{});
+    const stage=document.createElement("span");stage.className="assembly-tile-stage";stage.textContent=isPartNode(n)?"Part":n.stage==="integration"?"Integration":n.dependsOn?.length?"Dependent":"";
+    const button=document.createElement("button");button.type="button";button.className="assembly-tile-title";button.textContent=n.name;const openAssembly=()=>{if(isPartNode(n)){openTreePart(n);return}selected=n.id;expanded.add(n.parentId);render();history.pushState(null,"","#"+project+"/assembly/"+encodeURIComponent(n.id));notify();window.scrollTo(0,0)};button.onclick=openAssembly;cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" overview";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
     tile.append(stage,button);
     if(n.dependsOn?.length){const deps=document.createElement("p");deps.className="assembly-tile-deps";deps.textContent="Requires: "+n.dependsOn.map(id=>nodes.find(x=>x.id===id)?.name||"Unknown").join(", ");tile.append(deps)}
-    if(adminAuthenticated){const edit=document.createElement("button");edit.type="button";edit.className="btn assembly-tile-edit";edit.textContent="Order";edit.onclick=async()=>{const options=nodes.filter(x=>x.id!==n.id);const help=options.map((x,i)=>(i+1)+". "+x.name).join("\\n");const answer=prompt("Enter prerequisite assembly numbers, separated by commas. Leave blank for independent work.\\n"+help,(n.dependsOn||[]).map(id=>options.findIndex(x=>x.id===id)+1).join(","));if(answer===null)return;const indices=answer.trim()?answer.split(",").map(v=>Number(v.trim())-1):[];if(indices.some(i=>!Number.isInteger(i)||i<0||i>=options.length)){status.textContent="Invalid prerequisite numbers.";return}const deps=[...new Set(indices.map(i=>options[i].id))];const stage=prompt("Work type: independent, sequential, or integration",n.stage||"independent");if(stage===null)return;try{await save(nodes.map(x=>x.id===n.id?{...x,dependsOn:deps,stage:stage.trim().toLowerCase()}:x))}catch(e){status.textContent=e.message}};tile.append(edit)}
-    if(adminAuthenticated){
+    if(adminAuthenticated&&!isPartNode(n)){const edit=document.createElement("button");edit.type="button";edit.className="btn assembly-tile-edit";edit.textContent="Order";edit.onclick=async()=>{const options=nodes.filter(x=>x.id!==n.id);const help=options.map((x,i)=>(i+1)+". "+x.name).join("\\n");const answer=prompt("Enter prerequisite assembly numbers, separated by commas. Leave blank for independent work.\\n"+help,(n.dependsOn||[]).map(id=>options.findIndex(x=>x.id===id)+1).join(","));if(answer===null)return;const indices=answer.trim()?answer.split(",").map(v=>Number(v.trim())-1):[];if(indices.some(i=>!Number.isInteger(i)||i<0||i>=options.length)){status.textContent="Invalid prerequisite numbers.";return}const deps=[...new Set(indices.map(i=>options[i].id))];const stage=prompt("Work type: independent, sequential, or integration",n.stage||"independent");if(stage===null)return;try{await save(nodes.map(x=>x.id===n.id?{...x,dependsOn:deps,stage:stage.trim().toLowerCase()}:x))}catch(e){status.textContent=e.message}};tile.append(edit)}
+    if(adminAuthenticated&&!isPartNode(n)){
      const pick=document.createElement("button");pick.type="button";pick.className="btn assembly-tile-photo-button";pick.textContent="＋ Photo";pick.title="Upload a photo to "+n.name;
      const input=document.createElement("input");input.type="file";input.accept="image/*,.heic,.heif";input.hidden=true;
      pick.onclick=()=>input.click();
@@ -740,7 +749,7 @@ function setupAssemblyTrees(){
   function render(){nodesEl.replaceChildren();controls.classList.toggle("hide",!adminAuthenticated);const row=(node,depth)=>{
    const id=node?.id??null,children=nodes.filter(n=>n.parentId===id),el=document.createElement("div");el.className="assembly-node"+(selected===id?" selected":"");el.style.paddingLeft=(depth*17+3)+"px";
    const expand=document.createElement("button");expand.type="button";expand.className="assembly-expander";expand.textContent=children.length?(expanded.has(id)?"▾":"▸"):" ";expand.setAttribute("aria-label",expanded.has(id)?"Collapse":"Expand");expand.onclick=()=>{expanded.has(id)?expanded.delete(id):expanded.add(id);render()};
-   const name=document.createElement("button");name.type="button";name.className="assembly-name";name.textContent=node?"📦  "+node.name:"🟨  "+title;name.onclick=()=>{selected=id;render();notify()};
+   const name=document.createElement("button");name.type="button";name.className="assembly-name";name.textContent=node?(isPartNode(node)?"🔩  ":"📦  ")+node.name:"🟨  "+title;name.onclick=()=>{if(isPartNode(node)){openTreePart(node);return}selected=id;render();notify()};
    el.append(expand,name);
    if(node&&adminAuthenticated){
     el.draggable=true;el.title="Drag to reorder or drop into another assembly";
@@ -770,7 +779,31 @@ function setupAssemblyTrees(){
    nodesEl.append(el);
    if(expanded.has(id))children.forEach(child=>row(child,depth+1));
   };row(null,0);status.textContent="";renderTiles()}
-  root.querySelector(".assembly-add").onclick=async()=>{const name=prompt("New subassembly name");if(!name?.trim())return;const id=crypto.randomUUID();try{await save([...nodes,{id,name:name.trim(),parentId:selected}]);expanded.add(selected);selected=id;render();notify()}catch(e){status.textContent=e.message}};
+  const newPartButton=document.createElement("button");newPartButton.type="button";newPartButton.className="btn assembly-add-part";newPartButton.textContent="+ Part";newPartButton.title="Create a BOM part inside the selected assembly";
+  controls.prepend(newPartButton);
+  newPartButton.onclick=async()=>{
+   const parent=nodes.find(node=>node.id===selected);
+   if(isPartNode(parent)){status.textContent="Select an assembly, not a part, before adding a new part.";return}
+   const partName=prompt("New part name");
+   if(!partName?.trim())return;
+   if(partName.trim().length>100){status.textContent="Part names must be 100 characters or less.";return}
+   newPartButton.disabled=true;status.textContent="Creating part…";
+   let newPart=null;
+   try{
+    const res=await fetch("/api/components?project="+encodeURIComponent(project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({assemblyId:selected,quantity:1,name:partName.trim(),specifications:[]})});
+    const data=await res.json();if(!res.ok)throw Error(data.error||"Unable to create part");
+    newPart=data.component;
+    const next=[...nodes,{id:crypto.randomUUID(),kind:"part",partId:newPart.id,name:newPart.name,parentId:selected}];
+    await save(next);
+    expanded.add(selected);
+    status.textContent="Part added to the feature tree and BOM.";
+    openTreePart(next[next.length-1]);
+   }catch(error){
+    if(newPart){await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(newPart.id),{method:"DELETE",credentials:"same-origin"}).catch(()=>{})}
+    status.textContent="Could not add part: "+error.message;
+   }finally{newPartButton.disabled=false}
+  };
+  root.querySelector(".assembly-add").onclick=async()=>{if(isPartNode(nodes.find(n=>n.id===selected))){status.textContent="Select an assembly first; parts cannot contain children.";return}const name=prompt("New subassembly name");if(!name?.trim())return;const id=crypto.randomUUID();try{await save([...nodes,{id,name:name.trim(),parentId:selected}]);expanded.add(selected);selected=id;render();notify()}catch(e){status.textContent=e.message}};
   root.querySelector(".assembly-rename").onclick=async()=>{if(selected===null){status.textContent="Select a subassembly to rename.";return}const node=nodes.find(n=>n.id===selected),name=prompt("Rename subassembly",node.name);if(!name?.trim())return;try{await save(nodes.map(n=>n.id===selected?{...n,name:name.trim()}:n))}catch(e){status.textContent=e.message}};
   root.querySelector(".assembly-remove").onclick=async()=>{if(selected===null){status.textContent="Select a subassembly to delete.";return}const node=nodes.find(n=>n.id===selected);if(!confirm("Delete "+node.name+" and its nested subassemblies? Existing BOM components will remain in the project but may become unassigned."))return;const removed=new Set([selected]);let changed=true;while(changed){changed=false;for(const n of nodes)if(removed.has(n.parentId)&&!removed.has(n.id)){removed.add(n.id);changed=true}}try{await save(nodes.filter(n=>!removed.has(n.id)));selected=null;render();notify()}catch(e){status.textContent=e.message}};
   load();
