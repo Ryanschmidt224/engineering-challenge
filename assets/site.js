@@ -174,20 +174,93 @@ function setupAssemblyTrees(){
     notify(message);
    }finally{button.disabled=false}
   },true);
-  workspace.querySelector(".workspace-new-part").onclick=()=>{
-   const root=workspace.querySelector(".component-section");
-   if(!root){workspace.querySelector(".workspace-status").textContent="BOM editor unavailable. Refresh this page.";return}
-   // Ask before discarding an unfinished entry. A saved item is always a separate BOM row.
-   const editor=root.querySelector(".component-admin");
-   const name=root.querySelector(".component-name");
-   const description=root.querySelector(".component-description");
-   if(editor?.open&&(name?.value.trim()||description?.value.trim())&&!confirm("Discard the unfinished part and start a new one?"))return;
-   root.dispatchEvent(new Event("bom:new-part"));
-   root.querySelector("details")?.setAttribute("open","");
-   if(editor)editor.open=true;
-   root.querySelector(".component-review")?.classList.remove("hide");
-   name?.focus();
+  // Workspace owns its part editor actions. Keep the mini-project component
+  // editors separate; this panel saves one assembly part per request.
+  const bomRoot=()=>workspace.querySelector(".component-section");
+  const bomField=name=>bomRoot()?.querySelector(".component-"+name);
+  const bomReport=message=>{
+   const label=workspace.querySelector(".workspace-bom-notice");
+   if(label){label.textContent=message;label.classList.toggle("visible",!!message)}
+   const el=bomRoot()?.querySelector(".component-status");
+   if(el){el.textContent=message;el.hidden=false;el.style.display="block"}
   };
+  function clearBomDraft(){
+   for(const name of ["name","manufacturer","model","category","supplier","asin","description"]){const el=bomField(name);if(el)el.value=""}
+   const qty=bomField("quantity");if(qty)qty.value="1";
+   bomRoot()?.querySelector(".component-specs")?.replaceChildren();
+   bomRoot()?.querySelector(".component-review")?.classList.remove("hide");
+  }
+  function openBomDraft(){
+   const root=bomRoot();if(!root){bomReport("BOM editor unavailable. Refresh the page.");return}
+   root.querySelector("details")?.setAttribute("open","");
+   const form=root.querySelector(".component-admin");if(form)form.open=true;
+   root.querySelector(".component-review")?.classList.remove("hide");
+   bomField("name")?.focus();
+  }
+  let savingBom=false;
+  async function saveBomDraft(){
+   if(savingBom)return false;
+   const name=bomField("name")?.value.trim()||"";
+   if(!name){bomReport("Enter a part name before saving.");openBomDraft();return false}
+   if(!adminAuthenticated){bomReport("Use Admin login before saving BOM parts.");return false}
+   const component={assemblyId:selected,quantity:Math.max(1,Math.floor(Number(bomField("quantity")?.value)||1))};
+   for(const key of ["name","manufacturer","model","category","supplier","asin"])component[key]=bomField(key)?.value.trim()||"";
+   component.specifications=[...(bomRoot()?.querySelectorAll(".component-spec-row")||[])].map(row=>({
+    name:row.children[0]?.value.trim()||"",value:row.children[1]?.value.trim()||"",source:row.children[2]?.value==="inferred"?"inferred":"explicit"
+   })).filter(entry=>entry.name&&entry.value);
+   savingBom=true;
+   const saveButton=bomField("save");if(saveButton)saveButton.disabled=true;
+   bomReport("Saving "+name+"…");
+   try{
+    const response=await fetch("/api/components?project="+encodeURIComponent(project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(component)});
+    const raw=await response.text();let result;
+    try{result=JSON.parse(raw)}catch{throw Error("Unexpected save response (HTTP "+response.status+")")}
+    if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
+    clearBomDraft();
+    const editor=bomRoot()?.querySelector(".component-admin");if(editor)editor.open=false;
+    bomRoot()?.querySelector(".component-review")?.classList.add("hide");
+    bomRoot()?.dispatchEvent(new Event("bom:refresh"));
+    bomReport(name+" saved to the BOM.");
+    return true;
+   }catch(error){bomReport("Could not save part: "+error.message);return false}
+   finally{savingBom=false;if(saveButton)saveButton.disabled=false}
+  }
+  workspace.querySelector(".workspace-new-part").onclick=async()=>{
+   if(savingBom)return;
+   const active=bomRoot()?.querySelector(".component-admin")?.open;
+   const name=bomField("name")?.value.trim()||"";
+   if(active&&name){
+    if(!await saveBomDraft())return;
+   }else if(active&&(bomField("description")?.value.trim()||bomRoot()?.querySelectorAll(".component-spec-row").length)){
+    bomReport("The unfinished part needs a name. Save it before adding another part.");openBomDraft();return;
+   }
+   clearBomDraft();openBomDraft();
+   bomReport("New part — add details and save. Selecting New part again automatically saves this part and opens another.");
+  };
+  workspace.querySelector(".workspace-bom").addEventListener("click",event=>{
+   const target=event.target;
+   if(!(target instanceof Element))return;
+   if(target.closest(".component-add-spec")){
+    event.preventDefault();event.stopImmediatePropagation();
+    const container=bomRoot()?.querySelector(".component-specs");
+    if(!container){bomReport("Specification editor unavailable.");return}
+    const row=document.createElement("div");row.className="row component-spec-row";
+    const name=document.createElement("input"),value=document.createElement("input"),source=document.createElement("select"),remove=document.createElement("button");
+    name.className=value.className="field";name.placeholder="Specification";value.placeholder="Value";
+    for(const entry of ["explicit","inferred"]){const option=document.createElement("option");option.value=entry;option.textContent=entry==="explicit"?"Stated in listing":"Inferred";source.append(option)}
+    remove.className="btn";remove.type="button";remove.textContent="Remove";remove.onclick=()=>row.remove();
+    row.append(name,value,source,remove);container.append(row);
+    bomRoot()?.querySelector(".component-review")?.classList.remove("hide");
+    name.focus();bomReport("Specification added. Enter the name and value.");
+   }else if(target.closest(".component-save")){
+    event.preventDefault();event.stopImmediatePropagation();void saveBomDraft();
+   }else if(target.closest(".component-cancel")){
+    event.preventDefault();event.stopImmediatePropagation();
+    const form=bomRoot()?.querySelector(".component-admin");if(form)form.open=false;
+    clearBomDraft();bomRoot()?.querySelector(".component-review")?.classList.add("hide");
+    bomReport("Part editor collapsed.");
+   }
+  },true);
   const workspaceRoute=()=>location.hash.slice(1).startsWith(project+"/workspace/");
   let workspacePhotoVersion=0;
   async function loadWorkspaceCover(){const id=selected,version=++workspacePhotoVersion,cover=workspace.querySelector(".workspace-cover");cover.replaceChildren();const placeholder=document.createElement("span");placeholder.textContent="No photo yet";cover.append(placeholder);try{const r=await fetch("/api/photos?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(id??"__root__"));if(!r.ok)return;const data=await r.json();if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;const photo=(data.photos||[]).find(p=>(p.assembly??null)===id);if(photo){const img=document.createElement("img");img.src=photo.url;img.alt="Assembly photo";cover.replaceChildren(img)}}catch(e){/* cover is optional */}}
@@ -515,8 +588,8 @@ function setupComponents(){
  });
 
  const extract=field("extract"),description=field("description"),addSpec=field("add-spec"),save=field("save");
- save.textContent="Save part";
  if(!extract||!description||!addSpec||!save){say("Component editor is incomplete. Please refresh this page.");return}
+ save.textContent="Save part";
  // Put status immediately beside the action and mirror errors above the workspace.
  if(importPanel){
   const cancel=document.createElement("button");cancel.type="button";cancel.className="btn component-cancel";cancel.textContent="Cancel / Collapse";
@@ -568,6 +641,7 @@ function setupComponents(){
   field("save").disabled=true;try{const res=await fetch("/api/components?project="+project,{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",body:JSON.stringify(c)}),data=await res.json();if(!res.ok)throw Error(data.error||"Save failed");review.classList.add("hide");field("description").value="";if(field("quantity"))field("quantity").value="1";say("Part added to BOM.");feedback.textContent="";clearPartEditor();if(importPanel)importPanel.open=false;review.classList.add("hide");await refresh()}catch(e){say(e.message)}finally{field("save").disabled=false}
  };
  root.addEventListener("assemblychange",()=>{clearPartEditor();review.classList.add("hide");feedback.textContent="";if(importPanel)importPanel.open=false;refresh()});
+ root.addEventListener("bom:refresh",()=>{refresh()});
  refresh();
  })
 }
