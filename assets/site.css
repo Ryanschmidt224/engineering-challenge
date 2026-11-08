@@ -555,3 +555,21 @@
  .bom-view-switch{width:100%}
  .bom-view-switch .bom-view-button{flex:1}
 }
+
+
+/* Standard consumables are one quiet, collapsed section below the BOM. */
+.bom-shop-materials{margin-top:16px;border:1px solid #395664;border-radius:12px;background:rgba(91,130,149,.065);overflow:hidden}
+.bom-shop-materials>summary{cursor:pointer;padding:15px 18px;font-weight:650;list-style-position:inside}
+.bom-shop-materials[open]>summary{border-bottom:1px solid #395664}
+.bom-shop-note{margin:12px 18px;font-size:.86rem;line-height:1.5}
+.bom-shop-material-rows{display:grid;margin:0 18px 12px;gap:0}
+.bom-shop-material-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:11px 0;border-bottom:1px solid #395664}
+.bom-shop-material-row:last-child{border-bottom:0}
+.bom-shop-material-row>.bom-list-part-link{flex:1;text-align:left;min-width:170px}
+.bom-shop-qty{font-variant-numeric:tabular-nums;color:#b5d1df}
+.bom-material-preference{font-size:.77rem;padding:6px 10px;white-space:normal}
+.bom-shopping-table .bom-material-preference{margin-left:9px}
+@media(max-width:650px){
+ .bom-shop-material-row>.bom-list-part-link{min-width:100%}
+ .bom-shop-material-row .bom-material-preference{margin-left:auto}
+}
