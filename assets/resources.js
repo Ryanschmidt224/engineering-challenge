@@ -182,8 +182,10 @@
   return {setData,getData:()=>normalize(refs),destroy:()=>listeners.delete(onLibraryUpdate)};
  }
  let workshopChoiceContext=null;
- function focusWorkshopItem(id,choose=null){
+ let workshopAllowedChoices=[];
+ function focusWorkshopItem(id,choose=null,allowed=[]){
   workshopChoiceContext=typeof choose==="function"?choose:null;
+  workshopAllowedChoices=Array.isArray(allowed)?allowed:[];
   renderWorkshopEssentials();
   const entry=document.querySelector('[data-workshop-id="'+id+'"]');
   if(!entry)return false;
@@ -216,12 +218,12 @@
     const link=element("a","workshop-spec-source","Example specification");
     link.href=item.source;link.target="_blank";link.rel="noopener noreferrer";body.append(link);
    }
-   if(workshopChoiceContext&&item.kind==="material"){
+   if(workshopChoiceContext&&item.kind==="material"&&workshopAllowedChoices.includes(item.id)){
     const choose=element("button","btn primary workshop-use-choice","Use this for BOM item");
     choose.type="button";
     choose.onclick=async()=>{
      choose.disabled=true;choose.textContent="Saving…";
-     try{await workshopChoiceContext(item);workshopChoiceContext=null}
+     try{await workshopChoiceContext(item);workshopChoiceContext=null;workshopAllowedChoices=[]}
      catch(error){choose.disabled=false;choose.textContent="Use this for BOM item";
       const errorLine=element("p","resource-caution",error.message||String(error));body.append(errorLine)}
     };
