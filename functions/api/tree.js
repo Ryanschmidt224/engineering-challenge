@@ -14,19 +14,26 @@ export async function handleTree(request,env){
   const contentKey="assembly-pages/"+project+"/"+assemblyId+".json";
   if(request.method==="GET"){
    const obj=await env.PHOTOS.get(contentKey);
-   return reply({page:obj?JSON.parse(await obj.text()):{description:""}});
+   return reply({page:obj?JSON.parse(await obj.text()):{description:""},revision:obj?.etag??null});
   }
   if(request.method!=="PUT")return reply({error:"Method not allowed"},405);
   if(!await isAdmin(request,env))return reply({error:"Admin login required"},401);
   const body=await request.json().catch(()=>null);
   if(typeof body?.description!=="string"||body.description.length>20000)return reply({error:"Invalid description"},400);
-  await env.PHOTOS.put(contentKey,JSON.stringify({description:body.description}));
-  return reply({ok:true});
+  const existing=await env.PHOTOS.get(contentKey);
+  if(Object.prototype.hasOwnProperty.call(body,"expectedRevision")&&
+    (body.expectedRevision??null)!==(existing?.etag??null))
+   return reply({error:"The assembly description changed elsewhere. Reload before saving."},409);
+  const condition=existing?.etag?{onlyIf:{etagMatches:existing.etag}}:
+   !existing?{onlyIf:{etagDoesNotMatch:"*"}}:undefined;
+  const written=await env.PHOTOS.put(contentKey,JSON.stringify({description:body.description}),condition);
+  if(written===null)return reply({error:"Concurrent edit. Reload description before saving."},409);
+  return reply({ok:true,revision:written?.etag??null});
  }
  const key="trees/"+project+".json";
  if(request.method==="GET"){
   const obj=await env.PHOTOS.get(key);
-  return reply({nodes:obj?JSON.parse(await obj.text()):[]});
+  return reply({nodes:obj?JSON.parse(await obj.text()):[],revision:obj?.etag??null});
  }
  if(request.method!=="PUT")return reply({error:"Method not allowed"},405);
  if(!await isAdmin(request,env))return reply({error:"Admin login required"},401);
@@ -49,6 +56,13 @@ export async function handleTree(request,env){
  }
  for(const n of nodes){if(n.dependsOn!==undefined&&(!Array.isArray(n.dependsOn)||n.dependsOn.some(id=>typeof id!=="string"||id===n.id||!ids.has(id))))return reply({error:"Invalid dependencies"},400);if(n.stage!==undefined&&!["independent","sequential","integration"].includes(n.stage))return reply({error:"Invalid stage"},400)}
  for(const n of nodes){const seen=new Set([n.id]),visit=id=>{if(seen.has(id))return false;seen.add(id);const item=nodes.find(x=>x.id===id);for(const dep of item?.dependsOn||[])if(!visit(dep))return false;seen.delete(id);return true};for(const dep of n.dependsOn||[])if(!visit(dep))return reply({error:"Circular dependencies"},400)}
- await env.PHOTOS.put(key,JSON.stringify(nodes.map(n=>({id:n.id,name:n.name.trim(),parentId:n.parentId,dependsOn:n.dependsOn||[],stage:n.stage||"independent",kind:n.kind==="part"?"part":"assembly",...(n.kind==="part"?{partId:n.partId}:{})}))));
- return reply({ok:true});
+ const existing=await env.PHOTOS.get(key);
+ if(Object.prototype.hasOwnProperty.call(body,"expectedRevision")&&
+   (body.expectedRevision??null)!==(existing?.etag??null))
+  return reply({error:"The feature tree was modified elsewhere. Reload before saving."},409);
+ const condition=existing?.etag?{onlyIf:{etagMatches:existing.etag}}:
+  !existing?{onlyIf:{etagDoesNotMatch:"*"}}:undefined;
+ const written=await env.PHOTOS.put(key,JSON.stringify(nodes.map(n=>({id:n.id,name:n.name.trim(),parentId:n.parentId,dependsOn:n.dependsOn||[],stage:n.stage||"independent",kind:n.kind==="part"?"part":"assembly",...(n.kind==="part"?{partId:n.partId}:{})}))),condition);
+ if(written===null)return reply({error:"Concurrent tree edit. Reload before saving."},409);
+ return reply({ok:true,revision:written?.etag??null});
 }
