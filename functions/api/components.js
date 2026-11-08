@@ -35,7 +35,7 @@ const standardShopMaterial=part=>{
  const generic=!String(part.manufacturer||"").trim()&&!String(part.model||"").trim();
  if(!generic)return false;
  if(part.generatedKind==="ferrule")return true;
- if(part.generatedKind==="wire")return /\b(?:18|22)\s*awg\b/i.test(name);
+ if(part.generatedKind==="wire")return /\b(?:18|22)\s*awg\b/i.test(name)&&!(part.specifications||[]).some(x=>String(x.name).toLowerCase()==="insulation"&&/silicone|other/i.test(x.value));
  if(/\bcrimped\s+wire\b/.test(name)||category.includes("crimped wire"))return false;
  if(/\b(?:solder|soldering wire|solder paste|heat[- ]?shrink|heat shrink tubing)\b/.test(name))return true;
  if(/\bferrules?\b/.test(name)||category==="wire termination"&&/ferrule/.test(name))return true;
@@ -72,13 +72,15 @@ function syncDerived(items,source){
  // remains a significant BOM part. Cut lengths are measured in inches.
  const cut=Number(spec.get("cut length (in)"));
  const conductor=/^(solid|braided|stranded)$/.test(spec.get("conductor")||"")?spec.get("conductor"):"stranded";
+ const insulation=spec.get("insulation")||"Insulation not specified";
  updateGenerated("wire",validGauge&&Number.isFinite(cut)&&cut>0&&cut<=40000?{
   ...base,name:"Wire — "+gauge+" AWG "+conductor+" copper",
   quantity:qty===null?null:Number((qty*cut).toFixed(4)),quantityUnit:"in",
   category:"Wire & cable",generatedKind:"wire",sharedPartRef:source.sharedPartRef||null,
   specifications:[
    {name:"AWG",value:gauge,source:"explicit"},
-   {name:"Conductor",value:conductor,source:"explicit"}
+   {name:"Conductor",value:conductor,source:"explicit"},
+   {name:"Insulation",value:insulation,source:"explicit"}
   ]
  }:null);
 }
