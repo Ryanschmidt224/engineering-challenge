@@ -58,9 +58,13 @@ test("project feature tree and workspace initialize without browser errors", asy
 
  await expect(rows.first().locator(".bom-part-name")).toBeVisible();
  await expect(rows.first().locator(".bom-part-meta")).toContainText("Qty 2");
- // A readable part row still opens its expanded details.
- await rows.first().locator(".bom-part-summary").click();
+ // Expanding a part visibly highlights its header without recoloring children.
+ const header=rows.first().locator(":scope > .bom-part-summary");
+ const closedColor=await header.evaluate(el=>getComputedStyle(el).backgroundColor);
+ await header.click();
  await expect(rows.first()).toHaveAttribute("open", "");
+ const openedColor=await header.evaluate(el=>getComputedStyle(el).backgroundColor);
+ expect(openedColor).not.toBe(closedColor);
  // BOM occupies the left column and can be resized by a visible divider.
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
  const sidebar=page.locator("#launcher .assembly-sidebar");
@@ -87,6 +91,8 @@ test("project feature tree and workspace initialize without browser errors", asy
  const before=await sidebar.boundingBox();
  const right=await instructions.boundingBox();
  expect(before.x).toBeLessThan(right.x);
+ const sidebarGap=await splitter.boundingBox();
+ expect(sidebarGap.x-(before.x+before.width)).toBeGreaterThanOrEqual(10);
  const handle=await splitter.boundingBox();
  await page.mouse.move(handle.x+handle.width/2,handle.y+70);
  await page.mouse.down();
