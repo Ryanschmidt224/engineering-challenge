@@ -56,6 +56,11 @@ export async function handleWorkspace(request,env){
  if(recipe===null)return json({error:"Invalid recipe steps"},400);
  const existing=await env.PHOTOS.get(key);
  const previous=existing?JSON.parse(await existing.text()):{};
+ // Callers that loaded a revision must not silently overwrite a newer one.
+ // Clients without the token retain legacy behavior until upgraded.
+ if(Object.prototype.hasOwnProperty.call(data,"expectedRevision")&&
+    (data.expectedRevision??null)!==(previous.revision??null))
+  return json({error:"Instructions were changed elsewhere. Reload before saving.",latestRevision:previous.revision??null},409);
  // Keep recent published edits automatically: no revision numbers or forms to fill out.
  const experiments=data.experiments===undefined?(previous.experiments||[]):data.experiments;
  if(!Array.isArray(experiments)||experiments.length>100||experiments.some(entry=>
@@ -73,8 +78,9 @@ export async function handleWorkspace(request,env){
  const changed=JSON.stringify(before)!==JSON.stringify(workspace);
  const history=Array.isArray(previous.history)?previous.history.slice(-19):[];
  if(changed&&(existing||before.instructions||before.procedures||before.notes||before.experiments.length)){
-  history.push({savedAt:previous.updatedAt||new Date().toISOString(),...before});
+  history.push({savedAt:previous.updatedAt||new Date().toISOString(),revision:previous.revision??null,...before});
  }
  workspace.history=history;workspace.updatedAt=changed?new Date().toISOString():(previous.updatedAt||new Date().toISOString());
- await env.PHOTOS.put(key,JSON.stringify(workspace));return json({ok:true,updatedAt:workspace.updatedAt});
+ workspace.revision=changed||!previous.revision?crypto.randomUUID():previous.revision;
+ await env.PHOTOS.put(key,JSON.stringify(workspace));return json({ok:true,updatedAt:workspace.updatedAt,revision:workspace.revision});
 }
