@@ -102,7 +102,7 @@
      if(replacement)params.set("file",replacement);
      const res=await fetch("/api/drawings?"+params.toString(),{
       method:"POST",credentials:"same-origin",
-      headers:{"content-type":"application/pdf","x-drawing-name":file.name},
+      headers:{"content-type":"application/pdf","x-drawing-name":encodeURIComponent(file.name)},
       body:file
      });
      const data=await res.json().catch(()=>({}));
