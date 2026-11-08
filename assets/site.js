@@ -469,6 +469,13 @@ function setupAssemblyTrees(){
       photoMessage=photoResponse.ok?" Product picture added.":" Product picture unavailable; you can upload one manually.";
      }catch{photoMessage=" Product picture unavailable; you can upload one manually."}
     }
+    if(wasEdit){
+     const linked=nodes.filter(n=>isPartNode(n)&&n.partId===result.component?.id&&n.name!==result.component.name);
+     if(linked.length){
+      try{await save(nodes.map(n=>linked.some(x=>x.id===n.id)?{...n,name:result.component.name}:n))}
+      catch(error){photoMessage+=" Part saved; feature-tree name could not be updated: "+error.message}
+     }
+    }
     clearBomDraft();
     const editor=bomRoot()?.querySelector(".component-admin");if(editor)editor.open=false;
     bomRoot()?.querySelector(".component-review")?.classList.add("hide");
@@ -738,14 +745,14 @@ function setupAssemblyTrees(){
   async function reparent(id,newParent){
    const node=nodes.find(n=>n.id===id);
    if(!node)return;
-   if(newParent===id||wouldCycle(id,newParent))throw Error("Cannot move a subassembly inside itself or one of its children.");
+   if(newParent===id||wouldCycle(id,newParent)||isPartNode(nodes.find(n=>n.id===newParent)))throw Error("Cannot move an assembly inside a part or one of its descendants.");
    if(node.parentId===newParent)return;
    const next=nodes.map(n=>n.id===id?{...n,parentId:newParent}:n);
    await save(next);expanded.add(newParent);selected=id;render();notify();status.textContent="Subassembly moved.";
   }
   async function moveToChoice(){
    if(selected===null){status.textContent="Select a subassembly first.";return}
-   const options=[{id:null,name:"Top-level project"},...nodes.filter(n=>n.id!==selected&&!wouldCycle(selected,n.id))];
+   const options=[{id:null,name:"Top-level project"},...nodes.filter(n=>!isPartNode(n)&&n.id!==selected&&!wouldCycle(selected,n.id))];
    const help=options.map((n,i)=>(i+1)+". "+n.name).join("\\n");
    const answer=prompt("Move the selected subassembly into:\\n"+help);
    if(answer===null)return;
@@ -761,7 +768,8 @@ function setupAssemblyTrees(){
   function render(){nodesEl.replaceChildren();controls.classList.toggle("hide",!adminAuthenticated);const row=(node,depth)=>{
    const id=node?.id??null,children=nodes.filter(n=>n.parentId===id),el=document.createElement("div");el.className="assembly-node"+(selected===id?" selected":"");el.style.paddingLeft=(depth*17+3)+"px";
    const expand=document.createElement("button");expand.type="button";expand.className="assembly-expander";expand.textContent=children.length?(expanded.has(id)?"▾":"▸"):" ";expand.setAttribute("aria-label",expanded.has(id)?"Collapse":"Expand");expand.onclick=()=>{expanded.has(id)?expanded.delete(id):expanded.add(id);render()};
-   const name=document.createElement("button");name.type="button";name.className="assembly-name";name.textContent=node?(isPartNode(node)?"🔩  ":"📦  ")+node.name:"🟨  "+title;name.onclick=()=>{if(isPartNode(node)){openTreePart(node);return}selected=id;render();notify()};
+   const name=document.createElement("button");name.type="button";name.className="assembly-name";name.textContent=node?(isPartNode(node)?"🔩  ":"📦  ")+node.name:"🟨  "+title;
+   if(isPartNode(node)&&partRoute()===node.partId)el.classList.add("selected");name.onclick=()=>{if(isPartNode(node)){openTreePart(node);return}selected=id;render();notify()};
    el.append(expand,name);
    if(node&&adminAuthenticated){
     el.draggable=true;el.title="Drag to reorder or drop into another assembly";
