@@ -1,8 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createRequire} from "node:module";
-const require=createRequire(import.meta.url);
-const bom=require("../assets/bom-model.js");
+import {readFileSync} from "node:fs";
+import {runInNewContext} from "node:vm";
+const moduleContext={module:{exports:{}}};
+runInNewContext(readFileSync("assets/bom-model.js","utf8"),moduleContext);
+const bom=moduleContext.module.exports;
 
 const nodes=[
  {id:"motor",parentId:null,name:"Motor Control",kind:"assembly"},
