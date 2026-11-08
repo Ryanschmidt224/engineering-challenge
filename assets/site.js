@@ -535,7 +535,10 @@ function setupAssemblyTrees(){
    const recommended=recommendedWorkshop(part);
    if(!recommended)return [];
    if(recommended==="workshop:heatshrink"||recommended==="workshop:sealshrink")return ["workshop:heatshrink","workshop:sealshrink"];
-   if(recommended==="workshop:wire18"||recommended==="workshop:wire22")return [recommended,"workshop:silicone"];
+   if(recommended==="workshop:wire18"||recommended==="workshop:wire22"){
+    const hasGauge=/\b(?:18|22)\s*awg\b/i.test(String(part.name||""));
+    return hasGauge?[recommended,"workshop:silicone"]:["workshop:wire22","workshop:wire18","workshop:silicone"];
+   }
    return [recommended];
   }
   function workshopLink(part){
