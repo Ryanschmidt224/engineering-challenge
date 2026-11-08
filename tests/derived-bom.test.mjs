@@ -127,3 +127,33 @@ test("one-click purchase override works on calculated consumables and survives s
  items=(await (await components(request("GET",componentsUrl),env)).json()).components;
  assert.equal(items.find(x=>x.generatedKind==="ferrule").assumedOnHand,true);
 });
+
+
+test("shop materials can save a recommended Workshop choice without a full part edit",async()=>{
+ const {env}=storage();
+ const created=await components(request("POST",componentsUrl,{
+  name:"Solder",category:"Consumable",quantity:null,quantityUnit:"pcs",specifications:[]
+ }),env);
+ const part=(await created.json()).component;
+ const choice=await components(request("PATCH",componentsUrl+"&id="+part.id,{
+  workshopChoice:"workshop:solder"
+ }),env);
+ assert.equal(choice.status,200);
+ const loaded=await (await components(request("GET",componentsUrl),env)).json();
+ assert.equal(loaded.components.find(item=>item.id===part.id).workshopChoice,"workshop:solder");
+ assert.equal(loaded.components.find(item=>item.id===part.id).assumedOnHand,true);
+ const invalid=await components(request("PATCH",componentsUrl+"&id="+part.id,{
+  workshopChoice:"workshop:untrusted"
+ }),env);
+ assert.equal(invalid.status,400);
+});
+
+test("solder-removal tools are not mistaken for consumable solder",async()=>{
+ const {env}=storage();
+ const created=await components(request("POST",componentsUrl,{
+  name:"Solder Sucker Desoldering Tool",category:"Tool",quantity:1,quantityUnit:"pcs",specifications:[]
+ }),env);
+ const part=(await created.json()).component;
+ const loaded=await (await components(request("GET",componentsUrl),env)).json();
+ assert.equal(loaded.components.find(item=>item.id===part.id).assumedOnHand,false);
+});
