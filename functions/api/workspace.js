@@ -2,10 +2,18 @@ import {isAdmin} from "./auth.js";
 const projects=new Set(["launcher","linear","robot"]);
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});
 export async function handleWorkspace(request,env){
- const u=new URL(request.url),project=u.searchParams.get("project"),assembly=u.searchParams.get("assembly");
- if(!projects.has(project)||!assembly||!(assembly==="__root__"||/^[a-zA-Z0-9-]{1,80}$/.test(assembly)))return json({error:"Invalid workspace"},400);
+ const u=new URL(request.url),project=u.searchParams.get("project"),assembly=u.searchParams.get("assembly"),part=u.searchParams.get("part");
+ if(!projects.has(project))return json({error:"Invalid project"},400);
+ if(part&&assembly)return json({error:"Specify a part or an assembly, not both"},400);
+ if(part){
+  if(!/^[0-9a-f-]{36}$/i.test(part))return json({error:"Invalid part"},400);
+  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
+  const record=await env.PHOTOS.get("components/"+project+".json");
+  const parts=record?JSON.parse(await record.text()):[];
+  if(!parts.some(item=>item.id===part))return json({error:"Part no longer exists"},404);
+ }else if(!assembly||!(assembly==="__root__"||/^[a-zA-Z0-9-]{1,80}$/.test(assembly)))return json({error:"Invalid workspace"},400);
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
- const key="workspaces/"+project+"/"+assembly+".json";
+ const key=part?"part-workspaces/"+project+"/"+part+".json":"workspaces/"+project+"/"+assembly+".json";
  if(request.method==="GET"){const obj=await env.PHOTOS.get(key);return json({workspace:obj?JSON.parse(await obj.text()):{instructions:"",procedures:"",notes:""}})}
  if(request.method!=="PUT")return json({error:"Method not allowed"},405);
  if(!await isAdmin(request,env))return json({error:"Administrator login required"},401);
