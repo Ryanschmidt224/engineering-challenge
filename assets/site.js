@@ -531,13 +531,21 @@ function setupAssemblyTrees(){
    }
    return null;
   }
+  function allowedWorkshopChoices(part){
+   const recommended=recommendedWorkshop(part);
+   if(!recommended)return [];
+   if(recommended==="workshop:heatshrink"||recommended==="workshop:sealshrink")return ["workshop:heatshrink","workshop:sealshrink"];
+   if(recommended==="workshop:wire18"||recommended==="workshop:wire22")return [recommended,"workshop:silicone"];
+   return [recommended];
+  }
   function workshopLink(part){
    const link=document.createElement("button");link.type="button";link.className="btn bom-workshop-link";
    link.textContent=part.workshopChoice?"Change selection":recommendedWorkshop(part)?"Choose recommended":"Browse Workshop";
    link.onclick=async e=>{
     e.preventDefault();e.stopPropagation();
     const original=location.hash.slice(1);
-    const initial=part.workshopChoice||recommendedWorkshop(part);
+    const allowed=allowedWorkshopChoices(part);
+    const initial=allowed.includes(part.workshopChoice)?part.workshopChoice:recommendedWorkshop(part);
     navigate("commonparts");
     const choose=async item=>{
      const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{
@@ -549,7 +557,7 @@ function setupAssemblyTrees(){
      navigate(original);
      bomReport(item.name+" selected from The Workshop for "+part.name+".");
     };
-    requestAnimationFrame(()=>window.BSResources?.focusWorkshopItem(initial,choose));
+    requestAnimationFrame(()=>window.BSResources?.focusWorkshopItem(initial,choose,allowed));
    };
    return link;
   }
