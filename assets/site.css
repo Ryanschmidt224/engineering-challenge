@@ -1525,3 +1525,22 @@
   padding-right:14px;
  }
 }
+
+
+/* Workspace finishing touches: clear gutter beside the resizable sidebar and
+   a quiet active state only on the header of the expanded BOM item. */
+@media(min-width:1100px){
+ #launcher .assembly-layout:has(>.assembly-sidebar.bom-sidebar-active){
+  column-gap:14px;
+ }
+}
+/* Use the same muted selected-row shade as the feature tree, not a new accent. */
+#launcher .assembly-sidebar .workspace-bom .workspace-saved-parts .bom-part[open] > .bom-part-summary,
+#launcher .assembly-sidebar .workspace-bom .workspace-saved-parts .bom-subassembly[open] > .bom-part-summary{
+ background:#253f4f;
+ border-radius:5px;
+}
+#launcher .assembly-sidebar .workspace-bom .workspace-saved-parts .bom-part[open] > .bom-part-summary:hover,
+#launcher .assembly-sidebar .workspace-bom .workspace-saved-parts .bom-subassembly[open] > .bom-part-summary:hover{
+ background:#304c5b;
+}
