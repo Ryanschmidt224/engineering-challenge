@@ -25,7 +25,7 @@ function open({onCreate}){
  search.input.placeholder="e.g. 18 AWG, stranded, black";
  const material=field("Saved library material (optional)","select");
  const gauge=field("Wire gauge (AWG)","select");AWG.forEach(({g})=>option(gauge.input,String(g),g+" AWG"));gauge.input.value="18";
- const construction=field("Conductor construction","select");option(construction.input,"stranded","Stranded / flexible");option(construction.input,"solid","Solid");
+ const construction=field("Conductor construction","select");option(construction.input,"stranded","Stranded / flexible");option(construction.input,"braided","Braided");option(construction.input,"solid","Solid");
  const length=field("Cut length (mm)");length.input.type="number";length.input.min="1";length.input.step="1";length.input.value="300";
  const endA=field("End A termination");endA.input.placeholder="e.g. ferrule, JST crimp, bare";
  const endB=field("End B termination");endB.input.placeholder="e.g. ferrule, JST crimp, bare";
@@ -84,7 +84,7 @@ function open({onCreate}){
   const w=selectedWire();if(!w)return;
   const found=AWG.find(a=>String(a.g)===String(w.awg).replace(/\s*awg/i,"").trim());
   if(found)gauge.input.value=String(found.g);
-  const c=(w.construction||"").toLowerCase();if(c.includes("solid"))construction.input.value="solid";else if(c.includes("strand")||c.includes("braid"))construction.input.value="stranded";
+  const c=(w.construction||"").toLowerCase();if(c.includes("solid"))construction.input.value="solid";else if(c.includes("braid"))construction.input.value="braided";else if(c.includes("strand"))construction.input.value="stranded";
  };
  function updateCalc(){
   const r=recommend(+voltage.input.value,+current.input.value,+run.input.value,+drop.input.value);
@@ -94,7 +94,7 @@ function open({onCreate}){
  }
  [voltage.input,current.input,run.input,drop.input].forEach(e=>e.addEventListener("input",updateCalc));
  apply.onclick=()=>{if(selectedRecommendation!==null){gauge.input.value=String(selectedRecommendation);material.input.value="";status.textContent="Applied "+selectedRecommendation+" AWG. Check ampacity and terminal compatibility before building."}};
- mode.input.onchange=update;category.input.onchange=update;wireType.input.onchange=update;search.input.oninput=refreshMaterials;material.input.onchange=applyWire;commonCategory.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
+ mode.input.onchange=update;category.input.onchange=update;wireType.input.onchange=update;search.input.oninput=refreshMaterials;material.input.onchange=applyWire;gauge.input.onchange=()=>{material.input.value=""};construction.input.onchange=()=>{material.input.value=""};commonCategory.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
  form.addEventListener("submit",async e=>{
   e.preventDefault();
   if(!form.reportValidity())return;
@@ -110,7 +110,7 @@ function open({onCreate}){
    const g=Number(gauge.input.value),str=construction.input.value,crimp=wireType.input.value==="crimped";
    const mm=Number(length.input.value);
    if(crimp&&(!Number.isFinite(mm)||mm<=0||mm>1000000)){status.textContent="Enter a valid cut length between 1 and 1,000,000 mm.";return}
-   const w=selectedWire(),designation=g+" AWG "+(str==="solid"?"solid":"stranded")+" copper";
+   const w=selectedWire(),designation=g+" AWG "+(str==="solid"?"solid":str==="braided"?"braided":"stranded")+" copper";
    const name=(crimp?"Crimped wire — ":"Wire — ")+designation;
    const specs=[{name:"AWG",value:String(g)},{name:"Conductor",value:str},{name:"Material",value:"Copper (assumed; verify with supplier)"}];
    if(w){specs.push({name:"Library wire ID",value:w.id});if(w.insulation)specs.push({name:"Insulation",value:w.insulation});if(w.color)specs.push({name:"Color",value:w.color})}
