@@ -136,8 +136,38 @@ function setupAssemblyTrees(){
   const partResourcePicker=window.BSResources?.mount(partWorkspace.querySelector(".part-linked-resources"));
 
   const partTools=document.createElement("div");partTools.className="part-workspace-tools";
-  partTools.innerHTML='<button type="button" class="btn part-workspace-edit">Edit part details</button><button type="button" class="btn part-workspace-picture">Add / change picture</button><input type="file" class="part-workspace-file" accept="image/jpeg,image/png,image/webp" hidden>';
+  partTools.innerHTML='<button type="button" class="btn primary part-workspace-view">View part details</button><button type="button" class="btn part-workspace-picture">Add / change picture</button><input type="file" class="part-workspace-file" accept="image/jpeg,image/png,image/webp" hidden>';
   partWorkspace.querySelector(".workspace-heading").after(partTools);
+  const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
+  detailsPanel.innerHTML='<div class="part-details-view-heading"><h2>Part details</h2><span class="part-details-view-mode">View mode</span></div><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div>';
+  partTools.before(detailsPanel);
+  const detailRows=detailsPanel.querySelector(".part-details-view-rows");
+  const viewPartButton=partTools.querySelector(".part-workspace-view");
+  viewPartButton.onclick=()=>{detailsPanel.classList.remove("hide");detailsPanel.scrollIntoView({behavior:"smooth",block:"nearest"})};
+  const renderPartDetails=part=>{
+   detailRows.replaceChildren();
+   const fields=[["Qty",part.quantity??1],["Manufacturer",part.manufacturer],["Model",part.model],["Category",part.category],["Supplier",part.supplier],["ASIN",part.asin]];
+   for(const [title,value] of fields){
+    if(value===null||value===undefined||String(value).trim()==="")continue;
+    const line=document.createElement("div");line.className="part-details-view-row";
+    const label=document.createElement("strong");label.textContent=title;
+    const separator=document.createElement("span");separator.textContent=" - ";
+    const content=document.createElement("span");content.textContent=String(value);
+    line.append(label,separator,content);detailRows.append(line);
+   }
+   if(part.specifications?.length){
+    const heading=document.createElement("h3");heading.textContent="Specifications";detailRows.append(heading);
+    for(const spec of part.specifications){
+     const line=document.createElement("div");line.className="part-details-view-row";
+     const label=document.createElement("strong");label.textContent=spec.name||"Specification";
+     const separator=document.createElement("span");separator.textContent=" - ";
+     const value=document.createElement("span");value.textContent=(spec.value||"")+(spec.source==="inferred"?" (inferred)":"");
+     line.append(label,separator,value);detailRows.append(line);
+    }
+   }
+   detailsPanel.classList.remove("hide");
+  };
+
   let currentPartInfo=null;
   const partFile=partTools.querySelector(".part-workspace-file"),pictureButton=partTools.querySelector(".part-workspace-picture");
   const deletePictureButton=document.createElement("button");deletePictureButton.type="button";deletePictureButton.className="btn part-workspace-delete-picture";deletePictureButton.textContent="Delete picture";partTools.append(deletePictureButton);
@@ -213,7 +243,7 @@ function setupAssemblyTrees(){
    }catch(error){partStatus.textContent="Delete failed: "+error.message}
    finally{partDelete.disabled=false}
   };
-  partTools.querySelector(".part-workspace-edit").onclick=()=>{
+  detailsPanel.querySelector(".part-details-edit").onclick=()=>{
    const part=currentPartInfo;if(!part)return;
    const linked=nodes.find(n=>isPartNode(n)&&n.partId===part.id);
    selected=linked?linked.parentId:(part.assemblyId??null);
@@ -232,9 +262,12 @@ function setupAssemblyTrees(){
    const partId=partRoute();if(!partId)return;
    const version=++partLoadVersion;
    partTools.classList.toggle("hide",!adminAuthenticated);
+   viewPartButton.classList.remove("hide");
+   detailsPanel.querySelector(".part-details-view-actions").classList.toggle("hide",!adminAuthenticated);
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
    heading.textContent="Loading part…";currentPartInfo=null;partStatus.textContent="Loading instructions…";
+   detailRows.replaceChildren();detailsPanel.classList.add("hide");
    cover.replaceChildren();
    const placeholder=document.createElement("span");placeholder.textContent="No picture yet";cover.append(placeholder);
    for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value="";
@@ -248,6 +281,7 @@ function setupAssemblyTrees(){
     if(!part)throw Error("Part not found");
     heading.textContent=part.name;
     currentPartInfo=part;
+    renderPartDetails(part);
     void partDrawingPanel?.load(project,"part",partId);
     if(partBackAssembly===null)partBackAssembly=part.assemblyId??null;
     for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value=data.workspace?.[name]||"";
