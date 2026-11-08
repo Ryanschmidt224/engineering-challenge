@@ -1671,3 +1671,34 @@
   opacity:1;
  }
 }
+
+
+/* Root project editing is explicit on the main project page. */
+.assembly-main .project-root-actions{
+ display:flex;
+ flex-wrap:wrap;
+ align-items:center;
+ gap:10px;
+ margin:6px 0 18px;
+}
+.assembly-main .project-root-actions.hide{display:none!important}
+.assembly-main .project-root-actions .btn{
+ padding:7px 12px;
+ border:1px solid #425b68;
+ border-radius:7px;
+ background:#203440;
+ color:#e0e9ee;
+ font-size:.81rem;
+}
+.assembly-main .project-root-actions .btn:hover{background:#2b4654}
+.assembly-main .project-root-status{font-size:.8rem;color:#adc4ce}
+.project-art.has-project-cover>svg{display:none}
+.project-art>.project-card-cover{
+ display:block;
+ width:100%;
+ height:100%;
+ object-fit:cover;
+}
+/* All feature-tree creation, ordering and move commands now live in the
+   right-click / ⋯ context menu; retain their underlying handlers. */
+.assembly-sidebar .assembly-edit{display:none!important}
