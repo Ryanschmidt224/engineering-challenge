@@ -1702,3 +1702,21 @@
 /* All feature-tree creation, ordering and move commands now live in the
    right-click / ⋯ context menu; retain their underlying handlers. */
 .assembly-sidebar .assembly-edit{display:none!important}
+
+
+/* Small admin-only edit entry on the Projects landing cards. */
+.project-card>.project-card-edit{
+ display:block;
+ width:calc(100% - 36px);
+ margin:0 18px 17px;
+ padding:7px 10px;
+ text-align:center;
+ font-size:.8rem;
+ font-weight:500;
+ border:1px solid #425865;
+ background:#1a303b;
+ color:#d9e6e8;
+ border-radius:6px;
+}
+.project-card>.project-card-edit.hide{display:none!important}
+.project-card>.project-card-edit:hover{background:#294553}
