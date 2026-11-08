@@ -340,11 +340,27 @@ function setupAssemblyTrees(){
      if(!confirm("Delete "+part.name+"?"))return;
      remove.disabled=true;
      try{
+      const featureNodes=nodes.filter(n=>isPartNode(n)&&n.partId===part.id);
+      if(featureNodes.length)await save(nodes.filter(n=>!featureNodes.some(link=>link.id===n.id)));
       const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{method:"DELETE",credentials:"same-origin"});
       const result=await response.json().catch(()=>({}));if(!response.ok)throw Error(result.error||"Delete failed");
       await renderWorkspaceParts();
      }catch(error){bomReport("Delete failed: "+error.message);remove.disabled=false}
     };
+    if(!nodes.some(n=>isPartNode(n)&&n.partId===part.id)){
+     const link=document.createElement("button");link.type="button";link.className="btn";link.textContent="Add to feature tree";
+     link.onclick=async()=>{
+      link.disabled=true;
+      const node={id:crypto.randomUUID(),kind:"part",partId:part.id,name:part.name,parentId:originId};
+      try{
+       await save([...nodes,node]);expanded.add(originId);
+       await renderWorkspaceParts();
+       bomReport(part.name+" linked in the feature tree.");
+      }catch(error){bomReport("Unable to add to feature tree: "+error.message)}
+      finally{link.disabled=false}
+     };
+     controls.append(link);
+    }
     controls.append(edit,pick,remove,input);body.append(controls);
    }
    const instructions=document.createElement("button");instructions.type="button";instructions.className="btn bom-part-instructions";instructions.textContent="Build instructions →";
