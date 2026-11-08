@@ -46,10 +46,16 @@ export async function handleWorkspace(request,env){
  }else if(!assembly||!(assembly==="__root__"||/^[a-zA-Z0-9-]{1,80}$/.test(assembly)))return json({error:"Invalid workspace"},400);
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  const key=part?"part-workspaces/"+project+"/"+part+".json":"workspaces/"+project+"/"+assembly+".json";
- if(request.method==="GET"){const obj=await env.PHOTOS.get(key);return json({workspace:obj?JSON.parse(await obj.text()):{instructions:"",procedures:"",notes:"",resources:emptyResources()}})}
+ if(request.method==="GET"){
+  const obj=await env.PHOTOS.get(key);
+  const saved=obj?JSON.parse(await obj.text()):{};
+  const {instructions,procedures,notes,...workspace}=saved;
+  return json({workspace:{recipe:[],resources:emptyResources(),...workspace,
+   history:Array.isArray(workspace.history)?workspace.history.map(({instructions,procedures,notes,...snapshot})=>snapshot):[]}});
+ }
  if(request.method!=="PUT")return json({error:"Method not allowed"},405);
  if(!await isAdmin(request,env))return json({error:"Administrator login required"},401);
- const data=await request.json().catch(()=>null);if(!data||["instructions","procedures","notes"].some(k=>typeof data[k]!=="string"||data[k].length>30000))return json({error:"Invalid workspace data"},400);
+ const data=await request.json().catch(()=>null);if(!data||typeof data!=="object"||Array.isArray(data))return json({error:"Invalid workspace data"},400);
  const resources=validateResources(data.resources);
  if(resources===null)return json({error:"Invalid linked resources"},400);
  const recipe=validateRecipe(data.recipe);
@@ -67,17 +73,17 @@ export async function handleWorkspace(request,env){
   !entry||typeof entry.text!=="string"||!entry.text.trim()||entry.text.length>3000||
   typeof entry.createdAt!=="string"||entry.createdAt.length>50))return json({error:"Invalid experiment notes"},400);
  const workspace={
-  instructions:data.instructions,procedures:data.procedures,notes:data.notes,
   recipe:recipe===undefined?(previous.recipe||[]):recipe,
   resources:resources===undefined?(previous.resources||emptyResources()):resources,
   experiments:experiments.map(entry=>({id:typeof entry.id==="string"&&entry.id.length<=80?entry.id:crypto.randomUUID(),
    text:entry.text,createdAt:entry.createdAt}))
  };
- const before={instructions:previous.instructions||"",procedures:previous.procedures||"",notes:previous.notes||"",
-  recipe:previous.recipe||[],resources:previous.resources||emptyResources(),experiments:previous.experiments||[]};
- const changed=JSON.stringify(before)!==JSON.stringify(workspace);
- const history=Array.isArray(previous.history)?previous.history.slice(-19):[];
- if(changed&&(existing||before.instructions||before.procedures||before.notes||before.experiments.length)){
+ const before={recipe:previous.recipe||[],resources:previous.resources||emptyResources(),experiments:previous.experiments||[]};
+ const hasLegacy=["instructions","procedures","notes"].some(field=>Object.hasOwn(previous,field));
+ const changed=hasLegacy||JSON.stringify(before)!==JSON.stringify(workspace);
+ const history=Array.isArray(previous.history)?previous.history.slice(-19)
+  .map(({instructions,procedures,notes,...snapshot})=>snapshot):[];
+ if(changed&&existing){
   history.push({savedAt:previous.updatedAt||new Date().toISOString(),revision:previous.revision??null,...before});
  }
  workspace.history=history;workspace.updatedAt=changed?new Date().toISOString():(previous.updatedAt||new Date().toISOString());
