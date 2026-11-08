@@ -90,20 +90,55 @@ export async function handleExtract(request,env){
    const strip=str=>decode(str.replace(/<[^>]*>/g," "));
    const pieces=[];
    const title=html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1];
-   if(title)pieces.push("Title: "+strip(title).slice(0,450));
+   if(title)pieces.push("Page title: "+strip(title).slice(0,400));
+   // Common Open Graph, Twitter and ordinary page descriptions, regardless of retailer.
    for(const tag of html.matchAll(/<meta\b[^>]*>/gi)){
-    const element=tag[0],name=element.match(/(?:name|property)\s*=\s*["']([^"']+)["']/i)?.[1]||"";
-    if(!/^(?:description|og:title|og:description|twitter:title|twitter:description)$/i.test(name))continue;
+    const element=tag[0],name=element.match(/(?:name|property|itemprop)\s*=\s*["']([^"']+)["']/i)?.[1]||"";
+    if(!/^(?:description|og:title|og:description|twitter:title|twitter:description|name|brand|sku|mpn|product:price:amount)$/i.test(name))continue;
     const content=element.match(/content\s*=\s*["']([^"']+)["']/i)?.[1]||"";
-    if(content)pieces.push(name+": "+decode(content).slice(0,650));
+    if(content)pieces.push(name+": "+decode(content).slice(0,700));
    }
-   // Product titles and details can occur well after storefront boilerplate.
-   for(const match of html.matchAll(/<(?:span|div|h1|ul)[^>]*(?:id|class)=["'][^"']*(?:productTitle|feature-bullets|productDescription|detailBullets|aplus|productOverview)[^"']*["'][^>]*>([\s\S]{0,15000}?)<\/(?:span|div|h1|ul)>/gi)){
-    const value=strip(match[1]);if(value.length>12)pieces.push("Product details: "+value.slice(0,1300));
-    if(pieces.join(" ").length>6500)break;
+   // Many stores publish Product JSON-LD. Extract structured values without needing
+   // retailer-specific selectors or passing script contents directly to the model.
+   for(const match of html.matchAll(/<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)){
+    if(match[1].length>150000)continue;
+    let parsed;try{parsed=JSON.parse(match[1].trim())}catch{continue}
+    const visit=(value,depth=0)=>{
+     if(depth>5||!value||typeof value!=="object")return;
+     if(Array.isArray(value)){for(const item of value.slice(0,50))visit(item,depth+1);return}
+     const type=String(value["@type"]||"").toLowerCase();
+     if(type.includes("product")){
+      for(const key of ["name","description","sku","mpn","gtin","gtin13","gtin12","color","material","size","category"]){
+       if(typeof value[key]==="string"&&value[key])pieces.push("Product "+key+": "+decode(value[key]).slice(0,900));
+      }
+      const brand=value.brand;if(brand)pieces.push("Brand: "+decode(typeof brand==="string"?brand:String(brand.name||"")).slice(0,250));
+      const offers=Array.isArray(value.offers)?value.offers[0]:value.offers;
+      if(offers&&typeof offers==="object"){
+       if(offers.price)pieces.push("Listed price: "+String(offers.price).slice(0,100));
+       if(offers.priceCurrency)pieces.push("Currency: "+String(offers.priceCurrency).slice(0,20));
+      }
+      const properties=Array.isArray(value.additionalProperty)?value.additionalProperty:[];
+      for(const property of properties.slice(0,30))if(property?.name&&property?.value)pieces.push("Specification: "+String(property.name).slice(0,100)+" = "+String(property.value).slice(0,250));
+     }
+     if(value["@graph"])visit(value["@graph"],depth+1);
+     if(value.mainEntity)visit(value.mainEntity,depth+1);
+     if(value.itemListElement)visit(value.itemListElement,depth+1);
+     if(value.item)visit(value.item,depth+1);
+    };
+    visit(parsed);
+    if(pieces.join("\n").length>8000)break;
    }
-   // Do not send raw HTML or unrelated navigation/tracking boilerplate to the model.
-   const extracted=pieces.join("\n");
+   // Generic catalog selectors, not Amazon-specific. Keep only visible-looking snippets.
+   for(const match of html.matchAll(/<(?:h1|h2|p|li|div|span|section)[^>]*(?:id|class|itemprop)=["'][^"']*(?:product-title|product-name|product-description|product-details|product-info|product-spec|specification|description|feature-bullet|productTitle|feature-bullets|productDescription|detailBullets|productOverview)[^"']*["'][^>]*>([\s\S]{0,9000}?)<\/(?:h1|h2|p|li|div|span|section)>/gi)){
+    const value=strip(match[1]);if(value.length>16)pieces.push("Product detail: "+value.slice(0,1100));
+    if(pieces.join("\n").length>9000)break;
+   }
+   // Last-resort visible text for sites that don't provide structured metadata.
+   if(pieces.join(" ").length<150){
+    const visible=strip(html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi," ").replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi," ").replace(/<(?:nav|footer|header)\b[^>]*>[\s\S]*?<\/(?:nav|footer|header)>/gi," "));
+    if(visible.length>70)pieces.push("Page text: "+visible.slice(0,2100));
+   }
+   const extracted=[...new Set(pieces)].join("\n");
    if(extracted.length<60)return json({error:"Product details were not available in the readable portion of this page. The store may limit automated access; paste the product title and specifications instead."},422);
    description=("Source: "+url.hostname+" "+url.pathname+"\n"+extracted).slice(0,3000);
   }catch(e){return json({error:"Could not retrieve that website. It may block automated access. Paste the product description instead."},422)}
@@ -119,7 +154,7 @@ export async function handleExtract(request,env){
  // Reserve before calling OpenAI; failed requests still consume an allowance.
  await env.PHOTOS.put(usageKey,JSON.stringify({count:usage.count+1,updatedAt:new Date().toISOString()}));
  const schema={type:"object",additionalProperties:false,required:["name","manufacturer","model","supplier","asin","category","specifications"],properties:{name:{type:"string"},manufacturer:{type:"string"},model:{type:"string"},supplier:{type:"string"},asin:{type:"string"},category:{type:"string"},specifications:{type:"array",items:{type:"object",additionalProperties:false,required:["name","value","source"],properties:{name:{type:"string"},value:{type:"string"},source:{type:"string",enum:["explicit","inferred"]}}}}}};
- const response=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"authorization":"Bearer "+env.OPENAI_API_KEY,"content-type":"application/json"},body:JSON.stringify({model:"gpt-4o-mini",temperature:0,max_tokens:700,messages:[{role:"system",content:"Extract technical component information from a product description. Return concise, accurate fields. Do not invent missing specifications. Empty string for missing scalar fields. Only mark inferred when a detail is reasonably inferred; omit speculative values. ASIN only if explicitly present. Manufacturer and model must not be guessed. Supplier is Amazon only if mentioned or context explicitly identifies Amazon."},{role:"user",content:description}],response_format:{type:"json_schema",json_schema:{name:"component",strict:true,schema}}})});
+ const response=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"authorization":"Bearer "+env.OPENAI_API_KEY,"content-type":"application/json"},body:JSON.stringify({model:"gpt-4o-mini",temperature:0,max_tokens:700,messages:[{role:"system",content:"Extract technical component information from a product description. Return concise, accurate fields. Do not invent missing specifications. Empty string for missing scalar fields. Only mark inferred when a detail is reasonably inferred; omit speculative values. ASIN only if explicitly present. Manufacturer and model must not be guessed. Use the source domain to identify the retailer when available; do not assume Amazon. Prefer the product manufacturer over the retailer for manufacturer. Never invent specifications."},{role:"user",content:description}],response_format:{type:"json_schema",json_schema:{name:"component",strict:true,schema}}})});
  const result=await response.json().catch(()=>({}));if(!response.ok)return json({error:"AI extraction failed: "+(result.error?.message||"Provider error"),providerStatus:response.status},502);
  try{return json({component:JSON.parse(result.choices[0].message.content)})}catch{return json({error:"Invalid AI response"},502)}
 }
