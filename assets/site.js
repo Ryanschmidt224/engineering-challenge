@@ -326,7 +326,7 @@ function setupAssemblyTrees(){
   const partFile=partTools.querySelector(".part-workspace-file"),pictureButton=partTools.querySelector(".part-workspace-picture");
   const photoEditPreview=partTools.querySelector(".part-photo-edit-preview");
   const photoEditingId=()=>editingPart||currentPartInfo?.id||null;
-  const photoFeedback=message=>{if(photoEditingId())bomReport(message);else partStatus.textContent=message};
+  const photoFeedback=message=>{if(editingPart)bomReport(message);else partStatus.textContent=message};
   function refreshEditPhoto(){
    const id=photoEditingId();photoEditPreview.replaceChildren();if(!id)return;
    const img=document.createElement("img");img.alt="Current part picture";img.src=partPhotoUrl(id)+"&v="+Date.now();
