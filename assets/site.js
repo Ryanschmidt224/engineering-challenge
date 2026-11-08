@@ -420,8 +420,14 @@ function setupAssemblyTrees(){
    finally{historyButton.disabled=false}
   };
   archiveActions.append(backupButton,inspectButton,recoveryButton,historyButton,archiveInput,recoveryInput,archiveStatus);
-  archiveActions.after(historyList);
-  workspace.querySelector(".workspace-heading").after(archiveActions);
+  // Backups are maintenance tools, not a primary step in building an assembly.
+  // Keep them available below the workspace inside a collapsed disclosure.
+  const backupDetails=document.createElement("details");
+  backupDetails.className="workspace-backup-details";
+  const backupSummary=document.createElement("summary");
+  backupSummary.textContent="Project backups & recovery";
+  backupDetails.append(backupSummary,archiveActions,historyList);
+  workspace.append(backupDetails);
   const assemblyDrawingPanel=window.BSDrawings?.mount(workspace.querySelector(".workspace-drawing-panel"),()=>adminAuthenticated);
   const partDrawingPanel=window.BSDrawings?.mount(partWorkspace.querySelector(".part-drawing-panel"),()=>adminAuthenticated);
   const partFilesPanel=window.BSPartFiles?.mount(partWorkspace.querySelector(".part-files-panel"),()=>adminAuthenticated);
