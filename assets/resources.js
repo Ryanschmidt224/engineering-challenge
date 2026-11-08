@@ -196,7 +196,8 @@
   extras.append(list);mount.append(extras);
  }
  function renderCommonParts(){
-  renderCatalog("resource-commonparts",all("parts"),"part");
+  // Workshop standards are already displayed above; keep this optional catalog focused on user-saved parts.
+  renderCatalog("resource-commonparts",all("parts").filter(item=>!item.id.startsWith("workshop:")),"part");
   renderWorkshopEssentials();
   const mount=document.querySelector(".resource-wire-list");if(!mount)return;
   mount.replaceChildren();
