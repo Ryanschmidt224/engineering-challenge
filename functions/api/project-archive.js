@@ -55,17 +55,6 @@ async function allKeys(r2,project){
  }
  return [...keys].sort();
 }
-const toBase64=bytes=>{
- let out="";
- for(let i=0;i<bytes.length;i+=32768){
-  const chunk=bytes.subarray(i,i+32768);
-  let binary="";
-  for(const n of chunk)binary+=String.fromCharCode(n);
-  out+=btoa(binary);
- }
- // Chunkwise base64 is invalid without grouping lengths divisible by 3.
- return out;
-};
 const encodeBytes=bytes=>{
  const CHUNK=32766; // divisible by three: concatenated base64 chunks stay valid
  let out="";
@@ -107,7 +96,7 @@ async function exportProject(r2,project){
   if(bytesTotal>MAX_BYTES)throw Error("Project exceeds the current single-download archive limit");
   objects.push({key,size:bytes.length,sha256:await sha256(bytes),
    contentType:mimeFor(key,object),
-   customMetadata:object.customMetadata||{},data:encodeBytes(bytes)});
+   httpMetadata:object.httpMetadata||{},customMetadata:object.customMetadata||{},data:encodeBytes(bytes)});
  }
  return {format:ARCHIVE_FORMAT,schemaVersion:ARCHIVE_VERSION,projectId:project,
   exportedAt:new Date().toISOString(),storage:"cloudflare-r2",objectCount:objects.length,
@@ -124,6 +113,7 @@ async function inspectArchive(archive,expectedProject){
      seen.has(obj.key)||!Number.isInteger(obj.size)||obj.size<0||obj.size>MAX_SINGLE||
      typeof obj.sha256!=="string"||! /^[0-9a-f]{64}$/.test(obj.sha256)||
      typeof obj.contentType!=="string"||obj.contentType.length>150||
+     !obj.httpMetadata||typeof obj.httpMetadata!=="object"||Array.isArray(obj.httpMetadata)||
      !obj.customMetadata||typeof obj.customMetadata!=="object"||Array.isArray(obj.customMetadata))throw Error("Invalid archived object");
   seen.add(obj.key);total+=obj.size;
   if(total>MAX_BYTES)throw Error("Archive exceeds the safety limit");
