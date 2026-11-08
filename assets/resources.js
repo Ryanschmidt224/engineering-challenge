@@ -55,6 +55,25 @@
   "workshop:safety":"Safety glasses · Local solder-fume extraction",
   "workshop:oscilloscope":"Suitable bandwidth and probes · Safe grounding setup"
  };
+ // Search queries, not product endorsements. Keep one useful search per Workshop item.
+ const amazonSearchTerms={
+  "workshop:wire22":"22 AWG stranded hook up wire PVC 600V",
+  "workshop:wire18":"18 AWG stranded copper hook up wire PVC insulation",
+  "workshop:wire16":"16 AWG stranded copper hook up wire PVC 600V",
+  "workshop:ferrule22":"22 AWG insulated wire ferrules",
+  "workshop:ferrule18":"18 AWG insulated wire ferrules",
+  "workshop:heatshrink":"2:1 polyolefin heat shrink tubing assortment",
+  "workshop:sealshrink":"3:1 adhesive lined heat shrink tubing",
+  "workshop:solder":"SAC305 lead free rosin core solder wire 0.6mm",
+  "workshop:silicone":"18 AWG silicone wire stranded copper",
+  "workshop:stripper":"self adjusting wire stripper 10-24 AWG flush cutters",
+  "workshop:ferrule-tool":"ratcheting ferrule crimping tool 22-16 AWG",
+  "workshop:heatgun":"variable temperature heat gun electronics",
+  "workshop:meter":"digital multimeter auto ranging continuity",
+  "workshop:solderstation":"digital temperature controlled soldering station",
+  "workshop:safety":"ANSI Z87.1 safety glasses solder fume extractor",
+  "workshop:oscilloscope":"2 channel digital oscilloscope 100MHz"
+ };
  const workshopReferences=[...workshopSupplies,...workshopEquipment];
  const catalog={tools:workshopEquipment.map(x=>({id:x.id,name:x.name,subtitle:"Workshop standard",detail:x.spec+" "+x.use,caution:x.caution})),calculators,parts:[...baseParts,...workshopSupplies.map(x=>({id:x.id,name:x.name,subtitle:x.subtitle,detail:x.spec+" "+x.use,caution:x.caution}))]};
  let wires=[],commonRecords=[],listeners=new Set(),admin=false;
@@ -217,6 +236,14 @@
    if(item.source){
     const link=element("a","workshop-spec-source","Example specification");
     link.href=item.source;link.target="_blank";link.rel="noopener noreferrer";body.append(link);
+   }
+   const searchTerm=amazonSearchTerms[item.id];
+   if(searchTerm){
+    const shop=element("a","workshop-amazon-search","Search Amazon");
+    shop.href="https://www.amazon.com/s?k="+encodeURIComponent(searchTerm);
+    shop.target="_blank";shop.rel="noopener noreferrer";
+    shop.title="Search Amazon for: "+searchTerm+". Verify product specifications and suitability before buying.";
+    body.append(shop);
    }
    if(workshopChoiceContext&&item.kind==="material"&&workshopAllowedChoices.includes(item.id)){
     const choose=element("button","btn primary workshop-use-choice","Use this for BOM item");
