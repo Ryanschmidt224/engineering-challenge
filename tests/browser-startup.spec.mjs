@@ -41,6 +41,18 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(page.locator("#launcher .assembly-detail-title")).toContainText("Motor and Motor Control");
  await page.locator("#launcher .assembly-detail .assembly-open-workspace").click();
  await expect(page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)")).toBeVisible();
+ const backups=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details");
+ await expect(backups).toBeVisible();
+ await expect(backups).not.toHaveAttribute("open","");
+ await expect(backups.getByRole("button",{name:"Download project backup"})).toBeHidden();
+ const savedPanels=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels");
+ const panelsRect=await savedPanels.boundingBox();
+ const backupRect=await backups.boundingBox();
+ expect(backupRect.y).toBeGreaterThan(panelsRect.y);
+ await backups.locator("summary").click();
+ await expect(backups).toHaveAttribute("open","");
+ await expect(backups.getByRole("button",{name:"Download project backup"})).toBeVisible();
+ await backups.locator("summary").click();
  // The BOM has one text-first hierarchical view (no thumbnails or view switch).
  const bomList=page.locator("#launcher .assembly-sidebar .workspace-saved-parts");
  const rows=bomList.locator(".bom-part-stack > .bom-part");
