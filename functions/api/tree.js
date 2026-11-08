@@ -5,6 +5,25 @@ export async function handleTree(request,env){
  const project=new URL(request.url).searchParams.get("project");
  if(!projects.has(project))return reply({error:"Unknown project"},400);
  if(!env.PHOTOS)return reply({error:"Storage unavailable"},503);
+ // Root project display settings are separate from the tree and its node IDs.
+ // Names and cover selection can change without migrating BOM or assembly data.
+ if(new URL(request.url).searchParams.has("metadata")){
+  const key="project-settings/"+project+".json";
+  const existing=await env.PHOTOS.get(key);
+  const current=existing?JSON.parse(await existing.text()):{};
+  if(request.method==="GET")return reply({title:current.title||null,revision:existing?.etag??null});
+  if(request.method!=="PUT")return reply({error:"Method not allowed"},405);
+  if(!await isAdmin(request,env))return reply({error:"Admin login required"},401);
+  const body=await request.json().catch(()=>null);
+  if(typeof body?.title!=="string"||!body.title.trim()||body.title.trim().length>100)return reply({error:"Project name must be 1–100 characters"},400);
+  if(Object.hasOwn(body,"expectedRevision")&&(body.expectedRevision??null)!==(existing?.etag??null))
+   return reply({error:"Project settings changed in another tab. Reload and try again."},409);
+  const condition=existing?.etag?{onlyIf:{etagMatches:existing.etag}}:
+   {onlyIf:{etagDoesNotMatch:"*"}};
+  const saved=await env.PHOTOS.put(key,JSON.stringify({...current,title:body.title.trim()}),condition);
+  if(saved===null)return reply({error:"Concurrent project settings update. Reload and try again."},409);
+  return reply({ok:true,title:body.title.trim(),revision:saved.etag??null});
+ }
  const assemblyId=new URL(request.url).searchParams.get("assembly");
  if(assemblyId!==null){
   if(assemblyId!=="__root__"&&!/^[a-zA-Z0-9-]{1,80}$/.test(assemblyId))return reply({error:"Invalid assembly"},400);
