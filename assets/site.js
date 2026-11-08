@@ -101,7 +101,7 @@ const assemblyTreeSnapshots={};
 function setupAssemblyTrees(){
  document.querySelectorAll("[data-assembly-tree]").forEach(root=>{
   const project=root.dataset.assemblyTree,view=document.getElementById(project),nodesEl=root.querySelector(".assembly-tree-nodes"),status=root.querySelector(".assembly-tree-status"),controls=root.querySelector(".assembly-edit");
-  const title=view.querySelector(".assembly-main h1")?.textContent||"Project";let nodes=[],selected=null,expanded=new Set([null]);
+  let title=view.querySelector(".assembly-main h1")?.textContent||"Project";let nodes=[],selected=null,expanded=new Set([null]);
   const detail=view.querySelector(".assembly-detail"),main=view.querySelector(".assembly-main"),detailStatus=detail.querySelector(".assembly-detail-status");
   const isPartNode=node=>node?.kind==="part"&&!!node.partId;
   const openTreePart=node=>{
@@ -133,6 +133,85 @@ function setupAssemblyTrees(){
   newRootTile.querySelector(".assembly-content-tiles").append(rootBom);
   oldRootTile.replaceWith(newRootTile);
   if(rootStatus)main.insertBefore(rootStatus,newRootTile.nextSibling);
+  // Project-level controls: unlike subassembly nodes, the root has no node ID.
+  // Its name is stored in project-settings, and its cover uses existing photos.
+  const projectHeading=main.querySelector("h1");
+  const projectMetaUrl="/api/tree?project="+encodeURIComponent(project)+"&metadata=1";
+  let projectMetaRevision=null;
+  const projectActions=document.createElement("div");
+  projectActions.className="project-root-actions";
+  const editProjectName=document.createElement("button");
+  editProjectName.type="button";editProjectName.className="btn project-root-rename";
+  editProjectName.textContent="Rename project";editProjectName.title="Change the top-level project name";
+  const changeProjectCover=document.createElement("button");
+  changeProjectCover.type="button";changeProjectCover.className="btn project-root-cover";
+  changeProjectCover.textContent="Change cover picture";changeProjectCover.title="Upload a project cover photo";
+  const projectMetaStatus=document.createElement("span");
+  projectMetaStatus.className="project-root-status";projectMetaStatus.setAttribute("role","status");
+  projectActions.append(editProjectName,changeProjectCover,projectMetaStatus);
+  projectHeading.after(projectActions);
+  const updateProjectTitle=value=>{
+   title=value;
+   projectHeading.textContent=value;
+   const card=document.querySelector('.project-link[data-project="'+project+'"]');
+   const cardHeading=card?.querySelector(".project-copy h2");
+   if(cardHeading)cardHeading.textContent=value;
+   if(card)card.setAttribute("aria-label","Open "+value+" project");
+   render();
+  };
+  const refreshProjectCover=async()=>{
+   const card=document.querySelector('.project-link[data-project="'+project+'"]');
+   const art=card?.querySelector(".project-art");
+   if(!art)return;
+   try{
+    const response=await fetch("/api/photos?project="+encodeURIComponent(project),{cache:"no-store"});
+    if(!response.ok)return;
+    const result=await response.json();
+    const cover=(result.photos||[]).find(photo=>!photo.assembly);
+    if(cover){
+     let image=art.querySelector(".project-card-cover");
+     if(!image){image=document.createElement("img");image.className="project-card-cover";image.alt="";art.append(image)}
+     image.src=cover.url;
+     art.classList.add("has-project-cover");
+    }else{
+     art.querySelector(".project-card-cover")?.remove();
+     art.classList.remove("has-project-cover");
+    }
+   }catch{/* Keep the existing illustration if photos are unavailable. */}
+  };
+  async function loadProjectMetadata(){
+   try{
+    const response=await fetch(projectMetaUrl,{cache:"no-store"});
+    if(!response.ok)return;
+    const data=await response.json();
+    projectMetaRevision=data.revision??null;
+    if(data.title)updateProjectTitle(data.title);
+   }catch{/* Project remains readable with its default heading. */}
+   void refreshProjectCover();
+  }
+  editProjectName.onclick=async()=>{
+   const value=prompt("Project name",title);
+   if(!value?.trim()||value.trim()===title)return;
+   editProjectName.disabled=true;projectMetaStatus.textContent="Saving…";
+   try{
+    const response=await fetch(projectMetaUrl,{
+     method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},
+     body:JSON.stringify({title:value.trim(),expectedRevision:projectMetaRevision})
+    });
+    const data=await response.json();
+    if(!response.ok)throw Error(data.error||"Unable to rename project");
+    projectMetaRevision=data.revision??null;
+    updateProjectTitle(data.title);
+    projectMetaStatus.textContent="Project name saved.";
+   }catch(error){projectMetaStatus.textContent=error.message}
+   finally{editProjectName.disabled=false}
+  };
+  changeProjectCover.onclick=()=>{
+   const input=main.querySelector(".assembly-main-tile .assembly-photo-input");
+   if(input)input.click();
+   else projectMetaStatus.textContent="Photo editor is unavailable.";
+  };
+
   // Shared image tile renderer for root projects and all subassemblies.
   function makeAssemblyPhotoStage(photos,name,onAdd,onDelete){
    let active=0;
@@ -1331,7 +1410,7 @@ function setupAssemblyTrees(){
       try{
        const r=await fetch("/api/photos?id="+encodeURIComponent(p.id),{method:"DELETE",credentials:"same-origin"});
        if(!r.ok)throw Error("Delete failed (HTTP "+r.status+")");
-       await refresh();
+       await refresh();if(!id)void refreshProjectCover();
       }catch(e){report(e.message)}
      }));
     }catch(e){report(e.message)}
@@ -1351,7 +1430,7 @@ function setupAssemblyTrees(){
      const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={error:raw.slice(0,160)||"Unexpected server response"}}
      if(!r.ok)throw Error((data.error||"Upload failed")+" (HTTP "+r.status+")");
      input.value="";caption.value="";
-     await refresh();report("Photo uploaded.");
+     await refresh();if(!id)void refreshProjectCover();report("Photo uploaded.");
     }catch(e){report(e.message||"Upload failed.")}
     finally{busy=false;zone.removeAttribute("aria-busy")}
    }
@@ -1431,7 +1510,7 @@ function setupAssemblyTrees(){
   const validSelection=()=>selected===null||nodes.some(n=>n.id===selected);
   const notify=()=>{assemblySelections[project]=selected;assemblyTreeSnapshots[project]={nodes:[...nodes],title};showAssemblyPage();renderTiles();view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));};
   let treeSavedRevision=null;
-  async function load(){try{const r=await fetch("/api/tree?project="+project),data=await r.json();if(!r.ok)throw Error(data.error);nodes=data.nodes||[];treeSavedRevision=data.revision??null;if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/(?:assembly|workspace)/([^/]+)$"));if(deepLink&&(deepLink[1]==="__root__"||nodes.some(n=>n.id===deepLink[1])))selected=deepLink[1]==="__root__"?null:deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
+  async function load(){void loadProjectMetadata();try{const r=await fetch("/api/tree?project="+project),data=await r.json();if(!r.ok)throw Error(data.error);nodes=data.nodes||[];treeSavedRevision=data.revision??null;if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/(?:assembly|workspace)/([^/]+)$"));if(deepLink&&(deepLink[1]==="__root__"||nodes.some(n=>n.id===deepLink[1])))selected=deepLink[1]==="__root__"?null:deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
   async function save(next){const r=await fetch("/api/tree?project="+project,{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({nodes:next,expectedRevision:treeSavedRevision})});const data=await r.json();if(!r.ok)throw Error(data.error||"Save failed");treeSavedRevision=data.revision??treeSavedRevision;nodes=next;render();notify()}
   // Tree ordering is the order of node records; moving a node keeps its permanent ID.
   const siblings=parent=>nodes.filter(n=>n.parentId===parent);
@@ -1551,15 +1630,27 @@ function setupAssemblyTrees(){
    addItem("Add part",()=>{useTreeTarget(node);render();root.querySelector(".assembly-add-part").click()});
    addItem("Add subassembly",()=>{useTreeTarget(node);render();root.querySelector(".assembly-add").click()});
    const separator=document.createElement("div");separator.className="assembly-context-separator";separator.setAttribute("role","separator");treeMenu.append(separator);
-   addItem("Rename",()=>renameTreeItem(node),!node);
+   addItem("Rename",()=>node?renameTreeItem(node):editProjectName.click());
    addItem(isPart?"Remove from tree":"Delete",()=>deleteTreeItem(node),!node);
+   if(node){
+    const moveSeparator=document.createElement("div");
+    moveSeparator.className="assembly-context-separator";moveSeparator.setAttribute("role","separator");treeMenu.append(moveSeparator);
+    const moveButtons=[...root.querySelectorAll(".assembly-move-button")];
+    for(const [label,index] of [["Move up",0],["Move down",1],["Move to…",2]]){
+     addItem(label,()=>{
+      selected=node.id;
+      render();
+      moveButtons[index]?.click();
+     });
+    }
+   }
    treeMenu.hidden=false;
    treeMenu.style.left=Math.max(8,Math.min(x,window.innerWidth-treeMenu.offsetWidth-8))+"px";
    treeMenu.style.top=Math.max(8,Math.min(y,window.innerHeight-treeMenu.offsetHeight-8))+"px";
    if(trigger)treeMenu.dataset.target=trigger.textContent.trim();
    treeMenu.querySelector('button:not([disabled])')?.focus();
   };
-  function render(){nodesEl.replaceChildren();controls.classList.toggle("hide",!adminAuthenticated);const row=(node,depth)=>{
+  function render(){nodesEl.replaceChildren();controls.classList.toggle("hide",!adminAuthenticated);projectActions.classList.toggle("hide",!adminAuthenticated);const row=(node,depth)=>{
    const id=node?.id??null,children=nodes.filter(n=>n.parentId===id),el=document.createElement("div");el.className="assembly-node"+(selected===id?" selected":"");el.style.paddingLeft=(depth*17+3)+"px";
    const expand=document.createElement("button");expand.type="button";expand.className="assembly-expander";expand.textContent=children.length?(expanded.has(id)?"▾":"▸"):" ";expand.setAttribute("aria-label",expanded.has(id)?"Collapse":"Expand");expand.onclick=()=>{expanded.has(id)?expanded.delete(id):expanded.add(id);render()};
    const name=document.createElement("button");name.type="button";name.className="assembly-name";name.textContent=node?(isPartNode(node)?"🔩  ":"📦  ")+node.name:"🟨  "+title;
