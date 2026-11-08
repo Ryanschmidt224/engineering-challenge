@@ -549,7 +549,7 @@ function setupAssemblyTrees(){
      navigate(original);
      bomReport(item.name+" selected from The Workshop for "+part.name+".");
     };
-    window.BSResources?.focusWorkshopItem(initial,choose);
+    requestAnimationFrame(()=>window.BSResources?.focusWorkshopItem(initial,choose));
    };
    return link;
   }
