@@ -161,6 +161,12 @@ function setupAssemblyTrees(){
   const sidebar=root;
   const bomPanel=workspace.querySelector(".workspace-bom");
   sidebar.append(bomPanel);
+  // Keep the existing feature-tree controls and their handlers intact while
+  // grouping them in a distinct panel beside the BOM panel.
+  const featureTreeFrame=document.createElement("div");
+  featureTreeFrame.className="feature-tree-frame";
+  while(sidebar.firstChild&&sidebar.firstChild!==bomPanel)featureTreeFrame.append(sidebar.firstChild);
+  sidebar.insertBefore(featureTreeFrame,bomPanel);
   const bomResizer=document.createElement("div");
   bomResizer.className="workspace-bom-resizer";
   bomResizer.setAttribute("role","separator");
