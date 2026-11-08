@@ -143,3 +143,9 @@
 .assembly-workspace-page .workspace-bom .bom-visible-parts .bom-part{display:block}
 .assembly-workspace-page .workspace-bom .bom-visible-parts .bom-part-summary{display:flex}
 .assembly-workspace-page .workspace-bom .bom-visible-parts .bom-origin-group{margin:10px 0 15px}
+
+/* Independent saved-part listing: never rely on the collapsible editor. */
+.assembly-workspace-page .workspace-saved-parts{display:block;min-height:32px;margin:8px 0 16px}
+.assembly-workspace-page .workspace-saved-parts .bom-part-stack{display:flex}
+.assembly-workspace-page .workspace-bom .component-section>.component-list{display:none!important}
+.assembly-workspace-page .workspace-saved-parts .bom-origin-group{margin:12px 0 16px}
