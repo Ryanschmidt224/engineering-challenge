@@ -53,6 +53,7 @@ export default {
   async scheduled(event,env,ctx){
     ctx.waitUntil(backupAllProjects(env,new Date(event.scheduledTime)).then(result=>{
      console.log("Building Schmidt scheduled backup result",JSON.stringify(result));
+     if(result.some(item=>item.status==="failed"))throw Error("One or more scheduled project backups failed");
     }));
   }
 };
