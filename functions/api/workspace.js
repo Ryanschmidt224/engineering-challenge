@@ -14,6 +14,25 @@ const validateResources=input=>{
  }
  return resources;
 };
+// Discrete recipe steps have stable identities so reordering never breaks references.
+const validateRecipe=input=>{
+ if(input===undefined)return undefined;
+ if(!Array.isArray(input)||input.length>150)return null;
+ const ids=new Set(),steps=[];
+ for(const step of input){
+  if(!step||typeof step!=="object"||Array.isArray(step))return null;
+  const id=String(step.id||"");
+  if(!/^[a-zA-Z0-9_-]{1,80}$/.test(id)||ids.has(id))return null;
+  ids.add(id);
+  const title=step.title,standard=step.standard,detail=step.detail??"";
+  if(typeof title!=="string"||!title.trim()||title.length>180||
+    typeof standard!=="string"||standard.length>4000||
+    typeof detail!=="string"||detail.length>8000)return null;
+  const kind=["action","inspection","measurement","explanation"].includes(step.kind)?step.kind:"action";
+  steps.push({id,title:title.trim(),standard,detail,kind});
+ }
+ return steps;
+};
 export async function handleWorkspace(request,env){
  const u=new URL(request.url),project=u.searchParams.get("project"),assembly=u.searchParams.get("assembly"),part=u.searchParams.get("part");
  if(!projects.has(project))return json({error:"Invalid project"},400);
@@ -33,6 +52,8 @@ export async function handleWorkspace(request,env){
  const data=await request.json().catch(()=>null);if(!data||["instructions","procedures","notes"].some(k=>typeof data[k]!=="string"||data[k].length>30000))return json({error:"Invalid workspace data"},400);
  const resources=validateResources(data.resources);
  if(resources===null)return json({error:"Invalid linked resources"},400);
+ const recipe=validateRecipe(data.recipe);
+ if(recipe===null)return json({error:"Invalid recipe steps"},400);
  const existing=await env.PHOTOS.get(key);
  const previous=existing?JSON.parse(await existing.text()):{};
  // Keep recent published edits automatically: no revision numbers or forms to fill out.
@@ -42,12 +63,13 @@ export async function handleWorkspace(request,env){
   typeof entry.createdAt!=="string"||entry.createdAt.length>50))return json({error:"Invalid experiment notes"},400);
  const workspace={
   instructions:data.instructions,procedures:data.procedures,notes:data.notes,
+  recipe:recipe===undefined?(previous.recipe||[]):recipe,
   resources:resources===undefined?(previous.resources||emptyResources()):resources,
   experiments:experiments.map(entry=>({id:typeof entry.id==="string"&&entry.id.length<=80?entry.id:crypto.randomUUID(),
    text:entry.text,createdAt:entry.createdAt}))
  };
  const before={instructions:previous.instructions||"",procedures:previous.procedures||"",notes:previous.notes||"",
-  resources:previous.resources||emptyResources(),experiments:previous.experiments||[]};
+  recipe:previous.recipe||[],resources:previous.resources||emptyResources(),experiments:previous.experiments||[]};
  const changed=JSON.stringify(before)!==JSON.stringify(workspace);
  const history=Array.isArray(previous.history)?previous.history.slice(-19):[];
  if(changed&&(existing||before.instructions||before.procedures||before.notes||before.experiments.length)){
