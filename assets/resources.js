@@ -37,6 +37,24 @@
   {id:"workshop:safety",kind:"tool",tier:"core",name:"Eye protection and bench ventilation",spec:"Safety glasses plus effective solder-fume removal or local exhaust appropriate to the work.",use:"Cutting, crimping, soldering and heating materials."},
   {id:"workshop:oscilloscope",kind:"tool",tier:"conditional",name:"Oscilloscope",spec:"Bench or USB scope with appropriate bandwidth, probes and isolated or correctly grounded measurement setup.",use:"For PWM, ripple and switching waveforms.",caution:"A bench scope ground clip may be earth-referenced. Never attach it to an arbitrary live circuit node."}
  ];
+ const quickSpecs={
+  "workshop:wire22":"22 AWG stranded copper · PVC jacket · 105°C, 600 V example rating",
+  "workshop:wire18":"18 AWG stranded copper · PVC jacket · 105°C, 600 V example rating",
+  "workshop:wire16":"16 AWG stranded copper · Rated insulation · Size for load",
+  "workshop:ferrule22":"For 22 AWG stranded wire · Tin-plated copper · Matching crimp die",
+  "workshop:ferrule18":"For 18 AWG stranded wire · Tin-plated copper · Matching crimp die",
+  "workshop:heatshrink":"2:1 single-wall polyolefin · 1/16–3/8 in assortment",
+  "workshop:sealshrink":"3:1 adhesive-lined polyolefin · For damp connections",
+  "workshop:solder":"Lead-free, flux-core electronics solder · 0.5–0.8 mm",
+  "workshop:silicone":"Fine-stranded copper · Silicone jacket · For moving leads",
+  "workshop:stripper":"Wire stripper / cutters that handle 18–22 AWG",
+  "workshop:ferrule-tool":"Controlled-cycle crimper · Dies matched to ferrules",
+  "workshop:heatgun":"Variable temperature and airflow · Narrow nozzle",
+  "workshop:meter":"DC volts, resistance and continuity · Rated leads",
+  "workshop:solderstation":"Temperature control · Suitable tips · Safe stand",
+  "workshop:safety":"Safety glasses · Local solder-fume extraction",
+  "workshop:oscilloscope":"Suitable bandwidth and probes · Safe grounding setup"
+ };
  const workshopReferences=[...workshopSupplies,...workshopEquipment];
  const catalog={tools:[...tools,...workshopEquipment.map(x=>({id:x.id,name:x.name,subtitle:"Workshop standard",detail:x.spec+" "+x.use,caution:x.caution}))],calculators,parts:[...baseParts,...workshopSupplies.map(x=>({id:x.id,name:x.name,subtitle:x.subtitle,detail:x.spec+" "+x.use,caution:x.caution}))]};
  let wires=[],commonRecords=[],listeners=new Set(),admin=false;
@@ -186,8 +204,14 @@
    const heading=element("span","workshop-standard-name",item.name);
    summary.append(heading);
    const body=element("div","workshop-standard-body");
-   body.append(element("p","",item.spec));
-   if(item.caution)body.append(element("p","resource-caution",item.caution));
+   body.append(element("p","workshop-quick-spec",quickSpecs[item.id]||item.spec));
+   if(item.caution||item.spec){
+    const more=element("details","workshop-technical-notes");
+    more.append(element("summary","","Technical details"));
+    if(item.spec)more.append(element("p","",item.spec));
+    if(item.caution)more.append(element("p","resource-caution",item.caution));
+    body.append(more);
+   }
    if(item.source){
     const link=element("a","workshop-spec-source","Example specification");
     link.href=item.source;link.target="_blank";link.rel="noopener noreferrer";body.append(link);
