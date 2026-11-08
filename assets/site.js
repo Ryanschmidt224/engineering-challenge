@@ -317,6 +317,7 @@ function setupAssemblyTrees(){
        for(const name of ["instructions","procedures","notes"])panel.querySelector("."+prefix+"-"+name).value=snapshot[name]||"";
        experiments=Array.isArray(snapshot.experiments)?snapshot.experiments.map(x=>({...x})):[];
        renderLogs();onRestoreResources?.(snapshot.resources);onRestoreRecipe?.(snapshot);
+       syncLegacyInstructionSections(panel,prefix);
        panel.querySelector(prefix==="part"?".part-workspace-status":".workspace-status").textContent="Previous version loaded. Click Save to keep it.";
       };
       item.append(restore);
@@ -326,6 +327,15 @@ function setupAssemblyTrees(){
     if(!history.length)historyList.textContent="Older saved versions will appear here after edits.";
    }
    return {setData,getExperiments:()=>experiments};
+  }
+  // Legacy freeform fields remain in storage, but empty sections do not
+  // clutter a recipe-first work-instructions screen.
+  function syncLegacyInstructionSections(panel,prefix){
+   for(const field of ["procedures","notes"]){
+    const input=panel.querySelector("."+prefix+"-"+field);
+    const section=input?.closest("article");
+    if(section)section.classList.toggle("hide",!input.value.trim());
+   }
   }
   const assemblyRecipe=window.BSRecipes?.mount(workspace.querySelector(".workspace-instructions").closest("article"),{admin:()=>adminAuthenticated});
   const partRecipe=window.BSRecipes?.mount(partWorkspace.querySelector(".part-instructions").closest("article"),{admin:()=>adminAuthenticated});
@@ -516,6 +526,7 @@ function setupAssemblyTrees(){
     for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value=data.workspace?.[name]||"";
     partResourcePicker?.setData(data.workspace?.resources,adminAuthenticated);
     partRecipe?.setData(data.workspace);
+    syncLegacyInstructionSections(partWorkspace,"part");
     partSavedRevision=data.workspace?.revision??null;
     partExtras.setData(data.workspace);
     const img=document.createElement("img");img.alt=part.name;img.src=partPhotoUrl(partId);
@@ -1236,6 +1247,7 @@ function setupAssemblyTrees(){
     for(const name of workspaceFields)workspace.querySelector(".workspace-"+name).value=data.workspace?.[name]||"";
     assemblyResourcePicker?.setData(data.workspace?.resources,adminAuthenticated);
     assemblyRecipe?.setData(data.workspace);
+    syncLegacyInstructionSections(workspace,"workspace");
     workspaceSavedRevision=data.workspace?.revision??null;
     assemblyExtras.setData(data.workspace);
     workspaceStatus.textContent="";
