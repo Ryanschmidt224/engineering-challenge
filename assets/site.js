@@ -140,7 +140,7 @@ function setupAssemblyTrees(){
   partTools.innerHTML='<div class="part-photo-edit-label">Part picture</div><div class="part-photo-edit-preview"></div><button type="button" class="btn part-workspace-picture">Add / change picture</button><input type="file" class="part-workspace-file" accept="image/jpeg,image/png,image/webp" hidden>';
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
   detailsPanel.innerHTML='<div class="part-details-view-heading"><h2>Part details</h2><span class="part-details-view-mode">View mode</span></div><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div>';
-  partTools.before(detailsPanel);
+  partWorkspace.querySelector(".workspace-heading").after(detailsPanel);
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
   const renderPartDetails=part=>{
    detailRows.replaceChildren();
