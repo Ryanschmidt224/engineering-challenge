@@ -14,7 +14,10 @@ test("project feature tree and workspace initialize without browser errors", asy
       ? {page:{description:""},revision:"test"}
       : {nodes:[{id:"smoke-motor",parentId:null,name:"Motor and Motor Control",kind:"assembly"}],revision:"test"};
     break;
-   case "/api/components": data={components:[]};break;
+   case "/api/components": data={components:[
+    {id:"part-motor",name:"C2822 Brushless Motor",assemblyId:"smoke-motor",quantity:2},
+    {id:"part-esc",name:"20A ESC",assemblyId:"smoke-motor",quantity:2}
+   ]};break;
    case "/api/photos": data={photos:[]};break;
    case "/api/workspace": data={workspace:{recipe:[],resources:[]},revision:"test"};break;
    case "/api/auth": data={authenticated:false,isAdmin:false};break;
@@ -36,5 +39,20 @@ test("project feature tree and workspace initialize without browser errors", asy
  await tree.locator(".assembly-name", {hasText:"Motor and Motor Control"}).click();
  await expect(page).toHaveURL(/#launcher\/assembly\/smoke-motor/);
  await expect(page.locator("#launcher .assembly-detail-title")).toContainText("Motor and Motor Control");
+ await page.locator("#launcher .assembly-detail .assembly-open-workspace").click();
+ await expect(page.locator("#launcher .assembly-workspace-page")).toBeVisible();
+ await page.locator("#launcher .assembly-workspace-page .bom-view-button", {hasText:"List view"}).click();
+ const cards=page.locator("#launcher .assembly-workspace-page .bom-compact-list tbody tr");
+ await expect(cards).toHaveCount(2);
+ await expect(cards.first()).toContainText("C2822 Brushless Motor");
+ await expect(cards.nth(1)).toContainText("20A ESC");
+ const appearance=await cards.evaluateAll(rows=>rows.map(row=>{
+  const first=row.querySelector("td"),box=row.getBoundingClientRect();
+  const css=getComputedStyle(first);
+  return {top:box.top,bottom:box.bottom,color:css.backgroundColor,border:css.borderLeftWidth};
+ }));
+ expect(appearance[1].top-appearance[0].bottom).toBeGreaterThanOrEqual(4);
+ expect(appearance[0].color).not.toBe("rgba(0, 0, 0, 0)");
+ expect(appearance[0].color).not.toBe(appearance[1].color);
  expect(errors,"Unexpected JavaScript errors during startup/navigation").toEqual([]);
 });
