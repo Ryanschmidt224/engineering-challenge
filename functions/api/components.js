@@ -71,9 +71,21 @@ export async function handleComponentPhoto(request,env){
   const mime=(response.headers.get("content-type")||"").split(";")[0].toLowerCase();
   if(!["image/jpeg","image/png","image/webp"].includes(mime))return json({error:"Product image format unsupported"},415);
   if(Number(response.headers.get("content-length"))>3*1024*1024)return json({error:"Product image is larger than 3 MB"},413);
-  const buffer=await response.arrayBuffer();
-  if(!buffer.byteLength||buffer.byteLength>3*1024*1024)return json({error:"Product image is larger than 3 MB"},413);
-  const signature=new Uint8Array(buffer);
+  // Read at most 3 MB even when the remote server omits Content-Length.
+  const limit=3*1024*1024,reader=response.body?.getReader();
+  if(!reader)return json({error:"Product image body is empty"},422);
+  const chunks=[];let total=0,oversize=false;
+  try{
+   while(true){
+    const {done,value}=await reader.read();if(done)break;
+    if(total+value.byteLength>limit){oversize=true;await reader.cancel();break}
+    chunks.push(value);total+=value.byteLength;
+   }
+  }finally{reader.releaseLock()}
+  if(oversize)return json({error:"Product image is larger than 3 MB"},413);
+  if(!total)return json({error:"Product image body is empty"},422);
+  const signature=new Uint8Array(total);let offset=0;for(const chunk of chunks){signature.set(chunk,offset);offset+=chunk.length}
+  const buffer=signature.buffer;
   const valid=mime==="image/jpeg"?signature[0]===255&&signature[1]===216&&signature[2]===255:
    mime==="image/png"?signature[0]===137&&signature[1]===80&&signature[2]===78&&signature[3]===71:
    String.fromCharCode(...signature.slice(0,4))==="RIFF"&&String.fromCharCode(...signature.slice(8,12))==="WEBP";
