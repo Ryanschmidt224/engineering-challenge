@@ -76,3 +76,54 @@ test("optional test notes and automatic instruction history are retained",async(
  assert.equal(loaded.workspace.history.length,1);
  assert.equal(loaded.workspace.history[0].instructions,"Connect the wire.");
 });
+
+
+test("standard shop supplies are assumed available while special wire is purchased",async()=>{
+ const {env}=storage();
+ async function add(name,category,specifications=[]){
+  const response=await components(request("POST",componentsUrl,{
+   name,category,quantity:null,quantityUnit:"pcs",specifications
+  }),env);
+  assert.equal(response.status,201);return (await response.json()).component;
+ }
+ const solder=await add("Solder","Consumable");
+ const heat=await add("Heat shrink tubing","Consumable");
+ const special=await add("Wire — 10 AWG stranded copper","Wire & cable");
+ const standard=await add("Wire — 22 AWG stranded copper","Wire & cable");
+ const crimped=await add("Crimped wire — 18 AWG","Crimped wire",specs("ferrule","bare"));
+ const items=(await (await components(request("GET",componentsUrl),env)).json()).components;
+ const find=id=>items.find(x=>x.id===id);
+ assert.equal(find(solder.id).assumedOnHand,true);
+ assert.equal(find(heat.id).assumedOnHand,true);
+ assert.equal(find(standard.id).assumedOnHand,true);
+ assert.equal(find(special.id).assumedOnHand,false);
+ assert.equal(find(crimped.id).assumedOnHand,false);
+ assert.equal(items.find(x=>x.generatedKind==="ferrule").assumedOnHand,true);
+});
+
+test("one-click purchase override works on calculated consumables and survives source edits",async()=>{
+ const {env}=storage();
+ const created=await components(request("POST",componentsUrl,{
+  name:"Crimped wire",category:"Crimped wire",quantity:3,quantityUnit:"pcs",
+  specifications:[...specs("ferrule","ferrule"),{name:"Cut length (in)",value:"12"}]
+ }),env);
+ const wire=(await created.json()).component;
+ let items=(await (await components(request("GET",componentsUrl),env)).json()).components;
+ const ferrule=items.find(x=>x.generatedKind==="ferrule");
+ const raw=items.find(x=>x.generatedKind==="wire");
+ assert.equal(raw.quantity,36);
+ assert.equal(raw.quantityUnit,"in");
+ assert.equal(raw.assumedOnHand,true);
+ assert.equal((await components(request("PATCH",componentsUrl+"&id="+ferrule.id,{purchaseOverride:true}),env)).status,200);
+ const saved=await components(request("PUT",componentsUrl+"&id="+wire.id,{
+  ...wire,quantity:5,specifications:[...specs("ferrule","bare"),{name:"Cut length (in)",value:"12"}]
+ }),env);
+ assert.equal(saved.status,200);
+ items=(await (await components(request("GET",componentsUrl),env)).json()).components;
+ assert.equal(items.find(x=>x.generatedKind==="ferrule").quantity,5);
+ assert.equal(items.find(x=>x.generatedKind==="ferrule").assumedOnHand,false);
+ assert.equal(items.find(x=>x.generatedKind==="wire").quantity,60);
+ assert.equal((await components(request("PATCH",componentsUrl+"&id="+ferrule.id,{purchaseOverride:false}),env)).status,200);
+ items=(await (await components(request("GET",componentsUrl),env)).json()).components;
+ assert.equal(items.find(x=>x.generatedKind==="ferrule").assumedOnHand,true);
+});
