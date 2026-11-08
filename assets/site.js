@@ -50,7 +50,7 @@ document.getElementById("explainSelection").onclick=()=>{const selected=selectio
 let adminAuthenticated=false;
 const photoToken=()=>adminAuthenticated?"session":"";
 const adminButton=document.getElementById("adminLoginButton"),adminDialog=document.getElementById("adminDialog"),adminForm=document.getElementById("adminLoginForm"),adminStatus=document.getElementById("adminLoginStatus");
-function refreshAdminUI(){adminButton.textContent=adminAuthenticated?"Log out":"Admin login";document.querySelectorAll(".photo-admin,.component-section").forEach(el=>{el.querySelectorAll(".photo-upload,.component-save").forEach(control=>control.hidden=!adminAuthenticated);el.querySelectorAll(".component-extract").forEach(control=>control.hidden=false)});}
+function refreshAdminUI(){adminButton.textContent=adminAuthenticated?"Log out":"Admin login";window.BSResources?.setAdmin?.(adminAuthenticated);document.querySelectorAll(".photo-admin,.component-section").forEach(el=>{el.querySelectorAll(".photo-upload,.component-save").forEach(control=>control.hidden=!adminAuthenticated);el.querySelectorAll(".component-extract").forEach(control=>control.hidden=false)});}
 async function checkAdmin(){try{const r=await fetch("/api/auth",{cache:"no-store"});adminAuthenticated=!!(await r.json()).authenticated}catch{adminAuthenticated=false}refreshAdminUI()}
 adminButton.onclick=async()=>{if(adminAuthenticated){await fetch("/api/auth",{method:"DELETE"});adminAuthenticated=false;refreshAdminUI();location.reload()}else{adminStatus.textContent="";adminDialog.showModal()}};
 document.getElementById("adminCancel").onclick=()=>adminDialog.close();
@@ -123,12 +123,15 @@ function setupAssemblyTrees(){
   }
   // Separate workspace route; the existing assembly overview remains unchanged.
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
-  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article><h2>Work instructions</h2><textarea class="field workspace-instructions" placeholder="Add build steps, tools, measurements and checks…" rows="8"></textarea></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article><h2>Recipes / procedures</h2><textarea class="field workspace-procedures" placeholder="Add settings, recipes and procedures…" rows="5"></textarea></article><article><h2>Notes</h2><textarea class="field workspace-notes" placeholder="Add notes…" rows="5"></textarea></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
+  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article><h2>Work instructions</h2><textarea class="field workspace-instructions" placeholder="Add build steps, tools, measurements and checks…" rows="8"></textarea></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article><h2>Recipes / procedures</h2><textarea class="field workspace-procedures" placeholder="Add settings, recipes and procedures…" rows="5"></textarea></article><article><h2>Notes</h2><textarea class="field workspace-notes" placeholder="Add notes…" rows="5"></textarea></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
   // Each saved BOM part has its own independent instructions document.
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
-  partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article><h2>Build instructions</h2><textarea class="field part-instructions" rows="9" placeholder="Build steps, tools, measurements and checks…"></textarea></article><article class="part-harness"><h2>Wire harness / cutting list</h2><p class="muted">Choose reusable wire materials from the website-wide wire library. These cuts and terminations belong only to this part.</p><div class="harness-cuts"></div><div class="harness-summary"></div><div class="row harness-actions"><button class="btn harness-add" type="button">+ Wire cut</button><button class="btn primary harness-save" type="button">Save cutting list</button><span class="harness-status" role="status"></span></div><details class="harness-wire-library"><summary>Wire material library (shared across all projects)</summary><div class="wire-library-list"></div><div class="wire-library-editor"><h3>New wire type</h3><div class="wire-library-fields"></div><div class="row"><button class="btn primary wire-library-save" type="button">Save wire type</button><button class="btn wire-library-cancel" type="button">Cancel edit</button></div><p class="wire-library-status" role="status"></p></div></details></article><article><h2>Recipes / procedures</h2><textarea class="field part-procedures" rows="5" placeholder="Settings and procedures…"></textarea></article><article><h2>Notes</h2><textarea class="field part-notes" rows="5" placeholder="Additional notes…"></textarea></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
+  partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article><h2>Build instructions</h2><textarea class="field part-instructions" rows="9" placeholder="Build steps, tools, measurements and checks…"></textarea></article><article class="part-harness"><h2>Wire harness / cutting list</h2><p class="muted">Choose reusable wire materials from the website-wide wire library. These cuts and terminations belong only to this part. <a href="#commonparts">Manage wire types in Common Parts</a>.</p><div class="harness-cuts"></div><div class="harness-summary"></div><div class="row harness-actions"><button class="btn harness-add" type="button">+ Wire cut</button><button class="btn primary harness-save" type="button">Save cutting list</button><span class="harness-status" role="status"></span></div><details class="harness-wire-library"><summary>Wire material library (shared across all projects)</summary><div class="wire-library-list"></div><div class="wire-library-editor"><h3>New wire type</h3><div class="wire-library-fields"></div><div class="row"><button class="btn primary wire-library-save" type="button">Save wire type</button><button class="btn wire-library-cancel" type="button">Cancel edit</button></div><p class="wire-library-status" role="status"></p></div></details></article><article><h2>Recipes / procedures</h2><textarea class="field part-procedures" rows="5" placeholder="Settings and procedures…"></textarea></article><article><h2>Notes</h2><textarea class="field part-notes" rows="5" placeholder="Additional notes…"></textarea></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
   workspace.after(partWorkspace);
+  const assemblyResourcePicker=window.BSResources?.mount(workspace.querySelector(".workspace-resources"));
+  const partResourcePicker=window.BSResources?.mount(partWorkspace.querySelector(".part-linked-resources"));
+
   const partTools=document.createElement("div");partTools.className="part-workspace-tools";
   partTools.innerHTML='<button type="button" class="btn part-workspace-edit">Edit part details</button><button type="button" class="btn part-workspace-picture">Add / change picture</button><input type="file" class="part-workspace-file" accept="image/jpeg,image/png,image/webp" hidden>';
   partWorkspace.querySelector(".workspace-heading").after(partTools);
@@ -334,7 +337,7 @@ function setupAssemblyTrees(){
    }catch(e){wireStatus.textContent=e.message}finally{button.disabled=false}
   };
   harnessPanel.querySelector(".harness-add").onclick=()=>{
-   if(!wireCatalog.length){harnessStatus.textContent="Add a wire type to the shared library first.";harnessPanel.querySelector(".harness-wire-library").open=true;return}
+   if(!wireCatalog.length){harnessStatus.textContent="No wire types yet. Add them in the Common Parts tab, then reopen these instructions.";return}
    addHarnessRow({wireId:wireCatalog[0].id});harnessStatus.textContent="New unsaved wire cut.";
   };
   harnessPanel.querySelector(".harness-save").onclick=async()=>{
@@ -406,6 +409,7 @@ function setupAssemblyTrees(){
     void loadHarness(partId);
     if(partBackAssembly===null)partBackAssembly=part.assemblyId??null;
     for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value=data.workspace?.[name]||"";
+    partResourcePicker?.setData(data.workspace?.resources,adminAuthenticated);
     const img=document.createElement("img");img.alt=part.name;img.src=partPhotoUrl(partId);
     img.onload=()=>{if(partRoute()===partId)cover.replaceChildren(img)};
     partStatus.textContent="";
@@ -421,6 +425,7 @@ function setupAssemblyTrees(){
    const id=partRoute();if(!id)return;
    if(!adminAuthenticated){partStatus.textContent="Sign in as administrator to save.";return}
    const data={};for(const name of ["instructions","procedures","notes"])data[name]=partWorkspace.querySelector(".part-"+name).value;
+   data.resources=partResourcePicker?.getData();
    const button=partWorkspace.querySelector(".part-workspace-save");button.disabled=true;partStatus.textContent="Saving…";
    try{
     const response=await fetch("/api/workspace?project="+encodeURIComponent(project)+"&part="+encodeURIComponent(id),{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});
@@ -816,6 +821,7 @@ function setupAssemblyTrees(){
    try{const res=await fetch(url,{credentials:"same-origin",cache:"no-store"});const data=await res.json();if(!res.ok)throw Error(data.error||"Unable to load workspace");
     if(version!==workspaceLoadVersion||url!==workspaceUrl())return;
     for(const name of workspaceFields)workspace.querySelector(".workspace-"+name).value=data.workspace?.[name]||"";
+    assemblyResourcePicker?.setData(data.workspace?.resources,adminAuthenticated);
     workspaceStatus.textContent="";
    }catch(e){workspaceStatus.textContent=e.message}
   }
@@ -823,6 +829,7 @@ function setupAssemblyTrees(){
    if(!adminAuthenticated){workspaceStatus.textContent="Use Admin login at the top of the website to save.";return}
    const button=workspace.querySelector(".workspace-save"),url=workspaceUrl(),data={};
    for(const name of workspaceFields)data[name]=workspace.querySelector(".workspace-"+name).value;
+   data.resources=assemblyResourcePicker?.getData();
    button.disabled=true;workspaceStatus.textContent="Saving…";
    try{const res=await fetch(url,{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});const result=await res.json();if(!res.ok)throw Error(result.error||"Save failed (HTTP "+res.status+")");workspaceStatus.textContent="Saved."}
    catch(e){workspaceStatus.textContent=e.message}finally{button.disabled=false}
