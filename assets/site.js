@@ -693,22 +693,7 @@ function setupAssemblyTrees(){
   },true);
   // Display saved parts independently of the legacy editor's <details> DOM.
   let bomDisplayVersion=0;
-  let listView=false;
-  const bomHeader=bomPanel.querySelector(".workspace-bom-heading");
-  const viewSwitch=document.createElement("div");viewSwitch.className="bom-view-switch";viewSwitch.setAttribute("role","group");viewSwitch.setAttribute("aria-label","BOM display");
-  const thumbButton=document.createElement("button");thumbButton.type="button";thumbButton.className="btn bom-view-button";thumbButton.textContent="Thumbnail view";
-  const listButton=document.createElement("button");listButton.type="button";listButton.className="btn bom-view-button";listButton.textContent="List view";
-  const updateViewButtons=()=>{
-   thumbButton.classList.toggle("is-active",!listView);
-   listButton.classList.toggle("is-active",listView);
-   thumbButton.setAttribute("aria-pressed",String(!listView));
-   listButton.setAttribute("aria-pressed",String(listView));
-  };
-  thumbButton.onclick=()=>{if(!listView)return;listView=false;updateViewButtons();void renderWorkspaceParts()};
-  listButton.onclick=()=>{if(listView)return;listView=true;updateViewButtons();void renderWorkspaceParts()};
-  viewSwitch.append(thumbButton,listButton);
-  bomHeader.querySelector(".workspace-new-part").before(viewSwitch);
-  updateViewButtons();
+  // One readable, hierarchical BOM presentation; no competing view modes.
   let editingPart=null;
   let editingPartAssembly=null;
   const partPhotoUrl=id=>"/api/components/photo?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id);
@@ -833,10 +818,8 @@ function setupAssemblyTrees(){
    openPart.onclick=event=>{event.preventDefault();event.stopPropagation();openPartInstructions(part,originId)};
    if(part.bomOnly)item.classList.add("bom-only-part");
    if(part.generatedFrom)item.classList.add("bom-generated-part");
-   const qty=document.createElement("span");qty.className="bom-part-meta";qty.textContent=(part.quantity===null||part.quantity===undefined?"Qty not specified":"Qty "+part.quantity+(part.quantityUnit?" "+part.quantityUnit:""))+(part.model?" · "+part.model:"");
-   const expand=document.createElement("span");expand.className="bom-part-toggle-label";expand.textContent="Show details";
-   item.addEventListener("toggle",()=>{expand.textContent=item.open?"Minimize details":"Show details"});
-   summary.append(photo,name,qty,openPart,expand);item.append(summary);
+   const qty=document.createElement("span");qty.className="bom-part-meta";qty.textContent="Qty "+window.BSBomModel.quantityText(part);
+   summary.append(name,qty,openPart);item.append(summary);
    const body=document.createElement("div");body.className="bom-part-body";
    if(!part.generatedFrom){
     const purchased=document.createElement("button");purchased.type="button";purchased.className="btn bom-record-purchase";
@@ -889,7 +872,7 @@ function setupAssemblyTrees(){
      finally{pick.disabled=false;input.value=""}
     };
     input.onchange=()=>{void uploadThumbnail(input.files?.[0]);input.value=""};
-    // Drop a file on the thumbnail or its upload button.
+    // Picture uploads remain available in the expanded part controls.
     for(const target of [photo,pick]){
      target.classList.add("bom-picture-drop");
      target.addEventListener("dragover",event=>{if(!event.dataTransfer.types.includes("Files"))return;event.preventDefault();event.stopPropagation();event.dataTransfer.dropEffect="copy";target.classList.add("is-dragover")});
@@ -957,34 +940,8 @@ function setupAssemblyTrees(){
     const result=await response.json();if(!response.ok)throw Error(result.error||"Unable to load parts");
     if(version!==bomDisplayVersion||assemblyId!==selected||!workspaceRoute())return;
     const parts=Array.isArray(result.components)?result.components:[];
-    const {included,shopItems,shopIds,listItems}=window.BSBomModel.selectWorkspaceParts(parts,nodes,assemblyId);
+    const {shopItems,shopIds}=window.BSBomModel.selectWorkspaceParts(parts,nodes,assemblyId);
     container.replaceChildren();
-    if(listView){
-     // A compact tabular representation of the same BOM, not a different purchasing calculation.
-     const items=listItems;
-     const table=document.createElement("table");table.className="bom-shopping-table bom-compact-list";
-     const head=document.createElement("thead"),headRow=document.createElement("tr");
-     for(const label of ["Part / material","Assembly","Quantity","Details"]){const th=document.createElement("th");th.textContent=label;headRow.append(th)}
-     head.append(headRow);table.append(head);
-     const body=document.createElement("tbody");
-     for(const p of items){
-      const tr=document.createElement("tr"),name=document.createElement("td"),assembly=document.createElement("td"),quantity=document.createElement("td"),details=document.createElement("td");
-      const label=document.createElement("span");label.className="bom-list-part-name";label.textContent=p.name;
-      name.append(label);
-      const openPart=document.createElement("button");openPart.type="button";openPart.className="btn bom-open-part-details";openPart.textContent="Open part details";
-      openPart.onclick=()=>openPartInstructions(p,p.assemblyId??null);
-      details.append(openPart);
-      const preference=preferenceButton(p);if(preference)name.append(preference);
-      if(p.generatedFrom){const marker=document.createElement("small");marker.className="muted";marker.textContent=" · calculated";name.append(marker)}
-      assembly.textContent=window.BSBomModel.assemblyText(p,assemblyId,nodes);
-      quantity.textContent=window.BSBomModel.quantityText(p);
-      tr.append(name,assembly,quantity,details);body.append(tr);
-     }
-     if(!items.length){const row=document.createElement("tr"),cell=document.createElement("td");cell.colSpan=4;cell.textContent="No materials yet.";row.append(cell);body.append(row)}
-     table.append(body);container.append(table);
-     const shopSection=shopMaterialsPanel(shopItems);if(shopSection)container.append(shopSection);
-     return;
-    }
     // A real subassembly is shown once as an expandable BOM row, not duplicated as a normal part.
     const renderAssembly=(parentId,mount,level)=>{
      const linkedIds=new Set(nodes.filter(n=>isPartNode(n)).map(n=>n.partId));
@@ -997,27 +954,18 @@ function setupAssemblyTrees(){
        if(part&&!shopIds.has(part.id)){
         const entry=createSavedPart(part,node.parentId);
         entry.classList.add("bom-feature-part");
-        const badge=document.createElement("span");badge.className="bom-subassembly-label";badge.textContent="– Part";
-        entry.querySelector(".bom-part-summary .bom-part-name")?.after(badge);
         mount.append(entry);
        }
        continue;
       }
       const item=document.createElement("details");item.className="bom-part bom-subassembly";item.dataset.assemblyId=node.id;item.open=false;item.setAttribute("aria-label",node.name+" subassembly BOM");
       const summary=document.createElement("summary");summary.className="bom-part-summary";
-      const image=makeBomThumbnail("","Assembly image");
-      image.classList.add("bom-thumbnail-empty");
-      fetch("/api/photos?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(node.id))
-       .then(r=>r.ok?r.json():null).then(data=>{if(data?.photos?.[0]){image.classList.remove("bom-thumbnail-empty");image.src=data.photos[0].url}}).catch(()=>{});
       const name=document.createElement("span");name.className="bom-part-name";name.textContent=node.name;
-      const label=document.createElement("span");label.className="bom-subassembly-label";label.textContent="– Subassembly";
-      const hint=document.createElement("span");hint.className="bom-part-toggle-label";hint.textContent="Show BOM";hint.setAttribute("aria-label","Show or hide this subassembly BOM");
       const descendantIds=new Set([node.id]);const collect=id=>{for(const child of nodes.filter(x=>x.parentId===id))if(!descendantIds.has(child.id)){descendantIds.add(child.id);collect(child.id)}};collect(node.id);
       const count=document.createElement("span");count.className="bom-subassembly-count";
       const nParts=parts.filter(part=>descendantIds.has(part.assemblyId??null)||nodes.some(x=>isPartNode(x)&&x.partId===part.id&&descendantIds.has(x.parentId))).length;
       count.textContent=nParts+" part"+(nParts===1?"":"s");
-      summary.append(image,name,label,count,hint);item.append(summary);
-      item.addEventListener("toggle",()=>{hint.textContent=item.open?"Hide BOM":"Show BOM"});
+      summary.append(name,count);item.append(summary);
       const body=document.createElement("div");body.className="bom-part-body bom-subassembly-children";
       const inner=document.createElement("div");inner.className="bom-part-stack";
       renderAssembly(node.id,inner,level+1);
