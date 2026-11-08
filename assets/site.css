@@ -1198,3 +1198,128 @@
 .assembly-sidebar>.workspace-bom .bom-part-summary .bom-part-toggle-label,
 .assembly-sidebar>.workspace-bom .bom-row-thumbnail,
 .assembly-sidebar>.workspace-bom .bom-subassembly-label{display:none}
+
+/* Workspace visual cleanup — one subdued palette and clear section rhythm.
+ * Scoped to assembly workspaces; retain stronger accent only for primary actions.
+ */
+#launcher .assembly-content,
+#launcher .assembly-sidebar{
+ background:#101c26;
+ border-color:#2d414e;
+}
+#launcher .assembly-sidebar h3{
+ background:#1b2d39;
+ border-color:#2d414e;
+ color:#d9e3ea;
+}
+#launcher .assembly-node.selected{
+ background:#253f4f;
+ outline:1px solid #456477;
+}
+#launcher .assembly-sidebar .assembly-edit{
+ border-color:#2d414e;
+ padding:12px 9px;
+ gap:7px;
+}
+#launcher .assembly-sidebar .assembly-edit .btn{
+ background:#203340;
+ border:1px solid #354d5b;
+ color:#d7e2e9;
+}
+#launcher .assembly-sidebar .assembly-edit .btn:hover{
+ background:#304653;
+}
+#launcher .assembly-sidebar.bom-sidebar-active>.workspace-bom{
+ margin-top:12px;
+ padding-top:14px;
+ border-top:1px solid #405462;
+ background:transparent;
+}
+#launcher .assembly-sidebar .workspace-bom-heading{
+ padding:0 12px 13px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-count{
+ margin:4px 4px 15px;
+ color:#93a8b4;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part-stack{
+ gap:4px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part,
+#launcher .assembly-sidebar .workspace-bom .bom-part:nth-child(even){
+ border-bottom:1px solid #2b414f;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part-summary{
+ padding-top:10px;
+ padding-bottom:10px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly-children{
+ margin-top:6px;
+ margin-bottom:12px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-shop-materials{
+ margin-top:19px;
+ padding-top:8px;
+ border-color:#344854;
+}
+/* Hide the legacy component list; the dedicated workspace BOM above is canonical. */
+#launcher .assembly-sidebar .workspace-bom .component-section>.component-list,
+#launcher .assembly-sidebar .workspace-bom .component-section>.bom-visible-parts{
+ display:none!important;
+}
+#launcher .assembly-sidebar .workspace-bom .component-section>details:not(.component-admin)>summary{
+ display:none!important;
+}
+#launcher .assembly-sidebar .workspace-bom .component-admin:not([open]){
+ display:none!important;
+}
+#launcher .assembly-sidebar .workspace-bom .component-admin[open]{
+ margin:16px 8px;
+ padding:13px;
+ background:#162935;
+ border:1px solid #344c59;
+ border-radius:6px;
+}
+#launcher .assembly-sidebar .workspace-bom .component-admin>summary{
+ display:none;
+}
+/* Content column: consistent gaps rather than competing boxes and accents. */
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-heading{
+ margin-bottom:22px;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels{
+ max-width:none;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
+ margin:0 0 32px;
+ padding:0 0 3px;
+ background:transparent;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article h2{
+ color:#e0e8ed;
+ font-size:1.05rem;
+ font-weight:650;
+ margin:0 0 13px;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article p,
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article .muted{
+ color:#9cabb6;
+ line-height:1.6;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels .workspace-resources{
+ margin-top:5px;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-resources .btn,
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-drawing-panel .btn{
+ background:#243a48;
+ border:1px solid #385260;
+ color:#e0e8ea;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-actions{
+ margin:12px 0 32px;
+ padding-top:8px;
+}
+/* Keep section groups aligned while using quiet, consistent separation. */
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article + article{
+ padding-top:3px;
+}
