@@ -60,9 +60,16 @@ export async function handleComponentPhoto(request,env){
   const headers=new Headers();object.writeHttpMetadata(headers);headers.set("cache-control","no-store");headers.set("x-content-type-options","nosniff");
   return new Response(object.body,{headers});
  }
- if(request.method!=="POST")return json({error:"Method not allowed"},405);
+ if(request.method!=="POST"&&request.method!=="DELETE")return json({error:"Method not allowed"},405);
  if(!await authorized(request,env))return json({error:"Admin login required"},401);
  const records=await read(env,project);
+ if(!records.some(part=>part.id===id))return json({error:"Part not found"},404);
+ if(request.method==="DELETE"){
+  const existing=await env.PHOTOS.get(photoKey);
+  if(!existing)return json({error:"No picture saved for this part"},404);
+  await env.PHOTOS.delete(photoKey);
+  return json({ok:true});
+ }
  const incomingType=(request.headers.get("content-type")||"").split(";")[0].toLowerCase();
  if(incomingType==="application/json"){
   const payload=await request.json().catch(()=>null),remote=safePublicImageUrl(payload?.imageUrl);
@@ -97,7 +104,6 @@ export async function handleComponentPhoto(request,env){
   await env.PHOTOS.put(photoKey,buffer,{httpMetadata:{contentType:mime}});
   return json({ok:true,imported:true});
  }
-if(!records.some(part=>part.id===id))return json({error:"Part not found"},404);
  const mime=(request.headers.get("content-type")||"").split(";")[0].toLowerCase();
  if(!["image/jpeg","image/png","image/webp"].includes(mime))return json({error:"Use a JPG, PNG or WebP picture"},415);
  const bytes=await request.arrayBuffer();if(!bytes.byteLength||bytes.byteLength>3*1024*1024)return json({error:"Picture must be under 3 MB"},413);
