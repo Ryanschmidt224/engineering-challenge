@@ -207,6 +207,9 @@ function setupAssemblyTrees(){
    const historyList=document.createElement("div");historyList.className="instruction-history-list";
    historyDetails.append(historySummary,historyList);panel.querySelector(prefix==="part"?".part-workspace-save":".workspace-save").after(historyDetails);
    function setData(data){
+    const hasRecipe=Array.isArray(data?.recipe)&&data.recipe.length>0;
+    previewButton.classList.toggle("hide",hasRecipe);
+    if(hasRecipe)preview.classList.add("hide");
     experiments=Array.isArray(data?.experiments)?data.experiments.map(x=>({...x})):[];
     renderLogs();historyList.replaceChildren();
     const history=Array.isArray(data?.history)?[...data.history].reverse():[];
