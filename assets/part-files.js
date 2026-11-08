@@ -12,7 +12,9 @@
   const input=node("input");input.type="file";input.multiple=true;input.hidden=true;
   input.accept=".x_t,.x_b,.stl,.step,.stp,.iges,.igs,.sldprt,.sldasm,.dxf,.dwg,.zip,.pdf,.3mf,.obj,.csv,.txt";
   const status=node("p","muted part-file-status");status.setAttribute("role","status");
-  controls.append(upload,input);target.append(title,description,list,controls,status);
+  const pagesTitle=node("h3","","Saved product webpages");
+  const pagesList=node("div","part-saved-pages");
+  controls.append(upload,input);target.append(title,description,list,controls,status,pagesTitle,pagesList);
   let location=null,token=0;
   const url=file=>{
    const params=new URLSearchParams({project:location.project,id:location.id});
@@ -34,7 +36,20 @@
      const download=node("a","btn","Download");download.href=url(file.id);download.download=file.name;
      row.append(download);list.append(row);
     }
-   }catch(error){if(version===token)list.replaceChildren(node("p","part-file-error",error.message))}
+    pagesList.replaceChildren();
+    const pageResponse=await fetch("/api/part-pages?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id),{cache:"no-store",credentials:"same-origin"});
+    const savedPages=await pageResponse.json();if(!pageResponse.ok)throw Error(savedPages.error||"Could not list saved web pages");
+    if(version!==token)return;
+    if(!savedPages.pages?.length)pagesList.append(node("p","muted","No product pages archived for this part."));
+    for(const page of savedPages.pages||[]){
+     const row=node("div","part-file-item");
+     row.append(node("span","",page.url||"Archived product page"));
+     const link=node("a","btn","Download saved HTML");
+     link.href="/api/part-pages?"+new URLSearchParams({project,id,file:page.id}).toString();
+     link.download="product-page-"+page.id+".html";
+     row.append(link);pagesList.append(row);
+    }
+   }catch(error){if(version===token){list.replaceChildren(node("p","part-file-error",error.message));pagesList.replaceChildren()}}
   }
   upload.onclick=()=>input.click();
   input.onchange=async()=>{
