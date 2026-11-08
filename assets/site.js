@@ -127,7 +127,7 @@ function setupAssemblyTrees(){
   detail.after(workspace);
   // Each saved BOM part has its own independent instructions document.
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
-  partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article><h2>Build instructions</h2><textarea class="field part-instructions" rows="9" placeholder="Build steps, tools, measurements and checks…"></textarea></article><article class="part-drawing-panel"></article><article><h2>Recipes / procedures</h2><textarea class="field part-procedures" rows="5" placeholder="Settings and procedures…"></textarea></article><article><h2>Notes</h2><textarea class="field part-notes" rows="5" placeholder="Additional notes…"></textarea></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
+  partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article><h2>Build instructions</h2><textarea class="field part-instructions" rows="9" placeholder="Build steps, tools, measurements and checks…"></textarea></article><article class="part-drawing-panel"></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article><h2>Recipes / procedures</h2><textarea class="field part-procedures" rows="5" placeholder="Settings and procedures…"></textarea></article><article><h2>Notes</h2><textarea class="field part-notes" rows="5" placeholder="Additional notes…"></textarea></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
   workspace.after(partWorkspace);
   const assemblyDrawingPanel=window.BSDrawings?.mount(workspace.querySelector(".workspace-drawing-panel"),()=>adminAuthenticated);
   const partDrawingPanel=window.BSDrawings?.mount(partWorkspace.querySelector(".part-drawing-panel"),()=>adminAuthenticated);
@@ -258,6 +258,7 @@ function setupAssemblyTrees(){
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
    heading.textContent="Loading part…";currentPartInfo=null;partStatus.textContent="Loading instructions…";
    detailRows.replaceChildren();detailsPanel.classList.add("hide");
+   partWorkspace.querySelector(".part-harness-preview").classList.add("hide");
    cover.replaceChildren();
    const placeholder=document.createElement("span");placeholder.textContent="No picture yet";cover.append(placeholder);
    for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value="";
@@ -273,6 +274,7 @@ function setupAssemblyTrees(){
     currentPartInfo=part;
     renderPartDetails(part);
     void partDrawingPanel?.load(project,"part",partId);
+    void showHarnessPreview(partId,version);
     if(partBackAssembly===null)partBackAssembly=part.assemblyId??null;
     for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value=data.workspace?.[name]||"";
     partResourcePicker?.setData(data.workspace?.resources,adminAuthenticated);
@@ -284,6 +286,31 @@ function setupAssemblyTrees(){
      requestAnimationFrame(()=>window.scrollTo(0,y));
     }
    }catch(e){if(version===partLoadVersion)partStatus.textContent=e.message}
+  }
+  async function showHarnessPreview(partId,version){
+   const panel=partWorkspace.querySelector(".part-harness-preview"),body=panel.querySelector(".part-harness-preview-content");
+   try{
+    const [response,wiresResponse]=await Promise.all([
+     fetch("/api/harness?project="+encodeURIComponent(project)+"&part="+encodeURIComponent(partId),{cache:"no-store"}),
+     fetch("/api/wires",{cache:"no-store"})
+    ]);
+    const data=await response.json(),wireData=await wiresResponse.json();
+    if(!response.ok)throw Error(data.error||"Could not load cutting list");
+    if(!wiresResponse.ok)throw Error(wireData.error||"Could not load wire materials");
+    if(version!==partLoadVersion||partRoute()!==partId)return;
+    const cuts=data.cuts||[];
+    panel.classList.toggle("hide",!cuts.length);body.replaceChildren();
+    const byId=new Map((wireData.wires||[]).map(w=>[w.id,w]));
+    for(const cut of cuts){
+     const wire=byId.get(cut.wireId),row=document.createElement("div");row.className="part-harness-cut";
+     const title=document.createElement("strong");title.textContent=(wire?.name||"Wire material")+" · "+cut.qty+" × "+cut.cutLengthMm+" mm";
+     const detail=document.createElement("span");detail.textContent=[wire?.awg?wire.awg+" AWG":"",wire?.construction||"",cut.endA?"A: "+cut.endA:"",cut.endB?"B: "+cut.endB:""].filter(Boolean).join(" · ");
+     row.append(title,detail);body.append(row);
+    }
+   }catch(error){
+    if(version!==partLoadVersion||partRoute()!==partId)return;
+    panel.classList.remove("hide");body.textContent="Cutting list unavailable: "+error.message;
+   }
   }
   partWorkspace.querySelector(".part-workspace-back").onclick=()=>{
    selected=partBackAssembly;
