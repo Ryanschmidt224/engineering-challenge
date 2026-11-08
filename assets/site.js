@@ -511,6 +511,48 @@ function setupAssemblyTrees(){
    if(url)image.src=url;else{image.src=missingPicture;image.classList.add("bom-thumbnail-empty")}
    return image;
   }
+  const shopCandidate=part=>part.generatedKind==="ferrule"||part.generatedKind==="wire"||/\\b(?:ferrules?|solder|heat[- ]?shrink|wire|cable)\\b/i.test(part.name||"");
+  const materialQuantity=part=>part.quantity===null||part.quantity===undefined?"Quantity not specified":String(part.quantity)+(part.quantityUnit?" "+part.quantityUnit:"");
+  function preferenceButton(part){
+   if(!shopCandidate(part)||!adminAuthenticated)return null;
+   const button=document.createElement("button");button.type="button";button.className="btn bom-material-preference";
+   button.textContent=part.assumedOnHand?"Treat as purchase item":"Assume on hand";
+   button.title="Only changes how this material appears in the BOM. No inventory tracking.";
+   button.onclick=async event=>{
+    event.preventDefault();event.stopPropagation();button.disabled=true;
+    try{
+     const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{
+      method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},
+      body:JSON.stringify({purchaseOverride:part.assumedOnHand?true:false})
+     });
+     const data=await response.json().catch(()=>({}));
+     if(!response.ok)throw Error(data.error||"Could not update material preference");
+     await renderWorkspaceParts();
+     bomReport(part.name+(data.component.assumedOnHand?" moved to standard shop materials.":" moved to the main BOM."));
+    }catch(error){bomReport("Could not change material: "+error.message);button.disabled=false}
+   };
+   return button;
+  }
+  function shopMaterialsPanel(items){
+   if(!items.length)return null;
+   const section=document.createElement("details");section.className="bom-shop-materials";
+   const summary=document.createElement("summary");
+   summary.textContent="Standard shop materials · "+items.length+" item"+(items.length===1?"":"s")+" (assumed available)";
+   const description=document.createElement("p");description.className="muted bom-shop-note";
+   description.textContent="Check shop supplies before building. These are required materials, not confirmed stock.";
+   const rows=document.createElement("div");rows.className="bom-shop-material-rows";
+   for(const part of items){
+    const row=document.createElement("div");row.className="bom-shop-material-row";
+    const name=document.createElement("button");name.type="button";name.className="btn bom-list-part-link";
+    name.textContent=part.name;
+    name.onclick=()=>openPartInstructions(part.generatedFrom?{id:part.generatedFrom}:part,part.assemblyId??null);
+    const quantity=document.createElement("span");quantity.className="bom-shop-qty";quantity.textContent=materialQuantity(part);
+    row.append(name,quantity);
+    const change=preferenceButton(part);if(change)row.append(change);
+    rows.append(row);
+   }
+   section.append(summary,description,rows);return section;
+  }
   function createSavedPart(part,originId){
    const item=document.createElement("details");item.className="bom-part";
    const summary=document.createElement("summary");summary.className="bom-part-summary";
@@ -530,6 +572,7 @@ function setupAssemblyTrees(){
     const title=document.createElement("strong");title.textContent="Specifications";body.append(title);
     const ul=document.createElement("ul");for(const entry of part.specifications){const li=document.createElement("li");li.textContent=entry.name+": "+entry.value+(entry.source==="inferred"?" (inferred)":"");ul.append(li)}body.append(ul);
    }
+   const preference=preferenceButton(part);if(preference)body.append(preference);
    if(part.generatedFrom){
     const automatic=document.createElement("p");automatic.className="muted bom-auto-note";
     automatic.textContent="Calculated automatically from the wire configuration. Edit the wire to change this quantity or termination.";
@@ -626,13 +669,15 @@ function setupAssemblyTrees(){
     const result=await response.json();if(!response.ok)throw Error(result.error||"Unable to load parts");
     if(version!==bomDisplayVersion||assemblyId!==selected||!workspaceRoute())return;
     const parts=Array.isArray(result.components)?result.components:[];
+    const included=new Set([assemblyId]);
+    const gather=id=>{for(const node of nodes.filter(n=>n.parentId===id&&!isPartNode(n))){if(!included.has(node.id)){included.add(node.id);gather(node.id)}}};
+    gather(assemblyId);
+    const shopItems=parts.filter(p=>included.has(p.assemblyId??null)&&p.assumedOnHand);
+    const shopIds=new Set(shopItems.map(p=>p.id));
     container.replaceChildren();
     if(listView){
      // A compact tabular representation of the same BOM, not a different purchasing calculation.
-     const included=new Set([assemblyId]);
-     const visit=id=>{for(const node of nodes.filter(n=>n.parentId===id&&!isPartNode(n))){if(!included.has(node.id)){included.add(node.id);visit(node.id)}}};
-     visit(assemblyId);
-     const items=parts.filter(p=>included.has(p.assemblyId??null));
+     const items=parts.filter(p=>included.has(p.assemblyId??null)&&!shopIds.has(p.id));
      const table=document.createElement("table");table.className="bom-shopping-table";
      const head=document.createElement("thead"),headRow=document.createElement("tr");
      for(const label of ["Part / material","Assembly","Quantity"]){const th=document.createElement("th");th.textContent=label;headRow.append(th)}
@@ -643,24 +688,27 @@ function setupAssemblyTrees(){
       const link=document.createElement("button");link.type="button";link.className="btn bom-list-part-link";link.textContent=p.name;
       link.onclick=()=>openPartInstructions(p,p.assemblyId??null);
       name.append(link);
+      const preference=preferenceButton(p);if(preference)name.append(preference);
       if(p.generatedFrom){const marker=document.createElement("small");marker.className="muted";marker.textContent=" · calculated";name.append(marker)}
       assembly.textContent=p.assemblyId===assemblyId?(assemblyId===null?"Project":"This assembly"):(nodes.find(n=>n.id===p.assemblyId)?.name||"Project");
       quantity.textContent=p.quantity===null||p.quantity===undefined?"Not specified":String(p.quantity)+(p.quantityUnit?" "+p.quantityUnit:"");
       tr.append(name,assembly,quantity);body.append(tr);
      }
      if(!items.length){const row=document.createElement("tr"),cell=document.createElement("td");cell.colSpan=3;cell.textContent="No materials yet.";row.append(cell);body.append(row)}
-     table.append(body);container.append(table);return;
+     table.append(body);container.append(table);
+     const shopSection=shopMaterialsPanel(shopItems);if(shopSection)container.append(shopSection);
+     return;
     }
     // A real subassembly is shown once as an expandable BOM row, not duplicated as a normal part.
     const renderAssembly=(parentId,mount,level)=>{
      const linkedIds=new Set(nodes.filter(n=>isPartNode(n)).map(n=>n.partId));
-     const ownParts=parts.filter(p=>(p.assemblyId??null)===parentId&&!linkedIds.has(p.id));
+     const ownParts=parts.filter(p=>(p.assemblyId??null)===parentId&&!linkedIds.has(p.id)&&!shopIds.has(p.id));
      const children=nodes.filter(n=>n.parentId===parentId);
      for(const part of ownParts)mount.append(createSavedPart(part,parentId));
      for(const node of children){
       if(isPartNode(node)){
        const part=parts.find(p=>p.id===node.partId);
-       if(part){
+       if(part&&!shopIds.has(part.id)){
         const entry=createSavedPart(part,node.parentId);
         entry.classList.add("bom-feature-part");
         const badge=document.createElement("span");badge.className="bom-subassembly-label";badge.textContent="– Part";
@@ -697,12 +745,14 @@ function setupAssemblyTrees(){
     const treeIds=new Set([assemblyId]);
     const visit=id=>{for(const node of nodes.filter(n=>n.parentId===id))if(!treeIds.has(node.id)){treeIds.add(node.id);visit(node.id)}};visit(assemblyId);
     const partCount=parts.filter(p=>(treeIds.has(p.assemblyId??null)&&!nodes.some(n=>isPartNode(n)&&n.partId===p.id))||nodes.some(n=>isPartNode(n)&&n.partId===p.id&&treeIds.has(n.parentId))).length;
-    count.textContent=partCount+" saved part"+(partCount===1?"":"s")+" · "+nodes.filter(n=>!isPartNode(n)&&treeIds.has(n.id)&&n.id!==assemblyId).length+" subassemblies";
+    const componentCount=Math.max(0,partCount-shopItems.length);
+    count.textContent=componentCount+" BOM part"+(componentCount===1?"":"s")+(shopItems.length?" · "+shopItems.length+" standard shop materials":"")+" · "+nodes.filter(n=>!isPartNode(n)&&treeIds.has(n.id)&&n.id!==assemblyId).length+" subassemblies";
     container.append(count);
     const stack=document.createElement("div");stack.className="bom-part-stack";
     renderAssembly(assemblyId,stack,0);
-    if(!stack.childElementCount){const empty=document.createElement("p");empty.className="bom-empty";empty.textContent="No parts yet. Select + New part to add one.";stack.append(empty)}
+    if(!stack.childElementCount){const empty=document.createElement("p");empty.className="bom-empty";empty.textContent=shopItems.length?"No purchased components in this assembly. Standard materials appear below.":"No parts yet. Use + New BOM-only part to add one.";stack.append(empty)}
     container.append(stack);
+    const shopSection=shopMaterialsPanel(shopItems);if(shopSection)container.append(shopSection);
    }catch(error){
     if(version!==bomDisplayVersion)return;
     container.replaceChildren();
