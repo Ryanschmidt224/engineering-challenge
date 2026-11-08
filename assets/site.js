@@ -258,14 +258,16 @@ function setupAssemblyTrees(){
       fetch("/api/photos?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(node.id))
        .then(r=>r.ok?r.json():null).then(data=>{if(data?.photos?.[0]){image.classList.remove("bom-thumbnail-empty");image.src=data.photos[0].url}}).catch(()=>{});
       const name=document.createElement("span");name.className="bom-part-name";name.textContent=node.name;
-      const label=document.createElement("span");label.className="bom-subassembly-label";label.textContent="Subassembly";
+      const label=document.createElement("span");label.className="bom-subassembly-label";label.textContent="– Subassembly";
       const hint=document.createElement("span");hint.className="bom-part-toggle-label";hint.textContent="Expand";
       summary.append(image,name,label,hint);item.append(summary);
       const body=document.createElement("div");body.className="bom-part-body bom-subassembly-children";
       const inner=document.createElement("div");inner.className="bom-part-stack";
       renderAssembly(node.id,inner,level+1);
       if(!inner.childElementCount){const empty=document.createElement("p");empty.className="bom-empty";empty.textContent="No parts in this subassembly yet.";inner.append(empty)}
-      body.append(inner);item.append(body);mount.append(item);
+      const open=document.createElement("button");open.type="button";open.className="btn bom-open-subassembly";open.textContent="Open subassembly instructions";
+      open.onclick=()=>{selected=node.id;expanded.add(node.parentId);render();notify();history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(node.id));showAssemblyPage();window.scrollTo(0,0)};
+      body.append(inner,open);item.append(body);mount.append(item);
      }
     };
     const count=document.createElement("p");count.className="bom-count";
