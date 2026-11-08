@@ -14,6 +14,19 @@ const historicalPrice=input=>{
  if(typeof date!=="string"||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)||!Number.isFinite(Date.parse(date))||new Date(date).toISOString().slice(0,10)!==date)return null;
  return {price,date};
 };
+// BOM quantities may be unspecified or measured in non-piece units.
+const quantityData=(input,previous)=>{
+ const raw=input.quantity;
+ let quantity;
+ if(raw===null||raw===undefined||raw==="")quantity=null;
+ else{
+  quantity=Number(raw);
+  if(!Number.isFinite(quantity)||quantity<=0||quantity>10000000||!Number.isFinite(Number(raw)))return null;
+ }
+ const unit=input.quantityUnit===undefined?(previous?.quantityUnit??"pcs"):String(input.quantityUnit??"").trim();
+ if(unit.length>32||(!/^[a-zA-Z0-9 °µ²³/_-]*$/.test(unit)))return null;
+ return {quantity,quantityUnit:unit};
+};
 const safePublicImageUrl=value=>{
  try{
   if(typeof value!=="string"||value.length>1800)return null;
@@ -34,8 +47,9 @@ export async function handleComponents(request,env){
   if(!input||typeof input.name!=="string"||!input.name.trim()||input.name.length>180||!Array.isArray(input.specifications)||input.specifications.length>35)return json({error:"Invalid component"},400);
   const price=historicalPrice(input);
   if(!price)return json({error:"Historical price must be a nonnegative USD amount (2 decimals) with a valid recorded date"},400);
+  const amount=quantityData(input);if(!amount)return json({error:"Quantity must be a positive number or blank, with a valid unit"},400);
   const clean=s=>String(s??"").slice(0,300);
-  const record={assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,quantity:Number.isInteger(input.quantity)&&input.quantity>0&&input.quantity<=100000?input.quantity:1,id:crypto.randomUUID(),name:clean(input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
+  const record={assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,id:crypto.randomUUID(),name:clean(input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
   const items=await read(env,project);if(items.length>=300)return json({error:"Component limit reached"},400);items.push(record);await env.PHOTOS.put(key(project),JSON.stringify(items));return json({component:record},201);
  }
  if(request.method==="PUT"){
@@ -48,7 +62,8 @@ export async function handleComponents(request,env){
   const price=historicalPrice(input);
   if(!price)return json({error:"Historical price must be a nonnegative USD amount (2 decimals) with a valid recorded date"},400);
 
-  const updated={...previous,name:clean(input.name.trim()),quantity:Number.isInteger(input.quantity)&&input.quantity>0&&input.quantity<=100000?input.quantity:1,historicalPrice:price.price,historicalPriceDate:price.date};
+  const amount=quantityData(input,previous);if(!amount)return json({error:"Quantity must be a positive number or blank, with a valid unit"},400);
+  const updated={...previous,name:clean(input.name.trim()),...amount,historicalPrice:price.price,historicalPriceDate:price.date};
   if(Object.prototype.hasOwnProperty.call(input,"assemblyId")){
    if(input.assemblyId!==null&&!(typeof input.assemblyId==="string"&&/^[a-zA-Z0-9-]{1,80}$/.test(input.assemblyId)))return json({error:"Invalid parent assembly"},400);
    updated.assemblyId=input.assemblyId;
