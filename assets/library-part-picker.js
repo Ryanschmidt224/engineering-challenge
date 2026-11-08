@@ -116,14 +116,15 @@ function open({onCreate}){
   const r=recommend(+voltage.input.value,+current.input.value,+run.input.value,+drop.input.value);
   selectedRecommendation=r?.chosen?.g??null;apply.disabled=selectedRecommendation===null;
   if(!r){calcResult.textContent="Enter positive voltage, current, wire length and voltage-drop percentage.";return}
-  calcResult.textContent=r.chosen?"Preliminary recommendation: "+r.chosen.g+" AWG copper, "+(useCase.input.value==="moving"?"stranded / flexible":"solid for fixed, protected wiring (stranded also acceptable)")+". Estimated DC voltage drop "+r.drop.toFixed(3)+" V ("+(100*r.drop/(+voltage.input.value)).toFixed(2)+"%). This is not an ampacity check.":"No gauge in this 24–8 AWG range meets the selected voltage-drop target. Consider a larger wire, shorter run, or a different design.";
+  calcResult.textContent=r.chosen?"Preliminary recommendation: "+r.chosen.g+" AWG copper, "+((useCase.input.value==="moving"||wireType.input.value==="crimped")?"stranded / flexible":"solid for fixed, protected wiring (stranded also acceptable)")+". Estimated DC voltage drop "+r.drop.toFixed(3)+" V ("+(100*r.drop/(+voltage.input.value)).toFixed(2)+"%). This is not an ampacity check.":"No gauge in this 24–8 AWG range meets the selected voltage-drop target. Consider a larger wire, shorter run, or a different design.";
  }
  [voltage.input,current.input,run.input,drop.input].forEach(e=>e.addEventListener("input",updateCalc));
  useCase.input.onchange=updateCalc;
+ wireType.input.addEventListener("change",updateCalc);
  apply.onclick=()=>{
   if(selectedRecommendation===null)return;
   gauge.input.value=String(selectedRecommendation);
-  construction.input.value=useCase.input.value==="moving"?"stranded":"solid";
+  construction.input.value=useCase.input.value==="moving"||wireType.input.value==="crimped"?"stranded":"solid";
   material.input.value="";
   length.input.value=String(Math.max(1,Math.round(Number(run.input.value)*1000)));
   selectWorkflow("manual");
