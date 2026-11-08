@@ -95,7 +95,7 @@
   let refs=normalize(null),editable=false;
   panel.classList.add("linked-resources");
   const heading=element("h2","","Linked resources");
-  const description=element("p","muted","Shared tools, calculators and common parts used in these instructions. Library entries remain maintained in one place.");
+  const description=element("p","muted","Add shared tools, calculators or library parts to these instructions. Save the workspace or part instructions to keep the links; linked parts are references, not additional BOM quantities.");
   const body=element("div","linked-resource-groups");
   panel.append(heading,description,body);
   const onLibraryUpdate=()=>render();listeners.add(onLibraryUpdate);
