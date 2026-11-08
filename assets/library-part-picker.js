@@ -42,14 +42,35 @@ function open({onCreate,bomOnly=false}){
  const construction=field("Conductor construction","select");option(construction.input,"stranded","Stranded / flexible");option(construction.input,"braided","Braided");option(construction.input,"solid","Solid");
  const length=field("Cut length (inches)");length.input.type="number";length.input.min="0.001";length.input.step="any";length.input.value="12";
  const terminationOptions=[["","Not specified"],["bare","Bare / stripped"],["ferrule","Ferrule"],["ring","Ring terminal"],["spade","Spade / fork terminal"],["quick-disconnect","Quick-disconnect terminal"],["jst","JST-style crimp contact"],["dupont","DuPont-style crimp contact"],["solder","Soldered connection"],["other","Other — specify"]];
+ // Preferred terminations depend on the mating hardware, not the wire alone.
+ const terminationOrder={
+  terminal:["ferrule","bare"],connector:["jst","dupont"],stud:["ring","spade"],
+  blade:["quick-disconnect"],pcb:["solder"],unknown:[]
+ };
  const terminationField=side=>{
+  const target=field("End "+side+" connects to","select");
+  for(const [value,label] of [["unknown","Not sure / select manually"],["terminal","Screw / spring terminal block"],["connector","Connector housing (JST / DuPont style)"],["stud","Stud / screw terminal"],["blade","Blade / quick-disconnect tab"],["pcb","PCB solder pad"]])option(target.input,value,label);
   const choice=field("End "+side+" termination","select");
-  for(const [value,label] of terminationOptions)option(choice.input,value,label);
   const other=field("Other termination — End "+side);
+  const hint=el("p","library-picker-hint muted","Choose the matching connector or terminal first. Recommended options are preferred only when supported by that hardware.");
   other.input.maxLength=120;other.input.placeholder="Describe terminal or connector";
   other.label.classList.add("hide");
-  choice.input.addEventListener("change",()=>{other.label.classList.toggle("hide",choice.input.value!=="other")});
-  return {choice,other,value:()=>choice.input.value==="other"?other.input.value.trim():choice.input.value};
+  const populate=()=>{
+   const previous=choice.input.value;
+   const recommended=terminationOrder[target.input.value]||[];
+   const ranked=[...recommended,...terminationOptions.map(([value])=>value).filter(value=>!recommended.includes(value))];
+   choice.input.replaceChildren();
+   for(const value of ranked){
+    const entry=terminationOptions.find(([id])=>id===value);
+    option(choice.input,value,entry[1]+(recommended.includes(value)?" — Recommended":""));
+   }
+   choice.input.value=[...choice.input.options].some(o=>o.value===previous)?previous:"";
+   other.label.classList.toggle("hide",choice.input.value!=="other");
+  };
+  target.input.onchange=populate;
+  choice.input.onchange=()=>other.label.classList.toggle("hide",choice.input.value!=="other");
+  populate();
+  return {target,choice,other,hint,value:()=>choice.input.value==="other"?other.input.value.trim():choice.input.value};
  };
  const endA=terminationField("A"),endB=terminationField("B");
  const qty=field(bomOnly?"Quantity (optional)":"Quantity");qty.input.type="number";qty.input.min="0.000001";qty.input.max="10000000";qty.input.step="any";qty.input.placeholder=bomOnly?"Leave blank if unknown":"1";qty.input.value=bomOnly?"":"1";
@@ -85,7 +106,7 @@ function open({onCreate,bomOnly=false}){
  const footer=el("div","library-dialog-actions"),save=el("button","btn primary","Create part"),cancel=el("button","btn","Cancel");
  save.type="submit";cancel.type="button";footer.append(cancel,save);
  const wireSection=el("div","library-wire-section");
- manualFields.append(wireType.label,gauge.label,construction.label,length.label,endA.choice.label,endA.other.label,endB.choice.label,endB.other.label,results);
+ manualFields.append(wireType.label,gauge.label,construction.label,length.label,endA.target.label,endA.choice.label,endA.other.label,endB.target.label,endB.choice.label,endB.other.label,results);
  wireSection.append(workflow,workflowHint,manualFields,wizardFields);
  chooser.append(category.label,wireSection,compSection);
  form.append(heading,subtitle,mode.label,customName.label,chooser,qty.label,unit.label,hintUnits,status,footer);
@@ -120,6 +141,7 @@ function open({onCreate,bomOnly=false}){
   const crimp=wireType.input.value==="crimped";
   length.label.classList.toggle("hide",!crimp);
   for(const end of [endA,endB]){
+   end.target.label.classList.toggle("hide",!crimp);
    end.choice.label.classList.toggle("hide",!crimp);
    end.other.label.classList.toggle("hide",!crimp||end.choice.input.value!=="other");
   }
