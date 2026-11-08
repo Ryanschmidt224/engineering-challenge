@@ -123,6 +123,9 @@ function setupAssemblyTrees(){
    return tile;
   }
   const oldRootTile=main.querySelector(".assembly-unified-tile");
+  // Some legacy project sections have no unified root tile. Do not let one
+  // incomplete section abort initialization of every subsequent project.
+  if(!oldRootTile){console.warn("Skipping assembly controller without root tile:",project);return;}
   const rootBom=oldRootTile.querySelector(".component-section");
   const rootStatus=oldRootTile.querySelector(".root-photo-status");
   const newRootTile=createUnifiedTile();
