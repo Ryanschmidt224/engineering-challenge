@@ -121,3 +121,11 @@ Feature-tree, component-list/BOM, and workspace saves now use R2 conditional wri
 - **A future private-company deployment requires separate access controls for every existing GET endpoint.** The public educational application currently allows public project reads. A private/local project should be hosted separately or remain offline; the existence of an admin-only archive API does not make public project data confidential.
 - **Stored schema data is unchanged.** Reversible, version-specific migrations are needed before normalizing live BOM part definitions and occurrences. Existing component IDs, tree IDs, recipes, file keys, and prices are not changed by these updates.
 - **Git commits and branches remain untouched by the new archival services.** Cloudflare backups are distinct from GitHub history.
+
+### Recipe-only work instructions (2026-11-08)
+
+The interface now uses discrete recipe steps as the only editable instructions format. The obsolete freeform **Original written instructions**, **Machine settings / procedures**, and standalone **Notes** textareas have been removed from assembly and part workspaces. Empty historical test logs and revision-history panels do not appear.
+
+The workspace API ignores the retired `instructions`, `procedures`, and `notes` properties and excludes them from GET responses. On a subsequent authorized workspace save, the active saved record and its returned history are rewritten without those keys. Existing data that was previously entered in those three fields is **not migrated into recipe steps**. This is an explicitly accepted cleanup with possible loss of that obsolete content. Archives or backups created before that save can still contain the old records; source-code Git history is untouched.
+
+Recipe steps, permanent step IDs, metadata, linked resources, test-history entries, and revision history for active recipe content remain supported. No bulk Cloudflare data deletion is performed by code deployment alone.
