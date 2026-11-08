@@ -134,8 +134,14 @@
      const row=element("div","linked-resource-row");
      const name=element("span","",label(kind,id));
      row.append(name);
-     const target=kind==="tools"?"tools":kind==="calculators"?"calculators":"commonparts";
-     const open=element("button","btn","Open");open.type="button";open.onclick=()=>{location.hash=target};row.append(open);
+     const target=kind==="calculators"?"calculators":"commonparts";
+     const open=element("button","btn","Open");open.type="button";open.onclick=()=>{
+      location.hash=target;
+      if(kind==="tools"){
+       const mapped={"oscilloscope":"workshop:oscilloscope","multimeter":"workshop:meter","soldering-iron":"workshop:solderstation"};
+       requestAnimationFrame(()=>focusWorkshopItem(mapped[id]||id));
+      }else if(kind==="parts"&&id.startsWith("workshop:"))requestAnimationFrame(()=>focusWorkshopItem(id));
+     };row.append(open);
      if(editable){const remove=element("button","btn","Remove");remove.type="button";remove.onclick=()=>{refs[kind]=refs[kind].filter(x=>x!==id);render();onChange()};row.append(remove)}
      selected.append(row);
     }
@@ -322,7 +328,7 @@
   if(initialized)return;
   initialized=true;
   try{
-   renderCatalog("resource-tools",tools,"tool");
+   // Legacy tool references are now rendered inside The Workshop.
    renderCatalog("resource-calculators",calculators,"calculator");
    renderCommonParts();
    initWireForm();
