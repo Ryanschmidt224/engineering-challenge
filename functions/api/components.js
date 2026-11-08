@@ -41,6 +41,11 @@ const standardShopMaterial=part=>{
  if(/\bferrules?\b/.test(name)||category==="wire termination"&&/ferrule/.test(name))return true;
  return /\b(?:18|22)\s*awg\b/.test(name)&&/\b(?:wire|cable)\b/.test(name);
 };
+const recommendedWorkshopIds=new Set([
+ "workshop:wire22","workshop:wire18","workshop:wire16","workshop:silicone",
+ "workshop:ferrule22","workshop:ferrule18",
+ "workshop:heatshrink","workshop:sealshrink","workshop:solder"
+]);
 const presentPart=part=>({...part,assumedOnHand:part.purchaseOverride===true?false:part.purchaseOverride===false?true:standardShopMaterial(part)});
 // Derived consumables remain tied to their source part. Never require the
 // learner to enter ferrule counts or create a second independent BOM item.
@@ -110,16 +115,17 @@ export async function handleComponents(request,env){
   if(!price)return json({error:"Historical price must be a nonnegative USD amount (2 decimals) with a valid recorded date"},400);
   const amount=quantityData(input);if(!amount)return json({error:"Quantity must be a positive number or blank, with a valid unit"},400);
   const clean=s=>String(s??"").slice(0,300);
-  const record={assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,bomOnly:input.bomOnly===true,purchaseOverride:input.purchaseOverride===true||input.purchaseOverride===false?input.purchaseOverride:null,sharedPartRef:cleanPartRef(input.sharedPartRef),id:crypto.randomUUID(),name:clean(input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
+  const record={assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,bomOnly:input.bomOnly===true,purchaseOverride:input.purchaseOverride===true||input.purchaseOverride===false?input.purchaseOverride:null,workshopChoice:recommendedWorkshopIds.has(input.workshopChoice)?input.workshopChoice:null,sharedPartRef:cleanPartRef(input.sharedPartRef),id:crypto.randomUUID(),name:clean(input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
   const items=await read(env,project);if(items.length>=300)return json({error:"Component limit reached"},400);items.push(record);syncDerived(items,record);await env.PHOTOS.put(key(project),JSON.stringify(items));return json({component:presentPart(record)},201);
  }
  // Tiny opt-in override: no requirement to re-enter part specifications.
  if(request.method==="PATCH"){
   const id=url.searchParams.get("id"),input=await request.json().catch(()=>null);
-  if(!id||!input||!(input.purchaseOverride===null||typeof input.purchaseOverride==="boolean"))return json({error:"Invalid shop material preference"},400);
+  if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))))return json({error:"Invalid shop material preference"},400);
   const items=await read(env,project),entry=items.find(item=>item.id===id);
   if(!entry)return json({error:"Part not found"},404);
-  entry.purchaseOverride=input.purchaseOverride;
+  if(Object.prototype.hasOwnProperty.call(input,"purchaseOverride"))entry.purchaseOverride=input.purchaseOverride;
+  if(Object.prototype.hasOwnProperty.call(input,"workshopChoice"))entry.workshopChoice=input.workshopChoice;
   await env.PHOTOS.put(key(project),JSON.stringify(items));
   return json({component:presentPart(entry)});
  }
@@ -137,6 +143,7 @@ export async function handleComponents(request,env){
   const amount=quantityData(input,previous);if(!amount)return json({error:"Quantity must be a positive number or blank, with a valid unit"},400);
   const updated={...previous,name:clean(input.name.trim()),...amount,historicalPrice:price.price,historicalPriceDate:price.date};
   if(input.purchaseOverride===true||input.purchaseOverride===false||input.purchaseOverride===null)updated.purchaseOverride=input.purchaseOverride;
+  if(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))updated.workshopChoice=input.workshopChoice;
   // BOM-only classification persists through normal edits. Only a dedicated move action may change it.
   if(Object.prototype.hasOwnProperty.call(input,"assemblyId")){
    if(input.assemblyId!==null&&!(typeof input.assemblyId==="string"&&/^[a-zA-Z0-9-]{1,80}$/.test(input.assemblyId)))return json({error:"Invalid parent assembly"},400);
