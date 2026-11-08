@@ -14,5 +14,10 @@
       "binding": "PHOTOS",
       "bucket_name": "building-schmidt-photos"
     }
-  ]
+  ],
+  "triggers": {
+    "crons": [
+      "0 7 * * SUN"
+    ]
+  }
 }
