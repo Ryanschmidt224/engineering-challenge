@@ -208,8 +208,9 @@
   renderWorkshopEssentials();
   const entry=document.querySelector('[data-workshop-id="'+id+'"]');
   if(!entry)return false;
-  const parent=entry.closest(".workshop-optional-group");
-  if(parent)parent.open=true;
+  // Open every level of the Workshop feature tree when a BOM item links here.
+  let ancestor=entry.parentElement;
+  while(ancestor){if(ancestor.tagName==="DETAILS")ancestor.open=true;ancestor=ancestor.parentElement}
   entry.open=true;
   requestAnimationFrame(()=>entry.scrollIntoView({block:"center",behavior:"smooth"}));
   entry.classList.add("workshop-featured-item");
@@ -217,13 +218,23 @@
  }
  function renderWorkshopEssentials(){
   const mount=document.getElementById("workshop-essentials-list");if(!mount)return;
-  mount.replaceChildren();
+  // Keep user-opened category paths when workshop references refresh.
+  const previouslyOpen=new Set([...mount.querySelectorAll("details[open][data-workshop-branch]")].map(x=>x.dataset.workshopBranch));
+  const openCards=new Set([...mount.querySelectorAll(".workshop-standard-item[open]")].map(x=>x.dataset.workshopId));
+  const purchased=document.querySelector(".workshop-purchased");
+  const saved=document.querySelector(".workshop-saved-details");
+  const purchasedOpen=purchased?.closest("[data-workshop-branch='purchased']")?.open||false;
+  const savedOpen=saved?.open||false;
+  const savedWrapper=saved?.closest("[data-workshop-branch='saved']")?.open||false;
+  // Detach before clearing the list so their live inputs and saved-part forms survive.
+  purchased?.remove();
+  saved?.remove();
+  mount.replaceChildren();mount.classList.add("workshop-tree");
   const makeCard=item=>{
    const details=element("details","workshop-standard-item");
-   details.dataset.workshopId=item.id;
+   details.dataset.workshopId=item.id;details.open=openCards.has(item.id);
    const summary=element("summary","","");
-   const heading=element("span","workshop-standard-name",item.name);
-   summary.append(heading);
+   summary.append(element("span","workshop-standard-name",item.name));
    const body=element("div","workshop-standard-body");
    body.append(element("p","workshop-quick-spec",quickSpecs[item.id]||item.spec));
    if(item.caution||item.spec){
@@ -252,26 +263,56 @@
      choose.disabled=true;choose.textContent="Saving…";
      try{await workshopChoiceContext(item);workshopChoiceContext=null;workshopAllowedChoices=[]}
      catch(error){choose.disabled=false;choose.textContent="Use this for BOM item";
-      const errorLine=element("p","resource-caution",error.message||String(error));body.append(errorLine)}
+      body.append(element("p","resource-caution",error.message||String(error)))}
     };
     body.append(choose);
    }
    details.append(summary,body);return details;
   };
-  const section=(title,items)=>{
-   const group=element("section","workshop-group");
-   group.append(element("h3","",title));
+  const branch=(key,title,parent,options={})=>{
+   const details=element("details","workshop-tree-branch"+(options.nested?" workshop-tree-branch-nested":""));
+   details.dataset.workshopBranch=key;
+   details.open=previouslyOpen.has(key)||!!options.open;
+   const summary=element("summary","",title);
+   const children=element("div","workshop-tree-children");
+   details.append(summary,children);parent.append(details);
+   return children;
+  };
+  const category=(key,title,items,parent)=>{
+   const children=branch(key,title,parent,{nested:true});
    const list=element("div","workshop-standard-list");
    for(const item of items)list.append(makeCard(item));
-   group.append(list);mount.append(group);
+   children.append(list);
   };
-  section("Standard materials",workshopSupplies.filter(x=>x.tier==="core"));
-  section("Basic tools",workshopEquipment.filter(x=>x.tier==="core"));
-  const extras=element("details","workshop-optional-group");
-  extras.append(element("summary","","Special-purpose options"));
-  const list=element("div","workshop-standard-list");
-  for(const item of [...workshopSupplies,...workshopEquipment].filter(x=>x.tier==="conditional"))list.append(makeCard(item));
-  extras.append(list);mount.append(extras);
+  const tools=branch("tools","Tools",mount);
+  const toolGroups=[
+   ["measurement","Measurement & testing",["workshop:meter","workshop:oscilloscope"]],
+   ["cutting","Cutting & wire preparation",["workshop:stripper"]],
+   ["joining","Joining & assembly",["workshop:ferrule-tool","workshop:solderstation"]],
+   ["heating","Heating & finishing",["workshop:heatgun"]],
+   ["safety","Safety",["workshop:safety"]]
+  ];
+  for(const [id,title,ids] of toolGroups)
+   category("tools-"+id,title,workshopEquipment.filter(item=>ids.includes(item.id)),tools);
+  const materials=branch("materials","Materials & consumables",mount);
+  const materialGroups=[
+   ["wire","Electrical wire",["workshop:wire22","workshop:wire18","workshop:wire16","workshop:silicone"]],
+   ["terminations","Ferrules & terminations",["workshop:ferrule22","workshop:ferrule18"]],
+   ["insulation","Insulation & heat shrink",["workshop:heatshrink","workshop:sealshrink"]],
+   ["solder","Solder & flux",["workshop:solder"]]
+  ];
+  for(const [id,title,ids] of materialGroups)
+   category("materials-"+id,title,workshopSupplies.filter(item=>ids.includes(item.id)),materials);
+  if(purchased){
+   const purchases=branch("purchased","Purchased parts",mount,{open:purchasedOpen});
+   purchased.classList.remove("workshop-tree-detached");
+   purchases.append(purchased);
+  }
+  if(saved){
+   const savedChildren=branch("saved","Saved part library",mount,{open:savedWrapper});
+   saved.open=savedOpen;
+   savedChildren.append(saved);
+  }
  }
  const allProjects=[["launcher","Foam-dart launcher"],["linear","Linear actuator"],["robot","Robotic arm"],["buck","Buck converter"],["motorlab","Brushless motor"],["coiltest","Switch a coil"]];
  async function reloadPurchased(){
