@@ -168,3 +168,14 @@
 .bom-picture-drop{transition:outline-color .12s,background-color .12s}
 .bom-picture-drop.is-dragover{outline:3px dashed #72d7be;outline-offset:2px;background:rgba(103,206,179,.18)}
 .assembly-unified-photo.is-dragover .assembly-photo-stage{opacity:.8}
+
+/* Expand only a BOM part's own thumbnail to 3x its collapsed dimensions. */
+.assembly-workspace-page .workspace-saved-parts .bom-part:not(.bom-subassembly)[open] > .bom-part-summary > .bom-row-thumbnail{
+  width:114px;height:114px;min-width:114px;max-width:114px;
+  transition:width .16s ease,height .16s ease;
+}
+@media(max-width:650px){
+ .assembly-workspace-page .workspace-saved-parts .bom-part:not(.bom-subassembly)[open] > .bom-part-summary > .bom-row-thumbnail{
+  width:96px;height:96px;min-width:96px;max-width:96px;
+ }
+}
