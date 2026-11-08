@@ -97,3 +97,18 @@
 .assembly-workspace-page .workspace-bom .component-admin:not([open]){display:none}
 .assembly-workspace-page .workspace-bom .component-admin[open]{display:block;margin:14px 0;padding:14px;border:1px solid #3c5b67;border-radius:9px}
 .assembly-workspace-page .workspace-bom .component-status:not(:empty){font-size:.85rem;line-height:1.5;white-space:pre-wrap}
+
+/* Each saved BOM part is one compact line until expanded. */
+.bom-part-stack{display:flex;flex-direction:column;gap:6px;margin:8px 0 14px}
+.bom-part{border:1px solid #395661;border-radius:8px;background:#152b37;overflow:hidden}
+.bom-part-summary{display:flex;align-items:center;gap:12px;justify-content:space-between;cursor:pointer;list-style:none;padding:10px 14px;font-size:.88rem}
+.bom-part-summary::-webkit-details-marker{display:none}
+.bom-part-summary:before{content:"▸";color:#a2bfc8;font-size:.8rem;margin-right:0}
+.bom-part[open] .bom-part-summary:before{content:"▾"}
+.bom-part-name{font-weight:650;flex:1}
+.bom-part-meta{font-size:.78rem;color:#a8c0cb}
+.bom-part-body{border-top:1px solid #35505c;padding:12px 15px;font-size:.85rem}
+.bom-part-body p{margin:5px 0}
+.bom-part-body ul{margin:6px 0 12px;padding-left:20px}
+.bom-part-body li{margin:4px 0}
+.component-extraction-feedback:not(:empty){display:block!important;margin:10px 0;padding:10px 12px;background:#193744;border:1px solid #487588;border-radius:7px;color:#e7f6fb;font-size:.88rem;line-height:1.45;white-space:pre-wrap}
