@@ -271,24 +271,6 @@ function setupAssemblyTrees(){
   function installInstructionExtras(panel,prefix,onRestoreResources,onRestoreRecipe){
    const instruction=panel.querySelector("."+prefix+"-instructions");
    const article=instruction.closest("article");
-   const previewButton=document.createElement("button");previewButton.type="button";previewButton.className="btn instruction-preview-toggle";previewButton.textContent="Preview steps";
-   article.querySelector("h2").after(previewButton);
-   const preview=document.createElement("div");preview.className="instruction-steps-preview hide";article.append(preview);
-   const renderPreview=()=>{
-    preview.replaceChildren();
-    const chunks=instruction.value.trim().split(/\n\s*\n|\n(?=\s*\d+[.)]\s)/).map(x=>x.trim()).filter(Boolean);
-    if(!chunks.length){preview.textContent="Write instructions above to preview the steps.";return}
-    const list=document.createElement("ol");
-    for(const chunk of chunks){
-     const entry=document.createElement("li");entry.textContent=chunk.replace(/^\d+[.)]\s*/,"");list.append(entry);
-    }
-    preview.append(list);
-   };
-   previewButton.onclick=()=>{
-    const show=preview.classList.contains("hide");preview.classList.toggle("hide",!show);
-    previewButton.textContent=show?"Hide preview":"Preview steps";if(show)renderPreview();
-   };
-   instruction.addEventListener("input",()=>{if(!preview.classList.contains("hide"))renderPreview()});
    const notes=panel.querySelector("."+prefix+"-notes").closest("article");
    const logDetails=document.createElement("details");logDetails.className="instruction-log";
    const logSummary=document.createElement("summary");logSummary.textContent="Experiments & decisions";
@@ -321,9 +303,6 @@ function setupAssemblyTrees(){
    const historyList=document.createElement("div");historyList.className="instruction-history-list";
    historyDetails.append(historySummary,historyList);panel.querySelector(prefix==="part"?".part-workspace-save":".workspace-save").after(historyDetails);
    function setData(data){
-    const hasRecipe=Array.isArray(data?.recipe)&&data.recipe.length>0;
-    previewButton.classList.toggle("hide",hasRecipe);
-    if(hasRecipe)preview.classList.add("hide");
     experiments=Array.isArray(data?.experiments)?data.experiments.map(x=>({...x})):[];
     renderLogs();historyList.replaceChildren();
     const history=Array.isArray(data?.history)?[...data.history].reverse():[];
@@ -338,7 +317,6 @@ function setupAssemblyTrees(){
        for(const name of ["instructions","procedures","notes"])panel.querySelector("."+prefix+"-"+name).value=snapshot[name]||"";
        experiments=Array.isArray(snapshot.experiments)?snapshot.experiments.map(x=>({...x})):[];
        renderLogs();onRestoreResources?.(snapshot.resources);onRestoreRecipe?.(snapshot);
-       if(!preview.classList.contains("hide"))renderPreview();
        panel.querySelector(prefix==="part"?".part-workspace-status":".workspace-status").textContent="Previous version loaded. Click Save to keep it.";
       };
       item.append(restore);
