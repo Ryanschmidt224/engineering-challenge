@@ -45,7 +45,7 @@ export async function handleComponents(request,env){
   return json({component:updated});
  }
  if(request.method==="DELETE"){
-  const id=url.searchParams.get("id"),items=await read(env,project),remaining=items.filter(x=>x.id!==id);if(remaining.length===items.length)return json({error:"Not found"},404);await env.PHOTOS.put(key(project),JSON.stringify(remaining));await env.PHOTOS.delete("component-thumbnails/"+project+"/"+id);await env.PHOTOS.delete("part-workspaces/"+project+"/"+id+".json");return json({ok:true});
+  const id=url.searchParams.get("id"),items=await read(env,project),remaining=items.filter(x=>x.id!==id);if(remaining.length===items.length)return json({error:"Not found"},404);await env.PHOTOS.put(key(project),JSON.stringify(remaining));await env.PHOTOS.delete("component-thumbnails/"+project+"/"+id);await env.PHOTOS.delete("part-workspaces/"+project+"/"+id+".json");await env.PHOTOS.delete("harnesses/"+project+"/"+id+".json");return json({ok:true});
  }
  return json({error:"Method not allowed"},405)
 }
