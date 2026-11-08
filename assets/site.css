@@ -1455,3 +1455,73 @@
   margin-bottom:18px;
  }
 }
+
+/* BOM refinement: nested assemblies are hierarchy, not separate color cards.
+   A single neutral surface, indentation and fine dividers communicate structure. */
+#launcher .assembly-sidebar .workspace-bom .workspace-saved-parts{
+ padding:0 20px 0 13px;
+}
+#launcher .assembly-sidebar.bom-sidebar-active>.workspace-bom{
+ padding-bottom:32px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part-stack{
+ padding-right:0;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly,
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly[open],
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly > .bom-part-summary,
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly > .bom-subassembly-children,
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly > .bom-subassembly-children > .bom-part-stack,
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part,
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part-summary,
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part-body{
+ background:transparent;
+ box-shadow:none;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly > .bom-subassembly-children{
+ border:0;
+ border-left:1px solid #344b57;
+ margin:3px 0 12px 12px;
+ padding:0 0 3px 13px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly > .bom-subassembly-children > .bom-part-stack{
+ border:0;
+ margin:0;
+ padding:0;
+ gap:0;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part{
+ border:0;
+ border-bottom:1px solid #2b414e;
+ border-radius:0;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part-summary{
+ min-height:0;
+ padding:9px 3px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part-summary:hover{
+ background:#1c303b;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-open-subassembly{
+ margin:8px 0 8px 3px;
+ padding:3px 0;
+ border:0;
+ border-radius:0;
+ box-shadow:none;
+ color:#aacbd1;
+ background:transparent;
+ font-weight:500;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-open-subassembly:hover{
+ color:#e2f4f6;
+ text-decoration:underline;
+ background:transparent;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-shop-materials{
+ margin:26px 19px 0 13px;
+}
+@media(max-width:800px){
+ #launcher .assembly-sidebar .workspace-bom .workspace-saved-parts{
+  padding-right:14px;
+ }
+}
