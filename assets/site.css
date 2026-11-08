@@ -892,3 +892,51 @@
 .workshop-tree .workshop-saved-details{margin:0}
 .workshop-tree .workshop-purchased-results{margin:8px 0}
 .workshop-tree .workshop-tree-branch:focus-within{border-color:#5b9697}
+
+
+/* Recipe-first work instructions: one compact + Add step entry point.
+   A step owns its content, with optional editors revealed only on request. */
+.recipe-editor.recipe-compact{
+  border:0;background:transparent;box-shadow:none;
+  margin:0;padding:0;min-width:0;
+}
+.recipe-compact .recipe-content{display:flex;flex-direction:column;align-items:stretch;gap:9px}
+.recipe-compact .recipe-one-step{
+  border:1px solid #355766;border-radius:9px;background:#142b36;
+  margin:0;overflow:hidden;
+}
+.recipe-compact .recipe-one-step-summary{
+  display:flex;align-items:center;gap:12px;
+  cursor:pointer;padding:12px 14px;
+  font-size:.96rem;font-weight:650;list-style:none;
+}
+.recipe-compact .recipe-one-step-summary::-webkit-details-marker{display:none}
+.recipe-compact .recipe-one-step-summary::before{
+  content:"▸";color:#95cfc9;font-weight:700;
+}
+.recipe-compact .recipe-one-step[open]>.recipe-one-step-summary::before{content:"▾"}
+.recipe-compact .recipe-one-step[open]>.recipe-one-step-summary{border-bottom:1px solid #355766}
+.recipe-compact .recipe-kind-caption{color:#a9c7d0;font-size:.77rem;font-weight:400;margin-left:auto}
+.recipe-compact .recipe-one-step-body{padding:13px 15px;display:flex;flex-direction:column;align-items:flex-start;gap:9px}
+.recipe-compact .recipe-one-field{width:100%;display:flex;flex-direction:column;gap:6px;font-size:.86rem;font-weight:600}
+.recipe-compact .recipe-one-field>.field{width:100%;font-weight:400;max-width:100%}
+.recipe-compact .recipe-one-field>textarea{resize:vertical;min-height:78px}
+.recipe-compact .recipe-small-action{
+  padding:5px 9px;font-size:.8rem;
+  background:transparent;border:1px solid #365d68;color:#accbcf;
+}
+.recipe-compact .recipe-add-step{
+  align-self:flex-start;
+  border:0;background:transparent;color:#a4e4d9;
+  font-weight:650;box-shadow:none;padding:8px 3px;font-size:.95rem;
+}
+.recipe-compact .recipe-add-step:hover,
+.recipe-compact .recipe-add-step:focus-visible{color:#e8fffa;text-decoration:underline}
+.recipe-compact .recipe-edit-controls{margin-top:5px;padding-top:10px;width:100%;
+ border-top:1px solid #2d4d59;display:flex;flex-wrap:wrap;gap:6px}
+.recipe-compact .recipe-edit-controls>.btn{padding:5px 9px;font-size:.8rem}
+.recipe-compact .recipe-detail-controls{margin-bottom:3px}
+.recipe-compact .recipe-reader-text{width:100%}
+.recipe-compact+.recipe-feedback{font-size:.81rem}
+.recipe-compact .recipe-feedback:empty{display:none}
+.recipe-legacy.hide{display:none!important}
