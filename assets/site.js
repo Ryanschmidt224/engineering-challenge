@@ -1317,4 +1317,5 @@ function setupComponents(){
 setupComponents();
 
 
+window.BSResources?.init();
 renderNotes();renderDrafts();renderTiles();navigate(location.hash.slice(1)||"home");
