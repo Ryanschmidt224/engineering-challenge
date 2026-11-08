@@ -51,7 +51,7 @@ document.getElementById("explainSelection").onclick=()=>{const selected=selectio
 window.BSExplainText=(selected,context={})=>{
  const term=String(selected||"").trim().slice(0,220);
  if(!term)return;
- const normalized=term.toLowerCase().replace(/\\s+/g," ").trim();
+ const normalized=term.toLowerCase().replace(/\s+/g," ").trim();
  const aliases={
   "m4×0.7":"threads","m4 x 0.7":"threads","m4 0.7":"threads","thread pitch":"threads",
   "rpm":"rpm","revolutions per minute":"rpm","flywheel speed":"rpm",
@@ -60,7 +60,7 @@ window.BSExplainText=(selected,context={})=>{
   "buck converter":"power","startup inrush":"power","inrush current":"power",
   "measure":"measurement","repeatability":"measurement"
  };
- const alias=aliases[normalized.replace(/\\s*×\\s*/g,"×")];
+ const alias=aliases[normalized.replace(/\s*×\s*/g,"×")];
  const found=tiles.find(t=>t.id===alias)||
   tiles.find(t=>t.title.toLowerCase()===normalized);
  if(found){openTile(found.id);return}
