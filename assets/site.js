@@ -156,6 +156,44 @@ function setupAssemblyTrees(){
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
   partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article><h2>Build instructions</h2><textarea class="field part-instructions" rows="9" placeholder="Build steps, tools, measurements and checks…"></textarea></article><article class="part-drawing-panel"></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article><h2>Machine settings / procedures</h2><textarea class="field part-procedures" rows="5" placeholder="Settings and procedures…"></textarea></article><article><h2>Notes</h2><textarea class="field part-notes" rows="5" placeholder="Additional notes…"></textarea></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
   workspace.after(partWorkspace);
+  // Safe project portability: export is read-only; import currently verifies only.
+  // No operation here can overwrite or delete Cloudflare project records.
+  const archiveActions=document.createElement("div");archiveActions.className="workspace-archive-actions";
+  const backupButton=document.createElement("button");backupButton.type="button";backupButton.className="btn";backupButton.textContent="Download project backup";
+  const inspectButton=document.createElement("button");inspectButton.type="button";inspectButton.className="btn";inspectButton.textContent="Check project backup";
+  const archiveInput=document.createElement("input");archiveInput.type="file";archiveInput.accept=".bsproject,application/json";archiveInput.hidden=true;
+  const archiveStatus=document.createElement("span");archiveStatus.className="muted workspace-archive-status";archiveStatus.setAttribute("role","status");
+  const archiveUrl=()=>"/api/project/archive?project="+encodeURIComponent(project);
+  backupButton.onclick=async()=>{
+   if(!adminAuthenticated){archiveStatus.textContent="Administrator login required to export private data.";return}
+   backupButton.disabled=true;archiveStatus.textContent="Preparing complete project archive…";
+   try{
+    const response=await fetch(archiveUrl(),{credentials:"same-origin",cache:"no-store"});
+    if(!response.ok){const error=await response.json().catch(()=>({}));throw Error(error.error||"Project export failed")}
+    const blob=await response.blob();
+    const archive=JSON.parse(await blob.text());
+    if(archive.format!=="building-schmidt-project"||archive.projectId!==project||archive.objectCount!==archive.objects?.length)throw Error("Archive response is incomplete");
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement("a");link.href=url;link.download="building-schmidt-"+project+"-"+new Date().toISOString().slice(0,10)+".bsproject";
+    document.body.append(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),3000);
+    archiveStatus.textContent="Downloaded "+archive.objectCount+" records. Keep a copy outside Cloudflare and verify it using Check project backup.";
+   }catch(error){archiveStatus.textContent="Backup failed: "+error.message}
+   finally{backupButton.disabled=false}
+  };
+  inspectButton.onclick=()=>{if(!adminAuthenticated){archiveStatus.textContent="Administrator login required to inspect backups.";return}archiveInput.click()};
+  archiveInput.onchange=async()=>{
+   const file=archiveInput.files?.[0];archiveInput.value="";if(!file)return;
+   inspectButton.disabled=true;archiveStatus.textContent="Checking archive contents and checksums…";
+   try{
+    const response=await fetch(archiveUrl(),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:await file.text()});
+    const data=await response.json();if(!response.ok)throw Error(data.error||"Archive validation failed");
+    archiveStatus.textContent="Verified "+data.objectCount+" records ("+Math.round(data.totalBytes/1024)+" KB). No live data was changed.";
+   }catch(error){archiveStatus.textContent="Backup check failed: "+error.message}
+   finally{inspectButton.disabled=false}
+  };
+  archiveActions.append(backupButton,inspectButton,archiveInput,archiveStatus);
+  workspace.querySelector(".workspace-heading").after(archiveActions);
   const assemblyDrawingPanel=window.BSDrawings?.mount(workspace.querySelector(".workspace-drawing-panel"),()=>adminAuthenticated);
   const partDrawingPanel=window.BSDrawings?.mount(partWorkspace.querySelector(".part-drawing-panel"),()=>adminAuthenticated);
 
