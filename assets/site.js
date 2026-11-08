@@ -150,11 +150,11 @@ function setupAssemblyTrees(){
   }
   // Separate workspace route; the existing assembly overview remains unchanged.
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
-  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New BOM-only part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article><h2>Work instructions</h2><textarea class="field workspace-instructions" placeholder="Add build steps, tools, measurements and checks…" rows="8"></textarea></article><article class="workspace-drawing-panel"></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article><h2>Machine settings / procedures</h2><textarea class="field workspace-procedures" placeholder="Add settings, recipes and procedures…" rows="5"></textarea></article><article><h2>Notes</h2><textarea class="field workspace-notes" placeholder="Add notes…" rows="5"></textarea></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
+  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New BOM-only part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-drawing-panel"></article><article><h2>Pictures</h2><div class="workspace-picture-list">Photos uploaded to this assembly appear in the overview.</div></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
   // Each saved BOM part has its own independent instructions document.
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
-  partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article><h2>Build instructions</h2><textarea class="field part-instructions" rows="9" placeholder="Build steps, tools, measurements and checks…"></textarea></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article><h2>Machine settings / procedures</h2><textarea class="field part-procedures" rows="5" placeholder="Settings and procedures…"></textarea></article><article><h2>Notes</h2><textarea class="field part-notes" rows="5" placeholder="Additional notes…"></textarea></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
+  partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article class="recipe-instructions"><h2>Build instructions</h2></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
   workspace.after(partWorkspace);
   // Safe project portability: export is read-only; import currently verifies only.
   // No operation here can overwrite or delete Cloudflare project records.
@@ -269,14 +269,12 @@ function setupAssemblyTrees(){
   // Optional progressive disclosure: the textarea remains the simplest authoring tool.
   // Steps, test logs and history never require separate forms or mandatory fields.
   function installInstructionExtras(panel,prefix,onRestoreResources,onRestoreRecipe){
-   const instruction=panel.querySelector("."+prefix+"-instructions");
-   const article=instruction.closest("article");
-   const notes=panel.querySelector("."+prefix+"-notes").closest("article");
+   const article=panel.querySelector(".recipe-instructions");
    const logDetails=document.createElement("details");logDetails.className="instruction-log";
    const logSummary=document.createElement("summary");logSummary.textContent="Experiments & decisions";
    const logEntries=document.createElement("div");logEntries.className="instruction-log-entries";
    const addLog=document.createElement("button");addLog.type="button";addLog.className="btn";addLog.textContent="+ Record a test";
-   logDetails.append(logSummary,logEntries,addLog);notes.append(logDetails);
+   logDetails.append(logSummary,logEntries,addLog);article.append(logDetails);
    let experiments=[];
    const renderLogs=()=>{
     logEntries.replaceChildren();
@@ -314,10 +312,8 @@ function setupAssemblyTrees(){
      if(adminAuthenticated){
       const restore=document.createElement("button");restore.type="button";restore.className="btn";restore.textContent="Load this version";
       restore.onclick=()=>{
-       for(const name of ["instructions","procedures","notes"])panel.querySelector("."+prefix+"-"+name).value=snapshot[name]||"";
        experiments=Array.isArray(snapshot.experiments)?snapshot.experiments.map(x=>({...x})):[];
        renderLogs();onRestoreResources?.(snapshot.resources);onRestoreRecipe?.(snapshot);
-       syncLegacyInstructionSections(panel,prefix);
        panel.querySelector(prefix==="part"?".part-workspace-status":".workspace-status").textContent="Previous version loaded. Click Save to keep it.";
       };
       item.append(restore);
@@ -328,17 +324,8 @@ function setupAssemblyTrees(){
    }
    return {setData,getExperiments:()=>experiments};
   }
-  // Legacy freeform fields remain in storage, but empty sections do not
-  // clutter a recipe-first work-instructions screen.
-  function syncLegacyInstructionSections(panel,prefix){
-   for(const field of ["procedures","notes"]){
-    const input=panel.querySelector("."+prefix+"-"+field);
-    const section=input?.closest("article");
-    if(section)section.classList.toggle("hide",!input.value.trim());
-   }
-  }
-  const assemblyRecipe=window.BSRecipes?.mount(workspace.querySelector(".workspace-instructions").closest("article"),{admin:()=>adminAuthenticated});
-  const partRecipe=window.BSRecipes?.mount(partWorkspace.querySelector(".part-instructions").closest("article"),{admin:()=>adminAuthenticated});
+  const assemblyRecipe=window.BSRecipes?.mount(workspace.querySelector(".recipe-instructions"),{admin:()=>adminAuthenticated});
+  const partRecipe=window.BSRecipes?.mount(partWorkspace.querySelector(".recipe-instructions"),{admin:()=>adminAuthenticated});
   const assemblyExtras=installInstructionExtras(workspace,"workspace",resources=>assemblyResourcePicker?.setData(resources,adminAuthenticated),snapshot=>assemblyRecipe?.setData(snapshot));
   const partExtras=installInstructionExtras(partWorkspace,"part",resources=>partResourcePicker?.setData(resources,adminAuthenticated),snapshot=>partRecipe?.setData(snapshot));
 
@@ -507,7 +494,6 @@ function setupAssemblyTrees(){
    partWorkspace.querySelector(".part-harness-preview").classList.add("hide");
    cover.replaceChildren();
    const placeholder=document.createElement("span");placeholder.textContent="No picture yet";cover.append(placeholder);
-   for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value="";
    try{
     const [partResponse,response]=await Promise.all([fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}),fetch("/api/workspace?project="+encodeURIComponent(project)+"&part="+encodeURIComponent(partId),{cache:"no-store"})]);
     const partData=await partResponse.json(),data=await response.json();
@@ -523,10 +509,8 @@ function setupAssemblyTrees(){
     void partFilesPanel?.load(project,partId);
     void showHarnessPreview(partId,version);
     if(partBackAssembly===null)partBackAssembly=part.assemblyId??null;
-    for(const name of ["instructions","procedures","notes"])partWorkspace.querySelector(".part-"+name).value=data.workspace?.[name]||"";
     partResourcePicker?.setData(data.workspace?.resources,adminAuthenticated);
     partRecipe?.setData(data.workspace);
-    syncLegacyInstructionSections(partWorkspace,"part");
     partSavedRevision=data.workspace?.revision??null;
     partExtras.setData(data.workspace);
     const img=document.createElement("img");img.alt=part.name;img.src=partPhotoUrl(partId);
@@ -572,7 +556,7 @@ function setupAssemblyTrees(){
   partWorkspace.querySelector(".part-workspace-save").onclick=async()=>{
    const id=partRoute();if(!id)return;
    if(!adminAuthenticated){partStatus.textContent="Sign in as administrator to save.";return}
-   const data={};for(const name of ["instructions","procedures","notes"])data[name]=partWorkspace.querySelector(".part-"+name).value;
+   const data={};
    data.resources=partResourcePicker?.getData();data.experiments=partExtras.getExperiments();data.recipe=partRecipe?.getData()||[];data.expectedRevision=partSavedRevision;
    const button=partWorkspace.querySelector(".part-workspace-save");button.disabled=true;partStatus.textContent="Saving…";
    try{
@@ -1236,7 +1220,6 @@ function setupAssemblyTrees(){
   let workspacePhotoVersion=0;
   async function loadWorkspaceCover(){const id=selected,version=++workspacePhotoVersion,cover=workspace.querySelector(".workspace-cover");cover.replaceChildren();const placeholder=document.createElement("span");placeholder.textContent="No photo yet";cover.append(placeholder);try{const r=await fetch("/api/photos?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(id??"__root__"));if(!r.ok)return;const data=await r.json();if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;const photo=(data.photos||[]).find(p=>(p.assembly??null)===id);if(photo){const img=document.createElement("img");img.src=photo.url;img.alt="Assembly photo";cover.replaceChildren(img)}}catch(e){/* cover is optional */}}
   let workspaceLoadVersion=0;
-  const workspaceFields=["instructions","procedures","notes"];
   let workspaceSavedRevision=null;
   const workspaceStatus=workspace.querySelector(".workspace-status");
   const workspaceUrl=()=>"/api/workspace?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(selected??"__root__");
@@ -1244,10 +1227,8 @@ function setupAssemblyTrees(){
    const version=++workspaceLoadVersion,url=workspaceUrl();workspaceSavedRevision=null;workspaceStatus.textContent="Loading…";
    try{const res=await fetch(url,{credentials:"same-origin",cache:"no-store"});const data=await res.json();if(!res.ok)throw Error(data.error||"Unable to load workspace");
     if(version!==workspaceLoadVersion||url!==workspaceUrl())return;
-    for(const name of workspaceFields)workspace.querySelector(".workspace-"+name).value=data.workspace?.[name]||"";
     assemblyResourcePicker?.setData(data.workspace?.resources,adminAuthenticated);
     assemblyRecipe?.setData(data.workspace);
-    syncLegacyInstructionSections(workspace,"workspace");
     workspaceSavedRevision=data.workspace?.revision??null;
     assemblyExtras.setData(data.workspace);
     workspaceStatus.textContent="";
@@ -1256,7 +1237,6 @@ function setupAssemblyTrees(){
   workspace.querySelector(".workspace-save").onclick=async()=>{
    if(!adminAuthenticated){workspaceStatus.textContent="Use Admin login at the top of the website to save.";return}
    const button=workspace.querySelector(".workspace-save"),url=workspaceUrl(),data={};
-   for(const name of workspaceFields)data[name]=workspace.querySelector(".workspace-"+name).value;
    data.resources=assemblyResourcePicker?.getData();data.experiments=assemblyExtras.getExperiments();data.recipe=assemblyRecipe?.getData()||[];data.expectedRevision=workspaceSavedRevision;
    button.disabled=true;workspaceStatus.textContent="Saving…";
    try{const res=await fetch(url,{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});const result=await res.json();if(!res.ok)throw Error(result.error||"Save failed (HTTP "+res.status+")");workspaceSavedRevision=result.revision??workspaceSavedRevision;workspaceStatus.textContent="Saved."}
