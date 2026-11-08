@@ -1481,12 +1481,113 @@ function setupAssemblyTrees(){
    const button=document.createElement("button");button.type="button";button.className="btn assembly-move-button";button.textContent=label;button.title=title;button.setAttribute("aria-label",title);button.onclick=action;reorderControls.append(button)
   }
   controls.append(reorderControls);
+  // Feature-tree context menu: right click (or the row's ⋯ button on touch).
+  // The existing add/rename/delete handlers remain the source of truth for
+  // assemblies; linked parts use their own safe tree-reference operations.
+  const treeMenu=document.createElement("div");
+  treeMenu.className="assembly-context-menu";
+  treeMenu.setAttribute("role","menu");
+  treeMenu.setAttribute("aria-label","Feature tree actions");
+  treeMenu.hidden=true;
+  document.body.append(treeMenu);
+  let menuTarget=null;
+  const closeTreeMenu=()=>{treeMenu.hidden=true;menuTarget=null;treeMenu.replaceChildren()};
+  document.addEventListener("pointerdown",event=>{if(!treeMenu.hidden&&!treeMenu.contains(event.target))closeTreeMenu()});
+  document.addEventListener("keydown",event=>{if(event.key==="Escape")closeTreeMenu()});
+  window.addEventListener("hashchange",closeTreeMenu);
+  const useTreeTarget=node=>{
+   // Context menu on a part acts on its containing assembly for Add actions.
+   selected=isPartNode(node)?node.parentId:(node?.id??null);
+  };
+  const renameTreeItem=async node=>{
+   if(!node)return;
+   if(!isPartNode(node)){
+    selected=node.id;
+    root.querySelector(".assembly-rename").click();
+    return;
+   }
+   const value=prompt("Rename part",node.name);
+   if(!value?.trim()||value.trim()===node.name)return;
+   const response=await fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"});
+   const data=await response.json();
+   if(!response.ok)throw Error(data.error||"Could not load part");
+   const part=(data.components||[]).find(item=>item.id===node.partId);
+   if(!part)throw Error("Linked part no longer exists.");
+   if(part.generatedFrom)throw Error("Calculated parts must be renamed through their source.");
+   const updated=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{
+    method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},
+    body:JSON.stringify({...part,name:value.trim()})
+   });
+   const result=await updated.json();
+   if(!updated.ok)throw Error(result.error||"Unable to rename part");
+   await save(nodes.map(item=>item.id===node.id?{...item,name:value.trim()}:item));
+  };
+  const deleteTreeItem=async node=>{
+   if(!node)return;
+   if(!isPartNode(node)){
+    selected=node.id;
+    root.querySelector(".assembly-remove").click();
+    return;
+   }
+   if(!confirm("Remove "+node.name+" from the feature tree? Its BOM part and details will be kept."))return;
+   await save(nodes.filter(item=>item.id!==node.id));
+   status.textContent="Removed tree link; BOM part retained.";
+  };
+  const openTreeMenu=(node,x,y,trigger)=>{
+   if(!adminAuthenticated)return;
+   closeTreeMenu();
+   menuTarget=node;
+   const isPart=isPartNode(node);
+   const addItem=(label,action,disabled=false)=>{
+    const button=document.createElement("button");
+    button.type="button";button.setAttribute("role","menuitem");
+    button.textContent=label;button.disabled=disabled;
+    button.onclick=async()=>{
+     closeTreeMenu();
+     try{await action()}catch(error){status.textContent=error.message}
+    };
+    treeMenu.append(button);
+   };
+   addItem("Add part",()=>{useTreeTarget(node);render();root.querySelector(".assembly-add-part").click()});
+   addItem("Add subassembly",()=>{useTreeTarget(node);render();root.querySelector(".assembly-add").click()});
+   const separator=document.createElement("div");separator.className="assembly-context-separator";separator.setAttribute("role","separator");treeMenu.append(separator);
+   addItem("Rename",()=>renameTreeItem(node),!node);
+   addItem(isPart?"Remove from tree":"Delete",()=>deleteTreeItem(node),!node);
+   treeMenu.hidden=false;
+   treeMenu.style.left=Math.max(8,Math.min(x,window.innerWidth-treeMenu.offsetWidth-8))+"px";
+   treeMenu.style.top=Math.max(8,Math.min(y,window.innerHeight-treeMenu.offsetHeight-8))+"px";
+   if(trigger)treeMenu.dataset.target=trigger.textContent.trim();
+   treeMenu.querySelector('button:not([disabled])')?.focus();
+  };
   function render(){nodesEl.replaceChildren();controls.classList.toggle("hide",!adminAuthenticated);const row=(node,depth)=>{
    const id=node?.id??null,children=nodes.filter(n=>n.parentId===id),el=document.createElement("div");el.className="assembly-node"+(selected===id?" selected":"");el.style.paddingLeft=(depth*17+3)+"px";
    const expand=document.createElement("button");expand.type="button";expand.className="assembly-expander";expand.textContent=children.length?(expanded.has(id)?"▾":"▸"):" ";expand.setAttribute("aria-label",expanded.has(id)?"Collapse":"Expand");expand.onclick=()=>{expanded.has(id)?expanded.delete(id):expanded.add(id);render()};
    const name=document.createElement("button");name.type="button";name.className="assembly-name";name.textContent=node?(isPartNode(node)?"🔩  ":"📦  ")+node.name:"🟨  "+title;
    if(isPartNode(node)&&partRoute()===node.partId)el.classList.add("selected");name.onclick=()=>{if(isPartNode(node)){openTreePart(node);return}selected=id;history.pushState(null,"",id===null?"#"+project:"#"+project+"/assembly/"+encodeURIComponent(id));render();notify();window.scrollTo(0,0)};
    el.append(expand,name);
+   if(adminAuthenticated){
+    el.addEventListener("contextmenu",event=>{
+     event.preventDefault();event.stopPropagation();
+     openTreeMenu(node,event.clientX,event.clientY,name);
+    });
+    name.addEventListener("keydown",event=>{
+     if(event.key==="ContextMenu"||(event.shiftKey&&event.key==="F10")){
+      event.preventDefault();
+      const bounds=name.getBoundingClientRect();
+      openTreeMenu(node,bounds.left+14,bounds.bottom+4,name);
+     }
+    });
+    const more=document.createElement("button");
+    more.type="button";more.className="assembly-row-menu-trigger";
+    more.textContent="⋯";more.setAttribute("aria-label","Actions for "+(node?.name||title));
+    more.setAttribute("aria-haspopup","menu");
+    more.onclick=event=>{
+     event.stopPropagation();
+     const bounds=more.getBoundingClientRect();
+     openTreeMenu(node,bounds.right,bounds.bottom+4,more);
+    };
+    el.append(more);
+   }
    if(node&&adminAuthenticated){
     el.draggable=true;el.title="Drag to reorder or drop into another assembly";
     el.ondragstart=event=>{event.dataTransfer.setData("text/plain",node.id);event.dataTransfer.effectAllowed="move";el.classList.add("assembly-dragging")};
