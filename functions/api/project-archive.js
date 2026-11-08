@@ -11,7 +11,7 @@ const MAX_SINGLE=24*1024*1024;
 const json=(value,status=200)=>new Response(JSON.stringify(value),{
  status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff"}
 });
-const folders=project=>[
+export const folders=project=>[
  project+"/",
  "assembly-pages/"+project+"/",
  "workspaces/"+project+"/",
@@ -22,7 +22,7 @@ const folders=project=>[
  "part-files/"+project+"/",
  "part-pages/"+project+"/"
 ];
-const singles=project=>["trees/"+project+".json","components/"+project+".json",
+export const singles=project=>["trees/"+project+".json","components/"+project+".json",
  "libraries/wires.json","libraries/common-parts.json","libraries/purchased-parts.json"];
 export const isAllowedKey=(project,key)=>folders(project).some(x=>key.startsWith(x))||singles(project).includes(key);
 
@@ -67,13 +67,13 @@ const encodeBytes=bytes=>{
  }
  return out;
 };
-const decodeBytes=base64=>{
+export const decodeBytes=base64=>{
  if(typeof base64!=="string"||base64.length%4!==0||!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(base64))throw Error("Invalid object encoding");
  const ascii=atob(base64),bytes=new Uint8Array(ascii.length);
  for(let i=0;i<ascii.length;i++)bytes[i]=ascii.charCodeAt(i);
  return bytes;
 };
-const sha256=async bytes=>{
+export const sha256=async bytes=>{
  const digest=new Uint8Array(await crypto.subtle.digest("SHA-256",bytes));
  return [...digest].map(b=>b.toString(16).padStart(2,"0")).join("");
 };
@@ -105,7 +105,7 @@ async function exportProject(r2,project){
   exportedAt:new Date().toISOString(),storage:"cloudflare-r2",objectCount:objects.length,
   totalBytes:bytesTotal,objects};
 }
-async function inspectArchive(archive,expectedProject){
+export async function inspectArchive(archive,expectedProject){
  if(!archive||archive.format!==ARCHIVE_FORMAT||archive.schemaVersion!==ARCHIVE_VERSION||
     !PROJECTS.includes(archive.projectId)||archive.projectId!==expectedProject||
     !Array.isArray(archive.objects)||archive.objects.length>MAX_OBJECTS||
