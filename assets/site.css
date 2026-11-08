@@ -317,3 +317,11 @@
 .part-harness .harness-wire-library{display:none}
 @media(max-width:850px){.top nav{gap:2px}.top nav button{font-size:.78rem;padding:6px 9px}}
 @media(max-width:570px){.resource-grid,.linked-resource-groups{grid-template-columns:1fr}.top .topin{flex-wrap:wrap}.top nav{order:3;width:100%;justify-content:flex-start}}
+
+.resource-common-manager{margin-top:30px;padding-top:22px;border-top:1px solid #415865}
+.resource-common-manager h2{font-size:1.14rem}
+.resource-common-list{display:flex;flex-direction:column;gap:7px;margin:15px 0}
+.resource-common-form{max-width:900px;background:#142a36;border:1px solid #395765;border-radius:10px;padding:17px}
+.resource-common-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:14px 0}
+.resource-common-fields label{display:flex;flex-direction:column;gap:5px;font-size:.83rem}
+.resource-common-status{font-size:.84rem;color:#aacbd5}
