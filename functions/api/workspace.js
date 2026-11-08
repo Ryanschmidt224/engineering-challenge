@@ -82,5 +82,11 @@ export async function handleWorkspace(request,env){
  }
  workspace.history=history;workspace.updatedAt=changed?new Date().toISOString():(previous.updatedAt||new Date().toISOString());
  workspace.revision=changed||!previous.revision?crypto.randomUUID():previous.revision;
- await env.PHOTOS.put(key,JSON.stringify(workspace));return json({ok:true,updatedAt:workspace.updatedAt,revision:workspace.revision});
+ // R2 evaluates conditional PUTs atomically. A stale browser tab cannot
+ // overwrite a newer revision even when writes race after the initial GET.
+ const conditions=existing?.etag?{onlyIf:{etagMatches:existing.etag}}:
+  !existing?{onlyIf:{etagDoesNotMatch:"*"}}:undefined;
+ const saved=await env.PHOTOS.put(key,JSON.stringify(workspace),conditions);
+ if(saved===null)return json({error:"A concurrent update changed these instructions. Reload before saving."},409);
+ return json({ok:true,updatedAt:workspace.updatedAt,revision:workspace.revision});
 }
