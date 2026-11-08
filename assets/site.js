@@ -702,6 +702,22 @@ function setupAssemblyTrees(){
    const expand=document.createElement("span");expand.className="bom-part-toggle-label";expand.textContent="Details";
    summary.append(photo,name,qty,openPart,expand);item.append(summary);
    const body=document.createElement("div");body.className="bom-part-body";
+   if(!part.generatedFrom){
+    const purchased=document.createElement("button");purchased.type="button";purchased.className="btn bom-record-purchase";
+    purchased.textContent="Record as purchased";
+    purchased.onclick=async()=>{
+     if(!adminAuthenticated){bomReport("Administrator login required to record purchases.");return}
+     purchased.disabled=true;
+     try{
+      const response=await fetch("/api/purchased-parts",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({project,partId:part.id})});
+      const data=await response.json();if(!response.ok)throw Error(data.error||"Could not record purchase");
+      purchased.textContent="Recorded in Workshop";
+      bomReport(part.name+" added to your private purchased-parts library.");
+      void window.BSResources?.reloadPurchased?.();
+     }catch(error){bomReport(error.message);purchased.disabled=false}
+    };
+    body.append(purchased);
+   }
    for(const [label,value] of [["Manufacturer",part.manufacturer],["Model",part.model],["Supplier",part.supplier],["ASIN",part.asin],["Category",part.category]]){
     if(!value)continue;
     const row=document.createElement("p"),strong=document.createElement("strong");strong.textContent=label+": ";row.append(strong,document.createTextNode(value));body.append(row);
