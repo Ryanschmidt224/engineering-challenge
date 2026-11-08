@@ -167,7 +167,10 @@
   }
   function setData(data){
    steps=Array.isArray(data?.recipe)?data.recipe.map(copyStep):[];
-   selectedStep=0;editing=false;dirty=false;feedback.textContent="";render();
+   selectedStep=0;editing=false;dirty=false;feedback.textContent="";
+   const legacy=panel.parentElement?.querySelector(".recipe-legacy");
+   if(legacy)legacy.open=!steps.length&&!!instruction?.value?.trim();
+   render();
   }
   render();
   return {setData,getData:()=>steps.map(copyStep),isDirty:()=>dirty,render};
