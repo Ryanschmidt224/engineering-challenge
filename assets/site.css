@@ -220,3 +220,21 @@
   width:192px;height:192px;min-width:192px;max-width:192px;
  }
 }
+
+/* A single enlarged thumbnail at a time, even with several BOM groups open. */
+.assembly-workspace-page .workspace-saved-parts .bom-part > .bom-part-summary > .bom-row-thumbnail,
+.assembly-workspace-page .workspace-saved-parts .bom-part[open]:not(.bom-thumbnail-active) > .bom-part-summary > .bom-row-thumbnail{
+ width:76px;height:76px;min-width:76px;max-width:76px;
+}
+.assembly-workspace-page .workspace-saved-parts .bom-part.bom-thumbnail-active[open] > .bom-part-summary > .bom-row-thumbnail{
+ width:228px;height:228px;min-width:228px;max-width:228px;
+}
+@media(max-width:650px){
+ .assembly-workspace-page .workspace-saved-parts .bom-part > .bom-part-summary > .bom-row-thumbnail,
+ .assembly-workspace-page .workspace-saved-parts .bom-part[open]:not(.bom-thumbnail-active) > .bom-part-summary > .bom-row-thumbnail{
+  width:64px;height:64px;min-width:64px;max-width:64px;
+ }
+ .assembly-workspace-page .workspace-saved-parts .bom-part.bom-thumbnail-active[open] > .bom-part-summary > .bom-row-thumbnail{
+  width:192px;height:192px;min-width:192px;max-width:192px;
+ }
+}
