@@ -40,6 +40,12 @@ function open({onCreate,bomOnly=false}){
  const wireType=field("Wire part type","select");option(wireType.input,"crimped","Crimped wire (wire assembly)");option(wireType.input,"raw","Wire / cable material");
  const gauge=field("Wire gauge (AWG)","select");AWG.forEach(({g})=>option(gauge.input,String(g),g+" AWG"));gauge.input.value="18";
  const construction=field("Conductor construction","select");option(construction.input,"stranded","Stranded / flexible");option(construction.input,"braided","Braided");option(construction.input,"solid","Solid");
+ const insulation=field("Wire insulation / jacket","select");
+ option(insulation.input,"PVC 105°C (UL AWM 1015 or equivalent; verify)","Standard — PVC 105°C (verify wire rating)");
+ option(insulation.input,"Silicone rubber (manufacturer rating to verify)","Flexible — silicone rubber");
+ option(insulation.input,"Other (verify manufacturer insulation specification)","Other / special-purpose");
+ const wireAdvanced=el("details","wire-advanced");
+ wireAdvanced.append(el("summary","","Wire jacket / insulation (optional)"),insulation.label);
  const length=field("Cut length (inches)");length.input.type="number";length.input.min="0.001";length.input.step="any";length.input.value="12";
  const terminationOptions=[["","Not specified"],["bare","Bare / stripped"],["ferrule","Ferrule"],["ring","Ring terminal"],["spade","Spade / fork terminal"],["quick-disconnect","Quick-disconnect terminal"],["jst","JST-style crimp contact"],["dupont","DuPont-style crimp contact"],["solder","Soldered connection"],["other","Other — specify"]];
  // Preferred terminations depend on the mating hardware, not the wire alone.
@@ -106,7 +112,7 @@ function open({onCreate,bomOnly=false}){
  const footer=el("div","library-dialog-actions"),save=el("button","btn primary","Create part"),cancel=el("button","btn","Cancel");
  save.type="submit";cancel.type="button";footer.append(cancel,save);
  const wireSection=el("div","library-wire-section");
- manualFields.append(wireType.label,gauge.label,construction.label,length.label,endA.target.label,endA.choice.label,endA.other.label,endB.target.label,endB.choice.label,endB.other.label,results);
+ manualFields.append(wireType.label,gauge.label,construction.label,wireAdvanced,length.label,endA.target.label,endA.choice.label,endA.other.label,endB.target.label,endB.choice.label,endB.other.label,results);
  wireSection.append(workflow,workflowHint,manualFields,wizardFields);
  chooser.append(category.label,wireSection,compSection);
  form.append(heading,subtitle,mode.label,customName.label,chooser,qty.label,unit.label,hintUnits,status,footer);
@@ -160,7 +166,8 @@ function open({onCreate,bomOnly=false}){
  apply.onclick=()=>{
   if(selectedRecommendation===null)return;
   gauge.input.value=String(selectedRecommendation);
-  construction.input.value=useCase.input.value==="moving"||wireType.input.value==="crimped"?"stranded":"solid";
+  construction.input.value="stranded";
+  insulation.input.value=useCase.input.value==="moving"?"Silicone rubber (manufacturer rating to verify)":"PVC 105°C (UL AWM 1015 or equivalent; verify)";
   length.input.value=String(Number(Number(run.input.value).toFixed(3)));
   selectWorkflow("manual");
   status.textContent="Wizard applied "+selectedRecommendation+" AWG "+construction.input.value+" copper and "+length.input.value+" in cut length. Review the wire and termination details before creating the part; ampacity is not verified.";
@@ -187,10 +194,10 @@ function open({onCreate,bomOnly=false}){
    if(crimp&&(!Number.isFinite(inches)||inches<=0||mm>1000000)){status.textContent="Enter a valid positive cut length in inches.";return}
    const designation=g+" AWG "+(str==="solid"?"solid":str==="braided"?"braided":"stranded")+" copper";
    const name=(crimp?"Crimped wire — ":"Wire — ")+designation;
-   const specs=[{name:"AWG",value:String(g)},{name:"Conductor",value:str},{name:"Material",value:"Copper (assumed; verify with supplier)"}];
+   const specs=[{name:"AWG",value:String(g)},{name:"Conductor",value:str},{name:"Insulation",value:insulation.input.value},{name:"Material",value:"Copper (assumed; verify with supplier)"}];
    if(crimp)specs.push({name:"Cut length (in)",value:String(inches)},{name:"End A",value:endA.value()||"Unspecified"},{name:"End B",value:endB.value()||"Unspecified"});
    payload={name,quantity:count,category:crimp?"Crimped wire":"Wire & cable",specifications:specs};
-   payload.wireInfo={gauge:g,construction:str,crimp,mm,endA:endA.value(),endB:endB.value(),wireId:null};
+   payload.wireInfo={gauge:g,construction:str,insulation:insulation.input.value,crimp,mm,endA:endA.value(),endB:endB.value(),wireId:null};
   }
   payload.quantityUnit=unit.input.value;
   save.disabled=true;status.textContent="Creating part…";
