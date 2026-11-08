@@ -27,7 +27,9 @@ test("project feature tree and workspace initialize without browser errors", asy
   }
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
  });
- await page.goto("/#launcher");
+ await page.goto("/");
+ await page.locator(".project-link[data-nav=\"launcher\"]").click();
+ await expect(page.locator("#launcher")).toHaveClass(/active/);
  const tree=page.locator("#launcher .assembly-tree-nodes");
  await expect(tree.locator(".assembly-name").first()).toContainText("Foam-dart launcher");
  await expect(tree.locator(".assembly-name", {hasText:"Motor and Motor Control"})).toBeVisible();
