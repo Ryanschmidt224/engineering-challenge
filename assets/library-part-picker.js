@@ -60,7 +60,7 @@ function open({onCreate,bomOnly=false}){
  const calcResult=el("div","wire-gauge-result");
  const apply=el("button","btn primary","Apply recommendation & review");apply.type="button";apply.disabled=true;
  const wizardBack=el("button","btn","Back to choices");wizardBack.type="button";
- const calcNote=el("p","muted","Preliminary DC copper voltage-drop sizing at 20°C, assuming equal outbound and return wire lengths. NOT an ampacity or safety rating. Before building, verify wire current rating, operating temperature, installation/bundling, insulation, and terminal/crimp compatibility against manufacturer specifications. Crimped and moving wires generally use stranded conductors.");
+ const calcNote=el("p","muted","Preliminary DC copper voltage-drop sizing at 20°C using the entered one-way length in inches and an equal-length return conductor. NOT an ampacity or safety rating. Before building, verify wire current rating, operating temperature, installation/bundling, insulation, and terminal/crimp compatibility against manufacturer specifications. Crimped and moving wires generally use stranded conductors.");
  calcGrid.append(voltage.label,current.label,run.label,drop.label,useCase.label,calcResult,apply,wizardBack,calcNote);
  calc.append(calcGrid);wizardFields.append(calc);
  const compSection=el("div","library-components hide");
