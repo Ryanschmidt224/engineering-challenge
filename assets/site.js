@@ -152,6 +152,25 @@ function setupAssemblyTrees(){
   pictureDrop.addEventListener("dragover",event=>{if(!adminAuthenticated||!event.dataTransfer.types.includes("Files"))return;event.preventDefault();pictureDrop.classList.add("is-dragover");event.dataTransfer.dropEffect="copy"});
   pictureDrop.addEventListener("dragleave",()=>pictureDrop.classList.remove("is-dragover"));
   pictureDrop.addEventListener("drop",event=>{if(!adminAuthenticated)return;event.preventDefault();pictureDrop.classList.remove("is-dragover");void uploadPartPicture(event.dataTransfer.files?.[0])});
+  const partDelete=document.createElement("button");partDelete.type="button";partDelete.className="btn part-workspace-delete";partDelete.textContent="Delete part";
+  partTools.append(partDelete);
+  partDelete.onclick=async()=>{
+   const part=currentPartInfo;if(!part||!adminAuthenticated)return;
+   if(!confirm("Delete "+part.name+" from the BOM and feature tree? This also deletes its saved instructions and thumbnail."))return;
+   partDelete.disabled=true;
+   try{
+    const linked=nodes.filter(n=>isPartNode(n)&&n.partId===part.id);
+    if(linked.length)await save(nodes.filter(n=>!linked.some(x=>x.id===n.id)));
+    const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{method:"DELETE",credentials:"same-origin"});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(result.error||"Could not delete part");
+    selected=linked[0]?.parentId??part.assemblyId??null;
+    partBackAssembly=null;currentPartInfo=null;
+    history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));
+    render();notify();window.scrollTo(0,0);
+   }catch(error){partStatus.textContent="Delete failed: "+error.message}
+   finally{partDelete.disabled=false}
+  };
   partTools.querySelector(".part-workspace-edit").onclick=()=>{
    const part=currentPartInfo;if(!part)return;
    const linked=nodes.find(n=>isPartNode(n)&&n.partId===part.id);
