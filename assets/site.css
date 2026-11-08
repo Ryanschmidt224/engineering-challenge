@@ -325,3 +325,21 @@
 .resource-common-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:14px 0}
 .resource-common-fields label{display:flex;flex-direction:column;gap:5px;font-size:.83rem}
 .resource-common-status{font-size:.84rem;color:#aacbd5}
+
+/* CAD drawing attachments (SolidWorks-exported PDFs). */
+.drawing-library{display:flex;flex-direction:column;gap:10px}
+.drawing-library h2{margin:0}
+.drawing-library > .muted{font-size:.84rem;line-height:1.5;margin:0 0 5px}
+.drawing-list{display:flex;flex-direction:column;gap:8px;min-height:36px}
+.drawing-item{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px;border:1px solid #395866;border-radius:9px;background:rgba(36,66,80,.18)}
+.drawing-info{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.drawing-name{font-size:.88rem;overflow-wrap:anywhere}
+.drawing-meta{font-size:.74rem;color:#9bafbb}
+.drawing-row-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.drawing-row-actions .btn{font-size:.75rem;padding:7px 10px;text-decoration:none}
+.drawing-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.drawing-drop{flex:1;min-width:200px;border:2px dashed #496b77;border-radius:9px;padding:13px;text-align:center;color:#b1c3ca;font-size:.84rem;cursor:pointer}
+.drawing-drop.is-dragover,.drawing-drop:focus-visible{border-color:#86c9c1;background:rgba(84,166,157,.11);outline:none}
+.drawing-status{font-size:.81rem;color:#add0d9;min-height:1em}
+.drawing-error{color:#ebaea9;font-size:.83rem}
+@media(max-width:560px){.drawing-actions{flex-direction:column;align-items:stretch}.drawing-drop{min-width:0}.drawing-row-actions{width:100%}}
