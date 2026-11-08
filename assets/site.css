@@ -1323,3 +1323,49 @@
 #launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article + article{
  padding-top:3px;
 }
+
+/* Workspace spacing pass: distinguish functional areas using whitespace,
+   not additional competing colors or heavy outlines. */
+#launcher .assembly-sidebar.bom-sidebar-active>.workspace-bom{
+ margin-top:32px;
+ padding-top:24px;
+}
+#launcher .assembly-sidebar .workspace-bom-heading{
+ padding-bottom:17px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-count{
+ margin-bottom:20px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part-stack{
+ gap:7px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-shop-materials{
+ margin-top:26px;
+ padding-top:12px;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-heading{
+ margin-bottom:30px;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
+ margin-bottom:52px;
+ padding-bottom:0;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article h2{
+ margin-bottom:18px;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-resources{
+ margin-top:0;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-actions{
+ margin-top:6px;
+ padding-top:0;
+}
+@media(max-width:800px){
+ #launcher .assembly-sidebar.bom-sidebar-active>.workspace-bom{
+  margin-top:24px;
+  padding-top:18px;
+ }
+ #launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
+  margin-bottom:36px;
+ }
+}
