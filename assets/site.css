@@ -529,3 +529,29 @@
 .instruction-log-item p{white-space:pre-wrap;margin:6px 0}
 .instruction-log-item .btn,.instruction-history-item .btn{margin-top:6px}
 @media(max-width:620px){.bom-shopping-toggle{margin-left:0}.bom-shopping-table th,.bom-shopping-table td{padding:9px 6px}}
+
+
+/* BOM display selector: adjacent views, creation action at the right edge. */
+.workspace-bom-heading{display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap}
+.workspace-bom-heading h2{margin-right:auto}
+.bom-view-switch{display:inline-flex;gap:0;align-items:center;flex-shrink:0}
+.bom-view-switch .bom-view-button{border-radius:0;font-size:.85rem;padding:9px 13px;white-space:nowrap}
+.bom-view-switch .bom-view-button:first-child{border-radius:9px 0 0 9px}
+.bom-view-switch .bom-view-button:last-child{border-radius:0 9px 9px 0;margin-left:-1px}
+.bom-view-switch .bom-view-button.is-active{background:#356d75;border-color:#70cabe;color:#fff;position:relative;z-index:1}
+.workspace-bom-heading .workspace-new-part{margin-left:auto;white-space:nowrap}
+.bom-list-part-link{background:transparent;border:0;padding:2px 0;box-shadow:none;text-align:left;font-weight:650}
+.bom-list-part-link:hover{text-decoration:underline;background:transparent}
+.bom-shopping-table td:nth-child(2){color:var(--muted,#aabac3)}
+.bom-shopping-table th:last-child,.bom-shopping-table td:last-child{text-align:right;white-space:nowrap}
+@media(max-width:690px){
+ .workspace-bom-heading h2{width:100%;margin:0}
+ .bom-view-switch{flex:0 1 auto}
+ .workspace-bom-heading .workspace-new-part{margin-left:auto}
+ .bom-view-switch .bom-view-button{padding:9px 10px}
+}
+@media(max-width:470px){
+ .workspace-bom-heading .workspace-new-part{width:100%;margin-left:0}
+ .bom-view-switch{width:100%}
+ .bom-view-switch .bom-view-button{flex:1}
+}
