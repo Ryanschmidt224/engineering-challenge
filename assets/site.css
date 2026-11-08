@@ -692,3 +692,26 @@
   .bom-shop-material-row>.bom-workshop-link,
   .bom-shop-material-row>.bom-material-preference{flex:0 1 auto}
 }
+
+
+/* Single shopping search action; technical specification remains available on demand. */
+.workshop-amazon-search{
+  display:inline-flex;
+  align-items:center;
+  align-self:start;
+  width:max-content;
+  max-width:100%;
+  padding:8px 12px;
+  border:1px solid #568b88;
+  border-radius:8px;
+  background:#193b3b;
+  color:#b6efe0;
+  text-decoration:none;
+  font-size:.88rem;
+  font-weight:650;
+}
+.workshop-amazon-search:hover,.workshop-amazon-search:focus-visible{
+  background:#24524d;
+  border-color:#82c8b9;
+  color:#fff;
+}
