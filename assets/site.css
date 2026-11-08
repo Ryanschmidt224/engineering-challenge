@@ -715,3 +715,27 @@
   border-color:#82c8b9;
   color:#fff;
 }
+
+
+/* BOM part navigation: part names lead to their full details, while the
+   surrounding thumbnail row remains independently expandable. */
+.bom-part-summary .bom-part-open{
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:inherit;
+  padding:0;
+  margin:0;
+  font:inherit;
+  font-weight:650;
+  text-align:left;
+  cursor:pointer;
+  min-width:0;
+}
+.bom-part-summary .bom-part-open:hover,
+.bom-part-summary .bom-part-open:focus-visible{
+  color:#91dfd1;
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+.bom-open-part-details{margin:0 0 12px;font-size:.83rem}
