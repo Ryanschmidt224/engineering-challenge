@@ -754,7 +754,7 @@ function setupAssemblyTrees(){
      const data=await response.json();if(!response.ok)throw Error(data.error||"Could not create BOM-only part");
      newPart=data.component;
      // A cutting list needs an integer wire count; do not invent a count for unspecified quantities.
-     if(wireInfo?.crimp&&wireId&&Number.isInteger(part.quantity)&&part.quantity>0&&Number.isFinite(wireInfo.mm)&&wireInfo.mm>0){
+     if(wireInfo?.crimp&&wireId&&part.quantityUnit==="pcs"&&Number.isInteger(part.quantity)&&part.quantity>0&&Number.isFinite(wireInfo.mm)&&wireInfo.mm>0){
       const res=await fetch("/api/harness?project="+encodeURIComponent(project)+"&part="+encodeURIComponent(newPart.id),{
        method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},
        body:JSON.stringify({cuts:[{wireId,qty:part.quantity,cutLengthMm:wireInfo.mm,stripAmm:0,stripBmm:0,endA:wireInfo.endA,endB:wireInfo.endB}]})
