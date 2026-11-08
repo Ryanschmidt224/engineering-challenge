@@ -183,12 +183,12 @@ function setupAssemblyTrees(){
     if(!value?.trim())return;
     experiments.push({id:crypto.randomUUID(),text:value.trim().slice(0,3000),createdAt:new Date().toISOString()});
     renderLogs();logDetails.open=true;
-    const feedback=panel.querySelector("."+prefix+"-status");if(feedback)feedback.textContent="Test noted. Save the workspace to keep it.";
+    const feedback=panel.querySelector(prefix==="part"?".part-workspace-status":".workspace-status");if(feedback)feedback.textContent="Test noted. Save the workspace to keep it.";
    };
    const historyDetails=document.createElement("details");historyDetails.className="instruction-history";
    const historySummary=document.createElement("summary");historySummary.textContent="Recent changes";
    const historyList=document.createElement("div");historyList.className="instruction-history-list";
-   historyDetails.append(historySummary,historyList);panel.querySelector("."+prefix+"-save").after(historyDetails);
+   historyDetails.append(historySummary,historyList);panel.querySelector(prefix==="part"?".part-workspace-save":".workspace-save").after(historyDetails);
    function setData(data){
     experiments=Array.isArray(data?.experiments)?data.experiments.map(x=>({...x})):[];
     renderLogs();historyList.replaceChildren();
@@ -205,7 +205,7 @@ function setupAssemblyTrees(){
        experiments=Array.isArray(snapshot.experiments)?snapshot.experiments.map(x=>({...x})):[];
        renderLogs();onRestoreResources?.(snapshot.resources);
        if(!preview.classList.contains("hide"))renderPreview();
-       panel.querySelector("."+prefix+"-status").textContent="Previous version loaded. Click Save to keep it.";
+       panel.querySelector(prefix==="part"?".part-workspace-status":".workspace-status").textContent="Previous version loaded. Click Save to keep it.";
       };
       item.append(restore);
      }
