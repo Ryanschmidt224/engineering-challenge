@@ -1,5 +1,6 @@
 import {handleTree} from "./functions/api/tree.js";
 import {handleWires,handleHarness} from "./functions/api/wires.js";
+import {handleCommonParts} from "./functions/api/commonparts.js";
 import {handleWorkspace} from "./functions/api/workspace.js";
 import {auth} from "./functions/api/auth.js";
 import {handleComponents,handleExtract,handleComponentPhoto} from "./functions/api/components.js";
@@ -11,6 +12,7 @@ export default {
     try{
       if(path==="/api/tree")return handleTree(request,env);
       if(path==="/api/wires")return handleWires(request,env);
+      if(path==="/api/commonparts")return handleCommonParts(request,env);
       if(path==="/api/harness")return handleHarness(request,env);
       if(path==="/api/workspace")return handleWorkspace(request,env);
       if(path==="/api/auth")return auth(request,env);
