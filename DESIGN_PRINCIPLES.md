@@ -49,3 +49,14 @@ If the answer is no, simplify the design before implementation.
 - Provide exactly one override per material usage: **Treat as purchase item** or **Assume on hand**. This should not require editing the full BOM form.
 - A source wire edit must update its derived supplies without losing their explicit purchase/stock preference.
 - Do not silently rewrite legacy manually entered consumables. Recognize them by name when safe; leave reconciliation to deliberate edits.
+
+
+## Recipe-driven work instructions and learner-selected detail
+
+- A part or assembly has a recipe made of short, discrete steps. Each step has an immutable ID, an action title, optional standard instructions, optional deeper guidance, and a step type. Its visible step number comes from the order, not the ID.
+- Authors can insert, move, duplicate, and remove steps independently. The minimum authoring burden is a short action title; all extra information is optional.
+- Learners select **Brief**, **Standard**, or **Detailed** instructions with one persistent preference. Brief shows the step title, Standard adds the action guidance, Detailed adds optional extended help.
+- **Please explain this** belongs to the learner, not the mandatory step text. Highlighted instruction text opens a matching knowledge tile when one is available; otherwise the learner can draft an explanation request. Do not claim unreviewed explanations exist.
+- Existing freeform written instructions and machine procedures remain intact. Importing old prose to the step model is explicitly optional, not automatic.
+- Each recipe is persisted with its parent workspace and retained in workspace revision history. Step IDs and recipe order are preserved across edits.
+- Keep procedural detail and conceptual knowledge separate: an expert can skim while an inquisitive beginner can go deeper without disrupting the build.
