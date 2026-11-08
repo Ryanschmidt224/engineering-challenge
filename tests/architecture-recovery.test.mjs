@@ -16,7 +16,7 @@ const compile=(path,exports,additional={})=>{
   .replace(/^import .*?;\s*$/gm,"").replace(/^export /gm,"");
  return runInNewContext(code+"\n({"+exports.join(",")+"})",ctx(additional));
 };
-const archive=compile("functions/api/project-archive.js",["handleProjectArchive","inspectArchive","sha256","encodeBytes","decodeBytes"]);
+const archive=compile("functions/api/project-archive.js",["handleProjectArchive","inspectArchive","sha256","encodeBytes","decodeBytes","PROJECTS","exportProject"]);
 const staging=compile("functions/api/archive-staging.js",["handleArchiveStaging"],archive);
 const automatic=compile("functions/api/automatic-backups.js",["backupAllProjects","handleAutomaticBackups"],archive);
 const url=p=>"https://test.example"+p;
