@@ -599,11 +599,11 @@ function setupAssemblyTrees(){
    const rows=document.createElement("div");rows.className="bom-shop-material-rows";
    for(const part of items){
     const row=document.createElement("div");row.className="bom-shop-material-row";
-    const name=document.createElement("button");name.type="button";name.className="btn bom-list-part-link";
-    name.textContent=part.name;
-    name.onclick=()=>openPartInstructions(part,part.assemblyId??null);
+    const name=document.createElement("span");name.className="bom-shop-material-name";name.textContent=part.name;
     const quantity=document.createElement("span");quantity.className="bom-shop-qty";quantity.textContent=materialQuantity(part);
-    row.append(name,quantity);
+    const openPart=document.createElement("button");openPart.type="button";openPart.className="btn bom-open-part-details";openPart.textContent="Open part details";
+    openPart.onclick=()=>openPartInstructions(part,part.assemblyId??null);
+    row.append(name,quantity,openPart);
     if(part.workshopChoice){
      const selected=document.createElement("span");selected.className="bom-workshop-selected";
      selected.textContent="Selected: "+(window.BSResources?.all("parts").find(x=>x.id===part.workshopChoice)?.name||"Workshop standard");
@@ -619,19 +619,15 @@ function setupAssemblyTrees(){
    const item=document.createElement("details");item.className="bom-part";
    const summary=document.createElement("summary");summary.className="bom-part-summary";
    const photo=makeBomThumbnail(partPhotoUrl(part.id),part.name);
-   const name=document.createElement("button");name.type="button";name.className="bom-part-name bom-part-open";name.textContent=part.name;
-   name.title="Open full part details";
-   name.onclick=event=>{event.preventDefault();event.stopPropagation();openPartInstructions(part,originId)};
+   const name=document.createElement("span");name.className="bom-part-name";name.textContent=part.name;
+   const openPart=document.createElement("button");openPart.type="button";openPart.className="btn bom-open-part-details";openPart.textContent="Open part details";
+   openPart.onclick=event=>{event.preventDefault();event.stopPropagation();openPartInstructions(part,originId)};
    if(part.bomOnly)item.classList.add("bom-only-part");
    if(part.generatedFrom)item.classList.add("bom-generated-part");
    const qty=document.createElement("span");qty.className="bom-part-meta";qty.textContent=(part.quantity===null||part.quantity===undefined?"Qty not specified":"Qty "+part.quantity+(part.quantityUnit?" "+part.quantityUnit:""))+(part.model?" · "+part.model:"");
    const expand=document.createElement("span");expand.className="bom-part-toggle-label";expand.textContent="Details";
-   summary.append(photo,name,qty,expand);item.append(summary);
+   summary.append(photo,name,qty,openPart,expand);item.append(summary);
    const body=document.createElement("div");body.className="bom-part-body";
-   const openDetails=document.createElement("button");openDetails.type="button";openDetails.className="btn bom-open-part-details";
-   openDetails.textContent="Open part details";
-   openDetails.onclick=()=>openPartInstructions(part,originId);
-   body.append(openDetails);
    for(const [label,value] of [["Manufacturer",part.manufacturer],["Model",part.model],["Supplier",part.supplier],["ASIN",part.asin],["Category",part.category]]){
     if(!value)continue;
     const row=document.createElement("p"),strong=document.createElement("strong");strong.textContent=label+": ";row.append(strong,document.createTextNode(value));body.append(row);
@@ -714,9 +710,6 @@ function setupAssemblyTrees(){
     }
     controls.append(edit,pick,remove,input);body.append(controls);
    }
-   const instructions=document.createElement("button");instructions.type="button";instructions.className="btn bom-part-instructions";instructions.textContent="Open part details →";
-   instructions.onclick=()=>openPartInstructions(part,originId);
-   body.prepend(instructions);
    item.append(body);return item;
   }
   // Only the most recently opened BOM entry has an enlarged thumbnail.
@@ -754,9 +747,11 @@ function setupAssemblyTrees(){
      const body=document.createElement("tbody");
      for(const p of items){
       const tr=document.createElement("tr"),name=document.createElement("td"),assembly=document.createElement("td"),quantity=document.createElement("td");
-      const link=document.createElement("button");link.type="button";link.className="btn bom-list-part-link";link.textContent=p.name;
-      link.onclick=()=>openPartInstructions(p,p.assemblyId??null);
-      name.append(link);
+      const label=document.createElement("span");label.className="bom-list-part-name";label.textContent=p.name;
+      name.append(label);
+      const openPart=document.createElement("button");openPart.type="button";openPart.className="btn bom-open-part-details";openPart.textContent="Open part details";
+      openPart.onclick=()=>openPartInstructions(p,p.assemblyId??null);
+      name.append(openPart);
       const preference=preferenceButton(p);if(preference)name.append(preference);
       if(p.generatedFrom){const marker=document.createElement("small");marker.className="muted";marker.textContent=" · calculated";name.append(marker)}
       assembly.textContent=p.assemblyId===assemblyId?(assemblyId===null?"Project":"This assembly"):(nodes.find(n=>n.id===p.assemblyId)?.name||"Project");
