@@ -134,6 +134,42 @@ function setupAssemblyTrees(){
   partWorkspace.querySelector(".workspace-heading").after(partTools);
   let currentPartInfo=null;
   const partFile=partTools.querySelector(".part-workspace-file"),pictureButton=partTools.querySelector(".part-workspace-picture");
+  const deletePictureButton=document.createElement("button");deletePictureButton.type="button";deletePictureButton.className="btn part-workspace-delete-picture";deletePictureButton.textContent="Delete picture";partTools.append(deletePictureButton);
+  const partPictureDialog=document.createElement("dialog");partPictureDialog.className="part-picture-dialog";
+  const pictureClose=document.createElement("button");pictureClose.type="button";pictureClose.className="btn part-picture-close";pictureClose.textContent="Close ✕";
+  const fullImage=document.createElement("img");fullImage.className="part-picture-full";fullImage.alt="Full-size part picture";
+  pictureClose.onclick=()=>partPictureDialog.close();
+  partPictureDialog.onclick=event=>{if(event.target===partPictureDialog)partPictureDialog.close()};
+  partPictureDialog.append(pictureClose,fullImage);partWorkspace.append(partPictureDialog);
+  const pictureCover=partWorkspace.querySelector(".part-workspace-cover");
+  pictureCover.title="Double-click to view the full-size picture";
+  pictureCover.ondblclick=event=>{
+   const image=pictureCover.querySelector("img");
+   if(!image)return;
+   event.preventDefault();
+   fullImage.src=image.src;fullImage.alt=image.alt||"Full-size part picture";
+   if(!partPictureDialog.open)partPictureDialog.showModal();
+  };
+  async function deletePartPicture(partId,feedback){
+   if(!adminAuthenticated)return;
+   if(!confirm("Delete this part picture? The BOM part and its instructions will remain."))return;
+   const response=await fetch(partPhotoUrl(partId),{method:"DELETE",credentials:"same-origin"});
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok)throw Error(result.error||"Picture deletion failed (HTTP "+response.status+")");
+   if(typeof feedback==="function")feedback();
+  }
+  deletePictureButton.onclick=async()=>{
+   const partId=partRoute();if(!partId)return;
+   deletePictureButton.disabled=true;
+   try{
+    await deletePartPicture(partId,()=>{
+     pictureCover.replaceChildren(Object.assign(document.createElement("span"),{textContent:"No picture yet"}));
+     if(partPictureDialog.open)partPictureDialog.close();
+     partStatus.textContent="Part picture deleted.";
+    });
+   }catch(error){partStatus.textContent=error.message}
+   finally{deletePictureButton.disabled=false}
+  };
   async function uploadPartPicture(file){
    const partId=partRoute();if(!file||!partId)return;
    const mime=file.type||({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"}[file.name.split(".").pop().toLowerCase()]||"");
@@ -354,6 +390,18 @@ function setupAssemblyTrees(){
      target.addEventListener("dragleave",event=>{event.preventDefault();target.classList.remove("is-dragover")});
      target.addEventListener("drop",event=>{event.preventDefault();event.stopPropagation();target.classList.remove("is-dragover");void uploadThumbnail(event.dataTransfer.files?.[0])});
     }
+    const deletePicture=document.createElement("button");deletePicture.type="button";deletePicture.className="btn bom-delete-picture";deletePicture.textContent="Delete picture";
+    deletePicture.onclick=async()=>{
+     deletePicture.disabled=true;
+     try{
+      await deletePartPicture(part.id,()=>{
+       photo.onerror=null;photo.src=missingPicture;photo.classList.add("bom-thumbnail-empty");photo.alt="Picture unavailable";
+       bomReport("Picture removed from "+part.name+".");
+      });
+     }catch(error){bomReport(error.message)}
+     finally{deletePicture.disabled=false}
+    };
+    controls.append(deletePicture);
     const remove=document.createElement("button");remove.type="button";remove.className="btn";remove.textContent="Delete part";
     remove.onclick=async()=>{
      if(!confirm("Delete "+part.name+"?"))return;
