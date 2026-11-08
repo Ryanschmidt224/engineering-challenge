@@ -69,6 +69,8 @@ setupPhotos();
 
 // Project assembly trees are public; editing requires administrator login.
 const assemblySelections={};
+// Public tree snapshots let each assembly BOM roll up all descendant parts.
+const assemblyTreeSnapshots={};
 function setupAssemblyTrees(){
  document.querySelectorAll("[data-assembly-tree]").forEach(root=>{
   const project=root.dataset.assemblyTree,view=document.getElementById(project),nodesEl=root.querySelector(".assembly-tree-nodes"),status=root.querySelector(".assembly-tree-status"),controls=root.querySelector(".assembly-edit");
@@ -454,7 +456,7 @@ function setupAssemblyTrees(){
   }
   root.addEventListener("openassembly",e=>{const id=e.detail;if(id==="__root__"){selected=null;render();notify();return}if(!nodes.some(n=>n.id===id))return;selected=id;let cursor=nodes.find(n=>n.id===id);while(cursor){expanded.add(cursor.parentId);cursor=nodes.find(n=>n.id===cursor.parentId)}render();notify()});
   const validSelection=()=>selected===null||nodes.some(n=>n.id===selected);
-  const notify=()=>{assemblySelections[project]=selected;showAssemblyPage();renderTiles();view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));};
+  const notify=()=>{assemblySelections[project]=selected;assemblyTreeSnapshots[project]={nodes:[...nodes],title};showAssemblyPage();renderTiles();view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));};
   async function load(){try{const r=await fetch("/api/tree?project="+project),data=await r.json();if(!r.ok)throw Error(data.error);nodes=data.nodes||[];if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/(?:assembly|workspace)/([^/]+)$"));if(deepLink&&nodes.some(n=>n.id===deepLink[1]))selected=deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
   async function save(next){const r=await fetch("/api/tree?project="+project,{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({nodes:next})});const data=await r.json();if(!r.ok)throw Error(data.error||"Save failed");nodes=next;render();notify()}
   // Tree ordering is the order of node records; moving a node keeps its permanent ID.
@@ -548,30 +550,97 @@ function setupComponents(){
   for(const opt of ["explicit","inferred"]){const el=document.createElement("option");el.value=opt;el.textContent=opt==="explicit"?"Stated in listing":"Inferred";c.append(el)}c.value=source;
   del.className="btn";del.type="button";del.textContent="Remove";del.onclick=()=>row.remove();row.append(a,b,c,del);specs.append(row)
  }
+ let refreshVersion=0;
  async function refresh(){
-  try{const res=await fetch("/api/components?project="+project),data=await res.json();if(!res.ok)throw Error(data.error);
-  list.replaceChildren();
-  const selected=assemblySelections[project]??null;const visible=data.components.filter(c=>(c.assemblyId??null)===selected);
-  if(!visible.length){list.textContent="No components yet.";return}
-  const stack=document.createElement("div");stack.className="bom-part-stack";
-  for(const c of visible){
-   const item=document.createElement("details");item.className="bom-part";item.dataset.partId=c.id;
-   const summary=document.createElement("summary");summary.className="bom-part-summary";summary.title="Click to expand or collapse part details";summary.setAttribute("aria-label","Show or hide details for "+c.name);
-   const label=document.createElement("span");label.className="bom-part-name";label.textContent=c.name;
-   const meta=document.createElement("span");meta.className="bom-part-meta";meta.textContent="Qty "+(c.quantity||1)+(c.model?" · "+c.model:"");
-   const hint=document.createElement("span");hint.className="bom-part-toggle-label";hint.textContent="Details";
-   summary.append(label,meta,hint);item.append(summary);
-   const body=document.createElement("div");body.className="bom-part-body";
-   for(const [labelText,value] of [["Manufacturer",c.manufacturer],["Model",c.model],["Supplier",c.supplier],["ASIN",c.asin],["Category",c.category]]){
-    if(!value)continue;const row=document.createElement("p");const title=document.createElement("strong");title.textContent=labelText+": ";row.append(title,document.createTextNode(value));body.append(row)
+  const version=++refreshVersion,selected=assemblySelections[project]??null;
+  try{
+   const response=await fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"});
+   const payload=await response.json();
+   if(!response.ok)throw Error(payload.error||"HTTP "+response.status);
+   if(version!==refreshVersion||selected!==(assemblySelections[project]??null))return;
+   const all=Array.isArray(payload.components)?payload.components:[];
+   const tree=assemblyTreeSnapshots[project];
+   // Traverse the selected assembly and its children, not unrelated branches.
+   const orderedIds=[selected];
+   const seen=new Set(orderedIds);
+   if(tree){
+    const walk=parent=>{
+     for(const node of tree.nodes.filter(n=>n.parentId===parent)){
+      if(seen.has(node.id))continue;
+      seen.add(node.id);orderedIds.push(node.id);walk(node.id);
+     }
+    };
+    walk(selected);
    }
-   if(c.specifications?.length){const h=document.createElement("strong");h.textContent="Specifications";body.append(h);
-    const ul=document.createElement("ul");for(const spec of c.specifications){const li=document.createElement("li");li.textContent=spec.name+": "+spec.value+(spec.source==="inferred"?" (inferred)":"");ul.append(li)}body.append(ul)}
-   if(adminAuthenticated){const del=document.createElement("button");del.type="button";del.className="btn";del.textContent="Delete part";del.onclick=async()=>{if(!confirm("Delete "+c.name+"?"))return;del.disabled=true;try{const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(c.id),{method:"DELETE",credentials:"same-origin"});const result=await response.json().catch(()=>({}));if(!response.ok)throw Error(result.error||"Delete failed");say("Part deleted.");await refresh()}catch(e){say(e.message);del.disabled=false}};body.append(del)}
-   item.append(body);stack.append(item);
+   const partGroups=orderedIds.map(id=>({
+    id,
+    name:id===null?(tree?.title||"Main project"):(tree?.nodes.find(n=>n.id===id)?.name||"Assembly"),
+    parts:all.filter(part=>(part.assemblyId??null)===id)
+   })).filter(group=>group.parts.length);
+   list.replaceChildren();
+   if(!partGroups.length){
+    const empty=document.createElement("p");empty.className="bom-empty";
+    empty.textContent="No parts saved in this assembly"+(tree?" or its subassemblies":"")+". Use + New part to add one.";
+    list.append(empty);return;
+   }
+   const total=partGroups.reduce((sum,g)=>sum+g.parts.length,0);
+   const count=document.createElement("p");count.className="bom-count";
+   count.textContent=total+" part"+(total===1?"":"s")+" in this assembly"+(tree?" and its subassemblies":"");
+   list.append(count);
+   for(const group of partGroups){
+    const section=document.createElement("section");section.className="bom-origin-group";
+    if(tree){
+     const heading=document.createElement("h3");heading.className="bom-origin-title";
+     heading.textContent=group.name+(group.id===selected?" · This assembly":" · Subassembly");
+     section.append(heading);
+    }
+    const stack=document.createElement("div");stack.className="bom-part-stack";
+    for(const c of group.parts){
+     const item=document.createElement("details");item.className="bom-part";item.dataset.partId=c.id;
+     const summary=document.createElement("summary");summary.className="bom-part-summary";
+     summary.title="Click to expand or collapse part details";
+     summary.setAttribute("aria-label","Show or hide details for "+c.name);
+     const label=document.createElement("span");label.className="bom-part-name";label.textContent=c.name;
+     const meta=document.createElement("span");meta.className="bom-part-meta";meta.textContent="Qty "+(c.quantity||1)+(c.model?" · "+c.model:"");
+     const hint=document.createElement("span");hint.className="bom-part-toggle-label";hint.textContent="Details";
+     summary.append(label,meta,hint);item.append(summary);
+     const body=document.createElement("div");body.className="bom-part-body";
+     for(const [fieldName,value] of [["Manufacturer",c.manufacturer],["Model",c.model],["Supplier",c.supplier],["ASIN",c.asin],["Category",c.category]]){
+      if(!value)continue;
+      const line=document.createElement("p"),strong=document.createElement("strong");
+      strong.textContent=fieldName+": ";line.append(strong,document.createTextNode(value));body.append(line);
+     }
+     if(c.specifications?.length){
+      const title=document.createElement("strong");title.textContent="Specifications";body.append(title);
+      const ul=document.createElement("ul");
+      for(const spec of c.specifications){const li=document.createElement("li");li.textContent=spec.name+": "+spec.value+(spec.source==="inferred"?" (inferred)":"");ul.append(li)}
+      body.append(ul);
+     }
+     if(adminAuthenticated){
+      const del=document.createElement("button");del.type="button";del.className="btn";del.textContent="Delete part";
+      del.onclick=async()=>{
+       if(!confirm("Delete "+c.name+" from "+group.name+"?"))return;
+       del.disabled=true;
+       try{
+        const res=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(c.id),{method:"DELETE",credentials:"same-origin"});
+        const data=await res.json().catch(()=>({}));
+        if(!res.ok)throw Error(data.error||"Delete failed");
+        say("Part deleted.");await refresh();
+       }catch(error){say(error.message);del.disabled=false}
+      };
+      body.append(del);
+     }
+     item.append(body);stack.append(item);
+    }
+    section.append(stack);list.append(section);
+   }
+  }catch(error){
+   if(version!==refreshVersion)return;
+   list.replaceChildren();
+   const failure=document.createElement("p");failure.className="bom-error";
+   failure.textContent="Unable to load BOM: "+error.message;
+   list.append(failure);
   }
-  list.append(stack);
-  }catch(e){list.textContent="Components unavailable."}
  }
  const importPanel=root.querySelector(".component-admin");
  // A fresh part is a fresh draft. Only Save component writes a new BOM record.
