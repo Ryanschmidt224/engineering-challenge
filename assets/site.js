@@ -484,15 +484,22 @@ function setupAssemblyTrees(){
   },true);
   // Display saved parts independently of the legacy editor's <details> DOM.
   let bomDisplayVersion=0;
-  let shoppingView=false;
-  const shoppingToggle=document.createElement("button");shoppingToggle.type="button";shoppingToggle.className="btn bom-shopping-toggle";
-  shoppingToggle.textContent="Shopping list";
-  workspace.querySelector(".workspace-bom-heading").append(shoppingToggle);
-  shoppingToggle.onclick=()=>{
-   shoppingView=!shoppingView;
-   shoppingToggle.textContent=shoppingView?"Assembly view":"Shopping list";
-   void renderWorkspaceParts();
+  let listView=false;
+  const bomHeader=workspace.querySelector(".workspace-bom-heading");
+  const viewSwitch=document.createElement("div");viewSwitch.className="bom-view-switch";viewSwitch.setAttribute("role","group");viewSwitch.setAttribute("aria-label","BOM display");
+  const thumbButton=document.createElement("button");thumbButton.type="button";thumbButton.className="btn bom-view-button";thumbButton.textContent="Thumbnail view";
+  const listButton=document.createElement("button");listButton.type="button";listButton.className="btn bom-view-button";listButton.textContent="List view";
+  const updateViewButtons=()=>{
+   thumbButton.classList.toggle("is-active",!listView);
+   listButton.classList.toggle("is-active",listView);
+   thumbButton.setAttribute("aria-pressed",String(!listView));
+   listButton.setAttribute("aria-pressed",String(listView));
   };
+  thumbButton.onclick=()=>{if(!listView)return;listView=false;updateViewButtons();void renderWorkspaceParts()};
+  listButton.onclick=()=>{if(listView)return;listView=true;updateViewButtons();void renderWorkspaceParts()};
+  viewSwitch.append(thumbButton,listButton);
+  bomHeader.querySelector(".workspace-new-part").before(viewSwitch);
+  updateViewButtons();
   let editingPart=null;
   let editingPartAssembly=null;
   const partPhotoUrl=id=>"/api/components/photo?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id);
@@ -620,40 +627,29 @@ function setupAssemblyTrees(){
     if(version!==bomDisplayVersion||assemblyId!==selected||!workspaceRoute())return;
     const parts=Array.isArray(result.components)?result.components:[];
     container.replaceChildren();
-    if(shoppingView){
-     // Flatten selected assembly and descendants without additional user input.
+    if(listView){
+     // A compact tabular representation of the same BOM, not a different purchasing calculation.
      const included=new Set([assemblyId]);
-     const descendants=id=>{for(const n of nodes.filter(n=>n.parentId===id&&!isPartNode(n))){if(!included.has(n.id)){included.add(n.id);descendants(n.id)}}};
-     descendants(assemblyId);
+     const visit=id=>{for(const node of nodes.filter(n=>n.parentId===id&&!isPartNode(n))){if(!included.has(node.id)){included.add(node.id);visit(node.id)}}};
+     visit(assemblyId);
      const items=parts.filter(p=>included.has(p.assemblyId??null));
-     const groups=new Map();
-     for(const p of items){
-      // Distinct specifications must not be accidentally combined (e.g. wire lengths).
-      const sameReusablePart=!!p.generatedKind||String(p.sharedPartRef||"").startsWith("common:");
-      const signature=(p.sharedPartRef||p.name.toLowerCase())+"|"+(p.model||"")+"|"+(p.quantityUnit||"")+(sameReusablePart?"":"|"+JSON.stringify(p.specifications||[]));
-      let group=groups.get(signature);
-      if(!group){group={name:p.name,model:p.model||"",unit:p.quantityUnit||"",qty:0,unknown:false,count:0};groups.set(signature,group)}
-      group.count++;
-      if(p.quantity===null||p.quantity===undefined)group.unknown=true;
-      else group.qty+=Number(p.quantity);
-     }
-     const note=document.createElement("p");note.className="muted bom-count";
-     note.textContent="Combined materials for this assembly and its subassemblies. Quantities without an estimate stay unspecified.";
-     container.append(note);
      const table=document.createElement("table");table.className="bom-shopping-table";
-     const head=document.createElement("thead"),heads=document.createElement("tr");
-     for(const title of ["Part / material","Required"]){const cell=document.createElement("th");cell.textContent=title;heads.append(cell)}head.append(heads);table.append(head);
+     const head=document.createElement("thead"),headRow=document.createElement("tr");
+     for(const label of ["Part / material","Assembly","Quantity"]){const th=document.createElement("th");th.textContent=label;headRow.append(th)}
+     head.append(headRow);table.append(head);
      const body=document.createElement("tbody");
-     const rows=[...groups.values()].sort((a,b)=>a.name.localeCompare(b.name));
-     for(const group of rows){
-      const tr=document.createElement("tr"),part=document.createElement("td"),qty=document.createElement("td");
-      part.textContent=group.name+(group.model?" · "+group.model:"");
-      qty.textContent=group.unknown?"To confirm"+(group.qty?" (at least "+Number(group.qty.toFixed(4))+" "+group.unit+")":""):Number(group.qty.toFixed(4))+(group.unit?" "+group.unit:"");
-      tr.append(part,qty);body.append(tr);
+     for(const p of items){
+      const tr=document.createElement("tr"),name=document.createElement("td"),assembly=document.createElement("td"),quantity=document.createElement("td");
+      const link=document.createElement("button");link.type="button";link.className="btn bom-list-part-link";link.textContent=p.name;
+      link.onclick=()=>openPartInstructions(p,p.assemblyId??null);
+      name.append(link);
+      if(p.generatedFrom){const marker=document.createElement("small");marker.className="muted";marker.textContent=" · calculated";name.append(marker)}
+      assembly.textContent=p.assemblyId===assemblyId?(assemblyId===null?"Project":"This assembly"):(nodes.find(n=>n.id===p.assemblyId)?.name||"Project");
+      quantity.textContent=p.quantity===null||p.quantity===undefined?"Not specified":String(p.quantity)+(p.quantityUnit?" "+p.quantityUnit:"");
+      tr.append(name,assembly,quantity);body.append(tr);
      }
-     if(!rows.length){const empty=document.createElement("tr"),cell=document.createElement("td");cell.colSpan=2;cell.textContent="No materials yet.";empty.append(cell);body.append(empty)}
-     table.append(body);container.append(table);
-     return;
+     if(!items.length){const row=document.createElement("tr"),cell=document.createElement("td");cell.colSpan=3;cell.textContent="No materials yet.";row.append(cell);body.append(row)}
+     table.append(body);container.append(table);return;
     }
     // A real subassembly is shown once as an expandable BOM row, not duplicated as a normal part.
     const renderAssembly=(parentId,mount,level)=>{
