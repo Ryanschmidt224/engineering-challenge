@@ -805,3 +805,8 @@
 .recipe-wide-field{grid-column:1/-1}
 .recipe-edit-footer{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
 @media(max-width:650px){.recipe-step-fields{grid-template-columns:minmax(0,1fr)}.recipe-legacy>summary{font-size:.9rem}.recipe-editor{padding:12px}}
+
+/* Project portability actions are secondary to BOM/recipe authoring. */
+.workspace-archive-actions{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:10px 0 20px}
+.workspace-archive-actions>.btn{font-size:.82rem;padding:8px 11px}
+.workspace-archive-status{font-size:.81rem;line-height:1.45;flex:1 1 240px}
