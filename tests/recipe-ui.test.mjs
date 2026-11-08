@@ -16,12 +16,14 @@ test("optional step fields appear only when populated or explicitly added",()=>{
  assert.match(recipe,/\+ Add /);
  assert.match(recipe,/step\[property\]/);
  assert.match(recipe,/getData:\(\)=>steps\.map\(normalize\)/);
- assert.match(recipe,/Previous written instructions/);
+ assert.doesNotMatch(recipe,/Previous written instructions|Original written instructions/);
 });
-test("saved legacy instructions are retained, empty companion sections are hidden",()=>{
+test("legacy freeform instruction panels are removed, not merely hidden",()=>{
  const site=readFileSync("assets/site.js","utf8");
- assert.match(site,/syncLegacyInstructionSections/);
- assert.match(site,/section\.classList\.toggle\("hide",!input\.value\.trim\(\)\)/);
  const recipe=readFileSync("assets/recipe-editor.js","utf8");
- assert.match(recipe,/legacy\.classList\.toggle\("hide",!hasLegacy\)/);
+ assert.doesNotMatch(site,/workspace-instructions|part-instructions|workspace-procedures|part-procedures|workspace-notes|part-notes/);
+ assert.doesNotMatch(site,/syncLegacyInstructionSections/);
+ assert.doesNotMatch(recipe,/recipe-legacy|Previous written instructions/);
+ const api=readFileSync("functions/api/workspace.js","utf8");
+ assert.doesNotMatch(api,/instructions:data\.instructions|procedures:data\.procedures|notes:data\.notes/);
 });
