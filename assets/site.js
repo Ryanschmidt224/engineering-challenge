@@ -51,8 +51,18 @@ document.getElementById("explainSelection").onclick=()=>{const selected=selectio
 window.BSExplainText=(selected,context={})=>{
  const term=String(selected||"").trim().slice(0,220);
  if(!term)return;
- const found=tiles.find(t=>t.title.toLowerCase()===term.toLowerCase())||
-  tiles.find(t=>term.length>3&&(t.title+" "+t.short+" "+t.deep).toLowerCase().includes(term.toLowerCase()));
+ const normalized=term.toLowerCase().replace(/\\s+/g," ").trim();
+ const aliases={
+  "m4×0.7":"threads","m4 x 0.7":"threads","m4 0.7":"threads","thread pitch":"threads",
+  "rpm":"rpm","revolutions per minute":"rpm","flywheel speed":"rpm",
+  "esc":"motors","brushless motor":"motors","electronic speed controller":"motors",
+  "voltage spike":"voltage","inductive spike":"voltage","flyback":"voltage",
+  "buck converter":"power","startup inrush":"power","inrush current":"power",
+  "measure":"measurement","repeatability":"measurement"
+ };
+ const alias=aliases[normalized.replace(/\\s*×\\s*/g,"×")];
+ const found=tiles.find(t=>t.id===alias)||
+  tiles.find(t=>t.title.toLowerCase()===normalized);
  if(found){openTile(found.id);return}
  const step=String(context.stepTitle||"");
  modal('<h2>Please explain this</h2><p class="muted">Selected from '+safe(step||"the recipe")+':</p><p><strong>'+safe(term)+'</strong></p><p>There is no matching knowledge tile yet.</p><button class="btn primary" id="proposeSelected">Request an explanation</button>');
