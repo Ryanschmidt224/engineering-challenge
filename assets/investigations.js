@@ -11,8 +11,8 @@
   let records=[],revision=null;
   let assemblySlot=null,partSlot=null,stepSlots=new Map(),activeContext=null,loadSerial=0;
   const api="/api/investigations?project="+encodeURIComponent(project);
-  const feedback=()=>activeContext?.target?.querySelector(".investigation-feedback");
-  const report=message=>{const p=feedback();if(p)p.textContent=message};
+  const feedback=target=>(target||activeContext?.target)?.querySelector(".investigation-feedback");
+  const report=(message,target)=>{const p=feedback(target);if(p)p.textContent=message};
   const makeContext=(ownerType,ownerId,stepId="",title="")=>({scope:stepId?"step":ownerType,ownerType,ownerId,stepId,title});
   const parentOf=id=>getTree().find(node=>node.id===id)?.parentId??null;
   const isDescendant=(child,ancestor)=>{
@@ -27,7 +27,7 @@
   };
   const partAssembly=id=>{
    const part=getPartList().find(x=>x.id===id);
-   if(part)return part.assemblyId??null;
+   if(part?.assemblyId)return part.assemblyId;
    const linked=getTree().find(x=>x.partId===id);
    return linked?.parentId??null;
   };
@@ -58,6 +58,7 @@
    return d;
   }
   function attach(record,container){
+   const reportHere=message=>report(message,container.closest(".investigations-panel,.recipe-step-investigations"));
    const entryList=make("div","investigation-entries");
    for(const entry of record.entries||[]){
     const item=make("article","investigation-entry");
@@ -85,7 +86,7 @@
    fileInput.onchange=()=>{fileChoice.textContent=[...fileInput.files].map(x=>x.name).join(", ")};
    const attachBtn=btn("+ Add photo / document",()=>fileInput.click(),"btn");
    const saveBtn=btn("Save update",async()=>{
-    if(!text.value.trim()){report("Write an observation or lesson before saving.");text.focus();return}
+    if(!text.value.trim()){reportHere("Write an observation or lesson before saving.");text.focus();return}
     saveBtn.disabled=true;
     try{
      const files=[];
@@ -97,8 +98,8 @@
       files.push(d.id);
      }
      await save({action:"append",id:record.id,entry:{type:kind.value,text:text.value,files,fileName:[...fileInput.files][0]?.name||""}});
-     report("Update saved. Previous entries are preserved.");
-    }catch(error){report(error.message);saveBtn.disabled=false}
+     reportHere("Update saved. Previous entries are preserved.");
+    }catch(error){reportHere(error.message);saveBtn.disabled=false}
    },"btn primary");
    controls.append(kind,text,attachBtn,fileInput,fileChoice,saveBtn);
    const state=make("select","field investigation-status");
@@ -107,8 +108,8 @@
    state.setAttribute("aria-label","Investigation status");
    state.onchange=async()=>{
     state.disabled=true;
-    try{await save({action:"status",id:record.id,status:state.value});report("Status saved.")}
-    catch(error){report(error.message);state.disabled=false}
+    try{await save({action:"status",id:record.id,status:state.value});reportHere("Status saved.")}
+    catch(error){reportHere(error.message);state.disabled=false}
    };
    container.append(controls,state);
   }
@@ -158,13 +159,14 @@
    target.append(make("p","investigation-feedback muted"));
   }
   function newRecord(context,target){
+   const reportHere=message=>report(message,target);
    const form=make("div","investigation-create");
    const name=make("input","field");name.placeholder="What failed?";name.maxLength=180;
    const saveBtn=btn("Save failure",async()=>{
     if(!name.value.trim()){name.focus();return}
     saveBtn.disabled=true;
-    try{await save({action:"create",...context,title:name.value.trim()});report("Failure recorded. Open it to add evidence, attempts and lessons.")}
-    catch(error){report(error.message);saveBtn.disabled=false}
+    try{await save({action:"create",...context,title:name.value.trim()});reportHere("Failure recorded. Open it to add evidence, attempts and lessons.")}
+    catch(error){reportHere(error.message);saveBtn.disabled=false}
    },"btn primary");
    const cancel=btn("Cancel",()=>form.remove(),"btn");
    form.append(name,saveBtn,cancel);
