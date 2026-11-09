@@ -1941,9 +1941,10 @@ function setupComponents(){
  const feedback=document.createElement("p");feedback.className="component-extraction-feedback";feedback.setAttribute("role","status");feedback.setAttribute("aria-live","assertive");
  extract.after(feedback);
  const extractStatus=message=>{
-  say(message);feedback.textContent=message;
-  const workspaceStatus=root.closest(".assembly-workspace-page")?.querySelector(".workspace-status");
-  if(workspaceStatus)workspaceStatus.textContent=message;
+  // One status location. The old component status and feedback previously
+  // repeated the same message in two separate panels.
+  feedback.textContent=message;
+  status.textContent="";status.hidden=true;status.style.display="none";
  };
  if(importPanel){
   const summary=importPanel.querySelector("summary");if(summary)summary.textContent="Part details";
@@ -1953,18 +1954,20 @@ function setupComponents(){
  const lookupHint=document.createElement("p");
  lookupHint.className="component-lookup-help small muted";
  lookupHint.textContent="Paste a product link or description, then click Look up product details to suggest manufacturer, model and specifications. Review the suggestions before saving. You can also enter all fields directly.";
- description.closest("label")?.after(lookupHint);
+ const lookupPanel=document.createElement("section");lookupPanel.className="component-lookup-panel";
+ const lookupLabel=description.closest("label");
+ if(lookupLabel){lookupLabel.before(lookupPanel);lookupPanel.append(lookupLabel,lookupHint,extract,feedback)}
  description.rows=3;
  extract.textContent="Look up product details";
  extract.hidden=false;extract.type="button";
  extract.onclick=async event=>{
   event.preventDefault();
-  extractStatus("Extract clicked — checking input…");
+  extractStatus("");
   const value=description.value.trim();
   if(!value){extractStatus("Paste a product description or public HTTPS product URL first.");return}
   if(!adminAuthenticated){extractStatus("Sign in using Admin login, then try extracting.");return}
   extract.disabled=true;
-  extractStatus("Requesting product specifications…");
+  extractStatus("Looking up product details…");
   try{
    const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
    let response;
@@ -1977,7 +1980,7 @@ function setupComponents(){
    for(const name of ["name","manufacturer","model","category","supplier","asin"]){const el=field(name);if(el)el.value=component[name]||""}
    specs.replaceChildren();for(const spec of component.specifications||[])specRow(spec.name,spec.value,spec.source);
    review.classList.remove("hide");extractStatus("Product details suggested. Review the fields and specifications before saving.");
-  }catch(e){review.classList.remove("hide");extractStatus("Extraction failed: "+(e.name==="AbortError"?"The service did not respond within 20 seconds":e.message)+". You can enter this part manually.")}
+  }catch(e){review.classList.remove("hide");extractStatus("Product lookup failed: "+(e.name==="AbortError"?"The service did not respond within 20 seconds":e.message)+". You can enter this part manually.")}
   finally{extract.disabled=false}
  };
  field("add-spec").onclick=()=>specRow();
