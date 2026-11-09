@@ -29,9 +29,9 @@
   if(isImageAttachment(id))return makePhoto(id,name);
   const link=el("a","recipe-document-link");
   link.href=attachmentUrl(id);link.target="_blank";link.rel="noopener noreferrer";
-  link.setAttribute("download",name||"document."+attachmentExtension(id));
+  // Preserve the original filename from the server; PDFs open in the browser.
   const icon=el("span","recipe-document-icon",attachmentExtension(id).toUpperCase());
-  const action=el("span","recipe-document-open","Open / download document");
+  const action=el("span","recipe-document-open",attachmentExtension(id)==="pdf"?"Open PDF":"Download document");
   link.append(icon,action);
   return link;
  };
@@ -239,7 +239,7 @@
      const input=el("input");input.type="file";input.multiple=true;input.accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.dwg,.dxf,.sldprt,.sldasm,.step,.stp,.stl,.igs,.iges,.x_t,.x_b,.obj,.3mf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip";input.hidden=true;
      const upload=async file=>{
       if(!file)return;
-      if(!options.project){feedback.textContent="Cannot identify this project for photo upload.";return}
+      if(!options.project){feedback.textContent="Cannot identify this project for attachment upload.";return}
       if(file.size>20*1024*1024){feedback.textContent="Maximum attachment size is 20 MB.";return}
       addPhoto.disabled=true;feedback.textContent="Uploading attachment…";
       try{
