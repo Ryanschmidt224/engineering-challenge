@@ -2432,3 +2432,25 @@
  outline:2px solid #64cbd1;outline-offset:-2px
 }
 .recipe-compact .recipe-step-photo>.recipe-small-action{align-self:flex-start}
+
+
+/* Contextual knowledge search from right-clicking instruction words. */
+.recipe-knowledge-context-menu{
+ position:fixed;z-index:100000;width:min(330px,calc(100vw - 16px));max-height:min(440px,calc(100vh - 16px));
+ overflow:auto;box-sizing:border-box;background:#102631;color:#eef9ff;
+ border:1px solid #426575;border-radius:10px;box-shadow:0 12px 36px rgba(0,0,0,.5);
+ padding:7px;display:flex;flex-direction:column;gap:3px
+}
+.recipe-knowledge-context-heading{padding:9px 10px 11px;font-weight:700;font-size:.88rem;overflow-wrap:anywhere;border-bottom:1px solid #355362}
+.recipe-knowledge-context-result,.recipe-knowledge-context-explain{
+ display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:3px;
+ width:100%;padding:9px 10px;background:transparent;color:inherit;border:0;border-radius:6px;
+ font:inherit;cursor:pointer
+}
+.recipe-knowledge-context-result small{color:#9fbfc9;font-size:.75rem}
+.recipe-knowledge-context-result:hover,.recipe-knowledge-context-result:focus-visible,
+.recipe-knowledge-context-explain:hover,.recipe-knowledge-context-explain:focus-visible{
+ background:#224352;outline:none
+}
+.recipe-knowledge-context-explain{border-top:1px solid #355362;color:#9cdeeb}
+.recipe-knowledge-empty{padding:4px 10px;color:#a6bec8;font-size:.85rem}
