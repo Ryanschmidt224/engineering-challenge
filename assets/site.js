@@ -1019,13 +1019,16 @@ function setupAssemblyTrees(){
   const updatePartTypeFields=()=>{
    const custom=partTypeSelect.value==="custom";
    bomEditorMount.classList.toggle("is-custom-part",custom);
-   for(const name of ["manufacturer","model","supplier","asin","historical-price","historical-price-date"]){
+   for(const name of ["manufacturer","model","supplier","asin"]){
     const control=bomEditorMount.querySelector(".component-"+name);
     const label=control?.closest("label");
     if(label)label.hidden=custom;
    }
+   const priceGroup=bomEditorMount.querySelector(".historical-price-fields");
+   if(priceGroup)priceGroup.hidden=custom;
    const importField=bomEditorMount.querySelector(".component-description")?.closest("label");
    if(importField)importField.hidden=custom;
+   const hint=bomEditorMount.querySelector(".component-lookup-help");if(hint)hint.hidden=custom;
    const extractButton=bomEditorMount.querySelector(".component-extract");
    if(extractButton)extractButton.hidden=custom;
   };
@@ -1092,6 +1095,8 @@ function setupAssemblyTrees(){
    editingPart=null;editingPartAssembly=null;
    partTypeSelect.value="purchased";updatePartTypeFields();
    for(const name of ["name","manufacturer","model","category","supplier","asin","description","historical-price","historical-price-date"]){const el=bomField(name);if(el)el.value=""}
+   const priceBasis=bomField("historical-price-basis"),packageQty=bomField("historical-package-quantity");
+   if(priceBasis)priceBasis.value="per_part";if(packageQty)packageQty.value="";priceBasis?.dispatchEvent(new Event("change"));
    const qty=bomField("quantity");if(qty)qty.value="";
    const unit=bomField("quantity-unit");if(unit)unit.value="pcs";
    bomRoot()?.querySelector(".component-specs")?.replaceChildren();
@@ -1107,8 +1112,12 @@ function setupAssemblyTrees(){
    const qty=bomField("quantity");if(qty)qty.value=part.quantity??"";
    const unit=bomField("quantity-unit");if(unit)unit.value=part.quantityUnit??"pcs";
    const price=bomField("historical-price"),date=bomField("historical-price-date");
-   if(price)price.value=part.historicalPrice??"";
+   const priceBasis=bomField("historical-price-basis"),packageQty=bomField("historical-package-quantity");
+   if(price)price.value=part.historicalPurchasePrice??part.historicalPrice??"";
    if(date)date.value=part.historicalPriceDate||"";
+   if(priceBasis)priceBasis.value=part.historicalPriceBasis==="per_package"?"per_package":"per_part";
+   if(packageQty)packageQty.value=part.historicalPriceBasis==="per_package"?(part.historicalPackageQuantity??""):"";
+   priceBasis?.dispatchEvent(new Event("change"));
    const specs=bomRoot()?.querySelector(".component-specs");
    if(specs){for(const spec of part.specifications||[]){
     const row=document.createElement("div");row.className="row component-spec-row";
@@ -1170,10 +1179,17 @@ function setupAssemblyTrees(){
    if(priceInput&&(!Number.isFinite(Number(priceInput))||Number(priceInput)<0||Math.round(Number(priceInput)*100)!==Number(priceInput)*100&&Math.abs(Math.round(Number(priceInput)*100)-Number(priceInput)*100)>1e-6)){
     bomReport("Historical price must be a positive USD amount with at most two decimal places.");return false;
    }
-   component.historicalPrice=priceInput===""?null:Number(priceInput);
+   const pricingBasis=bomField("historical-price-basis")?.value??"per_part";
+   const countInput=bomField("historical-package-quantity")?.value.trim()??"";
+   if(priceInput&&pricingBasis==="per_package"&&(!countInput||!Number.isSafeInteger(Number(countInput))||Number(countInput)<1||Number(countInput)>1000000)){
+    bomReport("Enter a whole number of parts per package.");return false;
+   }
+   component.historicalPurchasePrice=priceInput===""?null:Number(priceInput);
+   component.historicalPriceBasis=pricingBasis;
+   component.historicalPackageQuantity=pricingBasis==="per_package"?(countInput||null):null;
    component.historicalPriceDate=priceInput===""?null:(dateInput||new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10));
    for(const key of ["name","manufacturer","model","category","supplier","asin"])component[key]=bomField(key)?.value.trim()||"";
-   if(component.partType==="custom")Object.assign(component,{manufacturer:"",model:"",supplier:"",asin:"",historicalPrice:null,historicalPriceDate:null});
+   if(component.partType==="custom")Object.assign(component,{manufacturer:"",model:"",supplier:"",asin:"",historicalPurchasePrice:null,historicalPriceDate:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
    component.specifications=[...(bomRoot()?.querySelectorAll(".component-spec-row")||[])].map(row=>({
     name:row.children[0]?.value.trim()||"",value:row.children[1]?.value.trim()||"",source:row.children[2]?.value==="inferred"?"inferred":"explicit"
    })).filter(entry=>entry.name&&entry.value);
