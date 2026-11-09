@@ -81,7 +81,7 @@
    const offset=range?.startOffset??range?.offset;
    if(!node||node.nodeType!==Node.TEXT_NODE||!event.target.contains(node))return "";
    const value=node.textContent||"";
-   const isWord=ch=>/[\\p{L}\\p{N}×._-]/u.test(ch);
+   const isWord=ch=>/[\p{L}\p{N}×._-]/u.test(ch);
    let start=Math.min(offset,value.length),end=start;
    if(start>0&&!isWord(value[start]||"")&&isWord(value[start-1]))start--;
    if(!isWord(value[start]||""))return "";
@@ -91,9 +91,9 @@
    return value.slice(start,end).trim().slice(0,220);
   };
   const searchKnowledge=term=>{
-   const q=term.toLowerCase().trim().replace(/\\s+/g," ");
+   const q=term.toLowerCase().trim().replace(/\s+/g," ");
    if(!q)return [];
-   const words=q.split(/\\s+/).filter(w=>w.length>2);
+   const words=q.split(/\s+/).filter(w=>w.length>2);
    const workshop=(window.BSResources?.catalog?.parts||[])
     .concat(window.BSResources?.catalog?.tools||[])
     .filter(item=>item.id?.startsWith("workshop:"))
