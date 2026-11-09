@@ -2402,3 +2402,33 @@
 .recipe-step-photo{gap:0}
 .recipe-step-photo .recipe-step-photo-image{margin:0;display:block}
 .recipe-step-photo-name{display:block;width:100%;box-sizing:border-box;margin:3px 0 9px}
+
+/* Work-instruction notes take the full available editing width. */
+.recipe-compact .recipe-step-notes,
+.recipe-compact .recipe-step-note{width:100%;min-width:0;box-sizing:border-box}
+.recipe-compact .recipe-step-note{display:flex;flex-direction:column;align-items:stretch}
+.recipe-compact .recipe-step-note textarea.recipe-input{
+ display:block;width:100%;max-width:100%;min-width:0;
+ box-sizing:border-box;resize:vertical;min-height:120px
+}
+.recipe-compact .recipe-step-note .recipe-small-action{align-self:flex-start}
+
+/* Photo and its editable name form one framed object, not two separate boxes. */
+.recipe-compact .recipe-step-photo{display:flex;flex-direction:column;align-items:stretch;gap:7px}
+.recipe-compact .recipe-photo-frame{
+ display:flex;flex-direction:column;min-width:0;overflow:hidden;
+ background:#102630;border:1px solid #3d606b;border-radius:9px
+}
+.recipe-compact .recipe-photo-frame .recipe-step-photo-image{
+ display:block;max-width:100%;width:100%;height:auto;max-height:240px;
+ object-fit:contain;margin:0;border-radius:0
+}
+.recipe-compact .recipe-photo-frame .recipe-step-photo-name{
+ display:block;width:100%;min-width:0;box-sizing:border-box;margin:0;
+ padding:9px 11px;background:#172f3b;border:0;border-top:1px solid #3d606b;
+ border-radius:0;color:inherit;font-weight:600
+}
+.recipe-compact .recipe-photo-frame .recipe-step-photo-name:focus{
+ outline:2px solid #64cbd1;outline-offset:-2px
+}
+.recipe-compact .recipe-step-photo>.recipe-small-action{align-self:flex-start}
