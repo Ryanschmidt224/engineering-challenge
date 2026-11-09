@@ -2523,3 +2523,37 @@
 .recipe-instructions .recipe-heading-row>h2{margin:0}
 .recipe-instructions .recipe-heading-row .recipe-right-click-tip{display:flex;align-items:center;gap:7px;max-width:100%;margin:0;color:#bcd7e2;font-size:.83rem;line-height:1.45}
 .recipe-instructions .recipe-heading-row .recipe-right-click-icon{color:#83d6e2;font-weight:700;font-size:1rem}
+
+
+/* Failures and lessons: reuse the same dark workspace card language as recipes. */
+.investigations-panel,.recipe-step-investigations{background:#132731;border:1px solid #3a5966;border-radius:12px;padding:16px;min-width:0}
+.recipe-step-investigations{width:100%;box-sizing:border-box;margin-top:12px;padding:12px}
+.investigation-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.investigation-heading h2,.investigation-heading h4{margin:0;color:#eaf6fb}
+.investigation-heading h2{font-size:1.22rem}
+.investigation-heading h4{font-size:.98rem}
+.investigation-add{font-size:.85rem}
+.investigation-card,.investigation-rollup{background:#0e2330;border:1px solid #3b6070;border-radius:9px;margin:8px 0;overflow:hidden}
+.investigation-summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;color:#f2faff}
+.investigation-summary strong{font-size:.98rem}
+.investigation-status-pill{display:inline-block;white-space:nowrap;color:#a8dce4;border:1px solid #4b7781;border-radius:14px;padding:3px 10px;font-size:.75rem}
+.investigation-body{padding:12px 15px;border-top:1px solid #355766}
+.investigation-entries{display:grid;gap:12px}
+.investigation-entry{border-left:4px solid #62bfcb;background:#123141;padding:12px 16px;border-radius:7px;color:#f0fbff;overflow-wrap:anywhere}
+.investigation-entry strong{color:#a5e6f1}
+.investigation-entry p{white-space:pre-wrap;color:#edf8fc;margin:7px 0 0;line-height:1.65}
+.investigation-image{display:block;max-width:min(100%,480px);max-height:420px;object-fit:contain;margin-top:12px;border-radius:7px}
+.investigation-file{display:inline-block;margin-top:10px;color:#a8e9f7}
+.investigation-add-controls{display:flex;flex-direction:column;gap:8px;margin-top:13px;padding-top:12px;border-top:1px solid #345568}
+.investigation-add-controls .field{max-width:100%;width:100%;box-sizing:border-box}
+.investigation-add-controls textarea{min-height:90px;resize:vertical}
+.investigation-add-controls .btn{align-self:flex-start}
+.investigation-status{margin-top:12px;max-width:220px}
+.investigation-origin{color:#acc9d1;font-size:.82rem}
+.investigation-create{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.investigation-create input{flex:1 1 240px;min-width:0}
+.investigation-rollup>summary{padding:12px;cursor:pointer;color:#c2e4ec}
+.investigation-rollup-body{padding:8px 12px}
+.investigation-empty{margin:7px 0;font-size:.87rem}
+.investigation-feedback:empty{display:none}
+.investigation-feedback{font-size:.85rem;margin:8px 0 0}
