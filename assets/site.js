@@ -1037,12 +1037,15 @@ function setupAssemblyTrees(){
   },true);
   async function renderWorkspaceParts(){
    const version=++bomDisplayVersion,assemblyId=selected,container=bomPanel.querySelector(".workspace-saved-parts");
-   container.replaceChildren();
-   const pending=document.createElement("p");pending.className="bom-count";pending.textContent="Loading saved parts…";container.append(pending);
+   // Keep the last list visible while fetching, rather than flashing the BOM
+   // empty every time the user navigates to a different project page.
+   if(!container.childElementCount){
+    const pending=document.createElement("p");pending.className="bom-count";pending.textContent="Loading saved parts…";container.append(pending);
+   }
    try{
     const response=await fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"});
     const result=await response.json();if(!response.ok)throw Error(result.error||"Unable to load parts");
-    if(version!==bomDisplayVersion||assemblyId!==selected||!workspaceRoute())return;
+    if(version!==bomDisplayVersion||assemblyId!==selected)return;
     const parts=Array.isArray(result.components)?result.components:[];
     const {shopItems,shopIds}=window.BSBomModel.selectWorkspaceParts(parts,nodes,assemblyId);
     container.replaceChildren();
@@ -1361,10 +1364,20 @@ function setupAssemblyTrees(){
   async function showAssemblyPage(){
    const version=++detailVersion;
    const isAssembly=selected!==null;
-   const bom=main.querySelector(".component-section")||detail.querySelector(".component-section")||bomPanel.querySelector(".component-section");
-   if(bom){bomPanel.querySelector(".workspace-bom-mount").append(bom)}
-   const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);sidebar.classList.toggle("bom-sidebar-active",workspaceRoute()&&!inPart);if(inPart){void showPartWorkspace();return;}
-   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();loadWorkspace();void assemblyDrawingPanel?.load(project,"assembly",selected??"__root__");void renderWorkspaceParts();if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
+   // The BOM is project navigation, so it stays mounted under the feature tree
+   // on overview, assembly, part-detail and workspace pages alike.
+   // Never move the form back into the sidebar while an edit is in progress.
+   const isEditingBom=workspace.classList.contains("is-editing-bom-part");
+   const bom=isEditingBom?null:(main.querySelector(".component-section")||detail.querySelector(".component-section")||bomPanel.querySelector(".component-section"));
+   if(bom&&bom.parentElement!==bomPanel.querySelector(".workspace-bom-mount")){
+    bomPanel.querySelector(".workspace-bom-mount").append(bom);
+   }
+   sidebar.classList.add("bom-sidebar-active");
+   // Refresh on page transitions, but not while an editor has unsaved changes.
+   if(!isEditingBom)void renderWorkspaceParts();
+   const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);
+   if(inPart){void showPartWorkspace();return;}
+   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();loadWorkspace();void assemblyDrawingPanel?.load(project,"assembly",selected??"__root__");if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
