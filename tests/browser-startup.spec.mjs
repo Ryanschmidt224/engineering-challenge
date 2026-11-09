@@ -262,6 +262,34 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
 
  await expect(editor.locator(".component-name")).toHaveValue("Linked Motor");
  await expect(editor.locator(".component-quantity")).toHaveValue("2");
+ // Product lookup is optional; direct fields stay visible without a manual-mode button.
+ await expect(editor.locator(".component-manual")).toHaveCount(0);
+ await expect(editor.locator(".component-extract")).toHaveText("Look up product details");
+ await expect(editor.locator(".component-lookup-help")).toContainText("Paste a product link");
+ await expect(editor.locator(".component-name")).toBeVisible();
+ const basis=editor.locator(".component-historical-price-basis");
+ const pack=editor.locator(".component-historical-package-quantity");
+ await expect(basis).toHaveValue("per_part");
+ await expect(editor.locator(".historical-package-count")).toBeHidden();
+ await editor.locator(".component-historical-price").fill("20");
+ await basis.selectOption("per_package");
+ await expect(editor.locator(".historical-package-count")).toBeVisible();
+ await pack.fill("5");
+ await expect(editor.locator(".historical-unit-hint")).toContainText("$4.0000 per part");
+ await basis.selectOption("per_part");
+ await expect(editor.locator(".historical-package-count")).toBeHidden();
+ // Add / origin / save / cancel controls form one coherent footer.
+ const actions=editor.locator(".component-editor-actions");
+ await expect(actions).toBeVisible();
+ await actions.locator(".component-add-spec").click();
+ const source=editor.locator(".component-spec-row .component-spec-source").first();
+ await expect(source).toBeVisible();
+ await expect(source.locator('option[value="explicit"]')).toContainText("From product listing");
+ await expect(source.locator('option[value="inferred"]')).toContainText("Estimated / inferred");
+ await source.selectOption("inferred");
+ await expect(actions.locator(".component-editor-primary-actions .component-save")).toBeVisible();
+ await expect(actions.locator(".component-editor-primary-actions .workspace-bom-editor-cancel")).toBeVisible();
+
  // Purchased retains source fields; custom hides fields that do not apply.
  const kind=editor.locator(".part-type-select");
  await expect(kind).toHaveValue("purchased");
