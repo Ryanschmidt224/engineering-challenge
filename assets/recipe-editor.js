@@ -134,6 +134,8 @@
      const displayed=el("div","recipe-reader-text");
      if(level!=="brief"&&step.standard.trim())displayed.append(el("p","",step.standard));
      if(level==="detailed"&&step.detail.trim())displayed.append(el("p","",step.detail));
+     for(const note of step.notes||[]){if(level!=="brief"&&note.trim())displayed.append(el("p","",note))}
+     for(const photo of step.photos||[]){const img=el("img","recipe-step-photo-image");img.src="/api/photo?id="+encodeURIComponent(photo);img.alt="Step photo";img.loading="lazy";displayed.append(img)}
      if(displayed.childElementCount){
       body.append(displayed);
       let highlighted="";
