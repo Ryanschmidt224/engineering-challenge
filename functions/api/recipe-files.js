@@ -9,7 +9,7 @@ const TYPES={
  step:"application/octet-stream",stp:"application/octet-stream",stl:"application/octet-stream",
  igs:"application/octet-stream",iges:"application/octet-stream",
  x_t:"application/octet-stream",x_b:"application/octet-stream",
- obj:"application/octet-stream",3mf:"application/octet-stream",
+ obj:"application/octet-stream","3mf":"application/octet-stream",
  doc:"application/octet-stream",docx:"application/octet-stream",
  xls:"application/octet-stream",xlsx:"application/octet-stream",
  txt:"text/plain",csv:"text/plain",zip:"application/octet-stream"
