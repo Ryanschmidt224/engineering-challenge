@@ -29,9 +29,9 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
 // Public, read-only lookup for contextual searches from work instructions.
 window.BSKnowledgeArticles={
  search(query){
-  const q=String(query||"").toLowerCase().trim().replace(/\\s+/g," ");
+  const q=String(query||"").toLowerCase().trim().replace(/\s+/g," ");
   if(!q||q.length>220)return [];
-  const words=q.split(/\\s+/).filter(x=>x.length>2);
+  const words=q.split(/\s+/).filter(x=>x.length>2);
   return tiles.map(t=>{
    const title=t.title.toLowerCase(),short=t.short.toLowerCase();
    const score=title===q?100:title.includes(q)?80:short.includes(q)?35:
