@@ -21,7 +21,8 @@ export const folders=project=>[
  "component-thumbnails/"+project+"/",
  "part-files/"+project+"/",
  "part-pages/"+project+"/",
- "recipe-files/"+project+"/"
+ "recipe-files/"+project+"/",
+ "part-revisions/"+project+"/"
 ];
 export const singles=project=>["trees/"+project+".json","components/"+project+".json","investigations/"+project+".json",
  "libraries/wires.json","libraries/common-parts.json","libraries/purchased-parts.json"];
