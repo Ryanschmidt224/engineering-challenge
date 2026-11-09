@@ -79,6 +79,12 @@ test("project feature tree and workspace initialize without browser errors", asy
  // BOM is a read-only index: every visitor can open a part; no inline editing.
  await expect(rows.first().locator(".bom-part-edit")).toHaveText("Open");
  await expect(rows.first().locator(".bom-part-name-link")).toBeVisible();
+ // Names are labels; they do not navigate. Open is the sole navigation action.
+ expect(await rows.first().locator(".bom-part-name-link").evaluate(el=>el.tagName)).toBe("SPAN");
+ const originalRoute=page.url();
+ await rows.first().locator(".bom-part-name-link").click();
+ expect(page.url()).toBe(originalRoute);
+
  // A part without dependent children must never display a disclosure arrow.
  const leafArrow=await rows.first().locator(":scope > .bom-part-summary").evaluate(el=>getComputedStyle(el,"::before").content);
  expect(["none","normal",""].includes(leafArrow)).toBe(true);
@@ -227,18 +233,18 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(workspace).toHaveClass(/is-editing-bom-part/);
  const editor=workspace.locator(".workspace-main-bom-editor");
  await expect(editor).toBeVisible();
+ await expect(workspace.locator(":scope > .workspace-heading")).toBeHidden();
+ await expect(workspace.locator(":scope > .workspace-back")).toBeHidden();
+ await expect(workspace.locator(".recipe-instructions")).toBeHidden();
+ await expect(editor.locator(".part-type-select option[value='custom']")).toHaveText("Custom");
+ const optionalLabels=await editor.locator("label").allTextContents();
+ expect(optionalLabels.some(label=>label.includes("(optional)"))).toBe(false);
+
  await expect(editor.locator(".component-name")).toHaveValue("Linked Motor");
  await expect(editor.locator(".component-quantity")).toHaveValue("2");
  // Purchased retains source fields; custom hides fields that do not apply.
  const kind=editor.locator(".part-type-select");
  await expect(kind).toHaveValue("purchased");
- const manufacturerDebug=await editor.locator(".component-manufacturer").evaluate(el=>{
-  const chain=[];for(let node=el;node&&chain.length<9;node=node.parentElement){
-   const cs=getComputedStyle(node);
-   chain.push({tag:node.tagName,cls:node.className,hidden:node.hidden,open:node.tagName==="DETAILS"?node.open:null,display:cs.display,visibility:cs.visibility,width:node.getBoundingClientRect().width,height:node.getBoundingClientRect().height,rects:node.getClientRects().length});
-  }return chain;
- });
- console.log("manufacturer visibility chain",JSON.stringify(manufacturerDebug));
  await expect(editor.locator(".component-manufacturer")).toBeVisible();
  await kind.selectOption("custom");
  await expect(editor.locator(".component-manufacturer")).toBeHidden();
