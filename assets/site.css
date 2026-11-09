@@ -2367,3 +2367,14 @@
 @media(max-width:700px){
  :is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-panel{padding:13px}
 }
+
+/* Compact recipe step authoring: optional notes, photos, and local save control. */
+.recipe-step-additions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.recipe-step-notes,.recipe-step-photos{display:grid;gap:10px}
+.recipe-step-note{display:grid;gap:5px;margin-top:10px}
+.recipe-step-note .recipe-small-action{justify-self:start}
+.recipe-step-photos{grid-template-columns:repeat(auto-fill,minmax(140px,190px));margin-top:10px}
+.recipe-step-photo{display:grid;gap:5px}
+.recipe-step-photo-image{display:block;max-width:100%;max-height:240px;object-fit:contain;border-radius:7px;margin:8px 0}
+.recipe-edit-controls .recipe-save-step{margin-left:auto;font-weight:700}
+@media(max-width:600px){.recipe-edit-controls .recipe-save-step{margin-left:0;width:100%}}
