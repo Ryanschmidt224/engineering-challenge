@@ -220,3 +220,35 @@ test("stale recipe editors cannot silently overwrite another saved revision",asy
  assert.equal(saved.recipe[0].title,"Updated safely");
  assert.notEqual(saved.revision,revision);
 });
+
+
+test("historical purchase price supports per-part and per-package without losing unit cost",async()=>{
+ const {env}=storage();
+ const part={name:"Packaged bearings",quantity:4,quantityUnit:"pcs",partType:"purchased",
+  historicalPurchasePrice:23.40,historicalPriceBasis:"per_package",historicalPackageQuantity:12,
+  historicalPriceDate:"2026-11-08",specifications:[]};
+ const created=await components(request("POST",componentsUrl,part),env);
+ assert.equal(created.status,201);
+ const record=(await created.json()).component;
+ assert.equal(record.historicalPurchasePrice,23.40);
+ assert.equal(record.historicalPriceBasis,"per_package");
+ assert.equal(record.historicalPackageQuantity,12);
+ assert.equal(record.historicalPrice,1.95);
+ const updated=await components(request("PUT",componentsUrl+"&id="+record.id,{
+  ...record,historicalPurchasePrice:4.50,historicalPriceBasis:"per_part",
+  historicalPackageQuantity:null,historicalPriceDate:"2026-11-08"}),env);
+ assert.equal(updated.status,200);
+ const changed=(await updated.json()).component;
+ assert.equal(changed.historicalPrice,4.50);
+ assert.equal(changed.historicalPackageQuantity,null);
+ const invalid=await components(request("PUT",componentsUrl+"&id="+record.id,{
+  ...changed,historicalPurchasePrice:20,historicalPriceBasis:"per_package",
+  historicalPackageQuantity:0,historicalPriceDate:"2026-11-08"}),env);
+ assert.equal(invalid.status,400);
+ const optional=await components(request("PUT",componentsUrl+"&id="+record.id,{
+  ...changed,historicalPurchasePrice:null,historicalPriceBasis:"per_package",
+  historicalPackageQuantity:null,historicalPriceDate:null}),env);
+ assert.equal(optional.status,200);
+ const cleared=(await optional.json()).component;
+ assert.equal(cleared.historicalPrice,null);
+});
