@@ -77,7 +77,7 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(treeFrame).toBeVisible();
  expect(await treeFrame.evaluate(el=>getComputedStyle(el).borderTopStyle)).toBe("solid");
  expect(await bom.evaluate(el=>getComputedStyle(el).borderTopStyle)).toBe("solid");
- const panels=workspace.locator(".workspace-panels > article");
+ const panels=workspace.locator(".workspace-panels > article:not(.workspace-main-bom-editor)");
  await expect(panels).toHaveCount(4);
  for(let i=0;i<await panels.count();i++){
   expect(await panels.nth(i).evaluate(el=>getComputedStyle(el).borderTopStyle)).toBe("solid");
@@ -140,7 +140,10 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
    {id:"smoke-motor",parentId:null,name:"Motor and Motor Control",kind:"assembly"},
    {id:"smoke-part",parentId:"smoke-motor",name:"Linked Motor",kind:"part",partId:"p1"}
   ],revision:"test"};
-  if(url.pathname==="/api/components")data={components:[]};
+  if(url.pathname==="/api/components")data={components:[
+   {id:"p1",name:"Linked Motor",assemblyId:"smoke-motor",quantity:2,quantityUnit:"pcs",
+    manufacturer:"Example Motors",model:"C2822",specifications:[],category:"Motor",supplier:"",asin:"",bomOnly:false}
+  ]};
   if(url.pathname==="/api/photos")data={photos:[]};
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
  });
@@ -187,6 +190,23 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(menu.getByRole("menuitem",{name:"Move up"})).toBeVisible();
  await page.keyboard.press("Escape");
  await expect(menu).toBeHidden();
+ // Opening Edit from the narrow BOM moves the existing form to the main pane.
+ await sidebar.locator(".assembly-name",{hasText:"Motor and Motor Control"}).click();
+ await page.locator("#launcher .assembly-detail .assembly-open-workspace").click();
+ const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
+ await expect(workspace).toBeVisible();
+ const rowPart=sidebar.locator(".workspace-saved-parts .bom-part",{hasText:"Linked Motor"}).first();
+ await rowPart.locator(".bom-part-summary").click();
+ await rowPart.getByRole("button",{name:"Edit part"}).click();
+ await expect(workspace).toHaveClass(/is-editing-bom-part/);
+ const editor=workspace.locator(".workspace-main-bom-editor");
+ await expect(editor).toBeVisible();
+ await expect(editor.locator(".component-name")).toHaveValue("Linked Motor");
+ await expect(editor.locator(".component-quantity")).toHaveValue("2");
+ await expect(workspace.locator(".recipe-instructions")).toBeHidden();
+ await editor.locator(".workspace-bom-editor-cancel").click();
+ await expect(editor).toBeHidden();
+ await expect(workspace.locator(".recipe-instructions")).toBeVisible();
  const frame=page.locator("#launcher .assembly-layout > .assembly-content");
  const radius=await frame.evaluate(el=>parseFloat(getComputedStyle(el).borderTopLeftRadius));
  expect(radius).toBeGreaterThanOrEqual(8);
