@@ -2056,3 +2056,112 @@
  color:#e1e9ee;
  text-decoration:none!important;
 }
+
+
+/* Overview cards: photo is the complete tile, with one consistent caption
+   at the bottom left. No secondary footers or administrative strips. */
+#launcher .assembly-main .assembly-photo-stage .assembly-photo-name,
+#launcher .assembly-detail .assembly-photo-stage .assembly-photo-name{
+ left:16px;
+ right:auto;
+ bottom:14px;
+ top:auto;
+ text-align:left;
+ max-width:calc(100% - 205px);
+ background:transparent;
+ color:#fff;
+ padding:0;
+ text-shadow:0 1px 3px rgba(0,0,0,.65);
+}
+#launcher .assembly-main .assembly-photo-stage .assembly-open-workspace,
+#launcher .assembly-detail .assembly-photo-stage .assembly-open-workspace{
+ left:auto;
+ right:14px;
+ bottom:12px;
+ top:auto;
+ transform:none;
+}
+#launcher .assembly-main .assembly-tile,
+#launcher .assembly-detail .assembly-tile{
+ display:block;
+ padding:0!important;
+ gap:0;
+ overflow:hidden;
+ background:#152b38;
+ border:1px solid #3a5360;
+ border-radius:9px;
+}
+#launcher .assembly-main .assembly-tile-cover,
+#launcher .assembly-detail .assembly-tile-cover{
+ width:100%;
+ margin:0;
+ border:0;
+ border-radius:8px;
+ overflow:hidden;
+}
+#launcher .assembly-main .assembly-tile-overlay,
+#launcher .assembly-detail .assembly-tile-overlay{
+ left:0;
+ right:0;
+ bottom:0;
+ top:auto;
+ width:100%;
+ padding:30px 14px 13px;
+ margin:0;
+ text-align:left;
+ font-size:.88rem;
+ font-weight:650;
+ line-height:1.35;
+ color:#fff;
+ background:linear-gradient(transparent,rgba(0,0,0,.72));
+ border:0;
+ border-radius:0;
+ box-shadow:none;
+ text-shadow:0 1px 3px rgba(0,0,0,.55);
+ pointer-events:none;
+}
+#launcher .assembly-main .assembly-tile-stage,
+#launcher .assembly-detail .assembly-tile-stage,
+#launcher .assembly-main .assembly-tile-deps,
+#launcher .assembly-detail .assembly-tile-deps,
+#launcher .assembly-main .assembly-tile-edit,
+#launcher .assembly-detail .assembly-tile-edit{
+ display:none!important;
+}
+#launcher .assembly-main .assembly-tile-photo-overlay,
+#launcher .assembly-detail .assembly-tile-photo-overlay{
+ position:absolute;
+ top:10px;
+ right:10px;
+ bottom:auto;
+ left:auto;
+ z-index:8;
+ width:30px;
+ height:30px;
+ min-height:0;
+ margin:0;
+ padding:0;
+ border:1px solid rgba(255,255,255,.45);
+ border-radius:50%;
+ color:#fff;
+ background:rgba(12,30,42,.78);
+ line-height:1;
+ font-size:1.15rem;
+ box-shadow:none;
+}
+#launcher .assembly-main .assembly-tile-photo-overlay:hover,
+#launcher .assembly-detail .assembly-tile-photo-overlay:hover{
+ background:#304d5a;
+}
+@media(max-width:540px){
+ #launcher .assembly-main .assembly-photo-stage .assembly-photo-name,
+ #launcher .assembly-detail .assembly-photo-stage .assembly-photo-name{
+  max-width:calc(100% - 170px);
+  font-size:.78rem;
+ }
+ #launcher .assembly-main .assembly-photo-stage .assembly-open-workspace,
+ #launcher .assembly-detail .assembly-photo-stage .assembly-open-workspace{
+  font-size:.72rem;
+  padding:7px 9px;
+ }
+}
