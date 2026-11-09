@@ -1823,3 +1823,24 @@
   padding:16px;
  }
 }
+
+
+/* Main-pane part editing shows ONLY the editable form.
+ * The saved BOM remains in the persistent sidebar (never duplicated here). */
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-section>details>.component-list,
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-section>details>summary,
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-section .bom-visible-parts,
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-admin>summary{
+ display:none!important;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-section>details,
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-admin{
+ border:0!important;
+ box-shadow:none!important;
+ background:transparent!important;
+ padding:0!important;
+ margin:0!important;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-review{
+ display:block;
+}
