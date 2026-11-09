@@ -42,7 +42,7 @@ test("project feature tree and workspace initialize without browser errors", asy
  // The BOM is persistent project navigation, not limited to Work Instructions.
  const persistentBom=page.locator("#launcher .assembly-sidebar .workspace-bom");
  await expect(persistentBom).toBeVisible();
- await expect(persistentBom.locator(".workspace-saved-parts")).toContainText("Motor and Motor Control");
+ await expect(persistentBom.locator(".workspace-saved-parts")).toContainText("C2822 Brushless Motor");
  await page.locator("#launcher .assembly-detail .assembly-back").click();
  await expect(page.locator("#launcher .assembly-main")).toBeVisible();
  await expect(persistentBom).toBeVisible();
