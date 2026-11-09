@@ -2016,6 +2016,35 @@ function setupComponents(){
 }
 setupComponents();
 
+// First edit replaces existing text instead of appending to a saved value.
+// Subsequent clicks allow normal caret placement and partial corrections.
+const overwriteSelector=".workspace-main-bom-editor input.field, .workspace-main-bom-editor textarea.field, .recipe-one-step-body input.recipe-input, .recipe-one-step-body textarea.recipe-input";
+const overwriteFocus=new WeakMap();
+document.addEventListener("focusin",event=>{
+ const field=event.target;
+ if(!field.matches?.(overwriteSelector)||field.readOnly||field.disabled)return;
+ overwriteFocus.set(field,true);
+ if(field.type!=="number"&&field.type!=="date"&&typeof field.select==="function")field.select();
+});
+document.addEventListener("click",event=>{
+ const field=event.target;
+ if(!field.matches?.(overwriteSelector)||!overwriteFocus.get(field))return;
+ if(field.type!=="number"&&field.type!=="date"&&typeof field.select==="function")field.select();
+ overwriteFocus.set(field,false);
+});
+document.addEventListener("keydown",event=>{
+ const field=event.target;
+ if(!field.matches?.(overwriteSelector)||field.type!=="number"||!overwriteFocus.get(field))return;
+ if(event.ctrlKey||event.metaKey||event.altKey)return;
+ if(/^[0-9.+-]$/.test(event.key)){
+  field.value="";
+  overwriteFocus.set(field,false);
+ }
+});
+document.addEventListener("focusout",event=>{
+ if(event.target.matches?.(overwriteSelector))overwriteFocus.delete(event.target);
+});
+
 
 window.BSResources?.init();
 renderNotes();renderDrafts();renderTiles();navigate(location.hash.slice(1)||"home");
