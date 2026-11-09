@@ -32,6 +32,15 @@ test("project feature tree and workspace initialize without browser errors", asy
  });
  await page.goto("/");
  await page.locator(".project-link[data-nav=\"launcher\"]").click();
+ // The large overview tile has no description form; its title is over the photo.
+ const rootPhoto=page.locator("#launcher .assembly-main .assembly-photo-stage");
+ await expect(rootPhoto).toBeVisible();
+ await expect(rootPhoto.locator(".assembly-photo-name")).toBeVisible();
+ await expect(rootPhoto.locator(".assembly-open-workspace")).toHaveText("Open workspace →");
+ await expect(page.locator("#launcher .assembly-main .assembly-unified-body")).toBeHidden();
+ const overlay=await rootPhoto.evaluate(el=>getComputedStyle(el,"::after").backgroundImage);
+ expect(overlay).toContain("linear-gradient");
+
  await expect(page.locator("#launcher")).toHaveClass(/active/);
  const tree=page.locator("#launcher .assembly-tree-nodes");
  await expect(tree.locator(".assembly-name").first()).toContainText("Foam-dart launcher");
@@ -70,6 +79,10 @@ test("project feature tree and workspace initialize without browser errors", asy
  // BOM is a read-only index: every visitor can open a part; no inline editing.
  await expect(rows.first().locator(".bom-part-edit")).toHaveText("Open");
  await expect(rows.first().locator(".bom-part-name-link")).toBeVisible();
+ // A part without dependent children must never display a disclosure arrow.
+ const leafArrow=await rows.first().locator(":scope > .bom-part-summary").evaluate(el=>getComputedStyle(el,"::before").content);
+ expect(["none","normal",""].includes(leafArrow)).toBe(true);
+
  await expect(rows.first().locator("input,select,textarea")).toHaveCount(0);
  await expect(rows.first().locator(".bom-part-body")).toHaveCount(0);
  // BOM occupies the left column and can be resized by a visible divider.
