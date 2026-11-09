@@ -3,7 +3,7 @@
  "use strict";
  const make=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el};
  const btn=(label,fn,cls="btn")=>{const b=make("button",cls,label);b.type="button";b.onclick=fn;return b};
- const types=[["observation","Observation"],["theory","Theory / hypothesis"],["attempt","Attempted fix"],["result","Test result"],["lesson","Lesson learned"]];
+ const types=[["observation","Observation"],["theory","Theory / hypothesis"],["attempt","Attempted fix"],["revision","Failed revision / design change"],["result","Test result"],["lesson","Lesson learned"]];
  const statuses=[["investigating","Investigating"],["resolved","Resolved"],["unresolved","Unresolved"]];
  const photoExt=/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i;
  const fileUrl=id=>"/api/recipe-files?id="+encodeURIComponent(id);
