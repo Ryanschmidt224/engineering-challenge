@@ -151,11 +151,19 @@
     for(const record of rolled){
      const wrapper=make("div","investigation-inherited");
      const card=make("details","investigation-card");
+     const openKey=context.ownerType+":"+context.ownerId+":related:"+record.id;
+     card.open=openCards.has(openKey);
+     card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
      const title=make("summary","investigation-summary");
      title.append(make("strong","",record.title),make("span","investigation-status-pill",record.status));
      card.append(title);
      const body=make("div","investigation-body");
-     body.append(make("p","investigation-origin","Recorded at "+record.ownerType+(record.scope==="step"?" / step":"")));
+     const sourceName=record.ownerType==="part"?
+      (getPartList().find(item=>item.id===record.ownerId)?.name||"Part"):
+      record.ownerId==="__root__"?"Project":(getTree().find(item=>item.id===record.ownerId)?.name||"Assembly");
+     const origin=make("a","investigation-origin",sourceName+(record.scope==="step"?" · Work instruction":""));
+     origin.href="#"+project+(record.ownerType==="part"?"/part/":"/workspace/")+encodeURIComponent(record.ownerId);
+     body.append(origin);
      attach(record,body);card.append(body);wrapper.append(card);inner.append(wrapper);
     }
     group.append(inner);target.append(group);
