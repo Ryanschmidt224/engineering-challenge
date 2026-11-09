@@ -2323,3 +2323,47 @@
   grid-column:3;grid-row:1 / span 2;align-self:center;
  }
 }
+
+
+/* Optional product lookup is one understandable tool above the manual fields. */
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .part-type-field{
+ display:flex;
+ flex-direction:column;
+ gap:8px;
+ max-width:390px;
+ margin:20px 0 22px;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-panel{
+ width:min(100%,960px);
+ padding:17px 20px;
+ margin:0 0 24px;
+ border:1px solid #344e5b;
+ border-radius:8px;
+ background:#162935;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-panel[hidden]{
+ display:none!important;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-panel>label{
+ display:block;
+ width:100%;
+ font-weight:600;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-panel textarea{
+ margin-top:8px;
+ width:100%;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-panel .component-extract{
+ margin:4px 0 0;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-panel .component-extraction-feedback:not(:empty){
+ margin:12px 0 0;
+ border-left:2px solid #78bdb3;
+ padding:8px 12px;
+ font-size:.84rem;
+ color:#c4dbde;
+ background:#193643;
+}
+@media(max-width:700px){
+ :is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-panel{padding:13px}
+}
