@@ -120,7 +120,7 @@
      const actions=el("div","recipe-edit-controls");
      const up=button("↑",()=>move(i,-1));up.disabled=i===0;up.title="Move up";
      const down=button("↓",()=>move(i,1));down.disabled=i===steps.length-1;down.title="Move down";
-     const duplicate=button("Duplicate",()=>{const copy={...normalize(step),id:newId()};steps.splice(i+1,0,copy);expanded=copy.id;changed();saveHint();render()});
+     const duplicate=button("Duplicate",()=>{const copy={...normalize(step),id:newId(),notes:[...step.notes],photos:[...step.photos]};steps.splice(i+1,0,copy);expanded=copy.id;changed();saveHint();render()});
      const remove=button("Remove",()=>{if(!confirm("Remove this step?"))return;steps.splice(i,1);expanded=null;changed();saveHint();render()});
      const save=button("Save step",async()=>{
       if(!step.title.trim()){feedback.textContent="Enter a step name before saving.";nameInput.focus();return}
