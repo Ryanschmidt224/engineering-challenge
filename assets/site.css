@@ -1904,3 +1904,58 @@
  flex:1 1 230px;
  min-width:210px;
 }
+
+
+/* Narrow BOM = read-only index. One quiet Edit action per editable part. */
+#launcher .assembly-sidebar .workspace-bom .bom-compact-part{
+ border:0;
+ border-bottom:1px solid #2d424e;
+ border-radius:0;
+ background:transparent;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-compact-part>.bom-part-summary{
+ display:flex;
+ flex-wrap:nowrap;
+ gap:9px;
+ align-items:center;
+ padding:10px 3px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part-name-link{
+ background:transparent;
+ border:0;
+ text-align:left;
+ color:#e1e9ee;
+ font:inherit;
+ font-size:.82rem;
+ font-weight:550;
+ cursor:pointer;
+ padding:0;
+ min-width:0;
+ flex:1 1 0;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part-name-link:hover{
+ color:#b5e3e4;
+ text-decoration:underline;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part-edit{
+ background:transparent;
+ color:#add8d8;
+ border:1px solid #3c5963;
+ border-radius:5px;
+ padding:4px 9px;
+ font-size:.76rem;
+ white-space:nowrap;
+ flex:0 0 auto;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part-edit:hover{
+ background:#25404d;
+ color:#e8f6f5;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-shop-material-row{
+ display:flex;
+ align-items:center;
+ gap:9px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-shop-material-row .bom-part-name-link{
+ flex:1 1 0;
+}
