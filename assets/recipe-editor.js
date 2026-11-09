@@ -126,7 +126,9 @@
        nameInput.classList.add("recipe-step-photo-name");
        nameInput.setAttribute("aria-label","Photo name");
        nameInput.maxLength=120;
-       item.append(picture,nameInput,button("Remove photo",()=>{step.photos.splice(index,1);delete step.photoNames[id];changed();saveHint();showPhotos()},"btn recipe-small-action"));
+       const frame=el("div","recipe-photo-frame");
+       frame.append(picture,nameInput);
+       item.append(frame,button("Remove photo",()=>{step.photos.splice(index,1);delete step.photoNames[id];changed();saveHint();showPhotos()},"btn recipe-small-action"));
        photoList.append(item);
       });
      };
