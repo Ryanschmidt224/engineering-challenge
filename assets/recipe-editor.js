@@ -62,6 +62,93 @@
    if(!text||text.length>220||!area.contains(selection.getRangeAt(0).commonAncestorContainer))return "";
    return text;
   };
+
+  // Contextual knowledge lookup from work-instruction prose, including step names.
+  let knowledgeMenu=null;
+  const closeKnowledgeMenu=()=>{
+   if(knowledgeMenu){knowledgeMenu.remove();knowledgeMenu=null}
+  };
+  const termAtPoint=event=>{
+   const selection=window.getSelection?.();
+   if(selection&&!selection.isCollapsed){
+    const text=String(selection).trim();
+    if(text.length<=220&&event.target.closest(".recipe-one-step")?.contains(selection.anchorNode)&&
+       event.target.closest(".recipe-one-step")?.contains(selection.focusNode))return text;
+   }
+   const range=document.caretRangeFromPoint?.(event.clientX,event.clientY)||
+    document.caretPositionFromPoint?.(event.clientX,event.clientY);
+   const node=range?.startContainer||range?.offsetNode;
+   const offset=range?.startOffset??range?.offset;
+   if(!node||node.nodeType!==Node.TEXT_NODE||!event.target.contains(node))return "";
+   const value=node.textContent||"";
+   const isWord=ch=>/[\\p{L}\\p{N}×._-]/u.test(ch);
+   let start=Math.min(offset,value.length),end=start;
+   if(start>0&&!isWord(value[start]||"")&&isWord(value[start-1]))start--;
+   if(!isWord(value[start]||""))return "";
+   end=start;
+   while(start>0&&isWord(value[start-1]))start--;
+   while(end<value.length&&isWord(value[end]))end++;
+   return value.slice(start,end).trim().slice(0,220);
+  };
+  const searchKnowledge=term=>{
+   const q=term.toLowerCase().trim().replace(/\\s+/g," ");
+   if(!q)return [];
+   const words=q.split(/\\s+/).filter(w=>w.length>2);
+   const workshop=(window.BSResources?.catalog?.parts||[])
+    .concat(window.BSResources?.catalog?.tools||[])
+    .filter(item=>item.id?.startsWith("workshop:"))
+    .map(item=>{
+     const title=item.name.toLowerCase(),detail=(item.subtitle||"").toLowerCase();
+     const score=title===q?120:title.startsWith(q+" ")||title.includes(" "+q+" ")?95:
+      title.includes(q)?75:words.length&&words.every(w=>title.includes(w))?60:detail.includes(q)?25:0;
+     return {id:item.id,title:item.name,type:"Workshop",score};
+    }).filter(item=>item.score>0);
+   const articles=(window.BSKnowledgeArticles?.search(term)||[])
+    .map(item=>({id:item.id,title:item.title,type:"Knowledge article",score:item.score}));
+   return [...workshop,...articles].sort((a,b)=>b.score-a.score).slice(0,8);
+  };
+  const openKnowledgeResult=result=>{
+   closeKnowledgeMenu();
+   if(result.type==="Workshop"){
+    location.hash="commonparts";
+    // Wait for navigation to mount the Workshop feature tree before focusing.
+    setTimeout(()=>window.BSResources?.focusWorkshopItem(result.id),50);
+   }else window.BSKnowledgeArticles?.open(result.id);
+  };
+  const showKnowledgeMenu=(event,term,step)=>{
+   closeKnowledgeMenu();
+   const results=searchKnowledge(term);
+   const menu=el("div","recipe-knowledge-context-menu");
+   menu.setAttribute("role","menu");menu.setAttribute("aria-label","Knowledge base matches");
+   menu.append(el("div","recipe-knowledge-context-heading",'Search knowledge base: "'+term+'"'));
+   for(const result of results){
+    const item=button(result.title,()=>openKnowledgeResult(result),"recipe-knowledge-context-result");
+    item.setAttribute("role","menuitem");
+    item.append(el("small","",result.type));menu.append(item);
+   }
+   if(!results.length)menu.append(el("p","recipe-knowledge-empty","No matching articles yet."));
+   const explain=button("Please explain this",()=>{
+    closeKnowledgeMenu();
+    window.BSExplainText?.(term,{stepId:step.id,stepTitle:step.title});
+   },"recipe-knowledge-context-explain");
+   menu.append(explain);document.body.append(menu);knowledgeMenu=menu;
+   const x=Math.max(8,Math.min(event.clientX,window.innerWidth-menu.offsetWidth-8));
+   const y=Math.max(8,Math.min(event.clientY,window.innerHeight-menu.offsetHeight-8));
+   menu.style.left=x+"px";menu.style.top=y+"px";
+  };
+  content.addEventListener("contextmenu",event=>{
+   if(event.target.closest("input,textarea,select,button,img"))return;
+   const card=event.target.closest(".recipe-one-step");
+   if(!card)return;
+   const step=steps.find(item=>item.id===card.dataset.stepId);
+   if(!step)return;
+   const term=termAtPoint(event);
+   if(!term)return;
+   event.preventDefault();showKnowledgeMenu(event,term,step);
+  });
+  document.addEventListener("click",event=>{if(knowledgeMenu&&!knowledgeMenu.contains(event.target))closeKnowledgeMenu()});
+  document.addEventListener("keydown",event=>{if(event.key==="Escape")closeKnowledgeMenu()});
+  document.addEventListener("scroll",closeKnowledgeMenu,true);
   const move=(index,offset)=>{
    const destination=index+offset;if(destination<0||destination>=steps.length)return;
    [steps[index],steps[destination]]=[steps[destination],steps[index]];
