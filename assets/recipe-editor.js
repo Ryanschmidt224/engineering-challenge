@@ -122,10 +122,11 @@
        const item=el("div","recipe-step-photo");
        const photoName=step.photoNames[id]||"";
        const picture=makePhoto(id,photoName);
-       const label=el("label","recipe-step-photo-name-label","Photo name");
-       const nameInput=editField(photoName,"Name this photo",value=>{step.photoNames[id]=value;picture.alt=value||"Step photo"});
-       nameInput.maxLength=120;label.append(nameInput);
-       item.append(picture,label,button("Remove photo",()=>{step.photos.splice(index,1);delete step.photoNames[id];changed();saveHint();showPhotos()},"btn recipe-small-action"));
+       const nameInput=editField(photoName,"Photo name",value=>{step.photoNames[id]=value;picture.alt=value||"Step photo"});
+       nameInput.classList.add("recipe-step-photo-name");
+       nameInput.setAttribute("aria-label","Photo name");
+       nameInput.maxLength=120;
+       item.append(picture,nameInput,button("Remove photo",()=>{step.photos.splice(index,1);delete step.photoNames[id];changed();saveHint();showPhotos()},"btn recipe-small-action"));
        photoList.append(item);
       });
      };
