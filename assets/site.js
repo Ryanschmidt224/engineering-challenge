@@ -896,149 +896,50 @@ function setupAssemblyTrees(){
    section.addEventListener("toggle",()=>{shopPanelExpanded=section.open});
    const summary=document.createElement("summary");
    summary.textContent="Standard shop materials · "+items.length+" item"+(items.length===1?"":"s")+" (assumed available)";
-   const description=document.createElement("p");description.className="muted bom-shop-note";
-   description.textContent="Check shop supplies before building. These are required materials, not confirmed stock.";
    const rows=document.createElement("div");rows.className="bom-shop-material-rows";
    for(const part of items){
     const row=document.createElement("div");row.className="bom-shop-material-row";
-    const name=document.createElement("span");name.className="bom-shop-material-name";name.textContent=part.name;
-    const quantity=document.createElement("span");quantity.className="bom-shop-qty";quantity.textContent=materialQuantity(part);
-    const openPart=document.createElement("button");openPart.type="button";openPart.className="btn bom-open-part-details";openPart.textContent="Open part details";
-    openPart.onclick=()=>openPartInstructions(part,part.assemblyId??null);
-    row.append(name,quantity,openPart);
-    if(part.workshopChoice){
-     const selected=document.createElement("span");selected.className="bom-workshop-selected";
-     selected.textContent="Selected: "+(window.BSResources?.all("parts").find(x=>x.id===part.workshopChoice)?.name||"Workshop standard");
-     row.append(selected);
+    const name=document.createElement("button");name.type="button";
+    name.className="bom-part-name bom-part-name-link";name.textContent=part.name;
+    name.onclick=()=>openPartInstructions(part,part.assemblyId??null);
+    const quantity=document.createElement("span");quantity.className="bom-shop-qty";
+    quantity.textContent=materialQuantity(part);
+    row.append(name,quantity);
+    if(adminAuthenticated&&!part.generatedFrom){
+     const edit=document.createElement("button");edit.type="button";
+     edit.className="btn bom-part-edit";edit.textContent="Edit";
+     edit.setAttribute("aria-label","Edit "+part.name);
+     edit.onclick=()=>editBomPart(part,part.assemblyId??null);
+     row.append(edit);
     }
-    row.append(workshopLink(part));
-    const change=preferenceButton(part);if(change)row.append(change);
     rows.append(row);
    }
-   section.append(summary,description,rows);return section;
+   section.append(summary,rows);return section;
   }
+  // Sidebar BOM is a read-only index. Edit opens the existing full-width form.
+  // Detailed specifications, purchasing and picture actions belong to that form,
+  // never inside the narrow feature-tree sidebar.
   function createSavedPart(part,originId){
-   const item=document.createElement("details");item.className="bom-part";
-   const summary=document.createElement("summary");summary.className="bom-part-summary";
-   const photo=makeBomThumbnail(partPhotoUrl(part.id),part.name);
-   const name=document.createElement("span");name.className="bom-part-name";name.textContent=part.name;
-   const openPart=document.createElement("button");openPart.type="button";openPart.className="btn bom-open-part-details";openPart.textContent="Open part details";
-   openPart.onclick=event=>{event.preventDefault();event.stopPropagation();openPartInstructions(part,originId)};
+   const item=document.createElement("div");item.className="bom-part bom-compact-part";
    if(part.bomOnly)item.classList.add("bom-only-part");
    if(part.generatedFrom)item.classList.add("bom-generated-part");
-   const qty=document.createElement("span");qty.className="bom-part-meta";qty.textContent="Qty "+window.BSBomModel.quantityText(part);
-   summary.append(name,qty,openPart);item.append(summary);
-   const body=document.createElement("div");body.className="bom-part-body";
-   if(!part.generatedFrom){
-    const purchased=document.createElement("button");purchased.type="button";purchased.className="btn bom-record-purchase";
-    purchased.textContent="Record as purchased";
-    purchased.onclick=async()=>{
-     if(!adminAuthenticated){bomReport("Administrator login required to record purchases.");return}
-     purchased.disabled=true;
-     try{
-      const response=await fetch("/api/purchased-parts",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({project,partId:part.id})});
-      const data=await response.json();if(!response.ok)throw Error(data.error||"Could not record purchase");
-      purchased.textContent="Recorded in Workshop";
-      bomReport(part.name+" added to your private purchased-parts library.");
-      void window.BSResources?.reloadPurchased?.();
-     }catch(error){bomReport(error.message);purchased.disabled=false}
-    };
-    body.append(purchased);
-   }
-   for(const [label,value] of [["Manufacturer",part.manufacturer],["Model",part.model],["Supplier",part.supplier],["ASIN",part.asin],["Category",part.category]]){
-    if(!value)continue;
-    const row=document.createElement("p"),strong=document.createElement("strong");strong.textContent=label+": ";row.append(strong,document.createTextNode(value));body.append(row);
-   }
-   if(part.specifications?.length){
-    const title=document.createElement("strong");title.textContent="Specifications";body.append(title);
-    const ul=document.createElement("ul");for(const entry of part.specifications){const li=document.createElement("li");li.textContent=entry.name+": "+entry.value+(entry.source==="inferred"?" (inferred)":"");ul.append(li)}body.append(ul);
-   }
-   if(part.assumedOnHand)body.append(workshopLink(part));
-   const preference=preferenceButton(part);if(preference)body.append(preference);
-   if(part.generatedFrom){
-    const automatic=document.createElement("p");automatic.className="muted bom-auto-note";
-    automatic.textContent="Calculated automatically from the wire configuration. Edit the wire to change this quantity or termination.";
-    body.append(automatic);
-   }
+   const row=document.createElement("div");row.className="bom-part-summary";
+   const name=document.createElement("button");name.type="button";
+   name.className="bom-part-name bom-part-name-link";name.textContent=part.name;
+   name.title="Open part details";name.onclick=()=>openPartInstructions(part,originId);
+   const qty=document.createElement("span");qty.className="bom-part-meta";
+   qty.textContent="Qty "+window.BSBomModel.quantityText(part);
+   row.append(name,qty);
    if(adminAuthenticated&&!part.generatedFrom){
-    const controls=document.createElement("div");controls.className="bom-part-actions";
-    const edit=document.createElement("button");edit.type="button";edit.className="btn";edit.textContent="Edit part";
-    edit.onclick=()=>{editBomPart(part,originId)};
-    const pick=document.createElement("button");pick.type="button";pick.className="btn";pick.textContent="Add / change picture";
-    const input=document.createElement("input");input.type="file";input.accept="image/jpeg,image/png,image/webp";input.hidden=true;
-    pick.onclick=()=>input.click();
-    const uploadThumbnail=async file=>{
-     if(!file)return;
-     const mime=file.type||({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"}[file.name.split(".").pop().toLowerCase()]||"");
-     if(!["image/jpeg","image/png","image/webp"].includes(mime)||file.size>3*1024*1024){bomReport("Use JPG, PNG or WebP under 3 MB.");return}
-     pick.disabled=true;pick.textContent="Uploading…";
-     try{
-      const response=await fetch(partPhotoUrl(part.id),{method:"POST",credentials:"same-origin",headers:{"content-type":mime},body:file});
-      const result=await response.json();if(!response.ok)throw Error(result.error||"Upload failed");
-      photo.classList.remove("bom-thumbnail-empty");photo.src=partPhotoUrl(part.id)+"&v="+Date.now();pick.textContent="Change picture";bomReport("Picture saved for "+part.name+".");
-     }catch(error){bomReport("Picture upload failed: "+error.message);pick.textContent="Add / change picture"}
-     finally{pick.disabled=false;input.value=""}
-    };
-    input.onchange=()=>{void uploadThumbnail(input.files?.[0]);input.value=""};
-    // Picture uploads remain available in the expanded part controls.
-    for(const target of [photo,pick]){
-     target.classList.add("bom-picture-drop");
-     target.addEventListener("dragover",event=>{if(!event.dataTransfer.types.includes("Files"))return;event.preventDefault();event.stopPropagation();event.dataTransfer.dropEffect="copy";target.classList.add("is-dragover")});
-     target.addEventListener("dragleave",event=>{event.preventDefault();target.classList.remove("is-dragover")});
-     target.addEventListener("drop",event=>{event.preventDefault();event.stopPropagation();target.classList.remove("is-dragover");void uploadThumbnail(event.dataTransfer.files?.[0])});
-    }
-    const deletePicture=document.createElement("button");deletePicture.type="button";deletePicture.className="btn bom-delete-picture";deletePicture.textContent="Delete picture";
-    deletePicture.onclick=async()=>{
-     deletePicture.disabled=true;
-     try{
-      await deletePartPicture(part.id,()=>{
-       photo.onerror=null;photo.src=missingPicture;photo.classList.add("bom-thumbnail-empty");photo.alt="Picture unavailable";
-       bomReport("Picture removed from "+part.name+".");
-      });
-     }catch(error){bomReport(error.message)}
-     finally{deletePicture.disabled=false}
-    };
-    controls.append(deletePicture);
-    const remove=document.createElement("button");remove.type="button";remove.className="btn";remove.textContent="Delete part";
-    remove.onclick=async()=>{
-     if(!confirm("Delete "+part.name+"?"))return;
-     remove.disabled=true;
-     try{
-      const featureNodes=nodes.filter(n=>isPartNode(n)&&n.partId===part.id);
-      if(featureNodes.length)await save(nodes.filter(n=>!featureNodes.some(link=>link.id===n.id)));
-      const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{method:"DELETE",credentials:"same-origin"});
-      const result=await response.json().catch(()=>({}));if(!response.ok)throw Error(result.error||"Delete failed");
-      await renderWorkspaceParts();
-     }catch(error){bomReport("Delete failed: "+error.message);remove.disabled=false}
-    };
-    if(!part.bomOnly&&!nodes.some(n=>isPartNode(n)&&n.partId===part.id)){
-     const link=document.createElement("button");link.type="button";link.className="btn";link.textContent="Add to feature tree";
-     link.onclick=async()=>{
-      link.disabled=true;
-      const node={id:crypto.randomUUID(),kind:"part",partId:part.id,name:part.name,parentId:originId};
-      try{
-       await save([...nodes,node]);expanded.add(originId);
-       await renderWorkspaceParts();
-       bomReport(part.name+" linked in the feature tree.");
-      }catch(error){bomReport("Unable to add to feature tree: "+error.message)}
-      finally{link.disabled=false}
-     };
-     controls.append(link);
-    }
-    controls.append(edit,pick,remove,input);body.append(controls);
+    const edit=document.createElement("button");edit.type="button";
+    edit.className="btn bom-part-edit";edit.textContent="Edit";
+    edit.setAttribute("aria-label","Edit "+part.name);
+    edit.onclick=()=>editBomPart(part,originId);
+    row.append(edit);
    }
-   item.append(body);return item;
+   item.append(row);
+   return item;
   }
-  // Only the most recently opened BOM entry has an enlarged thumbnail.
-  // Keep other <details> open so nested subassembly BOMs remain visible.
-  bomPanel.querySelector(".workspace-saved-parts").addEventListener("toggle",event=>{
-   const entry=event.target;
-   if(!(entry instanceof HTMLDetailsElement)||!entry.classList.contains("bom-part"))return;
-   if(!entry.open){entry.classList.remove("bom-thumbnail-active");return}
-   const list=bomPanel.querySelector(".workspace-saved-parts");
-   list.querySelectorAll(".bom-thumbnail-active").forEach(other=>other.classList.remove("bom-thumbnail-active"));
-   entry.classList.add("bom-thumbnail-active");
-  },true);
   async function renderWorkspaceParts(){
    const version=++bomDisplayVersion,assemblyId=selected,container=bomPanel.querySelector(".workspace-saved-parts");
    // Keep the last list visible while fetching, rather than flashing the BOM
@@ -1225,6 +1126,14 @@ function setupAssemblyTrees(){
    refreshEditPhoto();
    const save=bomField("save");if(save)save.textContent="Save changes";
    bomReport("Editing "+part.name+". Changes will update this part without creating a duplicate.");
+   // Editing can begin from an overview or build-instructions page, too.
+   // Route into the assembly workspace so the full-width editor is visible.
+   if(!workspaceRoute()){
+    if(originId!==undefined)selected=originId;
+    history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));
+    void showAssemblyPage();
+    render();notify();
+   }
   }
   function openBomDraft(){
    const root=bomRoot();if(!root){bomReport("BOM editor unavailable. Refresh the page.");return}
