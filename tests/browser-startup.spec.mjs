@@ -67,8 +67,8 @@ test("project feature tree and workspace initialize without browser errors", asy
 
  await expect(rows.first().locator(".bom-part-name")).toBeVisible();
  await expect(rows.first().locator(".bom-part-meta")).toContainText("Qty 2");
- // BOM is a read-only index: names open details and the only editor action is Edit.
- await expect(rows.first().locator(".bom-part-edit")).toHaveCount(0); // signed-out visitors see no edit control
+ // BOM is a read-only index: every visitor can open a part; no inline editing.
+ await expect(rows.first().locator(".bom-part-edit")).toHaveText("Open");
  await expect(rows.first().locator(".bom-part-name-link")).toBeVisible();
  await expect(rows.first().locator("input,select,textarea")).toHaveCount(0);
  await expect(rows.first().locator(".bom-part-body")).toHaveCount(0);
@@ -205,6 +205,12 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  const rowPart=sidebar.locator(".workspace-saved-parts .bom-part",{hasText:"Linked Motor"}).first();
  await expect(rowPart.locator("input,select,textarea")).toHaveCount(0);
  await rowPart.locator(".bom-part-edit").click();
+ await expect(page).toHaveURL(/#launcher\/part\//);
+ const partPage=page.locator("#launcher .bom-part-workspace");
+ await expect(partPage).toBeVisible();
+ await partPage.locator(".part-details-collapse summary").click();
+ await expect(partPage.locator(".part-details-edit")).toBeVisible();
+ await partPage.locator(".part-details-edit").click();
  await expect(workspace).toHaveClass(/is-editing-bom-part/);
  const editor=workspace.locator(".workspace-main-bom-editor");
  await expect(editor).toBeVisible();
