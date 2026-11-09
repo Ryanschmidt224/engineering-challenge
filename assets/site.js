@@ -1026,11 +1026,8 @@ function setupAssemblyTrees(){
    }
    const priceGroup=bomEditorMount.querySelector(".historical-price-fields");
    if(priceGroup)priceGroup.hidden=custom;
-   const importField=bomEditorMount.querySelector(".component-description")?.closest("label");
-   if(importField)importField.hidden=custom;
-   const hint=bomEditorMount.querySelector(".component-lookup-help");if(hint)hint.hidden=custom;
-   const extractButton=bomEditorMount.querySelector(".component-extract");
-   if(extractButton)extractButton.hidden=custom;
+   const lookup=bomEditorMount.querySelector(".component-lookup-panel");
+   if(lookup)lookup.hidden=custom;
   };
   partTypeSelect.onchange=updatePartTypeFields;
   updatePartTypeFields();
@@ -1146,7 +1143,10 @@ function setupAssemblyTrees(){
   function openBomDraft(){
    const root=bomRoot();if(!root){bomReport("BOM editor unavailable. Refresh the page.");return}
    const review=root.querySelector(".component-review");
-   if(review&&!review.contains(partTypeRow))review.prepend(partTypeRow);
+   const lookup=root.querySelector(".component-lookup-panel");
+   if(lookup){
+    if(partTypeRow.nextElementSibling!==lookup)lookup.before(partTypeRow);
+   }else if(review&&!review.contains(partTypeRow))review.prepend(partTypeRow);
    if(review){
     let actions=review.querySelector(".component-editor-actions");
     if(!actions){
