@@ -152,25 +152,52 @@
   return data;
  }
  function mount(panel,{onChange=()=>{}}={}){
-  let refs=normalize(null),editable=false;
+  let refs=normalize(null),editable=false,adding=false;
   panel.classList.add("linked-resources");
   const heading=element("h2","","Linked resources");
-  const description=element("p","muted","Add shared tools, calculators or library parts to these instructions. Save the workspace or part instructions to keep the links; linked parts are references, not additional BOM quantities.");
+  const description=element("p","muted","Linked resources are references, not additional BOM quantities.");
   const body=element("div","linked-resource-groups");
-  panel.append(heading,description,body);
+  const addButton=element("button","linked-resource-add","+ Add resources");
+  addButton.type="button";addButton.setAttribute("aria-expanded","false");
+  const chooser=element("div","linked-resource-chooser");
+  const typePicker=element("select","field");
+  typePicker.setAttribute("aria-label","Resource type");
+  for(const [kind,title] of [["tools","Tool"],["calculators","Calculator"],["parts","Workshop part"]]){
+   const option=element("option","",title);option.value=kind;typePicker.append(option);
+  }
+  const resourcePicker=element("select","field");
+  resourcePicker.setAttribute("aria-label","Resource to add");
+  const confirm=element("button","btn","Add selected resource");confirm.type="button";
+  const cancel=element("button","btn","Cancel");cancel.type="button";
+  chooser.append(typePicker,resourcePicker,confirm,cancel);
+  panel.append(heading,description,body,addButton,chooser);
   const onLibraryUpdate=()=>render();listeners.add(onLibraryUpdate);
+  const kindLabels={tools:"Tools",calculators:"Calculators",parts:"Workshop parts"};
+  function refreshChoices(){
+   resourcePicker.replaceChildren();
+   const kind=typePicker.value;
+   const options=all(kind).filter(item=>!refs[kind].includes(item.id));
+   for(const item of options){
+    const option=element("option","",item.name);option.value=item.id;resourcePicker.append(option);
+   }
+   if(!options.length){
+    const option=element("option","","No additional resources");resourcePicker.append(option);
+   }
+   resourcePicker.disabled=!options.length;
+   confirm.disabled=!options.length;
+  }
   function render(){
    body.replaceChildren();
-   const kinds=[["tools","Tool","Tools"],["calculators","Calculator","Calculators"],["parts","Part from Workshop","Workshop parts"]];
-   for(const [kind,singular,section] of kinds){
+   const total=Object.values(refs).reduce((sum,list)=>sum+list.length,0);
+   description.hidden=total===0;
+   for(const kind of ["tools","calculators","parts"]){
+    if(!refs[kind].length)continue;
     const group=element("div","linked-resource-group");
-    group.append(element("h3","",section));
+    group.append(element("h3","",kindLabels[kind]));
     const selected=element("div","linked-resource-items");
-    if(!refs[kind].length)selected.append(element("p","muted","None linked."));
     for(const id of refs[kind]){
      const row=element("div","linked-resource-row");
-     const name=element("span","",label(kind,id));
-     row.append(name);
+     row.append(element("span","",label(kind,id)));
      const target=kind==="calculators"?"calculators":"commonparts";
      const open=element("button","btn","Open");open.type="button";open.onclick=()=>{
       location.hash=target;
@@ -178,25 +205,32 @@
        const mapped={"oscilloscope":"workshop:oscilloscope","multimeter":"workshop:meter","soldering-iron":"workshop:solderstation"};
        requestAnimationFrame(()=>focusWorkshopItem(mapped[id]||id));
       }else if(kind==="parts"&&id.startsWith("workshop:"))requestAnimationFrame(()=>focusWorkshopItem(id));
-     };row.append(open);
-     if(editable){const remove=element("button","btn","Remove");remove.type="button";remove.onclick=()=>{refs[kind]=refs[kind].filter(x=>x!==id);render();onChange()};row.append(remove)}
+     };
+     row.append(open);
+     if(editable){
+      const remove=element("button","btn","Remove");remove.type="button";
+      remove.onclick=()=>{refs[kind]=refs[kind].filter(x=>x!==id);render();onChange()};
+      row.append(remove);
+     }
      selected.append(row);
     }
-    group.append(selected);
-    if(editable){
-     const actions=element("div","linked-resource-actions");
-     const picker=element("select","field");picker.setAttribute("aria-label","Choose "+singular.toLowerCase());
-     const options=all(kind).filter(item=>!refs[kind].includes(item.id));
-     if(!options.length){const o=element("option","","No additional entries");picker.append(o);picker.disabled=true}
-     else for(const item of options){const opt=element("option","",item.name);opt.value=item.id;picker.append(opt)}
-     const add=element("button","btn","+ Add "+singular.toLowerCase());add.type="button";add.disabled=!options.length;
-     add.onclick=()=>{if(!picker.value)return;refs[kind].push(picker.value);render();onChange()};
-     actions.append(picker,add);group.append(actions);
-    }
-    body.append(group);
+    group.append(selected);body.append(group);
    }
+   addButton.hidden=!editable;
+   chooser.hidden=!editable||!adding;
+   addButton.setAttribute("aria-expanded",String(editable&&adding));
+   if(adding)refreshChoices();
   }
-  function setData(value,admin){refs=normalize(value);editable=!!admin;render()}
+  addButton.onclick=()=>{adding=!adding;render();if(adding)typePicker.focus()};
+  cancel.onclick=()=>{adding=false;render();addButton.focus()};
+  typePicker.onchange=refreshChoices;
+  confirm.onclick=()=>{
+   const kind=typePicker.value,id=resourcePicker.value;
+   if(!editable||!id||resourcePicker.disabled||refs[kind].includes(id))return;
+   refs[kind].push(id);
+   adding=false;render();onChange();
+  };
+  function setData(value,admin){refs=normalize(value);editable=!!admin;adding=false;render()}
   render();
   return {setData,getData:()=>normalize(refs),destroy:()=>listeners.delete(onLibraryUpdate)};
  }
