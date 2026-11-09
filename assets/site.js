@@ -1050,6 +1050,7 @@ function setupAssemblyTrees(){
   bomEditPanel.className="workspace-main-bom-editor hide";
   bomEditPanel.setAttribute("aria-label","BOM part editor");
   workspace.querySelector(".workspace-panels").prepend(bomEditPanel);
+  let editorDisclosureObserver=null;
   const moveBomEditorToTop=()=>{
    bomEditPanel.append(bomEditorMount);
    workspace.classList.add("is-editing-bom-part");
@@ -1060,6 +1061,8 @@ function setupAssemblyTrees(){
    bomEditorHeader.classList.remove("hide");
   };
   const dismissBomEditor=()=>{
+   editorDisclosureObserver?.disconnect();
+   editorDisclosureObserver=null;
    bomEditorMount.classList.remove("is-editing");
    bomEditorHeader.classList.add("hide");
    partTools.classList.add("hide");
@@ -1137,7 +1140,17 @@ function setupAssemblyTrees(){
    if(review&&!review.contains(partTypeRow))review.prepend(partTypeRow);
    moveBomEditorToTop();
    updatePartTypeFields();
-   root.querySelector("details")?.setAttribute("open","");
+   // The reusable legacy component controller can close its parent disclosure
+   // asynchronously; keep it expanded only while the full-size editor is active.
+   const outer=root.querySelector(":scope > details");
+   if(outer){
+    outer.open=true;
+    editorDisclosureObserver?.disconnect();
+    editorDisclosureObserver=new MutationObserver(()=>{
+     if(workspace.classList.contains("is-editing-bom-part")&&!outer.open)outer.open=true;
+    });
+    editorDisclosureObserver.observe(outer,{attributes:true,attributeFilter:["open"]});
+   }
    const form=root.querySelector(".component-admin");if(form)form.open=true;
    root.querySelector(".component-review")?.classList.remove("hide");
    bomEditorMount.scrollIntoView({behavior:"smooth",block:"start"});
