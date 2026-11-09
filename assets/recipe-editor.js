@@ -240,6 +240,7 @@
      const upload=async file=>{
       if(!file)return;
       if(!options.project){feedback.textContent="Cannot identify this project for attachment upload.";return}
+      if(step.photos.length>=30){feedback.textContent="A step supports up to 30 attachments.";return}
       if(file.size>20*1024*1024){feedback.textContent="Maximum attachment size is 20 MB.";return}
       addPhoto.disabled=true;feedback.textContent="Uploading attachment…";
       try{
