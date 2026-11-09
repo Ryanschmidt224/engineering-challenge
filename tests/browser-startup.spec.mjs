@@ -212,6 +212,19 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(editor).toBeVisible();
  await expect(editor.locator(".component-name")).toHaveValue("Linked Motor");
  await expect(editor.locator(".component-quantity")).toHaveValue("2");
+ // Purchased retains source fields; custom hides fields that do not apply.
+ const kind=editor.locator(".part-type-select");
+ await expect(kind).toHaveValue("purchased");
+ await expect(editor.locator(".component-manufacturer")).toBeVisible();
+ await kind.selectOption("custom");
+ await expect(editor.locator(".component-manufacturer")).toBeHidden();
+ await expect(editor.locator(".component-supplier")).toBeHidden();
+ await expect(editor.locator(".component-asin")).toBeHidden();
+ await expect(editor.locator(".component-historical-price")).toBeHidden();
+ await expect(editor.locator(".component-category")).toBeVisible();
+ await expect(editor.locator(".component-name")).toBeVisible();
+ await kind.selectOption("purchased");
+ await expect(editor.locator(".component-manufacturer")).toBeVisible();
  // The old component list must not be duplicated inside the editing form.
  await expect(editor.locator(".component-list")).toBeHidden();
  await expect(sidebar.locator(".workspace-bom")).toBeVisible();
@@ -221,6 +234,17 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await editor.locator(".workspace-bom-editor-cancel").click();
  await expect(editor).toBeHidden();
  await expect(workspace.locator(".recipe-instructions")).toBeVisible();
+ // Linked resources show one action until a user creates a reference.
+ const resources=workspace.locator(".workspace-resources");
+ await expect(resources.locator(".linked-resource-group")).toHaveCount(0);
+ await expect(resources.locator(".linked-resource-add")).toBeVisible();
+ await resources.locator(".linked-resource-add").click();
+ await expect(resources.locator(".linked-resource-chooser")).toBeVisible();
+ await resources.locator(".linked-resource-chooser select[aria-label='Resource type']").selectOption("calculators");
+ await resources.locator(".linked-resource-chooser button",{hasText:"Add selected resource"}).click();
+ await expect(resources.locator(".linked-resource-group")).toHaveCount(1);
+ await expect(resources.locator(".linked-resource-group h3")).toContainText("Calculators");
+ await expect(resources.locator(".linked-resource-add")).toBeVisible();
  const frame=page.locator("#launcher .assembly-layout > .assembly-content");
  const radius=await frame.evaluate(el=>parseFloat(getComputedStyle(el).borderTopLeftRadius));
  expect(radius).toBeGreaterThanOrEqual(8);
