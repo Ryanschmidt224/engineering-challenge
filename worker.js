@@ -5,6 +5,7 @@ import {handlePurchasedParts} from "./functions/api/purchased-parts.js";
 import {handlePartFiles} from "./functions/api/part-files.js";
 import {handlePartPages} from "./functions/api/part-pages.js";
 import {handleWorkspace} from "./functions/api/workspace.js";
+import {handleInvestigations} from "./functions/api/investigations.js";
 import {handleRecipeFiles} from "./functions/api/recipe-files.js";
 import {handleProjectArchive} from "./functions/api/project-archive.js";
 import {handleArchiveStaging} from "./functions/api/archive-staging.js";
@@ -26,6 +27,7 @@ export default {
       if(path==="/api/part-pages")return handlePartPages(request,env);
       if(path==="/api/harness")return handleHarness(request,env);
       if(path==="/api/workspace")return handleWorkspace(request,env);
+      if(path==="/api/investigations")return handleInvestigations(request,env);
       if(path==="/api/recipe-files")return handleRecipeFiles(request,env);
       if(path==="/api/project/archive")return handleProjectArchive(request,env);
       if(path==="/api/project/staging")return handleArchiveStaging(request,env);
