@@ -2517,3 +2517,9 @@
  margin:1px 0 5px;color:#bcd7e2;font-size:.83rem;line-height:1.45;
 }
 .recipe-compact .recipe-right-click-icon{color:#83d6e2;font-weight:700;font-size:1rem}
+
+/* Keep the knowledge lookup hint alongside the work-instructions title. */
+.recipe-instructions .recipe-heading-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;column-gap:22px;row-gap:6px}
+.recipe-instructions .recipe-heading-row>h2{margin:0}
+.recipe-instructions .recipe-heading-row .recipe-right-click-tip{display:flex;align-items:center;gap:7px;max-width:100%;margin:0;color:#bcd7e2;font-size:.83rem;line-height:1.45}
+.recipe-instructions .recipe-heading-row .recipe-right-click-icon{color:#83d6e2;font-weight:700;font-size:1rem}
