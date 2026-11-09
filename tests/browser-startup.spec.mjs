@@ -244,7 +244,10 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(workspace.locator(".recipe-instructions")).toBeHidden();
  await editor.locator(".workspace-bom-editor-cancel").click();
  await expect(editor).toBeHidden();
- await expect(workspace.locator(".recipe-instructions")).toBeVisible();
+ // Editing was launched from Part Details, so Cancel returns to that page.
+ await expect(partPage).toBeVisible();
+ await partPage.locator(".part-workspace-back").click();
+ await expect(workspace).toBeVisible();
  // Linked resources show one action until a user creates a reference.
  const resources=workspace.locator(".workspace-resources");
  await expect(resources.locator(".linked-resource-group")).toHaveCount(0);
