@@ -2030,3 +2030,29 @@
 .assembly-detail .assembly-unified-body{
  display:none!important;
 }
+
+
+/* Focused part-edit mode: the editor is the entire main workspace.
+   The tree and BOM remain navigation in the left sidebar. */
+#launcher .assembly-workspace-page.is-editing-bom-part > .workspace-back,
+#launcher .assembly-workspace-page.is-editing-bom-part > .workspace-heading{
+ display:none!important;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-panels{
+ margin-top:0;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-panels > .workspace-main-bom-editor{
+ margin-top:0;
+}
+/* A BOM leaf title is text, not another navigation action. Only Open navigates. */
+#launcher .assembly-sidebar .workspace-bom .bom-compact-part .bom-part-name-link,
+#launcher .assembly-sidebar .workspace-bom .bom-shop-material-row .bom-part-name-link{
+ cursor:default;
+ text-decoration:none!important;
+ color:#e1e9ee;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-compact-part .bom-part-name-link:hover,
+#launcher .assembly-sidebar .workspace-bom .bom-shop-material-row .bom-part-name-link:hover{
+ color:#e1e9ee;
+ text-decoration:none!important;
+}
