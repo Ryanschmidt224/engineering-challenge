@@ -905,18 +905,16 @@ function setupAssemblyTrees(){
     const quantity=document.createElement("span");quantity.className="bom-shop-qty";
     quantity.textContent=materialQuantity(part);
     row.append(name,quantity);
-    if(adminAuthenticated&&!part.generatedFrom){
-     const edit=document.createElement("button");edit.type="button";
-     edit.className="btn bom-part-edit";edit.textContent="Edit";
-     edit.setAttribute("aria-label","Edit "+part.name);
-     edit.onclick=()=>editBomPart(part,part.assemblyId??null);
-     row.append(edit);
-    }
+    const open=document.createElement("button");open.type="button";
+    open.className="btn bom-part-edit";open.textContent="Open";
+    open.setAttribute("aria-label","Open "+part.name);
+    open.onclick=()=>openPartInstructions(part,part.assemblyId??null);
+    row.append(open);
     rows.append(row);
    }
    section.append(summary,rows);return section;
   }
-  // Sidebar BOM is a read-only index. Edit opens the existing full-width form.
+  // Sidebar BOM is a read-only index. Open navigates to part details; editing is a separate admin action.
   // Detailed specifications, purchasing and picture actions belong to that form,
   // never inside the narrow feature-tree sidebar.
   function createSavedPart(part,originId){
@@ -930,13 +928,11 @@ function setupAssemblyTrees(){
    const qty=document.createElement("span");qty.className="bom-part-meta";
    qty.textContent="Qty "+window.BSBomModel.quantityText(part);
    row.append(name,qty);
-   if(adminAuthenticated&&!part.generatedFrom){
-    const edit=document.createElement("button");edit.type="button";
-    edit.className="btn bom-part-edit";edit.textContent="Edit";
-    edit.setAttribute("aria-label","Edit "+part.name);
-    edit.onclick=()=>editBomPart(part,originId);
-    row.append(edit);
-   }
+   const open=document.createElement("button");open.type="button";
+   open.className="btn bom-part-edit";open.textContent="Open";
+   open.setAttribute("aria-label","Open "+part.name);
+   open.onclick=()=>openPartInstructions(part,originId);
+   row.append(open);
    item.append(row);
    return item;
   }
