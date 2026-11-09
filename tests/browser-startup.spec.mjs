@@ -145,10 +145,10 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
    data=route.request().method()==="PUT"?{ok:true,title:"Renamed Foam Dart Project",revision:"v2"}:{title:null,revision:null};
   }else if(url.pathname==="/api/tree")data={nodes:[
    {id:"smoke-motor",parentId:null,name:"Motor and Motor Control",kind:"assembly"},
-   {id:"smoke-part",parentId:"smoke-motor",name:"Linked Motor",kind:"part",partId:"p1"}
+   {id:"smoke-part",parentId:"smoke-motor",name:"Linked Motor",kind:"part",partId:"11111111-1111-4111-8111-111111111111"}
   ],revision:"test"};
   if(url.pathname==="/api/components")data={components:[
-   {id:"p1",name:"Linked Motor",assemblyId:"smoke-motor",quantity:2,quantityUnit:"pcs",
+   {id:"11111111-1111-4111-8111-111111111111",name:"Linked Motor",assemblyId:"smoke-motor",quantity:2,quantityUnit:"pcs",
     manufacturer:"Example Motors",model:"C2822",specifications:[],category:"Motor",supplier:"",asin:"",bomOnly:false}
   ]};
   if(url.pathname==="/api/photos")data={photos:[]};
