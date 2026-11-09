@@ -6,8 +6,8 @@ const scopeKey=(project,id)=>backupPrefix+project+"/"+id+".bsproject";
 const validId=s=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z-[a-f0-9-]{36}$/.test(s);
 const isProjectRecord=(project,key)=>
  key.startsWith(project+"/")||
- ["assembly-pages/","workspaces/","part-workspaces/","harnesses/","drawings/","component-thumbnails/","part-files/","part-pages/"].some(prefix=>key.startsWith(prefix+project+"/"))||
- key==="trees/"+project+".json"||key==="components/"+project+".json";
+ ["assembly-pages/","workspaces/","part-workspaces/","harnesses/","drawings/","component-thumbnails/","part-files/","part-pages/","recipe-files/"].some(prefix=>key.startsWith(prefix+project+"/"))||
+ key==="trees/"+project+".json"||key==="components/"+project+".json"||key==="investigations/"+project+".json";
 
 /* Weekly append-only checkpoints inside private R2. These are not offsite
    backups and are not transactionally consistent during concurrent edits.
