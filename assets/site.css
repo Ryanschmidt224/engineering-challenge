@@ -2378,3 +2378,15 @@
 .recipe-step-photo-image{display:block;max-width:100%;max-height:240px;object-fit:contain;border-radius:7px;margin:8px 0}
 .recipe-edit-controls .recipe-save-step{margin-left:auto;font-weight:700}
 @media(max-width:600px){.recipe-edit-controls .recipe-save-step{margin-left:0;width:100%}}
+
+/* Named work-instruction photos and keyboard-accessible full-screen viewer. */
+.recipe-step-photo-name-label{display:grid;gap:6px;font-size:.83rem;font-weight:600}
+.recipe-step-photo-name-label .recipe-input{width:100%;box-sizing:border-box}
+.recipe-step-photo-image{cursor:zoom-in}
+.recipe-step-photo-image:focus-visible{outline:2px solid #80d8e8;outline-offset:3px}
+.recipe-reader-photo{display:inline-block;vertical-align:top;margin:8px 14px 8px 0;max-width:240px}
+.recipe-reader-photo figcaption{font-size:.85rem;overflow-wrap:anywhere;padding:2px 0}
+.recipe-photo-viewer{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.94);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;padding:55px 22px 24px;box-sizing:border-box}
+.recipe-photo-viewer-image{max-width:100%;max-height:calc(100vh - 125px);object-fit:contain}
+.recipe-photo-viewer-caption{color:#fff;font-size:1rem;text-align:center;max-width:90vw;overflow-wrap:anywhere}
+.recipe-photo-viewer-close{position:absolute;top:12px;right:20px;border:1px solid #aaa;border-radius:8px;background:#24333c;color:white;cursor:pointer;font-size:2rem;line-height:1;padding:4px 13px}
