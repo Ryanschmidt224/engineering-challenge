@@ -3,11 +3,12 @@
  "use strict";
  const make=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el};
  const btn=(label,fn,cls="btn")=>{const b=make("button",cls,label);b.type="button";b.onclick=fn;return b};
- const types=[["observation","Observation"],["theory","Theory / hypothesis"],["attempt","Attempted fix"],["revision","Failed revision / design change"],["result","Test result"],["lesson","Lesson learned"]];
+ const types=[["observation","What happened"],["attempt","What I tried / changed"],["lesson","What I learned"]]; 
+ const legacyType={theory:"Hypothesis",revision:"Revision / design change",result:"Result"};
  const statuses=[["investigating","Investigating"],["resolved","Resolved"],["unresolved","Unresolved"]];
  const photoExt=/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i;
  const fileUrl=id=>"/api/recipe-files?id="+encodeURIComponent(id);
- function mount({project,admin,getTree,getPart,getPartList}){
+ function mount({project,admin,getTree,getPart,getPartList,onReplacePart}){
   let records=[],revision=null;
   let assemblySlot=null,partSlot=null,stepSlots=new Map(),activeContext=null,loadSerial=0;
   const openCards=new Set();
@@ -64,8 +65,12 @@
    const entryList=make("div","investigation-entries");
    for(const entry of record.entries||[]){
     const item=make("article","investigation-entry");
-    const label=types.find(x=>x[0]===entry.type)?.[1]||"Update";
-    item.append(make("strong","",label),make("p","",entry.text));
+    const label=types.find(x=>x[0]===entry.type)?.[1]||legacyType[entry.type]||"Update";
+    const stamp=entry.date||entry.createdAt?.slice(0,10)||"";
+    const labelRow=make("div","investigation-entry-heading");
+    labelRow.append(make("strong","",label));
+    if(stamp)labelRow.append(make("time","investigation-entry-date",stamp));
+    item.append(labelRow,make("p","",entry.text));
     for(const file of entry.files||[]){
      if(photoExt.test(file)){
       const img=make("img","investigation-image");img.src=fileUrl(file);img.loading="lazy";img.alt=entry.fileName||"Investigation evidence";item.append(img);
@@ -78,17 +83,29 @@
    }
    container.append(entryList);
    if(!admin())return;
+
+   // A simple, shared three-bucket form replaces the old update-type dropdown.
    const controls=make("div","investigation-add-controls");
-   const kind=make("select","field");
-   for(const [value,label] of types){const o=make("option","",label);o.value=value;kind.append(o)}
-   const text=make("textarea","field");text.rows=3;text.placeholder="What happened, what did you try, or what did you learn?";
+   const dateLabel=make("label","investigation-date-field","Date");
+   const date=make("input","field");date.type="date";
+   const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
+   dateLabel.append(date);controls.append(dateLabel);
+   const inputs=types.map(([type,label])=>{
+    const wrap=make("label","investigation-entry-field");
+    wrap.append(make("span","",label));
+    const field=make("textarea","field");field.rows=2;field.maxLength=5000;
+    field.placeholder=type==="observation"?"What happened?":type==="attempt"?"What did you change or test?":"What did you learn or conclude?";
+    wrap.append(field);controls.append(wrap);return {type,field};
+   });
    const fileInput=make("input");fileInput.type="file";fileInput.multiple=true;fileInput.hidden=true;
    fileInput.accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.dwg,.dxf,.stp,.step,.stl,.txt,.csv,.doc,.docx,.xls,.xlsx,.zip";
    const fileChoice=make("span","investigation-file-label");
    fileInput.onchange=()=>{fileChoice.textContent=[...fileInput.files].map(x=>x.name).join(", ")};
    const attachBtn=btn("+ Add photo / document",()=>fileInput.click(),"btn");
    const saveBtn=btn("Save update",async()=>{
-    if(!text.value.trim()){reportHere("Write an observation or lesson before saving.");text.focus();return}
+    const fields=inputs.filter(item=>item.field.value.trim());
+    if(!fields.length){reportHere("Add an observation, attempted change, or lesson.");inputs[0].field.focus();return}
+    if(!date.value){reportHere("Choose a date.");date.focus();return}
     saveBtn.disabled=true;
     try{
      const files=[];
@@ -96,14 +113,16 @@
       if(file.size>20*1024*1024)throw Error("An attachment exceeds 20 MB.");
       const up=await fetch("/api/recipe-files?project="+encodeURIComponent(project),{method:"POST",
        credentials:"same-origin",headers:{"content-type":"application/octet-stream","x-file-name":encodeURIComponent(file.name)},body:file});
-      const d=await up.json();if(!up.ok)throw Error(d.error||"Attachment failed");
-      files.push(d.id);
+      const data=await up.json();if(!up.ok)throw Error(data.error||"Attachment failed");
+      files.push(data.id);
      }
-     await save({action:"append",id:record.id,entry:{type:kind.value,text:text.value,files,fileName:[...fileInput.files][0]?.name||""}});
-     reportHere("Update saved. Previous entries are preserved.");
+     const entries=fields.map(({type,field},index)=>({type,text:field.value,date:date.value,
+      files:index===0?files:[],fileName:index===0?([...(fileInput.files||[])][0]?.name||""):""}));
+     await save({action:"appendBatch",id:record.id,entries});
+     reportHere("Update saved. Earlier findings are preserved.");
     }catch(error){reportHere(error.message);saveBtn.disabled=false}
    },"btn primary");
-   controls.append(kind,text,attachBtn,fileInput,fileChoice,saveBtn);
+   controls.append(attachBtn,fileInput,fileChoice,saveBtn);
    const state=make("select","field investigation-status");
    for(const [value,label] of statuses){const o=make("option","",label);o.value=value;state.append(o)}
    state.value=record.status;
@@ -120,9 +139,13 @@
    target.replaceChildren();
    activeContext={...context,target};
    const header=make("div","investigation-heading");
-   const title=make(compact?"h4":"h2","",compact?"Failures & lessons":"Failures & Lessons Learned");
+   const title=make(compact?"h4":"h2","",compact?"Revisions, failures & lessons":"Revisions, Failures & Lessons Learned");
    header.append(title);
-   if(admin())header.append(btn("+ Add failure",()=>newRecord(context,target),"btn investigation-add"));
+   if(admin()){
+    header.append(btn("+ Add record",()=>newRecord(context,target),"btn investigation-add"));
+    if(context.ownerType==="part"&&!context.stepId&&typeof getPart==="function"&&getPart()?.id===context.ownerId&&
+     typeof onReplacePart==="function")header.append(btn("Replace part / save revision",()=>replacePart(context,target),"btn investigation-add"));
+   }
    target.append(header);
    const own=records.filter(item=>owns(item,context));
    const rolled=records.filter(item=>within(item,context)&&!owns(item,context));
@@ -134,12 +157,22 @@
     const summary=make("summary","investigation-summary");
     summary.append(make("strong","",record.title));
     const badge=make("span","investigation-status-pill",statuses.find(x=>x[0]===record.status)?.[1]||record.status);
-    summary.append(badge);card.append(summary);
+    summary.append(badge);
+    if(admin()){
+     const rename=btn("Rename",event=>{
+      event.preventDefault();event.stopPropagation();
+      renameRecord(record,target);
+     },"btn investigation-rename");
+     summary.append(rename);
+     rename.addEventListener("click",event=>{event.preventDefault();event.stopPropagation()});
+    }
+    card.append(summary);
     const body=make("div","investigation-body");
     if(inherited){
      const source=record.scope==="step"?"Step":record.ownerType==="part"?"Part":"Assembly";
      body.append(make("p","investigation-origin","From "+source+" · "+record.title));
     }
+    if(record.partSnapshot)showSnapshot(record.partSnapshot,body);
     attach(record,body);card.append(body);target.append(card);
    };
    own.forEach(item=>renderRecord(item));
@@ -171,11 +204,78 @@
    if(!own.length&&!rolled.length)target.append(make("p","muted investigation-empty","No failures recorded yet."));
    target.append(make("p","investigation-feedback muted"));
   }
+
+  function showSnapshot(snapshot,target){
+   const details=make("details","investigation-snapshot");
+   details.append(make("summary","","Archived part and tests (before replacement)"));
+   const part=snapshot.part||{},workspace=snapshot.workspace||{};
+   const content=make("div","investigation-snapshot-content");
+   content.append(make("h4","",part.fullName||part.name||"Original component"));
+   for(const key of ["manufacturer","model","supplier","asin","quantity","quantityUnit","historicalPurchasePrice"]){
+    if(part[key]!==null&&part[key]!==undefined&&String(part[key]))content.append(make("p","",key.replace(/([A-Z])/g," $1")+": "+part[key]));
+   }
+   for(const spec of part.specifications||[])content.append(make("p","",spec.name+": "+spec.value));
+   if(snapshot.thumbnailKey){
+    const picture=make("img","investigation-image");
+    picture.src="/api/investigations?project="+encodeURIComponent(project)+"&thumbnail="+encodeURIComponent(snapshot.thumbnailKey);
+    picture.alt="Previous part photograph";picture.loading="lazy";content.append(picture);
+   }
+   const steps=workspace.recipe||[];
+   if(steps.length){
+    content.append(make("h4","","Archived work instructions and test notes"));
+    for(const step of steps){
+     const block=make("div","investigation-snapshot-step");
+     block.append(make("strong","",step.title||"Step"));
+     for(const note of [step.standard,step.detail,...(step.notes||[])])if(note)block.append(make("p","",note));
+     for(const file of step.photos||[]){
+      const link=make("a","investigation-file",step.photoNames?.[file]||"Saved instruction attachment");
+      link.href=file.startsWith("recipe-files/")?fileUrl(file):"/api/photo?id="+encodeURIComponent(file);
+      link.target="_blank";link.rel="noopener noreferrer";block.append(link);
+     }
+     content.append(block);
+    }
+   }
+   for(const test of workspace.experiments||[])content.append(make("p","",test.text||""));
+   details.append(content);target.append(details);
+  }
+  function renameRecord(record,target){
+   const box=make("div","investigation-create");
+   const input=make("input","field");input.value=record.title;input.maxLength=180;
+   const saveBtn=btn("Save name",async()=>{
+    if(!input.value.trim()){input.focus();return}
+    saveBtn.disabled=true;
+    try{await save({action:"rename",id:record.id,title:input.value.trim()});report("Name updated.",target)}
+    catch(error){report(error.message,target);saveBtn.disabled=false}
+   },"btn primary");
+   box.append(input,saveBtn,btn("Cancel",()=>box.remove(),"btn"));
+   target.querySelector(".investigation-heading")?.after(box);input.focus();input.select();
+  }
+  function replacePart(context,target){
+   const part=getPart();
+   if(!part||part.id!==context.ownerId)return;
+   const form=make("div","investigation-create investigation-replace");
+   form.append(make("p","","Save the current part specifications, work instructions, tests and photograph as a historical revision before editing the replacement. This does not delete the original records."));
+   const field=make("textarea","field");field.rows=2;field.placeholder="Why is this part being replaced? (e.g. 20 A ESC replaced by a smaller-rated ESC)";
+   const date=make("input","field");date.type="date";
+   const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
+   const saveBtn=btn("Archive and edit replacement",async()=>{
+    if(!field.value.trim()||!date.value){report("Enter a reason and date.",target);return}
+    saveBtn.disabled=true;
+    try{
+     await save({action:"archivePart",partId:part.id,reason:field.value.trim(),date:date.value});
+     report("Previous revision saved. Opening part editor.",target);
+     onReplacePart(part);
+    }catch(error){report(error.message,target);saveBtn.disabled=false}
+   },"btn primary");
+   form.append(field,date,saveBtn,btn("Cancel",()=>form.remove(),"btn"));
+   target.querySelector(".investigation-heading")?.after(form);
+   field.focus();
+  }
   function newRecord(context,target){
    const reportHere=message=>report(message,target);
    const form=make("div","investigation-create");
-   const name=make("input","field");name.placeholder="What failed?";name.maxLength=180;
-   const saveBtn=btn("Save failure",async()=>{
+   const name=make("input","field");name.placeholder="Revision, failure, or lesson title";name.maxLength=180;
+   const saveBtn=btn("Save record",async()=>{
     if(!name.value.trim()){name.focus();return}
     saveBtn.disabled=true;
     try{await save({action:"create",...context,title:name.value.trim()});reportHere("Failure recorded. Open it to add evidence, attempts and lessons.")}
