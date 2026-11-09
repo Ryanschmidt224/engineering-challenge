@@ -59,8 +59,7 @@
    records=d.records;revision=d.revision;renderAll();
    return d;
   }
-  function attach(record,container){
-   const target=container.closest(".investigations-panel,.recipe-step-investigations");
+  function attach(record,container,target){
    const reportHere=message=>report(message,target);
    const entryList=make("div","investigation-entries");
    for(const entry of record.entries||[]){
@@ -173,7 +172,7 @@
      body.append(make("p","investigation-origin","From "+source+" · "+record.title));
     }
     if(record.partSnapshot)showSnapshot(record.partSnapshot,body);
-    attach(record,body);card.append(body);target.append(card);
+    attach(record,body,target);card.append(body);target.append(card);
    };
    own.forEach(item=>renderRecord(item));
    if(rolled.length){
@@ -197,7 +196,7 @@
      const origin=make("a","investigation-origin",sourceName+(record.scope==="step"?" · Work instruction":""));
      origin.href="#"+project+(record.ownerType==="part"?"/part/":"/workspace/")+encodeURIComponent(record.ownerId);
      body.append(origin);
-     attach(record,body);card.append(body);wrapper.append(card);inner.append(wrapper);
+     attach(record,body,target);card.append(body);wrapper.append(card);inner.append(wrapper);
     }
     group.append(inner);target.append(group);
    }
