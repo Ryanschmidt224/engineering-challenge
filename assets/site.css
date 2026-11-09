@@ -1959,3 +1959,74 @@
 #launcher .assembly-sidebar .workspace-bom .bom-shop-material-row .bom-part-name-link{
  flex:1 1 0;
 }
+
+
+/* Hierarchy indicators only belong on expandable BOM assemblies.
+   Leaf parts open via their name or Open button; they do not have child trees. */
+.assembly-sidebar .workspace-bom .bom-compact-part > .bom-part-summary::before,
+.assembly-sidebar .workspace-bom .bom-feature-part > .bom-part-summary::before,
+.assembly-sidebar .workspace-bom .bom-compact-part[open] > .bom-part-summary::before{
+ content:none!important;
+ display:none!important;
+}
+.assembly-sidebar .workspace-bom .bom-compact-part > .bom-part-summary{
+ cursor:default;
+}
+/* Project and assembly photo cards use the same bottom-fade/white-caption
+   treatment as the smaller child tiles on their overview pages. */
+.assembly-main .assembly-photo-stage,
+.assembly-detail .assembly-photo-stage{
+ position:relative;
+ isolation:isolate;
+ overflow:hidden;
+}
+.assembly-main .assembly-photo-stage::after,
+.assembly-detail .assembly-photo-stage::after{
+ content:"";
+ position:absolute;
+ inset:50% 0 0;
+ background:linear-gradient(transparent,rgba(0,0,0,.72));
+ z-index:5;
+ pointer-events:none;
+}
+.assembly-main .assembly-photo-stage .assembly-photo-name,
+.assembly-detail .assembly-photo-stage .assembly-photo-name{
+ position:absolute;
+ left:auto;
+ right:14px;
+ top:auto;
+ bottom:13px;
+ max-width:58%;
+ padding:0;
+ margin:0;
+ color:#fff;
+ background:transparent;
+ border:0;
+ box-shadow:none;
+ font-size:.89rem;
+ font-weight:650;
+ text-align:right;
+ line-height:1.35;
+ text-shadow:0 1px 3px rgba(0,0,0,.55);
+ z-index:8;
+}
+.assembly-main .assembly-photo-stage .assembly-open-workspace,
+.assembly-detail .assembly-photo-stage .assembly-open-workspace{
+ left:14px;
+ right:auto;
+ bottom:12px;
+ top:auto;
+ border:1px solid rgba(225,237,244,.3);
+ border-radius:6px;
+ padding:8px 12px;
+ font-size:.82rem;
+ background:rgba(15,34,45,.72);
+ box-shadow:none;
+ z-index:9;
+}
+/* Description is no longer part of an overview card. The complete notes,
+   procedures and linked resources are accessed via Open workspace. */
+.assembly-main .assembly-unified-body,
+.assembly-detail .assembly-unified-body{
+ display:none!important;
+}
