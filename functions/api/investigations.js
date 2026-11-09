@@ -20,6 +20,16 @@ export async function handleInvestigations(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project");
  if(!projects.has(project))return json({error:"Invalid project"},400);
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
+ if(request.method==="GET"&&url.searchParams.has("thumbnail")){
+  const requested=url.searchParams.get("thumbnail")||"";
+  const prefix="part-revisions/"+project+"/";
+  if(!requested.startsWith(prefix)||!new RegExp("^part-revisions/"+project+"/[a-f0-9-]{36}/[a-f0-9-]{36}/thumbnail$","i").test(requested))
+   return json({error:"Invalid archived image"},400);
+  const image=await env.PHOTOS.get(requested);
+  if(!image)return json({error:"Archived image not found"},404);
+  return new Response(image.body,{headers:{"content-type":image.httpMetadata?.contentType||"image/jpeg",
+   "cache-control":"public, max-age=3600","x-content-type-options":"nosniff"}});
+ }
  const key="investigations/"+project+".json",object=await env.PHOTOS.get(key);
  const saved=object?JSON.parse(await object.text()):{records:[],revision:null};
  if(request.method==="GET")return json({records:Array.isArray(saved.records)?saved.records:[],revision:saved.revision??null});
