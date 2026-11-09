@@ -1454,7 +1454,7 @@ function setupAssemblyTrees(){
    const install=()=>{
     const stage=gallery.querySelector(".assembly-photo-stage");
     if(!stage||stage.querySelector(".assembly-open-workspace"))return;
-    const btn=document.createElement("button");btn.type="button";btn.className="assembly-open-workspace";btn.textContent="Build instructions →";btn.title="Open build instructions, procedures and notes";
+    const btn=document.createElement("button");btn.type="button";btn.className="assembly-open-workspace";btn.textContent="Open workspace →";btn.title="Open work instructions, drawings, resources and the bill of materials";
     btn.onclick=e=>{e.stopPropagation();openWorkspace()};
     stage.append(btn);
    };
