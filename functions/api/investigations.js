@@ -9,6 +9,13 @@ const statuses=new Set(["investigating","resolved","unresolved"]);
 const types=new Set(["observation","theory","attempt","revision","result","lesson"]);
 const scopes=new Set(["assembly","part","step"]);
 const trim=(text,max)=>String(text||"").trim().slice(0,max);
+const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value+"T12:00:00Z"))&&new Date(value+"T12:00:00Z").toISOString().slice(0,10)===value;
+const entryTypes=new Set(["observation","attempt","lesson","theory","revision","result"]);
+const safeEntry=(entry,project)=>entry&&entryTypes.has(entry.type)&&validText(entry.text,5000)&&entry.text.trim()&&
+ validDate(entry.date)&&Array.isArray(entry.files||[])&&(entry.files||[]).length<=12&&
+ (entry.files||[]).every(file=>typeof file==="string"&&filePattern.test(file)&&file.startsWith("recipe-files/"+project+"/"))&&validText(entry.fileName||"",120);
+const normalizedEntry=(entry)=>({id:crypto.randomUUID(),type:entry.type,text:entry.text.trim(),date:entry.date,
+ files:[...new Set(entry.files||[])],fileName:trim(entry.fileName,120),createdAt:new Date().toISOString()});
 export async function handleInvestigations(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project");
  if(!projects.has(project))return json({error:"Invalid project"},400);
@@ -46,6 +53,23 @@ export async function handleInvestigations(request,env){
   record={id:crypto.randomUUID(),scope,ownerType,ownerId,stepId,title:data.title.trim(),
    status:"investigating",entries:[],createdAt:new Date().toISOString()};
   changed=[...records,record];
+ }else if(data.action==="rename"){
+  record=records.find(item=>item.id===data.id);
+  if(!record)return json({error:"Investigation not found"},404);
+  if(!validText(data.title,180)||!data.title.trim())return json({error:"Invalid investigation title"},400);
+  const title=data.title.trim();
+  if(title===record.title)return json({ok:true,revision:saved.revision??null,records});
+  const audit={id:crypto.randomUUID(),type:"revision",text:"Renamed investigation from \""+record.title+"\" to \""+title+"\".",
+   date:new Date().toISOString().slice(0,10),files:[],fileName:"",createdAt:new Date().toISOString()};
+  changed=records.map(item=>item.id===record.id?{...item,title,entries:[...(item.entries||[]),audit]}:item);
+ }else if(data.action==="appendBatch"){
+  record=records.find(item=>item.id===data.id);
+  if(!record)return json({error:"Investigation not found"},404);
+  const incoming=data.entries;
+  if(!Array.isArray(incoming)||!incoming.length||incoming.length>3||incoming.some(item=>!safeEntry(item,project)))
+   return json({error:"Invalid investigation update"},400);
+  if((record.entries||[]).length+incoming.length>100)return json({error:"Too many entries in investigation"},413);
+  changed=records.map(item=>item.id===record.id?{...item,entries:[...(item.entries||[]),...incoming.map(normalizedEntry)]}:item);
  }else if(data.action==="append"){
   record=records.find(item=>item.id===data.id);
   const entry=data.entry;
@@ -55,14 +79,13 @@ export async function handleInvestigations(request,env){
      !(entry.files||[]).every(file=>typeof file==="string"&&filePattern.test(file)&&file.startsWith("recipe-files/"+project+"/"))||
      !validText(entry.fileName||"",120))return json({error:"Invalid investigation entry"},400);
   if((record.entries||[]).length>=100)return json({error:"Too many entries in investigation"},413);
-  const next={id:crypto.randomUUID(),type:entry.type,text:entry.text.trim(),
-   files:[...new Set(entry.files||[])],fileName:trim(entry.fileName,120),createdAt:new Date().toISOString()};
+  const next={...normalizedEntry({...entry,date:validDate(entry.date)?entry.date:new Date().toISOString().slice(0,10)})};
   changed=records.map(item=>item.id===record.id?{...item,entries:[...(item.entries||[]),next]}:item);
  }else if(data.action==="status"){
   record=records.find(item=>item.id===data.id);
   if(!record||!statuses.has(data.status))return json({error:"Invalid investigation status"},400);
   const next={id:crypto.randomUUID(),type:"result",text:"Status changed to "+data.status+".",
-   files:[],fileName:"",createdAt:new Date().toISOString()};
+   date:new Date().toISOString().slice(0,10),files:[],fileName:"",createdAt:new Date().toISOString()};
   changed=records.map(item=>item.id===record.id?{...item,status:data.status,entries:[...(item.entries||[]),next]}:item);
  }else return json({error:"Invalid action"},400);
  const nextRevision=crypto.randomUUID();
