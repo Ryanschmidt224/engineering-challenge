@@ -1771,13 +1771,29 @@ function setupComponents(){
   list.classList.add("bom-visible-parts");
  }
  const field=name=>root.querySelector(".component-"+name);
+ const priceBasis=field("historical-price-basis"),packageCount=field("historical-package-quantity"),priceField=field("historical-price");
+ const updatePriceControls=()=>{
+  const packaged=priceBasis?.value==="per_package";
+  const packageLabel=root.querySelector(".historical-package-count");
+  if(packageLabel)packageLabel.hidden=!packaged;
+  if(packageCount)packageCount.required=packaged&&!!priceField?.value;
+  const hint=root.querySelector(".historical-unit-hint");
+  const amount=Number(priceField?.value),count=Number(packageCount?.value);
+  if(hint)hint.textContent=packaged&&priceField?.value&&Number.isSafeInteger(count)&&count>0?
+   "Equivalent to $"+(amount/count).toFixed(4)+" per part.":"";
+ };
+ priceBasis?.addEventListener("change",updatePriceControls);
+ priceField?.addEventListener("input",updatePriceControls);
+ packageCount?.addEventListener("input",updatePriceControls);
+ updatePriceControls();
  const say=message=>{status.textContent=message;status.hidden=false;status.style.display="block";status.setAttribute("aria-live","polite");};
  function specRow(name="",value="",source="explicit"){
   const row=document.createElement("div");row.className="row component-spec-row";
   const a=document.createElement("input"),b=document.createElement("input"),c=document.createElement("select"),del=document.createElement("button");
   a.className=b.className="field";a.placeholder="Specification";b.placeholder="Value";a.value=name;b.value=value;
-  for(const opt of ["explicit","inferred"]){const el=document.createElement("option");el.value=opt;el.textContent=opt==="explicit"?"Stated in listing":"Inferred";c.append(el)}c.value=source;
-  del.className="btn";del.type="button";del.textContent="Remove";del.onclick=()=>row.remove();row.append(a,b,c,del);specs.append(row)
+  c.className="field component-spec-source";c.setAttribute("aria-label","Specification source");
+  for(const opt of ["explicit","inferred"]){const el=document.createElement("option");el.value=opt;el.textContent=opt==="explicit"?"✓ From product listing":"◇ Estimated / inferred";c.append(el)}c.value=source;
+  del.className="btn component-spec-remove";del.type="button";del.textContent="×";del.title="Remove specification";del.setAttribute("aria-label","Remove specification");del.onclick=()=>row.remove();row.append(a,b,c,del);specs.append(row)
  }
  let refreshVersion=0;
  async function refresh(){
@@ -1875,7 +1891,7 @@ function setupComponents(){
  // A fresh part is a fresh draft. Only Save component writes a new BOM record.
  function clearPartEditor(){
   for(const name of ["name","manufacturer","model","category","supplier","asin"]){const control=field(name);if(control)control.value=""}
-  field("description").value="";if(field("quantity"))field("quantity").value="";if(field("historical-price"))field("historical-price").value="";if(field("historical-price-date"))field("historical-price-date").value="";
+  field("description").value="";if(field("quantity"))field("quantity").value="";if(field("historical-price"))field("historical-price").value="";if(field("historical-price-date"))field("historical-price-date").value="";if(priceBasis)priceBasis.value="per_part";if(packageCount)packageCount.value="";updatePriceControls();
   specs.replaceChildren();review.classList.remove("hide");
  }
  root.addEventListener("bom:new-part",()=>{
