@@ -304,6 +304,11 @@
       // The context menu provides knowledge lookup without a redundant button.
      }
     }
+    if(typeof options.renderInvestigations==="function"){
+     const investigationArea=el("div","recipe-step-investigations");
+     body.append(investigationArea);
+     options.renderInvestigations(step,investigationArea);
+    }
     card.append(body);content.append(card);
    }
    if(admin()){
