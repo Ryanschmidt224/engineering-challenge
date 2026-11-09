@@ -216,7 +216,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  const manufacturerDebug=await editor.locator(".component-manufacturer").evaluate(el=>{
   const chain=[];for(let node=el;node&&chain.length<9;node=node.parentElement){
    const cs=getComputedStyle(node);
-   chain.push({tag:node.tagName,cls:node.className,hidden:node.hidden,display:cs.display,visibility:cs.visibility});
+   chain.push({tag:node.tagName,cls:node.className,hidden:node.hidden,open:node.tagName==="DETAILS"?node.open:null,display:cs.display,visibility:cs.visibility,width:node.getBoundingClientRect().width,height:node.getBoundingClientRect().height,rects:node.getClientRects().length});
   }return chain;
  });
  console.log("manufacturer visibility chain",JSON.stringify(manufacturerDebug));
