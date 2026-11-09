@@ -1844,3 +1844,63 @@
 #launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-review{
  display:block;
 }
+
+
+/* Part classification: only show data relevant to the selected kind. */
+#launcher .workspace-main-bom-editor .part-type-field{
+ display:flex;
+ flex-direction:column;
+ gap:7px;
+ max-width:390px;
+ margin-bottom:20px;
+ font-weight:650;
+ color:#e2e9ee;
+}
+#launcher .workspace-main-bom-editor .part-type-select{width:100%}
+#launcher .workspace-main-bom-editor .component-review label[hidden],
+#launcher .workspace-main-bom-editor label[hidden],
+#launcher .workspace-main-bom-editor .component-extract[hidden]{display:none!important}
+/* Linked resources: no empty three-column placeholders until items exist. */
+.linked-resources .linked-resource-chooser[hidden],
+.linked-resources .linked-resource-add[hidden],
+.linked-resources .linked-resource-groups:empty,
+.linked-resources .linked-resource-chooser [hidden]{display:none!important}
+.linked-resources .linked-resource-add{
+ display:inline-block;
+ border:0;
+ background:transparent;
+ color:#87d5c7;
+ padding:7px 3px;
+ text-align:left;
+ font:inherit;
+ font-size:.92rem;
+ font-weight:600;
+ cursor:pointer;
+}
+.linked-resources .linked-resource-add:hover{text-decoration:underline;color:#baf0e7}
+.linked-resources .linked-resource-chooser{
+ display:flex;
+ flex-wrap:wrap;
+ gap:10px;
+ align-items:center;
+ margin-top:12px;
+ padding:14px;
+ border:1px solid #39515e;
+ border-radius:8px;
+ background:#142632;
+}
+.linked-resources .linked-resource-chooser select{
+ flex:1 1 180px;
+ min-width:150px;
+ max-width:340px;
+}
+.linked-resources .linked-resource-groups{
+ display:flex;
+ flex-wrap:wrap;
+ gap:12px;
+ margin:12px 0;
+}
+.linked-resources .linked-resource-group{
+ flex:1 1 230px;
+ min-width:210px;
+}
