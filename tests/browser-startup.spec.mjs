@@ -39,6 +39,15 @@ test("project feature tree and workspace initialize without browser errors", asy
  await tree.locator(".assembly-name", {hasText:"Motor and Motor Control"}).click();
  await expect(page).toHaveURL(/#launcher\/assembly\/smoke-motor/);
  await expect(page.locator("#launcher .assembly-detail-title")).toContainText("Motor and Motor Control");
+ // The BOM is persistent project navigation, not limited to Work Instructions.
+ const persistentBom=page.locator("#launcher .assembly-sidebar .workspace-bom");
+ await expect(persistentBom).toBeVisible();
+ await expect(persistentBom.locator(".workspace-saved-parts")).toContainText("Motor and Motor Control");
+ await page.locator("#launcher .assembly-detail .assembly-back").click();
+ await expect(page.locator("#launcher .assembly-main")).toBeVisible();
+ await expect(persistentBom).toBeVisible();
+ await expect(persistentBom.locator(".workspace-saved-parts")).toContainText("Motor and Motor Control");
+ await tree.locator(".assembly-name", {hasText:"Motor and Motor Control"}).click();
  await page.locator("#launcher .assembly-detail .assembly-open-workspace").click();
  await expect(page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)")).toBeVisible();
  // The BOM has one text-first hierarchical view (no thumbnails or view switch).
@@ -203,6 +212,11 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(editor).toBeVisible();
  await expect(editor.locator(".component-name")).toHaveValue("Linked Motor");
  await expect(editor.locator(".component-quantity")).toHaveValue("2");
+ // The old component list must not be duplicated inside the editing form.
+ await expect(editor.locator(".component-list")).toBeHidden();
+ await expect(sidebar.locator(".workspace-bom")).toBeVisible();
+ await expect(sidebar.locator(".workspace-saved-parts")).toContainText("Linked Motor");
+ expect(await editor.locator(".workspace-bom-mount").evaluate(el=>el.closest(".workspace-main-bom-editor")!==null)).toBe(true);
  await expect(workspace.locator(".recipe-instructions")).toBeHidden();
  await editor.locator(".workspace-bom-editor-cancel").click();
  await expect(editor).toBeHidden();
