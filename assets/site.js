@@ -1245,8 +1245,8 @@ function setupAssemblyTrees(){
    const amount=rawQty===""?null:Number(rawQty);
    if(amount!==null&&(!Number.isFinite(amount)||amount<=0||amount>10000000)){bomReport("Quantity must be positive or left blank.");return false}
    const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:amount,quantityUnit:bomField("quantity-unit")?.value??"pcs",partType:partTypeSelect.value};
-   const priceInput=bomField("historical-price")?.value.trim()||"";
-   const dateInput=bomField("historical-price-date")?.value||"";
+   const priceInput=partTypeSelect.value==="custom"?"":(bomField("historical-price")?.value.trim()||"");
+   const dateInput=partTypeSelect.value==="custom"?"":(bomField("historical-price-date")?.value||"");
    if(priceInput&&(!Number.isFinite(Number(priceInput))||Number(priceInput)<0||Math.round(Number(priceInput)*100)!==Number(priceInput)*100&&Math.abs(Math.round(Number(priceInput)*100)-Number(priceInput)*100)>1e-6)){
     bomReport("Historical price must be a positive USD amount with at most two decimal places.");return false;
    }
