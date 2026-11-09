@@ -7,8 +7,8 @@ const css=readFileSync('assets/site.css','utf8');
 const js=readFileSync('assets/site.js','utf8');
 const worker=readFileSync('worker.js','utf8');
 test('single external stylesheet and application entrypoint',()=>{
-  assert.match(html,/<link rel="stylesheet" href="\/assets\/site\.css">/);
-  assert.match(html,/<script src="\/assets\/site\.js"><\/script>/);
+  assert.match(html,/<link rel="stylesheet" href="\/assets\/site\.css(?:\?[^"]+)?">/);
+  assert.match(html,/<script src="\/assets\/site\.js(?:\?[^"]+)?"><\/script>/);
   assert.doesNotMatch(html,/<style>|<script>(?!<\/script>)/);
   assert.ok(css.length>10000);
   assert.ok(js.length>30000);
