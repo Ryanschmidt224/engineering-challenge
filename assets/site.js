@@ -1802,6 +1802,9 @@ function setupComponents(){
  }
  const field=name=>root.querySelector(".component-"+name);
  const priceBasis=field("historical-price-basis"),packageCount=field("historical-package-quantity"),priceField=field("historical-price");
+ const recordedDate=field("historical-price-date");
+ const todayLocal=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+ priceField?.addEventListener("input",()=>{if(priceField.value&&!recordedDate?.value&&recordedDate)recordedDate.value=todayLocal()});
  const updatePriceControls=()=>{
   const packaged=priceBasis?.value==="per_package";
   const packageLabel=root.querySelector(".historical-package-count");
@@ -1981,6 +1984,8 @@ function setupComponents(){
    if(!component||typeof component!=="object")throw Error("The service returned no product information.");
    for(const name of ["name","manufacturer","model","category","supplier","asin"]){const el=field(name);if(el)el.value=component[name]||""}
    if(field("full-name"))field("full-name").value=component.fullName||component.name||"";
+   // A successful product lookup creates a fresh recorded-date reference.
+   if(recordedDate)recordedDate.value=todayLocal();
    specs.replaceChildren();for(const spec of component.specifications||[])specRow(spec.name,spec.value,spec.source);
    review.classList.remove("hide");extractStatus("Product details suggested. Review the fields and specifications before saving.");
   }catch(e){review.classList.remove("hide");extractStatus("Product lookup failed: "+(e.name==="AbortError"?"The service did not respond within 20 seconds":e.message)+". You can enter this part manually.")}
