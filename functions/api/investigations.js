@@ -53,6 +53,36 @@ export async function handleInvestigations(request,env){
   record={id:crypto.randomUUID(),scope,ownerType,ownerId,stepId,title:data.title.trim(),
    status:"investigating",entries:[],createdAt:new Date().toISOString()};
   changed=[...records,record];
+ }else if(data.action==="archivePart"){
+  const partId=data.partId;
+  if(!uuid.test(partId)||!validDate(data.date)||!validText(data.reason,2500)||!data.reason.trim())
+   return json({error:"Enter a reason and valid revision date"},400);
+  const partObject=await env.PHOTOS.get("components/"+project+".json");
+  const parts=partObject?JSON.parse(await partObject.text()):[];
+  const part=Array.isArray(parts)?parts.find(item=>item.id===partId):null;
+  if(!part)return json({error:"Part no longer exists"},404);
+  if(records.length>=300)return json({error:"Project investigation limit reached"},413);
+  const workspaceObject=await env.PHOTOS.get("part-workspaces/"+project+"/"+partId+".json");
+  const workspace=workspaceObject?JSON.parse(await workspaceObject.text()):{};
+  const revisionId=crypto.randomUUID();
+  const thumbnail=await env.PHOTOS.get("component-thumbnails/"+project+"/"+partId);
+  let archivedThumbnail=null;
+  if(thumbnail){
+   archivedThumbnail="part-revisions/"+project+"/"+partId+"/"+revisionId+"/thumbnail";
+   await env.PHOTOS.put(archivedThumbnail,await thumbnail.arrayBuffer(),{
+    httpMetadata:{contentType:thumbnail.httpMetadata?.contentType||"image/jpeg"}
+   });
+  }
+  // Capture the original part definition and its instruction/test state before edits.
+  // Existing CAD files, drawing objects and uploaded evidence remain immutable in R2.
+  const snapshot={part:JSON.parse(JSON.stringify(part)),workspace:JSON.parse(JSON.stringify(workspace)),
+   thumbnailKey:archivedThumbnail,archivedAt:new Date().toISOString()};
+  if(JSON.stringify(snapshot).length>250000)return json({error:"Part history is too large to snapshot"},413);
+  record={id:revisionId,scope:"part",ownerType:"part",ownerId:partId,stepId:"",
+   title:"Revision: "+trim(part.name||"Previous part",160),status:"resolved",
+   date:data.date,partSnapshot:snapshot,entries:[{id:crypto.randomUUID(),type:"revision",text:data.reason.trim(),
+    date:data.date,files:[],fileName:"",createdAt:new Date().toISOString()}],createdAt:new Date().toISOString()};
+  changed=[...records,record];
  }else if(data.action==="rename"){
   record=records.find(item=>item.id===data.id);
   if(!record)return json({error:"Investigation not found"},404);
