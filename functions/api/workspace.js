@@ -29,7 +29,10 @@ const validateRecipe=input=>{
     typeof standard!=="string"||standard.length>4000||
     typeof detail!=="string"||detail.length>8000)return null;
   const kind=["action","inspection","measurement","explanation"].includes(step.kind)?step.kind:"action";
-  steps.push({id,title:title.trim(),standard,detail,kind});
+  const notes=step.notes??[],photos=step.photos??[];
+  if(!Array.isArray(notes)||notes.length>40||notes.some(n=>typeof n!=="string"||n.length>4000)||
+     !Array.isArray(photos)||photos.length>30||photos.some(p=>typeof p!=="string"||! /^(launcher|linear|robot|buck|motorlab|coiltest)\\/[0-9a-f-]{36}\\.(jpg|png|webp|gif|heic|heif)$/.test(p)))return null;
+  steps.push({id,title:title.trim(),standard,detail,kind,notes,photos});
  }
  return steps;
 };
