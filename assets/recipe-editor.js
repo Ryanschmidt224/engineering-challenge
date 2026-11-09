@@ -20,6 +20,12 @@
    const field=el(rows?"textarea":"input","field recipe-input");
    if(rows)field.rows=rows;else field.type="text";
    field.value=value;field.placeholder=placeholder;
+   // On the first click or keyboard focus, select the old value so typing
+   // replaces it. Later clicks within the focused field allow caret edits.
+   let firstFocus=false;
+   field.addEventListener("focus",()=>{firstFocus=true;field.select()});
+   field.addEventListener("click",()=>{if(firstFocus){field.select();firstFocus=false}});
+   field.addEventListener("blur",()=>{firstFocus=false});
    field.oninput=()=>{onValue(field.value);changed();saveHint()};
    return field;
   };
