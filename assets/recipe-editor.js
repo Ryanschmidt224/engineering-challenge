@@ -3,7 +3,7 @@
  "use strict";
  const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node};
  const button=(label,fn,cls="btn")=>{const node=el("button",cls,label);node.type="button";node.onclick=fn;return node};
- const normalize=x=>({id:x.id,title:x.title||"",standard:x.standard||"",detail:x.detail||"",kind:x.kind||"action"});
+ const normalize=x=>({id:x.id,title:x.title||"",standard:x.standard||"",detail:x.detail||"",kind:x.kind||"action",notes:Array.isArray(x.notes)?x.notes.filter(n=>typeof n==="string").slice(0,40):[],photos:Array.isArray(x.photos)?x.photos.filter(p=>typeof p==="string").slice(0,30):[]});
  const kinds=[["action","Action"],["inspection","Inspection"],["measurement","Measurement"],["explanation","Explanation"]];
  const newId=()=>crypto?.randomUUID?.()||"step_"+Date.now()+"_"+Math.random().toString(36).slice(2);
  function mount(article,options={}){
@@ -15,7 +15,7 @@
   let steps=[],expanded=null,dirty=false,level="standard";
   try{const saved=localStorage.getItem("bs-recipe-detail");if(["brief","standard","detailed"].includes(saved))level=saved}catch{}
   const changed=()=>{dirty=true;options.onChange?.()};
-  const saveHint=()=>{feedback.textContent="Step edited. Use Save instructions below to keep your changes."};
+  const saveHint=()=>{feedback.textContent="Unsaved step changes."};
   const editField=(value,placeholder,onValue,rows=0)=>{
    const field=el(rows?"textarea":"input","field recipe-input");
    if(rows)field.rows=rows;else field.type="text";
@@ -67,46 +67,69 @@
      const title=el("label","recipe-one-field","Step");
      const nameInput=editField(step.title,"Describe the action",v=>{step.title=v;name.textContent=(i+1)+". "+(v||"Untitled step")});
      nameInput.maxLength=180;title.append(nameInput);body.append(title);
-     const optional=(property,label,placeholder)=>{
-      const present=!!step[property]?.trim();
-      if(present){
-       const fieldLabel=el("label","recipe-one-field",label);
-       const input=editField(step[property],placeholder,v=>step[property]=v,3);
-       input.maxLength=property==="standard"?4000:8000;
-       fieldLabel.append(input);body.append(fieldLabel);
-       const clear=button("Remove "+label.toLowerCase(),()=>{step[property]="";changed();saveHint();render()},"btn recipe-small-action");
-       body.append(clear);
-      }else{
-       body.append(button("+ Add "+label.toLowerCase(),()=>{
-        const fieldLabel=el("label","recipe-one-field",label);
-        const input=editField("",placeholder,v=>step[property]=v,3);
-        input.maxLength=property==="standard"?4000:8000;
-        fieldLabel.append(input);
-        // Replace this single optional action with its editor without re-rendering the step.
-        fieldLabel.dataset.property=property;
-        const action=[...body.querySelectorAll("button")].find(b=>b.dataset.addField===property);
-        action?.replaceWith(fieldLabel);input.focus();
-       },"btn recipe-small-action"));
-       body.lastElementChild.dataset.addField=property;
-      }
+
+     // Notes and photos are optional; only display editors when requested.
+     const additions=el("div","recipe-step-additions");
+     const noteList=el("div","recipe-step-notes");
+     const showNotes=()=>{
+      noteList.replaceChildren();
+      step.notes.forEach((value,index)=>{
+       const line=el("div","recipe-step-note");
+       const field=editField(value,"Write a note",v=>step.notes[index]=v,3);
+       field.maxLength=4000;
+       const removeNote=button("Remove note",()=>{step.notes.splice(index,1);changed();saveHint();showNotes()},"btn recipe-small-action");
+       line.append(field,removeNote);noteList.append(line);
+      });
      };
-     optional("standard","Instructions","How to perform this action");
-     optional("detail","Extra guidance","Optional clarification for learners who want more detail");
-     if(step.kind!=="action"){
-      const kind=el("label","recipe-one-field","Type"),select=el("select","field");
-      for(const [value,label] of kinds){const option=el("option","",label);option.value=value;select.append(option)}
-      select.value=step.kind;select.onchange=()=>{step.kind=select.value;changed();saveHint();render()};
-      kind.append(select);body.append(kind);
-     }else{
-      const setType=button("+ Set step type",()=>{step.kind="inspection";changed();saveHint();render()},"btn recipe-small-action");
-      body.append(setType);
-     }
+     showNotes();
+     const photoList=el("div","recipe-step-photos");
+     const showPhotos=()=>{
+      photoList.replaceChildren();
+      step.photos.forEach((id,index)=>{
+       const item=el("div","recipe-step-photo");
+       const picture=el("img","recipe-step-photo-image");
+       picture.src="/api/photo?id="+encodeURIComponent(id);
+       picture.alt="Step photo "+(index+1);picture.loading="lazy";
+       item.append(picture,button("Remove photo",()=>{step.photos.splice(index,1);changed();saveHint();showPhotos()},"btn recipe-small-action"));
+       photoList.append(item);
+      });
+     };
+     showPhotos();
+     const addNote=button("+ Add note",()=>{step.notes.push("");changed();saveHint();showNotes();noteList.lastElementChild?.querySelector("textarea")?.focus()},"btn recipe-small-action");
+     const addPhoto=button("+ Add photo",()=>input.click(),"btn recipe-small-action");
+     const input=el("input");input.type="file";input.accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif";input.hidden=true;
+     const upload=async file=>{
+      if(!file)return;
+      if(!options.project){feedback.textContent="Cannot identify this project for photo upload.";return}
+      if(file.size>10*1024*1024){feedback.textContent="Maximum photo size is 10 MB.";return}
+      addPhoto.disabled=true;feedback.textContent="Uploading photo…";
+      try{
+       const res=await fetch("/api/photos",{method:"POST",credentials:"same-origin",headers:{"content-type":file.type,"x-photo-project":options.project,"x-photo-name":encodeURIComponent(file.name)},body:file});
+       const data=await res.json();
+       if(!res.ok||!data.id)throw Error(data.error||"Photo upload failed");
+       step.photos.push(data.id);changed();showPhotos();saveHint();
+      }catch(error){feedback.textContent=error.message||"Photo upload failed"}
+      finally{addPhoto.disabled=false;input.value=""}
+     };
+     input.onchange=()=>upload(input.files?.[0]);
+     additions.append(addNote,addPhoto,input);
+     body.append(noteList,photoList,additions);
+     body.addEventListener("dragover",event=>{if(event.dataTransfer?.types?.includes("Files"))event.preventDefault()});
+     body.addEventListener("drop",event=>{const file=[...(event.dataTransfer?.files||[])].find(f=>f.type.startsWith("image/"));if(file){event.preventDefault();upload(file)}});
+     body.addEventListener("paste",event=>{const file=[...(event.clipboardData?.files||[])].find(f=>f.type.startsWith("image/"));if(file){event.preventDefault();upload(file)}});
      const actions=el("div","recipe-edit-controls");
      const up=button("↑",()=>move(i,-1));up.disabled=i===0;up.title="Move up";
      const down=button("↓",()=>move(i,1));down.disabled=i===steps.length-1;down.title="Move down";
      const duplicate=button("Duplicate",()=>{const copy={...normalize(step),id:newId()};steps.splice(i+1,0,copy);expanded=copy.id;changed();saveHint();render()});
      const remove=button("Remove",()=>{if(!confirm("Remove this step?"))return;steps.splice(i,1);expanded=null;changed();saveHint();render()});
-     actions.append(up,down,duplicate,remove);body.append(actions);
+     const save=button("Save step",async()=>{
+      if(!step.title.trim()){feedback.textContent="Enter a step name before saving.";nameInput.focus();return}
+      save.disabled=true;save.textContent="Saving…";
+      try{await options.onSave?.();dirty=false;feedback.textContent="Step saved.";save.textContent="Saved"}
+      catch(error){feedback.textContent=error.message||"Could not save step.";save.textContent="Save step"}
+      finally{save.disabled=false}
+     },"btn primary recipe-save-step");
+     actions.append(up,down,duplicate,remove,save);body.append(actions);
     }else{
      const displayed=el("div","recipe-reader-text");
      if(level!=="brief"&&step.standard.trim())displayed.append(el("p","",step.standard));
@@ -127,7 +150,7 @@
    }
    if(admin()){
     const add=button("+ Add step",()=>{
-     const item={id:newId(),title:"New step",standard:"",detail:"",kind:"action"};
+     const item={id:newId(),title:"New step",standard:"",detail:"",kind:"action",notes:[],photos:[]};
      steps.push(item);expanded=item.id;changed();saveHint();render();
      const newCard=[...content.querySelectorAll(".recipe-one-step")].find(x=>x.dataset.stepId===item.id);
      newCard?.querySelector("input")?.focus();
