@@ -13,7 +13,7 @@
   const close=button("×",()=>dismiss(),"recipe-photo-viewer-close");
   close.setAttribute("aria-label","Close photo");close.title="Close (Esc)";
   const picture=el("img","recipe-photo-viewer-image");
-  picture.src="/api/photo?id="+encodeURIComponent(id);picture.alt=name||"Step photo";
+  picture.src=attachmentUrl(id);picture.alt=name||"Step photo";
   const caption=el("div","recipe-photo-viewer-caption",name||"");
   const onKey=event=>{if(event.key==="Escape")dismiss()};
   const dismiss=()=>{document.removeEventListener("keydown",onKey);overlay.remove()};
@@ -21,9 +21,23 @@
   overlay.append(close,picture,caption);
   document.body.append(overlay);document.addEventListener("keydown",onKey);close.focus();
  }
+ const isRecipeFile=id=>id.startsWith("recipe-files/");
+ const attachmentExtension=id=>id.split(".").pop().toLowerCase();
+ const isImageAttachment=id=>!isRecipeFile(id)||["jpg","jpeg","png","webp","gif","heic","heif"].includes(attachmentExtension(id));
+ const attachmentUrl=id=>isRecipeFile(id)?"/api/recipe-files?id="+encodeURIComponent(id):"/api/photo?id="+encodeURIComponent(id);
+ const makeAttachment=(id,name)=>{
+  if(isImageAttachment(id))return makePhoto(id,name);
+  const link=el("a","recipe-document-link");
+  link.href=attachmentUrl(id);link.target="_blank";link.rel="noopener noreferrer";
+  link.setAttribute("download",name||"document."+attachmentExtension(id));
+  const icon=el("span","recipe-document-icon",attachmentExtension(id).toUpperCase());
+  const action=el("span","recipe-document-open","Open / download document");
+  link.append(icon,action);
+  return link;
+ };
  const makePhoto=(id,name)=>{
   const picture=el("img","recipe-step-photo-image");
-  picture.src="/api/photo?id="+encodeURIComponent(id);
+  picture.src=attachmentUrl(id);
   picture.alt=name||"Step photo";picture.loading="lazy";
   picture.title="Double-click for full-screen view";
   picture.tabIndex=0;picture.setAttribute("role","button");
@@ -208,39 +222,39 @@
       step.photos.forEach((id,index)=>{
        const item=el("div","recipe-step-photo");
        const photoName=step.photoNames[id]||"";
-       const picture=makePhoto(id,photoName);
-       const nameInput=editField(photoName,"Photo name",value=>{step.photoNames[id]=value;picture.alt=value||"Step photo"});
+       const picture=makeAttachment(id,photoName);
+       const nameInput=editField(photoName,"Attachment name",value=>{step.photoNames[id]=value;if(picture.tagName==="IMG")picture.alt=value||"Step photo"});
        nameInput.classList.add("recipe-step-photo-name");
-       nameInput.setAttribute("aria-label","Photo name");
+       nameInput.setAttribute("aria-label","Attachment name");
        nameInput.maxLength=120;
        const frame=el("div","recipe-photo-frame");
        frame.append(picture,nameInput);
-       item.append(frame,button("Remove photo",()=>{step.photos.splice(index,1);delete step.photoNames[id];changed();saveHint();showPhotos()},"btn recipe-small-action"));
+       item.append(frame,button("Remove attachment",()=>{step.photos.splice(index,1);delete step.photoNames[id];changed();saveHint();showPhotos()},"btn recipe-small-action"));
        photoList.append(item);
       });
      };
      showPhotos();
      const addNote=button("+ Add note",()=>{step.notes.push("");changed();saveHint();showNotes();noteList.lastElementChild?.querySelector("textarea")?.focus()},"btn recipe-small-action");
-     const addPhoto=button("+ Add photo",()=>input.click(),"btn recipe-small-action");
-     const input=el("input");input.type="file";input.accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif";input.hidden=true;
+     const addPhoto=button("+ Add photo / document",()=>input.click(),"btn recipe-small-action");
+     const input=el("input");input.type="file";input.multiple=true;input.accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.dwg,.dxf,.sldprt,.sldasm,.step,.stp,.stl,.igs,.iges,.x_t,.x_b,.obj,.3mf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip";input.hidden=true;
      const upload=async file=>{
       if(!file)return;
       if(!options.project){feedback.textContent="Cannot identify this project for photo upload.";return}
-      if(file.size>10*1024*1024){feedback.textContent="Maximum photo size is 10 MB.";return}
-      addPhoto.disabled=true;feedback.textContent="Uploading photo…";
+      if(file.size>20*1024*1024){feedback.textContent="Maximum attachment size is 20 MB.";return}
+      addPhoto.disabled=true;feedback.textContent="Uploading attachment…";
       try{
-       const res=await fetch("/api/photos",{method:"POST",credentials:"same-origin",headers:{"content-type":file.type,"x-photo-project":options.project,"x-photo-name":encodeURIComponent(file.name)},body:file});
+       const res=await fetch("/api/recipe-files?project="+encodeURIComponent(options.project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/octet-stream","x-file-name":encodeURIComponent(file.name)},body:file});
        const data=await res.json();
-       if(!res.ok||!data.id)throw Error(data.error||"Photo upload failed");
+       if(!res.ok||!data.id)throw Error(data.error||"Attachment upload failed");
        step.photos.push(data.id);step.photoNames[data.id]=file.name.replace(/\.[^.]+$/,"").slice(0,120);changed();showPhotos();saveHint();
-      }catch(error){feedback.textContent=error.message||"Photo upload failed"}
+      }catch(error){feedback.textContent=error.message||"Attachment upload failed"}
       finally{addPhoto.disabled=false;input.value=""}
      };
-     input.onchange=()=>upload(input.files?.[0]);
+     input.onchange=async()=>{for(const file of [...(input.files||[])])await upload(file)};
      additions.append(addNote,addPhoto,input);
      body.append(noteList,photoList,additions);
      body.addEventListener("dragover",event=>{if(event.dataTransfer?.types?.includes("Files"))event.preventDefault()});
-     body.addEventListener("drop",event=>{const file=[...(event.dataTransfer?.files||[])].find(f=>f.type.startsWith("image/"));if(file){event.preventDefault();upload(file)}});
+     body.addEventListener("drop",event=>{const files=[...(event.dataTransfer?.files||[])];if(files.length){event.preventDefault();(async()=>{for(const file of files)await upload(file)})()}});
      body.addEventListener("paste",event=>{const file=[...(event.clipboardData?.files||[])].find(f=>f.type.startsWith("image/"));if(file){event.preventDefault();upload(file)}});
      const actions=el("div","recipe-edit-controls");
      const up=button("↑",()=>move(i,-1));up.disabled=i===0;up.title="Move up";
@@ -262,7 +276,7 @@
      for(const note of step.notes||[]){if(note.trim())displayed.append(el("p","",note))}
      for(const photo of step.photos||[]){
       const item=el("figure","recipe-reader-photo");
-      item.append(makePhoto(photo,step.photoNames?.[photo]||""));
+      item.append(makeAttachment(photo,step.photoNames?.[photo]||""));
       if(step.photoNames?.[photo])item.append(el("figcaption","",step.photoNames[photo]));
       displayed.append(item);
      }
