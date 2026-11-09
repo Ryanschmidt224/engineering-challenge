@@ -2498,3 +2498,22 @@
 .recipe-compact .recipe-reader-text{width:100%;min-width:0;color:#eaf6fb;font-size:1.05rem;line-height:1.7}
 .recipe-compact .recipe-reader-text p{margin:0 0 12px;color:#eaf6fb}
 .recipe-compact .recipe-reader-text p:first-child{background:#0f2530;border:1px solid #3d606b;border-radius:8px;padding:14px 16px}
+
+/* All work-instruction notes should be equally legible, not only the first. */
+.recipe-compact .recipe-reader-text p.recipe-reader-note{
+ display:block;width:100%;box-sizing:border-box;
+ margin:0 0 12px;padding:15px 18px;
+ color:#f2faff;background:#102c3a;
+ border:1px solid #507989;border-left:4px solid #61c8d4;
+ border-radius:9px;font-size:1.04rem;line-height:1.65;
+ white-space:pre-wrap;overflow-wrap:anywhere;
+}
+.recipe-compact .recipe-reader-text p.recipe-reader-note:first-child{
+ background:#102c3a;border:1px solid #507989;border-left:4px solid #61c8d4;
+ padding:15px 18px;
+}
+.recipe-compact .recipe-right-click-tip{
+ align-self:flex-start;display:flex;align-items:center;gap:7px;
+ margin:1px 0 5px;color:#bcd7e2;font-size:.83rem;line-height:1.45;
+}
+.recipe-compact .recipe-right-click-icon{color:#83d6e2;font-weight:700;font-size:1rem}
