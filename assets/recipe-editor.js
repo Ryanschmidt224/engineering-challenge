@@ -170,6 +170,11 @@
   };
   function render(){
    content.replaceChildren();
+   if(steps.length){
+    const tip=el("p","recipe-right-click-tip");
+    tip.append(el("span","recipe-right-click-icon","ⓘ"),document.createTextNode(" Right-click a word or highlighted text in a step to search the knowledge base or request an explanation."));
+    content.append(tip);
+   }
    const hasDetail=steps.some(s=>s.standard?.trim()||s.detail?.trim());
    if(hasDetail){
     const preferences=el("div","recipe-detail-controls");
@@ -284,9 +289,9 @@
      actions.append(up,down,duplicate,remove);body.append(actions);
     }else{
      const displayed=el("div","recipe-reader-text");
-     if(step.standard.trim())displayed.append(el("p","",step.standard));
-     if(step.detail.trim())displayed.append(el("p","",step.detail));
-     for(const note of step.notes||[]){if(note.trim())displayed.append(el("p","",note))}
+     if(step.standard.trim())displayed.append(el("p","recipe-reader-note",step.standard));
+     if(step.detail.trim())displayed.append(el("p","recipe-reader-note",step.detail));
+     for(const note of step.notes||[]){if(note.trim())displayed.append(el("p","recipe-reader-note",note))}
      for(const photo of step.photos||[]){
       const item=el("figure","recipe-reader-photo");
       item.append(makeAttachment(photo,step.photoNames?.[photo]||""));
@@ -295,14 +300,7 @@
      }
      if(displayed.childElementCount){
       body.append(displayed);
-      let highlighted="";
-      displayed.addEventListener("mouseup",()=>{highlighted=selectedText(displayed)||highlighted});
-      displayed.addEventListener("keyup",()=>{highlighted=selectedText(displayed)||highlighted});
-      body.append(button("Please explain this",()=>{
-       const selected=selectedText(displayed)||highlighted;
-       if(!selected){feedback.textContent="Highlight an instruction phrase first.";return}
-       if(window.BSExplainText)window.BSExplainText(selected,{stepId:step.id,stepTitle:step.title,fullText:step.standard+"\n"+step.detail});
-      },"btn recipe-explain"));
+      // The context menu provides knowledge lookup without a redundant button.
      }
     }
     card.append(body);content.append(card);
