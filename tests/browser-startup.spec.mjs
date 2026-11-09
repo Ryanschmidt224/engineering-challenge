@@ -68,7 +68,7 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(rows.first().locator(".bom-part-name")).toBeVisible();
  await expect(rows.first().locator(".bom-part-meta")).toContainText("Qty 2");
  // BOM is a read-only index: names open details and the only editor action is Edit.
- await expect(rows.first().locator(".bom-part-edit")).toHaveText("Edit");
+ await expect(rows.first().locator(".bom-part-edit")).toHaveCount(0); // signed-out visitors see no edit control
  await expect(rows.first().locator(".bom-part-name-link")).toBeVisible();
  await expect(rows.first().locator("input,select,textarea")).toHaveCount(0);
  await expect(rows.first().locator(".bom-part-body")).toHaveCount(0);
@@ -213,6 +213,13 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  // Purchased retains source fields; custom hides fields that do not apply.
  const kind=editor.locator(".part-type-select");
  await expect(kind).toHaveValue("purchased");
+ const manufacturerDebug=await editor.locator(".component-manufacturer").evaluate(el=>{
+  const chain=[];for(let node=el;node&&chain.length<9;node=node.parentElement){
+   const cs=getComputedStyle(node);
+   chain.push({tag:node.tagName,cls:node.className,hidden:node.hidden,display:cs.display,visibility:cs.visibility});
+  }return chain;
+ });
+ console.log("manufacturer visibility chain",JSON.stringify(manufacturerDebug));
  await expect(editor.locator(".component-manufacturer")).toBeVisible();
  await kind.selectOption("custom");
  await expect(editor.locator(".component-manufacturer")).toBeHidden();
