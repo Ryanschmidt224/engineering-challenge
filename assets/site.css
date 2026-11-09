@@ -2454,3 +2454,42 @@
 }
 .recipe-knowledge-context-explain{border-top:1px solid #355362;color:#9cdeeb}
 .recipe-knowledge-empty{padding:4px 10px;color:#a6bec8;font-size:.85rem}
+
+
+/* Work-instruction attachments flow horizontally and wrap on narrow screens. */
+.recipe-compact .recipe-step-photos{
+ display:grid;width:100%;min-width:0;
+ grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),260px));
+ align-items:start;justify-content:start;gap:16px;margin-top:10px
+}
+.recipe-compact .recipe-step-photo{min-width:0;width:100%;margin:0}
+.recipe-compact .recipe-photo-frame{width:100%}
+.recipe-compact .recipe-reader-text{width:100%;min-width:0}
+.recipe-compact .recipe-reader-photo{
+ display:inline-flex;flex-direction:column;vertical-align:top;
+ width:min(260px,100%);max-width:100%;margin:8px 14px 12px 0;
+ border:1px solid #3d606b;border-radius:9px;overflow:hidden;
+ background:#102630
+}
+.recipe-compact .recipe-reader-photo .recipe-step-photo-image{
+ display:block;width:100%;height:210px;max-height:210px;
+ object-fit:contain;margin:0;border-radius:0
+}
+.recipe-compact .recipe-reader-photo figcaption{
+ display:block;padding:9px 11px;background:#172f3b;border-top:1px solid #3d606b;
+ font-weight:600;overflow-wrap:anywhere
+}
+.recipe-document-link{
+ width:100%;min-height:175px;padding:22px 12px;box-sizing:border-box;
+ display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;
+ text-align:center;text-decoration:none;color:#dceaf0;background:#0b202a
+}
+.recipe-document-link:hover,.recipe-document-link:focus-visible{
+ background:#1b3947;outline:2px solid #64cbd1;outline-offset:-2px
+}
+.recipe-document-icon{
+ display:flex;align-items:center;justify-content:center;
+ min-width:78px;padding:14px 8px;background:#28485a;border:1px solid #64889a;
+ border-radius:8px;font-weight:800;letter-spacing:.06em;font-size:.95rem
+}
+.recipe-document-open{font-size:.78rem;color:#b1dce9}
