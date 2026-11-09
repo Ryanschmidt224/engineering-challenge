@@ -3,9 +3,34 @@
  "use strict";
  const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node};
  const button=(label,fn,cls="btn")=>{const node=el("button",cls,label);node.type="button";node.onclick=fn;return node};
- const normalize=x=>({id:x.id,title:x.title||"",standard:x.standard||"",detail:x.detail||"",kind:x.kind||"action",notes:Array.isArray(x.notes)?x.notes.filter(n=>typeof n==="string").slice(0,40):[],photos:Array.isArray(x.photos)?x.photos.filter(p=>typeof p==="string").slice(0,30):[]});
+ const normalize=x=>({id:x.id,title:x.title||"",standard:x.standard||"",detail:x.detail||"",kind:x.kind||"action",notes:Array.isArray(x.notes)?x.notes.filter(n=>typeof n==="string").slice(0,40):[],photos:Array.isArray(x.photos)?x.photos.filter(p=>typeof p==="string").slice(0,30):[],photoNames:x.photoNames&&typeof x.photoNames==="object"&&!Array.isArray(x.photoNames)?Object.fromEntries(Object.entries(x.photoNames).filter(([id,name])=>typeof name==="string"&&Array.isArray(x.photos)&&x.photos.includes(id))):{}});
  const kinds=[["action","Action"],["inspection","Inspection"],["measurement","Measurement"],["explanation","Explanation"]];
  const newId=()=>crypto?.randomUUID?.()||"step_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+ // Viewer is shared by author and reader; closing it never changes step data.
+ function openPhoto(id,name){
+  const overlay=el("div","recipe-photo-viewer");
+  overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-label",name||"Step photo");
+  const close=button("×",()=>dismiss(),"recipe-photo-viewer-close");
+  close.setAttribute("aria-label","Close photo");close.title="Close (Esc)";
+  const picture=el("img","recipe-photo-viewer-image");
+  picture.src="/api/photo?id="+encodeURIComponent(id);picture.alt=name||"Step photo";
+  const caption=el("div","recipe-photo-viewer-caption",name||"");
+  const onKey=event=>{if(event.key==="Escape")dismiss()};
+  const dismiss=()=>{document.removeEventListener("keydown",onKey);overlay.remove()};
+  overlay.addEventListener("click",event=>{if(event.target===overlay)dismiss()});
+  overlay.append(close,picture,caption);
+  document.body.append(overlay);document.addEventListener("keydown",onKey);close.focus();
+ }
+ const makePhoto=(id,name)=>{
+  const picture=el("img","recipe-step-photo-image");
+  picture.src="/api/photo?id="+encodeURIComponent(id);
+  picture.alt=name||"Step photo";picture.loading="lazy";
+  picture.title="Double-click for full-screen view";
+  picture.tabIndex=0;picture.setAttribute("role","button");
+  picture.addEventListener("dblclick",()=>openPhoto(id,name));
+  picture.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();openPhoto(id,name)}});
+  return picture;
+ };
  function mount(article,options={}){
   if(!article)return null;
   const panel=el("section","recipe-editor recipe-compact"),content=el("div","recipe-content"),feedback=el("p","recipe-feedback muted");
@@ -87,10 +112,12 @@
       photoList.replaceChildren();
       step.photos.forEach((id,index)=>{
        const item=el("div","recipe-step-photo");
-       const picture=el("img","recipe-step-photo-image");
-       picture.src="/api/photo?id="+encodeURIComponent(id);
-       picture.alt="Step photo "+(index+1);picture.loading="lazy";
-       item.append(picture,button("Remove photo",()=>{step.photos.splice(index,1);changed();saveHint();showPhotos()},"btn recipe-small-action"));
+       const photoName=step.photoNames[id]||"";
+       const picture=makePhoto(id,photoName);
+       const label=el("label","recipe-step-photo-name-label","Photo name");
+       const nameInput=editField(photoName,"Name this photo",value=>{step.photoNames[id]=value;picture.alt=value||"Step photo"});
+       nameInput.maxLength=120;label.append(nameInput);
+       item.append(picture,label,button("Remove photo",()=>{step.photos.splice(index,1);delete step.photoNames[id];changed();saveHint();showPhotos()},"btn recipe-small-action"));
        photoList.append(item);
       });
      };
@@ -107,7 +134,7 @@
        const res=await fetch("/api/photos",{method:"POST",credentials:"same-origin",headers:{"content-type":file.type,"x-photo-project":options.project,"x-photo-name":encodeURIComponent(file.name)},body:file});
        const data=await res.json();
        if(!res.ok||!data.id)throw Error(data.error||"Photo upload failed");
-       step.photos.push(data.id);changed();showPhotos();saveHint();
+       step.photos.push(data.id);step.photoNames[data.id]=file.name.replace(/\.[^.]+$/,"").slice(0,120);changed();showPhotos();saveHint();
       }catch(error){feedback.textContent=error.message||"Photo upload failed"}
       finally{addPhoto.disabled=false;input.value=""}
      };
@@ -120,7 +147,7 @@
      const actions=el("div","recipe-edit-controls");
      const up=button("↑",()=>move(i,-1));up.disabled=i===0;up.title="Move up";
      const down=button("↓",()=>move(i,1));down.disabled=i===steps.length-1;down.title="Move down";
-     const duplicate=button("Duplicate",()=>{const copy={...normalize(step),id:newId(),notes:[...step.notes],photos:[...step.photos]};steps.splice(i+1,0,copy);expanded=copy.id;changed();saveHint();render()});
+     const duplicate=button("Duplicate",()=>{const copy={...normalize(step),id:newId(),notes:[...step.notes],photos:[...step.photos],photoNames:{...step.photoNames}};steps.splice(i+1,0,copy);expanded=copy.id;changed();saveHint();render()});
      const remove=button("Remove",()=>{if(!confirm("Remove this step?"))return;steps.splice(i,1);expanded=null;changed();saveHint();render()});
      const save=button("Save step",async()=>{
       if(!step.title.trim()){feedback.textContent="Enter a step name before saving.";nameInput.focus();return}
@@ -135,7 +162,12 @@
      if(level!=="brief"&&step.standard.trim())displayed.append(el("p","",step.standard));
      if(level==="detailed"&&step.detail.trim())displayed.append(el("p","",step.detail));
      for(const note of step.notes||[]){if(level!=="brief"&&note.trim())displayed.append(el("p","",note))}
-     for(const photo of step.photos||[]){const img=el("img","recipe-step-photo-image");img.src="/api/photo?id="+encodeURIComponent(photo);img.alt="Step photo";img.loading="lazy";displayed.append(img)}
+     for(const photo of step.photos||[]){
+      const item=el("figure","recipe-reader-photo");
+      item.append(makePhoto(photo,step.photoNames?.[photo]||""));
+      if(step.photoNames?.[photo])item.append(el("figcaption","",step.photoNames[photo]));
+      displayed.append(item);
+     }
      if(displayed.childElementCount){
       body.append(displayed);
       let highlighted="";
@@ -152,7 +184,7 @@
    }
    if(admin()){
     const add=button("+ Add step",()=>{
-     const item={id:newId(),title:"New step",standard:"",detail:"",kind:"action",notes:[],photos:[]};
+     const item={id:newId(),title:"New step",standard:"",detail:"",kind:"action",notes:[],photos:[],photoNames:{}};
      steps.push(item);expanded=item.id;changed();saveHint();render();
      const newCard=[...content.querySelectorAll(".recipe-one-step")].find(x=>x.dataset.stepId===item.id);
      newCard?.querySelector("input")?.focus();
