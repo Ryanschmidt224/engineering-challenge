@@ -252,3 +252,27 @@ test("historical purchase price supports per-part and per-package without losing
  const cleared=(await optional.json()).component;
  assert.equal(cleared.historicalPrice,null);
 });
+
+
+test("headline remains canonical for BOM while full name is saved separately",async()=>{
+ const {env}=storage();
+ const created=await components(request("POST",componentsUrl,{
+  name:"LM2596 regulator",fullName:"LM2596 DC to DC High Efficiency Voltage Regulator",
+  quantity:1,quantityUnit:"pcs",specifications:[]}),env);
+ assert.equal(created.status,201);
+ let part=(await created.json()).component;
+ assert.equal(part.name,"LM2596 regulator");
+ assert.equal(part.fullName,"LM2596 DC to DC High Efficiency Voltage Regulator");
+ const updated=await components(request("PUT",componentsUrl+"&id="+part.id,{
+  ...part,name:"LM2596 power supply",fullName:"Adjustable DC buck voltage regulator",
+  specifications:[]}),env);
+ assert.equal(updated.status,200);
+ part=(await updated.json()).component;
+ assert.equal(part.name,"LM2596 power supply");
+ assert.equal(part.fullName,"Adjustable DC buck voltage regulator");
+ const legacy=await components(request("POST",componentsUrl,{
+  name:"Legacy item",quantity:1,quantityUnit:"pcs",specifications:[]}),env);
+ assert.equal(legacy.status,201);
+ const legacyPart=(await legacy.json()).component;
+ assert.equal(legacyPart.fullName,"Legacy item");
+});
