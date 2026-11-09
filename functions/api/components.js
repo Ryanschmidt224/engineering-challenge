@@ -22,9 +22,9 @@ const historicalPrice=input=>{
  const raw=input?.historicalPurchasePrice??input?.historicalPrice;
  const basis=input?.historicalPriceBasis==="per_package"?"per_package":"per_part";
  const countRaw=input?.historicalPackageQuantity;
+ if(raw===undefined||raw===null||raw==="")return {price:null,date:null,basis,packageQuantity:null,purchasePrice:null};
  const count=basis==="per_package"?Number(countRaw):1;
  if(basis==="per_package"&&(!Number.isSafeInteger(count)||count<1||count>1000000))return null;
- if(raw===undefined||raw===null||raw==="")return {price:null,date:null,basis,packageQuantity:basis==="per_package"?count:null,purchasePrice:null};
  const purchasePrice=Number(raw);
  const date=input?.historicalPriceDate;
  if(!Number.isFinite(purchasePrice)||purchasePrice<0||purchasePrice>10000000||Math.abs(Math.round(purchasePrice*100)-purchasePrice*100)>1e-6)return null;
