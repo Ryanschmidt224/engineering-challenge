@@ -1477,11 +1477,12 @@ function setupAssemblyTrees(){
     else fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=data.photos[0].url;img.alt="";cover.replaceChildren(img,overlay)}).catch(()=>{});
     const stage=document.createElement("span");stage.className="assembly-tile-stage";stage.textContent=isPartNode(n)?"Part":n.stage==="integration"?"Integration":n.dependsOn?.length?"Dependent":"";
     const button=document.createElement("button");button.type="button";button.className="assembly-tile-title";button.textContent=n.name;const openAssembly=()=>{if(isPartNode(n)){openTreePart(n);return}selected=n.id;expanded.add(n.parentId);render();history.pushState(null,"","#"+project+"/assembly/"+encodeURIComponent(n.id));notify();window.scrollTo(0,0)};button.onclick=openAssembly;cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" overview";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
-    tile.append(stage,button);
+    // Photo-first overview tile: title stays in the image overlay.
+    // The old stage/dependency/footer controls are not shown beneath tiles.
+    tile.append(button);
     if(n.dependsOn?.length){const deps=document.createElement("p");deps.className="assembly-tile-deps";deps.textContent="Requires: "+n.dependsOn.map(id=>nodes.find(x=>x.id===id)?.name||"Unknown").join(", ");tile.append(deps)}
-    if(adminAuthenticated&&!isPartNode(n)){const edit=document.createElement("button");edit.type="button";edit.className="btn assembly-tile-edit";edit.textContent="Order";edit.onclick=async()=>{const options=nodes.filter(x=>x.id!==n.id);const help=options.map((x,i)=>(i+1)+". "+x.name).join("\\n");const answer=prompt("Enter prerequisite assembly numbers, separated by commas. Leave blank for independent work.\\n"+help,(n.dependsOn||[]).map(id=>options.findIndex(x=>x.id===id)+1).join(","));if(answer===null)return;const indices=answer.trim()?answer.split(",").map(v=>Number(v.trim())-1):[];if(indices.some(i=>!Number.isInteger(i)||i<0||i>=options.length)){status.textContent="Invalid prerequisite numbers.";return}const deps=[...new Set(indices.map(i=>options[i].id))];const stage=prompt("Work type: independent, sequential, or integration",n.stage||"independent");if(stage===null)return;try{await save(nodes.map(x=>x.id===n.id?{...x,dependsOn:deps,stage:stage.trim().toLowerCase()}:x))}catch(e){status.textContent=e.message}};tile.append(edit)}
     if(adminAuthenticated&&!isPartNode(n)){
-     const pick=document.createElement("button");pick.type="button";pick.className="btn assembly-tile-photo-button";pick.textContent="＋ Photo";pick.title="Upload a photo to "+n.name;
+     const pick=document.createElement("button");pick.type="button";pick.className="btn assembly-tile-photo-button";pick.textContent="+";pick.classList.add("assembly-tile-photo-overlay");pick.title="Upload a photo to "+n.name;pick.setAttribute("aria-label","Add photo to "+n.name);
      const input=document.createElement("input");input.type="file";input.accept="image/*,.heic,.heif";input.hidden=true;
      pick.onclick=()=>input.click();
      input.onchange=async()=>{
@@ -1496,9 +1497,9 @@ function setupAssemblyTrees(){
        const img=document.createElement("img");img.src="/api/photo?id="+encodeURIComponent(data.id);img.alt=n.name;cover.replaceChildren(img,overlay);
        status.textContent="Photo added to "+n.name+".";
       }catch(error){status.textContent="Photo upload failed: "+error.message}
-      finally{pick.disabled=false;pick.textContent="＋ Photo";input.value=""}
+      finally{pick.disabled=false;pick.textContent="+";input.value=""}
      };
-     tile.append(pick,input);
+     cover.append(pick,input);
     }
     grid.append(tile)
    }target.append(grid)
