@@ -1059,7 +1059,7 @@ function setupAssemblyTrees(){
    bomEditPanel.classList.remove("hide");
    bomEditorMount.classList.add("is-editing");
    bomEditorHeading.textContent=editingPart?"Edit part: "+(bomField("name")?.value||"Part"):"Add new BOM part";
-   bomEditorCancel.textContent=editingPart?"Cancel editing":"Cancel new part";
+   bomEditorCancel.textContent="Cancel";
    bomEditorHeader.classList.remove("hide");
   };
   const dismissBomEditor=()=>{
@@ -1087,7 +1087,7 @@ function setupAssemblyTrees(){
    const label=bomPanel.querySelector(".workspace-bom-notice");
    if(label){label.textContent=message;label.classList.toggle("visible",!!message)}
    const el=bomRoot()?.querySelector(".component-status");
-   if(el){el.textContent=message;el.hidden=false;el.style.display="block"}
+   if(el){el.textContent=message;el.hidden=!message;el.style.display=message?"block":"none"}
   };
   function clearBomDraft(){
    dismissBomEditor();
@@ -1123,16 +1123,17 @@ function setupAssemblyTrees(){
     const row=document.createElement("div");row.className="row component-spec-row";
     const a=document.createElement("input"),b=document.createElement("input"),c=document.createElement("select"),remove=document.createElement("button");
     a.className=b.className="field";a.placeholder="Specification";b.placeholder="Value";a.value=spec.name;b.value=spec.value;
-    for(const v of ["explicit","inferred"]){const opt=document.createElement("option");opt.value=v;opt.textContent=v==="explicit"?"Stated in listing":"Inferred";c.append(opt)}
+    c.className="field component-spec-source";c.setAttribute("aria-label","Specification source");
+    for(const v of ["explicit","inferred"]){const opt=document.createElement("option");opt.value=v;opt.textContent=v==="explicit"?"✓ From product listing":"◇ Estimated / inferred";c.append(opt)}
     c.value=spec.source==="inferred"?"inferred":"explicit";
-    remove.type="button";remove.className="btn";remove.textContent="Remove";remove.onclick=()=>row.remove();
+    remove.type="button";remove.className="btn component-spec-remove";remove.textContent="×";remove.title="Remove specification";remove.setAttribute("aria-label","Remove specification");remove.onclick=()=>row.remove();
     row.append(a,b,c,remove);specs.append(row);
    }}
    openBomDraft();
    partTools.classList.remove("hide");
    refreshEditPhoto();
    const save=bomField("save");if(save)save.textContent="Save changes";
-   bomReport("Editing "+part.name+". Changes will update this part without creating a duplicate.");
+   bomReport("");
    // Editing can begin from an overview or build-instructions page, too.
    // Route into the assembly workspace so the full-width editor is visible.
    if(!workspaceRoute()){
@@ -1146,6 +1147,17 @@ function setupAssemblyTrees(){
    const root=bomRoot();if(!root){bomReport("BOM editor unavailable. Refresh the page.");return}
    const review=root.querySelector(".component-review");
    if(review&&!review.contains(partTypeRow))review.prepend(partTypeRow);
+   if(review){
+    let actions=review.querySelector(".component-editor-actions");
+    if(!actions){
+     actions=document.createElement("div");actions.className="component-editor-actions";
+     const right=document.createElement("div");right.className="component-editor-primary-actions";
+     actions.append(root.querySelector(".component-add-spec"),right);
+     review.append(actions);
+    }
+    const buttons=actions.querySelector(".component-editor-primary-actions");
+    buttons.append(root.querySelector(".component-save"),bomEditorCancel);
+   }
    moveBomEditorToTop();
    updatePartTypeFields();
    // The reusable legacy component controller can close its parent disclosure
