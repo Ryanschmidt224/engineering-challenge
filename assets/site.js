@@ -1918,11 +1918,16 @@ function setupComponents(){
   if(workspaceStatus)workspaceStatus.textContent=message;
  };
  if(importPanel){
-  const manual=document.createElement("button");manual.type="button";manual.className="btn component-manual";manual.textContent="Enter manually";
-  manual.onclick=()=>{review.classList.remove("hide");extractStatus("Enter the part details below, then save.")};
-  feedback.after(manual);
-  const summary=importPanel.querySelector("summary");if(summary)summary.textContent="Add part to BOM";
+  const summary=importPanel.querySelector("summary");if(summary)summary.textContent="Part details";
  }
+ // Product lookup is optional; the editable fields are always immediately available.
+ review.classList.remove("hide");
+ const lookupHint=document.createElement("p");
+ lookupHint.className="component-lookup-help small muted";
+ lookupHint.textContent="Paste a product link or description, then click Look up product details to suggest manufacturer, model and specifications. Review the suggestions before saving. You can also enter all fields directly.";
+ description.closest("label")?.after(lookupHint);
+ description.rows=3;
+ extract.textContent="Look up product details";
  extract.hidden=false;extract.type="button";
  extract.onclick=async event=>{
   event.preventDefault();
@@ -1943,7 +1948,7 @@ function setupComponents(){
    if(!component||typeof component!=="object")throw Error("The service returned no product information.");
    for(const name of ["name","manufacturer","model","category","supplier","asin"]){const el=field(name);if(el)el.value=component[name]||""}
    specs.replaceChildren();for(const spec of component.specifications||[])specRow(spec.name,spec.value,spec.source);
-   review.classList.remove("hide");extractStatus("Specifications extracted. Review them, then select Save component.");
+   review.classList.remove("hide");extractStatus("Product details suggested. Review the fields and specifications before saving.");
   }catch(e){review.classList.remove("hide");extractStatus("Extraction failed: "+(e.name==="AbortError"?"The service did not respond within 20 seconds":e.message)+". You can enter this part manually.")}
   finally{extract.disabled=false}
  };
@@ -1951,11 +1956,16 @@ function setupComponents(){
  field("save").onclick=async()=>{
   const priceInput=field("historical-price")?.value.trim()||"";
   const dateInput=field("historical-price-date")?.value||"";
+  if(priceInput&&priceBasis?.value==="per_package"&&(!Number.isSafeInteger(Number(packageCount?.value))||Number(packageCount?.value)<1)){
+   say("Enter how many parts are in a package.");return;
+  }
   const rawQuantity=field("quantity")?.value.trim()??"";
   const quantity=rawQuantity===""?null:Number(rawQuantity);
   if(quantity!==null&&(!Number.isFinite(quantity)||quantity<=0||quantity>10000000)){say("Quantity must be a positive number or left blank.");return}
   const c={assemblyId:assemblySelections[project]??null,quantity,quantityUnit:field("quantity-unit")?.value??"pcs",
-   historicalPrice:priceInput===""?null:Number(priceInput),historicalPriceDate:priceInput===""?null:(dateInput||new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10))};for(const name of ["name","manufacturer","model","category","supplier","asin"])c[name]=field(name).value.trim();
+   historicalPurchasePrice:priceInput===""?null:Number(priceInput),historicalPriceBasis:priceBasis?.value??"per_part",
+   historicalPackageQuantity:priceBasis?.value==="per_package"?(packageCount?.value||null):null,
+   historicalPriceDate:priceInput===""?null:(dateInput||new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10))};for(const name of ["name","manufacturer","model","category","supplier","asin"])c[name]=field(name).value.trim();
   c.specifications=[...specs.querySelectorAll(".component-spec-row")].map(row=>({name:row.children[0].value.trim(),value:row.children[1].value.trim(),source:row.children[2].value})).filter(s=>s.name&&s.value);
   if(!c.name){say("Component name is required.");return}
   field("save").disabled=true;try{const res=await fetch("/api/components?project="+project,{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",body:JSON.stringify(c)}),data=await res.json();if(!res.ok)throw Error(data.error||"Save failed");review.classList.add("hide");field("description").value="";if(field("quantity"))field("quantity").value="";say("Part added to BOM.");feedback.textContent="";clearPartEditor();if(importPanel)importPanel.open=false;review.classList.add("hide");await refresh()}catch(e){say(e.message)}finally{field("save").disabled=false}
