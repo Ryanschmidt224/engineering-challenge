@@ -899,9 +899,8 @@ function setupAssemblyTrees(){
    const rows=document.createElement("div");rows.className="bom-shop-material-rows";
    for(const part of items){
     const row=document.createElement("div");row.className="bom-shop-material-row";
-    const name=document.createElement("button");name.type="button";
+    const name=document.createElement("span");
     name.className="bom-part-name bom-part-name-link";name.textContent=part.name;
-    name.onclick=()=>openPartInstructions(part,part.assemblyId??null);
     const quantity=document.createElement("span");quantity.className="bom-shop-qty";
     quantity.textContent=materialQuantity(part);
     row.append(name,quantity);
@@ -922,9 +921,8 @@ function setupAssemblyTrees(){
    if(part.bomOnly)item.classList.add("bom-only-part");
    if(part.generatedFrom)item.classList.add("bom-generated-part");
    const row=document.createElement("div");row.className="bom-part-summary";
-   const name=document.createElement("button");name.type="button";
+   const name=document.createElement("span");
    name.className="bom-part-name bom-part-name-link";name.textContent=part.name;
-   name.title="Open part details";name.onclick=()=>openPartInstructions(part,originId);
    const qty=document.createElement("span");qty.className="bom-part-meta";
    qty.textContent="Qty "+window.BSBomModel.quantityText(part);
    row.append(name,qty);
@@ -1012,7 +1010,7 @@ function setupAssemblyTrees(){
   partTypeRow.textContent="Part type";
   const partTypeSelect=document.createElement("select");
   partTypeSelect.className="field part-type-select";
-  for(const [value,label] of [["purchased","Purchased"],["custom","Custom (made in-house)"]]){
+  for(const [value,label] of [["purchased","Purchased"],["custom","Custom"]]){
    const option=document.createElement("option");option.value=value;option.textContent=label;partTypeSelect.append(option);
   }
   partTypeRow.append(partTypeSelect);
@@ -1053,6 +1051,7 @@ function setupAssemblyTrees(){
   let editorDisclosureObserver=null;
   const moveBomEditorToTop=()=>{
    bomEditPanel.append(bomEditorMount);
+   bomReport("");
    workspace.classList.add("is-editing-bom-part");
    bomEditPanel.classList.remove("hide");
    bomEditorMount.classList.add("is-editing");
