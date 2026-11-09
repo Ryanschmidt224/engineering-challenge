@@ -10,6 +10,7 @@
  function mount({project,admin,getTree,getPart,getPartList}){
   let records=[],revision=null;
   let assemblySlot=null,partSlot=null,stepSlots=new Map(),activeContext=null,loadSerial=0;
+  const openCards=new Set();
   const api="/api/investigations?project="+encodeURIComponent(project);
   const feedback=target=>(target||activeContext?.target)?.querySelector(".investigation-feedback");
   const report=(message,target)=>{const p=feedback(target);if(p)p.textContent=message};
@@ -58,7 +59,8 @@
    return d;
   }
   function attach(record,container){
-   const reportHere=message=>report(message,container.closest(".investigations-panel,.recipe-step-investigations"));
+   const target=container.closest(".investigations-panel,.recipe-step-investigations");
+   const reportHere=message=>report(message,target);
    const entryList=make("div","investigation-entries");
    for(const entry of record.entries||[]){
     const item=make("article","investigation-entry");
@@ -126,6 +128,9 @@
    const rolled=records.filter(item=>within(item,context)&&!owns(item,context));
    const renderRecord=(record,inherited=false)=>{
     const card=make("details","investigation-card");
+    const openKey=context.ownerType+":"+context.ownerId+":"+(context.stepId||"")+":"+record.id;
+    card.open=openCards.has(openKey);
+    card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
     const summary=make("summary","investigation-summary");
     summary.append(make("strong","",record.title));
     const badge=make("span","investigation-status-pill",statuses.find(x=>x[0]===record.status)?.[1]||record.status);
