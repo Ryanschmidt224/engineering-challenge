@@ -6,7 +6,7 @@ const filePattern=/^recipe-files\/(?:launcher|linear|robot|buck|motorlab|coiltes
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const validText=(v,max)=>typeof v==="string"&&v.length<=max;
 const statuses=new Set(["investigating","resolved","unresolved"]);
-const types=new Set(["observation","theory","attempt","result","lesson"]);
+const types=new Set(["observation","theory","attempt","revision","result","lesson"]);
 const scopes=new Set(["assembly","part","step"]);
 const trim=(text,max)=>String(text||"").trim().slice(0,max);
 export async function handleInvestigations(request,env){
