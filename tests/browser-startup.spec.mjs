@@ -67,13 +67,11 @@ test("project feature tree and workspace initialize without browser errors", asy
 
  await expect(rows.first().locator(".bom-part-name")).toBeVisible();
  await expect(rows.first().locator(".bom-part-meta")).toContainText("Qty 2");
- // Expanding a part visibly highlights its header without recoloring children.
- const header=rows.first().locator(":scope > .bom-part-summary");
- const closedColor=await header.evaluate(el=>getComputedStyle(el).backgroundColor);
- await header.click();
- await expect(rows.first()).toHaveAttribute("open", "");
- const openedColor=await header.evaluate(el=>getComputedStyle(el).backgroundColor);
- expect(openedColor).not.toBe(closedColor);
+ // BOM is a read-only index: names open details and the only editor action is Edit.
+ await expect(rows.first().locator(".bom-part-edit")).toHaveText("Edit");
+ await expect(rows.first().locator(".bom-part-name-link")).toBeVisible();
+ await expect(rows.first().locator("input,select,textarea")).toHaveCount(0);
+ await expect(rows.first().locator(".bom-part-body")).toHaveCount(0);
  // BOM occupies the left column and can be resized by a visible divider.
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
  const sidebar=page.locator("#launcher .assembly-sidebar");
@@ -205,8 +203,8 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
  await expect(workspace).toBeVisible();
  const rowPart=sidebar.locator(".workspace-saved-parts .bom-part",{hasText:"Linked Motor"}).first();
- await rowPart.locator(".bom-part-summary").click();
- await rowPart.getByRole("button",{name:"Edit part"}).click();
+ await expect(rowPart.locator("input,select,textarea")).toHaveCount(0);
+ await rowPart.locator(".bom-part-edit").click();
  await expect(workspace).toHaveClass(/is-editing-bom-part/);
  const editor=workspace.locator(".workspace-main-bom-editor");
  await expect(editor).toBeVisible();
