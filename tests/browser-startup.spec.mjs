@@ -187,7 +187,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
    {id:"smoke-part",parentId:"smoke-motor",name:"Linked Motor",kind:"part",partId:"11111111-1111-4111-8111-111111111111"}
   ],revision:"test"};
   if(url.pathname==="/api/components")data={components:[
-   {id:"11111111-1111-4111-8111-111111111111",name:"Linked Motor",assemblyId:"smoke-motor",quantity:2,quantityUnit:"pcs",
+   {id:"11111111-1111-4111-8111-111111111111",name:"Linked Motor",fullName:"Long descriptive motor part name",assemblyId:"smoke-motor",quantity:2,quantityUnit:"pcs",
     manufacturer:"Example Motors",model:"C2822",specifications:[],category:"Motor",supplier:"",asin:"",bomOnly:false}
   ]};
   if(url.pathname==="/api/photos")data={photos:[]};
@@ -261,7 +261,22 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  expect(optionalLabels.some(label=>label.includes("(optional)"))).toBe(false);
 
  await expect(editor.locator(".component-name")).toHaveValue("Linked Motor");
- await expect(editor.locator(".component-quantity")).toHaveValue("2");
+ await expect(editor.locator(".component-full-name")).toHaveValue("Long descriptive motor part name");
+ // The short headline is the BOM and tree label, while the full name stays editable.
+ await expect(sidebar.locator(".workspace-saved-parts")).toContainText("Linked Motor");
+ await expect(sidebar.locator(".workspace-saved-parts")).not.toContainText("Long descriptive motor part name");
+ // First typing replaces the saved value; subsequent typing edits normally.
+ await editor.locator(".component-full-name").click();
+ await page.keyboard.type("Replacement full name");
+ await expect(editor.locator(".component-full-name")).toHaveValue("Replacement full name");
+ await editor.locator(".component-name").click();
+ await page.keyboard.type("Short motor");
+ await expect(editor.locator(".component-name")).toHaveValue("Short motor");
+ await editor.locator(".component-quantity").click();
+ await page.keyboard.press("3");
+ await expect(editor.locator(".component-quantity")).toHaveValue("3");
+
+ await expect(editor.locator(".component-quantity")).toHaveValue("3");
  // Product lookup is optional; direct fields stay visible without a manual-mode button.
  await expect(editor.locator(".component-manual")).toHaveCount(0);
  await expect(editor.locator(".component-extract")).toHaveText("Look up product details");
