@@ -1758,3 +1758,68 @@
  font-size:.79rem;
  font-weight:500;
 }
+
+
+/* BOM editor uses the main workspace instead of the narrow sidebar. */
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-panels>.workspace-main-bom-editor{
+ display:block;
+ padding:24px 28px 30px;
+ min-width:0;
+ max-width:none;
+ background:#12212c;
+ border:1px solid #415663;
+ border-radius:9px;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-panels>article:not(.workspace-main-bom-editor),
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-panels>.workspace-actions{
+ display:none!important;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part>.workspace-backup-details{
+ display:none;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .workspace-bom-mount{
+ width:100%;
+ max-width:100%;
+ margin:0;
+ padding:0;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-section,
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-admin{
+ display:block!important;
+ width:100%;
+ max-width:none;
+ margin:0;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-admin{
+ padding:0;
+ border:0;
+ background:transparent;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .workspace-bom-editor-header{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ flex-wrap:wrap;
+ gap:14px;
+ margin:0 0 22px;
+ padding-bottom:16px;
+ border-bottom:1px solid #344b57;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .workspace-bom-editor-title{
+ margin:0;
+ font-size:1.15rem;
+ color:#e2ebef;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .field,
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor input,
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor textarea{
+ max-width:100%;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-review{
+ max-width:100%;
+}
+@media(max-width:800px){
+ #launcher .assembly-workspace-page.is-editing-bom-part .workspace-panels>.workspace-main-bom-editor{
+  padding:16px;
+ }
+}
