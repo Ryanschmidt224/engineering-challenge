@@ -20,9 +20,10 @@ export const folders=project=>[
  "drawings/"+project+"/",
  "component-thumbnails/"+project+"/",
  "part-files/"+project+"/",
- "part-pages/"+project+"/"
+ "part-pages/"+project+"/",
+ "recipe-files/"+project+"/"
 ];
-export const singles=project=>["trees/"+project+".json","components/"+project+".json",
+export const singles=project=>["trees/"+project+".json","components/"+project+".json","investigations/"+project+".json",
  "libraries/wires.json","libraries/common-parts.json","libraries/purchased-parts.json"];
 export const isAllowedKey=(project,key)=>
  typeof key==="string"&&key.length>0&&key.length<=1000&&
