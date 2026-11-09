@@ -508,7 +508,8 @@ function setupAssemblyTrees(){
   workspace.querySelector(".recipe-instructions").after(assemblyInvestigationPanel);
   partWorkspace.querySelector(".recipe-instructions").after(partInvestigationPanel);
   investigations=window.BSInvestigations?.mount({project,admin:()=>adminAuthenticated,getTree:()=>nodes,
-   getPart:()=>currentPartInfo,getPartList:()=>investigationParts});
+   getPart:()=>currentPartInfo,getPartList:()=>investigationParts,
+    onReplacePart:()=>detailsPanel.querySelector(".part-details-edit")?.click()});
   const assemblyExtras=installInstructionExtras(workspace,"workspace",resources=>assemblyResourcePicker?.setData(resources,adminAuthenticated),snapshot=>assemblyRecipe?.setData(snapshot));
   const partExtras=installInstructionExtras(partWorkspace,"part",resources=>partResourcePicker?.setData(resources,adminAuthenticated),snapshot=>partRecipe?.setData(snapshot));
 
