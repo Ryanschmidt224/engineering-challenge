@@ -2493,3 +2493,8 @@
  border-radius:8px;font-weight:800;letter-spacing:.06em;font-size:.95rem
 }
 .recipe-document-open{font-size:.78rem;color:#b1dce9}
+
+/* Work instruction notes: clear, high-contrast read-only presentation. */
+.recipe-compact .recipe-reader-text{width:100%;min-width:0;color:#eaf6fb;font-size:1.05rem;line-height:1.7}
+.recipe-compact .recipe-reader-text p{margin:0 0 12px;color:#eaf6fb}
+.recipe-compact .recipe-reader-text p:first-child{background:#0f2530;border:1px solid #3d606b;border-radius:8px;padding:14px 16px}
