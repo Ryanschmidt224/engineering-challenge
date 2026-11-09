@@ -2397,3 +2397,8 @@
 .recipe-step-edit-toggle{margin-left:auto;font-size:.8rem;padding:5px 14px;flex:0 0 auto}
 .recipe-edit-controls .recipe-save-step{margin-left:0;width:auto}
 @media(max-width:600px){.recipe-edit-controls .recipe-save-step{width:auto;margin-left:0}}
+
+/* Display photo name as a single editable caption immediately below the image. */
+.recipe-step-photo{gap:0}
+.recipe-step-photo .recipe-step-photo-image{margin:0;display:block}
+.recipe-step-photo-name{display:block;width:100%;box-sizing:border-box;margin:3px 0 9px}
