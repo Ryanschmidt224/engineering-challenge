@@ -1119,8 +1119,8 @@ function setupAssemblyTrees(){
    const option=document.createElement("option");option.value=value;option.textContent=label;partTypeSelect.append(option);
   }
   partTypeRow.append(partTypeSelect);
-  const editPartForm=bomEditorMount.querySelector(".component-admin .component-review");
-  if(editPartForm)editPartForm.prepend(partTypeRow);
+  // The legacy form is mounted asynchronously into the editor container.
+  // Attach this selector when opening the form, not during initial page setup.
   const updatePartTypeFields=()=>{
    const custom=partTypeSelect.value==="custom";
    bomEditorMount.classList.toggle("is-custom-part",custom);
@@ -1228,7 +1228,10 @@ function setupAssemblyTrees(){
   }
   function openBomDraft(){
    const root=bomRoot();if(!root){bomReport("BOM editor unavailable. Refresh the page.");return}
+   const review=root.querySelector(".component-review");
+   if(review&&!review.contains(partTypeRow))review.prepend(partTypeRow);
    moveBomEditorToTop();
+   updatePartTypeFields();
    root.querySelector("details")?.setAttribute("open","");
    const form=root.querySelector(".component-admin");if(form)form.open=true;
    root.querySelector(".component-review")?.classList.remove("hide");
