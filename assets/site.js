@@ -504,7 +504,7 @@ function setupAssemblyTrees(){
    const typeLabel=document.createElement("strong");typeLabel.textContent="Part type";
    type.append(typeLabel,document.createTextNode(" - "+(part.partType==="custom"?"Custom":"Purchased")));
    detailRows.append(type);
-   const fields=[["Qty",part.quantity===null||part.quantity===undefined?"Not specified":String(part.quantity)+(part.quantityUnit?" "+part.quantityUnit:"")],...(part.partType!=="custom"&&part.historicalPrice!==null&&part.historicalPrice!==undefined&&Number.isFinite(Number(part.historicalPrice))?[["Historical part price",part.historicalPriceBasis==="per_package"?"$"+Number(part.historicalPurchasePrice??0).toFixed(2)+" per package of "+part.historicalPackageQuantity+" ($"+Number(part.historicalPrice).toFixed(4)+" per part)"+(part.historicalPriceDate?" · "+part.historicalPriceDate:""):"$"+Number(part.historicalPrice).toFixed(2)+" per part"+(part.historicalPriceDate?" · "+part.historicalPriceDate:"")]]:[]),...(part.partType==="custom"?[["Category",part.category]]:[["Manufacturer",part.manufacturer],["Model",part.model],["Category",part.category],["Supplier",part.supplier],["ASIN",part.asin]])];
+   const fields=[["Full name",part.fullName||part.name],["Qty",part.quantity===null||part.quantity===undefined?"Not specified":String(part.quantity)+(part.quantityUnit?" "+part.quantityUnit:"")],...(part.partType!=="custom"&&part.historicalPrice!==null&&part.historicalPrice!==undefined&&Number.isFinite(Number(part.historicalPrice))?[["Historical part price",part.historicalPriceBasis==="per_package"?"$"+Number(part.historicalPurchasePrice??0).toFixed(2)+" per package of "+part.historicalPackageQuantity+" ($"+Number(part.historicalPrice).toFixed(4)+" per part)"+(part.historicalPriceDate?" · "+part.historicalPriceDate:""):"$"+Number(part.historicalPrice).toFixed(2)+" per part"+(part.historicalPriceDate?" · "+part.historicalPriceDate:"")]]:[]),...(part.partType==="custom"?[["Category",part.category]]:[["Manufacturer",part.manufacturer],["Model",part.model],["Category",part.category],["Supplier",part.supplier],["ASIN",part.asin]])];
    for(const [title,value] of fields){
     if(value===null||value===undefined||String(value).trim()==="")continue;
     const line=document.createElement("div");line.className="part-details-view-row";
@@ -1091,7 +1091,7 @@ function setupAssemblyTrees(){
    extractedPictureUrl=null;
    editingPart=null;editingPartAssembly=null;
    partTypeSelect.value="purchased";updatePartTypeFields();
-   for(const name of ["name","manufacturer","model","category","supplier","asin","description","historical-price","historical-price-date"]){const el=bomField(name);if(el)el.value=""}
+   for(const name of ["name","full-name","manufacturer","model","category","supplier","asin","description","historical-price","historical-price-date"]){const el=bomField(name);if(el)el.value=""}
    const priceBasis=bomField("historical-price-basis"),packageQty=bomField("historical-package-quantity");
    if(priceBasis)priceBasis.value="per_part";if(packageQty)packageQty.value="";priceBasis?.dispatchEvent(new Event("change"));
    const qty=bomField("quantity");if(qty)qty.value="";
@@ -1106,6 +1106,7 @@ function setupAssemblyTrees(){
    partTypeSelect.value=part.partType==="custom"?"custom":"purchased";
    updatePartTypeFields();
    for(const key of ["name","manufacturer","model","supplier","asin","category"]){const field=bomField(key);if(field)field.value=part[key]||""}
+   const fullName=bomField("full-name");if(fullName)fullName.value=part.fullName||part.name||"";
    const qty=bomField("quantity");if(qty)qty.value=part.quantity??"";
    const unit=bomField("quantity-unit");if(unit)unit.value=part.quantityUnit??"pcs";
    const price=bomField("historical-price"),date=bomField("historical-price-date");
@@ -1201,6 +1202,7 @@ function setupAssemblyTrees(){
    component.historicalPackageQuantity=pricingBasis==="per_package"?(countInput||null):null;
    component.historicalPriceDate=priceInput===""?null:(dateInput||new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10));
    for(const key of ["name","manufacturer","model","category","supplier","asin"])component[key]=bomField(key)?.value.trim()||"";
+   component.fullName=bomField("full-name")?.value.trim()||component.name;
    if(component.partType==="custom")Object.assign(component,{manufacturer:"",model:"",supplier:"",asin:"",historicalPurchasePrice:null,historicalPriceDate:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
    component.specifications=[...(bomRoot()?.querySelectorAll(".component-spec-row")||[])].map(row=>({
     name:row.children[0]?.value.trim()||"",value:row.children[1]?.value.trim()||"",source:row.children[2]?.value==="inferred"?"inferred":"explicit"
@@ -1918,7 +1920,7 @@ function setupComponents(){
  const importPanel=root.querySelector(".component-admin");
  // A fresh part is a fresh draft. Only Save component writes a new BOM record.
  function clearPartEditor(){
-  for(const name of ["name","manufacturer","model","category","supplier","asin"]){const control=field(name);if(control)control.value=""}
+  for(const name of ["name","full-name","manufacturer","model","category","supplier","asin"]){const control=field(name);if(control)control.value=""}
   field("description").value="";if(field("quantity"))field("quantity").value="";if(field("historical-price"))field("historical-price").value="";if(field("historical-price-date"))field("historical-price-date").value="";if(priceBasis)priceBasis.value="per_part";if(packageCount)packageCount.value="";updatePriceControls();
   specs.replaceChildren();review.classList.remove("hide");
  }
@@ -1978,6 +1980,7 @@ function setupComponents(){
    const component=data.component;
    if(!component||typeof component!=="object")throw Error("The service returned no product information.");
    for(const name of ["name","manufacturer","model","category","supplier","asin"]){const el=field(name);if(el)el.value=component[name]||""}
+   if(field("full-name"))field("full-name").value=component.fullName||component.name||"";
    specs.replaceChildren();for(const spec of component.specifications||[])specRow(spec.name,spec.value,spec.source);
    review.classList.remove("hide");extractStatus("Product details suggested. Review the fields and specifications before saving.");
   }catch(e){review.classList.remove("hide");extractStatus("Product lookup failed: "+(e.name==="AbortError"?"The service did not respond within 20 seconds":e.message)+". You can enter this part manually.")}
@@ -1996,7 +1999,7 @@ function setupComponents(){
   const c={assemblyId:assemblySelections[project]??null,quantity,quantityUnit:field("quantity-unit")?.value??"pcs",
    historicalPurchasePrice:priceInput===""?null:Number(priceInput),historicalPriceBasis:priceBasis?.value??"per_part",
    historicalPackageQuantity:priceBasis?.value==="per_package"?(packageCount?.value||null):null,
-   historicalPriceDate:priceInput===""?null:(dateInput||new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10))};for(const name of ["name","manufacturer","model","category","supplier","asin"])c[name]=field(name).value.trim();
+   historicalPriceDate:priceInput===""?null:(dateInput||new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10))};for(const name of ["name","manufacturer","model","category","supplier","asin"])c[name]=field(name).value.trim();c.fullName=field("full-name")?.value.trim()||c.name;
   c.specifications=[...specs.querySelectorAll(".component-spec-row")].map(row=>({name:row.children[0].value.trim(),value:row.children[1].value.trim(),source:row.children[2].value})).filter(s=>s.name&&s.value);
   if(!c.name){say("Component name is required.");return}
   field("save").disabled=true;try{const res=await fetch("/api/components?project="+project,{method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",body:JSON.stringify(c)}),data=await res.json();if(!res.ok)throw Error(data.error||"Save failed");review.classList.add("hide");field("description").value="";if(field("quantity"))field("quantity").value="";say("Part added to BOM.");feedback.textContent="";clearPartEditor();if(importPanel)importPanel.open=false;review.classList.add("hide");await refresh()}catch(e){say(e.message)}finally{field("save").disabled=false}
