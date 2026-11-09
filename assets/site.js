@@ -498,8 +498,17 @@ function setupAssemblyTrees(){
    }
    return {setData,getExperiments:()=>experiments};
   }
-  const assemblyRecipe=window.BSRecipes?.mount(workspace.querySelector(".recipe-instructions"),{admin:()=>adminAuthenticated,project,onSave:()=>new Promise((resolve,reject)=>{if(!adminAuthenticated){reject(Error("Administrator login required"));return}const status=workspace.querySelector(".workspace-status");const observer=new MutationObserver(()=>{if(status.textContent==="Saved."){observer.disconnect();resolve()}else if(status.textContent&&status.textContent!=="Saving…"){observer.disconnect();reject(Error(status.textContent))}});observer.observe(status,{childList:true,subtree:true,characterData:true});workspace.querySelector(".workspace-save").click();})});
-  const partRecipe=window.BSRecipes?.mount(partWorkspace.querySelector(".recipe-instructions"),{admin:()=>adminAuthenticated,project,onSave:()=>new Promise((resolve,reject)=>{if(!adminAuthenticated){reject(Error("Administrator login required"));return}const status=partWorkspace.querySelector(".part-workspace-status");const observer=new MutationObserver(()=>{if(status.textContent==="Part instructions saved."){observer.disconnect();resolve()}else if(status.textContent&&status.textContent!=="Saving…"){observer.disconnect();reject(Error(status.textContent))}});observer.observe(status,{childList:true,subtree:true,characterData:true});partWorkspace.querySelector(".part-workspace-save").click();})});
+  let investigations=null,investigationParts=[];
+  const assemblyRecipe=window.BSRecipes?.mount(workspace.querySelector(".recipe-instructions"),{admin:()=>adminAuthenticated,project,renderInvestigations:(step,target)=>investigations?.showStep(target,step,"assembly",selected??"__root__"),onSave:()=>new Promise((resolve,reject)=>{if(!adminAuthenticated){reject(Error("Administrator login required"));return}const status=workspace.querySelector(".workspace-status");const observer=new MutationObserver(()=>{if(status.textContent==="Saved."){observer.disconnect();resolve()}else if(status.textContent&&status.textContent!=="Saving…"){observer.disconnect();reject(Error(status.textContent))}});observer.observe(status,{childList:true,subtree:true,characterData:true});workspace.querySelector(".workspace-save").click();})});
+  const partRecipe=window.BSRecipes?.mount(partWorkspace.querySelector(".recipe-instructions"),{admin:()=>adminAuthenticated,project,renderInvestigations:(step,target)=>investigations?.showStep(target,step,"part",partRoute()),onSave:()=>new Promise((resolve,reject)=>{if(!adminAuthenticated){reject(Error("Administrator login required"));return}const status=partWorkspace.querySelector(".part-workspace-status");const observer=new MutationObserver(()=>{if(status.textContent==="Part instructions saved."){observer.disconnect();resolve()}else if(status.textContent&&status.textContent!=="Saving…"){observer.disconnect();reject(Error(status.textContent))}});observer.observe(status,{childList:true,subtree:true,characterData:true});partWorkspace.querySelector(".part-workspace-save").click();})});
+  const assemblyInvestigationPanel=document.createElement("article");
+  assemblyInvestigationPanel.className="investigations-panel";
+  const partInvestigationPanel=document.createElement("article");
+  partInvestigationPanel.className="investigations-panel";
+  workspace.querySelector(".recipe-instructions").after(assemblyInvestigationPanel);
+  partWorkspace.querySelector(".recipe-instructions").after(partInvestigationPanel);
+  investigations=window.BSInvestigations?.mount({project,admin:()=>adminAuthenticated,getTree:()=>nodes,
+   getPart:()=>currentPartInfo,getPartList:()=>investigationParts});
   const assemblyExtras=installInstructionExtras(workspace,"workspace",resources=>assemblyResourcePicker?.setData(resources,adminAuthenticated),snapshot=>assemblyRecipe?.setData(snapshot));
   const partExtras=installInstructionExtras(partWorkspace,"part",resources=>partResourcePicker?.setData(resources,adminAuthenticated),snapshot=>partRecipe?.setData(snapshot));
 
@@ -682,6 +691,8 @@ function setupAssemblyTrees(){
     if(!part)throw Error("Part not found");
     heading.textContent=part.name;
     currentPartInfo=part;
+    investigationParts=partData.components||[];
+    investigations?.showPart(partInvestigationPanel,partId);
     renderPartDetails(part);
     void partDrawingPanel?.load(project,"part",partId);
     void partFilesPanel?.load(project,partId);
@@ -1377,7 +1388,7 @@ function setupAssemblyTrees(){
    if(!isEditingBom)void renderWorkspaceParts();
    const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);
    if(inPart){void showPartWorkspace();return;}
-   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();loadWorkspace();if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
+   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
