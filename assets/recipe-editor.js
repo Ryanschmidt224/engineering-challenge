@@ -38,6 +38,7 @@
   article.querySelector("h2")?.after(panel);
   const admin=()=>!!options.admin?.();
   let steps=[],expanded=null,dirty=false,level="standard";
+  const editing=new Set();
   try{const saved=localStorage.getItem("bs-recipe-detail");if(["brief","standard","detailed"].includes(saved))level=saved}catch{}
   const changed=()=>{dirty=true;options.onChange?.()};
   const saveHint=()=>{feedback.textContent="Unsaved step changes."};
@@ -85,10 +86,17 @@
     const name=el("span","recipe-one-step-title",(i+1)+". "+(step.title||"Untitled step"));
     summary.append(name);
     if(step.kind!=="action")summary.append(el("small","recipe-kind-caption",kinds.find(k=>k[0]===step.kind)?.[1]||step.kind));
+    if(admin()){
+     const edit=button(editing.has(step.id)?"Editing":"Edit",event=>{
+      editing.add(step.id);expanded=step.id;render();
+     },"btn recipe-step-edit-toggle");
+     edit.addEventListener("click",event=>{event.preventDefault();event.stopPropagation()});
+     summary.append(edit);
+    }
     card.append(summary);
     card.addEventListener("toggle",()=>{if(card.open)expanded=step.id;else if(expanded===step.id)expanded=null});
     const body=el("div","recipe-one-step-body");
-    if(admin()){
+    if(admin()&&editing.has(step.id)){
      const title=el("label","recipe-one-field","Step");
      const nameInput=editField(step.title,"Describe the action",v=>{step.title=v;name.textContent=(i+1)+". "+(v||"Untitled step")});
      nameInput.maxLength=180;title.append(nameInput);body.append(title);
@@ -147,21 +155,21 @@
      const actions=el("div","recipe-edit-controls");
      const up=button("↑",()=>move(i,-1));up.disabled=i===0;up.title="Move up";
      const down=button("↓",()=>move(i,1));down.disabled=i===steps.length-1;down.title="Move down";
-     const duplicate=button("Duplicate",()=>{const copy={...normalize(step),id:newId(),notes:[...step.notes],photos:[...step.photos],photoNames:{...step.photoNames}};steps.splice(i+1,0,copy);expanded=copy.id;changed();saveHint();render()});
-     const remove=button("Remove",()=>{if(!confirm("Remove this step?"))return;steps.splice(i,1);expanded=null;changed();saveHint();render()});
+     const duplicate=button("Duplicate",()=>{const copy={...normalize(step),id:newId(),notes:[...step.notes],photos:[...step.photos],photoNames:{...step.photoNames}};steps.splice(i+1,0,copy);expanded=copy.id;editing.add(copy.id);changed();saveHint();render()});
+     const remove=button("Remove",()=>{if(!confirm("Remove this step?"))return;steps.splice(i,1);editing.delete(step.id);expanded=null;changed();saveHint();render()});
      const save=button("Save step",async()=>{
       if(!step.title.trim()){feedback.textContent="Enter a step name before saving.";nameInput.focus();return}
       save.disabled=true;save.textContent="Saving…";
-      try{await options.onSave?.();dirty=false;feedback.textContent="Step saved.";save.textContent="Saved"}
+      try{await options.onSave?.();dirty=false;feedback.textContent="Step saved.";editing.delete(step.id);render()}
       catch(error){feedback.textContent=error.message||"Could not save step.";save.textContent="Save step"}
       finally{save.disabled=false}
      },"btn primary recipe-save-step");
      actions.append(up,down,duplicate,remove,save);body.append(actions);
     }else{
      const displayed=el("div","recipe-reader-text");
-     if(level!=="brief"&&step.standard.trim())displayed.append(el("p","",step.standard));
-     if(level==="detailed"&&step.detail.trim())displayed.append(el("p","",step.detail));
-     for(const note of step.notes||[]){if(level!=="brief"&&note.trim())displayed.append(el("p","",note))}
+     if(step.standard.trim())displayed.append(el("p","",step.standard));
+     if(step.detail.trim())displayed.append(el("p","",step.detail));
+     for(const note of step.notes||[]){if(note.trim())displayed.append(el("p","",note))}
      for(const photo of step.photos||[]){
       const item=el("figure","recipe-reader-photo");
       item.append(makePhoto(photo,step.photoNames?.[photo]||""));
@@ -185,7 +193,7 @@
    if(admin()){
     const add=button("+ Add step",()=>{
      const item={id:newId(),title:"New step",standard:"",detail:"",kind:"action",notes:[],photos:[],photoNames:{}};
-     steps.push(item);expanded=item.id;changed();saveHint();render();
+     steps.push(item);expanded=item.id;editing.add(item.id);changed();saveHint();render();
      const newCard=[...content.querySelectorAll(".recipe-one-step")].find(x=>x.dataset.stepId===item.id);
      newCard?.querySelector("input")?.focus();
     },"btn recipe-add-step");
@@ -194,7 +202,7 @@
   }
   function setData(data){
    steps=Array.isArray(data?.recipe)?data.recipe.map(normalize):[];
-   dirty=false;expanded=null;feedback.textContent="";
+   dirty=false;expanded=null;editing.clear();feedback.textContent="";
    render();
   }
   render();
