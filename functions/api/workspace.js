@@ -31,7 +31,7 @@ const validateRecipe=input=>{
   const kind=["action","inspection","measurement","explanation"].includes(step.kind)?step.kind:"action";
   const notes=step.notes??[],photos=step.photos??[];
   if(!Array.isArray(notes)||notes.length>40||notes.some(n=>typeof n!=="string"||n.length>4000)||
-     !Array.isArray(photos)||photos.length>30||photos.some(p=>typeof p!=="string"||! /^(launcher|linear|robot|buck|motorlab|coiltest)\/[0-9a-f-]{36}\.(jpg|png|webp|gif|heic|heif)$/.test(p)))return null;
+     !Array.isArray(photos)||photos.length>30||photos.some(p=>typeof p!=="string"||! /^(?:(?:launcher|linear|robot|buck|motorlab|coiltest)\/[0-9a-f-]{36}\.(?:jpg|png|webp|gif|heic|heif)|recipe-files\/(?:launcher|linear|robot|buck|motorlab|coiltest)\/[0-9a-f-]{36}\.(?:jpg|jpeg|png|webp|gif|heic|heif|pdf|dwg|dxf|sldprt|sldasm|step|stp|stl|igs|iges|x_t|x_b|obj|3mf|doc|docx|xls|xlsx|txt|csv|zip))$/.test(p)))return null;
   const photoNames=step.photoNames??{};
   if(!photoNames||typeof photoNames!=="object"||Array.isArray(photoNames))return null;
   const names={};
