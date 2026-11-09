@@ -40,6 +40,26 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(page.locator("#launcher .assembly-main .assembly-unified-body")).toBeHidden();
  const overlay=await rootPhoto.evaluate(el=>getComputedStyle(el,"::after").backgroundImage);
  expect(overlay).toContain("linear-gradient");
+ // Main caption is bottom-left, while workspace navigation is bottom-right.
+ const rootBox=await rootPhoto.boundingBox();
+ const captionBox=await rootPhoto.locator(".assembly-photo-name").boundingBox();
+ const actionBox=await rootPhoto.locator(".assembly-open-workspace").boundingBox();
+ expect(captionBox.x).toBeLessThan(rootBox.x+rootBox.width/3);
+ expect(actionBox.x).toBeGreaterThan(rootBox.x+rootBox.width/2);
+ expect(Math.abs(captionBox.y+captionBox.height-(actionBox.y+actionBox.height))).toBeLessThan(20);
+ // Child tiles contain only the photograph and bottom-left white name.
+ const children=page.locator("#launcher .assembly-main .assembly-workflow .assembly-tile");
+ await expect(children).toHaveCount(1);
+ const child=children.first();
+ await expect(child.locator(".assembly-tile-overlay")).toContainText("Motor and Motor Control");
+ const childCover=await child.locator(".assembly-tile-cover").boundingBox();
+ const childName=await child.locator(".assembly-tile-overlay").boundingBox();
+ expect(childName.x).toBeLessThan(childCover.x+childCover.width/4);
+ expect(Math.abs((childCover.y+childCover.height)-(childName.y+childName.height))).toBeLessThan(5);
+ expect(await child.locator(".assembly-tile-stage").isVisible()).toBe(false);
+ expect(await child.locator(".assembly-tile-photo-button").count()).toBe(0); // visitor is signed out
+ expect(await child.evaluate(el=>el.getBoundingClientRect().height)).toBeLessThan(childCover.height+5);
+
 
  await expect(page.locator("#launcher")).toHaveClass(/active/);
  const tree=page.locator("#launcher .assembly-tree-nodes");
