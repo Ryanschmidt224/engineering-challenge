@@ -2029,7 +2029,8 @@ document.addEventListener("focusin",event=>{
 document.addEventListener("click",event=>{
  const field=event.target;
  if(!field.matches?.(overwriteSelector)||!overwriteFocus.get(field))return;
- if(field.type!=="number"&&field.type!=="date"&&typeof field.select==="function")field.select();
+ if(field.type==="number"||field.type==="date")return;
+ if(typeof field.select==="function")field.select();
  overwriteFocus.set(field,false);
 });
 document.addEventListener("keydown",event=>{
