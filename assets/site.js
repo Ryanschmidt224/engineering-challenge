@@ -740,13 +740,13 @@ function setupAssemblyTrees(){
   bomNotice.setAttribute("role","status");
   bomNotice.setAttribute("aria-live","assertive");
   bomPanel.querySelector(".workspace-bom-heading").after(bomNotice);
-  bomPanel.addEventListener("click",async event=>{
+  workspace.addEventListener("click",async event=>{
    const target=event.target;
    if(!(target instanceof Element))return;
    const button=target.closest(".component-extract");
    if(!button)return;
    event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
-   const section=bomPanel.querySelector(".component-section");
+   const section=workspace.querySelector(".component-section");
    const notify=message=>{
     bomNotice.textContent=message;
     bomNotice.classList.add("visible");
@@ -1112,8 +1112,16 @@ function setupAssemblyTrees(){
   bomEditorCancel.textContent="Cancel editing";
   bomEditorHeader.append(bomEditorHeading,bomEditorCancel);
   bomEditorMount.prepend(bomEditorHeader);
+  // Editing takes over the spacious main pane. Only the editor DOM moves;
+  // its event handlers, form state and save API remain unchanged.
+  const bomEditPanel=document.createElement("article");
+  bomEditPanel.className="workspace-main-bom-editor hide";
+  bomEditPanel.setAttribute("aria-label","BOM part editor");
+  workspace.querySelector(".workspace-panels").prepend(bomEditPanel);
   const moveBomEditorToTop=()=>{
-   bomSavedList.before(bomEditorMount);
+   bomEditPanel.append(bomEditorMount);
+   workspace.classList.add("is-editing-bom-part");
+   bomEditPanel.classList.remove("hide");
    bomEditorMount.classList.add("is-editing");
    bomEditorHeading.textContent=editingPart?"Edit part: "+(bomField("name")?.value||"Part"):"Add new BOM part";
    bomEditorCancel.textContent=editingPart?"Cancel editing":"Cancel new part";
@@ -1124,6 +1132,8 @@ function setupAssemblyTrees(){
    bomEditorHeader.classList.add("hide");
    partTools.classList.add("hide");
    bomSavedList.after(bomEditorMount);
+   workspace.classList.remove("is-editing-bom-part");
+   bomEditPanel.classList.add("hide");
   };
   bomEditorCancel.onclick=()=>{
    if(savingBom)return;
@@ -1134,7 +1144,7 @@ function setupAssemblyTrees(){
    bomReport("Part editing cancelled.");
    returnToEditedPart();
   };
-  const bomRoot=()=>bomPanel.querySelector(".component-section");
+  const bomRoot=()=>bomEditorMount.querySelector(".component-section");
   const bomField=name=>bomRoot()?.querySelector(".component-"+name);
   const bomReport=message=>{
    const label=bomPanel.querySelector(".workspace-bom-notice");
