@@ -19,7 +19,7 @@ const conflict=()=>json({error:"The project BOM was changed in another tab. Relo
 // Historical price is entered per part or per package (never a live quote).
 // Keep historicalPrice as the derived unit cost for existing BOM calculations.
 const historicalPrice=input=>{
- const raw=input?.historicalPurchasePrice??input?.historicalPrice;
+ const raw=Object.prototype.hasOwnProperty.call(input??{},"historicalPurchasePrice")?input.historicalPurchasePrice:input?.historicalPrice;
  const basis=input?.historicalPriceBasis==="per_package"?"per_package":"per_part";
  const countRaw=input?.historicalPackageQuantity;
  if(raw===undefined||raw===null||raw==="")return {price:null,date:null,basis,packageQuantity:null,purchasePrice:null};
