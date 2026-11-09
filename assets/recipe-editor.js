@@ -49,7 +49,13 @@
   if(!article)return null;
   const panel=el("section","recipe-editor recipe-compact"),content=el("div","recipe-content"),feedback=el("p","recipe-feedback muted");
   panel.append(content,feedback);
-  article.querySelector("h2")?.after(panel);
+  const heading=article.querySelector("h2");
+  if(heading){
+   const headingRow=el("div","recipe-heading-row");
+   const tip=el("p","recipe-right-click-tip");
+   tip.append(el("span","recipe-right-click-icon","ⓘ"),document.createTextNode(" Right-click any word or highlighted text in a step to search the knowledge base or request an explanation."));
+   heading.before(headingRow);headingRow.append(heading,tip);headingRow.after(panel);
+  }else article.prepend(panel);
   const admin=()=>!!options.admin?.();
   let steps=[],expanded=null,dirty=false,level="standard";
   const editing=new Set();
@@ -170,11 +176,6 @@
   };
   function render(){
    content.replaceChildren();
-   if(steps.length){
-    const tip=el("p","recipe-right-click-tip");
-    tip.append(el("span","recipe-right-click-icon","ⓘ"),document.createTextNode(" Right-click a word or highlighted text in a step to search the knowledge base or request an explanation."));
-    content.append(tip);
-   }
    const hasDetail=steps.some(s=>s.standard?.trim()||s.detail?.trim());
    if(hasDetail){
     const preferences=el("div","recipe-detail-controls");
