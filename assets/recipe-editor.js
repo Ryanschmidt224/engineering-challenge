@@ -188,8 +188,27 @@
     summary.append(name);
     if(step.kind!=="action")summary.append(el("small","recipe-kind-caption",kinds.find(k=>k[0]===step.kind)?.[1]||step.kind));
     if(admin()){
-     const edit=button(editing.has(step.id)?"Editing":"Edit",event=>{
-      editing.add(step.id);expanded=step.id;render();
+     const edit=button(editing.has(step.id)?"Done":"Edit",async event=>{
+      event.preventDefault();event.stopPropagation();
+      if(!editing.has(step.id)){
+       editing.add(step.id);expanded=step.id;render();
+       return;
+      }
+      if(!step.title.trim()){
+       feedback.textContent="Enter a step name before saving.";
+       card.querySelector(".recipe-one-field input")?.focus();
+       return;
+      }
+      edit.disabled=true;edit.textContent="Saving…";
+      try{
+       if(typeof options.onSave!=="function")throw Error("Save is unavailable.");
+       await options.onSave();
+       dirty=false;feedback.textContent="Step saved.";
+       editing.delete(step.id);expanded=step.id;render();
+      }catch(error){
+       feedback.textContent=error.message||"Could not save step.";
+       edit.disabled=false;edit.textContent="Done";
+      }
      },"btn recipe-step-edit-toggle");
      edit.addEventListener("click",event=>{event.preventDefault();event.stopPropagation()});
      summary.append(edit);
@@ -262,14 +281,7 @@
      const down=button("↓",()=>move(i,1));down.disabled=i===steps.length-1;down.title="Move down";
      const duplicate=button("Duplicate",()=>{const copy={...normalize(step),id:newId(),notes:[...step.notes],photos:[...step.photos],photoNames:{...step.photoNames}};steps.splice(i+1,0,copy);expanded=copy.id;editing.add(copy.id);changed();saveHint();render()});
      const remove=button("Remove",()=>{if(!confirm("Remove this step?"))return;steps.splice(i,1);editing.delete(step.id);expanded=null;changed();saveHint();render()});
-     const save=button("Save step",async()=>{
-      if(!step.title.trim()){feedback.textContent="Enter a step name before saving.";nameInput.focus();return}
-      save.disabled=true;save.textContent="Saving…";
-      try{await options.onSave?.();dirty=false;feedback.textContent="Step saved.";editing.delete(step.id);render()}
-      catch(error){feedback.textContent=error.message||"Could not save step.";save.textContent="Save step"}
-      finally{save.disabled=false}
-     },"btn primary recipe-save-step");
-     actions.append(up,down,duplicate,remove,save);body.append(actions);
+     actions.append(up,down,duplicate,remove);body.append(actions);
     }else{
      const displayed=el("div","recipe-reader-text");
      if(step.standard.trim())displayed.append(el("p","",step.standard));
