@@ -1475,16 +1475,15 @@ function setupAssemblyTrees(){
     const tile=document.createElement("article");tile.className="assembly-tile";
     const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);if(isPartNode(n)){const img=document.createElement("img");img.src=partPhotoUrl(n.partId);img.alt="";img.onerror=()=>{img.src=missingPicture;img.onerror=null};cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}
     else fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=data.photos[0].url;img.alt="";cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}).catch(()=>{});
-    const stage=document.createElement("span");stage.className="assembly-tile-stage";stage.textContent=isPartNode(n)?"Part":n.stage==="integration"?"Integration":n.dependsOn?.length?"Dependent":"";
     const button=document.createElement("button");button.type="button";button.className="assembly-tile-title";button.textContent=n.name;const openAssembly=()=>{if(isPartNode(n)){openTreePart(n);return}selected=n.id;expanded.add(n.parentId);render();history.pushState(null,"","#"+project+"/assembly/"+encodeURIComponent(n.id));notify();window.scrollTo(0,0)};button.onclick=openAssembly;cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" overview";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
     // Photo-first overview tile: title stays in the image overlay.
     // The old stage/dependency/footer controls are not shown beneath tiles.
     tile.append(button);
-    if(n.dependsOn?.length){const deps=document.createElement("p");deps.className="assembly-tile-deps";deps.textContent="Requires: "+n.dependsOn.map(id=>nodes.find(x=>x.id===id)?.name||"Unknown").join(", ");tile.append(deps)}
     if(adminAuthenticated&&!isPartNode(n)){
      const pick=document.createElement("button");pick.type="button";pick.className="btn assembly-tile-photo-button";pick.textContent="+";pick.classList.add("assembly-tile-photo-overlay");pick.title="Upload a photo to "+n.name;pick.setAttribute("aria-label","Add photo to "+n.name);
      const input=document.createElement("input");input.type="file";input.accept="image/*,.heic,.heif";input.hidden=true;
-     pick.onclick=()=>input.click();
+     input.onclick=event=>event.stopPropagation();
+     pick.onclick=event=>{event.stopPropagation();input.click()};
      input.onchange=async()=>{
       const file=input.files?.[0];if(!file)return;
       const type=file.type||({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",heic:"image/heic",heif:"image/heif"}[file.name.split(".").pop().toLowerCase()]||"");
