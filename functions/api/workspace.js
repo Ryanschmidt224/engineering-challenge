@@ -32,7 +32,14 @@ const validateRecipe=input=>{
   const notes=step.notes??[],photos=step.photos??[];
   if(!Array.isArray(notes)||notes.length>40||notes.some(n=>typeof n!=="string"||n.length>4000)||
      !Array.isArray(photos)||photos.length>30||photos.some(p=>typeof p!=="string"||! /^(launcher|linear|robot|buck|motorlab|coiltest)\/[0-9a-f-]{36}\.(jpg|png|webp|gif|heic|heif)$/.test(p)))return null;
-  steps.push({id,title:title.trim(),standard,detail,kind,notes,photos});
+  const photoNames=step.photoNames??{};
+  if(!photoNames||typeof photoNames!=="object"||Array.isArray(photoNames))return null;
+  const names={};
+  for(const [photoId,name] of Object.entries(photoNames)){
+   if(!photos.includes(photoId)||typeof name!=="string"||name.length>120)return null;
+   names[photoId]=name;
+  }
+  steps.push({id,title:title.trim(),standard,detail,kind,notes,photos,photoNames:names});
  }
  return steps;
 };
