@@ -241,7 +241,7 @@ function setupAssemblyTrees(){
   };
 
   // Shared image tile renderer for root projects and all subassemblies.
-  function makeAssemblyPhotoStage(photos,name,onAdd,onDelete){
+  function makeAssemblyPhotoStage(photos,name,onAdd,onDelete,allowEditing=false){
    let active=0;
    const stage=document.createElement("div");stage.className="assembly-photo-stage";
    const picture=document.createElement("img");picture.className="assembly-stage-image";picture.alt="";
@@ -252,7 +252,7 @@ function setupAssemblyTrees(){
    const actions=document.createElement("div");actions.className="assembly-photo-actions";
    const add=document.createElement("button");add.type="button";add.className="assembly-photo-icon";add.textContent="+";add.title="Add photo";add.setAttribute("aria-label","Add photo");add.onclick=onAdd;
    const del=document.createElement("button");del.type="button";del.className="assembly-photo-icon";del.textContent="×";del.title="Delete current photo";del.setAttribute("aria-label","Delete current photo");del.onclick=()=>onDelete(photos[active]);
-   if(adminAuthenticated)actions.append(add,del);
+   if(adminAuthenticated&&allowEditing)actions.append(add,del);
    const show=()=>{const p=photos[active];picture.hidden=!p;empty.hidden=!!p;if(p){picture.src=p.url;picture.alt=p.caption||name}else picture.removeAttribute("src");prev.hidden=next.hidden=photos.length<2;del.hidden=!p};
    prev.onclick=()=>{active=(active+photos.length-1)%photos.length;show()};
    next.onclick=()=>{active=(active+1)%photos.length;show()};
@@ -262,6 +262,14 @@ function setupAssemblyTrees(){
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
   workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New BOM-only part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
+  // Assembly photo management lives in the workspace, not the read-only overview.
+  const workspacePhotoEditor=document.createElement("article");
+  workspacePhotoEditor.className="workspace-photos-editor";
+  workspacePhotoEditor.innerHTML='<h2>Assembly photos</h2><p class="muted">Add or remove photos of this assembly here.</p><div class="assembly-unified-photo"><div class="assembly-photos"></div></div><div class="assembly-photo-admin hide"><div class="assembly-photo-zone"><button type="button" class="assembly-photo-pick">+ Add photo</button><input class="assembly-photo-input" type="file" accept="image/*,.heic,.heif" hidden><span class="assembly-photo-drop-hint">or drop an image here</span></div><label class="assembly-photo-caption-label">Caption <input class="field assembly-photo-caption" placeholder="Photo description"></label></div><p class="workspace-photo-status muted" role="status"></p>';
+  workspace.querySelector(".workspace-panels").prepend(workspacePhotoEditor);
+  const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>selected,
+   workspacePhotoEditor.querySelector(".workspace-photo-status"),true);
+
   // The feature tree and the assembly BOM share one persistent left sidebar.
   // The BOM is shown only on an assembly workspace, never on its overview.
   const assemblyLayout=view.querySelector(".assembly-layout");
@@ -1414,7 +1422,7 @@ function setupAssemblyTrees(){
    if(!isEditingBom)void renderWorkspaceParts();
    const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);
    if(inPart){void showPartWorkspace();return;}
-   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
+   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();void workspacePhotoController.refresh();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
@@ -1464,7 +1472,7 @@ function setupAssemblyTrees(){
   bindDescriptionSave(main,()=>null,main.querySelector(".root-photo-status"));
   bindDescriptionSave(detail,()=>selected,detailStatus);
   // One controller for every project tile, including the root and nested assemblies.
-  function createPhotoController(tile, getAssemblyId, statusElement){
+  function createPhotoController(tile, getAssemblyId, statusElement, allowEditing=false){
    const gallery=tile.querySelector(".assembly-photos");
    const admin=tile.querySelector(".assembly-photo-admin");
    const input=tile.querySelector(".assembly-photo-input");
@@ -1476,7 +1484,7 @@ function setupAssemblyTrees(){
    const currentId=()=>getAssemblyId();
    async function refresh(){
     const id=currentId();
-    admin.classList.toggle("hide",!adminAuthenticated);
+    admin.classList.toggle("hide",!adminAuthenticated||!allowEditing);
     const url="/api/photos?project="+encodeURIComponent(project)+(id?"&assembly="+encodeURIComponent(id):"");
     try{
      const r=await fetch(url),data=await r.json();
@@ -1491,7 +1499,7 @@ function setupAssemblyTrees(){
        if(!r.ok)throw Error("Delete failed (HTTP "+r.status+")");
        await refresh();if(!id)void refreshProjectCover();
       }catch(e){report(e.message)}
-     }));
+     },allowEditing));
     }catch(e){report(e.message)}
    }
    async function upload(file){
@@ -1517,7 +1525,7 @@ function setupAssemblyTrees(){
    input.onchange=()=>upload(input.files?.[0]);
    // The zone is hidden in the modern photo-first layout; bind drops to the visible stage.
    const dropTarget=tile.querySelector(".assembly-unified-photo");
-   if(dropTarget){
+   if(dropTarget&&allowEditing){
     dropTarget.addEventListener("dragover",event=>{if(!adminAuthenticated||!event.dataTransfer.types.includes("Files"))return;event.preventDefault();event.stopPropagation();event.dataTransfer.dropEffect="copy";dropTarget.classList.add("is-dragover")});
     dropTarget.addEventListener("dragleave",event=>{if(!dropTarget.contains(event.relatedTarget))dropTarget.classList.remove("is-dragover")});
     dropTarget.addEventListener("drop",event=>{if(!adminAuthenticated)return;event.preventDefault();event.stopPropagation();dropTarget.classList.remove("is-dragover");void upload(event.dataTransfer.files?.[0])});
@@ -1561,7 +1569,7 @@ function setupAssemblyTrees(){
     const openAssembly=()=>{if(isPartNode(n)){openTreePart(n);return}selected=n.id;expanded.add(n.parentId);render();history.pushState(null,"","#"+project+"/assembly/"+encodeURIComponent(n.id));notify();window.scrollTo(0,0)};cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" overview";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
     // Photo-first overview tile: title stays in the image overlay.
     // The old stage/dependency/footer controls are not shown beneath tiles.
-    if(adminAuthenticated&&!isPartNode(n)){
+    if(false&&adminAuthenticated&&!isPartNode(n)){
      const pick=document.createElement("button");pick.type="button";pick.className="btn assembly-tile-photo-button";pick.textContent="+";pick.classList.add("assembly-tile-photo-overlay");pick.title="Upload a photo to "+n.name;pick.setAttribute("aria-label","Add photo to "+n.name);
      const input=document.createElement("input");input.type="file";input.accept="image/*,.heic,.heif";input.hidden=true;
      input.onclick=event=>event.stopPropagation();
