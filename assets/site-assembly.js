@@ -183,10 +183,31 @@ function setupAssemblyTrees(){
   };
   const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>selected,
    workspacePhotoEditor.querySelector(".workspace-photo-status"),true);
-  // The feature tree is navigation only. The BOM stays inside its workspace.
+  // Reuse the canonical BOM panel on its own screen. The editor alone moves
+  // into the workspace when editing; no duplicate BOM data or forms.
+  const bomScreen=document.createElement("section");
+  bomScreen.className="assembly-bom-screen hide";
+  bomScreen.innerHTML='<div class="assembly-bom-screen-header"><div><button type="button" class="btn assembly-bom-back">← Workspace</button><h1 class="assembly-bom-screen-title">BOM</h1></div><div class="assembly-bom-view-switch" role="group" aria-label="BOM view"><button type="button" class="btn assembly-bom-list is-active" aria-pressed="true">List</button><button type="button" class="btn assembly-bom-pictures" aria-pressed="false">Pictures</button></div></div><div class="assembly-bom-list-view"></div><div class="assembly-bom-picture-view hide"></div>';
+  workspace.after(bomScreen);
+  let bomView="list";
+  const bomPictureMount=bomScreen.querySelector(".assembly-bom-picture-view");
+  const setBomView=viewName=>{
+   bomView=viewName==="pictures"?"pictures":"list";
+   bomScreen.querySelector(".assembly-bom-list-view").classList.toggle("hide",bomView!=="list");
+   bomPictureMount.classList.toggle("hide",bomView!=="pictures");
+   for(const [kind,selector] of [["list",".assembly-bom-list"],["pictures",".assembly-bom-pictures"]]){
+    const button=bomScreen.querySelector(selector);
+    button.classList.toggle("is-active",bomView===kind);
+    button.setAttribute("aria-pressed",String(bomView===kind));
+   }
+   if(bomView==="pictures")renderTiles();
+  };
+  bomScreen.querySelector(".assembly-bom-list").onclick=()=>setBomView("list");
+  bomScreen.querySelector(".assembly-bom-pictures").onclick=()=>setBomView("pictures");
   const assemblyLayout=view.querySelector(".assembly-layout");
   const sidebar=root;
   const bomPanel=workspace.querySelector(".workspace-bom");
+  bomScreen.querySelector(".assembly-bom-list-view").append(bomPanel);
   // Keep the established feature-tree styling without nesting workspace content.
   const featureTreeFrame=document.createElement("div");
   featureTreeFrame.className="feature-tree-frame";
@@ -1314,17 +1335,22 @@ function setupAssemblyTrees(){
    catch(e){workspaceStatus.textContent=e.message}finally{button.disabled=false}
   };
   const workspaceHash=id=>"#"+project+"/workspace/"+encodeURIComponent(id??"__root__");
-  const overviewHash=id=>id===null?"#"+project+"/overview":"#"+project+"/assembly/"+encodeURIComponent(id)+"/overview";
-  const overviewRoute=()=>{const hash=decodeURIComponent(location.hash.slice(1));return hash===project+"/overview"||new RegExp("^"+project+"/assembly/[^/]+(?:/overview)?$").test(hash)};
+  const bomHash=id=>"#"+project+"/bom/"+encodeURIComponent(id??"__root__");
+  // Keep older overview deep links usable as BOM list destinations.
+  const bomRoute=()=>{
+   const hash=decodeURIComponent(location.hash.slice(1));
+   return hash===project+"/overview"||new RegExp("^"+project+"/(?:bom/[^/]+|assembly/[^/]+(?:/overview)?)$").test(hash);
+  };
   function openWorkspace(){history.pushState(null,"",workspaceHash(selected));void showAssemblyPage();window.scrollTo(0,0)}
-  workspace.querySelector(".workspace-back").textContent="Assembly overview";
-  workspace.querySelector(".workspace-back").onclick=()=>{history.pushState(null,"",overviewHash(selected));void showAssemblyPage();window.scrollTo(0,0)};
-  // The overview is a secondary visual BOM, not an intermediate landing page.
-  const overviewBack=document.createElement("button");overviewBack.type="button";overviewBack.className="btn assembly-return-workspace";overviewBack.textContent="← Back to workspace";
-  overviewBack.onclick=openWorkspace;
-  main.prepend(overviewBack);
-  detail.prepend(overviewBack.cloneNode(true));
-  detail.querySelector(".assembly-return-workspace").onclick=openWorkspace;
+  const openBom=()=>{
+   setBomView("list");
+   history.pushState(null,"",bomHash(selected));
+   void showAssemblyPage();
+   window.scrollTo(0,0);
+  };
+  workspace.querySelector(".workspace-back").textContent="BOM";
+  workspace.querySelector(".workspace-back").onclick=openBom;
+  bomScreen.querySelector(".assembly-bom-back").onclick=openWorkspace;
   async function showAssemblyPage(){
    ++detailVersion;
    const isAssembly=selected!==null;
@@ -1336,11 +1362,18 @@ function setupAssemblyTrees(){
    sidebar.classList.add("bom-sidebar-active");
    if(!isEditingBom)void renderWorkspaceParts();
    const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);
-   const inOverview=overviewRoute();const inWorkspace=!inPart&&!inOverview;
+   const inBom=bomRoute(),inWorkspace=!inPart&&!inBom;
    workspace.classList.toggle("hide",!inWorkspace);
-   detail.classList.toggle("hide",inPart||inWorkspace||!isAssembly);
-   main.classList.toggle("hide",inPart||inWorkspace||isAssembly);
+   bomScreen.classList.toggle("hide",!inBom);
+   // Legacy overview DOM remains available for image editing but isn't a page.
+   detail.classList.add("hide");
+   main.classList.add("hide");
    if(inPart){void showPartWorkspace();return;}
+   if(inBom){
+    bomScreen.querySelector(".assembly-bom-screen-title").textContent=(selected===null?title:nodes.find(n=>n.id===selected)?.name||"Assembly")+" · BOM";
+    if(bomView==="pictures")renderTiles();
+    return;
+   }
    if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");if(photoDialog.open)photoDialog.close();openPhotoEditor.hidden=!adminAuthenticated;loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
@@ -1454,12 +1487,12 @@ function setupAssemblyTrees(){
    zone.ondrop=e=>{e.preventDefault();zone.classList.remove("drag-over");void upload(e.dataTransfer.files?.[0])};
    return {refresh};
   }
-  // A dedicated button above the visual BOM handles the return to workspace.
+  // Legacy photo controllers remain available for assembly imagery.
   const rootPhotoController=createPhotoController(main,()=>null,main.querySelector(".root-photo-status"));
   const detailPhotoController=createPhotoController(detail,()=>selected,detailStatus);
   async function renderRootPhotos(){await rootPhotoController.refresh()}
   function renderTiles(){
-   const target=(selected===null?main:detail).querySelector(".assembly-workflow");if(!target)return;
+   const target=bomPictureMount;
    target.replaceChildren();const children=nodes.filter(n=>n.parentId===selected);
    
    if(!children.length)return;
@@ -1496,7 +1529,7 @@ function setupAssemblyTrees(){
   const notify=()=>{assemblySelections[project]=selected;assemblyTreeSnapshots[project]={nodes:[...nodes],title};showAssemblyPage();renderTiles();view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));};
   let treeSavedRevision=null;
   async function load(){void loadProjectMetadata();try{const [r,partsResponse]=await Promise.all([fetch("/api/tree?project="+project),fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"})]);const data=await r.json();if(!r.ok)throw Error(data.error);nodes=data.nodes||[];
-   if(partsResponse.ok){const partData=await partsResponse.json();syncPartNodes(partData.components||[])}treeSavedRevision=data.revision??null;if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/(?:assembly|workspace)/([^/]+)(?:/overview)?$"));if(deepLink&&(deepLink[1]==="__root__"||nodes.some(n=>n.id===deepLink[1])))selected=deepLink[1]==="__root__"?null:deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
+   if(partsResponse.ok){const partData=await partsResponse.json();syncPartNodes(partData.components||[])}treeSavedRevision=data.revision??null;if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/(?:assembly|workspace|bom)/([^/]+)(?:/overview)?$"));if(deepLink&&(deepLink[1]==="__root__"||nodes.some(n=>n.id===deepLink[1])))selected=deepLink[1]==="__root__"?null:deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
   async function save(next){const r=await fetch("/api/tree?project="+project,{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({nodes:next,expectedRevision:treeSavedRevision})});const data=await r.json();if(!r.ok)throw Error(data.error||"Save failed");treeSavedRevision=data.revision??treeSavedRevision;nodes=next;render();notify()}
   // Tree ordering is the order of node records; moving a node keeps its permanent ID.
   const siblings=parent=>nodes.filter(n=>n.parentId===parent);
