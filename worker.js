@@ -1,3 +1,5 @@
+import {onRequest as projectsApi,projectAllowed,canEditProject} from "./functions/api/projects.js";
+import {handleAccounts} from "./functions/api/accounts.js";
 import {handleTree} from "./functions/api/tree.js";
 import {handleWires,handleHarness} from "./functions/api/wires.js";
 import {handleCommonParts} from "./functions/api/commonparts.js";
@@ -19,6 +21,21 @@ export default {
   async fetch(request,env,ctx){
     const path=new URL(request.url).pathname;
     try{
+      if(path==="/api/accounts")return handleAccounts(request,env);
+      if(path==="/api/projects")return projectsApi({request,env,ctx});
+      // A private project must not be readable by guessing an API or asset URL.
+      const u=new URL(request.url);
+      let scoped=u.searchParams.get("project");
+      if(path==="/api/photo"||path==="/api/photos"&&request.method==="DELETE"){
+       const photoKey=u.searchParams.get("id")||"";
+       scoped=photoKey.split("/")[0]||scoped;
+      }
+      if(path==="/api/photos"&&request.method==="POST")scoped=request.headers.get("x-photo-project");
+      if(scoped&&path.startsWith("/api/")&&
+         !await projectAllowed(env,scoped,request))
+        return new Response(JSON.stringify({error:"Project not found or private"}),{status:404,headers:{"content-type":"application/json","cache-control":"no-store"}});
+      if(scoped&&path==="/api/photo"&&request.method!=="GET"&&!await canEditProject(request,env,scoped))
+       return new Response("Forbidden",{status:403});
       if(path==="/api/tree")return handleTree(request,env);
       if(path==="/api/wires")return handleWires(request,env);
       if(path==="/api/commonparts")return handleCommonParts(request,env);
