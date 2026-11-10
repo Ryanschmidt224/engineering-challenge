@@ -1569,27 +1569,6 @@ function setupAssemblyTrees(){
     const openAssembly=()=>{if(isPartNode(n)){openTreePart(n);return}selected=n.id;expanded.add(n.parentId);render();history.pushState(null,"","#"+project+"/assembly/"+encodeURIComponent(n.id));notify();window.scrollTo(0,0)};cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" overview";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
     // Photo-first overview tile: title stays in the image overlay.
     // The old stage/dependency/footer controls are not shown beneath tiles.
-    if(false&&adminAuthenticated&&!isPartNode(n)){
-     const pick=document.createElement("button");pick.type="button";pick.className="btn assembly-tile-photo-button";pick.textContent="+";pick.classList.add("assembly-tile-photo-overlay");pick.title="Upload a photo to "+n.name;pick.setAttribute("aria-label","Add photo to "+n.name);
-     const input=document.createElement("input");input.type="file";input.accept="image/*,.heic,.heif";input.hidden=true;
-     input.onclick=event=>event.stopPropagation();
-     pick.onclick=event=>{event.stopPropagation();input.click()};
-     input.onchange=async()=>{
-      const file=input.files?.[0];if(!file)return;
-      const type=file.type||({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",heic:"image/heic",heif:"image/heif"}[file.name.split(".").pop().toLowerCase()]||"");
-      if(!type||file.size>10*1024*1024){status.textContent="Choose an image under 10 MB.";input.value="";return}
-      pick.disabled=true;pick.textContent="Uploading…";
-      try{
-       const response=await fetch("/api/photos",{method:"POST",credentials:"same-origin",headers:{"content-type":type,"x-photo-project":project,"x-photo-assembly":n.id,"x-photo-caption":"","x-photo-name":encodeURIComponent(file.name)},body:file});
-       const data=await response.json();
-       if(!response.ok)throw Error(data.error||"Upload failed (HTTP "+response.status+")");
-       const img=document.createElement("img");img.src="/api/photo?id="+encodeURIComponent(data.id);img.alt=n.name;cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img));
-       status.textContent="Photo added to "+n.name+".";
-      }catch(error){status.textContent="Photo upload failed: "+error.message}
-      finally{pick.disabled=false;pick.textContent="+";input.value=""}
-     };
-     cover.append(pick,input);
-    }
     bomGrid.append(tile)
    }
    if(children.length){
