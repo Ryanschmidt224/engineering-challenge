@@ -163,7 +163,7 @@ function setupAssemblyTrees(){
   }
   // Project and subassembly workspaces remain independent of the BOM screen.
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
-  workspace.innerHTML='<button type="button" class="btn workspace-back">BOM</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
+  workspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div><button type="button" class="btn workspace-back">Open BOM</button></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
   // Assembly photo management lives in the workspace, not the read-only overview.
   const workspacePhotoEditor=document.createElement("article");
@@ -861,9 +861,8 @@ function setupAssemblyTrees(){
    }
    section.append(summary,rows);return section;
   }
-  // Sidebar BOM is a read-only index. Open navigates to part details; editing is a separate admin action.
-  // Detailed specifications, purchasing and picture actions belong to that form,
-  // never inside the narrow feature-tree sidebar.
+  // The BOM list is a text-first index. Open navigates to part details;
+  // specifications, purchasing and images remain in each part workspace.
   function createSavedPart(part,originId){
    const item=document.createElement("div");item.className="bom-part bom-compact-part";
    if(part.hideFromFeatureTree)item.classList.add("bom-only-part");
