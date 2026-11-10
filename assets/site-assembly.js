@@ -11,13 +11,16 @@ function setupAssemblyTrees(){
  document.querySelectorAll("[data-assembly-tree]").forEach(root=>{
   const project=root.dataset.assemblyTree,view=document.getElementById(project),nodesEl=root.querySelector(".assembly-tree-nodes"),status=root.querySelector(".assembly-tree-status"),controls=root.querySelector(".assembly-edit");
   let title=view.querySelector(".assembly-main h1")?.textContent||"Project";let nodes=[],selected=null,expanded=new Set([null]);
-  let showHiddenTreeItems=false;const partVisibility=new Map();
+  let showHiddenTreeItems=false,showTreeTools=false;const partVisibility=new Map(),partTools=new Map();
   const isHiddenPart=node=>isPartNode(node)&&partVisibility.get(node.partId)===true;
+  const isToolNode=node=>isPartNode(node)&&partTools.get(node.partId)===true;
+  const includeTreeNode=node=>(showHiddenTreeItems||!isHiddenPart(node))&&(showTreeTools||!isToolNode(node));
   const syncPartNodes=parts=>{
    const known=new Set(nodes.filter(isPartNode).map(n=>n.partId));let changed=false;
    for(const part of parts){
     if(part.generatedFrom)continue;
     partVisibility.set(part.id,part.hideFromFeatureTree===true);
+    partTools.set(part.id,part.isTool===true);
     if(!known.has(part.id)){
      const parentId=nodes.some(n=>n.id===part.assemblyId&&!isPartNode(n))?part.assemblyId:null;
      nodes.push({id:"part-"+part.id,kind:"part",partId:part.id,name:part.name,parentId});
@@ -954,6 +957,9 @@ function setupAssemblyTrees(){
   const bomEditorMount=bomPanel.querySelector(".workspace-bom-mount");
   // Explicit type, shared by the overview and main editor. Older records default
   // to Purchased to preserve their existing manufacturer/supplier fields.
+  const toolRow=document.createElement("label");toolRow.className="part-visibility-field";
+  const toolCheckbox=document.createElement("input");toolCheckbox.type="checkbox";
+  toolRow.append(toolCheckbox,document.createTextNode(" Tool (not a build component)"));
   const visibilityRow=document.createElement("label");visibilityRow.className="part-visibility-field";
   const visibilityCheckbox=document.createElement("input");visibilityCheckbox.type="checkbox";
   visibilityRow.append(visibilityCheckbox,document.createTextNode(" Hide from feature tree"));
@@ -1041,7 +1047,7 @@ function setupAssemblyTrees(){
    dismissBomEditor();
    extractedPictureUrl=null;
    editingPart=null;editingPartAssembly=null;
-   partTypeSelect.value="purchased";visibilityCheckbox.checked=false;updatePartTypeFields();
+   partTypeSelect.value="purchased";visibilityCheckbox.checked=false;toolCheckbox.checked=false;updatePartTypeFields();
    for(const name of ["name","full-name","manufacturer","model","category","supplier","asin","description","historical-price","historical-price-date"]){const el=bomField(name);if(el)el.value=""}
    const priceBasis=bomField("historical-price-basis"),packageQty=bomField("historical-package-quantity");
    if(priceBasis)priceBasis.value="per_part";if(packageQty)packageQty.value="";priceBasis?.dispatchEvent(new Event("change"));
@@ -1054,7 +1060,7 @@ function setupAssemblyTrees(){
   function editBomPart(part,originId){
    if(savingBom)return;
    clearBomDraft();editingPart=part.id;editingPartAssembly=originId;
-   partTypeSelect.value=part.partType==="custom"?"custom":"purchased";visibilityCheckbox.checked=part.hideFromFeatureTree===true;
+   partTypeSelect.value=part.partType==="custom"?"custom":"purchased";visibilityCheckbox.checked=part.hideFromFeatureTree===true;toolCheckbox.checked=part.isTool===true;
    updatePartTypeFields();
    for(const key of ["name","manufacturer","model","supplier","asin","category"]){const field=bomField(key);if(field)field.value=part[key]||""}
    const fullName=bomField("full-name");if(fullName)fullName.value=part.fullName||part.name||"";
@@ -1099,6 +1105,7 @@ function setupAssemblyTrees(){
    }else if(review&&!review.contains(partTypeRow))review.prepend(partTypeRow);
    if(review){
     if(!review.contains(visibilityRow))review.prepend(visibilityRow);
+    if(!review.contains(toolRow))visibilityRow.before(toolRow);
     let actions=review.querySelector(".component-editor-actions");
     if(!actions){
      actions=document.createElement("div");actions.className="component-editor-actions";
@@ -1136,7 +1143,7 @@ function setupAssemblyTrees(){
    const rawQty=bomField("quantity")?.value.trim()??"";
    const amount=rawQty===""?null:Number(rawQty);
    if(amount!==null&&(!Number.isFinite(amount)||amount<=0||amount>10000000)){bomReport("Quantity must be positive or left blank.");return false}
-   const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:amount,quantityUnit:bomField("quantity-unit")?.value??"pcs",partType:partTypeSelect.value,hideFromFeatureTree:visibilityCheckbox.checked};
+   const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:amount,quantityUnit:bomField("quantity-unit")?.value??"pcs",partType:partTypeSelect.value,hideFromFeatureTree:visibilityCheckbox.checked,isTool:toolCheckbox.checked};
    const priceInput=partTypeSelect.value==="custom"?"":(bomField("historical-price")?.value.trim()||"");
    const dateInput=partTypeSelect.value==="custom"?"":(bomField("historical-price-date")?.value||"");
    if(priceInput&&(!Number.isFinite(Number(priceInput))||Number(priceInput)<0||Math.round(Number(priceInput)*100)!==Number(priceInput)*100&&Math.abs(Math.round(Number(priceInput)*100)-Number(priceInput)*100)>1e-6)){
@@ -1192,6 +1199,7 @@ function setupAssemblyTrees(){
     }
     if(result.component&&!result.component.generatedFrom){
      partVisibility.set(result.component.id,result.component.hideFromFeatureTree===true);
+     partTools.set(result.component.id,result.component.isTool===true);
      if(!nodes.some(n=>isPartNode(n)&&n.partId===result.component.id))nodes.push({id:"part-"+result.component.id,kind:"part",partId:result.component.id,name:result.component.name,parentId:component.assemblyId??null});
      render();
     }
@@ -1233,6 +1241,7 @@ function setupAssemblyTrees(){
      const data=await response.json();if(!response.ok)throw Error(data.error||"Could not create BOM-only part");
      newPart=data.component;
      partVisibility.set(newPart.id,newPart.hideFromFeatureTree===true);
+     partTools.set(newPart.id,newPart.isTool===true);
      nodes.push({id:"part-"+newPart.id,kind:"part",partId:newPart.id,name:newPart.name,parentId:targetAssembly});render();
      // A cutting list needs an integer wire count; do not invent a count for unspecified quantities.
      if(wireInfo?.crimp&&wireId&&part.quantityUnit==="pcs"&&Number.isInteger(part.quantity)&&part.quantity>0&&Number.isFinite(wireInfo.mm)&&wireInfo.mm>0){
@@ -1246,7 +1255,7 @@ function setupAssemblyTrees(){
      bomReport(newPart.name+" saved to the BOM. Required ferrules are calculated automatically.");
     }catch(error){
      if(newPart)await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(newPart.id),{method:"DELETE",credentials:"same-origin"}).catch(()=>{});
-     if(newPart){nodes=nodes.filter(n=>n.partId!==newPart.id);partVisibility.delete(newPart.id);render()}
+     if(newPart){nodes=nodes.filter(n=>n.partId!==newPart.id);partVisibility.delete(newPart.id);partTools.delete(newPart.id);render()}
      bomReport("Could not create part: "+error.message);
      throw error;
     }
@@ -1608,6 +1617,10 @@ function setupAssemblyTrees(){
    addItem("Add subassembly",()=>{useTreeTarget(node);render();root.querySelector(".assembly-add").click()});
    const separator=document.createElement("div");separator.className="assembly-context-separator";separator.setAttribute("role","separator");treeMenu.append(separator);
    addItem("Rename",()=>node?renameTreeItem(node):editProjectName.click());
+   if(isPart)addItem(isToolNode(node)?"Mark as build component":"Mark as tool",async()=>{
+    const res=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({isTool:!isToolNode(node)})});
+    const data=await res.json();if(!res.ok)throw Error(data.error||"Could not update tool classification");partTools.set(node.partId,data.component.isTool===true);render();
+   });
    if(isPart)addItem(isHiddenPart(node)?"Unhide on feature tree":"Hide on feature tree",async()=>{
     const res=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({hideFromFeatureTree:!isHiddenPart(node)})});
     const data=await res.json();if(!res.ok)throw Error(data.error||"Could not change visibility");partVisibility.set(node.partId,data.component.hideFromFeatureTree===true);render();
@@ -1631,20 +1644,22 @@ function setupAssemblyTrees(){
    if(trigger)treeMenu.dataset.target=trigger.textContent.trim();
    treeMenu.querySelector('button:not([disabled])')?.focus();
   };
-  const treeVisibilityControl=document.createElement("div");treeVisibilityControl.className="assembly-tree-modes";
-  const treeModeButtons=new Map();
-  for(const [value,label] of [[false,"Focused"],[true,"All parts"]]){
-   const button=document.createElement("button");button.type="button";button.className="btn assembly-tree-mode";button.textContent=label;
-   button.onclick=()=>{showHiddenTreeItems=value;render()};treeModeButtons.set(value,button);treeVisibilityControl.append(button);
-  }
+  // Independent display filters leave all part records, BOM quantities and workspaces intact.
+  const treeVisibilityControl=document.createElement("fieldset");treeVisibilityControl.className="assembly-tree-filters";
+  const filterTitle=document.createElement("legend");filterTitle.textContent="Tree display";treeVisibilityControl.append(filterTitle);
+  const filterOption=(label,apply)=>{
+   const wrapper=document.createElement("label");const input=document.createElement("input");input.type="checkbox";
+   wrapper.append(input,document.createTextNode(label));input.onchange=()=>{apply(input.checked);render()};treeVisibilityControl.append(wrapper);return input;
+  };
+  const hiddenFilter=filterOption("Hidden parts",value=>{showHiddenTreeItems=value});
+  const toolsFilter=filterOption("Tools",value=>{showTreeTools=value});
   nodesEl.parentNode.insertBefore(treeVisibilityControl,nodesEl);
-  function render(){nodesEl.replaceChildren();const hiddenCount=nodes.filter(isHiddenPart).length;
-   treeVisibilityControl.hidden=hiddenCount===0;
-   for(const [value,button] of treeModeButtons){const active=showHiddenTreeItems===value;button.classList.toggle("is-active",active);button.setAttribute("aria-pressed",String(active))}
+  function render(){nodesEl.replaceChildren();
+   hiddenFilter.checked=showHiddenTreeItems;toolsFilter.checked=showTreeTools;
    controls.classList.toggle("hide",!adminAuthenticated);projectActions.classList.toggle("hide",!adminAuthenticated);cardEdit.classList.toggle("hide",!adminAuthenticated);const row=(node,depth)=>{
-   const id=node?.id??null,children=nodes.filter(n=>n.parentId===id&&(showHiddenTreeItems||!isHiddenPart(n))),el=document.createElement("div");el.className="assembly-node"+(selected===id?" selected":"")+(node&&isHiddenPart(node)?" is-hidden-part":"");el.style.paddingLeft=(depth*17+3)+"px";
+   const id=node?.id??null,children=nodes.filter(n=>n.parentId===id&&includeTreeNode(n)),el=document.createElement("div");el.className="assembly-node"+(selected===id?" selected":"")+(node&&isHiddenPart(node)?" is-hidden-part":"")+(node&&isToolNode(node)?" is-tool-part":"");el.style.paddingLeft=(depth*17+3)+"px";
    const expand=document.createElement("button");expand.type="button";expand.className="assembly-expander";expand.textContent=children.length?(expanded.has(id)?"▾":"▸"):" ";expand.setAttribute("aria-label",expanded.has(id)?"Collapse":"Expand");expand.onclick=()=>{expanded.has(id)?expanded.delete(id):expanded.add(id);render()};
-   const name=document.createElement("button");name.type="button";name.className="assembly-name";name.textContent=node?(isPartNode(node)?"🔩  ":"📦  ")+node.name:"🟨  "+title;
+   const name=document.createElement("button");name.type="button";name.className="assembly-name";name.textContent=node?(isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+node.name:"🟨  "+title;
    if(isPartNode(node)&&partRoute()===node.partId)el.classList.add("selected");name.onclick=()=>{if(isPartNode(node)){openTreePart(node);return}selected=id;history.pushState(null,"",workspaceHash(id));render();notify();window.scrollTo(0,0)};
    el.append(expand,name);
    if(adminAuthenticated){
@@ -1737,9 +1752,10 @@ function setupAssemblyTrees(){
       if(!harnessResponse.ok)throw Error(harnessData.error||"Unable to save harness cutting list");
      }
      partVisibility.set(newPart.id,newPart.hideFromFeatureTree===true);
+     partTools.set(newPart.id,newPart.isTool===true);
      const next=[...nodes,{id:crypto.randomUUID(),kind:"part",partId:newPart.id,name:newPart.name,parentId:selected}];
      await save(next);expanded.add(selected);
-     if(!newPart.hideFromFeatureTree)openTreePart(next[next.length-1]);
+     if(!newPart.hideFromFeatureTree&&!newPart.isTool)openTreePart(next[next.length-1]);
      status.textContent="Part added to the feature tree and BOM. Required ferrules are calculated automatically.";
     }catch(error){
      if(newPart)await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(newPart.id),{method:"DELETE",credentials:"same-origin"}).catch(()=>{});
