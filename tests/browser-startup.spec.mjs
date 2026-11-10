@@ -160,6 +160,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(sidebar.locator(".assembly-add")).toBeHidden();
  await expect(sidebar.locator(".assembly-add-part")).toBeHidden();
  await expect(sidebar.locator(".assembly-move-button").first()).toBeHidden();
+ await page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-back").click();
  const renameProject=page.locator("#launcher .project-root-rename");
  const coverProject=page.locator("#launcher .project-root-cover");
  await expect(page.locator('.project-card:has(.project-link[data-nav="launcher"]) > .project-card-edit')).not.toHaveClass(/hide/);
@@ -170,6 +171,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(page.locator("#launcher .assembly-main h1")).toContainText("Renamed Foam Dart Project");
  await expect(page.locator('#launcher .assembly-tree-nodes .assembly-name').first()).toContainText("Renamed Foam Dart Project");
  await expect(page.locator('.project-link[data-nav="launcher"] .project-copy h2')).toContainText("Renamed Foam Dart Project");
+ await page.locator("#launcher .assembly-main .assembly-return-workspace").click();
 
  await expect(sidebar.locator(".assembly-remove")).toBeHidden();
  const row=sidebar.locator(".assembly-node",{hasText:"Motor and Motor Control"});
@@ -210,7 +212,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(assemblyPhotoDialog.locator(".assembly-photo-pick")).toBeVisible();
  await assemblyPhotoDialog.getByRole("button",{name:"Done"}).click();
  await expect(assemblyPhotoDialog).toBeHidden();
- const rowPart=sidebar.locator(".workspace-saved-parts .bom-part",{hasText:"Linked Motor"}).first();
+ const rowPart=workspace.locator(".workspace-saved-parts .bom-part",{hasText:"Linked Motor"}).first();
  await expect(rowPart.locator("input,select,textarea")).toHaveCount(0);
  await rowPart.locator(".bom-part-edit").click();
  await expect(page).toHaveURL(/#launcher\/part\//);
@@ -250,7 +252,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(editor.locator(".component-full-name")).toHaveValue("Long descriptive motor part name");
  // The short headline is the BOM and tree label, while the full name stays editable.
  await expect(workspace.locator(".workspace-saved-parts")).toContainText("Linked Motor");
- await expect(sidebar.locator(".workspace-saved-parts")).not.toContainText("Long descriptive motor part name");
+ await expect(workspace.locator(".workspace-saved-parts")).not.toContainText("Long descriptive motor part name");
  // First typing replaces the saved value; subsequent typing edits normally.
  await editor.locator(".component-full-name").click();
  await page.keyboard.type("Replacement full name");
@@ -306,8 +308,8 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(editor.locator(".component-manufacturer")).toBeVisible();
  // The old component list must not be duplicated inside the editing form.
  await expect(editor.locator(".component-list")).toBeHidden();
- await expect(workspace.locator(".workspace-bom")).toBeVisible();
- await expect(sidebar.locator(".workspace-saved-parts")).toContainText("Linked Motor");
+ await expect(workspace.locator(".workspace-bom")).toBeHidden();
+ await expect(workspace.locator(".workspace-saved-parts")).toContainText("Linked Motor");
  expect(await editor.locator(".workspace-bom-mount").evaluate(el=>el.closest(".workspace-main-bom-editor")!==null)).toBe(true);
  await expect(workspace.locator(".recipe-instructions")).toBeHidden();
  await editor.locator(".workspace-bom-editor-cancel").click();
