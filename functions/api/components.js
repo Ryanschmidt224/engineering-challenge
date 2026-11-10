@@ -63,7 +63,8 @@ const recommendedWorkshopIds=new Set([
  "workshop:ferrule22","workshop:ferrule18",
  "workshop:heatshrink","workshop:sealshrink","workshop:solder"
 ]);
-const presentPart=part=>({...part,hideFromFeatureTree:part.hideFromFeatureTree===true||(part.hideFromFeatureTree===undefined&&part.bomOnly===true),assumedOnHand:part.purchaseOverride===true?false:part.purchaseOverride===false?true:standardShopMaterial(part)});
+const isToolPart=part=>typeof part.isTool==="boolean"?part.isTool:/\btools?\b/i.test(String(part.category||""))||/\bsolder\s+sucker\b/i.test(String(part.name||""));
+const presentPart=part=>({...part,isTool:isToolPart(part),hideFromFeatureTree:part.hideFromFeatureTree===true||(part.hideFromFeatureTree===undefined&&part.bomOnly===true),assumedOnHand:part.purchaseOverride===true?false:part.purchaseOverride===false?true:standardShopMaterial(part)});
 // Derived consumables remain tied to their source part. Never require the
 // learner to enter ferrule counts or create a second independent BOM item.
 function syncDerived(items,source){
@@ -133,7 +134,7 @@ export async function handleComponents(request,env){
   const amount=quantityData(input);if(!amount)return json({error:"Quantity must be a positive number or blank, with a valid unit"},400);
   const clean=s=>String(s??"").slice(0,300);
   const kind=input.partType==="custom"?"custom":"purchased";
-  const record={partType:kind,assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,hideFromFeatureTree:input.hideFromFeatureTree===true,purchaseOverride:input.purchaseOverride===true||input.purchaseOverride===false?input.purchaseOverride:null,workshopChoice:recommendedWorkshopIds.has(input.workshopChoice)?input.workshopChoice:null,sharedPartRef:cleanPartRef(input.sharedPartRef),id:crypto.randomUUID(),name:clean(input.name),fullName:clean(input.fullName||input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,historicalPriceBasis:price.basis,historicalPackageQuantity:price.packageQuantity,historicalPurchasePrice:price.purchasePrice,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
+  const record={partType:kind,assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,hideFromFeatureTree:input.hideFromFeatureTree===true,isTool:input.isTool===true,purchaseOverride:input.purchaseOverride===true||input.purchaseOverride===false?input.purchaseOverride:null,workshopChoice:recommendedWorkshopIds.has(input.workshopChoice)?input.workshopChoice:null,sharedPartRef:cleanPartRef(input.sharedPartRef),id:crypto.randomUUID(),name:clean(input.name),fullName:clean(input.fullName||input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,historicalPriceBasis:price.basis,historicalPackageQuantity:price.packageQuantity,historicalPurchasePrice:price.purchasePrice,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
   if(kind==="custom")Object.assign(record,{manufacturer:"",model:"",supplier:"",asin:"",historicalPrice:null,historicalPriceDate:null,historicalPurchasePrice:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
   const state=await readEditable(env,project),items=state.items;
   if(items.length>=300)return json({error:"Component limit reached"},400);
@@ -144,12 +145,13 @@ export async function handleComponents(request,env){
  // Tiny opt-in override: no requirement to re-enter part specifications.
  if(request.method==="PATCH"){
   const id=url.searchParams.get("id"),input=await request.json().catch(()=>null);
-  if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"))return json({error:"Invalid shop material preference"},400);
+  if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"||typeof input.isTool==="boolean"))return json({error:"Invalid part preference"},400);
   const state=await readEditable(env,project),items=state.items,entry=items.find(item=>item.id===id);
   if(!entry)return json({error:"Part not found"},404);
   if(Object.prototype.hasOwnProperty.call(input,"purchaseOverride"))entry.purchaseOverride=input.purchaseOverride;
   if(Object.prototype.hasOwnProperty.call(input,"workshopChoice"))entry.workshopChoice=input.workshopChoice;
   if(typeof input.hideFromFeatureTree==="boolean")entry.hideFromFeatureTree=input.hideFromFeatureTree;
+  if(typeof input.isTool==="boolean")entry.isTool=input.isTool;
   if(!await saveEditable(env,project,items,state))return conflict();
   return json({component:presentPart(entry)});
  }
@@ -170,6 +172,7 @@ export async function handleComponents(request,env){
   if(input.purchaseOverride===true||input.purchaseOverride===false||input.purchaseOverride===null)updated.purchaseOverride=input.purchaseOverride;
   if(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))updated.workshopChoice=input.workshopChoice;
   // Migrate legacy BOM-only parts on edit; the previous flag is read-only compatibility data.
+  if(typeof input.isTool==="boolean")updated.isTool=input.isTool;
   if(typeof input.hideFromFeatureTree==="boolean")updated.hideFromFeatureTree=input.hideFromFeatureTree;
   else if(updated.hideFromFeatureTree===undefined)updated.hideFromFeatureTree=previous.bomOnly===true;
   if(Object.prototype.hasOwnProperty.call(input,"assemblyId")){
