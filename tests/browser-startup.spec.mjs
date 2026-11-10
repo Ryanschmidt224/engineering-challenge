@@ -204,7 +204,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  const coverProject=page.locator("#launcher .project-root-cover");
  await expect(page.locator('.project-card:has(.project-link[data-nav="launcher"]) > .project-card-edit')).not.toHaveClass(/hide/);
  await expect(renameProject).toBeVisible();
- await expect(coverProject).toBeVisible();
+ await expect(coverProject).toHaveCount(0); // Photos are edited only in the workspace.
  page.once("dialog",dialog=>dialog.accept("Renamed Foam Dart Project"));
  await renameProject.click();
  await expect(page.locator("#launcher .assembly-main h1")).toContainText("Renamed Foam Dart Project");
@@ -241,12 +241,29 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await page.locator("#launcher .assembly-detail .assembly-open-workspace").click();
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
  await expect(workspace).toBeVisible();
+ // Assembly and part photo dialogs reuse the same small pencil launcher.
+ const assemblyPencil=workspace.locator(".workspace-photo-launch");
+ await expect(assemblyPencil).toBeVisible();
+ await assemblyPencil.click();
+ const assemblyPhotoDialog=workspace.locator(".workspace-photo-dialog");
+ await expect(assemblyPhotoDialog).toBeVisible();
+ await expect(assemblyPhotoDialog.locator(".assembly-photo-pick")).toBeVisible();
+ await assemblyPhotoDialog.getByRole("button",{name:"Done"}).click();
+ await expect(assemblyPhotoDialog).toBeHidden();
  const rowPart=sidebar.locator(".workspace-saved-parts .bom-part",{hasText:"Linked Motor"}).first();
  await expect(rowPart.locator("input,select,textarea")).toHaveCount(0);
  await rowPart.locator(".bom-part-edit").click();
  await expect(page).toHaveURL(/#launcher\/part\//);
  const partPage=page.locator("#launcher .bom-part-workspace");
  await expect(partPage).toBeVisible();
+ const partPencil=partPage.locator(".workspace-photo-launch");
+ await expect(partPencil).toBeVisible();
+ await partPencil.click();
+ const partPhotoDialog=partPage.locator(".part-photo-dialog");
+ await expect(partPhotoDialog).toBeVisible();
+ await expect(partPhotoDialog.locator(".part-photo-add")).toBeVisible();
+ await partPhotoDialog.getByRole("button",{name:"Done"}).click();
+ await expect(partPhotoDialog).toBeHidden();
  await partPage.locator(".part-details-collapse summary").click();
  await expect(partPage.locator(".part-details-edit")).toBeVisible();
  await partPage.locator(".part-details-edit").click();
