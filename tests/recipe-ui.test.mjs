@@ -36,7 +36,20 @@ test("step editor has two Save controls, no Duplicate, and note-specific photo p
  assert.doesNotMatch(recipe,/button\("Duplicate"/);
  assert.match(recipe,/photoAfterNote/);
  assert.match(recipe,/recipe-add-note-photo/);
- assert.match(recipe,/if\(step\.photoAfterNote\[photo\]===noteIndex\)/);
+ assert.match(recipe,/if\(step\.photoNoteIds\[photo\]===step\.noteIds\[noteIndex\]\)/);
  assert.match(api,/const placements=step\.photoAfterNote\?\?\{\}/);
- assert.match(api,/photoAfterNote\}/);
+ assert.match(api,/photoNoteIds,photoAfterNote\}/);
+});
+
+test("note IDs and upload guards are part of the editing contract",()=>{
+ const recipe=readFileSync("assets/recipe-editor.js","utf8");
+ const assembly=readFileSync("assets/site-assembly.js","utf8");
+ assert.match(recipe,/const noteIds=notes\.map/);
+ assert.match(recipe,/photoNoteIds\[id\]=noteIds\[previous\[id\]\]/);
+ assert.match(recipe,/step\.noteIds\.push\(newId\(\)\)/);
+ assert.match(recipe,/if\(pendingUploads\)/);
+ assert.match(recipe,/hasPendingUploads:\(\)=>pendingUploads>0/);
+ assert.match(recipe,/window\.addEventListener\("beforeunload"/);
+ assert.match(assembly,/partRecipe\?\.hasPendingUploads\(\)/);
+ assert.match(assembly,/assemblyRecipe\?\.hasPendingUploads\(\)/);
 });
