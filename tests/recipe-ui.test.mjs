@@ -27,3 +27,16 @@ test("legacy freeform instruction panels are removed, not merely hidden",()=>{
  const api=readFileSync("functions/api/workspace.js","utf8");
  assert.doesNotMatch(api,/instructions:data\.instructions|procedures:data\.procedures|notes:data\.notes/);
 });
+
+test("step editor has two Save controls, no Duplicate, and note-specific photo placement",()=>{
+ const recipe=readFileSync("assets/recipe-editor.js","utf8");
+ const api=readFileSync("functions/api/workspace.js","utf8");
+ assert.match(recipe,/editing\.has\(step\.id\)\?"Save":"Edit"/);
+ assert.match(recipe,/recipe-save-step-bottom/);
+ assert.doesNotMatch(recipe,/button\("Duplicate"/);
+ assert.match(recipe,/photoAfterNote/);
+ assert.match(recipe,/recipe-add-note-photo/);
+ assert.match(recipe,/if\(step\.photoAfterNote\[photo\]===noteIndex\)/);
+ assert.match(api,/const placements=step\.photoAfterNote\?\?\{\}/);
+ assert.match(api,/photoAfterNote\}/);
+});
