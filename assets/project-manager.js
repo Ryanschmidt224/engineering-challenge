@@ -46,7 +46,8 @@ window.BSProjectManager=(()=>{
   editor.querySelector(".project-create-save").onclick=async()=>{
    const form=editor.querySelector("form"),button=editor.querySelector(".project-create-save");button.disabled=true;
    try{const data=await api("POST","/api/projects",{name:form.elements.name.value,description:form.elements.description.value,kind:"project"});
-    editor.close();form.reset();await refresh();navigate(data.projects.find(p=>p.name===form.elements.name.value)?.id||"home");
+    const createdName=form.elements.name.value,created=data.projects.find(p=>p.name===createdName&&p.ownerId===user?.id);
+    editor.close();form.reset();await refresh();navigate(created?.id||"home");
    }catch(error){editor.querySelector(".project-create-message").textContent=error.message}
    finally{button.disabled=false}
   };
@@ -88,13 +89,13 @@ window.BSProjectManager=(()=>{
    form.append(element("h2","",project.name));
    const visibility=element("label","","Visibility");
    const visibilitySelect=element("select","field");
-   for(const [value,label] of [["private","Private"],["unlisted","Unlisted (invitation required)"],["public","Public"]]){
+   for(const [value,label] of [["private","Private"],["unlisted","Unlisted (currently owner-only)"],["public","Public"]]){
     const option=element("option","",label);option.value=value;visibilitySelect.append(option);
    }
    visibilitySelect.value=project.visibility||"public";visibility.append(visibilitySelect);form.append(visibility);
    const permission=element("label","","Editing mode");
    const permissionSelect=element("select","field");
-   for(const [value,label] of [["locked","Owner only"],["approval","Owner approval required"],["collaborative","Collaborative (future)"]]){
+   for(const [value,label] of [["locked","Owner only"],["approval","Owner approval required"],["collaborative","Collaborative (currently owner-only)"]]){
     const option=element("option","",label);option.value=value;permissionSelect.append(option);
    }
    permissionSelect.value=project.editMode||"approval";permission.append(permissionSelect);form.append(permission);
@@ -139,6 +140,16 @@ window.BSProjectManager=(()=>{
      ensureProjectPage(project);
      grid.append(card(project));
     }
+    // Existing built-in projects can be managed by the site administrator.
+    root.querySelectorAll(".project-card:not(.project-personal-card)").forEach(article=>{
+     article.querySelector(".project-card-actions")?.remove();
+     const link=article.querySelector("[data-project],[data-nav]"),id=link?.dataset.project||link?.dataset.nav;
+     const project=projects.find(p=>p.id===id);
+     if(!project?.isOwner)return;
+     const actions=element("div","project-card-actions"),manage=element("button","btn","Manage");
+     manage.onclick=event=>{event.stopPropagation();showManage(project)};
+     actions.append(manage);article.append(actions);
+    });
     // Existing public cards are hidden when archived or made private.
     const ids=new Set(projects.map(p=>p.id));
     root.querySelectorAll(".project-card:not(.project-personal-card)").forEach(article=>{
@@ -147,6 +158,7 @@ window.BSProjectManager=(()=>{
       article.hidden=!ids.has(link.dataset.project||link.dataset.nav);
     });
     setupAssemblyTrees();setupComponents();setupPhotos();
+    for(const project of projects)window.BSReview?.attach(project,user);
    }catch(error){console.error("Project catalog unavailable",error)}
   }
   void refresh();
