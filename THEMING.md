@@ -1,8 +1,9 @@
 # BuildingSchmidt color themes
 
 The active theme is **Studio Green**. Its palette is defined in
-[`assets/theme.css`](assets/theme.css), which loads **before**
-[`assets/site.css`](assets/site.css).
+[`assets/theme.css`](assets/theme.css), which loads **before** the four ordered component stylesheets:
+`assets/site.css`, `assets/site-workspaces.css`, `assets/site-controls.css`,
+and `assets/site-polish.css`. Preserve this load order to retain the cascade.
 
 ## How to change a color
 
@@ -68,7 +69,7 @@ Run `npm test` or `npm run check`. The theme tests verify:
 - Theme tokens load before component styles.
 - Every referenced `--color-*` token has a definition.
 - No new hexadecimal or `rgb()` / `rgba()` values are added to the
-  component stylesheet.
+  component stylesheets.
 - Primary text, secondary text, and buttons meet a 4.5:1 contrast
   baseline on the standard surfaces.
 
