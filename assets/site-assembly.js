@@ -1317,7 +1317,7 @@ function setupAssemblyTrees(){
   detail.prepend(overviewBack.cloneNode(true));
   detail.querySelector(".assembly-return-workspace").onclick=openWorkspace;
   async function showAssemblyPage(){
-   const version=++detailVersion;
+   ++detailVersion;
    const isAssembly=selected!==null;
    // Reuse the existing part editor, but keep the BOM inside the workspace.
    const isEditingBom=workspace.classList.contains("is-editing-bom-part");
@@ -1445,21 +1445,7 @@ function setupAssemblyTrees(){
    zone.ondrop=e=>{e.preventDefault();zone.classList.remove("drag-over");void upload(e.dataTransfer.files?.[0])};
    return {refresh};
   }
-  // Overview keeps a single clear return path to the workspace.
-  function addWorkspaceEntry(container){
-   const gallery=container.querySelector(".assembly-photos");
-   if(!gallery)return;
-   const install=()=>{
-    const stage=gallery.querySelector(".assembly-photo-stage");
-    if(!stage||stage.querySelector(".assembly-open-workspace"))return;
-    const btn=document.createElement("button");btn.type="button";btn.className="assembly-open-workspace";btn.textContent="Back to workspace →";btn.title="Open work instructions, drawings, resources and the bill of materials";
-    btn.onclick=e=>{e.stopPropagation();openWorkspace()};
-    stage.append(btn);
-   };
-   new MutationObserver(install).observe(gallery,{childList:true});install();
-  }
-  addWorkspaceEntry(detail);
-  addWorkspaceEntry(main);
+  // A dedicated button above the visual BOM handles the return to workspace.
   const rootPhotoController=createPhotoController(main,()=>null,main.querySelector(".root-photo-status"));
   const detailPhotoController=createPhotoController(detail,()=>selected,detailStatus);
   async function renderRootPhotos(){await rootPhotoController.refresh()}
