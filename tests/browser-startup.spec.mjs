@@ -37,6 +37,13 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(rootPhoto).toBeVisible();
  await expect(rootPhoto.locator(".assembly-photo-name")).toBeVisible();
  await expect(rootPhoto.locator(".assembly-open-workspace")).toHaveText("Open workspace →");
+ const openWorkspaceColors=await rootPhoto.locator(".assembly-open-workspace").evaluate(el=>{
+  const css=getComputedStyle(el);return {text:css.color,background:css.backgroundColor,opacity:css.opacity};
+ });
+ expect(openWorkspaceColors.text).toBe("rgb(255, 255, 255)");
+ expect(openWorkspaceColors.background).toBe("rgb(54, 119, 96)");
+ expect(openWorkspaceColors.opacity).toBe("1");
+
  await expect(page.locator("#launcher .assembly-main .assembly-unified-body")).toBeHidden();
  const overlay=await rootPhoto.evaluate(el=>getComputedStyle(el,"::after").backgroundImage);
  expect(overlay).toContain("linear-gradient");
@@ -256,6 +263,15 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(page).toHaveURL(/#launcher\/part\//);
  const partPage=page.locator("#launcher .bom-part-workspace");
  await expect(partPage).toBeVisible();
+ // Part instructions use the same white cards as assembly instructions.
+ const partInstructionCard=partPage.locator(".workspace-panels > article.recipe-instructions");
+ await expect(partInstructionCard).toBeVisible();
+ const partCardSurface=await partInstructionCard.evaluate(el=>{
+  const style=getComputedStyle(el);
+  return {background:style.backgroundColor,border:style.borderTopStyle};
+ });
+ expect(partCardSurface.background).toBe("rgb(255, 255, 255)");
+ expect(partCardSurface.border).toBe("solid");
  const partPencil=partPage.locator(".workspace-photo-launch");
  await expect(partPencil).toBeVisible();
  await partPencil.click();
