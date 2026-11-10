@@ -2659,3 +2659,22 @@
  .investigation-collapse-heading .investigation-toggle-label{font-size:.75rem}
  .investigation-collapse-content{padding:12px}
 }
+
+/* Assembly photos are managed only from the workspace. Overview galleries are read-only. */
+.assembly-main .assembly-photo-admin,.assembly-detail .assembly-photo-admin{display:none!important}
+.workspace-photos-editor{max-width:900px;background:#142833;border:1px solid #395765;border-radius:12px;padding:15px 17px;margin:4px 0 16px}
+.workspace-photos-editor h2{font-size:1.08rem;margin:0 0 3px}
+.workspace-photos-editor>p.muted{font-size:.84rem;margin:0 0 12px}
+.workspace-photos-editor .assembly-unified-photo{border:1px solid #345361;border-radius:9px;overflow:hidden}
+.workspace-photos-editor .assembly-photos{display:block}
+.workspace-photos-editor .assembly-photo-stage{height:clamp(240px,32vw,440px);border-radius:8px}
+.workspace-photos-editor .assembly-stage-image{width:100%;height:100%;object-fit:contain}
+.workspace-photos-editor .assembly-photo-admin{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:12px 0 0}
+.workspace-photos-editor .assembly-photo-admin.hide{display:none!important}
+.workspace-photos-editor .assembly-photo-zone{display:flex!important;align-items:center;gap:10px;border:1px dashed #5f8591;border-radius:8px;padding:10px 13px}
+.workspace-photos-editor .assembly-photo-pick{background:#245066;color:#ecfaff;border:0;border-radius:6px;padding:8px 12px;cursor:pointer}
+.workspace-photos-editor .assembly-photo-caption-label{display:flex;flex-direction:column;gap:5px;flex:1 1 230px;max-width:370px}
+.workspace-photos-editor .assembly-photo-caption{width:100%}
+.workspace-photos-editor .workspace-photo-status{margin:9px 0 0;font-size:.82rem}
+.workspace-photos-editor .assembly-photo-actions{z-index:5}
+@media(max-width:650px){.workspace-photos-editor{padding:12px}.workspace-photos-editor .assembly-photo-zone{flex-wrap:wrap}}
