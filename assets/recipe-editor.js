@@ -3,10 +3,31 @@
  "use strict";
  const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node};
  const button=(label,fn,cls="btn")=>{const node=el("button",cls,label);node.type="button";node.onclick=fn;return node};
- const normalize=x=>({id:x.id,title:x.title||"",standard:x.standard||"",detail:x.detail||"",kind:x.kind||"action",notes:Array.isArray(x.notes)?x.notes.filter(n=>typeof n==="string").slice(0,40):[],photos:Array.isArray(x.photos)?x.photos.filter(p=>typeof p==="string").slice(0,30):[],photoNames:x.photoNames&&typeof x.photoNames==="object"&&!Array.isArray(x.photoNames)?Object.fromEntries(Object.entries(x.photoNames).filter(([id,name])=>typeof name==="string"&&Array.isArray(x.photos)&&x.photos.includes(id))):{},
-  photoAfterNote:x.photoAfterNote&&typeof x.photoAfterNote==="object"&&!Array.isArray(x.photoAfterNote)?Object.fromEntries(Object.entries(x.photoAfterNote).filter(([id,index])=>Array.isArray(x.photos)&&x.photos.includes(id)&&Number.isInteger(index)&&index>=0&&index<(Array.isArray(x.notes)?x.notes.length:0))):{}});
+ // Keep existing text and photo arrays, with stable note IDs for attachments.
+ const newId=()=>crypto?.randomUUID?.()||"note_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+ const normalize=x=>{
+  const notes=Array.isArray(x.notes)?x.notes.filter(n=>typeof n==="string").slice(0,40):[];
+  const photos=Array.isArray(x.photos)?x.photos.filter(p=>typeof p==="string").slice(0,30):[];
+  const used=new Set();
+  const noteIds=notes.map((_,i)=>{
+   const candidate=x.noteIds?.[i];
+   const id=typeof candidate==="string"&&/^[a-zA-Z0-9_-]{1,80}$/.test(candidate)&&!used.has(candidate)?candidate:newId();
+   used.add(id);return id;
+  });
+  const photoNames=x.photoNames&&typeof x.photoNames==="object"&&!Array.isArray(x.photoNames)?Object.fromEntries(Object.entries(x.photoNames).filter(([id,name])=>typeof name==="string"&&photos.includes(id))):{};
+  const previous=x.photoAfterNote&&typeof x.photoAfterNote==="object"&&!Array.isArray(x.photoAfterNote)?x.photoAfterNote:{};
+  const stored=x.photoNoteIds&&typeof x.photoNoteIds==="object"&&!Array.isArray(x.photoNoteIds)?x.photoNoteIds:{};
+  const photoNoteIds={};
+  for(const id of photos){
+   if(typeof stored[id]==="string"&&used.has(stored[id]))photoNoteIds[id]=stored[id];
+   else if(Number.isInteger(previous[id])&&noteIds[previous[id]])photoNoteIds[id]=noteIds[previous[id]];
+  }
+  const photoAfterNote={};
+  for(const [id,noteId] of Object.entries(photoNoteIds))photoAfterNote[id]=noteIds.indexOf(noteId);
+  return {id:x.id,title:x.title||"",standard:x.standard||"",detail:x.detail||"",kind:x.kind||"action",notes,noteIds,photos,photoNames,photoNoteIds,photoAfterNote};
+ };
  const kinds=[["action","Action"],["inspection","Inspection"],["measurement","Measurement"],["explanation","Explanation"]];
- const newId=()=>crypto?.randomUUID?.()||"step_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+
  // Viewer is shared by author and reader; closing it never changes step data.
  function openPhoto(id,name){
   const overlay=el("div","recipe-photo-viewer");
@@ -58,7 +79,7 @@
    heading.before(headingRow);headingRow.append(heading,tip);headingRow.after(panel);
   }else article.prepend(panel);
   const admin=()=>!!options.admin?.();
-  let steps=[],expanded=null,dirty=false,level="standard";
+  let steps=[],expanded=null,dirty=false,level="standard",pendingUploads=0,saving=false;
   const editing=new Set();
   try{const saved=localStorage.getItem("bs-recipe-detail");if(["brief","standard","detailed"].includes(saved))level=saved}catch{}
   const changed=()=>{dirty=true;options.onChange?.()};
@@ -199,6 +220,8 @@
     const step=steps[i],isCurrent=expanded===step.id;
     const navButton=button((i+1)+". "+(step.title||"Untitled step"),()=>{
      if(expanded===step.id)return;
+     if(pendingUploads){feedback.textContent="Finish uploading before switching steps.";return}
+     if(editing.size&&dirty&&!confirm("You have unsaved changes. Switch steps? Your edits will remain in this workspace until saved."))return;
      expanded=step.id;closeKnowledgeMenu();render();
     },"recipe-step-nav-item"+(isCurrent?" is-active":""));
     navButton.setAttribute("aria-current",isCurrent?"step":"false");
@@ -218,13 +241,15 @@
        editing.add(step.id);expanded=step.id;render();
        return;
       }
+      if(saving)return;
+      if(pendingUploads){feedback.textContent="Wait for photo uploads to finish before saving.";return}
       if(!step.title.trim()){
        feedback.textContent="Enter a step name before saving.";
        card.querySelector(".recipe-one-field input")?.focus();
        return;
       }
       const bottomSave=card.querySelector(".recipe-save-step-bottom");
-      edit.disabled=true;edit.textContent="Saving…";
+      saving=true;edit.disabled=true;edit.textContent="Saving…";
       if(bottomSave){bottomSave.disabled=true;bottomSave.textContent="Saving…"}
       try{
        if(typeof options.onSave!=="function")throw Error("Save is unavailable.");
@@ -235,7 +260,7 @@
        feedback.textContent=error.message||"Could not save step.";
        edit.disabled=false;edit.textContent="Save";
        if(bottomSave){bottomSave.disabled=false;bottomSave.textContent="Save"}
-      }
+      }finally{saving=false}
      },"btn recipe-step-edit-toggle");
      edit.addEventListener("click",event=>{event.preventDefault();event.stopPropagation()});
      summary.append(edit);
@@ -274,7 +299,7 @@
       frame.append(picture,nameInput);
       const remove=button("Remove attachment",()=>{
        step.photos=step.photos.filter(photo=>photo!==id);
-       delete step.photoNames[id];delete step.photoAfterNote[id];
+       delete step.photoNames[id];delete step.photoAfterNote[id];delete step.photoNoteIds[id];
        changed();saveHint();showNotes();showPhotos();
       },"btn recipe-small-action");
       item.append(frame,remove);
@@ -289,17 +314,18 @@
        field.maxLength=4000;
        const noteAttachments=el("div","recipe-note-attachments");
        for(const id of step.photos){
-        if(step.photoAfterNote[id]===index)noteAttachments.append(editablePhoto(id));
+        if(step.photoNoteIds[id]===step.noteIds[index])noteAttachments.append(editablePhoto(id));
        }
        const addAfterNote=button("+ Add photo / document",()=>selectAttachment(index),"btn recipe-small-action recipe-add-note-photo");
        addAfterNote.setAttribute("aria-label","Add photo after note "+(index+1));
        const removeNote=button("Remove note",()=>{
-        step.notes.splice(index,1);
-        // A removed note never deletes its photos: unassign them instead.
-        for(const [id,position] of Object.entries(step.photoAfterNote)){
-         if(position===index)delete step.photoAfterNote[id];
-         else if(position>index)step.photoAfterNote[id]=position-1;
+        const deletedId=step.noteIds[index];
+        step.notes.splice(index,1);step.noteIds.splice(index,1);
+        // Unlink attachments from deleted notes, but never delete their files.
+        for(const [id,noteId] of Object.entries(step.photoNoteIds)){
+         if(noteId===deletedId){delete step.photoNoteIds[id];delete step.photoAfterNote[id]}
         }
+        for(const [id,noteId] of Object.entries(step.photoNoteIds))step.photoAfterNote[id]=step.noteIds.indexOf(noteId);
         changed();saveHint();showNotes();showPhotos();
        },"btn recipe-small-action");
        line.append(field,noteAttachments,addAfterNote,removeNote);
@@ -309,7 +335,7 @@
      function showPhotos(){
       photoList.replaceChildren();
       for(const id of step.photos){
-       if(step.photoAfterNote[id]===undefined)photoList.append(editablePhoto(id));
+       if(step.photoNoteIds[id]===undefined)photoList.append(editablePhoto(id));
       }
      }
      const upload=async(file,noteIndex=null)=>{
@@ -317,24 +343,24 @@
       if(!options.project){feedback.textContent="Cannot identify this project for attachment upload.";return}
       if(step.photos.length>=30){feedback.textContent="A step supports up to 30 attachments.";return}
       if(file.size>20*1024*1024){feedback.textContent="Maximum attachment size is 20 MB.";return}
-      addPhoto.disabled=true;feedback.textContent="Uploading attachment…";
+      pendingUploads++;addPhoto.disabled=true;feedback.textContent="Uploading attachment…";
       try{
        const res=await fetch("/api/recipe-files?project="+encodeURIComponent(options.project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/octet-stream","x-file-name":encodeURIComponent(file.name)},body:file});
        const data=await res.json();
        if(!res.ok||!data.id)throw Error(data.error||"Attachment upload failed");
        step.photos.push(data.id);
        step.photoNames[data.id]=file.name.replace(/\.[^.]+$/,"").slice(0,120);
-       if(Number.isInteger(noteIndex)&&noteIndex>=0&&noteIndex<step.notes.length)step.photoAfterNote[data.id]=noteIndex;
+       if(Number.isInteger(noteIndex)&&noteIndex>=0&&noteIndex<step.notes.length){step.photoNoteIds[data.id]=step.noteIds[noteIndex];step.photoAfterNote[data.id]=noteIndex}
        changed();showNotes();showPhotos();saveHint();
       }catch(error){feedback.textContent=error.message||"Attachment upload failed"}
-      finally{addPhoto.disabled=false;input.value=""}
+      finally{pendingUploads--;addPhoto.disabled=pendingUploads>0;input.value=""}
      };
      input.onchange=async()=>{
       const target=uploadTargetNote;
       for(const file of [...(input.files||[])])await upload(file,target);
       uploadTargetNote=null;
      };
-     const addNote=button("+ Add note",()=>{step.notes.push("");changed();saveHint();showNotes();noteList.lastElementChild?.querySelector("textarea")?.focus()},"btn recipe-small-action");
+     const addNote=button("+ Add note",()=>{step.notes.push("");step.noteIds.push(newId());changed();saveHint();showNotes();noteList.lastElementChild?.querySelector("textarea")?.focus()},"btn recipe-small-action");
      additions.append(addNote,addPhoto,input);
      body.append(noteList,photoList,additions);
      showNotes();showPhotos();
@@ -361,11 +387,11 @@
       const note=step.notes[noteIndex];
       if(note.trim())displayed.append(el("p","recipe-reader-note",note));
       for(const photo of step.photos){
-       if(step.photoAfterNote[photo]===noteIndex)appendReadAttachment(photo);
+       if(step.photoNoteIds[photo]===step.noteIds[noteIndex])appendReadAttachment(photo);
       }
      }
      for(const photo of step.photos){
-      if(step.photoAfterNote[photo]===undefined)appendReadAttachment(photo);
+      if(step.photoNoteIds[photo]===undefined)appendReadAttachment(photo);
      }
      if(displayed.childElementCount){
       body.append(displayed);
@@ -381,7 +407,7 @@
    }
    if(admin()){
     const add=button("+ Add step",()=>{
-     const item={id:newId(),title:"New step",standard:"",detail:"",kind:"action",notes:[],photos:[],photoNames:{},photoAfterNote:{}};
+     const item={id:newId(),title:"New step",standard:"",detail:"",kind:"action",notes:[],noteIds:[],photos:[],photoNames:{},photoNoteIds:{},photoAfterNote:{}};
      steps.push(item);expanded=item.id;editing.add(item.id);changed();saveHint();render();
      const newCard=[...content.querySelectorAll(".recipe-one-step")].find(x=>x.dataset.stepId===item.id);
      newCard?.querySelector("input")?.focus();
@@ -390,12 +416,13 @@
    }
   }
   function setData(data){
+   if(dirty||pendingUploads){feedback.textContent="Unsaved work is still open. Save before reloading instructions.";return}
    steps=Array.isArray(data?.recipe)?data.recipe.map(normalize):[];
    dirty=false;expanded=steps[0]?.id||null;editing.clear();feedback.textContent="";
    render();
   }
   render();
-  return {setData,getData:()=>steps.map(normalize),isDirty:()=>dirty,render};
+  return {setData,getData:()=>steps.map(normalize),isDirty:()=>dirty,hasPendingUploads:()=>pendingUploads>0,render};
  }
  window.BSRecipes={mount};
 })();
