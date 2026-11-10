@@ -5,7 +5,8 @@ import {readFileSync} from 'node:fs';
 
 const html=readFileSync('index.html','utf8');
 const theme=readFileSync('assets/theme.css','utf8');
-const site=readFileSync('assets/site.css','utf8');
+const stylesheets=['site.css','site-workspaces.css','site-controls.css','site-polish.css'];
+const site=stylesheets.map(name=>readFileSync('assets/'+name,'utf8')).join('\n');
 
 const definitions=new Map([...theme.matchAll(/(--color-[a-z-]+)\s*:\s*(#[a-f0-9]{6})\s*;/gi)]
   .map(([,name,value])=>[name,value]));
@@ -22,8 +23,9 @@ function contrast(a,b){
 }
 test('centralized theme loads before component CSS',()=>{
  const first=html.indexOf('/assets/theme.css');
- const second=html.indexOf('/assets/site.css');
- assert.ok(first>=0&&second>first,'theme tokens must precede the component stylesheet');
+ const positions=stylesheets.map(name=>html.indexOf('/assets/'+name));
+ assert.ok(first>=0&&positions.every(pos=>pos>first),'theme tokens must load before every component stylesheet');
+ assert.deepEqual([...positions].sort((a,b)=>a-b),positions,'stylesheet order must preserve the cascade');
  assert.match(theme,/--color-accent:\s*#367760/i);
 });
 test('every semantic color used by components exists in the palette',()=>{
