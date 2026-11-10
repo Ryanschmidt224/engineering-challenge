@@ -36,7 +36,12 @@ test("project feature tree and workspace initialize without browser errors", asy
  const screen=page.locator("#launcher .assembly-bom-screen");
  const tree=page.locator("#launcher .assembly-tree-nodes");
  await expect(workspace).toBeVisible();
- await expect(workspace.locator(".workspace-back")).toHaveText("BOM");
+ await expect(workspace.locator(".workspace-back")).toHaveText("Open BOM");
+ const header=workspace.locator(":scope > .workspace-heading");
+ const buttonBounds=await header.locator(".workspace-back").boundingBox();
+ const titleBounds=await header.locator(".workspace-title").boundingBox();
+ expect(buttonBounds.x).toBeGreaterThan(titleBounds.x+titleBounds.width);
+ await expect(header.locator(".workspace-back")).toBeVisible();
  await workspace.locator(".workspace-back").click();
  await expect(page).toHaveURL(/#launcher\/bom\/__root__/);
  await expect(screen).toBeVisible();
