@@ -2775,3 +2775,29 @@
  .assembly-workspace-page .workspace-panels > article.recipe-instructions{margin-bottom:68px!important}
  .assembly-workspace-page .workspace-panels > article.recipe-instructions::after{bottom:-14px}
 }
+
+
+/* Shared part / subassembly photo editor: discreet pencil overlay. */
+.workspace-cover-shell .workspace-photo-launch{
+ background:rgba(10,29,40,.52);
+ border-color:rgba(171,205,218,.55);
+ color:rgba(247,253,255,.88);
+ box-shadow:0 2px 6px rgba(0,0,0,.22);
+}
+.workspace-cover-shell .workspace-photo-launch:hover,
+.workspace-cover-shell .workspace-photo-launch:focus-visible{
+ background:rgba(35,84,104,.88);border-color:#89cada;color:#fff;
+}
+.bom-part-workspace .part-workspace-cover{cursor:default}
+.part-photo-dialog .workspace-photos-editor{width:100%;max-width:none}
+.part-photo-dialog .part-photo-stage{
+ width:100%;height:clamp(240px,45vw,460px);
+ position:relative;display:flex;justify-content:center;align-items:center;
+ background:#0a1b26;border-radius:8px;overflow:hidden;
+}
+.part-photo-dialog .part-photo-preview{display:block;max-width:100%;max-height:100%;object-fit:contain}
+.part-photo-dialog .part-photo-preview[hidden],.part-photo-dialog .part-photo-placeholder[hidden]{display:none!important}
+.part-photo-dialog .part-photo-placeholder{color:#b7cdd5;font-size:.96rem}
+.part-photo-dialog .part-photo-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.part-photo-dialog .part-photo-actions .btn{font-size:.85rem}
+.part-photo-dialog .part-photo-status{font-size:.85rem}
