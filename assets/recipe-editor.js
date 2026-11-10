@@ -424,7 +424,7 @@
    render();
   }
   render();
-  return {setData,getData:()=>steps.map(normalize),isDirty:()=>dirty,hasPendingUploads:()=>pendingUploads>0,render};
+  return {setData,getData:()=>steps.map(normalize),isDirty:()=>dirty,hasPendingUploads:()=>pendingUploads>0,markSaved:()=>{dirty=false;feedback.textContent="Saved."},render};
  }
  window.BSRecipes={mount};
 })();
