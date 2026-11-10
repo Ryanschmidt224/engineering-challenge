@@ -1,7 +1,7 @@
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
-const authorized=isAdmin;
+const authorized=async(request,env)=>{const u=new URL(request.url),project=u.searchParams.get("project");return project?canEditProject(request,env,project):isAdmin(request,env)};
 const key=project=>"components/"+project+".json";
 const read=async(env,project)=>{const obj=await env.PHOTOS.get(key(project));return obj?JSON.parse(await obj.text()):[]};
 const readEditable=async(env,project)=>{
