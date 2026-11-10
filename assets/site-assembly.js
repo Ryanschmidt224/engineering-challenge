@@ -78,7 +78,7 @@ function setupAssemblyTrees(){
   projectHeading.after(projectActions);
   // The Projects landing page also exposes a small editing entry point.
   // Project names are edited here; photos use the shared workspace image editor.
-  const landingCard=document.querySelector('.project-link[data-nav="'+project+'"]')?.closest(".project-card");
+  const landingCard=document.querySelector('.project-link[data-nav="'+project+'"],.project-link[data-project="'+project+'"]')?.closest(".project-card");
   const cardEdit=document.createElement("button");
   cardEdit.type="button";cardEdit.className="btn project-card-edit hide";
   cardEdit.textContent="Edit project";
@@ -92,14 +92,14 @@ function setupAssemblyTrees(){
   const updateProjectTitle=value=>{
    title=value;
    projectHeading.textContent=value;
-   const card=document.querySelector('.project-link[data-nav="'+project+'"]');
+   const card=document.querySelector('.project-link[data-nav="'+project+'"],.project-link[data-project="'+project+'"]');
    const cardHeading=card?.querySelector(".project-copy h2");
    if(cardHeading)cardHeading.textContent=value;
    if(card)card.setAttribute("aria-label","Open "+value+" project");
    render();
   };
   const refreshProjectCover=async()=>{
-   const card=document.querySelector('.project-link[data-nav="'+project+'"]');
+   const card=document.querySelector('.project-link[data-nav="'+project+'"],.project-link[data-project="'+project+'"]');
    const art=card?.querySelector(".project-art");
    if(!art)return;
    try{
@@ -140,6 +140,10 @@ function setupAssemblyTrees(){
     const data=await response.json();
     if(!response.ok)throw Error(data.error||"Unable to rename project");
     projectMetaRevision=data.revision??null;
+    if(project.startsWith("p")){
+     const update=await fetch("/api/projects",{method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({id:project,name:data.title})});
+     const updated=await update.json();if(!update.ok)throw Error(updated.error||"Project catalog rename failed");
+    }
     updateProjectTitle(data.title);
     projectMetaStatus.textContent="Project name saved.";
    }catch(error){projectMetaStatus.textContent=error.message}
