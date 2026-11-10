@@ -1,7 +1,7 @@
-/* Assembly tree, workspace, BOM, part-detail and drawing controller.
- * Loaded before site.js; functions run only when site.js initializes the application.
- * See docs/CODEBASE_GUIDE.md for feature ownership and dependency map.
- * No storage keys or API formats are changed by this file split.
+/* Canonical assembly controllers: project tree, BOM, workspaces and photo editing.
+ * This is the single source of truth for those features.
+ * Loaded before assets/site.js; setupAssemblyTrees() is called from site.js
+ * after shared application globals are initialized. Existing APIs and IDs are unchanged.
  */
 // Project assembly trees are public; editing requires administrator login.
 const assemblySelections={};
@@ -10,7 +10,7 @@ const assemblyTreeSnapshots={};
 function setupAssemblyTrees(){
  document.querySelectorAll("[data-assembly-tree]").forEach(root=>{
   const project=root.dataset.assemblyTree,view=document.getElementById(project),nodesEl=root.querySelector(".assembly-tree-nodes"),status=root.querySelector(".assembly-tree-status"),controls=root.querySelector(".assembly-edit");
-  const title=view.querySelector(".assembly-main h1")?.textContent||"Project";let nodes=[],selected=null,expanded=new Set([null]);
+  let title=view.querySelector(".assembly-main h1")?.textContent||"Project";let nodes=[],selected=null,expanded=new Set([null]);
   const detail=view.querySelector(".assembly-detail"),main=view.querySelector(".assembly-main"),detailStatus=detail.querySelector(".assembly-detail-status");
   const isPartNode=node=>node?.kind==="part"&&!!node.partId;
   const openTreePart=node=>{
@@ -23,8 +23,7 @@ function setupAssemblyTrees(){
   let detailVersion=0;
   // All project and subassembly pages now instantiate the exact same tile DOM.
   // Preserve the existing BOM widget (and its event handlers) when replacing root markup.
-  // ── Shared assembly/part tile rendering ──
-function createUnifiedTile(){
+  function createUnifiedTile(){
    const tile=detail.querySelector(".assembly-unified-tile").cloneNode(true);
    tile.querySelector(".assembly-photos").replaceChildren();
    tile.querySelector(".assembly-description").textContent="";
@@ -33,6 +32,9 @@ function createUnifiedTile(){
    return tile;
   }
   const oldRootTile=main.querySelector(".assembly-unified-tile");
+  // Some legacy project sections have no unified root tile. Do not let one
+  // incomplete section abort initialization of every subsequent project.
+  if(!oldRootTile){console.warn("Skipping assembly controller without root tile:",project);return;}
   const rootBom=oldRootTile.querySelector(".component-section");
   const rootStatus=oldRootTile.querySelector(".root-photo-status");
   const newRootTile=createUnifiedTile();
@@ -40,6 +42,89 @@ function createUnifiedTile(){
   newRootTile.querySelector(".assembly-content-tiles").append(rootBom);
   oldRootTile.replaceWith(newRootTile);
   if(rootStatus)main.insertBefore(rootStatus,newRootTile.nextSibling);
+  // Project-level controls: unlike subassembly nodes, the root has no node ID.
+  // Its name is stored in project-settings, and its cover uses existing photos.
+  const projectHeading=main.querySelector("h1");
+  const projectMetaUrl="/api/tree?project="+encodeURIComponent(project)+"&metadata=1";
+  let projectMetaRevision=null;
+  const projectActions=document.createElement("div");
+  projectActions.className="project-root-actions";
+  const editProjectName=document.createElement("button");
+  editProjectName.type="button";editProjectName.className="btn project-root-rename";
+  editProjectName.textContent="Rename project";editProjectName.title="Change the top-level project name";
+  const projectMetaStatus=document.createElement("span");
+  projectMetaStatus.className="project-root-status";projectMetaStatus.setAttribute("role","status");
+  projectActions.append(editProjectName,projectMetaStatus);
+  projectHeading.after(projectActions);
+  // The Projects landing page also exposes a small editing entry point.
+  // Project names are edited here; photos use the shared workspace image editor.
+  const landingCard=document.querySelector('.project-link[data-nav="'+project+'"]')?.closest(".project-card");
+  const cardEdit=document.createElement("button");
+  cardEdit.type="button";cardEdit.className="btn project-card-edit hide";
+  cardEdit.textContent="Edit project";
+  cardEdit.setAttribute("aria-label","Rename project");
+  if(landingCard)landingCard.append(cardEdit);
+  cardEdit.onclick=()=>{
+   navigate(project);
+   main.scrollIntoView({block:"start",behavior:"instant"});
+   editProjectName.focus();
+  };
+  const updateProjectTitle=value=>{
+   title=value;
+   projectHeading.textContent=value;
+   const card=document.querySelector('.project-link[data-nav="'+project+'"]');
+   const cardHeading=card?.querySelector(".project-copy h2");
+   if(cardHeading)cardHeading.textContent=value;
+   if(card)card.setAttribute("aria-label","Open "+value+" project");
+   render();
+  };
+  const refreshProjectCover=async()=>{
+   const card=document.querySelector('.project-link[data-nav="'+project+'"]');
+   const art=card?.querySelector(".project-art");
+   if(!art)return;
+   try{
+    const response=await fetch("/api/photos?project="+encodeURIComponent(project),{cache:"no-store"});
+    if(!response.ok)return;
+    const result=await response.json();
+    const cover=(result.photos||[]).find(photo=>!photo.assembly);
+    if(cover){
+     let image=art.querySelector(".project-card-cover");
+     if(!image){image=document.createElement("img");image.className="project-card-cover";image.alt="";art.append(image)}
+     image.src=cover.url;
+     art.classList.add("has-project-cover");
+    }else{
+     art.querySelector(".project-card-cover")?.remove();
+     art.classList.remove("has-project-cover");
+    }
+   }catch{/* Keep the existing illustration if photos are unavailable. */}
+  };
+  async function loadProjectMetadata(){
+   try{
+    const response=await fetch(projectMetaUrl,{cache:"no-store"});
+    if(!response.ok)return;
+    const data=await response.json();
+    projectMetaRevision=data.revision??null;
+    if(data.title)updateProjectTitle(data.title);
+   }catch{/* Project remains readable with its default heading. */}
+   void refreshProjectCover();
+  }
+  editProjectName.onclick=async()=>{
+   const value=prompt("Project name",title);
+   if(!value?.trim()||value.trim()===title)return;
+   editProjectName.disabled=true;projectMetaStatus.textContent="Saving…";
+   try{
+    const response=await fetch(projectMetaUrl,{
+     method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},
+     body:JSON.stringify({title:value.trim(),expectedRevision:projectMetaRevision})
+    });
+    const data=await response.json();
+    if(!response.ok)throw Error(data.error||"Unable to rename project");
+    projectMetaRevision=data.revision??null;
+    updateProjectTitle(data.title);
+    projectMetaStatus.textContent="Project name saved.";
+   }catch(error){projectMetaStatus.textContent=error.message}
+   finally{editProjectName.disabled=false}
+  };
   // Shared image tile renderer for root projects and all subassemblies.
   function makeAssemblyPhotoStage(photos,name,onAdd,onDelete,allowEditing=false){
    let active=0;
@@ -93,9 +178,77 @@ function createUnifiedTile(){
   };
   const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>selected,
    workspacePhotoEditor.querySelector(".workspace-photo-status"),true);
+  // The feature tree and the assembly BOM share one persistent left sidebar.
+  // The BOM is shown only on an assembly workspace, never on its overview.
+  const assemblyLayout=view.querySelector(".assembly-layout");
+  const sidebar=root;
+  const bomPanel=workspace.querySelector(".workspace-bom");
+  sidebar.append(bomPanel);
+  // Keep the existing feature-tree controls and their handlers intact while
+  // grouping them in a distinct panel beside the BOM panel.
+  const featureTreeFrame=document.createElement("div");
+  featureTreeFrame.className="feature-tree-frame";
+  while(sidebar.firstChild&&sidebar.firstChild!==bomPanel)featureTreeFrame.append(sidebar.firstChild);
+  sidebar.insertBefore(featureTreeFrame,bomPanel);
+  const bomResizer=document.createElement("div");
+  bomResizer.className="workspace-bom-resizer";
+  bomResizer.setAttribute("role","separator");
+  bomResizer.setAttribute("tabindex","0");
+  bomResizer.setAttribute("aria-orientation","vertical");
+  bomResizer.setAttribute("aria-label","Resize feature tree and BOM sidebar");
+  bomResizer.setAttribute("aria-valuemin","20");
+  bomResizer.setAttribute("aria-valuemax","70");
+  assemblyLayout.insertBefore(bomResizer,view.querySelector(".assembly-content"));
+  const bomWidthKey="bs-workspace-bom-width";
+  const clampSidebarWidth=value=>{
+   const available=assemblyLayout.getBoundingClientRect().width;
+   return Math.round(Math.max(290,Math.min(Number(value)||available*.30,available-390)));
+  };
+  const setBomWidth=value=>{
+   const width=clampSidebarWidth(value);
+   assemblyLayout.style.setProperty("--assembly-sidebar-width",width+"px");
+   bomResizer.setAttribute("aria-valuenow",String(Math.round(width/assemblyLayout.getBoundingClientRect().width*100)));
+   return width;
+  };
+  try{
+   const stored=Number(localStorage.getItem(bomWidthKey));
+   if(Number.isFinite(stored)&&stored>0)setBomWidth(stored);
+  }catch{/* Storage may be disabled. */}
+  let draggingBom=false;
+  bomResizer.addEventListener("pointerdown",event=>{
+   if(event.button!==0||matchMedia("(max-width:1099px)").matches)return;
+   draggingBom=true;
+   bomResizer.setPointerCapture(event.pointerId);
+   document.body.classList.add("is-resizing-bom");
+   event.preventDefault();
+  });
+  bomResizer.addEventListener("pointermove",event=>{
+   if(!draggingBom)return;
+   const left=assemblyLayout.getBoundingClientRect().left;
+   setBomWidth(event.clientX-left-5);
+  });
+  const endBomDrag=()=>{
+   if(!draggingBom)return;
+   draggingBom=false;
+   document.body.classList.remove("is-resizing-bom");
+   try{localStorage.setItem(bomWidthKey,String(sidebar.getBoundingClientRect().width))}catch{}
+  };
+  bomResizer.addEventListener("pointerup",endBomDrag);
+  bomResizer.addEventListener("pointercancel",endBomDrag);
+  bomResizer.addEventListener("lostpointercapture",endBomDrag);
+  bomResizer.addEventListener("keydown",event=>{
+   if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;
+   event.preventDefault();
+   const available=assemblyLayout.getBoundingClientRect().width;
+   const current=sidebar.getBoundingClientRect().width;
+   const next=event.key==="Home"?290:event.key==="End"?available-390:
+    current+(event.key==="ArrowRight"?32:-32);
+   const width=setBomWidth(next);
+   try{localStorage.setItem(bomWidthKey,String(width))}catch{}
+  });
   // Each saved BOM part has its own independent instructions document.
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
-  partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article class="recipe-instructions"><h2>Build instructions</h2></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
+  partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
   workspace.after(partWorkspace);
   // Safe project portability: export is read-only; import currently verifies only.
   // No operation here can overwrite or delete Cloudflare project records.
@@ -198,8 +351,14 @@ function createUnifiedTile(){
    finally{historyButton.disabled=false}
   };
   archiveActions.append(backupButton,inspectButton,recoveryButton,historyButton,archiveInput,recoveryInput,archiveStatus);
-  archiveActions.after(historyList);
-  workspace.querySelector(".workspace-heading").after(archiveActions);
+  // Backups are maintenance tools, not a primary step in building an assembly.
+  // Keep them available below the workspace inside a collapsed disclosure.
+  const backupDetails=document.createElement("details");
+  backupDetails.className="workspace-backup-details";
+  const backupSummary=document.createElement("summary");
+  backupSummary.textContent="Project backups & recovery";
+  backupDetails.append(backupSummary,archiveActions,historyList);
+  workspace.append(backupDetails);
   const partDrawingPanel=window.BSDrawings?.mount(partWorkspace.querySelector(".part-drawing-panel"),()=>adminAuthenticated);
   const partFilesPanel=window.BSPartFiles?.mount(partWorkspace.querySelector(".part-files-panel"),()=>adminAuthenticated);
 
@@ -208,8 +367,7 @@ function createUnifiedTile(){
 
   // Optional progressive disclosure: the textarea remains the simplest authoring tool.
   // Steps, test logs and history never require separate forms or mandatory fields.
-  // ── Work-instruction integration and linked resources ──
-function installInstructionExtras(panel,prefix,onRestoreResources,onRestoreRecipe){
+  function installInstructionExtras(panel,prefix,onRestoreResources,onRestoreRecipe){
    const article=panel.querySelector(".recipe-instructions");
    const logDetails=document.createElement("details");logDetails.className="instruction-log";
    const logSummary=document.createElement("summary");logSummary.textContent="Experiments & decisions";
@@ -279,7 +437,11 @@ function installInstructionExtras(panel,prefix,onRestoreResources,onRestoreRecip
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
   const renderPartDetails=part=>{
    detailRows.replaceChildren();
-   const fields=[["Qty",part.quantity===null||part.quantity===undefined?"Not specified":String(part.quantity)+(part.quantityUnit?" "+part.quantityUnit:"")],...(part.historicalPrice!==null&&part.historicalPrice!==undefined&&Number.isFinite(Number(part.historicalPrice))?[["Historical price","$"+Number(part.historicalPrice).toFixed(2)+" USD per unit"+(part.historicalPriceDate?" (recorded "+part.historicalPriceDate+")":"")]]:[]),["Manufacturer",part.manufacturer],["Model",part.model],["Category",part.category],["Supplier",part.supplier],["ASIN",part.asin]];
+   const type=document.createElement("div");type.className="part-details-view-row";
+   const typeLabel=document.createElement("strong");typeLabel.textContent="Part type";
+   type.append(typeLabel,document.createTextNode(" - "+(part.partType==="custom"?"Custom":"Purchased")));
+   detailRows.append(type);
+   const fields=[["Full name",part.fullName||part.name],["Qty",part.quantity===null||part.quantity===undefined?"Not specified":String(part.quantity)+(part.quantityUnit?" "+part.quantityUnit:"")],...(part.partType!=="custom"&&part.historicalPrice!==null&&part.historicalPrice!==undefined&&Number.isFinite(Number(part.historicalPrice))?[["Historical part price",part.historicalPriceBasis==="per_package"?"$"+Number(part.historicalPurchasePrice??0).toFixed(2)+" per package of "+part.historicalPackageQuantity+" ($"+Number(part.historicalPrice).toFixed(4)+" per part)"+(part.historicalPriceDate?" · "+part.historicalPriceDate:""):"$"+Number(part.historicalPrice).toFixed(2)+" per part"+(part.historicalPriceDate?" · "+part.historicalPriceDate:"")]]:[]),...(part.partType==="custom"?[["Category",part.category]]:[["Manufacturer",part.manufacturer],["Model",part.model],["Category",part.category],["Supplier",part.supplier],["ASIN",part.asin]])];
    for(const [title,value] of fields){
     if(value===null||value===undefined||String(value).trim()==="")continue;
     const line=document.createElement("div");line.className="part-details-view-row";
@@ -411,8 +573,7 @@ function installInstructionExtras(panel,prefix,onRestoreResources,onRestoreRecip
   }
   const partStatus=partWorkspace.querySelector(".part-workspace-status");
   let partSavedRevision=null;
-  async // ── Part details workspace, specifications and files ──
-function showPartWorkspace(){
+  async function showPartWorkspace(){
    const partId=partRoute();if(!partId)return;
    const version=++partLoadVersion;
    detailsPanel.querySelector(".part-details-view-actions").classList.toggle("hide",!adminAuthenticated);
@@ -499,8 +660,7 @@ function showPartWorkspace(){
     partStatus.textContent="Part instructions saved.";
    }catch(e){partStatus.textContent=e.message}finally{button.disabled=false}
   };
-  // ── Part instruction routing ──
-function openPartInstructions(part,originId){
+  function openPartInstructions(part,originId){
    partBackAssembly=selected;
    history.pushState(null,"","#"+project+"/part/"+encodeURIComponent(part.id));
    void showAssemblyPage();window.scrollTo(0,0);
@@ -512,8 +672,8 @@ function openPartInstructions(part,originId){
   bomNotice.className="workspace-bom-notice";
   bomNotice.setAttribute("role","status");
   bomNotice.setAttribute("aria-live","assertive");
-  workspace.querySelector(".workspace-bom-heading").after(bomNotice);
-  workspace.querySelector(".workspace-bom").addEventListener("click",async event=>{
+  bomPanel.querySelector(".workspace-bom-heading").after(bomNotice);
+  workspace.addEventListener("click",async event=>{
    const target=event.target;
    if(!(target instanceof Element))return;
    const button=target.closest(".component-extract");
@@ -570,29 +730,13 @@ function openPartInstructions(part,originId){
   },true);
   // Display saved parts independently of the legacy editor's <details> DOM.
   let bomDisplayVersion=0;
-  let listView=false;
-  const bomHeader=workspace.querySelector(".workspace-bom-heading");
-  const viewSwitch=document.createElement("div");viewSwitch.className="bom-view-switch";viewSwitch.setAttribute("role","group");viewSwitch.setAttribute("aria-label","BOM display");
-  const thumbButton=document.createElement("button");thumbButton.type="button";thumbButton.className="btn bom-view-button";thumbButton.textContent="Thumbnail view";
-  const listButton=document.createElement("button");listButton.type="button";listButton.className="btn bom-view-button";listButton.textContent="List view";
-  const updateViewButtons=()=>{
-   thumbButton.classList.toggle("is-active",!listView);
-   listButton.classList.toggle("is-active",listView);
-   thumbButton.setAttribute("aria-pressed",String(!listView));
-   listButton.setAttribute("aria-pressed",String(listView));
-  };
-  thumbButton.onclick=()=>{if(!listView)return;listView=false;updateViewButtons();void renderWorkspaceParts()};
-  listButton.onclick=()=>{if(listView)return;listView=true;updateViewButtons();void renderWorkspaceParts()};
-  viewSwitch.append(thumbButton,listButton);
-  bomHeader.querySelector(".workspace-new-part").before(viewSwitch);
-  updateViewButtons();
+  // One readable, hierarchical BOM presentation; no competing view modes.
   let editingPart=null;
   let editingPartAssembly=null;
   const partPhotoUrl=id=>"/api/components/photo?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id);
   // Local SVG fallback: always show a clear frowny face when a thumbnail is missing.
   const missingPicture="data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><rect width="160" height="160" rx="18" fill="#243642"/><circle cx="80" cy="80" r="53" fill="#667b87" stroke="#718894" stroke-width="3"/><circle cx="61" cy="70" r="5" fill="#354b57"/><circle cx="99" cy="70" r="5" fill="#354b57"/><path d="M54 108 Q80 87 106 108" fill="none" stroke="#354b57" stroke-width="6" stroke-linecap="round"/></svg>');
-  // ── BOM presentation helpers, shop materials and part rows ──
-function makeBomThumbnail(url,alt){
+  function makeBomThumbnail(url,alt){
    const image=document.createElement("img");image.className="bom-row-thumbnail";image.alt=alt||"Part picture";image.loading="lazy";
    image.onerror=()=>{image.onerror=null;image.src=missingPicture;image.classList.add("bom-thumbnail-empty");image.alt="Picture unavailable";};
    if(url)image.src=url;else{image.src=missingPicture;image.classList.add("bom-thumbnail-empty")}
@@ -681,226 +825,107 @@ function makeBomThumbnail(url,alt){
    section.addEventListener("toggle",()=>{shopPanelExpanded=section.open});
    const summary=document.createElement("summary");
    summary.textContent="Standard shop materials · "+items.length+" item"+(items.length===1?"":"s")+" (assumed available)";
-   const description=document.createElement("p");description.className="muted bom-shop-note";
-   description.textContent="Check shop supplies before building. These are required materials, not confirmed stock.";
    const rows=document.createElement("div");rows.className="bom-shop-material-rows";
    for(const part of items){
     const row=document.createElement("div");row.className="bom-shop-material-row";
-    const name=document.createElement("span");name.className="bom-shop-material-name";name.textContent=part.name;
-    const quantity=document.createElement("span");quantity.className="bom-shop-qty";quantity.textContent=materialQuantity(part);
-    const openPart=document.createElement("button");openPart.type="button";openPart.className="btn bom-open-part-details";openPart.textContent="Open part details";
-    openPart.onclick=()=>openPartInstructions(part,part.assemblyId??null);
-    row.append(name,quantity,openPart);
-    if(part.workshopChoice){
-     const selected=document.createElement("span");selected.className="bom-workshop-selected";
-     selected.textContent="Selected: "+(window.BSResources?.all("parts").find(x=>x.id===part.workshopChoice)?.name||"Workshop standard");
-     row.append(selected);
-    }
-    row.append(workshopLink(part));
-    const change=preferenceButton(part);if(change)row.append(change);
+    const name=document.createElement("span");
+    name.className="bom-part-name bom-part-name-link";name.textContent=part.name;
+    const quantity=document.createElement("span");quantity.className="bom-shop-qty";
+    quantity.textContent=materialQuantity(part);
+    row.append(name,quantity);
+    const open=document.createElement("button");open.type="button";
+    open.className="btn bom-part-edit";open.textContent="Open";
+    open.setAttribute("aria-label","Open "+part.name);
+    open.onclick=()=>openPartInstructions(part,part.assemblyId??null);
+    row.append(open);
     rows.append(row);
    }
-   section.append(summary,description,rows);return section;
+   section.append(summary,rows);return section;
   }
+  // Sidebar BOM is a read-only index. Open navigates to part details; editing is a separate admin action.
+  // Detailed specifications, purchasing and picture actions belong to that form,
+  // never inside the narrow feature-tree sidebar.
   function createSavedPart(part,originId){
-   const item=document.createElement("details");item.className="bom-part";
-   const summary=document.createElement("summary");summary.className="bom-part-summary";
-   const photo=makeBomThumbnail(partPhotoUrl(part.id),part.name);
-   const name=document.createElement("span");name.className="bom-part-name";name.textContent=part.name;
-   const openPart=document.createElement("button");openPart.type="button";openPart.className="btn bom-open-part-details";openPart.textContent="Open part details";
-   openPart.onclick=event=>{event.preventDefault();event.stopPropagation();openPartInstructions(part,originId)};
+   const item=document.createElement("div");item.className="bom-part bom-compact-part";
    if(part.bomOnly)item.classList.add("bom-only-part");
    if(part.generatedFrom)item.classList.add("bom-generated-part");
-   const qty=document.createElement("span");qty.className="bom-part-meta";qty.textContent=(part.quantity===null||part.quantity===undefined?"Qty not specified":"Qty "+part.quantity+(part.quantityUnit?" "+part.quantityUnit:""))+(part.model?" · "+part.model:"");
-   const expand=document.createElement("span");expand.className="bom-part-toggle-label";expand.textContent="Show details";
-   item.addEventListener("toggle",()=>{expand.textContent=item.open?"Minimize details":"Show details"});
-   summary.append(photo,name,qty,openPart,expand);item.append(summary);
-   const body=document.createElement("div");body.className="bom-part-body";
-   if(!part.generatedFrom){
-    const purchased=document.createElement("button");purchased.type="button";purchased.className="btn bom-record-purchase";
-    purchased.textContent="Record as purchased";
-    purchased.onclick=async()=>{
-     if(!adminAuthenticated){bomReport("Administrator login required to record purchases.");return}
-     purchased.disabled=true;
-     try{
-      const response=await fetch("/api/purchased-parts",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({project,partId:part.id})});
-      const data=await response.json();if(!response.ok)throw Error(data.error||"Could not record purchase");
-      purchased.textContent="Recorded in Workshop";
-      bomReport(part.name+" added to your private purchased-parts library.");
-      void window.BSResources?.reloadPurchased?.();
-     }catch(error){bomReport(error.message);purchased.disabled=false}
-    };
-    body.append(purchased);
-   }
-   for(const [label,value] of [["Manufacturer",part.manufacturer],["Model",part.model],["Supplier",part.supplier],["ASIN",part.asin],["Category",part.category]]){
-    if(!value)continue;
-    const row=document.createElement("p"),strong=document.createElement("strong");strong.textContent=label+": ";row.append(strong,document.createTextNode(value));body.append(row);
-   }
-   if(part.specifications?.length){
-    const title=document.createElement("strong");title.textContent="Specifications";body.append(title);
-    const ul=document.createElement("ul");for(const entry of part.specifications){const li=document.createElement("li");li.textContent=entry.name+": "+entry.value+(entry.source==="inferred"?" (inferred)":"");ul.append(li)}body.append(ul);
-   }
-   if(part.assumedOnHand)body.append(workshopLink(part));
-   const preference=preferenceButton(part);if(preference)body.append(preference);
-   if(part.generatedFrom){
-    const automatic=document.createElement("p");automatic.className="muted bom-auto-note";
-    automatic.textContent="Calculated automatically from the wire configuration. Edit the wire to change this quantity or termination.";
-    body.append(automatic);
-   }
-   if(adminAuthenticated&&!part.generatedFrom){
-    const controls=document.createElement("div");controls.className="bom-part-actions";
-    const edit=document.createElement("button");edit.type="button";edit.className="btn";edit.textContent="Edit part";
-    edit.onclick=()=>{editBomPart(part,originId)};
-    const pick=document.createElement("button");pick.type="button";pick.className="btn";pick.textContent="Add / change picture";
-    const input=document.createElement("input");input.type="file";input.accept="image/jpeg,image/png,image/webp";input.hidden=true;
-    pick.onclick=()=>input.click();
-    const uploadThumbnail=async file=>{
-     if(!file)return;
-     const mime=file.type||({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"}[file.name.split(".").pop().toLowerCase()]||"");
-     if(!["image/jpeg","image/png","image/webp"].includes(mime)||file.size>3*1024*1024){bomReport("Use JPG, PNG or WebP under 3 MB.");return}
-     pick.disabled=true;pick.textContent="Uploading…";
-     try{
-      const response=await fetch(partPhotoUrl(part.id),{method:"POST",credentials:"same-origin",headers:{"content-type":mime},body:file});
-      const result=await response.json();if(!response.ok)throw Error(result.error||"Upload failed");
-      photo.classList.remove("bom-thumbnail-empty");photo.src=partPhotoUrl(part.id)+"&v="+Date.now();pick.textContent="Change picture";bomReport("Picture saved for "+part.name+".");
-     }catch(error){bomReport("Picture upload failed: "+error.message);pick.textContent="Add / change picture"}
-     finally{pick.disabled=false;input.value=""}
-    };
-    input.onchange=()=>{void uploadThumbnail(input.files?.[0]);input.value=""};
-    // Drop a file on the thumbnail or its upload button.
-    for(const target of [photo,pick]){
-     target.classList.add("bom-picture-drop");
-     target.addEventListener("dragover",event=>{if(!event.dataTransfer.types.includes("Files"))return;event.preventDefault();event.stopPropagation();event.dataTransfer.dropEffect="copy";target.classList.add("is-dragover")});
-     target.addEventListener("dragleave",event=>{event.preventDefault();target.classList.remove("is-dragover")});
-     target.addEventListener("drop",event=>{event.preventDefault();event.stopPropagation();target.classList.remove("is-dragover");void uploadThumbnail(event.dataTransfer.files?.[0])});
-    }
-    const deletePicture=document.createElement("button");deletePicture.type="button";deletePicture.className="btn bom-delete-picture";deletePicture.textContent="Delete picture";
-    deletePicture.onclick=async()=>{
-     deletePicture.disabled=true;
-     try{
-      await deletePartPicture(part.id,()=>{
-       photo.onerror=null;photo.src=missingPicture;photo.classList.add("bom-thumbnail-empty");photo.alt="Picture unavailable";
-       bomReport("Picture removed from "+part.name+".");
-      });
-     }catch(error){bomReport(error.message)}
-     finally{deletePicture.disabled=false}
-    };
-    controls.append(deletePicture);
-    const remove=document.createElement("button");remove.type="button";remove.className="btn";remove.textContent="Delete part";
-    remove.onclick=async()=>{
-     if(!confirm("Delete "+part.name+"?"))return;
-     remove.disabled=true;
-     try{
-      const featureNodes=nodes.filter(n=>isPartNode(n)&&n.partId===part.id);
-      if(featureNodes.length)await save(nodes.filter(n=>!featureNodes.some(link=>link.id===n.id)));
-      const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{method:"DELETE",credentials:"same-origin"});
-      const result=await response.json().catch(()=>({}));if(!response.ok)throw Error(result.error||"Delete failed");
-      await renderWorkspaceParts();
-     }catch(error){bomReport("Delete failed: "+error.message);remove.disabled=false}
-    };
-    if(!part.bomOnly&&!nodes.some(n=>isPartNode(n)&&n.partId===part.id)){
-     const link=document.createElement("button");link.type="button";link.className="btn";link.textContent="Add to feature tree";
-     link.onclick=async()=>{
-      link.disabled=true;
-      const node={id:crypto.randomUUID(),kind:"part",partId:part.id,name:part.name,parentId:originId};
-      try{
-       await save([...nodes,node]);expanded.add(originId);
-       await renderWorkspaceParts();
-       bomReport(part.name+" linked in the feature tree.");
-      }catch(error){bomReport("Unable to add to feature tree: "+error.message)}
-      finally{link.disabled=false}
-     };
-     controls.append(link);
-    }
-    controls.append(edit,pick,remove,input);body.append(controls);
-   }
-   item.append(body);return item;
+   const row=document.createElement("div");row.className="bom-part-summary";
+   const name=document.createElement("span");
+   name.className="bom-part-name bom-part-name-link";name.textContent=part.name;
+   const qty=document.createElement("span");qty.className="bom-part-meta";
+   qty.textContent="Qty "+window.BSBomModel.quantityText(part);
+   row.append(name,qty);
+   const open=document.createElement("button");open.type="button";
+   open.className="btn bom-part-edit";open.textContent="Open";
+   open.setAttribute("aria-label","Open "+part.name);
+   open.onclick=()=>openPartInstructions(part,originId);
+   row.append(open);
+   item.append(row);
+   return item;
   }
-  // Only the most recently opened BOM entry has an enlarged thumbnail.
-  // Keep other <details> open so nested subassembly BOMs remain visible.
-  workspace.querySelector(".workspace-saved-parts").addEventListener("toggle",event=>{
-   const entry=event.target;
-   if(!(entry instanceof HTMLDetailsElement)||!entry.classList.contains("bom-part"))return;
-   if(!entry.open){entry.classList.remove("bom-thumbnail-active");return}
-   const list=workspace.querySelector(".workspace-saved-parts");
-   list.querySelectorAll(".bom-thumbnail-active").forEach(other=>other.classList.remove("bom-thumbnail-active"));
-   entry.classList.add("bom-thumbnail-active");
-  },true);
-  async // ── Assembly BOM rendering: list view, thumbnails and rollups ──
-function renderWorkspaceParts(){
-   const version=++bomDisplayVersion,assemblyId=selected,container=workspace.querySelector(".workspace-saved-parts");
-   container.replaceChildren();
-   const pending=document.createElement("p");pending.className="bom-count";pending.textContent="Loading saved parts…";container.append(pending);
+  // Group matching displayed names while preserving each underlying saved record.
+  const bomIdentity=part=>[part.name,part.manufacturer,part.model,part.partType,part.sharedPartRef]
+   .map(value=>String(value||"").trim().replace(/\s+/g," ").toLowerCase()).join("|");
+  function appendGroupedBomParts(mount,entries){
+   const groups=new Map();
+   for(const entry of entries){
+    const key=bomIdentity(entry.part);
+    if(!groups.has(key))groups.set(key,[]);
+    if(!groups.get(key).some(item=>item.part.id===entry.part.id))groups.get(key).push(entry);
+   }
+   for(const group of groups.values()){
+    const first=group[0],row=createSavedPart(first.part,first.originId);
+    if(first.feature)row.classList.add("bom-feature-part");
+    if(group.length===1){mount.append(row);continue}
+    const list=document.createElement("details");list.className="bom-duplicate-group";
+    const heading=document.createElement("summary");heading.className="bom-duplicate-heading";
+    heading.textContent=group.length+" saved records · Show each";
+    list.append(heading);
+    const children=document.createElement("div");children.className="bom-duplicate-records";
+    for(const entry of group){
+     const child=createSavedPart(entry.part,entry.originId);
+     child.classList.add("bom-duplicate-record");children.append(child);
+    }
+    list.append(children);
+    row.querySelector(".bom-part-meta").textContent=group.length+" records";
+    row.append(list);mount.append(row);
+   }
+  }
+  async function renderWorkspaceParts(){
+   const version=++bomDisplayVersion,assemblyId=selected,container=bomPanel.querySelector(".workspace-saved-parts");
+   // Keep the last list visible while fetching, rather than flashing the BOM
+   // empty every time the user navigates to a different project page.
+   if(!container.childElementCount){
+    const pending=document.createElement("p");pending.className="bom-count";pending.textContent="Loading saved parts…";container.append(pending);
+   }
    try{
     const response=await fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"});
     const result=await response.json();if(!response.ok)throw Error(result.error||"Unable to load parts");
-    if(version!==bomDisplayVersion||assemblyId!==selected||!workspaceRoute())return;
+    if(version!==bomDisplayVersion||assemblyId!==selected)return;
     const parts=Array.isArray(result.components)?result.components:[];
-    const included=new Set([assemblyId]);
-    const gather=id=>{for(const node of nodes.filter(n=>n.parentId===id&&!isPartNode(n))){if(!included.has(node.id)){included.add(node.id);gather(node.id)}}};
-    gather(assemblyId);
-    const shopItems=parts.filter(p=>included.has(p.assemblyId??null)&&p.assumedOnHand);
-    const shopIds=new Set(shopItems.map(p=>p.id));
+    const {shopItems,shopIds}=window.BSBomModel.selectWorkspaceParts(parts,nodes,assemblyId);
     container.replaceChildren();
-    if(listView){
-     // A compact tabular representation of the same BOM, not a different purchasing calculation.
-     const items=parts.filter(p=>included.has(p.assemblyId??null)&&!shopIds.has(p.id));
-     const table=document.createElement("table");table.className="bom-shopping-table bom-compact-list";
-     const head=document.createElement("thead"),headRow=document.createElement("tr");
-     for(const label of ["Part / material","Assembly","Quantity","Details"]){const th=document.createElement("th");th.textContent=label;headRow.append(th)}
-     head.append(headRow);table.append(head);
-     const body=document.createElement("tbody");
-     for(const p of items){
-      const tr=document.createElement("tr"),name=document.createElement("td"),assembly=document.createElement("td"),quantity=document.createElement("td"),details=document.createElement("td");
-      const label=document.createElement("span");label.className="bom-list-part-name";label.textContent=p.name;
-      name.append(label);
-      const openPart=document.createElement("button");openPart.type="button";openPart.className="btn bom-open-part-details";openPart.textContent="Open part details";
-      openPart.onclick=()=>openPartInstructions(p,p.assemblyId??null);
-      details.append(openPart);
-      const preference=preferenceButton(p);if(preference)name.append(preference);
-      if(p.generatedFrom){const marker=document.createElement("small");marker.className="muted";marker.textContent=" · calculated";name.append(marker)}
-      assembly.textContent=p.assemblyId===assemblyId?(assemblyId===null?"Project":"This assembly"):(nodes.find(n=>n.id===p.assemblyId)?.name||"Project");
-      quantity.textContent=p.quantity===null||p.quantity===undefined?"Not specified":String(p.quantity)+(p.quantityUnit?" "+p.quantityUnit:"");
-      tr.append(name,assembly,quantity,details);body.append(tr);
-     }
-     if(!items.length){const row=document.createElement("tr"),cell=document.createElement("td");cell.colSpan=4;cell.textContent="No materials yet.";row.append(cell);body.append(row)}
-     table.append(body);container.append(table);
-     const shopSection=shopMaterialsPanel(shopItems);if(shopSection)container.append(shopSection);
-     return;
-    }
     // A real subassembly is shown once as an expandable BOM row, not duplicated as a normal part.
     const renderAssembly=(parentId,mount,level)=>{
      const linkedIds=new Set(nodes.filter(n=>isPartNode(n)).map(n=>n.partId));
      const ownParts=parts.filter(p=>(p.assemblyId??null)===parentId&&!linkedIds.has(p.id)&&!shopIds.has(p.id));
      const children=nodes.filter(n=>n.parentId===parentId);
-     for(const part of ownParts)mount.append(createSavedPart(part,parentId));
+     const entries=ownParts.map(part=>({part,originId:parentId,feature:false}));
+     for(const node of children)if(isPartNode(node)){
+      const part=parts.find(p=>p.id===node.partId);
+      if(part&&!shopIds.has(part.id))entries.push({part,originId:node.parentId,feature:true});
+     }
+     appendGroupedBomParts(mount,entries);
      for(const node of children){
-      if(isPartNode(node)){
-       const part=parts.find(p=>p.id===node.partId);
-       if(part&&!shopIds.has(part.id)){
-        const entry=createSavedPart(part,node.parentId);
-        entry.classList.add("bom-feature-part");
-        const badge=document.createElement("span");badge.className="bom-subassembly-label";badge.textContent="– Part";
-        entry.querySelector(".bom-part-summary .bom-part-name")?.after(badge);
-        mount.append(entry);
-       }
-       continue;
-      }
+      if(isPartNode(node))continue;
       const item=document.createElement("details");item.className="bom-part bom-subassembly";item.dataset.assemblyId=node.id;item.open=false;item.setAttribute("aria-label",node.name+" subassembly BOM");
       const summary=document.createElement("summary");summary.className="bom-part-summary";
-      const image=makeBomThumbnail("","Assembly image");
-      image.classList.add("bom-thumbnail-empty");
-      fetch("/api/photos?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(node.id))
-       .then(r=>r.ok?r.json():null).then(data=>{if(data?.photos?.[0]){image.classList.remove("bom-thumbnail-empty");image.src=data.photos[0].url}}).catch(()=>{});
       const name=document.createElement("span");name.className="bom-part-name";name.textContent=node.name;
-      const label=document.createElement("span");label.className="bom-subassembly-label";label.textContent="– Subassembly";
-      const hint=document.createElement("span");hint.className="bom-part-toggle-label";hint.textContent="Show BOM";hint.setAttribute("aria-label","Show or hide this subassembly BOM");
       const descendantIds=new Set([node.id]);const collect=id=>{for(const child of nodes.filter(x=>x.parentId===id))if(!descendantIds.has(child.id)){descendantIds.add(child.id);collect(child.id)}};collect(node.id);
       const count=document.createElement("span");count.className="bom-subassembly-count";
       const nParts=parts.filter(part=>descendantIds.has(part.assemblyId??null)||nodes.some(x=>isPartNode(x)&&x.partId===part.id&&descendantIds.has(x.parentId))).length;
       count.textContent=nParts+" part"+(nParts===1?"":"s");
-      summary.append(image,name,label,count,hint);item.append(summary);
-      item.addEventListener("toggle",()=>{hint.textContent=item.open?"Hide BOM":"Show BOM"});
+      summary.append(name,count);item.append(summary);
       const body=document.createElement("div");body.className="bom-part-body bom-subassembly-children";
       const inner=document.createElement("div");inner.className="bom-part-stack";
       renderAssembly(node.id,inner,level+1);
@@ -930,8 +955,36 @@ function renderWorkspaceParts(){
   }
   // Workspace owns its part editor actions. Keep the mini-project component
   // editors separate; this panel saves one assembly part per request.
-  const bomEditorMount=workspace.querySelector(".workspace-bom-mount");
-  const bomSavedList=workspace.querySelector(".workspace-saved-parts");
+  const bomEditorMount=bomPanel.querySelector(".workspace-bom-mount");
+  // Explicit type, shared by the overview and main editor. Older records default
+  // to Purchased to preserve their existing manufacturer/supplier fields.
+  const partTypeRow=document.createElement("label");
+  partTypeRow.className="part-type-field";
+  partTypeRow.textContent="Part type";
+  const partTypeSelect=document.createElement("select");
+  partTypeSelect.className="field part-type-select";
+  for(const [value,label] of [["purchased","Purchased"],["custom","Custom"]]){
+   const option=document.createElement("option");option.value=value;option.textContent=label;partTypeSelect.append(option);
+  }
+  partTypeRow.append(partTypeSelect);
+  // The legacy form is mounted asynchronously into the editor container.
+  // Attach this selector when opening the form, not during initial page setup.
+  const updatePartTypeFields=()=>{
+   const custom=partTypeSelect.value==="custom";
+   bomEditorMount.classList.toggle("is-custom-part",custom);
+   for(const name of ["manufacturer","model","supplier","asin"]){
+    const control=bomEditorMount.querySelector(".component-"+name);
+    const label=control?.closest("label");
+    if(label)label.hidden=custom;
+   }
+   const priceGroup=bomEditorMount.querySelector(".historical-price-fields");
+   if(priceGroup)priceGroup.hidden=custom;
+   const lookup=bomEditorMount.querySelector(".component-lookup-panel");
+   if(lookup)lookup.hidden=custom;
+  };
+  partTypeSelect.onchange=updatePartTypeFields;
+  updatePartTypeFields();
+  const bomSavedList=bomPanel.querySelector(".workspace-saved-parts");
   const bomEditorHeader=document.createElement("div");
   bomEditorHeader.className="workspace-bom-editor-header hide";
   const bomEditorHeading=document.createElement("h3");
@@ -942,17 +995,31 @@ function renderWorkspaceParts(){
   bomEditorCancel.textContent="Cancel editing";
   bomEditorHeader.append(bomEditorHeading,bomEditorCancel);
   bomEditorMount.prepend(bomEditorHeader);
+  // Editing takes over the spacious main pane. Only the editor DOM moves;
+  // its event handlers, form state and save API remain unchanged.
+  const bomEditPanel=document.createElement("article");
+  bomEditPanel.className="workspace-main-bom-editor hide";
+  bomEditPanel.setAttribute("aria-label","BOM part editor");
+  workspace.querySelector(".workspace-panels").prepend(bomEditPanel);
+  let editorDisclosureObserver=null;
   const moveBomEditorToTop=()=>{
-   bomSavedList.before(bomEditorMount);
+   bomEditPanel.append(bomEditorMount);
+   bomReport("");
+   workspace.classList.add("is-editing-bom-part");
+   bomEditPanel.classList.remove("hide");
    bomEditorMount.classList.add("is-editing");
    bomEditorHeading.textContent=editingPart?"Edit part: "+(bomField("name")?.value||"Part"):"Add new BOM part";
-   bomEditorCancel.textContent=editingPart?"Cancel editing":"Cancel new part";
+   bomEditorCancel.textContent="Cancel";
    bomEditorHeader.classList.remove("hide");
   };
   const dismissBomEditor=()=>{
+   editorDisclosureObserver?.disconnect();
+   editorDisclosureObserver=null;
    bomEditorMount.classList.remove("is-editing");
    bomEditorHeader.classList.add("hide");
    bomSavedList.after(bomEditorMount);
+   workspace.classList.remove("is-editing-bom-part");
+   bomEditPanel.classList.add("hide");
   };
   bomEditorCancel.onclick=()=>{
    if(savingBom)return;
@@ -963,20 +1030,22 @@ function renderWorkspaceParts(){
    bomReport("Part editing cancelled.");
    returnToEditedPart();
   };
-  const bomRoot=()=>workspace.querySelector(".component-section");
+  const bomRoot=()=>bomEditorMount.querySelector(".component-section");
   const bomField=name=>bomRoot()?.querySelector(".component-"+name);
   const bomReport=message=>{
-   const label=workspace.querySelector(".workspace-bom-notice");
+   const label=bomPanel.querySelector(".workspace-bom-notice");
    if(label){label.textContent=message;label.classList.toggle("visible",!!message)}
    const el=bomRoot()?.querySelector(".component-status");
-   if(el){el.textContent=message;el.hidden=false;el.style.display="block"}
+   if(el){el.textContent=message;el.hidden=!message;el.style.display=message?"block":"none"}
   };
-  // ── BOM-only part editing and save flow ──
-function clearBomDraft(){
+  function clearBomDraft(){
    dismissBomEditor();
    extractedPictureUrl=null;
    editingPart=null;editingPartAssembly=null;
-   for(const name of ["name","manufacturer","model","category","supplier","asin","description","historical-price","historical-price-date"]){const el=bomField(name);if(el)el.value=""}
+   partTypeSelect.value="purchased";updatePartTypeFields();
+   for(const name of ["name","full-name","manufacturer","model","category","supplier","asin","description","historical-price","historical-price-date"]){const el=bomField(name);if(el)el.value=""}
+   const priceBasis=bomField("historical-price-basis"),packageQty=bomField("historical-package-quantity");
+   if(priceBasis)priceBasis.value="per_part";if(packageQty)packageQty.value="";priceBasis?.dispatchEvent(new Event("change"));
    const qty=bomField("quantity");if(qty)qty.value="";
    const unit=bomField("quantity-unit");if(unit)unit.value="pcs";
    bomRoot()?.querySelector(".component-specs")?.replaceChildren();
@@ -986,30 +1055,73 @@ function clearBomDraft(){
   function editBomPart(part,originId){
    if(savingBom)return;
    clearBomDraft();editingPart=part.id;editingPartAssembly=originId;
+   partTypeSelect.value=part.partType==="custom"?"custom":"purchased";
+   updatePartTypeFields();
    for(const key of ["name","manufacturer","model","supplier","asin","category"]){const field=bomField(key);if(field)field.value=part[key]||""}
+   const fullName=bomField("full-name");if(fullName)fullName.value=part.fullName||part.name||"";
    const qty=bomField("quantity");if(qty)qty.value=part.quantity??"";
    const unit=bomField("quantity-unit");if(unit)unit.value=part.quantityUnit??"pcs";
    const price=bomField("historical-price"),date=bomField("historical-price-date");
-   if(price)price.value=part.historicalPrice??"";
+   const priceBasis=bomField("historical-price-basis"),packageQty=bomField("historical-package-quantity");
+   if(price)price.value=part.historicalPurchasePrice??part.historicalPrice??"";
    if(date)date.value=part.historicalPriceDate||"";
+   if(priceBasis)priceBasis.value=part.historicalPriceBasis==="per_package"?"per_package":"per_part";
+   if(packageQty)packageQty.value=part.historicalPriceBasis==="per_package"?(part.historicalPackageQuantity??""):"";
+   priceBasis?.dispatchEvent(new Event("change"));
    const specs=bomRoot()?.querySelector(".component-specs");
    if(specs){for(const spec of part.specifications||[]){
     const row=document.createElement("div");row.className="row component-spec-row";
     const a=document.createElement("input"),b=document.createElement("input"),c=document.createElement("select"),remove=document.createElement("button");
     a.className=b.className="field";a.placeholder="Specification";b.placeholder="Value";a.value=spec.name;b.value=spec.value;
-    for(const v of ["explicit","inferred"]){const opt=document.createElement("option");opt.value=v;opt.textContent=v==="explicit"?"Stated in listing":"Inferred";c.append(opt)}
+    c.className="field component-spec-source";c.setAttribute("aria-label","Specification source");
+    for(const v of ["explicit","inferred"]){const opt=document.createElement("option");opt.value=v;opt.textContent=v==="explicit"?"✓ From product listing":"◇ Estimated / inferred";c.append(opt)}
     c.value=spec.source==="inferred"?"inferred":"explicit";
-    remove.type="button";remove.className="btn";remove.textContent="Remove";remove.onclick=()=>row.remove();
+    remove.type="button";remove.className="btn component-spec-remove";remove.textContent="×";remove.title="Remove specification";remove.setAttribute("aria-label","Remove specification");remove.onclick=()=>row.remove();
     row.append(a,b,c,remove);specs.append(row);
    }}
    openBomDraft();
    const save=bomField("save");if(save)save.textContent="Save changes";
-   bomReport("Editing "+part.name+". Changes will update this part without creating a duplicate.");
+   bomReport("");
+   // Editing can begin from an overview or build-instructions page, too.
+   // Route into the assembly workspace so the full-width editor is visible.
+   if(!workspaceRoute()){
+    if(originId!==undefined)selected=originId;
+    history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));
+    void showAssemblyPage();
+    render();notify();
+   }
   }
   function openBomDraft(){
    const root=bomRoot();if(!root){bomReport("BOM editor unavailable. Refresh the page.");return}
+   const review=root.querySelector(".component-review");
+   const lookup=root.querySelector(".component-lookup-panel");
+   if(lookup){
+    if(partTypeRow.nextElementSibling!==lookup)lookup.before(partTypeRow);
+   }else if(review&&!review.contains(partTypeRow))review.prepend(partTypeRow);
+   if(review){
+    let actions=review.querySelector(".component-editor-actions");
+    if(!actions){
+     actions=document.createElement("div");actions.className="component-editor-actions";
+     const right=document.createElement("div");right.className="component-editor-primary-actions";
+     actions.append(root.querySelector(".component-add-spec"),right);
+     review.append(actions);
+    }
+    const buttons=actions.querySelector(".component-editor-primary-actions");
+    buttons.append(root.querySelector(".component-save"),bomEditorCancel);
+   }
    moveBomEditorToTop();
-   root.querySelector("details")?.setAttribute("open","");
+   updatePartTypeFields();
+   // The reusable legacy component controller can close its parent disclosure
+   // asynchronously; keep it expanded only while the full-size editor is active.
+   const outer=root.querySelector(":scope > details");
+   if(outer){
+    outer.open=true;
+    editorDisclosureObserver?.disconnect();
+    editorDisclosureObserver=new MutationObserver(()=>{
+     if(workspace.classList.contains("is-editing-bom-part")&&!outer.open)outer.open=true;
+    });
+    editorDisclosureObserver.observe(outer,{attributes:true,attributeFilter:["open"]});
+   }
    const form=root.querySelector(".component-admin");if(form)form.open=true;
    root.querySelector(".component-review")?.classList.remove("hide");
    bomEditorMount.scrollIntoView({behavior:"smooth",block:"start"});
@@ -1024,15 +1136,24 @@ function clearBomDraft(){
    const rawQty=bomField("quantity")?.value.trim()??"";
    const amount=rawQty===""?null:Number(rawQty);
    if(amount!==null&&(!Number.isFinite(amount)||amount<=0||amount>10000000)){bomReport("Quantity must be positive or left blank.");return false}
-   const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:amount,quantityUnit:bomField("quantity-unit")?.value??"pcs"};
-   const priceInput=bomField("historical-price")?.value.trim()||"";
-   const dateInput=bomField("historical-price-date")?.value||"";
+   const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:amount,quantityUnit:bomField("quantity-unit")?.value??"pcs",partType:partTypeSelect.value};
+   const priceInput=partTypeSelect.value==="custom"?"":(bomField("historical-price")?.value.trim()||"");
+   const dateInput=partTypeSelect.value==="custom"?"":(bomField("historical-price-date")?.value||"");
    if(priceInput&&(!Number.isFinite(Number(priceInput))||Number(priceInput)<0||Math.round(Number(priceInput)*100)!==Number(priceInput)*100&&Math.abs(Math.round(Number(priceInput)*100)-Number(priceInput)*100)>1e-6)){
     bomReport("Historical price must be a positive USD amount with at most two decimal places.");return false;
    }
-   component.historicalPrice=priceInput===""?null:Number(priceInput);
+   const pricingBasis=bomField("historical-price-basis")?.value??"per_part";
+   const countInput=bomField("historical-package-quantity")?.value.trim()??"";
+   if(priceInput&&pricingBasis==="per_package"&&(!countInput||!Number.isSafeInteger(Number(countInput))||Number(countInput)<1||Number(countInput)>1000000)){
+    bomReport("Enter a whole number of parts per package.");return false;
+   }
+   component.historicalPurchasePrice=priceInput===""?null:Number(priceInput);
+   component.historicalPriceBasis=pricingBasis;
+   component.historicalPackageQuantity=pricingBasis==="per_package"?(countInput||null):null;
    component.historicalPriceDate=priceInput===""?null:(dateInput||new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10));
    for(const key of ["name","manufacturer","model","category","supplier","asin"])component[key]=bomField(key)?.value.trim()||"";
+   component.fullName=bomField("full-name")?.value.trim()||component.name;
+   if(component.partType==="custom")Object.assign(component,{manufacturer:"",model:"",supplier:"",asin:"",historicalPurchasePrice:null,historicalPriceDate:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
    component.specifications=[...(bomRoot()?.querySelectorAll(".component-spec-row")||[])].map(row=>({
     name:row.children[0]?.value.trim()||"",value:row.children[1]?.value.trim()||"",source:row.children[2]?.value==="inferred"?"inferred":"explicit"
    })).filter(entry=>entry.name&&entry.value);
@@ -1081,7 +1202,7 @@ function clearBomDraft(){
    finally{savingBom=false;if(saveButton)saveButton.disabled=false}
   }
   // BOM-only items share the library/manual/wire wizard, but never create a feature-tree node.
-  workspace.querySelector(".workspace-new-part").onclick=async()=>{
+  bomPanel.querySelector(".workspace-new-part").onclick=async()=>{
    if(savingBom)return;
    if(!window.BSLibraryPartPicker){bomReport("Part library unavailable. Refresh and try again.");return}
    const targetAssembly=selected;
@@ -1123,7 +1244,7 @@ function clearBomDraft(){
     }
    }});
   };
-  workspace.querySelector(".workspace-bom").addEventListener("click",event=>{
+  bomPanel.addEventListener("click",event=>{
    const target=event.target;
    if(!(target instanceof Element))return;
    if(target.closest(".component-add-spec")){
@@ -1155,8 +1276,7 @@ function clearBomDraft(){
   let workspaceSavedRevision=null;
   const workspaceStatus=workspace.querySelector(".workspace-status");
   const workspaceUrl=()=>"/api/workspace?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(selected??"__root__");
-  async // ── Assembly workspace loading, routing and metadata ──
-function loadWorkspace(){
+  async function loadWorkspace(){
    const version=++workspaceLoadVersion,url=workspaceUrl();workspaceSavedRevision=null;workspaceStatus.textContent="Loading…";
    try{const res=await fetch(url,{credentials:"same-origin",cache:"no-store"});const data=await res.json();if(!res.ok)throw Error(data.error||"Unable to load workspace");
     if(version!==workspaceLoadVersion||url!==workspaceUrl())return;
@@ -1177,14 +1297,23 @@ function loadWorkspace(){
   };
   function openWorkspace(){history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));showAssemblyPage();window.scrollTo(0,0)}
   workspace.querySelector(".workspace-back").onclick=()=>{history.pushState(null,"",selected===null?"#"+project:"#"+project+"/assembly/"+encodeURIComponent(selected));showAssemblyPage();window.scrollTo(0,0)};
-  async // ── Assembly overview routing ──
-function showAssemblyPage(){
+  async function showAssemblyPage(){
    const version=++detailVersion;
    const isAssembly=selected!==null;
-   const bom=main.querySelector(".component-section")||detail.querySelector(".component-section")||workspace.querySelector(".component-section");
-   if(bom){workspace.querySelector(".workspace-bom-mount").append(bom)}
-   const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);if(inPart){void showPartWorkspace();return;}
-   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");if(photoDialog.open)photoDialog.close();openPhotoEditor.hidden=!adminAuthenticated;loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});void renderWorkspaceParts();if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
+   // The BOM is project navigation, so it stays mounted under the feature tree
+   // on overview, assembly, part-detail and workspace pages alike.
+   // Never move the form back into the sidebar while an edit is in progress.
+   const isEditingBom=workspace.classList.contains("is-editing-bom-part");
+   const bom=isEditingBom?null:(main.querySelector(".component-section")||detail.querySelector(".component-section")||bomPanel.querySelector(".component-section"));
+   if(bom&&bom.parentElement!==bomPanel.querySelector(".workspace-bom-mount")){
+    bomPanel.querySelector(".workspace-bom-mount").append(bom);
+   }
+   sidebar.classList.add("bom-sidebar-active");
+   // Refresh on page transitions, but not while an editor has unsaved changes.
+   if(!isEditingBom)void renderWorkspaceParts();
+   const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);
+   if(inPart){void showPartWorkspace();return;}
+   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");if(photoDialog.open)photoDialog.close();openPhotoEditor.hidden=!adminAuthenticated;loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
@@ -1218,8 +1347,7 @@ function showAssemblyPage(){
     display.classList.toggle("hide",adminAuthenticated);
    }catch(e){display.textContent="Unable to load description: "+e.message}
   }
-  // ── Description persistence ──
-function bindDescriptionSave(container,getId,message){
+  function bindDescriptionSave(container,getId,message){
    container.querySelector(".assembly-description-save").onclick=async()=>{
     const id=getId();
     message.textContent="Saving…";
@@ -1235,8 +1363,7 @@ function bindDescriptionSave(container,getId,message){
   bindDescriptionSave(main,()=>null,main.querySelector(".root-photo-status"));
   bindDescriptionSave(detail,()=>selected,detailStatus);
   // One controller for every project tile, including the root and nested assemblies.
-  // ── Photos and uploads ──
-function createPhotoController(tile, getAssemblyId, statusElement, allowEditing=false){
+  function createPhotoController(tile, getAssemblyId, statusElement, allowEditing=false){
    const gallery=tile.querySelector(".assembly-photos");
    const admin=tile.querySelector(".assembly-photo-admin");
    const input=tile.querySelector(".assembly-photo-input");
@@ -1261,7 +1388,7 @@ function createPhotoController(tile, getAssemblyId, statusElement, allowEditing=
       try{
        const r=await fetch("/api/photos?id="+encodeURIComponent(p.id),{method:"DELETE",credentials:"same-origin"});
        if(!r.ok)throw Error("Delete failed (HTTP "+r.status+")");
-       await refresh();
+       await refresh();if(tile===workspacePhotoEditor)void loadWorkspaceCover();if(!id)void refreshProjectCover();
       }catch(e){report(e.message)}
      },allowEditing));
     }catch(e){report(e.message)}
@@ -1281,11 +1408,11 @@ function createPhotoController(tile, getAssemblyId, statusElement, allowEditing=
      const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={error:raw.slice(0,160)||"Unexpected server response"}}
      if(!r.ok)throw Error((data.error||"Upload failed")+" (HTTP "+r.status+")");
      input.value="";caption.value="";
-     await refresh();report("Photo uploaded.");
+     await refresh();if(tile===workspacePhotoEditor)void loadWorkspaceCover();if(!id)void refreshProjectCover();report("Photo uploaded.");
     }catch(e){report(e.message||"Upload failed.")}
     finally{busy=false;zone.removeAttribute("aria-busy")}
    }
-   pick.onclick=()=>input.click();
+   pick.onclick=event=>{event.stopPropagation();input.click()};
    input.onchange=()=>upload(input.files?.[0]);
    // The zone is hidden in the modern photo-first layout; bind drops to the visible stage.
    const dropTarget=tile.querySelector(".assembly-unified-photo");
@@ -1300,14 +1427,13 @@ function createPhotoController(tile, getAssemblyId, statusElement, allowEditing=
    return {refresh};
   }
   // A single explicit entry point on the large assembly photo, not on child tiles.
-  // ── Entry actions and project tile rendering ──
-function addWorkspaceEntry(container){
+  function addWorkspaceEntry(container){
    const gallery=container.querySelector(".assembly-photos");
    if(!gallery)return;
    const install=()=>{
     const stage=gallery.querySelector(".assembly-photo-stage");
     if(!stage||stage.querySelector(".assembly-open-workspace"))return;
-    const btn=document.createElement("button");btn.type="button";btn.className="assembly-open-workspace";btn.textContent="Build instructions →";btn.title="Open build instructions, procedures and notes";
+    const btn=document.createElement("button");btn.type="button";btn.className="assembly-open-workspace";btn.textContent="Open workspace →";btn.title="Open work instructions, drawings, resources and the bill of materials";
     btn.onclick=e=>{e.stopPropagation();openWorkspace()};
     stage.append(btn);
    };
@@ -1329,13 +1455,11 @@ function addWorkspaceEntry(container){
    const sorted=[...children];
    for(const n of sorted){
     const tile=document.createElement("article");tile.className="assembly-tile "+(isPartNode(n)?"assembly-bom-part-tile":"assembly-bom-subassembly-tile");
-    const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);if(isPartNode(n)){const img=document.createElement("img");img.src=partPhotoUrl(n.partId);img.alt="";img.onerror=()=>{img.src=missingPicture;img.onerror=null};cover.replaceChildren(img,overlay)}
-    else fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=data.photos[0].url;img.alt="";cover.replaceChildren(img,overlay)}).catch(()=>{});
-    const stage=document.createElement("span");stage.className="assembly-tile-stage";stage.textContent=isPartNode(n)?"Part":n.stage==="integration"?"Integration":n.dependsOn?.length?"Dependent":"";
-    const button=document.createElement("button");button.type="button";button.className="assembly-tile-title";button.textContent=n.name;const openAssembly=()=>{if(isPartNode(n)){openTreePart(n);return}selected=n.id;expanded.add(n.parentId);render();history.pushState(null,"","#"+project+"/assembly/"+encodeURIComponent(n.id));notify();window.scrollTo(0,0)};button.onclick=openAssembly;cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" overview";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
-    tile.append(stage,button);
-    if(n.dependsOn?.length){const deps=document.createElement("p");deps.className="assembly-tile-deps";deps.textContent="Requires: "+n.dependsOn.map(id=>nodes.find(x=>x.id===id)?.name||"Unknown").join(", ");tile.append(deps)}
-    if(adminAuthenticated&&!isPartNode(n)){const edit=document.createElement("button");edit.type="button";edit.className="btn assembly-tile-edit";edit.textContent="Order";edit.onclick=async()=>{const options=nodes.filter(x=>x.id!==n.id);const help=options.map((x,i)=>(i+1)+". "+x.name).join("\\n");const answer=prompt("Enter prerequisite assembly numbers, separated by commas. Leave blank for independent work.\\n"+help,(n.dependsOn||[]).map(id=>options.findIndex(x=>x.id===id)+1).join(","));if(answer===null)return;const indices=answer.trim()?answer.split(",").map(v=>Number(v.trim())-1):[];if(indices.some(i=>!Number.isInteger(i)||i<0||i>=options.length)){status.textContent="Invalid prerequisite numbers.";return}const deps=[...new Set(indices.map(i=>options[i].id))];const stage=prompt("Work type: independent, sequential, or integration",n.stage||"independent");if(stage===null)return;try{await save(nodes.map(x=>x.id===n.id?{...x,dependsOn:deps,stage:stage.trim().toLowerCase()}:x))}catch(e){status.textContent=e.message}};tile.append(edit)}
+    const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);if(isPartNode(n)){const img=document.createElement("img");img.src=partPhotoUrl(n.partId);img.alt="";img.onerror=()=>{img.src=missingPicture;img.onerror=null};cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}
+    else fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=data.photos[0].url;img.alt="";cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}).catch(()=>{});
+    const openAssembly=()=>{if(isPartNode(n)){openTreePart(n);return}selected=n.id;expanded.add(n.parentId);render();history.pushState(null,"","#"+project+"/assembly/"+encodeURIComponent(n.id));notify();window.scrollTo(0,0)};cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" overview";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
+    // Photo-first overview tile: title stays in the image overlay.
+    // The old stage/dependency/footer controls are not shown beneath tiles.
     bomGrid.append(tile)
    }
    if(children.length){
@@ -1357,7 +1481,7 @@ function addWorkspaceEntry(container){
   const validSelection=()=>selected===null||nodes.some(n=>n.id===selected);
   const notify=()=>{assemblySelections[project]=selected;assemblyTreeSnapshots[project]={nodes:[...nodes],title};showAssemblyPage();renderTiles();view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));};
   let treeSavedRevision=null;
-  async function load(){try{const r=await fetch("/api/tree?project="+project),data=await r.json();if(!r.ok)throw Error(data.error);nodes=data.nodes||[];treeSavedRevision=data.revision??null;if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/(?:assembly|workspace)/([^/]+)$"));if(deepLink&&(deepLink[1]==="__root__"||nodes.some(n=>n.id===deepLink[1])))selected=deepLink[1]==="__root__"?null:deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
+  async function load(){void loadProjectMetadata();try{const r=await fetch("/api/tree?project="+project),data=await r.json();if(!r.ok)throw Error(data.error);nodes=data.nodes||[];treeSavedRevision=data.revision??null;if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/(?:assembly|workspace)/([^/]+)$"));if(deepLink&&(deepLink[1]==="__root__"||nodes.some(n=>n.id===deepLink[1])))selected=deepLink[1]==="__root__"?null:deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
   async function save(next){const r=await fetch("/api/tree?project="+project,{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({nodes:next,expectedRevision:treeSavedRevision})});const data=await r.json();if(!r.ok)throw Error(data.error||"Save failed");treeSavedRevision=data.revision??treeSavedRevision;nodes=next;render();notify()}
   // Tree ordering is the order of node records; moving a node keeps its permanent ID.
   const siblings=parent=>nodes.filter(n=>n.parentId===parent);
@@ -1407,12 +1531,125 @@ function addWorkspaceEntry(container){
    const button=document.createElement("button");button.type="button";button.className="btn assembly-move-button";button.textContent=label;button.title=title;button.setAttribute("aria-label",title);button.onclick=action;reorderControls.append(button)
   }
   controls.append(reorderControls);
-  function render(){nodesEl.replaceChildren();controls.classList.toggle("hide",!adminAuthenticated);const row=(node,depth)=>{
+  // Feature-tree context menu: right click (or the row's ⋯ button on touch).
+  // The existing add/rename/delete handlers remain the source of truth for
+  // assemblies; linked parts use their own safe tree-reference operations.
+  const treeMenu=document.createElement("div");
+  treeMenu.className="assembly-context-menu";
+  treeMenu.setAttribute("role","menu");
+  treeMenu.setAttribute("aria-label","Feature tree actions");
+  treeMenu.hidden=true;
+  document.body.append(treeMenu);
+  let menuTarget=null;
+  const closeTreeMenu=()=>{treeMenu.hidden=true;menuTarget=null;treeMenu.replaceChildren()};
+  document.addEventListener("pointerdown",event=>{if(!treeMenu.hidden&&!treeMenu.contains(event.target))closeTreeMenu()});
+  document.addEventListener("keydown",event=>{if(event.key==="Escape")closeTreeMenu()});
+  window.addEventListener("hashchange",closeTreeMenu);
+  const useTreeTarget=node=>{
+   // Context menu on a part acts on its containing assembly for Add actions.
+   selected=isPartNode(node)?node.parentId:(node?.id??null);
+  };
+  const renameTreeItem=async node=>{
+   if(!node)return;
+   if(!isPartNode(node)){
+    selected=node.id;
+    root.querySelector(".assembly-rename").click();
+    return;
+   }
+   const value=prompt("Rename part",node.name);
+   if(!value?.trim()||value.trim()===node.name)return;
+   const response=await fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"});
+   const data=await response.json();
+   if(!response.ok)throw Error(data.error||"Could not load part");
+   const part=(data.components||[]).find(item=>item.id===node.partId);
+   if(!part)throw Error("Linked part no longer exists.");
+   if(part.generatedFrom)throw Error("Calculated parts must be renamed through their source.");
+   const updated=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{
+    method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},
+    body:JSON.stringify({...part,name:value.trim()})
+   });
+   const result=await updated.json();
+   if(!updated.ok)throw Error(result.error||"Unable to rename part");
+   await save(nodes.map(item=>item.id===node.id?{...item,name:value.trim()}:item));
+  };
+  const deleteTreeItem=async node=>{
+   if(!node)return;
+   if(!isPartNode(node)){
+    selected=node.id;
+    root.querySelector(".assembly-remove").click();
+    return;
+   }
+   if(!confirm("Remove "+node.name+" from the feature tree? Its BOM part and details will be kept."))return;
+   await save(nodes.filter(item=>item.id!==node.id));
+   status.textContent="Removed tree link; BOM part retained.";
+  };
+  const openTreeMenu=(node,x,y,trigger)=>{
+   if(!adminAuthenticated)return;
+   closeTreeMenu();
+   menuTarget=node;
+   const isPart=isPartNode(node);
+   const addItem=(label,action,disabled=false)=>{
+    const button=document.createElement("button");
+    button.type="button";button.setAttribute("role","menuitem");
+    button.textContent=label;button.disabled=disabled;
+    button.onclick=async()=>{
+     closeTreeMenu();
+     try{await action()}catch(error){status.textContent=error.message}
+    };
+    treeMenu.append(button);
+   };
+   addItem("Add part",()=>{useTreeTarget(node);render();root.querySelector(".assembly-add-part").click()});
+   addItem("Add subassembly",()=>{useTreeTarget(node);render();root.querySelector(".assembly-add").click()});
+   const separator=document.createElement("div");separator.className="assembly-context-separator";separator.setAttribute("role","separator");treeMenu.append(separator);
+   addItem("Rename",()=>node?renameTreeItem(node):editProjectName.click());
+   addItem(isPart?"Remove from tree":"Delete",()=>deleteTreeItem(node),!node);
+   if(node){
+    const moveSeparator=document.createElement("div");
+    moveSeparator.className="assembly-context-separator";moveSeparator.setAttribute("role","separator");treeMenu.append(moveSeparator);
+    const moveButtons=[...root.querySelectorAll(".assembly-move-button")];
+    for(const [label,index] of [["Move up",0],["Move down",1],["Move to…",2]]){
+     addItem(label,()=>{
+      selected=node.id;
+      render();
+      moveButtons[index]?.click();
+     });
+    }
+   }
+   treeMenu.hidden=false;
+   treeMenu.style.left=Math.max(8,Math.min(x,window.innerWidth-treeMenu.offsetWidth-8))+"px";
+   treeMenu.style.top=Math.max(8,Math.min(y,window.innerHeight-treeMenu.offsetHeight-8))+"px";
+   if(trigger)treeMenu.dataset.target=trigger.textContent.trim();
+   treeMenu.querySelector('button:not([disabled])')?.focus();
+  };
+  function render(){nodesEl.replaceChildren();controls.classList.toggle("hide",!adminAuthenticated);projectActions.classList.toggle("hide",!adminAuthenticated);cardEdit.classList.toggle("hide",!adminAuthenticated);const row=(node,depth)=>{
    const id=node?.id??null,children=nodes.filter(n=>n.parentId===id),el=document.createElement("div");el.className="assembly-node"+(selected===id?" selected":"");el.style.paddingLeft=(depth*17+3)+"px";
    const expand=document.createElement("button");expand.type="button";expand.className="assembly-expander";expand.textContent=children.length?(expanded.has(id)?"▾":"▸"):" ";expand.setAttribute("aria-label",expanded.has(id)?"Collapse":"Expand");expand.onclick=()=>{expanded.has(id)?expanded.delete(id):expanded.add(id);render()};
    const name=document.createElement("button");name.type="button";name.className="assembly-name";name.textContent=node?(isPartNode(node)?"🔩  ":"📦  ")+node.name:"🟨  "+title;
    if(isPartNode(node)&&partRoute()===node.partId)el.classList.add("selected");name.onclick=()=>{if(isPartNode(node)){openTreePart(node);return}selected=id;history.pushState(null,"",id===null?"#"+project:"#"+project+"/assembly/"+encodeURIComponent(id));render();notify();window.scrollTo(0,0)};
    el.append(expand,name);
+   if(adminAuthenticated){
+    el.addEventListener("contextmenu",event=>{
+     event.preventDefault();event.stopPropagation();
+     openTreeMenu(node,event.clientX,event.clientY,name);
+    });
+    name.addEventListener("keydown",event=>{
+     if(event.key==="ContextMenu"||(event.shiftKey&&event.key==="F10")){
+      event.preventDefault();
+      const bounds=name.getBoundingClientRect();
+      openTreeMenu(node,bounds.left+14,bounds.bottom+4,name);
+     }
+    });
+    const more=document.createElement("button");
+    more.type="button";more.className="assembly-row-menu-trigger";
+    more.textContent="⋯";more.setAttribute("aria-label","Actions for "+(node?.name||title));
+    more.setAttribute("aria-haspopup","menu");
+    more.onclick=event=>{
+     event.stopPropagation();
+     const bounds=more.getBoundingClientRect();
+     openTreeMenu(node,bounds.right,bounds.bottom+4,more);
+    };
+    el.append(more);
+   }
    if(node&&adminAuthenticated){
     el.draggable=true;el.title="Drag to reorder or drop into another assembly";
     el.ondragstart=event=>{event.dataTransfer.setData("text/plain",node.id);event.dataTransfer.effectAllowed="move";el.classList.add("assembly-dragging")};
