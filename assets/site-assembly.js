@@ -41,7 +41,7 @@ function createUnifiedTile(){
   oldRootTile.replaceWith(newRootTile);
   if(rootStatus)main.insertBefore(rootStatus,newRootTile.nextSibling);
   // Shared image tile renderer for root projects and all subassemblies.
-  function makeAssemblyPhotoStage(photos,name,onAdd,onDelete){
+  function makeAssemblyPhotoStage(photos,name,onAdd,onDelete,allowEditing=false){
    let active=0;
    const stage=document.createElement("div");stage.className="assembly-photo-stage";
    const picture=document.createElement("img");picture.className="assembly-stage-image";picture.alt="";
@@ -52,7 +52,7 @@ function createUnifiedTile(){
    const actions=document.createElement("div");actions.className="assembly-photo-actions";
    const add=document.createElement("button");add.type="button";add.className="assembly-photo-icon";add.textContent="+";add.title="Add photo";add.setAttribute("aria-label","Add photo");add.onclick=onAdd;
    const del=document.createElement("button");del.type="button";del.className="assembly-photo-icon";del.textContent="×";del.title="Delete current photo";del.setAttribute("aria-label","Delete current photo");del.onclick=()=>onDelete(photos[active]);
-   if(adminAuthenticated)actions.append(add,del);
+   if(adminAuthenticated&&allowEditing)actions.append(add,del);
    const show=()=>{const p=photos[active];picture.hidden=!p;empty.hidden=!!p;if(p){picture.src=p.url;picture.alt=p.caption||name}else picture.removeAttribute("src");prev.hidden=next.hidden=photos.length<2;del.hidden=!p};
    prev.onclick=()=>{active=(active+photos.length-1)%photos.length;show()};
    next.onclick=()=>{active=(active+1)%photos.length;show()};
@@ -62,6 +62,14 @@ function createUnifiedTile(){
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
   workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New BOM-only part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
+  // Assembly photo management lives in the workspace, not the read-only overview.
+  const workspacePhotoEditor=document.createElement("article");
+  workspacePhotoEditor.className="workspace-photos-editor";
+  workspacePhotoEditor.innerHTML='<h2>Assembly photos</h2><p class="muted">Add or remove photos of this assembly here.</p><div class="assembly-unified-photo"><div class="assembly-photos"></div></div><div class="assembly-photo-admin hide"><div class="assembly-photo-zone"><button type="button" class="assembly-photo-pick">+ Add photo</button><input class="assembly-photo-input" type="file" accept="image/*,.heic,.heif" hidden><span class="assembly-photo-drop-hint">or drop an image here</span></div><label class="assembly-photo-caption-label">Caption <input class="field assembly-photo-caption" placeholder="Photo description"></label></div><p class="workspace-photo-status muted" role="status"></p>';
+  workspace.querySelector(".workspace-panels").prepend(workspacePhotoEditor);
+  const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>selected,
+   workspacePhotoEditor.querySelector(".workspace-photo-status"),true);
+
   // Each saved BOM part has its own independent instructions document.
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
   partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article class="recipe-instructions"><h2>Build instructions</h2></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
@@ -1170,7 +1178,7 @@ function showAssemblyPage(){
    const bom=main.querySelector(".component-section")||detail.querySelector(".component-section")||workspace.querySelector(".component-section");
    if(bom){workspace.querySelector(".workspace-bom-mount").append(bom)}
    const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);if(inPart){void showPartWorkspace();return;}
-   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});void renderWorkspaceParts();if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
+   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();void workspacePhotoController.refresh();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});void renderWorkspaceParts();if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
@@ -1222,7 +1230,7 @@ function bindDescriptionSave(container,getId,message){
   bindDescriptionSave(detail,()=>selected,detailStatus);
   // One controller for every project tile, including the root and nested assemblies.
   // ── Photos and uploads ──
-function createPhotoController(tile, getAssemblyId, statusElement){
+function createPhotoController(tile, getAssemblyId, statusElement, allowEditing=false){
    const gallery=tile.querySelector(".assembly-photos");
    const admin=tile.querySelector(".assembly-photo-admin");
    const input=tile.querySelector(".assembly-photo-input");
@@ -1234,7 +1242,7 @@ function createPhotoController(tile, getAssemblyId, statusElement){
    const currentId=()=>getAssemblyId();
    async function refresh(){
     const id=currentId();
-    admin.classList.toggle("hide",!adminAuthenticated);
+    admin.classList.toggle("hide",!adminAuthenticated||!allowEditing);
     const url="/api/photos?project="+encodeURIComponent(project)+(id?"&assembly="+encodeURIComponent(id):"");
     try{
      const r=await fetch(url),data=await r.json();
@@ -1249,7 +1257,7 @@ function createPhotoController(tile, getAssemblyId, statusElement){
        if(!r.ok)throw Error("Delete failed (HTTP "+r.status+")");
        await refresh();
       }catch(e){report(e.message)}
-     }));
+     },allowEditing));
     }catch(e){report(e.message)}
    }
    async function upload(file){
@@ -1275,7 +1283,7 @@ function createPhotoController(tile, getAssemblyId, statusElement){
    input.onchange=()=>upload(input.files?.[0]);
    // The zone is hidden in the modern photo-first layout; bind drops to the visible stage.
    const dropTarget=tile.querySelector(".assembly-unified-photo");
-   if(dropTarget){
+   if(dropTarget&&allowEditing){
     dropTarget.addEventListener("dragover",event=>{if(!adminAuthenticated||!event.dataTransfer.types.includes("Files"))return;event.preventDefault();event.stopPropagation();event.dataTransfer.dropEffect="copy";dropTarget.classList.add("is-dragover")});
     dropTarget.addEventListener("dragleave",event=>{if(!dropTarget.contains(event.relatedTarget))dropTarget.classList.remove("is-dragover")});
     dropTarget.addEventListener("drop",event=>{if(!adminAuthenticated)return;event.preventDefault();event.stopPropagation();dropTarget.classList.remove("is-dragover");void upload(event.dataTransfer.files?.[0])});
@@ -1322,7 +1330,7 @@ function addWorkspaceEntry(container){
     tile.append(stage,button);
     if(n.dependsOn?.length){const deps=document.createElement("p");deps.className="assembly-tile-deps";deps.textContent="Requires: "+n.dependsOn.map(id=>nodes.find(x=>x.id===id)?.name||"Unknown").join(", ");tile.append(deps)}
     if(adminAuthenticated&&!isPartNode(n)){const edit=document.createElement("button");edit.type="button";edit.className="btn assembly-tile-edit";edit.textContent="Order";edit.onclick=async()=>{const options=nodes.filter(x=>x.id!==n.id);const help=options.map((x,i)=>(i+1)+". "+x.name).join("\\n");const answer=prompt("Enter prerequisite assembly numbers, separated by commas. Leave blank for independent work.\\n"+help,(n.dependsOn||[]).map(id=>options.findIndex(x=>x.id===id)+1).join(","));if(answer===null)return;const indices=answer.trim()?answer.split(",").map(v=>Number(v.trim())-1):[];if(indices.some(i=>!Number.isInteger(i)||i<0||i>=options.length)){status.textContent="Invalid prerequisite numbers.";return}const deps=[...new Set(indices.map(i=>options[i].id))];const stage=prompt("Work type: independent, sequential, or integration",n.stage||"independent");if(stage===null)return;try{await save(nodes.map(x=>x.id===n.id?{...x,dependsOn:deps,stage:stage.trim().toLowerCase()}:x))}catch(e){status.textContent=e.message}};tile.append(edit)}
-    if(adminAuthenticated&&!isPartNode(n)){
+    if(false&&adminAuthenticated&&!isPartNode(n)){
      const pick=document.createElement("button");pick.type="button";pick.className="btn assembly-tile-photo-button";pick.textContent="＋ Photo";pick.title="Upload a photo to "+n.name;
      const input=document.createElement("input");input.type="file";input.accept="image/*,.heic,.heif";input.hidden=true;
      pick.onclick=()=>input.click();
