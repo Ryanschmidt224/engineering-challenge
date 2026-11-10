@@ -22,8 +22,8 @@ export async function handleRecipeFiles(request,env){
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  const url=new URL(request.url);
  if(request.method==="POST"){
-  if(!await canEditProject(request,env,project))return json({error:"Administrator login required"},401);
   const project=url.searchParams.get("project");
+  if(!await canEditProject(request,env,project))return json({error:"Project owner login required"},401);
   if(!await projectAllowed(env,project,request))return json({error:"Invalid project"},400);
   let filename;
   try{filename=decodeURIComponent(request.headers.get("x-file-name")||"")}catch{return json({error:"Invalid filename"},400)}
