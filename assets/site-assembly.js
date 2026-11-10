@@ -1309,9 +1309,9 @@ function addWorkspaceEntry(container){
    target.replaceChildren();const children=nodes.filter(n=>n.parentId===selected);
    
    if(!children.length)return;
-   const grid=document.createElement("div");grid.className="assembly-tile-grid";
    const bomGrid=document.createElement("div");bomGrid.className="assembly-tile-grid";
-   const bomNodes=children.filter(isPartNode);
+   const partCount=children.filter(isPartNode).length;
+   const subassemblyCount=children.length-partCount;
    const sorted=[...children];
    for(const n of sorted){
     const tile=document.createElement("article");tile.className="assembly-tile";
@@ -1342,19 +1342,18 @@ function addWorkspaceEntry(container){
      };
      tile.append(pick,input);
     }
-    (isPartNode(n)?bomGrid:grid).append(tile)
+    bomGrid.append(tile)
    }
-   if(grid.childElementCount)target.append(grid);
-   if(bomNodes.length){
+   if(children.length){
     const section=document.createElement("section");section.className="assembly-bom-parts-group";
-    section.setAttribute("aria-label","Bill of materials parts");
+    section.setAttribute("aria-label","Bill of materials parts and subassemblies");
     const heading=document.createElement("div");heading.className="assembly-bom-parts-heading";
-    const title=document.createElement("h2");title.textContent="Bill of Materials — Parts";
+    const title=document.createElement("h2");title.textContent="Bill of Materials";
     const count=document.createElement("span");count.className="assembly-bom-parts-count";
-    count.textContent=bomNodes.length+" "+(bomNodes.length===1?"part":"parts");
+    count.textContent=[partCount?partCount+" "+(partCount===1?"part":"parts"):"",subassemblyCount?subassemblyCount+" "+(subassemblyCount===1?"subassembly":"subassemblies"):""].filter(Boolean).join(" · ");
     heading.append(title,count);
     const description=document.createElement("p");description.className="assembly-bom-parts-description";
-    description.textContent="Parts belonging to this assembly";
+    description.textContent="Parts and subassemblies belonging to this assembly";
     section.append(heading,description,bomGrid);
     target.append(section);
    }
