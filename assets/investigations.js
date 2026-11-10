@@ -144,12 +144,12 @@
    const disclosure=make("details","investigation-collapse");
    disclosure.open=openSections.has(sectionKey);
    const summary=make("summary","investigation-collapse-heading");
-   const title=make(compact?"h4":"h2","",compact?"Revisions, Failures & Lessons Learned":"Revisions, Failures & Lessons Learned");
-   const toggleLabel=make("span","investigation-toggle-label",disclosure.open?"Minimize details":"Show details");
+   const title=make(compact?"h4":"h2","",compact?"Revisions & lessons":"Revisions, Failures & Lessons Learned");
+   const toggleLabel=make("span","investigation-toggle-label",disclosure.open?(compact?"Hide":"Minimize details"):(compact?"Show":"Show details"));
    summary.append(title,toggleLabel);
    disclosure.append(summary);
    disclosure.addEventListener("toggle",()=>{
-    toggleLabel.textContent=disclosure.open?"Minimize details":"Show details";
+    toggleLabel.textContent=disclosure.open?(compact?"Hide":"Minimize details"):(compact?"Show":"Show details");
     if(disclosure.open)openSections.add(sectionKey);else openSections.delete(sectionKey);
    });
    const content=make("div","investigation-collapse-content");
