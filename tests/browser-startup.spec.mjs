@@ -432,8 +432,68 @@ test("step editor keeps photo attachments with their note and saves from either 
  await expect(card.locator(".recipe-step-edit-toggle")).toHaveText("Edit");
  const saved=await page.evaluate(()=>window.lastRecipeSave?.[0]);
  expect(saved.photoAfterNote).toEqual({"recipe-files/launcher/11111111-1111-4111-8111-111111111111.png":0});
+ expect(saved.noteIds).toHaveLength(2);
+ expect(saved.photoNoteIds["recipe-files/launcher/11111111-1111-4111-8111-111111111111.png"]).toBe(saved.noteIds[0]);
+ await page.evaluate(()=>window.testRecipe.setData({recipe:window.lastRecipeSave}));
  await expect(card.locator(".recipe-step-detail .recipe-reader-photo")).toHaveCount(1);
  const content=await card.locator(".recipe-reader-text").innerText();
  expect(content.indexOf("Connect the meter")).toBeLessThan(content.indexOf("Record the reading"));
+ expect(errors).toEqual([]);
+});
+
+test("in-flight uploads block saving and a failed save preserves the editor",async({page})=>{
+ let releaseUpload;
+ const uploadGate=new Promise(resolve=>{releaseUpload=resolve});
+ const errors=[];
+ page.on("pageerror",error=>errors.push(error.message));
+ await page.route("**/api/**",async route=>{
+  const pathname=new URL(route.request().url()).pathname;
+  if(pathname==="/api/recipe-files"&&route.request().method()==="POST"){
+   await uploadGate;
+   return route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
+    id:"recipe-files/launcher/22222222-2222-4222-8222-222222222222.png"
+   })});
+  }
+  return route.fulfill({status:200,contentType:"application/json",body:"{}"});
+ });
+ await page.goto("/");
+ await page.evaluate(()=>{
+  const article=document.createElement("article");
+  article.className="recipe-upload-guard";
+  article.innerHTML="<h2>Work instructions</h2>";
+  document.body.append(article);
+  window.saveAttempts=0;
+  window.guardedRecipe=window.BSRecipes.mount(article,{
+   project:"launcher",admin:()=>true,
+   onSave:async()=>{
+    window.saveAttempts++;
+    if(window.saveAttempts===1)throw Error("Network unavailable");
+    window.successfulRecipe=window.guardedRecipe.getData();
+   }
+  });
+  window.guardedRecipe.setData({recipe:[{
+   id:"guard-step",title:"Inspect",standard:"Check voltage",
+   notes:["Test note"],photos:[],photoNames:{}
+  }]});
+ });
+ const card=page.locator(".recipe-upload-guard");
+ await card.locator(".recipe-step-edit-toggle").click();
+ const chooser=page.waitForEvent("filechooser");
+ await card.getByRole("button",{name:"Add photo after note 1"}).click();
+ await (await chooser).setFiles({name:"meter.png",mimeType:"image/png",buffer:Buffer.from("sample")});
+ await expect(card.locator(".recipe-feedback")).toContainText("Uploading attachment");
+ await card.locator(".recipe-save-step-bottom").click();
+ await expect(card.locator(".recipe-feedback")).toContainText("Wait for photo uploads");
+ expect(await page.evaluate(()=>window.saveAttempts)).toBe(0);
+ releaseUpload();
+ await expect(card.locator(".recipe-step-note .recipe-step-photo")).toHaveCount(1);
+ await card.locator(".recipe-save-step-bottom").click();
+ await expect(card.locator(".recipe-feedback")).toContainText("Network unavailable");
+ await expect(card.locator(".recipe-step-edit-toggle")).toHaveText("Save");
+ await expect(card.locator(".recipe-step-note textarea")).toHaveValue("Test note");
+ await card.locator(".recipe-save-step-bottom").click();
+ await expect(card.locator(".recipe-step-edit-toggle")).toHaveText("Edit");
+ const saved=await page.evaluate(()=>window.successfulRecipe?.[0]);
+ expect(saved.photoNoteIds[saved.photos[0]]).toBe(saved.noteIds[0]);
  expect(errors).toEqual([]);
 });
