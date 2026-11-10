@@ -61,3 +61,5 @@ export async function handleAccounts(request,env){
  if(user.disabled||!equal(await passwordHash(password,user.salt),user.passwordHash))return json({error:"Invalid email or password"},401);
  return json({user:{id:user.id,email,displayName:user.displayName}},200,{"set-cookie":cookie(await createSession(user,env),30*86400)});
 }
+
+export async function onRequest({request,env}){return handleAccounts(request,env)}
