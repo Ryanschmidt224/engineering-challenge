@@ -389,3 +389,51 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  expect(radius).toBeGreaterThanOrEqual(8);
  expect(errors).toEqual([]);
 });
+
+
+test("step editor keeps photo attachments with their note and saves from either end",async({page})=>{
+ const errors=[];
+ page.on("pageerror",error=>errors.push(error.message));
+ await page.route("**/api/**",route=>{
+  const pathname=new URL(route.request().url()).pathname;
+  if(pathname==="/api/recipe-files"&&route.request().method()==="POST"){
+   return route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({id:"recipe-files/launcher/11111111-1111-4111-8111-111111111111.png"})});
+  }
+  return route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(pathname==="/api/auth"?{authenticated:false,isAdmin:false}:{})});
+ });
+ await page.goto("/");
+ await page.evaluate(()=>{
+  const article=document.createElement("article");
+  article.className="recipe-test-article";
+  article.innerHTML="<h2>Work instructions</h2>";
+  document.body.append(article);
+  window.testRecipe=window.BSRecipes.mount(article,{
+   project:"launcher",admin:()=>true,
+   onSave:async()=>{window.lastRecipeSave=window.testRecipe.getData()}
+  });
+  window.testRecipe.setData({recipe:[
+   {id:"test-step",title:"Measure",standard:"Verify resistance",
+    notes:["Connect the meter","Record the reading"],photos:[],photoNames:{}}
+  ]});
+ });
+ const card=page.locator(".recipe-test-article");
+ await card.locator(".recipe-step-edit-toggle").click();
+ await expect(card.locator(".recipe-step-edit-toggle")).toHaveText("Save");
+ await expect(card.locator(".recipe-save-step-bottom")).toHaveText("Save");
+ await expect(card.getByRole("button",{name:"Duplicate"})).toHaveCount(0);
+ const notes=card.locator(".recipe-step-note");
+ await expect(notes).toHaveCount(2);
+ const chooser=page.waitForEvent("filechooser");
+ await notes.nth(0).getByRole("button",{name:"Add photo after note 1"}).click();
+ await (await chooser).setFiles({name:"measurement.png",mimeType:"image/png",buffer:Buffer.from("sample")});
+ await expect(notes.nth(0).locator(".recipe-step-photo")).toHaveCount(1);
+ await expect(notes.nth(1).locator(".recipe-step-photo")).toHaveCount(0);
+ await card.locator(".recipe-save-step-bottom").click();
+ await expect(card.locator(".recipe-step-edit-toggle")).toHaveText("Edit");
+ const saved=await page.evaluate(()=>window.lastRecipeSave?.[0]);
+ expect(saved.photoAfterNote).toEqual({"recipe-files/launcher/11111111-1111-4111-8111-111111111111.png":0});
+ await expect(card.locator(".recipe-step-detail .recipe-reader-photo")).toHaveCount(1);
+ const content=await card.locator(".recipe-reader-text").innerText();
+ expect(content.indexOf("Connect the meter")).toBeLessThan(content.indexOf("Record the reading"));
+ expect(errors).toEqual([]);
+});
