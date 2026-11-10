@@ -88,11 +88,11 @@ export async function onRequest({request,env}){
   }else{
    if(item.archived)return json({error:"Restore the project before changing settings"},409);
    if(input.visibility!==undefined){
-    if(!["private","public","unlisted"].includes(input.visibility))return json({error:"Invalid visibility"},400);
+    if(!["private","public"].includes(input.visibility))return json({error:"Invalid visibility"},400);
     changed.visibility=input.visibility;
    }
    if(input.editMode!==undefined){
-    if(!["locked","approval","collaborative"].includes(input.editMode))return json({error:"Invalid editing mode"},400);
+    if(!["locked","approval"].includes(input.editMode))return json({error:"Invalid editing mode"},400);
     changed.editMode=input.editMode;
    }
    if(input.name!==undefined){if(typeof input.name!=="string"||!input.name.trim()||input.name.length>100)return json({error:"Invalid project name"},400);changed.name=input.name.trim()}
