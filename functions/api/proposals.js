@@ -73,3 +73,5 @@ export async function handleProposals(request,env){
  if(!await save(env,project,data.entries,data.etag))return json({error:"Change was applied, but review log could not be updated. Check before retrying."},409);
  return json({proposal});
 }
+
+export async function onRequest({request,env}){return handleProposals(request,env)}
