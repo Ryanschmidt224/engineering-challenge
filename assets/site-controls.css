@@ -1036,3 +1036,20 @@
    Flex order must match the DOM placement or this panel jumps to the top. */
 :is(#launcher,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.investigations-panel{order:4}
 :is(#launcher,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-actions{order:5}
+
+
+/* Private account and personal project management (no public data toggled by CSS). */
+.project-owner-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.project-account-dialog,.project-create-dialog,.project-manage-dialog{background:var(--color-surface);color:var(--color-text);border:1px solid var(--color-border);border-radius:14px;padding:22px;width:min(510px,calc(100vw - 32px));max-height:85vh;overflow:auto}
+.project-account-dialog::backdrop,.project-create-dialog::backdrop,.project-manage-dialog::backdrop{background:color-mix(in srgb,var(--color-media-backdrop) 70%,transparent)}
+.project-account-form,.project-create-form,.project-manage-form{display:grid;gap:12px}
+.project-account-form h2,.project-create-form h2,.project-manage-form h2{font-size:1.35rem;margin:0}
+.project-account-form .field,.project-create-form .field,.project-manage-form .field{display:block;margin:5px 0 0}
+.project-account-buttons{gap:8px}
+.project-personal-art{display:grid;place-items:center;font-size:5rem;font-weight:400;color:var(--color-accent);background:var(--color-surface-muted)}
+.project-personal-card{display:flex;flex-direction:column}
+.project-personal-card .project-link{height:auto;flex:1}
+.project-card-actions{display:flex;justify-content:flex-end;gap:8px;margin:0 16px 14px}
+.project-card-actions .btn{padding:7px 10px;font-size:.8rem;margin:0}
+.project-card[hidden]{display:none!important}
+@media(max-width:600px){.project-owner-actions{width:100%}.project-owner-actions .btn{font-size:.79rem}}
