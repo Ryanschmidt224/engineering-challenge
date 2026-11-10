@@ -1,4 +1,4 @@
-import {projectAllowed,VALID_PROJECT_ID} from "./projects.js";
+import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
 
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
@@ -40,7 +40,7 @@ export async function handleDrawings(request,env){
  if(!env.PHOTOS)return json({error:"Drawing storage is unavailable"},503);
  const url=new URL(request.url);
  const project=url.searchParams.get("project"),type=url.searchParams.get("type"),id=url.searchParams.get("id");
- if(!await projectAllowed(env,project)||!["assembly","part"].includes(type)||!(id==="__root__"&&type==="assembly"||validId(id)))return json({error:"Invalid drawing location"},400);
+ if(!await projectAllowed(env,project,request)||!["assembly","part"].includes(type)||!(id==="__root__"&&type==="assembly"||validId(id)))return json({error:"Invalid drawing location"},400);
  if(!await validOwner(env,project,type,id))return json({error:"Assembly or part not found"},404);
  const file=url.searchParams.get("file");
  if(file!==null&&!validUuid(file))return json({error:"Invalid drawing ID"},400);
@@ -62,7 +62,7 @@ export async function handleDrawings(request,env){
   })),truncated:listed.truncated});
  }
  if(!["POST","DELETE"].includes(request.method))return json({error:"Method not allowed"},405);
- if(!await isAdmin(request,env))return json({error:"Administrator login required"},401);
+ if(!await canEditProject(request,env,project))return json({error:"Administrator login required"},401);
  if(request.method==="DELETE"){
   if(file===null)return json({error:"Select a drawing to delete"},400);
   if(!await env.PHOTOS.head(objectKey))return json({error:"Drawing not found"},404);
