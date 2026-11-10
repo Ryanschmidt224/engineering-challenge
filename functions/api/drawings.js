@@ -1,6 +1,6 @@
+import {projectAllowed,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
 
-const projects=new Set(["launcher","linear","robot"]);
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const validId=value=>typeof value==="string"&&/^[a-zA-Z0-9-]{1,80}$/.test(value);
 const validUuid=value=>typeof value==="string"&&/^[a-f0-9-]{36}$/i.test(value);
@@ -40,7 +40,7 @@ export async function handleDrawings(request,env){
  if(!env.PHOTOS)return json({error:"Drawing storage is unavailable"},503);
  const url=new URL(request.url);
  const project=url.searchParams.get("project"),type=url.searchParams.get("type"),id=url.searchParams.get("id");
- if(!projects.has(project)||!["assembly","part"].includes(type)||!(id==="__root__"&&type==="assembly"||validId(id)))return json({error:"Invalid drawing location"},400);
+ if(!await projectAllowed(env,project)||!["assembly","part"].includes(type)||!(id==="__root__"&&type==="assembly"||validId(id)))return json({error:"Invalid drawing location"},400);
  if(!await validOwner(env,project,type,id))return json({error:"Assembly or part not found"},404);
  const file=url.searchParams.get("file");
  if(file!==null&&!validUuid(file))return json({error:"Invalid drawing ID"},400);
