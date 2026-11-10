@@ -943,7 +943,7 @@ function setupAssemblyTrees(){
     container.append(count);
     const stack=document.createElement("div");stack.className="bom-part-stack";
     renderAssembly(assemblyId,stack,0);
-    if(!stack.childElementCount){const empty=document.createElement("p");empty.className="bom-empty";empty.textContent=shopItems.length?"No purchased components in this assembly. Standard materials appear below.":"No parts yet. Use + New BOM-only part to add one.";stack.append(empty)}
+    if(!stack.childElementCount){const empty=document.createElement("p");empty.className="bom-empty";empty.textContent=shopItems.length?"No purchased components in this assembly. Standard materials appear below.":"No parts yet. Use + New part to add one.";stack.append(empty)}
     container.append(stack);
     const shopSection=shopMaterialsPanel(shopItems);if(shopSection)container.append(shopSection);
    }catch(error){
@@ -1209,7 +1209,7 @@ function setupAssemblyTrees(){
    }catch(error){bomReport("Could not save part: "+error.message);return false}
    finally{savingBom=false;if(saveButton)saveButton.disabled=false}
   }
-  // BOM-only items share the library/manual/wire wizard, but never create a feature-tree node.
+  // BOM creation uses the shared part picker and creates a hideable tree occurrence.
   bomPanel.querySelector(".workspace-new-part").onclick=async()=>{
    if(savingBom)return;
    if(!window.BSLibraryPartPicker){bomReport("Part library unavailable. Refresh and try again.");return}
@@ -1639,7 +1639,7 @@ function setupAssemblyTrees(){
    treeMenu.querySelector('button:not([disabled])')?.focus();
   };
   const treeVisibilityButton=document.createElement("button");treeVisibilityButton.type="button";treeVisibilityButton.className="btn assembly-hidden-toggle";
-  root.insertBefore(treeVisibilityButton,nodesEl);
+  nodesEl.parentNode.insertBefore(treeVisibilityButton,nodesEl);
   treeVisibilityButton.onclick=()=>{showHiddenTreeItems=!showHiddenTreeItems;render()};
   function render(){nodesEl.replaceChildren();const hiddenCount=nodes.filter(isHiddenPart).length;
    treeVisibilityButton.textContent=(showHiddenTreeItems?"Hide":"Show")+" hidden items ("+hiddenCount+")";treeVisibilityButton.hidden=hiddenCount===0;
