@@ -2574,3 +2574,17 @@
 .investigation-snapshot-content p{margin:0;color:#e7f6fb;overflow-wrap:anywhere}
 .investigation-snapshot-step{padding:10px 13px;border-left:3px solid #69c4d2;background:#0f2731;border-radius:5px}
 .investigation-heading .btn{font-size:.82rem}
+
+
+/* Assembly overview: BOM parts are a separate, clearly labeled group of child tiles. */
+.assembly-workflow .assembly-bom-parts-group{
+ width:100%;max-width:1100px;margin:22px 0 8px;padding:18px;
+ border:1px solid #486b79;border-radius:12px;background:#142a36;
+}
+.assembly-bom-parts-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.assembly-workflow .assembly-bom-parts-heading h2{margin:0;color:#effaff;font-size:1.15rem;line-height:1.35}
+.assembly-bom-parts-count{display:inline-flex;align-items:center;color:#c0e4eb;background:#213f4c;border:1px solid #4e7481;border-radius:16px;padding:3px 11px;font-size:.8rem}
+.assembly-bom-parts-description{margin:4px 0 15px;color:#b4ccd5;font-size:.85rem}
+.assembly-bom-parts-group .assembly-tile-grid{margin:0}
+.assembly-bom-parts-group .assembly-tile{background:#112532;border-color:#426371}
+@media(max-width:650px){.assembly-workflow .assembly-bom-parts-group{padding:12px}}
