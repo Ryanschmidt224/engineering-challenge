@@ -1,5 +1,5 @@
+import {projectAllowed,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
-const projects=new Set(["launcher","linear","robot","buck","motorlab","coiltest"]);
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});
 const emptyResources=()=>({tools:[],calculators:[],parts:[]});
 const validateResources=input=>{
@@ -31,7 +31,7 @@ const validateRecipe=input=>{
   const kind=["action","inspection","measurement","explanation"].includes(step.kind)?step.kind:"action";
   const notes=step.notes??[],photos=step.photos??[];
   if(!Array.isArray(notes)||notes.length>40||notes.some(n=>typeof n!=="string"||n.length>4000)||
-     !Array.isArray(photos)||photos.length>30||photos.some(p=>typeof p!=="string"||! /^(?:(?:launcher|linear|robot|buck|motorlab|coiltest)\/[0-9a-f-]{36}\.(?:jpg|png|webp|gif|heic|heif)|recipe-files\/(?:launcher|linear|robot|buck|motorlab|coiltest)\/[0-9a-f-]{36}\.(?:jpg|jpeg|png|webp|gif|heic|heif|pdf|dwg|dxf|sldprt|sldasm|step|stp|stl|igs|iges|x_t|x_b|obj|3mf|doc|docx|xls|xlsx|txt|csv|zip))$/.test(p)))return null;
+     !Array.isArray(photos)||photos.length>30||photos.some(p=>typeof p!=="string"||! /^(?:(?:launcher|linear|robot|buck|motorlab|coiltest|p[a-f0-9]{32})\/[0-9a-f-]{36}\.(?:jpg|png|webp|gif|heic|heif)|recipe-files\/(?:launcher|linear|robot|buck|motorlab|coiltest|p[a-f0-9]{32})\/[0-9a-f-]{36}\.(?:jpg|jpeg|png|webp|gif|heic|heif|pdf|dwg|dxf|sldprt|sldasm|step|stp|stl|igs|iges|x_t|x_b|obj|3mf|doc|docx|xls|xlsx|txt|csv|zip))$/.test(p)))return null;
   const photoNames=step.photoNames??{};
   if(!photoNames||typeof photoNames!=="object"||Array.isArray(photoNames))return null;
   const names={};
@@ -71,7 +71,7 @@ const validateRecipe=input=>{
 };
 export async function handleWorkspace(request,env){
  const u=new URL(request.url),project=u.searchParams.get("project"),assembly=u.searchParams.get("assembly"),part=u.searchParams.get("part");
- if(!projects.has(project))return json({error:"Invalid project"},400);
+ if(!await projectAllowed(env,project))return json({error:"Invalid project"},400);
  if(part&&assembly)return json({error:"Specify a part or an assembly, not both"},400);
  if(part){
   if(!/^[0-9a-f-]{36}$/i.test(part))return json({error:"Invalid part"},400);
