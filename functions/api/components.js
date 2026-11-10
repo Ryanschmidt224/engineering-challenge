@@ -275,9 +275,9 @@ export async function handleComponentPhoto(request,env){
 }
 export async function handleExtract(request,env){
  if(request.method!=="POST")return json({error:"Method not allowed"},405);
- if(!await authorized(request,env))return json({error:"Administrator token required"},401);
- if(!env.OPENAI_API_KEY)return json({error:"AI extraction is not configured: add an OPENAI_API_KEY secret to this Cloudflare Worker. You can still add components manually."},503);
  const body=await request.json().catch(()=>null);
+ if(!(await authorized(request,env))&&!(typeof body?.project==="string"&&await canEditProject(request,env,body.project)))return json({error:"Project owner login required"},401);
+ if(!env.OPENAI_API_KEY)return json({error:"AI extraction is not configured: add an OPENAI_API_KEY secret to this Cloudflare Worker. You can still add components manually."},503);
  let description=typeof body?.description==="string"?body.description.trim():"";
  let imageUrl=null,pageSnapshot=null,sourceUrl=null;
  const requestedProject=typeof body?.project==="string"&&await projectAllowed(env,body.project,request)?body.project:null;
