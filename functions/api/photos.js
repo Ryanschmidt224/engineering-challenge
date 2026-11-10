@@ -2,7 +2,7 @@ import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
 const TYPES={"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif","image/heic":"heic","image/heif":"heif"};
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
-const authorized=isAdmin;
+const authorized=async(request,env)=>{const u=new URL(request.url);let project=u.searchParams.get("project")||request.headers.get("x-photo-project");if(!project&&request.method==="DELETE")project=(u.searchParams.get("id")||"").split("/")[0];return project?canEditProject(request,env,project):false};
 // Legacy work-instruction photos were uploaded to the same root gallery path.
 // Exclude photos referenced by saved recipes without moving or deleting any R2 objects.
 async function recipePhotoReferences(bucket,project){
