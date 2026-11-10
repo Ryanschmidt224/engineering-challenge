@@ -1,8 +1,8 @@
+import {projectAllowed,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
-const projects=new Set(["launcher","linear","robot","buck","motorlab","coiltest"]);
 const uuid=/^[a-f0-9-]{36}$/i;
 const idPattern=/^[a-zA-Z0-9_-]{1,80}$/;
-const filePattern=/^recipe-files\/(?:launcher|linear|robot|buck|motorlab|coiltest)\/[a-f0-9-]{36}\.(?:jpg|jpeg|png|webp|gif|heic|heif|pdf|dwg|dxf|sldprt|sldasm|step|stp|stl|igs|iges|x_t|x_b|obj|3mf|doc|docx|xls|xlsx|txt|csv|zip)$/;
+const filePattern=/^recipe-files\/(?:launcher|linear|robot|buck|motorlab|coiltest|p[a-f0-9]{32})\/[a-f0-9-]{36}\.(?:jpg|jpeg|png|webp|gif|heic|heif|pdf|dwg|dxf|sldprt|sldasm|step|stp|stl|igs|iges|x_t|x_b|obj|3mf|doc|docx|xls|xlsx|txt|csv|zip)$/;
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const validText=(v,max)=>typeof v==="string"&&v.length<=max;
 const statuses=new Set(["investigating","resolved","unresolved"]);
@@ -18,7 +18,7 @@ const normalizedEntry=(entry)=>({id:crypto.randomUUID(),type:entry.type,text:ent
  files:[...new Set(entry.files||[])],fileName:trim(entry.fileName,120),createdAt:new Date().toISOString()});
 export async function handleInvestigations(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project");
- if(!projects.has(project))return json({error:"Invalid project"},400);
+ if(!await projectAllowed(env,project))return json({error:"Invalid project"},400);
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  if(request.method==="GET"&&url.searchParams.has("thumbnail")){
   const requested=url.searchParams.get("thumbnail")||"";
