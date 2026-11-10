@@ -8,7 +8,8 @@ const assemblySelections={};
 // Public tree snapshots let each assembly BOM roll up all descendant parts.
 const assemblyTreeSnapshots={};
 function setupAssemblyTrees(){
- document.querySelectorAll("[data-assembly-tree]").forEach(root=>{
+ document.querySelectorAll("[data-assembly-tree]:not([data-tree-ready])").forEach(root=>{
+  root.dataset.treeReady="true";
   const project=root.dataset.assemblyTree,view=document.getElementById(project),nodesEl=root.querySelector(".assembly-tree-nodes"),status=root.querySelector(".assembly-tree-status"),controls=root.querySelector(".assembly-edit");
   let title=view.querySelector(".assembly-main h1")?.textContent||"Project";let nodes=[],selected=null,expanded=new Set([null]);
   let showHiddenTreeItems=false,showTreeTools=false;const partVisibility=new Map(),partTools=new Map();
