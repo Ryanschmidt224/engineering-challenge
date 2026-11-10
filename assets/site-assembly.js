@@ -65,10 +65,25 @@ function createUnifiedTile(){
   // Assembly photo management lives in the workspace, not the read-only overview.
   const workspacePhotoEditor=document.createElement("article");
   workspacePhotoEditor.className="workspace-photos-editor";
-  workspacePhotoEditor.innerHTML='<h2>Assembly photos</h2><p class="muted">Add or remove photos of this assembly here.</p><div class="assembly-unified-photo"><div class="assembly-photos"></div></div><div class="assembly-photo-admin hide"><div class="assembly-photo-zone"><button type="button" class="assembly-photo-pick">+ Add photo</button><input class="assembly-photo-input" type="file" accept="image/*,.heic,.heif" hidden><span class="assembly-photo-drop-hint">or drop an image here</span></div><label class="assembly-photo-caption-label">Caption <input class="field assembly-photo-caption" placeholder="Photo description"></label></div><p class="workspace-photo-status muted" role="status"></p>';
+  workspacePhotoEditor.innerHTML='<div class="workspace-photo-compact"><div class="assembly-unified-photo"><div class="assembly-photos"></div></div><div class="workspace-photo-meta"><span class="workspace-photo-title">Assembly image</span><button type="button" class="btn workspace-photo-edit-toggle" aria-expanded="false" aria-controls="workspace-photo-tools-'+project+'">Edit image</button></div></div><div id="workspace-photo-tools-'+project+'" class="workspace-photo-tools" hidden><div class="assembly-photo-admin hide"><div class="assembly-photo-zone"><button type="button" class="assembly-photo-pick">+ Add photo</button><input class="assembly-photo-input" type="file" accept="image/*,.heic,.heif" hidden><span class="assembly-photo-drop-hint">or drop an image here</span></div><label class="assembly-photo-caption-label">Caption <input class="field assembly-photo-caption" placeholder="Photo description"></label></div></div><p class="workspace-photo-status muted" role="status" aria-live="polite"></p>';
   workspace.querySelector(".workspace-panels").prepend(workspacePhotoEditor);
   const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>selected,
    workspacePhotoEditor.querySelector(".workspace-photo-status"),true);
+  const workspacePhotoToggle=workspacePhotoEditor.querySelector(".workspace-photo-edit-toggle");
+  const workspacePhotoTools=workspacePhotoEditor.querySelector(".workspace-photo-tools");
+  function setWorkspacePhotoEditing(editing){
+   const allowed=editing&&adminAuthenticated;
+   workspacePhotoEditor.classList.toggle("is-editing-photo",allowed);
+   workspacePhotoTools.hidden=!allowed;
+   workspacePhotoToggle.setAttribute("aria-expanded",String(allowed));
+   workspacePhotoToggle.textContent=allowed?"Done":"Edit image";
+  }
+  workspacePhotoToggle.onclick=()=>{
+   if(!adminAuthenticated){workspacePhotoEditor.querySelector(".workspace-photo-status").textContent="Administrator login required to edit photos.";return}
+   setWorkspacePhotoEditing(!workspacePhotoEditor.classList.contains("is-editing-photo"));
+  };
+  workspacePhotoToggle.hidden=!adminAuthenticated;
+
 
   // Each saved BOM part has its own independent instructions document.
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
@@ -1178,7 +1193,7 @@ function showAssemblyPage(){
    const bom=main.querySelector(".component-section")||detail.querySelector(".component-section")||workspace.querySelector(".component-section");
    if(bom){workspace.querySelector(".workspace-bom-mount").append(bom)}
    const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);if(inPart){void showPartWorkspace();return;}
-   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");loadWorkspaceCover();void workspacePhotoController.refresh();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});void renderWorkspaceParts();if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
+   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");setWorkspacePhotoEditing(false);workspacePhotoToggle.hidden=!adminAuthenticated;loadWorkspaceCover();void workspacePhotoController.refresh();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});void renderWorkspaceParts();if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
