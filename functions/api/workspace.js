@@ -1,4 +1,4 @@
-import {projectAllowed,VALID_PROJECT_ID} from "./projects.js";
+import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});
 const emptyResources=()=>({tools:[],calculators:[],parts:[]});
@@ -71,7 +71,7 @@ const validateRecipe=input=>{
 };
 export async function handleWorkspace(request,env){
  const u=new URL(request.url),project=u.searchParams.get("project"),assembly=u.searchParams.get("assembly"),part=u.searchParams.get("part");
- if(!await projectAllowed(env,project))return json({error:"Invalid project"},400);
+ if(!await projectAllowed(env,project,request))return json({error:"Invalid project"},400);
  if(part&&assembly)return json({error:"Specify a part or an assembly, not both"},400);
  if(part){
   if(!/^[0-9a-f-]{36}$/i.test(part))return json({error:"Invalid part"},400);
@@ -90,7 +90,7 @@ export async function handleWorkspace(request,env){
    history:Array.isArray(workspace.history)?workspace.history.map(({instructions,procedures,notes,...snapshot})=>snapshot):[]}});
  }
  if(request.method!=="PUT")return json({error:"Method not allowed"},405);
- if(!await isAdmin(request,env))return json({error:"Administrator login required"},401);
+ if(!await canEditProject(request,env,project))return json({error:"Administrator login required"},401);
  const data=await request.json().catch(()=>null);if(!data||typeof data!=="object"||Array.isArray(data))return json({error:"Invalid workspace data"},400);
  const resources=validateResources(data.resources);
  if(resources===null)return json({error:"Invalid linked resources"},400);
