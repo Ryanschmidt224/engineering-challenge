@@ -1,0 +1,1143 @@
+/* Sequential workspace and part controls; loaded after site.css to preserve cascade. */
+
+/* Read-only part information, with editing available as a secondary action. */
+.bom-part-workspace .part-details-view{
+ border:1px solid var(--color-border);border-radius:12px;background:color-mix(in srgb, var(--color-surface-muted) 22%, transparent);
+ margin:18px 0 12px;overflow:hidden;
+}
+.bom-part-workspace .part-details-view.hide{display:none}
+.bom-part-workspace .part-details-view-heading{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ background:color-mix(in srgb, var(--color-selected) 32%, transparent);border-bottom:1px solid var(--color-border);
+ padding:12px 16px;
+}
+.bom-part-workspace .part-details-view-heading h2{margin:0;font-size:1.06rem}
+.bom-part-workspace .part-details-view-mode{
+ font-size:.76rem;color:var(--color-text-muted);background:color-mix(in srgb, var(--color-accent) 46%, transparent);
+ border-radius:20px;padding:4px 10px;white-space:nowrap;
+}
+.bom-part-workspace .part-details-view-rows{padding:0 16px}
+.bom-part-workspace .part-details-view-row{
+ display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;padding:8px 0;
+ border-bottom:1px solid color-mix(in srgb, var(--color-accent) 27%, transparent);font-size:.92rem;
+}
+.bom-part-workspace .part-details-view-row:last-child{border-bottom:0}
+.bom-part-workspace .part-details-view-row strong{font-weight:650}
+.bom-part-workspace .part-details-view-rows h3{
+ font-size:.85rem;margin:16px 0 3px;color:var(--color-text-muted)
+}
+.bom-part-workspace .part-details-view-actions{
+ display:flex;justify-content:flex-end;padding:10px 16px;
+ border-top:1px solid color-mix(in srgb, var(--color-accent) 27%, transparent);
+}
+.bom-part-workspace .part-details-view-actions.hide{display:none}
+.bom-part-workspace .part-workspace-tools{margin-top:14px}
+@media(max-width:650px){
+ .bom-part-workspace .part-details-view-heading{padding:11px 12px}
+ .bom-part-workspace .part-details-view-rows{padding:0 12px}
+ .bom-part-workspace .part-details-view-actions{padding:10px 12px}
+}
+
+
+/* Consistent alignment for individual part workspaces. */
+/* Keep the header, part details, action buttons, instructions and drawings
+   on a shared column instead of mixing full-width and 900px sections. */
+.bom-part-workspace > .workspace-heading,
+.bom-part-workspace > .part-details-view,
+.bom-part-workspace > .part-workspace-tools,
+.bom-part-workspace > .workspace-panels {
+  width:100%;
+  max-width:1100px;
+  margin-left:0;
+  margin-right:0;
+}
+.bom-part-workspace > .workspace-panels {
+  max-width:1100px;
+}
+
+
+/* Part photos are managed inside the part editor, not the read-only page. */
+.workspace-bom-mount .part-workspace-tools{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:12px 0;margin:0 0 14px;
+  border-bottom:1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+.workspace-bom-mount .part-workspace-tools.hide{display:none}
+.workspace-bom-mount .part-photo-edit-label{font-weight:650;width:100%}
+.workspace-bom-mount .part-photo-edit-preview{
+  display:flex;align-items:center;justify-content:center;
+  width:88px;height:72px;flex:none;overflow:hidden;
+  border:1px solid var(--color-border);border-radius:8px;color:var(--color-on-media);
+  font-size:.78rem;background:var(--color-media-backdrop);
+}
+.workspace-bom-mount .part-photo-edit-preview img{
+  width:100%;height:100%;object-fit:contain;
+}
+
+
+/* Feature-tree library part picker, including wire selection and gauge helper. */
+.library-part-dialog{
+  width:min(680px,calc(100vw - 28px));max-height:min(90vh,850px);
+  overflow:auto;border:1px solid var(--color-border);border-radius:14px;
+  background:var(--color-sidebar);color:var(--color-text);padding:0;
+  box-shadow:0 20px 70px color-mix(in srgb, var(--color-shadow) 55%, transparent);
+}
+.library-part-dialog::backdrop{background:color-mix(in srgb, var(--color-media-backdrop) 76%, transparent)}
+.library-part-form{padding:22px;display:flex;flex-direction:column;gap:15px}
+.library-part-form h2{margin:0}
+.library-part-form>.muted{margin:0;font-size:.87rem}
+.library-field{display:flex;flex-direction:column;gap:6px;font-size:.87rem;font-weight:600;min-width:0}
+.library-field .field{width:100%;font-weight:400;min-height:38px}
+.library-picker-section,.library-wire-section,.library-components{display:grid;gap:13px;min-width:0}
+.library-picker-section{padding:14px;border:1px solid var(--color-border);border-radius:10px;background:color-mix(in srgb, var(--color-surface-muted) 16%, transparent)}
+.library-part-form .hide,.library-picker-section .hide,.library-wire-section .hide{display:none!important}
+.library-picker-hint{font-size:.8rem;line-height:1.5;margin:0}
+.wire-gauge-helper{border:1px solid var(--color-border);border-radius:9px;padding:12px}
+.wire-gauge-helper summary{font-weight:650;cursor:pointer}
+.wire-gauge-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.wire-gauge-result,.wire-gauge-grid>.muted{grid-column:1/-1}
+.wire-gauge-result{font-weight:600;line-height:1.45}
+.wire-gauge-grid>.muted{font-size:.78rem;line-height:1.5;margin:0}
+.library-dialog-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.library-dialog-status{font-size:.84rem;color:var(--color-text-muted);margin:0;min-height:1em}
+@media(max-width:520px){.wire-gauge-grid{grid-template-columns:1fr}.library-part-form{padding:15px}}
+
+
+/* Saved harness cuts displayed on individual wire-part workspaces. */
+.part-harness-preview.hide{display:none!important}
+.part-harness-preview-content{display:grid;gap:8px}
+.part-harness-cut{display:flex;flex-direction:column;gap:5px;padding:11px 13px;border:1px solid var(--color-border);border-radius:8px;background:color-mix(in srgb, var(--color-surface-muted) 18%, transparent)}
+.part-harness-cut strong{font-size:.9rem}
+.part-harness-cut span{font-size:.82rem;color:var(--color-text-muted)}
+
+
+/* First choose how to configure a wire, then expose only that workflow. */
+.wire-workflow-choice{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.wire-workflow-choice .btn{padding:15px 12px;font-size:1rem;font-weight:650;border:1px solid var(--color-border)}
+.wire-workflow-choice .btn.primary{border-color:var(--color-accent)}
+.wire-workflow-hint{font-size:.84rem;line-height:1.5;margin:0}
+.wire-manual-fields,.wire-wizard-fields{display:grid;gap:13px;min-width:0}
+.wire-gauge-helper h3{margin:0 0 12px;font-size:1.03rem}
+.wire-gauge-grid .btn{justify-self:start}
+@media(max-width:480px){.wire-workflow-choice{grid-template-columns:1fr}}
+
+
+/* Progressive disclosure: one alternate BOM view, optional instruction tools. */
+.workspace-bom-heading{flex-wrap:wrap;gap:10px}
+.bom-shopping-toggle{margin-left:auto}
+.bom-shopping-table{width:100%;border-collapse:collapse;font-size:.91rem}
+.bom-shopping-table th,.bom-shopping-table td{padding:11px 13px;border-bottom:1px solid var(--line, var(--color-border));text-align:left;vertical-align:top}
+.bom-shopping-table th:last-child,.bom-shopping-table td:last-child{text-align:right;white-space:nowrap}
+.bom-shopping-table tbody tr:last-child td{border-bottom:0}
+.bom-generated-part .bom-part-meta{opacity:.8}
+.bom-auto-note{font-size:.86rem;margin:8px 0}
+.instruction-log,.instruction-history{border:1px solid var(--color-border);border-radius:8px;padding:11px 14px;margin-top:12px;min-width:0}
+.instruction-log summary,.instruction-history summary{font-weight:650;cursor:pointer}
+.instruction-log-entries,.instruction-history-list{display:grid;gap:10px;margin:12px 0}
+.instruction-log-item,.instruction-history-item{padding:10px;border:1px solid var(--color-border);border-radius:8px}
+.instruction-log-item small{display:block;opacity:.75}
+.instruction-log-item p{white-space:pre-wrap;margin:6px 0}
+.instruction-log-item .btn,.instruction-history-item .btn{margin-top:6px}
+@media(max-width:620px){.bom-shopping-toggle{margin-left:0}.bom-shopping-table th,.bom-shopping-table td{padding:9px 6px}}
+
+
+/* BOM display selector: adjacent views, creation action at the right edge. */
+.workspace-bom-heading{display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap}
+.workspace-bom-heading h2{margin-right:auto}
+.bom-view-switch{display:inline-flex;gap:0;align-items:center;flex-shrink:0}
+.bom-view-switch .bom-view-button{border-radius:0;font-size:.85rem;padding:9px 13px;white-space:nowrap}
+.bom-view-switch .bom-view-button:first-child{border-radius:9px 0 0 9px}
+.bom-view-switch .bom-view-button:last-child{border-radius:0 9px 9px 0;margin-left:-1px}
+.bom-view-switch .bom-view-button.is-active{background:var(--color-selected);border-color:var(--color-accent);color:var(--color-text);position:relative;z-index:1}
+.workspace-bom-heading .workspace-new-part{margin-left:auto;white-space:nowrap}
+.bom-list-part-link{background:transparent;border:0;padding:2px 0;box-shadow:none;text-align:left;font-weight:650}
+.bom-list-part-link:hover{text-decoration:underline;background:transparent}
+.bom-shopping-table td:nth-child(2){color:var(--muted,var(--color-text-muted))}
+.bom-shopping-table th:last-child,.bom-shopping-table td:last-child{text-align:right;white-space:nowrap}
+@media(max-width:690px){
+ .workspace-bom-heading h2{width:100%;margin:0}
+ .bom-view-switch{flex:0 1 auto}
+ .workspace-bom-heading .workspace-new-part{margin-left:auto}
+ .bom-view-switch .bom-view-button{padding:9px 10px}
+}
+@media(max-width:470px){
+ .workspace-bom-heading .workspace-new-part{width:100%;margin-left:0}
+ .bom-view-switch{width:100%}
+ .bom-view-switch .bom-view-button{flex:1}
+}
+
+
+/* Standard consumables are one quiet, collapsed section below the BOM. */
+.bom-shop-materials{margin-top:16px;border:1px solid var(--color-border);border-radius:12px;background:color-mix(in srgb, var(--color-accent) 6.5%, transparent);overflow:hidden}
+.bom-shop-materials>summary{cursor:pointer;padding:15px 18px;font-weight:650;list-style-position:inside}
+.bom-shop-materials[open]>summary{border-bottom:1px solid var(--color-border)}
+.bom-shop-note{margin:12px 18px;font-size:.86rem;line-height:1.5}
+.bom-shop-material-rows{display:grid;margin:0 18px 12px;gap:0}
+.bom-shop-material-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:11px 0;border-bottom:1px solid var(--color-border)}
+.bom-shop-material-row:last-child{border-bottom:0}
+.bom-shop-material-row>.bom-list-part-link{flex:1;text-align:left;min-width:170px}
+.bom-shop-qty{font-variant-numeric:tabular-nums;color:var(--color-text-muted)}
+.bom-material-preference{font-size:.77rem;padding:6px 10px;white-space:normal}
+.bom-shopping-table .bom-material-preference{margin-left:9px}
+@media(max-width:650px){
+ .bom-shop-material-row>.bom-list-part-link{min-width:100%}
+ .bom-shop-material-row .bom-material-preference{margin-left:auto}
+}
+
+
+/* The Workshop: clear, responsive reference shelf rather than an inventory form. */
+#commonparts .resource-heading{max-width:850px;margin-bottom:26px}
+#commonparts .resource-heading>p{line-height:1.65;max-width:760px}
+.workshop-essentials{min-width:0}
+.workshop-essentials-heading{margin-bottom:20px}
+.workshop-essentials-heading h2{font-size:1.4rem;margin:0 0 8px}
+.workshop-essentials-heading p{margin:0;line-height:1.6;max-width:850px}
+#workshop-essentials-list{display:grid;gap:26px;min-width:0}
+.workshop-group{min-width:0}
+.workshop-group>h3{font-size:1.12rem;line-height:1.35;margin:0 0 12px}
+.workshop-standard-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:12px}
+.workshop-standard-item{min-width:0;background:var(--color-surface);border:1px solid var(--color-border);border-radius:12px;overflow:hidden}
+.workshop-standard-item[open]{border-color:var(--color-accent)}
+.workshop-standard-item>summary{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;list-style:none;cursor:pointer;padding:15px 40px 15px 17px;position:relative;min-height:72px}
+.workshop-standard-item>summary::-webkit-details-marker,.workshop-optional-group>summary::-webkit-details-marker,.workshop-saved-details>summary::-webkit-details-marker{display:none}
+.workshop-standard-item>summary::after{content:"⌄";position:absolute;right:15px;top:50%;transform:translateY(-50%);font-size:1.2rem;color:var(--color-text-muted)}
+.workshop-standard-item[open]>summary::after{content:"⌃"}
+.workshop-standard-name{display:block;width:100%;min-width:0;font-weight:700;line-height:1.35;overflow-wrap:anywhere}
+.workshop-standard-caption{color:var(--color-text-muted);font-size:.84rem;line-height:1.45;flex:1 1 175px}
+.workshop-standard-tag{display:inline-block;font-size:.7rem;line-height:1.2;font-weight:700;color:var(--color-accent);background:var(--color-surface-muted);border-radius:999px;padding:4px 9px}
+.workshop-standard-body{padding:15px 17px 18px;border-top:1px solid var(--color-border);display:grid;gap:12px;overflow-wrap:anywhere}
+.workshop-standard-body>p{margin:0;line-height:1.6}
+.workshop-standard-body .resource-caution{padding:10px 12px;border-left:3px solid var(--color-border);background:color-mix(in srgb, var(--color-accent-soft) 8%, transparent)}
+.workshop-spec-source{color:var(--color-accent);text-decoration:underline;text-underline-offset:3px;font-size:.87rem;max-width:max-content}
+.workshop-optional-group,.workshop-saved-details{border:1px solid var(--color-border);border-radius:12px;min-width:0;overflow:hidden}
+.workshop-optional-group{background:var(--color-surface)}
+.workshop-optional-group>summary,.workshop-saved-details>summary{padding:16px 42px 16px 18px;cursor:pointer;font-weight:650;position:relative;list-style:none}
+.workshop-optional-group>summary::after,.workshop-saved-details>summary::after{content:"⌄";position:absolute;right:18px;color:var(--color-text-muted)}
+.workshop-optional-group[open]>summary::after,.workshop-saved-details[open]>summary::after{content:"⌃"}
+.workshop-optional-group>.workshop-standard-list{padding:0 15px 17px}
+.workshop-optional-group .workshop-standard-item>summary{min-height:0}
+.workshop-saved-details{margin-top:32px;padding:0;background:var(--color-surface)}
+.workshop-saved-details>p{padding:0 18px 12px;margin:0;line-height:1.6}
+.workshop-saved-details>#resource-commonparts{padding:0 18px 18px}
+.workshop-saved-details>.resource-wire-manager,.workshop-saved-details>.resource-common-manager{margin:0 18px 22px;padding-top:18px}
+#commonparts .workshop-standard-item:focus-within,#commonparts .workshop-optional-group:focus-within{outline-offset:2px}
+@media(max-width:750px){.workshop-standard-list{grid-template-columns:minmax(0,1fr)}.workshop-standard-item>summary{min-height:0}.workshop-optional-group>.workshop-standard-list{padding:0 12px 14px}}
+@media(max-width:460px){.workshop-standard-item>summary{padding:13px 34px 13px 13px}.workshop-standard-body{padding:13px}.workshop-saved-details>#resource-commonparts{padding:0 12px 14px}.workshop-saved-details>.resource-wire-manager,.workshop-saved-details>.resource-common-manager{margin:0 12px 18px}}
+
+
+/* Compact Workshop tiles, and clear BOM-to-Workshop material selection. */
+.workshop-standard-item>summary{min-height:0;padding:12px 36px 12px 15px}
+.workshop-standard-name{font-size:.96rem;line-height:1.35}
+.workshop-standard-body{gap:10px;padding:12px 15px 15px}
+.workshop-quick-spec{font-size:.91rem;line-height:1.5}
+.workshop-technical-notes{font-size:.83rem;color:var(--color-text-muted);min-width:0}
+.workshop-technical-notes>summary{padding:3px 0;cursor:pointer;color:var(--color-text-muted)}
+.workshop-technical-notes>p{margin:8px 0 0;line-height:1.5}
+.workshop-use-choice{justify-self:start;margin-top:2px}
+.workshop-featured-item{border-color:var(--color-accent)!important;box-shadow:0 0 0 2px color-mix(in srgb, var(--color-shadow) 15%, transparent)}
+.bom-shop-material-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(90px,auto) auto auto;gap:8px 14px;align-items:center}
+.bom-shop-material-row>.bom-list-part-link{min-width:0;max-width:100%;text-align:left;justify-self:start;overflow-wrap:anywhere}
+.bom-shop-material-row>.bom-shop-qty{text-align:right;justify-self:end;white-space:nowrap}
+.bom-shop-material-row>.bom-workshop-link,.bom-shop-material-row>.bom-material-preference{justify-self:end;margin:0}
+.bom-workshop-link{font-size:.8rem;padding:6px 10px;border-color:var(--color-accent)}
+.bom-workshop-selected{grid-column:1/-1;color:var(--color-text-muted);font-size:.81rem}
+@media(max-width:880px){
+ .bom-shop-material-row{grid-template-columns:minmax(0,1fr) auto;gap:8px}
+ .bom-shop-material-row>.bom-list-part-link{min-width:0}
+ .bom-shop-material-row>.bom-workshop-link{grid-column:1;justify-self:start}
+ .bom-shop-material-row>.bom-material-preference{grid-column:2;justify-self:end}
+ .bom-workshop-selected{grid-column:1/-1}
+}
+@media(max-width:490px){
+ .bom-shop-material-row>.bom-list-part-link{grid-column:1/-1}
+ .bom-shop-material-row>.bom-shop-qty{grid-column:1/-1;justify-self:start}
+ .bom-shop-material-row>.bom-workshop-link,.bom-shop-material-row>.bom-material-preference{grid-column:auto}
+}
+
+
+/* Standard shop materials: left-align every row element, including button text.
+   Do not distribute entries across the full panel width. */
+.bom-shop-material-rows{justify-items:stretch;text-align:left}
+.bom-shop-material-row{
+  display:flex;
+  flex-flow:row wrap;
+  align-items:center;
+  justify-content:flex-start;
+  column-gap:18px;
+  row-gap:10px;
+  text-align:left;
+}
+.bom-shop-material-row>.bom-list-part-link{
+  flex:0 1 340px;
+  width:auto;
+  min-width:160px;
+  max-width:100%;
+  margin:0;
+  text-align:left;
+  justify-content:flex-start;
+}
+.bom-shop-material-row>.bom-shop-qty{
+  flex:0 0 165px;
+  justify-self:start;
+  text-align:left;
+  white-space:normal;
+}
+.bom-shop-material-row>.bom-workshop-link,
+.bom-shop-material-row>.bom-material-preference{
+  flex:0 0 auto;
+  margin:0;
+  justify-self:start;
+}
+.bom-shop-material-row>.bom-workshop-selected{
+  flex:1 0 100%;
+  text-align:left;
+}
+@media(max-width:900px){
+  .bom-shop-material-row>.bom-list-part-link{flex:1 1 210px;min-width:0}
+  .bom-shop-material-row>.bom-shop-qty{flex:0 0 150px}
+}
+@media(max-width:620px){
+  .bom-shop-material-row>.bom-list-part-link{flex:1 0 100%;min-width:0}
+  .bom-shop-material-row>.bom-shop-qty{flex:1 0 100%;min-width:0}
+  .bom-shop-material-row>.bom-workshop-link,
+  .bom-shop-material-row>.bom-material-preference{flex:0 1 auto}
+}
+
+
+/* Single shopping search action; technical specification remains available on demand. */
+.workshop-amazon-search{
+  display:inline-flex;
+  align-items:center;
+  align-self:start;
+  width:max-content;
+  max-width:100%;
+  padding:8px 12px;
+  border:1px solid var(--color-accent);
+  border-radius:8px;
+  background:var(--color-surface-muted);
+  color:var(--color-text);
+  text-decoration:none;
+  font-size:.88rem;
+  font-weight:650;
+}
+.workshop-amazon-search:hover,.workshop-amazon-search:focus-visible{
+  background:var(--color-hover);
+  border-color:var(--color-border);
+  color:var(--color-text);
+}
+
+
+/* BOM part navigation: part names lead to their full details, while the
+   surrounding thumbnail row remains independently expandable. */
+.bom-part-summary .bom-part-open{
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:inherit;
+  padding:0;
+  margin:0;
+  font:inherit;
+  font-weight:650;
+  text-align:left;
+  cursor:pointer;
+  min-width:0;
+}
+.bom-part-summary .bom-part-open:hover,
+.bom-part-summary .bom-part-open:focus-visible{
+  color:var(--color-accent);
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+.bom-open-part-details{margin:0 0 12px;font-size:.83rem}
+
+
+/* Explicit Part Details action on every BOM row; names are plain text. */
+.bom-part-summary>.bom-open-part-details{
+  flex:0 0 auto;
+  font-size:.82rem;
+  padding:7px 11px;
+  white-space:nowrap;
+}
+.bom-shopping-table .bom-list-part-name{display:block;font-weight:650;line-height:1.4}
+.bom-shopping-table .bom-open-part-details{display:inline-flex;margin-top:7px;font-size:.8rem;padding:6px 10px}
+.bom-shop-material-row>.bom-shop-material-name{
+  flex:0 1 340px;
+  width:auto;
+  min-width:160px;
+  max-width:100%;
+  font-weight:650;
+  line-height:1.4;
+  text-align:left;
+  overflow-wrap:anywhere;
+}
+.bom-shop-material-row>.bom-open-part-details{flex:0 0 auto;justify-self:start;margin:0;font-size:.8rem;padding:7px 10px}
+@media(max-width:900px){
+ .bom-shop-material-row>.bom-shop-material-name{flex:1 1 210px;min-width:0}
+ .bom-part-summary>.bom-open-part-details{white-space:normal}
+}
+@media(max-width:620px){
+ .bom-shop-material-row>.bom-shop-material-name{flex:1 0 100%;min-width:0}
+ .bom-shop-material-row>.bom-open-part-details{flex:0 1 auto}
+}
+
+
+/* Discrete work-instruction recipes. A compact author view and one-step learner view. */
+.recipe-editor{margin:12px 0 18px;padding:16px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-surface);min-width:0}
+.recipe-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.recipe-heading h3{margin:0;font-size:1.12rem}
+.recipe-editor>.muted{font-size:.84rem;line-height:1.5;margin:7px 0 13px}
+.recipe-content{min-width:0}
+.recipe-detail-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 17px}
+.recipe-detail-controls>span{margin-right:8px;font-size:.83rem}
+.recipe-detail-button{font-size:.8rem;padding:6px 10px}
+.recipe-detail-button.active{background:var(--color-selected);border-color:var(--color-accent);color:var(--color-text)}
+.recipe-builder-view{min-width:0}
+.recipe-reader-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--color-text-muted);font-size:.8rem}
+.recipe-step-type{border:1px solid var(--color-border);border-radius:999px;padding:4px 9px}
+.recipe-reader-title{font-size:1.3rem;line-height:1.35;margin:12px 0}
+.recipe-reader-text{line-height:1.65;white-space:pre-line;overflow-wrap:anywhere;user-select:text}
+.recipe-reader-text p{margin:0 0 12px}
+.recipe-explain{margin:8px 0 2px;font-size:.85rem}
+.recipe-selection-hint{font-size:.79rem;margin:5px 0 17px}
+.recipe-reader-nav{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--color-border)}
+.recipe-feedback{font-size:.84rem;margin:8px 0 0;min-height:0}
+.recipe-edit-step{padding:14px;margin:10px 0;background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;min-width:0}
+.recipe-step-toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.recipe-step-toolbar>strong{flex:1 1 170px;overflow-wrap:anywhere}
+.recipe-edit-controls{display:flex;flex-wrap:wrap;gap:5px}
+.recipe-edit-controls>.btn{font-size:.77rem;padding:5px 9px}
+.recipe-step-fields{display:grid;grid-template-columns:minmax(0,2fr) minmax(140px,1fr);gap:11px;margin-top:11px}
+.recipe-step-fields label{font-size:.82rem;font-weight:600;display:flex;flex-direction:column;gap:6px;min-width:0}
+.recipe-step-fields .field{width:100%;max-width:100%;font-weight:400}
+.recipe-wide-field{grid-column:1/-1}
+.recipe-edit-footer{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+@media(max-width:650px){.recipe-step-fields{grid-template-columns:minmax(0,1fr)}.recipe-editor{padding:12px}}
+
+/* Project portability actions are secondary to BOM/recipe authoring. */
+.workspace-archive-actions{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:10px 0 20px}
+.workspace-archive-actions>.btn{font-size:.82rem;padding:8px 11px}
+.workspace-archive-status{font-size:.81rem;line-height:1.45;flex:1 1 240px}
+
+
+/* Part detail disclosure and engineering attachments */
+.bom-part-workspace .part-details-collapse>summary{cursor:pointer;list-style:none}
+.bom-part-workspace .part-details-collapse>summary::-webkit-details-marker{display:none}
+.bom-part-workspace .part-details-collapse>summary:focus-visible{outline:2px solid var(--color-focus);outline-offset:-2px}
+.bom-part-workspace .part-details-collapse:not([open])>summary{border-bottom:0}
+.bom-part-workspace .part-details-toggle-label{font-size:.86rem;font-weight:650;color:var(--color-text-muted);border:1px solid var(--color-accent);border-radius:8px;padding:7px 11px}
+.bom-part-workspace .part-drawing-panel,.bom-part-workspace .part-files-panel{padding:15px 16px;border-top:1px solid var(--color-border)}
+.part-files-panel h3{margin:0 0 7px;font-size:1.05rem}
+.part-file-item{display:flex;align-items:center;gap:9px 14px;flex-wrap:wrap;border-bottom:1px solid var(--color-border);padding:9px 0;overflow-wrap:anywhere}
+.part-file-item>span:first-child{flex:1 1 240px;min-width:0}
+.part-file-item>.btn{font-size:.81rem}
+.part-saved-pages{margin-top:8px}
+.part-files-panel .part-file-controls{margin:10px 0}
+.bom-part-summary .bom-part-toggle-label{min-width:110px;text-align:center}
+.bom-part[open] .bom-part-toggle-label::after,.bom-part:not([open]) .bom-part-toggle-label::after{content:""}
+.bom-record-purchase{margin:0 8px 12px 0}
+.workshop-purchased{margin:14px 0 22px}
+.workshop-purchased-search{width:100%;max-width:520px;margin:10px 0}
+.workshop-purchased-results{display:grid;gap:9px}
+.workshop-purchase-item{display:flex;align-items:start;flex-wrap:wrap;gap:6px 15px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:9px;padding:12px}
+.workshop-purchase-item>strong{flex:1 1 260px}
+.workshop-purchase-item>.muted{font-size:.82rem}
+.workshop-purchase-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%}
+.workshop-purchase-actions>.field{max-width:235px}
+.workshop-purchase-actions>.btn{font-size:.85rem}
+.part-workspace-cover[role="button"]{cursor:pointer;position:relative;outline-offset:3px}
+.part-workspace-cover.part-image-dragover{outline:3px dashed var(--color-focus);background:color-mix(in srgb, var(--color-accent) 35%, transparent)}
+.part-workspace-cover.part-image-dragover:after{content:"Drop image to upload";position:absolute;inset:auto 5px 5px;padding:7px;background:var(--color-media-backdrop);color:var(--color-on-media);border-radius:7px;text-align:center;font-size:.8rem}
+
+
+/* Edit Part: keep descriptor and editable value on the same horizontal row. */
+.assembly-workspace-page .workspace-bom .component-review>label{
+ display:grid;
+ grid-template-columns:minmax(150px,215px) minmax(0,1fr);
+ align-items:center;
+ column-gap:18px;
+ row-gap:5px;
+ width:100%;
+ margin:0;
+ text-align:left;
+}
+.assembly-workspace-page .workspace-bom .component-review>label>.field{
+ width:100%;
+ min-width:0;
+ max-width:100%;
+ margin:0;
+}
+.assembly-workspace-page .workspace-bom .component-review>h3,
+.assembly-workspace-page .workspace-bom .component-review>.component-specs,
+.assembly-workspace-page .workspace-bom .component-review>.btn{
+ justify-self:start;
+}
+@media(max-width:620px){
+ .assembly-workspace-page .workspace-bom .component-review>label{
+  grid-template-columns:minmax(0,1fr);
+  gap:5px;
+ }
+}
+
+/* Workshop browser: feature-tree navigation instead of long flat tool tiles. */
+#workshop-essentials-list.workshop-tree{display:flex;flex-direction:column;gap:9px}
+.workshop-tree-branch{border:1px solid var(--color-border);border-radius:10px;overflow:hidden;background:var(--color-surface)}
+.workshop-tree-branch>summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;padding:13px 15px;font-weight:650;font-size:1.01rem}
+.workshop-tree-branch>summary::-webkit-details-marker{display:none}
+.workshop-tree-branch>summary:before{content:"▸";font-size:1.05rem;color:var(--color-accent);flex:0 0 12px}
+.workshop-tree-branch[open]>summary:before{content:"▾"}
+.workshop-tree-branch[open]>summary{border-bottom:1px solid var(--color-border)}
+.workshop-tree-branch-count{margin-left:auto;font-size:.76rem;color:var(--color-text-muted);font-weight:400}
+.workshop-tree-children{display:flex;flex-direction:column;gap:8px;padding:9px 12px 12px 20px}
+.workshop-tree-branch-nested{border:1px solid var(--color-border);background:var(--color-surface)}
+.workshop-tree-branch-nested>summary{font-size:.92rem;padding:9px 12px}
+.workshop-tree-branch-nested>.workshop-tree-children{padding:10px 12px 12px 22px}
+.workshop-tree .workshop-standard-list{display:grid;grid-template-columns:minmax(0,1fr);gap:7px}
+.workshop-tree .workshop-standard-item{width:100%;margin:0;min-width:0}
+.workshop-tree .workshop-standard-item>summary{padding:10px 12px}
+.workshop-tree .workshop-standard-body{padding:10px 12px}
+.workshop-tree .workshop-purchased{margin:0}
+.workshop-tree .workshop-saved-details{margin:0}
+.workshop-tree .workshop-purchased-results{margin:8px 0}
+.workshop-tree .workshop-tree-branch:focus-within{border-color:var(--color-accent)}
+
+
+/* Recipe-first work instructions: one compact + Add step entry point.
+   A step owns its content, with optional editors revealed only on request. */
+.recipe-editor.recipe-compact{
+  border:0;background:transparent;box-shadow:none;
+  margin:0;padding:0;min-width:0;
+}
+.recipe-compact .recipe-content{display:flex;flex-direction:column;align-items:stretch;gap:9px}
+.recipe-compact .recipe-one-step{
+  border:1px solid var(--color-border);border-radius:9px;background:var(--color-surface);
+  margin:0;overflow:hidden;
+}
+.recipe-compact .recipe-one-step-summary{
+  display:flex;align-items:center;gap:12px;
+  cursor:pointer;padding:12px 14px;
+  font-size:.96rem;font-weight:650;list-style:none;
+}
+.recipe-compact .recipe-one-step-summary::-webkit-details-marker{display:none}
+.recipe-compact .recipe-one-step-summary::before{
+  content:"▸";color:var(--color-accent);font-weight:700;
+}
+.recipe-compact .recipe-one-step[open]>.recipe-one-step-summary::before{content:"▾"}
+.recipe-compact .recipe-one-step[open]>.recipe-one-step-summary{border-bottom:1px solid var(--color-border)}
+.recipe-compact .recipe-kind-caption{color:var(--color-text-muted);font-size:.77rem;font-weight:400;margin-left:auto}
+.recipe-compact .recipe-one-step-body{padding:13px 15px;display:flex;flex-direction:column;align-items:flex-start;gap:9px}
+.recipe-compact .recipe-one-field{width:100%;display:flex;flex-direction:column;gap:6px;font-size:.86rem;font-weight:600}
+.recipe-compact .recipe-one-field>.field{width:100%;font-weight:400;max-width:100%}
+.recipe-compact .recipe-one-field>textarea{resize:vertical;min-height:78px}
+.recipe-compact .recipe-small-action{
+  padding:5px 9px;font-size:.8rem;
+  background:transparent;border:1px solid var(--color-border);color:var(--color-text-muted);
+}
+.recipe-compact .recipe-add-step{
+  align-self:flex-start;
+  border:0;background:transparent;color:var(--color-accent);
+  font-weight:650;box-shadow:none;padding:8px 3px;font-size:.95rem;
+}
+.recipe-compact .recipe-add-step:hover,
+.recipe-compact .recipe-add-step:focus-visible{color:var(--color-text);text-decoration:underline}
+.recipe-compact .recipe-edit-controls{margin-top:5px;padding-top:10px;width:100%;
+ border-top:1px solid var(--color-border);display:flex;flex-wrap:wrap;gap:6px}
+.recipe-compact .recipe-edit-controls>.btn{padding:5px 9px;font-size:.8rem}
+.recipe-compact .recipe-detail-controls{margin-bottom:3px}
+.recipe-compact .recipe-reader-text{width:100%}
+.recipe-compact+.recipe-feedback{font-size:.81rem}
+.recipe-compact .recipe-feedback:empty{display:none}
+
+/* Compact BOM list: one horizontally aligned row per part. */
+.bom-shopping-table.bom-compact-list th,
+.bom-shopping-table.bom-compact-list td{padding:7px 12px;vertical-align:middle;line-height:1.3}
+.bom-shopping-table.bom-compact-list .bom-list-part-name{display:inline;font-weight:650;line-height:1.3}
+.bom-shopping-table.bom-compact-list .bom-open-part-details{display:inline-flex;align-items:center;margin:0;padding:5px 9px;font-size:.78rem;white-space:nowrap}
+.bom-shopping-table.bom-compact-list th:nth-child(3),
+.bom-shopping-table.bom-compact-list td:nth-child(3){text-align:right;white-space:nowrap}
+.bom-shopping-table.bom-compact-list th:nth-child(4),
+.bom-shopping-table.bom-compact-list td:nth-child(4){text-align:right;white-space:nowrap;width:1%}
+@media(max-width:650px){
+ .bom-shopping-table.bom-compact-list{font-size:.8rem}
+ .bom-shopping-table.bom-compact-list th,
+ .bom-shopping-table.bom-compact-list td{padding:7px 5px}
+ .bom-shopping-table.bom-compact-list .bom-open-part-details{padding:5px 6px;font-size:.72rem}
+}
+
+/* The feature tree and BOM live in the SAME left sidebar on assembly workspaces. */
+.assembly-sidebar>.workspace-bom{display:none}
+.assembly-sidebar.bom-sidebar-active>.workspace-bom{
+ display:block;
+ padding:11px 9px 16px;
+ border-top:2px solid var(--color-border);
+ background:var(--color-sidebar);
+ min-width:0;
+}
+.assembly-sidebar.bom-sidebar-active>.workspace-bom .workspace-bom-heading{
+ display:flex;
+ flex-wrap:wrap;
+ gap:8px;
+ align-items:center;
+}
+.assembly-sidebar>.workspace-bom .workspace-bom-heading h2{
+ font-size:.85rem;
+ margin:0 auto 0 0;
+}
+.assembly-sidebar>.workspace-bom .workspace-new-part{
+ font-size:.73rem;
+ padding:6px 8px;
+}
+.assembly-sidebar>.workspace-bom .bom-view-button{font-size:.75rem;padding:6px 8px}
+.assembly-sidebar>.workspace-bom .workspace-saved-parts{
+ display:block;
+ min-width:0;
+ width:100%;
+ overflow-x:auto;
+ padding:0;
+ margin:8px 0 12px;
+ font-size:.82rem;
+}
+.assembly-sidebar>.workspace-bom .bom-part-stack{display:flex;flex-direction:column;gap:6px}
+.assembly-sidebar>.workspace-bom .bom-part{
+ border:1px solid var(--color-border);
+ border-left:3px solid var(--color-accent);
+ border-radius:7px;
+ background:var(--color-sidebar);
+ overflow:hidden;
+}
+.assembly-sidebar>.workspace-bom .bom-part:nth-child(even){background:var(--color-sidebar)}
+.assembly-sidebar>.workspace-bom .bom-part-summary{
+ display:flex;
+ flex-wrap:wrap;
+ gap:7px;
+ padding:8px;
+ min-height:48px;
+ font-size:.82rem;
+}
+.assembly-sidebar>.workspace-bom .bom-row-thumbnail{
+ width:42px;height:42px;min-width:42px;max-width:42px;
+}
+.assembly-sidebar>.workspace-bom .bom-part-name{font-size:.82rem}
+.assembly-sidebar>.workspace-bom .bom-part-actions .btn,
+.assembly-sidebar>.workspace-bom .bom-open-part-details,
+.assembly-sidebar>.workspace-bom .bom-part-toggle-label{font-size:.72rem;padding:5px 7px}
+.assembly-sidebar>.workspace-bom .bom-subassembly-children{padding:9px}
+.assembly-sidebar>.workspace-bom .bom-compact-list{font-size:.78rem;min-width:510px}
+.assembly-sidebar>.workspace-bom .bom-compact-list tbody tr td{padding:8px 7px}
+.assembly-sidebar>.workspace-bom .bom-shop-materials{margin-top:10px}
+.assembly-sidebar>.workspace-bom .bom-shop-materials>summary{padding:10px;font-size:.77rem}
+.workspace-bom-resizer{display:none}
+.is-resizing-bom{cursor:col-resize!important;user-select:none}
+@media(min-width:1100px){
+ .assembly-layout:has(>.assembly-sidebar.bom-sidebar-active){
+  grid-template-columns:minmax(290px,var(--assembly-sidebar-width,clamp(300px,27vw,480px))) 9px minmax(0,1fr);
+ }
+ .assembly-layout>.assembly-sidebar.bom-sidebar-active{
+  grid-column:1;
+  min-width:0;
+ }
+ .assembly-layout>.assembly-sidebar.bom-sidebar-active + .workspace-bom-resizer{
+  grid-column:2;
+  display:block;
+  position:relative;
+  cursor:col-resize;
+  align-self:stretch;
+  min-height:400px;
+  touch-action:none;
+  outline-offset:2px;
+ }
+ .assembly-layout>.workspace-bom-resizer:after{
+  content:"";position:absolute;left:3px;top:8px;bottom:8px;
+  width:3px;border-radius:3px;background:var(--color-surface-muted);
+ }
+ .assembly-layout>.workspace-bom-resizer:hover:after,
+ .assembly-layout>.workspace-bom-resizer:focus-visible:after,
+ .is-resizing-bom .workspace-bom-resizer:after{background:var(--color-hover)}
+ .assembly-layout>.assembly-content{min-width:0}
+ .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels{
+  display:block;
+  max-width:none;
+  width:100%;
+ }
+ .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
+  margin-bottom:20px;
+ }
+ .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels h2{margin-top:0}
+}
+@media(max-width:1099px){
+ .assembly-sidebar.bom-sidebar-active{max-height:none}
+ .assembly-sidebar>.workspace-bom .bom-compact-list{min-width:510px}
+}
+
+
+/* Minimal BOM in the shared feature-tree sidebar.
+   Single typography scale, neutral rows, subtle hierarchy; no thumbnails or badges. */
+.assembly-sidebar.bom-sidebar-active>.workspace-bom{
+ background:transparent;
+ border-top:1px solid var(--color-border);
+ padding:0 0 12px;
+}
+.assembly-sidebar>.workspace-bom .workspace-bom-heading{
+ padding:10px 10px 8px;
+ gap:7px;
+}
+.assembly-sidebar>.workspace-bom .workspace-bom-heading h2{
+ color:var(--color-text);
+ font-size:.84rem;
+ font-weight:650;
+ margin:0 auto 0 0;
+}
+.assembly-sidebar>.workspace-bom .workspace-new-part{
+ background:transparent;
+ border:1px solid var(--color-border);
+ border-radius:5px;
+ color:var(--color-text-muted);
+ padding:5px 7px;
+ font-size:.73rem;
+ font-weight:500;
+}
+.assembly-sidebar>.workspace-bom .workspace-saved-parts{
+ padding:0 7px;
+ overflow:visible;
+ margin:0;
+}
+.assembly-sidebar>.workspace-bom .bom-count{
+ font-size:.73rem;
+ color:var(--color-text-muted);
+ margin:2px 3px 9px;
+ line-height:1.45;
+}
+.assembly-sidebar>.workspace-bom .bom-part-stack{
+ margin:0;
+ gap:0;
+}
+.assembly-sidebar>.workspace-bom .bom-part,
+.assembly-sidebar>.workspace-bom .bom-part:nth-child(even),
+.assembly-sidebar>.workspace-bom .bom-part-stack>.bom-part,
+.assembly-sidebar>.workspace-bom .bom-part-stack>.bom-part:nth-child(even){
+ border:0;
+ border-bottom:1px solid var(--color-border);
+ border-radius:0;
+ background:transparent;
+ margin:0;
+ box-shadow:none;
+ overflow:visible;
+}
+.assembly-sidebar>.workspace-bom .bom-part-summary,
+.assembly-sidebar>.workspace-bom .bom-part-stack>.bom-part>.bom-part-summary{
+ display:flex;
+ flex-wrap:wrap;
+ align-items:center;
+ justify-content:flex-start;
+ min-height:35px;
+ gap:5px 9px;
+ padding:7px 5px;
+ background:transparent;
+ font-size:.82rem;
+ font-weight:400;
+}
+.assembly-sidebar>.workspace-bom .bom-part-summary:hover{
+ background:var(--color-hover);
+}
+.assembly-sidebar>.workspace-bom .bom-part-summary:before{
+ color:var(--color-text-muted);
+ margin-right:1px;
+}
+.assembly-sidebar>.workspace-bom .bom-part-name{
+ flex:1 1 140px;
+ min-width:0;
+ color:var(--color-text);
+ font-size:.82rem;
+ font-weight:550;
+ line-height:1.35;
+ overflow-wrap:anywhere;
+}
+.assembly-sidebar>.workspace-bom .bom-part-meta,
+.assembly-sidebar>.workspace-bom .bom-subassembly-count{
+ font-size:.73rem;
+ color:var(--color-text-muted);
+ font-weight:400;
+ white-space:nowrap;
+}
+.assembly-sidebar>.workspace-bom .bom-open-part-details{
+ margin:0;
+ padding:3px 6px;
+ border:0;
+ border-radius:4px;
+ color:var(--color-text-muted);
+ background:transparent;
+ box-shadow:none;
+ font-size:.73rem;
+ font-weight:500;
+}
+.assembly-sidebar>.workspace-bom .bom-open-part-details:hover{
+ text-decoration:underline;
+ color:var(--color-text);
+ background:transparent;
+}
+.assembly-sidebar>.workspace-bom .bom-subassembly>.bom-part-summary .bom-part-name{
+ font-weight:650;
+}
+.assembly-sidebar>.workspace-bom .bom-subassembly-children{
+ padding:0 0 8px 14px;
+ border-left:1px solid var(--color-border);
+ margin-left:11px;
+}
+.assembly-sidebar>.workspace-bom .bom-subassembly-children>.bom-part-stack{
+ border:0;
+ margin:0;
+ padding:0;
+}
+.assembly-sidebar>.workspace-bom .bom-part-body{
+ background:var(--color-sidebar);
+ border-top:1px solid var(--color-border);
+ padding:10px 12px;
+ font-size:.8rem;
+}
+.assembly-sidebar>.workspace-bom .bom-part-body .btn{
+ font-size:.73rem;
+ padding:5px 8px;
+}
+.assembly-sidebar>.workspace-bom .bom-shop-materials{
+ background:transparent;
+ border:0;
+ border-top:1px solid var(--color-border);
+ border-radius:0;
+ margin:10px 7px 0;
+}
+.assembly-sidebar>.workspace-bom .bom-shop-materials>summary{
+ color:var(--color-text-muted);
+ padding:10px 4px;
+ font-size:.76rem;
+ font-weight:500;
+}
+.assembly-sidebar>.workspace-bom .bom-part-summary .bom-part-toggle-label,
+.assembly-sidebar>.workspace-bom .bom-row-thumbnail,
+.assembly-sidebar>.workspace-bom .bom-subassembly-label{display:none}
+
+/* Workspace visual cleanup — one subdued palette and clear section rhythm.
+ * Scoped to assembly workspaces; retain stronger accent only for primary actions.
+ */
+#launcher .assembly-content,
+#launcher .assembly-sidebar{
+ background:var(--color-sidebar);
+ border-color:var(--color-border);
+}
+#launcher .assembly-sidebar h3{
+ background:var(--color-sidebar);
+ border-color:var(--color-border);
+ color:var(--color-text);
+}
+#launcher .assembly-node.selected{
+ background:var(--color-selected);
+ outline:1px solid var(--color-focus);
+}
+#launcher .assembly-sidebar .assembly-edit{
+ border-color:var(--color-border);
+ padding:12px 9px;
+ gap:7px;
+}
+#launcher .assembly-sidebar .assembly-edit .btn{
+ background:var(--color-sidebar);
+ border:1px solid var(--color-border);
+ color:var(--color-text-muted);
+}
+#launcher .assembly-sidebar .assembly-edit .btn:hover{
+ background:var(--color-hover);
+}
+#launcher .assembly-sidebar.bom-sidebar-active>.workspace-bom{
+ margin-top:12px;
+ padding-top:14px;
+ border-top:1px solid var(--color-border);
+ background:transparent;
+}
+#launcher .assembly-sidebar .workspace-bom-heading{
+ padding:0 12px 13px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-count{
+ margin:4px 4px 15px;
+ color:var(--color-text-muted);
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part-stack{
+ gap:4px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part,
+#launcher .assembly-sidebar .workspace-bom .bom-part:nth-child(even){
+ border-bottom:1px solid var(--color-border);
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part-summary{
+ padding-top:10px;
+ padding-bottom:10px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly-children{
+ margin-top:6px;
+ margin-bottom:12px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-shop-materials{
+ margin-top:19px;
+ padding-top:8px;
+ border-color:var(--color-border);
+}
+/* Hide the legacy component list; the dedicated workspace BOM above is canonical. */
+#launcher .assembly-sidebar .workspace-bom .component-section>.component-list,
+#launcher .assembly-sidebar .workspace-bom .component-section>.bom-visible-parts{
+ display:none!important;
+}
+#launcher .assembly-sidebar .workspace-bom .component-section>details:not(.component-admin)>summary{
+ display:none!important;
+}
+#launcher .assembly-sidebar .workspace-bom .component-admin:not([open]){
+ display:none!important;
+}
+#launcher .assembly-sidebar .workspace-bom .component-admin[open]{
+ margin:16px 8px;
+ padding:13px;
+ background:var(--color-sidebar);
+ border:1px solid var(--color-border);
+ border-radius:6px;
+}
+#launcher .assembly-sidebar .workspace-bom .component-admin>summary{
+ display:none;
+}
+/* Content column: consistent gaps rather than competing boxes and accents. */
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-heading{
+ margin-bottom:22px;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels{
+ max-width:none;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
+ margin:0 0 32px;
+ padding:0 0 3px;
+ background:transparent;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article h2{
+ color:var(--color-text);
+ font-size:1.05rem;
+ font-weight:650;
+ margin:0 0 13px;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article p,
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article .muted{
+ color:var(--color-text-muted);
+ line-height:1.6;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels .workspace-resources{
+ margin-top:5px;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-resources .btn,
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-drawing-panel .btn{
+ background:var(--color-surface-muted);
+ border:1px solid var(--color-border);
+ color:var(--color-text);
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-actions{
+ margin:12px 0 32px;
+ padding-top:8px;
+}
+/* Keep section groups aligned while using quiet, consistent separation. */
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article + article{
+ padding-top:3px;
+}
+
+/* Workspace spacing pass: distinguish functional areas using whitespace,
+   not additional competing colors or heavy outlines. */
+#launcher .assembly-sidebar.bom-sidebar-active>.workspace-bom{
+ margin-top:32px;
+ padding-top:24px;
+}
+#launcher .assembly-sidebar .workspace-bom-heading{
+ padding-bottom:17px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-count{
+ margin-bottom:20px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part-stack{
+ gap:7px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-shop-materials{
+ margin-top:26px;
+ padding-top:12px;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-heading{
+ margin-bottom:30px;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
+ margin-bottom:52px;
+ padding-bottom:0;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article h2{
+ margin-bottom:18px;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-resources{
+ margin-top:0;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-actions{
+ margin-top:6px;
+ padding-top:0;
+}
+@media(max-width:800px){
+ #launcher .assembly-sidebar.bom-sidebar-active>.workspace-bom{
+  margin-top:24px;
+  padding-top:18px;
+ }
+ #launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
+  margin-bottom:36px;
+ }
+}
+
+
+/* Distinct section frames: neutral, consistent boundaries for the workspace.
+   Use identical border and surface for every functional area, rather than more colors. */
+#launcher .assembly-sidebar{
+ background:transparent;
+ border:0;
+ border-radius:0;
+ padding:0;
+}
+#launcher .assembly-sidebar .feature-tree-frame{
+ background:var(--color-sidebar);
+ border:1px solid var(--color-border);
+ border-radius:9px;
+ overflow:hidden;
+}
+#launcher .assembly-sidebar .feature-tree-frame h3{
+ background:var(--color-sidebar);
+ border-bottom:1px solid var(--color-border);
+}
+#launcher .assembly-sidebar .feature-tree-frame .assembly-edit{
+ border-top:1px solid var(--color-border);
+}
+#launcher .assembly-sidebar .feature-tree-frame .assembly-tree-status:not(:empty){
+ border-top:1px solid var(--color-border);
+}
+#launcher .assembly-sidebar.bom-sidebar-active>.workspace-bom{
+ margin:22px 0 0;
+ padding:0 0 14px;
+ background:var(--color-sidebar);
+ border:1px solid var(--color-border);
+ border-radius:9px;
+ overflow:hidden;
+}
+#launcher .assembly-sidebar .workspace-bom-heading{
+ padding:13px 12px;
+ background:var(--color-sidebar);
+ border-bottom:1px solid var(--color-border);
+ margin-bottom:14px;
+}
+#launcher .assembly-sidebar .workspace-bom-heading h2{
+ font-size:.85rem;
+ margin:0 auto 0 0;
+ color:var(--color-text);
+}
+#launcher .assembly-sidebar .workspace-bom .workspace-saved-parts{
+ padding:0 11px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-count{
+ margin:1px 2px 14px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-shop-materials{
+ margin:20px 11px 0;
+}
+/* Each right-side section shares the same frame with a little internal breathing room. */
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels{
+ display:block;
+ max-width:none;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
+ background:var(--color-surface);
+ border:1px solid var(--color-border);
+ border-radius:9px;
+ padding:20px 22px 22px;
+ margin:0 0 22px;
+ min-width:0;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article+article{
+ padding-top:20px;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article h2{
+ margin:0 0 18px;
+ font-size:1.05rem;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-actions{
+ margin:14px 0 24px;
+ padding:0;
+}
+/* Match section spacing at mobile widths without compressing the contents. */
+@media(max-width:800px){
+ #launcher .assembly-sidebar.bom-sidebar-active>.workspace-bom{margin-top:18px}
+ #launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
+  padding:16px;
+  margin-bottom:18px;
+ }
+}
+
+/* BOM refinement: nested assemblies are hierarchy, not separate color cards.
+   A single neutral surface, indentation and fine dividers communicate structure. */
+#launcher .assembly-sidebar .workspace-bom .workspace-saved-parts{
+ padding:0 20px 0 13px;
+}
+#launcher .assembly-sidebar.bom-sidebar-active>.workspace-bom{
+ padding-bottom:32px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part-stack{
+ padding-right:0;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly,
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly[open],
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly > .bom-part-summary,
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly > .bom-subassembly-children,
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly > .bom-subassembly-children > .bom-part-stack,
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part,
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part-summary,
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part-body{
+ background:transparent;
+ box-shadow:none;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly > .bom-subassembly-children{
+ border:0;
+ border-left:1px solid var(--color-border);
+ margin:3px 0 12px 12px;
+ padding:0 0 3px 13px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly > .bom-subassembly-children > .bom-part-stack{
+ border:0;
+ margin:0;
+ padding:0;
+ gap:0;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part{
+ border:0;
+ border-bottom:1px solid var(--color-border);
+ border-radius:0;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part-summary{
+ min-height:0;
+ padding:9px 3px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part-summary:hover{
+ background:var(--color-hover);
+}
+#launcher .assembly-sidebar .workspace-bom .bom-open-subassembly{
+ margin:8px 0 8px 3px;
+ padding:3px 0;
+ border:0;
+ border-radius:0;
+ box-shadow:none;
+ color:var(--color-text-muted);
+ background:transparent;
+ font-weight:500;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-open-subassembly:hover{
+ color:var(--color-text);
+ text-decoration:underline;
+ background:transparent;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-shop-materials{
+ margin:26px 19px 0 13px;
+}
+@media(max-width:800px){
+ #launcher .assembly-sidebar .workspace-bom .workspace-saved-parts{
+  padding-right:14px;
+ }
+}
+
