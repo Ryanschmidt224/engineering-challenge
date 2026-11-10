@@ -1,3 +1,4 @@
+import {handleProposals} from "./functions/api/proposals.js";
 import {onRequest as projectsApi,projectAllowed,canEditProject} from "./functions/api/projects.js";
 import {handleAccounts} from "./functions/api/accounts.js";
 import {handleTree} from "./functions/api/tree.js";
@@ -23,6 +24,7 @@ export default {
     try{
       if(path==="/api/accounts")return handleAccounts(request,env);
       if(path==="/api/projects")return projectsApi({request,env,ctx});
+      if(path==="/api/proposals")return handleProposals(request,env);
       // A private project must not be readable by guessing an API or asset URL.
       const u=new URL(request.url);
       let scoped=u.searchParams.get("project");
