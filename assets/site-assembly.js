@@ -630,6 +630,7 @@ function setupAssemblyTrees(){
   partWorkspace.querySelector(".part-workspace-save").onclick=async()=>{
    const id=partRoute();if(!id)return;
    if(!adminAuthenticated){partStatus.textContent="Sign in as administrator to save.";return}
+   if(partRecipe?.hasPendingUploads()){partStatus.textContent="Finish uploading attachments before saving.";return}
    const data={};
    data.resources=partResourcePicker?.getData();data.experiments=partExtras.getExperiments();data.recipe=partRecipe?.getData()||[];data.expectedRevision=partSavedRevision;
    const button=partWorkspace.querySelector(".part-workspace-save");button.disabled=true;partStatus.textContent="Saving…";
@@ -1270,6 +1271,7 @@ function setupAssemblyTrees(){
   }
   workspace.querySelector(".workspace-save").onclick=async()=>{
    if(!adminAuthenticated){workspaceStatus.textContent="Use Admin login at the top of the website to save.";return}
+   if(assemblyRecipe?.hasPendingUploads()){workspaceStatus.textContent="Finish uploading attachments before saving.";return}
    const button=workspace.querySelector(".workspace-save"),url=workspaceUrl(),data={};
    data.resources=assemblyResourcePicker?.getData();data.experiments=assemblyExtras.getExperiments();data.recipe=assemblyRecipe?.getData()||[];data.expectedRevision=workspaceSavedRevision;
    button.disabled=true;workspaceStatus.textContent="Saving…";
