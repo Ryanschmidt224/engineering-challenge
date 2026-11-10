@@ -151,26 +151,13 @@ function setupAssemblyTrees(){
   const workspacePhotoEditor=document.createElement("article");
   workspacePhotoEditor.className="workspace-photos-editor is-editing-photo";
   workspacePhotoEditor.innerHTML='<h2>Assembly photos</h2><p class="muted">Browse, add, or delete assembly photos.</p><div class="assembly-unified-photo"><div class="assembly-photos"></div></div><div class="workspace-photo-tools"><div class="assembly-photo-admin hide"><div class="assembly-photo-zone"><button type="button" class="assembly-photo-pick">+ Add photo</button><input class="assembly-photo-input" type="file" accept="image/*,.heic,.heif" hidden><span class="assembly-photo-drop-hint">or drop an image here</span></div><label class="assembly-photo-caption-label">Caption <input class="field assembly-photo-caption" placeholder="Photo description"></label></div></div><p class="workspace-photo-status muted" role="status" aria-live="polite"></p>';
-  const photoDialog=document.createElement("dialog");
-  photoDialog.className="workspace-photo-dialog";
-  photoDialog.setAttribute("aria-label","Edit assembly photos");
-  const dialogHeader=document.createElement("div");
-  dialogHeader.className="workspace-photo-dialog-header";
-  const closePhotoDialog=document.createElement("button");
-  closePhotoDialog.type="button";closePhotoDialog.className="btn workspace-photo-close";
-  closePhotoDialog.textContent="Done";
-  closePhotoDialog.onclick=()=>photoDialog.close();
-  dialogHeader.append(closePhotoDialog);photoDialog.append(dialogHeader,workspacePhotoEditor);
-  workspace.append(photoDialog);
-  photoDialog.addEventListener("click",event=>{if(event.target===photoDialog)photoDialog.close()});
-  const cover=workspace.querySelector(".workspace-cover");
-  const coverShell=document.createElement("div");coverShell.className="workspace-cover-shell";
-  cover.before(coverShell);coverShell.append(cover);
-  const openPhotoEditor=document.createElement("button");openPhotoEditor.type="button";
-  openPhotoEditor.className="workspace-photo-launch";
-  openPhotoEditor.textContent="✎";openPhotoEditor.title="Edit assembly image";
-  openPhotoEditor.setAttribute("aria-label","Edit assembly image");
-  coverShell.append(openPhotoEditor);
+  const photoDialog=window.BSPhotoEditor.dialog({
+   parent:workspace,label:"Edit assembly photos",className:"workspace-photo-dialog",
+   doneClass:"workspace-photo-close",content:workspacePhotoEditor
+  });
+  const openPhotoEditor=window.BSPhotoEditor.pencil(
+   workspace.querySelector(".workspace-cover"),"Edit assembly image"
+  );
   openPhotoEditor.onclick=()=>{
    if(!adminAuthenticated)return;
    photoDialog.showModal();
@@ -465,25 +452,19 @@ function setupAssemblyTrees(){
 
   let currentPartInfo=null;
   const pictureCover=partWorkspace.querySelector(".part-workspace-cover");
-  const partCoverShell=document.createElement("div");partCoverShell.className="workspace-cover-shell";
-  pictureCover.before(partCoverShell);partCoverShell.append(pictureCover);
-  const editPartPicture=document.createElement("button");
-  editPartPicture.type="button";editPartPicture.className="workspace-photo-launch";
-  editPartPicture.textContent="✎";editPartPicture.title="Edit part image";
-  editPartPicture.setAttribute("aria-label","Edit part image");editPartPicture.hidden=true;
-  partCoverShell.append(editPartPicture);
-  const partPhotoDialog=document.createElement("dialog");partPhotoDialog.className="workspace-photo-dialog part-photo-dialog";
-  partPhotoDialog.setAttribute("aria-label","Edit part image");
-  partPhotoDialog.innerHTML='<div class="workspace-photo-dialog-header"><button type="button" class="btn part-photo-done">Done</button></div><div class="workspace-photos-editor is-editing-photo"><h2>Part image</h2><p class="muted">Add, replace, or delete this part photo.</p><div class="assembly-unified-photo"><div class="part-photo-stage"><img class="part-photo-preview" alt="Part image"><span class="part-photo-placeholder">No picture yet</span></div></div><div class="workspace-photo-tools"><div class="part-photo-actions"><button type="button" class="btn part-photo-add">+ Add / replace image</button><button type="button" class="btn part-photo-delete">Delete image</button><input class="part-photo-file" type="file" accept="image/jpeg,image/png,image/webp" hidden></div></div><p class="part-photo-status muted" role="status" aria-live="polite"></p></div>';
-  partWorkspace.append(partPhotoDialog);
+  const editPartPicture=window.BSPhotoEditor.pencil(pictureCover,"Edit part image");
+  editPartPicture.hidden=true;
+  const partPhotoDialog=window.BSPhotoEditor.dialog({
+   parent:partWorkspace,label:"Edit part image",
+   className:"workspace-photo-dialog part-photo-dialog",doneClass:"part-photo-done",
+   contentHtml:'<div class="workspace-photos-editor is-editing-photo"><h2>Part image</h2><p class="muted">Add, replace, or delete this part photo.</p><div class="assembly-unified-photo"><div class="part-photo-stage"><img class="part-photo-preview" alt="Part image"><span class="part-photo-placeholder">No picture yet</span></div></div><div class="workspace-photo-tools"><div class="part-photo-actions"><button type="button" class="btn part-photo-add">+ Add / replace image</button><button type="button" class="btn part-photo-delete">Delete image</button><input class="part-photo-file" type="file" accept="image/jpeg,image/png,image/webp" hidden></div></div><p class="part-photo-status muted" role="status" aria-live="polite"></p></div>'
+  });
   const partPhotoFile=partPhotoDialog.querySelector(".part-photo-file");
   const partPhotoAdd=partPhotoDialog.querySelector(".part-photo-add");
   const partPhotoDelete=partPhotoDialog.querySelector(".part-photo-delete");
   const partPhotoPreview=partPhotoDialog.querySelector(".part-photo-preview");
   const partPhotoPlaceholder=partPhotoDialog.querySelector(".part-photo-placeholder");
   const partPhotoStatus=partPhotoDialog.querySelector(".part-photo-status");
-  partPhotoDialog.querySelector(".part-photo-done").onclick=()=>partPhotoDialog.close();
-  partPhotoDialog.addEventListener("click",event=>{if(event.target===partPhotoDialog)partPhotoDialog.close()});
   function showPartPicture(partId,bust=false){
    if(!partId)return;
    const src=partPhotoUrl(partId)+(bust?"&v="+Date.now():"");
