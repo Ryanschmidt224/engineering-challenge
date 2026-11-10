@@ -6,7 +6,7 @@ const json=(v,status=200,headers={})=>new Response(JSON.stringify(v),{status,hea
 const cookie=(value,age)=>"bs_user="+value+"; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age="+age;
 const key=env=>crypto.subtle.importKey("raw",encoder.encode(env.admin_password),{name:"HMAC",hash:"SHA-256"},false,["sign","verify"]);
 const userKey=id=>"users/"+id+".json";
-const emailKey=mail=>"user-email/"+b64(encoder.encode(mail)).slice(0,240)+".json";
+const emailKey=async mail=>"user-email/"+b64(new Uint8Array(await crypto.subtle.digest("SHA-256",encoder.encode(mail))))+".json";
 export async function accountUser(request,env){
  if(!env.admin_password||!env.PHOTOS)return null;
  const value=request.headers.get("cookie")?.split(";").map(x=>x.trim()).find(x=>x.startsWith("bs_user="))?.slice(8);
@@ -44,12 +44,12 @@ export async function handleAccounts(request,env){
  const body=await request.json().catch(()=>null);
  const email=String(body?.email||"").toLowerCase().trim(),password=body?.password;
  if(!/^[^\s@]{1,80}@[^\s@]{1,120}\.[^\s@]{2,30}$/.test(email)||typeof password!=="string"||password.length<12||password.length>256)return json({error:"Enter a valid email and a password of at least 12 characters"},400);
- const emailObject=await env.PHOTOS.get(emailKey(email));
+ const emailObject=await env.PHOTOS.get(await emailKey(email));
  if(body.action==="register"){
   if(emailObject)return json({error:"Account already exists"},409);
   const id="u"+crypto.randomUUID().replace(/-/g,""),salt=b64(crypto.getRandomValues(new Uint8Array(16)));
   const user={id,email,displayName:String(body.displayName||"").trim().slice(0,80)||email.split("@")[0],salt,passwordHash:await passwordHash(password,salt),sessionVersion:crypto.randomUUID()};
-  const claimed=await env.PHOTOS.put(emailKey(email),JSON.stringify({id}),{onlyIf:{etagDoesNotMatch:"*"}});
+  const claimed=await env.PHOTOS.put(await emailKey(email),JSON.stringify({id}),{onlyIf:{etagDoesNotMatch:"*"}});
   if(!claimed)return json({error:"Account already exists"},409);
   await env.PHOTOS.put(userKey(id),JSON.stringify(user),{onlyIf:{etagDoesNotMatch:"*"}});
   return json({user:{id,email,displayName:user.displayName}},201,{"set-cookie":cookie(await createSession(user,env),30*86400)});
