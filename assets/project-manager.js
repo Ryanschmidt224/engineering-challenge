@@ -33,12 +33,12 @@ window.BSProjectManager=(()=>{
   async function sign(action){
    try{
     const data=await api("POST","/api/accounts",{action,email:email.value,password:password.value,displayName:name.value});
-    user=data.user;password.value="";dialog.close();await refresh();
+    user=data.user;password.value="";dialog.close();location.href="#home";location.reload();
    }catch(error){note.textContent=error.message}
   }
   dialog.querySelector(".project-signin").onclick=()=>sign("login");
   dialog.querySelector(".project-register").onclick=()=>sign("register");
-  dialog.querySelector(".project-signout").onclick=async()=>{await api("DELETE","/api/accounts");user=null;dialog.close();navigate("home");await refresh()};
+  dialog.querySelector(".project-signout").onclick=async()=>{await api("DELETE","/api/accounts");user=null;dialog.close();location.href="#home";location.reload()};
   const editor=element("dialog","project-create-dialog");
   editor.innerHTML='<form method="dialog" class="project-create-form"><h2>New project</h2><p class="muted">Projects are private by default. Only you can edit them.</p><label>Project name<input class="field" name="name" maxlength="100" required></label><label>Description<textarea class="field" name="description" maxlength="500"></textarea></label><p class="project-create-message" role="status"></p><div class="row"><button type="button" class="btn primary project-create-save">Create project</button><button type="button" class="btn project-create-cancel">Cancel</button></div></form>';
   document.body.append(editor);
