@@ -1,4 +1,5 @@
 import {isAdmin} from "./auth.js";
+import {projectAllowed,canEditProject} from "./projects.js";
 const PROJECTS=new Set(["launcher","linear","robot"]);
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const libraryKey="libraries/wires.json";
@@ -46,7 +47,7 @@ export async function handleWires(request,env){
 export async function handleHarness(request,env){
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  const url=new URL(request.url),project=url.searchParams.get("project"),partId=url.searchParams.get("part");
- if(!PROJECTS.has(project)||!guid(partId))return json({error:"Invalid part"},400);
+ if(!await projectAllowed(env,project,request)||!guid(partId))return json({error:"Invalid part"},400);
  const records=await env.PHOTOS.get("components/"+project+".json");
  const parts=records?JSON.parse(await records.text()):[];
  if(!parts.some(p=>p.id===partId))return json({error:"Part not found"},404);
@@ -56,7 +57,7 @@ export async function handleHarness(request,env){
   return json({cuts:record?JSON.parse(await record.text()):[]});
  }
  if(request.method!=="PUT")return json({error:"Method not allowed"},405);
- if(!await isAdmin(request,env))return json({error:"Admin login required"},401);
+ if(!await canEditProject(request,env,project))return json({error:"Project owner login required"},401);
  const body=await request.json().catch(()=>null);
  if(!Array.isArray(body?.cuts)||body.cuts.length>100)return json({error:"Invalid harness cutting list"},400);
  const wires=await library(env),ids=new Set(wires.map(w=>w.id));
