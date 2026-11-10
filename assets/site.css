@@ -2626,3 +2626,36 @@
 }
 .assembly-bom-parts-group .assembly-bom-part-tile .assembly-tile-cover::before{content:"Part"}
 .assembly-bom-parts-group .assembly-bom-subassembly-tile .assembly-tile-cover::before{content:"Subassembly"}
+
+/* Revisions: the same collapsed header treatment as Part details. */
+.investigations-panel,.recipe-step-investigations{
+ padding:0;overflow:hidden;
+ background:rgba(31,62,78,.22);border:1px solid #456779;border-radius:12px;
+}
+.investigations-panel .investigation-collapse,.recipe-step-investigations .investigation-collapse{
+ display:block;width:100%;
+}
+.investigation-collapse>summary.investigation-collapse-heading{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ background:rgba(48,90,111,.32);border-bottom:1px solid #436478;
+ padding:12px 16px;cursor:pointer;list-style:none;
+}
+.investigation-collapse>summary.investigation-collapse-heading::-webkit-details-marker{display:none}
+.investigation-collapse>summary.investigation-collapse-heading:focus-visible{outline:2px solid #87c7bd;outline-offset:-2px}
+.investigation-collapse:not([open])>summary.investigation-collapse-heading{border-bottom:0}
+.investigation-collapse-heading h2,.investigation-collapse-heading h4{
+ margin:0;color:#eaf6fb;font-size:1.06rem;font-weight:700;
+}
+.investigation-collapse-heading .investigation-toggle-label{
+ font-size:.86rem;font-weight:650;color:#a9dfd5;
+ border:1px solid #4d8d88;border-radius:8px;padding:7px 11px;white-space:nowrap;
+}
+.investigation-collapse-content{padding:14px 16px}
+.investigation-collapse-content .investigation-heading{margin:0 0 12px}
+.investigation-collapse-content .investigation-card:first-of-type{margin-top:0}
+.recipe-step-investigations{margin-top:12px}
+@media(max-width:550px){
+ .investigation-collapse-heading h2,.investigation-collapse-heading h4{font-size:.95rem}
+ .investigation-collapse-heading .investigation-toggle-label{font-size:.75rem}
+ .investigation-collapse-content{padding:12px}
+}
