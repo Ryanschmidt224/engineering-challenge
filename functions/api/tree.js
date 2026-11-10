@@ -1,9 +1,9 @@
+import {projectAllowed,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
-const projects=new Set(["launcher","linear","robot"]);
 const reply=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});
 export async function handleTree(request,env){
  const project=new URL(request.url).searchParams.get("project");
- if(!projects.has(project))return reply({error:"Unknown project"},400);
+ if(!await projectAllowed(env,project))return reply({error:"Unknown project"},400);
  if(!env.PHOTOS)return reply({error:"Storage unavailable"},503);
  // Root project display settings are separate from the tree and its node IDs.
  // Names and cover selection can change without migrating BOM or assembly data.
