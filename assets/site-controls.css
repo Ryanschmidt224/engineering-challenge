@@ -870,3 +870,10 @@
 .recipe-step-edit-toggle{margin-left:auto;font-size:.8rem;padding:5px 14px;flex:0 0 auto}
 .recipe-edit-controls .recipe-save-step{margin-left:0;width:auto}
 @media(max-width:600px){.recipe-edit-controls .recipe-save-step{width:auto;margin-left:0}}
+
+/* Feature-tree visibility is a display filter, not a BOM classification. */
+.assembly-hidden-toggle{display:block;margin:7px 10px 9px auto;padding:5px 9px;font-size:.79rem;max-width:calc(100% - 20px)}
+.assembly-hidden-toggle[hidden]{display:none}
+.assembly-node.is-hidden-part .assembly-name{opacity:.56}
+.part-visibility-field,.library-visibility-field{display:flex;align-items:center;gap:9px;margin:13px 0 8px;font-size:.91rem;cursor:pointer}
+.part-visibility-field input,.library-visibility-field input{width:17px;height:17px;flex:none}
