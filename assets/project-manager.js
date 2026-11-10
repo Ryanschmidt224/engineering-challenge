@@ -133,7 +133,7 @@ window.BSProjectManager=(()=>{
   async function refresh(){
    try{
     user=(await api("GET","/api/accounts")).user;
-    const data=await api("GET","/api/projects");projects=data.projects||[];currentProjects=projects;
+    const data=await api("GET","/api/projects");if(!Array.isArray(data.projects))throw Error("Project catalog response unavailable");projects=data.projects;currentProjects=projects;
     newButton.hidden=!user;archiveButton.hidden=!user;
     document.querySelectorAll(".project-personal-card").forEach(node=>node.remove());
     for(const project of projects){
@@ -159,6 +159,7 @@ window.BSProjectManager=(()=>{
       article.hidden=!ids.has(link.dataset.project||link.dataset.nav);
     });
     setupAssemblyTrees();setupComponents();setupPhotos();
+    if(typeof refreshAdminUI==="function")refreshAdminUI();
     for(const project of projects)window.BSReview?.attach(project,user);
     document.querySelectorAll("[data-assembly-tree]").forEach(root=>root.dispatchEvent(new Event("projectpermissionschanged")));
    }catch(error){console.error("Project catalog unavailable",error)}
