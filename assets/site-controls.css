@@ -882,11 +882,6 @@
 /* Navigation-only sidebar: all BOM management now belongs to the main workspace. */
 .assembly-sidebar.bom-sidebar-active{min-height:0}
 .assembly-sidebar .feature-tree-frame{width:100%}
-.assembly-tree-modes{display:flex;gap:0;margin:10px 12px 8px;border:1px solid var(--color-border);border-radius:8px;overflow:hidden}
-.assembly-tree-modes[hidden]{display:none!important}
-.assembly-tree-modes .assembly-tree-mode{flex:1;min-width:0;border:0;border-radius:0;box-shadow:none;padding:8px 7px;font-size:.78rem;background:transparent;color:var(--color-text-muted)}
-.assembly-tree-modes .assembly-tree-mode+.assembly-tree-mode{border-left:1px solid var(--color-border)}
-.assembly-tree-modes .assembly-tree-mode.is-active{background:var(--color-selected);color:var(--color-text);font-weight:650}
 :is(#launcher,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels{display:flex;flex-direction:column;align-items:stretch;gap:0;min-width:0}
 :is(#launcher,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.recipe-instructions{order:1}
 :is(#launcher,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-bom{order:2;display:block;min-width:0}
