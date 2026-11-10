@@ -271,9 +271,6 @@ function installInstructionExtras(panel,prefix,onRestoreResources,onRestoreRecip
   const assemblyExtras=installInstructionExtras(workspace,"workspace",resources=>assemblyResourcePicker?.setData(resources,adminAuthenticated),snapshot=>assemblyRecipe?.setData(snapshot));
   const partExtras=installInstructionExtras(partWorkspace,"part",resources=>partResourcePicker?.setData(resources,adminAuthenticated),snapshot=>partRecipe?.setData(snapshot));
 
-  const partTools=document.createElement("div");partTools.className="part-workspace-tools";
-  partTools.classList.add("hide");
-  partTools.innerHTML='<div class="part-photo-edit-label">Part picture</div><div class="part-photo-edit-preview"></div><button type="button" class="btn part-workspace-picture">Add / change picture</button><input type="file" class="part-workspace-file" accept="image/jpeg,image/png,image/webp" hidden>';
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
   detailsPanel.innerHTML='<details class="part-details-collapse"><summary class="part-details-view-heading"><h2>Part details</h2><span class="part-details-toggle-label">Show details</span></summary><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div><div class="part-drawing-panel"></div><div class="part-files-panel"></div></details>';
   const partDetailsCollapse=detailsPanel.querySelector(".part-details-collapse");
@@ -305,102 +302,91 @@ function installInstructionExtras(panel,prefix,onRestoreResources,onRestoreRecip
   };
 
   let currentPartInfo=null;
-  const partFile=partTools.querySelector(".part-workspace-file"),pictureButton=partTools.querySelector(".part-workspace-picture");
-  const photoEditPreview=partTools.querySelector(".part-photo-edit-preview");
-  const photoEditingId=()=>editingPart||currentPartInfo?.id||null;
-  const photoFeedback=message=>{if(editingPart)bomReport(message);else partStatus.textContent=message};
-  function refreshEditPhoto(){
-   const id=photoEditingId();photoEditPreview.replaceChildren();if(!id)return;
-   const img=document.createElement("img");img.alt="Current part picture";img.src=partPhotoUrl(id)+"&v="+Date.now();
-   img.onerror=()=>{if(img.isConnected)photoEditPreview.replaceChildren(Object.assign(document.createElement("span"),{textContent:"No picture yet"}))};
-   photoEditPreview.append(img);
-  }
-  const deletePictureButton=document.createElement("button");deletePictureButton.type="button";deletePictureButton.className="btn part-workspace-delete-picture";deletePictureButton.textContent="Delete picture";partTools.append(deletePictureButton);
-  const partPictureDialog=document.createElement("dialog");partPictureDialog.className="part-picture-dialog";
-  const pictureClose=document.createElement("button");pictureClose.type="button";pictureClose.className="btn part-picture-close";pictureClose.textContent="Close ✕";
-  const fullImage=document.createElement("img");fullImage.className="part-picture-full";fullImage.alt="Full-size part picture";
-  pictureClose.onclick=()=>partPictureDialog.close();
-  partPictureDialog.onclick=event=>{if(event.target===partPictureDialog)partPictureDialog.close()};
-  partPictureDialog.append(pictureClose,fullImage);partWorkspace.append(partPictureDialog);
   const pictureCover=partWorkspace.querySelector(".part-workspace-cover");
-  pictureCover.title="Double-click to view the full-size picture";
-  pictureCover.ondblclick=event=>{
-   const image=pictureCover.querySelector("img");
-   if(!image)return;
-   event.preventDefault();
-   fullImage.src=image.src;fullImage.alt=image.alt||"Full-size part picture";
-   if(!partPictureDialog.open)partPictureDialog.showModal();
-  };
-  async function deletePartPicture(partId,feedback){
-   if(!adminAuthenticated)return;
-   if(!confirm("Delete this part picture? The BOM part and its instructions will remain."))return;
-   const response=await fetch(partPhotoUrl(partId),{method:"DELETE",credentials:"same-origin"});
-   const result=await response.json().catch(()=>({}));
-   if(!response.ok)throw Error(result.error||"Picture deletion failed (HTTP "+response.status+")");
-   if(typeof feedback==="function")feedback();
+  const partCoverShell=document.createElement("div");partCoverShell.className="workspace-cover-shell";
+  pictureCover.before(partCoverShell);partCoverShell.append(pictureCover);
+  const editPartPicture=document.createElement("button");
+  editPartPicture.type="button";editPartPicture.className="workspace-photo-launch";
+  editPartPicture.textContent="✎";editPartPicture.title="Edit part image";
+  editPartPicture.setAttribute("aria-label","Edit part image");editPartPicture.hidden=true;
+  partCoverShell.append(editPartPicture);
+  const partPhotoDialog=document.createElement("dialog");partPhotoDialog.className="workspace-photo-dialog part-photo-dialog";
+  partPhotoDialog.setAttribute("aria-label","Edit part image");
+  partPhotoDialog.innerHTML='<div class="workspace-photo-dialog-header"><button type="button" class="btn part-photo-done">Done</button></div><div class="workspace-photos-editor is-editing-photo"><h2>Part image</h2><p class="muted">Add, replace, or delete this part photo.</p><div class="assembly-unified-photo"><div class="part-photo-stage"><img class="part-photo-preview" alt="Part image"><span class="part-photo-placeholder">No picture yet</span></div></div><div class="workspace-photo-tools"><div class="part-photo-actions"><button type="button" class="btn part-photo-add">+ Add / replace image</button><button type="button" class="btn part-photo-delete">Delete image</button><input class="part-photo-file" type="file" accept="image/jpeg,image/png,image/webp" hidden></div></div><p class="part-photo-status muted" role="status" aria-live="polite"></p></div>';
+  partWorkspace.append(partPhotoDialog);
+  const partPhotoFile=partPhotoDialog.querySelector(".part-photo-file");
+  const partPhotoAdd=partPhotoDialog.querySelector(".part-photo-add");
+  const partPhotoDelete=partPhotoDialog.querySelector(".part-photo-delete");
+  const partPhotoPreview=partPhotoDialog.querySelector(".part-photo-preview");
+  const partPhotoPlaceholder=partPhotoDialog.querySelector(".part-photo-placeholder");
+  const partPhotoStatus=partPhotoDialog.querySelector(".part-photo-status");
+  partPhotoDialog.querySelector(".part-photo-done").onclick=()=>partPhotoDialog.close();
+  partPhotoDialog.addEventListener("click",event=>{if(event.target===partPhotoDialog)partPhotoDialog.close()});
+  function showPartPicture(partId,bust=false){
+   if(!partId)return;
+   const src=partPhotoUrl(partId)+(bust?"&v="+Date.now():"");
+   const image=document.createElement("img");image.src=src;image.alt=currentPartInfo?.name||"Part image";
+   partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");partPhotoPlaceholder.hidden=false;
+   image.onload=()=>{
+    if(currentPartInfo?.id!==partId)return;
+    const main=document.createElement("img");main.src=src;main.alt=image.alt;
+    pictureCover.replaceChildren(main);
+    partPhotoPreview.src=src;partPhotoPreview.hidden=false;partPhotoPlaceholder.hidden=true;
+    partPhotoDelete.disabled=false;
+   };
+   image.onerror=()=>{
+    if(currentPartInfo?.id!==partId)return;
+    pictureCover.replaceChildren(Object.assign(document.createElement("span"),{textContent:"No picture yet"}));
+    partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");
+    partPhotoPlaceholder.hidden=false;partPhotoDelete.disabled=true;
+   };
   }
-  deletePictureButton.onclick=async()=>{
-   const partId=photoEditingId();if(!partId)return;
-   deletePictureButton.disabled=true;
-   try{
-    await deletePartPicture(partId,()=>{
-     pictureCover.replaceChildren(Object.assign(document.createElement("span"),{textContent:"No picture yet"}));
-     refreshEditPhoto();
-     if(partPictureDialog.open)partPictureDialog.close();
-     photoFeedback("Part picture deleted.");
-    });
-   }catch(error){photoFeedback(error.message)}
-   finally{deletePictureButton.disabled=false}
+  editPartPicture.onclick=()=>{
+   if(!adminAuthenticated||!currentPartInfo)return;
+   partPhotoStatus.textContent="";
+   showPartPicture(currentPartInfo.id);partPhotoDialog.showModal();
   };
+  partPhotoAdd.onclick=()=>partPhotoFile.click();
+  partPhotoFile.onchange=()=>void uploadPartPicture(partPhotoFile.files?.[0]);
   async function uploadPartPicture(file){
-   const partId=photoEditingId();if(!file||!partId)return;
+   const partId=currentPartInfo?.id;
+   if(!file||!partId||!adminAuthenticated)return;
    const mime=file.type||({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp"}[file.name.split(".").pop().toLowerCase()]||"");
-   if(!["image/jpeg","image/png","image/webp"].includes(mime)||file.size>3*1024*1024){photoFeedback("Choose JPG, PNG or WebP under 3 MB.");return}
-   pictureButton.disabled=true;photoFeedback("Uploading picture…");
+   if(!["image/jpeg","image/png","image/webp"].includes(mime)||file.size>3*1024*1024){
+    partPhotoStatus.textContent="Choose JPG, PNG, or WebP under 3 MB.";return;
+   }
+   partPhotoAdd.disabled=true;partPhotoStatus.textContent="Uploading picture…";
    try{
     const response=await fetch(partPhotoUrl(partId),{method:"POST",credentials:"same-origin",headers:{"content-type":mime},body:file});
     const data=await response.json();if(!response.ok)throw Error(data.error||"Upload failed");
-    const image=document.createElement("img");image.src=partPhotoUrl(partId)+"&v="+Date.now();image.alt=currentPartInfo?.name||"Part picture";
-    partWorkspace.querySelector(".part-workspace-cover").replaceChildren(image);refreshEditPhoto();photoFeedback("Picture saved.");
-   }catch(e){photoFeedback(e.message)}finally{pictureButton.disabled=false;partFile.value=""}
+    if(currentPartInfo?.id===partId){showPartPicture(partId,true);partPhotoStatus.textContent="Picture saved."}
+   }catch(error){partPhotoStatus.textContent=error.message||"Upload failed"}
+   finally{partPhotoAdd.disabled=false;partPhotoFile.value=""}
   }
-  pictureButton.onclick=()=>partFile.click();
-  partFile.onchange=()=>void uploadPartPicture(partFile.files?.[0]);
-  // The visible part cover supports click and file drops; the hidden editor
-  // is not a prerequisite for uploading a picture.
-  pictureCover.title="Click to add a part picture; double-click an existing image to enlarge";
-  pictureCover.setAttribute("role","button");pictureCover.tabIndex=0;
-  pictureCover.setAttribute("aria-label","Add or change part picture");
-  pictureCover.addEventListener("click",event=>{
-   if(adminAuthenticated&&currentPartInfo&&event.detail===1)partFile.click();
-  });
-  pictureCover.addEventListener("keydown",event=>{
-   if(adminAuthenticated&&currentPartInfo&&(event.key==="Enter"||event.key===" ")){
-    event.preventDefault();partFile.click();
-   }
-  });
-  // Do not intercept drops intended for CAD files or PDF drawings.
-  function partImageDropAllowed(event){
-   return adminAuthenticated&&!!currentPartInfo&&
-    Array.from(event.dataTransfer?.types||[]).includes("Files")&&
-    !event.target.closest(".drawing-library,.part-files-panel");
-  }
-  partWorkspace.addEventListener("dragover",event=>{
-   if(!partImageDropAllowed(event))return;
+  partPhotoDelete.onclick=async()=>{
+   const partId=currentPartInfo?.id;
+   if(!partId||!adminAuthenticated||!confirm("Delete this part picture? The BOM part and instructions remain."))return;
+   partPhotoDelete.disabled=true;partPhotoStatus.textContent="Deleting picture…";
+   try{
+    const response=await fetch(partPhotoUrl(partId),{method:"DELETE",credentials:"same-origin"});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(result.error||"Picture deletion failed");
+    if(currentPartInfo?.id===partId){
+     pictureCover.replaceChildren(Object.assign(document.createElement("span"),{textContent:"No picture yet"}));
+     partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");
+     partPhotoPlaceholder.hidden=false;partPhotoStatus.textContent="Picture deleted.";
+    }
+   }catch(error){partPhotoStatus.textContent=error.message||"Delete failed";partPhotoDelete.disabled=false}
+  };
+  const partPhotoStage=partPhotoDialog.querySelector(".part-photo-stage");
+  partPhotoStage.addEventListener("dragover",event=>{
+   if(!adminAuthenticated||!Array.from(event.dataTransfer?.types||[]).includes("Files"))return;
    event.preventDefault();event.dataTransfer.dropEffect="copy";
-   pictureCover.classList.add("part-image-dragover");
   });
-  partWorkspace.addEventListener("dragleave",event=>{
-   if(!partWorkspace.contains(event.relatedTarget))pictureCover.classList.remove("part-image-dragover");
-  });
-  partWorkspace.addEventListener("drop",event=>{
-   pictureCover.classList.remove("part-image-dragover");
-   if(!partImageDropAllowed(event))return;
-   event.preventDefault();event.stopPropagation();
-   const image=Array.from(event.dataTransfer?.files||[]).find(file=>
-    file.type.startsWith("image/")||["jpg","jpeg","png","webp"].includes(file.name.split(".").pop().toLowerCase()));
-   if(!image){partStatus.textContent="Drop a JPG, PNG, or WebP image under 3 MB.";return}
-   void uploadPartPicture(image);
+  partPhotoStage.addEventListener("drop",event=>{
+   if(!adminAuthenticated)return;
+   const file=Array.from(event.dataTransfer?.files||[]).find(f=>f.type.startsWith("image/")||/\.(jpe?g|png|webp)$/i.test(f.name));
+   if(!file)return;event.preventDefault();void uploadPartPicture(file);
   });
   detailsPanel.querySelector(".part-details-edit").onclick=()=>{
    const part=currentPartInfo;if(!part)return;
@@ -432,6 +418,7 @@ function showPartWorkspace(){
    detailsPanel.querySelector(".part-details-view-actions").classList.toggle("hide",!adminAuthenticated);
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
+   if(partPhotoDialog.open)partPhotoDialog.close();editPartPicture.hidden=true;
    heading.textContent="Loading part…";currentPartInfo=null;partSavedRevision=null;partStatus.textContent="Loading instructions…";partDetailsCollapse.open=false;
    detailRows.replaceChildren();detailsPanel.classList.add("hide");
    partWorkspace.querySelector(".part-harness-preview").classList.add("hide");
@@ -447,6 +434,7 @@ function showPartWorkspace(){
     if(!part)throw Error("Part not found");
     heading.textContent=part.name;
     currentPartInfo=part;
+    editPartPicture.hidden=!adminAuthenticated;
     investigationParts=partData.components||[];
     investigations?.showPart(partInvestigationPanel,partId);
     renderPartDetails(part);
@@ -458,8 +446,7 @@ function showPartWorkspace(){
     partRecipe?.setData(data.workspace);
     partSavedRevision=data.workspace?.revision??null;
     partExtras.setData(data.workspace);
-    const img=document.createElement("img");img.alt=part.name;img.src=partPhotoUrl(partId);
-    img.onload=()=>{if(partRoute()===partId)cover.replaceChildren(img)};
+    showPartPicture(partId);
     partStatus.textContent="";
     if(partEditReturn?.id===partId){
      const y=partEditReturn.scrollY;partEditReturn=null;
@@ -944,7 +931,6 @@ function renderWorkspaceParts(){
   // Workspace owns its part editor actions. Keep the mini-project component
   // editors separate; this panel saves one assembly part per request.
   const bomEditorMount=workspace.querySelector(".workspace-bom-mount");
-  bomEditorMount.prepend(partTools);
   const bomSavedList=workspace.querySelector(".workspace-saved-parts");
   const bomEditorHeader=document.createElement("div");
   bomEditorHeader.className="workspace-bom-editor-header hide";
@@ -966,7 +952,6 @@ function renderWorkspaceParts(){
   const dismissBomEditor=()=>{
    bomEditorMount.classList.remove("is-editing");
    bomEditorHeader.classList.add("hide");
-   partTools.classList.add("hide");
    bomSavedList.after(bomEditorMount);
   };
   bomEditorCancel.onclick=()=>{
@@ -1018,8 +1003,6 @@ function clearBomDraft(){
     row.append(a,b,c,remove);specs.append(row);
    }}
    openBomDraft();
-   partTools.classList.remove("hide");
-   refreshEditPhoto();
    const save=bomField("save");if(save)save.textContent="Save changes";
    bomReport("Editing "+part.name+". Changes will update this part without creating a duplicate.");
   }
