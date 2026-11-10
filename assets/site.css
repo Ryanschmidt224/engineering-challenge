@@ -2829,3 +2829,50 @@
  .assembly-main .assembly-main-tile.assembly-unified-tile{width:100%;max-width:100%}
  .assembly-main .assembly-main-tile .root-photo-ui .assembly-photo-stage{height:300px}
 }
+
+
+/* Studio Green: explicit surface roles for photo-management interfaces.
+   The image canvas and image-overlay controls remain dark for contrast. */
+.assembly-main .assembly-unified-tile,
+.assembly-detail .assembly-unified-tile{
+  background:var(--color-surface);
+  border-color:var(--color-border);
+}
+.workspace-photo-dialog{
+  background:var(--color-surface);
+  color:var(--color-text);
+  border-color:var(--color-border-strong);
+}
+.workspace-photo-dialog .workspace-photos-editor{
+  background:transparent;
+  color:var(--color-text);
+}
+.workspace-photo-dialog .workspace-photos-editor h2,
+.workspace-photo-dialog .workspace-photo-title{color:var(--color-text)}
+.workspace-photo-dialog .workspace-photos-editor>p.muted{color:var(--color-text-muted)}
+.workspace-photo-dialog .workspace-photo-tools{border-top-color:var(--color-border)}
+.workspace-photo-dialog .assembly-photo-pick,
+.workspace-photo-dialog .part-photo-add{
+  background:var(--color-accent);
+  color:var(--color-on-accent);
+  border-color:var(--color-accent);
+}
+.workspace-photo-dialog .assembly-photo-pick:hover,
+.workspace-photo-dialog .part-photo-add:hover{background:var(--color-accent-hover)}
+.workspace-photo-dialog .part-photo-delete{
+  background:var(--color-surface-muted);
+  color:var(--color-danger);
+  border-color:var(--color-border);
+}
+.workspace-photo-dialog .part-photo-placeholder{color:var(--color-on-media)}
+.photo-dropzone,
+.photo-dropzone:hover,
+.photo-dropzone:focus-visible,
+.photo-dropzone.dragover{background:var(--color-surface-muted);color:var(--color-text)}
+.photo-drop-icon{background:var(--color-accent-soft);color:var(--color-accent)}
+.photo-dropzone>span:not(.photo-drop-icon){color:var(--color-text-muted)}
+.recipe-compact .recipe-photo-frame .recipe-step-photo-name,
+.recipe-compact .recipe-reader-photo figcaption{
+  background:var(--color-surface-muted);
+  color:var(--color-text);
+}
