@@ -1,9 +1,9 @@
-import {projectAllowed,VALID_PROJECT_ID} from "./projects.js";
+import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
 const reply=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});
 export async function handleTree(request,env){
  const project=new URL(request.url).searchParams.get("project");
- if(!await projectAllowed(env,project))return reply({error:"Unknown project"},400);
+ if(!await projectAllowed(env,project,request))return reply({error:"Unknown project"},400);
  if(!env.PHOTOS)return reply({error:"Storage unavailable"},503);
  // Root project display settings are separate from the tree and its node IDs.
  // Names and cover selection can change without migrating BOM or assembly data.
@@ -13,7 +13,7 @@ export async function handleTree(request,env){
   const current=existing?JSON.parse(await existing.text()):{};
   if(request.method==="GET")return reply({title:current.title||null,revision:existing?.etag??null});
   if(request.method!=="PUT")return reply({error:"Method not allowed"},405);
-  if(!await isAdmin(request,env))return reply({error:"Admin login required"},401);
+  if(!await canEditProject(request,env,project))return reply({error:"Admin login required"},401);
   const body=await request.json().catch(()=>null);
   if(typeof body?.title!=="string"||!body.title.trim()||body.title.trim().length>100)return reply({error:"Project name must be 1–100 characters"},400);
   if(Object.hasOwn(body,"expectedRevision")&&(body.expectedRevision??null)!==(existing?.etag??null))
@@ -36,7 +36,7 @@ export async function handleTree(request,env){
    return reply({page:obj?JSON.parse(await obj.text()):{description:""},revision:obj?.etag??null});
   }
   if(request.method!=="PUT")return reply({error:"Method not allowed"},405);
-  if(!await isAdmin(request,env))return reply({error:"Admin login required"},401);
+  if(!await canEditProject(request,env,project))return reply({error:"Admin login required"},401);
   const body=await request.json().catch(()=>null);
   if(typeof body?.description!=="string"||body.description.length>20000)return reply({error:"Invalid description"},400);
   const existing=await env.PHOTOS.get(contentKey);
@@ -55,7 +55,7 @@ export async function handleTree(request,env){
   return reply({nodes:obj?JSON.parse(await obj.text()):[],revision:obj?.etag??null});
  }
  if(request.method!=="PUT")return reply({error:"Method not allowed"},405);
- if(!await isAdmin(request,env))return reply({error:"Admin login required"},401);
+ if(!await canEditProject(request,env,project))return reply({error:"Admin login required"},401);
  const body=await request.json().catch(()=>null),nodes=body?.nodes;
  if(!Array.isArray(nodes)||nodes.length>200)return reply({error:"Invalid feature tree"},400);
  const ids=new Set();
