@@ -2588,3 +2588,30 @@
 .assembly-bom-parts-group .assembly-tile-grid{margin:0}
 .assembly-bom-parts-group .assembly-tile{background:#112532;border-color:#426371}
 @media(max-width:650px){.assembly-workflow .assembly-bom-parts-group{padding:12px}}
+
+
+/* Assembly overview: a clear boundary separates the main drawing from subordinate tiles. */
+.assembly-detail .assembly-workflow::before{
+ content:"";display:block;width:100%;height:2px;margin:8px 0 24px;
+ background:linear-gradient(90deg,#79c7d4 0%,#486e7d 50%,transparent 100%);
+}
+.assembly-detail .assembly-bom-parts-group{
+ padding:14px 16px;max-width:960px;margin-top:12px;
+}
+.assembly-detail .assembly-bom-parts-group .assembly-tile-grid{
+ grid-template-columns:repeat(auto-fill,minmax(150px,220px));gap:12px;justify-content:start;
+}
+.assembly-detail .assembly-bom-parts-group .assembly-tile{max-width:220px;min-width:0}
+.assembly-detail .assembly-bom-parts-group .assembly-tile-cover{height:150px}
+.assembly-detail .assembly-bom-parts-group .assembly-tile-overlay{font-size:.8rem;padding:20px 9px 8px}
+@media(max-width:540px){
+ .assembly-detail .assembly-bom-parts-group .assembly-tile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .assembly-detail .assembly-bom-parts-group .assembly-tile{max-width:none}
+ .assembly-detail .assembly-bom-parts-group .assembly-tile-cover{height:140px}
+}
+/* Matching BOM records are disclosed rather than destructively merged. */
+.bom-duplicate-group{grid-column:1/-1;width:100%;margin-top:8px;border-top:1px solid #3e5e6b;padding-top:7px}
+.bom-duplicate-heading{cursor:pointer;color:#9dcbd7;font-size:.75rem;line-height:1.35}
+.bom-duplicate-records{border-left:2px solid #557683;margin:9px 0 0;padding-left:10px}
+.bom-duplicate-record{font-size:.86rem}
+.bom-duplicate-record .bom-part-summary{padding:7px 0}
