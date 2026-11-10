@@ -242,16 +242,10 @@
 /* Feature-tree part controls and individual part workspace. */
 .assembly-sidebar .assembly-add-part{white-space:nowrap;font-weight:650}
 .bom-feature-part > .bom-part-summary{background:color-mix(in srgb, var(--color-accent) 9%, transparent)}
-.part-workspace-tools{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:10px 0 18px}
-.part-workspace-tools .btn{font-size:.85rem}
 .bom-part-workspace .part-workspace-cover.is-dragover{outline:2px dashed var(--color-focus);outline-offset:3px;background:color-mix(in srgb, var(--color-accent) 12%, transparent)}
 
 /* Full-size viewer for the picture on a part's build-details page. */
 .bom-part-workspace .part-workspace-cover:has(img){cursor:zoom-in}
-.part-picture-dialog{border:1px solid var(--color-border);border-radius:12px;background:var(--color-media-backdrop);color:var(--color-on-media);padding:16px;max-width:95vw;max-height:95vh;overflow:auto;box-shadow:0 18px 75px color-mix(in srgb, var(--color-shadow) 60%, transparent)}
-.part-picture-dialog::backdrop{background:color-mix(in srgb, var(--color-media-backdrop) 85%, transparent)}
-.part-picture-dialog .part-picture-close{display:block;margin:0 0 12px auto}
-.part-picture-dialog .part-picture-full{display:block;width:auto;height:auto;max-width:calc(95vw - 36px);max-height:calc(95vh - 92px);object-fit:contain}
 
 /* Shared wire-material library and per-part wire-harness cutting toolkit. */
 .bom-part-workspace .part-harness{margin-top:8px}
