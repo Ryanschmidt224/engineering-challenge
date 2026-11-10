@@ -639,6 +639,7 @@ function setupAssemblyTrees(){
     const result=await response.json();
     if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
     partSavedRevision=result.revision??partSavedRevision;
+    partRecipe?.markSaved();
     partStatus.textContent="Part instructions saved.";
    }catch(e){partStatus.textContent=e.message}finally{button.disabled=false}
   };
@@ -1275,7 +1276,7 @@ function setupAssemblyTrees(){
    const button=workspace.querySelector(".workspace-save"),url=workspaceUrl(),data={};
    data.resources=assemblyResourcePicker?.getData();data.experiments=assemblyExtras.getExperiments();data.recipe=assemblyRecipe?.getData()||[];data.expectedRevision=workspaceSavedRevision;
    button.disabled=true;workspaceStatus.textContent="Saving…";
-   try{const res=await fetch(url,{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});const result=await res.json();if(!res.ok)throw Error(result.error||"Save failed (HTTP "+res.status+")");workspaceSavedRevision=result.revision??workspaceSavedRevision;workspaceStatus.textContent="Saved."}
+   try{const res=await fetch(url,{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});const result=await res.json();if(!res.ok)throw Error(result.error||"Save failed (HTTP "+res.status+")");workspaceSavedRevision=result.revision??workspaceSavedRevision;assemblyRecipe?.markSaved();workspaceStatus.textContent="Saved."}
    catch(e){workspaceStatus.textContent=e.message}finally{button.disabled=false}
   };
   function openWorkspace(){history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));showAssemblyPage();window.scrollTo(0,0)}
