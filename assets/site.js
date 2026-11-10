@@ -158,20 +158,17 @@ function setupAssemblyTrees(){
   const editProjectName=document.createElement("button");
   editProjectName.type="button";editProjectName.className="btn project-root-rename";
   editProjectName.textContent="Rename project";editProjectName.title="Change the top-level project name";
-  const changeProjectCover=document.createElement("button");
-  changeProjectCover.type="button";changeProjectCover.className="btn project-root-cover";
-  changeProjectCover.textContent="Change cover picture";changeProjectCover.title="Upload a project cover photo";
   const projectMetaStatus=document.createElement("span");
   projectMetaStatus.className="project-root-status";projectMetaStatus.setAttribute("role","status");
-  projectActions.append(editProjectName,changeProjectCover,projectMetaStatus);
+  projectActions.append(editProjectName,projectMetaStatus);
   projectHeading.after(projectActions);
   // The Projects landing page also exposes a small editing entry point.
-  // Editing occurs on the project overview so all root settings stay together.
+  // Project names are edited here; photos use the shared workspace image editor.
   const landingCard=document.querySelector('.project-link[data-nav="'+project+'"]')?.closest(".project-card");
   const cardEdit=document.createElement("button");
   cardEdit.type="button";cardEdit.className="btn project-card-edit hide";
   cardEdit.textContent="Edit project";
-  cardEdit.setAttribute("aria-label","Edit project name and cover picture");
+  cardEdit.setAttribute("aria-label","Rename project");
   if(landingCard)landingCard.append(cardEdit);
   cardEdit.onclick=()=>{
    navigate(project);
@@ -234,12 +231,6 @@ function setupAssemblyTrees(){
    }catch(error){projectMetaStatus.textContent=error.message}
    finally{editProjectName.disabled=false}
   };
-  changeProjectCover.onclick=()=>{
-   const input=main.querySelector(".assembly-main-tile .assembly-photo-input");
-   if(input)input.click();
-   else projectMetaStatus.textContent="Photo editor is unavailable.";
-  };
-
   // Shared image tile renderer for root projects and all subassemblies.
   function makeAssemblyPhotoStage(photos,name,onAdd,onDelete,allowEditing=false){
    let active=0;
