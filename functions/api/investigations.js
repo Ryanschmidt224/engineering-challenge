@@ -1,4 +1,4 @@
-import {projectAllowed,VALID_PROJECT_ID} from "./projects.js";
+import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
 const uuid=/^[a-f0-9-]{36}$/i;
 const idPattern=/^[a-zA-Z0-9_-]{1,80}$/;
@@ -18,7 +18,7 @@ const normalizedEntry=(entry)=>({id:crypto.randomUUID(),type:entry.type,text:ent
  files:[...new Set(entry.files||[])],fileName:trim(entry.fileName,120),createdAt:new Date().toISOString()});
 export async function handleInvestigations(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project");
- if(!await projectAllowed(env,project))return json({error:"Invalid project"},400);
+ if(!await projectAllowed(env,project,request))return json({error:"Invalid project"},400);
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  if(request.method==="GET"&&url.searchParams.has("thumbnail")){
   const requested=url.searchParams.get("thumbnail")||"";
@@ -34,7 +34,7 @@ export async function handleInvestigations(request,env){
  const saved=object?JSON.parse(await object.text()):{records:[],revision:null};
  if(request.method==="GET")return json({records:Array.isArray(saved.records)?saved.records:[],revision:saved.revision??null});
  if(request.method!=="POST")return json({error:"Method not allowed"},405);
- if(!await isAdmin(request,env))return json({error:"Administrator login required"},401);
+ if(!await canEditProject(request,env,project))return json({error:"Administrator login required"},401);
  const data=await request.json().catch(()=>null);
  if(!data||typeof data!=="object"||Array.isArray(data))return json({error:"Invalid request"},400);
  if((data.expectedRevision??null)!==(saved.revision??null))return json({error:"Investigations changed elsewhere. Reload before saving.",revision:saved.revision??null},409);
