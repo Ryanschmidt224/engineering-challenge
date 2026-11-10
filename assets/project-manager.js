@@ -134,7 +134,7 @@ window.BSProjectManager=(()=>{
    try{
     user=(await api("GET","/api/accounts")).user;
     const data=await api("GET","/api/projects");if(!Array.isArray(data.projects))throw Error("Project catalog response unavailable");projects=data.projects;currentProjects=projects;
-    newButton.hidden=!user;archiveButton.hidden=!user;
+    newButton.hidden=!user;archiveButton.hidden=!user&&!adminAuthenticated;
     document.querySelectorAll(".project-personal-card").forEach(node=>node.remove());
     for(const project of projects){
      if(!project.id.startsWith("p"))continue;
