@@ -1,0 +1,480 @@
+/* Latest shared UI controls and design refinements; preserve cascade ordering. */
+
+/* Display photo name as a single editable caption immediately below the image. */
+.recipe-step-photo{gap:0}
+.recipe-step-photo .recipe-step-photo-image{margin:0;display:block}
+.recipe-step-photo-name{display:block;width:100%;box-sizing:border-box;margin:3px 0 9px}
+
+/* Work-instruction notes take the full available editing width. */
+.recipe-compact .recipe-step-notes,
+.recipe-compact .recipe-step-note{width:100%;min-width:0;box-sizing:border-box}
+.recipe-compact .recipe-step-note{display:flex;flex-direction:column;align-items:stretch}
+.recipe-compact .recipe-step-note textarea.recipe-input{
+ display:block;width:100%;max-width:100%;min-width:0;
+ box-sizing:border-box;resize:vertical;min-height:120px
+}
+.recipe-compact .recipe-step-note .recipe-small-action{align-self:flex-start}
+
+/* Photo and its editable name form one framed object, not two separate boxes. */
+.recipe-compact .recipe-step-photo{display:flex;flex-direction:column;align-items:stretch;gap:7px}
+.recipe-compact .recipe-photo-frame{
+ display:flex;flex-direction:column;min-width:0;overflow:hidden;
+ background:var(--color-media-backdrop);border:1px solid var(--color-border);border-radius:9px
+}
+.recipe-compact .recipe-photo-frame .recipe-step-photo-image{
+ display:block;max-width:100%;width:100%;height:auto;max-height:240px;
+ object-fit:contain;margin:0;border-radius:0
+}
+.recipe-compact .recipe-photo-frame .recipe-step-photo-name{
+ display:block;width:100%;min-width:0;box-sizing:border-box;margin:0;
+ padding:9px 11px;background:var(--color-media-backdrop);border:0;border-top:1px solid var(--color-border);
+ border-radius:0;color:inherit;font-weight:600
+}
+.recipe-compact .recipe-photo-frame .recipe-step-photo-name:focus{
+ outline:2px solid var(--color-focus);outline-offset:-2px
+}
+.recipe-compact .recipe-step-photo>.recipe-small-action{align-self:flex-start}
+
+
+/* Contextual knowledge search from right-clicking instruction words. */
+.recipe-knowledge-context-menu{
+ position:fixed;z-index:100000;width:min(330px,calc(100vw - 16px));max-height:min(440px,calc(100vh - 16px));
+ overflow:auto;box-sizing:border-box;background:var(--color-surface);color:var(--color-text);
+ border:1px solid var(--color-border);border-radius:10px;box-shadow:0 12px 36px color-mix(in srgb, var(--color-shadow) 50%, transparent);
+ padding:7px;display:flex;flex-direction:column;gap:3px
+}
+.recipe-knowledge-context-heading{padding:9px 10px 11px;font-weight:700;font-size:.88rem;overflow-wrap:anywhere;border-bottom:1px solid var(--color-border)}
+.recipe-knowledge-context-result,.recipe-knowledge-context-explain{
+ display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:3px;
+ width:100%;padding:9px 10px;background:transparent;color:inherit;border:0;border-radius:6px;
+ font:inherit;cursor:pointer
+}
+.recipe-knowledge-context-result small{color:var(--color-text-muted);font-size:.75rem}
+.recipe-knowledge-context-result:hover,.recipe-knowledge-context-result:focus-visible,
+.recipe-knowledge-context-explain:hover,.recipe-knowledge-context-explain:focus-visible{
+ background:var(--color-hover);outline:none
+}
+.recipe-knowledge-context-explain{border-top:1px solid var(--color-border);color:var(--color-accent)}
+.recipe-knowledge-empty{padding:4px 10px;color:var(--color-text-muted);font-size:.85rem}
+
+
+/* Work-instruction attachments flow horizontally and wrap on narrow screens. */
+.recipe-compact .recipe-step-photos{
+ display:grid;width:100%;min-width:0;
+ grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),260px));
+ align-items:start;justify-content:start;gap:16px;margin-top:10px
+}
+.recipe-compact .recipe-step-photo{min-width:0;width:100%;margin:0}
+.recipe-compact .recipe-photo-frame{width:100%}
+.recipe-compact .recipe-reader-text{width:100%;min-width:0}
+.recipe-compact .recipe-reader-photo{
+ display:inline-flex;flex-direction:column;vertical-align:top;
+ width:min(260px,100%);max-width:100%;margin:8px 14px 12px 0;
+ border:1px solid var(--color-border);border-radius:9px;overflow:hidden;
+ background:var(--color-media-backdrop)
+}
+.recipe-compact .recipe-reader-photo .recipe-step-photo-image{
+ display:block;width:100%;height:210px;max-height:210px;
+ object-fit:contain;margin:0;border-radius:0
+}
+.recipe-compact .recipe-reader-photo figcaption{
+ display:block;padding:9px 11px;background:var(--color-media-backdrop);border-top:1px solid var(--color-border);
+ font-weight:600;overflow-wrap:anywhere
+}
+.recipe-document-link{
+ width:100%;min-height:175px;padding:22px 12px;box-sizing:border-box;
+ display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;
+ text-align:center;text-decoration:none;color:var(--color-text);background:var(--color-surface)
+}
+.recipe-document-link:hover,.recipe-document-link:focus-visible{
+ background:var(--color-hover);outline:2px solid var(--color-focus);outline-offset:-2px
+}
+.recipe-document-icon{
+ display:flex;align-items:center;justify-content:center;
+ min-width:78px;padding:14px 8px;background:var(--color-surface-muted);border:1px solid var(--color-accent);
+ border-radius:8px;font-weight:800;letter-spacing:.06em;font-size:.95rem
+}
+.recipe-document-open{font-size:.78rem;color:var(--color-text-muted)}
+
+/* Work instruction notes: clear, high-contrast read-only presentation. */
+.recipe-compact .recipe-reader-text{width:100%;min-width:0;color:var(--color-text);font-size:1.05rem;line-height:1.7}
+.recipe-compact .recipe-reader-text p{margin:0 0 12px;color:var(--color-text)}
+.recipe-compact .recipe-reader-text p:first-child{background:var(--color-surface);border:1px solid var(--color-border);border-radius:8px;padding:14px 16px}
+
+/* All work-instruction notes should be equally legible, not only the first. */
+.recipe-compact .recipe-reader-text p.recipe-reader-note{
+ display:block;width:100%;box-sizing:border-box;
+ margin:0 0 12px;padding:15px 18px;
+ color:var(--color-text);background:var(--color-surface);
+ border:1px solid var(--color-border);border-left:4px solid var(--color-accent);
+ border-radius:9px;font-size:1.04rem;line-height:1.65;
+ white-space:pre-wrap;overflow-wrap:anywhere;
+}
+.recipe-compact .recipe-reader-text p.recipe-reader-note:first-child{
+ background:var(--color-surface);border:1px solid var(--color-border);border-left:4px solid var(--color-accent);
+ padding:15px 18px;
+}
+.recipe-compact .recipe-right-click-tip{
+ align-self:flex-start;display:flex;align-items:center;gap:7px;
+ margin:1px 0 5px;color:var(--color-text-muted);font-size:.83rem;line-height:1.45;
+}
+.recipe-compact .recipe-right-click-icon{color:var(--color-accent);font-weight:700;font-size:1rem}
+
+/* Keep the knowledge lookup hint alongside the work-instructions title. */
+.recipe-instructions .recipe-heading-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;column-gap:22px;row-gap:6px}
+.recipe-instructions .recipe-heading-row>h2{margin:0}
+.recipe-instructions .recipe-heading-row .recipe-right-click-tip{display:flex;align-items:center;gap:7px;max-width:100%;margin:0;color:var(--color-text-muted);font-size:.83rem;line-height:1.45}
+.recipe-instructions .recipe-heading-row .recipe-right-click-icon{color:var(--color-accent);font-weight:700;font-size:1rem}
+
+
+/* Failures and lessons: reuse the same dark workspace card language as recipes. */
+.investigations-panel,.recipe-step-investigations{background:var(--color-surface);border:1px solid var(--color-border);border-radius:12px;padding:16px;min-width:0}
+.recipe-step-investigations{width:100%;box-sizing:border-box;margin-top:12px;padding:12px}
+.investigation-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.investigation-heading h2,.investigation-heading h4{margin:0;color:var(--color-text)}
+.investigation-heading h2{font-size:1.22rem}
+.investigation-heading h4{font-size:.98rem}
+.investigation-add{font-size:.85rem}
+.investigation-card,.investigation-rollup{background:var(--color-surface);border:1px solid var(--color-border);border-radius:9px;margin:8px 0;overflow:hidden}
+.investigation-summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;color:var(--color-text)}
+.investigation-summary strong{font-size:.98rem}
+.investigation-status-pill{display:inline-block;white-space:nowrap;color:var(--color-accent);border:1px solid var(--color-border);border-radius:14px;padding:3px 10px;font-size:.75rem}
+.investigation-body{padding:12px 15px;border-top:1px solid var(--color-border)}
+.investigation-entries{display:grid;gap:12px}
+.investigation-entry{border-left:4px solid var(--color-accent);background:var(--color-surface);padding:12px 16px;border-radius:7px;color:var(--color-text);overflow-wrap:anywhere}
+.investigation-entry strong{color:var(--color-accent)}
+.investigation-entry p{white-space:pre-wrap;color:var(--color-text);margin:7px 0 0;line-height:1.65}
+.investigation-image{display:block;max-width:min(100%,480px);max-height:420px;object-fit:contain;margin-top:12px;border-radius:7px}
+.investigation-file{display:inline-block;margin-top:10px;color:var(--color-accent)}
+.investigation-add-controls{display:flex;flex-direction:column;gap:8px;margin-top:13px;padding-top:12px;border-top:1px solid var(--color-border)}
+.investigation-add-controls .field{max-width:100%;width:100%;box-sizing:border-box}
+.investigation-add-controls textarea{min-height:90px;resize:vertical}
+.investigation-add-controls .btn{align-self:flex-start}
+.investigation-status{margin-top:12px;max-width:220px}
+.investigation-origin{color:var(--color-text-muted);font-size:.82rem}
+.investigation-create{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.investigation-create input{flex:1 1 240px;min-width:0}
+.investigation-rollup>summary{padding:12px;cursor:pointer;color:var(--color-text-muted)}
+.investigation-rollup-body{padding:8px 12px}
+.investigation-empty{margin:7px 0;font-size:.87rem}
+.investigation-feedback:empty{display:none}
+.investigation-feedback{font-size:.85rem;margin:8px 0 0}
+
+/* Revision, failure and lesson forms share the workspace's compact cards. */
+.investigation-entry-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.investigation-entry-date{font-size:.78rem;color:var(--color-text-muted);font-variant-numeric:tabular-nums}
+.investigation-entry-field{display:flex;flex-direction:column;gap:7px;color:var(--color-text);font-size:.88rem;font-weight:600}
+.investigation-entry-field .field{width:100%;font-weight:400}
+.investigation-date-field{display:flex;flex-direction:column;gap:7px;color:var(--color-text);font-size:.85rem;max-width:240px}
+.investigation-rename{font-size:.8rem;padding:5px 10px;flex:0 0 auto}
+.investigation-replace{display:flex;flex-direction:column;align-items:flex-start}
+.investigation-replace .field{width:100%;max-width:750px;box-sizing:border-box}
+.investigation-replace input[type=date]{max-width:240px}
+.investigation-snapshot{border:1px solid var(--color-border);border-radius:8px;padding:10px 13px;margin-bottom:14px;background:var(--color-surface)}
+.investigation-snapshot summary{cursor:pointer;color:var(--color-accent);font-weight:600}
+.investigation-snapshot-content{padding-top:12px;display:grid;gap:7px}
+.investigation-snapshot-content p{margin:0;color:var(--color-text);overflow-wrap:anywhere}
+.investigation-snapshot-step{padding:10px 13px;border-left:3px solid var(--color-accent);background:var(--color-surface);border-radius:5px}
+.investigation-heading .btn{font-size:.82rem}
+
+
+/* Assembly overview: BOM parts are a separate, clearly labeled group of child tiles. */
+.assembly-workflow .assembly-bom-parts-group{
+ width:100%;max-width:1100px;margin:22px 0 8px;padding:18px;
+ border:1px solid var(--color-border);border-radius:12px;background:var(--color-surface);
+}
+.assembly-bom-parts-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.assembly-workflow .assembly-bom-parts-heading h2{margin:0;color:var(--color-text);font-size:1.15rem;line-height:1.35}
+.assembly-bom-parts-count{display:inline-flex;align-items:center;color:var(--color-text-muted);background:var(--color-surface-muted);border:1px solid var(--color-border);border-radius:16px;padding:3px 11px;font-size:.8rem}
+.assembly-bom-parts-description{margin:4px 0 15px;color:var(--color-text-muted);font-size:.85rem}
+.assembly-bom-parts-group .assembly-tile-grid{margin:0}
+.assembly-bom-parts-group .assembly-tile{background:var(--color-surface);border-color:var(--color-border)}
+@media(max-width:650px){.assembly-workflow .assembly-bom-parts-group{padding:12px}}
+
+
+/* Assembly overview: a clear boundary separates the main drawing from subordinate tiles. */
+.assembly-detail .assembly-workflow::before{
+ content:"";display:block;width:100%;height:2px;margin:8px 0 24px;
+ background:linear-gradient(90deg,var(--color-accent-soft) 0%,var(--color-accent) 50%,transparent 100%);
+}
+.assembly-detail .assembly-bom-parts-group{
+ padding:14px 16px;max-width:960px;margin-top:12px;
+}
+.assembly-detail .assembly-bom-parts-group .assembly-tile-grid{
+ grid-template-columns:repeat(auto-fill,minmax(150px,220px));gap:12px;justify-content:start;
+}
+.assembly-detail .assembly-bom-parts-group .assembly-tile{max-width:220px;min-width:0}
+.assembly-detail .assembly-bom-parts-group .assembly-tile-cover{height:150px}
+.assembly-detail .assembly-bom-parts-group .assembly-tile-overlay{font-size:.8rem;padding:20px 9px 8px}
+@media(max-width:540px){
+ .assembly-detail .assembly-bom-parts-group .assembly-tile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .assembly-detail .assembly-bom-parts-group .assembly-tile{max-width:none}
+ .assembly-detail .assembly-bom-parts-group .assembly-tile-cover{height:140px}
+}
+/* Matching BOM records are disclosed rather than destructively merged. */
+.bom-duplicate-group{grid-column:1/-1;width:100%;margin-top:8px;border-top:1px solid var(--color-border);padding-top:7px}
+.bom-duplicate-heading{cursor:pointer;color:var(--color-accent);font-size:.75rem;line-height:1.35}
+.bom-duplicate-records{border-left:2px solid var(--color-border);margin:9px 0 0;padding-left:10px}
+.bom-duplicate-record{font-size:.86rem}
+.bom-duplicate-record .bom-part-summary{padding:7px 0}
+
+
+/* The assembly BOM includes both individual components and nested subassemblies. */
+.assembly-bom-parts-group .assembly-tile-cover::before{
+ position:absolute;top:9px;left:9px;z-index:2;
+ background:color-mix(in srgb, var(--color-media-backdrop) 86%, transparent);border:1px solid var(--color-border);
+ padding:2px 8px;border-radius:5px;
+ font-size:.72rem;font-weight:650;color:var(--color-on-media);line-height:1.4;
+}
+.assembly-bom-parts-group .assembly-bom-part-tile .assembly-tile-cover::before{content:"Part"}
+.assembly-bom-parts-group .assembly-bom-subassembly-tile .assembly-tile-cover::before{content:"Subassembly"}
+
+/* Revisions: the same collapsed header treatment as Part details. */
+.investigations-panel,.recipe-step-investigations{
+ padding:0;overflow:hidden;
+ background:color-mix(in srgb, var(--color-header) 22%, transparent);border:1px solid var(--color-border);border-radius:12px;
+}
+.investigations-panel .investigation-collapse,.recipe-step-investigations .investigation-collapse{
+ display:block;width:100%;
+}
+.investigation-collapse>summary.investigation-collapse-heading{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ background:color-mix(in srgb, var(--color-selected) 32%, transparent);border-bottom:1px solid var(--color-border);
+ padding:12px 16px;cursor:pointer;list-style:none;
+}
+.investigation-collapse>summary.investigation-collapse-heading::-webkit-details-marker{display:none}
+.investigation-collapse>summary.investigation-collapse-heading:focus-visible{outline:2px solid var(--color-focus);outline-offset:-2px}
+.investigation-collapse:not([open])>summary.investigation-collapse-heading{border-bottom:0}
+.investigation-collapse-heading h2,.investigation-collapse-heading h4{
+ margin:0;color:var(--color-text);font-size:1.06rem;font-weight:700;
+}
+.investigation-collapse-heading .investigation-toggle-label{
+ font-size:.86rem;font-weight:650;color:var(--color-text-muted);
+ border:1px solid var(--color-accent);border-radius:8px;padding:7px 11px;white-space:nowrap;
+}
+.investigation-collapse-content{padding:14px 16px}
+.investigation-collapse-content .investigation-heading{margin:0 0 12px}
+.investigation-collapse-content .investigation-card:first-of-type{margin-top:0}
+.recipe-step-investigations{margin-top:12px}
+@media(max-width:550px){
+ .investigation-collapse-heading h2,.investigation-collapse-heading h4{font-size:.95rem}
+ .investigation-collapse-heading .investigation-toggle-label{font-size:.75rem}
+ .investigation-collapse-content{padding:12px}
+}
+
+/* Assembly photos are managed only from the workspace. Overview galleries are read-only. */
+.assembly-main .assembly-photo-admin,.assembly-detail .assembly-photo-admin{display:none!important}
+.workspace-photos-editor{max-width:900px;background:var(--color-media-backdrop);border:1px solid var(--color-border);border-radius:12px;padding:15px 17px;margin:4px 0 16px}
+.workspace-photos-editor h2{font-size:1.08rem;margin:0 0 3px}
+.workspace-photos-editor>p.muted{font-size:.84rem;margin:0 0 12px}
+.workspace-photos-editor .assembly-unified-photo{border:1px solid var(--color-border);border-radius:9px;overflow:hidden}
+.workspace-photos-editor .assembly-photos{display:block}
+.workspace-photos-editor .assembly-photo-stage{height:clamp(240px,32vw,440px);border-radius:8px}
+.workspace-photos-editor .assembly-stage-image{width:100%;height:100%;object-fit:contain}
+.workspace-photos-editor .assembly-photo-admin{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:12px 0 0}
+.workspace-photos-editor .assembly-photo-admin.hide{display:none!important}
+.workspace-photos-editor .assembly-photo-zone{display:flex!important;align-items:center;gap:10px;border:1px dashed var(--color-border);border-radius:8px;padding:10px 13px}
+.workspace-photos-editor .assembly-photo-pick{background:var(--color-media-backdrop);color:var(--color-on-media);border:0;border-radius:6px;padding:8px 12px;cursor:pointer}
+.workspace-photos-editor .assembly-photo-caption-label{display:flex;flex-direction:column;gap:5px;flex:1 1 230px;max-width:370px}
+.workspace-photos-editor .assembly-photo-caption{width:100%}
+.workspace-photos-editor .workspace-photo-status{margin:9px 0 0;font-size:.82rem}
+.workspace-photos-editor .assembly-photo-actions{z-index:5}
+@media(max-width:650px){.workspace-photos-editor{padding:12px}.workspace-photos-editor .assembly-photo-zone{flex-wrap:wrap}}
+
+
+/* Assembly photo management is a small thumbnail control, not a full-width panel. */
+.workspace-photos-editor{
+ display:block;width:fit-content;max-width:min(100%,460px);
+ margin:0 0 15px;padding:9px 12px;
+ background:var(--color-media-backdrop);border:1px solid var(--color-border);border-radius:9px;
+}
+.workspace-photos-editor .workspace-photo-compact{display:flex;align-items:center;gap:13px}
+.workspace-photos-editor .workspace-photo-meta{display:flex;align-items:flex-start;flex-direction:column;gap:8px}
+.workspace-photos-editor .workspace-photo-title{font-size:.85rem;font-weight:650;color:var(--color-on-media)}
+.workspace-photos-editor .workspace-photo-edit-toggle{font-size:.78rem;padding:6px 10px}
+.workspace-photos-editor .assembly-unified-photo{width:112px;flex:0 0 112px;border:1px solid var(--color-border);border-radius:7px;overflow:hidden}
+.workspace-photos-editor .assembly-photo-stage{width:112px;height:84px;min-height:0;border-radius:6px}
+.workspace-photos-editor .assembly-photo-placeholder{height:100%;font-size:.75rem}
+.workspace-photos-editor .assembly-stage-image{width:100%;height:100%;object-fit:cover}
+.workspace-photos-editor .assembly-photo-name{display:none}
+.workspace-photos-editor .assembly-photo-arrow{font-size:1.15rem;width:20px;height:30px;padding:0;background:color-mix(in srgb, var(--color-media-backdrop) 50%, transparent)}
+.workspace-photos-editor .assembly-photo-arrow.previous{left:0}
+.workspace-photos-editor .assembly-photo-arrow.next{right:0}
+.workspace-photos-editor .assembly-photo-actions{display:none}
+.workspace-photos-editor.is-editing-photo .assembly-photo-actions{display:flex;top:3px;right:3px;gap:3px}
+.workspace-photos-editor .assembly-photo-icon{width:22px;height:22px;font-size:1rem;background:color-mix(in srgb, var(--color-media-backdrop) 85%, transparent);border-radius:5px}
+.workspace-photos-editor .workspace-photo-tools{padding-top:10px;margin-top:10px;border-top:1px solid var(--color-border)}
+.workspace-photos-editor .workspace-photo-tools[hidden]{display:none!important}
+.workspace-photos-editor .assembly-photo-admin{padding:0;display:flex;gap:9px;align-items:flex-start;flex-wrap:wrap}
+.workspace-photos-editor .assembly-photo-zone{padding:6px 9px;gap:5px;min-height:0}
+.workspace-photos-editor .assembly-photo-drop-hint{font-size:.73rem}
+.workspace-photos-editor .assembly-photo-pick{font-size:.75rem;padding:5px 8px}
+.workspace-photos-editor .assembly-photo-caption-label{font-size:.75rem;flex:1 1 145px;max-width:none}
+.workspace-photos-editor .assembly-photo-caption{min-height:32px;padding:5px 8px;font-size:.8rem}
+.workspace-photos-editor .workspace-photo-status:empty{display:none}
+.workspace-photos-editor .workspace-photo-status{margin:7px 0 0;font-size:.76rem;max-width:400px}
+
+/* Photo editing is hidden in a dialog launched from the workspace cover thumbnail. */
+.workspace-cover-shell{position:relative;display:inline-flex;align-self:flex-start;flex:0 0 auto;min-width:0}
+.workspace-cover-shell .workspace-cover{position:relative}
+.workspace-photo-launch{
+ position:absolute;bottom:5px;right:5px;z-index:3;
+ width:29px;height:29px;display:grid;place-items:center;
+ border:1px solid var(--color-border);border-radius:7px;background:color-mix(in srgb, var(--color-media-backdrop) 90%, transparent);
+ color:var(--color-on-media);font-size:1.15rem;line-height:1;cursor:pointer;padding:0;
+ box-shadow:0 2px 6px color-mix(in srgb, var(--color-shadow) 40%, transparent);
+}
+.workspace-photo-launch:hover,.workspace-photo-launch:focus-visible{background:var(--color-media-backdrop);outline:2px solid var(--color-focus);outline-offset:1px}
+.workspace-photo-launch[hidden]{display:none!important}
+.workspace-photo-dialog{width:min(720px,calc(100vw - 30px));max-height:min(92vh,900px);overflow:auto;box-sizing:border-box;border:1px solid var(--color-accent);border-radius:12px;background:var(--color-media-backdrop);color:var(--color-on-media);padding:16px 18px;box-shadow:0 20px 70px color-mix(in srgb, var(--color-shadow) 73.3%, transparent)}
+.workspace-photo-dialog::backdrop{background:color-mix(in srgb, var(--color-media-backdrop) 78%, transparent)}
+.workspace-photo-dialog-header{display:flex;justify-content:flex-end;margin-bottom:6px}
+.workspace-photo-dialog .workspace-photos-editor{width:100%;max-width:none;margin:0;padding:0;border:0;background:transparent}
+.workspace-photo-dialog .workspace-photos-editor h2{display:block;font-size:1.14rem;margin:0 0 4px}
+.workspace-photo-dialog .workspace-photos-editor>p.muted{display:block;font-size:.82rem;margin:0 0 12px}
+.workspace-photo-dialog .assembly-unified-photo{width:100%;border:1px solid var(--color-border);border-radius:9px;overflow:hidden}
+.workspace-photo-dialog .assembly-photo-stage{width:100%;height:clamp(250px,45vw,460px);border-radius:8px}
+.workspace-photo-dialog .assembly-stage-image{width:100%;height:100%;object-fit:contain}
+.workspace-photo-dialog .assembly-photo-name{display:block}
+.workspace-photo-dialog .assembly-photo-arrow{font-size:2rem;width:38px;height:45px}
+.workspace-photo-dialog .assembly-photo-arrow.previous{left:4px}
+.workspace-photo-dialog .assembly-photo-arrow.next{right:4px}
+.workspace-photo-dialog .assembly-photo-actions{display:flex;top:10px;right:12px;gap:7px}
+.workspace-photo-dialog .assembly-photo-icon{width:33px;height:33px;font-size:1.3rem;border-radius:50%}
+.workspace-photo-dialog .workspace-photo-tools{margin-top:12px;padding-top:12px;border-top:1px solid var(--color-border)}
+.workspace-photo-dialog .assembly-photo-admin{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.workspace-photo-dialog .assembly-photo-zone{padding:9px 12px}
+.workspace-photo-dialog .assembly-photo-pick{font-size:.84rem;padding:8px 13px}
+.workspace-photo-dialog .assembly-photo-caption-label{font-size:.82rem;max-width:310px}
+.workspace-photo-dialog .workspace-photo-status{max-width:none}
+
+
+/* Shared button graphics for instruction editing and revision disclosure. */
+.recipe-compact .recipe-step-edit-toggle,
+.investigation-collapse-heading .investigation-toggle-label{
+ display:inline-flex;align-items:center;justify-content:center;
+ min-height:38px;box-sizing:border-box;padding:7px 15px;
+ margin-left:auto;border:1px solid var(--color-border);border-radius:9px;
+ background:var(--color-surface-muted);color:var(--color-text);font-size:.86rem;
+ font-weight:650;line-height:1.3;white-space:nowrap;box-shadow:none;
+}
+.recipe-compact .recipe-step-edit-toggle:hover,
+.investigation-collapse-heading:hover .investigation-toggle-label{background:var(--color-hover);border-color:var(--color-border)}
+.recipe-compact .recipe-step-edit-toggle:focus-visible,
+.investigation-collapse-heading:focus-visible .investigation-toggle-label{outline:2px solid var(--color-focus);outline-offset:2px}
+
+/* Work instructions are the main workspace. Give them a distinct end
+   and generous breathing room before secondary revisions/resources. */
+.assembly-workspace-page .workspace-panels > article.recipe-instructions{
+ position:relative;margin-bottom:88px!important;
+}
+.assembly-workspace-page .workspace-panels > article.recipe-instructions::after{
+ content:"";position:absolute;left:0;right:0;bottom:-20px;height:2px;
+ background:linear-gradient(90deg,var(--color-accent),var(--color-selected) 78%,transparent);
+ pointer-events:none;
+}
+@media(max-width:800px){
+ .assembly-workspace-page .workspace-panels > article.recipe-instructions{margin-bottom:68px!important}
+ .assembly-workspace-page .workspace-panels > article.recipe-instructions::after{bottom:-14px}
+}
+
+
+/* Shared part / subassembly photo editor: discreet pencil overlay. */
+.workspace-cover-shell .workspace-photo-launch{
+ background:color-mix(in srgb, var(--color-media-backdrop) 52%, transparent);
+ border-color:color-mix(in srgb, var(--color-on-media) 55%, transparent);
+ color:color-mix(in srgb, var(--color-on-media) 88%, transparent);
+ box-shadow:0 2px 6px color-mix(in srgb, var(--color-shadow) 22%, transparent);
+}
+.workspace-cover-shell .workspace-photo-launch:hover,
+.workspace-cover-shell .workspace-photo-launch:focus-visible{
+ background:color-mix(in srgb, var(--color-media-backdrop) 88%, transparent);border-color:var(--color-on-media);color:var(--color-on-media);
+}
+.bom-part-workspace .part-workspace-cover{cursor:default}
+.part-photo-dialog .workspace-photos-editor{width:100%;max-width:none}
+.part-photo-dialog .part-photo-stage{
+ width:100%;height:clamp(240px,45vw,460px);
+ position:relative;display:flex;justify-content:center;align-items:center;
+ background:var(--color-media-backdrop);border-radius:8px;overflow:hidden;
+}
+.part-photo-dialog .part-photo-preview{display:block;max-width:100%;max-height:100%;object-fit:contain}
+.part-photo-dialog .part-photo-preview[hidden],.part-photo-dialog .part-photo-placeholder[hidden]{display:none!important}
+.part-photo-dialog .part-photo-placeholder{color:var(--color-on-media);font-size:.96rem}
+.part-photo-dialog .part-photo-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.part-photo-dialog .part-photo-actions .btn{font-size:.85rem}
+.part-photo-dialog .part-photo-status{font-size:.85rem}
+
+
+/* Root project overview matches the child-assembly overview rather than
+   retaining its former oversized, separately edited photo card. */
+.assembly-main .assembly-main-tile.assembly-unified-tile{
+ width:min(100%,650px);max-width:650px;
+ margin:14px 0 22px;border:1px solid var(--color-border);
+ border-radius:12px;background:var(--color-media-backdrop);overflow:hidden;
+}
+.assembly-main .assembly-main-tile .root-photo-ui .assembly-photo-stage{
+ height:clamp(280px,38vw,430px);width:100%;border-radius:0;overflow:hidden;
+}
+.assembly-main .assembly-main-tile .root-photo-ui .assembly-stage-image{
+ width:100%;height:100%;max-height:none;object-fit:cover;
+}
+.assembly-main .assembly-main-tile .assembly-unified-photo .assembly-photos{
+ display:block;padding:0;margin:0;overflow:hidden;
+}
+.assembly-main .project-root-actions{margin:0 0 12px}
+.assembly-main .project-root-actions .project-root-rename{
+ padding:5px 9px;font-size:.75rem;background:transparent;
+ border-color:var(--color-border);color:var(--color-text-muted);
+}
+.assembly-main .project-root-actions .project-root-rename:hover{background:var(--color-hover)}
+@media(max-width:700px){
+ .assembly-main .assembly-main-tile.assembly-unified-tile{width:100%;max-width:100%}
+ .assembly-main .assembly-main-tile .root-photo-ui .assembly-photo-stage{height:300px}
+}
+
+
+/* Studio Green: explicit surface roles for photo-management interfaces.
+   The image canvas and image-overlay controls remain dark for contrast. */
+.assembly-main .assembly-unified-tile,
+.assembly-detail .assembly-unified-tile{
+  background:var(--color-surface);
+  border-color:var(--color-border);
+}
+.workspace-photo-dialog{
+  background:var(--color-surface);
+  color:var(--color-text);
+  border-color:var(--color-border-strong);
+}
+.workspace-photo-dialog .workspace-photos-editor{
+  background:transparent;
+  color:var(--color-text);
+}
+.workspace-photo-dialog .workspace-photos-editor h2,
+.workspace-photo-dialog .workspace-photo-title{color:var(--color-text)}
+.workspace-photo-dialog .workspace-photos-editor>p.muted{color:var(--color-text-muted)}
+.workspace-photo-dialog .workspace-photo-tools{border-top-color:var(--color-border)}
+.workspace-photo-dialog .assembly-photo-pick,
+.workspace-photo-dialog .part-photo-add{
+  background:var(--color-accent);
+  color:var(--color-on-accent);
+  border-color:var(--color-accent);
+}
+.workspace-photo-dialog .assembly-photo-pick:hover,
+.workspace-photo-dialog .part-photo-add:hover{background:var(--color-accent-hover)}
+.workspace-photo-dialog .part-photo-delete{
+  background:var(--color-surface-muted);
+  color:var(--color-danger);
+  border-color:var(--color-border);
+}
+.workspace-photo-dialog .part-photo-placeholder{color:var(--color-on-media)}
+.photo-dropzone,
+.photo-dropzone:hover,
+.photo-dropzone:focus-visible,
+.photo-dropzone.dragover{background:var(--color-surface-muted);color:var(--color-text)}
+.photo-drop-icon{background:var(--color-accent-soft);color:var(--color-accent)}
+.photo-dropzone>span:not(.photo-drop-icon){color:var(--color-text-muted)}
+.recipe-compact .recipe-photo-frame .recipe-step-photo-name,
+.recipe-compact .recipe-reader-photo figcaption{
+  background:var(--color-surface-muted);
+  color:var(--color-text);
+}
