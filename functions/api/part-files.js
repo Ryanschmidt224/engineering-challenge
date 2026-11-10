@@ -1,12 +1,12 @@
+import {projectAllowed,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
-const PROJECTS=new Set(["launcher","linear","robot","buck","motorlab","coiltest"]);
 const EXTENSIONS=new Set(["x_t","x_b","stl","step","stp","iges","igs","sldprt","sldasm","dxf","dwg","zip","pdf","3mf","obj","csv","txt"]);
 const json=(x,status=200)=>new Response(JSON.stringify(x),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const MAX_BYTES=20*1024*1024;
 const uuid=s=>typeof s==="string"&&/^[a-f0-9-]{36}$/i.test(s);
 export async function handlePartFiles(request,env){
  const u=new URL(request.url),project=u.searchParams.get("project"),partId=u.searchParams.get("id"),file=u.searchParams.get("file");
- if(!PROJECTS.has(project)||!uuid(partId)||file!==null&&!uuid(file))return json({error:"Invalid part file location"},400);
+ if(!await projectAllowed(env,project)||!uuid(partId)||file!==null&&!uuid(file))return json({error:"Invalid part file location"},400);
  if(!["GET","POST"].includes(request.method))return json({error:"Method not allowed"},405);
  // CAD files can contain proprietary engineering data: require admin to read and upload.
  if(!await isAdmin(request,env))return json({error:"Administrator login required for private engineering files"},401);
