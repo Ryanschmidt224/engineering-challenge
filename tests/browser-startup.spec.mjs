@@ -438,6 +438,18 @@ test("step editor keeps photo attachments with their note and saves from either 
  await expect(card.locator(".recipe-step-detail .recipe-reader-photo")).toHaveCount(1);
  const content=await card.locator(".recipe-reader-text").innerText();
  expect(content.indexOf("Connect the meter")).toBeLessThan(content.indexOf("Record the reading"));
+ // Removing an associated note makes its photo unassigned, never deleted.
+ await card.locator(".recipe-step-edit-toggle").click();
+ await card.locator(".recipe-step-note").first().getByRole("button",{name:"Remove note"}).click();
+ await expect(card.locator(".recipe-step-photos .recipe-step-photo")).toHaveCount(1);
+ await card.locator(".recipe-save-step-bottom").click();
+ const afterRemoval=await page.evaluate(()=>window.lastRecipeSave?.[0]);
+ expect(afterRemoval.notes).toEqual(["Record the reading"]);
+ expect(afterRemoval.noteIds).toHaveLength(1);
+ expect(afterRemoval.photos).toHaveLength(1);
+ expect(afterRemoval.photoNoteIds).toEqual({});
+ await page.evaluate(()=>window.testRecipe.setData({recipe:window.lastRecipeSave}));
+ await expect(card.locator(".recipe-step-detail .recipe-reader-photo")).toHaveCount(1);
  expect(errors).toEqual([]);
 });
 
