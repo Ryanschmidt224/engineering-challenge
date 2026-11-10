@@ -2615,3 +2615,14 @@
 .bom-duplicate-records{border-left:2px solid #557683;margin:9px 0 0;padding-left:10px}
 .bom-duplicate-record{font-size:.86rem}
 .bom-duplicate-record .bom-part-summary{padding:7px 0}
+
+
+/* The assembly BOM includes both individual components and nested subassemblies. */
+.assembly-bom-parts-group .assembly-tile-cover::before{
+ position:absolute;top:9px;left:9px;z-index:2;
+ background:rgba(9,26,35,.86);border:1px solid #537482;
+ padding:2px 8px;border-radius:5px;
+ font-size:.72rem;font-weight:650;color:#e6f6fb;line-height:1.4;
+}
+.assembly-bom-parts-group .assembly-bom-part-tile .assembly-tile-cover::before{content:"Part"}
+.assembly-bom-parts-group .assembly-bom-subassembly-tile .assembly-tile-cover::before{content:"Subassembly"}
