@@ -960,6 +960,34 @@ function setupAssemblyTrees(){
    item.append(row);
    return item;
   }
+  // Group matching displayed names while preserving each underlying saved record.
+  const bomIdentity=part=>[part.name,part.manufacturer,part.model,part.partType,part.sharedPartRef]
+   .map(value=>String(value||"").trim().replace(/\\s+/g," ").toLowerCase()).join("|");
+  function appendGroupedBomParts(mount,entries){
+   const groups=new Map();
+   for(const entry of entries){
+    const key=bomIdentity(entry.part);
+    if(!groups.has(key))groups.set(key,[]);
+    if(!groups.get(key).some(item=>item.part.id===entry.part.id))groups.get(key).push(entry);
+   }
+   for(const group of groups.values()){
+    const first=group[0],row=createSavedPart(first.part,first.originId);
+    if(first.feature)row.classList.add("bom-feature-part");
+    if(group.length===1){mount.append(row);continue}
+    const list=document.createElement("details");list.className="bom-duplicate-group";
+    const heading=document.createElement("summary");heading.className="bom-duplicate-heading";
+    heading.textContent=group.length+" saved records · Show each";
+    list.append(heading);
+    const children=document.createElement("div");children.className="bom-duplicate-records";
+    for(const entry of group){
+     const child=createSavedPart(entry.part,entry.originId);
+     child.classList.add("bom-duplicate-record");children.append(child);
+    }
+    list.append(children);
+    row.querySelector(".bom-part-meta").textContent=group.length+" records";
+    row.append(list);mount.append(row);
+   }
+  }
   async function renderWorkspaceParts(){
    const version=++bomDisplayVersion,assemblyId=selected,container=bomPanel.querySelector(".workspace-saved-parts");
    // Keep the last list visible while fetching, rather than flashing the BOM
@@ -979,17 +1007,14 @@ function setupAssemblyTrees(){
      const linkedIds=new Set(nodes.filter(n=>isPartNode(n)).map(n=>n.partId));
      const ownParts=parts.filter(p=>(p.assemblyId??null)===parentId&&!linkedIds.has(p.id)&&!shopIds.has(p.id));
      const children=nodes.filter(n=>n.parentId===parentId);
-     for(const part of ownParts)mount.append(createSavedPart(part,parentId));
+     const entries=ownParts.map(part=>({part,originId:parentId,feature:false}));
+     for(const node of children)if(isPartNode(node)){
+      const part=parts.find(p=>p.id===node.partId);
+      if(part&&!shopIds.has(part.id))entries.push({part,originId:node.parentId,feature:true});
+     }
+     appendGroupedBomParts(mount,entries);
      for(const node of children){
-      if(isPartNode(node)){
-       const part=parts.find(p=>p.id===node.partId);
-       if(part&&!shopIds.has(part.id)){
-        const entry=createSavedPart(part,node.parentId);
-        entry.classList.add("bom-feature-part");
-        mount.append(entry);
-       }
-       continue;
-      }
+      if(isPartNode(node))continue;
       const item=document.createElement("details");item.className="bom-part bom-subassembly";item.dataset.assemblyId=node.id;item.open=false;item.setAttribute("aria-label",node.name+" subassembly BOM");
       const summary=document.createElement("summary");summary.className="bom-part-summary";
       const name=document.createElement("span");name.className="bom-part-name";name.textContent=node.name;
