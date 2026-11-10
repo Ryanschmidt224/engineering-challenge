@@ -1031,3 +1031,8 @@
 .assembly-bom-screen .bom-shop-material-row{border-bottom:1px solid var(--color-border);background:transparent;}
 .assembly-bom-screen .bom-row-thumbnail{display:none!important;}
 .assembly-bom-screen .bom-duplicate-group{border:0;background:transparent;}
+
+/* Assembly workspace sequence: instructions, resources, then lessons and revisions.
+   Flex order must match the DOM placement or this panel jumps to the top. */
+:is(#launcher,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.investigations-panel{order:4}
+:is(#launcher,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-actions{order:5}
