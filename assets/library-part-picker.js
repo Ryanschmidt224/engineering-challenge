@@ -26,6 +26,7 @@ function open({onCreate,hideDefault=false}){
  return new Promise(resolve=>{
  const dialog=el("dialog","library-part-dialog"),form=el("form","library-part-form");form.method="dialog";
  const heading=el("h2","","New part"),subtitle=el("p","muted","Create a part for the BOM. Choose whether it appears in the feature tree.");
+ const toolField=el("label","library-visibility-field");const toolInput=el("input");toolInput.type="checkbox";toolField.append(toolInput,document.createTextNode(" Tool (not a build component)"));
  const visibility=el("label","library-visibility-field");const visibilityInput=el("input");visibilityInput.type="checkbox";visibilityInput.checked=hideDefault;visibility.append(visibilityInput,document.createTextNode(" Hide from feature tree"));
  const mode=field("How would you like to add this part?","select");option(mode.input,"custom","Enter part details");option(mode.input,"library","Choose from saved parts / wire tools");
  const customName=field("Part name");
@@ -116,7 +117,7 @@ function open({onCreate,hideDefault=false}){
  manualFields.append(wireType.label,gauge.label,construction.label,wireAdvanced,length.label,endA.target.label,endA.choice.label,endA.other.label,endB.target.label,endB.choice.label,endB.other.label,results);
  wireSection.append(workflow,workflowHint,manualFields,wizardFields);
  chooser.append(category.label,wireSection,compSection);
- form.append(heading,subtitle,mode.label,customName.label,chooser,qty.label,unit.label,hintUnits,visibility,status,footer);
+ form.append(heading,subtitle,mode.label,customName.label,chooser,qty.label,unit.label,hintUnits,toolField,visibility,status,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
@@ -202,6 +203,7 @@ function open({onCreate,hideDefault=false}){
   }
   payload.quantityUnit=unit.input.value;
   payload.hideFromFeatureTree=visibilityInput.checked;
+  payload.isTool=toolInput.checked;
   save.disabled=true;status.textContent="Creating part…";
   try{await onCreate(payload);close({created:true})}catch(err){status.textContent=err.message||String(err);save.disabled=false}
  });
