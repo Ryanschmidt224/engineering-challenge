@@ -81,6 +81,7 @@
   const admin=()=>!!options.admin?.();
   let steps=[],expanded=null,dirty=false,level="standard",pendingUploads=0,saving=false;
   const editing=new Set();
+  window.addEventListener("beforeunload",event=>{if(!dirty&&!pendingUploads&&!saving)return;event.preventDefault();event.returnValue="";});
   try{const saved=localStorage.getItem("bs-recipe-detail");if(["brief","standard","detailed"].includes(saved))level=saved}catch{}
   const changed=()=>{dirty=true;options.onChange?.()};
   const saveHint=()=>{feedback.textContent="Unsaved step changes."};
@@ -416,7 +417,6 @@
    }
   }
   function setData(data){
-   if(dirty||pendingUploads){feedback.textContent="Unsaved work is still open. Save before reloading instructions.";return}
    steps=Array.isArray(data?.recipe)?data.recipe.map(normalize):[];
    dirty=false;expanded=steps[0]?.id||null;editing.clear();feedback.textContent="";
    render();
