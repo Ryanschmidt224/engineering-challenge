@@ -22,10 +22,11 @@ function recommend(voltage,current,length,dropPercent=3,purpose="power"){
  if(preferredDrop>maxDrop)reasons.push("the voltage-drop limit ("+preferredDrop.toFixed(3)+" V estimated)");
  return {chosen,drop:chosen?current*(2*length*chosen.r/1000):null,maxDrop,preferred,reasons};
 }
-function open({onCreate,bomOnly=false}){
+function open({onCreate,hideDefault=false}){
  return new Promise(resolve=>{
  const dialog=el("dialog","library-part-dialog"),form=el("form","library-part-form");form.method="dialog";
- const heading=el("h2","",bomOnly?"New BOM-only part":"New feature-tree part"),subtitle=el("p","muted",bomOnly?"Create a BOM-only material or consumable. It will not appear in the feature tree.":"Enter the details for any part, whether purchased or made, or choose a reusable part or wire configuration.");
+ const heading=el("h2","","New part"),subtitle=el("p","muted","Create a part for the BOM. Choose whether it appears in the feature tree.");
+ const visibility=el("label","library-visibility-field");const visibilityInput=el("input");visibilityInput.type="checkbox";visibilityInput.checked=hideDefault;visibility.append(visibilityInput,document.createTextNode(" Hide from feature tree"));
  const mode=field("How would you like to add this part?","select");option(mode.input,"custom","Enter part details");option(mode.input,"library","Choose from saved parts / wire tools");
  const customName=field("Part name");
  const chooser=el("div","library-picker-section hide");
@@ -79,7 +80,7 @@ function open({onCreate,bomOnly=false}){
   return {target,choice,other,hint,value:()=>choice.input.value==="other"?other.input.value.trim():choice.input.value};
  };
  const endA=terminationField("A"),endB=terminationField("B");
- const qty=field(bomOnly?"Quantity (optional)":"Quantity");qty.input.type="number";qty.input.min="0.000001";qty.input.max="10000000";qty.input.step="any";qty.input.placeholder=bomOnly?"Leave blank if unknown":"1";qty.input.value=bomOnly?"":"1";
+ const qty=field("Quantity (optional)");qty.input.type="number";qty.input.min="0.000001";qty.input.max="10000000";qty.input.step="any";qty.input.placeholder="Leave blank if unknown";qty.input.value="";
  const unit=field("Unit (optional)","select");
  for(const [value,title] of [["pcs","pieces (pcs)"],["in","inches (in)"],["ft","feet (ft)"],["m","meters (m)"],["mm","millimeters (mm)"],["g","grams (g)"],["kg","kilograms (kg)"],["mL","milliliters (mL)"],["L","liters (L)"],["","unspecified"]])option(unit.input,value,title);
  const hintUnits=el("p","muted library-picker-hint","Optional: leave quantity blank for consumables such as solder when usage is not yet known.");
@@ -115,7 +116,7 @@ function open({onCreate,bomOnly=false}){
  manualFields.append(wireType.label,gauge.label,construction.label,wireAdvanced,length.label,endA.target.label,endA.choice.label,endA.other.label,endB.target.label,endB.choice.label,endB.other.label,results);
  wireSection.append(workflow,workflowHint,manualFields,wizardFields);
  chooser.append(category.label,wireSection,compSection);
- form.append(heading,subtitle,mode.label,customName.label,chooser,qty.label,unit.label,hintUnits,status,footer);
+ form.append(heading,subtitle,mode.label,customName.label,chooser,qty.label,unit.label,hintUnits,visibility,status,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
@@ -200,6 +201,7 @@ function open({onCreate,bomOnly=false}){
    payload.wireInfo={gauge:g,construction:str,insulation:insulation.input.value,crimp,mm,endA:endA.value(),endB:endB.value(),wireId:null};
   }
   payload.quantityUnit=unit.input.value;
+  payload.hideFromFeatureTree=visibilityInput.checked;
   save.disabled=true;status.textContent="Creating part…";
   try{await onCreate(payload);close({created:true})}catch(err){status.textContent=err.message||String(err);save.disabled=false}
  });
