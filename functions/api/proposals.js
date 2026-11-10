@@ -60,7 +60,7 @@ export async function handleProposals(request,env){
   const workspace=JSON.parse(await object.text());
   const step=workspace.recipe?.find(step=>step.id===proposal.stepId);
   if(!step||String(step[proposal.field]||"")!==proposal.originalText)return json({error:"Instruction changed since proposal. Review and resubmit against latest text."},409);
-  const before={recipe:workspace.recipe||[],resources:workspace.resources||{},experiments:workspace.experiments||[]};
+  const before={recipe:structuredClone(workspace.recipe||[]),resources:structuredClone(workspace.resources||{}),experiments:structuredClone(workspace.experiments||[])};
   const history=Array.isArray(workspace.history)?workspace.history.slice(-19):[];
   history.push({savedAt:workspace.updatedAt||new Date().toISOString(),revision:workspace.revision??null,...before});
   step[proposal.field]=proposal.suggestedText;
