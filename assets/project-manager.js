@@ -58,7 +58,7 @@ window.BSProjectManager=(()=>{
    if(document.getElementById(project.id))return;
    if(!template)return;
    const section=template.cloneNode(true);
-   section.id=project.id;
+   section.id=project.id;section.classList.add("personal-project-view");
    section.querySelectorAll("[data-assembly-tree],[data-components],[data-photos]").forEach(node=>{
     if(node.hasAttribute("data-assembly-tree"))node.dataset.assemblyTree=project.id;
     if(node.hasAttribute("data-components"))node.dataset.components=project.id;
