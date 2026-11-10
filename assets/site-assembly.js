@@ -444,7 +444,8 @@ function setupAssemblyTrees(){
   assemblyInvestigationPanel.className="investigations-panel";
   const partInvestigationPanel=document.createElement("article");
   partInvestigationPanel.className="investigations-panel";
-  workspace.querySelector(".recipe-instructions").after(assemblyInvestigationPanel);
+  // Keep lessons and revision history after the primary workspace materials.
+  workspace.querySelector(".workspace-resources").after(assemblyInvestigationPanel);
   partWorkspace.querySelector(".recipe-instructions").after(partInvestigationPanel);
   investigations=window.BSInvestigations?.mount({project,admin:()=>adminAuthenticated,getTree:()=>nodes,
    getPart:()=>currentPartInfo,getPartList:()=>investigationParts,
