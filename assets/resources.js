@@ -381,7 +381,7 @@
     try{
      const payload={name:part.name,manufacturer:part.manufacturer||"",model:part.model||"",supplier:part.supplier||"",
       asin:part.asin||"",category:part.category||"",specifications:part.specifications||[],
-      assemblyId:null,bomOnly:true,quantity:null,quantityUnit:"pcs",sharedPartRef:"purchased:"+part.id};
+      assemblyId:null,hideFromFeatureTree:true,quantity:null,quantityUnit:"pcs",sharedPartRef:"purchased:"+part.id};
      const response=await fetch("/api/components?project="+encodeURIComponent(choose.value),{
       method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(payload)});
      const data=await response.json();if(!response.ok)throw Error(data.error||"Unable to reuse purchased part");
