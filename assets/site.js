@@ -962,7 +962,7 @@ function setupAssemblyTrees(){
   }
   // Group matching displayed names while preserving each underlying saved record.
   const bomIdentity=part=>[part.name,part.manufacturer,part.model,part.partType,part.sharedPartRef]
-   .map(value=>String(value||"").trim().replace(/\\s+/g," ").toLowerCase()).join("|");
+   .map(value=>String(value||"").trim().replace(/\s+/g," ").toLowerCase()).join("|");
   function appendGroupedBomParts(mount,entries){
    const groups=new Map();
    for(const entry of entries){
