@@ -12,6 +12,7 @@
   let records=[],revision=null;
   let assemblySlot=null,partSlot=null,stepSlots=new Map(),activeContext=null,loadSerial=0;
   const openCards=new Set();
+  const openSections=new Set();
   const api="/api/investigations?project="+encodeURIComponent(project);
   const feedback=target=>(target||activeContext?.target)?.querySelector(".investigation-feedback");
   const report=(message,target)=>{const p=feedback(target);if(p)p.textContent=message};
@@ -135,17 +136,32 @@
   }
   function render(target,context,compact=false){
    if(!target)return;
+   const sectionKey=context.ownerType+":"+context.ownerId+":"+(context.stepId||"");
+   const existing=target.querySelector(".investigation-collapse");
+   if(existing){if(existing.open)openSections.add(sectionKey);else openSections.delete(sectionKey)}
    target.replaceChildren();
    activeContext={...context,target};
+   const disclosure=make("details","investigation-collapse");
+   disclosure.open=openSections.has(sectionKey);
+   const summary=make("summary","investigation-collapse-heading");
+   const title=make(compact?"h4":"h2","",compact?"Revisions, Failures & Lessons Learned":"Revisions, Failures & Lessons Learned");
+   const toggleLabel=make("span","investigation-toggle-label",disclosure.open?"Minimize details":"Show details");
+   summary.append(title,toggleLabel);
+   disclosure.append(summary);
+   disclosure.addEventListener("toggle",()=>{
+    toggleLabel.textContent=disclosure.open?"Minimize details":"Show details";
+    if(disclosure.open)openSections.add(sectionKey);else openSections.delete(sectionKey);
+   });
+   const content=make("div","investigation-collapse-content");
    const header=make("div","investigation-heading");
-   const title=make(compact?"h4":"h2","",compact?"Revisions, failures & lessons":"Revisions, Failures & Lessons Learned");
-   header.append(title);
    if(admin()){
     header.append(btn("+ Add record",()=>newRecord(context,target),"btn investigation-add"));
     if(context.ownerType==="part"&&!context.stepId&&typeof getPart==="function"&&getPart()?.id===context.ownerId&&
      typeof onReplacePart==="function")header.append(btn("Replace part / save revision",()=>replacePart(context,target),"btn investigation-add"));
    }
-   target.append(header);
+   if(header.childElementCount)content.append(header);
+   disclosure.append(content);
+   target.append(disclosure);
    const own=records.filter(item=>owns(item,context));
    const rolled=records.filter(item=>within(item,context)&&!owns(item,context));
    const renderRecord=(record,inherited=false)=>{
@@ -172,7 +188,7 @@
      body.append(make("p","investigation-origin","From "+source+" · "+record.title));
     }
     if(record.partSnapshot)showSnapshot(record.partSnapshot,body);
-    attach(record,body,target);card.append(body);target.append(card);
+    attach(record,body,target);card.append(body);content.append(card);
    };
    own.forEach(item=>renderRecord(item));
    if(rolled.length){
@@ -198,10 +214,10 @@
      body.append(origin);
      attach(record,body,target);card.append(body);wrapper.append(card);inner.append(wrapper);
     }
-    group.append(inner);target.append(group);
+    group.append(inner);content.append(group);
    }
-   if(!own.length&&!rolled.length)target.append(make("p","muted investigation-empty","No failures recorded yet."));
-   target.append(make("p","investigation-feedback muted"));
+   if(!own.length&&!rolled.length)content.append(make("p","muted investigation-empty","No failures recorded yet."));
+   content.append(make("p","investigation-feedback muted"));
   }
 
   function showSnapshot(snapshot,target){
