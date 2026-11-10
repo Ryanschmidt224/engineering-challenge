@@ -1,10 +1,10 @@
+import {projectAllowed,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
-const PROJECTS=new Set(["launcher","linear","robot","buck","motorlab","coiltest"]);
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const uuid=s=>typeof s==="string"&&/^[0-9a-f-]{36}$/i.test(s);
 export async function handlePartPages(request,env){
  const u=new URL(request.url),project=u.searchParams.get("project"),partId=u.searchParams.get("id"),file=u.searchParams.get("file");
- if(!PROJECTS.has(project)||!uuid(partId)||file!==null&&!uuid(file))return json({error:"Invalid saved product page location"},400);
+ if(!await projectAllowed(env,project)||!uuid(partId)||file!==null&&!uuid(file))return json({error:"Invalid saved product page location"},400);
  if(!["GET","POST"].includes(request.method))return json({error:"Method not allowed"},405);
  if(!await isAdmin(request,env))return json({error:"Administrator login required"},401);
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
