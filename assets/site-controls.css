@@ -1,0 +1,872 @@
+/* Workspace and feature-tree refinements; loaded after site-workspaces.css. */
+
+/* Workspace finishing touches: clear gutter beside the resizable sidebar and
+   a quiet active state only on the header of the expanded BOM item. */
+@media(min-width:1100px){
+ #launcher .assembly-layout:has(>.assembly-sidebar.bom-sidebar-active){
+  column-gap:14px;
+ }
+}
+/* Use the same muted selected-row shade as the feature tree, not a new accent. */
+#launcher .assembly-sidebar .workspace-bom .workspace-saved-parts .bom-part[open] > .bom-part-summary,
+#launcher .assembly-sidebar .workspace-bom .workspace-saved-parts .bom-subassembly[open] > .bom-part-summary{
+ background:var(--color-sidebar);
+ border-radius:5px;
+}
+#launcher .assembly-sidebar .workspace-bom .workspace-saved-parts .bom-part[open] > .bom-part-summary:hover,
+#launcher .assembly-sidebar .workspace-bom .workspace-saved-parts .bom-subassembly[open] > .bom-part-summary:hover{
+ background:var(--color-hover);
+}
+
+
+/* Matching outer frame for the main assembly page. */
+.assembly-layout>.assembly-content{
+ border:1px solid var(--color-border);
+ border-radius:10px;
+ background:var(--color-page);
+ overflow:visible;
+}
+@media(max-width:800px){
+ .assembly-layout>.assembly-content{
+  padding:16px;
+  border:1px solid var(--color-border);
+  border-radius:10px;
+ }
+}
+/* Right-click is the primary tree editing surface; old buttons stay wired
+   internally so the assembly actions have only one implementation. */
+.assembly-sidebar .assembly-edit>.assembly-rename,
+.assembly-sidebar .assembly-edit>.assembly-remove{
+ display:none!important;
+}
+.assembly-row-menu-trigger{
+ display:none;
+ flex:0 0 auto;
+ min-width:23px;
+ text-align:center;
+ border-radius:4px!important;
+ padding:2px 4px!important;
+ color:var(--color-text-muted)!important;
+ font-size:1rem!important;
+}
+.assembly-node:hover .assembly-row-menu-trigger,
+.assembly-node:focus-within .assembly-row-menu-trigger{
+ display:block;
+}
+.assembly-row-menu-trigger:hover,
+.assembly-row-menu-trigger:focus-visible{background:var(--color-hover)!important;color:var(--color-text)!important}
+.assembly-context-menu{
+ position:fixed;
+ z-index:10000;
+ min-width:185px;
+ padding:5px;
+ background:var(--color-surface);
+ border:1px solid var(--color-border);
+ border-radius:8px;
+ box-shadow:0 12px 28px color-mix(in srgb, var(--color-shadow) 40%, transparent);
+}
+.assembly-context-menu[hidden]{display:none!important}
+.assembly-context-menu button{
+ display:block;
+ width:100%;
+ border:0;
+ border-radius:5px;
+ background:transparent;
+ text-align:left;
+ color:var(--color-text);
+ padding:9px 12px;
+ font:inherit;
+ font-size:.84rem;
+ cursor:pointer;
+}
+.assembly-context-menu button:hover,
+.assembly-context-menu button:focus-visible{background:var(--color-hover);outline:0}
+.assembly-context-menu button:disabled{opacity:.4;cursor:not-allowed}
+.assembly-context-separator{
+ border-top:1px solid var(--color-border);
+ margin:4px 5px;
+}
+@media(hover:none), (pointer:coarse){
+ .assembly-node .assembly-row-menu-trigger{display:block}
+}
+
+
+/* Consistent assembly-page gutters and motion-free tree interactions.
+ * The workspace has an extra 9px splitter column, so 7px gaps on either
+ * side produce the same ~22px sidebar/content clearance as overview pages. */
+@media(min-width:1100px){
+ #launcher .assembly-layout,
+ #linear .assembly-layout,
+ #robot .assembly-layout{
+  column-gap:22px;
+ }
+ #launcher .assembly-layout:has(>.assembly-sidebar.bom-sidebar-active),
+ #linear .assembly-layout:has(>.assembly-sidebar.bom-sidebar-active),
+ #robot .assembly-layout:has(>.assembly-sidebar.bom-sidebar-active){
+  column-gap:7px;
+ }
+}
+/* Do not insert a menu button on hover. Keep its layout width stable and
+ * reveal with opacity, preventing adjacent names from shifting or reflowing. */
+.assembly-node .assembly-row-menu-trigger{
+ display:block;
+ visibility:hidden;
+ opacity:0;
+ width:23px;
+ min-width:23px;
+ flex:0 0 23px;
+ padding:2px 4px!important;
+ transition:none!important;
+ transform:none!important;
+}
+.assembly-node:hover .assembly-row-menu-trigger,
+.assembly-node:focus-within .assembly-row-menu-trigger{
+ display:block;
+ visibility:visible;
+ opacity:1;
+}
+.assembly-node,
+.assembly-node .assembly-name,
+.assembly-node .assembly-expander,
+.assembly-node .assembly-row-menu-trigger,
+.assembly-sidebar .assembly-edit .btn,
+.assembly-content .btn{
+ transform:none!important;
+ transition:none!important;
+ animation:none!important;
+}
+.assembly-page .btn:hover{
+ filter:none;
+}
+@media(hover:none),(pointer:coarse){
+ .assembly-node .assembly-row-menu-trigger{
+  visibility:visible;
+  opacity:1;
+ }
+}
+
+
+/* Root project editing is explicit on the main project page. */
+.assembly-main .project-root-actions{
+ display:flex;
+ flex-wrap:wrap;
+ align-items:center;
+ gap:10px;
+ margin:6px 0 18px;
+}
+.assembly-main .project-root-actions.hide{display:none!important}
+.assembly-main .project-root-actions .btn{
+ padding:7px 12px;
+ border:1px solid var(--color-border);
+ border-radius:7px;
+ background:var(--color-surface);
+ color:var(--color-text);
+ font-size:.81rem;
+}
+.assembly-main .project-root-actions .btn:hover{background:var(--color-hover)}
+.assembly-main .project-root-status{font-size:.8rem;color:var(--color-text-muted)}
+.project-art.has-project-cover>svg{display:none}
+.project-art>.project-card-cover{
+ display:block;
+ width:100%;
+ height:100%;
+ object-fit:cover;
+}
+/* All feature-tree creation, ordering and move commands now live in the
+   right-click / ⋯ context menu; retain their underlying handlers. */
+.assembly-sidebar .assembly-edit{display:none!important}
+
+
+/* Small admin-only edit entry on the Projects landing cards. */
+.project-card>.project-card-edit{
+ display:block;
+ width:calc(100% - 36px);
+ margin:0 18px 17px;
+ padding:7px 10px;
+ text-align:center;
+ font-size:.8rem;
+ font-weight:500;
+ border:1px solid var(--color-border);
+ background:var(--color-surface);
+ color:var(--color-text);
+ border-radius:6px;
+}
+.project-card>.project-card-edit.hide{display:none!important}
+.project-card>.project-card-edit:hover{background:var(--color-hover)}
+
+
+/* Backup/recovery controls are secondary project maintenance tools. */
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details{
+ margin:34px 0 16px;
+ padding:0;
+ border:1px solid var(--color-border);
+ border-radius:8px;
+ background:var(--color-page);
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details>summary{
+ cursor:pointer;
+ padding:13px 17px;
+ color:var(--color-text-muted);
+ font-size:.82rem;
+ font-weight:550;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details>summary:hover{
+ background:var(--color-hover);
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details[open]>summary{
+ border-bottom:1px solid var(--color-border);
+ color:var(--color-text);
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details .workspace-archive-actions{
+ padding:15px 17px 8px;
+ margin:0;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details .workspace-backup-history{
+ padding:0 17px 16px;
+}
+#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details .btn{
+ background:var(--color-surface-muted);
+ border:1px solid var(--color-border);
+ color:var(--color-text);
+ font-size:.79rem;
+ font-weight:500;
+}
+
+
+/* BOM editor uses the main workspace instead of the narrow sidebar. */
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-panels>.workspace-main-bom-editor{
+ display:block;
+ padding:24px 28px 30px;
+ min-width:0;
+ max-width:none;
+ background:var(--color-sidebar);
+ border:1px solid var(--color-border);
+ border-radius:9px;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-panels>article:not(.workspace-main-bom-editor),
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-panels>.workspace-actions{
+ display:none!important;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part>.workspace-backup-details{
+ display:none;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .workspace-bom-mount{
+ width:100%;
+ max-width:100%;
+ margin:0;
+ padding:0;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-section,
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-admin{
+ display:block!important;
+ width:100%;
+ max-width:none;
+ margin:0;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-admin{
+ padding:0;
+ border:0;
+ background:transparent;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .workspace-bom-editor-header{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ flex-wrap:wrap;
+ gap:14px;
+ margin:0 0 22px;
+ padding-bottom:16px;
+ border-bottom:1px solid var(--color-border);
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .workspace-bom-editor-title{
+ margin:0;
+ font-size:1.15rem;
+ color:var(--color-text);
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .field,
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor input,
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor textarea{
+ max-width:100%;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-review{
+ max-width:100%;
+}
+@media(max-width:800px){
+ #launcher .assembly-workspace-page.is-editing-bom-part .workspace-panels>.workspace-main-bom-editor{
+  padding:16px;
+ }
+}
+
+
+/* Main-pane part editing shows ONLY the editable form.
+ * The saved BOM remains in the persistent sidebar (never duplicated here). */
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-section>details>.component-list,
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-section>details>summary,
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-section .bom-visible-parts,
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-admin>summary{
+ display:none!important;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-section>details,
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-admin{
+ border:0!important;
+ box-shadow:none!important;
+ background:transparent!important;
+ padding:0!important;
+ margin:0!important;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .component-review{
+ display:block;
+}
+
+
+/* Part classification: only show data relevant to the selected kind. */
+#launcher .workspace-main-bom-editor .part-type-field{
+ display:flex;
+ flex-direction:column;
+ gap:7px;
+ max-width:390px;
+ margin-bottom:20px;
+ font-weight:650;
+ color:var(--color-text);
+}
+#launcher .workspace-main-bom-editor .part-type-select{width:100%}
+#launcher .workspace-main-bom-editor .component-review label[hidden],
+#launcher .workspace-main-bom-editor label[hidden],
+#launcher .workspace-main-bom-editor .component-extract[hidden]{display:none!important}
+/* Linked resources: no empty three-column placeholders until items exist. */
+.linked-resources .linked-resource-chooser[hidden],
+.linked-resources .linked-resource-add[hidden],
+.linked-resources .linked-resource-groups:empty,
+.linked-resources .linked-resource-chooser [hidden]{display:none!important}
+.linked-resources .linked-resource-add{
+ display:inline-block;
+ border:0;
+ background:transparent;
+ color:var(--color-accent);
+ padding:7px 3px;
+ text-align:left;
+ font:inherit;
+ font-size:.92rem;
+ font-weight:600;
+ cursor:pointer;
+}
+.linked-resources .linked-resource-add:hover{text-decoration:underline;color:var(--color-text)}
+.linked-resources .linked-resource-chooser{
+ display:flex;
+ flex-wrap:wrap;
+ gap:10px;
+ align-items:center;
+ margin-top:12px;
+ padding:14px;
+ border:1px solid var(--color-border);
+ border-radius:8px;
+ background:var(--color-surface);
+}
+.linked-resources .linked-resource-chooser select{
+ flex:1 1 180px;
+ min-width:150px;
+ max-width:340px;
+}
+.linked-resources .linked-resource-groups{
+ display:flex;
+ flex-wrap:wrap;
+ gap:12px;
+ margin:12px 0;
+}
+.linked-resources .linked-resource-group{
+ flex:1 1 230px;
+ min-width:210px;
+}
+
+
+/* Narrow BOM = read-only index. One quiet Edit action per editable part. */
+#launcher .assembly-sidebar .workspace-bom .bom-compact-part{
+ border:0;
+ border-bottom:1px solid var(--color-border);
+ border-radius:0;
+ background:transparent;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-compact-part>.bom-part-summary{
+ display:flex;
+ flex-wrap:nowrap;
+ gap:9px;
+ align-items:center;
+ padding:10px 3px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part-name-link{
+ background:transparent;
+ border:0;
+ text-align:left;
+ color:var(--color-text);
+ font:inherit;
+ font-size:.82rem;
+ font-weight:550;
+ cursor:pointer;
+ padding:0;
+ min-width:0;
+ flex:1 1 0;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part-name-link:hover{
+ color:var(--color-text-muted);
+ text-decoration:underline;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part-edit{
+ background:transparent;
+ color:var(--color-text-muted);
+ border:1px solid var(--color-border);
+ border-radius:5px;
+ padding:4px 9px;
+ font-size:.76rem;
+ white-space:nowrap;
+ flex:0 0 auto;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-part-edit:hover{
+ background:var(--color-hover);
+ color:var(--color-text);
+}
+#launcher .assembly-sidebar .workspace-bom .bom-shop-material-row{
+ display:flex;
+ align-items:center;
+ gap:9px;
+}
+#launcher .assembly-sidebar .workspace-bom .bom-shop-material-row .bom-part-name-link{
+ flex:1 1 0;
+}
+
+
+/* Hierarchy indicators only belong on expandable BOM assemblies.
+   Leaf parts open via their name or Open button; they do not have child trees. */
+.assembly-sidebar .workspace-bom .bom-compact-part > .bom-part-summary::before,
+.assembly-sidebar .workspace-bom .bom-feature-part > .bom-part-summary::before,
+.assembly-sidebar .workspace-bom .bom-compact-part[open] > .bom-part-summary::before{
+ content:none!important;
+ display:none!important;
+}
+.assembly-sidebar .workspace-bom .bom-compact-part > .bom-part-summary{
+ cursor:default;
+}
+/* Project and assembly photo cards use the same bottom-fade/white-caption
+   treatment as the smaller child tiles on their overview pages. */
+.assembly-main .assembly-photo-stage,
+.assembly-detail .assembly-photo-stage{
+ position:relative;
+ isolation:isolate;
+ overflow:hidden;
+}
+.assembly-main .assembly-photo-stage::after,
+.assembly-detail .assembly-photo-stage::after{
+ content:"";
+ position:absolute;
+ inset:50% 0 0;
+ background:linear-gradient(transparent,color-mix(in srgb, var(--color-media-backdrop) 72%, transparent));
+ z-index:5;
+ pointer-events:none;
+}
+.assembly-main .assembly-photo-stage .assembly-photo-name,
+.assembly-detail .assembly-photo-stage .assembly-photo-name{
+ position:absolute;
+ left:auto;
+ right:14px;
+ top:auto;
+ bottom:13px;
+ max-width:58%;
+ padding:0;
+ margin:0;
+ color:var(--color-on-media);
+ background:transparent;
+ border:0;
+ box-shadow:none;
+ font-size:.89rem;
+ font-weight:650;
+ text-align:right;
+ line-height:1.35;
+ text-shadow:0 1px 3px color-mix(in srgb, var(--color-shadow) 55%, transparent);
+ z-index:8;
+}
+.assembly-main .assembly-photo-stage .assembly-open-workspace,
+.assembly-detail .assembly-photo-stage .assembly-open-workspace{
+ left:14px;
+ right:auto;
+ bottom:12px;
+ top:auto;
+ border:1px solid color-mix(in srgb, var(--color-on-media) 30%, transparent);
+ border-radius:6px;
+ padding:8px 12px;
+ font-size:.82rem;
+ background:color-mix(in srgb, var(--color-media-backdrop) 72%, transparent);
+ box-shadow:none;
+ z-index:9;
+}
+/* Description is no longer part of an overview card. The complete notes,
+   procedures and linked resources are accessed via Open workspace. */
+.assembly-main .assembly-unified-body,
+.assembly-detail .assembly-unified-body{
+ display:none!important;
+}
+
+
+/* Focused part-edit mode: the editor is the entire main workspace.
+   The tree and BOM remain navigation in the left sidebar. */
+#launcher .assembly-workspace-page.is-editing-bom-part > .workspace-back,
+#launcher .assembly-workspace-page.is-editing-bom-part > .workspace-heading{
+ display:none!important;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-panels{
+ margin-top:0;
+}
+#launcher .assembly-workspace-page.is-editing-bom-part .workspace-panels > .workspace-main-bom-editor{
+ margin-top:0;
+}
+/* A BOM leaf title is text, not another navigation action. Only Open navigates. */
+#launcher .assembly-sidebar .workspace-bom .bom-compact-part .bom-part-name-link,
+#launcher .assembly-sidebar .workspace-bom .bom-shop-material-row .bom-part-name-link{
+ cursor:default;
+ text-decoration:none!important;
+ color:var(--color-text);
+}
+#launcher .assembly-sidebar .workspace-bom .bom-compact-part .bom-part-name-link:hover,
+#launcher .assembly-sidebar .workspace-bom .bom-shop-material-row .bom-part-name-link:hover{
+ color:var(--color-text);
+ text-decoration:none!important;
+}
+
+
+/* Overview cards: photo is the complete tile, with one consistent caption
+   at the bottom left. No secondary footers or administrative strips. */
+#launcher .assembly-main .assembly-photo-stage .assembly-photo-name,
+#launcher .assembly-detail .assembly-photo-stage .assembly-photo-name{
+ left:16px;
+ right:auto;
+ bottom:14px;
+ top:auto;
+ text-align:left;
+ max-width:calc(100% - 205px);
+ background:transparent;
+ color:var(--color-on-media);
+ padding:0;
+ text-shadow:0 1px 3px color-mix(in srgb, var(--color-shadow) 65%, transparent);
+}
+#launcher .assembly-main .assembly-photo-stage .assembly-open-workspace,
+#launcher .assembly-detail .assembly-photo-stage .assembly-open-workspace{
+ left:auto;
+ right:14px;
+ bottom:12px;
+ top:auto;
+ transform:none;
+}
+#launcher .assembly-main .assembly-tile,
+#launcher .assembly-detail .assembly-tile{
+ display:block;
+ padding:0!important;
+ gap:0;
+ overflow:hidden;
+ background:var(--color-surface);
+ border:1px solid var(--color-border);
+ border-radius:9px;
+}
+#launcher .assembly-main .assembly-tile-cover,
+#launcher .assembly-detail .assembly-tile-cover{
+ width:100%;
+ margin:0;
+ border:0;
+ border-radius:8px;
+ overflow:hidden;
+}
+#launcher .assembly-main .assembly-tile-overlay,
+#launcher .assembly-detail .assembly-tile-overlay{
+ left:0;
+ right:0;
+ bottom:0;
+ top:auto;
+ width:100%;
+ padding:30px 14px 13px;
+ margin:0;
+ text-align:left;
+ font-size:.88rem;
+ font-weight:650;
+ line-height:1.35;
+ color:var(--color-on-media);
+ background:linear-gradient(transparent,color-mix(in srgb, var(--color-media-backdrop) 72%, transparent));
+ border:0;
+ border-radius:0;
+ box-shadow:none;
+ text-shadow:0 1px 3px color-mix(in srgb, var(--color-shadow) 55%, transparent);
+ pointer-events:none;
+}
+#launcher .assembly-main .assembly-tile-stage,
+#launcher .assembly-detail .assembly-tile-stage,
+#launcher .assembly-main .assembly-tile-deps,
+#launcher .assembly-detail .assembly-tile-deps,
+#launcher .assembly-main .assembly-tile-edit,
+#launcher .assembly-detail .assembly-tile-edit{
+ display:none!important;
+}
+#launcher .assembly-main .assembly-tile-photo-overlay,
+#launcher .assembly-detail .assembly-tile-photo-overlay{
+ position:absolute;
+ top:10px;
+ right:10px;
+ bottom:auto;
+ left:auto;
+ z-index:8;
+ width:30px;
+ height:30px;
+ min-height:0;
+ margin:0;
+ padding:0;
+ border:1px solid color-mix(in srgb, var(--color-on-media) 45%, transparent);
+ border-radius:50%;
+ color:var(--color-on-media);
+ background:color-mix(in srgb, var(--color-media-backdrop) 78%, transparent);
+ line-height:1;
+ font-size:1.15rem;
+ box-shadow:none;
+}
+#launcher .assembly-main .assembly-tile-photo-overlay:hover,
+#launcher .assembly-detail .assembly-tile-photo-overlay:hover{
+ background:var(--color-media-backdrop);
+}
+@media(max-width:540px){
+ #launcher .assembly-main .assembly-photo-stage .assembly-photo-name,
+ #launcher .assembly-detail .assembly-photo-stage .assembly-photo-name{
+  max-width:calc(100% - 170px);
+  font-size:.78rem;
+ }
+ #launcher .assembly-main .assembly-photo-stage .assembly-open-workspace,
+ #launcher .assembly-detail .assembly-photo-stage .assembly-open-workspace{
+  font-size:.72rem;
+  padding:7px 9px;
+ }
+}
+
+
+/* Part editor refinement: clear lookup workflow, measured field widths,
+   compact specification origin controls, and one orderly action footer. */
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-review{
+ display:grid;
+ width:min(100%,960px);
+ max-width:960px;
+ gap:16px;
+ margin:20px 0 0;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-review>label{
+ margin:0;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-review label[hidden],
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .historical-price-fields[hidden],
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .historical-package-count[hidden],
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-help[hidden]{
+ display:none!important;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-description{
+ min-height:85px;
+ max-height:180px;
+ resize:vertical;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-help{
+ max-width:820px;
+ line-height:1.55;
+ margin:8px 0 12px;
+ color:var(--color-text-muted);
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-extract{
+ border:1px solid var(--color-border);
+ background:var(--color-surface-muted);
+ color:var(--color-text);
+ font-weight:600;
+ padding:10px 16px;
+ border-radius:7px;
+ margin-bottom:8px;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-extract:hover{background:var(--color-hover)}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-extraction-feedback:empty,
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-status:empty,
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-cancel{
+ display:none!important;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .historical-price-fields{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:14px;
+ max-width:850px;
+ border-top:1px solid var(--color-border);
+ padding-top:16px;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .historical-price-fields>label{
+ display:flex;
+ flex-direction:column;
+ gap:7px;
+ font-weight:600;
+ margin:0;
+ min-width:0;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .historical-unit-hint{
+ grid-column:1/-1;
+ margin:0;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-specs{
+ width:100%;
+ display:grid;
+ gap:9px;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-spec-row{
+ display:grid;
+ grid-template-columns:minmax(120px,1fr) minmax(120px,1fr) minmax(180px,220px) 32px;
+ align-items:center;
+ gap:9px;
+ width:100%;
+ margin:0;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-spec-row .field{
+ min-width:0;
+ width:100%;
+ margin:0;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-spec-source{
+ background:var(--color-surface);
+ border:1px solid var(--color-border);
+ border-radius:6px;
+ color:var(--color-text);
+ font-size:.8rem;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-spec-remove{
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ width:32px;
+ height:34px;
+ padding:0;
+ border:1px solid var(--color-border);
+ border-radius:6px;
+ background:transparent;
+ color:var(--color-text-muted);
+ font-size:1.3rem;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-spec-remove:hover{background:var(--color-hover);color:var(--color-text)}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-editor-actions{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:16px;
+ margin-top:12px;
+ padding-top:20px;
+ border-top:1px solid var(--color-border);
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-editor-primary-actions{
+ display:flex;
+ gap:10px;
+ align-items:center;
+ margin-left:auto;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-add-spec{
+ justify-self:auto;
+ padding:9px 14px;
+ background:transparent;
+ border:1px solid var(--color-border);
+ color:var(--color-text-muted);
+ border-radius:7px;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-editor-primary-actions .component-save{
+ border-radius:7px;
+ background:var(--color-accent-soft);
+ color:var(--color-text);
+ padding:10px 20px;
+ font-weight:700;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-editor-primary-actions .workspace-bom-editor-cancel{
+ border-radius:7px;
+ background:transparent;
+ border:1px solid var(--color-border);
+ padding:10px 15px;
+ font-weight:500;
+ color:var(--color-text-muted);
+}
+@media(max-width:700px){
+ :is(#launcher,#linear,#robot) .workspace-main-bom-editor .historical-price-fields{
+  grid-template-columns:1fr;
+ }
+ :is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-spec-row{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) 32px;
+ }
+ :is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-spec-source{
+  grid-column:1 / span 2;
+ }
+ :is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-spec-remove{
+  grid-column:3;grid-row:1 / span 2;align-self:center;
+ }
+}
+
+
+/* Optional product lookup is one understandable tool above the manual fields. */
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .part-type-field{
+ display:flex;
+ flex-direction:column;
+ gap:8px;
+ max-width:390px;
+ margin:20px 0 22px;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-panel{
+ width:min(100%,960px);
+ padding:17px 20px;
+ margin:0 0 24px;
+ border:1px solid var(--color-border);
+ border-radius:8px;
+ background:var(--color-surface);
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-panel[hidden]{
+ display:none!important;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-panel>label{
+ display:block;
+ width:100%;
+ font-weight:600;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-panel textarea{
+ margin-top:8px;
+ width:100%;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-panel .component-extract{
+ margin:4px 0 0;
+}
+:is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-panel .component-extraction-feedback:not(:empty){
+ margin:12px 0 0;
+ border-left:2px solid var(--color-accent);
+ padding:8px 12px;
+ font-size:.84rem;
+ color:var(--color-text-muted);
+ background:var(--color-surface);
+}
+@media(max-width:700px){
+ :is(#launcher,#linear,#robot) .workspace-main-bom-editor .component-lookup-panel{padding:13px}
+}
+
+/* Compact recipe step authoring: optional notes, photos, and local save control. */
+.recipe-step-additions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.recipe-step-notes,.recipe-step-photos{display:grid;gap:10px}
+.recipe-step-note{display:grid;gap:5px;margin-top:10px}
+.recipe-step-note .recipe-small-action{justify-self:start}
+.recipe-step-photos{grid-template-columns:repeat(auto-fill,minmax(140px,190px));margin-top:10px}
+.recipe-step-photo{display:grid;gap:5px}
+.recipe-step-photo-image{display:block;max-width:100%;max-height:240px;object-fit:contain;border-radius:7px;margin:8px 0}
+.recipe-edit-controls .recipe-save-step{margin-left:auto;font-weight:700}
+@media(max-width:600px){.recipe-edit-controls .recipe-save-step{margin-left:0;width:100%}}
+
+/* Named work-instruction photos and keyboard-accessible full-screen viewer. */
+.recipe-step-photo-name-label{display:grid;gap:6px;font-size:.83rem;font-weight:600}
+.recipe-step-photo-name-label .recipe-input{width:100%;box-sizing:border-box}
+.recipe-step-photo-image{cursor:zoom-in}
+.recipe-step-photo-image:focus-visible{outline:2px solid var(--color-focus);outline-offset:3px}
+.recipe-reader-photo{display:inline-block;vertical-align:top;margin:8px 14px 8px 0;max-width:240px}
+.recipe-reader-photo figcaption{font-size:.85rem;overflow-wrap:anywhere;padding:2px 0}
+.recipe-photo-viewer{position:fixed;inset:0;z-index:99999;background:color-mix(in srgb, var(--color-media-backdrop) 94%, transparent);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;padding:55px 22px 24px;box-sizing:border-box}
+.recipe-photo-viewer-image{max-width:100%;max-height:calc(100vh - 125px);object-fit:contain}
+.recipe-photo-viewer-caption{color:var(--color-on-media);font-size:1rem;text-align:center;max-width:90vw;overflow-wrap:anywhere}
+.recipe-photo-viewer-close{position:absolute;top:12px;right:20px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-media-backdrop);color:var(--color-on-media);cursor:pointer;font-size:2rem;line-height:1;padding:4px 13px}
+
+/* Step name opens a read-only view; edit must be explicitly requested. */
+.recipe-one-step-summary{display:flex;align-items:center;gap:10px}
+.recipe-one-step-title{flex:1;min-width:0}
+.recipe-step-edit-toggle{margin-left:auto;font-size:.8rem;padding:5px 14px;flex:0 0 auto}
+.recipe-edit-controls .recipe-save-step{margin-left:0;width:auto}
+@media(max-width:600px){.recipe-edit-controls .recipe-save-step{width:auto;margin-left:0}}
