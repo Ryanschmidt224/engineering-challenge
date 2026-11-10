@@ -63,7 +63,7 @@ const recommendedWorkshopIds=new Set([
  "workshop:ferrule22","workshop:ferrule18",
  "workshop:heatshrink","workshop:sealshrink","workshop:solder"
 ]);
-const presentPart=part=>({...part,assumedOnHand:part.purchaseOverride===true?false:part.purchaseOverride===false?true:standardShopMaterial(part)});
+const presentPart=part=>({...part,hideFromFeatureTree:part.hideFromFeatureTree===true||(part.hideFromFeatureTree===undefined&&part.bomOnly===true),assumedOnHand:part.purchaseOverride===true?false:part.purchaseOverride===false?true:standardShopMaterial(part)});
 // Derived consumables remain tied to their source part. Never require the
 // learner to enter ferrule counts or create a second independent BOM item.
 function syncDerived(items,source){
@@ -80,7 +80,7 @@ function syncDerived(items,source){
  };
  const ferrules=["end a","end b"].filter(key=>spec.get(key)?.toLowerCase()==="ferrule").length;
  const qty=source.quantityUnit==="pcs"&&Number.isInteger(source.quantity)&&source.quantity>0?source.quantity:null;
- const base={assemblyId:source.assemblyId??null,bomOnly:true,generatedFrom:source.id,
+ const base={assemblyId:source.assemblyId??null,hideFromFeatureTree:true,generatedFrom:source.id,
   manufacturer:"",model:"",supplier:"",asin:"",historicalPrice:null,historicalPriceDate:null};
  updateGenerated("ferrule",validGauge&&ferrules?{
   ...base,name:"Ferrule — "+gauge+" AWG",quantity:qty===null?null:qty*ferrules,quantityUnit:"pcs",
@@ -133,7 +133,7 @@ export async function handleComponents(request,env){
   const amount=quantityData(input);if(!amount)return json({error:"Quantity must be a positive number or blank, with a valid unit"},400);
   const clean=s=>String(s??"").slice(0,300);
   const kind=input.partType==="custom"?"custom":"purchased";
-  const record={partType:kind,assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,bomOnly:input.bomOnly===true,purchaseOverride:input.purchaseOverride===true||input.purchaseOverride===false?input.purchaseOverride:null,workshopChoice:recommendedWorkshopIds.has(input.workshopChoice)?input.workshopChoice:null,sharedPartRef:cleanPartRef(input.sharedPartRef),id:crypto.randomUUID(),name:clean(input.name),fullName:clean(input.fullName||input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,historicalPriceBasis:price.basis,historicalPackageQuantity:price.packageQuantity,historicalPurchasePrice:price.purchasePrice,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
+  const record={partType:kind,assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,hideFromFeatureTree:input.hideFromFeatureTree===true,purchaseOverride:input.purchaseOverride===true||input.purchaseOverride===false?input.purchaseOverride:null,workshopChoice:recommendedWorkshopIds.has(input.workshopChoice)?input.workshopChoice:null,sharedPartRef:cleanPartRef(input.sharedPartRef),id:crypto.randomUUID(),name:clean(input.name),fullName:clean(input.fullName||input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,historicalPriceBasis:price.basis,historicalPackageQuantity:price.packageQuantity,historicalPurchasePrice:price.purchasePrice,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
   if(kind==="custom")Object.assign(record,{manufacturer:"",model:"",supplier:"",asin:"",historicalPrice:null,historicalPriceDate:null,historicalPurchasePrice:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
   const state=await readEditable(env,project),items=state.items;
   if(items.length>=300)return json({error:"Component limit reached"},400);
@@ -144,11 +144,12 @@ export async function handleComponents(request,env){
  // Tiny opt-in override: no requirement to re-enter part specifications.
  if(request.method==="PATCH"){
   const id=url.searchParams.get("id"),input=await request.json().catch(()=>null);
-  if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))))return json({error:"Invalid shop material preference"},400);
+  if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"))return json({error:"Invalid shop material preference"},400);
   const state=await readEditable(env,project),items=state.items,entry=items.find(item=>item.id===id);
   if(!entry)return json({error:"Part not found"},404);
   if(Object.prototype.hasOwnProperty.call(input,"purchaseOverride"))entry.purchaseOverride=input.purchaseOverride;
   if(Object.prototype.hasOwnProperty.call(input,"workshopChoice"))entry.workshopChoice=input.workshopChoice;
+  if(typeof input.hideFromFeatureTree==="boolean")entry.hideFromFeatureTree=input.hideFromFeatureTree;
   if(!await saveEditable(env,project,items,state))return conflict();
   return json({component:presentPart(entry)});
  }
@@ -168,7 +169,9 @@ export async function handleComponents(request,env){
    partType:input.partType==="custom"?"custom":"purchased"};
   if(input.purchaseOverride===true||input.purchaseOverride===false||input.purchaseOverride===null)updated.purchaseOverride=input.purchaseOverride;
   if(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))updated.workshopChoice=input.workshopChoice;
-  // BOM-only classification persists through normal edits. Only a dedicated move action may change it.
+  // Migrate legacy BOM-only parts on edit; the previous flag is read-only compatibility data.
+  if(typeof input.hideFromFeatureTree==="boolean")updated.hideFromFeatureTree=input.hideFromFeatureTree;
+  else if(updated.hideFromFeatureTree===undefined)updated.hideFromFeatureTree=previous.bomOnly===true;
   if(Object.prototype.hasOwnProperty.call(input,"assemblyId")){
    if(input.assemblyId!==null&&!(typeof input.assemblyId==="string"&&/^[a-zA-Z0-9-]{1,80}$/.test(input.assemblyId)))return json({error:"Invalid parent assembly"},400);
    updated.assemblyId=input.assemblyId;
