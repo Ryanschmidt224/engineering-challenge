@@ -19,7 +19,7 @@ test("project feature tree and workspace initialize without browser errors", asy
     {id:"part-esc",name:"20A ESC",assemblyId:"smoke-motor",quantity:2}
    ]};break;
    case "/api/photos": data={photos:[]};break;
-   case "/api/workspace": data={workspace:{recipe:[],resources:[]},revision:"test"};break;
+   case "/api/workspace": data={workspace:{recipe:[{id:"step-prepare",title:"Prepare components",standard:"Inspect the parts",kind:"action",notes:[],photos:[]},{id:"step-measure",title:"Measure resistance",standard:"Verify resistance",kind:"measurement",notes:[],photos:[]}],resources:[]},revision:"test"};break;
    case "/api/auth": data={authenticated:false,isAdmin:false};break;
    case "/api/drawings": data={drawings:[]};break;
    case "/api/part-files": data={files:[]};break;
@@ -123,6 +123,16 @@ test("project feature tree and workspace initialize without browser errors", asy
  const sidebar=page.locator("#launcher .assembly-sidebar");
  const bom=sidebar.locator(".workspace-bom");
  const instructions=workspace.locator(".recipe-instructions");
+ // Option 2: compact step navigation and one selected detail at a time.
+ const recipeNav=instructions.locator(".recipe-step-list");
+ await expect(recipeNav.locator(".recipe-step-nav-item")).toHaveCount(2);
+ await expect(instructions.locator(".recipe-step-detail > .recipe-one-step")).toHaveCount(1);
+ await expect(instructions.locator(".recipe-step-detail")).toContainText("Inspect the parts");
+ await recipeNav.getByRole("button",{name:"Step 2: Measure resistance"}).click();
+ await expect(instructions.locator(".recipe-step-detail")).toContainText("Verify resistance");
+ await expect(instructions.locator(".recipe-step-detail")).not.toContainText("Inspect the parts");
+ await expect(recipeNav.locator(".recipe-step-nav-item.is-active")).toContainText("Measure resistance");
+
  const splitter=page.locator("#launcher .assembly-layout > .workspace-bom-resizer");
  await expect(sidebar).toHaveClass(/bom-sidebar-active/);
  // The feature tree, BOM, and content groups have separate visible frames.
