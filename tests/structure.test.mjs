@@ -3,7 +3,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const html=readFileSync('index.html','utf8');
-const css=readFileSync('assets/site.css','utf8');
+const cssFiles=['site.css','site-workspaces.css','site-controls.css','site-polish.css'];
+const css=cssFiles.map(name=>readFileSync('assets/'+name,'utf8')).join('\n');
+const photoUI=readFileSync('assets/photo-editor.js','utf8');
 const js=readFileSync('assets/site.js','utf8');
 const assemblies=readFileSync('assets/site-assembly.js','utf8');
 const worker=readFileSync('worker.js','utf8');
@@ -14,6 +16,11 @@ test('single external stylesheet and application entrypoint',()=>{
   assert.ok(css.length>10000);
   assert.ok(js.length>30000);
   assert.ok(assemblies.length>80000);
+  const loaded=cssFiles.map(name=>html.indexOf('/assets/'+name));
+  assert.ok(loaded.every(x=>x>=0),'all component CSS sections must be loaded');
+  assert.deepEqual(loaded,[...loaded].sort((a,b)=>a-b),'preserve the original CSS cascade order');
+  const photoAt=html.indexOf('/assets/photo-editor.js');
+  assert.ok(photoAt>=0&&photoAt<html.indexOf('/assets/site-assembly.js'),'shared photo UI must load before its users');
 });
 test('assembly tree, workspace, BOM and photo features have one controller',()=>{
   const assemblyScripts=[...html.matchAll(/<script[^>]*src="([^"]*site-assembly\.js[^"]*)"/g)];
@@ -48,4 +55,13 @@ test('failure investigations load at every level and preserve their API route',(
   assert.match(recipe,/renderInvestigations/);
   assert.match(investigations,/Related failures in child parts/);
   assert.match(api,/etagMatches/);
+});
+
+test('part and assembly photo editors use the same reusable UI controls',()=>{
+ assert.match(photoUI,/function pencil\(/);
+ assert.match(photoUI,/function dialog\(/);
+ assert.equal((assemblies.match(/BSPhotoEditor\.pencil\(/g)||[]).length,2);
+ assert.equal((assemblies.match(/BSPhotoEditor\.dialog\(/g)||[]).length,2);
+ assert.doesNotMatch(assemblies,/part-workspace-picture|part-workspace-tools|part-image-dragover/);
+ assert.doesNotMatch(css,/\.part-workspace-tools|\.part-picture-dialog|\.part-image-dragover/);
 });
