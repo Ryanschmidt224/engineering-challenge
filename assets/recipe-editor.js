@@ -341,6 +341,7 @@
      }
      const upload=async(file,noteIndex=null)=>{
       if(!file)return;
+      const targetNoteId=Number.isInteger(noteIndex)?step.noteIds[noteIndex]:null;
       if(!options.project){feedback.textContent="Cannot identify this project for attachment upload.";return}
       if(step.photos.length>=30){feedback.textContent="A step supports up to 30 attachments.";return}
       if(file.size>20*1024*1024){feedback.textContent="Maximum attachment size is 20 MB.";return}
@@ -351,7 +352,8 @@
        if(!res.ok||!data.id)throw Error(data.error||"Attachment upload failed");
        step.photos.push(data.id);
        step.photoNames[data.id]=file.name.replace(/\.[^.]+$/,"").slice(0,120);
-       if(Number.isInteger(noteIndex)&&noteIndex>=0&&noteIndex<step.notes.length){step.photoNoteIds[data.id]=step.noteIds[noteIndex];step.photoAfterNote[data.id]=noteIndex}
+       const currentPosition=targetNoteId?step.noteIds.indexOf(targetNoteId):-1;
+       if(currentPosition>=0){step.photoNoteIds[data.id]=targetNoteId;step.photoAfterNote[data.id]=currentPosition}
        changed();showNotes();showPhotos();saveHint();
       }catch(error){feedback.textContent=error.message||"Attachment upload failed"}
       finally{pendingUploads--;addPhoto.disabled=pendingUploads>0;input.value=""}
