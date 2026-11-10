@@ -1310,6 +1310,8 @@ function addWorkspaceEntry(container){
    
    if(!children.length)return;
    const grid=document.createElement("div");grid.className="assembly-tile-grid";
+   const bomGrid=document.createElement("div");bomGrid.className="assembly-tile-grid";
+   const bomNodes=children.filter(isPartNode);
    const sorted=[...children];
    for(const n of sorted){
     const tile=document.createElement("article");tile.className="assembly-tile";
@@ -1340,8 +1342,22 @@ function addWorkspaceEntry(container){
      };
      tile.append(pick,input);
     }
-    grid.append(tile)
-   }target.append(grid)
+    (isPartNode(n)?bomGrid:grid).append(tile)
+   }
+   if(grid.childElementCount)target.append(grid);
+   if(bomNodes.length){
+    const section=document.createElement("section");section.className="assembly-bom-parts-group";
+    section.setAttribute("aria-label","Bill of materials parts");
+    const heading=document.createElement("div");heading.className="assembly-bom-parts-heading";
+    const title=document.createElement("h2");title.textContent="Bill of Materials — Parts";
+    const count=document.createElement("span");count.className="assembly-bom-parts-count";
+    count.textContent=bomNodes.length+" "+(bomNodes.length===1?"part":"parts");
+    heading.append(title,count);
+    const description=document.createElement("p");description.className="assembly-bom-parts-description";
+    description.textContent="Parts belonging to this assembly";
+    section.append(heading,description,bomGrid);
+    target.append(section);
+   }
   }
   root.addEventListener("openpart",()=>{void showAssemblyPage()});
   root.addEventListener("openassembly",e=>{const id=e.detail;if(id==="__root__"){selected=null;render();notify();return}if(!nodes.some(n=>n.id===id))return;selected=id;let cursor=nodes.find(n=>n.id===id);while(cursor){expanded.add(cursor.parentId);cursor=nodes.find(n=>n.id===cursor.parentId)}render();notify()});
