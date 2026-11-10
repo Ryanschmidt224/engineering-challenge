@@ -39,7 +39,16 @@ const validateRecipe=input=>{
    if(!photos.includes(photoId)||typeof name!=="string"||name.length>120)return null;
    names[photoId]=name;
   }
-  steps.push({id,title:title.trim(),standard,detail,kind,notes,photos,photoNames:names});
+  // Optional layout metadata: associates a stored attachment with a note index.
+  // Older records omit this field and continue displaying photos after all notes.
+  const placements=step.photoAfterNote??{};
+  if(!placements||typeof placements!=="object"||Array.isArray(placements))return null;
+  const photoAfterNote={};
+  for(const [photoId,index] of Object.entries(placements)){
+   if(!photos.includes(photoId)||!Number.isInteger(index)||index<0||index>=notes.length)return null;
+   photoAfterNote[photoId]=index;
+  }
+  steps.push({id,title:title.trim(),standard,detail,kind,notes,photos,photoNames:names,photoAfterNote});
  }
  return steps;
 };
