@@ -419,3 +419,48 @@ test("tool and hidden-part filters operate independently",async({page})=>{
  await expect(tree).toContainText("M4 Screws");
  expect(errors).toEqual([]);
 });
+
+
+test("saving a part closes the moved editor and restores part workspace",async({page})=>{
+ const partId="11111111-1111-4111-8111-111111111111";
+ const part={id:partId,name:"Linked Motor",fullName:"Linked Motor",assemblyId:"smoke-motor",
+  quantity:2,quantityUnit:"pcs",partType:"purchased",specifications:[],category:"Motor"};
+ let saves=0;const errors=[];
+ page.on("pageerror",error=>errors.push(error.message));
+ await page.route("**/api/**",async route=>{
+  const url=new URL(route.request().url());
+  const method=route.request().method();
+  let data={};
+  if(url.pathname==="/api/auth")data={authenticated:true,isAdmin:true};
+  else if(url.pathname==="/api/tree")data=url.searchParams.has("assembly")?
+   {page:{description:""},revision:"test"}:{nodes:[
+    {id:"smoke-motor",parentId:null,name:"Motor Control",kind:"assembly"},
+    {id:"smoke-part",parentId:"smoke-motor",name:part.name,kind:"part",partId}
+   ],revision:"test"};
+  else if(url.pathname==="/api/components"){
+   if(method==="PUT"){Object.assign(part,route.request().postDataJSON());saves++;data={component:part};}
+   else data={components:[part]};
+  }else if(url.pathname==="/api/photos")data={photos:[]};
+  else if(url.pathname==="/api/workspace")data={workspace:{recipe:[],resources:[]},revision:"test"};
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
+ });
+ await page.goto("/");
+ await page.locator('.project-link[data-nav="launcher"]').click();
+ await page.locator("#launcher .assembly-tree-nodes .assembly-name",{hasText:"Motor Control"}).click();
+ await page.locator("#launcher .assembly-tree-nodes .assembly-name",{hasText:"Linked Motor"}).click();
+ const partWorkspace=page.locator("#launcher .bom-part-workspace");
+ await expect(partWorkspace).toBeVisible();
+ await partWorkspace.locator(".part-details-collapse summary").click();
+ await partWorkspace.locator(".part-details-edit").click();
+ const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
+ const editor=workspace.locator(".workspace-main-bom-editor");
+ await expect(editor).toBeVisible();
+ await editor.locator(".component-name").fill("Updated Motor");
+ await editor.locator(".component-save").click();
+ await expect.poll(()=>saves).toBe(1);
+ await expect(page).toHaveURL(new RegExp("#launcher/part/"+partId));
+ await expect(partWorkspace).toBeVisible();
+ await expect(editor).toBeHidden();
+ await expect(workspace).not.toHaveClass(/is-editing-bom-part/);
+ expect(errors).toEqual([]);
+});
