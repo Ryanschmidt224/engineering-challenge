@@ -927,7 +927,7 @@ function setupAssemblyTrees(){
       renderAssembly(node.id,inner,level+1);
       if(!inner.childElementCount){const empty=document.createElement("p");empty.className="bom-empty";empty.textContent="No parts in this subassembly yet.";inner.append(empty)}
       const open=document.createElement("button");open.type="button";open.className="btn bom-open-subassembly";open.textContent="Open subassembly instructions";
-      open.onclick=()=>{selected=node.id;expanded.add(node.parentId);render();notify();history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(node.id));showAssemblyPage();window.scrollTo(0,0)};
+      open.onclick=()=>{selected=node.id;expanded.add(node.parentId);history.pushState(null,"",workspaceHash(node.id));render();notify();window.scrollTo(0,0)};
       body.append(inner,open);item.append(body);mount.append(item);
      }
     };
@@ -1277,7 +1277,7 @@ function setupAssemblyTrees(){
     returnToEditedPart();
    }
   },true);
-  const workspaceRoute=()=>location.hash.slice(1).startsWith(project+"/workspace/");
+  const workspaceRoute=()=>{const hash=location.hash.slice(1);return hash===project||hash.startsWith(project+"/workspace/")};
   let workspacePhotoVersion=0;
   async function loadWorkspaceCover(){const id=selected,version=++workspacePhotoVersion,cover=workspace.querySelector(".workspace-cover");cover.replaceChildren();const placeholder=document.createElement("span");placeholder.textContent="No photo yet";cover.append(placeholder);try{const r=await fetch("/api/photos?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(id??"__root__"));if(!r.ok)return;const data=await r.json();if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;const photo=(data.photos||[]).find(p=>(p.assembly??null)===id);if(photo){const img=document.createElement("img");img.src=photo.url;img.alt="Assembly photo";cover.replaceChildren(img)}}catch(e){/* cover is optional */}}
   let workspaceLoadVersion=0;
@@ -1346,7 +1346,7 @@ function setupAssemblyTrees(){
    await detailPhotoController.refresh();
 
   }
-  detail.querySelector(".assembly-back").onclick=()=>{selected=null;render();notify();history.pushState(null,"","#"+project);window.scrollTo(0,0)};
+  detail.querySelector(".assembly-back").onclick=()=>{selected=null;history.pushState(null,"",workspaceHash(null));render();notify();window.scrollTo(0,0)};
   // One description loader/saver for the same tile at every depth.
   async function loadDescription(id,container,message){
    const editor=container.querySelector(".assembly-description-edit");
@@ -1476,7 +1476,7 @@ function setupAssemblyTrees(){
     const tile=document.createElement("article");tile.className="assembly-tile "+(isPartNode(n)?"assembly-bom-part-tile":"assembly-bom-subassembly-tile");
     const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);if(isPartNode(n)){const img=document.createElement("img");img.src=partPhotoUrl(n.partId);img.alt="";img.onerror=()=>{img.src=missingPicture;img.onerror=null};cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}
     else fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=data.photos[0].url;img.alt="";cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}).catch(()=>{});
-    const openAssembly=()=>{if(isPartNode(n)){openTreePart(n);return}selected=n.id;expanded.add(n.parentId);render();history.pushState(null,"",workspaceHash(n.id));notify();window.scrollTo(0,0)};cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" workspace";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
+    const openAssembly=()=>{if(isPartNode(n)){openTreePart(n);return}selected=n.id;expanded.add(n.parentId);history.pushState(null,"",workspaceHash(n.id));render();notify();window.scrollTo(0,0)};cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" workspace";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
     // Photo-first overview tile: title stays in the image overlay.
     // The old stage/dependency/footer controls are not shown beneath tiles.
     bomGrid.append(tile)
