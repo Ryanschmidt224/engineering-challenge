@@ -161,9 +161,9 @@ function setupAssemblyTrees(){
    next.onclick=()=>{active=(active+1)%photos.length;show()};
    stage.append(picture,empty,prev,next,label,actions);show();return stage;
   }
-  // Separate workspace route; the existing assembly overview remains unchanged.
+  // Project and subassembly workspaces remain independent of the BOM screen.
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
-  workspace.innerHTML='<button type="button" class="btn workspace-back">← Assembly overview</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
+  workspace.innerHTML='<button type="button" class="btn workspace-back">BOM</button><div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
   // Assembly photo management lives in the workspace, not the read-only overview.
   const workspacePhotoEditor=document.createElement("article");
@@ -1348,7 +1348,6 @@ function setupAssemblyTrees(){
    void showAssemblyPage();
    window.scrollTo(0,0);
   };
-  workspace.querySelector(".workspace-back").textContent="BOM";
   workspace.querySelector(".workspace-back").onclick=openBom;
   bomScreen.querySelector(".assembly-bom-back").onclick=openWorkspace;
   async function showAssemblyPage(){
@@ -1505,7 +1504,7 @@ function setupAssemblyTrees(){
     const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);if(isPartNode(n)){const img=document.createElement("img");img.src=partPhotoUrl(n.partId);img.alt="";img.onerror=()=>{img.src=missingPicture;img.onerror=null};cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}
     else fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=data.photos[0].url;img.alt="";cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}).catch(()=>{});
     const openAssembly=()=>{if(isPartNode(n)){openTreePart(n);return}selected=n.id;expanded.add(n.parentId);history.pushState(null,"",workspaceHash(n.id));render();notify();window.scrollTo(0,0)};cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" workspace";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
-    // Photo-first overview tile: title stays in the image overlay.
+    // Picture BOM tiles reuse the established photo-first design.
     // The old stage/dependency/footer controls are not shown beneath tiles.
     bomGrid.append(tile)
    }
