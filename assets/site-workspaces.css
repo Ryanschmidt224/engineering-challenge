@@ -794,170 +794,170 @@
 /* Workspace visual cleanup — one subdued palette and clear section rhythm.
  * Scoped to assembly workspaces; retain stronger accent only for primary actions.
  */
-#launcher .assembly-content,
-#launcher .assembly-sidebar{
+:is(#launcher,.personal-project-view) .assembly-content,
+:is(#launcher,.personal-project-view) .assembly-sidebar{
  background:var(--color-sidebar);
  border-color:var(--color-border);
 }
-#launcher .assembly-sidebar h3{
+:is(#launcher,.personal-project-view) .assembly-sidebar h3{
  background:var(--color-sidebar);
  border-color:var(--color-border);
  color:var(--color-text);
 }
-#launcher .assembly-node.selected{
+:is(#launcher,.personal-project-view) .assembly-node.selected{
  background:var(--color-selected);
  outline:1px solid var(--color-focus);
 }
-#launcher .assembly-sidebar .assembly-edit{
+:is(#launcher,.personal-project-view) .assembly-sidebar .assembly-edit{
  border-color:var(--color-border);
  padding:12px 9px;
  gap:7px;
 }
-#launcher .assembly-sidebar .assembly-edit .btn{
+:is(#launcher,.personal-project-view) .assembly-sidebar .assembly-edit .btn{
  background:var(--color-sidebar);
  border:1px solid var(--color-border);
  color:var(--color-text-muted);
 }
-#launcher .assembly-sidebar .assembly-edit .btn:hover{
+:is(#launcher,.personal-project-view) .assembly-sidebar .assembly-edit .btn:hover{
  background:var(--color-hover);
 }
-#launcher .assembly-sidebar.bom-sidebar-active>.workspace-bom{
+:is(#launcher,.personal-project-view) .assembly-sidebar.bom-sidebar-active>.workspace-bom{
  margin-top:12px;
  padding-top:14px;
  border-top:1px solid var(--color-border);
  background:transparent;
 }
-#launcher .assembly-sidebar .workspace-bom-heading{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom-heading{
  padding:0 12px 13px;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-count{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-count{
  margin:4px 4px 15px;
  color:var(--color-text-muted);
 }
-#launcher .assembly-sidebar .workspace-bom .bom-part-stack{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-part-stack{
  gap:4px;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-part,
-#launcher .assembly-sidebar .workspace-bom .bom-part:nth-child(even){
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-part,
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-part:nth-child(even){
  border-bottom:1px solid var(--color-border);
 }
-#launcher .assembly-sidebar .workspace-bom .bom-part-summary{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-part-summary{
  padding-top:10px;
  padding-bottom:10px;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-subassembly-children{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-subassembly-children{
  margin-top:6px;
  margin-bottom:12px;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-shop-materials{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-shop-materials{
  margin-top:19px;
  padding-top:8px;
  border-color:var(--color-border);
 }
 /* Hide the legacy component list; the dedicated workspace BOM above is canonical. */
-#launcher .assembly-sidebar .workspace-bom .component-section>.component-list,
-#launcher .assembly-sidebar .workspace-bom .component-section>.bom-visible-parts{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .component-section>.component-list,
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .component-section>.bom-visible-parts{
  display:none!important;
 }
-#launcher .assembly-sidebar .workspace-bom .component-section>details:not(.component-admin)>summary{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .component-section>details:not(.component-admin)>summary{
  display:none!important;
 }
-#launcher .assembly-sidebar .workspace-bom .component-admin:not([open]){
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .component-admin:not([open]){
  display:none!important;
 }
-#launcher .assembly-sidebar .workspace-bom .component-admin[open]{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .component-admin[open]{
  margin:16px 8px;
  padding:13px;
  background:var(--color-sidebar);
  border:1px solid var(--color-border);
  border-radius:6px;
 }
-#launcher .assembly-sidebar .workspace-bom .component-admin>summary{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .component-admin>summary{
  display:none;
 }
 /* Content column: consistent gaps rather than competing boxes and accents. */
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-heading{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-heading{
  margin-bottom:22px;
 }
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels{
  max-width:none;
 }
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
  margin:0 0 32px;
  padding:0 0 3px;
  background:transparent;
 }
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article h2{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article h2{
  color:var(--color-text);
  font-size:1.05rem;
  font-weight:650;
  margin:0 0 13px;
 }
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article p,
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article .muted{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article p,
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article .muted{
  color:var(--color-text-muted);
  line-height:1.6;
 }
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels .workspace-resources{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels .workspace-resources{
  margin-top:5px;
 }
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-resources .btn,
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-drawing-panel .btn{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-resources .btn,
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-drawing-panel .btn{
  background:var(--color-surface-muted);
  border:1px solid var(--color-border);
  color:var(--color-text);
 }
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-actions{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-actions{
  margin:12px 0 32px;
  padding-top:8px;
 }
 /* Keep section groups aligned while using quiet, consistent separation. */
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article + article{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article + article{
  padding-top:3px;
 }
 
 /* Workspace spacing pass: distinguish functional areas using whitespace,
    not additional competing colors or heavy outlines. */
-#launcher .assembly-sidebar.bom-sidebar-active>.workspace-bom{
+:is(#launcher,.personal-project-view) .assembly-sidebar.bom-sidebar-active>.workspace-bom{
  margin-top:32px;
  padding-top:24px;
 }
-#launcher .assembly-sidebar .workspace-bom-heading{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom-heading{
  padding-bottom:17px;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-count{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-count{
  margin-bottom:20px;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-part-stack{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-part-stack{
  gap:7px;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-shop-materials{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-shop-materials{
  margin-top:26px;
  padding-top:12px;
 }
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-heading{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-heading{
  margin-bottom:30px;
 }
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
  margin-bottom:52px;
  padding-bottom:0;
 }
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article h2{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article h2{
  margin-bottom:18px;
 }
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-resources{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-resources{
  margin-top:0;
 }
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-actions{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-actions{
  margin-top:6px;
  padding-top:0;
 }
 @media(max-width:800px){
- #launcher .assembly-sidebar.bom-sidebar-active>.workspace-bom{
+ :is(#launcher,.personal-project-view) .assembly-sidebar.bom-sidebar-active>.workspace-bom{
   margin-top:24px;
   padding-top:18px;
  }
- #launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
+ :is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
   margin-bottom:36px;
  }
 }
@@ -965,29 +965,29 @@
 
 /* Distinct section frames: neutral, consistent boundaries for the workspace.
    Use identical border and surface for every functional area, rather than more colors. */
-#launcher .assembly-sidebar{
+:is(#launcher,.personal-project-view) .assembly-sidebar{
  background:transparent;
  border:0;
  border-radius:0;
  padding:0;
 }
-#launcher .assembly-sidebar .feature-tree-frame{
+:is(#launcher,.personal-project-view) .assembly-sidebar .feature-tree-frame{
  background:var(--color-sidebar);
  border:1px solid var(--color-border);
  border-radius:9px;
  overflow:hidden;
 }
-#launcher .assembly-sidebar .feature-tree-frame h3{
+:is(#launcher,.personal-project-view) .assembly-sidebar .feature-tree-frame h3{
  background:var(--color-sidebar);
  border-bottom:1px solid var(--color-border);
 }
-#launcher .assembly-sidebar .feature-tree-frame .assembly-edit{
+:is(#launcher,.personal-project-view) .assembly-sidebar .feature-tree-frame .assembly-edit{
  border-top:1px solid var(--color-border);
 }
-#launcher .assembly-sidebar .feature-tree-frame .assembly-tree-status:not(:empty){
+:is(#launcher,.personal-project-view) .assembly-sidebar .feature-tree-frame .assembly-tree-status:not(:empty){
  border-top:1px solid var(--color-border);
 }
-#launcher .assembly-sidebar.bom-sidebar-active>.workspace-bom{
+:is(#launcher,.personal-project-view) .assembly-sidebar.bom-sidebar-active>.workspace-bom{
  margin:22px 0 0;
  padding:0 0 14px;
  background:var(--color-sidebar);
@@ -995,32 +995,32 @@
  border-radius:9px;
  overflow:hidden;
 }
-#launcher .assembly-sidebar .workspace-bom-heading{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom-heading{
  padding:13px 12px;
  background:var(--color-sidebar);
  border-bottom:1px solid var(--color-border);
  margin-bottom:14px;
 }
-#launcher .assembly-sidebar .workspace-bom-heading h2{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom-heading h2{
  font-size:.85rem;
  margin:0 auto 0 0;
  color:var(--color-text);
 }
-#launcher .assembly-sidebar .workspace-bom .workspace-saved-parts{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .workspace-saved-parts{
  padding:0 11px;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-count{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-count{
  margin:1px 2px 14px;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-shop-materials{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-shop-materials{
  margin:20px 11px 0;
 }
 /* Each right-side section shares the same frame with a little internal breathing room. */
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels{
  display:block;
  max-width:none;
 }
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
  background:var(--color-surface);
  border:1px solid var(--color-border);
  border-radius:9px;
@@ -1028,21 +1028,21 @@
  margin:0 0 22px;
  min-width:0;
 }
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article+article{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article+article{
  padding-top:20px;
 }
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article h2{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article h2{
  margin:0 0 18px;
  font-size:1.05rem;
 }
-#launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-actions{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-actions{
  margin:14px 0 24px;
  padding:0;
 }
 /* Match section spacing at mobile widths without compressing the contents. */
 @media(max-width:800px){
- #launcher .assembly-sidebar.bom-sidebar-active>.workspace-bom{margin-top:18px}
- #launcher .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
+ :is(#launcher,.personal-project-view) .assembly-sidebar.bom-sidebar-active>.workspace-bom{margin-top:18px}
+ :is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{
   padding:16px;
   margin-bottom:18px;
  }
@@ -1050,51 +1050,51 @@
 
 /* BOM refinement: nested assemblies are hierarchy, not separate color cards.
    A single neutral surface, indentation and fine dividers communicate structure. */
-#launcher .assembly-sidebar .workspace-bom .workspace-saved-parts{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .workspace-saved-parts{
  padding:0 20px 0 13px;
 }
-#launcher .assembly-sidebar.bom-sidebar-active>.workspace-bom{
+:is(#launcher,.personal-project-view) .assembly-sidebar.bom-sidebar-active>.workspace-bom{
  padding-bottom:32px;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-part-stack{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-part-stack{
  padding-right:0;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-subassembly,
-#launcher .assembly-sidebar .workspace-bom .bom-subassembly[open],
-#launcher .assembly-sidebar .workspace-bom .bom-subassembly > .bom-part-summary,
-#launcher .assembly-sidebar .workspace-bom .bom-subassembly > .bom-subassembly-children,
-#launcher .assembly-sidebar .workspace-bom .bom-subassembly > .bom-subassembly-children > .bom-part-stack,
-#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part,
-#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part-summary,
-#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part-body{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-subassembly,
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-subassembly[open],
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-subassembly > .bom-part-summary,
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-subassembly > .bom-subassembly-children,
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-subassembly > .bom-subassembly-children > .bom-part-stack,
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-subassembly .bom-part,
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-subassembly .bom-part-summary,
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-subassembly .bom-part-body{
  background:transparent;
  box-shadow:none;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-subassembly > .bom-subassembly-children{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-subassembly > .bom-subassembly-children{
  border:0;
  border-left:1px solid var(--color-border);
  margin:3px 0 12px 12px;
  padding:0 0 3px 13px;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-subassembly > .bom-subassembly-children > .bom-part-stack{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-subassembly > .bom-subassembly-children > .bom-part-stack{
  border:0;
  margin:0;
  padding:0;
  gap:0;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-subassembly .bom-part{
  border:0;
  border-bottom:1px solid var(--color-border);
  border-radius:0;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part-summary{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-subassembly .bom-part-summary{
  min-height:0;
  padding:9px 3px;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-subassembly .bom-part-summary:hover{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-subassembly .bom-part-summary:hover{
  background:var(--color-hover);
 }
-#launcher .assembly-sidebar .workspace-bom .bom-open-subassembly{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-open-subassembly{
  margin:8px 0 8px 3px;
  padding:3px 0;
  border:0;
@@ -1104,16 +1104,16 @@
  background:transparent;
  font-weight:500;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-open-subassembly:hover{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-open-subassembly:hover{
  color:var(--color-text);
  text-decoration:underline;
  background:transparent;
 }
-#launcher .assembly-sidebar .workspace-bom .bom-shop-materials{
+:is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .bom-shop-materials{
  margin:26px 19px 0 13px;
 }
 @media(max-width:800px){
- #launcher .assembly-sidebar .workspace-bom .workspace-saved-parts{
+ :is(#launcher,.personal-project-view) .assembly-sidebar .workspace-bom .workspace-saved-parts{
   padding-right:14px;
  }
 }
