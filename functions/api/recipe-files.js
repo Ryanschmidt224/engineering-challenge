@@ -35,7 +35,7 @@ export async function handleRecipeFiles(request,env){
   const bytes=await request.arrayBuffer();
   if(!bytes.byteLength||bytes.byteLength>MAX_BYTES)return json({error:"Maximum file size is 20 MB"},413);
   const id="recipe-files/"+project+"/"+crypto.randomUUID()+"."+extension;
-  // The work-instruction itself is public, so linked files are publicly retrievable.
+  // Attachments inherit project visibility; GET checks ownership for private projects.
   await env.PHOTOS.put(id,bytes,{httpMetadata:{contentType:TYPES[extension]},
    customMetadata:{filename}});
   return json({ok:true,id,name:filename,isImage:IMAGE_TYPES.has(extension)},201);
@@ -43,6 +43,7 @@ export async function handleRecipeFiles(request,env){
  if(request.method==="GET"){
   const id=url.searchParams.get("id")||"",match=id.match(pattern);
   if(!match||!Object.hasOwn(TYPES,match[3]))return json({error:"File not found"},404);
+  if(!await projectAllowed(env,match[1],request))return json({error:"File not found"},404);
   const file=await env.PHOTOS.get(id);
   if(!file)return json({error:"File not found"},404);
   const ext=match[3],isImage=IMAGE_TYPES.has(ext);
@@ -51,7 +52,7 @@ export async function handleRecipeFiles(request,env){
   const headers=new Headers({
    "content-type":TYPES[ext],
    "content-disposition":(isImage||ext==="pdf"?"inline":"attachment")+"; filename*=UTF-8''"+encodeURIComponent(safeFilename),
-   "cache-control":"public, max-age=3600",
+   "cache-control":"private, no-store",
    "x-content-type-options":"nosniff",
    "content-security-policy":"default-src 'none'; sandbox"
   });
