@@ -90,17 +90,17 @@ window.BSProjectManager=(()=>{
    form.append(element("h2","",project.name));
    const visibility=element("label","","Visibility");
    const visibilitySelect=element("select","field");
-   for(const [value,label] of [["private","Private"],["unlisted","Unlisted (currently owner-only)"],["public","Public"]]){
+   for(const [value,label] of [["private","Private"],["public","Public"]]){
     const option=element("option","",label);option.value=value;visibilitySelect.append(option);
    }
    visibilitySelect.value=project.visibility||"public";visibility.append(visibilitySelect);form.append(visibility);
    const permission=element("label","","Editing mode");
    const permissionSelect=element("select","field");
-   for(const [value,label] of [["locked","Owner only"],["approval","Owner approval required"],["collaborative","Collaborative (currently owner-only)"]]){
+   for(const [value,label] of [["locked","Owner only"],["approval","Owner approval required"]]){
     const option=element("option","",label);option.value=value;permissionSelect.append(option);
    }
    permissionSelect.value=project.editMode||"approval";permission.append(permissionSelect);form.append(permission);
-   form.append(element("p","muted","Only the owner can edit records today. Approval workflow is separate from live edits."));
+   form.append(element("p","muted","Only the owner can change published records. Others can propose instruction edits when approval is enabled."));
    const error=element("p","project-manage-message");form.append(error);
    const actions=element("div","row");
    const save=element("button","btn primary","Save settings");save.type="button";
