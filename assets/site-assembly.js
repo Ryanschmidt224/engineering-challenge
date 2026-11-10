@@ -180,28 +180,25 @@ function setupAssemblyTrees(){
   };
   const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>selected,
    workspacePhotoEditor.querySelector(".workspace-photo-status"),true);
-  // The feature tree and the assembly BOM share one persistent left sidebar.
-  // The BOM is shown only on an assembly workspace, never on its overview.
+  // The feature tree is navigation only. The BOM stays inside its workspace.
   const assemblyLayout=view.querySelector(".assembly-layout");
   const sidebar=root;
   const bomPanel=workspace.querySelector(".workspace-bom");
-  sidebar.append(bomPanel);
-  // Keep the existing feature-tree controls and their handlers intact while
-  // grouping them in a distinct panel beside the BOM panel.
+  // Keep the established feature-tree styling without nesting workspace content.
   const featureTreeFrame=document.createElement("div");
   featureTreeFrame.className="feature-tree-frame";
-  while(sidebar.firstChild&&sidebar.firstChild!==bomPanel)featureTreeFrame.append(sidebar.firstChild);
-  sidebar.insertBefore(featureTreeFrame,bomPanel);
+  while(sidebar.firstChild)featureTreeFrame.append(sidebar.firstChild);
+  sidebar.append(featureTreeFrame);
   const bomResizer=document.createElement("div");
   bomResizer.className="workspace-bom-resizer";
   bomResizer.setAttribute("role","separator");
   bomResizer.setAttribute("tabindex","0");
   bomResizer.setAttribute("aria-orientation","vertical");
-  bomResizer.setAttribute("aria-label","Resize feature tree and BOM sidebar");
+  bomResizer.setAttribute("aria-label","Resize feature tree");
   bomResizer.setAttribute("aria-valuemin","20");
   bomResizer.setAttribute("aria-valuemax","70");
   assemblyLayout.insertBefore(bomResizer,view.querySelector(".assembly-content"));
-  const bomWidthKey="bs-workspace-bom-width";
+  const bomWidthKey="bs-feature-tree-width";
   const clampSidebarWidth=value=>{
    const available=assemblyLayout.getBoundingClientRect().width;
    return Math.round(Math.max(290,Math.min(Number(value)||available*.30,available-390)));
@@ -1307,25 +1304,35 @@ function setupAssemblyTrees(){
    try{const res=await fetch(url,{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});const result=await res.json();if(!res.ok)throw Error(result.error||"Save failed (HTTP "+res.status+")");workspaceSavedRevision=result.revision??workspaceSavedRevision;assemblyRecipe?.markSaved();workspaceStatus.textContent="Saved."}
    catch(e){workspaceStatus.textContent=e.message}finally{button.disabled=false}
   };
-  function openWorkspace(){history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));showAssemblyPage();window.scrollTo(0,0)}
-  workspace.querySelector(".workspace-back").onclick=()=>{history.pushState(null,"",selected===null?"#"+project:"#"+project+"/assembly/"+encodeURIComponent(selected));showAssemblyPage();window.scrollTo(0,0)};
+  const workspaceHash=id=>"#"+project+"/workspace/"+encodeURIComponent(id??"__root__");
+  const overviewHash=id=>id===null?"#"+project+"/overview":"#"+project+"/assembly/"+encodeURIComponent(id)+"/overview";
+  const overviewRoute=()=>{const hash=decodeURIComponent(location.hash.slice(1));return hash===project+"/overview"||new RegExp("^"+project+"/assembly/[^/]+(?:/overview)?$").test(hash)};
+  function openWorkspace(){history.pushState(null,"",workspaceHash(selected));void showAssemblyPage();window.scrollTo(0,0)}
+  workspace.querySelector(".workspace-back").textContent="Assembly overview";
+  workspace.querySelector(".workspace-back").onclick=()=>{history.pushState(null,"",overviewHash(selected));void showAssemblyPage();window.scrollTo(0,0)};
+  // The overview is a secondary visual BOM, not an intermediate landing page.
+  const overviewBack=document.createElement("button");overviewBack.type="button";overviewBack.className="btn assembly-return-workspace";overviewBack.textContent="← Back to workspace";
+  overviewBack.onclick=openWorkspace;
+  main.prepend(overviewBack);
+  detail.prepend(overviewBack.cloneNode(true));
+  detail.querySelector(".assembly-return-workspace").onclick=openWorkspace;
   async function showAssemblyPage(){
    const version=++detailVersion;
    const isAssembly=selected!==null;
-   // The BOM is project navigation, so it stays mounted under the feature tree
-   // on overview, assembly, part-detail and workspace pages alike.
-   // Never move the form back into the sidebar while an edit is in progress.
+   // Reuse the existing part editor, but keep the BOM inside the workspace.
    const isEditingBom=workspace.classList.contains("is-editing-bom-part");
-   const bom=isEditingBom?null:(main.querySelector(".component-section")||detail.querySelector(".component-section")||bomPanel.querySelector(".component-section"));
-   if(bom&&bom.parentElement!==bomPanel.querySelector(".workspace-bom-mount")){
-    bomPanel.querySelector(".workspace-bom-mount").append(bom);
-   }
+   const bomMount=bomPanel.querySelector(".workspace-bom-mount");
+   const bom=isEditingBom?null:(main.querySelector(".component-section")||detail.querySelector(".component-section")||bomMount.querySelector(".component-section"));
+   if(bom&&bom.parentElement!==bomMount)bomMount.append(bom);
    sidebar.classList.add("bom-sidebar-active");
-   // Refresh on page transitions, but not while an editor has unsaved changes.
    if(!isEditingBom)void renderWorkspaceParts();
    const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);
+   const inOverview=overviewRoute();const inWorkspace=!inPart&&!inOverview;
+   workspace.classList.toggle("hide",!inWorkspace);
+   detail.classList.toggle("hide",inPart||inWorkspace||!isAssembly);
+   main.classList.toggle("hide",inPart||inWorkspace||isAssembly);
    if(inPart){void showPartWorkspace();return;}
-   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");if(photoDialog.open)photoDialog.close();openPhotoEditor.hidden=!adminAuthenticated;loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
+   if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");if(photoDialog.open)photoDialog.close();openPhotoEditor.hidden=!adminAuthenticated;loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
@@ -1438,14 +1445,14 @@ function setupAssemblyTrees(){
    zone.ondrop=e=>{e.preventDefault();zone.classList.remove("drag-over");void upload(e.dataTransfer.files?.[0])};
    return {refresh};
   }
-  // A single explicit entry point on the large assembly photo, not on child tiles.
+  // Overview keeps a single clear return path to the workspace.
   function addWorkspaceEntry(container){
    const gallery=container.querySelector(".assembly-photos");
    if(!gallery)return;
    const install=()=>{
     const stage=gallery.querySelector(".assembly-photo-stage");
     if(!stage||stage.querySelector(".assembly-open-workspace"))return;
-    const btn=document.createElement("button");btn.type="button";btn.className="assembly-open-workspace";btn.textContent="Open workspace →";btn.title="Open work instructions, drawings, resources and the bill of materials";
+    const btn=document.createElement("button");btn.type="button";btn.className="assembly-open-workspace";btn.textContent="Back to workspace →";btn.title="Open work instructions, drawings, resources and the bill of materials";
     btn.onclick=e=>{e.stopPropagation();openWorkspace()};
     stage.append(btn);
    };
@@ -1469,7 +1476,7 @@ function setupAssemblyTrees(){
     const tile=document.createElement("article");tile.className="assembly-tile "+(isPartNode(n)?"assembly-bom-part-tile":"assembly-bom-subassembly-tile");
     const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);if(isPartNode(n)){const img=document.createElement("img");img.src=partPhotoUrl(n.partId);img.alt="";img.onerror=()=>{img.src=missingPicture;img.onerror=null};cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}
     else fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=data.photos[0].url;img.alt="";cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}).catch(()=>{});
-    const openAssembly=()=>{if(isPartNode(n)){openTreePart(n);return}selected=n.id;expanded.add(n.parentId);render();history.pushState(null,"","#"+project+"/assembly/"+encodeURIComponent(n.id));notify();window.scrollTo(0,0)};cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" overview";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
+    const openAssembly=()=>{if(isPartNode(n)){openTreePart(n);return}selected=n.id;expanded.add(n.parentId);render();history.pushState(null,"",workspaceHash(n.id));notify();window.scrollTo(0,0)};cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" workspace";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
     // Photo-first overview tile: title stays in the image overlay.
     // The old stage/dependency/footer controls are not shown beneath tiles.
     bomGrid.append(tile)
@@ -1489,12 +1496,12 @@ function setupAssemblyTrees(){
    }
   }
   root.addEventListener("openpart",()=>{void showAssemblyPage()});
-  root.addEventListener("openassembly",e=>{const id=e.detail;if(id==="__root__"){selected=null;render();notify();return}if(!nodes.some(n=>n.id===id))return;selected=id;let cursor=nodes.find(n=>n.id===id);while(cursor){expanded.add(cursor.parentId);cursor=nodes.find(n=>n.id===cursor.parentId)}render();notify()});
+  root.addEventListener("openassembly",e=>{const id=e.detail;if(id==="__root__"){selected=null;history.pushState(null,"",workspaceHash(null));render();notify();return}if(!nodes.some(n=>n.id===id))return;selected=id;history.pushState(null,"",workspaceHash(id));let cursor=nodes.find(n=>n.id===id);while(cursor){expanded.add(cursor.parentId);cursor=nodes.find(n=>n.id===cursor.parentId)}render();notify()});
   const validSelection=()=>selected===null||nodes.some(n=>n.id===selected);
   const notify=()=>{assemblySelections[project]=selected;assemblyTreeSnapshots[project]={nodes:[...nodes],title};showAssemblyPage();renderTiles();view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));};
   let treeSavedRevision=null;
   async function load(){void loadProjectMetadata();try{const [r,partsResponse]=await Promise.all([fetch("/api/tree?project="+project),fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"})]);const data=await r.json();if(!r.ok)throw Error(data.error);nodes=data.nodes||[];
-   if(partsResponse.ok){const partData=await partsResponse.json();syncPartNodes(partData.components||[])}treeSavedRevision=data.revision??null;if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/(?:assembly|workspace)/([^/]+)$"));if(deepLink&&(deepLink[1]==="__root__"||nodes.some(n=>n.id===deepLink[1])))selected=deepLink[1]==="__root__"?null:deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
+   if(partsResponse.ok){const partData=await partsResponse.json();syncPartNodes(partData.components||[])}treeSavedRevision=data.revision??null;if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/(?:assembly|workspace)/([^/]+)(?:/overview)?$"));if(deepLink&&(deepLink[1]==="__root__"||nodes.some(n=>n.id===deepLink[1])))selected=deepLink[1]==="__root__"?null:deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
   async function save(next){const r=await fetch("/api/tree?project="+project,{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({nodes:next,expectedRevision:treeSavedRevision})});const data=await r.json();if(!r.ok)throw Error(data.error||"Save failed");treeSavedRevision=data.revision??treeSavedRevision;nodes=next;render();notify()}
   // Tree ordering is the order of node records; moving a node keeps its permanent ID.
   const siblings=parent=>nodes.filter(n=>n.parentId===parent);
@@ -1638,16 +1645,21 @@ function setupAssemblyTrees(){
    if(trigger)treeMenu.dataset.target=trigger.textContent.trim();
    treeMenu.querySelector('button:not([disabled])')?.focus();
   };
-  const treeVisibilityButton=document.createElement("button");treeVisibilityButton.type="button";treeVisibilityButton.className="btn assembly-hidden-toggle";
-  nodesEl.parentNode.insertBefore(treeVisibilityButton,nodesEl);
-  treeVisibilityButton.onclick=()=>{showHiddenTreeItems=!showHiddenTreeItems;render()};
+  const treeVisibilityControl=document.createElement("div");treeVisibilityControl.className="assembly-tree-modes";
+  const treeModeButtons=new Map();
+  for(const [value,label] of [[false,"Focused"],[true,"All parts"]]){
+   const button=document.createElement("button");button.type="button";button.className="btn assembly-tree-mode";button.textContent=label;
+   button.onclick=()=>{showHiddenTreeItems=value;render()};treeModeButtons.set(value,button);treeVisibilityControl.append(button);
+  }
+  nodesEl.parentNode.insertBefore(treeVisibilityControl,nodesEl);
   function render(){nodesEl.replaceChildren();const hiddenCount=nodes.filter(isHiddenPart).length;
-   treeVisibilityButton.textContent=(showHiddenTreeItems?"Hide":"Show")+" hidden items ("+hiddenCount+")";treeVisibilityButton.hidden=hiddenCount===0;
+   treeVisibilityControl.hidden=hiddenCount===0;
+   for(const [value,button] of treeModeButtons){const active=showHiddenTreeItems===value;button.classList.toggle("is-active",active);button.setAttribute("aria-pressed",String(active))}
    controls.classList.toggle("hide",!adminAuthenticated);projectActions.classList.toggle("hide",!adminAuthenticated);cardEdit.classList.toggle("hide",!adminAuthenticated);const row=(node,depth)=>{
    const id=node?.id??null,children=nodes.filter(n=>n.parentId===id&&(showHiddenTreeItems||!isHiddenPart(n))),el=document.createElement("div");el.className="assembly-node"+(selected===id?" selected":"")+(node&&isHiddenPart(node)?" is-hidden-part":"");el.style.paddingLeft=(depth*17+3)+"px";
    const expand=document.createElement("button");expand.type="button";expand.className="assembly-expander";expand.textContent=children.length?(expanded.has(id)?"▾":"▸"):" ";expand.setAttribute("aria-label",expanded.has(id)?"Collapse":"Expand");expand.onclick=()=>{expanded.has(id)?expanded.delete(id):expanded.add(id);render()};
    const name=document.createElement("button");name.type="button";name.className="assembly-name";name.textContent=node?(isPartNode(node)?"🔩  ":"📦  ")+node.name:"🟨  "+title;
-   if(isPartNode(node)&&partRoute()===node.partId)el.classList.add("selected");name.onclick=()=>{if(isPartNode(node)){openTreePart(node);return}selected=id;history.pushState(null,"",id===null?"#"+project:"#"+project+"/assembly/"+encodeURIComponent(id));render();notify();window.scrollTo(0,0)};
+   if(isPartNode(node)&&partRoute()===node.partId)el.classList.add("selected");name.onclick=()=>{if(isPartNode(node)){openTreePart(node);return}selected=id;history.pushState(null,"",workspaceHash(id));render();notify();window.scrollTo(0,0)};
    el.append(expand,name);
    if(adminAuthenticated){
     el.addEventListener("contextmenu",event=>{
