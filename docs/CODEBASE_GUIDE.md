@@ -124,3 +124,28 @@ archived revisions and restoration.
 ## Publishing
 
 GitHub `main` is the source branch. Cloudflare's production deployment depends on the site's configured build/integration. Confirm its status separately. A deployment should not modify stored project records merely because code was reorganized.
+
+
+## Work-instruction note and photo identity
+
+`assets/recipe-editor.js` keeps each step's existing `notes: string[]` and
+`photos: string[]` fields for compatibility with historical workspaces and
+backup archives. The accompanying `noteIds: string[]` gives each note a stable
+identity; `photoNoteIds: { [photoId]: noteId }` associates a photo or document
+with its note independently of note ordering.
+
+Older workspaces with `photoAfterNote: { [photoId]: noteIndex }` are migrated
+non-destructively when read into the editor. The old index map remains in
+saved records for backwards compatibility. Do not infer photo ownership from
+array order in new code.
+
+The backend validates note IDs, uniqueness, and referenced photo IDs on save.
+Deleting a note unassigns its attachments but does not delete uploaded files.
+Part and assembly workspace save handlers refuse to save while attachments
+are uploading; successful saves notify the recipe editor to clear its dirty
+state. Failed saves leave input and attachments in the editor for retry.
+
+Regression coverage: `tests/recipe-note-ids.test.mjs` exercises legacy
+migration, note reordering, deletion, and stale-save protection; the Playwright
+startup suite covers upload/save UI behavior and photo preservation.
+
