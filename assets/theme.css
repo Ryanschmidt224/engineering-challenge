@@ -1,0 +1,64 @@
+/*
+ * BuildingSchmidt theme tokens — Studio Green
+ *
+ * Edit values here to redesign the site; component styles consume semantic
+ * --color-* roles rather than literal colors. Add alternate schemes via
+ * [data-theme="name"] selectors without editing component CSS.
+ *
+ * Neutral surfaces, readable text, action colors, image overlays and status
+ * colors are independent for accessibility.
+ */
+:root,
+:root[data-theme="studio-green"] {
+  color-scheme: light;
+
+  --color-page: #f7f8f6;
+  --color-sidebar: #e8edeb;
+  --color-header: #f5f7f4;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f2f5f3;
+  --color-surface-raised: #f0f3f0;
+  --color-surface-inset: #edf2ee;
+  --color-selected: #dce9e0;
+  --color-hover: #e3eee7;
+
+  --color-border: #cbd6d1;
+  --color-border-strong: #a9beb3;
+
+  --color-text: #283b35;
+  --color-text-muted: #64786e;
+  --color-text-subtle: #71867c;
+  --color-on-accent: #ffffff;
+  --color-on-media: #ffffff;
+
+  --color-accent: #367760;
+  --color-accent-hover: #285e4c;
+  --color-accent-soft: #dce9e0;
+  --color-focus: #367760;
+
+  --color-info: #296a72;
+  --color-danger: #a83f3e;
+  --color-success: #2e7554;
+  --color-warning: #956913;
+
+  --color-media-backdrop: #13201b;
+  --color-shadow: #1b3129;
+
+  /* Short aliases used by the original core components. */
+  --panel: var(--color-surface);
+  --edge: var(--color-border);
+  --muted: var(--color-text-muted);
+  --accent: var(--color-accent);
+  --warm: var(--color-warning);
+}
+
+/* Browser controls share the same palette and contrast rules. */
+html, body { background: var(--color-page); color: var(--color-text); }
+input, textarea, select {
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+input::placeholder, textarea::placeholder { color: var(--color-text-subtle); }
+::selection { color: var(--color-on-accent); background: var(--color-accent); }
+:focus-visible { outline-color: var(--color-focus); }
