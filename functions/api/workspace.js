@@ -39,16 +39,33 @@ const validateRecipe=input=>{
    if(!photos.includes(photoId)||typeof name!=="string"||name.length>120)return null;
    names[photoId]=name;
   }
-  // Optional layout metadata: associates a stored attachment with a note index.
-  // Older records omit this field and continue displaying photos after all notes.
+  // Stable IDs are optional for pre-migration steps, and generated on save.
+  const suppliedNoteIds=step.noteIds;
+  if(suppliedNoteIds!==undefined&&(!Array.isArray(suppliedNoteIds)||suppliedNoteIds.length!==notes.length))return null;
+  const noteIds=suppliedNoteIds??notes.map(()=>crypto.randomUUID());
+  if(noteIds.some(id=>typeof id!=="string"||! /^[a-zA-Z0-9_-]{1,80}$/.test(id))||
+     new Set(noteIds).size!==noteIds.length)return null;
+  // Accept old integer positions, but persist permanent ID-based associations.
   const placements=step.photoAfterNote??{};
   if(!placements||typeof placements!=="object"||Array.isArray(placements))return null;
-  const photoAfterNote={};
+  const oldPositions={};
   for(const [photoId,index] of Object.entries(placements)){
    if(!photos.includes(photoId)||!Number.isInteger(index)||index<0||index>=notes.length)return null;
-   photoAfterNote[photoId]=index;
+   oldPositions[photoId]=index;
   }
-  steps.push({id,title:title.trim(),standard,detail,kind,notes,photos,photoNames:names,photoAfterNote});
+  const stored=step.photoNoteIds??{};
+  if(!stored||typeof stored!=="object"||Array.isArray(stored))return null;
+  const photoNoteIds={};
+  for(const [photoId,noteId] of Object.entries(stored)){
+   if(!photos.includes(photoId)||typeof noteId!=="string"||!noteIds.includes(noteId))return null;
+   photoNoteIds[photoId]=noteId;
+  }
+  for(const [photoId,index] of Object.entries(oldPositions)){
+   if(photoNoteIds[photoId]===undefined)photoNoteIds[photoId]=noteIds[index];
+  }
+  const photoAfterNote={};
+  for(const [photoId,noteId] of Object.entries(photoNoteIds))photoAfterNote[photoId]=noteIds.indexOf(noteId);
+  steps.push({id,title:title.trim(),standard,detail,kind,notes,noteIds,photos,photoNames:names,photoNoteIds,photoAfterNote});
  }
  return steps;
 };
