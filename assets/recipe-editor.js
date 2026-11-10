@@ -176,6 +176,14 @@
   };
   function render(){
    content.replaceChildren();
+   // One step at a time: the list is navigation, the right pane is the selected step.
+   if(steps.length&&!steps.some(step=>step.id===expanded))expanded=steps[0].id;
+   const browser=el("div","recipe-step-browser");
+   const stepList=el("nav","recipe-step-list");
+   stepList.setAttribute("aria-label","Work instruction steps");
+   const detailPane=el("div","recipe-step-detail");
+   browser.append(stepList,detailPane);
+   if(steps.length)content.append(browser);
    const hasDetail=steps.some(s=>s.standard?.trim()||s.detail?.trim());
    if(hasDetail){
     const preferences=el("div","recipe-detail-controls");
@@ -184,11 +192,20 @@
      const choice=button(label,()=>{level=key;try{localStorage.setItem("bs-recipe-detail",key)}catch{}render()},"btn recipe-detail-button"+(key===level?" active":""));
      choice.setAttribute("aria-pressed",String(key===level));preferences.append(choice);
     }
-    content.append(preferences);
+    detailPane.append(preferences);
    }
    for(let i=0;i<steps.length;i++){
-    const step=steps[i],card=el("details","recipe-one-step");
-    card.dataset.stepId=step.id;card.open=expanded===step.id;
+    const step=steps[i],isCurrent=expanded===step.id;
+    const navButton=button((i+1)+". "+(step.title||"Untitled step"),()=>{
+     if(expanded===step.id)return;
+     expanded=step.id;closeKnowledgeMenu();render();
+    },"recipe-step-nav-item"+(isCurrent?" is-active":""));
+    navButton.setAttribute("aria-current",isCurrent?"step":"false");
+    navButton.setAttribute("aria-label","Step "+(i+1)+": "+(step.title||"Untitled step"));
+    stepList.append(navButton);
+    if(!isCurrent)continue;
+    const card=el("details","recipe-one-step");
+    card.dataset.stepId=step.id;card.open=true;
     const summary=el("summary","recipe-one-step-summary");
     const name=el("span","recipe-one-step-title",(i+1)+". "+(step.title||"Untitled step"));
     summary.append(name);
@@ -219,8 +236,9 @@
      edit.addEventListener("click",event=>{event.preventDefault();event.stopPropagation()});
      summary.append(edit);
     }
+    // Step selection happens in the navigation list; keep the detail panel open.
+    summary.addEventListener("click",event=>{if(!event.target.closest("button"))event.preventDefault()});
     card.append(summary);
-    card.addEventListener("toggle",()=>{if(card.open)expanded=step.id;else if(expanded===step.id)expanded=null});
     const body=el("div","recipe-one-step-body");
     if(admin()&&editing.has(step.id)){
      const title=el("label","recipe-one-field","Step");
@@ -309,7 +327,7 @@
      body.append(investigationArea);
      options.renderInvestigations(step,investigationArea);
     }
-    card.append(body);content.append(card);
+    card.append(body);detailPane.append(card);
    }
    if(admin()){
     const add=button("+ Add step",()=>{
@@ -323,7 +341,7 @@
   }
   function setData(data){
    steps=Array.isArray(data?.recipe)?data.recipe.map(normalize):[];
-   dirty=false;expanded=null;editing.clear();feedback.textContent="";
+   dirty=false;expanded=steps[0]?.id||null;editing.clear();feedback.textContent="";
    render();
   }
   render();
