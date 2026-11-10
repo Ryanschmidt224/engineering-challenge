@@ -877,3 +877,28 @@
 .assembly-node.is-hidden-part .assembly-name{opacity:.56}
 .part-visibility-field,.library-visibility-field{display:flex;align-items:center;gap:9px;margin:13px 0 8px;font-size:.91rem;cursor:pointer}
 .part-visibility-field input,.library-visibility-field input{width:17px;height:17px;flex:none}
+
+
+/* Navigation-only sidebar: all BOM management now belongs to the main workspace. */
+.assembly-sidebar.bom-sidebar-active{min-height:0}
+.assembly-sidebar .feature-tree-frame{width:100%}
+.assembly-tree-modes{display:flex;gap:0;margin:10px 12px 8px;border:1px solid var(--color-border);border-radius:8px;overflow:hidden}
+.assembly-tree-modes[hidden]{display:none!important}
+.assembly-tree-modes .assembly-tree-mode{flex:1;min-width:0;border:0;border-radius:0;box-shadow:none;padding:8px 7px;font-size:.78rem;background:transparent;color:var(--color-text-muted)}
+.assembly-tree-modes .assembly-tree-mode+.assembly-tree-mode{border-left:1px solid var(--color-border)}
+.assembly-tree-modes .assembly-tree-mode.is-active{background:var(--color-selected);color:var(--color-text);font-weight:650}
+:is(#launcher,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels{display:flex;flex-direction:column;align-items:stretch;gap:0;min-width:0}
+:is(#launcher,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.recipe-instructions{order:1}
+:is(#launcher,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-bom{order:2;display:block;min-width:0}
+:is(#launcher,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-resources{order:3}
+:is(#launcher,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-actions{order:4}
+:is(#launcher,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-main-bom-editor{order:0}
+:is(#launcher,#linear,#robot) .workspace-bom .workspace-saved-parts{width:100%;min-width:0;overflow-x:auto}
+:is(#launcher,#linear,#robot) .workspace-bom .bom-part-stack{min-width:0}
+:is(#launcher,#linear,#robot) .workspace-bom .bom-compact-list{max-width:100%;min-width:0}
+:is(#launcher,#linear,#robot) .workspace-bom .bom-subassembly-children{padding-left:12px}
+:is(#launcher,#linear,#robot) .workspace-bom .workspace-bom-heading{padding-bottom:12px;border-bottom:1px solid var(--color-border);margin-bottom:16px}
+:is(#launcher,#linear,#robot) .workspace-bom .workspace-new-part{font-size:.83rem}
+.assembly-return-workspace{display:inline-flex;margin:0 0 16px;font-size:.85rem}
+.assembly-workspace-page>.workspace-back{display:inline-flex;margin-bottom:14px}
+:is(#launcher,#linear,#robot) .assembly-workspace-page.is-editing-bom-part .workspace-panels>.workspace-main-bom-editor{display:block}
