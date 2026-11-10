@@ -1,5 +1,6 @@
 // Project dashboard. Private project data is authorized by the API, never by these DOM filters.
 window.BSProjectManager=(()=>{
+ let currentProjects=[];
  const api=async(method,path,body)=>{
   const response=await fetch(path,{method,credentials:"same-origin",cache:"no-store",
    ...(body?{headers:{"content-type":"application/json"},body:JSON.stringify(body)}:{})});
@@ -132,7 +133,7 @@ window.BSProjectManager=(()=>{
   async function refresh(){
    try{
     user=(await api("GET","/api/accounts")).user;
-    const data=await api("GET","/api/projects");projects=data.projects||[];
+    const data=await api("GET","/api/projects");projects=data.projects||[];currentProjects=projects;
     newButton.hidden=!user;archiveButton.hidden=!user;
     document.querySelectorAll(".project-personal-card").forEach(node=>node.remove());
     for(const project of projects){
@@ -159,9 +160,10 @@ window.BSProjectManager=(()=>{
     });
     setupAssemblyTrees();setupComponents();setupPhotos();
     for(const project of projects)window.BSReview?.attach(project,user);
+    document.querySelectorAll("[data-assembly-tree]").forEach(root=>root.dispatchEvent(new Event("projectpermissionschanged")));
    }catch(error){console.error("Project catalog unavailable",error)}
   }
   void refresh();
  };
- return {init};
+ return {init,isOwner:id=>currentProjects.some(project=>project.id===id&&project.isOwner)};
 })();
