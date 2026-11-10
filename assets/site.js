@@ -264,27 +264,35 @@ function setupAssemblyTrees(){
   detail.after(workspace);
   // Assembly photo management lives in the workspace, not the read-only overview.
   const workspacePhotoEditor=document.createElement("article");
-  workspacePhotoEditor.className="workspace-photos-editor";
-  workspacePhotoEditor.innerHTML='<div class="workspace-photo-compact"><div class="assembly-unified-photo"><div class="assembly-photos"></div></div><div class="workspace-photo-meta"><span class="workspace-photo-title">Assembly image</span><button type="button" class="btn workspace-photo-edit-toggle" aria-expanded="false" aria-controls="workspace-photo-tools-'+project+'">Edit image</button></div></div><div id="workspace-photo-tools-'+project+'" class="workspace-photo-tools" hidden><div class="assembly-photo-admin hide"><div class="assembly-photo-zone"><button type="button" class="assembly-photo-pick">+ Add photo</button><input class="assembly-photo-input" type="file" accept="image/*,.heic,.heif" hidden><span class="assembly-photo-drop-hint">or drop an image here</span></div><label class="assembly-photo-caption-label">Caption <input class="field assembly-photo-caption" placeholder="Photo description"></label></div></div><p class="workspace-photo-status muted" role="status" aria-live="polite"></p>';
-  workspace.querySelector(".workspace-panels").prepend(workspacePhotoEditor);
+  workspacePhotoEditor.className="workspace-photos-editor is-editing-photo";
+  workspacePhotoEditor.innerHTML='<h2>Assembly photos</h2><p class="muted">Browse, add, or delete assembly photos.</p><div class="assembly-unified-photo"><div class="assembly-photos"></div></div><div class="workspace-photo-tools"><div class="assembly-photo-admin hide"><div class="assembly-photo-zone"><button type="button" class="assembly-photo-pick">+ Add photo</button><input class="assembly-photo-input" type="file" accept="image/*,.heic,.heif" hidden><span class="assembly-photo-drop-hint">or drop an image here</span></div><label class="assembly-photo-caption-label">Caption <input class="field assembly-photo-caption" placeholder="Photo description"></label></div></div><p class="workspace-photo-status muted" role="status" aria-live="polite"></p>';
+  const photoDialog=document.createElement("dialog");
+  photoDialog.className="workspace-photo-dialog";
+  photoDialog.setAttribute("aria-label","Edit assembly photos");
+  const dialogHeader=document.createElement("div");
+  dialogHeader.className="workspace-photo-dialog-header";
+  const closePhotoDialog=document.createElement("button");
+  closePhotoDialog.type="button";closePhotoDialog.className="btn workspace-photo-close";
+  closePhotoDialog.textContent="Done";
+  closePhotoDialog.onclick=()=>photoDialog.close();
+  dialogHeader.append(closePhotoDialog);photoDialog.append(dialogHeader,workspacePhotoEditor);
+  workspace.append(photoDialog);
+  photoDialog.addEventListener("click",event=>{if(event.target===photoDialog)photoDialog.close()});
+  const cover=workspace.querySelector(".workspace-cover");
+  const coverShell=document.createElement("div");coverShell.className="workspace-cover-shell";
+  cover.before(coverShell);coverShell.append(cover);
+  const openPhotoEditor=document.createElement("button");openPhotoEditor.type="button";
+  openPhotoEditor.className="workspace-photo-launch";
+  openPhotoEditor.textContent="✎";openPhotoEditor.title="Edit assembly image";
+  openPhotoEditor.setAttribute("aria-label","Edit assembly image");
+  coverShell.append(openPhotoEditor);
+  openPhotoEditor.onclick=()=>{
+   if(!adminAuthenticated)return;
+   photoDialog.showModal();
+   void workspacePhotoController.refresh();
+  };
   const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>selected,
    workspacePhotoEditor.querySelector(".workspace-photo-status"),true);
-  const workspacePhotoToggle=workspacePhotoEditor.querySelector(".workspace-photo-edit-toggle");
-  const workspacePhotoTools=workspacePhotoEditor.querySelector(".workspace-photo-tools");
-  function setWorkspacePhotoEditing(editing){
-   const allowed=editing&&adminAuthenticated;
-   workspacePhotoEditor.classList.toggle("is-editing-photo",allowed);
-   workspacePhotoTools.hidden=!allowed;
-   workspacePhotoToggle.setAttribute("aria-expanded",String(allowed));
-   workspacePhotoToggle.textContent=allowed?"Done":"Edit image";
-  }
-  workspacePhotoToggle.onclick=()=>{
-   if(!adminAuthenticated){workspacePhotoEditor.querySelector(".workspace-photo-status").textContent="Administrator login required to edit photos.";return}
-   setWorkspacePhotoEditing(!workspacePhotoEditor.classList.contains("is-editing-photo"));
-  };
-  workspacePhotoToggle.hidden=!adminAuthenticated;
-
-
   // The feature tree and the assembly BOM share one persistent left sidebar.
   // The BOM is shown only on an assembly workspace, never on its overview.
   const assemblyLayout=view.querySelector(".assembly-layout");
@@ -1437,7 +1445,7 @@ function setupAssemblyTrees(){
    if(!isEditingBom)void renderWorkspaceParts();
    const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);
    if(inPart){void showPartWorkspace();return;}
-   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");setWorkspacePhotoEditing(false);workspacePhotoToggle.hidden=!adminAuthenticated;loadWorkspaceCover();void workspacePhotoController.refresh();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
+   const inWorkspace=workspaceRoute();workspace.classList.toggle("hide",!inWorkspace);detail.classList.toggle("hide",!isAssembly||inWorkspace);main.classList.toggle("hide",isAssembly);if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");if(photoDialog.open)photoDialog.close();openPhotoEditor.hidden=!adminAuthenticated;loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
@@ -1512,7 +1520,7 @@ function setupAssemblyTrees(){
       try{
        const r=await fetch("/api/photos?id="+encodeURIComponent(p.id),{method:"DELETE",credentials:"same-origin"});
        if(!r.ok)throw Error("Delete failed (HTTP "+r.status+")");
-       await refresh();if(!id)void refreshProjectCover();
+       await refresh();if(tile===workspacePhotoEditor)void loadWorkspaceCover();if(!id)void refreshProjectCover();
       }catch(e){report(e.message)}
      },allowEditing));
     }catch(e){report(e.message)}
@@ -1532,7 +1540,7 @@ function setupAssemblyTrees(){
      const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={error:raw.slice(0,160)||"Unexpected server response"}}
      if(!r.ok)throw Error((data.error||"Upload failed")+" (HTTP "+r.status+")");
      input.value="";caption.value="";
-     await refresh();if(!id)void refreshProjectCover();report("Photo uploaded.");
+     await refresh();if(tile===workspacePhotoEditor)void loadWorkspaceCover();if(!id)void refreshProjectCover();report("Photo uploaded.");
     }catch(e){report(e.message||"Upload failed.")}
     finally{busy=false;zone.removeAttribute("aria-busy")}
    }
