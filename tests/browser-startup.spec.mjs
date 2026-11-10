@@ -464,3 +464,37 @@ test("saving a part closes the moved editor and restores part workspace",async({
  await expect(workspace).not.toHaveClass(/is-editing-bom-part/);
  expect(errors).toEqual([]);
 });
+
+
+test("personal project builds a private editable workspace from the shared project template",async({page})=>{
+ const id="p"+"a".repeat(32),errors=[];
+ page.on("pageerror",e=>errors.push(e.message));
+ await page.route("**/api/**",async route=>{
+  const url=new URL(route.request().url());
+  let value={};
+  if(url.pathname==="/api/accounts")value={user:{id:"u"+"1".repeat(32),email:"test@example.com",displayName:"Tester"}};
+  if(url.pathname==="/api/projects")value={projects:[{id,name:"Test Personal Project",description:"Private prototype",
+   visibility:"private",editMode:"approval",ownerId:"u"+"1".repeat(32),isOwner:true}]};
+  if(url.pathname==="/api/auth")value={authenticated:false,isAdmin:false};
+  if(url.pathname==="/api/tree")value=url.searchParams.has("metadata")?{title:null,revision:null}:{nodes:[],revision:null};
+  if(url.pathname==="/api/components")value={components:[]};
+  if(url.pathname==="/api/workspace")value={workspace:{recipe:[],resources:{tools:[],parts:[],calculators:[]}},revision:null};
+  if(url.pathname==="/api/photos")value={photos:[]};
+  if(url.pathname==="/api/drawings")value={drawings:[]};
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(value)});
+ });
+ await page.goto("/");
+ const card=page.locator(".project-personal-card",{hasText:"Test Personal Project"});
+ await expect(card).toBeVisible();
+ await card.locator(".project-link").click();
+ const section=page.locator("#"+id);
+ await expect(section.locator(".assembly-workspace-page:not(.bom-part-workspace)")).toBeVisible();
+ await expect(section.locator(".assembly-workspace-page .workspace-back")).toHaveText("Open BOM");
+ await expect(section.locator(".assembly-tree-nodes")).toContainText("Test Personal Project");
+ await expect(section.locator(".assembly-add")).not.toHaveClass(/hide/);
+ await expect(section.locator(".project-proposals-button")).toHaveText("Review suggestions");
+ await section.locator(".workspace-back").click();
+ await expect(section.locator(".assembly-bom-screen")).toBeVisible();
+ await expect(section.locator(".assembly-bom-list")).toHaveAttribute("aria-pressed","true");
+ expect(errors).toEqual([]);
+});
