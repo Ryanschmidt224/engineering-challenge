@@ -1,5 +1,5 @@
+import {projectAllowed,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
-const projects=new Set(["launcher","linear","robot","buck","motorlab","coiltest"]);
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const authorized=isAdmin;
 const key=project=>"components/"+project+".json";
@@ -123,7 +123,7 @@ const safePublicImageUrl=value=>{
 
 export async function handleComponents(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project");
- if(!projects.has(project))return json({error:"Invalid project"},400);
+ if(!await projectAllowed(env,project))return json({error:"Invalid project"},400);
  if(request.method==="GET")return json({components:(await read(env,project)).map(presentPart)});
  if(!await authorized(request,env))return json({error:"Administrator token required"},401);
  if(request.method==="POST"){
@@ -215,7 +215,7 @@ export async function handleComponents(request,env){
 // Small, dedicated part thumbnails are not assembly gallery photos.
 export async function handleComponentPhoto(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project"),id=url.searchParams.get("id");
- if(!projects.has(project)||!/^[0-9a-f-]{36}$/i.test(id||""))return json({error:"Invalid part"},400);
+ if(!await projectAllowed(env,project)||!/^[0-9a-f-]{36}$/i.test(id||""))return json({error:"Invalid part"},400);
  if(!env.PHOTOS)return json({error:"Photo storage unavailable"},503);
  const photoKey="component-thumbnails/"+project+"/"+id;
  if(request.method==="GET"){
@@ -280,7 +280,7 @@ export async function handleExtract(request,env){
  const body=await request.json().catch(()=>null);
  let description=typeof body?.description==="string"?body.description.trim():"";
  let imageUrl=null,pageSnapshot=null,sourceUrl=null;
- const requestedProject=typeof body?.project==="string"&&projects.has(body.project)?body.project:null;
+ const requestedProject=typeof body?.project==="string"&&await projectAllowed(env,body.project)?body.project:null;
  const source=description.match(/^https?:\/\/\S+$/i)?.[0];
  if(source){
   // Only fetch ordinary public HTTPS websites. No automatic redirect following.
