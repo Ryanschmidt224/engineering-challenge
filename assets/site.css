@@ -2711,3 +2711,37 @@
 .workspace-photos-editor .assembly-photo-caption{min-height:32px;padding:5px 8px;font-size:.8rem}
 .workspace-photos-editor .workspace-photo-status:empty{display:none}
 .workspace-photos-editor .workspace-photo-status{margin:7px 0 0;font-size:.76rem;max-width:400px}
+
+/* Photo editing is hidden in a dialog launched from the workspace cover thumbnail. */
+.workspace-cover-shell{position:relative;display:inline-flex;align-self:flex-start;flex:0 0 auto;min-width:0}
+.workspace-cover-shell .workspace-cover{position:relative}
+.workspace-photo-launch{
+ position:absolute;bottom:5px;right:5px;z-index:3;
+ width:29px;height:29px;display:grid;place-items:center;
+ border:1px solid #8caeb8;border-radius:7px;background:rgba(10,29,40,.9);
+ color:#f2fcff;font-size:1.15rem;line-height:1;cursor:pointer;padding:0;
+ box-shadow:0 2px 6px #0006;
+}
+.workspace-photo-launch:hover,.workspace-photo-launch:focus-visible{background:#2f6174;outline:2px solid #87ccdb;outline-offset:1px}
+.workspace-photo-launch[hidden]{display:none!important}
+.workspace-photo-dialog{width:min(720px,calc(100vw - 30px));max-height:min(92vh,900px);overflow:auto;box-sizing:border-box;border:1px solid #628a98;border-radius:12px;background:#101f2a;color:#edfaff;padding:16px 18px;box-shadow:0 20px 70px #000b}
+.workspace-photo-dialog::backdrop{background:rgba(0,8,14,.78)}
+.workspace-photo-dialog-header{display:flex;justify-content:flex-end;margin-bottom:6px}
+.workspace-photo-dialog .workspace-photos-editor{width:100%;max-width:none;margin:0;padding:0;border:0;background:transparent}
+.workspace-photo-dialog .workspace-photos-editor h2{display:block;font-size:1.14rem;margin:0 0 4px}
+.workspace-photo-dialog .workspace-photos-editor>p.muted{display:block;font-size:.82rem;margin:0 0 12px}
+.workspace-photo-dialog .assembly-unified-photo{width:100%;border:1px solid #436473;border-radius:9px;overflow:hidden}
+.workspace-photo-dialog .assembly-photo-stage{width:100%;height:clamp(250px,45vw,460px);border-radius:8px}
+.workspace-photo-dialog .assembly-stage-image{width:100%;height:100%;object-fit:contain}
+.workspace-photo-dialog .assembly-photo-name{display:block}
+.workspace-photo-dialog .assembly-photo-arrow{font-size:2rem;width:38px;height:45px}
+.workspace-photo-dialog .assembly-photo-arrow.previous{left:4px}
+.workspace-photo-dialog .assembly-photo-arrow.next{right:4px}
+.workspace-photo-dialog .assembly-photo-actions{display:flex;top:10px;right:12px;gap:7px}
+.workspace-photo-dialog .assembly-photo-icon{width:33px;height:33px;font-size:1.3rem;border-radius:50%}
+.workspace-photo-dialog .workspace-photo-tools{margin-top:12px;padding-top:12px;border-top:1px solid #345b6a}
+.workspace-photo-dialog .assembly-photo-admin{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.workspace-photo-dialog .assembly-photo-zone{padding:9px 12px}
+.workspace-photo-dialog .assembly-photo-pick{font-size:.84rem;padding:8px 13px}
+.workspace-photo-dialog .assembly-photo-caption-label{font-size:.82rem;max-width:310px}
+.workspace-photo-dialog .workspace-photo-status{max-width:none}
