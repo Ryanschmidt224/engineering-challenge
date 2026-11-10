@@ -1282,7 +1282,9 @@ function setupAssemblyTrees(){
     }
    }});
   };
-  bomPanel.addEventListener("click",event=>{
+  // The editor moves from the BOM screen into workspace-main-bom-editor.
+  // Delegate events from the stable workspace, not the original BOM panel.
+  workspace.addEventListener("click",event=>{
    const target=event.target;
    if(!(target instanceof Element))return;
    if(target.closest(".component-add-spec")){
