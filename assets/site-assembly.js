@@ -1848,14 +1848,26 @@ function setupAssemblyTrees(){
    summaryEntry.textContent="Project summary";summaryEntry.setAttribute("aria-current",isProjectSummary()?"page":"false");
    summaryEntry.onclick=()=>{selected=null;history.pushState(null,"","#"+project);render();notify();window.scrollTo(0,0)};
    nodesEl.append(summaryEntry);
+   // Duplicate links to one part under the same assembly render once. Keep
+   // all original nodes and their IDs untouched for storage and BOM accuracy.
+   const duplicateLinks=new Map(),visiblePartLinks=new Set();
+   for(const item of nodes){
+    if(!isPartNode(item)||!includeTreeNode(item))continue;
+    const group=String(item.parentId)+"|"+item.partId;
+    const count=duplicateLinks.get(group)||0;
+    duplicateLinks.set(group,count+1);
+    if(count===0)visiblePartLinks.add(item.id);
+   }
    const row=(node,depth)=>{
-   const id=node?.id??null,children=nodes.filter(n=>n.parentId===id&&includeTreeNode(n)),el=document.createElement("div");el.className="assembly-node"+(selected===id&&!isProjectSummary()?" selected":"")+(node&&isHiddenPart(node)?" is-hidden-part":"")+(node&&isToolNode(node)?" is-tool-part":"");el.style.paddingLeft=(depth*17+3)+"px";
+   const id=node?.id??null,children=nodes.filter(n=>n.parentId===id&&includeTreeNode(n)&&(!isPartNode(n)||visiblePartLinks.has(n.id))),el=document.createElement("div");el.className="assembly-node"+(selected===id&&!isProjectSummary()?" selected":"")+(node&&isHiddenPart(node)?" is-hidden-part":"")+(node&&isToolNode(node)?" is-tool-part":"");el.style.paddingLeft=(depth*17+3)+"px";
    const expand=document.createElement("button");expand.type="button";expand.className="assembly-expander";expand.textContent=children.length?(expanded.has(id)?"▾":"▸"):" ";expand.setAttribute("aria-label",expanded.has(id)?"Collapse":"Expand");expand.onclick=()=>{expanded.has(id)?expanded.delete(id):expanded.add(id);render()};
    const name=document.createElement("button");name.type="button";name.className="assembly-name";
    const nodeNumber=node?(isPartNode(node)?partNumbers.get(node.partId):node.partNumber):null;
    name.textContent=node?(isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+(nodeNumber?nodeNumber+" · ":"")+node.name:"📦  "+title;
    if(isPartNode(node)){
-    const count=partQuantities.get(node.partId);if(Number.isFinite(count)&&count>1)name.textContent+=" ("+count+")";
+    const quantity=partQuantities.get(node.partId),links=duplicateLinks.get(String(node.parentId)+"|"+node.partId)||1;
+    const count=Number.isFinite(quantity)&&quantity>1?Math.max(quantity,links):links;
+    if(count>1)name.textContent+=" ("+count+")";
     const status=partProgress.get(node.partId);
     if(status==="complete"||status==="in_progress")el.classList.add("part-progress-"+status);
     if(partAttention.get(node.partId)){el.classList.add("part-needs-attention");name.title="Needs attention — open part to view the reminder"}
