@@ -1265,3 +1265,45 @@
 .my-build-feedback-choices,.my-build-feedback-actions{display:flex;flex-wrap:wrap;gap:9px}
 .my-build-feedback-actions{justify-content:flex-end;margin-top:16px}
 @media(max-width:540px){.my-build-feedback-choices .btn{flex:1 1 100%}}
+
+/* Section feedback lives as a small corner help affordance. */
+.build-confusion-control{
+ position:absolute;right:10px;bottom:10px;z-index:3;
+ display:flex;align-items:center;gap:6px;
+ margin:0!important;padding:0!important;
+}
+.build-confusion-control .build-confusion-button{
+ display:grid!important;place-items:center;
+ box-sizing:border-box;width:26px;height:26px;min-width:26px;min-height:26px;
+ padding:0!important;border:1px solid var(--color-border)!important;
+ border-radius:50%!important;background:var(--color-surface)!important;
+ color:var(--color-text-muted)!important;font-size:14px!important;
+ font-weight:700!important;line-height:1!important;cursor:pointer;
+ box-shadow:0 1px 3px #00000012;
+}
+.build-confusion-control .build-confusion-button:hover,
+.build-confusion-control .build-confusion-button:focus-visible{
+ background:var(--color-accent-soft)!important;color:var(--color-text)!important;
+}
+.build-confusion-control .build-confusion-status:not(:empty){
+ position:absolute;right:30px;bottom:0;
+ width:max-content;max-width:min(300px,60vw);
+ padding:5px 9px;border:1px solid var(--color-border);
+ border-radius:7px;background:var(--color-surface);box-shadow:0 2px 6px #00000010;
+ font-size:.78rem;
+}
+.project-summary-gallery,.project-summary-bom-section,.project-summary-tools-section,
+.workspace-resources,.workspace-bom,.recipe-instructions,.part-linked-resources,
+.part-details-view,.recipe-one-step-body,
+.build-confusion-insights,.project-summary-page>.project-summary-heading{
+ position:relative;
+}
+.recipe-step-detail .build-confusion-control{margin:0!important}
+.my-build-feedback-dialog{position:fixed}
+.my-build-feedback-close{
+ position:absolute;top:9px;right:10px;border:0;background:transparent;
+ width:32px;height:32px;border-radius:8px;cursor:pointer;
+ color:var(--color-text-muted);font-size:22px;line-height:1;
+}
+.my-build-feedback-close:hover{background:var(--color-hover)}
+.my-build-feedback-dialog{padding-top:34px}
