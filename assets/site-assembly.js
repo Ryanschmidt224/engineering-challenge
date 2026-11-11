@@ -2018,7 +2018,43 @@ function setupAssemblyTrees(){
     }finally{newPartButton.disabled=false}
    }});
   };
-  root.querySelector(".assembly-add").onclick=async()=>{if(isPartNode(nodes.find(n=>n.id===selected))){status.textContent="Select an assembly first; parts cannot contain children.";return}const name=prompt("New subassembly name");if(!name?.trim())return;const id=crypto.randomUUID();try{await save([...nodes,{id,name:name.trim(),parentId:selected}]);expanded.add(selected);selected=id;render();notify()}catch(e){status.textContent=e.message}};
+  const assemblyDialog=document.createElement("dialog");
+  assemblyDialog.className="assembly-create-dialog";
+  assemblyDialog.innerHTML='<form class="assembly-create-form" method="dialog"><h2>New assembly</h2><p class="muted">Choose a project part number for this assembly.</p><fieldset class="assembly-number-choice"><legend>Assembly number</legend><label><input type="radio" name="assembly-number-mode" value="auto" checked> Assign next available assembly number</label><label><input type="radio" name="assembly-number-mode" value="manual"> Enter an assembly number</label></fieldset><label class="assembly-manual-number" hidden>Assembly number<input type="text" class="field assembly-number-input" placeholder="NR0001" maxlength="30" autocomplete="off"></label><p class="muted assembly-number-hint">Assembly numbers use the project prefix and reserved range 0001–1000.</p><label>Assembly name<input class="field assembly-new-name" type="text" maxlength="100" required placeholder="Enter assembly name"></label><p class="assembly-create-status" role="status"></p><div class="assembly-create-actions"><button type="button" class="btn assembly-create-cancel">Cancel</button><button type="submit" class="btn primary assembly-create-submit">Create assembly</button></div></form>';
+  document.body.append(assemblyDialog);
+  const assemblyForm=assemblyDialog.querySelector("form");
+  const manualAssemblyRow=assemblyDialog.querySelector(".assembly-manual-number");
+  const manualAssemblyInput=assemblyDialog.querySelector(".assembly-number-input");
+  const assemblyNameInput=assemblyDialog.querySelector(".assembly-new-name");
+  const assemblyError=assemblyDialog.querySelector(".assembly-create-status");
+  const assemblySubmit=assemblyDialog.querySelector(".assembly-create-submit");
+  const assemblyNumberMode=()=>assemblyDialog.querySelector('input[name="assembly-number-mode"]:checked')?.value||"auto";
+  assemblyDialog.querySelectorAll('input[name="assembly-number-mode"]').forEach(input=>input.onchange=()=>{
+   const manual=assemblyNumberMode()==="manual";
+   manualAssemblyRow.hidden=!manual;manualAssemblyInput.required=manual;
+   if(manual)manualAssemblyInput.focus();
+  });
+  assemblyDialog.querySelector(".assembly-create-cancel").onclick=()=>assemblyDialog.close();
+  assemblyForm.onsubmit=async event=>{
+   event.preventDefault();if(!assemblyForm.reportValidity())return;
+   const parentId=selected,name=assemblyNameInput.value.trim();
+   if(!name){assemblyError.textContent="Enter an assembly name.";return}
+   if(isPartNode(nodes.find(n=>n.id===parentId))){assemblyError.textContent="Select an assembly first.";return}
+   const numberMode=assemblyNumberMode(),partNumber=manualAssemblyInput.value.trim().toUpperCase();
+   if(numberMode==="manual"&&!partNumber){assemblyError.textContent="Enter an assembly number.";return}
+   assemblySubmit.disabled=true;assemblyError.textContent="Creating assembly…";
+   const id=crypto.randomUUID();
+   try{
+    await save([...nodes,{id,name,parentId,kind:"assembly",numberMode,...(numberMode==="manual"?{partNumber}:{})}]);
+    expanded.add(parentId);selected=id;render();notify();assemblyDialog.close();
+   }catch(error){assemblyError.textContent=error.message}
+   finally{assemblySubmit.disabled=false}
+  };
+  root.querySelector(".assembly-add").onclick=()=>{
+   if(isPartNode(nodes.find(n=>n.id===selected))){status.textContent="Select an assembly first; parts cannot contain children.";return}
+   assemblyForm.reset();manualAssemblyRow.hidden=true;manualAssemblyInput.required=false;assemblyError.textContent="";
+   assemblyDialog.showModal();assemblyNameInput.focus();
+  };
   root.querySelector(".assembly-rename").onclick=async()=>{if(selected===null){status.textContent="Select a subassembly to rename.";return}const node=nodes.find(n=>n.id===selected),name=prompt("Rename subassembly",node.name);if(!name?.trim())return;try{await save(nodes.map(n=>n.id===selected?{...n,name:name.trim()}:n))}catch(e){status.textContent=e.message}};
   root.querySelector(".assembly-remove").onclick=async()=>{if(selected===null){status.textContent="Select a subassembly to delete.";return}const node=nodes.find(n=>n.id===selected);if(!confirm("Delete "+node.name+" and its nested subassemblies? Existing BOM components will remain in the project but may become unassigned."))return;const removed=new Set([selected]);let changed=true;while(changed){changed=false;for(const n of nodes)if(removed.has(n.parentId)&&!removed.has(n.id)){removed.add(n.id);changed=true}}try{await save(nodes.filter(n=>!removed.has(n.id)));selected=null;render();notify()}catch(e){status.textContent=e.message}};
   load();
