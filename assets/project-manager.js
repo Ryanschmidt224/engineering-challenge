@@ -1,6 +1,6 @@
 // Project dashboard. Private project data is authorized by the API, never by these DOM filters.
 window.BSProjectManager=(()=>{
- let currentProjects=[];
+ let currentProjects=[],openSettingsDialog=null;
  const api=async(method,path,body)=>{
   const response=await fetch(path,{method,credentials:"same-origin",cache:"no-store",
    ...(body?{headers:{"content-type":"application/json"},body:JSON.stringify(body)}:{})});
@@ -88,12 +88,14 @@ window.BSProjectManager=(()=>{
    manageDialog.replaceChildren();
    const form=element("form","project-manage-form");form.method="dialog";
    form.append(element("h2","",project.name));
+   form.append(element("p","muted","Privacy and project ownership settings. Only the project owner can change these."));
    const visibility=element("label","","Visibility");
    const visibilitySelect=element("select","field");
    for(const [value,label] of [["private","Private"],["public","Public"]]){
     const option=element("option","",label);option.value=value;visibilitySelect.append(option);
    }
    visibilitySelect.value=project.visibility||"public";visibility.append(visibilitySelect);form.append(visibility);
+   form.append(element("p","muted","Private: visible only to you. Public: others can view approved project content and suggest instruction corrections when enabled."));
    const permission=element("label","","Editing mode");
    const permissionSelect=element("select","field");
    for(const [value,label] of [["locked","Owner only"],["approval","Owner approval required"]]){
@@ -105,15 +107,21 @@ window.BSProjectManager=(()=>{
    const actions=element("div","row");
    const save=element("button","btn primary","Save settings");save.type="button";
    save.onclick=async()=>{try{await api("PATCH","/api/projects",{id:project.id,visibility:visibilitySelect.value,editMode:permissionSelect.value});manageDialog.close();await refresh()}catch(e){error.textContent=e.message}};
-   const archive=element("button","btn","Archive project");archive.type="button";
+   const archive=element("button","btn project-archive-button","Remove project");archive.type="button";archive.title="Archive the project without deleting its files";
    archive.onclick=async()=>{
-    const confirmation=prompt('Type the project name to archive it: '+project.name);
+    const confirmation=prompt('Remove this project from the site? Its parts, photos, and instructions will be kept so you can restore it later.\n\nType the exact project name to confirm: '+project.name);
     if(confirmation===null)return;
     try{await api("DELETE","/api/projects",{id:project.id,confirmName:confirmation});manageDialog.close();navigate("home");await refresh()}catch(e){error.textContent=e.message}
    };
    const close=element("button","btn","Close");close.type="button";close.onclick=()=>manageDialog.close();
-   actions.append(save,archive,close);form.append(actions);manageDialog.append(form);manageDialog.showModal();
+   actions.append(save,archive,close);form.append(actions);
+   form.append(element("p","muted","Remove project archives it. You can restore it from Projects → Archived projects; no project files are deleted."));
+   manageDialog.append(form);manageDialog.showModal();
   }
+  openSettingsDialog=id=>{
+   const project=currentProjects.find(p=>p.id===id&&p.isOwner);
+   if(project)showManage(project);
+  };
   archiveButton.onclick=async()=>{
    if(!user){showAccount();return}
    try{
@@ -166,5 +174,5 @@ window.BSProjectManager=(()=>{
   }
   void refresh();
  };
- return {init,isOwner:id=>currentProjects.some(project=>project.id===id&&project.isOwner)};
+ return {init,isOwner:id=>currentProjects.some(project=>project.id===id&&project.isOwner),openSettings:id=>openSettingsDialog?.(id)};
 })();
