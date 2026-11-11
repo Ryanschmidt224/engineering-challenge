@@ -50,17 +50,28 @@ async function legacyNumbers(env,project){
  }
  return numbers;
 }
+function occupiedSequences(data,existing){
+ const occupied=new Set(Object.keys(data.issuedSequences));
+ // Also recognize legacy numbers with different zero padding under the current prefix.
+ for(const number of [...existing.keys(),...Object.values(data.issued)]){
+  if(number.startsWith(data.prefix)&&/^\d+$/.test(number.slice(data.prefix.length)))occupied.add(String(Number(number.slice(data.prefix.length))));
+ }
+ return occupied;
+}
+function nextAvailable(data,existing,kind){
+ const occupied=occupiedSequences(data,existing);
+ let sequence=data[kind==="assembly"?"nextAssembly":"nextPart"];
+ const upper=kind==="assembly"?99:Number.MAX_SAFE_INTEGER;
+ while(sequence<=upper&&occupied.has(String(sequence)))sequence++;
+ return sequence<=upper?sequence:null;
+}
 export async function issueNumber(env,project,kind,recordId,manual){
  if(!["assembly","part"].includes(kind)||typeof recordId!=="string"||recordId.length>100)throw err("Invalid number allocation",400);
  const recordKey=kind+":"+recordId;
  const existing=await legacyNumbers(env,project);
  return changeRegister(env,project,data=>{
   if(data.issued[recordKey])return data.issued[recordKey];
-  const occupied=new Set(Object.keys(data.issuedSequences));
-  // Also recognize legacy numbers with different zero padding under the current prefix.
-  for(const number of [...existing.keys(),...Object.values(data.issued)]){
-   if(number.startsWith(data.prefix)&&/^\d+$/.test(number.slice(data.prefix.length)))occupied.add(String(Number(number.slice(data.prefix.length))));
-  }
+  const occupied=occupiedSequences(data,existing);
   let value,sequence;
   if(manual!==undefined&&manual!==null&&manual!==""){
    value=String(manual).trim().toUpperCase();
@@ -93,7 +104,8 @@ export async function onRequest({request,env}){
  if(!await projectAllowed(env,project,request))return json({error:"Project unavailable"},404);
  if(request.method==="GET"){
   const {data}=await numberingState(env,project);
-  return json({prefix:data.prefix,digits:data.digits,nextAssembly:data.nextAssembly,nextPart:data.nextPart,reservedAssemblyRange:"001–099",issuedCount:Object.keys(data.issued).length});
+  const existing=await legacyNumbers(env,project);
+  return json({prefix:data.prefix,digits:data.digits,nextAssembly:nextAvailable(data,existing,"assembly"),nextPart:nextAvailable(data,existing,"part"),reservedAssemblyRange:"001–099",issuedCount:Object.keys(data.issued).length});
  }
  if(request.method!=="PUT")return json({error:"Method not allowed"},405);
  if(!await canEditProject(request,env,project))return json({error:"Owner permission required"},403);
