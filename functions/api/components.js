@@ -157,7 +157,7 @@ export async function handleComponents(request,env){
   if(Object.prototype.hasOwnProperty.call(input,"purchaseOverride"))entry.purchaseOverride=input.purchaseOverride;
   if(Object.prototype.hasOwnProperty.call(input,"workshopChoice"))entry.workshopChoice=input.workshopChoice;
   if(typeof input.hideFromFeatureTree==="boolean")entry.hideFromFeatureTree=input.hideFromFeatureTree;
-  if(typeof input.isTool==="boolean")entry.isTool=input.isTool;
+  if(typeof input.isTool==="boolean")entry.isTool=entry.itemType==="document"?false:input.isTool;
   if(input.progressStatus!==undefined){if(!["not_started","in_progress","complete"].includes(input.progressStatus))return json({error:"Invalid progress status"},400);entry.progressStatus=input.progressStatus}
   if(input.needsAttention!==undefined){if(typeof input.needsAttention!=="boolean")return json({error:"Invalid attention flag"},400);entry.needsAttention=input.needsAttention}
   if(input.attentionNote!==undefined){if(typeof input.attentionNote!=="string"||input.attentionNote.length>2000)return json({error:"Attention note must be 2000 characters or less"},400);entry.attentionNote=input.attentionNote.trim()}
