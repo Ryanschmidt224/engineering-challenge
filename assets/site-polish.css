@@ -933,3 +933,7 @@
  .recipe-compact .recipe-step-list{border:1px solid var(--color-border);border-radius:10px}
  .recipe-compact .recipe-step-detail{border:1px solid var(--color-border);border-radius:10px}
 }
+
+/* No accent stripe on either selected step surface. */
+.recipe-compact .recipe-step-nav-item.is-active,
+.recipe-compact .recipe-step-detail>.recipe-one-step[open]>.recipe-one-step-summary{border-left:0!important}
