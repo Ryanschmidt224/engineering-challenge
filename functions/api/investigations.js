@@ -103,16 +103,20 @@ export async function handleInvestigations(request,env){
   const audit={id:crypto.randomUUID(),type:"revision",text:"Renamed investigation from \""+record.title+"\" to \""+title+"\".",
    date:new Date().toISOString().slice(0,10),files:[],fileName:"",createdAt:new Date().toISOString()};
   changed=records.map(item=>item.id===record.id?{...item,title,entries:[...(item.entries||[]),audit]}:item);
+ }else if(data.action==="deleteRecord"){
+  record=records.find(item=>item.id===data.id);
+  if(!record)return json({error:"Investigation not found"},404);
+  changed=records.filter(item=>item.id!==record.id);
  }else if(data.action==="editRecord"){
   record=records.find(item=>item.id===data.id);
   if(!record)return json({error:"Investigation not found"},404);
-  if(!validText(data.title,180)||!data.title.trim()||!validDate(data.date)||!Array.isArray(data.entries)||data.entries.length>3||data.entries.some(item=>!safeEntry(item,project)||!["observation","resolution","note"].includes(item.type))||new Set(data.entries.map(item=>item.type)).size!==data.entries.length)return json({error:"Invalid record details"},400);
+  if(!validText(data.title,180)||!data.title.trim()||!validDate(data.date)||!Array.isArray(data.entries)||data.entries.length>4||data.entries.some(item=>!safeEntry(item,project)||!["observation","theory","resolution","note"].includes(item.type))||new Set(data.entries.map(item=>item.type)).size!==data.entries.length)return json({error:"Invalid record details"},400);
   const resolution=data.entries.find(entry=>entry.type==="resolution");
   const status=resolution?({yes:"resolved",no:"unresolved",maybe:"investigating"})[resolution.resolution]:"investigating";
   // Retain older entry types and earlier updates; replace only the latest editable entry per field.
   const previous=record.entries||[];
   const latest=new Map();
-  previous.forEach((entry,index)=>{if(["observation","resolution","note"].includes(entry.type))latest.set(entry.type,index)});
+  previous.forEach((entry,index)=>{if(["observation","theory","resolution","note"].includes(entry.type))latest.set(entry.type,index)});
   const retained=previous.filter((entry,index)=>latest.get(entry.type)!==index);
   const entries=[...retained,...data.entries.map(normalizedEntry)];
   if(entries.length>100)return json({error:"Too many entries in investigation"},413);
