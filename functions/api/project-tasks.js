@@ -4,6 +4,7 @@ const validId=x=>typeof x==="string"&&/^[a-zA-Z0-9_-]{1,100}$/.test(x);
 export async function onRequest({request,env}){
  const project=new URL(request.url).searchParams.get("project");
  if(!await projectAllowed(env,project,request))return json({error:"Project unavailable"},403);
+ if(!await canEditProject(request,env,project))return json({error:"Sign in to manage this project’s private tasks"},401);
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  const key="project-tasks/v1/"+project+".json";
  const existing=await env.PHOTOS.get(key);
