@@ -1455,7 +1455,7 @@
 
 /* Investigation cards open in reading mode; editing is an explicit action. */
 .investigation-summary .investigation-rename[hidden]{display:none!important}
-.investigation-edit-actions{display:flex;justify-content:flex-end;align-items:center;gap:9px;margin-top:8px}
+.investigation-edit-actions{display:flex;justify-content:flex-start;align-items:center;gap:9px;margin-top:8px;flex-wrap:wrap}
 .investigation-existing-files{display:flex;flex-wrap:wrap;gap:10px;margin-left:187px}
 .investigation-existing-file{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
 .investigation-edit-thumbnail{width:100px;height:76px;object-fit:contain;border-radius:5px;border:1px solid var(--color-border)}
@@ -1467,7 +1467,7 @@
 
 /* Record dates remain visible in collapsed headers; destructive action is separated from Save. */
 .investigation-record-date{font-size:.8rem;font-weight:500;color:var(--color-text-muted);white-space:nowrap;font-variant-numeric:tabular-nums}
-.investigation-edit-actions .investigation-delete{margin-right:auto;color:#a52d35;border-color:#a52d3560;background:transparent}
+.investigation-edit-actions .investigation-delete{margin-left:12px;margin-right:0;color:#a52d35;border-color:#a52d3560;background:transparent}
 .investigation-edit-actions .investigation-delete:hover{background:#a52d3510}
 
 /* Compact title composer with the same typography as other investigation descriptors. */
