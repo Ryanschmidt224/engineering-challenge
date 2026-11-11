@@ -21,8 +21,10 @@ test("project feature tree and workspace initialize without browser errors", asy
    ]};break;
    case "/api/photos": data={photos:url.searchParams.get("assembly")==="root-assembly"
     ?[{id:"launcher/assembly-photo.png",url:"/root-assembly-photo.png",caption:"Assembly build photo",assembly:"root-assembly"}]
-    :[{id:"launcher/photo-a.png",url:"/test-photo-a.png",caption:"Launcher front view",assembly:""},
-      {id:"launcher/photo-b.png",url:"/test-photo-b.png",caption:"Launcher side view",assembly:""}]};break;
+    :url.searchParams.get("assembly")==="project-summary"
+     ?[{id:"launcher/photo-a.png",url:"/test-photo-a.png",caption:"Launcher front view",assembly:"project-summary"},
+       {id:"launcher/photo-b.png",url:"/test-photo-b.png",caption:"Launcher side view",assembly:"project-summary"}]
+     :[]};break;
    case "/api/workspace": data={workspace:{recipe:[{id:"step-prepare",title:"Prepare components",standard:"Inspect the parts",kind:"action",notes:[],photos:[]},{id:"step-measure",title:"Measure resistance",standard:"Verify resistance",kind:"measurement",notes:[],photos:[]}],resources:[]},revision:"test"};break;
    case "/api/auth": data={authenticated:false,isAdmin:false};break;
    case "/api/drawings": data={drawings:[]};break;
@@ -55,7 +57,8 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(summary.locator(".project-summary-photo-caption")).toContainText("Launcher side view");
  await summary.locator(".project-summary-previous").click();
  await expect(summary.locator(".project-summary-photo-position")).toContainText("1 of 2");
- await summary.locator(".project-summary-workspace").click();
+ await expect(summary.locator(".project-summary-workspace,.project-summary-bom,.project-summary-add-photo")).toHaveCount(0);
+ await tree.locator(".assembly-name").first().click();
  await expect(workspace).toBeVisible();
  await expect(workspace.locator(".workspace-back")).toHaveText("Open BOM");
  await expect(workspace.locator(".workspace-cover img")).toHaveAttribute("src","/root-assembly-photo.png");
@@ -63,7 +66,7 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(page).toHaveURL(/#launcher\/workspace\/__root__/);
  await tree.locator(".assembly-project-summary-entry").click();
  await expect(summary).toBeVisible();
- await summary.locator(".project-summary-workspace").click();
+ await tree.locator(".assembly-name").first().click();
  const header=workspace.locator(":scope > .workspace-heading");
  const buttonBounds=await header.locator(".workspace-back").boundingBox();
  const titleBounds=await header.locator(".workspace-title").boundingBox();
@@ -516,7 +519,7 @@ test("personal project builds a private editable workspace from the shared proje
  await card.locator(".project-link").click();
  const section=page.locator("#"+id);
  await expect(section.locator(".project-summary-page")).toBeVisible();
- await section.locator(".project-summary-workspace").click();
+ await section.locator(".assembly-tree-nodes .assembly-name").first().click();
  await expect(section.locator(".assembly-workspace-page:not(.bom-part-workspace)")).toBeVisible();
  await expect(section.locator(".assembly-workspace-page .workspace-back")).toHaveText("Open BOM");
  await expect(section.locator(".assembly-tree-nodes")).toContainText("Test Personal Project");
