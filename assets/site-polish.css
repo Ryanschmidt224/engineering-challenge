@@ -895,3 +895,41 @@
   --recipe-active-heading-height:64px;
  }
 }
+
+
+/* Instruction reader split: one neutral divider, user-adjustable and persistent. */
+.recipe-compact .recipe-step-browser{
+ grid-template-columns:minmax(150px,var(--recipe-nav-width,31%)) 12px minmax(0,1fr);
+ gap:0;
+}
+.recipe-compact .recipe-step-list{border-top-right-radius:0;border-bottom-right-radius:0;border-right:0}
+.recipe-compact .recipe-step-detail{border-top-left-radius:0;border-bottom-left-radius:0;border-left:0}
+.recipe-compact .recipe-step-resizer{
+ display:block;position:relative;touch-action:none;cursor:col-resize;
+ border-top:1px solid var(--color-border);border-bottom:1px solid var(--color-border);
+ background:var(--color-surface);outline-offset:1px;
+}
+.recipe-compact .recipe-step-resizer::after{
+ content:"";position:absolute;top:12px;bottom:12px;left:4px;width:4px;
+ border-radius:3px;background:var(--color-border);
+}
+.recipe-compact .recipe-step-resizer:hover::after,
+.recipe-compact .recipe-step-resizer:focus-visible::after,
+.recipe-compact .is-resizing-recipe .recipe-step-resizer::after{background:var(--color-text-muted)}
+.recipe-compact .is-resizing-recipe{user-select:none}
+.recipe-compact .recipe-step-nav-item.is-active{
+ border-left-color:transparent!important;
+ background:var(--color-accent-soft);
+}
+.recipe-compact .recipe-step-detail>.recipe-one-step[open]>.recipe-one-step-summary{
+ border-left:0!important;box-shadow:none!important;
+}
+/* Remove the doubled green selection stripes on both sides of the split. */
+.recipe-compact .recipe-step-detail>.recipe-one-step[open]>.recipe-one-step-summary::before,
+.recipe-compact .recipe-step-nav-item.is-active::before{border-left:0!important}
+@media(max-width:760px){
+ .recipe-compact .recipe-step-browser{grid-template-columns:minmax(0,1fr);gap:10px}
+ .recipe-compact .recipe-step-resizer{display:none}
+ .recipe-compact .recipe-step-list{border:1px solid var(--color-border);border-radius:10px}
+ .recipe-compact .recipe-step-detail{border:1px solid var(--color-border);border-radius:10px}
+}
