@@ -1270,3 +1270,30 @@
 .assembly-node.part-progress-in_progress>.assembly-name::after{content:" ◐";color:var(--color-text-muted)}
 .assembly-node.part-needs-attention>.assembly-name{color:var(--color-danger,#ad452d)}
 .assembly-node.part-needs-attention>.assembly-name::after{content:" ⚑";color:var(--color-danger,#ad452d)}
+
+
+/* Project-level review queue; subtle highlight signals action without dominating navigation. */
+.assembly-project-summary-entry.has-pending-changes{
+ border-color:var(--color-accent);
+ background:var(--color-accent-soft);
+ flex-wrap:wrap;column-gap:8px;row-gap:3px;
+}
+.assembly-summary-pending-count{
+ margin-left:auto;font-weight:700;font-size:.73rem;
+ color:var(--color-text);white-space:nowrap;
+}
+.project-summary-review:not([hidden]){
+ display:grid;gap:12px;padding:18px 21px;
+ border:1px solid var(--color-border);border-radius:12px;
+ background:var(--color-surface);
+}
+.project-summary-review[hidden]{display:none!important}
+.project-summary-review-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.project-summary-review-header h2{font-size:1.08rem;margin:0}
+.project-summary-review-list{margin:0;padding:0;list-style:none}
+.project-summary-review-list li{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:12px;border-top:1px solid var(--color-border);padding:10px 0;
+ font-size:.88rem;
+}
+.project-summary-review-list .btn{font-size:.8rem;padding:6px 10px}
