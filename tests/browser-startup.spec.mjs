@@ -16,9 +16,12 @@ test("project feature tree and workspace initialize without browser errors", asy
     break;
    case "/api/components": data={components:[
     {id:"part-motor",name:"C2822 Brushless Motor",assemblyId:"smoke-motor",quantity:2},
-    {id:"part-esc",name:"20A ESC",assemblyId:"smoke-motor",quantity:2}
+    {id:"part-esc",name:"20A ESC",assemblyId:"smoke-motor",quantity:2},
+    {id:"tool-iron",name:"Soldering Iron",assemblyId:"smoke-motor",isTool:true,quantity:1}
    ]};break;
-   case "/api/photos": data={photos:[]};break;
+   case "/api/photos": data={photos:[
+    {id:"launcher/photo-a.png",url:"/test-photo-a.png",caption:"Launcher front view",assembly:""},
+    {id:"launcher/photo-b.png",url:"/test-photo-b.png",caption:"Launcher side view",assembly:""}]};break;
    case "/api/workspace": data={workspace:{recipe:[{id:"step-prepare",title:"Prepare components",standard:"Inspect the parts",kind:"action",notes:[],photos:[]},{id:"step-measure",title:"Measure resistance",standard:"Verify resistance",kind:"measurement",notes:[],photos:[]}],resources:[]},revision:"test"};break;
    case "/api/auth": data={authenticated:false,isAdmin:false};break;
    case "/api/drawings": data={drawings:[]};break;
@@ -40,7 +43,15 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(summary.locator(".project-summary-title")).toContainText("Foam");
  await expect(summary.locator(".project-summary-bom-items")).toContainText("C2822 Brushless Motor");
  await expect(summary.locator(".project-summary-bom-items")).toContainText("20A ESC");
- await expect(summary.locator(".project-summary-tool-items")).toContainText("No tools specified");
+ await expect(summary.locator(".project-summary-tool-items")).toContainText("Soldering Iron");
+ await expect(summary.locator(".project-summary-bom-items")).not.toContainText("Soldering Iron");
+ await expect(summary.locator(".project-summary-photo-position")).toContainText("1 of 2");
+ await expect(summary.locator(".project-summary-photo-caption")).toContainText("Launcher front view");
+ await summary.locator(".project-summary-next").click();
+ await expect(summary.locator(".project-summary-photo-position")).toContainText("2 of 2");
+ await expect(summary.locator(".project-summary-photo-caption")).toContainText("Launcher side view");
+ await summary.locator(".project-summary-previous").click();
+ await expect(summary.locator(".project-summary-photo-position")).toContainText("1 of 2");
  await summary.locator(".project-summary-workspace").click();
  await expect(workspace).toBeVisible();
  await expect(workspace.locator(".workspace-back")).toHaveText("Open BOM");
