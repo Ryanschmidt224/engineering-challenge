@@ -537,12 +537,16 @@ test("owner manages project privacy and removal from the summary",async({page})=
  const id="p"+"a".repeat(32),ownerId="u"+"1".repeat(32);
  const catalog=[{id,name:"Private test project",description:"Prototype",visibility:"private",
   ownerId,kind:"project",editMode:"approval",isOwner:true}];
+ const numbering={prefix:"NR",digits:4,nextAssembly:1,nextPart:1001};
  await page.route("**/api/**",async route=>{
   const url=new URL(route.request().url());let value={};
   if(url.pathname==="/api/accounts")value={user:{id:ownerId,email:"owner@example.com",displayName:"Owner"}};
   else if(url.pathname==="/api/projects"){
    if(route.request().method()==="PATCH"){const input=route.request().postDataJSON();Object.assign(catalog[0],input);value={ok:true,projects:catalog};}
    else value={projects:catalog};
+  }else if(url.pathname==="/api/numbering"){
+   if(route.request().method()==="PUT"){const input=route.request().postDataJSON();numbering.prefix=input.prefix;numbering.digits=input.digits;value={settings:{...numbering}};}
+   else value={...numbering,reservedAssemblyRange:"0001–1000"};
   }else if(url.pathname==="/api/tree")value=url.searchParams.has("metadata")?{title:null,revision:null}:{nodes:[],revision:null};
   else if(url.pathname==="/api/components")value={components:[]};
   else if(url.pathname==="/api/photos")value={photos:[]};
@@ -558,6 +562,15 @@ test("owner manages project privacy and removal from the summary",async({page})=
  await expect(settings).toBeVisible();
  await expect(settings.getByRole("heading",{name:"Project settings"})).toBeVisible();
  await expect(settings.getByRole("button",{name:"Remove project"})).toBeVisible();
+ await expect(settings.getByRole("heading",{name:"Part numbering"})).toBeVisible();
+ await expect(settings.locator(".project-numbering-preview")).toContainText("NR0001");
+ await expect(settings.locator(".project-numbering-preview")).toContainText("NR1001");
+ await expect(settings.locator(".project-numbering-nomenclature")).toContainText("manufacturer");
+ await settings.getByLabel("Prefix").fill("PR");
+ await settings.getByLabel("Minimum digits").selectOption("5");
+ await settings.getByRole("button",{name:"Save numbering format"}).click();
+ await expect.poll(()=>numbering.prefix).toBe("PR");
+ await expect(settings.locator(".project-numbering-preview")).toContainText("PR01001");
  await settings.getByLabel("Visibility").selectOption("public");
  await settings.getByRole("button",{name:"Save settings"}).click();
  await expect.poll(()=>catalog[0].visibility).toBe("public");
