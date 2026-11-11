@@ -3,8 +3,8 @@
  "use strict";
  const make=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el};
  const btn=(label,fn,cls="btn")=>{const b=make("button",cls,label);b.type="button";b.onclick=fn;return b};
- const types=[["observation","Observation"],["theory","Cause / suspected cause"],["attempt","Attempt / change"],["lesson","How was it fixed"],["note","Additional notes"]]; 
- const legacyType={theory:"Hypothesis",revision:"Revision / design change",result:"Result"};
+ const types=[["observation","Observation"],["attempt","Attempt / change"],["note","Additional notes"]]; 
+ const legacyType={theory:"Hypothesis",lesson:"How was it fixed?",revision:"Revision / design change",result:"Result"};
  const statuses=[["investigating","Investigating"],["resolved","Resolved"],["unresolved","Unresolved"]];
  const photoExt=/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i;
  const fileUrl=id=>"/api/recipe-files?id="+encodeURIComponent(id);
@@ -65,7 +65,7 @@
    const entryList=make("div","investigation-entries");
    for(const entry of record.entries||[]){
     const item=make("article","investigation-entry");
-    const label=types.find(x=>x[0]===entry.type)?.[1]||legacyType[entry.type]||"Update";
+    const label=entry.type==="resolution"?("Did you fix it? "+({yes:"Yes — How?",no:"No — Why?",maybe:"Maybe — How?"})[entry.resolution]):types.find(x=>x[0]===entry.type)?.[1]||legacyType[entry.type]||"Update";
     const stamp=entry.date||entry.createdAt?.slice(0,10)||"";
     const labelRow=make("div","investigation-entry-heading");
     labelRow.append(make("strong","",label));
@@ -89,23 +89,40 @@
    const date=make("input","field");date.type="date";
    const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
    dateLabel.append(date);controls.append(dateLabel);
-   const descriptions={observation:"Describe what happened or what failed.",theory:"What caused the problem? Include suspected causes if not verified.",attempt:"What did you change, test, or try?",lesson:"Describe the final fix and how you verified that it worked.",note:"Other relevant details, measurements, or notes."};
-   const inputs=types.map(([type,label])=>{
+   const descriptions={observation:"Describe what happened or failed.",attempt:"What did you change, test, or try?",note:"Other relevant details, measurements, or notes."};
+   function fieldRow(type,label,placeholder){
     const wrap=make("div","investigation-entry-field");
-    const caption=make("label","investigation-field-label",label);
+    const caption=make("label","investigation-field-label");
+    const descriptor=make("span","investigation-field-descriptor",label);
     const field=make("textarea","field");field.rows=2;field.maxLength=5000;
-    field.placeholder=descriptions[type];caption.append(field);
+    field.placeholder=placeholder;caption.append(descriptor,field);
     const fileInput=make("input");fileInput.type="file";fileInput.multiple=true;fileInput.hidden=true;
     fileInput.accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.dwg,.dxf,.stp,.step,.stl,.txt,.csv,.doc,.docx,.xls,.xlsx,.zip";
     const fileChoice=make("span","investigation-file-label");
     fileInput.onchange=()=>{fileChoice.textContent=[...fileInput.files].map(x=>x.name).join(", ")};
     const attachments=make("div","investigation-field-attachments");
-    attachments.append(btn("+ Add photo / document",()=>fileInput.click(),"btn"),fileInput,fileChoice);
+    attachments.append(btn("+ Add photo / document",()=>fileInput.click(),"investigation-attachment-link"),fileInput,fileChoice);
     wrap.append(caption,attachments);controls.append(wrap);
-    return {type,field,fileInput};
-   });
+    return {type,field,fileInput,wrap,descriptor};
+   }
+   const inputs=types.map(([type,label])=>fieldRow(type,label,descriptions[type]));
+   const fixedRow=make("label","investigation-fixed-row");
+   fixedRow.append(make("span","","Did you fix it?"));
+   const fixed=make("select","field investigation-fixed-select");
+   for(const [value,label] of [["","Select"],["yes","Yes"],["no","No"],["maybe","Maybe"]]){
+    const option=make("option","",label);option.value=value;fixed.append(option);
+   }
+   fixedRow.append(fixed);controls.append(fixedRow);
+   const resolution=fieldRow("resolution","How?","Describe the fix and how you verified it.");
+   resolution.wrap.hidden=true;
+   fixed.onchange=()=>{
+    resolution.wrap.hidden=!fixed.value;
+    resolution.descriptor.textContent=fixed.value==="no"?"Why?":"How?";
+    resolution.field.placeholder=fixed.value==="no"?"Explain why the problem remains unresolved.":"Describe what you changed and what happened.";
+   };
+   inputs.push(resolution);
    const saveBtn=btn("Save update",async()=>{
-    const fields=inputs.filter(item=>item.field.value.trim()||item.fileInput.files.length);
+    const fields=inputs.filter(item=>item.type==="resolution"?!!fixed.value:!!(item.field.value.trim()||item.fileInput.files.length));
     if(!fields.length){reportHere("Add a note or attachment to at least one field.");inputs[0].field.focus();return}
     if(!date.value){reportHere("Choose a date.");date.focus();return}
     saveBtn.disabled=true;
@@ -122,24 +139,14 @@
        const data=await up.json();if(!up.ok)throw Error(data.error||"Attachment failed");
        files.push(data.id);
       }
-      entries.push({type,text:field.value,date:date.value,files,fileName:selected[0]?.name.slice(0,120)||""});
+      entries.push({type,text:field.value,date:date.value,files,fileName:selected[0]?.name.slice(0,120)||"",...(type==="resolution"?{resolution:fixed.value}:{})});
      }
      await save({action:"appendBatch",id:record.id,entries});
      reportHere("Update saved. Earlier findings are preserved.");
     }catch(error){reportHere(error.message);saveBtn.disabled=false}
    },"btn primary");
    controls.append(saveBtn);
-   const state=make("select","field investigation-status");
-   for(const [value,label] of statuses){const o=make("option","",label);o.value=value;state.append(o)}
-   state.value=record.status;
-   state.setAttribute("aria-label","Investigation status");
-   state.onchange=async()=>{
-    state.disabled=true;
-    try{await save({action:"status",id:record.id,status:state.value});reportHere("Status saved.")}
-    catch(error){reportHere(error.message);state.disabled=false}
-   };
-   const statusRow=make("label","investigation-status-row","Investigation status");
-   statusRow.append(state);container.append(controls,statusRow);
+   container.append(controls);
   }
   function render(target,context,compact=false){
    if(!target)return;
@@ -295,16 +302,16 @@
   }
   function newRecord(context,target){
    const reportHere=message=>report(message,target);
-   const form=make("div","investigation-create");
+   const form=make("div","investigation-create investigation-new-record");
    const name=make("input","field");name.placeholder="Revision, failure, or lesson title";name.maxLength=180;
-   const saveBtn=btn("Save record",async()=>{
+   const saveBtn=btn("Save",async()=>{
     if(!name.value.trim()){name.focus();return}
     saveBtn.disabled=true;
     try{await save({action:"create",...context,title:name.value.trim()});reportHere("Failure recorded. Open it to add evidence, attempts and lessons.")}
     catch(error){reportHere(error.message);saveBtn.disabled=false}
    },"btn primary");
    const cancel=btn("Cancel",()=>form.remove(),"btn");
-   const titleLabel=make("label","investigation-record-title","Record title");titleLabel.append(name);
+   const titleLabel=make("label","investigation-record-title");titleLabel.append(make("span","","Record title"),name);
    form.append(titleLabel,saveBtn,cancel);
    target.querySelector(".investigation-heading")?.after(form);
    name.focus();
