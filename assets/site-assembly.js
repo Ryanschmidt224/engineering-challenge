@@ -15,16 +15,18 @@ function setupAssemblyTrees(){
   if(project==="linear"||project==="robot")view.classList.add("personal-project-view");
   const canEdit=()=>window.BSProjectManager?.isOwner?.(project)===true || (["launcher","linear","robot"].includes(project)&&adminAuthenticated);
   let title=view.querySelector(".assembly-main h1")?.textContent||"Project";let nodes=[],selected=null,expanded=new Set([null]);
-  let showHiddenTreeItems=false,showTreeTools=false;const partVisibility=new Map(),partTools=new Map(),partNumbers=new Map(),partProgress=new Map(),partAttention=new Map(),partQuantities=new Map();
+  let showHiddenTreeItems=false,showTreeTools=false,showTreeDocuments=true,showBomDocuments=true;const partDocuments=new Map(),partVisibility=new Map(),partTools=new Map(),partNumbers=new Map(),partProgress=new Map(),partAttention=new Map(),partQuantities=new Map();
   const isHiddenPart=node=>isPartNode(node)&&partVisibility.get(node.partId)===true;
   const isToolNode=node=>isPartNode(node)&&partTools.get(node.partId)===true;
-  const includeTreeNode=node=>(showHiddenTreeItems||!isHiddenPart(node))&&(showTreeTools||!isToolNode(node));
+  const isDocumentNode=node=>isPartNode(node)&&partDocuments.get(node.partId)===true;
+  const includeTreeNode=node=>(showHiddenTreeItems||!isHiddenPart(node))&&(showTreeTools||!isToolNode(node))&&(showTreeDocuments||!isDocumentNode(node));
   const syncPartNodes=parts=>{
    const known=new Set(nodes.filter(isPartNode).map(n=>n.partId));let changed=false;
    for(const part of parts){
     if(part.generatedFrom)continue;
     partVisibility.set(part.id,part.hideFromFeatureTree===true);
     partTools.set(part.id,part.isTool===true);
+    partDocuments.set(part.id,part.itemType==="document");
     if(part.partNumber)partNumbers.set(part.id,part.partNumber);
     partProgress.set(part.id,part.progressStatus||"not_started");
     partAttention.set(part.id,part.needsAttention===true);
@@ -1377,6 +1379,7 @@ function setupAssemblyTrees(){
     if(result.component&&!result.component.generatedFrom){
      partVisibility.set(result.component.id,result.component.hideFromFeatureTree===true);
      partTools.set(result.component.id,result.component.isTool===true);
+     partDocuments.set(result.component.id,result.component.itemType==="document");
      if(result.component.partNumber)partNumbers.set(result.component.id,result.component.partNumber);
      if(!nodes.some(n=>isPartNode(n)&&n.partId===result.component.id))nodes.push({id:"part-"+result.component.id,kind:"part",partId:result.component.id,name:result.component.name,parentId:component.assemblyId??null});
      render();
@@ -1420,6 +1423,7 @@ function setupAssemblyTrees(){
      newPart=data.component;
      partVisibility.set(newPart.id,newPart.hideFromFeatureTree===true);
      partTools.set(newPart.id,newPart.isTool===true);
+     partDocuments.set(newPart.id,newPart.itemType==="document");
      if(newPart.partNumber)partNumbers.set(newPart.id,newPart.partNumber);
      nodes.push({id:"part-"+newPart.id,kind:"part",partId:newPart.id,name:newPart.name,parentId:targetAssembly});render();
      // A cutting list needs an integer wire count; do not invent a count for unspecified quantities.
@@ -1875,9 +1879,11 @@ function setupAssemblyTrees(){
   };
   const hiddenFilter=filterOption("Hidden parts",value=>{showHiddenTreeItems=value});
   const toolsFilter=filterOption("Tools",value=>{showTreeTools=value});
+  const documentsFilter=filterOption("Documents",value=>{showTreeDocuments=value});
+  documentsFilter.checked=true;
   nodesEl.parentNode.insertBefore(treeVisibilityControl,nodesEl);
   function render(){nodesEl.replaceChildren();
-   hiddenFilter.checked=showHiddenTreeItems;toolsFilter.checked=showTreeTools;
+   hiddenFilter.checked=showHiddenTreeItems;toolsFilter.checked=showTreeTools;documentsFilter.checked=showTreeDocuments;
    controls.classList.toggle("hide",!canEdit()||isProjectSummary());projectActions.classList.toggle("hide",!canEdit());cardEdit.classList.toggle("hide",!canEdit());
    const summaryEntry=document.createElement("button");summaryEntry.type="button";summaryEntry.className="assembly-project-summary-entry"+(isProjectSummary()?" selected":"");
    summaryEntry.textContent="Project summary";summaryEntry.setAttribute("aria-current",isProjectSummary()?"page":"false");
@@ -1905,7 +1911,7 @@ function setupAssemblyTrees(){
    const expand=document.createElement("button");expand.type="button";expand.className="assembly-expander";expand.textContent=children.length?(expanded.has(id)?"▾":"▸"):" ";expand.setAttribute("aria-label",expanded.has(id)?"Collapse":"Expand");expand.onclick=()=>{expanded.has(id)?expanded.delete(id):expanded.add(id);render()};
    const name=document.createElement("button");name.type="button";name.className="assembly-name";
    const nodeNumber=node?(isPartNode(node)?partNumbers.get(node.partId):node.partNumber):null;
-   name.textContent=node?(isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+(nodeNumber?nodeNumber+" · ":"")+node.name:"📦  "+title;
+   name.textContent=node?(isDocumentNode(node)?"📄  ":isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+(nodeNumber?nodeNumber+" · ":"")+node.name:"📦  "+title;
    if(isPartNode(node)){
     const quantity=partQuantities.get(node.partId),links=duplicateLinks.get(String(node.parentId)+"|"+node.partId)||1;
     const count=Number.isFinite(quantity)&&quantity>1?Math.max(quantity,links):links;
