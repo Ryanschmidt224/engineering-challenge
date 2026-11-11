@@ -4,7 +4,6 @@
 import {projectAllowed,canEditProject} from "./projects.js";
 const key=id=>"project-numbering/"+id+".json";
 const defaults=()=>({prefix:"NR",digits:4,nextAssembly:1,nextPart:1001,issued:{}});
-export const numberPattern=/^[A-Z][A-Z0-9]{0,9}[0-9]{3,}$/;
 const err=(message,status=400)=>Object.assign(new Error(message),{status});
 const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});
 export async function numberingState(env,project){
@@ -42,7 +41,6 @@ export async function issueNumber(env,project,kind,recordId,manual){
    if(!Number.isSafeInteger(sequence)||sequence<1)throw err("Invalid sequence number");
    if(kind==="assembly"&&sequence>1000)throw err("Assembly numbers must be between 1 and 1000");
    if(kind==="part"&&sequence<=1000)throw err("Numbers 1–1000 are reserved for assemblies");
-   if(sequence<kind==="part"?1001:1)throw err("Invalid sequence");
   }else{
    const cursor=kind==="assembly"?"nextAssembly":"nextPart";
    sequence=data[cursor];
