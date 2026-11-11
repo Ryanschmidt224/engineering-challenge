@@ -1028,3 +1028,49 @@
  align-items:center;
  justify-content:flex-start;
 }
+
+
+/* Resume work and readiness checks: compact, integrated with the workspace. */
+.assembly-workspace-page .project-work-panel{
+ padding:18px 20px!important;
+ margin:0 0 24px!important;
+ background:var(--color-surface)!important;
+ border:1px solid var(--color-border)!important;
+ border-radius:12px;
+}
+.project-work-tracker{display:flex;flex-direction:column;gap:12px;min-width:0}
+.tracker-heading,.tracker-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.tracker-heading h2{margin:0!important;font-size:1.08rem!important}
+.tracker-status{color:var(--color-text-muted);font-size:.85rem}
+.tracker-status:empty{display:none}
+.tracker-resume-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 18px;align-items:center;padding:12px 14px;background:var(--color-accent-soft);border:1px solid var(--color-border);border-radius:9px}
+.tracker-resume-card strong{grid-column:1}
+.tracker-resume-card p{grid-column:1;margin:0;color:var(--color-text-muted);font-size:.87rem}
+.tracker-resume-card button{grid-column:2;grid-row:1/3}
+.tracker-task-list{display:flex;flex-direction:column;gap:5px}
+.tracker-task{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--color-border);border-radius:8px}
+.tracker-task>input{flex:0 0 auto}
+.tracker-task-body{flex:1;min-width:0}
+.tracker-task-body strong{font-size:.9rem;font-weight:600;overflow-wrap:anywhere}
+.tracker-task-body p{margin:2px 0 0;color:var(--color-text-muted);font-size:.82rem;white-space:pre-wrap}
+.tracker-task.is-done .tracker-task-body{text-decoration:line-through;opacity:.65}
+.tracker-link,.tracker-remove{padding:5px 8px;font-size:.8rem}
+.tracker-add-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:start}
+.tracker-add-form .field{width:100%;min-width:0;box-sizing:border-box}
+.tracker-readiness{border-top:1px solid var(--color-border);padding-top:11px}
+.tracker-readiness summary{cursor:pointer;font-weight:650}
+.tracker-readiness-body{padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.tracker-readiness-body>p{margin:0}
+.tracker-ready-count{font-weight:650}
+.tracker-ready-item{display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--color-border);padding:7px 0}
+.tracker-ready-item span{flex:1;overflow-wrap:anywhere}
+.tracker-ready-item small{color:var(--color-text-muted)}
+/* Put Open BOM next to the heading instead of leaving a large gap. */
+.assembly-workspace-page:not(.bom-part-workspace) .workspace-heading-actions{margin-left:8px;align-self:center}
+@media(max-width:720px){
+ .tracker-add-form{grid-template-columns:minmax(0,1fr)}
+ .tracker-resume-card{grid-template-columns:minmax(0,1fr)}
+ .tracker-resume-card button{grid-column:1;grid-row:auto;justify-self:start}
+ .tracker-task{flex-wrap:wrap}
+ .assembly-workspace-page:not(.bom-part-workspace) .workspace-heading-actions{margin-left:0}
+}
