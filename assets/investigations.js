@@ -95,7 +95,7 @@
    const controls=make("div","investigation-add-controls");
    const nameRow=make("label","investigation-field-label");
    const titleInput=make("input","field");titleInput.value=record.title;titleInput.maxLength=180;
-   nameRow.append(make("span","investigation-field-descriptor","Record title"),titleInput);controls.append(nameRow);
+   nameRow.append(make("span","investigation-field-descriptor","Title"),titleInput);controls.append(nameRow);
    const dateLabel=make("label","investigation-date-field","Date");
    const date=make("input","field");date.type="date";
    const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
@@ -339,9 +339,13 @@
    field.focus();
   }
   function newRecord(context,target){
+   const heading=target.querySelector(".investigation-heading");
+   if(!heading)return;
+   const existing=target.querySelector(".investigation-new-record");
+   if(existing){existing.querySelector("input")?.focus();return;}
    const reportHere=message=>report(message,target);
    const form=make("div","investigation-create investigation-new-record");
-   const name=make("input","field");name.placeholder="Briefly summarize the revision, failure, or lesson";name.maxLength=180;
+   const name=make("input","field");name.placeholder="Enter a short, descriptive title";name.maxLength=180;
    const saveBtn=btn("Save",async()=>{
     if(!name.value.trim()){name.focus();return}
     saveBtn.disabled=true;
@@ -349,9 +353,9 @@
     catch(error){reportHere(error.message);saveBtn.disabled=false}
    },"btn primary");
    const cancel=btn("Cancel",()=>form.remove(),"btn");
-   const titleLabel=make("label","investigation-record-title");titleLabel.append(make("span","investigation-field-descriptor","Summary"),name);
+   const titleLabel=make("label","investigation-record-title");titleLabel.append(make("span","investigation-field-descriptor","Title"),name);
    form.append(titleLabel,saveBtn,cancel);
-   target.querySelector(".investigation-heading")?.after(form);
+   heading.before(form);
    name.focus();
   }
   function renderAll(){
