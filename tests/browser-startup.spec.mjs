@@ -40,6 +40,8 @@ test("project feature tree and workspace initialize without browser errors", asy
  const tree=page.locator("#launcher .assembly-tree-nodes");
  const summary=page.locator("#launcher .project-summary-page");
  await expect(summary).toBeVisible();
+ await expect(tree.locator(".assembly-project-summary-entry")).toHaveText("Project summary");
+ await expect(tree.locator(".assembly-project-summary-entry")).toHaveAttribute("aria-current","page");
  await expect(summary.locator(".project-summary-title")).toContainText("Foam");
  await expect(summary.locator(".project-summary-bom-items")).toContainText("C2822 Brushless Motor");
  await expect(summary.locator(".project-summary-bom-items")).toContainText("20A ESC");
@@ -56,6 +58,11 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(workspace).toBeVisible();
  await expect(workspace.locator(".workspace-back")).toHaveText("Open BOM");
  await expect(workspace.locator(".workspace-cover img")).toHaveAttribute("src","/test-photo-a.png");
+ await tree.locator(".assembly-name").first().click();
+ await expect(page).toHaveURL(/#launcher\/workspace\/__root__/);
+ await tree.locator(".assembly-project-summary-entry").click();
+ await expect(summary).toBeVisible();
+ await summary.locator(".project-summary-workspace").click();
  const header=workspace.locator(":scope > .workspace-heading");
  const buttonBounds=await header.locator(".workspace-back").boundingBox();
  const titleBounds=await header.locator(".workspace-title").boundingBox();
@@ -521,7 +528,7 @@ test("personal project builds a private editable workspace from the shared proje
 });
 
 
-test("owner sees project privacy and removal settings from the workspace",async({page})=>{
+test("owner manages project privacy and removal from the summary",async({page})=>{
  const errors=[];page.on("pageerror",error=>errors.push(error.message));
  const id="p"+"a".repeat(32),ownerId="u"+"1".repeat(32);
  const catalog=[{id,name:"Private test project",description:"Prototype",visibility:"private",
@@ -543,21 +550,19 @@ test("owner sees project privacy and removal settings from the workspace",async(
  await expect(page.locator(".project-owner-actions")).toBeVisible();
  await page.locator(".project-personal-card .project-link").click();
  const summary=page.locator("#"+id+" .project-summary-page");
- await summary.locator(".project-summary-workspace").click();
- const workspace=page.locator("#"+id+" .assembly-workspace-page:not(.bom-part-workspace)");
- await expect(workspace).toBeVisible();
- const heading=workspace.locator(".workspace-heading");
- await expect(heading.locator(".workspace-project-settings")).toBeVisible();
- const bom=heading.locator(".workspace-back"),settings=heading.locator(".workspace-project-settings");
- const title=await heading.locator(".workspace-title").boundingBox(),button=await bom.boundingBox();
- expect(button.x).toBeLessThan(title.x+title.width+140);
- await settings.click();
- const modal=page.locator(".project-manage-dialog:visible");
- await expect(modal.getByText("Visibility",{exact:true})).toBeVisible();
- await expect(modal.getByRole("button",{name:"Remove project"})).toBeVisible();
- await expect(modal.getByText(/restore it from Projects/)).toBeVisible();
- await modal.getByLabel("Visibility").selectOption("public");
- await modal.getByRole("button",{name:"Save settings"}).click();
+ const settings=summary.locator(".project-summary-owner-settings");
+ await expect(settings).toBeVisible();
+ await expect(settings.getByRole("heading",{name:"Project settings"})).toBeVisible();
+ await expect(settings.getByRole("button",{name:"Remove project"})).toBeVisible();
+ await settings.getByLabel("Visibility").selectOption("public");
+ await settings.getByRole("button",{name:"Save settings"}).click();
  await expect.poll(()=>catalog[0].visibility).toBe("public");
+ await expect(settings.getByLabel("Visibility")).toHaveValue("public");
+ const tree=page.locator("#"+id+" .assembly-tree-nodes");
+ await tree.locator(".assembly-name").first().click();
+ await expect(page).toHaveURL(new RegExp("#"+id+"/workspace/__root__"));
+ await expect(page.locator("#"+id+" .workspace-project-settings")).toHaveCount(0);
+ await tree.locator(".assembly-project-summary-entry").click();
+ await expect(summary).toBeVisible();
  expect(errors).toEqual([]);
 });
