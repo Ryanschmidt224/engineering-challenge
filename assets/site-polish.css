@@ -1251,3 +1251,17 @@
 .build-confusion-insight{padding:10px 0;border-bottom:1px solid var(--color-border);display:flex;flex-direction:column;gap:5px}
 .build-confusion-insight span{font-size:.82rem;color:var(--color-text-muted)}
 .build-confusion-insight p{font-size:.86rem;margin:2px 0;white-space:pre-wrap}
+
+.my-build-feedback-dialog{
+ width:min(520px,calc(100vw - 32px));max-width:520px;
+ border:1px solid var(--color-border);border-radius:13px;
+ padding:20px 22px;background:var(--color-surface);color:var(--color-text);
+ box-shadow:0 16px 50px #0003;
+}
+.my-build-feedback-dialog::backdrop{background:#0007}
+.my-build-feedback-dialog h3{font-size:1.15rem;margin:0 0 9px}
+.my-build-feedback-dialog .muted{font-size:.84rem;line-height:1.5;margin:0 0 15px}
+.my-build-feedback-dialog textarea{width:100%;box-sizing:border-box;margin-bottom:13px}
+.my-build-feedback-choices,.my-build-feedback-actions{display:flex;flex-wrap:wrap;gap:9px}
+.my-build-feedback-actions{justify-content:flex-end;margin-top:16px}
+@media(max-width:540px){.my-build-feedback-choices .btn{flex:1 1 100%}}
