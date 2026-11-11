@@ -101,6 +101,39 @@ test("project feature tree and workspace initialize without browser errors", asy
 });
 
 
+test("linear and robot projects share the complete feature tree, summary, BOM and workspace",async({page})=>{
+ const errors=[];page.on("pageerror",error=>errors.push(error.message));
+ await page.route("**/api/**",async route=>{
+  const u=new URL(route.request().url());let data={};
+  if(u.pathname==="/api/auth")data={authenticated:false,isAdmin:false};
+  else if(u.pathname==="/api/tree")data=u.searchParams.has("metadata")?{title:null,revision:null}:{nodes:[],revision:"test"};
+  else if(u.pathname==="/api/components")data={components:[]};
+  else if(u.pathname==="/api/photos")data={photos:[]};
+  else if(u.pathname==="/api/workspace")data={workspace:{recipe:[],resources:{tools:[],parts:[],calculators:[]}},revision:"test"};
+  else if(u.pathname==="/api/projects")data={projects:[]};
+  else if(u.pathname==="/api/accounts")data={user:null};
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
+ });
+ await page.goto("/");
+ for(const id of ["linear","robot"]){
+  await page.goto("/#"+id);
+  const root=page.locator("#"+id);
+  const tree=root.locator(".assembly-tree-nodes");
+  await expect(tree.locator(".assembly-project-summary-entry")).toBeVisible();
+  await expect(root.locator(".project-summary-page")).toBeVisible();
+  await expect(root.locator(".project-summary-gallery")).toBeVisible();
+  await expect(root.locator(".project-summary-bom-section")).toBeVisible();
+  await expect(root.locator(".project-summary-tools-section")).toBeVisible();
+  await tree.locator(".assembly-name").first().click();
+  await expect(root.locator(".assembly-workspace-page:not(.bom-part-workspace)")).toBeVisible();
+  await expect(root.locator(".workspace-back")).toHaveText("Open BOM");
+  await root.locator(".workspace-back").click();
+  await expect(root.locator(".assembly-bom-screen")).toBeVisible();
+  await expect(root.locator(".assembly-bom-list")).toHaveAttribute("aria-pressed","true");
+ }
+ expect(errors).toEqual([]);
+});
+
 test("admin tree right-click menu replaces rename/delete toolbar and main page has rounded frame",async({page})=>{
  const errors=[];
  page.on("pageerror",error=>errors.push(error.message));
