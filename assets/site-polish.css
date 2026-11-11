@@ -1469,3 +1469,17 @@
 .investigation-record-date{font-size:.8rem;font-weight:500;color:var(--color-text-muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .investigation-edit-actions .investigation-delete{margin-right:auto;color:#a52d35;border-color:#a52d3560;background:transparent}
 .investigation-edit-actions .investigation-delete:hover{background:#a52d3510}
+
+/* New investigation summary uses the same descriptor treatment as the record editor. */
+.investigation-new-record .investigation-record-title{
+ flex:1 1 650px;max-width:960px;grid-template-columns:120px minmax(0,1fr);
+ font-size:.87rem;font-weight:650;color:var(--color-text);
+}
+.investigation-new-record .investigation-field-descriptor{padding:0;line-height:1.4}
+.investigation-new-record .investigation-record-title .field{
+ font-size:.9rem;font-weight:400;line-height:1.4;padding:8px 12px;
+}
+.investigation-new-record>.btn{flex:0 0 auto}
+@media(max-width:650px){
+ .investigation-new-record .investigation-record-title{flex:1 1 100%;grid-template-columns:105px minmax(0,1fr)}
+}
