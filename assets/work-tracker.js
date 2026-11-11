@@ -108,7 +108,7 @@
    const bom=parts.filter(p=>included.has(p.assemblyId??null)&&p.itemType!=="document");
    const resourceTools=resources()?.tools||[];
    readBody.append(el("p","muted","Manually confirm what is available. A BOM entry or linked resource does not mean you own it. This list includes BOM parts in the selected assembly and its subassemblies."));
-   const items=[...bom.map(p=>({key:"part:"+p.id,name:(p.partNumber?p.partNumber+" · ":"")+(p.name||"Unnamed part"),category:"Parts"})),...resourceTools.map(tool=>({key:"tool:"+String(tool),name:"Linked tool: "+tool,category:"Tools"}))];
+   const items=[...bom.map(p=>({key:"part:"+p.id,name:(p.partNumber?p.partNumber+" · ":"")+(p.name||"Unnamed part"),category:"Parts"})),...resourceTools.map(tool=>({key:"tool:"+String(tool),name:window.BSResources?.all?.("tools")?.find(item=>item.id===tool)?.name||String(tool),category:"Tools"}))];
    const ready=items.filter(item=>stored.readiness[item.key]).length;
    readBody.append(el("p","tracker-ready-count",ready+" of "+items.length+" confirmed"));
    if(!items.length)readBody.append(el("p","muted",readinessLoaded?"No BOM parts or linked tools found.":"Loading BOM…"));
