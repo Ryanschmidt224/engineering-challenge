@@ -137,6 +137,26 @@ test("new custom part offers explicit automatic numbering before the name",async
  await page.locator(".library-part-dialog .library-dialog-actions").getByRole("button",{name:"Cancel"}).click();
 });
 
+test("new assembly offers automatic or manually entered part numbers",async({page})=>{
+ await page.goto("/");
+ const dialog=page.locator("#launcher ~ .assembly-create-dialog").first();
+ // Dialogs are mounted at document level, outside the project view.
+ const modal=page.locator(".assembly-create-dialog").first();
+ await expect(modal).toHaveCount(1);
+ await page.evaluate(()=>document.querySelector(".assembly-create-dialog").showModal());
+ await expect(modal.getByRole("heading",{name:"New assembly"})).toBeVisible();
+ await expect(modal.locator('input[name="assembly-number-mode"][value="auto"]')).toBeChecked();
+ await expect(modal.locator(".assembly-manual-number")).toBeHidden();
+ await modal.locator('input[name="assembly-number-mode"][value="manual"]').check();
+ await expect(modal.locator(".assembly-manual-number")).toBeVisible();
+ await expect(modal.locator(".assembly-number-input")).toHaveAttribute("required","");
+ await modal.locator(".assembly-number-input").fill("NR0005");
+ await modal.locator('input[name="assembly-number-mode"][value="auto"]').check();
+ await expect(modal.locator(".assembly-manual-number")).toBeHidden();
+ await modal.getByRole("button",{name:"Cancel"}).click();
+ await expect(modal).not.toBeVisible();
+});
+
 test("linear and robot projects share the complete feature tree, summary, BOM and workspace",async({page})=>{
  const errors=[];page.on("pageerror",error=>errors.push(error.message));
  await page.route("**/api/**",async route=>{
