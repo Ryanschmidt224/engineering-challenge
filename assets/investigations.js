@@ -3,7 +3,7 @@
  "use strict";
  const make=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el};
  const btn=(label,fn,cls="btn")=>{const b=make("button",cls,label);b.type="button";b.onclick=fn;return b};
- const types=[["observation","What happened"],["attempt","What I tried / changed"],["lesson","What I learned"]]; 
+ const types=[["observation","Observation"],["theory","Cause / suspected cause"],["attempt","Attempt / change"],["lesson","Lesson learned"],["note","Additional notes"]]; 
  const legacyType={theory:"Hypothesis",revision:"Revision / design change",result:"Result"};
  const statuses=[["investigating","Investigating"],["resolved","Resolved"],["unresolved","Unresolved"]];
  const photoExt=/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i;
@@ -70,7 +70,7 @@
     const labelRow=make("div","investigation-entry-heading");
     labelRow.append(make("strong","",label));
     if(stamp)labelRow.append(make("time","investigation-entry-date",stamp));
-    item.append(labelRow,make("p","",entry.text));
+    item.append(labelRow);if(entry.text)item.append(make("p","",entry.text));
     for(const file of entry.files||[]){
      if(photoExt.test(file)){
       const img=make("img","investigation-image");img.src=fileUrl(file);img.loading="lazy";img.alt=entry.fileName||"Investigation evidence";item.append(img);
@@ -84,45 +84,51 @@
    container.append(entryList);
    if(!admin())return;
 
-   // A simple, shared three-bucket form replaces the old update-type dropdown.
    const controls=make("div","investigation-add-controls");
    const dateLabel=make("label","investigation-date-field","Date");
    const date=make("input","field");date.type="date";
    const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
    dateLabel.append(date);controls.append(dateLabel);
+   const descriptions={observation:"Describe what happened or what failed.",theory:"What caused the problem? Include suspected causes if not verified.",attempt:"What did you change, test, or try?",lesson:"What did you learn? Include the result or recommendation.",note:"Other relevant details, measurements, or notes."};
    const inputs=types.map(([type,label])=>{
-    const wrap=make("label","investigation-entry-field");
-    wrap.append(make("span","",label));
+    const wrap=make("div","investigation-entry-field");
+    const caption=make("label","investigation-field-label",label);
     const field=make("textarea","field");field.rows=2;field.maxLength=5000;
-    field.placeholder=type==="observation"?"What happened?":type==="attempt"?"What did you change or test?":"What did you learn or conclude?";
-    wrap.append(field);controls.append(wrap);return {type,field};
+    field.placeholder=descriptions[type];caption.append(field);
+    const fileInput=make("input");fileInput.type="file";fileInput.multiple=true;fileInput.hidden=true;
+    fileInput.accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.dwg,.dxf,.stp,.step,.stl,.txt,.csv,.doc,.docx,.xls,.xlsx,.zip";
+    const fileChoice=make("span","investigation-file-label");
+    fileInput.onchange=()=>{fileChoice.textContent=[...fileInput.files].map(x=>x.name).join(", ")};
+    const attachments=make("div","investigation-field-attachments");
+    attachments.append(btn("+ Add photo / document",()=>fileInput.click(),"btn"),fileInput,fileChoice);
+    wrap.append(caption,attachments);controls.append(wrap);
+    return {type,field,fileInput};
    });
-   const fileInput=make("input");fileInput.type="file";fileInput.multiple=true;fileInput.hidden=true;
-   fileInput.accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.dwg,.dxf,.stp,.step,.stl,.txt,.csv,.doc,.docx,.xls,.xlsx,.zip";
-   const fileChoice=make("span","investigation-file-label");
-   fileInput.onchange=()=>{fileChoice.textContent=[...fileInput.files].map(x=>x.name).join(", ")};
-   const attachBtn=btn("+ Add photo / document",()=>fileInput.click(),"btn");
    const saveBtn=btn("Save update",async()=>{
-    const fields=inputs.filter(item=>item.field.value.trim());
-    if(!fields.length){reportHere("Add an observation, attempted change, or lesson.");inputs[0].field.focus();return}
+    const fields=inputs.filter(item=>item.field.value.trim()||item.fileInput.files.length);
+    if(!fields.length){reportHere("Add a note or attachment to at least one field.");inputs[0].field.focus();return}
     if(!date.value){reportHere("Choose a date.");date.focus();return}
     saveBtn.disabled=true;
     try{
-     const files=[];
-     for(const file of [...fileInput.files]){
-      if(file.size>20*1024*1024)throw Error("An attachment exceeds 20 MB.");
-      const up=await fetch("/api/recipe-files?project="+encodeURIComponent(project),{method:"POST",
-       credentials:"same-origin",headers:{"content-type":"application/octet-stream","x-file-name":encodeURIComponent(file.name)},body:file});
-      const data=await up.json();if(!up.ok)throw Error(data.error||"Attachment failed");
-      files.push(data.id);
+     const entries=[];
+     for(const {type,field,fileInput} of fields){
+      const selected=[...fileInput.files];
+      if(selected.length>12)throw Error("Attach no more than 12 files to each field.");
+      const files=[];
+      for(const file of selected){
+       if(file.size>20*1024*1024)throw Error("An attachment exceeds 20 MB.");
+       const up=await fetch("/api/recipe-files?project="+encodeURIComponent(project),{method:"POST",
+        credentials:"same-origin",headers:{"content-type":"application/octet-stream","x-file-name":encodeURIComponent(file.name)},body:file});
+       const data=await up.json();if(!up.ok)throw Error(data.error||"Attachment failed");
+       files.push(data.id);
+      }
+      entries.push({type,text:field.value,date:date.value,files,fileName:selected[0]?.name.slice(0,120)||""});
      }
-     const entries=fields.map(({type,field},index)=>({type,text:field.value,date:date.value,
-      files:index===0?files:[],fileName:index===0?([...(fileInput.files||[])][0]?.name||""):""}));
      await save({action:"appendBatch",id:record.id,entries});
      reportHere("Update saved. Earlier findings are preserved.");
     }catch(error){reportHere(error.message);saveBtn.disabled=false}
    },"btn primary");
-   controls.append(attachBtn,fileInput,fileChoice,saveBtn);
+   controls.append(saveBtn);
    const state=make("select","field investigation-status");
    for(const [value,label] of statuses){const o=make("option","",label);o.value=value;state.append(o)}
    state.value=record.status;
@@ -132,7 +138,8 @@
     try{await save({action:"status",id:record.id,status:state.value});reportHere("Status saved.")}
     catch(error){reportHere(error.message);state.disabled=false}
    };
-   container.append(controls,state);
+   const statusRow=make("label","investigation-status-row","Investigation status");
+   statusRow.append(state);container.append(controls,statusRow);
   }
   function render(target,context,compact=false){
    if(!target)return;
@@ -297,7 +304,8 @@
     catch(error){reportHere(error.message);saveBtn.disabled=false}
    },"btn primary");
    const cancel=btn("Cancel",()=>form.remove(),"btn");
-   form.append(name,saveBtn,cancel);
+   const titleLabel=make("label","investigation-record-title","Record title");titleLabel.append(name);
+   form.append(titleLabel,saveBtn,cancel);
    target.querySelector(".investigation-heading")?.after(form);
    name.focus();
   }
