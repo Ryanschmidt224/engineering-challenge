@@ -3,7 +3,7 @@
  "use strict";
  const make=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el};
  const btn=(label,fn,cls="btn")=>{const b=make("button",cls,label);b.type="button";b.onclick=fn;return b};
- const types=[["observation","Observation"],["theory","Cause / suspected cause"],["attempt","Attempt / change"],["lesson","Lesson learned"],["note","Additional notes"]]; 
+ const types=[["observation","Observation"],["theory","Cause / suspected cause"],["attempt","Attempt / change"],["lesson","How was it fixed"],["note","Additional notes"]]; 
  const legacyType={theory:"Hypothesis",revision:"Revision / design change",result:"Result"};
  const statuses=[["investigating","Investigating"],["resolved","Resolved"],["unresolved","Unresolved"]];
  const photoExt=/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i;
@@ -89,7 +89,7 @@
    const date=make("input","field");date.type="date";
    const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
    dateLabel.append(date);controls.append(dateLabel);
-   const descriptions={observation:"Describe what happened or what failed.",theory:"What caused the problem? Include suspected causes if not verified.",attempt:"What did you change, test, or try?",lesson:"What did you learn? Include the result or recommendation.",note:"Other relevant details, measurements, or notes."};
+   const descriptions={observation:"Describe what happened or what failed.",theory:"What caused the problem? Include suspected causes if not verified.",attempt:"What did you change, test, or try?",lesson:"Describe the final fix and how you verified that it worked.",note:"Other relevant details, measurements, or notes."};
    const inputs=types.map(([type,label])=>{
     const wrap=make("div","investigation-entry-field");
     const caption=make("label","investigation-field-label",label);
