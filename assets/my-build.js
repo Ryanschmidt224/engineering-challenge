@@ -147,7 +147,7 @@
   const personal=node("div","my-build-mount my-build-step");
   target.append(personal);
   mount(personal,{project,context:()=>({scope:"step:"+step.id})});
-  reportControl(target,{project,scope:()=> "step:"+step.id});
+  // Personal step notes remain available without a separate feedback icon.
  }
  function insights(target,{project}){
   const panel=node("details","build-confusion-insights");
