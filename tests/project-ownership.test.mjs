@@ -78,3 +78,28 @@ test("ownership hides private projects, preserves archives, and gates writes",as
  assert.equal((await projectsApi({request:request("/api/projects","PATCH",{id,action:"restore"},owner),env})).status,200);
  assert.equal(await projectAllowed(env,id,ownerRequest),true);
 });
+
+
+test("part progress and attention notes are editable only by the project owner",async()=>{
+ const env={PHOTOS:new Bucket(),admin_password:"test-part-status-signing-secret"};
+ const register=await handleAccounts(request("/api/accounts","POST",{action:"register",email:"status-owner@example.test",password:"strong-project-password"}),env);
+ const owner=cookie(register);
+ const created=await projectsApi({request:request("/api/projects","POST",{name:"Progress test project"},owner),env});
+ const project=(await created.json()).projects.find(p=>p.name==="Progress test project").id;
+ const id="33333333-3333-4333-8333-333333333333";
+ await env.PHOTOS.put("components/"+project+".json",JSON.stringify([{id,name:"Motor Mount",partType:"custom",quantity:2,quantityUnit:"pcs",specifications:[]}]));
+ const endpoint="/api/components?project="+project+"&id="+id;
+ const invalid=await handleComponents(request(endpoint,"PATCH",{needsAttention:true,attentionNote:""},owner),env);
+ assert.equal(invalid.status,400);
+ const saved=await handleComponents(request(endpoint,"PATCH",{progressStatus:"in_progress",needsAttention:true,attentionNote:"Hole locations need rechecking"},owner),env);
+ assert.equal(saved.status,200);
+ const part=(await saved.json()).component;
+ assert.equal(part.progressStatus,"in_progress");assert.equal(part.needsAttention,true);
+ assert.equal(part.attentionNote,"Hole locations need rechecking");
+ const forbidden=await handleComponents(request(endpoint,"PATCH",{progressStatus:"complete",needsAttention:false}),env);
+ assert.notEqual(forbidden.status,200);
+ const final=await handleComponents(request(endpoint,"PATCH",{progressStatus:"complete",needsAttention:false},owner),env);
+ assert.equal(final.status,200);
+ const components=await handleComponents(request("/api/components?project="+project,"GET",undefined,owner),env);
+ assert.equal((await components.json()).components[0].progressStatus,"complete");
+});
