@@ -1,6 +1,6 @@
 // Project dashboard. Private project data is authorized by the API, never by these DOM filters.
 window.BSProjectManager=(()=>{
- let currentProjects=[],openSettingsDialog=null;
+ let currentProjects=[];
  const api=async(method,path,body)=>{
   const response=await fetch(path,{method,credentials:"same-origin",cache:"no-store",
    ...(body?{headers:{"content-type":"application/json"},body:JSON.stringify(body)}:{})});
@@ -75,53 +75,9 @@ window.BSProjectManager=(()=>{
    const copy=element("div","project-copy");copy.append(element("h2","",project.name),element("p","",project.description||"New engineering project"));
    copy.append(element("div","project-tags",project.visibility==="private"?"Private project":project.visibility==="unlisted"?"Unlisted project":"Public project"));
    link.append(copy);article.append(link);
-   if(project.isOwner){
-    const settings=element("div","project-card-actions");
-    const manage=element("button","btn","Project settings");manage.type="button";
-    manage.onclick=event=>{event.stopPropagation();showManage(project)};
-    settings.append(manage);article.append(settings);
-   }
    return article;
   };
   const manageDialog=element("dialog","project-manage-dialog");document.body.append(manageDialog);
-  function showManage(project){
-   manageDialog.replaceChildren();
-   const form=element("form","project-manage-form");form.method="dialog";
-   form.append(element("h2","",project.name));
-   form.append(element("p","muted","Privacy and project ownership settings. Only the project owner can change these."));
-   const visibility=element("label","","Visibility");
-   const visibilitySelect=element("select","field");
-   for(const [value,label] of [["private","Private"],["public","Public"]]){
-    const option=element("option","",label);option.value=value;visibilitySelect.append(option);
-   }
-   visibilitySelect.value=project.visibility||"public";visibility.append(visibilitySelect);form.append(visibility);
-   form.append(element("p","muted","Private: visible only to you. Public: others can view approved project content and suggest instruction corrections when enabled."));
-   const permission=element("label","","Editing mode");
-   const permissionSelect=element("select","field");
-   for(const [value,label] of [["locked","Owner only"],["approval","Owner approval required"]]){
-    const option=element("option","",label);option.value=value;permissionSelect.append(option);
-   }
-   permissionSelect.value=project.editMode||"approval";permission.append(permissionSelect);form.append(permission);
-   form.append(element("p","muted","Only the owner can change published records. Others can propose instruction edits when approval is enabled."));
-   const error=element("p","project-manage-message");form.append(error);
-   const actions=element("div","row");
-   const save=element("button","btn primary","Save settings");save.type="button";
-   save.onclick=async()=>{try{await api("PATCH","/api/projects",{id:project.id,visibility:visibilitySelect.value,editMode:permissionSelect.value});manageDialog.close();await refresh()}catch(e){error.textContent=e.message}};
-   const archive=element("button","btn project-archive-button","Remove project");archive.type="button";archive.title="Archive the project without deleting its files";
-   archive.onclick=async()=>{
-    const confirmation=prompt('Remove this project from the site? Its parts, photos, and instructions will be kept so you can restore it later.\n\nType the exact project name to confirm: '+project.name);
-    if(confirmation===null)return;
-    try{await api("DELETE","/api/projects",{id:project.id,confirmName:confirmation});manageDialog.close();navigate("home");await refresh()}catch(e){error.textContent=e.message}
-   };
-   const close=element("button","btn","Close");close.type="button";close.onclick=()=>manageDialog.close();
-   actions.append(save,archive,close);form.append(actions);
-   form.append(element("p","muted","Remove project archives it. You can restore it from Projects → Archived projects; no project files are deleted."));
-   manageDialog.append(form);manageDialog.showModal();
-  }
-  openSettingsDialog=id=>{
-   const project=currentProjects.find(p=>p.id===id&&p.isOwner);
-   if(project)showManage(project);
-  };
   archiveButton.onclick=async()=>{
    if(!user&&!adminAuthenticated){showAccount();return}
    try{
@@ -202,16 +158,6 @@ window.BSProjectManager=(()=>{
      ensureProjectPage(project);
      grid.append(card(project));
     }
-    // Existing built-in projects can be managed by the site administrator.
-    root.querySelectorAll(".project-card:not(.project-personal-card)").forEach(article=>{
-     article.querySelector(".project-card-actions")?.remove();
-     const link=article.querySelector("[data-project],[data-nav]"),id=link?.dataset.project||link?.dataset.nav;
-     const project=projects.find(p=>p.id===id);
-     if(!project?.isOwner)return;
-     const actions=element("div","project-card-actions"),manage=element("button","btn","Manage");
-     manage.onclick=event=>{event.stopPropagation();showManage(project)};
-     actions.append(manage);article.append(actions);
-    });
     // Existing public cards are hidden when archived or made private.
     const ids=new Set(projects.map(p=>p.id));
     root.querySelectorAll(".project-card:not(.project-personal-card)").forEach(article=>{
@@ -227,5 +173,5 @@ window.BSProjectManager=(()=>{
   }
   void refresh();
  };
- return {init,isOwner:id=>currentProjects.some(project=>project.id===id&&project.isOwner),getProject:id=>currentProjects.find(project=>project.id===id),openSettings:id=>openSettingsDialog?.(id)};
+ return {init,isOwner:id=>currentProjects.some(project=>project.id===id&&project.isOwner),getProject:id=>currentProjects.find(project=>project.id===id)};
 })();
