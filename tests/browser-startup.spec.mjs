@@ -159,6 +159,15 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
 
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
  await expect(workspace).toBeVisible();
+ const browser=workspace.locator(".recipe-step-browser");
+ const divider=browser.locator(".recipe-step-resizer");
+ await expect(divider).toBeVisible();
+ await expect(divider).toHaveAttribute("role","separator");
+ await divider.focus();
+ await page.keyboard.press("ArrowRight");
+ expect(Number(await divider.getAttribute("aria-valuenow"))).toBeGreaterThan(31);
+ await expect(browser.locator(".recipe-step-list")).toBeVisible();
+ await expect(browser.locator(".recipe-step-detail")).toBeVisible();
  // Assembly and part photo dialogs reuse the same small pencil launcher.
  const assemblyPencil=workspace.locator(".workspace-photo-launch");
  await expect(assemblyPencil).toBeVisible();
@@ -176,6 +185,8 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(page).toHaveURL(/#launcher\/part\//);
  const partPage=page.locator("#launcher .bom-part-workspace");
  await expect(partPage).toBeVisible();
+ await expect(partPage.locator(".part-progress-panel")).toBeVisible();
+ await expect(partPage.locator(".part-progress-select")).toHaveValue("not_started");
  // Part instructions use the same white cards as assembly instructions.
  const partInstructionCard=partPage.locator(".workspace-panels > article.recipe-instructions");
  await expect(partInstructionCard).toBeVisible();
