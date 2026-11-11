@@ -86,14 +86,18 @@
   return {refresh:()=>{if(loaded&&document.activeElement!==note)redraw()},open:()=>{details.open=true}};
  }
  async function report(project,scope,status){
+  document.querySelectorAll("dialog.my-build-feedback-dialog").forEach(existing=>existing.remove());
   const dialog=node("dialog","my-build-feedback-dialog");
+  const dismiss=()=>{if(dialog.open)dialog.close();dialog.remove()};
+  const close=button("×",dismiss,"my-build-feedback-close");
+  close.setAttribute("aria-label","Close feedback");close.title="Close";
   const heading=node("h3","","Where did you have trouble?");
   const choice=node("div","my-build-feedback-choices");
   const comment=node("textarea","field");comment.rows=3;comment.maxLength=1200;
   comment.placeholder="Optional: explain what was confusing or what stopped you";
   const note=node("p","muted","Reports help the creator improve this section. Your account identity is not shown to the creator.");
   const footer=node("div","my-build-feedback-actions");
-  const cancel=button("Cancel",()=>dialog.close());
+  const cancel=button("Cancel",dismiss);
   footer.append(cancel);
   for(const [kind,label] of [["stuck","I got stuck"],["confused","This was confusing"]]){
    choice.append(button(label,async()=>{
@@ -107,22 +111,26 @@
      const data=await res.json();
      if(!res.ok)throw Error(data.loginRequired?loginHint:data.error);
      status.textContent="Thank you — feedback saved.";
-     dialog.close();
+     dismiss();
     }catch(error){
      status.textContent=error.message;
      for(const b of choice.querySelectorAll("button"))b.disabled=false;
     }
    },"btn primary"));
   }
-  dialog.append(heading,note,comment,choice,footer);
+  dialog.append(close,heading,note,comment,choice,footer);
   document.body.append(dialog);
   dialog.addEventListener("close",()=>dialog.remove(),{once:true});
+  dialog.addEventListener("cancel",event=>{event.preventDefault();dismiss()});
+  dialog.addEventListener("click",event=>{if(event.target===dialog)dismiss()});
   dialog.showModal();
  }
  function reportControl(target,{project,scope}){
   if(!target||target.querySelector(":scope > .build-confusion-control"))return;
   const line=node("div","build-confusion-control"),status=node("span","build-confusion-status");
-  line.append(button("Stuck or confused?",()=>void report(project,typeof scope==="function"?scope():scope,status),"btn build-confusion-button"),status);
+  const trigger=button("?",()=>void report(project,typeof scope==="function"?scope():scope,status),"build-confusion-button");
+  trigger.title="Stuck or confused?";trigger.setAttribute("aria-label","Report: stuck or confused");
+  line.append(trigger,status);
   target.append(line);
  }
  function decorateStep(target,{project,step}){
