@@ -223,7 +223,7 @@ function setupAssemblyTrees(){
    const list=document.createElement("ul");list.className="project-summary-part-list";
    for(const part of items){
     const row=document.createElement("li"),name=document.createElement("span"),quantity=document.createElement("span");
-    name.className="project-summary-part-name";name.textContent=part.name;
+    name.className="project-summary-part-name";name.textContent=(part.partNumber?part.partNumber+" · ":"")+part.name;
     quantity.className="project-summary-part-quantity";quantity.textContent=window.BSBomModel.quantityText(part);
     row.append(name,quantity);list.append(row);
    }
@@ -1490,11 +1490,11 @@ function setupAssemblyTrees(){
    if(inPart){void showPartWorkspace();return;}
    if(inSummary){void refreshProjectSummary();return;}
    if(inBom){
-    bomScreen.querySelector(".assembly-bom-screen-title").textContent=(selected===null?title:nodes.find(n=>n.id===selected)?.name||"Assembly")+" · BOM";
+    bomScreen.querySelector(".assembly-bom-screen-title").textContent=(selected===null?title:((nodes.find(n=>n.id===selected)?.partNumber||"")+(nodes.find(n=>n.id===selected)?.partNumber?" · ":"")+(nodes.find(n=>n.id===selected)?.name||"Assembly")))+" · BOM";
     if(bomView==="pictures")renderTiles();
     return;
    }
-   if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:(nodes.find(n=>n.id===selected)?.name||"Assembly");if(photoDialog.open)photoDialog.close();openPhotoEditor.hidden=!canEdit();loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
+   if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:((nodes.find(n=>n.id===selected)?.partNumber||"")+(nodes.find(n=>n.id===selected)?.partNumber?" · ":"")+(nodes.find(n=>n.id===selected)?.name||"Assembly"));if(photoDialog.open)photoDialog.close();openPhotoEditor.hidden=!canEdit();loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
