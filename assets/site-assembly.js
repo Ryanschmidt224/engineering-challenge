@@ -189,7 +189,7 @@ function setupAssemblyTrees(){
    photoDialog.showModal();
    void workspacePhotoController.refresh();
   };
-  const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>selected,
+  const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>isProjectSummary()?null:(selected??"root-assembly"),
    workspacePhotoEditor.querySelector(".workspace-photo-status"),true);
   // The project summary is a landing page, not a separate source of BOM data.
   // It rolls up all assembly occurrences and standard shop materials at project scope.
@@ -1390,7 +1390,16 @@ function setupAssemblyTrees(){
   },true);
   const workspaceRoute=()=>location.hash.slice(1).startsWith(project+"/workspace/");
   let workspacePhotoVersion=0;
-  async function loadWorkspaceCover(){const id=selected,version=++workspacePhotoVersion,cover=workspace.querySelector(".workspace-cover");cover.replaceChildren();const placeholder=document.createElement("span");placeholder.textContent="No photo yet";cover.append(placeholder);try{const r=await fetch("/api/photos?project="+encodeURIComponent(project)+(id===null?"":"&assembly="+encodeURIComponent(id)));if(!r.ok)return;const data=await r.json();if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;const photo=(data.photos||[]).find(p=>id===null?!p.assembly:p.assembly===id);if(photo){const img=document.createElement("img");img.src=photo.url;img.alt=photo.caption||"Assembly photo";cover.replaceChildren(img)}}catch(e){/* cover is optional */}}
+  async function loadWorkspaceCover(){const id=selected,version=++workspacePhotoVersion,cover=workspace.querySelector(".workspace-cover");cover.replaceChildren();const placeholder=document.createElement("span");placeholder.textContent="No photo yet";cover.append(placeholder);try{
+    // The root assembly has its own gallery. Keep the old project cover as a fallback.
+    const query="/api/photos?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(id??"root-assembly");
+    const r=await fetch(query,{credentials:"same-origin",cache:"no-store"});if(!r.ok)return;
+    const data=await r.json();if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;
+    let photo=data.photos?.[0];
+    if(!photo&&id===null){const legacy=await fetch("/api/photos?project="+encodeURIComponent(project),{credentials:"same-origin",cache:"no-store"});if(legacy.ok)photo=(await legacy.json()).photos?.find(p=>!p.assembly)}
+    if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;
+    if(photo){const img=document.createElement("img");img.src=photo.url;img.alt=photo.caption||"Assembly photo";cover.replaceChildren(img)}
+   }catch(e){/* cover is optional */}}
   let workspaceLoadVersion=0;
   let workspaceSavedRevision=null;
   const workspaceStatus=workspace.querySelector(".workspace-status");
