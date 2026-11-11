@@ -1,4 +1,3 @@
-import {accountUser} from "./accounts.js";
 import {projectAllowed,canEditProject} from "./projects.js";
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});
 const validScope=/^(project|assembly|part|step|section):[a-zA-Z0-9_-]{1,100}$/;
@@ -32,13 +31,12 @@ export async function onRequest({request,env}){
  }
  if(request.method!=="POST")return json({error:"Method not allowed"},405);
  if(request.headers.get("origin")!==new URL(request.url).origin)return json({error:"Invalid origin"},403);
- const user=await accountUser(request,env);
- if(!user)return json({error:"Sign in to report a problem",loginRequired:true},401);
  const data=await request.json().catch(()=>null);
- if(!data||!validScope.test(data.scope)||!["stuck","confused"].includes(data.kind)||typeof data.comment!=="string"||data.comment.length>1200)return json({error:"Invalid report"},400);
- // One report per location and learner. A second report updates it, rather than inflating counts.
- // The user identifier is never returned to the project creator.
- const key=prefix+data.scope+"/"+user.id+".json";
+ if(!data||!validScope.test(data.scope)||!["stuck","confused"].includes(data.kind)||typeof data.comment!=="string"||data.comment.length>1200||!/^v[a-f0-9]{32}$/.test(data.visitorId))return json({error:"Invalid report"},400);
+ // No account is required. Random per-browser IDs prevent repeated clicks in one browser
+ // from inflating the section count. These are not verified unique people.
+ // Report IDs are not exposed by the creator-only aggregate endpoint.
+ const key=prefix+data.scope+"/"+data.visitorId+".json";
  await env.PHOTOS.put(key,JSON.stringify({kind:data.kind,comment:data.comment.trim()}),{httpMetadata:{contentType:"application/json"}});
  return json({saved:true});
 }
