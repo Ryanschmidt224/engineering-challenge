@@ -76,6 +76,13 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(page).toHaveURL(/#launcher\/bom\/__root__/);
  await expect(screen).toBeVisible();
  await expect(screen.locator(".assembly-bom-list")).toHaveAttribute("aria-pressed","true");
+ const toolbar=screen.locator(":scope > .workspace-bom-heading");
+ await expect(toolbar).toBeVisible();
+ await expect(toolbar.locator("h2")).toHaveText("Bill of materials");
+ await expect(toolbar.locator(".assembly-bom-list")).toBeVisible();
+ await expect(toolbar.locator(".assembly-bom-pictures")).toBeVisible();
+ await expect(toolbar.locator(".workspace-new-part")).toBeVisible();
+ await expect(screen.locator(".assembly-bom-screen-header .assembly-bom-view-switch")).toHaveCount(0);
  await expect(screen.locator(".assembly-bom-picture-view")).toBeHidden();
  await expect(screen.locator(".workspace-bom")).toBeVisible();
  await expect(screen.locator(".workspace-saved-parts")).toContainText("Motor and Motor Control");
