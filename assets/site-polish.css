@@ -1083,3 +1083,11 @@
 .assembly-workspace-page .workspace-title-group .workspace-back{
  margin:0;align-self:flex-start;min-height:35px;padding:6px 13px;
 }
+
+.project-summary-page .project-summary-tracker{
+ margin:14px 0 26px;
+ padding:16px 20px;
+ background:var(--color-surface);
+ border:1px solid var(--color-border);
+ border-radius:12px;
+}
