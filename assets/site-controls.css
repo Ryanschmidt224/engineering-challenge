@@ -1165,3 +1165,63 @@
 .project-summary-settings-actions .project-archive-button{margin-left:auto}
 .project-summary-settings-status{min-height:1em;color:var(--color-text-muted)}
 @media(max-width:700px){.project-summary-settings-form{grid-template-columns:1fr}.project-summary-settings-actions .project-archive-button{margin-left:0}}
+
+
+/* Horizontal tree filters that wrap naturally when the tree is narrow. */
+.assembly-tree-filters{
+ display:flex;align-items:center;flex-wrap:wrap;gap:6px 18px;
+ padding:9px 12px 13px;
+}
+.assembly-tree-filters legend{width:100%;float:left;margin:0 0 3px}
+.assembly-tree-filters label{
+ flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;
+ min-width:0;padding:4px 0;white-space:nowrap;
+}
+@media(max-width:320px){
+ .assembly-tree-filters{gap:4px 12px}
+ .assembly-tree-filters label{flex-basis:100%}
+}
+/* Project summary: distinct BOM and tool surfaces with a text-first interior. */
+.project-summary-lists{gap:22px;align-items:stretch}
+.project-summary-lists>.project-summary-bom-section,
+.project-summary-lists>.project-summary-tools-section{
+ border:1px solid var(--color-border);border-radius:14px;
+ background:var(--color-surface);padding:21px 22px 25px;
+ box-shadow:0 1px 3px #00000008;
+ min-width:0;
+}
+.project-summary-lists h2{padding:0 0 13px;margin:0 0 6px}
+.project-summary-lists .muted{line-height:1.5}
+/* Summary gallery aligns with the page's left edge instead of filling ultrawide panels. */
+.project-summary-gallery{
+ width:min(100%,880px);max-width:880px;justify-self:start;margin:0;
+}
+.project-summary-photo-stage{
+ position:relative;justify-content:flex-start;align-items:center;
+ height:clamp(250px,35vw,490px);padding:10px;
+ border-radius:16px;background:var(--color-surface);
+ border:1px solid var(--color-border);
+ box-shadow:0 3px 14px #0000000c;overflow:hidden;
+}
+.project-summary-photo-stage img{
+ width:100%;height:100%;object-fit:contain;object-position:left center;
+ border-radius:11px;
+}
+.project-summary-photo-stage>.project-summary-photo-edit{
+ position:absolute;top:16px;right:16px;left:auto;
+ width:36px;height:36px;transform:none;z-index:2;
+ font-size:18px;border-radius:8px;background:var(--color-surface);
+ padding:0;display:grid;place-items:center;
+}
+.project-summary-photo-stage>.project-summary-photo-edit[hidden]{display:none!important}
+.project-summary-photo-stage>.project-summary-previous{left:18px}
+.project-summary-photo-stage>.project-summary-next{right:18px}
+.project-summary-photo-stage .project-summary-photo-empty{padding:16px}
+.project-summary-gallery-heading{margin-bottom:12px}
+.project-summary-heading{justify-content:flex-start}
+@media(max-width:760px){
+ .project-summary-lists{gap:16px}
+ .project-summary-lists>.project-summary-bom-section,
+ .project-summary-lists>.project-summary-tools-section{padding:17px 16px 20px}
+ .project-summary-photo-stage{height:clamp(220px,55vw,390px)}
+}
