@@ -114,7 +114,7 @@
   document.addEventListener("click",async event=>{
    if(allowReplay||!dirty||!article.isConnected||article.closest(".hide")||article.offsetParent===null)return;
    const target=event.target.closest("button,a,[role=button]");
-   if(!target||article.contains(target)||target.closest(".modalback,dialog,[role=dialog]"))return;
+   if(!target||article.contains(target)||target.closest(".modalback,dialog,[role=dialog]")||target.matches(".workspace-save,.part-workspace-save"))return;
    event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
    try{
     await savePending();
