@@ -3,13 +3,13 @@
 // its assigned number permanently; changing formatting affects new issues only.
 import {projectAllowed,canEditProject} from "./projects.js";
 const key=id=>"project-numbering/"+id+".json";
-const defaults=()=>({prefix:"NR",digits:4,nextAssembly:1,nextPart:1001,issued:{}});
+const defaults=()=>({prefix:"NR",digits:4,nextAssembly:1,nextPart:1001,issued:{},issuedSequences:{}});
 const err=(message,status=400)=>Object.assign(new Error(message),{status});
 const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});
 export async function numberingState(env,project){
  const object=await env.PHOTOS.get(key(project));
  const data=object?JSON.parse(await object.text()):defaults();
- return {data:{...defaults(),...data,issued:data.issued||{}},etag:object?.etag||null};
+ return {data:{...defaults(),...data,issued:data.issued||{},issuedSequences:data.issuedSequences||{}},etag:object?.etag||null};
 }
 export const formatNumber=(data,sequence)=>data.prefix+String(sequence).padStart(data.digits,"0");
 const validateSettings=input=>{
@@ -41,16 +41,19 @@ export async function issueNumber(env,project,kind,recordId,manual){
    if(!Number.isSafeInteger(sequence)||sequence<1)throw err("Invalid sequence number");
    if(kind==="assembly"&&sequence>1000)throw err("Assembly numbers must be between 1 and 1000");
    if(kind==="part"&&sequence<=1000)throw err("Numbers 1–1000 are reserved for assemblies");
+   // Normalize leading zeroes so NR1 cannot bypass the uniqueness of NR0001.
+   value=formatNumber(data,sequence);
   }else{
    const cursor=kind==="assembly"?"nextAssembly":"nextPart";
    sequence=data[cursor];
    const upper=kind==="assembly"?1000:Number.MAX_SAFE_INTEGER;
-   while(sequence<=upper&&Object.values(data.issued).includes(formatNumber(data,sequence)))sequence++;
+   while(sequence<=upper&&(data.issuedSequences[String(sequence)]||Object.values(data.issued).includes(formatNumber(data,sequence))))sequence++;
    if(sequence>upper)throw err("Assembly numbers 1–1000 are exhausted. Choose a new prefix for new projects.",409);
    value=formatNumber(data,sequence);
   }
-  if(Object.entries(data.issued).some(([id,n])=>id!==recordKey&&n===value))throw err("This part number is already assigned in the project",409);
+  if(data.issuedSequences[String(sequence)]&&data.issuedSequences[String(sequence)]!==recordKey||Object.entries(data.issued).some(([id,n])=>id!==recordKey&&n===value))throw err("This part number is already assigned in the project",409);
   data.issued[recordKey]=value;
+  data.issuedSequences[String(sequence)]=recordKey;
   const cursor=kind==="assembly"?"nextAssembly":"nextPart";
   data[cursor]=Math.max(data[cursor],sequence+1);
   return value;
