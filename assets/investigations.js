@@ -141,7 +141,13 @@
    fixedRow.append(fixed);controls.append(fixedRow);
    const resolution=fieldRow("resolution","How?","Describe the fix and how you verified it.");
    resolution.wrap.hidden=true;
+   let previousResolution=latest.get("resolution")?.resolution||"";
    fixed.onchange=()=>{
+    const nextResolution=fixed.value;
+    const previousGroup=previousResolution==="no"?"why":(["yes","maybe"].includes(previousResolution)?"how":"");
+    const nextGroup=nextResolution==="no"?"why":(["yes","maybe"].includes(nextResolution)?"how":"");
+    if(previousGroup&&nextGroup&&previousGroup!==nextGroup)resolution.field.value="";
+    if(nextGroup)previousResolution=nextResolution;
     resolution.wrap.hidden=!fixed.value;
     resolution.descriptor.textContent=fixed.value==="no"?"Why?":"How?";
     resolution.field.placeholder=fixed.value==="no"?"Explain why the problem remains unresolved.":"Describe what you changed and what happened.";
