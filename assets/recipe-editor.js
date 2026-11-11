@@ -205,7 +205,47 @@
    const stepList=el("nav","recipe-step-list");
    stepList.setAttribute("aria-label","Work instruction steps");
    const detailPane=el("div","recipe-step-detail");
-   browser.append(stepList,detailPane);
+   const divider=el("div","recipe-step-resizer");
+   divider.setAttribute("role","separator");divider.setAttribute("aria-orientation","vertical");
+   divider.setAttribute("aria-label","Resize work instruction list width");
+   divider.tabIndex=0;divider.title="Drag left or right to resize the step list. Use arrow keys to adjust.";
+   const widthKey="bs-recipe-list-width-"+(options.project||"default");
+   let savedWidth=31;
+   try{savedWidth=Number(localStorage.getItem(widthKey))||31}catch{}
+   const setWidth=value=>{
+    const safe=Math.max(16,Math.min(70,Number(value)||31));
+    browser.style.setProperty("--recipe-nav-width",safe+"%");
+    divider.setAttribute("aria-valuenow",String(Math.round(safe)));
+    return safe;
+   };
+   setWidth(savedWidth);
+   divider.setAttribute("aria-valuemin","16");divider.setAttribute("aria-valuemax","70");
+   const persist=value=>{try{localStorage.setItem(widthKey,String(value))}catch{}};
+   divider.onkeydown=event=>{
+    if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;
+    event.preventDefault();
+    const current=Number.parseFloat(browser.style.getPropertyValue("--recipe-nav-width"))||31;
+    const next=setWidth(event.key==="Home"?16:event.key==="End"?70:current+(event.key==="ArrowLeft"?-2:2));
+    persist(next);
+   };
+   divider.onpointerdown=event=>{
+    if(window.matchMedia("(max-width:760px)").matches)return;
+    event.preventDefault();
+    divider.setPointerCapture(event.pointerId);browser.classList.add("is-resizing-recipe");
+   };
+   divider.onpointermove=event=>{
+    if(!divider.hasPointerCapture(event.pointerId))return;
+    const rect=browser.getBoundingClientRect();
+    setWidth((event.clientX-rect.left)/rect.width*100);
+   };
+   const release=event=>{
+    if(!divider.hasPointerCapture(event.pointerId))return;
+    divider.releasePointerCapture(event.pointerId);
+    browser.classList.remove("is-resizing-recipe");
+    persist(Number.parseFloat(browser.style.getPropertyValue("--recipe-nav-width"))||31);
+   };
+   divider.onpointerup=release;divider.onpointercancel=release;
+   browser.append(stepList,divider,detailPane);
    if(steps.length)content.append(browser);
    const hasDetail=steps.some(s=>s.standard?.trim()||s.detail?.trim());
    if(hasDetail){
