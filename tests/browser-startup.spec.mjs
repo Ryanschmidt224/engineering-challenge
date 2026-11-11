@@ -35,6 +35,13 @@ test("project feature tree and workspace initialize without browser errors", asy
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
  const screen=page.locator("#launcher .assembly-bom-screen");
  const tree=page.locator("#launcher .assembly-tree-nodes");
+ const summary=page.locator("#launcher .project-summary-page");
+ await expect(summary).toBeVisible();
+ await expect(summary.locator(".project-summary-title")).toContainText("Foam");
+ await expect(summary.locator(".project-summary-bom-items")).toContainText("C2822 Brushless Motor");
+ await expect(summary.locator(".project-summary-bom-items")).toContainText("20A ESC");
+ await expect(summary.locator(".project-summary-tool-items")).toContainText("No tools specified");
+ await summary.locator(".project-summary-workspace").click();
  await expect(workspace).toBeVisible();
  await expect(workspace.locator(".workspace-back")).toHaveText("Open BOM");
  const header=workspace.locator(":scope > .workspace-heading");
@@ -488,6 +495,8 @@ test("personal project builds a private editable workspace from the shared proje
  await expect(card).toBeVisible();
  await card.locator(".project-link").click();
  const section=page.locator("#"+id);
+ await expect(section.locator(".project-summary-page")).toBeVisible();
+ await section.locator(".project-summary-workspace").click();
  await expect(section.locator(".assembly-workspace-page:not(.bom-part-workspace)")).toBeVisible();
  await expect(section.locator(".assembly-workspace-page .workspace-back")).toHaveText("Open BOM");
  await expect(section.locator(".assembly-tree-nodes")).toContainText("Test Personal Project");
