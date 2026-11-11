@@ -169,7 +169,7 @@ function setupAssemblyTrees(){
   }
   // Project and subassembly workspaces remain independent of the BOM screen.
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
-  workspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div><div class="workspace-heading-actions"><button type="button" class="btn workspace-back">Open BOM</button><button type="button" class="btn workspace-project-settings" hidden>Project settings</button></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
+  workspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div><div class="workspace-heading-actions"><button type="button" class="btn workspace-back">Open BOM</button></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
   // Assembly photo management lives in the workspace, not the read-only overview.
   const workspacePhotoEditor=document.createElement("article");
@@ -195,7 +195,7 @@ function setupAssemblyTrees(){
   // It rolls up all assembly occurrences and standard shop materials at project scope.
   const summary=document.createElement("section");
   summary.className="project-summary-page hide";
-  summary.innerHTML='<header class="project-summary-heading"><div><p class="muted">Project summary</p><h1 class="project-summary-title"></h1></div><div class="project-summary-actions"><button type="button" class="btn project-summary-workspace">Open workspace</button><button type="button" class="btn project-summary-bom">Open BOM</button><button type="button" class="btn project-summary-settings" hidden>Project settings</button></div></header><section class="project-summary-gallery"><div class="project-summary-gallery-heading"><h2>Project photos</h2><button type="button" class="btn project-summary-add-photo hide">Manage photos</button></div><div class="project-summary-photo-stage"><img alt="Project photo" class="project-summary-photo" hidden><p class="project-summary-photo-empty">No project photos yet.</p><button type="button" class="project-summary-previous" aria-label="Previous project photo">‹</button><button type="button" class="project-summary-next" aria-label="Next project photo">›</button></div><div class="project-summary-photo-footer"><p class="project-summary-photo-caption"></p><span class="project-summary-photo-position"></span></div></section><div class="project-summary-lists"><section class="project-summary-bom-section"><h2>Project BOM</h2><div class="project-summary-bom-items" aria-live="polite"></div></section><section class="project-summary-tools-section"><h2>Tools needed</h2><div class="project-summary-tool-items" aria-live="polite"></div></section></div>';
+  summary.innerHTML='<header class="project-summary-heading"><div><p class="muted">Project summary</p><h1 class="project-summary-title"></h1></div><div class="project-summary-actions"><button type="button" class="btn project-summary-workspace">Open workspace</button><button type="button" class="btn project-summary-bom">Open BOM</button></div></header><section class="project-summary-gallery"><div class="project-summary-gallery-heading"><h2>Project photos</h2><button type="button" class="btn project-summary-add-photo hide">Manage photos</button></div><div class="project-summary-photo-stage"><img alt="Project photo" class="project-summary-photo" hidden><p class="project-summary-photo-empty">No project photos yet.</p><button type="button" class="project-summary-previous" aria-label="Previous project photo">‹</button><button type="button" class="project-summary-next" aria-label="Next project photo">›</button></div><div class="project-summary-photo-footer"><p class="project-summary-photo-caption"></p><span class="project-summary-photo-position"></span></div></section><div class="project-summary-lists"><section class="project-summary-bom-section"><h2>Project BOM</h2><div class="project-summary-bom-items" aria-live="polite"></div></section><section class="project-summary-tools-section"><h2>Tools needed</h2><div class="project-summary-tool-items" aria-live="polite"></div></section></div><section class="project-summary-owner-settings" hidden></section>';
   detail.after(summary);
   let summaryPhotos=[],summaryPhotoIndex=0,summaryVersion=0;
   const isProjectSummary=()=>decodeURIComponent(location.hash.slice(1))===project;
@@ -1388,7 +1388,7 @@ function setupAssemblyTrees(){
     returnToEditedPart();
    }
   },true);
-  const workspaceRoute=()=>{const hash=location.hash.slice(1);return hash===project||hash.startsWith(project+"/workspace/")};
+  const workspaceRoute=()=>location.hash.slice(1).startsWith(project+"/workspace/");
   let workspacePhotoVersion=0;
   async function loadWorkspaceCover(){const id=selected,version=++workspacePhotoVersion,cover=workspace.querySelector(".workspace-cover");cover.replaceChildren();const placeholder=document.createElement("span");placeholder.textContent="No photo yet";cover.append(placeholder);try{const r=await fetch("/api/photos?project="+encodeURIComponent(project)+(id===null?"":"&assembly="+encodeURIComponent(id)));if(!r.ok)return;const data=await r.json();if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;const photo=(data.photos||[]).find(p=>id===null?!p.assembly:p.assembly===id);if(photo){const img=document.createElement("img");img.src=photo.url;img.alt=photo.caption||"Assembly photo";cover.replaceChildren(img)}}catch(e){/* cover is optional */}}
   let workspaceLoadVersion=0;
@@ -1430,16 +1430,10 @@ function setupAssemblyTrees(){
    window.scrollTo(0,0);
   };
   workspace.querySelector(".workspace-back").onclick=openBom;
-  const showSettings=()=>window.BSProjectManager?.openSettings?.(project);
-  workspace.querySelector(".workspace-project-settings").onclick=showSettings;
-  summary.querySelector(".project-summary-settings").onclick=showSettings;
   const refreshSettingsControls=()=>{
-   const canManage=window.BSProjectManager?.isOwner?.(project)===true||(["launcher","linear","robot"].includes(project)&&adminAuthenticated);
-   workspace.querySelector(".workspace-project-settings").hidden=!canManage;
-   summary.querySelector(".project-summary-settings").hidden=!canManage;
    const record=window.BSProjectManager?.getProject?.(project);
    const visibility=record?.visibility==="private"?"Private":"Public";
-   workspace.querySelector(".workspace-heading .muted").textContent=record?"Workspace · "+visibility:"Workspace";
+   workspace.querySelector(".workspace-heading .muted").textContent="Workspace";
    summary.querySelector(".project-summary-heading .muted").textContent=record?"Project summary · "+visibility:"Project summary";
   };
   bomScreen.querySelector(".assembly-bom-back").onclick=openWorkspace;
@@ -1620,7 +1614,7 @@ function setupAssemblyTrees(){
   }
   root.addEventListener("projectpermissionschanged",()=>{refreshSettingsControls();render();notify()});
   root.addEventListener("openpart",()=>{void showAssemblyPage()});
-  root.addEventListener("openassembly",e=>{const id=e.detail;if(id==="__root__"){selected=null;history.pushState(null,"","#"+project);render();notify();return}if(!nodes.some(n=>n.id===id))return;selected=id;history.pushState(null,"",workspaceHash(id));let cursor=nodes.find(n=>n.id===id);while(cursor){expanded.add(cursor.parentId);cursor=nodes.find(n=>n.id===cursor.parentId)}render();notify()});
+  root.addEventListener("openassembly",e=>{const id=e.detail;if(id==="__root__"){selected=null;history.pushState(null,"",workspaceHash(null));render();notify();return}if(!nodes.some(n=>n.id===id))return;selected=id;history.pushState(null,"",workspaceHash(id));let cursor=nodes.find(n=>n.id===id);while(cursor){expanded.add(cursor.parentId);cursor=nodes.find(n=>n.id===cursor.parentId)}render();notify()});
   const validSelection=()=>selected===null||nodes.some(n=>n.id===selected);
   const notify=()=>{assemblySelections[project]=selected;assemblyTreeSnapshots[project]={nodes:[...nodes],title};showAssemblyPage();renderTiles();view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));};
   let treeSavedRevision=null;
@@ -1785,11 +1779,16 @@ function setupAssemblyTrees(){
   nodesEl.parentNode.insertBefore(treeVisibilityControl,nodesEl);
   function render(){nodesEl.replaceChildren();
    hiddenFilter.checked=showHiddenTreeItems;toolsFilter.checked=showTreeTools;
-   controls.classList.toggle("hide",!canEdit());projectActions.classList.toggle("hide",!canEdit());cardEdit.classList.toggle("hide",!canEdit());const row=(node,depth)=>{
-   const id=node?.id??null,children=nodes.filter(n=>n.parentId===id&&includeTreeNode(n)),el=document.createElement("div");el.className="assembly-node"+(selected===id?" selected":"")+(node&&isHiddenPart(node)?" is-hidden-part":"")+(node&&isToolNode(node)?" is-tool-part":"");el.style.paddingLeft=(depth*17+3)+"px";
+   controls.classList.toggle("hide",!canEdit());projectActions.classList.toggle("hide",!canEdit());cardEdit.classList.toggle("hide",!canEdit());
+   const summaryEntry=document.createElement("button");summaryEntry.type="button";summaryEntry.className="assembly-project-summary-entry"+(isProjectSummary()?" selected":"");
+   summaryEntry.textContent="Project summary";summaryEntry.setAttribute("aria-current",isProjectSummary()?"page":"false");
+   summaryEntry.onclick=()=>{selected=null;history.pushState(null,"","#"+project);render();notify();window.scrollTo(0,0)};
+   nodesEl.append(summaryEntry);
+   const row=(node,depth)=>{
+   const id=node?.id??null,children=nodes.filter(n=>n.parentId===id&&includeTreeNode(n)),el=document.createElement("div");el.className="assembly-node"+(selected===id&&!isProjectSummary()?" selected":"")+(node&&isHiddenPart(node)?" is-hidden-part":"")+(node&&isToolNode(node)?" is-tool-part":"");el.style.paddingLeft=(depth*17+3)+"px";
    const expand=document.createElement("button");expand.type="button";expand.className="assembly-expander";expand.textContent=children.length?(expanded.has(id)?"▾":"▸"):" ";expand.setAttribute("aria-label",expanded.has(id)?"Collapse":"Expand");expand.onclick=()=>{expanded.has(id)?expanded.delete(id):expanded.add(id);render()};
-   const name=document.createElement("button");name.type="button";name.className="assembly-name";name.textContent=node?(isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+node.name:"🟨  "+title;
-   if(isPartNode(node)&&partRoute()===node.partId)el.classList.add("selected");name.onclick=()=>{if(isPartNode(node)){openTreePart(node);return}selected=id;history.pushState(null,"",id===null?"#"+project:workspaceHash(id));render();notify();window.scrollTo(0,0)};
+   const name=document.createElement("button");name.type="button";name.className="assembly-name";name.textContent=node?(isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+node.name:"📦  "+title;
+   if(isPartNode(node)&&partRoute()===node.partId)el.classList.add("selected");name.onclick=()=>{if(isPartNode(node)){openTreePart(node);return}selected=id;history.pushState(null,"",workspaceHash(id));render();notify();window.scrollTo(0,0)};
    el.append(expand,name);
    if(canEdit()){
     el.addEventListener("contextmenu",event=>{
