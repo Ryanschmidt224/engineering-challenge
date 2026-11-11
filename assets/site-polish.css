@@ -1313,3 +1313,39 @@
 .project-summary-heading>.build-confusion-control{right:10px;bottom:8px}
 .workspace-heading>div:has(>.build-confusion-control),
 .project-summary-heading>div:has(>.build-confusion-control){position:static}
+
+/* Keep status, dropdown and attention control on a single horizontal line. */
+.bom-part-workspace .workspace-heading > div:has(> .part-workspace-title){
+ flex:1 1 0; width:100%; min-width:0;
+}
+.bom-part-workspace .part-progress-panel:not([hidden]){
+ width:100%!important;max-width:none!important;
+ flex-wrap:nowrap!important;align-items:center!important;gap:10px 14px;
+}
+.bom-part-workspace .part-progress-inline-label{
+ flex:0 0 auto;white-space:nowrap;
+}
+.bom-part-workspace .part-progress-select{
+ flex:0 0 205px; width:205px;max-width:205px;min-width:150px;
+}
+.bom-part-workspace .part-attention-toggle{
+ flex:0 0 auto;white-space:nowrap;
+}
+.bom-part-workspace .part-attention-note-field:not([hidden]){
+ flex:1 1 180px;min-width:150px;
+}
+.bom-part-workspace .part-progress-feedback:not(:empty){
+ flex:0 0 auto;
+}
+@media(max-width:800px){
+ .bom-part-workspace .part-progress-panel:not([hidden]){flex-wrap:wrap!important}
+}
+.assembly-hidden-filter-label{display:inline-flex;align-items:center;gap:5px;position:relative}
+.assembly-hidden-filter-help{
+ display:inline-flex;align-items:center;justify-content:center;
+ width:17px;height:17px;cursor:help;flex:0 0 17px;
+ font-size:13px;color:var(--color-text-muted);border-radius:50%;
+}
+.assembly-hidden-filter-help:hover,.assembly-hidden-filter-help:focus-visible{
+ color:var(--color-text);background:var(--color-accent-soft);outline-offset:2px;
+}
