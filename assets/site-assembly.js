@@ -648,10 +648,64 @@ function setupAssemblyTrees(){
   partDetailsCollapse.addEventListener("toggle",()=>{partDetailsCollapse.querySelector(".part-details-toggle-label").textContent=partDetailsCollapse.open?"Minimize details":"Show details"});
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
   const progressPanel=document.createElement("section");progressPanel.className="part-progress-panel";
-  progressPanel.innerHTML='<label class="part-progress-inline-label" for="part-progress-select-'+project+'">Part status</label><select id="part-progress-select-'+project+'" class="field part-progress-select" aria-label="Part status"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="complete">Complete</option></select><label class="part-attention-toggle"><input type="checkbox" class="part-needs-attention"> Needs attention</label><label class="part-attention-note-field" hidden>What needs to be fixed?<textarea class="field part-attention-note" rows="2" maxlength="2000" placeholder="What needs attention?"></textarea></label><span class="part-progress-feedback" role="status" aria-live="polite"></span><button type="button" class="part-progress-save" hidden>Save status</button>';
+  progressPanel.innerHTML='<label class="part-progress-inline-label" for="part-progress-select-'+project+'">Status</label><select id="part-progress-select-'+project+'" class="field part-progress-select" aria-label="Status"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="complete">Complete</option></select><label class="part-attention-toggle"><input type="checkbox" class="part-needs-attention"> Needs attention</label><label class="part-attention-note-field" hidden>What needs to be fixed?<textarea class="field part-attention-note" rows="2" maxlength="2000" placeholder="What needs attention?"></textarea></label><span class="part-progress-feedback" role="status" aria-live="polite"></span><button type="button" class="part-progress-save" hidden>Save status</button>';
   partWorkspace.querySelector(".workspace-heading > div:not(.workspace-cover)").append(progressPanel);
   partWorkspace.querySelector(".workspace-heading").after(detailsPanel);
   const progressSelect=progressPanel.querySelector(".part-progress-select"),attentionCheckbox=progressPanel.querySelector(".part-needs-attention"),attentionText=progressPanel.querySelector(".part-attention-note");
+  // Assembly status uses its own record rather than rewriting the tree or instructions.
+  const assemblyProgressPanel=progressPanel.cloneNode(true);
+  assemblyProgressPanel.classList.add("assembly-progress-panel");
+  assemblyProgressPanel.hidden=true;
+  const assemblyProgressSelect=assemblyProgressPanel.querySelector(".part-progress-select");
+  assemblyProgressSelect.id="assembly-progress-select-"+project;
+  assemblyProgressPanel.querySelector(".part-progress-inline-label").htmlFor=assemblyProgressSelect.id;
+  const assemblyAttention=assemblyProgressPanel.querySelector(".part-needs-attention");
+  const assemblyAttentionNote=assemblyProgressPanel.querySelector(".part-attention-note");
+  const assemblyProgressFeedback=assemblyProgressPanel.querySelector(".part-progress-feedback");
+  const assemblyAttentionField=assemblyProgressPanel.querySelector(".part-attention-note-field");
+  workspace.querySelector(".workspace-title-group").append(assemblyProgressPanel);
+  let assemblyStatusId=null,assemblyStatusVersion=0,assemblyStatusQueue=Promise.resolve();
+  const assemblyStatusUrl=id=>"/api/tree?project="+encodeURIComponent(project)+"&statusAssembly="+encodeURIComponent(id);
+  async function loadAssemblyStatus(){
+   const id=selected;
+   if(assemblyStatusId===id&&id!==null)return;
+   assemblyStatusId=id;
+   const version=++assemblyStatusVersion;
+   assemblyProgressPanel.hidden=true;assemblyProgressFeedback.textContent="";
+   if(id===null)return;
+   try{
+    await assemblyStatusQueue.catch(()=>{});
+    const response=await fetch(assemblyStatusUrl(id),{credentials:"same-origin",cache:"no-store"});
+    const data=await response.json();
+    if(!response.ok)throw Error(data.error||"Unable to load status");
+    if(version!==assemblyStatusVersion||selected!==id)return;
+    assemblyProgressSelect.value=data.status.progressStatus;
+    assemblyAttention.checked=data.status.needsAttention;
+    assemblyAttentionNote.value=data.status.attentionNote;
+    assemblyAttentionField.hidden=!assemblyAttention.checked;
+    assemblyProgressSelect.disabled=!canEdit();
+    assemblyAttention.disabled=!canEdit();
+    assemblyAttentionNote.readOnly=!canEdit();
+    assemblyProgressPanel.hidden=false;
+   }catch(error){if(version===assemblyStatusVersion){assemblyProgressPanel.hidden=false;assemblyProgressSelect.disabled=true;assemblyAttention.disabled=true;assemblyAttentionNote.readOnly=true;assemblyProgressFeedback.textContent=error.message;assemblyStatusId=null}}
+  }
+  function saveAssemblyStatus(){
+   const id=assemblyStatusId,version=assemblyStatusVersion;
+   if(!id||!canEdit())return;
+   const body={progressStatus:assemblyProgressSelect.value,needsAttention:assemblyAttention.checked,attentionNote:assemblyAttentionNote.value};
+   assemblyAttentionField.hidden=!assemblyAttention.checked;
+   assemblyProgressFeedback.textContent="Saving…";
+   assemblyStatusQueue=assemblyStatusQueue.catch(()=>{}).then(async()=>{
+    const response=await fetch(assemblyStatusUrl(id),{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+    const data=await response.json();
+    if(!response.ok)throw Error(data.error||"Unable to save status");
+    if(assemblyStatusVersion===version&&assemblyStatusId===id)window.BSTransient?.show(assemblyProgressFeedback,"Saved.");
+   }).catch(error=>{if(assemblyStatusVersion===version&&assemblyStatusId===id)assemblyProgressFeedback.textContent=error.message});
+  }
+  assemblyProgressSelect.addEventListener("change",saveAssemblyStatus);
+  assemblyAttention.addEventListener("change",saveAssemblyStatus);
+  assemblyAttentionNote.addEventListener("change",saveAssemblyStatus);
+  assemblyAttentionNote.addEventListener("blur",()=>{if(assemblyAttentionNote.value!==assemblyAttentionNote.defaultValue)assemblyAttentionNote.defaultValue=assemblyAttentionNote.value});
   const refreshAttentionForm=()=>{progressPanel.querySelector(".part-attention-note-field").hidden=!attentionCheckbox.checked};
   let partStatusTimer=null,partStatusSavePromise=null,partStatusChangeVersion=0;
   const schedulePartStatusSave=(immediate=false)=>{
@@ -687,7 +741,7 @@ function setupAssemblyTrees(){
     partProgress.set(id,data.component.progressStatus);partAttention.set(id,data.component.needsAttention===true);
     if(currentPartInfo?.id===id){
      currentPartInfo=data.component;
-     if(version===partStatusChangeVersion){fillProgressPanel(data.component);feedback.textContent="Saved."}
+     if(version===partStatusChangeVersion){fillProgressPanel(data.component);window.BSTransient?.show(feedback,"Saved.")}
      render();
     }
    })();
@@ -933,7 +987,7 @@ function setupAssemblyTrees(){
      if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
      partSavedRevision=result.revision??partSavedRevision;
      partRecipe?.markSaved();
-     partStatus.textContent="Part instructions saved.";
+     window.BSTransient?.show(partStatus,"Part instructions saved.");
     }catch(error){
      partStatus.textContent=error.name==="AbortError"?"Save timed out. Try again.":error.message;
      throw error;
@@ -1655,7 +1709,7 @@ function setupAssemblyTrees(){
      if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
      workspaceSavedRevision=result.revision??workspaceSavedRevision;
      assemblyRecipe?.markSaved();
-     workspaceStatus.textContent="Saved.";
+     window.BSTransient?.show(workspaceStatus,"Saved.");
     }catch(error){
      workspaceStatus.textContent=error.name==="AbortError"?"Save timed out. Try again.":error.message;
      throw error;
@@ -1714,7 +1768,7 @@ function setupAssemblyTrees(){
     if(bomView==="pictures")renderTiles();
     return;
    }
-   if(inWorkspace){workspace.querySelector(".workspace-title").textContent=selected===null?title:((nodes.find(n=>n.id===selected)?.partNumber||"")+(nodes.find(n=>n.id===selected)?.partNumber?" · ":"")+(nodes.find(n=>n.id===selected)?.name||"Assembly"));if(photoDialog.open)photoDialog.close();openPhotoEditor.hidden=!canEdit();loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
+   if(inWorkspace){void loadAssemblyStatus();workspace.querySelector(".workspace-title").textContent=selected===null?title:((nodes.find(n=>n.id===selected)?.partNumber||"")+(nodes.find(n=>n.id===selected)?.partNumber?" · ":"")+(nodes.find(n=>n.id===selected)?.name||"Assembly"));if(photoDialog.open)photoDialog.close();openPhotoEditor.hidden=!canEdit();loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
