@@ -19,9 +19,10 @@ test("project feature tree and workspace initialize without browser errors", asy
     {id:"part-esc",name:"20A ESC",assemblyId:"smoke-motor",quantity:2},
     {id:"tool-iron",name:"Soldering Iron",assemblyId:"smoke-motor",isTool:true,quantity:1}
    ]};break;
-   case "/api/photos": data={photos:[
-    {id:"launcher/photo-a.png",url:"/test-photo-a.png",caption:"Launcher front view",assembly:""},
-    {id:"launcher/photo-b.png",url:"/test-photo-b.png",caption:"Launcher side view",assembly:""}]};break;
+   case "/api/photos": data={photos:url.searchParams.get("assembly")==="root-assembly"
+    ?[{id:"launcher/assembly-photo.png",url:"/root-assembly-photo.png",caption:"Assembly build photo",assembly:"root-assembly"}]
+    :[{id:"launcher/photo-a.png",url:"/test-photo-a.png",caption:"Launcher front view",assembly:""},
+      {id:"launcher/photo-b.png",url:"/test-photo-b.png",caption:"Launcher side view",assembly:""}]};break;
    case "/api/workspace": data={workspace:{recipe:[{id:"step-prepare",title:"Prepare components",standard:"Inspect the parts",kind:"action",notes:[],photos:[]},{id:"step-measure",title:"Measure resistance",standard:"Verify resistance",kind:"measurement",notes:[],photos:[]}],resources:[]},revision:"test"};break;
    case "/api/auth": data={authenticated:false,isAdmin:false};break;
    case "/api/drawings": data={drawings:[]};break;
@@ -57,7 +58,7 @@ test("project feature tree and workspace initialize without browser errors", asy
  await summary.locator(".project-summary-workspace").click();
  await expect(workspace).toBeVisible();
  await expect(workspace.locator(".workspace-back")).toHaveText("Open BOM");
- await expect(workspace.locator(".workspace-cover img")).toHaveAttribute("src","/test-photo-a.png");
+ await expect(workspace.locator(".workspace-cover img")).toHaveAttribute("src","/root-assembly-photo.png");
  await tree.locator(".assembly-name").first().click();
  await expect(page).toHaveURL(/#launcher\/workspace\/__root__/);
  await tree.locator(".assembly-project-summary-entry").click();
