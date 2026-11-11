@@ -1307,3 +1307,9 @@
 }
 .my-build-feedback-close:hover{background:var(--color-hover)}
 .my-build-feedback-dialog{padding-top:34px}
+
+.workspace-heading,.project-summary-heading{position:relative}
+.workspace-heading>.build-confusion-control,
+.project-summary-heading>.build-confusion-control{right:10px;bottom:8px}
+.workspace-heading>div:has(>.build-confusion-control),
+.project-summary-heading>div:has(>.build-confusion-control){position:static}
