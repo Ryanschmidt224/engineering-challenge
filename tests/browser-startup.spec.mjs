@@ -116,16 +116,24 @@ test("new custom part offers explicit automatic numbering before the name",async
   dialog.querySelector(".library-field select")?.setAttribute("data-test-picker","mode");
   const classification=[...dialog.querySelectorAll("label")].find(l=>l.textContent.includes("Part type"))?.querySelector("select");
   classification.value="custom";classification.dispatchEvent(new Event("change"));
-  return {exists:!!dialog,numberingText:dialog.querySelector(".library-auto-number")?.textContent,checked:dialog.querySelector(".library-auto-number input")?.checked,
-   nameBeforeNumber:[...dialog.querySelectorAll(".library-part-form > *")].findIndex(e=>e.classList.contains("library-auto-number"))<
+  return {exists:!!dialog,numberingText:dialog.querySelector(".library-auto-number")?.textContent,
+   checked:dialog.querySelector('input[name="new-part-number-mode"][value="auto"]')?.checked,
+   manualAvailable:!!dialog.querySelector('input[name="new-part-number-mode"][value="manual"]'),
+   nameBeforeNumber:[...dialog.querySelectorAll(".library-part-form > *")].findIndex(e=>e.classList.contains("library-number-choice"))<
     [...dialog.querySelectorAll(".library-part-form > *")].findIndex(e=>e.textContent?.startsWith("Part name")),
-   numberVisible:!dialog.querySelector(".library-auto-number").classList.contains("hide")};
+   numberVisible:!dialog.querySelector(".library-number-choice").classList.contains("hide")};
  });
  expect(selection.exists).toBe(true);
  expect(selection.checked).toBe(true);
- expect(selection.numberingText).toContain("Create next sequential part number");
+ expect(selection.manualAvailable).toBe(true);
+ expect(selection.numberingText).toContain("Assign next available project number");
  expect(selection.nameBeforeNumber).toBe(true);
  expect(selection.numberVisible).toBe(true);
+ await page.locator('.library-part-dialog input[name="new-part-number-mode"][value="manual"]').check();
+ await expect(page.locator(".library-part-dialog .library-number-choice")).toBeVisible();
+ await expect(page.locator(".library-part-dialog .library-field",{hasText:"Project part number"})).toBeVisible();
+ await page.locator('.library-part-dialog input[name="new-part-number-mode"][value="auto"]').check();
+ await expect(page.locator(".library-part-dialog .library-field",{hasText:"Project part number"})).toBeHidden();
  await page.locator(".library-part-dialog .library-dialog-actions").getByRole("button",{name:"Cancel"}).click();
 });
 
