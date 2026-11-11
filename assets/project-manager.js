@@ -138,6 +138,59 @@ window.BSProjectManager=(()=>{
     manageDialog.append(pane);manageDialog.showModal();
    }catch(e){alert(e.message)}
   };
+
+  // Project-wide permissions belong to the summary, never to assembly instructions.
+  function mountSummarySettings(project){
+   const section=document.getElementById(project.id)?.querySelector(".project-summary-owner-settings");
+   if(!section)return;
+   section.replaceChildren();
+   section.hidden=!project.isOwner;
+   if(!project.isOwner)return;
+   section.append(element("h2","","Project settings"));
+   const intro=element("p","muted","Only the owner can change the visibility, permissions, or archive this project.");
+   section.append(intro);
+   const form=element("div","project-summary-settings-form");
+   const visibility=element("label","","Visibility");
+   const visibilitySelect=element("select","field");
+   for(const [value,label] of [["private","Private — only you can view"],["public","Public — everyone can view"]]){
+    const option=element("option","",label);option.value=value;visibilitySelect.append(option);
+   }
+   visibilitySelect.value=project.visibility||"public";
+   visibility.append(visibilitySelect);
+   const permissions=element("label","","Editing permissions");
+   const permissionsSelect=element("select","field");
+   for(const [value,label] of [["locked","Locked — owner only"],["approval","Allow suggestions — owner approval"]]){
+    const option=element("option","",label);option.value=value;permissionsSelect.append(option);
+   }
+   permissionsSelect.value=project.editMode||"approval";
+   permissions.append(permissionsSelect);
+   form.append(visibility,permissions);
+   const note=element("p","muted","Changing to Private hides this project from other users. People may still have copies of previously published materials.");
+   const status=element("p","project-summary-settings-status");status.setAttribute("role","status");
+   const actions=element("div","project-summary-settings-actions");
+   const save=element("button","btn primary","Save settings");save.type="button";
+   save.onclick=async()=>{
+    save.disabled=true;status.textContent="Saving…";
+    try{
+     await api("PATCH","/api/projects",{id:project.id,visibility:visibilitySelect.value,editMode:permissionsSelect.value});
+     status.textContent="Project settings saved.";await refresh();
+    }catch(error){status.textContent=error.message}
+    finally{save.disabled=false}
+   };
+   const remove=element("button","btn project-archive-button","Remove project");remove.type="button";
+   remove.onclick=async()=>{
+    const confirmation=prompt("Remove this project from the site? All BOM parts, photos, and work instructions will be preserved for restoration.\\n\\nType the project name to confirm: "+project.name);
+    if(confirmation===null)return;
+    remove.disabled=true;
+    try{
+     await api("DELETE","/api/projects",{id:project.id,confirmName:confirmation});
+     navigate("home");await refresh();
+    }catch(error){status.textContent=error.message}
+    finally{remove.disabled=false}
+   };
+   actions.append(save,remove);
+   section.append(form,note,actions,status);
+  }
   async function refresh(){
    try{
     user=(await api("GET","/api/accounts")).user;
@@ -168,7 +221,7 @@ window.BSProjectManager=(()=>{
     });
     setupAssemblyTrees();setupComponents();setupPhotos();
     if(typeof refreshAdminUI==="function")refreshAdminUI();
-    for(const project of projects)window.BSReview?.attach(project,user);
+    for(const project of projects){window.BSReview?.attach(project,user);mountSummarySettings(project)}
     document.querySelectorAll("[data-assembly-tree]").forEach(root=>root.dispatchEvent(new Event("projectpermissionschanged")));
    }catch(error){console.error("Project catalog unavailable",error)}
   }
