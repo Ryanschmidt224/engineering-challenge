@@ -2,6 +2,9 @@ import {onRequest as numberingApi} from "./functions/api/numbering.js";
 import {handleProposals} from "./functions/api/proposals.js";
 import {onRequest as projectsApi,projectAllowed,canEditProject} from "./functions/api/projects.js";
 import {handleAccounts} from "./functions/api/accounts.js";
+import {onRequest as myBuildApi} from "./functions/api/my-build.js";
+import {onRequest as buildConfusionApi} from "./functions/api/build-confusion.js";
+import {onRequest as projectTasksApi} from "./functions/api/project-tasks.js";
 import {handleTree} from "./functions/api/tree.js";
 import {handleWires,handleHarness} from "./functions/api/wires.js";
 import {handleCommonParts} from "./functions/api/commonparts.js";
@@ -40,6 +43,9 @@ export default {
         return new Response(JSON.stringify({error:"Project not found or private"}),{status:404,headers:{"content-type":"application/json","cache-control":"no-store"}});
       if(scoped&&path==="/api/photo"&&request.method!=="GET"&&!await canEditProject(request,env,scoped))
        return new Response("Forbidden",{status:403});
+      if(path==="/api/my-build")return myBuildApi({request,env,ctx});
+      if(path==="/api/build-confusion")return buildConfusionApi({request,env,ctx});
+      if(path==="/api/project-tasks")return projectTasksApi({request,env,ctx});
       if(path==="/api/tree")return handleTree(request,env);
       if(path==="/api/wires")return handleWires(request,env);
       if(path==="/api/commonparts")return handleCommonParts(request,env);
