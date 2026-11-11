@@ -3,11 +3,18 @@
  "use strict";
  const make=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el};
  const btn=(label,fn,cls="btn")=>{const b=make("button",cls,label);b.type="button";b.onclick=fn;return b};
- const types=[["observation","Observation"],["note","Additional notes"]]; 
+ const types=[["observation","What happened?"],["theory","What do you think caused it?"],["note","Additional notes"]]; 
  const legacyType={attempt:"Attempt / change",theory:"Hypothesis",lesson:"How was it fixed?",revision:"Revision / design change",result:"Result"};
  const statuses=[["investigating","Investigating"],["resolved","Resolved"],["unresolved","Unresolved"]];
  const photoExt=/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i;
  const fileUrl=id=>"/api/recipe-files?id="+encodeURIComponent(id);
+ const recordDate=record=>record.date||[...(record.entries||[])].reverse().find(entry=>entry.date)?.date||record.createdAt?.slice(0,10)||"";
+ function dateLabelFor(record){
+  const value=recordDate(record);
+  const label=make("time","investigation-record-date",value);
+  if(value)label.dateTime=value;else label.hidden=true;
+  return label;
+ }
  function mount({project,admin,getTree,getPart,getPartList,onReplacePart}){
   let records=[],revision=null;
   let assemblySlot=null,partSlot=null,stepSlots=new Map(),activeContext=null,loadSerial=0;
@@ -94,7 +101,7 @@
    const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
    date.value=record.date||[...(record.entries||[])].reverse().find(entry=>entry.date)?.date||date.value;
    dateLabel.append(date);controls.append(dateLabel);
-   const descriptions={observation:"Describe what happened or failed.",note:"Other relevant details, measurements, or notes."};
+   const descriptions={observation:"Describe what happened or failed.",theory:"Describe your suspected cause or explanation.",note:"Other relevant details, measurements, or notes."};
    function fieldRow(type,label,placeholder){
     const wrap=make("div","investigation-entry-field");
     const caption=make("label","investigation-field-label");
@@ -139,10 +146,10 @@
     resolution.descriptor.textContent=fixed.value==="no"?"Why?":"How?";
     resolution.field.placeholder=fixed.value==="no"?"Explain why the problem remains unresolved.":"Describe what you changed and what happened.";
    };
-   // Keep the resolution question directly after the observation in both the UI and saved entry order.
-   controls.insertBefore(fixedRow,inputs[1].wrap);
-   controls.insertBefore(resolution.wrap,inputs[1].wrap);
-   inputs.splice(1,0,resolution);
+   // Keep the cause directly after the observation, followed by the resolution.
+   controls.insertBefore(fixedRow,inputs[2].wrap);
+   controls.insertBefore(resolution.wrap,inputs[2].wrap);
+   inputs.splice(2,0,resolution);
    fixed.value=latest.get("resolution")?.resolution||"";fixed.onchange();
    const saveBtn=btn("Save",async()=>{
     const fields=inputs.filter(item=>item.type==="resolution"?!!fixed.value:!!(item.field.value.trim()||item.fileInput.files.length||item.existingFiles.length));
@@ -169,7 +176,13 @@
     }catch(error){reportHere(error.message);saveBtn.disabled=false}
    },"btn primary");
    const actions=make("div","investigation-edit-actions");
-   actions.append(btn("Cancel",onDone),saveBtn);controls.append(actions);
+   const deleteBtn=btn("Delete revision",async()=>{
+    if(!confirm('Delete "'+record.title+'"? This removes the revision record and its notes from the project.'))return;
+    deleteBtn.disabled=true;saveBtn.disabled=true;
+    try{await save({action:"deleteRecord",id:record.id});reportHere("Revision deleted.")}
+    catch(error){reportHere(error.message);deleteBtn.disabled=false;saveBtn.disabled=false}
+   },"btn investigation-delete");
+   actions.append(deleteBtn,btn("Cancel",onDone),saveBtn);controls.append(actions);
    container.append(controls);
   }
   function render(target,context,compact=false){
@@ -209,7 +222,7 @@
     const summary=make("summary","investigation-summary");
     summary.append(make("strong","",record.title));
     const badge=make("span","investigation-status-pill",statuses.find(x=>x[0]===record.status)?.[1]||record.status);
-    summary.append(badge);
+    summary.append(dateLabelFor(record),badge);
     card.append(summary);
     const body=make("div","investigation-body");
     if(inherited){
@@ -243,7 +256,7 @@
      card.open=openCards.has(openKey);
      card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
      const title=make("summary","investigation-summary");
-     title.append(make("strong","",record.title),make("span","investigation-status-pill",record.status));
+     title.append(make("strong","",record.title),dateLabelFor(record),make("span","investigation-status-pill",record.status));
      card.append(title);
      const body=make("div","investigation-body");
      const sourceName=record.ownerType==="part"?
