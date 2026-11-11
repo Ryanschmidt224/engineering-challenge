@@ -662,36 +662,41 @@ function setupAssemblyTrees(){
   partDetailsCollapse.addEventListener("toggle",()=>{partDetailsCollapse.querySelector(".part-details-toggle-label").textContent=partDetailsCollapse.open?"Minimize details":"Show details"});
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
   const progressPanel=document.createElement("section");progressPanel.className="part-progress-panel";
-  progressPanel.innerHTML='<details class="part-progress-disclosure"><summary class="part-progress-heading"><h2>Part status</h2><span class="part-progress-badge"></span><span class="part-progress-edit-label">Edit</span></summary><div class="part-progress-body"><div class="part-progress-fields"><label>Progress<select class="field part-progress-select"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="complete">Complete</option></select></label><label class="part-attention-toggle"><input type="checkbox" class="part-needs-attention"> Needs attention</label></div><label class="part-attention-note-field" hidden>What needs to be fixed?<textarea class="field part-attention-note" rows="3" maxlength="2000" placeholder="Describe the issue so it can be addressed later."></textarea></label><div class="part-progress-actions"><button type="button" class="btn part-progress-save">Save status</button><span class="part-progress-feedback" role="status"></span></div></div></details>';
-  partWorkspace.querySelector(".workspace-heading").after(progressPanel,detailsPanel);
+  progressPanel.innerHTML='<label class="part-progress-inline-label" for="part-progress-select-'+project+'">Part status</label><select id="part-progress-select-'+project+'" class="field part-progress-select" aria-label="Part status"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="complete">Complete</option></select><label class="part-attention-toggle"><input type="checkbox" class="part-needs-attention"> Needs attention</label><label class="part-attention-note-field" hidden>What needs to be fixed?<textarea class="field part-attention-note" rows="2" maxlength="2000" placeholder="What needs attention?"></textarea></label><span class="part-progress-feedback" role="status" aria-live="polite"></span><button type="button" class="part-progress-save" hidden>Save status</button>';
+  partWorkspace.querySelector(".workspace-heading > div:not(.workspace-cover)").append(progressPanel);
+  partWorkspace.querySelector(".workspace-heading").after(detailsPanel);
   const progressSelect=progressPanel.querySelector(".part-progress-select"),attentionCheckbox=progressPanel.querySelector(".part-needs-attention"),attentionText=progressPanel.querySelector(".part-attention-note");
   const refreshAttentionForm=()=>{progressPanel.querySelector(".part-attention-note-field").hidden=!attentionCheckbox.checked};
-  attentionCheckbox.onchange=refreshAttentionForm;
+  let partStatusTimer=null;
+  const schedulePartStatusSave=(immediate=false)=>{
+   clearTimeout(partStatusTimer);
+   if(!canEdit()||!currentPartInfo)return;
+   partStatusTimer=setTimeout(()=>{void savePartProgress()},immediate?0:650);
+  };
+  progressSelect.addEventListener("change",()=>schedulePartStatusSave(true));
+  attentionCheckbox.addEventListener("change",()=>{refreshAttentionForm();schedulePartStatusSave(true)});
+  attentionText.addEventListener("input",()=>schedulePartStatusSave());
   const fillProgressPanel=part=>{
    progressSelect.value=part.progressStatus||"not_started";
    attentionCheckbox.checked=part.needsAttention===true;attentionText.value=part.attentionNote||"";refreshAttentionForm();
-   progressPanel.querySelector(".part-progress-badge").textContent=part.needsAttention?"Needs attention":progressSelect.selectedOptions[0]?.textContent||"Not started";
    progressPanel.classList.toggle("is-flagged",part.needsAttention===true);
-   progressPanel.querySelector(".part-progress-disclosure").open=false;
-   progressPanel.querySelector(".part-progress-edit-label").hidden=!canEdit();
-   progressPanel.querySelector(".part-progress-fields").hidden=!canEdit();
-   progressPanel.querySelector(".part-progress-actions").hidden=!canEdit();
-   progressPanel.querySelector(".part-attention-note-field").querySelector("textarea").readOnly=!canEdit();
+   progressSelect.disabled=!canEdit();
+   attentionCheckbox.disabled=!canEdit();
+   attentionText.readOnly=!canEdit();
   };
-  progressPanel.querySelector(".part-progress-save").onclick=async()=>{
+  async function savePartProgress(){
    if(!canEdit()||!currentPartInfo)return;
    const note=attentionText.value.trim(),flag=attentionCheckbox.checked,feedback=progressPanel.querySelector(".part-progress-feedback");
-   if(flag&&!note){feedback.textContent="Describe what needs attention before saving.";attentionText.focus();return}
    const id=currentPartInfo.id,saveButton=progressPanel.querySelector(".part-progress-save");
-   saveButton.disabled=true;feedback.textContent="Saving status…";
+   saveButton.disabled=true;feedback.textContent="Saving…";
    try{
     const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id),{method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({progressStatus:progressSelect.value,needsAttention:flag,attentionNote:note})});
     const data=await response.json();if(!response.ok)throw Error(data.error||"Status could not be saved");
     currentPartInfo=data.component;partProgress.set(id,data.component.progressStatus);partAttention.set(id,data.component.needsAttention===true);
-    fillProgressPanel(data.component);render();feedback.textContent="Status saved.";
+    fillProgressPanel(data.component);render();feedback.textContent="Saved.";
    }catch(error){feedback.textContent=error.message}
    finally{saveButton.disabled=false}
-  };
+  }
   const renderPartDetails=part=>{
    detailRows.replaceChildren();
    const type=document.createElement("div");type.className="part-details-view-row";
@@ -831,7 +836,7 @@ function setupAssemblyTrees(){
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
    if(partPhotoDialog.open)partPhotoDialog.close();editPartPicture.hidden=true;
-   heading.textContent="Loading part…";currentPartInfo=null;partSavedRevision=null;partStatus.textContent="Loading instructions…";partDetailsCollapse.open=false;
+   clearTimeout(partStatusTimer);heading.textContent="Loading part…";currentPartInfo=null;partSavedRevision=null;partStatus.textContent="Loading instructions…";partDetailsCollapse.open=false;
    detailRows.replaceChildren();detailsPanel.classList.add("hide");
    partWorkspace.querySelector(".part-harness-preview").classList.add("hide");
    cover.replaceChildren();
