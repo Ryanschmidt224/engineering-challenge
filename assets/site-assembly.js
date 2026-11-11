@@ -594,6 +594,15 @@ function setupAssemblyTrees(){
   };
   const assemblyTracker=makeTracker(workspace,assemblyRecipe,()=>assemblyResourcePicker?.getData(),()=>selected);
   const partTracker=makeTracker(partWorkspace,partRecipe,()=>partResourcePicker?.getData(),()=>currentPartInfo?.assemblyId??null);
+  const summaryTrackerPanel=document.createElement("section");
+  summaryTrackerPanel.className="project-work-panel project-summary-tracker";
+  summary.querySelector(".project-summary-heading").after(summaryTrackerPanel);
+  const summaryTracker=window.BSWorkTracker?.mount(summaryTrackerPanel,{
+   project,editable:()=>canEdit(),nodes:()=>nodes,
+   context:()=>({path:"#"+project+"/workspace/__root__",assemblyId:null,title,stepId:"",stepTitle:""}),
+   resources:()=>({})
+  });
+
 
 
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
@@ -1572,7 +1581,7 @@ function setupAssemblyTrees(){
   async function showAssemblyPage(){
    ++detailVersion;
    refreshSettingsControls();
-   assemblyTracker?.refresh();partTracker?.refresh();
+   assemblyTracker?.refresh();partTracker?.refresh();summaryTracker?.refresh();
    const isAssembly=selected!==null;
    // Reuse the existing part editor, but keep the BOM inside the workspace.
    const isEditingBom=workspace.classList.contains("is-editing-bom-part");
