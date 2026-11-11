@@ -1,5 +1,6 @@
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
+import {issueNumber} from "./numbering.js";
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const authorized=async(request,env)=>{const u=new URL(request.url),project=u.searchParams.get("project");return project?canEditProject(request,env,project):isAdmin(request,env)};
 const key=project=>"components/"+project+".json";
@@ -138,6 +139,9 @@ export async function handleComponents(request,env){
   if(kind==="custom")Object.assign(record,{manufacturer:"",model:"",supplier:"",asin:"",historicalPrice:null,historicalPriceDate:null,historicalPurchasePrice:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
   const state=await readEditable(env,project),items=state.items;
   if(items.length>=300)return json({error:"Component limit reached"},400);
+  try{
+   if(input.partNumber||kind==="custom"&&!record.isTool)record.partNumber=await issueNumber(env,project,"part",record.id,input.partNumber||undefined);
+  }catch(error){return json({error:error.message},error.status||400)}
   items.push(record);syncDerived(items,record);
   if(!await saveEditable(env,project,items,state))return conflict();
   return json({component:presentPart(record)},201);
@@ -184,6 +188,11 @@ export async function handleComponents(request,env){
   updated.specifications=input.specifications.map(spec=>({name:clean(spec.name),value:clean(spec.value),source:spec.source==="inferred"?"inferred":"explicit"})).filter(spec=>spec.name&&spec.value);
   // Keep the original shared part reference unless a new valid reference is supplied.
   if(Object.prototype.hasOwnProperty.call(input,"sharedPartRef"))updated.sharedPartRef=cleanPartRef(input.sharedPartRef);
+  if(input.partNumber&&previous.partNumber&&input.partNumber!==previous.partNumber)return json({error:"Issued part numbers cannot be changed. Use the same number or contact the project owner."},409);
+  if(!previous.partNumber&&(input.partNumber||updated.partType==="custom"&&!updated.isTool)){
+   try{updated.partNumber=await issueNumber(env,project,"part",id,input.partNumber||undefined)}
+   catch(error){return json({error:error.message},error.status||400)}
+  }
   items[index]=updated;syncDerived(items,updated);
   if(!await saveEditable(env,project,items,state))return conflict();
   return json({component:presentPart(updated)});
