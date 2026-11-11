@@ -1437,6 +1437,10 @@ function setupAssemblyTrees(){
    const canManage=window.BSProjectManager?.isOwner?.(project)===true||(["launcher","linear","robot"].includes(project)&&adminAuthenticated);
    workspace.querySelector(".workspace-project-settings").hidden=!canManage;
    summary.querySelector(".project-summary-settings").hidden=!canManage;
+   const record=window.BSProjectManager?.getProject?.(project);
+   const visibility=record?.visibility==="private"?"Private":"Public";
+   workspace.querySelector(".workspace-heading .muted").textContent=record?"Workspace · "+visibility:"Workspace";
+   summary.querySelector(".project-summary-heading .muted").textContent=record?"Project summary · "+visibility:"Project summary";
   };
   bomScreen.querySelector(".assembly-bom-back").onclick=openWorkspace;
   async function showAssemblyPage(){
