@@ -667,10 +667,11 @@ function setupAssemblyTrees(){
   partWorkspace.querySelector(".workspace-heading").after(detailsPanel);
   const progressSelect=progressPanel.querySelector(".part-progress-select"),attentionCheckbox=progressPanel.querySelector(".part-needs-attention"),attentionText=progressPanel.querySelector(".part-attention-note");
   const refreshAttentionForm=()=>{progressPanel.querySelector(".part-attention-note-field").hidden=!attentionCheckbox.checked};
-  let partStatusTimer=null;
+  let partStatusTimer=null,partStatusSavePromise=null,partStatusChangeVersion=0;
   const schedulePartStatusSave=(immediate=false)=>{
    clearTimeout(partStatusTimer);
    if(!canEdit()||!currentPartInfo)return;
+   partStatusChangeVersion++;
    partStatusTimer=setTimeout(()=>{void savePartProgress()},immediate?0:650);
   };
   progressSelect.addEventListener("change",()=>schedulePartStatusSave(true));
@@ -686,16 +687,30 @@ function setupAssemblyTrees(){
   };
   async function savePartProgress(){
    if(!canEdit()||!currentPartInfo)return;
-   const note=attentionText.value.trim(),flag=attentionCheckbox.checked,feedback=progressPanel.querySelector(".part-progress-feedback");
-   const id=currentPartInfo.id,saveButton=progressPanel.querySelector(".part-progress-save");
-   saveButton.disabled=true;feedback.textContent="Saving…";
-   try{
-    const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id),{method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({progressStatus:progressSelect.value,needsAttention:flag,attentionNote:note})});
-    const data=await response.json();if(!response.ok)throw Error(data.error||"Status could not be saved");
-    currentPartInfo=data.component;partProgress.set(id,data.component.progressStatus);partAttention.set(id,data.component.needsAttention===true);
-    fillProgressPanel(data.component);render();feedback.textContent="Saved.";
-   }catch(error){feedback.textContent=error.message}
-   finally{saveButton.disabled=false}
+   if(partStatusSavePromise){await partStatusSavePromise;return}
+   const id=currentPartInfo.id,version=partStatusChangeVersion;
+   const changes={progressStatus:progressSelect.value,needsAttention:attentionCheckbox.checked,attentionNote:attentionText.value.trim()};
+   const feedback=progressPanel.querySelector(".part-progress-feedback");
+   feedback.textContent="Saving…";
+   partStatusSavePromise=(async()=>{
+    const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id),{
+     method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(changes)
+    });
+    const data=await response.json();
+    if(!response.ok)throw Error(data.error||"Status could not be saved");
+    partProgress.set(id,data.component.progressStatus);partAttention.set(id,data.component.needsAttention===true);
+    if(currentPartInfo?.id===id){
+     currentPartInfo=data.component;
+     if(version===partStatusChangeVersion){fillProgressPanel(data.component);feedback.textContent="Saved."}
+     render();
+    }
+   })();
+   try{await partStatusSavePromise}
+   catch(error){if(currentPartInfo?.id===id)feedback.textContent=error.message}
+   finally{
+    partStatusSavePromise=null;
+    if(currentPartInfo?.id===id&&version!==partStatusChangeVersion)schedulePartStatusSave(true);
+   }
   }
   const renderPartDetails=part=>{
    detailRows.replaceChildren();
@@ -836,7 +851,7 @@ function setupAssemblyTrees(){
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
    if(partPhotoDialog.open)partPhotoDialog.close();editPartPicture.hidden=true;
-   clearTimeout(partStatusTimer);heading.textContent="Loading part…";currentPartInfo=null;partSavedRevision=null;partStatus.textContent="Loading instructions…";partDetailsCollapse.open=false;
+   clearTimeout(partStatusTimer);partStatusChangeVersion++;heading.textContent="Loading part…";currentPartInfo=null;partSavedRevision=null;partStatus.textContent="Loading instructions…";partDetailsCollapse.open=false;
    detailRows.replaceChildren();detailsPanel.classList.add("hide");
    partWorkspace.querySelector(".part-harness-preview").classList.add("hide");
    cover.replaceChildren();
