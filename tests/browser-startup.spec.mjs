@@ -582,12 +582,20 @@ test("owner manages project privacy and removal from the summary",async({page})=
  const catalog=[{id,name:"Private test project",description:"Prototype",visibility:"private",
   ownerId,kind:"project",editMode:"approval",isOwner:true}];
  const numbering={prefix:"NR",digits:4,nextAssembly:1,nextPart:1001};
+ const proposals=[{id:"33333333-3333-4333-8333-333333333333",project:id,scope:"assembly",targetId:"__root__",
+   stepId:"draft-step",field:"standard",originalText:"Use two screws",suggestedText:"Use three screws",status:"pending"}];
  await page.route("**/api/**",async route=>{
   const url=new URL(route.request().url());let value={};
   if(url.pathname==="/api/accounts")value={user:{id:ownerId,email:"owner@example.com",displayName:"Owner"}};
   else if(url.pathname==="/api/projects"){
    if(route.request().method()==="PATCH"){const input=route.request().postDataJSON();Object.assign(catalog[0],input);value={ok:true,projects:catalog};}
    else value={projects:catalog};
+  }else if(url.pathname==="/api/proposals"){
+   if(route.request().method()==="PATCH"){
+    const input=route.request().postDataJSON(),item=proposals.find(p=>p.id===input.id);
+    if(item)item.status=input.action==="approve"?"approved":"rejected";
+    value={proposal:item};
+   }else value={proposals};
   }else if(url.pathname==="/api/numbering"){
    if(route.request().method()==="PUT"){const input=route.request().postDataJSON();numbering.prefix=input.prefix;numbering.digits=input.digits;value={settings:{...numbering}};}
    else value={...numbering,reservedAssemblyRange:"0001–1000"};
@@ -604,6 +612,19 @@ test("owner manages project privacy and removal from the summary",async({page})=
  const summary=page.locator("#"+id+" .project-summary-page");
  const settings=summary.locator(".project-summary-owner-settings");
  await expect(settings).toBeVisible();
+ const tree=page.locator("#"+id+" .assembly-tree-nodes");
+ const summaryEntry=tree.locator(".assembly-project-summary-entry");
+ await expect(summaryEntry).toContainText("1 change waiting");
+ await expect(summary.locator(".project-summary-review")).toBeVisible();
+ await expect(summary.locator(".project-summary-review-list li")).toHaveCount(1);
+ await summary.getByRole("button",{name:"Review suggestions"}).click();
+ const modal=page.locator(".project-manage-dialog:visible");
+ await expect(modal).toContainText("Use three screws");
+ await modal.getByRole("button",{name:"Approve and apply"}).click();
+ await expect(summary.locator(".project-summary-review")).toBeHidden();
+ await expect(summaryEntry).not.toContainText("change waiting");
+ await modal.getByRole("button",{name:"Close"}).click();
+
  await expect(settings.getByRole("heading",{name:"Project settings"})).toBeVisible();
  await expect(settings.getByRole("button",{name:"Remove project"})).toBeVisible();
  await expect(settings.getByRole("heading",{name:"Part numbering"})).toBeVisible();
@@ -619,7 +640,6 @@ test("owner manages project privacy and removal from the summary",async({page})=
  await settings.getByRole("button",{name:"Save settings"}).click();
  await expect.poll(()=>catalog[0].visibility).toBe("public");
  await expect(settings.getByLabel("Visibility")).toHaveValue("public");
- const tree=page.locator("#"+id+" .assembly-tree-nodes");
  await tree.locator(".assembly-name").first().click();
  await expect(page).toHaveURL(new RegExp("#"+id+"/workspace/__root__"));
  await expect(page.locator("#"+id+" .workspace-project-settings")).toHaveCount(0);
