@@ -25,6 +25,26 @@ export async function handleTree(request,env){
   if(saved===null)return reply({error:"Concurrent project settings update. Reload and try again."},409);
   return reply({ok:true,title:body.title.trim(),revision:saved.etag??null});
  }
+ const statusId=new URL(request.url).searchParams.get("statusAssembly");
+ if(statusId!==null){
+  const treeObj=await env.PHOTOS.get("trees/"+project+".json");
+  const tree=treeObj?JSON.parse(await treeObj.text()):[];
+  if(!tree.some(n=>n.id===statusId&&n.kind!=="part"))return reply({error:"Assembly not found"},404);
+  const key="assembly-status/"+project+"/"+statusId+".json";
+  const defaults={progressStatus:"not_started",needsAttention:false,attentionNote:""};
+  if(request.method==="GET"){
+   const obj=await env.PHOTOS.get(key);
+   return reply({status:obj?{...defaults,...JSON.parse(await obj.text())}:defaults});
+  }
+  if(request.method!=="PUT")return reply({error:"Method not allowed"},405);
+  if(!await canEditProject(request,env,project))return reply({error:"Admin login required"},401);
+  if(request.headers.get("origin")!==new URL(request.url).origin)return reply({error:"Invalid origin"},403);
+  const body=await request.json().catch(()=>null);
+  if(!body||!["not_started","in_progress","complete"].includes(body.progressStatus)||typeof body.needsAttention!=="boolean"||typeof body.attentionNote!=="string"||body.attentionNote.length>2000)return reply({error:"Invalid status"},400);
+  const status={progressStatus:body.progressStatus,needsAttention:body.needsAttention,attentionNote:body.attentionNote.trim()};
+  await env.PHOTOS.put(key,JSON.stringify(status));
+  return reply({status});
+ }
  const assemblyId=new URL(request.url).searchParams.get("assembly");
  if(assemblyId!==null){
   if(assemblyId!=="__root__"&&!/^[a-zA-Z0-9-]{1,80}$/.test(assemblyId))return reply({error:"Invalid assembly"},400);
