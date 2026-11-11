@@ -244,7 +244,8 @@ function setupAssemblyTrees(){
     summaryPhotos=(photoData.photos||[]).filter(photo=>!photo.assembly);
     summaryPhotoIndex=Math.max(0,summaryPhotos.findIndex(photo=>photo.id===previousPhotoId));
     displaySummaryPhoto();
-    const parts=(partData.components||[]).filter(part=>!part.generatedFrom);
+    // Include generated cutting-list materials, matching the canonical BOM rollup.
+    const parts=partData.components||[];
     const rollup=window.BSBomModel.selectWorkspaceParts(parts,nodes,null);
     // Tool status is independent of feature-tree visibility.
     makeSummaryList(bomList,[...rollup.listItems,...rollup.shopItems].filter(part=>!part.isTool),"No BOM parts yet.");
