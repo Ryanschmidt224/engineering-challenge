@@ -182,7 +182,7 @@
     try{await save({action:"deleteRecord",id:record.id});reportHere("Revision deleted.")}
     catch(error){reportHere(error.message);deleteBtn.disabled=false;saveBtn.disabled=false}
    },"btn investigation-delete");
-   actions.append(deleteBtn,btn("Cancel",onDone),saveBtn);controls.append(actions);
+   actions.append(saveBtn,btn("Cancel",onDone),deleteBtn);controls.append(actions);
    container.append(controls);
   }
   function render(target,context,compact=false){
