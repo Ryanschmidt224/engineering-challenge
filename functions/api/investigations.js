@@ -6,16 +6,17 @@ const filePattern=/^recipe-files\/(?:launcher|linear|robot|buck|motorlab|coiltes
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const validText=(v,max)=>typeof v==="string"&&v.length<=max;
 const statuses=new Set(["investigating","resolved","unresolved"]);
-const types=new Set(["observation","theory","attempt","revision","result","lesson","note"]);
+const types=new Set(["observation","theory","attempt","revision","result","lesson","note","resolution"]);
 const scopes=new Set(["assembly","part","step"]);
 const trim=(text,max)=>String(text||"").trim().slice(0,max);
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value+"T12:00:00Z"))&&new Date(value+"T12:00:00Z").toISOString().slice(0,10)===value;
-const entryTypes=new Set(["observation","attempt","lesson","theory","revision","result","note"]);
-const safeEntry=(entry,project)=>entry&&entryTypes.has(entry.type)&&validText(entry.text,5000)&&(entry.text.trim()||(Array.isArray(entry.files)&&entry.files.length>0))&&
+const entryTypes=new Set(["observation","attempt","lesson","theory","revision","result","note","resolution"]);
+const resolutionChoices=new Set(["yes","no","maybe"]);
+const safeEntry=(entry,project)=>entry&&entryTypes.has(entry.type)&&(entry.type!=="resolution"||resolutionChoices.has(entry.resolution))&&validText(entry.text,5000)&&(entry.text.trim()||(Array.isArray(entry.files)&&entry.files.length>0)||entry.type==="resolution")&&
  validDate(entry.date)&&Array.isArray(entry.files||[])&&(entry.files||[]).length<=12&&
  (entry.files||[]).every(file=>typeof file==="string"&&filePattern.test(file)&&file.startsWith("recipe-files/"+project+"/"))&&validText(entry.fileName||"",120);
 const normalizedEntry=(entry)=>({id:crypto.randomUUID(),type:entry.type,text:entry.text.trim(),date:entry.date,
- files:[...new Set(entry.files||[])],fileName:trim(entry.fileName,120),createdAt:new Date().toISOString()});
+ files:[...new Set(entry.files||[])],fileName:trim(entry.fileName,120),...(entry.type==="resolution"?{resolution:entry.resolution}:{}),createdAt:new Date().toISOString()});
 export async function handleInvestigations(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project");
  if(!await projectAllowed(env,project,request))return json({error:"Invalid project"},400);
@@ -109,18 +110,21 @@ export async function handleInvestigations(request,env){
   if(!Array.isArray(incoming)||!incoming.length||incoming.length>5||incoming.some(item=>!safeEntry(item,project)))
    return json({error:"Invalid investigation update"},400);
   if((record.entries||[]).length+incoming.length>100)return json({error:"Too many entries in investigation"},413);
-  changed=records.map(item=>item.id===record.id?{...item,entries:[...(item.entries||[]),...incoming.map(normalizedEntry)]}:item);
+  const resolution=[...incoming].reverse().find(entry=>entry.type==="resolution");
+  const status=resolution?({yes:"resolved",no:"unresolved",maybe:"investigating"})[resolution.resolution]:record.status;
+  changed=records.map(item=>item.id===record.id?{...item,status,entries:[...(item.entries||[]),...incoming.map(normalizedEntry)]}:item);
  }else if(data.action==="append"){
   record=records.find(item=>item.id===data.id);
   const entry=data.entry;
   if(!record)return json({error:"Investigation not found"},404);
-  if(!entry||!types.has(entry.type)||!validText(entry.text,5000)||(!entry.text.trim()&&!(Array.isArray(entry.files)&&entry.files.length))||
+  if(!entry||!types.has(entry.type)||(entry.type==="resolution"&&!resolutionChoices.has(entry.resolution))||!validText(entry.text,5000)||(!entry.text.trim()&&!(Array.isArray(entry.files)&&entry.files.length)&&entry.type!=="resolution")||
      !Array.isArray(entry.files||[])||(entry.files||[]).length>12||
      !(entry.files||[]).every(file=>typeof file==="string"&&filePattern.test(file)&&file.startsWith("recipe-files/"+project+"/"))||
      !validText(entry.fileName||"",120))return json({error:"Invalid investigation entry"},400);
   if((record.entries||[]).length>=100)return json({error:"Too many entries in investigation"},413);
   const next={...normalizedEntry({...entry,date:validDate(entry.date)?entry.date:new Date().toISOString().slice(0,10)})};
-  changed=records.map(item=>item.id===record.id?{...item,entries:[...(item.entries||[]),next]}:item);
+  const status=entry.type==="resolution"?({yes:"resolved",no:"unresolved",maybe:"investigating"})[entry.resolution]:record.status;
+  changed=records.map(item=>item.id===record.id?{...item,status,entries:[...(item.entries||[]),next]}:item);
  }else if(data.action==="status"){
   record=records.find(item=>item.id===data.id);
   if(!record||!statuses.has(data.status))return json({error:"Invalid investigation status"},400);
