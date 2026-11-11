@@ -266,7 +266,7 @@ function setupAssemblyTrees(){
     const parts=partData.components||[];
     const rollup=window.BSBomModel.selectWorkspaceParts(parts,nodes,null);
     // Tool status is independent of feature-tree visibility.
-    makeSummaryList(bomList,[...rollup.listItems,...rollup.shopItems].filter(part=>!part.isTool),"No BOM parts yet.");
+    makeSummaryList(bomList,[...rollup.listItems,...rollup.shopItems].filter(part=>!part.isTool&&part.itemType!=="document"),"No BOM parts yet.");
     makeSummaryList(toolList,parts.filter(part=>part.isTool),"No tools specified yet.");
    }catch(error){
     if(version!==summaryVersion)return;
@@ -306,6 +306,12 @@ function setupAssemblyTrees(){
   };
   bomScreen.querySelector(".assembly-bom-list").onclick=()=>setBomView("list");
   bomScreen.querySelector(".assembly-bom-pictures").onclick=()=>setBomView("pictures");
+  const bomDocumentsLabel=document.createElement("label");
+  bomDocumentsLabel.className="assembly-bom-documents-toggle";
+  const bomDocumentsCheckbox=document.createElement("input");bomDocumentsCheckbox.type="checkbox";bomDocumentsCheckbox.checked=true;
+  bomDocumentsLabel.append(bomDocumentsCheckbox,document.createTextNode(" Documents"));
+  bomDocumentsCheckbox.onchange=()=>{showBomDocuments=bomDocumentsCheckbox.checked;void renderWorkspaceParts();renderTiles()};
+
   const assemblyLayout=view.querySelector(".assembly-layout");
   const sidebar=root;
   const bomPanel=workspace.querySelector(".workspace-bom");
@@ -318,7 +324,7 @@ function setupAssemblyTrees(){
    const tools=document.createElement("div");
    tools.className="assembly-bom-heading-actions";
    const newPart=bomHeading.querySelector(".workspace-new-part");
-   tools.append(viewSwitch);
+   tools.append(viewSwitch,bomDocumentsLabel);
    if(newPart)tools.append(newPart);
    bomHeading.append(tools);
    bomScreen.querySelector(".assembly-bom-list-view").before(bomHeading);
@@ -1068,16 +1074,17 @@ function setupAssemblyTrees(){
     if(version!==bomDisplayVersion||assemblyId!==selected)return;
     const parts=Array.isArray(result.components)?result.components:[];
     syncPartNodes(parts);
-    const {shopItems,shopIds}=window.BSBomModel.selectWorkspaceParts(parts,nodes,assemblyId);
+    const visibleParts=showBomDocuments?parts:parts.filter(part=>part.itemType!=="document");
+    const {shopItems,shopIds}=window.BSBomModel.selectWorkspaceParts(visibleParts,nodes,assemblyId);
     container.replaceChildren();
     // A real subassembly is shown once as an expandable BOM row, not duplicated as a normal part.
     const renderAssembly=(parentId,mount,level)=>{
      const linkedIds=new Set(nodes.filter(n=>isPartNode(n)).map(n=>n.partId));
-     const ownParts=parts.filter(p=>(p.assemblyId??null)===parentId&&!linkedIds.has(p.id)&&!shopIds.has(p.id));
+     const ownParts=visibleParts.filter(p=>(p.assemblyId??null)===parentId&&!linkedIds.has(p.id)&&!shopIds.has(p.id));
      const children=nodes.filter(n=>n.parentId===parentId);
      const entries=ownParts.map(part=>({part,originId:parentId,feature:false}));
      for(const node of children)if(isPartNode(node)){
-      const part=parts.find(p=>p.id===node.partId);
+      const part=visibleParts.find(p=>p.id===node.partId);
       if(part&&!shopIds.has(part.id))entries.push({part,originId:node.parentId,feature:true});
      }
      appendGroupedBomParts(mount,entries);
@@ -1088,7 +1095,7 @@ function setupAssemblyTrees(){
       const name=document.createElement("span");name.className="bom-part-name";name.textContent=node.name;
       const descendantIds=new Set([node.id]);const collect=id=>{for(const child of nodes.filter(x=>x.parentId===id))if(!descendantIds.has(child.id)){descendantIds.add(child.id);collect(child.id)}};collect(node.id);
       const count=document.createElement("span");count.className="bom-subassembly-count";
-      const nParts=parts.filter(part=>descendantIds.has(part.assemblyId??null)||nodes.some(x=>isPartNode(x)&&x.partId===part.id&&descendantIds.has(x.parentId))).length;
+      const nParts=visibleParts.filter(part=>descendantIds.has(part.assemblyId??null)||nodes.some(x=>isPartNode(x)&&x.partId===part.id&&descendantIds.has(x.parentId))).length;
       count.textContent=nParts+" part"+(nParts===1?"":"s");
       summary.append(name,count);item.append(summary);
       const body=document.createElement("div");body.className="bom-part-body bom-subassembly-children";
@@ -1103,7 +1110,7 @@ function setupAssemblyTrees(){
     const count=document.createElement("p");count.className="bom-count";
     const treeIds=new Set([assemblyId]);
     const visit=id=>{for(const node of nodes.filter(n=>n.parentId===id))if(!treeIds.has(node.id)){treeIds.add(node.id);visit(node.id)}};visit(assemblyId);
-    const partCount=parts.filter(p=>(treeIds.has(p.assemblyId??null)&&!nodes.some(n=>isPartNode(n)&&n.partId===p.id))||nodes.some(n=>isPartNode(n)&&n.partId===p.id&&treeIds.has(n.parentId))).length;
+    const partCount=visibleParts.filter(p=>(treeIds.has(p.assemblyId??null)&&!nodes.some(n=>isPartNode(n)&&n.partId===p.id))||nodes.some(n=>isPartNode(n)&&n.partId===p.id&&treeIds.has(n.parentId))).length;
     const componentCount=Math.max(0,partCount-shopItems.length);
     count.textContent=componentCount+" BOM part"+(componentCount===1?"":"s")+(shopItems.length?" · "+shopItems.length+" standard shop materials":"")+" · "+nodes.filter(n=>!isPartNode(n)&&treeIds.has(n.id)&&n.id!==assemblyId).length+" subassemblies";
     container.append(count);
@@ -1673,7 +1680,7 @@ function setupAssemblyTrees(){
   async function renderRootPhotos(){await rootPhotoController.refresh()}
   function renderTiles(){
    const target=bomPictureMount;
-   target.replaceChildren();const children=nodes.filter(n=>n.parentId===selected);
+   target.replaceChildren();const children=nodes.filter(n=>n.parentId===selected&&(showBomDocuments||!isDocumentNode(n)));
    
    if(!children.length)return;
    const bomGrid=document.createElement("div");bomGrid.className="assembly-tile-grid";
