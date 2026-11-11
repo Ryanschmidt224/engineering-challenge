@@ -77,7 +77,7 @@ window.BSProjectManager=(()=>{
    link.append(copy);article.append(link);
    if(project.isOwner){
     const settings=element("div","project-card-actions");
-    const manage=element("button","btn","Manage");manage.type="button";
+    const manage=element("button","btn","Project settings");manage.type="button";
     manage.onclick=event=>{event.stopPropagation();showManage(project)};
     settings.append(manage);article.append(settings);
    }
@@ -174,5 +174,5 @@ window.BSProjectManager=(()=>{
   }
   void refresh();
  };
- return {init,isOwner:id=>currentProjects.some(project=>project.id===id&&project.isOwner),openSettings:id=>openSettingsDialog?.(id)};
+ return {init,isOwner:id=>currentProjects.some(project=>project.id===id&&project.isOwner),getProject:id=>currentProjects.find(project=>project.id===id),openSettings:id=>openSettingsDialog?.(id)};
 })();
