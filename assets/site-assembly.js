@@ -611,8 +611,16 @@ function setupAssemblyTrees(){
    return {setData,getExperiments:()=>experiments};
   }
   let investigations=null,investigationParts=[];
-  const assemblyRecipe=window.BSRecipes?.mount(workspace.querySelector(".recipe-instructions"),{admin:()=>canEdit(),project,renderInvestigations:(step,target)=>investigations?.showStep(target,step,"assembly",selected??"__root__"),onSave:()=>new Promise((resolve,reject)=>{if(!canEdit()){reject(Error("Administrator login required"));return}const status=workspace.querySelector(".workspace-status");const observer=new MutationObserver(()=>{if(status.textContent==="Saved."){observer.disconnect();resolve()}else if(status.textContent&&status.textContent!=="Saving…"){observer.disconnect();reject(Error(status.textContent))}});observer.observe(status,{childList:true,subtree:true,characterData:true});workspace.querySelector(".workspace-save").click();})});
-  const partRecipe=window.BSRecipes?.mount(partWorkspace.querySelector(".recipe-instructions"),{admin:()=>canEdit(),project,renderInvestigations:(step,target)=>investigations?.showStep(target,step,"part",partRoute()),onSave:()=>new Promise((resolve,reject)=>{if(!canEdit()){reject(Error("Administrator login required"));return}const status=partWorkspace.querySelector(".part-workspace-status");const observer=new MutationObserver(()=>{if(status.textContent==="Part instructions saved."){observer.disconnect();resolve()}else if(status.textContent&&status.textContent!=="Saving…"){observer.disconnect();reject(Error(status.textContent))}});observer.observe(status,{childList:true,subtree:true,characterData:true});partWorkspace.querySelector(".part-workspace-save").click();})});
+  const assemblyRecipe=window.BSRecipes?.mount(workspace.querySelector(".recipe-instructions"),{
+   admin:()=>canEdit(),project,
+   renderInvestigations:(step,target)=>investigations?.showStep(target,step,"assembly",selected??"__root__"),
+   onSave:()=>saveAssemblyWorkspace()
+  });
+  const partRecipe=window.BSRecipes?.mount(partWorkspace.querySelector(".recipe-instructions"),{
+   admin:()=>canEdit(),project,
+   renderInvestigations:(step,target)=>investigations?.showStep(target,step,"part",partRoute()),
+   onSave:()=>savePartWorkspace()
+  });
   const assemblyInvestigationPanel=document.createElement("article");
   assemblyInvestigationPanel.className="investigations-panel";
   const partInvestigationPanel=document.createElement("article");
@@ -897,22 +905,46 @@ function setupAssemblyTrees(){
    history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));
    render();notify();window.scrollTo(0,0);
   };
-  partWorkspace.querySelector(".part-workspace-save").onclick=async()=>{
-   const id=partRoute();if(!id)return;
-   if(!canEdit()){partStatus.textContent="Sign in as administrator to save.";return}
-   if(partRecipe?.hasPendingUploads()){partStatus.textContent="Finish uploading attachments before saving.";return}
-   const data={};
-   data.resources=partResourcePicker?.getData();data.experiments=partExtras.getExperiments();data.recipe=partRecipe?.getData()||[];data.expectedRevision=partSavedRevision;
-   const button=partWorkspace.querySelector(".part-workspace-save");button.disabled=true;partStatus.textContent="Saving…";
-   try{
-    const response=await fetch("/api/workspace?project="+encodeURIComponent(project)+"&part="+encodeURIComponent(id),{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});
-    const result=await response.json();
-    if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
-    partSavedRevision=result.revision??partSavedRevision;
-    partRecipe?.markSaved();
-    partStatus.textContent="Part instructions saved.";
-   }catch(e){partStatus.textContent=e.message}finally{button.disabled=false}
-  };
+  let partSaveFlight=null;
+  function savePartWorkspace(){
+   if(partSaveFlight)return partSaveFlight;
+   const work=(async()=>{
+    const id=partRoute();
+    if(!id)throw Error("No part selected for saving.");
+    if(!canEdit())throw Error("Sign in as administrator to save.");
+    if(partRecipe?.hasPendingUploads())throw Error("Finish uploading attachments before saving.");
+    const data={
+     resources:partResourcePicker?.getData(),
+     experiments:partExtras.getExperiments(),
+     recipe:partRecipe?.getData()||[],
+     expectedRevision:partSavedRevision
+    };
+    const button=partWorkspace.querySelector(".part-workspace-save");
+    button.disabled=true;partStatus.textContent="Saving…";
+    try{
+     const controller=new AbortController();
+     const timeout=setTimeout(()=>controller.abort(),20000);
+     let response;
+     try{response=await fetch("/api/workspace?project="+encodeURIComponent(project)+"&part="+encodeURIComponent(id),{
+      method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},
+      body:JSON.stringify(data),signal:controller.signal
+     })}finally{clearTimeout(timeout)}
+     const result=await response.json();
+     if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
+     partSavedRevision=result.revision??partSavedRevision;
+     partRecipe?.markSaved();
+     partStatus.textContent="Part instructions saved.";
+    }catch(error){
+     partStatus.textContent=error.name==="AbortError"?"Save timed out. Try again.":error.message;
+     throw error;
+    }finally{button.disabled=false}
+   })();
+   partSaveFlight=work;
+   void work.finally(()=>{if(partSaveFlight===work)partSaveFlight=null}).catch(()=>{});
+   return work;
+  }
+  partWorkspace.querySelector(".part-workspace-save").onclick=()=>void savePartWorkspace().catch(()=>{});
+
   function openPartInstructions(part,originId){
    partBackAssembly=selected;
    history.pushState(null,"","#"+project+"/part/"+encodeURIComponent(part.id));
@@ -1598,15 +1630,43 @@ function setupAssemblyTrees(){
     workspaceStatus.textContent="";
    }catch(e){workspaceStatus.textContent=e.message}
   }
-  workspace.querySelector(".workspace-save").onclick=async()=>{
-   if(!canEdit()){workspaceStatus.textContent="Use Admin login at the top of the website to save.";return}
-   if(assemblyRecipe?.hasPendingUploads()){workspaceStatus.textContent="Finish uploading attachments before saving.";return}
-   const button=workspace.querySelector(".workspace-save"),url=workspaceUrl(),data={};
-   data.resources=assemblyResourcePicker?.getData();data.experiments=assemblyExtras.getExperiments();data.recipe=assemblyRecipe?.getData()||[];data.expectedRevision=workspaceSavedRevision;
-   button.disabled=true;workspaceStatus.textContent="Saving…";
-   try{const res=await fetch(url,{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(data)});const result=await res.json();if(!res.ok)throw Error(result.error||"Save failed (HTTP "+res.status+")");workspaceSavedRevision=result.revision??workspaceSavedRevision;assemblyRecipe?.markSaved();workspaceStatus.textContent="Saved."}
-   catch(e){workspaceStatus.textContent=e.message}finally{button.disabled=false}
-  };
+  let assemblySaveFlight=null;
+  function saveAssemblyWorkspace(){
+   if(assemblySaveFlight)return assemblySaveFlight;
+   const work=(async()=>{
+    if(!canEdit())throw Error("Use Admin login to save.");
+    if(assemblyRecipe?.hasPendingUploads())throw Error("Finish uploading attachments before saving.");
+    const button=workspace.querySelector(".workspace-save"),url=workspaceUrl();
+    const data={
+     resources:assemblyResourcePicker?.getData(),
+     experiments:assemblyExtras.getExperiments(),
+     recipe:assemblyRecipe?.getData()||[],
+     expectedRevision:workspaceSavedRevision
+    };
+    button.disabled=true;workspaceStatus.textContent="Saving…";
+    try{
+     const controller=new AbortController();
+     const timeout=setTimeout(()=>controller.abort(),20000);
+     let response;
+     try{response=await fetch(url,{method:"PUT",credentials:"same-origin",
+      headers:{"content-type":"application/json"},body:JSON.stringify(data),signal:controller.signal
+     })}finally{clearTimeout(timeout)}
+     const result=await response.json();
+     if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
+     workspaceSavedRevision=result.revision??workspaceSavedRevision;
+     assemblyRecipe?.markSaved();
+     workspaceStatus.textContent="Saved.";
+    }catch(error){
+     workspaceStatus.textContent=error.name==="AbortError"?"Save timed out. Try again.":error.message;
+     throw error;
+    }finally{button.disabled=false}
+   })();
+   assemblySaveFlight=work;
+   void work.finally(()=>{if(assemblySaveFlight===work)assemblySaveFlight=null}).catch(()=>{});
+   return work;
+  }
+  workspace.querySelector(".workspace-save").onclick=()=>void saveAssemblyWorkspace().catch(()=>{});
+
   const workspaceHash=id=>"#"+project+"/workspace/"+encodeURIComponent(id??"__root__");
   const bomHash=id=>"#"+project+"/bom/"+encodeURIComponent(id??"__root__");
   // Keep older overview deep links usable as BOM list destinations.
