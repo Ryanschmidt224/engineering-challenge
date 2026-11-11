@@ -179,6 +179,8 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await row.click({button:"right"});
  const menu=page.locator(".assembly-context-menu:visible").last();
  await expect(menu).toBeVisible();
+ await expect(menu.locator(".assembly-context-heading")).toContainText("Motor and Motor Control");
+ await expect(menu.locator(".assembly-context-section-label")).toContainText(["Create","Edit","Move"]);
  await expect(menu.getByRole("menuitem",{name:"Add part"})).toBeVisible();
  await expect(menu.getByRole("menuitem",{name:"Add subassembly"})).toBeVisible();
  await expect(menu.getByRole("menuitem",{name:"Rename"})).toBeVisible();
@@ -626,7 +628,20 @@ test("owner manages project privacy and removal from the summary",async({page})=
  await modal.getByRole("button",{name:"Close"}).click();
 
  await expect(settings.getByRole("heading",{name:"Project settings"})).toBeVisible();
- await expect(settings.getByRole("button",{name:"Remove project"})).toBeVisible();
+ await expect(settings.locator(".project-settings-card")).toBeVisible();
+ await expect(settings.locator(".project-numbering-card")).toBeVisible();
+ await expect(settings.getByRole("button",{name:"Delete Project"})).toBeVisible();
+ await settings.getByRole("button",{name:"Delete Project"}).click();
+ const confirmation=page.locator(".project-delete-dialog:visible");
+ await expect(confirmation.getByRole("heading",{name:"Delete project?"})).toBeVisible();
+ await expect(confirmation).toContainText("archived, not permanently erased");
+ await expect(confirmation.getByRole("button",{name:"Delete Project"})).toBeDisabled();
+ await confirmation.getByLabel("Confirm project name").fill("not the project name");
+ await expect(confirmation.getByRole("button",{name:"Delete Project"})).toBeDisabled();
+ await confirmation.getByLabel("Confirm project name").fill("Private test project");
+ await expect(confirmation.getByRole("button",{name:"Delete Project"})).toBeEnabled();
+ await confirmation.getByRole("button",{name:"Cancel"}).click();
+ await expect(confirmation).toBeHidden();
  await expect(settings.getByRole("heading",{name:"Part numbering"})).toBeVisible();
  await expect(settings.locator(".project-numbering-preview")).toContainText("NR0001");
  await expect(settings.locator(".project-numbering-preview")).toContainText("NR1001");
