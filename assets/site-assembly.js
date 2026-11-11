@@ -650,9 +650,23 @@ function setupAssemblyTrees(){
   creatorInsightsTarget.className="creator-feedback-target";
   summary.querySelector(".project-summary-lists").after(creatorInsightsTarget);
   if(canEdit())window.BSMyBuild?.insights(creatorInsightsTarget,{project});
+  // Each major content section can be flagged independently; the source text stays untouched.
+  const sectionReport=(element,sectionId)=>window.BSMyBuild?.reportControl(element,{
+   project,scope:()=> "section:"+sectionId+"_"+(partRoute()||selected||"root")
+  });
+  sectionReport(workspace.querySelector(".workspace-resources"),"resources");
+  sectionReport(workspace.querySelector(".recipe-instructions"),"instructions");
+  sectionReport(bomPanel,"bom");
+  sectionReport(partWorkspace.querySelector(".part-linked-resources"),"resources");
+  sectionReport(partWorkspace.querySelector(".recipe-instructions"),"instructions");
+  sectionReport(summary.querySelector(".project-summary-bom-section"),"bom");
+  sectionReport(summary.querySelector(".project-summary-tools-section"),"tools");
+  sectionReport(summary.querySelector(".project-summary-gallery"),"photos");
+
 
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
   detailsPanel.innerHTML='<details class="part-details-collapse"><summary class="part-details-view-heading"><h2>Part details</h2><span class="part-details-toggle-label">Show details</span></summary><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div><div class="part-drawing-panel"></div><div class="part-files-panel"></div></details>';
+  sectionReport(detailsPanel,"details");
   const partDetailsCollapse=detailsPanel.querySelector(".part-details-collapse");
   partDetailsCollapse.addEventListener("toggle",()=>{partDetailsCollapse.querySelector(".part-details-toggle-label").textContent=partDetailsCollapse.open?"Minimize details":"Show details"});
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
