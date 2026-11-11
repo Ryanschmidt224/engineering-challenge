@@ -937,3 +937,57 @@
 /* No accent stripe on either selected step surface. */
 .recipe-compact .recipe-step-nav-item.is-active,
 .recipe-compact .recipe-step-detail>.recipe-one-step[open]>.recipe-one-step-summary{border-left:0!important}
+
+
+/* Work instruction polish: consistent neutral active-step surfaces.
+   Both headers use the exact same opaque fill, height and corner geometry. */
+.recipe-compact .recipe-step-nav-item.is-active,
+.recipe-compact .recipe-step-detail > .recipe-one-step[open] > .recipe-one-step-summary{
+ box-sizing:border-box;
+ height:var(--recipe-active-heading-height);
+ min-height:var(--recipe-active-heading-height);
+ background:var(--color-surface-muted)!important;
+ border:0!important;
+ border-radius:9px!important;
+ box-shadow:none!important;
+ padding:12px 16px;
+ display:flex;
+ align-items:center;
+}
+.recipe-compact .recipe-step-list{padding:9px;gap:4px}
+.recipe-compact .recipe-step-detail{padding:9px}
+.recipe-compact .recipe-step-detail > .recipe-one-step[open] > .recipe-one-step-summary{
+ border-bottom:0!important;
+}
+.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-body{
+ padding:18px 7px 9px;
+}
+/* Revision, failure and lesson disclosures are text-first rather than tinted cards. */
+.assembly-workspace-page .investigations-panel,
+.assembly-workspace-page .investigations-panel .investigation-collapse,
+.assembly-workspace-page .investigations-panel .investigation-collapse-heading,
+.assembly-workspace-page .investigations-panel .investigation-card,
+.assembly-workspace-page .investigations-panel .investigation-rollup,
+.assembly-workspace-page .investigations-panel .investigation-entry,
+.recipe-compact .recipe-step-investigations,
+.recipe-compact .recipe-step-investigations .investigation-collapse,
+.recipe-compact .recipe-step-investigations .investigation-collapse-heading,
+.recipe-compact .recipe-step-investigations .investigation-entry{
+ background:transparent!important;
+ background-image:none!important;
+ box-shadow:none!important;
+}
+.assembly-workspace-page .investigations-panel .investigation-collapse > summary.investigation-collapse-heading{
+ background:transparent!important;
+}
+.recipe-instructions .recipe-heading-row{align-items:center}
+.recipe-instructions .recipe-heading-row .recipe-right-click-tip{
+ align-self:center!important;display:inline-flex;align-items:center;
+ justify-content:flex-start;margin:0!important;
+}
+.recipe-instructions .recipe-heading-row .recipe-right-click-icon{
+ flex:0 0 auto;line-height:1;
+}
+@media(max-width:760px){
+ .recipe-compact .recipe-step-detail{padding:7px}
+}
