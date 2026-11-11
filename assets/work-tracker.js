@@ -31,7 +31,7 @@
   });
   state.pending=next;return next;
  }
- function mount(panel,{project,context,editable=()=>false,resources=()=>({}),steps=()=>[]}){
+ function mount(panel,{project,context,editable=()=>false,resources=()=>({}),nodes=()=>[]}){
   panel.classList.add("project-work-tracker");
   const heading=el("div","tracker-heading"),title=el("h2","","Continue working"),status=el("span","tracker-status");
   const toolbar=el("div","tracker-tools"),list=el("div","tracker-task-list");
@@ -104,13 +104,14 @@
    if(!stored)return;
    readBody.replaceChildren();
    const ctx=here(),assembly=ctx.assemblyId??null;
-   const bom=parts.filter(p=>(p.assemblyId??null)===assembly&&p.itemType!=="document");
+   const included=window.BSBomModel?.assemblyIds(nodes(),assembly)||new Set([assembly]);
+   const bom=parts.filter(p=>included.has(p.assemblyId??null)&&p.itemType!=="document");
    const resourceTools=resources()?.tools||[];
-   readBody.append(el("p","muted","Manually confirm what is available. A BOM entry or linked resource does not mean you own it. This list covers direct BOM parts for the selected assembly."));
+   readBody.append(el("p","muted","Manually confirm what is available. A BOM entry or linked resource does not mean you own it. This list includes BOM parts in the selected assembly and its subassemblies."));
    const items=[...bom.map(p=>({key:"part:"+p.id,name:(p.partNumber?p.partNumber+" · ":"")+(p.name||"Unnamed part"),category:"Parts"})),...resourceTools.map(tool=>({key:"tool:"+String(tool),name:"Linked tool: "+tool,category:"Tools"}))];
    const ready=items.filter(item=>stored.readiness[item.key]).length;
    readBody.append(el("p","tracker-ready-count",ready+" of "+items.length+" confirmed"));
-   if(!items.length)readBody.append(el("p","muted",readinessLoaded?"No direct BOM parts or linked tools found.":"Loading BOM…"));
+   if(!items.length)readBody.append(el("p","muted",readinessLoaded?"No BOM parts or linked tools found.":"Loading BOM…"));
    for(const item of items){
     const label=el("label","tracker-ready-item"),check=el("input");check.type="checkbox";check.checked=!!stored.readiness[item.key];check.disabled=!editable();
     check.onchange=()=>void update(project,s=>{s.readiness[item.key]=check.checked}).catch(error=>message(error.message));
