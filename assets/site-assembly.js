@@ -296,14 +296,15 @@ function setupAssemblyTrees(){
   bomResizer.setAttribute("role","separator");
   bomResizer.setAttribute("tabindex","0");
   bomResizer.setAttribute("aria-orientation","vertical");
-  bomResizer.setAttribute("aria-label","Resize feature tree");
+  bomResizer.setAttribute("aria-label","Resize feature tree width");
+  bomResizer.title="Drag left or right to resize the feature tree. Arrow keys also work.";
   bomResizer.setAttribute("aria-valuemin","20");
   bomResizer.setAttribute("aria-valuemax","70");
   assemblyLayout.insertBefore(bomResizer,view.querySelector(".assembly-content"));
   const bomWidthKey="bs-feature-tree-width";
   const clampSidebarWidth=value=>{
    const available=assemblyLayout.getBoundingClientRect().width;
-   return Math.round(Math.max(290,Math.min(Number(value)||available*.30,available-390)));
+   return Math.round(Math.max(220,Math.min(Number(value)||available*.25,Math.max(220,available-390))));
   };
   const setBomWidth=value=>{
    const width=clampSidebarWidth(value);
@@ -342,7 +343,7 @@ function setupAssemblyTrees(){
    event.preventDefault();
    const available=assemblyLayout.getBoundingClientRect().width;
    const current=sidebar.getBoundingClientRect().width;
-   const next=event.key==="Home"?290:event.key==="End"?available-390:
+   const next=event.key==="Home"?220:event.key==="End"?available-390:
     current+(event.key==="ArrowRight"?32:-32);
    const width=setBomWidth(next);
    try{localStorage.setItem(bomWidthKey,String(width))}catch{}
