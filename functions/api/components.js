@@ -140,7 +140,7 @@ export async function handleComponents(request,env){
   const state=await readEditable(env,project),items=state.items;
   if(items.length>=300)return json({error:"Component limit reached"},400);
   try{
-   if(input.partNumber||kind==="custom"&&!record.isTool&&input.assignNumber!==false)record.partNumber=await issueNumber(env,project,"part",record.id,input.partNumber||undefined);
+   if(input.partNumber||input.assignNumber===true||kind==="custom"&&!record.isTool&&input.assignNumber!==false)record.partNumber=await issueNumber(env,project,"part",record.id,input.partNumber||undefined);
   }catch(error){return json({error:error.message},error.status||400)}
   items.push(record);syncDerived(items,record);
   if(!await saveEditable(env,project,items,state))return conflict();
