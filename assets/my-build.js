@@ -130,7 +130,7 @@
      });
      const data=await readApiResponse(res,"Feedback");
      if(!res.ok)throw Error(data.error||"Unable to save feedback");
-     status.textContent="Thank you — feedback saved.";
+     window.BSTransient?.show(status,"Thank you — feedback saved.",4000);
      dismiss();
     }catch(error){
      status.textContent=error.message;
