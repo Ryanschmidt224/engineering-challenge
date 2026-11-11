@@ -30,7 +30,7 @@ function open({onCreate,hideDefault=false}){
  const visibility=el("label","library-visibility-field");const visibilityInput=el("input");visibilityInput.type="checkbox";visibilityInput.checked=hideDefault;visibility.append(visibilityInput,document.createTextNode(" Hide from feature tree"));
  const mode=field("How would you like to add this part?","select");option(mode.input,"custom","Enter part details");option(mode.input,"library","Choose from saved parts / wire tools");
  const customName=field("Part name");
- const itemKind=field("Create","select");option(itemKind.input,"part","Part");option(itemKind.input,"document","Document");
+ const itemKind=field("Item type","select");option(itemKind.input,"part","Part");option(itemKind.input,"document","Document");
  const partClassification=field("Part type","select");option(partClassification.input,"purchased","Purchased or standard part");option(partClassification.input,"custom","Custom-designed part");
  const partNumberField=field("New part number");partNumberField.input.placeholder="Enter an existing / reserved number";partNumberField.input.maxLength=30;
  const numberChoice=el("fieldset","library-number-choice");
@@ -207,7 +207,7 @@ function open({onCreate,hideDefault=false}){
   if(mode.input.value==="custom"){
    const name=customName.input.value.trim();if(!name||name.length>100){status.textContent="Enter a part name (up to 100 characters).";return}
    const autoNumber=autoNumberCheckbox.checked;
-   payload={name,quantity:documentMode?1:count,specifications:[],itemType:itemKind.input.value,partType:partClassification.input.value,
+   payload={name,quantity:itemKind.input.value==="document"?1:count,specifications:[],itemType:itemKind.input.value,partType:partClassification.input.value,
     assignNumber:autoNumber,partNumber:autoNumber?null:partNumberField.input.value.trim().toUpperCase()||null};
   }else if(category.input.value==="components"){
    const p=commons.find(p=>p.id===commonSelect.input.value);if(!p){status.textContent="Select a saved library part.";return}
