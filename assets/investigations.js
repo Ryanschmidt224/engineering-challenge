@@ -221,8 +221,7 @@
     card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
     const summary=make("summary","investigation-summary");
     summary.append(make("strong","",record.title));
-    const badge=make("span","investigation-status-pill",statuses.find(x=>x[0]===record.status)?.[1]||record.status);
-    summary.append(dateLabelFor(record),badge);
+    summary.append(dateLabelFor(record));
     card.append(summary);
     const body=make("div","investigation-body");
     if(inherited){
@@ -256,7 +255,7 @@
      card.open=openCards.has(openKey);
      card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
      const title=make("summary","investigation-summary");
-     title.append(make("strong","",record.title),dateLabelFor(record),make("span","investigation-status-pill",record.status));
+     title.append(make("strong","",record.title),dateLabelFor(record));
      card.append(title);
      const body=make("div","investigation-body");
      const sourceName=record.ownerType==="part"?
