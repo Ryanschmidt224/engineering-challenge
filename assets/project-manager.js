@@ -123,7 +123,7 @@ window.BSProjectManager=(()=>{
    if(project)showManage(project);
   };
   archiveButton.onclick=async()=>{
-   if(!user){showAccount();return}
+   if(!user&&!adminAuthenticated){showAccount();return}
    try{
     const all=(await api("GET","/api/projects?includeArchived=1")).projects.filter(p=>p.archived&&p.isOwner);
     manageDialog.replaceChildren();
