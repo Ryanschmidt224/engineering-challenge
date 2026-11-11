@@ -1788,7 +1788,7 @@ function setupAssemblyTrees(){
   nodesEl.parentNode.insertBefore(treeVisibilityControl,nodesEl);
   function render(){nodesEl.replaceChildren();
    hiddenFilter.checked=showHiddenTreeItems;toolsFilter.checked=showTreeTools;
-   controls.classList.toggle("hide",!canEdit());projectActions.classList.toggle("hide",!canEdit());cardEdit.classList.toggle("hide",!canEdit());
+   controls.classList.toggle("hide",!canEdit()||isProjectSummary());projectActions.classList.toggle("hide",!canEdit());cardEdit.classList.toggle("hide",!canEdit());
    const summaryEntry=document.createElement("button");summaryEntry.type="button";summaryEntry.className="assembly-project-summary-entry"+(isProjectSummary()?" selected":"");
    summaryEntry.textContent="Project summary";summaryEntry.setAttribute("aria-current",isProjectSummary()?"page":"false");
    summaryEntry.onclick=()=>{selected=null;history.pushState(null,"","#"+project);render();notify();window.scrollTo(0,0)};
