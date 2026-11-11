@@ -1,7 +1,7 @@
 import {accountUser} from "./accounts.js";
 import {projectAllowed,canEditProject} from "./projects.js";
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});
-const validScope=/^(project|assembly|part|step):[a-zA-Z0-9_-]{1,100}$/;
+const validScope=/^(project|assembly|part|step|section):[a-zA-Z0-9_-]{1,100}$/;
 export async function onRequest({request,env}){
  const project=new URL(request.url).searchParams.get("project");
  if(!await projectAllowed(env,project,request))return json({error:"Project unavailable"},403);
