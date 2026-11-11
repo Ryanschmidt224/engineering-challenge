@@ -95,6 +95,16 @@
   };
   return {refresh:()=>{if(loaded&&document.activeElement!==note)redraw()},open:()=>{details.open=true}};
  }
+ function anonymousVisitorId(){
+  const storageKey="bs-anonymous-feedback-v1";
+  let value=null;
+  try{value=localStorage.getItem(storageKey)}catch{}
+  if(!/^v[a-f0-9]{32}$/.test(value||"")){
+   value="v"+crypto.randomUUID().replace(/-/g,"");
+   try{localStorage.setItem(storageKey,value)}catch{}
+  }
+  return value;
+ }
  async function report(project,scope,status){
   document.querySelectorAll("dialog.my-build-feedback-dialog").forEach(existing=>existing.remove());
   const dialog=node("dialog","my-build-feedback-dialog");
@@ -105,7 +115,7 @@
   const choice=node("div","my-build-feedback-choices");
   const comment=node("textarea","field");comment.rows=3;comment.maxLength=1200;
   comment.placeholder="Optional: explain what was confusing or what stopped you";
-  const note=node("p","muted","Reports help the creator improve this section. Your account identity is not shown to the creator.");
+  const note=node("p","muted","No login needed. Your selection is counted and any note helps the creator improve these instructions.");
   const footer=node("div","my-build-feedback-actions");
   const cancel=button("Cancel",dismiss);
   footer.append(cancel);
@@ -116,10 +126,10 @@
     try{
      const res=await fetch("/api/build-confusion?project="+encodeURIComponent(project),{
       method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},
-      body:JSON.stringify({scope,kind,comment:comment.value})
+      body:JSON.stringify({scope,kind,comment:comment.value,visitorId:anonymousVisitorId()})
      });
      const data=await readApiResponse(res,"Feedback");
-     if(!res.ok)throw Error(data.loginRequired?loginHint:data.error);
+     if(!res.ok)throw Error(data.error||"Unable to save feedback");
      status.textContent="Thank you — feedback saved.";
      dismiss();
     }catch(error){
