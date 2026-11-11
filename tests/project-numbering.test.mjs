@@ -48,3 +48,18 @@ test("simultaneous allocation never issues one number twice",async()=>{
  assert.equal(new Set(assigned).size,assigned.length);
  assert.ok(assigned.length>0);
 });
+
+
+test("legacy part and assembly numbers cannot be duplicated",async()=>{
+ const env={PHOTOS:new MemoryR2()},project="launcher";
+ await env.PHOTOS.put("components/"+project+".json",JSON.stringify([
+  {id:"legacy-part",name:"Imported CAD bracket",partNumber:"NR1007"}
+ ]));
+ await env.PHOTOS.put("trees/"+project+".json",JSON.stringify([
+  {id:"legacy-assembly",kind:"assembly",name:"Frame",partNumber:"NR0003"}
+ ]));
+ await assert.rejects(issueNumber(env,project,"part","newpart","NR1007"),/already assigned/);
+ await assert.rejects(issueNumber(env,project,"assembly","newassembly","NR0003"),/already assigned/);
+ assert.equal(await issueNumber(env,project,"part","newpart","NR1008"),"NR1008");
+ assert.equal(await issueNumber(env,project,"assembly","newassembly","NR0004"),"NR0004");
+});
