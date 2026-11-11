@@ -101,6 +101,27 @@ test("project feature tree and workspace initialize without browser errors", asy
 });
 
 
+test("new custom part offers explicit automatic numbering before the name",async({page})=>{
+ await page.goto("/");
+ const selection=await page.evaluate(async()=>{
+  const opened=window.BSLibraryPartPicker.open({onCreate:async part=>{window.__testCreatedPart=part}});
+  const dialog=document.querySelector(".library-part-dialog");
+  dialog.querySelector(".library-field select")?.setAttribute("data-test-picker","mode");
+  const classification=[...dialog.querySelectorAll("label")].find(l=>l.textContent.includes("Part type"))?.querySelector("select");
+  classification.value="custom";classification.dispatchEvent(new Event("change"));
+  return {exists:!!dialog,numberingText:dialog.querySelector(".library-auto-number")?.textContent,checked:dialog.querySelector(".library-auto-number input")?.checked,
+   nameBeforeNumber:[...dialog.querySelectorAll(".library-part-form > *")].findIndex(e=>e.classList.contains("library-auto-number"))<
+    [...dialog.querySelectorAll(".library-part-form > *")].findIndex(e=>e.textContent?.startsWith("Part name")),
+   numberVisible:!dialog.querySelector(".library-auto-number").classList.contains("hide")};
+ });
+ expect(selection.exists).toBe(true);
+ expect(selection.checked).toBe(true);
+ expect(selection.numberingText).toContain("Create next sequential part number");
+ expect(selection.nameBeforeNumber).toBe(true);
+ expect(selection.numberVisible).toBe(true);
+ await page.locator(".library-part-dialog .library-dialog-actions").getByRole("button",{name:"Cancel"}).click();
+});
+
 test("linear and robot projects share the complete feature tree, summary, BOM and workspace",async({page})=>{
  const errors=[];page.on("pageerror",error=>errors.push(error.message));
  await page.route("**/api/**",async route=>{
