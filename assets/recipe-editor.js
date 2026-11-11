@@ -263,7 +263,7 @@
      if(expanded===step.id)return;
      if(pendingUploads){feedback.textContent="Finish uploading before switching steps.";return}
      if(editing.size&&dirty&&!confirm("You have unsaved changes. Switch steps? Your edits will remain in this workspace until saved."))return;
-     expanded=step.id;closeKnowledgeMenu();render();
+     expanded=step.id;closeKnowledgeMenu();render();options.onStepChange?.(step.id);
     },"recipe-step-nav-item"+(isCurrent?" is-active":""));
     navButton.setAttribute("aria-current",isCurrent?"step":"false");
     navButton.setAttribute("aria-label","Step "+(i+1)+": "+(step.title||"Untitled step"));
@@ -460,11 +460,15 @@
   }
   function setData(data){
    steps=Array.isArray(data?.recipe)?data.recipe.map(normalize):[];
-   dirty=false;expanded=steps[0]?.id||null;editing.clear();feedback.textContent="";
+   dirty=false;expanded=steps[0]?.id||null;
+   const resumeKey="bs-resume-step:"+location.hash;
+   const desired=sessionStorage.getItem(resumeKey);
+   if(desired&&steps.some(step=>step.id===desired)){expanded=desired;sessionStorage.removeItem(resumeKey)}
+   editing.clear();feedback.textContent="";
    render();
   }
   render();
-  return {setData,getData:()=>steps.map(normalize),isDirty:()=>dirty,hasPendingUploads:()=>pendingUploads>0,markSaved:()=>{dirty=false;feedback.textContent="Saved."},render};
+  return {setData,getData:()=>steps.map(normalize),getSelected:()=>steps.find(step=>step.id===expanded)||null,isDirty:()=>dirty,hasPendingUploads:()=>pendingUploads>0,markSaved:()=>{dirty=false;feedback.textContent="Saved."},render};
  }
  window.BSRecipes={mount};
 })();
