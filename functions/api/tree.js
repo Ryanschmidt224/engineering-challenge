@@ -93,7 +93,14 @@ export async function handleTree(request,env){
     if(original){
      if(original.kind==="part")return reply({error:"Cannot change a part node into an assembly"},400);
      if(original.partNumber)entry.partNumber=original.partNumber;
-    }else entry.partNumber=await issueNumber(env,project,"assembly",node.id);
+    }else{
+     const manual=node.numberMode==="manual";
+     if(manual&&(!node.partNumber||typeof node.partNumber!=="string"))
+      return reply({error:"Enter a part number for the new assembly"},400);
+     if(node.numberMode!==undefined&&!["auto","manual"].includes(node.numberMode))
+      return reply({error:"Invalid assembly numbering choice"},400);
+     entry.partNumber=await issueNumber(env,project,"assembly",node.id,manual?node.partNumber:undefined);
+    }
    }
    savedNodes.push(entry);
   }
