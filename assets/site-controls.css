@@ -1450,3 +1450,17 @@
 .assembly-create-form .field{width:100%;min-width:0}
 .assembly-create-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 .assembly-create-status{min-height:1em;color:var(--color-danger,#ad452d)}
+
+
+/* Documents are ordinary project records with independent display toggles. */
+.assembly-bom-documents-toggle{
+ display:inline-flex;align-items:center;gap:8px;
+ margin:0 4px;padding:6px 2px;font-size:.84rem;
+ font-weight:600;color:var(--color-text);white-space:nowrap;cursor:pointer;
+}
+.assembly-bom-documents-toggle input{
+ width:16px;height:16px;accent-color:var(--color-accent);
+}
+.assembly-tree-filters label:has(input){white-space:nowrap}
+.part-item-type-select{width:100%}
+.library-field[hidden],.part-type-field[hidden]{display:none!important}
