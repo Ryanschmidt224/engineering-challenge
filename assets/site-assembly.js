@@ -223,7 +223,7 @@ function setupAssemblyTrees(){
     const parts=(partData.components||[]).filter(part=>!part.generatedFrom);
     const rollup=window.BSBomModel.selectWorkspaceParts(parts,nodes,null);
     // Tool status is independent of feature-tree visibility.
-    makeSummaryList(bomList,rollup.listItems.filter(part=>!part.isTool),"No BOM parts yet.");
+    makeSummaryList(bomList,[...rollup.listItems,...rollup.shopItems].filter(part=>!part.isTool),"No BOM parts yet.");
     makeSummaryList(toolList,parts.filter(part=>part.isTool),"No tools specified yet.");
    }catch(error){
     if(version!==summaryVersion)return;
@@ -248,6 +248,8 @@ function setupAssemblyTrees(){
    parent:workspace,label:"Edit assembly photos",className:"workspace-photo-dialog",
    doneClass:"workspace-photo-close",content:workspacePhotoEditor
   });
+  // Keep the modal outside the hidden workspace so the project summary can open it.
+  workspace.parentElement.append(photoDialog);
   const openPhotoEditor=window.BSPhotoEditor.pencil(
    workspace.querySelector(".workspace-cover"),"Edit assembly image"
   );
