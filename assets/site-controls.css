@@ -1246,3 +1246,27 @@
 .part-number-existing-option[hidden]{display:none!important}
 .part-number-existing-option input{width:16px;height:16px;flex:none}
 .part-number-input[readonly]{background:var(--color-surface-muted);color:var(--color-text-muted);cursor:default}
+
+
+/* Simple persistent project part progress / reminder. */
+.bom-part-workspace .part-progress-panel{
+ display:grid;gap:11px;margin:13px 0 18px;padding:17px 20px;
+ border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);
+}
+.bom-part-workspace .part-progress-heading{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.bom-part-workspace .part-progress-heading h2{font-size:1rem;margin:0}
+.bom-part-workspace .part-progress-badge{font-size:.79rem;color:var(--color-text-muted);font-weight:600}
+.bom-part-workspace .part-progress-panel.is-flagged .part-progress-badge{color:var(--color-danger,#ad452d)}
+.bom-part-workspace .part-progress-fields{display:flex;align-items:end;gap:22px;flex-wrap:wrap}
+.bom-part-workspace .part-progress-fields>label:first-child{display:grid;gap:7px;font-size:.85rem;font-weight:650}
+.bom-part-workspace .part-progress-select{min-width:170px}
+.bom-part-workspace .part-attention-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem;font-weight:600;padding-bottom:12px}
+.bom-part-workspace .part-attention-note-field{display:grid;gap:8px;font-size:.86rem;font-weight:650}
+.bom-part-workspace .part-attention-note-field[hidden],.bom-part-workspace .part-progress-fields[hidden],.bom-part-workspace .part-progress-actions[hidden]{display:none!important}
+.bom-part-workspace .part-attention-note{width:min(100%,800px);min-height:74px;resize:vertical}
+.bom-part-workspace .part-progress-actions{display:flex;align-items:center;gap:12px}
+.bom-part-workspace .part-progress-feedback{color:var(--color-text-muted);font-size:.82rem}
+.assembly-node.part-progress-complete>.assembly-name::after{content:" ✓";color:var(--color-accent);font-weight:750}
+.assembly-node.part-progress-in_progress>.assembly-name::after{content:" ◐";color:var(--color-text-muted)}
+.assembly-node.part-needs-attention>.assembly-name{color:var(--color-danger,#ad452d)}
+.assembly-node.part-needs-attention>.assembly-name::after{content:" ⚑";color:var(--color-danger,#ad452d)}
