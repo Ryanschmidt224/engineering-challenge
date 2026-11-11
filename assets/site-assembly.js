@@ -245,6 +245,57 @@ function setupAssemblyTrees(){
    }
    container.append(list);
   };
+  // Mirror feature-tree hierarchy without changing BOM records or quantities.
+  const makeSummaryBomTree=(container,parts)=>{
+   const previousOpen=new Set([...container.querySelectorAll("details[data-assembly-id]")].filter(item=>item.open).map(item=>item.dataset.assemblyId));
+   container.replaceChildren();
+   const included=parts.filter(part=>!part.isTool&&part.itemType!=="document");
+   const children=new Map();
+   for(const node of nodes){
+    if(node.kind==="part")continue;
+    const parent=node.parentId??null;
+    if(!children.has(parent))children.set(parent,[]);
+    children.get(parent).push(node);
+   }
+   const linkedIds=new Set(nodes.filter(node=>node.kind==="part"&&node.partId).map(node=>node.partId));
+   const createParts=(parent,mount)=>{
+    const group=included.filter(part=>(part.assemblyId??null)===parent&&!linkedIds.has(part.id));
+    const linked=nodes.filter(node=>node.kind==="part"&&(node.parentId??null)===parent).map(node=>included.find(part=>part.id===node.partId)).filter(Boolean);
+    const unique=new Map([...group,...linked].map(part=>[part.id,part]));
+    if(unique.size){
+     const list=document.createElement("ul");list.className="project-summary-part-list";
+     for(const part of unique.values()){
+      const row=document.createElement("li"),name=document.createElement("span"),quantity=document.createElement("span");
+      name.className="project-summary-part-name";name.textContent=(part.partNumber?part.partNumber+" · ":"")+part.name;
+      quantity.className="project-summary-part-quantity";quantity.textContent=window.BSBomModel.quantityText(part);
+      row.append(name,quantity);list.append(row);
+     }
+     mount.append(list);
+    }
+   };
+   let count=0;
+   const visit=(parent,mount,seen)=>{
+    createParts(parent,mount);
+    for(const node of children.get(parent)||[]){
+     if(seen.has(node.id))continue;
+     count++;
+     const detail=document.createElement("details");detail.className="project-summary-assembly";detail.dataset.assemblyId=node.id;
+     detail.open=previousOpen.has(node.id);
+     const heading=document.createElement("summary");
+     const title=document.createElement("strong");title.textContent=(node.partNumber?node.partNumber+" · ":"")+(node.name||"Assembly");
+     const countLabel=document.createElement("span");countLabel.className="muted";
+     const descendants=window.BSBomModel.assemblyIds(nodes,node.id);
+     const qty=included.filter(p=>descendants.has(p.assemblyId??null)).length;
+     countLabel.textContent=qty+" "+(qty===1?"part":"parts");
+     heading.append(title,countLabel);detail.append(heading);
+     const body=document.createElement("div");body.className="project-summary-assembly-contents";
+     visit(node.id,body,new Set([...seen,node.id]));
+     detail.append(body);mount.append(detail);
+    }
+   };
+   visit(null,container,new Set());
+   if(!included.length&&!count)container.append(Object.assign(document.createElement("p"),{className:"muted",textContent:"No BOM parts yet."}));
+  };
   async function refreshProjectSummary(){
    const version=++summaryVersion;
    summary.querySelector(".project-summary-title").textContent=title;
@@ -266,7 +317,7 @@ function setupAssemblyTrees(){
     const parts=partData.components||[];
     const rollup=window.BSBomModel.selectWorkspaceParts(parts,nodes,null);
     // Tool status is independent of feature-tree visibility.
-    makeSummaryList(bomList,[...rollup.listItems,...rollup.shopItems].filter(part=>!part.isTool&&part.itemType!=="document"),"No BOM parts yet.");
+    makeSummaryBomTree(bomList,[...rollup.listItems,...rollup.shopItems]);
     makeSummaryList(toolList,parts.filter(part=>part.isTool),"No tools specified yet.");
    }catch(error){
     if(version!==summaryVersion)return;
@@ -611,7 +662,7 @@ function setupAssemblyTrees(){
   partDetailsCollapse.addEventListener("toggle",()=>{partDetailsCollapse.querySelector(".part-details-toggle-label").textContent=partDetailsCollapse.open?"Minimize details":"Show details"});
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
   const progressPanel=document.createElement("section");progressPanel.className="part-progress-panel";
-  progressPanel.innerHTML='<div class="part-progress-heading"><h2>Part status</h2><span class="part-progress-badge"></span></div><div class="part-progress-fields"><label>Progress<select class="field part-progress-select"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="complete">Complete</option></select></label><label class="part-attention-toggle"><input type="checkbox" class="part-needs-attention"> Needs attention</label></div><label class="part-attention-note-field" hidden>What needs to be fixed?<textarea class="field part-attention-note" rows="3" maxlength="2000" placeholder="Describe the issue so it can be addressed later."></textarea></label><div class="part-progress-actions"><button type="button" class="btn part-progress-save">Save status</button><span class="part-progress-feedback" role="status"></span></div>';
+  progressPanel.innerHTML='<details class="part-progress-disclosure"><summary class="part-progress-heading"><h2>Part status</h2><span class="part-progress-badge"></span><span class="part-progress-edit-label">Edit</span></summary><div class="part-progress-body"><div class="part-progress-fields"><label>Progress<select class="field part-progress-select"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="complete">Complete</option></select></label><label class="part-attention-toggle"><input type="checkbox" class="part-needs-attention"> Needs attention</label></div><label class="part-attention-note-field" hidden>What needs to be fixed?<textarea class="field part-attention-note" rows="3" maxlength="2000" placeholder="Describe the issue so it can be addressed later."></textarea></label><div class="part-progress-actions"><button type="button" class="btn part-progress-save">Save status</button><span class="part-progress-feedback" role="status"></span></div></div></details>';
   partWorkspace.querySelector(".workspace-heading").after(progressPanel,detailsPanel);
   const progressSelect=progressPanel.querySelector(".part-progress-select"),attentionCheckbox=progressPanel.querySelector(".part-needs-attention"),attentionText=progressPanel.querySelector(".part-attention-note");
   const refreshAttentionForm=()=>{progressPanel.querySelector(".part-attention-note-field").hidden=!attentionCheckbox.checked};
@@ -621,6 +672,8 @@ function setupAssemblyTrees(){
    attentionCheckbox.checked=part.needsAttention===true;attentionText.value=part.attentionNote||"";refreshAttentionForm();
    progressPanel.querySelector(".part-progress-badge").textContent=part.needsAttention?"Needs attention":progressSelect.selectedOptions[0]?.textContent||"Not started";
    progressPanel.classList.toggle("is-flagged",part.needsAttention===true);
+   progressPanel.querySelector(".part-progress-disclosure").open=false;
+   progressPanel.querySelector(".part-progress-edit-label").hidden=!canEdit();
    progressPanel.querySelector(".part-progress-fields").hidden=!canEdit();
    progressPanel.querySelector(".part-progress-actions").hidden=!canEdit();
    progressPanel.querySelector(".part-attention-note-field").querySelector("textarea").readOnly=!canEdit();
