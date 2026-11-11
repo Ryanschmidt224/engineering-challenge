@@ -46,11 +46,13 @@ export async function onRequestGet({request,env}){
  const objects=await env.PHOTOS.list({prefix:project+"/",limit:500,include:["customMetadata"]});
  // Assembly-specific photos already have their own assembly ID and are unaffected.
  let used=new Set();
- if(assembly===null){
+ if(assembly===null||assembly==="project-summary"){
   try{used=await recipePhotoReferences(env.PHOTOS,project)}
   catch(error){console.error("Could not separate legacy step photos",error);return json({error:"Photo gallery is temporarily unavailable."},503)}
  }
- return json({photos:objects.objects.filter(o=>(assembly===null?!o.customMetadata?.assemblyId:o.customMetadata?.assemblyId===assembly)&&!used.has(o.key)).map(o=>({
+ // Project-summary albums include legacy unassigned project photos, but do not share
+ // root-assembly photos or instruction attachments. New uploads use project-summary.
+ return json({photos:objects.objects.filter(o=>(assembly===null?!o.customMetadata?.assemblyId:assembly==="project-summary"?(o.customMetadata?.assemblyId==="project-summary"||!o.customMetadata?.assemblyId):o.customMetadata?.assemblyId===assembly)&&!used.has(o.key)).map(o=>({
   id:o.key,assembly:o.customMetadata?.assemblyId||"",caption:o.customMetadata?.caption||"",
   name:o.customMetadata?.name||"Photo",uploaded:o.uploaded.toISOString(),
   url:"/api/photo?id="+encodeURIComponent(o.key)
