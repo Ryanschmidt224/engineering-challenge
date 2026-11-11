@@ -3,8 +3,8 @@
  "use strict";
  const make=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el};
  const btn=(label,fn,cls="btn")=>{const b=make("button",cls,label);b.type="button";b.onclick=fn;return b};
- const types=[["observation","Observation"],["attempt","Attempt / change"],["note","Additional notes"]]; 
- const legacyType={theory:"Hypothesis",lesson:"How was it fixed?",revision:"Revision / design change",result:"Result"};
+ const types=[["observation","Observation"],["note","Additional notes"]]; 
+ const legacyType={attempt:"Attempt / change",theory:"Hypothesis",lesson:"How was it fixed?",revision:"Revision / design change",result:"Result"};
  const statuses=[["investigating","Investigating"],["resolved","Resolved"],["unresolved","Unresolved"]];
  const photoExt=/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i;
  const fileUrl=id=>"/api/recipe-files?id="+encodeURIComponent(id);
@@ -89,7 +89,7 @@
    const date=make("input","field");date.type="date";
    const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
    dateLabel.append(date);controls.append(dateLabel);
-   const descriptions={observation:"Describe what happened or failed.",attempt:"What did you change, test, or try?",note:"Other relevant details, measurements, or notes."};
+   const descriptions={observation:"Describe what happened or failed.",note:"Other relevant details, measurements, or notes."};
    function fieldRow(type,label,placeholder){
     const wrap=make("div","investigation-entry-field");
     const caption=make("label","investigation-field-label");
