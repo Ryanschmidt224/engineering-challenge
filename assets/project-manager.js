@@ -103,7 +103,7 @@ window.BSProjectManager=(()=>{
    section.hidden=!project.isOwner;
    if(!project.isOwner)return;
    section.append(element("h2","","Project settings"));
-   const intro=element("p","muted","Only the owner can change the visibility, permissions, or archive this project.");
+   const intro=element("p","muted","Only the owner can change the visibility, permissions, or delete this project.");
    section.append(intro);
    const form=element("div","project-summary-settings-form");
    const visibility=element("label","","Visibility");
@@ -133,19 +133,34 @@ window.BSProjectManager=(()=>{
     }catch(error){status.textContent=error.message}
     finally{save.disabled=false}
    };
-   const remove=element("button","btn project-archive-button","Remove project");remove.type="button";
-   remove.onclick=async()=>{
-    const confirmation=prompt("Remove this project from the site? All BOM parts, photos, and work instructions will be preserved for restoration.\\n\\nType the project name to confirm: "+project.name);
-    if(confirmation===null)return;
-    remove.disabled=true;
-    try{
-     await api("DELETE","/api/projects",{id:project.id,confirmName:confirmation});
-     navigate("home");await refresh();
-    }catch(error){status.textContent=error.message}
-    finally{remove.disabled=false}
+   const remove=element("button","btn project-delete-button","Delete Project");remove.type="button";
+   remove.onclick=()=>{
+    const dialog=element("dialog","project-delete-dialog");
+    const form=element("form","project-delete-form");form.method="dialog";
+    form.append(element("h2","","Delete project?"));
+    form.append(element("p","","This will remove “"+project.name+"” from your active projects. All parts, photos and instructions will be archived, not permanently erased; you can restore them from Archived projects."));
+    const confirmLabel=element("label","","Type the exact project name to confirm:");
+    const confirmation=element("input","field");confirmation.type="text";confirmation.autocomplete="off";confirmation.setAttribute("aria-label","Confirm project name");confirmLabel.append(confirmation);form.append(confirmLabel);
+    const feedback=element("p","project-delete-feedback");feedback.setAttribute("role","status");form.append(feedback);
+    const buttons=element("div","project-delete-actions");
+    const cancel=element("button","btn","Cancel");cancel.type="button";cancel.onclick=()=>dialog.close();
+    const submit=element("button","btn project-delete-confirm","Delete Project");submit.type="button";submit.disabled=true;
+    confirmation.addEventListener("input",()=>{submit.disabled=confirmation.value!==project.name});
+    submit.onclick=async()=>{
+     submit.disabled=true;feedback.textContent="Deleting project…";
+     try{
+      await api("DELETE","/api/projects",{id:project.id,confirmName:confirmation.value});
+      dialog.close();navigate("home");await refresh();
+     }catch(error){feedback.textContent=error.message;submit.disabled=confirmation.value!==project.name}
+    };
+    buttons.append(cancel,submit);form.append(buttons);dialog.append(form);
+    dialog.addEventListener("close",()=>dialog.remove(),{once:true});
+    document.body.append(dialog);dialog.showModal();confirmation.focus();
    };
    actions.append(save,remove);
-   section.append(form,note,actions,status);
+   const projectSettingsCard=element("section","project-settings-card");
+   projectSettingsCard.append(section.querySelector("h2"),intro,form,note,actions,status);
+   section.append(projectSettingsCard);
    // A project has two independent sequential ranges: assemblies 0001–1000,
    // and custom parts 1001 onward. Formatting can change without renumbering.
    const numbering=element("section","project-numbering-settings");
@@ -192,7 +207,9 @@ window.BSProjectManager=(()=>{
     "Don't reuse retired numbers or renumber a part when moving it between assemblies."
    ])hints.append(element("li","",suggestion));
    recommendations.append(hints);
-   section.append(numbering,recommendations);
+   const numberingCard=element("section","project-numbering-card");
+   numberingCard.append(numbering,recommendations);
+   section.append(numberingCard);
    api("GET","/api/numbering?project="+encodeURIComponent(project.id)).then(data=>{
     if(!numbering.isConnected)return;
     prefix.value=data.prefix||"NR";digits.value=String(data.digits||4);
