@@ -372,3 +372,4 @@ document.addEventListener("focusout",event=>{
 
 window.BSResources?.init();
 renderNotes();renderDrafts();renderTiles();navigate(location.hash.slice(1)||"home");
+window.BSProjectManager?.init({setupAssemblyTrees,setupComponents,setupPhotos,navigate});
