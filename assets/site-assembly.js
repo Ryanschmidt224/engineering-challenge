@@ -186,6 +186,9 @@ function setupAssemblyTrees(){
   );
   openPhotoEditor.onclick=()=>{
    if(!canEdit())return;
+   photoDialog.setAttribute("aria-label","Edit assembly photos");
+   workspacePhotoEditor.querySelector("h2").textContent="Assembly photos";
+   workspacePhotoEditor.querySelector(".muted").textContent="Browse, add, or delete assembly photos.";
    photoDialog.showModal();
    void workspacePhotoController.refresh();
   };
@@ -239,7 +242,7 @@ function setupAssemblyTrees(){
     const [photoData,partData]=await Promise.all([photosResponse.json(),partsResponse.json()]);
     if(version!==summaryVersion||!isProjectSummary())return;
     const previousPhotoId=summaryPhotos[summaryPhotoIndex]?.id;
-    summaryPhotos=(photoData.photos||[]).filter(photo=>photo.assembly==="project-summary");
+    summaryPhotos=(photoData.photos||[]).filter(photo=>photo.assembly==="project-summary"||!photo.assembly);
     summaryPhotoIndex=Math.max(0,summaryPhotos.findIndex(photo=>photo.id===previousPhotoId));
     displaySummaryPhoto();
     // Include generated cutting-list materials, matching the canonical BOM rollup.
@@ -258,7 +261,11 @@ function setupAssemblyTrees(){
   // The compact pencil is over the photo instead of a separate Manage photos button.
   summary.querySelector(".project-summary-photo-edit").onclick=()=>{
    if(!canEdit())return;
-   selected=null;photoDialog.showModal();void workspacePhotoController.refresh();
+   selected=null;
+   photoDialog.setAttribute("aria-label","Edit project summary photos");
+   workspacePhotoEditor.querySelector("h2").textContent="Project summary photos";
+   workspacePhotoEditor.querySelector(".muted").textContent="Photos in this gallery are separate from the top-level assembly.";
+   photoDialog.showModal();void workspacePhotoController.refresh();
   };
   photoDialog.addEventListener("close",()=>{if(isProjectSummary())void refreshProjectSummary()});
   // Reuse the canonical BOM panel on its own screen. The editor alone moves
@@ -1539,7 +1546,7 @@ function setupAssemblyTrees(){
      const r=await fetch(url),data=await r.json();
      if(!r.ok)throw Error(data.error||"Unable to load photos");
      if(id!==currentId())return;
-     const photos=(data.photos||[]).filter(p=>id?p.assembly===id:!p.assembly);
+     const photos=(data.photos||[]).filter(p=>id==="project-summary"?(p.assembly==="project-summary"||!p.assembly):id?p.assembly===id:!p.assembly);
      const name=id?nodes.find(n=>n.id===id)?.name||title:title;
      gallery.replaceChildren(makeAssemblyPhotoStage(photos,name,()=>input.click(),async p=>{
       if(!p||!confirm("Delete this photo?"))return;
