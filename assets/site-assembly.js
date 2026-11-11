@@ -1897,6 +1897,9 @@ function setupAssemblyTrees(){
    wrapper.append(input,document.createTextNode(label));input.onchange=()=>{apply(input.checked);render()};treeVisibilityControl.append(wrapper);return input;
   };
   const hiddenFilter=filterOption("Hidden parts",value=>{showHiddenTreeItems=value});
+  const hiddenFilterTip="Show parts marked as hidden in the feature tree. Unchecking hides them from the tree only; it does not delete parts or change the bill of materials.";
+  hiddenFilter.title=hiddenFilterTip;
+  hiddenFilter.parentElement.title=hiddenFilterTip;
   const toolsFilter=filterOption("Tools",value=>{showTreeTools=value});
   const documentsFilter=filterOption("Documents",value=>{showTreeDocuments=value});
   documentsFilter.checked=true;
