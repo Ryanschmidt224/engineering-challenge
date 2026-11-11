@@ -1464,3 +1464,8 @@
 .investigation-field-label>input.field{min-height:40px!important;height:40px;box-sizing:border-box}
 .investigation-body:empty{padding:0!important;border-top:0!important}
 @media(max-width:650px){.investigation-existing-files{margin-left:0}}
+
+/* Record dates remain visible in collapsed headers; destructive action is separated from Save. */
+.investigation-record-date{font-size:.8rem;font-weight:500;color:var(--color-text-muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.investigation-edit-actions .investigation-delete{margin-right:auto;color:#a52d35;border-color:#a52d3560;background:transparent}
+.investigation-edit-actions .investigation-delete:hover{background:#a52d3510}
