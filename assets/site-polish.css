@@ -1403,3 +1403,39 @@
  .investigation-field-label{grid-template-columns:1fr;gap:5px}
  .investigation-field-attachments{margin-left:0}
 }
+
+/* Compact record creation and evidence links, with consistent descriptor alignment. */
+.investigation-new-record.investigation-create{
+ display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+}
+.investigation-new-record .investigation-record-title{
+ display:grid;grid-template-columns:120px minmax(0,1fr);align-items:center;
+ gap:12px;flex:0 1 500px;min-width:250px;margin:0;
+}
+.investigation-new-record .investigation-record-title .field{
+ width:100%;min-width:0;box-sizing:border-box;margin:0;height:40px;
+}
+.investigation-new-record>.btn{height:40px;min-height:40px;margin:0;display:inline-flex;align-items:center;justify-content:center}
+.investigation-add-controls .investigation-entry-field{gap:0;padding:8px 0}
+.investigation-add-controls .investigation-entry-field[hidden]{display:none!important}
+.investigation-field-label{align-items:start;margin:0;gap:12px}
+.investigation-field-descriptor{padding-top:8px}
+.investigation-field-label>.field{margin:0;display:block}
+.investigation-field-attachments{gap:6px;margin-top:0;padding:0;min-height:0}
+.investigation-field-attachments .investigation-attachment-link{
+ border:0!important;background:transparent!important;box-shadow:none!important;
+ border-radius:0!important;color:var(--color-accent);font-size:.79rem;
+ font-weight:550;line-height:1.3;cursor:pointer;padding:1px 0!important;
+ margin:0!important;min-height:0;height:auto;text-align:left;
+}
+.investigation-attachment-link:hover{text-decoration:underline}
+.investigation-fixed-row{
+ display:grid;grid-template-columns:175px minmax(0,210px);
+ align-items:center;gap:12px;font-size:.87rem;font-weight:650;margin:0;
+}
+.investigation-fixed-row .field{height:38px;width:100%;margin:0}
+@media(max-width:650px){
+ .investigation-new-record .investigation-record-title{flex:1 1 100%;min-width:0;grid-template-columns:105px minmax(0,1fr)}
+ .investigation-fixed-row{grid-template-columns:105px minmax(0,180px)}
+ .investigation-field-descriptor{padding-top:0}
+}
