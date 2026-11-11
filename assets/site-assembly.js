@@ -167,6 +167,75 @@ function setupAssemblyTrees(){
    next.onclick=()=>{active=(active+1)%photos.length;show()};
    stage.append(picture,empty,prev,next,label,actions);show();return stage;
   }
+  // The project summary is a landing page, not a separate source of BOM data.
+  // It rolls up all assembly occurrences and standard shop materials at project scope.
+  const summary=document.createElement("section");
+  summary.className="project-summary-page hide";
+  summary.innerHTML='<header class="project-summary-heading"><div><p class="muted">Project summary</p><h1 class="project-summary-title"></h1></div><div class="project-summary-actions"><button type="button" class="btn project-summary-workspace">Open workspace</button><button type="button" class="btn project-summary-bom">Open BOM</button></div></header><section class="project-summary-gallery"><div class="project-summary-gallery-heading"><h2>Project photos</h2><button type="button" class="btn project-summary-add-photo hide">Manage photos</button></div><div class="project-summary-photo-stage"><img alt="Project photo" class="project-summary-photo" hidden><p class="project-summary-photo-empty">No project photos yet.</p><button type="button" class="project-summary-previous" aria-label="Previous project photo">‹</button><button type="button" class="project-summary-next" aria-label="Next project photo">›</button></div><div class="project-summary-photo-footer"><p class="project-summary-photo-caption"></p><span class="project-summary-photo-position"></span></div></section><div class="project-summary-lists"><section class="project-summary-bom-section"><h2>Project BOM</h2><div class="project-summary-bom-items" aria-live="polite"></div></section><section class="project-summary-tools-section"><h2>Tools needed</h2><div class="project-summary-tool-items" aria-live="polite"></div></section></div>';
+  detail.after(summary);
+  let summaryPhotos=[],summaryPhotoIndex=0,summaryVersion=0;
+  const isProjectSummary=()=>decodeURIComponent(location.hash.slice(1))===project;
+  const summaryPhotoStage=summary.querySelector(".project-summary-photo-stage");
+  const displaySummaryPhoto=()=>{
+   const photo=summaryPhotos[summaryPhotoIndex],picture=summary.querySelector(".project-summary-photo");
+   picture.hidden=!photo;summary.querySelector(".project-summary-photo-empty").hidden=!!photo;
+   if(photo){picture.src=photo.url;picture.alt=photo.caption||"Project photo"}else picture.removeAttribute("src");
+   summary.querySelector(".project-summary-photo-caption").textContent=photo?.caption||"";
+   summary.querySelector(".project-summary-photo-position").textContent=summaryPhotos.length?(summaryPhotoIndex+1)+" of "+summaryPhotos.length:"";
+   for(const selector of [".project-summary-previous",".project-summary-next"])summary.querySelector(selector).hidden=summaryPhotos.length<2;
+  };
+  const moveSummaryPhoto=step=>{if(!summaryPhotos.length)return;summaryPhotoIndex=(summaryPhotoIndex+step+summaryPhotos.length)%summaryPhotos.length;displaySummaryPhoto()};
+  summary.querySelector(".project-summary-previous").onclick=()=>moveSummaryPhoto(-1);
+  summary.querySelector(".project-summary-next").onclick=()=>moveSummaryPhoto(1);
+  summaryPhotoStage.tabIndex=0;
+  summaryPhotoStage.onkeydown=event=>{if(event.key==="ArrowLeft"||event.key==="ArrowRight"){event.preventDefault();moveSummaryPhoto(event.key==="ArrowLeft"?-1:1)}};
+  summary.querySelector(".project-summary-workspace").onclick=()=>{selected=null;history.pushState(null,"","#"+project+"/workspace/__root__");render();notify();window.scrollTo(0,0)};
+  summary.querySelector(".project-summary-bom").onclick=()=>{selected=null;setBomView("list");history.pushState(null,"","#"+project+"/bom/__root__");render();notify();window.scrollTo(0,0)};
+  const makeSummaryList=(container,items,emptyText)=>{
+   container.replaceChildren();
+   if(!items.length){container.append(Object.assign(document.createElement("p"),{className:"muted",textContent:emptyText}));return}
+   const list=document.createElement("ul");list.className="project-summary-part-list";
+   for(const part of items){
+    const row=document.createElement("li"),name=document.createElement("span"),quantity=document.createElement("span");
+    name.className="project-summary-part-name";name.textContent=part.name;
+    quantity.className="project-summary-part-quantity";quantity.textContent=window.BSBomModel.quantityText(part);
+    row.append(name,quantity);list.append(row);
+   }
+   container.append(list);
+  };
+  async function refreshProjectSummary(){
+   const version=++summaryVersion;
+   summary.querySelector(".project-summary-title").textContent=title;
+   summary.querySelector(".project-summary-add-photo").classList.toggle("hide",!canEdit());
+   const bomList=summary.querySelector(".project-summary-bom-items"),toolList=summary.querySelector(".project-summary-tool-items");
+   try{
+    const [photosResponse,partsResponse]=await Promise.all([
+     fetch("/api/photos?project="+encodeURIComponent(project),{credentials:"same-origin",cache:"no-store"}),
+     fetch("/api/components?project="+encodeURIComponent(project),{credentials:"same-origin",cache:"no-store"})
+    ]);
+    if(!photosResponse.ok||!partsResponse.ok)throw Error("Project summary unavailable.");
+    const [photoData,partData]=await Promise.all([photosResponse.json(),partsResponse.json()]);
+    if(version!==summaryVersion||!isProjectSummary())return;
+    const previousPhotoId=summaryPhotos[summaryPhotoIndex]?.id;
+    summaryPhotos=(photoData.photos||[]).filter(photo=>!photo.assembly);
+    summaryPhotoIndex=Math.max(0,summaryPhotos.findIndex(photo=>photo.id===previousPhotoId));
+    displaySummaryPhoto();
+    const parts=(partData.components||[]).filter(part=>!part.generatedFrom);
+    const rollup=window.BSBomModel.selectWorkspaceParts(parts,nodes,null);
+    // Tool status is independent of feature-tree visibility.
+    makeSummaryList(bomList,rollup.listItems.filter(part=>!part.isTool),"No BOM parts yet.");
+    makeSummaryList(toolList,parts.filter(part=>part.isTool),"No tools specified yet.");
+   }catch(error){
+    if(version!==summaryVersion)return;
+    bomList.textContent="Could not load project BOM: "+error.message;
+    toolList.textContent="Could not load tools.";
+   }
+  }
+  // Reuse the established photo upload/edit dialog for the project root.
+  summary.querySelector(".project-summary-add-photo").onclick=()=>{
+   selected=null;photoDialog.showModal();void workspacePhotoController.refresh();
+  };
+  photoDialog.addEventListener("close",()=>{if(isProjectSummary())void refreshProjectSummary()});
   // Project and subassembly workspaces remain independent of the BOM screen.
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
   workspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div><button type="button" class="btn workspace-back">Open BOM</button></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
@@ -1369,13 +1438,15 @@ function setupAssemblyTrees(){
    sidebar.classList.add("bom-sidebar-active");
    if(!isEditingBom)void renderWorkspaceParts();
    const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);
-   const inBom=bomRoute(),inWorkspace=!inPart&&!inBom;
+   const inSummary=isProjectSummary();const inBom=bomRoute(),inWorkspace=!inPart&&!inBom&&!inSummary;
+   summary.classList.toggle("hide",!inSummary);
    workspace.classList.toggle("hide",!inWorkspace);
    bomScreen.classList.toggle("hide",!inBom);
    // Legacy overview DOM remains available for image editing but isn't a page.
    detail.classList.add("hide");
    main.classList.add("hide");
    if(inPart){void showPartWorkspace();return;}
+   if(inSummary){void refreshProjectSummary();return;}
    if(inBom){
     bomScreen.querySelector(".assembly-bom-screen-title").textContent=(selected===null?title:nodes.find(n=>n.id===selected)?.name||"Assembly")+" · BOM";
     if(bomView==="pictures")renderTiles();
@@ -1532,7 +1603,7 @@ function setupAssemblyTrees(){
   }
   root.addEventListener("projectpermissionschanged",()=>{render();notify()});
   root.addEventListener("openpart",()=>{void showAssemblyPage()});
-  root.addEventListener("openassembly",e=>{const id=e.detail;if(id==="__root__"){selected=null;history.pushState(null,"",workspaceHash(null));render();notify();return}if(!nodes.some(n=>n.id===id))return;selected=id;history.pushState(null,"",workspaceHash(id));let cursor=nodes.find(n=>n.id===id);while(cursor){expanded.add(cursor.parentId);cursor=nodes.find(n=>n.id===cursor.parentId)}render();notify()});
+  root.addEventListener("openassembly",e=>{const id=e.detail;if(id==="__root__"){selected=null;history.pushState(null,"","#"+project);render();notify();return}if(!nodes.some(n=>n.id===id))return;selected=id;history.pushState(null,"",workspaceHash(id));let cursor=nodes.find(n=>n.id===id);while(cursor){expanded.add(cursor.parentId);cursor=nodes.find(n=>n.id===cursor.parentId)}render();notify()});
   const validSelection=()=>selected===null||nodes.some(n=>n.id===selected);
   const notify=()=>{assemblySelections[project]=selected;assemblyTreeSnapshots[project]={nodes:[...nodes],title};showAssemblyPage();renderTiles();view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));};
   let treeSavedRevision=null;
@@ -1701,7 +1772,7 @@ function setupAssemblyTrees(){
    const id=node?.id??null,children=nodes.filter(n=>n.parentId===id&&includeTreeNode(n)),el=document.createElement("div");el.className="assembly-node"+(selected===id?" selected":"")+(node&&isHiddenPart(node)?" is-hidden-part":"")+(node&&isToolNode(node)?" is-tool-part":"");el.style.paddingLeft=(depth*17+3)+"px";
    const expand=document.createElement("button");expand.type="button";expand.className="assembly-expander";expand.textContent=children.length?(expanded.has(id)?"▾":"▸"):" ";expand.setAttribute("aria-label",expanded.has(id)?"Collapse":"Expand");expand.onclick=()=>{expanded.has(id)?expanded.delete(id):expanded.add(id);render()};
    const name=document.createElement("button");name.type="button";name.className="assembly-name";name.textContent=node?(isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+node.name:"🟨  "+title;
-   if(isPartNode(node)&&partRoute()===node.partId)el.classList.add("selected");name.onclick=()=>{if(isPartNode(node)){openTreePart(node);return}selected=id;history.pushState(null,"",workspaceHash(id));render();notify();window.scrollTo(0,0)};
+   if(isPartNode(node)&&partRoute()===node.partId)el.classList.add("selected");name.onclick=()=>{if(isPartNode(node)){openTreePart(node);return}selected=id;history.pushState(null,"",id===null?"#"+project:workspaceHash(id));render();notify();window.scrollTo(0,0)};
    el.append(expand,name);
    if(canEdit()){
     el.addEventListener("contextmenu",event=>{
