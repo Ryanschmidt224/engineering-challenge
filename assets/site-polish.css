@@ -1074,3 +1074,12 @@
  .tracker-task{flex-wrap:wrap}
  .assembly-workspace-page:not(.bom-part-workspace) .workspace-heading-actions{margin-left:0}
 }
+
+/* The Open BOM action replaces the old Workspace subtitle under the title. */
+.assembly-workspace-page .workspace-title-group{
+ display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0;flex:1;
+}
+.assembly-workspace-page .workspace-title-group .workspace-title{margin:0}
+.assembly-workspace-page .workspace-title-group .workspace-back{
+ margin:0;align-self:flex-start;min-height:35px;padding:6px 13px;
+}
