@@ -129,11 +129,17 @@ test("new custom part offers explicit automatic numbering before the name",async
  expect(selection.numberingText).toContain("Assign next available project number");
  expect(selection.nameBeforeNumber).toBe(true);
  expect(selection.numberVisible).toBe(true);
+ const itemType=page.locator(".library-part-dialog .library-field",{hasText:"Item type"}).locator("select");
+ await expect(itemType).toBeVisible();
+ await itemType.selectOption("document");
+ await expect(page.locator(".library-part-dialog .library-field",{hasText:"Unit"})).toHaveCount(0);
+ await expect(page.locator(".library-part-dialog .library-field",{hasText:"Quantity"})).toBeHidden();
+ await itemType.selectOption("part");
  await page.locator('.library-part-dialog input[name="new-part-number-mode"][value="manual"]').check();
  await expect(page.locator(".library-part-dialog .library-number-choice")).toBeVisible();
- await expect(page.locator(".library-part-dialog .library-field",{hasText:"Project part number"})).toBeVisible();
+ await expect(page.locator(".library-part-dialog .library-field",{hasText:"New part number"})).toBeVisible();
  await page.locator('.library-part-dialog input[name="new-part-number-mode"][value="auto"]').check();
- await expect(page.locator(".library-part-dialog .library-field",{hasText:"Project part number"})).toBeHidden();
+ await expect(page.locator(".library-part-dialog .library-field",{hasText:"New part number"})).toBeHidden();
  await page.locator(".library-part-dialog .library-dialog-actions").getByRole("button",{name:"Cancel"}).click();
 });
 
@@ -717,4 +723,42 @@ test("owner manages project privacy and removal from the summary",async({page})=
  await tree.locator(".assembly-project-summary-entry").click();
  await expect(summary).toBeVisible();
  expect(errors).toEqual([]);
+});
+
+
+test("documents can be hidden independently in feature tree and BOM",async({page})=>{
+ const components=[
+  {id:"44444444-4444-4444-8444-444444444444",name:"Assembly drawing",itemType:"document",partType:"purchased",quantity:1,quantityUnit:"pcs"},
+  {id:"55555555-5555-4555-8555-555555555555",name:"Housing",itemType:"part",partType:"custom",quantity:1,quantityUnit:"pcs"}
+ ];
+ await page.route("**/api/**",async route=>{
+  const u=new URL(route.request().url());let data={};
+  if(u.pathname==="/api/auth")data={authenticated:false,isAdmin:false};
+  else if(u.pathname==="/api/tree")data=u.searchParams.has("metadata")?{title:null,revision:null}:{nodes:[],revision:"one"};
+  else if(u.pathname==="/api/components")data={components};
+  else if(u.pathname==="/api/photos")data={photos:[]};
+  else if(u.pathname==="/api/workspace")data={workspace:{recipe:[],resources:{tools:[],parts:[],calculators:[]}},revision:"one"};
+  else if(u.pathname==="/api/projects")data={projects:[]};
+  else if(u.pathname==="/api/accounts")data={user:null};
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
+ });
+ await page.goto("/#launcher");
+ const tree=page.locator("#launcher .assembly-tree-nodes");
+ const filter=page.locator("#launcher .assembly-tree-filters").getByLabel("Documents");
+ await expect(tree).toContainText("Assembly drawing");
+ await filter.uncheck();
+ await expect(tree).not.toContainText("Assembly drawing");
+ await expect(tree).toContainText("Housing");
+ await filter.check();
+ await tree.locator(".assembly-name").first().click();
+ await page.locator("#launcher .workspace-back").click();
+ const bom=page.locator("#launcher .assembly-bom-screen");
+ const documentToggle=bom.locator(".assembly-bom-documents-toggle input");
+ await expect(documentToggle).toBeChecked();
+ await expect(bom.locator(".assembly-bom-list-view")).toContainText("Assembly drawing");
+ await documentToggle.uncheck();
+ await expect(bom.locator(".assembly-bom-list-view")).not.toContainText("Assembly drawing");
+ await expect(bom.locator(".assembly-bom-list-view")).toContainText("Housing");
+ await bom.locator(".assembly-bom-pictures").click();
+ await expect(bom.locator(".assembly-bom-picture-view")).not.toContainText("Assembly drawing");
 });
