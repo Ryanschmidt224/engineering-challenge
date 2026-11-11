@@ -55,17 +55,21 @@ function setupAssemblyTrees(){
    tile.querySelector(".assembly-content-tiles").replaceChildren();
    return tile;
   }
+  // All projects use the same assembly controller. Reuse existing BOM records.
   const oldRootTile=main.querySelector(".assembly-unified-tile");
-  // Some legacy project sections have no unified root tile. Do not let one
-  // incomplete section abort initialization of every subsequent project.
-  if(!oldRootTile){console.warn("Skipping assembly controller without root tile:",project);return;}
-  const rootBom=oldRootTile.querySelector(".component-section");
-  const rootStatus=oldRootTile.querySelector(".root-photo-status");
+  const rootBom=oldRootTile?.querySelector(".component-section")||
+   view.querySelector('.component-section[data-components="'+project+'"]');
+  if(!rootBom){console.error("Project BOM mount is missing:",project);return}
+  let rootStatus=main.querySelector(".root-photo-status");
+  if(!rootStatus){
+   rootStatus=document.createElement("p");rootStatus.className="root-photo-status small";rootStatus.setAttribute("role","status");
+  }
   const newRootTile=createUnifiedTile();
   newRootTile.classList.add("assembly-main-tile");
   newRootTile.querySelector(".assembly-content-tiles").append(rootBom);
-  oldRootTile.replaceWith(newRootTile);
-  if(rootStatus)main.insertBefore(rootStatus,newRootTile.nextSibling);
+  if(oldRootTile)oldRootTile.replaceWith(newRootTile);
+  else main.append(newRootTile);
+  main.insertBefore(rootStatus,newRootTile.nextSibling);
   // Project-level controls: unlike subassembly nodes, the root has no node ID.
   // Its name is stored in project-settings, and its cover uses existing photos.
   const projectHeading=main.querySelector("h1");
@@ -1676,6 +1680,7 @@ function setupAssemblyTrees(){
    }
   }
   root.addEventListener("projectpermissionschanged",()=>{refreshSettingsControls();render();notify()});
+   root.addEventListener("projectreviewchanged",()=>render());
   root.addEventListener("openpart",()=>{void showAssemblyPage()});
   root.addEventListener("openassembly",e=>{const id=e.detail;if(id==="__root__"){selected=null;history.pushState(null,"",workspaceHash(null));render();notify();return}if(!nodes.some(n=>n.id===id))return;selected=id;history.pushState(null,"",workspaceHash(id));let cursor=nodes.find(n=>n.id===id);while(cursor){expanded.add(cursor.parentId);cursor=nodes.find(n=>n.id===cursor.parentId)}render();notify()});
   const validSelection=()=>selected===null||nodes.some(n=>n.id===selected);
@@ -1845,6 +1850,13 @@ function setupAssemblyTrees(){
    controls.classList.toggle("hide",!canEdit()||isProjectSummary());projectActions.classList.toggle("hide",!canEdit());cardEdit.classList.toggle("hide",!canEdit());
    const summaryEntry=document.createElement("button");summaryEntry.type="button";summaryEntry.className="assembly-project-summary-entry"+(isProjectSummary()?" selected":"");
    summaryEntry.textContent="Project summary";summaryEntry.setAttribute("aria-current",isProjectSummary()?"page":"false");
+   const pendingCount=window.BSReview?.getPendingCount?.(project);
+   if(Number.isInteger(pendingCount)&&pendingCount>0&&canEdit()){
+    summaryEntry.classList.add("has-pending-changes");
+    const count=document.createElement("span");count.className="assembly-summary-pending-count";
+    count.textContent=pendingCount+" "+(pendingCount===1?"change":"changes")+" waiting";
+    summaryEntry.append(count);
+   }
    summaryEntry.onclick=()=>{selected=null;history.pushState(null,"","#"+project);render();notify();window.scrollTo(0,0)};
    nodesEl.append(summaryEntry);
    // Duplicate links to one part under the same assembly render once. Keep
