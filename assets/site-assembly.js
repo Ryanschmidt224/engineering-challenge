@@ -835,7 +835,7 @@ function setupAssemblyTrees(){
   bomNotice.className="workspace-bom-notice";
   bomNotice.setAttribute("role","status");
   bomNotice.setAttribute("aria-live","assertive");
-  bomPanel.querySelector(".workspace-bom-heading").after(bomNotice);
+  bomPanel.prepend(bomNotice);
   workspace.addEventListener("click",async event=>{
    const target=event.target;
    if(!(target instanceof Element))return;
@@ -1393,7 +1393,7 @@ function setupAssemblyTrees(){
    finally{savingBom=false;if(saveButton)saveButton.disabled=false}
   }
   // BOM creation uses the shared part picker and creates a hideable tree occurrence.
-  bomPanel.querySelector(".workspace-new-part").onclick=async()=>{
+  bomHeading.querySelector(".workspace-new-part").onclick=async()=>{
    if(savingBom)return;
    if(!window.BSLibraryPartPicker){bomReport("Part library unavailable. Refresh and try again.");return}
    const targetAssembly=selected;
