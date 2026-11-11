@@ -1084,3 +1084,51 @@
 .project-summary-part-quantity{color:var(--color-text-muted);font-size:.82rem;text-align:right;white-space:nowrap;flex:none}
 .project-summary-lists .muted{margin-top:14px;font-size:.89rem}
 @media(max-width:760px){.project-summary-lists{grid-template-columns:1fr;gap:28px}.project-summary-photo-stage{height:clamp(230px,54vw,370px)}}
+
+
+/* Keep primary navigation beside the assembly title, not stranded at the far
+   edge of an ultrawide monitor. Settings remains available to project owners. */
+:is(#launcher,#linear,#robot,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading{
+ display:flex;align-items:center;justify-content:flex-start;gap:16px 20px;flex-wrap:wrap;
+}
+:is(#launcher,#linear,#robot,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>div:nth-child(2){
+ flex:0 1 auto;min-width:0;max-width:min(880px,65vw);
+}
+:is(#launcher,#linear,#robot,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.workspace-heading-actions{
+ display:flex;align-items:center;gap:9px;flex-wrap:wrap;flex:0 0 auto;margin-left:clamp(12px,2.2vw,38px);
+}
+:is(#launcher,#linear,#robot,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-heading-actions>.workspace-back{
+ margin:0;padding:11px 20px;font-size:.91rem;white-space:nowrap;min-height:42px;font-weight:650;
+}
+:is(#launcher,#linear,#robot,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-project-settings{
+ margin:0;padding:10px 14px;white-space:nowrap;min-height:42px;
+}
+.workspace-project-settings[hidden],.project-summary-settings[hidden]{display:none!important}
+@media(max-width:780px){
+ :is(#launcher,#linear,#robot,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.workspace-heading-actions{
+  flex:1 1 100%;margin-left:0;
+ }
+}
+/* Make the feature-tree width control discoverable: drag its vertical grip.
+   Preserve the existing pointer, keyboard and local-storage resizing logic. */
+@media(min-width:1100px){
+ .assembly-layout>.assembly-sidebar.bom-sidebar-active + .workspace-bom-resizer{
+  min-width:12px;cursor:col-resize;
+ }
+ .assembly-layout:has(>.assembly-sidebar.bom-sidebar-active){
+  grid-template-columns:minmax(220px,var(--assembly-sidebar-width,clamp(260px,22vw,420px))) 12px minmax(0,1fr);
+ }
+ .assembly-layout>.workspace-bom-resizer:after{
+  width:5px;left:3px;top:35%;bottom:35%;
+  border:1px solid var(--color-border);background:var(--color-surface-muted);
+ }
+ .assembly-layout>.workspace-bom-resizer:hover:after,
+ .assembly-layout>.workspace-bom-resizer:focus-visible:after,
+ .is-resizing-bom .workspace-bom-resizer:after{background:var(--color-accent);}
+ .assembly-layout>.workspace-bom-resizer:before{
+  content:"⋮";position:absolute;top:calc(50% - 21px);left:0;width:12px;height:42px;
+  display:grid;place-items:center;color:var(--color-text-muted);font-size:19px;
+  background:var(--color-surface);border:1px solid var(--color-border);
+  border-radius:8px;z-index:1;pointer-events:none;
+ }
+}
