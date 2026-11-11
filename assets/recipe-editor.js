@@ -481,6 +481,7 @@
      body.append(investigationArea);
      options.renderInvestigations(step,investigationArea);
     }
+    if(typeof options.decorateStep==="function")options.decorateStep(step,body);
     card.append(body);detailPane.append(card);
    }
    if(admin()){
