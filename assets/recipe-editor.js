@@ -95,7 +95,7 @@
    feedback.textContent="Saving…";
    savePromise=(async()=>{
     await options.onSave();
-    if(changeVersion===version){dirty=false;feedback.textContent="Saved."}
+    if(changeVersion===version){dirty=false;window.BSTransient?.show(feedback,"Saved.")}
     else{dirty=true;feedback.textContent="More edits to save."}
    })();
    try{await savePromise}
@@ -330,7 +330,7 @@
       try{
        if(typeof options.onSave!=="function")throw Error("Save is unavailable.");
        await options.onSave();
-       dirty=false;feedback.textContent="Step saved.";
+       dirty=false;window.BSTransient?.show(feedback,"Step saved.");
        editing.delete(step.id);expanded=step.id;render();
       }catch(error){
        feedback.textContent=error.message||"Could not save step.";
@@ -504,7 +504,7 @@
    render();
   }
   render();
-  return {setData,getData:()=>steps.map(normalize),getSelected:()=>steps.find(step=>step.id===expanded)||null,isDirty:()=>dirty,hasPendingUploads:()=>pendingUploads>0,savePending,markSaved:()=>{if(!savePromise){dirty=false;feedback.textContent="Saved."}},render};
+  return {setData,getData:()=>steps.map(normalize),getSelected:()=>steps.find(step=>step.id===expanded)||null,isDirty:()=>dirty,hasPendingUploads:()=>pendingUploads>0,savePending,markSaved:()=>{if(!savePromise){dirty=false;window.BSTransient?.show(feedback,"Saved.")}},render};
  }
  window.BSRecipes={mount};
 })();
