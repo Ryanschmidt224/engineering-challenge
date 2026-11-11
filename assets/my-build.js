@@ -86,16 +86,38 @@
   return {refresh:()=>{if(loaded&&document.activeElement!==note)redraw()},open:()=>{details.open=true}};
  }
  async function report(project,scope,status){
-  const kind=window.prompt("Where did you get stuck? Enter 'stuck' or 'confused'.","confused");
-  if(kind===null)return;
-  const choice=kind.trim().toLowerCase();if(!["stuck","confused"].includes(choice)){status.textContent="Enter stuck or confused.";return}
-  const comment=window.prompt("Optional explanation for the project creator (no personal information).","");if(comment===null)return;
-  status.textContent="Sending…";
-  try{
-   const res=await fetch("/api/build-confusion?project="+encodeURIComponent(project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({scope,kind:choice,comment})});
-   const data=await res.json();if(!res.ok)throw Error(data.loginRequired?loginHint:data.error);
-   status.textContent="Feedback saved. The creator can see this section's feedback count, not your identity.";
-  }catch(error){status.textContent=error.message}
+  const dialog=node("dialog","my-build-feedback-dialog");
+  const heading=node("h3","","Where did you have trouble?");
+  const choice=node("div","my-build-feedback-choices");
+  const comment=node("textarea","field");comment.rows=3;comment.maxLength=1200;
+  comment.placeholder="Optional: explain what was confusing or what stopped you";
+  const note=node("p","muted","Reports help the creator improve this section. Your account identity is not shown to the creator.");
+  const footer=node("div","my-build-feedback-actions");
+  const cancel=button("Cancel",()=>dialog.close());
+  footer.append(cancel);
+  for(const [kind,label] of [["stuck","I got stuck"],["confused","This was confusing"]]){
+   choice.append(button(label,async()=>{
+    for(const b of choice.querySelectorAll("button"))b.disabled=true;
+    status.textContent="Sending…";
+    try{
+     const res=await fetch("/api/build-confusion?project="+encodeURIComponent(project),{
+      method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},
+      body:JSON.stringify({scope,kind,comment:comment.value})
+     });
+     const data=await res.json();
+     if(!res.ok)throw Error(data.loginRequired?loginHint:data.error);
+     status.textContent="Thank you — feedback saved.";
+     dialog.close();
+    }catch(error){
+     status.textContent=error.message;
+     for(const b of choice.querySelectorAll("button"))b.disabled=false;
+    }
+   },"btn primary"));
+  }
+  dialog.append(heading,note,comment,choice,footer);
+  document.body.append(dialog);
+  dialog.addEventListener("close",()=>dialog.remove(),{once:true});
+  dialog.showModal();
  }
  function reportControl(target,{project,scope}){
   if(!target||target.querySelector(":scope > .build-confusion-control"))return;
