@@ -6,12 +6,12 @@ const filePattern=/^recipe-files\/(?:launcher|linear|robot|buck|motorlab|coiltes
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const validText=(v,max)=>typeof v==="string"&&v.length<=max;
 const statuses=new Set(["investigating","resolved","unresolved"]);
-const types=new Set(["observation","theory","attempt","revision","result","lesson"]);
+const types=new Set(["observation","theory","attempt","revision","result","lesson","note"]);
 const scopes=new Set(["assembly","part","step"]);
 const trim=(text,max)=>String(text||"").trim().slice(0,max);
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value+"T12:00:00Z"))&&new Date(value+"T12:00:00Z").toISOString().slice(0,10)===value;
-const entryTypes=new Set(["observation","attempt","lesson","theory","revision","result"]);
-const safeEntry=(entry,project)=>entry&&entryTypes.has(entry.type)&&validText(entry.text,5000)&&entry.text.trim()&&
+const entryTypes=new Set(["observation","attempt","lesson","theory","revision","result","note"]);
+const safeEntry=(entry,project)=>entry&&entryTypes.has(entry.type)&&validText(entry.text,5000)&&(entry.text.trim()||(Array.isArray(entry.files)&&entry.files.length>0))&&
  validDate(entry.date)&&Array.isArray(entry.files||[])&&(entry.files||[]).length<=12&&
  (entry.files||[]).every(file=>typeof file==="string"&&filePattern.test(file)&&file.startsWith("recipe-files/"+project+"/"))&&validText(entry.fileName||"",120);
 const normalizedEntry=(entry)=>({id:crypto.randomUUID(),type:entry.type,text:entry.text.trim(),date:entry.date,
@@ -106,7 +106,7 @@ export async function handleInvestigations(request,env){
   record=records.find(item=>item.id===data.id);
   if(!record)return json({error:"Investigation not found"},404);
   const incoming=data.entries;
-  if(!Array.isArray(incoming)||!incoming.length||incoming.length>3||incoming.some(item=>!safeEntry(item,project)))
+  if(!Array.isArray(incoming)||!incoming.length||incoming.length>5||incoming.some(item=>!safeEntry(item,project)))
    return json({error:"Invalid investigation update"},400);
   if((record.entries||[]).length+incoming.length>100)return json({error:"Too many entries in investigation"},413);
   changed=records.map(item=>item.id===record.id?{...item,entries:[...(item.entries||[]),...incoming.map(normalizedEntry)]}:item);
@@ -114,7 +114,7 @@ export async function handleInvestigations(request,env){
   record=records.find(item=>item.id===data.id);
   const entry=data.entry;
   if(!record)return json({error:"Investigation not found"},404);
-  if(!entry||!types.has(entry.type)||!validText(entry.text,5000)||!entry.text.trim()||
+  if(!entry||!types.has(entry.type)||!validText(entry.text,5000)||(!entry.text.trim()&&!(Array.isArray(entry.files)&&entry.files.length))||
      !Array.isArray(entry.files||[])||(entry.files||[]).length>12||
      !(entry.files||[]).every(file=>typeof file==="string"&&filePattern.test(file)&&file.startsWith("recipe-files/"+project+"/"))||
      !validText(entry.fileName||"",120))return json({error:"Invalid investigation entry"},400);
