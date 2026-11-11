@@ -216,6 +216,7 @@
    const rolled=records.filter(item=>within(item,context)&&!owns(item,context));
    const renderRecord=(record,inherited=false)=>{
     const card=make("details","investigation-card");
+    card.dataset.recordId=record.id;
     const openKey=context.ownerType+":"+context.ownerId+":"+(context.stepId||"")+":"+record.id;
     card.open=openCards.has(openKey);
     card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
@@ -349,7 +350,21 @@
    const saveBtn=btn("Save",async()=>{
     if(!name.value.trim()){name.focus();return}
     saveBtn.disabled=true;
-    try{await save({action:"create",...context,title:name.value.trim()});window.BSTransient?.show(feedback(target),"Record saved.")}
+    try{
+     const previousIds=new Set(records.map(record=>record.id));
+     const result=await save({action:"create",...context,title:name.value.trim()});
+     const created=result.records.find(record=>!previousIds.has(record.id)&&localRecord(record,context)&&record.title===name.value.trim());
+     if(created){
+      const card=[...target.querySelectorAll(".investigation-card[data-record-id]")].find(item=>item.dataset.recordId===created.id);
+      if(card){
+       card.open=true;
+       openCards.add(context.ownerType+":"+context.ownerId+":"+(context.stepId||"")+":"+created.id);
+       card.querySelector(".investigation-rename")?.click();
+       card.querySelector(".investigation-add-controls textarea")?.focus();
+      }
+     }
+     window.BSTransient?.show(feedback(target),"Record saved.");
+    }
     catch(error){reportHere(error.message);saveBtn.disabled=false}
    },"btn primary");
    const cancel=btn("Cancel",()=>form.remove(),"btn");
