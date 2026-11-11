@@ -1152,3 +1152,31 @@
  .bom-part-workspace .part-progress-panel{margin:0 0 14px;width:100%}
  .bom-part-workspace .part-progress-body{min-width:0}
 }
+
+/* Part progress: quiet inline state beneath the part title, no separate card. */
+.bom-part-workspace .workspace-heading{align-items:center}
+.bom-part-workspace .workspace-heading > div:has(> .part-workspace-title){display:flex;flex-direction:column;align-items:flex-start;gap:9px;min-width:0}
+.bom-part-workspace .part-progress-panel{
+ display:flex!important;align-items:center;flex-wrap:wrap;gap:8px 12px;
+ width:auto;max-width:100%;margin:0!important;padding:0!important;
+ border:0!important;border-radius:0!important;background:transparent!important;
+ box-shadow:none!important;
+}
+.bom-part-workspace .part-progress-inline-label{font-size:.85rem;font-weight:650;color:var(--color-text-muted)}
+.bom-part-workspace .part-progress-select{
+ min-width:155px;max-width:220px;min-height:36px;padding:6px 12px;
+ font-size:.88rem;border-radius:8px;
+}
+.bom-part-workspace .part-attention-toggle{font-size:.8rem;padding:0;margin-left:2px}
+.bom-part-workspace .part-attention-note-field{
+ flex-basis:100%;width:min(100%,480px);font-size:.82rem;
+}
+.bom-part-workspace .part-attention-note-field[hidden]{display:none!important}
+.bom-part-workspace .part-attention-note{min-height:58px;max-width:480px}
+.bom-part-workspace .part-progress-feedback{font-size:.76rem;color:var(--color-text-muted)}
+.bom-part-workspace .part-progress-feedback:empty{display:none}
+.bom-part-workspace .part-progress-save{display:none!important}
+@media(max-width:650px){
+ .bom-part-workspace .part-progress-panel{gap:8px}
+ .bom-part-workspace .part-progress-inline-label{flex:0 0 auto}
+}
