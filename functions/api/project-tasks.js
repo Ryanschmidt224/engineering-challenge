@@ -23,7 +23,7 @@ export async function onRequest({request,env}){
  }
  const readiness={};
  for(const [key,value] of Object.entries(data.readiness)){
-  if(Object.keys(readiness).length>=1000||!validId(key)||typeof value!=="boolean")return json({error:"Invalid readiness item"},400);
+  if(Object.keys(readiness).length>=1000||!/^((part|tool):)[a-zA-Z0-9:_-]{1,180}$/.test(key)||typeof value!=="boolean")return json({error:"Invalid readiness item"},400);
   readiness[key]=value;
  }
  const next={revision:(saved.revision||0)+1,tasks,readiness};
