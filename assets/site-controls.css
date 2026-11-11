@@ -1418,3 +1418,35 @@
  .assembly-bom-heading-actions .assembly-bom-view-switch{flex:0 1 auto}
  .assembly-bom-heading-actions .workspace-new-part{width:auto;margin:0}
 }
+
+
+/* Same streamlined numbering choice for new parts and assemblies. */
+.library-number-choice,.assembly-number-choice{
+ border:1px solid var(--color-border);border-radius:10px;
+ padding:12px 14px;display:grid;gap:11px;margin:0;
+}
+.library-number-choice legend,.assembly-number-choice legend{
+ padding:0 6px;font-size:.85rem;font-weight:700;
+}
+.library-number-choice label,.assembly-number-choice label{
+ display:flex;align-items:center;gap:10px;font-size:.88rem;
+ font-weight:550;cursor:pointer;line-height:1.45;
+}
+.library-number-choice input,.assembly-number-choice input[type="radio"]{
+ width:17px;height:17px;accent-color:var(--color-accent);flex:none;
+}
+.library-number-choice.hide{display:none!important}
+.assembly-create-dialog{
+ width:min(510px,calc(100vw - 32px));max-height:90vh;overflow:auto;
+ padding:0;border:1px solid var(--color-border);border-radius:14px;
+ background:var(--color-surface);color:var(--color-text);box-shadow:0 24px 65px #0003;
+}
+.assembly-create-dialog::backdrop{background:#0008}
+.assembly-create-form{display:grid;gap:16px;padding:24px}
+.assembly-create-form h2{font-size:1.35rem;margin:0}
+.assembly-create-form p{margin:0;line-height:1.5;font-size:.85rem}
+.assembly-create-form>label{display:grid;gap:7px;font-size:.87rem;font-weight:650}
+.assembly-create-form>label[hidden]{display:none!important}
+.assembly-create-form .field{width:100%;min-width:0}
+.assembly-create-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.assembly-create-status{min-height:1em;color:var(--color-danger,#ad452d)}
