@@ -308,6 +308,19 @@ function setupAssemblyTrees(){
   const sidebar=root;
   const bomPanel=workspace.querySelector(".workspace-bom");
   bomScreen.querySelector(".assembly-bom-list-view").append(bomPanel);
+  // One shared BOM toolbar above both list and picture views. Keep the existing
+  // New part button and view buttons; only their placement changes.
+  const bomHeading=bomPanel.querySelector(".workspace-bom-heading");
+  const viewSwitch=bomScreen.querySelector(".assembly-bom-view-switch");
+  if(bomHeading&&viewSwitch){
+   const tools=document.createElement("div");
+   tools.className="assembly-bom-heading-actions";
+   const newPart=bomHeading.querySelector(".workspace-new-part");
+   tools.append(viewSwitch);
+   if(newPart)tools.append(newPart);
+   bomHeading.append(tools);
+   bomScreen.querySelector(".assembly-bom-list-view").before(bomHeading);
+  }
   // Keep the established feature-tree styling without nesting workspace content.
   const featureTreeFrame=document.createElement("div");
   featureTreeFrame.className="feature-tree-frame";
