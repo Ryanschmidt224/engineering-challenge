@@ -151,7 +151,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  const assemblyPencil=workspace.locator(".workspace-photo-launch");
  await expect(assemblyPencil).toBeVisible();
  await assemblyPencil.click();
- const assemblyPhotoDialog=workspace.locator(".workspace-photo-dialog");
+ const assemblyPhotoDialog=page.locator("#launcher .workspace-photo-dialog");
  await expect(assemblyPhotoDialog).toBeVisible();
  await expect(assemblyPhotoDialog.locator(".assembly-photo-pick")).toBeVisible();
  await assemblyPhotoDialog.getByRole("button",{name:"Done"}).click();
