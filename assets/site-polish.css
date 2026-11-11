@@ -1180,3 +1180,6 @@
  .bom-part-workspace .part-progress-panel{gap:8px}
  .bom-part-workspace .part-progress-inline-label{flex:0 0 auto}
 }
+
+/* Hide tool progress completely and suppress the obsolete BOM add button. */
+.bom-part-workspace .part-progress-panel[hidden], .assembly-bom-screen .workspace-new-part{display:none!important}
