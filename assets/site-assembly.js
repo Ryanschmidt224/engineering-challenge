@@ -1801,6 +1801,15 @@ function setupAssemblyTrees(){
    closeTreeMenu();
    menuTarget=node;
    const isPart=isPartNode(node);
+   const heading=document.createElement("div");heading.className="assembly-context-heading";
+   const title=document.createElement("strong");title.textContent=node?.name||"Project";
+   const subtitle=document.createElement("span");subtitle.textContent=isPart?"Part actions":"Assembly actions";
+   heading.append(title,subtitle);treeMenu.append(heading);
+   const sectionLabel=text=>{
+    const el=document.createElement("div");el.className="assembly-context-section-label";
+    el.textContent=text;treeMenu.append(el);
+   };
+   sectionLabel("Create");
    const addItem=(label,action,disabled=false)=>{
     const button=document.createElement("button");
     button.type="button";button.setAttribute("role","menuitem");
@@ -1814,6 +1823,7 @@ function setupAssemblyTrees(){
    addItem("Add part",()=>{useTreeTarget(node);render();root.querySelector(".assembly-add-part").click()});
    addItem("Add subassembly",()=>{useTreeTarget(node);render();root.querySelector(".assembly-add").click()});
    const separator=document.createElement("div");separator.className="assembly-context-separator";separator.setAttribute("role","separator");treeMenu.append(separator);
+   sectionLabel("Edit");
    addItem("Rename",()=>node?renameTreeItem(node):editProjectName.click());
    if(isPart)addItem(isToolNode(node)?"Mark as build component":"Mark as tool",async()=>{
     const res=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({isTool:!isToolNode(node)})});
@@ -1827,6 +1837,7 @@ function setupAssemblyTrees(){
    if(node){
     const moveSeparator=document.createElement("div");
     moveSeparator.className="assembly-context-separator";moveSeparator.setAttribute("role","separator");treeMenu.append(moveSeparator);
+    sectionLabel("Move");
     const moveButtons=[...root.querySelectorAll(".assembly-move-button")];
     for(const [label,index] of [["Move up",0],["Move down",1],["Move to…",2]]){
      addItem(label,()=>{
