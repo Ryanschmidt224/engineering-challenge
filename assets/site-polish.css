@@ -1470,35 +1470,24 @@
 .investigation-edit-actions .investigation-delete{margin-right:auto;color:#a52d35;border-color:#a52d3560;background:transparent}
 .investigation-edit-actions .investigation-delete:hover{background:#a52d3510}
 
-/* New investigation summary uses the same descriptor treatment as the record editor. */
-.investigation-new-record .investigation-record-title{
- flex:1 1 650px;max-width:960px;grid-template-columns:120px minmax(0,1fr);
- font-size:.87rem;font-weight:650;color:var(--color-text);
+/* Compact title composer with the same typography as other investigation descriptors. */
+.investigation-new-record.investigation-create{
+ padding:8px 12px;margin:8px 0 10px;
+ border:1px solid var(--color-border);border-radius:9px;gap:10px;
 }
-.investigation-new-record .investigation-field-descriptor{padding:0;line-height:1.4}
+.investigation-new-record .investigation-record-title{
+ display:grid;grid-template-columns:max-content minmax(0,1fr);
+ align-items:center;gap:12px;flex:1 1 650px;max-width:960px;
+ font-size:.87rem;font-weight:650;color:var(--color-text);line-height:1.5;
+}
+.investigation-new-record .investigation-field-descriptor{
+ padding:0;font:inherit;color:inherit;letter-spacing:normal;
+}
 .investigation-new-record .investigation-record-title .field{
+ height:40px;min-height:40px;border-radius:8px;
  font-size:.9rem;font-weight:400;line-height:1.4;padding:8px 12px;
 }
 .investigation-new-record>.btn{flex:0 0 auto}
 @media(max-width:650px){
- .investigation-new-record .investigation-record-title{flex:1 1 100%;grid-template-columns:105px minmax(0,1fr)}
-}
-
-/* Compact title descriptor and single record composer above the add action. */
-.investigation-new-record.investigation-create{
- padding:10px 12px;margin:8px 0 10px;
- border:1px solid var(--color-border);border-radius:9px;gap:10px;
-}
-.investigation-new-record .investigation-record-title{
- grid-template-columns:76px minmax(0,1fr);gap:12px;flex:1 1 650px;max-width:960px;
-}
-.investigation-new-record .investigation-field-descriptor{
- font-size:.82rem;font-weight:650;line-height:1.3;
- letter-spacing:.01em;color:var(--color-text-muted);
-}
-.investigation-new-record .investigation-record-title .field{
- height:40px;min-height:40px;border-radius:8px;
-}
-@media(max-width:650px){
- .investigation-new-record .investigation-record-title{grid-template-columns:60px minmax(0,1fr);flex:1 1 100%}
+ .investigation-new-record .investigation-record-title{flex:1 1 100%;grid-template-columns:max-content minmax(0,1fr)}
 }
