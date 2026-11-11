@@ -47,10 +47,10 @@
   let state=null,loaded=false,noteTimer=null;
   const scope=()=>context().scope;
   const message=text=>{noteState.textContent=text};
-  async function write(change){
+  async function write(change,targetScope=scope()){
    if(!state)return;
    message("Saving…");
-   try{await mutate(project,entries=>{const key=scope();entries[key]??=empty();change(entries[key])});message("Saved")}
+   try{await mutate(project,entries=>{entries[targetScope]??=empty();change(entries[targetScope])});message("Saved")}
    catch(error){message(error.message)}
   }
   function redraw(){
@@ -75,11 +75,13 @@
   progress.onchange=()=>void write(entry=>{entry.progress=progress.value});
   note.oninput=()=>{
    clearTimeout(noteTimer);const value=note.value;
-   noteTimer=setTimeout(()=>void write(entry=>{entry.note=value}),650);
+   const targetScope=scope();
+   noteTimer=setTimeout(()=>void write(entry=>{entry.note=value},targetScope),650);
   };
   taskForm.onsubmit=e=>{
    e.preventDefault();const text=taskInput.value.trim();if(!text)return;
-   void write(entry=>{entry.tasks.push({id:id(),text,done:false});taskInput.value="";redraw()});
+   const targetScope=scope();
+   void write(entry=>{entry.tasks.push({id:id(),text,done:false})},targetScope).then(()=>{taskInput.value="";redraw()});
   };
   return {refresh:()=>{if(loaded&&document.activeElement!==note)redraw()},open:()=>{details.open=true}};
  }
