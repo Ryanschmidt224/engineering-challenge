@@ -186,7 +186,7 @@ function setupAssemblyTrees(){
   }
   // Project and subassembly workspaces remain independent of the BOM screen.
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
-  workspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div><div class="workspace-heading-actions"><button type="button" class="btn workspace-back">Open BOM</button></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
+  workspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1></div><div class="workspace-heading-actions"><button type="button" class="btn workspace-back">Open BOM</button></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
   // Assembly photo management lives in the workspace, not the read-only overview.
   const workspacePhotoEditor=document.createElement("article");
@@ -393,7 +393,7 @@ function setupAssemblyTrees(){
   });
   // Each saved BOM part has its own independent instructions document.
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
-  partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1><p class="muted">Part build instructions</p></div></div><section class="workspace-panels"><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
+  partWorkspace.innerHTML='<button type="button" class="btn part-workspace-back">← Assembly BOM</button><div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1></div></div><section class="workspace-panels"><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
   workspace.after(partWorkspace);
   // Safe project portability: export is read-only; import currently verifies only.
   // No operation here can overwrite or delete Cloudflare project records.
@@ -574,6 +574,26 @@ function setupAssemblyTrees(){
     onReplacePart:()=>detailsPanel.querySelector(".part-details-edit")?.click()});
   const assemblyExtras=installInstructionExtras(workspace,"workspace",resources=>assemblyResourcePicker?.setData(resources,canEdit()),snapshot=>assemblyRecipe?.setData(snapshot));
   const partExtras=installInstructionExtras(partWorkspace,"part",resources=>partResourcePicker?.setData(resources,canEdit()),snapshot=>partRecipe?.setData(snapshot));
+  // Work tracker is an independent project record; instruction saves never overwrite tasks.
+  const makeTracker=(parent,recipe,resourceGetter,assemblyGetter)=>{
+   const panel=document.createElement("article");
+   panel.className="project-work-panel";
+   parent.querySelector(".recipe-instructions").after(panel);
+   return window.BSWorkTracker?.mount(panel,{
+    project,editable:()=>canEdit(),
+    context:()=>({
+     path:location.hash,
+     assemblyId:assemblyGetter(),
+     title:parent.querySelector(".workspace-title,.part-workspace-title")?.textContent||"Project",
+     stepId:recipe?.getSelected?.()?.id||"",
+     stepTitle:recipe?.getSelected?.()?.title||""
+    }),
+    resources:resourceGetter
+   });
+  };
+  const assemblyTracker=makeTracker(workspace,assemblyRecipe,()=>assemblyResourcePicker?.getData(),()=>selected);
+  const partTracker=makeTracker(partWorkspace,partRecipe,()=>partResourcePicker?.getData(),()=>currentPartInfo?.assemblyId??null);
+
 
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
   detailsPanel.innerHTML='<details class="part-details-collapse"><summary class="part-details-view-heading"><h2>Part details</h2><span class="part-details-toggle-label">Show details</span></summary><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div><div class="part-drawing-panel"></div><div class="part-files-panel"></div></details>';
@@ -774,6 +794,7 @@ function setupAssemblyTrees(){
     if(partBackAssembly===null)partBackAssembly=part.assemblyId??null;
     partResourcePicker?.setData(data.workspace?.resources,canEdit());
     partRecipe?.setData(data.workspace);
+    partTracker?.refresh();
     partSavedRevision=data.workspace?.revision??null;
     partExtras.setData(data.workspace);
     showPartPicture(partId);
@@ -1511,6 +1532,7 @@ function setupAssemblyTrees(){
     if(version!==workspaceLoadVersion||url!==workspaceUrl())return;
     assemblyResourcePicker?.setData(data.workspace?.resources,canEdit());
     assemblyRecipe?.setData(data.workspace);
+    assemblyTracker?.refresh();
     workspaceSavedRevision=data.workspace?.revision??null;
     assemblyExtras.setData(data.workspace);
     workspaceStatus.textContent="";
@@ -1543,13 +1565,13 @@ function setupAssemblyTrees(){
   const refreshSettingsControls=()=>{
    const record=window.BSProjectManager?.getProject?.(project);
    const visibility=record?.visibility==="private"?"Private":"Public";
-   workspace.querySelector(".workspace-heading .muted").textContent="Workspace";
    summary.querySelector(".project-summary-heading .muted").textContent=record?"Project summary · "+visibility:"Project summary";
   };
   bomScreen.querySelector(".assembly-bom-back").onclick=openWorkspace;
   async function showAssemblyPage(){
    ++detailVersion;
    refreshSettingsControls();
+   assemblyTracker?.refresh();partTracker?.refresh();
    const isAssembly=selected!==null;
    // Reuse the existing part editor, but keep the BOM inside the workspace.
    const isEditingBom=workspace.classList.contains("is-editing-bom-part");
