@@ -27,9 +27,31 @@ async function changeRegister(env,project,update){
  }
  throw err("Numbering was updated in another session. Retry the save.",409);
 }
+// Legacy project records may predate the numbering registry. Include them
+// when allocating or validating numbers, without renumbering existing items.
+async function legacyNumbers(env,project){
+ const keys=["components/"+project+".json","trees/"+project+".json"];
+ const entries=await Promise.all(keys.map(k=>env.PHOTOS.get(k)));
+ const numbers=new Map();
+ for(let i=0;i<entries.length;i++){
+  if(!entries[i])continue;
+  const records=JSON.parse(await entries[i].text());
+  if(!Array.isArray(records))continue;
+  for(const part of records){
+   if(i===1&&part.kind==="part")continue;
+   const value=String(part.partNumber||"").trim().toUpperCase();
+   if(!value)continue;
+   const owner=(i===0?"part:":"assembly:")+part.id;
+   if(numbers.has(value)&&numbers.get(value)!==owner)throw err("Duplicate existing project number "+value+". Resolve this conflict before issuing new numbers.",409);
+   numbers.set(value,owner);
+  }
+ }
+ return numbers;
+}
 export async function issueNumber(env,project,kind,recordId,manual){
  if(!["assembly","part"].includes(kind)||typeof recordId!=="string"||recordId.length>100)throw err("Invalid number allocation",400);
  const recordKey=kind+":"+recordId;
+ const existing=await legacyNumbers(env,project);
  return changeRegister(env,project,data=>{
   if(data.issued[recordKey])return data.issued[recordKey];
   let value,sequence;
@@ -47,11 +69,11 @@ export async function issueNumber(env,project,kind,recordId,manual){
    const cursor=kind==="assembly"?"nextAssembly":"nextPart";
    sequence=data[cursor];
    const upper=kind==="assembly"?1000:Number.MAX_SAFE_INTEGER;
-   while(sequence<=upper&&(data.issuedSequences[String(sequence)]||Object.values(data.issued).includes(formatNumber(data,sequence))))sequence++;
+   while(sequence<=upper&&(data.issuedSequences[String(sequence)]||Object.values(data.issued).includes(formatNumber(data,sequence))||existing.has(formatNumber(data,sequence))))sequence++;
    if(sequence>upper)throw err("Assembly numbers 1–1000 are exhausted. Choose a new prefix for new projects.",409);
    value=formatNumber(data,sequence);
   }
-  if(data.issuedSequences[String(sequence)]&&data.issuedSequences[String(sequence)]!==recordKey||Object.entries(data.issued).some(([id,n])=>id!==recordKey&&n===value))throw err("This part number is already assigned in the project",409);
+  if(existing.has(value)&&existing.get(value)!==recordKey||data.issuedSequences[String(sequence)]&&data.issuedSequences[String(sequence)]!==recordKey||Object.entries(data.issued).some(([id,n])=>id!==recordKey&&n===value))throw err("This part number is already assigned in the project",409);
   data.issued[recordKey]=value;
   data.issuedSequences[String(sequence)]=recordKey;
   const cursor=kind==="assembly"?"nextAssembly":"nextPart";
