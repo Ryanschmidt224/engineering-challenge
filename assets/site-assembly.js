@@ -72,6 +72,11 @@ function setupAssemblyTrees(){
   if(oldRootTile)oldRootTile.replaceWith(newRootTile);
   else main.append(newRootTile);
   main.insertBefore(rootStatus,newRootTile.nextSibling);
+  // Legacy linear/robot galleries were standalone siblings of their main
+  // content. Keep their DOM/data, but prevent the old gallery from appearing
+  // alongside the new summary/workspace screens.
+  const legacyGallery=view.querySelector('.photos[data-photos="'+project+'"]');
+  if(legacyGallery&&legacyGallery.parentElement!==main)main.append(legacyGallery);
   // Project-level controls: unlike subassembly nodes, the root has no node ID.
   // Its name is stored in project-settings, and its cover uses existing photos.
   const projectHeading=main.querySelector("h1");
