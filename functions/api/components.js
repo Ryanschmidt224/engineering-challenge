@@ -189,7 +189,8 @@ export async function handleComponents(request,env){
   // Keep the original shared part reference unless a new valid reference is supplied.
   if(Object.prototype.hasOwnProperty.call(input,"sharedPartRef"))updated.sharedPartRef=cleanPartRef(input.sharedPartRef);
   if(input.partNumber&&previous.partNumber&&input.partNumber!==previous.partNumber)return json({error:"Issued part numbers cannot be changed. Use the same number or contact the project owner."},409);
-  if(!previous.partNumber&&(input.partNumber||updated.partType==="custom"&&!updated.isTool)){
+  // Existing legacy parts are not silently numbered during an unrelated edit.
+  if(!previous.partNumber&&(input.partNumber||input.assignNumber===true&&updated.partType==="custom"&&!updated.isTool)){
    try{updated.partNumber=await issueNumber(env,project,"part",id,input.partNumber||undefined)}
    catch(error){return json({error:error.message},error.status||400)}
   }
