@@ -161,25 +161,25 @@ window.BSProjectManager=(()=>{
    const projectSettingsCard=element("section","project-settings-card");
    projectSettingsCard.append(section.querySelector("h2"),intro,form,note,actions,status);
    section.append(projectSettingsCard);
-   // A project has two independent sequential ranges: assemblies 0001–1000,
-   // and custom parts 1001 onward. Formatting can change without renumbering.
+   // A project has two independent sequential ranges: assemblies 001–099,
+   // and custom parts 100 onward. Formatting can change without renumbering.
    const numbering=element("section","project-numbering-settings");
    numbering.append(element("h3","","Part numbering"));
-   const explanation=element("p","muted","One sequence per project. Numbers 1–1000 are reserved for assemblies; custom parts start at 1001. Purchased parts and tools are numbered only when requested.");
+   const explanation=element("p","muted","One sequence per project. Numbers 1–99 are reserved for assemblies; custom parts start at 100. Purchased parts and tools are numbered only when requested.");
    numbering.append(explanation);
    const fields=element("div","project-numbering-fields");
    const prefixLabel=element("label","","Prefix"),prefix=element("input","field");
    prefix.maxLength=10;prefix.value="NR";prefix.placeholder="NR";prefix.autocomplete="off";prefixLabel.append(prefix);
    const digitsLabel=element("label","","Minimum digits"),digits=element("select","field");
    for(const value of [3,4,5,6,7,8]){const opt=element("option","",String(value));opt.value=String(value);digits.append(opt)}
-   digits.value="4";digitsLabel.append(digits);fields.append(prefixLabel,digitsLabel);
+   digits.value="3";digitsLabel.append(digits);fields.append(prefixLabel,digitsLabel);
    const preview=element("p","project-numbering-preview");
    const statusNumber=element("p","project-summary-settings-status");statusNumber.setAttribute("role","status");
    const previewUpdate=()=>{
     const label=prefix.value.toUpperCase().trim();
     const width=Number(digits.value);
     preview.textContent="Next assembly: "+label+String(numbering.dataset.nextAssembly||1).padStart(width,"0")+
-     "   ·   Next custom part: "+label+String(numbering.dataset.nextPart||1001).padStart(width,"0");
+     "   ·   Next custom part: "+label+String(numbering.dataset.nextPart||100).padStart(width,"0");
    };
    prefix.addEventListener("input",previewUpdate);digits.addEventListener("change",previewUpdate);
    const saveNumbers=element("button","btn","Save numbering format");saveNumbers.type="button";
@@ -202,7 +202,7 @@ window.BSProjectManager=(()=>{
    for(const suggestion of [
     "Use short, specific names: Motor Mount Plate rather than Plate.",
     "Let part numbers identify records, not categories or feature-tree locations.",
-    "Keep revisions separate: NR1001 · Rev A, rather than changing the part number.",
+    "Keep revisions separate: NR100 · Rev A, rather than changing the part number.",
     "Keep manufacturer and supplier numbers separate from your project number.",
     "Don't reuse retired numbers or renumber a part when moving it between assemblies."
    ])hints.append(element("li","",suggestion));
@@ -214,7 +214,7 @@ window.BSProjectManager=(()=>{
     if(!numbering.isConnected)return;
     prefix.value=data.prefix||"NR";digits.value=String(data.digits||4);
     numbering.dataset.nextAssembly=data.nextAssembly||1;
-    numbering.dataset.nextPart=data.nextPart||1001;
+    numbering.dataset.nextPart=data.nextPart||100;
     previewUpdate();
    }).catch(error=>{statusNumber.textContent="Could not load numbering settings: "+error.message;previewUpdate()});
 
