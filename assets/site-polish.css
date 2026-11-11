@@ -1439,3 +1439,16 @@
  .investigation-fixed-row{grid-template-columns:105px minmax(0,180px)}
  .investigation-field-descriptor{padding-top:0}
 }
+
+/* Investigation record headers and resolution selector. */
+:is(.investigations-panel,.recipe-step-investigations) .investigation-card > .investigation-summary{
+ background:var(--color-accent-soft)!important;
+ color:var(--color-text)!important;
+}
+.investigation-add-controls .investigation-fixed-row > select.investigation-fixed-select{
+ box-sizing:border-box;display:block;
+ height:auto!important;min-height:42px!important;max-height:none!important;
+ padding:8px 32px 8px 12px!important;
+ line-height:1.4!important;font-size:.88rem;
+ width:100%;margin:0;vertical-align:middle;
+}
