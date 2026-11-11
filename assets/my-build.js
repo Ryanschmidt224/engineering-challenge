@@ -126,6 +126,9 @@
   target.append(line);
  }
  function decorateStep(target,{project,step}){
+  const personal=node("div","my-build-mount my-build-step");
+  target.append(personal);
+  mount(personal,{project,context:()=>({scope:"step:"+step.id})});
   reportControl(target,{project,scope:()=> "step:"+step.id});
  }
  function insights(target,{project}){
