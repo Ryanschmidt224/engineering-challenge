@@ -83,8 +83,44 @@
   const editing=new Set();
   window.addEventListener("beforeunload",event=>{if(!dirty&&!pendingUploads&&!saving)return;event.preventDefault();event.returnValue="";});
   try{const saved=localStorage.getItem("bs-recipe-detail");if(["brief","standard","detailed"].includes(saved))level=saved}catch{}
-  const changed=()=>{dirty=true;options.onChange?.()};
+  let changeVersion=0,saveTimer=null,savePromise=null,allowReplay=false;
+  async function savePending(){
+   clearTimeout(saveTimer);
+   if(savePromise){await savePromise;if(!dirty)return; }
+   if(!dirty)return;
+   if(pendingUploads)throw Error("Finish uploading photos or documents before leaving this step.");
+   if(steps.some(step=>!step.title.trim()))throw Error("Every step needs a name before it can be saved.");
+   if(!admin()||typeof options.onSave!=="function")throw Error("Sign in to save your instructions.");
+   const version=changeVersion;
+   feedback.textContent="Saving…";
+   savePromise=(async()=>{
+    await options.onSave();
+    if(changeVersion===version){dirty=false;feedback.textContent="Saved."}
+    else{dirty=true;feedback.textContent="More edits to save."}
+   })();
+   try{await savePromise}
+   catch(error){dirty=true;feedback.textContent=error.message||"Unable to save instructions.";throw error}
+   finally{savePromise=null}
+   if(dirty)scheduleSave();
+  }
+  function scheduleSave(){
+   clearTimeout(saveTimer);
+   saveTimer=setTimeout(()=>{void savePending().catch(()=>{})},1100);
+  }
+  const changed=()=>{dirty=true;changeVersion++;options.onChange?.();scheduleSave()};
   const saveHint=()=>{feedback.textContent="Unsaved step changes."};
+  // Capture navigation before the page replaces its editor or changes the workspace endpoint.
+  // Replay the original click only after the save has succeeded.
+  document.addEventListener("click",async event=>{
+   if(allowReplay||!dirty||!article.isConnected||article.closest(".hide")||article.offsetParent===null)return;
+   const target=event.target.closest("button,a,[role=button]");
+   if(!target||article.contains(target)||target.closest(".modalback"))return;
+   event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
+   try{
+    await savePending();
+    allowReplay=true;try{target.click()}finally{allowReplay=false}
+   }catch(error){feedback.textContent=error.message||"Save failed; navigation cancelled."}
+  },true);
   const editField=(value,placeholder,onValue,rows=0)=>{
    const field=el(rows?"textarea":"input","field recipe-input");
    if(rows)field.rows=rows;else field.type="text";
@@ -259,11 +295,10 @@
    }
    for(let i=0;i<steps.length;i++){
     const step=steps[i],isCurrent=expanded===step.id;
-    const navButton=button((i+1)+". "+(step.title||"Untitled step"),()=>{
+    const navButton=button((i+1)+". "+(step.title||"Untitled step"),async()=>{
      if(expanded===step.id)return;
-     if(pendingUploads){feedback.textContent="Finish uploading before switching steps.";return}
-     if(editing.size&&dirty&&!confirm("You have unsaved changes. Switch steps? Your edits will remain in this workspace until saved."))return;
-     expanded=step.id;closeKnowledgeMenu();render();options.onStepChange?.(step.id);
+     try{await savePending()}catch(error){feedback.textContent=error.message||"Save failed; still on this step.";return}
+     expanded=step.id;editing.clear();closeKnowledgeMenu();render();options.onStepChange?.(step.id);
     },"recipe-step-nav-item"+(isCurrent?" is-active":""));
     navButton.setAttribute("aria-current",isCurrent?"step":"false");
     navButton.setAttribute("aria-label","Step "+(i+1)+": "+(step.title||"Untitled step"));
@@ -460,7 +495,7 @@
   }
   function setData(data){
    steps=Array.isArray(data?.recipe)?data.recipe.map(normalize):[];
-   dirty=false;expanded=steps[0]?.id||null;
+   clearTimeout(saveTimer);dirty=false;expanded=steps[0]?.id||null;
    const resumeKey="bs-resume-step:"+location.hash;
    const desired=sessionStorage.getItem(resumeKey);
    if(desired&&steps.some(step=>step.id===desired)){expanded=desired;sessionStorage.removeItem(resumeKey)}
@@ -468,7 +503,7 @@
    render();
   }
   render();
-  return {setData,getData:()=>steps.map(normalize),getSelected:()=>steps.find(step=>step.id===expanded)||null,isDirty:()=>dirty,hasPendingUploads:()=>pendingUploads>0,markSaved:()=>{dirty=false;feedback.textContent="Saved."},render};
+  return {setData,getData:()=>steps.map(normalize),getSelected:()=>steps.find(step=>step.id===expanded)||null,isDirty:()=>dirty,hasPendingUploads:()=>pendingUploads>0,savePending,markSaved:()=>{if(!savePromise){dirty=false;feedback.textContent="Saved."}},render};
  }
  window.BSRecipes={mount};
 })();
