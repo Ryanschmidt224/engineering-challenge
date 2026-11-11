@@ -611,8 +611,8 @@ function setupAssemblyTrees(){
    return {setData,getExperiments:()=>experiments};
   }
   let investigations=null,investigationParts=[];
-  const assemblyRecipe=window.BSRecipes?.mount(workspace.querySelector(".recipe-instructions"),{admin:()=>canEdit(),project,decorateStep:(step,target)=>window.BSMyBuild?.decorateStep(target,{project,step}),renderInvestigations:(step,target)=>investigations?.showStep(target,step,"assembly",selected??"__root__"),onSave:()=>new Promise((resolve,reject)=>{if(!canEdit()){reject(Error("Administrator login required"));return}const status=workspace.querySelector(".workspace-status");const observer=new MutationObserver(()=>{if(status.textContent==="Saved."){observer.disconnect();resolve()}else if(status.textContent&&status.textContent!=="Saving…"){observer.disconnect();reject(Error(status.textContent))}});observer.observe(status,{childList:true,subtree:true,characterData:true});workspace.querySelector(".workspace-save").click();})});
-  const partRecipe=window.BSRecipes?.mount(partWorkspace.querySelector(".recipe-instructions"),{admin:()=>canEdit(),project,decorateStep:(step,target)=>window.BSMyBuild?.decorateStep(target,{project,step}),renderInvestigations:(step,target)=>investigations?.showStep(target,step,"part",partRoute()),onSave:()=>new Promise((resolve,reject)=>{if(!canEdit()){reject(Error("Administrator login required"));return}const status=partWorkspace.querySelector(".part-workspace-status");const observer=new MutationObserver(()=>{if(status.textContent==="Part instructions saved."){observer.disconnect();resolve()}else if(status.textContent&&status.textContent!=="Saving…"){observer.disconnect();reject(Error(status.textContent))}});observer.observe(status,{childList:true,subtree:true,characterData:true});partWorkspace.querySelector(".part-workspace-save").click();})});
+  const assemblyRecipe=window.BSRecipes?.mount(workspace.querySelector(".recipe-instructions"),{admin:()=>canEdit(),project,renderInvestigations:(step,target)=>investigations?.showStep(target,step,"assembly",selected??"__root__"),onSave:()=>new Promise((resolve,reject)=>{if(!canEdit()){reject(Error("Administrator login required"));return}const status=workspace.querySelector(".workspace-status");const observer=new MutationObserver(()=>{if(status.textContent==="Saved."){observer.disconnect();resolve()}else if(status.textContent&&status.textContent!=="Saving…"){observer.disconnect();reject(Error(status.textContent))}});observer.observe(status,{childList:true,subtree:true,characterData:true});workspace.querySelector(".workspace-save").click();})});
+  const partRecipe=window.BSRecipes?.mount(partWorkspace.querySelector(".recipe-instructions"),{admin:()=>canEdit(),project,renderInvestigations:(step,target)=>investigations?.showStep(target,step,"part",partRoute()),onSave:()=>new Promise((resolve,reject)=>{if(!canEdit()){reject(Error("Administrator login required"));return}const status=partWorkspace.querySelector(".part-workspace-status");const observer=new MutationObserver(()=>{if(status.textContent==="Part instructions saved."){observer.disconnect();resolve()}else if(status.textContent&&status.textContent!=="Saving…"){observer.disconnect();reject(Error(status.textContent))}});observer.observe(status,{childList:true,subtree:true,characterData:true});partWorkspace.querySelector(".part-workspace-save").click();})});
   const assemblyInvestigationPanel=document.createElement("article");
   assemblyInvestigationPanel.className="investigations-panel";
   const partInvestigationPanel=document.createElement("article");
@@ -625,18 +625,6 @@ function setupAssemblyTrees(){
     onReplacePart:()=>detailsPanel.querySelector(".part-details-edit")?.click()});
   const assemblyExtras=installInstructionExtras(workspace,"workspace",resources=>assemblyResourcePicker?.setData(resources,canEdit()),snapshot=>assemblyRecipe?.setData(snapshot));
   const partExtras=installInstructionExtras(partWorkspace,"part",resources=>partResourcePicker?.setData(resources,canEdit()),snapshot=>partRecipe?.setData(snapshot));
-  // Personal learner notebook is distinct from the author's work instructions.
-  const mountPersonal=(parent,scope)=>{
-   const target=document.createElement("div");target.className="my-build-mount";
-   parent.querySelector(".recipe-instructions").after(target);
-   return window.BSMyBuild?.mount(target,{project,context:()=>({scope:scope()})});
-  };
-  const assemblyPersonal=mountPersonal(workspace,()=>selected===null?"project:"+project:"assembly:"+selected);
-  const partPersonal=mountPersonal(partWorkspace,()=> "part:"+(partRoute()||"none"));
-  const summaryPersonalTarget=document.createElement("div");
-  summaryPersonalTarget.className="my-build-mount";
-  summary.querySelector(".project-summary-heading").after(summaryPersonalTarget);
-  const summaryPersonal=window.BSMyBuild?.mount(summaryPersonalTarget,{project,context:()=>({scope:"project:"+project})});
   const creatorInsightsTarget=document.createElement("div");
   creatorInsightsTarget.className="creator-feedback-target";
   summary.querySelector(".project-summary-lists").after(creatorInsightsTarget);
@@ -868,7 +856,6 @@ function setupAssemblyTrees(){
     if(partBackAssembly===null)partBackAssembly=part.assemblyId??null;
     partResourcePicker?.setData(data.workspace?.resources,canEdit());
     partRecipe?.setData(data.workspace);
-    partPersonal?.refresh();
     partSavedRevision=data.workspace?.revision??null;
     partExtras.setData(data.workspace);
     showPartPicture(partId);
@@ -1606,7 +1593,6 @@ function setupAssemblyTrees(){
     if(version!==workspaceLoadVersion||url!==workspaceUrl())return;
     assemblyResourcePicker?.setData(data.workspace?.resources,canEdit());
     assemblyRecipe?.setData(data.workspace);
-    assemblyPersonal?.refresh();
     workspaceSavedRevision=data.workspace?.revision??null;
     assemblyExtras.setData(data.workspace);
     workspaceStatus.textContent="";
@@ -1645,7 +1631,6 @@ function setupAssemblyTrees(){
   async function showAssemblyPage(){
    ++detailVersion;
    refreshSettingsControls();
-   summaryPersonal?.refresh();assemblyPersonal?.refresh();partPersonal?.refresh();
    const isAssembly=selected!==null;
    // Reuse the existing part editor, but keep the BOM inside the workspace.
    const isEditingBom=workspace.classList.contains("is-editing-bom-part");
