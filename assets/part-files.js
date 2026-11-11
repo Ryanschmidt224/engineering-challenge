@@ -6,7 +6,8 @@
  function mount(target,isAdmin=()=>false){
   if(!target)return null;
   const title=node("h3","","Part files (CAD, Parasolid, STL, STEP)");
-  const description=node("p","muted","Keep native engineering files with the part. Uploads are private and stored as separate revisions.");
+  const description=node("p","muted","Keep native engineering files with the part, including SOLIDWORKS .sldprt files. Uploads are private and stored as separate revisions.");
+  const cadNote=node("p","muted part-file-cad-note","SOLIDWORKS files can be attached here. Part-number/custom-property and preview extraction are not yet automatic; add an image using Edit part image.");
   const list=node("div","part-file-list"),controls=node("div","part-file-controls");
   const upload=node("button","btn","+ Add part files");upload.type="button";
   const input=node("input");input.type="file";input.multiple=true;input.hidden=true;
@@ -14,7 +15,7 @@
   const status=node("p","muted part-file-status");status.setAttribute("role","status");
   const pagesTitle=node("h3","","Saved product webpages");
   const pagesList=node("div","part-saved-pages");
-  controls.append(upload,input);target.append(title,description,list,controls,status,pagesTitle,pagesList);
+  controls.append(upload,input);target.append(title,description,cadNote,list,controls,status,pagesTitle,pagesList);
   let location=null,token=0;
   const url=file=>{
    const params=new URLSearchParams({project:location.project,id:location.id});
