@@ -698,7 +698,7 @@ function setupAssemblyTrees(){
     if(version!==partLoadVersion||partRoute()!==partId)return;
     const part=partData.components?.find(item=>item.id===partId);
     if(!part)throw Error("Part not found");
-    heading.textContent=part.name;
+    heading.textContent=(part.partNumber?part.partNumber+" · ":"")+part.name;
     currentPartInfo=part;
     editPartPicture.hidden=!canEdit();
     investigationParts=partData.components||[];
@@ -957,7 +957,7 @@ function setupAssemblyTrees(){
    if(part.generatedFrom)item.classList.add("bom-generated-part");
    const row=document.createElement("div");row.className="bom-part-summary";
    const name=document.createElement("span");
-   name.className="bom-part-name bom-part-name-link";name.textContent=part.name;
+   name.className="bom-part-name bom-part-name-link";name.textContent=(part.partNumber?part.partNumber+" · ":"")+part.name;
    const qty=document.createElement("span");qty.className="bom-part-meta";
    qty.textContent="Qty "+window.BSBomModel.quantityText(part);
    row.append(name,qty);
@@ -1076,6 +1076,10 @@ function setupAssemblyTrees(){
   partNumberRow.append(document.createTextNode("Project part number"),partNumberInput);
   const partNumberHelp=document.createElement("small");partNumberHelp.textContent="Custom parts receive the next project number (starting at 1001) when saved. Purchased parts and tools can be left unnumbered.";
   partNumberRow.append(partNumberHelp);
+  const assignExistingNumber=document.createElement("label");assignExistingNumber.className="part-number-existing-option";
+  const assignExistingCheckbox=document.createElement("input");assignExistingCheckbox.type="checkbox";
+  assignExistingNumber.append(assignExistingCheckbox,document.createTextNode(" Assign next number to this existing custom part"));
+  partNumberRow.append(assignExistingNumber);
   const partTypeRow=document.createElement("label");
   partTypeRow.className="part-type-field";
   partTypeRow.textContent="Part type";
@@ -1160,7 +1164,7 @@ function setupAssemblyTrees(){
    dismissBomEditor();
    extractedPictureUrl=null;
    editingPart=null;editingPartAssembly=null;
-   partTypeSelect.value="purchased";visibilityCheckbox.checked=false;toolCheckbox.checked=false;partNumberInput.value="";partNumberInput.readOnly=false;updatePartTypeFields();
+   partTypeSelect.value="purchased";visibilityCheckbox.checked=false;toolCheckbox.checked=false;partNumberInput.value="";partNumberInput.readOnly=false;assignExistingCheckbox.checked=false;assignExistingNumber.hidden=true;updatePartTypeFields();
    for(const name of ["name","full-name","manufacturer","model","category","supplier","asin","description","historical-price","historical-price-date"]){const el=bomField(name);if(el)el.value=""}
    const priceBasis=bomField("historical-price-basis"),packageQty=bomField("historical-package-quantity");
    if(priceBasis)priceBasis.value="per_part";if(packageQty)packageQty.value="";priceBasis?.dispatchEvent(new Event("change"));
@@ -1175,6 +1179,8 @@ function setupAssemblyTrees(){
    clearBomDraft();editingPart=part.id;editingPartAssembly=originId;
    partTypeSelect.value=part.partType==="custom"?"custom":"purchased";visibilityCheckbox.checked=part.hideFromFeatureTree===true;toolCheckbox.checked=part.isTool===true;
    partNumberInput.value=part.partNumber||"";partNumberInput.readOnly=!!part.partNumber;
+   assignExistingCheckbox.checked=false;assignExistingNumber.hidden=!!part.partNumber||part.partType!=="custom";
+   partNumberHelp.textContent=part.partNumber?"Issued number (kept permanently, independent of revisions).":"Enter a manual number or assign the next number for a custom part.";
    updatePartTypeFields();
    for(const key of ["name","manufacturer","model","supplier","asin","category"]){const field=bomField(key);if(field)field.value=part[key]||""}
    const fullName=bomField("full-name");if(fullName)fullName.value=part.fullName||part.name||"";
@@ -1258,7 +1264,7 @@ function setupAssemblyTrees(){
    const rawQty=bomField("quantity")?.value.trim()??"";
    const amount=rawQty===""?null:Number(rawQty);
    if(amount!==null&&(!Number.isFinite(amount)||amount<=0||amount>10000000)){bomReport("Quantity must be positive or left blank.");return false}
-   const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:amount,quantityUnit:bomField("quantity-unit")?.value??"pcs",partType:partTypeSelect.value,hideFromFeatureTree:visibilityCheckbox.checked,isTool:toolCheckbox.checked,partNumber:partNumberInput.value.trim().toUpperCase()||null};
+   const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:amount,quantityUnit:bomField("quantity-unit")?.value??"pcs",partType:partTypeSelect.value,hideFromFeatureTree:visibilityCheckbox.checked,isTool:toolCheckbox.checked,partNumber:partNumberInput.value.trim().toUpperCase()||null,assignNumber:assignExistingCheckbox.checked};
    const priceInput=partTypeSelect.value==="custom"?"":(bomField("historical-price")?.value.trim()||"");
    const dateInput=partTypeSelect.value==="custom"?"":(bomField("historical-price-date")?.value||"");
    if(priceInput&&(!Number.isFinite(Number(priceInput))||Number(priceInput)<0||Math.round(Number(priceInput)*100)!==Number(priceInput)*100&&Math.abs(Math.round(Number(priceInput)*100)-Number(priceInput)*100)>1e-6)){
