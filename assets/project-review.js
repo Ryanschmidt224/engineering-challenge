@@ -39,28 +39,89 @@ window.BSReview=(()=>{
   send.onclick=async()=>{try{
    await request("POST",api(project),{scope,targetId,stepId:stepSelect.value,field:fieldSelect.value,suggestedText:textarea.value});
    dialog.close();
+   // Suggestions are visible to the project owner in the summary queue.
   }catch(error){message.textContent=error.message}};
   close.onclick=()=>dialog.close();buttons.append(send,close);form.append(buttons);
   dialog.append(form);dialog.showModal();
  }
- async function review(project){
+
+ const pendingCounts=new Map(),projectConfigs=new Map();
+ const root=project=>document.querySelector('[data-assembly-tree="'+project.id+'"]');
+ const targetLabel=p=>p.scope==="part"?"Part":p.targetId==="__root__"?"Top-level assembly":"Subassembly";
+ const targetHash=(project,p)=>"#"+project.id+"/"+(p.scope==="part"?"part/":"workspace/")+encodeURIComponent(p.targetId);
+ async function loadPending(project){
   const {proposals}=await request("GET",api(project));
+  return (proposals||[]).filter(p=>p.status==="pending");
+ }
+ async function refresh(project){
+  if(!project.isOwner)return;
+  const pending=await loadPending(project);
+  pendingCounts.set(project.id,pending.length);
+  root(project)?.dispatchEvent(new Event("projectreviewchanged"));
+  const section=document.getElementById(project.id);
+  const heading=section?.querySelector(".assembly-workspace-page:not(.bom-part-workspace) > .workspace-heading");
+  if(heading){
+   heading.querySelector(".project-proposals-button")?.remove();
+   // Review actions are useful only when the queue has actual work.
+   if(pending.length){
+    const button=el("button","btn project-proposals-button",pending.length+" "+(pending.length===1?"change":"changes")+" waiting");
+    button.type="button";button.onclick=()=>review(project).catch(error=>alert(error.message));
+    heading.append(button);
+   }
+  }
+  let panel=section?.querySelector(".project-summary-review");
+  if(!panel&&section){
+   panel=el("section","project-summary-review");
+   section.querySelector(".project-summary-owner-settings")?.before(panel);
+  }
+  if(!panel)return;
+  panel.hidden=pending.length===0;
+  panel.replaceChildren();
+  if(!pending.length)return;
+  const h=el("div","project-summary-review-header");
+  h.append(el("h2","",pending.length+" "+(pending.length===1?"change":"changes")+" waiting"));
+  const reviewButton=el("button","btn primary","Review suggestions");
+  reviewButton.type="button";reviewButton.onclick=()=>review(project).catch(error=>alert(error.message));
+  h.append(reviewButton);panel.append(h);
+  const list=el("ul","project-summary-review-list");
+  pending.forEach((p,i)=>{
+   const row=el("li","");
+   row.append(el("span","",targetLabel(p)+" · "+(i+1)+" of "+pending.length));
+   const open=el("button","btn", "Open instruction");
+   open.type="button";open.onclick=()=>{
+    location.hash=targetHash(project,p);
+    review(project).catch(error=>alert(error.message));
+   };
+   row.append(open);list.append(row);
+  });
+  panel.append(list);
+ }
+ async function review(project){
+  const pending=await loadPending(project);
   dialog.replaceChildren();
-  const form=el("div","project-manage-form");form.append(el("h2","",project.name+" — review suggestions"));
-  const pending=(proposals||[]).filter(proposal=>proposal.status==="pending");
+  const form=el("div","project-manage-form");
+  form.append(el("h2","",project.name+" — review changes"));
   if(!pending.length)form.append(el("p","muted","No suggested changes are awaiting review."));
   for(const proposal of pending){
    const section=el("section","project-proposal-review");
-   section.append(el("strong","",proposal.field==="standard"?"Instruction change":"Details change"));
+   section.append(el("strong","",targetLabel(proposal)+" · "+(proposal.field==="standard"?"Instruction change":"Details change")));
    section.append(el("p","muted","Original: "+proposal.originalText));
    section.append(el("p","","Suggested: "+proposal.suggestedText));
    const message=el("p","project-manage-message"),actions=el("div","row");
+   const go=el("button","btn","Open instruction");
+   go.type="button";go.onclick=()=>{
+    dialog.close();location.hash=targetHash(project,proposal);
+   };
+   actions.append(go);
    for(const [action,label] of [["approve","Approve and apply"],["reject","Reject"]]){
     const button=el("button","btn"+(action==="approve"?" primary":""),label);
-    button.onclick=async()=>{try{
-     await request("PATCH",api(project),{id:proposal.id,action});
-     section.remove();
-    }catch(error){message.textContent=error.message}};
+    button.onclick=async()=>{
+     try{
+      await request("PATCH",api(project),{id:proposal.id,action});
+      section.remove();
+      await refresh(project);
+     }catch(error){message.textContent=error.message}
+    };
     actions.append(button);
    }
    section.append(actions,message);form.append(section);
@@ -69,15 +130,21 @@ window.BSReview=(()=>{
   dialog.append(form);dialog.showModal();
  }
  function attach(project,user){
+  projectConfigs.set(project.id,project);
   const heading=document.getElementById(project.id)?.querySelector(".assembly-workspace-page:not(.bom-part-workspace) > .workspace-heading");
-  if(!heading)return;
-  heading.querySelector(".project-proposals-button")?.remove();
-  if(!user&&!project.isOwner)return;
-  if(!project.isOwner&&project.editMode==="locked")return;
-  const button=el("button","btn project-proposals-button",project.isOwner?"Review suggestions":"Suggest change");
-  button.type="button";
-  button.onclick=()=>{(project.isOwner?review(project):suggest(project)).catch(error=>alert(error.message))};
+  heading?.querySelector(".project-proposals-button")?.remove();
+  if(project.isOwner){
+   // Counts and review links are global for the project, not per-page.
+   refresh(project).catch(error=>console.warn("Project review queue unavailable",error));
+   return;
+  }
+  pendingCounts.delete(project.id);
+  if(!user||project.editMode==="locked"||!heading)return;
+  // Contributors still need a way to submit proposals; this is not a review button.
+  const button=el("button","btn project-proposals-button","Suggest change");
+  button.type="button";button.onclick=()=>suggest(project).catch(error=>alert(error.message));
   heading.append(button);
  }
- return {attach};
+
+ return {attach,getPendingCount:id=>pendingCounts.get(id),refresh:id=>{const project=projectConfigs.get(id);return project?refresh(project):Promise.resolve()}};
 })();
