@@ -547,11 +547,11 @@ function setupAssemblyTrees(){
   detailsPanel.innerHTML='<details class="part-details-collapse"><summary class="part-details-view-heading"><h2>Part details</h2><span class="part-details-toggle-label">Show details</span></summary><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div><div class="part-drawing-panel"></div><div class="part-files-panel"></div></details>';
   const partDetailsCollapse=detailsPanel.querySelector(".part-details-collapse");
   partDetailsCollapse.addEventListener("toggle",()=>{partDetailsCollapse.querySelector(".part-details-toggle-label").textContent=partDetailsCollapse.open?"Minimize details":"Show details"});
-  partWorkspace.querySelector(".workspace-heading").after(detailsPanel);
+  partWorkspace.querySelector(".workspace-heading").after(progressPanel,detailsPanel);
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
   const progressPanel=document.createElement("section");progressPanel.className="part-progress-panel";
   progressPanel.innerHTML='<div class="part-progress-heading"><h2>Part status</h2><span class="part-progress-badge"></span></div><div class="part-progress-fields"><label>Progress<select class="field part-progress-select"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="complete">Complete</option></select></label><label class="part-attention-toggle"><input type="checkbox" class="part-needs-attention"> Needs attention</label></div><label class="part-attention-note-field" hidden>What needs to be fixed?<textarea class="field part-attention-note" rows="3" maxlength="2000" placeholder="Describe the issue so it can be addressed later."></textarea></label><div class="part-progress-actions"><button type="button" class="btn part-progress-save">Save status</button><span class="part-progress-feedback" role="status"></span></div>';
-  detailsPanel.before(progressPanel);
+  // Insert after detailsPanel is attached below; detached .before() is a no-op.
   const progressSelect=progressPanel.querySelector(".part-progress-select"),attentionCheckbox=progressPanel.querySelector(".part-needs-attention"),attentionText=progressPanel.querySelector(".part-attention-note");
   const refreshAttentionForm=()=>{progressPanel.querySelector(".part-attention-note-field").hidden=!attentionCheckbox.checked};
   attentionCheckbox.onchange=refreshAttentionForm;
