@@ -1138,13 +1138,18 @@ function setupAssemblyTrees(){
   visibilityRow.append(visibilityCheckbox,document.createTextNode(" Hide from feature tree"));
   const partNumberRow=document.createElement("label");partNumberRow.className="part-number-field";
   const partNumberInput=document.createElement("input");partNumberInput.className="field part-number-input";partNumberInput.placeholder="Automatic for custom parts; optional for purchased";partNumberInput.maxLength=30;
-  partNumberRow.append(document.createTextNode("Project part number"),partNumberInput);
+  partNumberRow.append(document.createTextNode("New part number"),partNumberInput);
   const partNumberHelp=document.createElement("small");partNumberHelp.textContent="Custom parts receive the next project number (starting at 1001) when saved. Purchased parts and tools can be left unnumbered.";
   partNumberRow.append(partNumberHelp);
   const assignExistingNumber=document.createElement("label");assignExistingNumber.className="part-number-existing-option";
   const assignExistingCheckbox=document.createElement("input");assignExistingCheckbox.type="checkbox";
   assignExistingNumber.append(assignExistingCheckbox,document.createTextNode(" Assign next number to this existing custom part"));
   partNumberRow.append(assignExistingNumber);
+  const itemTypeRow=document.createElement("label");itemTypeRow.className="part-type-field";
+  itemTypeRow.textContent="Item type";
+  const itemTypeSelect=document.createElement("select");itemTypeSelect.className="field part-item-type-select";
+  for(const [value,label] of [["part","Part"],["document","Document"]]){const option=document.createElement("option");option.value=value;option.textContent=label;itemTypeSelect.append(option)}
+  itemTypeRow.append(itemTypeSelect);
   const partTypeRow=document.createElement("label");
   partTypeRow.className="part-type-field";
   partTypeRow.textContent="Part type";
@@ -1158,6 +1163,10 @@ function setupAssemblyTrees(){
   // Attach this selector when opening the form, not during initial page setup.
   const updatePartTypeFields=()=>{
    const custom=partTypeSelect.value==="custom";
+   const documentMode=itemTypeSelect.value==="document";
+   partTypeRow.hidden=documentMode;
+   toolRow.hidden=documentMode;
+   const qtyControl=bomEditorMount.querySelector(".component-quantity");if(qtyControl?.closest("label"))qtyControl.closest("label").hidden=documentMode;
    bomEditorMount.classList.toggle("is-custom-part",custom);
    for(const name of ["manufacturer","model","supplier","asin"]){
     const control=bomEditorMount.querySelector(".component-"+name);
@@ -1170,6 +1179,7 @@ function setupAssemblyTrees(){
    if(lookup)lookup.hidden=custom;
   };
   partTypeSelect.onchange=updatePartTypeFields;
+  itemTypeSelect.onchange=updatePartTypeFields;
   updatePartTypeFields();
   const bomSavedList=bomPanel.querySelector(".workspace-saved-parts");
   const bomEditorHeader=document.createElement("div");
@@ -1229,12 +1239,12 @@ function setupAssemblyTrees(){
    dismissBomEditor();
    extractedPictureUrl=null;
    editingPart=null;editingPartAssembly=null;
-   partTypeSelect.value="purchased";visibilityCheckbox.checked=false;toolCheckbox.checked=false;partNumberInput.value="";partNumberInput.readOnly=false;assignExistingCheckbox.checked=false;assignExistingNumber.hidden=true;updatePartTypeFields();
+   itemTypeSelect.value="part";partTypeSelect.value="purchased";visibilityCheckbox.checked=false;toolCheckbox.checked=false;partNumberInput.value="";partNumberInput.readOnly=false;assignExistingCheckbox.checked=false;assignExistingNumber.hidden=true;updatePartTypeFields();
    for(const name of ["name","full-name","manufacturer","model","category","supplier","asin","description","historical-price","historical-price-date"]){const el=bomField(name);if(el)el.value=""}
    const priceBasis=bomField("historical-price-basis"),packageQty=bomField("historical-package-quantity");
    if(priceBasis)priceBasis.value="per_part";if(packageQty)packageQty.value="";priceBasis?.dispatchEvent(new Event("change"));
    const qty=bomField("quantity");if(qty)qty.value="";
-   const unit=bomField("quantity-unit");if(unit)unit.value="pcs";
+   const unit=bomField("quantity-unit");if(unit)unit.value="pcs";if(unit?.closest("label"))unit.closest("label").hidden=true;
    bomRoot()?.querySelector(".component-specs")?.replaceChildren();
    bomRoot()?.querySelector(".component-review")?.classList.remove("hide");
    const save=bomField("save");if(save)save.textContent="Save part";
@@ -1242,6 +1252,7 @@ function setupAssemblyTrees(){
   function editBomPart(part,originId){
    if(savingBom)return;
    clearBomDraft();editingPart=part.id;editingPartAssembly=originId;
+   itemTypeSelect.value=part.itemType==="document"?"document":"part";
    partTypeSelect.value=part.partType==="custom"?"custom":"purchased";visibilityCheckbox.checked=part.hideFromFeatureTree===true;toolCheckbox.checked=part.isTool===true;
    partNumberInput.value=part.partNumber||"";partNumberInput.readOnly=!!part.partNumber;
    assignExistingCheckbox.checked=false;assignExistingNumber.hidden=!!part.partNumber||part.partType!=="custom";
@@ -1250,7 +1261,7 @@ function setupAssemblyTrees(){
    for(const key of ["name","manufacturer","model","supplier","asin","category"]){const field=bomField(key);if(field)field.value=part[key]||""}
    const fullName=bomField("full-name");if(fullName)fullName.value=part.fullName||part.name||"";
    const qty=bomField("quantity");if(qty)qty.value=part.quantity??"";
-   const unit=bomField("quantity-unit");if(unit)unit.value=part.quantityUnit??"pcs";
+   const unit=bomField("quantity-unit");if(unit)unit.value=part.quantityUnit??"pcs";if(unit?.closest("label"))unit.closest("label").hidden=true;
    const price=bomField("historical-price"),date=bomField("historical-price-date");
    const priceBasis=bomField("historical-price-basis"),packageQty=bomField("historical-package-quantity");
    if(price)price.value=part.historicalPurchasePrice??part.historicalPrice??"";
@@ -1291,6 +1302,7 @@ function setupAssemblyTrees(){
    if(review){
     if(!review.contains(visibilityRow))review.prepend(visibilityRow);
     if(!review.contains(toolRow))visibilityRow.before(toolRow);
+    if(!review.contains(itemTypeRow))partTypeRow.before(itemTypeRow);
     if(!review.contains(partNumberRow))toolRow.before(partNumberRow);
     let actions=review.querySelector(".component-editor-actions");
     if(!actions){
@@ -1329,7 +1341,7 @@ function setupAssemblyTrees(){
    const rawQty=bomField("quantity")?.value.trim()??"";
    const amount=rawQty===""?null:Number(rawQty);
    if(amount!==null&&(!Number.isFinite(amount)||amount<=0||amount>10000000)){bomReport("Quantity must be positive or left blank.");return false}
-   const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:amount,quantityUnit:bomField("quantity-unit")?.value??"pcs",partType:partTypeSelect.value,hideFromFeatureTree:visibilityCheckbox.checked,isTool:toolCheckbox.checked,partNumber:partNumberInput.value.trim().toUpperCase()||null,assignNumber:assignExistingCheckbox.checked};
+   const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:amount,quantityUnit:editingPart?bomField("quantity-unit")?.value??"pcs":"pcs",itemType:itemTypeSelect.value,partType:partTypeSelect.value,hideFromFeatureTree:visibilityCheckbox.checked,isTool:toolCheckbox.checked,partNumber:partNumberInput.value.trim().toUpperCase()||null,assignNumber:assignExistingCheckbox.checked};
    const priceInput=partTypeSelect.value==="custom"?"":(bomField("historical-price")?.value.trim()||"");
    const dateInput=partTypeSelect.value==="custom"?"":(bomField("historical-price-date")?.value||"");
    if(priceInput&&(!Number.isFinite(Number(priceInput))||Number(priceInput)<0||Math.round(Number(priceInput)*100)!==Number(priceInput)*100&&Math.abs(Math.round(Number(priceInput)*100)-Number(priceInput)*100)>1e-6)){
@@ -1386,6 +1398,7 @@ function setupAssemblyTrees(){
     if(result.component&&!result.component.generatedFrom){
      partVisibility.set(result.component.id,result.component.hideFromFeatureTree===true);
      partTools.set(result.component.id,result.component.isTool===true);
+     partDocuments.set(result.component.id,result.component.itemType==="document");
      partDocuments.set(result.component.id,result.component.itemType==="document");
      if(result.component.partNumber)partNumbers.set(result.component.id,result.component.partNumber);
      if(!nodes.some(n=>isPartNode(n)&&n.partId===result.component.id))nodes.push({id:"part-"+result.component.id,kind:"part",partId:result.component.id,name:result.component.name,parentId:component.assemblyId??null});
