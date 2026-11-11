@@ -367,8 +367,7 @@ function setupAssemblyTrees(){
   const sidebar=root;
   const bomPanel=workspace.querySelector(".workspace-bom");
   bomScreen.querySelector(".assembly-bom-list-view").append(bomPanel);
-  // One shared BOM toolbar above both list and picture views. Keep the existing
-  // New part button and view buttons; only their placement changes.
+  // Shared BOM toolbar: show view and document controls, without a New part action.
   const bomHeading=bomPanel.querySelector(".workspace-bom-heading");
   const viewSwitch=bomScreen.querySelector(".assembly-bom-view-switch");
   if(bomHeading&&viewSwitch){
@@ -376,7 +375,8 @@ function setupAssemblyTrees(){
    tools.className="assembly-bom-heading-actions";
    const newPart=bomHeading.querySelector(".workspace-new-part");
    tools.append(viewSwitch,bomDocumentsLabel);
-   if(newPart)tools.append(newPart);
+   // Retain the button only for the existing creation handler, not as a BOM control.
+   if(newPart){newPart.hidden=true;newPart.classList.add("hide");}
    bomHeading.append(tools);
    bomScreen.querySelector(".assembly-bom-list-view").before(bomHeading);
   }
@@ -611,8 +611,8 @@ function setupAssemblyTrees(){
    return {setData,getExperiments:()=>experiments};
   }
   let investigations=null,investigationParts=[];
-  const assemblyRecipe=window.BSRecipes?.mount(workspace.querySelector(".recipe-instructions"),{admin:()=>canEdit(),project,onStepChange:()=>assemblyTracker?.refresh(),renderInvestigations:(step,target)=>investigations?.showStep(target,step,"assembly",selected??"__root__"),onSave:()=>new Promise((resolve,reject)=>{if(!canEdit()){reject(Error("Administrator login required"));return}const status=workspace.querySelector(".workspace-status");const observer=new MutationObserver(()=>{if(status.textContent==="Saved."){observer.disconnect();resolve()}else if(status.textContent&&status.textContent!=="Saving…"){observer.disconnect();reject(Error(status.textContent))}});observer.observe(status,{childList:true,subtree:true,characterData:true});workspace.querySelector(".workspace-save").click();})});
-  const partRecipe=window.BSRecipes?.mount(partWorkspace.querySelector(".recipe-instructions"),{admin:()=>canEdit(),project,onStepChange:()=>partTracker?.refresh(),renderInvestigations:(step,target)=>investigations?.showStep(target,step,"part",partRoute()),onSave:()=>new Promise((resolve,reject)=>{if(!canEdit()){reject(Error("Administrator login required"));return}const status=partWorkspace.querySelector(".part-workspace-status");const observer=new MutationObserver(()=>{if(status.textContent==="Part instructions saved."){observer.disconnect();resolve()}else if(status.textContent&&status.textContent!=="Saving…"){observer.disconnect();reject(Error(status.textContent))}});observer.observe(status,{childList:true,subtree:true,characterData:true});partWorkspace.querySelector(".part-workspace-save").click();})});
+  const assemblyRecipe=window.BSRecipes?.mount(workspace.querySelector(".recipe-instructions"),{admin:()=>canEdit(),project,renderInvestigations:(step,target)=>investigations?.showStep(target,step,"assembly",selected??"__root__"),onSave:()=>new Promise((resolve,reject)=>{if(!canEdit()){reject(Error("Administrator login required"));return}const status=workspace.querySelector(".workspace-status");const observer=new MutationObserver(()=>{if(status.textContent==="Saved."){observer.disconnect();resolve()}else if(status.textContent&&status.textContent!=="Saving…"){observer.disconnect();reject(Error(status.textContent))}});observer.observe(status,{childList:true,subtree:true,characterData:true});workspace.querySelector(".workspace-save").click();})});
+  const partRecipe=window.BSRecipes?.mount(partWorkspace.querySelector(".recipe-instructions"),{admin:()=>canEdit(),project,renderInvestigations:(step,target)=>investigations?.showStep(target,step,"part",partRoute()),onSave:()=>new Promise((resolve,reject)=>{if(!canEdit()){reject(Error("Administrator login required"));return}const status=partWorkspace.querySelector(".part-workspace-status");const observer=new MutationObserver(()=>{if(status.textContent==="Part instructions saved."){observer.disconnect();resolve()}else if(status.textContent&&status.textContent!=="Saving…"){observer.disconnect();reject(Error(status.textContent))}});observer.observe(status,{childList:true,subtree:true,characterData:true});partWorkspace.querySelector(".part-workspace-save").click();})});
   const assemblyInvestigationPanel=document.createElement("article");
   assemblyInvestigationPanel.className="investigations-panel";
   const partInvestigationPanel=document.createElement("article");
@@ -625,37 +625,6 @@ function setupAssemblyTrees(){
     onReplacePart:()=>detailsPanel.querySelector(".part-details-edit")?.click()});
   const assemblyExtras=installInstructionExtras(workspace,"workspace",resources=>assemblyResourcePicker?.setData(resources,canEdit()),snapshot=>assemblyRecipe?.setData(snapshot));
   const partExtras=installInstructionExtras(partWorkspace,"part",resources=>partResourcePicker?.setData(resources,canEdit()),snapshot=>partRecipe?.setData(snapshot));
-  // Work tracker is an independent project record; instruction saves never overwrite tasks.
-  const makeTracker=(parent,recipe,resourceGetter,assemblyGetter)=>{
-   const panel=document.createElement("article");
-   panel.className="project-work-panel";
-   parent.querySelector(".recipe-instructions").after(panel);
-   return window.BSWorkTracker?.mount(panel,{
-    project,editable:()=>canEdit(),
-    context:()=>({
-     path:location.hash,
-     assemblyId:assemblyGetter(),
-     title:parent.querySelector(".workspace-title,.part-workspace-title")?.textContent||"Project",
-     stepId:recipe?.getSelected?.()?.id||"",
-     stepTitle:recipe?.getSelected?.()?.title||""
-    }),
-    resources:resourceGetter,
-    nodes:()=>nodes
-   });
-  };
-  const assemblyTracker=makeTracker(workspace,assemblyRecipe,()=>assemblyResourcePicker?.getData(),()=>selected);
-  const partTracker=makeTracker(partWorkspace,partRecipe,()=>partResourcePicker?.getData(),()=>currentPartInfo?.assemblyId??null);
-  const summaryTrackerPanel=document.createElement("section");
-  summaryTrackerPanel.className="project-work-panel project-summary-tracker";
-  summary.querySelector(".project-summary-heading").after(summaryTrackerPanel);
-  const summaryTracker=window.BSWorkTracker?.mount(summaryTrackerPanel,{
-   project,editable:()=>canEdit(),nodes:()=>nodes,
-   context:()=>({path:"#"+project+"/workspace/__root__",assemblyId:null,title,stepId:"",stepTitle:""}),
-   resources:()=>({})
-  });
-
-
-
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
   detailsPanel.innerHTML='<details class="part-details-collapse"><summary class="part-details-view-heading"><h2>Part details</h2><span class="part-details-toggle-label">Show details</span></summary><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div><div class="part-drawing-panel"></div><div class="part-files-panel"></div></details>';
   const partDetailsCollapse=detailsPanel.querySelector(".part-details-collapse");
@@ -851,7 +820,7 @@ function setupAssemblyTrees(){
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
    if(partPhotoDialog.open)partPhotoDialog.close();editPartPicture.hidden=true;
-   clearTimeout(partStatusTimer);partStatusChangeVersion++;heading.textContent="Loading part…";currentPartInfo=null;partSavedRevision=null;partStatus.textContent="Loading instructions…";partDetailsCollapse.open=false;
+   clearTimeout(partStatusTimer);partStatusChangeVersion++;progressPanel.hidden=true;heading.textContent="Loading part…";currentPartInfo=null;partSavedRevision=null;partStatus.textContent="Loading instructions…";partDetailsCollapse.open=false;
    detailRows.replaceChildren();detailsPanel.classList.add("hide");
    partWorkspace.querySelector(".part-harness-preview").classList.add("hide");
    cover.replaceChildren();
@@ -866,7 +835,8 @@ function setupAssemblyTrees(){
     if(!part)throw Error("Part not found");
     heading.textContent=(part.partNumber?part.partNumber+" · ":"")+part.name;
     currentPartInfo=part;
-    fillProgressPanel(part);
+    progressPanel.hidden=part.isTool===true;
+    if(!part.isTool)fillProgressPanel(part);
     editPartPicture.hidden=!canEdit();
     investigationParts=partData.components||[];
     investigations?.showPart(partInvestigationPanel,partId);
@@ -877,7 +847,6 @@ function setupAssemblyTrees(){
     if(partBackAssembly===null)partBackAssembly=part.assemblyId??null;
     partResourcePicker?.setData(data.workspace?.resources,canEdit());
     partRecipe?.setData(data.workspace);
-    partTracker?.refresh();
     partSavedRevision=data.workspace?.revision??null;
     partExtras.setData(data.workspace);
     showPartPicture(partId);
@@ -1615,7 +1584,6 @@ function setupAssemblyTrees(){
     if(version!==workspaceLoadVersion||url!==workspaceUrl())return;
     assemblyResourcePicker?.setData(data.workspace?.resources,canEdit());
     assemblyRecipe?.setData(data.workspace);
-    assemblyTracker?.refresh();
     workspaceSavedRevision=data.workspace?.revision??null;
     assemblyExtras.setData(data.workspace);
     workspaceStatus.textContent="";
@@ -1654,7 +1622,6 @@ function setupAssemblyTrees(){
   async function showAssemblyPage(){
    ++detailVersion;
    refreshSettingsControls();
-   assemblyTracker?.refresh();partTracker?.refresh();summaryTracker?.refresh();
    const isAssembly=selected!==null;
    // Reuse the existing part editor, but keep the BOM inside the workspace.
    const isEditingBom=workspace.classList.contains("is-editing-bom-part");
