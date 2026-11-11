@@ -30,6 +30,8 @@ function open({onCreate,hideDefault=false}){
  const visibility=el("label","library-visibility-field");const visibilityInput=el("input");visibilityInput.type="checkbox";visibilityInput.checked=hideDefault;visibility.append(visibilityInput,document.createTextNode(" Hide from feature tree"));
  const mode=field("How would you like to add this part?","select");option(mode.input,"custom","Enter part details");option(mode.input,"library","Choose from saved parts / wire tools");
  const customName=field("Part name");
+ const partClassification=field("Part type","select");option(partClassification.input,"purchased","Purchased or standard part");option(partClassification.input,"custom","Custom-designed part (automatic number)");
+ const partNumberField=field("Project part number (optional)");partNumberField.input.placeholder="Leave blank for automatic custom numbering";partNumberField.input.maxLength=30;
  const chooser=el("div","library-picker-section hide");
  const category=field("Part category","select");option(category.input,"wire","Wire & cable");option(category.input,"components","Fasteners, converters & other saved parts");
  const workflow=el("div","wire-workflow-choice");
@@ -117,7 +119,7 @@ function open({onCreate,hideDefault=false}){
  manualFields.append(wireType.label,gauge.label,construction.label,wireAdvanced,length.label,endA.target.label,endA.choice.label,endA.other.label,endB.target.label,endB.choice.label,endB.other.label,results);
  wireSection.append(workflow,workflowHint,manualFields,wizardFields);
  chooser.append(category.label,wireSection,compSection);
- form.append(heading,subtitle,mode.label,customName.label,chooser,qty.label,unit.label,hintUnits,toolField,visibility,status,footer);
+ form.append(heading,subtitle,mode.label,customName.label,partClassification.label,partNumberField.label,chooser,qty.label,unit.label,hintUnits,toolField,visibility,status,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
@@ -143,6 +145,8 @@ function open({onCreate,hideDefault=false}){
  const update=()=>{
   const lib=mode.input.value==="library",wire=category.input.value==="wire";
   customName.label.classList.toggle("hide",lib);
+  partClassification.label.classList.toggle("hide",lib);
+  partNumberField.label.classList.toggle("hide",lib);
   chooser.classList.toggle("hide",!lib);
   wireSection.classList.toggle("hide",!lib||!wire);
   compSection.classList.toggle("hide",!lib||wire);
@@ -185,7 +189,7 @@ function open({onCreate,hideDefault=false}){
   if(count!==null&&(!Number.isFinite(count)||count<=0||count>10000000)){status.textContent="Quantity must be positive, or left blank.";return}
   if(mode.input.value==="custom"){
    const name=customName.input.value.trim();if(!name||name.length>100){status.textContent="Enter a part name (up to 100 characters).";return}
-   payload={name,quantity:count,specifications:[]};
+   payload={name,quantity:count,specifications:[],partType:partClassification.input.value,partNumber:partNumberField.input.value.trim().toUpperCase()||null};
   }else if(category.input.value==="components"){
    const p=commons.find(p=>p.id===commonSelect.input.value);if(!p){status.textContent="Select a saved library part.";return}
    payload={name:p.name,quantity:count,sharedPartRef:"common:"+p.id,manufacturer:p.manufacturer||"",model:p.partNumber||"",category:p.category||"Library part",specifications:[{name:"Library part ID",value:p.id},{name:"Library specifications",value:p.specifications||"Shared library component"}]};
