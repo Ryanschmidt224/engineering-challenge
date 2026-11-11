@@ -120,7 +120,10 @@
     resolution.descriptor.textContent=fixed.value==="no"?"Why?":"How?";
     resolution.field.placeholder=fixed.value==="no"?"Explain why the problem remains unresolved.":"Describe what you changed and what happened.";
    };
-   inputs.push(resolution);
+   // Keep the resolution question directly after the observation in both the UI and saved entry order.
+   controls.insertBefore(fixedRow,inputs[1].wrap);
+   controls.insertBefore(resolution.wrap,inputs[1].wrap);
+   inputs.splice(1,0,resolution);
    const saveBtn=btn("Save update",async()=>{
     const fields=inputs.filter(item=>item.type==="resolution"?!!fixed.value:!!(item.field.value.trim()||item.fileInput.files.length));
     if(!fields.length){reportHere("Add a note or attachment to at least one field.");inputs[0].field.focus();return}
@@ -173,7 +176,6 @@
     if(context.ownerType==="part"&&!context.stepId&&typeof getPart==="function"&&getPart()?.id===context.ownerId&&
      typeof onReplacePart==="function")header.append(btn("Replace part / save revision",()=>replacePart(context,target),"btn investigation-add"));
    }
-   if(header.childElementCount)content.append(header);
    disclosure.append(content);
    target.append(disclosure);
    const own=records.filter(item=>owns(item,context));
@@ -205,6 +207,7 @@
     attach(record,body,target);card.append(body);content.append(card);
    };
    own.forEach(item=>renderRecord(item));
+   if(header.childElementCount)content.append(header);
    if(rolled.length){
     const group=make("details","investigation-rollup");
     const summary=make("summary","", "Related failures in child parts, assemblies and steps ("+rolled.length+")");
