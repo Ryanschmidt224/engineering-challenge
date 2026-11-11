@@ -3,12 +3,14 @@
 // its assigned number permanently; changing formatting affects new issues only.
 import {projectAllowed,canEditProject} from "./projects.js";
 const key=id=>"project-numbering/"+id+".json";
-const defaults=()=>({prefix:"NR",digits:4,nextAssembly:1,nextPart:1001,issued:{},issuedSequences:{}});
+const defaults=()=>({prefix:"NR",digits:3,nextAssembly:1,nextPart:100,issued:{},issuedSequences:{}});
 const err=(message,status=400)=>Object.assign(new Error(message),{status});
 const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});
 export async function numberingState(env,project){
  const object=await env.PHOTOS.get(key(project));
  const data=object?JSON.parse(await object.text()):defaults();
+ // Migrate allocation cursors without changing any previously issued identifiers.
+ if(data.rangeVersion!==2){data.nextAssembly=1;data.nextPart=100;data.rangeVersion=2;}
  return {data:{...defaults(),...data,issued:data.issued||{},issuedSequences:data.issuedSequences||{}},etag:object?.etag||null};
 }
 export const formatNumber=(data,sequence)=>data.prefix+String(sequence).padStart(data.digits,"0");
@@ -54,6 +56,11 @@ export async function issueNumber(env,project,kind,recordId,manual){
  const existing=await legacyNumbers(env,project);
  return changeRegister(env,project,data=>{
   if(data.issued[recordKey])return data.issued[recordKey];
+  const occupied=new Set(Object.keys(data.issuedSequences));
+  // Also recognize legacy numbers with different zero padding under the current prefix.
+  for(const number of [...existing.keys(),...Object.values(data.issued)]){
+   if(number.startsWith(data.prefix)&&/^\d+$/.test(number.slice(data.prefix.length)))occupied.add(String(Number(number.slice(data.prefix.length))));
+  }
   let value,sequence;
   if(manual!==undefined&&manual!==null&&manual!==""){
    value=String(manual).trim().toUpperCase();
@@ -61,19 +68,19 @@ export async function issueNumber(env,project,kind,recordId,manual){
    if(!value.startsWith(prefix)||!/^\d+$/.test(value.slice(prefix.length)))throw err("Part number must use the project's prefix followed by digits");
    sequence=Number(value.slice(prefix.length));
    if(!Number.isSafeInteger(sequence)||sequence<1)throw err("Invalid sequence number");
-   if(kind==="assembly"&&sequence>1000)throw err("Assembly numbers must be between 1 and 1000");
-   if(kind==="part"&&sequence<=1000)throw err("Numbers 1–1000 are reserved for assemblies");
+   if(kind==="assembly"&&sequence>99)throw err("Assembly numbers must be between 1 and 99");
+   if(kind==="part"&&sequence<100)throw err("Numbers 1–99 are reserved for assemblies");
    // Normalize leading zeroes so NR1 cannot bypass the uniqueness of NR0001.
    value=formatNumber(data,sequence);
   }else{
    const cursor=kind==="assembly"?"nextAssembly":"nextPart";
    sequence=data[cursor];
-   const upper=kind==="assembly"?1000:Number.MAX_SAFE_INTEGER;
-   while(sequence<=upper&&(data.issuedSequences[String(sequence)]||Object.values(data.issued).includes(formatNumber(data,sequence))||existing.has(formatNumber(data,sequence))))sequence++;
-   if(sequence>upper)throw err("Assembly numbers 1–1000 are exhausted. Choose a new prefix for new projects.",409);
+   const upper=kind==="assembly"?99:Number.MAX_SAFE_INTEGER;
+   while(sequence<=upper&&(occupied.has(String(sequence))))sequence++;
+   if(sequence>upper)throw err("Assembly numbers 1–99 are exhausted. Choose a new prefix for new projects.",409);
    value=formatNumber(data,sequence);
   }
-  if(existing.has(value)&&existing.get(value)!==recordKey||data.issuedSequences[String(sequence)]&&data.issuedSequences[String(sequence)]!==recordKey||Object.entries(data.issued).some(([id,n])=>id!==recordKey&&n===value))throw err("This part number is already assigned in the project",409);
+  if(occupied.has(String(sequence))||existing.has(value)&&existing.get(value)!==recordKey||data.issuedSequences[String(sequence)]&&data.issuedSequences[String(sequence)]!==recordKey||Object.entries(data.issued).some(([id,n])=>id!==recordKey&&n===value))throw err("This part number is already assigned in the project",409);
   data.issued[recordKey]=value;
   data.issuedSequences[String(sequence)]=recordKey;
   const cursor=kind==="assembly"?"nextAssembly":"nextPart";
@@ -86,7 +93,7 @@ export async function onRequest({request,env}){
  if(!await projectAllowed(env,project,request))return json({error:"Project unavailable"},404);
  if(request.method==="GET"){
   const {data}=await numberingState(env,project);
-  return json({prefix:data.prefix,digits:data.digits,nextAssembly:Math.min(data.nextAssembly,1000),nextPart:data.nextPart,reservedAssemblyRange:"0001–1000",issuedCount:Object.keys(data.issued).length});
+  return json({prefix:data.prefix,digits:data.digits,nextAssembly:data.nextAssembly,nextPart:data.nextPart,reservedAssemblyRange:"001–099",issuedCount:Object.keys(data.issued).length});
  }
  if(request.method!=="PUT")return json({error:"Method not allowed"},405);
  if(!await canEditProject(request,env,project))return json({error:"Owner permission required"},403);
