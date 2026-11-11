@@ -341,15 +341,15 @@
   function newRecord(context,target){
    const reportHere=message=>report(message,target);
    const form=make("div","investigation-create investigation-new-record");
-   const name=make("input","field");name.placeholder="Revision, failure, or lesson title";name.maxLength=180;
+   const name=make("input","field");name.placeholder="Briefly summarize the revision, failure, or lesson";name.maxLength=180;
    const saveBtn=btn("Save",async()=>{
     if(!name.value.trim()){name.focus();return}
     saveBtn.disabled=true;
-    try{await save({action:"create",...context,title:name.value.trim()});reportHere("Failure recorded. Open it to add evidence, attempts and lessons.")}
+    try{await save({action:"create",...context,title:name.value.trim()});window.BSTransient?.show(feedback(target),"Record saved.")}
     catch(error){reportHere(error.message);saveBtn.disabled=false}
    },"btn primary");
    const cancel=btn("Cancel",()=>form.remove(),"btn");
-   const titleLabel=make("label","investigation-record-title");titleLabel.append(make("span","","Record title"),name);
+   const titleLabel=make("label","investigation-record-title");titleLabel.append(make("span","investigation-field-descriptor","Summary"),name);
    form.append(titleLabel,saveBtn,cancel);
    target.querySelector(".investigation-heading")?.after(form);
    name.focus();
