@@ -13,7 +13,7 @@ function setupAssemblyTrees(){
   const project=root.dataset.assemblyTree,view=document.getElementById(project),nodesEl=root.querySelector(".assembly-tree-nodes"),status=root.querySelector(".assembly-tree-status"),controls=root.querySelector(".assembly-edit");
   const canEdit=()=>window.BSProjectManager?.isOwner?.(project)===true || (["launcher","linear","robot"].includes(project)&&adminAuthenticated);
   let title=view.querySelector(".assembly-main h1")?.textContent||"Project";let nodes=[],selected=null,expanded=new Set([null]);
-  let showHiddenTreeItems=false,showTreeTools=false;const partVisibility=new Map(),partTools=new Map(),partNumbers=new Map();
+  let showHiddenTreeItems=false,showTreeTools=false;const partVisibility=new Map(),partTools=new Map(),partNumbers=new Map(),partProgress=new Map(),partAttention=new Map(),partQuantities=new Map();
   const isHiddenPart=node=>isPartNode(node)&&partVisibility.get(node.partId)===true;
   const isToolNode=node=>isPartNode(node)&&partTools.get(node.partId)===true;
   const includeTreeNode=node=>(showHiddenTreeItems||!isHiddenPart(node))&&(showTreeTools||!isToolNode(node));
@@ -24,6 +24,9 @@ function setupAssemblyTrees(){
     partVisibility.set(part.id,part.hideFromFeatureTree===true);
     partTools.set(part.id,part.isTool===true);
     if(part.partNumber)partNumbers.set(part.id,part.partNumber);
+    partProgress.set(part.id,part.progressStatus||"not_started");
+    partAttention.set(part.id,part.needsAttention===true);
+    partQuantities.set(part.id,part.quantity);
     if(!known.has(part.id)){
      const parentId=nodes.some(n=>n.id===part.assemblyId&&!isPartNode(n))?part.assemblyId:null;
      nodes.push({id:"part-"+part.id,kind:"part",partId:part.id,name:part.name,parentId});
@@ -546,6 +549,35 @@ function setupAssemblyTrees(){
   partDetailsCollapse.addEventListener("toggle",()=>{partDetailsCollapse.querySelector(".part-details-toggle-label").textContent=partDetailsCollapse.open?"Minimize details":"Show details"});
   partWorkspace.querySelector(".workspace-heading").after(detailsPanel);
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
+  const progressPanel=document.createElement("section");progressPanel.className="part-progress-panel";
+  progressPanel.innerHTML='<div class="part-progress-heading"><h2>Part status</h2><span class="part-progress-badge"></span></div><div class="part-progress-fields"><label>Progress<select class="field part-progress-select"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="complete">Complete</option></select></label><label class="part-attention-toggle"><input type="checkbox" class="part-needs-attention"> Needs attention</label></div><label class="part-attention-note-field" hidden>What needs to be fixed?<textarea class="field part-attention-note" rows="3" maxlength="2000" placeholder="Describe the issue so it can be addressed later."></textarea></label><div class="part-progress-actions"><button type="button" class="btn part-progress-save">Save status</button><span class="part-progress-feedback" role="status"></span></div>';
+  detailsPanel.before(progressPanel);
+  const progressSelect=progressPanel.querySelector(".part-progress-select"),attentionCheckbox=progressPanel.querySelector(".part-needs-attention"),attentionText=progressPanel.querySelector(".part-attention-note");
+  const refreshAttentionForm=()=>{progressPanel.querySelector(".part-attention-note-field").hidden=!attentionCheckbox.checked};
+  attentionCheckbox.onchange=refreshAttentionForm;
+  const fillProgressPanel=part=>{
+   progressSelect.value=part.progressStatus||"not_started";
+   attentionCheckbox.checked=part.needsAttention===true;attentionText.value=part.attentionNote||"";refreshAttentionForm();
+   progressPanel.querySelector(".part-progress-badge").textContent=part.needsAttention?"Needs attention":progressSelect.selectedOptions[0]?.textContent||"Not started";
+   progressPanel.classList.toggle("is-flagged",part.needsAttention===true);
+   progressPanel.querySelector(".part-progress-fields").hidden=!canEdit();
+   progressPanel.querySelector(".part-progress-actions").hidden=!canEdit();
+   progressPanel.querySelector(".part-attention-note-field").querySelector("textarea").readOnly=!canEdit();
+  };
+  progressPanel.querySelector(".part-progress-save").onclick=async()=>{
+   if(!canEdit()||!currentPartInfo)return;
+   const note=attentionText.value.trim(),flag=attentionCheckbox.checked,feedback=progressPanel.querySelector(".part-progress-feedback");
+   if(flag&&!note){feedback.textContent="Describe what needs attention before saving.";attentionText.focus();return}
+   const id=currentPartInfo.id,saveButton=progressPanel.querySelector(".part-progress-save");
+   saveButton.disabled=true;feedback.textContent="Saving status…";
+   try{
+    const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id),{method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({progressStatus:progressSelect.value,needsAttention:flag,attentionNote:note})});
+    const data=await response.json();if(!response.ok)throw Error(data.error||"Status could not be saved");
+    currentPartInfo=data.component;partProgress.set(id,data.component.progressStatus);partAttention.set(id,data.component.needsAttention===true);
+    fillProgressPanel(data.component);render();feedback.textContent="Status saved.";
+   }catch(error){feedback.textContent=error.message}
+   finally{saveButton.disabled=false}
+  };
   const renderPartDetails=part=>{
    detailRows.replaceChildren();
    const type=document.createElement("div");type.className="part-details-view-row";
@@ -700,6 +732,7 @@ function setupAssemblyTrees(){
     if(!part)throw Error("Part not found");
     heading.textContent=(part.partNumber?part.partNumber+" · ":"")+part.name;
     currentPartInfo=part;
+    fillProgressPanel(part);
     editPartPicture.hidden=!canEdit();
     investigationParts=partData.components||[];
     investigations?.showPart(partInvestigationPanel,partId);
@@ -1821,6 +1854,12 @@ function setupAssemblyTrees(){
    const name=document.createElement("button");name.type="button";name.className="assembly-name";
    const nodeNumber=node?(isPartNode(node)?partNumbers.get(node.partId):node.partNumber):null;
    name.textContent=node?(isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+(nodeNumber?nodeNumber+" · ":"")+node.name:"📦  "+title;
+   if(isPartNode(node)){
+    const count=partQuantities.get(node.partId);if(Number.isFinite(count)&&count>1)name.textContent+=" ("+count+")";
+    const status=partProgress.get(node.partId);
+    if(status==="complete"||status==="in_progress")el.classList.add("part-progress-"+status);
+    if(partAttention.get(node.partId)){el.classList.add("part-needs-attention");name.title="Needs attention — open part to view the reminder"}
+   }
    if(isPartNode(node)&&partRoute()===node.partId)el.classList.add("selected");name.onclick=()=>{if(isPartNode(node)){openTreePart(node);return}selected=id;history.pushState(null,"",workspaceHash(id));render();notify();window.scrollTo(0,0)};
    el.append(expand,name);
    if(canEdit()){
