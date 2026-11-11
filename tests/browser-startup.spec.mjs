@@ -55,6 +55,7 @@ test("project feature tree and workspace initialize without browser errors", asy
  await summary.locator(".project-summary-workspace").click();
  await expect(workspace).toBeVisible();
  await expect(workspace.locator(".workspace-back")).toHaveText("Open BOM");
+ await expect(workspace.locator(".workspace-cover img")).toHaveAttribute("src","/test-photo-a.png");
  const header=workspace.locator(":scope > .workspace-heading");
  const buttonBounds=await header.locator(".workspace-back").boundingBox();
  const titleBounds=await header.locator(".workspace-title").boundingBox();
@@ -516,5 +517,47 @@ test("personal project builds a private editable workspace from the shared proje
  await section.locator(".workspace-back").click();
  await expect(section.locator(".assembly-bom-screen")).toBeVisible();
  await expect(section.locator(".assembly-bom-list")).toHaveAttribute("aria-pressed","true");
+ expect(errors).toEqual([]);
+});
+
+
+test("owner sees project privacy and removal settings from the workspace",async({page})=>{
+ const errors=[];page.on("pageerror",error=>errors.push(error.message));
+ const id="p"+"a".repeat(32),ownerId="u"+"1".repeat(32);
+ const catalog=[{id,name:"Private test project",description:"Prototype",visibility:"private",
+  ownerId,kind:"project",editMode:"approval",isOwner:true}];
+ await page.route("**/api/**",async route=>{
+  const url=new URL(route.request().url());let value={};
+  if(url.pathname==="/api/accounts")value={user:{id:ownerId,email:"owner@example.com",displayName:"Owner"}};
+  else if(url.pathname==="/api/projects"){
+   if(route.request().method()==="PATCH"){const input=route.request().postDataJSON();Object.assign(catalog[0],input);value={ok:true,projects:catalog};}
+   else value={projects:catalog};
+  }else if(url.pathname==="/api/tree")value=url.searchParams.has("metadata")?{title:null,revision:null}:{nodes:[],revision:null};
+  else if(url.pathname==="/api/components")value={components:[]};
+  else if(url.pathname==="/api/photos")value={photos:[]};
+  else if(url.pathname==="/api/workspace")value={workspace:{recipe:[],resources:{tools:[],parts:[],calculators:[]}},revision:null};
+  else if(url.pathname==="/api/auth")value={authenticated:false};
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(value)});
+ });
+ await page.goto("/");
+ await expect(page.locator(".project-owner-actions")).toBeVisible();
+ await page.locator(".project-personal-card .project-link").click();
+ const summary=page.locator("#"+id+" .project-summary-page");
+ await summary.locator(".project-summary-workspace").click();
+ const workspace=page.locator("#"+id+" .assembly-workspace-page:not(.bom-part-workspace)");
+ await expect(workspace).toBeVisible();
+ const heading=workspace.locator(".workspace-heading");
+ await expect(heading.locator(".workspace-project-settings")).toBeVisible();
+ const bom=heading.locator(".workspace-back"),settings=heading.locator(".workspace-project-settings");
+ const title=await heading.locator(".workspace-title").boundingBox(),button=await bom.boundingBox();
+ expect(button.x).toBeLessThan(title.x+title.width+140);
+ await settings.click();
+ const modal=page.locator(".project-manage-dialog:visible");
+ await expect(modal.getByText("Visibility",{exact:true})).toBeVisible();
+ await expect(modal.getByRole("button",{name:"Remove project"})).toBeVisible();
+ await expect(modal.getByText(/restore it from Projects/)).toBeVisible();
+ await modal.getByLabel("Visibility").selectOption("public");
+ await modal.getByRole("button",{name:"Save settings"}).click();
+ await expect.poll(()=>catalog[0].visibility).toBe("public");
  expect(errors).toEqual([]);
 });
