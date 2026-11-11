@@ -167,6 +167,30 @@ function setupAssemblyTrees(){
    next.onclick=()=>{active=(active+1)%photos.length;show()};
    stage.append(picture,empty,prev,next,label,actions);show();return stage;
   }
+  // Project and subassembly workspaces remain independent of the BOM screen.
+  const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
+  workspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div><button type="button" class="btn workspace-back">Open BOM</button></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
+  detail.after(workspace);
+  // Assembly photo management lives in the workspace, not the read-only overview.
+  const workspacePhotoEditor=document.createElement("article");
+  workspacePhotoEditor.className="workspace-photos-editor is-editing-photo";
+  workspacePhotoEditor.innerHTML='<h2>Assembly photos</h2><p class="muted">Browse, add, or delete assembly photos.</p><div class="assembly-unified-photo"><div class="assembly-photos"></div></div><div class="workspace-photo-tools"><div class="assembly-photo-admin hide"><div class="assembly-photo-zone"><button type="button" class="assembly-photo-pick">+ Add photo</button><input class="assembly-photo-input" type="file" accept="image/*,.heic,.heif" hidden><span class="assembly-photo-drop-hint">or drop an image here</span></div><label class="assembly-photo-caption-label">Caption <input class="field assembly-photo-caption" placeholder="Photo description"></label></div></div><p class="workspace-photo-status muted" role="status" aria-live="polite"></p>';
+  const photoDialog=window.BSPhotoEditor.dialog({
+   parent:workspace,label:"Edit assembly photos",className:"workspace-photo-dialog",
+   doneClass:"workspace-photo-close",content:workspacePhotoEditor
+  });
+  // Keep the modal outside the hidden workspace so the project summary can open it.
+  workspace.parentElement.append(photoDialog);
+  const openPhotoEditor=window.BSPhotoEditor.pencil(
+   workspace.querySelector(".workspace-cover"),"Edit assembly image"
+  );
+  openPhotoEditor.onclick=()=>{
+   if(!canEdit())return;
+   photoDialog.showModal();
+   void workspacePhotoController.refresh();
+  };
+  const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>selected,
+   workspacePhotoEditor.querySelector(".workspace-photo-status"),true);
   // The project summary is a landing page, not a separate source of BOM data.
   // It rolls up all assembly occurrences and standard shop materials at project scope.
   const summary=document.createElement("section");
@@ -236,30 +260,6 @@ function setupAssemblyTrees(){
    selected=null;photoDialog.showModal();void workspacePhotoController.refresh();
   };
   photoDialog.addEventListener("close",()=>{if(isProjectSummary())void refreshProjectSummary()});
-  // Project and subassembly workspaces remain independent of the BOM screen.
-  const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
-  workspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div><h1 class="workspace-title"></h1><p class="muted">Workspace</p></div><button type="button" class="btn workspace-back">Open BOM</button></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
-  detail.after(workspace);
-  // Assembly photo management lives in the workspace, not the read-only overview.
-  const workspacePhotoEditor=document.createElement("article");
-  workspacePhotoEditor.className="workspace-photos-editor is-editing-photo";
-  workspacePhotoEditor.innerHTML='<h2>Assembly photos</h2><p class="muted">Browse, add, or delete assembly photos.</p><div class="assembly-unified-photo"><div class="assembly-photos"></div></div><div class="workspace-photo-tools"><div class="assembly-photo-admin hide"><div class="assembly-photo-zone"><button type="button" class="assembly-photo-pick">+ Add photo</button><input class="assembly-photo-input" type="file" accept="image/*,.heic,.heif" hidden><span class="assembly-photo-drop-hint">or drop an image here</span></div><label class="assembly-photo-caption-label">Caption <input class="field assembly-photo-caption" placeholder="Photo description"></label></div></div><p class="workspace-photo-status muted" role="status" aria-live="polite"></p>';
-  const photoDialog=window.BSPhotoEditor.dialog({
-   parent:workspace,label:"Edit assembly photos",className:"workspace-photo-dialog",
-   doneClass:"workspace-photo-close",content:workspacePhotoEditor
-  });
-  // Keep the modal outside the hidden workspace so the project summary can open it.
-  workspace.parentElement.append(photoDialog);
-  const openPhotoEditor=window.BSPhotoEditor.pencil(
-   workspace.querySelector(".workspace-cover"),"Edit assembly image"
-  );
-  openPhotoEditor.onclick=()=>{
-   if(!canEdit())return;
-   photoDialog.showModal();
-   void workspacePhotoController.refresh();
-  };
-  const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>selected,
-   workspacePhotoEditor.querySelector(".workspace-photo-status"),true);
   // Reuse the canonical BOM panel on its own screen. The editor alone moves
   // into the workspace when editing; no duplicate BOM data or forms.
   const bomScreen=document.createElement("section");
