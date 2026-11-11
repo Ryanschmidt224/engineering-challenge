@@ -189,13 +189,13 @@ function setupAssemblyTrees(){
    photoDialog.showModal();
    void workspacePhotoController.refresh();
   };
-  const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>isProjectSummary()?null:(selected??"root-assembly"),
+  const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>isProjectSummary()?"project-summary":(selected??"root-assembly"),
    workspacePhotoEditor.querySelector(".workspace-photo-status"),true);
   // The project summary is a landing page, not a separate source of BOM data.
   // It rolls up all assembly occurrences and standard shop materials at project scope.
   const summary=document.createElement("section");
   summary.className="project-summary-page hide";
-  summary.innerHTML='<header class="project-summary-heading"><div><p class="muted">Project summary</p><h1 class="project-summary-title"></h1></div><div class="project-summary-actions"><button type="button" class="btn project-summary-workspace">Open workspace</button><button type="button" class="btn project-summary-bom">Open BOM</button></div></header><section class="project-summary-gallery"><div class="project-summary-gallery-heading"><h2>Project photos</h2><button type="button" class="btn project-summary-add-photo hide">Manage photos</button></div><div class="project-summary-photo-stage"><img alt="Project photo" class="project-summary-photo" hidden><p class="project-summary-photo-empty">No project photos yet.</p><button type="button" class="project-summary-previous" aria-label="Previous project photo">‹</button><button type="button" class="project-summary-next" aria-label="Next project photo">›</button></div><div class="project-summary-photo-footer"><p class="project-summary-photo-caption"></p><span class="project-summary-photo-position"></span></div></section><div class="project-summary-lists"><section class="project-summary-bom-section"><h2>Project BOM</h2><div class="project-summary-bom-items" aria-live="polite"></div></section><section class="project-summary-tools-section"><h2>Tools needed</h2><div class="project-summary-tool-items" aria-live="polite"></div></section></div><section class="project-summary-owner-settings" hidden></section>';
+  summary.innerHTML='<header class="project-summary-heading"><div><p class="muted">Project summary</p><h1 class="project-summary-title"></h1></div></header><section class="project-summary-gallery"><div class="project-summary-gallery-heading"><h2>Project photos</h2></div><div class="project-summary-photo-stage"><button type="button" class="project-summary-photo-edit" aria-label="Edit project summary photos" title="Edit summary gallery" hidden>✎</button><img alt="Project photo" class="project-summary-photo" hidden><p class="project-summary-photo-empty">No project photos yet.</p><button type="button" class="project-summary-previous" aria-label="Previous project photo">‹</button><button type="button" class="project-summary-next" aria-label="Next project photo">›</button></div><div class="project-summary-photo-footer"><p class="project-summary-photo-caption"></p><span class="project-summary-photo-position"></span></div></section><div class="project-summary-lists"><section class="project-summary-bom-section"><h2>Project BOM</h2><div class="project-summary-bom-items" aria-live="polite"></div></section><section class="project-summary-tools-section"><h2>Tools needed</h2><div class="project-summary-tool-items" aria-live="polite"></div></section></div><section class="project-summary-owner-settings" hidden></section>';
   detail.after(summary);
   let summaryPhotos=[],summaryPhotoIndex=0,summaryVersion=0;
   const isProjectSummary=()=>decodeURIComponent(location.hash.slice(1))===project;
@@ -213,8 +213,6 @@ function setupAssemblyTrees(){
   summary.querySelector(".project-summary-next").onclick=()=>moveSummaryPhoto(1);
   summaryPhotoStage.tabIndex=0;
   summaryPhotoStage.onkeydown=event=>{if(event.key==="ArrowLeft"||event.key==="ArrowRight"){event.preventDefault();moveSummaryPhoto(event.key==="ArrowLeft"?-1:1)}};
-  summary.querySelector(".project-summary-workspace").onclick=()=>{selected=null;history.pushState(null,"","#"+project+"/workspace/__root__");render();notify();window.scrollTo(0,0)};
-  summary.querySelector(".project-summary-bom").onclick=()=>{selected=null;setBomView("list");history.pushState(null,"","#"+project+"/bom/__root__");render();notify();window.scrollTo(0,0)};
   const makeSummaryList=(container,items,emptyText)=>{
    container.replaceChildren();
    if(!items.length){container.append(Object.assign(document.createElement("p"),{className:"muted",textContent:emptyText}));return}
@@ -230,18 +228,18 @@ function setupAssemblyTrees(){
   async function refreshProjectSummary(){
    const version=++summaryVersion;
    summary.querySelector(".project-summary-title").textContent=title;
-   summary.querySelector(".project-summary-add-photo").classList.toggle("hide",!canEdit());
+   summary.querySelector(".project-summary-photo-edit").hidden=!canEdit();
    const bomList=summary.querySelector(".project-summary-bom-items"),toolList=summary.querySelector(".project-summary-tool-items");
    try{
     const [photosResponse,partsResponse]=await Promise.all([
-     fetch("/api/photos?project="+encodeURIComponent(project),{credentials:"same-origin",cache:"no-store"}),
+     fetch("/api/photos?project="+encodeURIComponent(project)+"&assembly=project-summary",{credentials:"same-origin",cache:"no-store"}),
      fetch("/api/components?project="+encodeURIComponent(project),{credentials:"same-origin",cache:"no-store"})
     ]);
     if(!photosResponse.ok||!partsResponse.ok)throw Error("Project summary unavailable.");
     const [photoData,partData]=await Promise.all([photosResponse.json(),partsResponse.json()]);
     if(version!==summaryVersion||!isProjectSummary())return;
     const previousPhotoId=summaryPhotos[summaryPhotoIndex]?.id;
-    summaryPhotos=(photoData.photos||[]).filter(photo=>!photo.assembly);
+    summaryPhotos=(photoData.photos||[]).filter(photo=>photo.assembly==="project-summary");
     summaryPhotoIndex=Math.max(0,summaryPhotos.findIndex(photo=>photo.id===previousPhotoId));
     displaySummaryPhoto();
     // Include generated cutting-list materials, matching the canonical BOM rollup.
@@ -256,8 +254,10 @@ function setupAssemblyTrees(){
     toolList.textContent="Could not load tools.";
    }
   }
-  // Reuse the established photo upload/edit dialog for the project root.
-  summary.querySelector(".project-summary-add-photo").onclick=()=>{
+  // Project-summary photos have an independent album, never the root assembly gallery.
+  // The compact pencil is over the photo instead of a separate Manage photos button.
+  summary.querySelector(".project-summary-photo-edit").onclick=()=>{
+   if(!canEdit())return;
    selected=null;photoDialog.showModal();void workspacePhotoController.refresh();
   };
   photoDialog.addEventListener("close",()=>{if(isProjectSummary())void refreshProjectSummary()});
@@ -1391,12 +1391,11 @@ function setupAssemblyTrees(){
   const workspaceRoute=()=>location.hash.slice(1).startsWith(project+"/workspace/");
   let workspacePhotoVersion=0;
   async function loadWorkspaceCover(){const id=selected,version=++workspacePhotoVersion,cover=workspace.querySelector(".workspace-cover");cover.replaceChildren();const placeholder=document.createElement("span");placeholder.textContent="No photo yet";cover.append(placeholder);try{
-    // The root assembly has its own gallery. Keep the old project cover as a fallback.
+    // Root assembly photos are distinct from the project summary gallery.
     const query="/api/photos?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(id??"root-assembly");
     const r=await fetch(query,{credentials:"same-origin",cache:"no-store"});if(!r.ok)return;
     const data=await r.json();if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;
     let photo=data.photos?.[0];
-    if(!photo&&id===null){const legacy=await fetch("/api/photos?project="+encodeURIComponent(project),{credentials:"same-origin",cache:"no-store"});if(legacy.ok)photo=(await legacy.json()).photos?.find(p=>!p.assembly)}
     if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;
     if(photo){const img=document.createElement("img");img.src=photo.url;img.alt=photo.caption||"Assembly photo";cover.replaceChildren(img)}
    }catch(e){/* cover is optional */}}
