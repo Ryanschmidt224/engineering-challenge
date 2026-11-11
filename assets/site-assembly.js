@@ -1399,7 +1399,6 @@ function setupAssemblyTrees(){
      partVisibility.set(result.component.id,result.component.hideFromFeatureTree===true);
      partTools.set(result.component.id,result.component.isTool===true);
      partDocuments.set(result.component.id,result.component.itemType==="document");
-     partDocuments.set(result.component.id,result.component.itemType==="document");
      if(result.component.partNumber)partNumbers.set(result.component.id,result.component.partNumber);
      if(!nodes.some(n=>isPartNode(n)&&n.partId===result.component.id))nodes.push({id:"part-"+result.component.id,kind:"part",partId:result.component.id,name:result.component.name,parentId:component.assemblyId??null});
      render();
@@ -2033,6 +2032,7 @@ function setupAssemblyTrees(){
      }
      partVisibility.set(newPart.id,newPart.hideFromFeatureTree===true);
      partTools.set(newPart.id,newPart.isTool===true);
+     partDocuments.set(newPart.id,newPart.itemType==="document");
      if(newPart.partNumber)partNumbers.set(newPart.id,newPart.partNumber);
      const next=[...nodes,{id:crypto.randomUUID(),kind:"part",partId:newPart.id,name:newPart.name,parentId:selected}];
      await save(next);expanded.add(selected);
