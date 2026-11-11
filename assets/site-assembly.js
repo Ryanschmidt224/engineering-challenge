@@ -638,13 +638,13 @@ function setupAssemblyTrees(){
   summary.querySelector(".project-summary-heading").after(summaryPersonalTarget);
   const summaryPersonal=window.BSMyBuild?.mount(summaryPersonalTarget,{project,context:()=>({scope:"project:"+project})});
   const summaryFeedbackTarget=document.createElement("div");
-  summary.querySelector(".project-summary-heading").after(summaryFeedbackTarget);
+  summary.querySelector(".project-summary-heading").append(summaryFeedbackTarget);
   window.BSMyBuild?.reportControl(summaryFeedbackTarget,{project,scope:"project:"+project});
   const assemblyFeedbackTarget=document.createElement("div");
-  workspace.querySelector(".workspace-heading").after(assemblyFeedbackTarget);
+  workspace.querySelector(".workspace-heading").append(assemblyFeedbackTarget);
   window.BSMyBuild?.reportControl(assemblyFeedbackTarget,{project,scope:()=>selected===null?"project:"+project:"assembly:"+selected});
   const partFeedbackTarget=document.createElement("div");
-  partWorkspace.querySelector(".workspace-heading").after(partFeedbackTarget);
+  partWorkspace.querySelector(".workspace-heading").append(partFeedbackTarget);
   window.BSMyBuild?.reportControl(partFeedbackTarget,{project,scope:()=> "part:"+(partRoute()||"none")});
   const creatorInsightsTarget=document.createElement("div");
   creatorInsightsTarget.className="creator-feedback-target";
