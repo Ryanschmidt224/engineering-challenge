@@ -1,5 +1,6 @@
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
+import {issueNumber} from "./numbering.js";
 const reply=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});
 export async function handleTree(request,env){
  const project=new URL(request.url).searchParams.get("project");
@@ -79,9 +80,27 @@ export async function handleTree(request,env){
  if(Object.prototype.hasOwnProperty.call(body,"expectedRevision")&&
    (body.expectedRevision??null)!==(existing?.etag??null))
   return reply({error:"The feature tree was modified elsewhere. Reload before saving."},409);
+ const currentNodes=existing?JSON.parse(await existing.text()):[];
+ const previousIds=new Map(currentNodes.map(n=>[n.id,n]));
+ const savedNodes=[];
+ try{
+  for(const node of nodes){
+   const kind=node.kind==="part"?"part":"assembly";
+   const entry={id:node.id,name:node.name.trim(),parentId:node.parentId,dependsOn:node.dependsOn||[],stage:node.stage||"independent",kind,...(kind==="part"?{partId:node.partId}:{})};
+   if(kind==="assembly"){
+    const original=previousIds.get(node.id);
+    // Preserve existing identifiers. Issue a number only for a newly created assembly.
+    if(original){
+     if(original.kind==="part")return reply({error:"Cannot change a part node into an assembly"},400);
+     if(original.partNumber)entry.partNumber=original.partNumber;
+    }else entry.partNumber=await issueNumber(env,project,"assembly",node.id);
+   }
+   savedNodes.push(entry);
+  }
+ }catch(error){return reply({error:error.message},error.status||409)}
  const condition=existing?.etag?{onlyIf:{etagMatches:existing.etag}}:
   !existing?{onlyIf:{etagDoesNotMatch:"*"}}:undefined;
- const written=await env.PHOTOS.put(key,JSON.stringify(nodes.map(n=>({id:n.id,name:n.name.trim(),parentId:n.parentId,dependsOn:n.dependsOn||[],stage:n.stage||"independent",kind:n.kind==="part"?"part":"assembly",...(n.kind==="part"?{partId:n.partId}:{})}))),condition);
+ const written=await env.PHOTOS.put(key,JSON.stringify(savedNodes),condition);
  if(written===null)return reply({error:"Concurrent tree edit. Reload before saving."},409);
- return reply({ok:true,revision:written?.etag??null});
+ return reply({ok:true,nodes:savedNodes,revision:written?.etag??null});
 }
