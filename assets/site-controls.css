@@ -1053,3 +1053,34 @@
 .project-card-actions .btn{padding:7px 10px;font-size:.8rem;margin:0}
 .project-card[hidden]{display:none!important}
 @media(max-width:600px){.project-owner-actions{width:100%}.project-owner-actions .btn{font-size:.79rem}}
+
+
+/* Project home: summary is separate from the editing workspace and detailed BOM. */
+.project-summary-page{width:100%;min-width:0;display:grid;gap:26px;padding:4px 2px 30px}
+.project-summary-page.hide{display:none!important}
+.project-summary-heading{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap}
+.project-summary-heading h1{font-size:clamp(1.55rem,2.8vw,2.3rem);line-height:1.16;margin:3px 0 0}
+.project-summary-heading p{margin:0;font-size:.85rem}
+.project-summary-actions{display:flex;gap:10px;flex-wrap:wrap}
+.project-summary-gallery{min-width:0}
+.project-summary-gallery-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.project-summary-gallery-heading h2,.project-summary-lists h2{font-size:1.12rem;font-weight:700;margin:0}
+.project-summary-photo-stage{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:clamp(240px,34vw,480px);border-radius:12px;background:var(--color-surface-muted);overflow:hidden;border:1px solid var(--color-border)}
+.project-summary-photo-stage img{width:100%;height:100%;object-fit:contain;display:block}
+.project-summary-photo-stage img[hidden],.project-summary-photo-stage p[hidden],.project-summary-photo-stage button[hidden]{display:none!important}
+.project-summary-photo-empty{color:var(--color-text-muted);font-size:.94rem}
+.project-summary-photo-stage>button{position:absolute;top:50%;transform:translateY(-50%);width:41px;height:48px;padding:0;border:1px solid var(--color-border);border-radius:9px;background:var(--color-surface);color:var(--color-text);font-size:1.6rem;cursor:pointer;box-shadow:0 2px 8px #0002}
+.project-summary-photo-stage>button:hover{background:var(--color-hover)}
+.project-summary-previous{left:12px}.project-summary-next{right:12px}
+.project-summary-photo-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:24px;padding:8px 2px;color:var(--color-text-muted);font-size:.83rem}
+.project-summary-photo-footer p{margin:0}
+.project-summary-photo-position{white-space:nowrap}
+.project-summary-lists{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(220px,1fr);gap:28px;align-items:start}
+.project-summary-lists>section{min-width:0}
+.project-summary-lists h2{padding:0 0 12px;border-bottom:1px solid var(--color-border)}
+.project-summary-part-list{padding:0;margin:0;list-style:none}
+.project-summary-part-list li{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:10px 1px;border-bottom:1px solid var(--color-border);font-size:.9rem;line-height:1.4}
+.project-summary-part-name{min-width:0;overflow-wrap:anywhere}
+.project-summary-part-quantity{color:var(--color-text-muted);font-size:.82rem;text-align:right;white-space:nowrap;flex:none}
+.project-summary-lists .muted{margin-top:14px;font-size:.89rem}
+@media(max-width:760px){.project-summary-lists{grid-template-columns:1fr;gap:28px}.project-summary-photo-stage{height:clamp(230px,54vw,370px)}}
