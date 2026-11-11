@@ -1091,3 +1091,64 @@
  border:1px solid var(--color-border);
  border-radius:12px;
 }
+
+/* Project BOM: nested, collapsible assembly branches like the feature tree. */
+.project-summary-bom-items{display:flex;flex-direction:column;gap:5px}
+.project-summary-bom-items .project-summary-assembly{
+ border:1px solid var(--color-border);border-radius:9px;
+ background:var(--color-surface);overflow:hidden;
+}
+.project-summary-bom-items .project-summary-assembly>summary{
+ display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 13px;
+ list-style:none;
+}
+.project-summary-bom-items .project-summary-assembly>summary::-webkit-details-marker{display:none}
+.project-summary-bom-items .project-summary-assembly>summary::before{
+ content:"▸";display:inline-block;color:var(--color-text-muted);font-size:1rem;transition:transform .12s;
+}
+.project-summary-bom-items .project-summary-assembly[open]>summary::before{transform:rotate(90deg)}
+.project-summary-bom-items .project-summary-assembly>summary strong{font-size:.9rem;font-weight:650;min-width:0}
+.project-summary-bom-items .project-summary-assembly>summary .muted{font-size:.79rem;margin-left:auto;white-space:nowrap}
+.project-summary-bom-items .project-summary-assembly>summary:hover{background:var(--color-hover)}
+.project-summary-bom-items .project-summary-assembly-contents{padding:2px 9px 9px 19px;border-top:1px solid var(--color-border)}
+.project-summary-bom-items .project-summary-part-list{margin:4px 0 7px}
+.project-summary-bom-items .project-summary-assembly-contents>.project-summary-assembly{margin-top:5px}
+
+/* Part status is a quiet, single-line disclosure close to the part heading. */
+.bom-part-workspace .part-progress-panel{
+ display:block;
+ width:max-content;max-width:100%;box-sizing:border-box;
+ margin:-5px 0 15px;
+ padding:0;
+ border:1px solid var(--color-border);
+ border-radius:9px;background:var(--color-surface);
+ box-shadow:none;
+}
+.bom-part-workspace .part-progress-disclosure{display:block}
+.bom-part-workspace .part-progress-heading{
+ display:flex;align-items:center;gap:10px;
+ padding:9px 13px;cursor:pointer;list-style:none;
+}
+.bom-part-workspace .part-progress-heading::-webkit-details-marker{display:none}
+.bom-part-workspace .part-progress-heading::before{content:"▸";color:var(--color-text-muted);font-size:.8rem}
+.bom-part-workspace .part-progress-disclosure[open]>.part-progress-heading::before{content:"▾"}
+.bom-part-workspace .part-progress-heading h2{font-size:.86rem;font-weight:650;margin:0}
+.bom-part-workspace .part-progress-badge{font-size:.8rem;font-weight:450}
+.bom-part-workspace .part-progress-edit-label{font-size:.75rem;color:var(--color-text-muted);margin-left:10px}
+.bom-part-workspace .part-progress-panel.is-flagged{border-color:var(--color-border)}
+.bom-part-workspace .part-progress-body{
+ display:flex;flex-direction:column;align-items:flex-start;gap:11px;
+ padding:12px 14px 14px;border-top:1px solid var(--color-border);
+ min-width:min(340px,80vw);
+}
+.bom-part-workspace .part-progress-fields{gap:14px;align-items:center}
+.bom-part-workspace .part-progress-fields>label:first-child{gap:5px}
+.bom-part-workspace .part-attention-toggle{padding-bottom:0}
+.bom-part-workspace .part-progress-select{min-width:155px}
+.bom-part-workspace .part-attention-note-field{width:100%}
+.bom-part-workspace .part-attention-note{width:100%;min-height:65px}
+.bom-part-workspace .part-progress-actions .btn{padding:7px 12px}
+@media(max-width:720px){
+ .bom-part-workspace .part-progress-panel{margin:0 0 14px;width:100%}
+ .bom-part-workspace .part-progress-body{min-width:0}
+}
