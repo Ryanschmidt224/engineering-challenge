@@ -32,10 +32,16 @@ function open({onCreate,hideDefault=false}){
  const customName=field("Part name");
  const partClassification=field("Part type","select");option(partClassification.input,"purchased","Purchased or standard part");option(partClassification.input,"custom","Custom-designed part");
  const partNumberField=field("Project part number (optional)");partNumberField.input.placeholder="Enter an existing / reserved number";partNumberField.input.maxLength=30;
+ const numberChoice=el("fieldset","library-number-choice");
+ const numberLegend=el("legend","","Part number");numberChoice.append(numberLegend);
  const autoNumberRow=el("label","library-auto-number");
- const autoNumberCheckbox=el("input");autoNumberCheckbox.type="checkbox";autoNumberCheckbox.checked=true;
- autoNumberRow.append(autoNumberCheckbox,document.createTextNode(" Create next sequential part number"));
- const autoNumberHelp=el("p","muted library-auto-number-help","A new project number will be assigned when you save this custom part. Numbers 0001–1000 are reserved for assemblies; custom parts begin at 1001.");
+ const autoNumberCheckbox=el("input");autoNumberCheckbox.type="radio";autoNumberCheckbox.name="new-part-number-mode";autoNumberCheckbox.value="auto";autoNumberCheckbox.checked=true;
+ autoNumberRow.append(autoNumberCheckbox,document.createTextNode(" Assign next available project number"));
+ const manualNumberRow=el("label","library-auto-number");
+ const manualNumberCheckbox=el("input");manualNumberCheckbox.type="radio";manualNumberCheckbox.name="new-part-number-mode";manualNumberCheckbox.value="manual";
+ manualNumberRow.append(manualNumberCheckbox,document.createTextNode(" Enter a part number"));
+ numberChoice.append(autoNumberRow,manualNumberRow);
+ const autoNumberHelp=el("p","muted library-auto-number-help","The number is assigned when you save. Numbers 0001–1000 are reserved for assemblies; parts begin at 1001.");
  const chooser=el("div","library-picker-section hide");
  const category=field("Part category","select");option(category.input,"wire","Wire & cable");option(category.input,"components","Fasteners, converters & other saved parts");
  const workflow=el("div","wire-workflow-choice");
@@ -123,7 +129,7 @@ function open({onCreate,hideDefault=false}){
  manualFields.append(wireType.label,gauge.label,construction.label,wireAdvanced,length.label,endA.target.label,endA.choice.label,endA.other.label,endB.target.label,endB.choice.label,endB.other.label,results);
  wireSection.append(workflow,workflowHint,manualFields,wizardFields);
  chooser.append(category.label,wireSection,compSection);
- form.append(heading,subtitle,mode.label,partClassification.label,autoNumberRow,autoNumberHelp,partNumberField.label,customName.label,chooser,qty.label,unit.label,hintUnits,toolField,visibility,status,footer);
+ form.append(heading,subtitle,mode.label,partClassification.label,numberChoice,autoNumberHelp,partNumberField.label,customName.label,chooser,qty.label,unit.label,hintUnits,toolField,visibility,status,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
@@ -150,10 +156,10 @@ function open({onCreate,hideDefault=false}){
   const lib=mode.input.value==="library",wire=category.input.value==="wire";
   customName.label.classList.toggle("hide",lib);
   partClassification.label.classList.toggle("hide",lib);
-  const customPart=!lib&&partClassification.input.value==="custom";
-  autoNumberRow.classList.toggle("hide",!customPart);
-  autoNumberHelp.classList.toggle("hide",!customPart||!autoNumberCheckbox.checked);
-  partNumberField.label.classList.toggle("hide",lib||customPart&&autoNumberCheckbox.checked);
+  numberChoice.classList.toggle("hide",lib);
+  autoNumberHelp.classList.toggle("hide",lib||!autoNumberCheckbox.checked);
+  partNumberField.label.classList.toggle("hide",lib||autoNumberCheckbox.checked);
+  partNumberField.input.required=!lib&&manualNumberCheckbox.checked;
   chooser.classList.toggle("hide",!lib);
   wireSection.classList.toggle("hide",!lib||!wire);
   compSection.classList.toggle("hide",!lib||wire);
@@ -186,7 +192,7 @@ function open({onCreate,hideDefault=false}){
   status.textContent="Wizard applied "+selectedRecommendation+" AWG "+construction.input.value+" copper and "+length.input.value+" in cut length. Review the wire and termination details before creating the part; ampacity is not verified.";
  };
  unit.input.value="pcs";
- mode.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;
+ mode.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;
  category.input.onchange=update;wireType.input.onchange=update;commonCategory.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
  form.addEventListener("submit",async e=>{
   e.preventDefault();
@@ -196,7 +202,7 @@ function open({onCreate,hideDefault=false}){
   if(count!==null&&(!Number.isFinite(count)||count<=0||count>10000000)){status.textContent="Quantity must be positive, or left blank.";return}
   if(mode.input.value==="custom"){
    const name=customName.input.value.trim();if(!name||name.length>100){status.textContent="Enter a part name (up to 100 characters).";return}
-   const autoNumber=partClassification.input.value==="custom"&&autoNumberCheckbox.checked;
+   const autoNumber=autoNumberCheckbox.checked;
    payload={name,quantity:count,specifications:[],partType:partClassification.input.value,
     assignNumber:autoNumber,partNumber:autoNumber?null:partNumberField.input.value.trim().toUpperCase()||null};
   }else if(category.input.value==="components"){
