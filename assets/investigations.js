@@ -182,7 +182,7 @@
     }catch(error){reportHere(error.message);saveBtn.disabled=false}
    },"btn primary");
    const actions=make("div","investigation-edit-actions");
-   const deleteBtn=btn("Delete revision",async()=>{
+   const deleteBtn=btn("Delete",async()=>{
     if(!confirm('Delete "'+record.title+'"? This removes the revision record and its notes from the project.'))return;
     deleteBtn.disabled=true;saveBtn.disabled=true;
     try{await save({action:"deleteRecord",id:record.id});reportHere("Revision deleted.")}
