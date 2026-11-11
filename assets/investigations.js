@@ -60,7 +60,7 @@
    records=d.records;revision=d.revision;renderAll();
    return d;
   }
-  function attach(record,container,target){
+  function attach(record,container,target,editing=false,onDone=()=>{}){
    const reportHere=message=>report(message,target);
    const entryList=make("div","investigation-entries");
    for(const entry of record.entries||[]){
@@ -81,13 +81,18 @@
     }
     entryList.append(item);
    }
-   container.append(entryList);
+   if(!editing){if(entryList.childElementCount)container.append(entryList);return;}
    if(!admin())return;
+   const latest=new Map();for(const entry of record.entries||[])latest.set(entry.type,entry);
 
    const controls=make("div","investigation-add-controls");
+   const nameRow=make("label","investigation-field-label");
+   const titleInput=make("input","field");titleInput.value=record.title;titleInput.maxLength=180;
+   nameRow.append(make("span","investigation-field-descriptor","Record title"),titleInput);controls.append(nameRow);
    const dateLabel=make("label","investigation-date-field","Date");
    const date=make("input","field");date.type="date";
    const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
+   date.value=record.date||[...(record.entries||[])].reverse().find(entry=>entry.date)?.date||date.value;
    dateLabel.append(date);controls.append(dateLabel);
    const descriptions={observation:"Describe what happened or failed.",note:"Other relevant details, measurements, or notes."};
    function fieldRow(type,label,placeholder){
@@ -95,15 +100,29 @@
     const caption=make("label","investigation-field-label");
     const descriptor=make("span","investigation-field-descriptor",label);
     const field=make("textarea","field");field.rows=2;field.maxLength=5000;
-    field.placeholder=placeholder;caption.append(descriptor,field);
+    field.placeholder=placeholder;field.value=latest.get(type)?.text||"";caption.append(descriptor,field);
     const fileInput=make("input");fileInput.type="file";fileInput.multiple=true;fileInput.hidden=true;
     fileInput.accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.dwg,.dxf,.stp,.step,.stl,.txt,.csv,.doc,.docx,.xls,.xlsx,.zip";
     const fileChoice=make("span","investigation-file-label");
     fileInput.onchange=()=>{fileChoice.textContent=[...fileInput.files].map(x=>x.name).join(", ")};
     const attachments=make("div","investigation-field-attachments");
     attachments.append(btn("+ Add photo / document",()=>fileInput.click(),"investigation-attachment-link"),fileInput,fileChoice);
-    wrap.append(caption,attachments);controls.append(wrap);
-    return {type,field,fileInput,wrap,descriptor};
+    const existingFiles=[...(latest.get(type)?.files||[])];
+    const existingList=make("div","investigation-existing-files");
+    function drawFiles(){
+     existingList.replaceChildren();
+     for(const file of existingFiles){
+      const row=make("div","investigation-existing-file");
+      const link=make("a","investigation-file",latest.get(type)?.fileName||"Existing attachment");
+      link.href=fileUrl(file);link.target="_blank";link.rel="noopener noreferrer";
+      if(photoExt.test(file)){const img=make("img","investigation-edit-thumbnail");img.src=fileUrl(file);img.alt="Attached photo";link.replaceChildren(img)}
+      row.append(link,btn("Remove",()=>{existingFiles.splice(existingFiles.indexOf(file),1);drawFiles()},"investigation-attachment-link"));
+      existingList.append(row);
+     }
+    }
+    drawFiles();
+    wrap.append(caption,attachments,existingList);controls.append(wrap);
+    return {type,field,fileInput,wrap,descriptor,existingFiles};
    }
    const inputs=types.map(([type,label])=>fieldRow(type,label,descriptions[type]));
    const fixedRow=make("label","investigation-fixed-row");
@@ -124,17 +143,18 @@
    controls.insertBefore(fixedRow,inputs[1].wrap);
    controls.insertBefore(resolution.wrap,inputs[1].wrap);
    inputs.splice(1,0,resolution);
-   const saveBtn=btn("Save update",async()=>{
-    const fields=inputs.filter(item=>item.type==="resolution"?!!fixed.value:!!(item.field.value.trim()||item.fileInput.files.length));
-    if(!fields.length){reportHere("Add a note or attachment to at least one field.");inputs[0].field.focus();return}
+   fixed.value=latest.get("resolution")?.resolution||"";fixed.onchange();
+   const saveBtn=btn("Save",async()=>{
+    const fields=inputs.filter(item=>item.type==="resolution"?!!fixed.value:!!(item.field.value.trim()||item.fileInput.files.length||item.existingFiles.length));
+    if(!titleInput.value.trim()){titleInput.focus();return}
     if(!date.value){reportHere("Choose a date.");date.focus();return}
     saveBtn.disabled=true;
     try{
      const entries=[];
-     for(const {type,field,fileInput} of fields){
+     for(const {type,field,fileInput,existingFiles} of fields){
       const selected=[...fileInput.files];
-      if(selected.length>12)throw Error("Attach no more than 12 files to each field.");
-      const files=[];
+      if(selected.length+existingFiles.length>12)throw Error("Attach no more than 12 files to each field.");
+      const files=[...existingFiles];
       for(const file of selected){
        if(file.size>20*1024*1024)throw Error("An attachment exceeds 20 MB.");
        const up=await fetch("/api/recipe-files?project="+encodeURIComponent(project),{method:"POST",
@@ -142,13 +162,14 @@
        const data=await up.json();if(!up.ok)throw Error(data.error||"Attachment failed");
        files.push(data.id);
       }
-      entries.push({type,text:field.value,date:date.value,files,fileName:selected[0]?.name.slice(0,120)||"",...(type==="resolution"?{resolution:fixed.value}:{})});
+      entries.push({type,text:field.value,date:date.value,files,fileName:selected[0]?.name.slice(0,120)||latest.get(type)?.fileName||"",...(type==="resolution"?{resolution:fixed.value}:{})});
      }
-     await save({action:"appendBatch",id:record.id,entries});
-     reportHere("Update saved. Earlier findings are preserved.");
+     await save({action:"editRecord",id:record.id,title:titleInput.value.trim(),date:date.value,entries});
+     onDone();reportHere("Record saved.");
     }catch(error){reportHere(error.message);saveBtn.disabled=false}
    },"btn primary");
-   controls.append(saveBtn);
+   const actions=make("div","investigation-edit-actions");
+   actions.append(btn("Cancel",onDone),saveBtn);controls.append(actions);
    container.append(controls);
   }
   function render(target,context,compact=false){
@@ -189,22 +210,24 @@
     summary.append(make("strong","",record.title));
     const badge=make("span","investigation-status-pill",statuses.find(x=>x[0]===record.status)?.[1]||record.status);
     summary.append(badge);
-    if(admin()){
-     const rename=btn("Rename",event=>{
-      event.preventDefault();event.stopPropagation();
-      renameRecord(record,target);
-     },"btn investigation-rename");
-     summary.append(rename);
-     rename.addEventListener("click",event=>{event.preventDefault();event.stopPropagation()});
-    }
     card.append(summary);
     const body=make("div","investigation-body");
     if(inherited){
      const source=record.scope==="step"?"Step":record.ownerType==="part"?"Part":"Assembly";
      body.append(make("p","investigation-origin","From "+source+" · "+record.title));
     }
-    if(record.partSnapshot)showSnapshot(record.partSnapshot,body);
-    attach(record,body,target);card.append(body);content.append(card);
+    let editing=false;
+    const edit=btn("Edit",event=>{
+     event.preventDefault();event.stopPropagation();card.open=true;editing=true;draw();
+    },"btn investigation-rename");
+    if(admin()){summary.append(edit);edit.addEventListener("click",event=>{event.preventDefault();event.stopPropagation()})}
+    const draw=()=>{
+     body.replaceChildren();
+     if(record.partSnapshot)showSnapshot(record.partSnapshot,body);
+     edit.hidden=editing;
+     attach(record,body,target,editing,()=>{editing=false;draw()});
+    };
+    draw();card.append(body);content.append(card);
    };
    own.forEach(item=>renderRecord(item));
    if(header.childElementCount)content.append(header);
