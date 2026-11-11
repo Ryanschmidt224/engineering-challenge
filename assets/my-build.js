@@ -6,10 +6,20 @@
  const id=()=>("t"+crypto.randomUUID().replace(/-/g,""));
  const stores=new Map();
  const loginHint="Sign in through Projects → My account to save your own build notes.";
+ async function readApiResponse(response,action){
+  const raw=await response.text();
+  let data;
+  try{data=raw?JSON.parse(raw):null}catch{}
+  if(!data||typeof data!=="object"){
+   const detail=response.ok?"The server returned an empty response.":("HTTP "+response.status+".");
+   throw Error(action+" is unavailable. "+detail+" Refresh the page and try again.");
+  }
+  return data;
+ }
  async function load(project){
   if(stores.has(project))return stores.get(project);
   const res=await fetch("/api/my-build?project="+encodeURIComponent(project),{credentials:"same-origin",cache:"no-store"});
-  const data=await res.json();if(!res.ok)throw Error(data.loginRequired?loginHint:data.error||"My Build unavailable");
+  const data=await readApiResponse(res,"My Build");if(!res.ok)throw Error(data.loginRequired?loginHint:data.error||"My Build unavailable");
   const state={revision:data.revision||0,entries:data.entries||{},queue:Promise.resolve()};
   stores.set(project,state);return state;
  }
@@ -21,7 +31,7 @@
    change(state.entries);
    try{
     const res=await fetch("/api/my-build?project="+encodeURIComponent(project),{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({revision:state.revision,entries:state.entries})});
-    const data=await res.json();if(!res.ok)throw Error(data.error||"Could not save My Build");
+    const data=await readApiResponse(res,"Saving My Build");if(!res.ok)throw Error(data.error||"Could not save My Build");
     state.revision=data.revision;
    }catch(error){state.entries=before;throw error}
   });
@@ -69,7 +79,7 @@
   async function ensure(){
    if(loaded)return;
    try{state=await load(project);loaded=true;redraw()}
-   catch(error){body.replaceChildren(node("p","muted",error.message))}
+   catch(error){body.replaceChildren(node("p","muted",error.message));const retry=button("Retry",()=>{body.replaceChildren(hint,progress,note,noteState,tasks,taskForm);void ensure()});body.append(retry)}
   }
   details.addEventListener("toggle",()=>{if(details.open)void ensure()});
   progress.onchange=()=>void write(entry=>{entry.progress=progress.value});
@@ -108,7 +118,7 @@
       method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},
       body:JSON.stringify({scope,kind,comment:comment.value})
      });
-     const data=await res.json();
+     const data=await readApiResponse(res,"Feedback");
      if(!res.ok)throw Error(data.loginRequired?loginHint:data.error);
      status.textContent="Thank you — feedback saved.";
      dismiss();
@@ -149,7 +159,7 @@
    body.textContent="Loading feedback…";
    try{
     const response=await fetch("/api/build-confusion?project="+encodeURIComponent(project),{credentials:"same-origin",cache:"no-store"});
-    const data=await response.json();if(!response.ok)throw Error(data.error);
+    const data=await readApiResponse(response,"Feedback summary");if(!response.ok)throw Error(data.error);
     body.replaceChildren();
     if(!data.reports.length){body.append(node("p","muted","No confusion reports yet."));return}
     for(const item of data.reports){
