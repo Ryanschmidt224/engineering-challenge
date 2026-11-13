@@ -14,7 +14,7 @@
   const dialog=el("dialog","bs-markup-modal");dialog.setAttribute("aria-label","Edit photo");
   const header=el("div","bs-markup-header");
   const title=el("strong","", "Edit photo");
-  const close=button("Done",()=>void persist(true));header.append(title,close);
+  const close=button("Close",()=>{if(generation!==savedGeneration&&!confirm("The latest edits are still saving. Close anyway?"))return;dialog.close()});header.append(title,close);
   const toolbar=el("div","bs-markup-toolbar"),frame=el("div","bs-markup-canvas-wrap");
   const canvas=el("canvas","bs-markup-canvas");
   const status=el("p","small muted","Loading photo…");status.setAttribute("role","status");
@@ -143,7 +143,7 @@
   }
   async function persist(closeAfter=false){
    clearTimeout(saveTimer);
-   if(!image)return;
+   if(!image){if(closeAfter)dialog.close();return}
    if(saveInFlight){
     try{await saveInFlight}catch{/* The next save may succeed. */}
    }
