@@ -39,6 +39,15 @@ export async function handlePhotoAnnotations(request,env){
  if(!target)return json({error:"Invalid image"},400);
  if(!await projectAllowed(env,target.project,request))return json({error:"Image not found"},404);
  const {key,project}=target;
+ if(request.method==="GET"&&new URL(request.url).searchParams.get("view")==="1"){
+  const rendered=await env.PHOTOS.get(renditionKey(key));
+  const original=rendered?null:await env.PHOTOS.get(key);
+  const object=rendered||original;
+  if(!object)return new Response("Not found",{status:404});
+  const headers=new Headers();object.writeHttpMetadata(headers);
+  headers.set("cache-control","private, no-store");headers.set("x-content-type-options","nosniff");
+  return new Response(object.body,{headers});
+ }
  if(request.method==="GET"){
   if(!await env.PHOTOS.head(key))return json({error:"Image not found"},404);
   const obj=await env.PHOTOS.get(annotationKey(key));
@@ -65,3 +74,5 @@ export async function handlePhotoAnnotations(request,env){
  await env.PHOTOS.put(renditionKey(key),bytes,{httpMetadata:{contentType:"image/webp",cacheControl:"private, no-store"}});
  return json({ok:true});
 }
+
+export const onRequest=({request,env})=>handlePhotoAnnotations(request,env);
