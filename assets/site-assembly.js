@@ -210,7 +210,7 @@ function setupAssemblyTrees(){
    photoDialog.showModal();
    void workspacePhotoController.refresh();
   };
-  window.BSPhotoMarkup.pasteOn(workspacePhotoEditor,file=>workspacePhotoController.upload(file));
+  window.BSPhotoMarkup.pasteOn(photoDialog,file=>workspacePhotoController.upload(file));
   const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>isProjectSummary()?"project-summary":(selected??"root-assembly"),
    workspacePhotoEditor.querySelector(".workspace-photo-status"),true);
   // The project summary is a landing page, not a separate source of BOM data.
