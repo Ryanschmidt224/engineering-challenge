@@ -802,19 +802,19 @@ function setupAssemblyTrees(){
    if(!partId)return;
    const src=window.BSPhotoMarkup.displayUrl("part",partId,project)+(bust?"&v="+Date.now():"");
    const image=document.createElement("img");image.src=src;image.alt=currentPartInfo?.name||"Part image";
-   partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");partPhotoPlaceholder.hidden=false;
+   partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");partPhotoPlaceholder.hidden=false;partPhotoMarkup.disabled=true;
    image.onload=()=>{
     if(currentPartInfo?.id!==partId)return;
     const main=document.createElement("img");main.src=src;main.alt=image.alt;
     pictureCover.replaceChildren(main);
     partPhotoPreview.src=src;partPhotoPreview.hidden=false;partPhotoPlaceholder.hidden=true;
-    partPhotoDelete.disabled=false;
+    partPhotoDelete.disabled=false;partPhotoMarkup.disabled=false;
    };
    image.onerror=()=>{
     if(currentPartInfo?.id!==partId)return;
     pictureCover.replaceChildren(Object.assign(document.createElement("span"),{textContent:"No picture yet"}));
     partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");
-    partPhotoPlaceholder.hidden=false;partPhotoDelete.disabled=true;
+    partPhotoPlaceholder.hidden=false;partPhotoDelete.disabled=true;partPhotoMarkup.disabled=true;
    };
   }
   editPartPicture.onclick=()=>{
