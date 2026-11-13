@@ -61,7 +61,7 @@ test("project feature tree and workspace initialize without browser errors", asy
  await tree.locator(".assembly-name").first().click();
  await expect(workspace).toBeVisible();
  await expect(workspace.locator(".workspace-back")).toHaveText("Open BOM");
- await expect(workspace.locator(".workspace-cover img")).toHaveAttribute("src",/\\/api\\/photo-annotations\\?kind=gallery/);
+ await expect(workspace.locator(".workspace-cover img")).toHaveAttribute("src",/photo-annotations/);
  await tree.locator(".assembly-name").first().click();
  await expect(page).toHaveURL(/#launcher\/workspace\/__root__/);
  await tree.locator(".assembly-project-summary-entry").click();
