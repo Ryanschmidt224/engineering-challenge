@@ -852,7 +852,7 @@ function setupAssemblyTrees(){
     if(currentPartInfo?.id===partId){
      pictureCover.replaceChildren(Object.assign(document.createElement("span"),{textContent:"No picture yet"}));
      partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");
-     partPhotoPlaceholder.hidden=false;partPhotoStatus.textContent="Picture deleted.";
+     partPhotoPlaceholder.hidden=false;partPhotoMarkup.disabled=true;partPhotoStatus.textContent="Picture deleted.";
     }
    }catch(error){partPhotoStatus.textContent=error.message||"Delete failed";partPhotoDelete.disabled=false}
   };
