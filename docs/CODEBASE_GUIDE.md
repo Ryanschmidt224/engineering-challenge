@@ -81,6 +81,14 @@ User interaction
 - Read `docs/DATA_ARCHITECTURE.md` first. **Never** treat a source-code rollback as restoring project data.
 - Make no destructive data migrations as part of a UI or organization refactor.
 
+
+### Photo editing and clipboard paste
+- Shared editor: `assets/photo-markup.js` and `assets/photo-markup.css`. The project/assembly/part photo dialogs accept pasted images; work-instruction steps already accept image paste.
+- Gallery, part thumbnails, and image work-instruction attachments all use `/api/photo-annotations` for edited rendering. `GET ?view=1` returns the edit rendition when present or the unchanged original otherwise.
+- The original R2 object is **never overwritten** by markup. Separate `photo-annotations/<original-key>.json` and `photo-renders/<original-key>.webp` objects hold editable instructions and rendered output. Users can later alter or reset crop and marks. Replacing a part thumbnail clears its old edit objects.
+- The editor handles crop, pen, highlight, arrow, circle, text, undo/redo/reset and explicit save. Access to write follows project edit permissions. No history migration occurs.
+- Google Photos integration is not part of this implementation.
+
 ## How to run checks
 
 From the repository root:
