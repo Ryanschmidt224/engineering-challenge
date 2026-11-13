@@ -167,7 +167,7 @@ function setupAssemblyTrees(){
    finally{editProjectName.disabled=false}
   };
   // Shared image tile renderer for root projects and all subassemblies.
-  function makeAssemblyPhotoStage(photos,name,onAdd,onDelete,allowEditing=false){
+  function makeAssemblyPhotoStage(photos,name,onAdd,onDelete,allowEditing=false,onEdit=null){
    let active=0;
    const stage=document.createElement("div");stage.className="assembly-photo-stage";
    const picture=document.createElement("img");picture.className="assembly-stage-image";picture.alt="";
@@ -177,9 +177,10 @@ function setupAssemblyTrees(){
    const label=document.createElement("span");label.className="assembly-photo-name";label.textContent=name;
    const actions=document.createElement("div");actions.className="assembly-photo-actions";
    const add=document.createElement("button");add.type="button";add.className="assembly-photo-icon";add.textContent="+";add.title="Add photo";add.setAttribute("aria-label","Add photo");add.onclick=onAdd;
+   const edit= document.createElement("button");edit.type="button";edit.className="assembly-photo-icon bs-photo-edit";edit.textContent="✎";edit.title="Crop and mark up current photo";edit.setAttribute("aria-label","Edit current photo");edit.onclick=()=>onEdit?.(photos[active]);
    const del=document.createElement("button");del.type="button";del.className="assembly-photo-icon";del.textContent="×";del.title="Delete current photo";del.setAttribute("aria-label","Delete current photo");del.onclick=()=>onDelete(photos[active]);
-   if(canEdit()&&allowEditing)actions.append(add,del);
-   const show=()=>{const p=photos[active];picture.hidden=!p;empty.hidden=!!p;if(p){picture.src=p.url;picture.alt=p.caption||name}else picture.removeAttribute("src");prev.hidden=next.hidden=photos.length<2;del.hidden=!p};
+   if(canEdit()&&allowEditing)actions.append(add,edit,del);
+   const show=()=>{const p=photos[active];picture.hidden=!p;empty.hidden=!!p;if(p){picture.src=window.BSPhotoMarkup.displayUrl("gallery",p.id);picture.alt=p.caption||name}else picture.removeAttribute("src");prev.hidden=next.hidden=photos.length<2;edit.hidden=del.hidden=!p};
    prev.onclick=()=>{active=(active+photos.length-1)%photos.length;show()};
    next.onclick=()=>{active=(active+1)%photos.length;show()};
    stage.append(picture,empty,prev,next,label,actions);show();return stage;
@@ -209,6 +210,7 @@ function setupAssemblyTrees(){
    photoDialog.showModal();
    void workspacePhotoController.refresh();
   };
+  window.BSPhotoMarkup.pasteOn(workspacePhotoEditor,file=>workspacePhotoController.upload(file));
   const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>isProjectSummary()?"project-summary":(selected??"root-assembly"),
    workspacePhotoEditor.querySelector(".workspace-photo-status"),true);
   // The project summary is a landing page, not a separate source of BOM data.
@@ -787,17 +789,18 @@ function setupAssemblyTrees(){
   const partPhotoDialog=window.BSPhotoEditor.dialog({
    parent:partWorkspace,label:"Edit part image",
    className:"workspace-photo-dialog part-photo-dialog",doneClass:"part-photo-done",
-   contentHtml:'<div class="workspace-photos-editor is-editing-photo"><h2>Part image</h2><p class="muted">Add, replace, or delete this part photo.</p><div class="assembly-unified-photo"><div class="part-photo-stage"><img class="part-photo-preview" alt="Part image"><span class="part-photo-placeholder">No picture yet</span></div></div><div class="workspace-photo-tools"><div class="part-photo-actions"><button type="button" class="btn part-photo-add">+ Add / replace image</button><button type="button" class="btn part-photo-delete">Delete image</button><input class="part-photo-file" type="file" accept="image/jpeg,image/png,image/webp" hidden></div></div><p class="part-photo-status muted" role="status" aria-live="polite"></p></div>'
+   contentHtml:'<div class="workspace-photos-editor is-editing-photo"><h2>Part image</h2><p class="muted">Add, replace, or delete this part photo.</p><div class="assembly-unified-photo"><div class="part-photo-stage"><img class="part-photo-preview" alt="Part image"><span class="part-photo-placeholder">No picture yet</span></div></div><div class="workspace-photo-tools"><div class="part-photo-actions"><button type="button" class="btn part-photo-add">+ Add / replace image</button><button type="button" class="btn part-photo-markup">Crop / annotate</button><button type="button" class="btn part-photo-delete">Delete image</button><input class="part-photo-file" type="file" accept="image/jpeg,image/png,image/webp" hidden></div></div><p class="part-photo-status muted" role="status" aria-live="polite"></p></div>'
   });
   const partPhotoFile=partPhotoDialog.querySelector(".part-photo-file");
   const partPhotoAdd=partPhotoDialog.querySelector(".part-photo-add");
   const partPhotoDelete=partPhotoDialog.querySelector(".part-photo-delete");
+  const partPhotoMarkup=partPhotoDialog.querySelector(".part-photo-markup");
   const partPhotoPreview=partPhotoDialog.querySelector(".part-photo-preview");
   const partPhotoPlaceholder=partPhotoDialog.querySelector(".part-photo-placeholder");
   const partPhotoStatus=partPhotoDialog.querySelector(".part-photo-status");
   function showPartPicture(partId,bust=false){
    if(!partId)return;
-   const src=partPhotoUrl(partId)+(bust?"&v="+Date.now():"");
+   const src=window.BSPhotoMarkup.displayUrl("part",partId,project)+(bust?"&v="+Date.now():"");
    const image=document.createElement("img");image.src=src;image.alt=currentPartInfo?.name||"Part image";
    partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");partPhotoPlaceholder.hidden=false;
    image.onload=()=>{
@@ -820,6 +823,8 @@ function setupAssemblyTrees(){
    showPartPicture(currentPartInfo.id);partPhotoDialog.showModal();
   };
   partPhotoAdd.onclick=()=>partPhotoFile.click();
+  partPhotoMarkup.onclick=()=>{if(currentPartInfo&&canEdit())window.BSPhotoMarkup.open({kind:"part",id:currentPartInfo.id,project,onSave:()=>showPartPicture(currentPartInfo.id,true)})};
+  window.BSPhotoMarkup.pasteOn(partPhotoDialog,file=>uploadPartPicture(file));
   partPhotoFile.onchange=()=>void uploadPartPicture(partPhotoFile.files?.[0]);
   async function uploadPartPicture(file){
    const partId=currentPartInfo?.id;
@@ -1845,7 +1850,7 @@ function setupAssemblyTrees(){
        if(!r.ok)throw Error("Delete failed (HTTP "+r.status+")");
        await refresh();if(tile===workspacePhotoEditor)void loadWorkspaceCover();if(!id)void refreshProjectCover();
       }catch(e){report(e.message)}
-     },allowEditing));
+     },allowEditing,p=>window.BSPhotoMarkup.open({kind:"gallery",id:p.id,onSave:()=>{void refresh();void loadWorkspaceCover();void refreshProjectCover();void refreshProjectSummary()}})));
     }catch(e){report(e.message)}
    }
    async function upload(file){
@@ -1879,7 +1884,7 @@ function setupAssemblyTrees(){
    zone.ondragover=e=>{e.preventDefault();zone.classList.add("drag-over")};
    zone.ondragleave=()=>zone.classList.remove("drag-over");
    zone.ondrop=e=>{e.preventDefault();zone.classList.remove("drag-over");void upload(e.dataTransfer.files?.[0])};
-   return {refresh};
+   return {refresh,upload};
   }
   // Legacy photo controllers remain available for assembly imagery.
   const rootPhotoController=createPhotoController(main,()=>null,main.querySelector(".root-photo-status"));
