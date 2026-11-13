@@ -14,12 +14,12 @@
   const dialog=el("dialog","bs-markup-modal");dialog.setAttribute("aria-label","Edit photo");
   const header=el("div","bs-markup-header");
   const title=el("strong","", "Edit photo");
-  const close=button("Cancel",()=>dialog.close());header.append(title,close);
+  const close=button("Done",()=>void persist(true));header.append(title,close);
   const toolbar=el("div","bs-markup-toolbar"),frame=el("div","bs-markup-canvas-wrap");
   const canvas=el("canvas","bs-markup-canvas");
   const status=el("p","small muted","Loading photo…");status.setAttribute("role","status");
   const footer=el("div","bs-markup-footer");
-  const save=button("Save changes",()=>void persist());save.classList.add("primary");
+  const save=button("Save & close",()=>void persist(true));save.classList.add("primary");
   const undo=button("Undo",()=>stepBack());
   const redo=button("Redo",()=>stepForward());
   const reset=button("Reset edits",()=>{if(confirm("Clear all crops and annotations?"))commit({crop:null,marks:[]})});
@@ -27,6 +27,9 @@
   frame.append(canvas);dialog.append(header,toolbar,frame,status,footer);document.body.append(dialog);dialog.showModal();
   dialog.addEventListener("close",()=>dialog.remove());
   let image=null,state={crop:null,marks:[]},history=[],future=[],tool="pen",drag=null,strokeColor="#e63838";
+  let generation=0,savedGeneration=0,saveTimer=null,saveInFlight=null;
+  const scheduleSave=()=>{generation++;clearTimeout(saveTimer);saveTimer=setTimeout(()=>void persist(false),950);status.textContent="Unsaved changes…"};
+  dialog.addEventListener("cancel",e=>{if(generation!==savedGeneration){e.preventDefault();void persist(true)}});
   const color=el("input");color.type="color";color.value=strokeColor;color.setAttribute("aria-label","Annotation color");
   color.onchange=()=>strokeColor=color.value;
   for(const [key,label] of [["pen","Pen"],["highlight","Highlight"],["arrow","Arrow"],["circle","Circle"],["text","Text"],["crop","Crop"]]){
@@ -34,9 +37,9 @@
   }
   toolbar.append(color);activate();
   function activate(){for(const b of toolbar.querySelectorAll("[data-tool]"))b.setAttribute("aria-pressed",String(b.dataset.tool===tool))}
-  function commit(next){history.push(snapshot(state));future=[];state=snapshot(next);draw();sync()}
-  function stepBack(){if(!history.length)return;future.push(snapshot(state));state=history.pop();draw();sync()}
-  function stepForward(){if(!future.length)return;history.push(snapshot(state));state=future.pop();draw();sync()}
+  function commit(next){history.push(snapshot(state));future=[];state=snapshot(next);draw();sync();scheduleSave()}
+  function stepBack(){if(!history.length)return;future.push(snapshot(state));state=history.pop();draw();sync();scheduleSave()}
+  function stepForward(){if(!future.length)return;history.push(snapshot(state));state=future.pop();draw();sync();scheduleSave()}
   function sync(){undo.disabled=!history.length;redo.disabled=!future.length}
   function xy(e){const rect=canvas.getBoundingClientRect();return [clamp((e.clientX-rect.left)/rect.width),clamp((e.clientY-rect.top)/rect.height)]}
   function render(target,s,scale=1){
@@ -138,23 +141,39 @@
     history=[];future=[];draw();sync();status.textContent="Drag on the image to annotate. Crop selects the visible area. Original photo is preserved.";
    }catch(e){status.textContent=e.message;save.disabled=true}
   }
-  async function persist(){
+  async function persist(closeAfter=false){
+   clearTimeout(saveTimer);
    if(!image)return;
-   save.disabled=true;status.textContent="Saving edited photo…";
-   try{
-    const c=state.crop||[0,0,1,1],w=Math.max(1,Math.round(canvas.width*c[2])),h=Math.max(1,Math.round(canvas.height*c[3]));
+   if(saveInFlight){
+    try{await saveInFlight}catch{/* The next save may succeed. */}
+   }
+   if(generation===savedGeneration){if(closeAfter)dialog.close();return}
+   const version=generation,working=snapshot(state);
+   const task=(async()=>{
+    const c=working.crop||[0,0,1,1],w=Math.max(1,Math.round(canvas.width*c[2])),h=Math.max(1,Math.round(canvas.height*c[3]));
     const composed=document.createElement("canvas");composed.width=canvas.width;composed.height=canvas.height;
-    render(composed.getContext("2d"),state);
+    render(composed.getContext("2d"),working);
     const output=document.createElement("canvas");output.width=w;output.height=h;
     output.getContext("2d").drawImage(composed,c[0]*canvas.width,c[1]*canvas.height,w,h,0,0,w,h);
     const blob=await new Promise(resolve=>output.toBlob(resolve,"image/webp",.88));
     if(!blob)throw Error("Could not render photo");
-    const form=new FormData();form.append("image",blob,"edited.webp");form.append("state",JSON.stringify(state));
+    const form=new FormData();form.append("image",blob,"edited.webp");form.append("state",JSON.stringify(working));
     const res=await fetch(url(kind,id,project),{method:"PUT",credentials:"same-origin",body:form});
     const data=await res.json().catch(()=>({}));if(!res.ok)throw Error(data.error||"Save failed");
-    onSave?.();dialog.close();
-   }catch(e){status.textContent=e.message;save.disabled=false}
+    savedGeneration=version;onSave?.();
+   })();
+   saveInFlight=task;status.textContent="Saving changes…";
+   try{
+    await task;
+    status.textContent="Saved automatically.";
+   }catch(e){status.textContent="Save failed: "+e.message;return}
+   finally{if(saveInFlight===task)saveInFlight=null}
+   if(generation!==savedGeneration){
+    if(closeAfter)await persist(true);
+    else saveTimer=setTimeout(()=>void persist(false),950);
+   }else if(closeAfter)dialog.close();
   }
+
   void load();
  }
  function pasteOn(root,handler){
