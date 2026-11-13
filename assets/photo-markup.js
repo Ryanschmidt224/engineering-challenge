@@ -91,7 +91,7 @@
    const a=xy(e);
    if(tool==="text"){
     const content=prompt("Annotation text:");if(!content)return;
-    commit({...state,marks:[...state.marks,{tool:"text",a,color:strokeColor,size:.018,text:content.slice(0,120)}]});return;
+    commit({...state,marks:[...state.marks,{tool:"text",a,color:strokeColor,size:.006,text:content.slice(0,120)}]});return;
    }
    drag={a,original:snapshot(state)};
    if(tool==="pen"||tool==="highlight"){
@@ -162,7 +162,7 @@
    const file=[...(e.clipboardData?.files||[])].find(f=>f.type.startsWith("image/"));
    if(!file)return;
    // Never intercept a text-only paste or a paste into an unrelated editor.
-   e.preventDefault();void handler(new File([file],"pasted-photo.png",{type:file.type||"image/png"}));
+   e.preventDefault();void handler(new File([file],"pasted-photo."+(file.type==="image/webp"?"webp":file.type==="image/jpeg"?"jpg":"png"),{type:file.type||"image/png"}));
   });
  }
  window.BSPhotoMarkup=Object.freeze({open,pasteOn,displayUrl:(kind,id,project)=>url(kind,id,project,true)});
