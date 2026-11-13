@@ -225,7 +225,7 @@ function setupAssemblyTrees(){
   const displaySummaryPhoto=()=>{
    const photo=summaryPhotos[summaryPhotoIndex],picture=summary.querySelector(".project-summary-photo");
    picture.hidden=!photo;summary.querySelector(".project-summary-photo-empty").hidden=!!photo;
-   if(photo){picture.src=photo.url;picture.alt=photo.caption||"Project photo"}else picture.removeAttribute("src");
+   if(photo){picture.src=window.BSPhotoMarkup.displayUrl("gallery",photo.id);picture.alt=photo.caption||"Project photo"}else picture.removeAttribute("src");
    summary.querySelector(".project-summary-photo-caption").textContent=photo?.caption||"";
    summary.querySelector(".project-summary-photo-position").textContent=summaryPhotos.length?(summaryPhotoIndex+1)+" of "+summaryPhotos.length:"";
    for(const selector of [".project-summary-previous",".project-summary-next"])summary.querySelector(selector).hidden=summaryPhotos.length<2;
@@ -1672,7 +1672,7 @@ function setupAssemblyTrees(){
     const data=await r.json();if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;
     let photo=data.photos?.[0];
     if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;
-    if(photo){const img=document.createElement("img");img.src=photo.url;img.alt=photo.caption||"Assembly photo";cover.replaceChildren(img)}
+    if(photo){const img=document.createElement("img");img.src=window.BSPhotoMarkup.displayUrl("gallery",photo.id);img.alt=photo.caption||"Assembly photo";cover.replaceChildren(img)}
    }catch(e){/* cover is optional */}}
   let workspaceLoadVersion=0;
   let workspaceSavedRevision=null;
@@ -1902,7 +1902,7 @@ function setupAssemblyTrees(){
    for(const n of sorted){
     const tile=document.createElement("article");tile.className="assembly-tile "+(isPartNode(n)?"assembly-bom-part-tile":"assembly-bom-subassembly-tile");
     const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);if(isPartNode(n)){const img=document.createElement("img");img.src=partPhotoUrl(n.partId);img.alt="";img.onerror=()=>{img.src=missingPicture;img.onerror=null};cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}
-    else fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=data.photos[0].url;img.alt="";cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}).catch(()=>{});
+    else fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=window.BSPhotoMarkup.displayUrl("gallery",data.photos[0].id);img.alt="";cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}).catch(()=>{});
     const openAssembly=()=>{if(isPartNode(n)){openTreePart(n);return}selected=n.id;expanded.add(n.parentId);history.pushState(null,"",workspaceHash(n.id));render();notify();window.scrollTo(0,0)};cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" workspace";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
     // Picture BOM tiles reuse the established photo-first design.
     // The old stage/dependency/footer controls are not shown beneath tiles.
