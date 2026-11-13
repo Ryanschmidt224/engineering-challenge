@@ -127,7 +127,7 @@ function setupAssemblyTrees(){
     if(cover){
      let image=art.querySelector(".project-card-cover");
      if(!image){image=document.createElement("img");image.className="project-card-cover";image.alt="";art.append(image)}
-     image.src=cover.url;
+     image.src=window.BSPhotoMarkup.displayUrl("gallery",cover.id);
      art.classList.add("has-project-cover");
     }else{
      art.querySelector(".project-card-cover")?.remove();
