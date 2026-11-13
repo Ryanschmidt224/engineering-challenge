@@ -35,7 +35,7 @@
   const close=button("×",()=>dismiss(),"recipe-photo-viewer-close");
   close.setAttribute("aria-label","Close photo");close.title="Close (Esc)";
   const picture=el("img","recipe-photo-viewer-image");
-  picture.src=attachmentUrl(id);picture.alt=name||"Step photo";
+  picture.src=isRecipeFile(id)?window.BSPhotoMarkup.displayUrl("recipe",id):window.BSPhotoMarkup.displayUrl("gallery",id);picture.alt=name||"Step photo";
   const caption=el("div","recipe-photo-viewer-caption",name||"");
   const onKey=event=>{if(event.key==="Escape")dismiss()};
   const dismiss=()=>{document.removeEventListener("keydown",onKey);overlay.remove()};
@@ -59,7 +59,7 @@
  };
  const makePhoto=(id,name)=>{
   const picture=el("img","recipe-step-photo-image");
-  picture.src=attachmentUrl(id);
+  picture.src=isRecipeFile(id)?window.BSPhotoMarkup.displayUrl("recipe",id):window.BSPhotoMarkup.displayUrl("gallery",id);
   picture.alt=name||"Step photo";picture.loading="lazy";
   picture.title="Double-click for full-screen view";
   picture.tabIndex=0;picture.setAttribute("role","button");
@@ -378,7 +378,10 @@
        delete step.photoNames[id];delete step.photoAfterNote[id];delete step.photoNoteIds[id];
        changed();saveHint();showNotes();showPhotos();
       },"btn recipe-small-action");
-      item.append(frame,remove);
+      if(isImageAttachment(id)){
+       const editPicture=button("Crop / annotate",()=>window.BSPhotoMarkup.open({kind:isRecipeFile(id)?"recipe":"gallery",id,onSave:()=>{const newSrc=(isRecipeFile(id)?window.BSPhotoMarkup.displayUrl("recipe",id):window.BSPhotoMarkup.displayUrl("gallery",id))+"&v="+Date.now();picture.src=newSrc}}),"btn recipe-small-action");
+       item.append(frame,editPicture,remove);
+      }else item.append(frame,remove);
       return item;
      }
      function showNotes(){
