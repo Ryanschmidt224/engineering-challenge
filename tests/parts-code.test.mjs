@@ -82,3 +82,36 @@ test("Assigning the next number to an existing purchased part works and locks is
  part=(await (await handleComponents(req("/api/components?project=launcher"),env)).json()).components.find(p=>p.id===id);
  assert.equal(part.partNumber,original);
 });
+
+test("Purchase status is independent from manufacturing progress and attention notes",async()=>{
+ const {env,req}=await setup(),path="/api/components?project=launcher&id="+id;
+ let response=await handleComponents(req(path,"PATCH",{partType:"purchased",purchaseStatus:"need_to_buy",progressStatus:"complete",needsAttention:true,attentionNote:"Check motor direction"}),env);
+ assert.equal(response.status,200);
+ let part=(await response.json()).component;
+ assert.equal(part.purchaseStatus,"need_to_buy");
+ assert.equal(part.progressStatus,"complete");
+ assert.equal(part.needsAttention,true);
+ assert.equal(part.attentionNote,"Check motor direction");
+ response=await handleComponents(req(path,"PATCH",{partType:"custom"}),env);
+ assert.equal(response.status,200);
+ part=(await response.json()).component;
+ assert.equal(part.progressStatus,"complete");
+ assert.equal(part.purchaseStatus,"need_to_buy");
+ response=await handleComponents(req(path,"PATCH",{purchaseStatus:"invalid"}),env);
+ assert.equal(response.status,400);
+ response=await handleComponents(req(path,"PATCH",{partType:"purchased",purchaseStatus:"not_started"}),env);
+ assert.equal(response.status,200);
+ part=(await response.json()).component;
+ assert.equal(part.purchaseStatus,"not_started");
+ assert.equal(part.needsAttention,true);
+});
+
+test("Missing legacy purchase status displays Not started without modifying the record",async()=>{
+ const {env,req}=await setup();
+ const response=await handleComponents(req("/api/components?project=launcher"),env);
+ assert.equal(response.status,200);
+ const part=(await response.json()).components.find(x=>x.id===id);
+ assert.equal(part.purchaseStatus,"not_started");
+ const saved=JSON.parse(await (await env.PHOTOS.get("components/launcher.json")).text());
+ assert.equal(Object.hasOwn(saved[0],"purchaseStatus"),false);
+});
