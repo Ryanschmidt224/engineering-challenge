@@ -74,3 +74,24 @@
  caret-color:#ffffff;
 }
 .bs-markup-inline-text::placeholder{color:rgba(255,255,255,.75);font-weight:500}
+
+
+/* Discreet pencil at the photo's bottom-right; click expands its actions. */
+.bs-photo-control .bs-photo-toggle{
+ display:inline-flex;align-items:center;justify-content:center;
+ width:32px;height:32px;min-width:32px;min-height:32px;
+ padding:5px;border-radius:7px;
+ color:var(--color-text);line-height:1;
+}
+.bs-photo-control .bs-photo-toggle svg{width:16px;height:16px;display:block;pointer-events:none}
+.bs-photo-control .bs-photo-actions{gap:7px;margin-top:4px;justify-content:flex-end}
+.bs-photo-control .bs-photo-more:not([hidden]){gap:7px}
+.bs-photo-control .bs-photo-toggle[aria-expanded="true"]{background:var(--color-accent-soft);border-color:var(--color-accent)}
+.bs-photo-control .bs-photo-toggle:focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}
+.project-summary-gallery>.bs-photo-control .bs-photo-actions{padding-right:0;margin-top:4px}
+.workspace-heading>.bs-photo-control .bs-photo-actions{
+ margin-top:4px;
+}
+.workspace-heading>.bs-photo-control .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="false"]){
+ justify-content:flex-end
+}
