@@ -125,9 +125,11 @@ test("Progress Status operations render as editable fields on both pages",()=>{
  assert.match(management,/progressOperationAdd:true/);
  assert.match(management,/progressOperationEdit:\{id:operation\.id,text:input\.value\}/);
  assert.match(management,/for\(const \[index,operation\] of \(part\.progressUpdates\|\|\[\]\)\.entries\(\)\)/);
- assert.match(details,/partWorkspace\.querySelector\("\.workspace-heading"\)\.after\(progressNotes\)/);
- assert.match(details,/progressNotes\.open=part\.progressStatus==="in_progress"/);
+ assert.match(details,/detailsPanel\.after\(progressNotes\)/);
+ assert.match(details,/progressNotes\.open=true/);
  assert.match(details,/progressOperationAdd:true/);
  assert.match(details,/progressOperationEdit:\{id:operation\.id,text:input\.value\}/);
  assert.doesNotMatch(details,/detailRows\.after\(progressNotes\)/);
+ assert.match(details,/const editable=canEdit\(\)/);
+ assert.match(management,/input\.disabled=readOnly/);
 });
