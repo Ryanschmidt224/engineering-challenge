@@ -58,17 +58,17 @@
 .bs-code-editor[hidden],.bs-code-viewer[hidden],.bs-code-metadata[hidden],.bs-code-actions[hidden],.bs-code-history[hidden]{display:none!important}
 @media(max-width:700px){.assembly-parts-page{padding:8px 0 28px}.bs-parts-scroll{border-radius:6px}.bs-part-code{padding:10px}.bs-code-metadata{flex-direction:column}}
 
-/* Always-visible six-dot drag grips on the right edge of each header. */
+/* Compact, neutral resize handles with softly rounded edges. */
 .bs-parts-resize{
- position:absolute;right:0;top:0;bottom:0;width:17px;display:flex;
+ position:absolute;right:3px;top:6px;bottom:6px;width:15px;display:flex;
  align-items:center;justify-content:center;cursor:col-resize;touch-action:none;
- font-size:15px;letter-spacing:-5px;padding-right:5px;
- color:var(--color-text-muted);background:color-mix(in srgb,var(--color-border) 24%,transparent);
- border-left:1px solid var(--color-border);border-right:1px solid var(--color-border);
+ font-size:13px;letter-spacing:-4px;padding-right:4px;
+ color:var(--color-text-muted);background:transparent;
+ border:1px solid transparent;border-radius:7px;
 }
 .bs-parts-resize:hover,.bs-parts-resize:focus-visible,.bs-parts-resize.is-resizing{
- color:var(--color-accent);background:var(--color-surface);
- border-right:2px solid var(--color-accent);outline:none;
+ color:var(--color-accent);background:var(--color-surface-muted);
+ border-color:var(--color-border);outline:none;
 }
 
 /* Part-number ownership lookup and inline attention notes. */
@@ -100,3 +100,22 @@
  text-overflow:ellipsis;white-space:nowrap;overflow:hidden;
 }
 .bs-parts-table .bs-attention-note[hidden]{display:none!important}
+
+/* Parts Management controls are plain white; retain a subtle border and focus ring. */
+.bs-parts-page .bs-parts-controls :is(input.field,select.field),
+.bs-parts-page .bs-number-lookup input.field,
+.bs-parts-page .bs-parts-table tbody :is(input.field,select.field){
+ background-color:#fff!important;
+ background-image:none!important;
+ color:var(--color-text);
+ box-shadow:none!important;
+}
+.bs-parts-page .bs-parts-table tbody select.field{
+ appearance:auto;
+ -webkit-appearance:menulist;
+ padding-right:12px!important;
+}
+.bs-parts-page :is(input.field,select.field):focus-visible{
+ outline:2px solid var(--color-accent);
+ outline-offset:1px;
+}
