@@ -17,15 +17,28 @@
 }
 .bs-parts-table th{height:42px}
 .bs-parts-table tbody td{height:54px}
-.bs-parts-table tbody .field{height:36px}
-.bs-parts-table tbody select.field{padding-inline:10px}
+.bs-parts-table tbody .field{
+ height:40px;
+ min-height:40px;
+ padding-block:0!important;
+ line-height:normal!important;
+ box-sizing:border-box;
+ vertical-align:middle;
+}
+.bs-parts-table tbody select.field{
+ padding:0 30px 0 10px!important;
+ line-height:40px!important;
+ background-position:right 9px center;
+}
+.bs-parts-table tbody input.field{padding:0 12px!important;line-height:normal!important}
 .bs-parts-table th .bs-parts-sort{max-width:calc(100% - 4px);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bs-parts-table tr:last-child td{border-bottom:0}
 .bs-parts-table th{background:var(--color-surface-muted);font-size:.81rem;white-space:nowrap;position:relative;user-select:none;padding-right:19px}
 .bs-parts-table .bs-parts-sort{font:inherit;font-weight:650;background:transparent;border:0;padding:5px 2px;color:var(--color-text);cursor:pointer}
 .bs-parts-table .bs-parts-sort:hover{text-decoration:underline}
 .bs-parts-table .field{width:100%;min-width:0;margin:0;box-sizing:border-box;font-size:.87rem}
-.bs-parts-table td:nth-child(2){min-width:0}
+.bs-parts-table td:nth-child(2){min-width:0;padding-right:18px}
+.bs-parts-table td:nth-child(3),.bs-parts-table td:nth-child(4){padding-right:12px}
 .bs-parts-table td:last-child{text-align:left;padding-right:6px}
 .bs-parts-number{font-variant-numeric:tabular-nums;color:var(--color-text-muted);font-size:.85rem;white-space:nowrap}
 .bs-parts-feedback{font-size:.82rem;color:var(--color-text-muted);min-height:1.3em;margin:8px 0}
@@ -70,7 +83,7 @@
  grid-template-columns:max-content max-content minmax(0,1fr);
  align-items:center;
  justify-content:start!important;
- column-gap:8px;
+ column-gap:34px;
  width:100%;
  min-width:0;
 }
@@ -83,7 +96,7 @@
 .bs-attention-line{display:inline-flex;align-items:center;gap:5px;flex:none;font-size:.81rem;white-space:nowrap;cursor:pointer}
 .bs-attention-line input{width:15px;height:15px;flex:none;accent-color:var(--color-accent)}
 .bs-parts-table .bs-attention-note{
- width:100%;min-width:0;height:36px;margin:0;padding:5px 8px;
+ width:100%;min-width:0;height:40px;margin:0;padding:0 8px;
  text-overflow:ellipsis;white-space:nowrap;overflow:hidden;
 }
 .bs-parts-table .bs-attention-note[hidden]{display:none!important}
