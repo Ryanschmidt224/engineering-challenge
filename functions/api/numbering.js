@@ -105,22 +105,29 @@ export async function onRequest({request,env}){
  if(request.method==="GET"){
   const {data}=await numberingState(env,project);
   const existing=await legacyNumbers(env,project);
-  const lookup=String(new URL(request.url).searchParams.get("lookup")||"").trim().toUpperCase();
+  const query=new URL(request.url).searchParams;
+  if(query.get("audit")==="unassigned"){
+   const object=await env.PHOTOS.get("components/"+project+".json");
+   const records=object?JSON.parse(await object.text()):[];
+   const unassigned=(Array.isArray(records)?records:[]).filter(part=>!part.partNumber&&!part.generatedFrom).map(part=>({id:part.id,name:part.name||"Unnamed",partType:part.partType||"purchased"}));
+   return json({unassigned,total:unassigned.length,note:"Read-only audit. No part numbers were created, reassigned, or deleted."});
+  }
+  const lookup=String(query.get("lookup")||"").trim().toUpperCase();
   if(lookup){
    if(!/^[A-Z0-9-]{1,32}$/.test(lookup))return json({error:"Invalid part number"},400);
-   const issued=Object.entries(data.issued).find(([,number])=>number.toUpperCase()===lookup);
-   const exact=issued?.[0]||existing.get(lookup)||null;
-   let owner=exact,record=null;
+   const exact=Object.entries(data.issued).find(([,number])=>number.toUpperCase()===lookup)?.[0]||existing.get(lookup)||null;
+   let owner=exact;
+   if(!owner&&lookup.startsWith(data.prefix)){
+    const suffix=lookup.slice(data.prefix.length);
+    if(/^\d+$/.test(suffix))owner=data.issuedSequences[String(Number(suffix))]||null;
+   }
+   let record=null;
    if(owner){
     const isPart=owner.startsWith("part:");
-    const stored=await env.PHOTOS.get((isPart?"components/":"trees/")+project+".json");
-    const records=stored?JSON.parse(await stored.text()):[];
+    const object=await env.PHOTOS.get((isPart?"components/":"trees/")+project+".json");
+    const records=object?JSON.parse(await object.text()):[];
     const item=Array.isArray(records)?records.find(p=>p.id===owner.slice(owner.indexOf(":")+1)):null;
     if(item)record={id:item.id,name:item.name||"Unnamed",kind:isPart?"part":"assembly"};
-   }
-   if(!owner){
-    const sequence=lookup.startsWith(data.prefix)&&/^\\d+$/.test(lookup.slice(data.prefix.length))?String(Number(lookup.slice(data.prefix.length))):null;
-    if(sequence)owner=data.issuedSequences[sequence]||null;
    }
    return json({number:lookup,reserved:!!owner,kind:owner?.split(":")[0]||null,active:!!record,record,reason:owner?(record?"active":"previously issued or deleted"):"available",note:owner&&!record?"This identifier remains reserved even though no active part or assembly is listed.":""});
   }
