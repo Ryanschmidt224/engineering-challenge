@@ -29,7 +29,8 @@
   const feedback=el("p","bs-parts-feedback");feedback.setAttribute("role","status");feedback.setAttribute("aria-live","polite");
   const scroll=el("div","bs-parts-scroll"),table=el("table","bs-parts-table");
   const thead=el("thead"),headingRow=el("tr"),colgroup=el("colgroup");
-  const widths=[145,300,150,165,245,100];
+  // Compact defaults: part number is intentionally narrow, note stays beside its flag.
+  const widths=[112,330,150,160,380,88];
   widths.forEach(w=>{const col=el("col");col.style.width=w+"px";colgroup.append(col)});
   table.style.width=widths.reduce((a,b)=>a+b,0)+"px";table.append(colgroup);
   const columns=[["number","Part number"],["name","Part name"],["partType","Part type"],["status","Status"],["needsAttention","Needs attention"],["open",""]];
@@ -41,10 +42,10 @@
     const b=el("button","bs-parts-sort",label);b.type="button";b.onclick=()=>{direction=order===key?-direction:1;order=key;render()};th.append(b);sortButtons[key]=b;
    }
    if(key!=="open"){
-    const handle=el("span","bs-parts-resize");handle.setAttribute("role","separator");handle.setAttribute("aria-label","Resize "+label);handle.setAttribute("aria-orientation","vertical");handle.tabIndex=0;
+    const handle=el("span","bs-parts-resize");handle.textContent="⋮⋮";handle.title="Drag to resize "+label+" column";handle.setAttribute("role","separator");handle.setAttribute("aria-label","Resize "+label);handle.setAttribute("aria-orientation","vertical");handle.tabIndex=0;
     const index=columns.findIndex(c=>c[0]===key);
-    const size=w=>{widths[index]=Math.max(index===1?180:95,Math.round(w));colgroup.children[index].style.width=widths[index]+"px";table.style.width=widths.reduce((a,b)=>a+b,0)+"px"};
-    handle.addEventListener("pointerdown",e=>{e.preventDefault();const x=e.clientX,w=widths[index];handle.setPointerCapture(e.pointerId);const move=ev=>size(w+ev.clientX-x);const stop=()=>{handle.removeEventListener("pointermove",move);handle.removeEventListener("pointerup",stop);handle.removeEventListener("pointercancel",stop)};handle.addEventListener("pointermove",move);handle.addEventListener("pointerup",stop);handle.addEventListener("pointercancel",stop)});
+    const size=w=>{widths[index]=Math.max(index===0?102:index===1?180:index===4?240:85,Math.round(w));colgroup.children[index].style.width=widths[index]+"px";table.style.width=widths.reduce((a,b)=>a+b,0)+"px"};
+    handle.addEventListener("pointerdown",e=>{if(e.button!==0)return;e.preventDefault();e.stopPropagation();const x=e.clientX,w=widths[index];handle.setPointerCapture(e.pointerId);handle.classList.add("is-resizing");const move=ev=>size(w+ev.clientX-x);const stop=()=>{handle.classList.remove("is-resizing");handle.removeEventListener("pointermove",move);handle.removeEventListener("pointerup",stop);handle.removeEventListener("pointercancel",stop)};handle.addEventListener("pointermove",move);handle.addEventListener("pointerup",stop);handle.addEventListener("pointercancel",stop)});
     handle.addEventListener("keydown",e=>{if(e.key==="ArrowLeft"||e.key==="ArrowRight"){e.preventDefault();size(widths[index]+(e.key==="ArrowLeft"?-15:15))}});
     th.append(handle);
    }
@@ -89,10 +90,29 @@
     const stateCell=el("td"),stateKey=fields.statusField(part),state=dropdown(fields.statusesFor(part),statusFor(part),readOnly);
     state.setAttribute("aria-label","Status for "+part.name);
     state.onchange=()=>void change(part,stateKey,state.value,state);stateCell.append(state);tr.append(stateCell);
-    const attentionCell=el("td","bs-parts-attention"),attentionLine=el("label","bs-attention-line"),attention=el("input");attention.type="checkbox";attention.checked=part.needsAttention===true;attention.disabled=readOnly;attentionLine.append(attention,document.createTextNode(" Needs attention"));attentionCell.append(attentionLine);
-    const note=el("textarea","field bs-attention-note");note.rows=2;note.maxLength=2000;note.placeholder="What needs attention?";note.value=part.attentionNote||"";note.disabled=readOnly;note.hidden=!attention.checked;attentionCell.append(note);
-    attention.onchange=()=>{note.hidden=!attention.checked;if(attention.checked){note.focus();feedback.textContent="Enter a note to flag this part; save the note by leaving the field."}else void savePatch(part,{needsAttention:false,attentionNote:note.value},attention)};
-    note.addEventListener("blur",()=>{const value=note.value.trim();if(attention.checked&&!value){feedback.textContent="Enter a note before flagging this part.";return}if(value!==(part.attentionNote||"")||attention.checked!==!!part.needsAttention)void savePatch(part,{needsAttention:attention.checked,attentionNote:value},note)});
+    const attentionCell=el("td","bs-parts-attention"),attentionRow=el("div","bs-parts-attention-inline");
+    const attentionLine=el("label","bs-attention-line"),attention=el("input");
+    attention.type="checkbox";attention.checked=part.needsAttention===true;attention.disabled=readOnly;
+    attentionLine.append(attention,document.createTextNode(" Needs attention"));
+    const note=el("input","field bs-attention-note");
+    note.type="text";note.maxLength=2000;note.placeholder="What needs attention?";
+    note.value=part.attentionNote||"";note.disabled=readOnly;note.hidden=!attention.checked;
+    note.setAttribute("aria-label","Attention note for "+part.name);
+    note.title=note.value;
+    attentionRow.append(attentionLine,note);attentionCell.append(attentionRow);
+    attention.onchange=()=>{
+     note.hidden=!attention.checked;
+     if(attention.checked){note.focus();feedback.textContent="Enter an attention note. It saves when you leave the field or press Enter."}
+     else void savePatch(part,{needsAttention:false,attentionNote:note.value},attention);
+    };
+    const saveNote=()=>{
+     const value=note.value.trim();
+     if(attention.checked&&!value){feedback.textContent="Enter a note before flagging this part.";return}
+     if(value!==(part.attentionNote||"")||attention.checked!==!!part.needsAttention)
+      void savePatch(part,{needsAttention:attention.checked,attentionNote:value},note);
+    };
+    note.addEventListener("blur",saveNote);
+    note.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();note.blur()}});
     tr.append(attentionCell);
     const openCell=el("td"),open=el("button","btn","Open");open.type="button";open.onclick=()=>onOpenPart?.(part.id);
     openCell.append(open);tr.append(openCell);tbody.append(tr);
