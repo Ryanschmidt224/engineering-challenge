@@ -53,3 +53,10 @@ test("New Part and Part editor each show Part, Document, Code",()=>{
  assert.match(picker,/partType:itemKind\.input\.value==="code"\?"code":partClassification\.input\.value/);
  assert.match(editor,/itemTypeSelect\.value=part\.partType==="code"\?"code"/);
 });
+
+test("Parts Management table fills viewport after column resizing",()=>{
+ const js=readFileSync(new URL("../assets/parts-management.js",import.meta.url),"utf8");
+ assert.match(js,/scroll\.clientWidth-prefix/);
+ assert.match(js,/new ResizeObserver\(layoutColumns\)/);
+ assert.match(js,/layoutColumns\(\)/);
+});
