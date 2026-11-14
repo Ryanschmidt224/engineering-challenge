@@ -177,7 +177,7 @@ function setupAssemblyTrees(){
    const label=document.createElement("span");label.className="assembly-photo-name";label.textContent=name;
    const actions=document.createElement("div");actions.className="assembly-photo-actions";
    const add=document.createElement("button");add.type="button";add.className="assembly-photo-icon";add.textContent="+";add.title="Add photo";add.setAttribute("aria-label","Add photo");add.onclick=onAdd;
-   const edit= document.createElement("button");edit.type="button";edit.className="assembly-photo-icon bs-photo-edit";edit.textContent="✎";edit.title="Crop and mark up current photo";edit.setAttribute("aria-label","Edit current photo");edit.onclick=()=>onEdit?.(photos[active]);
+   const edit= document.createElement("button");edit.type="button";edit.className="btn bs-gallery-markup";edit.textContent="Markup / annotate";edit.title="Crop and mark up current photo";edit.setAttribute("aria-label","Edit current photo");edit.onclick=()=>onEdit?.(photos[active]);
    const del=document.createElement("button");del.type="button";del.className="assembly-photo-icon";del.textContent="×";del.title="Delete current photo";del.setAttribute("aria-label","Delete current photo");del.onclick=()=>onDelete(photos[active]);
    if(canEdit()&&allowEditing)actions.append(add,edit,del);
    const show=()=>{const p=photos[active];picture.hidden=!p;empty.hidden=!!p;if(p){picture.src=window.BSPhotoMarkup.displayUrl("gallery",p.id);picture.alt=p.caption||name}else picture.removeAttribute("src");prev.hidden=next.hidden=photos.length<2;edit.hidden=del.hidden=!p};
@@ -209,7 +209,7 @@ function setupAssemblyTrees(){
   const workspacePhotoInput=document.createElement("input");workspacePhotoInput.type="file";
   workspacePhotoInput.accept="image/*,.heic,.heif";workspacePhotoInput.hidden=true;
   workspacePhotoBar.shell.append(workspacePhotoInput);
-  workspacePhotoInput.onchange=()=>{const file=workspacePhotoInput.files?.[0];workspacePhotoInput.value="";if(file)void uploadGalleryPhoto(file,workspacePhotoBar)};
+  workspacePhotoInput.onchange=()=>{const file=workspacePhotoInput.files?.[0];workspacePhotoInput.value="";if(file)void uploadGalleryPhoto(file,isProjectSummary()?summaryPhotoBar:workspacePhotoBar)};
   workspacePhotoBar.setEnabled(canEdit());
   function galleryStatus(bar,message){bar.setStatus(message)}
   async function uploadGalleryPhoto(file,bar){
