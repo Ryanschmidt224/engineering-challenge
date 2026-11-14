@@ -74,21 +74,40 @@
   "workshop:safety":"ANSI Z87.1 safety glasses solder fume extractor",
   "workshop:oscilloscope":"2 channel digital oscilloscope 100MHz"
  };
- const workshopReferences=[...workshopSupplies,...workshopEquipment];
  // Legacy IDs remain unchanged so existing project links and saved history continue to work.
+ // Classification is independent of stocking assumptions and BOM behavior.
+ // Stable IDs retain links from existing projects and instructions.
  const workshopCategories=[
-  ["wire","Wire and cable",["workshop:wire22","workshop:wire18","workshop:wire16","workshop:silicone","workshop:ferrule22","workshop:ferrule18","workshop:heatshrink","workshop:sealshrink"]],
-  ["power","Power and electronics",["workshop:solder"]],
-  ["fasteners","Fasteners",[]],
-  ["tool","Tool",workshopEquipment.map(item=>item.id)],
-  ["other","Other",[]]
+  ["tools","Tools & Equipment",["workshop:stripper","workshop:ferrule-tool","workshop:heatgun","workshop:meter","workshop:solderstation","workshop:oscilloscope"]],
+  ["consumables","Consumables & Supplies",["workshop:wire22","workshop:wire18","workshop:wire16","workshop:silicone","workshop:heatshrink","workshop:sealshrink","workshop:solder"]],
+  ["electronics","Electronics & Components",[]],
+  ["hardware","Hardware & Materials",["workshop:ferrule22","workshop:ferrule18"]],
+  ["safety","Safety & Measurement",["workshop:safety"]]
  ];
- const legacyCategory=category=>({
-  screws:"fasteners","buck-converters":"power","Wire & cable":"wire","Crimped wire":"wire","Wire termination":"wire",
-  "wire and cable":"wire","power and electronics":"power","fasteners":"fasteners",tool:"tool",other:"other"
- })[category]||(["wire","power","fasteners","tool","other"].includes(category)?category:"other");
- const workshopCategoryName=category=>({wire:"Wire and cable",power:"Power and electronics",fasteners:"Fasteners",tool:"Tool",other:"Other"})[legacyCategory(category)];
- const catalog={tools:workshopEquipment.map(x=>({id:x.id,name:x.name,subtitle:"Workshop standard",detail:x.spec+" "+x.use,caution:x.caution})),calculators,parts:[...baseParts,...workshopSupplies.map(x=>({id:x.id,name:x.name,subtitle:x.subtitle,detail:x.spec+" "+x.use,caution:x.caution}))]};
+ const categoryNames=Object.fromEntries(workshopCategories.map(([id,name])=>[id,name]));
+ const categoryForReference=id=>workshopCategories.find(([, ,ids])=>ids.includes(id))?.[0]||"hardware";
+ const legacyCategory=category=>{
+  const old=String(category||"").trim().toLowerCase();
+  const known={
+   wire:"consumables",power:"electronics",fasteners:"hardware",tool:"tools",other:"hardware",
+   screws:"hardware","buck-converters":"electronics","wire & cable":"consumables",
+   "crimped wire":"consumables","wire termination":"hardware","wire and cable":"consumables",
+   "power and electronics":"electronics","tools":"tools","tools & equipment":"tools",
+   "consumables & supplies":"consumables","electronics & components":"electronics",
+   "hardware & materials":"hardware","safety & measurement":"safety"
+  };
+  return categoryNames[old]?old:known[old]||"hardware";
+ };
+ const workshopCategoryName=category=>categoryNames[legacyCategory(category)];
+ const itemMetadata=item=>{
+  const category=categoryForReference(item.id);
+  // "Expected" is guidance, never a claim that an individual owns an item.
+  const availabilityAssumption=item.tier==="core"?"Expected":"Optional";
+  const bomDefault=category==="consumables"?"exclude":"include";
+  return {...item,category,availabilityAssumption,bomDefault};
+ };
+ const workshopReferences=[...workshopSupplies,...workshopEquipment].map(itemMetadata);
+ const catalog={tools:workshopReferences.filter(x=>x.kind==="tool").map(x=>({id:x.id,name:x.name,subtitle:"Workshop standard",detail:x.spec+" "+x.use,caution:x.caution,category:x.category,availabilityAssumption:x.availabilityAssumption,bomDefault:x.bomDefault})),calculators,parts:[...baseParts,...workshopReferences.filter(x=>x.kind==="material").map(x=>({id:x.id,name:x.name,subtitle:x.subtitle,detail:x.spec+" "+x.use,caution:x.caution,category:x.category,availabilityAssumption:x.availabilityAssumption,bomDefault:x.bomDefault}))]};
  let wires=[],commonRecords=[],purchasedRecords=[],listeners=new Set(),admin=false;
  const byId=(kind,id)=>catalog[kind]?.find(item=>item.id===id);
  const wireName=w=>[w.name,w.awg?w.awg+" AWG":"",w.color,w.partNumber].filter(Boolean).join(" · ");
@@ -284,6 +303,8 @@
    summary.append(element("span","workshop-standard-name",item.name));
    const body=element("div","workshop-standard-body");
    body.append(element("p","workshop-quick-spec",quickSpecs[item.id]||item.spec));
+   body.append(element("p","muted workshop-item-policy",item.availabilityAssumption+" workshop item · "+(item.bomDefault==="exclude"?"Not included in a project BOM by default":"Include in a project BOM when specified")));
+   body.append(element("p","muted workshop-stock-note","Recommended to have available; your personal inventory is tracked separately."));
    if(item.caution||item.spec){
     const more=element("details","workshop-technical-notes");
     more.append(element("summary","","Technical details"));
@@ -331,7 +352,7 @@
    for(const item of items)list.append(makeCard(item));
    children.append(list);
   };
-  // The same four categories are used in the New Part Workshop Item picker.
+  // The same five categories are used throughout The Workshop and part picker.
   for(const [id,title,ids] of workshopCategories)
    category("category-"+id,title,workshopReferences.filter(item=>ids.includes(item.id)),mount);
   if(purchased){
@@ -345,7 +366,7 @@
    savedChildren.append(saved);
   }
  }
- const allProjects=[["launcher","Foam-dart launcher"],["linear","Linear actuator"],["robot","Robotic arm"],["buck","Buck converter"],["motorlab","Brushless motor"],["coiltest","Switch a coil"]];
+ const allProjects=[["launcher","Foam-dart launcher"],["linear","Linear actuator"],["robot","Robotic arm"]];
  async function reloadPurchased(){
   const status=document.querySelector(".workshop-purchased-status");
   if(!admin){purchasedRecords=[];renderPurchased();return}
@@ -466,7 +487,7 @@
    let field;
    if(key==="category"){
     field=element("select","field");
-    for(const [value,title] of [["wire","Wire and cable"],["power","Power and electronics"],["fasteners","Fasteners"],["tool","Tool"],["other","Other"]]){
+    for(const [value,title] of workshopCategories.map(([id,title])=>[id,title])){
      const opt=element("option","",title);opt.value=value;field.append(opt);
     }
    }else{field=element("input","field");field.type="text";field.maxLength=key==="notes"||key==="specifications"?1000:100}
@@ -517,7 +538,7 @@
    }
   }
  }
- window.BSResources={catalog,all,mount,reloadWires,reloadCommonParts,reloadPurchased,init,normalize,setAdmin,focusWorkshopItem};
+ window.BSResources={catalog,workshopCategories,workshopReferences,legacyCategory,all,mount,reloadWires,reloadCommonParts,reloadPurchased,init,normalize,setAdmin,focusWorkshopItem};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
  else init();
 })();
