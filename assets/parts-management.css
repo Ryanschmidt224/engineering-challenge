@@ -142,12 +142,3 @@
  pointer-events:none;
 }
 
-/* Discrete operations: each add creates a new independently editable field. */
-.bs-parts-table .bs-progress-notes{margin-top:8px;max-width:100%;font-size:.8rem}
-.bs-progress-notes-label{font-weight:650;margin-bottom:6px}
-.bs-progress-operations{margin:5px 0 7px;padding-left:24px}
-.bs-progress-operations li{padding:3px 0}
-.bs-parts-table .bs-progress-operations .bs-progress-operation{
- width:100%;min-width:0;height:35px;box-sizing:border-box;
-}
-.bs-progress-add{white-space:nowrap}
