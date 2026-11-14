@@ -19,7 +19,7 @@ const byId=id=>tiles.find(t=>t.id===id);const safe=s=>String(s||"").replace(/[&<
 const store=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){alert("Browser storage is unavailable. Export your notes instead.")}};
 const load=k=>{try{return JSON.parse(localStorage.getItem(k))||[]}catch(e){return []}};
 let notes=load("bs_notes"),drafts=load("bs_drafts"),feedback=load("bs_feedback"),hintIndex=0,selectionText="";
-function navigate(page){const route=page.match(/^([a-z0-9]+)\/(?:(?:assembly|workspace|part|bom)\/([^/]+)|parts)$/);if(route)page=route[1];if(page==="challenge"||page==="workshop")page="launcher";if(page==="community")page="learn";if(page==="tools")page="commonparts";if(!document.getElementById(page))page="home";document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===page));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.nav===page));if(!route||location.hash.slice(1)!==route[0])location.hash=page;window.scrollTo({top:0,behavior:"instant"});if(page==="learn")renderTiles()}
+function navigate(page){const route=page.match(/^([a-z0-9]+)\/(?:(?:assembly|workspace|part|bom)\/([^/]+)|parts)$/);if(route)page=route[1];if(page==="challenge"||page==="workshop")page="launcher";if(page==="community"||page==="calculators")page="learn";if(page==="tools")page="commonparts";if(!document.getElementById(page))page="home";document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===page));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.nav===page));if(!route||location.hash.slice(1)!==route[0])location.hash=page;window.scrollTo({top:0,behavior:"instant"});if(page==="learn")renderTiles()}
 document.addEventListener("click",e=>{const nav=e.target.closest("[data-nav]");if(nav){e.preventDefault();navigate(nav.dataset.nav)}const topic=e.target.closest("[data-topic]");if(topic)openTile(topic.dataset.topic);const project=e.target.closest("[data-project]");if(project)navigate(project.dataset.project)});
 window.addEventListener("hashchange",()=>{
  const hash=location.hash.slice(1)||"home";navigate(hash);
@@ -32,9 +32,40 @@ window.addEventListener("hashchange",()=>{
   if(manager)document.querySelector('[data-assembly-tree="'+manager[1]+'"]')?.dispatchEvent(new Event("openparts"));
  }
 });
-function renderTiles(){const q=document.getElementById("search").value.toLowerCase().trim();document.getElementById("topicFilters").innerHTML=disciplines.map(d=>'<button class="filter'+(d===activeDiscipline?' selected':'')+'" data-filter="'+d+'" aria-pressed="'+(d===activeDiscipline)+'">'+d+'</button>').join("");const found=tiles.filter(t=>(activeDiscipline==="All"||topicDisciplines[t.id].includes(activeDiscipline))&&(t.title+" "+t.category+" "+t.short+" "+topicDisciplines[t.id].join(" ")).toLowerCase().includes(q));document.getElementById("tileList").innerHTML=found.map(t=>'<article class="card"><div class="project-tags">'+topicDisciplines[t.id].map(d=>'<span>'+d+'</span>').join("")+'</div><h3 style="margin-top:12px">'+safe(t.title)+'</h3><p>'+safe(t.short)+'</p><button class="btn" data-topic="'+t.id+'">Open</button></article>').join("")||'<p>No results.</p>'}
-document.getElementById("topicFilters").addEventListener("click",e=>{const b=e.target.closest("[data-filter]");if(b){activeDiscipline=b.dataset.filter;renderTiles()}});
+function renderTiles(){
+ const q=document.getElementById("search").value.toLowerCase().trim();
+ const kind=document.getElementById("knowledgeTypeFilter")?.value||"all";
+ document.getElementById("topicFilters").innerHTML=disciplines.map(d=>
+  '<button type="button" class="filter'+(d===activeDiscipline?' selected':'')+'" data-filter="'+d+'" aria-pressed="'+(d===activeDiscipline)+'">'+d+'</button>'
+ ).join("");
+ const found=tiles.filter(t=>(activeDiscipline==="All"||topicDisciplines[t.id].includes(activeDiscipline))&&
+  (t.title+" "+t.category+" "+t.short+" "+topicDisciplines[t.id].join(" ")).toLowerCase().includes(q));
+ const section=document.getElementById("knowledgeExplanations"),calculators=document.getElementById("knowledgeCalculators");
+ section.hidden=kind==="calculators";
+ document.getElementById("tileList").innerHTML=found.map(t=>
+  '<article class="card knowledge-topic-card"><div class="project-tags">'+topicDisciplines[t.id].map(d=>'<span>'+d+'</span>').join("")+
+  '</div><h3>'+safe(t.title)+'</h3><p>'+safe(t.short)+'</p><button class="btn" data-topic="'+t.id+'">Read explanation</button></article>'
+ ).join("")||'<p class="muted">No explanations match your filters.</p>';
+ const calcCards=[...document.querySelectorAll("#resource-calculators .resource-card")];
+ let calculatorCount=0;
+ for(const card of calcCards){
+  const match=activeDiscipline==="All"||activeDiscipline==="Mechanics"&&/surface speed|sfm/i.test(card.textContent)||
+   activeDiscipline==="Electronics"&&/ohm|resistance|current/i.test(card.textContent)||
+   activeDiscipline==="Manufacturing"&&/surface speed|sfm/i.test(card.textContent);
+  const foundCard=match&&card.textContent.toLowerCase().includes(q);
+  card.hidden=!foundCard;
+  if(foundCard)calculatorCount++;
+ }
+ calculators.hidden=kind==="explanations"||calculatorCount===0;
+ const total=(kind==="calculators"?0:found.length)+(kind==="explanations"?0:calculatorCount);
+ document.getElementById("knowledgeResultsCount").textContent=total+" result"+(total===1?"":"s");
+ if(kind!=="calculators"&&!found.length)section.hidden=true;
+}
+document.getElementById("topicFilters").addEventListener("click",e=>{
+ const b=e.target.closest("[data-filter]");if(b){activeDiscipline=b.dataset.filter;renderTiles()}
+});
 document.getElementById("search").addEventListener("input",renderTiles);
+document.getElementById("knowledgeTypeFilter").addEventListener("change",renderTiles);
 function modal(body){document.getElementById("modalRoot").className="modalback";document.getElementById("modalRoot").innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-label="Knowledge detail"><header><span class="eyebrow">Building Schmidt</span><button class="close" id="closeModal" aria-label="Close">×</button></header>'+body+'</div>';document.getElementById("closeModal").focus()}
 function closeModal(){document.getElementById("modalRoot").className="hide";document.getElementById("modalRoot").innerHTML=""}
 document.getElementById("modalRoot").addEventListener("click",e=>{if(e.target.id==="modalRoot"||e.target.closest("#closeModal"))closeModal()});
