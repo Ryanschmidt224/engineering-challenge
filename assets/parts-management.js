@@ -148,7 +148,30 @@
     type.onchange=()=>void change(part,"partType",type.value,type);typeCell.append(type);tr.append(typeCell);
     const stateCell=el("td"),stateKey=fields.statusField(part),state=dropdown(fields.statusesFor(part),statusFor(part),readOnly);
     state.setAttribute("aria-label","Status for "+part.name);
-    state.onchange=()=>void change(part,stateKey,state.value,state);stateCell.append(state);tr.append(stateCell);
+    state.onchange=()=>void change(part,stateKey,state.value,state);
+    stateCell.append(state);
+    // Progress Status is an ordered list of updates, not a replaceable note.
+    if(stateKey==="progressStatus"&&statusFor(part)==="in_progress"){
+     const progress=el("div","bs-progress-notes"),label=el("label","bs-progress-notes-label","Progress Status");
+     const composer=el("div","bs-progress-composer"),entry=el("input","field bs-progress-input"),add=el("button","btn bs-progress-add","Add");
+     entry.placeholder="Material ordered, waiting on paint…";entry.maxLength=500;entry.disabled=readOnly;
+     entry.setAttribute("aria-label","Progress Status update for "+part.name);add.type="button";add.disabled=readOnly;
+     const save=async()=>{
+      if(!entry.value.trim())return;
+      add.disabled=true;entry.disabled=true;
+      await savePatch(part,{progressUpdate:entry.value.trim()},add);
+     };
+     add.onclick=()=>void save();
+     entry.onkeydown=event=>{if(event.key==="Enter"){event.preventDefault();void save()}};
+     composer.append(entry,add);label.append(composer);progress.append(label);
+     if(part.progressUpdates?.length){
+      const history=el("details","bs-progress-history"),summary=el("summary","",part.progressUpdates.length+" previous update"+(part.progressUpdates.length===1?"":"s")),list=el("ol");
+      for(const update of part.progressUpdates){const item=el("li");item.textContent=update.text;item.title=update.createdAt||"";list.append(item)}
+      history.append(summary,list);progress.append(history);
+     }
+     stateCell.append(progress);
+    }
+    tr.append(stateCell);
     const attentionCell=el("td","bs-parts-attention"),attentionRow=el("div","bs-parts-attention-inline");
     const attentionLine=el("label","bs-attention-line"),attention=el("input");
     attention.type="checkbox";attention.checked=part.needsAttention===true;attention.disabled=readOnly;
