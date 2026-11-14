@@ -684,6 +684,12 @@ function setupAssemblyTrees(){
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
   detailsPanel.innerHTML='<details class="part-details-collapse"><summary class="part-details-view-heading"><h2>Part details</h2><span class="part-details-toggle-label">Show details</span></summary><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div><div class="part-drawing-panel"></div><div class="part-files-panel"></div></details>';
   const partDetailsCollapse=detailsPanel.querySelector(".part-details-collapse");
+  // Edit belongs beside the heading, not at the bottom of the expanded details.
+  const detailEditButton=detailsPanel.querySelector(".part-details-edit");
+  detailEditButton.hidden=true;
+  const detailHeading=detailsPanel.querySelector(".part-details-view-heading");
+  detailHeading.insertBefore(detailEditButton,detailHeading.querySelector(".part-details-toggle-label"));
+  detailsPanel.querySelector(".part-details-view-actions").remove();
   partDetailsCollapse.addEventListener("toggle",()=>{partDetailsCollapse.querySelector(".part-details-toggle-label").textContent=partDetailsCollapse.open?"Minimize details":"Show details"});
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
   const progressPanel=document.createElement("section");progressPanel.className="part-progress-panel";
@@ -905,7 +911,8 @@ function setupAssemblyTrees(){
     }
    }catch(error){partPhotoStatus.textContent=error.message||"Delete failed";partPhotoActions.setStatus(partPhotoStatus.textContent);partPhotoDelete.disabled=false}
   }
-  detailsPanel.querySelector(".part-details-edit").onclick=()=>{
+  detailEditButton.onclick=event=>{
+   event.preventDefault();event.stopPropagation();
    const part=currentPartInfo;if(!part)return;
    const linked=nodes.find(n=>isPartNode(n)&&n.partId===part.id);
    selected=linked?linked.parentId:(part.assemblyId??null);
@@ -931,7 +938,7 @@ function setupAssemblyTrees(){
   async function showPartWorkspace(){
    const partId=partRoute();if(!partId)return;
    const version=++partLoadVersion;
-   detailsPanel.querySelector(".part-details-view-actions").classList.toggle("hide",!canEdit());
+   detailEditButton.hidden=!canEdit();
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
    if(partPhotoDialog.open)partPhotoDialog.close();partPhotoActions.setEnabled(false);partPhotoActions.collapse();
@@ -2145,9 +2152,29 @@ function setupAssemblyTrees(){
     root.querySelector(".assembly-remove").click();
     return;
    }
-   if(!confirm("Remove "+node.name+" from the feature tree? Its BOM part and details will be kept."))return;
-   await save(nodes.filter(item=>item.id!==node.id));
-   status.textContent="Removed tree link; BOM part retained.";
+   const links=nodes.filter(item=>isPartNode(item)&&item.partId===node.partId);
+   if(!confirm("Delete \""+node.name+"\" from this project?\\n\\nThis removes the part from the feature tree and all assembly BOM references ("+links.length+"). Its stored details are moved to the recovery bin. This action cannot be undone on this page."))return;
+   // Delete the underlying part through the existing recovery-bin API, not
+   // by simply removing the tree node. Only remove links after API success.
+   const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{
+    method:"DELETE",credentials:"same-origin"
+   });
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok)throw Error(data.error||"Part deletion failed");
+   try{
+    await save(nodes.filter(item=>!(isPartNode(item)&&item.partId===node.partId)));
+    partDocuments.delete(node.partId);partVisibility.delete(node.partId);
+    partTools.delete(node.partId);partNumbers.delete(node.partId);
+    partProgress.delete(node.partId);partAttention.delete(node.partId);partQuantities.delete(node.partId);
+    if(partRoute()===node.partId){
+     selected=node.parentId??null;
+     history.replaceState(null,"",workspaceHash(selected));
+     render();notify();
+    }
+    status.textContent="Part deleted from this project. A recovery copy was retained.";
+   }catch(error){
+    status.textContent="Part was archived and removed from the BOM, but its tree link could not be saved: "+error.message+". Refresh the page to reconcile.";
+   }
   };
   const openTreeMenu=(node,x,y,trigger)=>{
    if(!canEdit())return;
@@ -2186,7 +2213,7 @@ function setupAssemblyTrees(){
     const res=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({hideFromFeatureTree:!isHiddenPart(node)})});
     const data=await res.json();if(!res.ok)throw Error(data.error||"Could not change visibility");partVisibility.set(node.partId,data.component.hideFromFeatureTree===true);render();
    });
-   else addItem("Delete",()=>deleteTreeItem(node),!node);
+   if(node)addItem("Delete",()=>deleteTreeItem(node));
    if(node){
     const moveSeparator=document.createElement("div");
     moveSeparator.className="assembly-context-separator";moveSeparator.setAttribute("role","separator");treeMenu.append(moveSeparator);
@@ -2232,6 +2259,11 @@ function setupAssemblyTrees(){
   const documentsFilter=filterOption("Documents",value=>{showTreeDocuments=value});
   documentsFilter.checked=true;
   nodesEl.parentNode.insertBefore(treeVisibilityControl,nodesEl);
+  const partsEntry=document.createElement("button");
+  partsEntry.type="button";partsEntry.textContent="Parts Management";
+  partsEntry.className="assembly-project-summary-entry assembly-parts-management-link";
+  partsEntry.onclick=()=>{history.pushState(null,"","#"+project+"/parts");render();notify();window.scrollTo(0,0)};
+  nodesEl.after(partsEntry);
   function render(){nodesEl.replaceChildren();
    hiddenFilter.checked=showHiddenTreeItems;toolsFilter.checked=showTreeTools;documentsFilter.checked=showTreeDocuments;
    controls.classList.toggle("hide",!canEdit()||isProjectSummary());projectActions.classList.toggle("hide",!canEdit());cardEdit.classList.toggle("hide",!canEdit());
@@ -2246,11 +2278,9 @@ function setupAssemblyTrees(){
    }
    summaryEntry.onclick=()=>{selected=null;history.pushState(null,"","#"+project);render();notify();window.scrollTo(0,0)};
    nodesEl.append(summaryEntry);
-   const partsEntry=document.createElement("button");partsEntry.type="button";
-   partsEntry.className="assembly-project-summary-entry"+(partsRoute()?" selected":"");
-   partsEntry.textContent="Parts Management";partsEntry.setAttribute("aria-current",partsRoute()?"page":"false");
-   partsEntry.onclick=()=>{history.pushState(null,"","#"+project+"/parts");render();notify();window.scrollTo(0,0)};
-   nodesEl.append(partsEntry);
+   // Project utilities live below, outside the actual feature tree.
+   partsEntry.className="assembly-project-summary-entry assembly-parts-management-link"+(partsRoute()?" selected":"");
+   partsEntry.setAttribute("aria-current",partsRoute()?"page":"false");
    // Duplicate links to one part under the same assembly render once. Keep
    // all original nodes and their IDs untouched for storage and BOM accuracy.
    const duplicateLinks=new Map(),visiblePartLinks=new Set();
