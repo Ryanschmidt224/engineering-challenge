@@ -521,7 +521,7 @@ test("in-flight uploads block saving and a failed save preserves the editor",asy
  expect(errors).toEqual([]);
 });
 
-test("tool and hidden-part filters operate independently",async({page})=>{
+test("Workshop and Document tree filters operate independently",async({page})=>{
  const errors=[];page.on("pageerror",error=>errors.push(error.message));
  await page.route("**/api/**",async route=>{
   const url=new URL(route.request().url());
@@ -531,7 +531,8 @@ test("tool and hidden-part filters operate independently",async({page})=>{
   if(url.pathname==="/api/components")data={components:[
    {id:"11111111-1111-4111-8111-111111111111",name:"Solder Sucker",assemblyId:"assembly-a",category:"Tool",isTool:true,hideFromFeatureTree:false},
    {id:"22222222-2222-4222-8222-222222222222",name:"Mount Plate",assemblyId:"assembly-a",category:"Machined",isTool:false,hideFromFeatureTree:false},
-   {id:"33333333-3333-4333-8333-333333333333",name:"M4 Screws",assemblyId:"assembly-a",category:"Fasteners",isTool:false,hideFromFeatureTree:true}
+   {id:"33333333-3333-4333-8333-333333333333",name:"M4 Screws",assemblyId:"assembly-a",category:"Fasteners",isTool:false,hideFromFeatureTree:true},
+    {id:"44444444-4444-4444-8444-444444444444",name:"Assembly Drawing",assemblyId:"assembly-a",itemType:"document",hideFromFeatureTree:false}
   ]};
   if(url.pathname==="/api/photos")data={photos:[]};
   if(url.pathname==="/api/workspace")data={workspace:{recipe:[],resources:[]},revision:"test"};
@@ -543,18 +544,20 @@ test("tool and hidden-part filters operate independently",async({page})=>{
  const tree=page.locator("#launcher .assembly-tree-nodes");
  const controls=page.locator("#launcher .assembly-tree-filters");
  await expect(controls).toBeVisible();
- await expect(controls.locator("label",{hasText:"Tools"})).toBeVisible();
+ await expect(controls.getByLabel("Workshop item")).toBeVisible();
+ await expect(controls.getByLabel("Document")).toBeVisible();
  await expect(tree).toContainText("Mount Plate");
+ await expect(tree).toContainText("Assembly Drawing");
  await expect(tree).not.toContainText("Solder Sucker");
  await expect(tree).not.toContainText("M4 Screws");
- await controls.getByLabel("Tools").check();
+ await controls.getByLabel("Workshop item").check();
  await expect(tree).toContainText("Solder Sucker");
- await expect(tree).not.toContainText("M4 Screws");
- await controls.getByLabel("Hidden parts").check();
- await expect(tree).toContainText("M4 Screws");
- await controls.getByLabel("Tools").uncheck();
+ await controls.getByLabel("Document").uncheck();
+ await expect(tree).not.toContainText("Assembly Drawing");
+ await expect(tree).toContainText("Solder Sucker");
+ await controls.getByLabel("Workshop item").uncheck();
  await expect(tree).not.toContainText("Solder Sucker");
- await expect(tree).toContainText("M4 Screws");
+ await expect(tree).not.toContainText("M4 Screws");
  expect(errors).toEqual([]);
 });
 
