@@ -65,7 +65,7 @@ const recommendedWorkshopIds=new Set([
  "workshop:heatshrink","workshop:sealshrink","workshop:solder"
 ]);
 const isToolPart=part=>typeof part.isTool==="boolean"?part.isTool:/\btools?\b/i.test(String(part.category||""))||/\bsolder\s+sucker\b/i.test(String(part.name||""));
-const generatedFullName=part=>(part.partNumber?part.partNumber+" - ":"")+String(part.name||"");
+const generatedFullName=part=>{const name=String(part.name||"").trim(),number=String(part.partNumber||"").trim();return number&&(name.toUpperCase()===number.toUpperCase()||name.toUpperCase().startsWith(number.toUpperCase()+" - "))?name:number?number+" - "+name:name};
 const presentPart=part=>({...part,fullName:generatedFullName(part),itemType:part.itemType==="document"?"document":"part",progressStatus:["not_started","in_progress","complete"].includes(part.progressStatus)?part.progressStatus:"not_started",needsAttention:part.needsAttention===true,attentionNote:part.attentionNote||"",isTool:isToolPart(part),hideFromFeatureTree:part.hideFromFeatureTree===true||(part.hideFromFeatureTree===undefined&&part.bomOnly===true),assumedOnHand:part.purchaseOverride===true?false:part.purchaseOverride===false?true:standardShopMaterial(part)});
 // Derived consumables remain tied to their source part. Never require the
 // learner to enter ferrule counts or create a second independent BOM item.
