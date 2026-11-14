@@ -63,10 +63,10 @@
    const top=Math.max(0,Math.min(event.clientY-imageRect.top,imageRect.height-36));
    const input=el("textarea","bs-markup-inline-text");
    input.rows=1;input.maxLength=120;input.spellcheck=false;
-   input.placeholder="Type here…";input.setAttribute("aria-label","Text on photo");
+   input.placeholder="Type here…";input.setAttribute("aria-label","Text on photo");input.title="Enter to place · Shift+Enter for new line · Esc to cancel";
    const fontPixels=18;
    const scale=imageRect.width/canvas.width;
-   const size=(fontPixels/scale)/(Math.min(canvas.width,canvas.height)*6);
+   const size=Math.min(1,(fontPixels/scale)/(Math.min(canvas.width,canvas.height)*6));
    input.style.left=(imageRect.left-frameRect.left+frame.scrollLeft+left)+"px";
    input.style.top=(imageRect.top-frameRect.top+frame.scrollTop+top)+"px";
    input.style.width=width+"px";
@@ -107,9 +107,9 @@
      target.textBaseline=m.top?"top":"alphabetic";
      const maxWidth=m.wrapW?m.wrapW*w:Infinity;
      let lineNumber=0;
-     for(const paragraph of m.text.split("\\n")){
+     for(const paragraph of m.text.split("\n")){
       let line="";
-      for(const word of paragraph.split(/(\\s+)/)){
+      for(const word of paragraph.split(/(\s+)/)){
        if(line&&target.measureText(line+word).width>maxWidth){
         target.fillText(line,x,y+lineNumber*fontPx*1.25);
         lineNumber++;line=word.trimStart();
@@ -194,7 +194,7 @@
     image=img;state=data.state||{crop:null,marks:[]};
     const max=1800,ratio=Math.min(1,max/Math.max(image.naturalWidth,image.naturalHeight));
     canvas.width=Math.round(image.naturalWidth*ratio);canvas.height=Math.round(image.naturalHeight*ratio);
-    history=[];future=[];draw();sync();status.textContent="Drag on the image to annotate. Crop selects the visible area. Original photo is preserved.";
+    history=[];future=[];draw();sync();status.textContent="Text: click the photo and type directly. Enter to place, Shift+Enter for a new line, Esc to cancel. Original photo is preserved.";
    }catch(e){status.textContent=e.message;save.disabled=true}
   }
   async function persist(closeAfter=false){
