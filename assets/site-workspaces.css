@@ -64,6 +64,15 @@
 .library-part-dialog::backdrop{background:color-mix(in srgb, var(--color-media-backdrop) 76%, transparent)}
 .library-part-form{padding:22px;display:flex;flex-direction:column;gap:15px}
 .library-part-form h2{margin:0}
+.library-workshop-first{
+ display:flex;align-items:center;gap:10px;
+ font-size:.94rem;font-weight:650;cursor:pointer;
+ padding:10px 0 12px;border-bottom:1px solid var(--color-border);
+}
+.library-workshop-first input{
+ width:18px;height:18px;margin:0;flex:none;accent-color:var(--color-accent);
+}
+
 .library-part-form>.muted{margin:0;font-size:.87rem}
 .library-field{display:flex;flex-direction:column;gap:6px;font-size:.87rem;font-weight:600;min-width:0}
 .library-field .field{width:100%;font-weight:400;min-height:38px}
