@@ -188,3 +188,93 @@
  .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.workspace-title-group,
  .bom-part-workspace>.workspace-heading>div:has(>.part-workspace-title){flex:1 1 100%;padding-top:0}
 }
+
+
+/* Compact part-page header. Keep the image, title and status related instead
+   of reserving an invisible 405px-wide column for photo edit actions. */
+.bom-part-workspace>.workspace-heading:has(>.bs-photo-control){
+ display:grid!important;
+ grid-template-columns:190px minmax(0,1fr);
+ align-items:start!important;
+ column-gap:18px;
+ row-gap:0;
+ width:100%;
+ max-width:1100px;
+ margin:0 0 15px!important;
+}
+.bom-part-workspace>.workspace-heading>.bs-photo-control{
+ grid-column:1;
+ grid-row:1;
+ width:190px!important;
+ min-width:0;
+ max-width:190px!important;
+ flex:none!important;
+ align-self:start;
+}
+.bom-part-workspace>.workspace-heading>.bs-photo-control>.part-workspace-cover{
+ display:block;
+ box-sizing:border-box;
+ width:190px!important;
+ height:160px!important;
+ max-width:100%;
+}
+.bom-part-workspace>.workspace-heading>.bs-photo-control>.bs-photo-actions{
+ position:static!important;
+ display:flex;
+ justify-content:flex-start!important;
+ align-items:center;
+ flex-wrap:wrap!important;
+ width:100%!important;
+ max-width:190px!important;
+ margin:6px 0 0!important;
+ gap:6px;
+}
+.bom-part-workspace>.workspace-heading>.bs-photo-control .bs-photo-more:not([hidden]){
+ display:flex;
+ flex-wrap:wrap!important;
+ gap:6px;
+}
+.bom-part-workspace>.workspace-heading>.bs-photo-control>.bs-photo-status{
+ position:static!important;
+ margin:5px 0 0!important;
+ max-width:190px;
+}
+.bom-part-workspace>.workspace-heading>div:has(>.part-workspace-title){
+ grid-column:2;
+ grid-row:1;
+ display:flex;
+ flex-direction:column;
+ align-items:flex-start;
+ justify-content:flex-start;
+ gap:9px;
+ width:100%;
+ max-width:100%;
+ min-width:0;
+ padding:0!important;
+}
+.bom-part-workspace>.workspace-heading .part-workspace-title{
+ font-size:clamp(1.5rem,2.1vw,2.1rem);
+ line-height:1.16;
+ margin:0;
+ overflow-wrap:break-word;
+}
+.bom-part-workspace>.workspace-heading .part-progress-panel{
+ margin:2px 0 0!important;
+}
+.bom-part-workspace>.part-workspace-back{
+ margin:0 0 12px;
+ padding:8px 12px;
+ min-height:36px;
+}
+@media(max-width:600px){
+ .bom-part-workspace>.workspace-heading:has(>.bs-photo-control){
+  grid-template-columns:minmax(0,1fr);
+  row-gap:12px;
+ }
+ .bom-part-workspace>.workspace-heading>.bs-photo-control{
+  grid-column:1;grid-row:1;
+ }
+ .bom-part-workspace>.workspace-heading>div:has(>.part-workspace-title){
+  grid-column:1;grid-row:2;
+ }
+}
