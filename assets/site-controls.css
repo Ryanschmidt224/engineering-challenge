@@ -1914,3 +1914,20 @@
  .project-directory-label{flex:1 1 145px}
  .project-directory-label .field{min-width:0;max-width:none;width:100%}
 }
+
+/* Single account entry point: login/register is one consistent dialog. */
+.project-account-dialog{width:min(440px,calc(100vw - 32px));padding:28px;border-radius:16px}
+.project-account-dialog .project-account-form{gap:16px}
+.project-account-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.project-account-header h2{font-size:1.6rem;line-height:1.25;margin:0}
+.project-account-header .project-close{width:36px;height:36px;font-size:20px;padding:0}
+.project-account-subtitle{margin:0;font-size:.9rem}
+.project-account-message{margin:0;font-size:.86rem;min-height:1.1em;color:var(--color-text-muted)}
+.project-account-form>label{font-size:.88rem;font-weight:600}
+.project-account-form>label .field{width:100%;height:44px}
+.project-account-form .project-account-buttons{display:grid;gap:10px}
+.project-account-form .project-account-buttons .btn{width:100%;min-height:40px}
+.project-admin-link{display:grid;gap:10px;border-top:1px solid var(--color-border);padding-top:15px}
+.project-admin-link p{margin:0}
+.project-admin-link .field{width:100%}
+.project-account-form .hide,.project-admin-link.hide{display:none!important}
