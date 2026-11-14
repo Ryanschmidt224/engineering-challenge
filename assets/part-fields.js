@@ -4,7 +4,11 @@
  const progressStatuses=Object.freeze([["not_started","Not started"],["in_progress","In progress"],["complete","Complete"]]);
  const purchaseStatuses=Object.freeze([["not_started","Not started"],["already_have","Already own"],["need_to_buy","Need to buy"],["ignore","Ignore"]]);
  const labelFor=(options,value)=>options.find(row=>row[0]===value)?.[1]||options[0][1];
- const isPurchased=part=>part.partType==="purchased";
+ // Legacy records without a partType are off-the-shelf parts. Documents and
+ // Code always use workflow progress, never inventory purchasing status.
+ const partTypeFor=part=>["custom","code"].includes(part?.partType)?part.partType:"purchased";
+ const itemTypeFor=part=>partTypeFor(part)==="code"?"code":part?.itemType==="document"?"document":"part";
+ const isPurchased=part=>itemTypeFor(part)==="part"&&partTypeFor(part)==="purchased";
  const statusesFor=part=>isPurchased(part)?purchaseStatuses:progressStatuses;
  const statusField=part=>isPurchased(part)?"purchaseStatus":"progressStatus";
  const statusValue=part=>part[statusField(part)]||"not_started";
@@ -22,9 +26,9 @@
   const values={
    partNumber:part.partNumber,
    name:part.name,
-   itemType:part.partType==="code"?"Code":part.itemType==="document"?"Document":"Part",
-   partType:part.partType==="code"?null:labelFor([["purchased","Off-the-shelf"],["custom","Custom"]],part.partType),
-   purchaseStatus:isPurchased(part)?labelFor(purchaseStatuses,statusValue(part)):null,
+   itemType:labelFor([["part","Part"],["document","Document"],["code","Code"]],itemTypeFor(part)),
+   partType:partTypeFor(part)==="code"?null:labelFor([["purchased","Off-the-shelf"],["custom","Custom"]],partTypeFor(part)),
+   purchaseStatus:labelFor(statusesFor(part),statusValue(part)),
    description:part.description,
    quantity:qty,
    historicalPrice:price,
@@ -39,5 +43,5 @@
   const labels={partNumber:"Part number",name:"Part name",itemType:"Item type",partType:"Part type",purchaseStatus:"Status",description:"Description",quantity:"Quantity",historicalPrice:"Historical part price",manufacturer:"Manufacturer",model:"Model",category:"Category",supplier:"Supplier",asin:"ASIN",isTool:"Tool",hideFromFeatureTree:"Hidden from feature tree"};
   return [...sectionFields.identity,...sectionFields.additional,...sectionFields.display].map(key=>[labels[key],values[key]]).filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="");
  }
- window.BSPartFields=Object.freeze({progressStatuses,purchaseStatuses,isPurchased,statusesFor,statusField,statusValue,labelFor,sectionFields,detailRows});
+ window.BSPartFields=Object.freeze({progressStatuses,purchaseStatuses,partTypeFor,itemTypeFor,isPurchased,statusesFor,statusField,statusValue,labelFor,sectionFields,detailRows});
 })();
