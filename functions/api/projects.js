@@ -4,13 +4,10 @@ import {accountUser} from "./accounts.js";
 export const CORE_PROJECTS=Object.freeze([
  {id:"launcher",name:"Foam-dart launcher",description:"Launch a foam dart 50 feet. Flywheels, motors, controls, and testing.",kind:"project",builtIn:true},
  {id:"linear",name:"Electromagnetic linear actuator",description:"Move a magnet using coils. Fields, switching, sensors, and control.",kind:"project",builtIn:true},
- {id:"robot",name:"Robotic arm",description:"Build a multi-axis arm. Motors, kinematics, and software.",kind:"project",builtIn:true},
- {id:"buck",name:"Test a buck converter",description:"Measure voltage and investigate startup failures.",kind:"mini",builtIn:true},
- {id:"motorlab",name:"Control a brushless motor",description:"Use an ESC and measure RPM.",kind:"mini",builtIn:true},
- {id:"coiltest",name:"Switch a coil",description:"Explore magnetic fields and switching.",kind:"mini",builtIn:true}
+ {id:"robot",name:"Robotic arm",description:"Build a multi-axis arm. Motors, kinematics, and software.",kind:"project",builtIn:true}
 ]);
 export const CATALOG_KEY="project-catalog/v1.json";
-export const VALID_PROJECT_ID=/^(?:launcher|linear|robot|buck|motorlab|coiltest|p[a-f0-9]{32})$/;
+export const VALID_PROJECT_ID=/^(?:launcher|linear|robot|p[a-f0-9]{32})$/;
 export const projectGroup=p=>String(p.group||((p.kind==="mini")?"Mini Projects":"Projects")).trim();
 const validGroup=x=>typeof x==="string"&&x.trim().length>0&&x.trim().length<=60;
 const safeRecords=value=>Array.isArray(value?.projects)?value.projects.filter(p=>p&&typeof p.id==="string"&&VALID_PROJECT_ID.test(p.id)):[];
