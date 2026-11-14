@@ -1594,12 +1594,20 @@ function setupAssemblyTrees(){
       toolRow,visibilityRow,specsHeading,specs,addSpec,existingActions,apiPanel].filter(Boolean));
     const otherFields=[...review.children].filter(el=>!known.has(el)&&!el.classList.contains("part-editor-section-heading"));
     const move=(...elements)=>{for(const el of elements)if(el)review.append(el)};
-    // Required first six rows. The large lookup box is now a single line.
-    move(partNumberRow,identity[0],itemTypeRow,partTypeRow,partDescriptionRow,apiPanel);
-    move(sectionHeading("additional","Additional details"),...quantities,...sourcing);
+    // Use one canonical field order for the editor and expanded part details.
+    const fields=window.BSPartFields.sectionFields;
+    const controls={partNumber:partNumberRow,name:identity[0],itemType:itemTypeRow,
+     partType:partTypeRow,description:partDescriptionRow,quantity:quantities[0],
+     manufacturer:sourcing[0],model:sourcing[1],category:legacyCategory,
+     supplier:sourcing[2],asin:sourcing[3],historicalPrice:sourcing[4],
+     isTool:toolRow,hideFromFeatureTree:visibilityRow};
+    const ordered=keys=>keys.map(key=>controls[key]).filter(Boolean);
+    move(...ordered(fields.identity),apiPanel);
+    move(sectionHeading("additional","Additional details"),...ordered(fields.additional),quantities[1]);
     const displayGroup=review.querySelector(".part-display-options")||document.createElement("div");
-     displayGroup.className="part-display-options";displayGroup.append(toolRow,visibilityRow);
-     move(sectionHeading("display","Display options"),displayGroup);
+    displayGroup.className="part-display-options";
+    displayGroup.append(...ordered(fields.display));
+    move(sectionHeading("display","Display options"),displayGroup);
     move(...otherFields);
     move(specsHeading||sectionHeading("specifications","Specifications"),specs);
     let actions=review.querySelector(".component-editor-actions");
