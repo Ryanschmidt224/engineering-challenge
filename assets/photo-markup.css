@@ -49,3 +49,13 @@
  .bom-part-workspace .workspace-heading:has(>.bs-photo-control){margin-bottom:105px}
  .bs-photo-actions .btn{padding:6px 9px;font-size:.79rem}
 }
+
+/* Attachment controls match project, assembly and part photo controls. */
+.recipe-compact .recipe-step-photo>.bs-photo-control{width:100%;max-width:100%;align-items:stretch}
+.recipe-compact .recipe-step-photo>.bs-photo-control .recipe-photo-frame{width:100%;max-width:100%}
+.recipe-compact .recipe-step-photo>.bs-photo-control .bs-photo-actions{justify-content:flex-end;margin:3px 0 0}
+.recipe-compact .recipe-step-photo>.bs-photo-control .bs-photo-more{justify-content:flex-end}
+.workspace-heading>.bs-photo-control .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="false"]){
+ width:100%;justify-content:flex-end
+}
+.bs-photo-control .bs-photo-previous,.bs-photo-control .bs-photo-next{top:50%}
