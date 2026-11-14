@@ -11,3 +11,41 @@
 .bs-markup-modal .muted{margin:8px 0}
 .bs-photo-edit{font-size:13px}
 @media(max-width:600px){.bs-markup-modal{padding:10px}.bs-markup-canvas-wrap{max-height:55vh}.bs-markup-toolbar button{padding:7px}.bs-markup-footer{justify-content:flex-start}}
+
+/* Shared photo action row — placed below the photo, never over its image. */
+.bs-photo-control{position:relative;display:flex;flex-direction:column;align-items:stretch;min-width:0;max-width:100%}
+.bs-photo-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.bs-photo-more{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bs-photo-more[hidden],.bs-photo-toggle[hidden]{display:none!important}
+.bs-photo-actions .btn{min-height:34px;padding:6px 11px;font-size:.82rem;white-space:nowrap}
+.bs-photo-actions .bs-photo-toggle[aria-expanded="true"]{border-color:var(--color-accent);background:var(--color-accent-soft);color:var(--color-text)}
+.bs-photo-actions button:disabled{opacity:.48;cursor:not-allowed}
+.bs-photo-status{font-size:.8rem;line-height:1.4;color:var(--color-text-muted);margin:6px 0 0;text-align:right}
+.bs-photo-status:empty{display:none}
+.bs-photo-control .workspace-cover,.bs-photo-control .part-workspace-cover{position:relative}
+.bs-photo-control .bs-photo-previous,.bs-photo-control .bs-photo-next{
+ position:absolute;top:35%;z-index:1;transform:translateY(-50%);
+ border:0;background:color-mix(in srgb,var(--color-media-backdrop) 80%,transparent);
+ color:var(--color-on-media);padding:2px 5px;border-radius:6px;cursor:pointer;font:inherit;font-size:23px
+}
+.bs-photo-control .bs-photo-previous{left:2px}
+.bs-photo-control .bs-photo-next{right:2px}
+.project-summary-gallery>.bs-photo-control{width:100%;max-width:100%}
+.project-summary-gallery>.bs-photo-control .project-summary-photo-stage{width:100%}
+.project-summary-gallery>.bs-photo-control .bs-photo-actions{padding:0 0 4px}
+.workspace-heading>.bs-photo-control{flex:0 0 auto;align-self:flex-start;width:132px;max-width:none}
+.workspace-heading>.bs-photo-control .bs-photo-actions{
+ position:absolute;left:0;top:100%;margin-top:7px;justify-content:flex-start;width:max-content;max-width:calc(100vw - 50px);z-index:2
+}
+.workspace-heading>.bs-photo-control .bs-photo-more{flex-wrap:nowrap}
+.workspace-heading>.bs-photo-control .bs-photo-status{position:absolute;left:0;top:calc(100% + 44px);width:max-content;max-width:300px;text-align:left}
+.assembly-workspace-page .workspace-heading:has(>.bs-photo-control),
+.bom-part-workspace .workspace-heading:has(>.bs-photo-control){margin-bottom:76px}
+@media(max-width:700px){
+ .workspace-heading>.bs-photo-control{width:94px}
+ .workspace-heading>.bs-photo-control .bs-photo-actions{flex-wrap:wrap;max-width:calc(100vw - 40px)}
+ .workspace-heading>.bs-photo-control .bs-photo-more{flex-wrap:wrap}
+ .assembly-workspace-page .workspace-heading:has(>.bs-photo-control),
+ .bom-part-workspace .workspace-heading:has(>.bs-photo-control){margin-bottom:105px}
+ .bs-photo-actions .btn{padding:6px 9px;font-size:.79rem}
+}
