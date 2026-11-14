@@ -21,7 +21,7 @@ export async function accountUser(request,env){
   if(!object)return null;
   const user=JSON.parse(await object.text());
   if(user.disabled||user.sessionVersion!==claims.version)return null;
-  return {id:user.id,email:user.email,displayName:user.displayName};
+  return {id:user.id,email:user.email,displayName:user.displayName,role:user.role==="admin"?"admin":"member"};
  }catch{return null}
 }
 async function createSession(user,env){
@@ -42,24 +42,46 @@ export async function handleAccounts(request,env){
  if(request.headers.get("origin")!==new URL(request.url).origin)return json({error:"Invalid request origin"},403);
  if(request.method==="DELETE")return json({user:null},200,{"set-cookie":cookie("",0)});
  const body=await request.json().catch(()=>null);
+ // One-time migration: attach legacy administrator access to an authenticated
+ // user account. Never trust role values submitted during registration.
+ if(body?.action==="claim-admin"){
+  const member=await accountUser(request,env);
+  if(!member)return json({error:"Sign in to your account before linking administrator access"},401);
+  if(member.role==="admin")return json({user:member});
+  const oldPassword=body.adminPassword;
+  if(typeof oldPassword!=="string"||oldPassword.length>256)return json({error:"Enter the existing administrator password"},400);
+  const candidate=new Uint8Array(await crypto.subtle.digest("SHA-256",encoder.encode(oldPassword)));
+  const expected=new Uint8Array(await crypto.subtle.digest("SHA-256",encoder.encode(env.admin_password)));
+  let difference=0;for(let i=0;i<expected.length;i++)difference|=candidate[i]^expected[i];
+  if(difference!==0)return json({error:"Administrator verification failed"},403);
+  const object=await env.PHOTOS.get(userKey(member.id));
+  if(!object)return json({error:"Account not found"},404);
+  const user=JSON.parse(await object.text());
+  if(user.disabled)return json({error:"Account disabled"},403);
+  user.role="admin";
+  // Use conditional writes so concurrent account changes cannot be overwritten.
+  const saved=await env.PHOTOS.put(userKey(member.id),JSON.stringify(user),{onlyIf:{etagMatches:object.etag}});
+  if(saved===null)return json({error:"Account changed; retry administrator verification"},409);
+  return json({user:{id:user.id,email:user.email,displayName:user.displayName,role:"admin"}});
+ }
  const email=String(body?.email||"").toLowerCase().trim(),password=body?.password;
  if(!/^[^\s@]{1,80}@[^\s@]{1,120}\.[^\s@]{2,30}$/.test(email)||typeof password!=="string"||password.length<12||password.length>256)return json({error:"Enter a valid email and a password of at least 12 characters"},400);
  const emailObject=await env.PHOTOS.get(await emailKey(email));
  if(body.action==="register"){
   if(emailObject)return json({error:"Account already exists"},409);
   const id="u"+crypto.randomUUID().replace(/-/g,""),salt=b64(crypto.getRandomValues(new Uint8Array(16)));
-  const user={id,email,displayName:String(body.displayName||"").trim().slice(0,80)||email.split("@")[0],salt,passwordHash:await passwordHash(password,salt),sessionVersion:crypto.randomUUID()};
+  const user={id,email,role:"member",displayName:String(body.displayName||"").trim().slice(0,80)||email.split("@")[0],salt,passwordHash:await passwordHash(password,salt),sessionVersion:crypto.randomUUID()};
   const claimed=await env.PHOTOS.put(await emailKey(email),JSON.stringify({id}),{onlyIf:{etagDoesNotMatch:"*"}});
   if(!claimed)return json({error:"Account already exists"},409);
   await env.PHOTOS.put(userKey(id),JSON.stringify(user),{onlyIf:{etagDoesNotMatch:"*"}});
-  return json({user:{id,email,displayName:user.displayName}},201,{"set-cookie":cookie(await createSession(user,env),30*86400)});
+  return json({user:{id,email,displayName:user.displayName,role:"member"}},201,{"set-cookie":cookie(await createSession(user,env),30*86400)});
  }
  if(!emailObject)return json({error:"Invalid email or password"},401);
  const {id}=JSON.parse(await emailObject.text()),object=await env.PHOTOS.get(userKey(id));
  if(!object)return json({error:"Invalid email or password"},401);
  const user=JSON.parse(await object.text());
  if(user.disabled||!equal(await passwordHash(password,user.salt),user.passwordHash))return json({error:"Invalid email or password"},401);
- return json({user:{id:user.id,email,displayName:user.displayName}},200,{"set-cookie":cookie(await createSession(user,env),30*86400)});
+ return json({user:{id:user.id,email,displayName:user.displayName,role:user.role==="admin"?"admin":"member"}},200,{"set-cookie":cookie(await createSession(user,env),30*86400)});
 }
 
 export async function onRequest({request,env}){return handleAccounts(request,env)}
