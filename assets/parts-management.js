@@ -161,14 +161,14 @@
       input.type="text";input.maxLength=500;input.value=operation.text||"";
       input.placeholder="Operation "+(index+1)+" — material ordered, waiting on paint…";
       input.title=operation.text||"";
-      input.disabled=readOnly||statusFor(part)!=="in_progress";
+      input.disabled=readOnly;
       input.setAttribute("aria-label","Progress Status operation "+(index+1)+" for "+part.name);
       input.onkeydown=event=>{if(event.key==="Enter"){event.preventDefault();input.blur()}};
       input.onblur=()=>{if(input.value.trim()!==(operation.text||""))void savePatch(part,{progressOperationEdit:{id:operation.id,text:input.value}},input)};
       item.append(input);list.append(item);
      }
      progress.append(label,list);
-     if(statusFor(part)==="in_progress"){
+     {
       const add=el("button","btn bs-progress-add","Add operation");
       add.type="button";add.disabled=readOnly;
       add.onclick=()=>void savePatch(part,{progressOperationAdd:true},add);
