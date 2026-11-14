@@ -77,16 +77,17 @@
  const workshopReferences=[...workshopSupplies,...workshopEquipment];
  // Legacy IDs remain unchanged so existing project links and saved history continue to work.
  const workshopCategories=[
-  ["wire","Wire and cable",["workshop:wire22","workshop:wire18","workshop:wire16","workshop:silicone","workshop:ferrule22","workshop:ferrule18","workshop:heatshrink","workshop:sealshrink","workshop:stripper","workshop:ferrule-tool","workshop:heatgun"]],
-  ["power","Power and electronics",["workshop:solder","workshop:meter","workshop:solderstation","workshop:oscilloscope"]],
+  ["wire","Wire and cable",["workshop:wire22","workshop:wire18","workshop:wire16","workshop:silicone","workshop:ferrule22","workshop:ferrule18","workshop:heatshrink","workshop:sealshrink"]],
+  ["power","Power and electronics",["workshop:solder"]],
   ["fasteners","Fasteners",[]],
-  ["other","Other",["workshop:safety"]]
+  ["tool","Tool",workshopEquipment.map(item=>item.id)],
+  ["other","Other",[]]
  ];
  const legacyCategory=category=>({
   screws:"fasteners","buck-converters":"power","Wire & cable":"wire","Crimped wire":"wire","Wire termination":"wire",
-  "wire and cable":"wire","power and electronics":"power","fasteners":"fasteners",other:"other"
- })[category]||(["wire","power","fasteners","other"].includes(category)?category:"other");
- const workshopCategoryName=category=>({wire:"Wire and cable",power:"Power and electronics",fasteners:"Fasteners",other:"Other"})[legacyCategory(category)];
+  "wire and cable":"wire","power and electronics":"power","fasteners":"fasteners",tool:"tool",other:"other"
+ })[category]||(["wire","power","fasteners","tool","other"].includes(category)?category:"other");
+ const workshopCategoryName=category=>({wire:"Wire and cable",power:"Power and electronics",fasteners:"Fasteners",tool:"Tool",other:"Other"})[legacyCategory(category)];
  const catalog={tools:workshopEquipment.map(x=>({id:x.id,name:x.name,subtitle:"Workshop standard",detail:x.spec+" "+x.use,caution:x.caution})),calculators,parts:[...baseParts,...workshopSupplies.map(x=>({id:x.id,name:x.name,subtitle:x.subtitle,detail:x.spec+" "+x.use,caution:x.caution}))]};
  let wires=[],commonRecords=[],purchasedRecords=[],listeners=new Set(),admin=false;
  const byId=(kind,id)=>catalog[kind]?.find(item=>item.id===id);
@@ -465,7 +466,7 @@
    let field;
    if(key==="category"){
     field=element("select","field");
-    for(const [value,title] of [["wire","Wire and cable"],["power","Power and electronics"],["fasteners","Fasteners"],["other","Other"]]){
+    for(const [value,title] of [["wire","Wire and cable"],["power","Power and electronics"],["fasteners","Fasteners"],["tool","Tool"],["other","Other"]]){
      const opt=element("option","",title);opt.value=value;field.append(opt);
     }
    }else{field=element("input","field");field.type="text";field.maxLength=key==="notes"||key==="specifications"?1000:100}
