@@ -13,10 +13,17 @@ window.BSProjectManager=(()=>{
   const root=document.querySelector("#home .project-index"),grid=root?.querySelector(".project-grid");if(!grid)return;
   const header=root.querySelector(".row.space"),controls=element("div","project-owner-actions");
   const miniRoot=document.querySelector("#appetizer .project-index"),miniGrid=miniRoot?.querySelector(".project-grid");
-  const miniControls=element("div","project-owner-actions"),newMiniButton=element("button","btn primary","+ New mini project");
-  newMiniButton.type="button";miniControls.append(newMiniButton);
-  miniRoot?.querySelector(".index-title")?.after(miniControls);
-  const newButton=element("button","btn primary","+ New project");newButton.type="button";
+  // Both lists share the same dashboard layout and project-creation workflow.
+  const makeCreateButton=(kind)=>{
+   const button=element("button","btn primary",kind==="mini"?"+ New mini project":"+ New project");
+   button.type="button";
+   button.dataset.projectCreate=kind;
+   return button;
+  };
+  const miniControls=element("div","project-owner-actions"),newMiniButton=makeCreateButton("mini");
+  miniControls.append(newMiniButton);
+  miniRoot?.querySelector(".row.space")?.append(miniControls);
+  const newButton=makeCreateButton("project");
   const accountButton=element("button","btn","My account");accountButton.type="button";
   const archiveButton=element("button","btn","Archived projects");archiveButton.type="button";
   controls.append(newButton,archiveButton,accountButton);header.append(controls);
@@ -68,8 +75,9 @@ window.BSProjectManager=(()=>{
    }catch(error){editor.querySelector(".project-create-message").textContent=error.message}
    finally{button.disabled=false}
   };
-  // The legacy assembly HTML is a stable template until a reusable component replaces it.
-  const template=document.getElementById("linear");
+  // Reuse one pristine project workspace template for both Projects and Mini Projects.
+  // It is captured before any controller mutates the DOM.
+  const template=window.BSProjectTemplate;
   const groupOf=project=>String(project.group||((project.kind==="mini")?"Mini Projects":"Projects")).trim();
   const customGroups=element("div","project-custom-groups");grid.after(customGroups);
   const groupGrid=group=>{
@@ -88,7 +96,7 @@ window.BSProjectManager=(()=>{
    section.id=project.id;section.classList.add("personal-project-view");
    // All projects, including original mini projects, use the identical assembly template.
    if(existing)existing.replaceWith(section);
-   else template.parentNode.insertBefore(section,template.nextSibling);
+   else document.getElementById("linear")?.after(section);
    section.querySelectorAll("[data-assembly-tree],[data-components],[data-photos]").forEach(node=>{
     if(node.hasAttribute("data-assembly-tree"))node.dataset.assemblyTree=project.id;
     if(node.hasAttribute("data-components"))node.dataset.components=project.id;
@@ -260,7 +268,8 @@ window.BSProjectManager=(()=>{
    try{
     user=(await api("GET","/api/accounts")).user;
     const data=await api("GET","/api/projects");if(!Array.isArray(data.projects))throw Error("Project catalog response unavailable");projects=data.projects;currentProjects=projects;
-    newButton.hidden=!user;newMiniButton.hidden=!user;archiveButton.hidden=!user&&!adminAuthenticated;
+    // Always show creation actions. Signing in is requested only after clicking one.
+    newButton.hidden=false;newMiniButton.hidden=false;archiveButton.hidden=!user&&!adminAuthenticated;
     accountButton.textContent=user?"My account: "+user.displayName:"My account";
     document.querySelectorAll(".project-personal-card").forEach(node=>node.remove());
     // Keep built-in cards alive before rebuilding custom category containers.
