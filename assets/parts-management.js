@@ -45,8 +45,7 @@
    for(const [key,button] of Object.entries(sortButtons))button.textContent=(columns.find(x=>x[0]===key)?.[1]||key)+(order===key?(direction===1?" ↑":" ↓"):"");
    tbody.replaceChildren();
    const query=search.value.trim().toLowerCase();
-   const visible=parts.filter(p=>(filter.value==="all"||p.progressStatus===filter.value)&&(typeFilter.value==="all"||p.partType===typeFilter.value)&&(p.name||"").toLowerCase().includes(query)||false);
-   // Include number searches without overriding the filters.
+   // Search by part number or headline name without overriding the filters.
    const entries=parts.filter(p=>(filter.value==="all"||p.progressStatus===filter.value)&&(typeFilter.value==="all"||p.partType===typeFilter.value)&&((p.name||"").toLowerCase().includes(query)||(p.partNumber||"").toLowerCase().includes(query)));
    entries.sort((a,b)=>{
     if(order==="number"){
@@ -87,7 +86,7 @@
     });
     const data=await res.json();if(!res.ok)throw Error(data.error||"Update failed");
     Object.assign(part,data.component);onChanged?.(data.component);
-    feedback.textContent="Saved "+part.name+".";
+    render();feedback.textContent="Saved "+part.name+".";
    }catch(error){
     control.value=previous;feedback.textContent="Not saved: "+error.message;
     if(/another tab|Reload/.test(error.message))void refresh();
