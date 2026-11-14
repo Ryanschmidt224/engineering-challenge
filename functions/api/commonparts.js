@@ -9,7 +9,9 @@ const valid=input=>{
  const record={
   category,name:clean(input.name,100),manufacturer:clean(input.manufacturer,100),
   partNumber:clean(input.partNumber,100),specifications:clean(input.specifications,1000),
-  notes:clean(input.notes,1000)
+  notes:clean(input.notes,1000),
+  availabilityAssumption:["expected","optional","specialized"].includes(input.availabilityAssumption)?input.availabilityAssumption:"optional",
+  bomDefault:["include","exclude"].includes(input.bomDefault)?input.bomDefault:["consumables","tools","safety","wire","tool"].includes(category)?"exclude":"include"
  };
  return record.name?record:null;
 };
