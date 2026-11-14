@@ -5,7 +5,7 @@ const clean=(value,max=160)=>String(value??"").trim().slice(0,max);
 const valid=input=>{
  if(!input||typeof input!=="object")return null;
  const category=clean(input.category,30);
- if(!["wire","power","fasteners","other"].includes(category))return null;
+ if(!["wire","power","fasteners","tool","other"].includes(category))return null;
  const record={
   category,name:clean(input.name,100),manufacturer:clean(input.manufacturer,100),
   partNumber:clean(input.partNumber,100),specifications:clean(input.specifications,1000),
