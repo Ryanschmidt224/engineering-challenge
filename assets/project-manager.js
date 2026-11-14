@@ -12,23 +12,45 @@ window.BSProjectManager=(()=>{
  const init=({setupAssemblyTrees,setupComponents,setupPhotos,navigate})=>{
   const root=document.querySelector("#home .project-index"),grid=root?.querySelector(".project-grid");if(!grid)return;
   const header=root.querySelector(".row.space"),controls=element("div","project-owner-actions");
-  const miniRoot=document.querySelector("#appetizer .project-index"),miniGrid=miniRoot?.querySelector(".project-grid");
-  const miniEmpty=element("p","muted project-empty","No mini projects yet. Create one to get started.");
-  miniGrid?.after(miniEmpty);
-  // Both lists share the same dashboard layout and project-creation workflow.
-  const makeCreateButton=(kind)=>{
-   const button=element("button","btn primary",kind==="mini"?"+ New mini project":"+ New project");
-   button.type="button";
-   button.dataset.projectCreate=kind;
-   return button;
-  };
-  const miniControls=element("div","project-owner-actions"),newMiniButton=makeCreateButton("mini");
-  miniControls.append(newMiniButton);
-  miniRoot?.querySelector(".row.space")?.append(miniControls);
-  const newButton=makeCreateButton("project");
+  const newButton=element("button","btn primary","+ New project");newButton.type="button";
   const accountButton=element("button","btn","My account");accountButton.type="button";
   const archiveButton=element("button","btn","Archived projects");archiveButton.type="button";
   controls.append(newButton,archiveButton,accountButton);header.append(controls);
+  const filters=element("div","project-directory-controls");
+  const categoryLabel=element("label","project-directory-label","Category");
+  const categorySelect=element("select","field project-category-filter");
+  categoryLabel.append(categorySelect);
+  const sortLabel=element("label","project-directory-label","Sort by");
+  const sortSelect=element("select","field project-sort-filter");
+  for(const [value,label] of [["name_asc","Name A–Z"],["name_desc","Name Z–A"],["newest","Newest first"],["oldest","Oldest first"]]){
+   const option=element("option","",label);option.value=value;sortSelect.append(option);
+  }
+  sortLabel.append(sortSelect);
+  const directoryStatus=element("span","project-directory-count muted");
+  filters.append(categoryLabel,sortLabel,directoryStatus);grid.before(filters);
+  const categoryOf=project=>String(project?.category||"Uncategorized").trim()||"Uncategorized";
+  const updateDirectory=()=>{
+   const filter=categorySelect.value,byId=new Map(projects.map(project=>[project.id,project]));
+   const cards=[...grid.querySelectorAll(".project-card")];
+   const info=card=>{
+    const link=card.querySelector("[data-project],[data-nav]");
+    return byId.get(link?.dataset.project||link?.dataset.nav);
+   };
+   const title=card=>info(card)?.name||card.querySelector(".project-copy h2")?.textContent||"";
+   const date=card=>Date.parse(info(card)?.createdAt||"")||0;
+   cards.sort((a,b)=>{
+    if(sortSelect.value==="newest")return date(b)-date(a)||title(a).localeCompare(title(b));
+    if(sortSelect.value==="oldest")return date(a)-date(b)||title(a).localeCompare(title(b));
+    return (sortSelect.value==="name_desc"?-1:1)*title(a).localeCompare(title(b),undefined,{numeric:true,sensitivity:"base"});
+   });
+   for(const card of cards){
+    card.hidden=!info(card)||(filter!=="all"&&categoryOf(info(card))!==filter);
+    grid.append(card);
+   }
+   directoryStatus.textContent=cards.filter(card=>!card.hidden).length+" projects";
+  };
+  categorySelect.onchange=updateDirectory;
+  sortSelect.onchange=updateDirectory;
   const dialog=element("dialog","project-account-dialog");
   dialog.innerHTML='<form method="dialog" class="project-account-form"><h2>My account</h2><p class="project-account-message muted" role="status"></p><label>Email<input class="field" type="email" name="email" autocomplete="email" required></label><label>Password<input class="field" type="password" name="password" autocomplete="current-password" minlength="12" required></label><label class="project-account-name hide">Display name<input class="field" name="displayName" maxlength="80"></label><div class="row project-account-buttons"><button class="btn primary project-signin" type="button">Log in</button><button class="btn project-register" type="button">Create account</button><button class="btn project-signout hide" type="button">Log out</button><button class="btn project-close" type="button">Close</button></div></form>';
   document.body.append(dialog);
@@ -60,36 +82,35 @@ window.BSProjectManager=(()=>{
 
   dialog.querySelector(".project-signout").onclick=async()=>{await api("DELETE","/api/accounts");user=null;dialog.close();location.href="#home";location.reload()};
   const editor=element("dialog","project-create-dialog");
-  editor.innerHTML='<form method="dialog" class="project-create-form"><h2>New project</h2><p class="muted">Projects are private by default. Only you can edit them.</p><label>Project name<input class="field" name="name" maxlength="100" required></label><label>Description<textarea class="field" name="description" maxlength="500"></textarea></label><p class="project-create-message" role="status"></p><div class="row"><button type="button" class="btn primary project-create-save">Create project</button><button type="button" class="btn project-create-cancel">Cancel</button></div></form>';
+  editor.innerHTML='<form method="dialog" class="project-create-form"><h2>New project</h2><p class="muted">Projects are private by default. Only you can edit them.</p><label>Project name<input class="field" name="name" maxlength="100" required></label><label>Category<input class="field" name="category" maxlength="60" placeholder="Uncategorized" list="project-category-choices"></label><datalist id="project-category-choices"></datalist><label>Description<textarea class="field" name="description" maxlength="500"></textarea></label><p class="project-create-message" role="status"></p><div class="row"><button type="button" class="btn primary project-create-save">Create project</button><button type="button" class="btn project-create-cancel">Cancel</button></div></form>';
   document.body.append(editor);
   editor.querySelector(".project-create-cancel").onclick=()=>editor.close();
-  let createKind="project";
-  const openCreate=kind=>{if(!user){showAccount();note.textContent="Create an account or log in before creating a project.";return}
-   createKind=kind;editor.querySelector("h2").textContent=kind==="mini"?"New mini project":"New project";
-   editor.querySelector(".project-create-save").textContent=kind==="mini"?"Create mini project":"Create project";editor.showModal()};
-  newButton.onclick=()=>openCreate("project");
-  newMiniButton.onclick=()=>openCreate("mini");
+  const openCreate=()=>{
+   if(!user){showAccount();note.textContent="Create an account or log in before creating a project.";return}
+   const list=editor.querySelector("#project-category-choices");list.replaceChildren();
+   for(const category of [...new Set(projects.map(categoryOf))].filter(value=>value!=="Uncategorized").sort()){
+    const option=element("option");option.value=category;list.append(option);
+   }
+   editor.querySelector(".project-create-message").textContent="";
+   editor.showModal();
+  };
+  newButton.onclick=openCreate;
   editor.querySelector(".project-create-save").onclick=async()=>{
-   const form=editor.querySelector("form"),button=editor.querySelector(".project-create-save");button.disabled=true;
-   try{const data=await api("POST","/api/projects",{name:form.elements.name.value,description:form.elements.description.value,kind:createKind});
-    const createdName=form.elements.name.value,created=data.projects.find(p=>p.name===createdName&&p.ownerId===user?.id&&p.kind===createKind);
+   const form=editor.querySelector("form"),button=editor.querySelector(".project-create-save");
+   if(!form.reportValidity())return;
+   button.disabled=true;
+   try{
+    const response=await api("POST","/api/projects",{name:form.elements.name.value,description:form.elements.description.value,
+     category:form.elements.category.value.trim()||"Uncategorized",kind:"project"});
+    const name=form.elements.name.value;
+    const created=response.projects.find(project=>project.name===name&&project.ownerId===user?.id);
     editor.close();form.reset();await refresh();navigate(created?.id||"home");
    }catch(error){editor.querySelector(".project-create-message").textContent=error.message}
    finally{button.disabled=false}
   };
-  // Reuse one pristine project workspace template for both Projects and Mini Projects.
+  // Reuse a single project workspace template for all projects.
   // It is captured before any controller mutates the DOM.
   const template=window.BSProjectTemplate;
-  const groupOf=project=>String(project.group||((project.kind==="mini")?"Mini Projects":"Projects")).trim();
-  const customGroups=element("div","project-custom-groups");grid.after(customGroups);
-  const groupGrid=group=>{
-   if(group==="Mini Projects")return miniGrid||grid;
-   if(group==="Projects")return grid;
-   let panel=[...customGroups.children].find(node=>node.dataset.group===group);
-   if(!panel){panel=element("section","project-custom-group");panel.dataset.group=group;
-    panel.append(element("h2","",group));const list=element("div","project-grid");panel.append(list);customGroups.append(panel)}
-   return panel.querySelector(".project-grid");
-  };
   const ensureProjectPage=project=>{
    const existing=document.getElementById(project.id);
    if(existing?.querySelector("[data-assembly-tree]"))return;
@@ -104,7 +125,7 @@ window.BSProjectManager=(()=>{
     if(node.hasAttribute("data-components"))node.dataset.components=project.id;
     if(node.hasAttribute("data-photos"))node.dataset.photos=project.id;
    });
-   section.querySelectorAll('[data-nav="home"]').forEach(node=>node.dataset.nav=groupOf(project)==="Mini Projects"?"appetizer":"home");
+   section.querySelectorAll('[data-nav="home"]').forEach(node=>node.dataset.nav="home");
    const heading=section.querySelector(".assembly-main h1");
    if(heading)heading.textContent=project.name;
   };
@@ -161,11 +182,11 @@ window.BSProjectManager=(()=>{
    }
    permissionsSelect.value=project.editMode||"approval";
    permissions.append(permissionsSelect);
-   const groupLabel=element("label","","Project group");
+   const groupLabel=element("label","","Category");
    const groupInput=element("input","field");groupInput.type="text";groupInput.maxLength=60;groupInput.required=true;
-   groupInput.value=groupOf(project);groupInput.placeholder="Projects, Mini Projects, or a new group";
+   groupInput.value=categoryOf(project);groupInput.placeholder="Uncategorized or a custom category";
    const suggestions=element("datalist");suggestions.id="project-groups-"+project.id;
-   [...new Set(["Projects","Mini Projects",...projects.map(groupOf)])].forEach(g=>{const opt=element("option");opt.value=g;suggestions.append(opt)});
+   [...new Set(["Uncategorized",...projects.map(categoryOf)])].forEach(g=>{const opt=element("option");opt.value=g;suggestions.append(opt)});
    groupInput.setAttribute("list",suggestions.id);groupLabel.append(groupInput,suggestions);
    form.append(groupLabel,visibility,permissions);
    const note=element("p","muted","Changing to Private hides this project from other users. People may still have copies of previously published materials.");
@@ -175,7 +196,7 @@ window.BSProjectManager=(()=>{
    save.onclick=async()=>{
     save.disabled=true;status.textContent="Saving…";
     try{
-     await api("PATCH","/api/projects",{id:project.id,group:groupInput.value.trim(),visibility:visibilitySelect.value,editMode:permissionsSelect.value});
+     await api("PATCH","/api/projects",{id:project.id,category:groupInput.value.trim()||"Uncategorized",visibility:visibilitySelect.value,editMode:permissionsSelect.value});
      status.textContent="Project settings saved.";await refresh();
     }catch(error){status.textContent=error.message}
     finally{save.disabled=false}
@@ -270,29 +291,23 @@ window.BSProjectManager=(()=>{
    try{
     user=(await api("GET","/api/accounts")).user;
     const data=await api("GET","/api/projects");if(!Array.isArray(data.projects))throw Error("Project catalog response unavailable");projects=data.projects;currentProjects=projects;
-    // Always show creation actions. Signing in is requested only after clicking one.
-    newButton.hidden=false;newMiniButton.hidden=false;archiveButton.hidden=!user&&!adminAuthenticated;
+    newButton.hidden=false;archiveButton.hidden=!user&&!adminAuthenticated;
     accountButton.textContent=user?"My account: "+user.displayName:"My account";
     document.querySelectorAll(".project-personal-card").forEach(node=>node.remove());
-    // Keep built-in cards alive before rebuilding custom category containers.
-    customGroups.querySelectorAll(".project-card:not(.project-personal-card)").forEach(card=>grid.append(card));
-    customGroups.replaceChildren();
     for(const project of projects){
      ensureProjectPage(project);
-     if(project.id.startsWith("p"))groupGrid(groupOf(project)).append(card(project));
+     if(project.id.startsWith("p"))grid.append(card(project));
     }
-    // Built-in and personal cards are grouped in exactly the same way.
-    // Their project IDs stay fixed when the group is changed.
-    for(const article of document.querySelectorAll("#home .project-card:not(.project-personal-card),#appetizer .project-card:not(.project-personal-card)")){
-     const link=article.querySelector("[data-project],[data-nav]");
-     const id=link?.dataset.project||link?.dataset.nav;
-     const project=projects.find(p=>p.id===id);
-     article.hidden=!project;
-     if(project)groupGrid(groupOf(project)).append(article);
+    const selected=categorySelect.value||"all";
+    categorySelect.replaceChildren();
+    const all=element("option","","All categories");all.value="all";categorySelect.append(all);
+    for(const category of [...new Set(projects.map(categoryOf))].sort((a,b)=>a.localeCompare(b))){
+     const option=element("option","",category);option.value=category;categorySelect.append(option);
     }
+    categorySelect.value=[...categorySelect.options].some(option=>option.value===selected)?selected:"all";
+    updateDirectory();
     setupAssemblyTrees();setupComponents();setupPhotos();
     if(typeof refreshAdminUI==="function")refreshAdminUI();
-    if(miniGrid)miniEmpty.hidden=miniGrid.querySelector(".project-card:not([hidden])")!==null;
     for(const project of projects){window.BSReview?.attach(project,user);mountSummarySettings(project)}
     document.querySelectorAll("[data-assembly-tree]").forEach(root=>root.dispatchEvent(new Event("projectpermissionschanged")));
    }catch(error){console.error("Project catalog unavailable",error)}
