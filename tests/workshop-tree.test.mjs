@@ -9,7 +9,7 @@ test("Workshop reference categories are centralized and preserve stable item IDs
   assert.ok(tree.includes(name),name+" is required");
  for(const name of ["workshop:solder","workshop:wire22","workshop:meter","workshop:oscilloscope","workshop:ferrule22"])
   assert.ok(source.includes('id:"'+name+'"'),name+" must retain its stable reference ID");
- assert.match(tree,/workshopEquipment\.map\(item=>item\.id\)/);
+ assert.match(tree,/\["tools","Tools & Equipment",\[/);
  assert.match(tree,/workshopComponents\.map\(item=>item\.id\)/);
  assert.match(tree,/workshopHardware\.map\(item=>item\.id\)/);
  assert.match(source,/const workshopReferences=.*\.map\(itemMetadata\)/);
