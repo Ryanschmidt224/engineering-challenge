@@ -15,17 +15,16 @@ function setupAssemblyTrees(){
   if(project==="linear"||project==="robot")view.classList.add("personal-project-view");
   const canEdit=()=>window.BSProjectManager?.isOwner?.(project)===true || (["launcher","linear","robot"].includes(project)&&adminAuthenticated);
   let title=view.querySelector(".assembly-main h1")?.textContent||"Project";let nodes=[],selected=null,expanded=new Set([null]);
-  let showTreeTools=false,showTreeDocuments=true,showBomDocuments=true,showPurchasedParts=true,showCustomParts=true;const partDocuments=new Map(),partVisibility=new Map(),partTools=new Map(),partTypes=new Map(),partNumbers=new Map(),partProgress=new Map(),partAttention=new Map(),partQuantities=new Map();
+  let showWorkshopItems=false,showTreeDocuments=true,showBomDocuments=true;const partDocuments=new Map(),partVisibility=new Map(),partTools=new Map(),partWorkshopItems=new Map(),partNumbers=new Map(),partProgress=new Map(),partAttention=new Map(),partQuantities=new Map();
   const isHiddenPart=node=>isPartNode(node)&&partVisibility.get(node.partId)===true;
   const isToolNode=node=>isPartNode(node)&&partTools.get(node.partId)===true;
   const isDocumentNode=node=>isPartNode(node)&&partDocuments.get(node.partId)===true;
   const includeTreeNode=node=>{
    if(!isPartNode(node))return true;
    // Existing per-part visibility flags stay intact; these are display-only filters.
-   if(isHiddenPart(node))return false;
-   if(isToolNode(node))return showTreeTools;
    if(isDocumentNode(node))return showTreeDocuments;
-   return partTypes.get(node.partId)==="custom"?showCustomParts:showPurchasedParts;
+   if(partWorkshopItems.get(node.partId)===true)return showWorkshopItems;
+   return !isHiddenPart(node);
   };
   const syncPartNodes=parts=>{
    const known=new Set(nodes.filter(isPartNode).map(n=>n.partId));let changed=false;
@@ -33,7 +32,7 @@ function setupAssemblyTrees(){
     if(part.generatedFrom)continue;
     partVisibility.set(part.id,part.hideFromFeatureTree===true);
     partTools.set(part.id,part.isTool===true);
-    partTypes.set(part.id,part.partType==="custom"?"custom":"purchased");
+    partWorkshopItems.set(part.id,!!part.sharedPartRef||!!part.workshopChoice||part.isTool===true);
     partDocuments.set(part.id,part.itemType==="document");
     if(part.partNumber)partNumbers.set(part.id,part.partNumber);
     partProgress.set(part.id,part.progressStatus||"not_started");
@@ -1719,7 +1718,7 @@ function setupAssemblyTrees(){
     if(result.component&&!result.component.generatedFrom){
      partVisibility.set(result.component.id,result.component.hideFromFeatureTree===true);
      partTools.set(result.component.id,result.component.isTool===true);
-     partTypes.set(result.component.id,result.component.partType==="custom"?"custom":"purchased");
+     partWorkshopItems.set(result.component.id,!!result.component.sharedPartRef||!!result.component.workshopChoice||result.component.isTool===true);
      partDocuments.set(result.component.id,result.component.itemType==="document");
      if(result.component.partNumber)partNumbers.set(result.component.id,result.component.partNumber);
      if(!nodes.some(n=>isPartNode(n)&&n.partId===result.component.id))nodes.push({id:"part-"+result.component.id,kind:"part",partId:result.component.id,name:result.component.name,parentId:component.assemblyId??null});
@@ -1770,7 +1769,7 @@ function setupAssemblyTrees(){
      newPart=data.component;
      partVisibility.set(newPart.id,newPart.hideFromFeatureTree===true);
      partTools.set(newPart.id,newPart.isTool===true);
-     partTypes.set(newPart.id,newPart.partType==="custom"?"custom":"purchased");
+     partWorkshopItems.set(newPart.id,!!newPart.sharedPartRef||!!newPart.workshopChoice||newPart.isTool===true);
      partDocuments.set(newPart.id,newPart.itemType==="document");
      if(newPart.partNumber)partNumbers.set(newPart.id,newPart.partNumber);
      nodes.push({id:"part-"+newPart.id,kind:"part",partId:newPart.id,name:newPart.name,parentId:targetAssembly});render();
@@ -2308,13 +2307,10 @@ function setupAssemblyTrees(){
    const wrapper=document.createElement("label");const input=document.createElement("input");input.type="checkbox";
    wrapper.append(input,document.createTextNode(label));input.onchange=()=>{apply(input.checked);render()};treeVisibilityControl.append(wrapper);return input;
   };
-  const purchasedFilter=filterOption("Purchased",value=>{showPurchasedParts=value});
-  const customFilter=filterOption("Custom",value=>{showCustomParts=value});
-  purchasedFilter.checked=true;
-  customFilter.checked=true;
-  const toolsFilter=filterOption("Tools",value=>{showTreeTools=value});
-  const documentsFilter=filterOption("Documents",value=>{showTreeDocuments=value});
-  documentsFilter.checked=true;
+  const workshopFilter=filterOption("Workshop item",value=>{showWorkshopItems=value});
+  const documentsFilter=filterOption("Document",value=>{showTreeDocuments=value});
+  workshopFilter.checked=showWorkshopItems;
+  documentsFilter.checked=showTreeDocuments;
   nodesEl.parentNode.insertBefore(treeVisibilityControl,nodesEl);
   const partsEntry=document.createElement("button");
   partsEntry.type="button";partsEntry.textContent="Parts Management";
@@ -2322,7 +2318,7 @@ function setupAssemblyTrees(){
   partsEntry.onclick=()=>{history.pushState(null,"","#"+project+"/parts");render();notify();window.scrollTo(0,0)};
   nodesEl.after(partsEntry);
   function render(){nodesEl.replaceChildren();
-   purchasedFilter.checked=showPurchasedParts;customFilter.checked=showCustomParts;toolsFilter.checked=showTreeTools;documentsFilter.checked=showTreeDocuments;
+   workshopFilter.checked=showWorkshopItems;documentsFilter.checked=showTreeDocuments;
    controls.classList.toggle("hide",!canEdit()||isProjectSummary());projectActions.classList.toggle("hide",!canEdit());cardEdit.classList.toggle("hide",!canEdit());
    const summaryEntry=document.createElement("button");summaryEntry.type="button";summaryEntry.className="assembly-project-summary-entry"+(isProjectSummary()?" selected":"");
    summaryEntry.textContent="Project summary";summaryEntry.setAttribute("aria-current",isProjectSummary()?"page":"false");
@@ -2455,7 +2451,7 @@ function setupAssemblyTrees(){
      }
      partVisibility.set(newPart.id,newPart.hideFromFeatureTree===true);
      partTools.set(newPart.id,newPart.isTool===true);
-     partTypes.set(newPart.id,newPart.partType==="custom"?"custom":"purchased");
+     partWorkshopItems.set(newPart.id,!!newPart.sharedPartRef||!!newPart.workshopChoice||newPart.isTool===true);
      partDocuments.set(newPart.id,newPart.itemType==="document");
      if(newPart.partNumber)partNumbers.set(newPart.id,newPart.partNumber);
      const next=[...nodes,{id:crypto.randomUUID(),kind:"part",partId:newPart.id,name:newPart.name,parentId:selected}];
