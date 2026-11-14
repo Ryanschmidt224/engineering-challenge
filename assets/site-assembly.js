@@ -815,8 +815,15 @@ function setupAssemblyTrees(){
 
   let currentPartInfo=null;
   const pictureCover=partWorkspace.querySelector(".part-workspace-cover");
-  const editPartPicture=window.BSPhotoEditor.pencil(pictureCover,"Edit part image");
-  editPartPicture.hidden=true;
+  const partPhotoActions=window.BSPhotoEditor.actionBar(pictureCover,{
+   onMarkup:()=>{if(currentPartInfo?.id)window.BSPhotoMarkup.open({kind:"part",id:currentPartInfo.id,project,onSave:()=>showPartPicture(currentPartInfo.id,true)})},
+   onAdd:()=>directPartPhotoInput.click(),
+   onDelete:()=>partPhotoDelete.click()
+  });
+  const directPartPhotoInput=document.createElement("input");directPartPhotoInput.type="file";directPartPhotoInput.accept="image/jpeg,image/png,image/webp";directPartPhotoInput.hidden=true;
+  partPhotoActions.shell.append(directPartPhotoInput);
+  directPartPhotoInput.onchange=()=>{const file=directPartPhotoInput.files?.[0];directPartPhotoInput.value="";if(file)void uploadPartPicture(file)};
+  partPhotoActions.setEnabled(false);
   const partPhotoDialog=window.BSPhotoEditor.dialog({
    parent:partWorkspace,label:"Edit part image",
    className:"workspace-photo-dialog part-photo-dialog",doneClass:"part-photo-done",
@@ -833,26 +840,21 @@ function setupAssemblyTrees(){
    if(!partId)return;
    const src=window.BSPhotoMarkup.displayUrl("part",partId,project)+(bust?"&v="+Date.now():"");
    const image=document.createElement("img");image.src=src;image.alt=currentPartInfo?.name||"Part image";
-   partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");partPhotoPlaceholder.hidden=false;partPhotoMarkup.disabled=true;
+   partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");partPhotoPlaceholder.hidden=false;partPhotoMarkup.disabled=true;partPhotoActions.setPhotoPresent(false);
    image.onload=()=>{
     if(currentPartInfo?.id!==partId)return;
     const main=document.createElement("img");main.src=src;main.alt=image.alt;
     pictureCover.replaceChildren(main);
     partPhotoPreview.src=src;partPhotoPreview.hidden=false;partPhotoPlaceholder.hidden=true;
-    partPhotoDelete.disabled=false;partPhotoMarkup.disabled=false;
+    partPhotoDelete.disabled=false;partPhotoMarkup.disabled=false;partPhotoActions.setPhotoPresent(true);
    };
    image.onerror=()=>{
     if(currentPartInfo?.id!==partId)return;
     pictureCover.replaceChildren(Object.assign(document.createElement("span"),{textContent:"No picture yet"}));
     partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");
-    partPhotoPlaceholder.hidden=false;partPhotoDelete.disabled=true;partPhotoMarkup.disabled=true;
+    partPhotoPlaceholder.hidden=false;partPhotoDelete.disabled=true;partPhotoMarkup.disabled=true;partPhotoActions.setPhotoPresent(false);
    };
   }
-  editPartPicture.onclick=()=>{
-   if(!canEdit()||!currentPartInfo)return;
-   partPhotoStatus.textContent="";
-   showPartPicture(currentPartInfo.id);partPhotoDialog.showModal();
-  };
   partPhotoAdd.onclick=()=>partPhotoFile.click();
   partPhotoMarkup.onclick=()=>{if(currentPartInfo&&canEdit())window.BSPhotoMarkup.open({kind:"part",id:currentPartInfo.id,project,onSave:()=>showPartPicture(currentPartInfo.id,true)})};
   window.BSPhotoMarkup.pasteOn(partPhotoDialog,file=>uploadPartPicture(file));
@@ -872,18 +874,18 @@ function setupAssemblyTrees(){
    if(!["image/jpeg","image/png","image/webp"].includes(mime)||file.size>3*1024*1024){
     partPhotoStatus.textContent="Choose JPG, PNG, or WebP under 3 MB.";return;
    }
-   partPhotoAdd.disabled=true;partPhotoStatus.textContent="Uploading picture…";
+   partPhotoAdd.disabled=true;partPhotoStatus.textContent="Uploading picture…";partPhotoActions.setStatus("Uploading photo…");
    try{
     const response=await fetch(partPhotoUrl(partId),{method:"POST",credentials:"same-origin",headers:{"content-type":mime},body:file});
     const data=await response.json();if(!response.ok)throw Error(data.error||"Upload failed");
-    if(currentPartInfo?.id===partId){showPartPicture(partId,true);partPhotoStatus.textContent="Picture saved."}
-   }catch(error){partPhotoStatus.textContent=error.message||"Upload failed"}
+    if(currentPartInfo?.id===partId){showPartPicture(partId,true);partPhotoStatus.textContent="Picture saved.";partPhotoActions.setStatus("Photo saved.")}
+   }catch(error){partPhotoStatus.textContent=error.message||"Upload failed";partPhotoActions.setStatus(partPhotoStatus.textContent)}
    finally{partPhotoAdd.disabled=false;partPhotoFile.value=""}
   }
   partPhotoDelete.onclick=async()=>{
    const partId=currentPartInfo?.id;
    if(!partId||!canEdit()||!confirm("Delete this part picture? The BOM part and instructions remain."))return;
-   partPhotoDelete.disabled=true;partPhotoStatus.textContent="Deleting picture…";
+   partPhotoDelete.disabled=true;partPhotoStatus.textContent="Deleting picture…";partPhotoActions.setStatus("Deleting photo…");
    try{
     const response=await fetch(partPhotoUrl(partId),{method:"DELETE",credentials:"same-origin"});
     const result=await response.json().catch(()=>({}));
@@ -891,9 +893,9 @@ function setupAssemblyTrees(){
     if(currentPartInfo?.id===partId){
      pictureCover.replaceChildren(Object.assign(document.createElement("span"),{textContent:"No picture yet"}));
      partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");
-     partPhotoPlaceholder.hidden=false;partPhotoMarkup.disabled=true;partPhotoStatus.textContent="Picture deleted.";
+     partPhotoPlaceholder.hidden=false;partPhotoMarkup.disabled=true;partPhotoActions.setPhotoPresent(false);partPhotoStatus.textContent="Picture deleted.";partPhotoActions.setStatus("Photo deleted.");
     }
-   }catch(error){partPhotoStatus.textContent=error.message||"Delete failed";partPhotoDelete.disabled=false}
+   }catch(error){partPhotoStatus.textContent=error.message||"Delete failed";partPhotoActions.setStatus(partPhotoStatus.textContent);partPhotoDelete.disabled=false}
   };
   detailsPanel.querySelector(".part-details-edit").onclick=()=>{
    const part=currentPartInfo;if(!part)return;
@@ -924,7 +926,7 @@ function setupAssemblyTrees(){
    detailsPanel.querySelector(".part-details-view-actions").classList.toggle("hide",!canEdit());
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
-   if(partPhotoDialog.open)partPhotoDialog.close();editPartPicture.hidden=true;
+   if(partPhotoDialog.open)partPhotoDialog.close();partPhotoActions.setEnabled(false);partPhotoActions.collapse();
    clearTimeout(partStatusTimer);partStatusChangeVersion++;progressPanel.hidden=true;heading.textContent="Loading part…";currentPartInfo=null;partSavedRevision=null;partStatus.textContent="Loading instructions…";partDetailsCollapse.open=false;
    detailRows.replaceChildren();detailsPanel.classList.add("hide");
    partWorkspace.querySelector(".part-harness-preview").classList.add("hide");
@@ -942,7 +944,7 @@ function setupAssemblyTrees(){
     currentPartInfo=part;
     progressPanel.hidden=part.isTool===true;
     if(!part.isTool)fillProgressPanel(part);
-    editPartPicture.hidden=!canEdit();
+    partPhotoActions.setEnabled(canEdit());
     investigationParts=partData.components||[];
     investigations?.showPart(partInvestigationPanel,partId);
     renderPartDetails(part);
