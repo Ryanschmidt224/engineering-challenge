@@ -1931,3 +1931,63 @@
 .project-admin-link p{margin:0}
 .project-admin-link .field{width:100%}
 .project-account-form .hide,.project-admin-link.hide{display:none!important}
+
+/* Finished home directory: calm hierarchy, clear navigation and aligned cards. */
+#home .project-index{padding-top:42px;padding-bottom:70px}
+#home .project-directory-heading{padding:4px 0 12px;align-items:flex-end;gap:24px}
+#home .project-directory-heading h1{font-size:clamp(2.45rem,4.3vw,3.55rem);letter-spacing:-.045em;margin:8px 0 11px}
+#home .project-directory-heading p{max-width:580px;margin:0;line-height:1.5;font-size:1rem}
+#home .project-owner-actions{align-self:center;justify-content:flex-end}
+#home .project-directory-controls{
+ margin:24px 0 22px;padding:18px 20px;
+ border:1px solid var(--color-border);border-radius:14px;
+ background:var(--color-surface);
+ gap:14px 16px;align-items:end;
+}
+#home .project-directory-label{gap:7px}
+#home .project-directory-label .field{margin:0;min-height:42px}
+#home .project-directory-search{flex:1 1 270px}
+#home .project-directory-search .field{width:100%;max-width:none}
+#home .project-directory-count{margin-left:auto;padding:0 0 12px;white-space:nowrap}
+#home .project-grid{margin-top:18px;gap:22px}
+#home .project-card{border-radius:15px;box-shadow:0 3px 15px color-mix(in srgb,var(--color-shadow) 8%,transparent);transition:transform .16s,border-color .16s,box-shadow .16s}
+#home .project-card:hover{transform:translateY(-2px);box-shadow:0 9px 26px color-mix(in srgb,var(--color-shadow) 14%,transparent)}
+#home .project-copy{padding:20px 21px 22px}
+#home .project-copy h2{font-size:1.2rem;font-weight:750;letter-spacing:-.018em;line-height:1.3}
+#home .project-copy p{line-height:1.5}
+#home .project-tags span{border-radius:20px;padding:4px 9px}
+@media(max-width:700px){
+ #home .project-directory-heading{align-items:flex-start}
+ #home .project-owner-actions{width:100%;justify-content:flex-start}
+ #home .project-directory-controls{padding:14px;gap:12px}
+ #home .project-directory-count{margin:0;flex:1 1 100%;padding:0}
+}
+/* Knowledge Base: explanations and interactive calculators share one directory. */
+.knowledge-base-page{padding-top:48px;padding-bottom:48px}
+.knowledge-header{margin-bottom:25px}
+.knowledge-header h1{font-size:clamp(2.4rem,4.5vw,3.5rem);margin:8px 0 10px;letter-spacing:-.045em}
+.knowledge-header p{max-width:680px;line-height:1.55}
+.knowledge-directory-toolbar{
+ display:flex;gap:16px;flex-wrap:wrap;align-items:end;
+ border:1px solid var(--color-border);background:var(--color-surface);
+ border-radius:14px;padding:18px;margin:0 0 18px
+}
+.knowledge-directory-toolbar label{flex:1 1 210px;display:flex;flex-direction:column;gap:6px}
+.knowledge-directory-toolbar label:first-child{flex:2 1 320px}
+.knowledge-directory-toolbar .field{margin:0;min-height:43px}
+.knowledge-base-page #topicFilters{margin:12px 0 10px;gap:7px}
+.knowledge-base-page #topicFilters .filter{padding:7px 13px;font-size:.86rem}
+.knowledge-results-count{font-size:.85rem;margin:0 0 22px}
+.knowledge-section{margin:0 0 28px}
+.knowledge-section[hidden]{display:none!important}
+.knowledge-section-heading{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin:0 0 16px}
+.knowledge-section-heading h2{font-size:1.4rem;margin:0;letter-spacing:-.025em}
+.knowledge-section-heading span{font-size:.88rem}
+.knowledge-base-page #tileList{gap:16px}
+.knowledge-topic-card{display:flex;flex-direction:column;gap:12px;border-radius:14px}
+.knowledge-topic-card .project-tags{margin-bottom:2px}
+.knowledge-topic-card h3{font-size:1.07rem;margin:0;line-height:1.4}
+.knowledge-topic-card p{line-height:1.52;margin:0;font-size:.93rem}
+.knowledge-topic-card .btn{align-self:flex-start;margin-top:auto}
+.knowledge-base-page #resource-calculators .resource-card{border-radius:14px}
+@media(max-width:650px){.knowledge-base-page{padding-top:30px}.knowledge-directory-toolbar{padding:14px}.knowledge-directory-toolbar label{flex:1 1 100%}}
