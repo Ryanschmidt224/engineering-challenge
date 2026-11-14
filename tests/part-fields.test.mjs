@@ -108,3 +108,12 @@ test("Status choices are based on item type and sourcing",()=>{
   assert.equal(ids.includes("in_progress"),record.key==="progressStatus",record.name);
  }
 });
+
+test("Parts Management autofits displayed names up to 40 characters without truncating stored names",()=>{
+ const source=readFileSync(new URL("../assets/parts-management.js",import.meta.url),"utf8");
+ assert.match(source,/String\(part\.name\|\|""\)\.slice\(0,40\)/);
+ assert.match(source,/Math\.min\(maxWidth/);
+ assert.match(source,/fitNameWidth\(entries\)/);
+ assert.match(source,/nameWidthManuallyResized=true/);
+ assert.match(source,/input\.maxLength=180/);
+});
