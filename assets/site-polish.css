@@ -1493,3 +1493,22 @@
 @media(max-width:650px){
  .investigation-new-record .investigation-record-title{flex:1 1 100%;grid-template-columns:max-content minmax(0,1fr)}
 }
+
+
+/* Inline photo editor: one button below the image; secondary controls expand right. */
+.bs-photo-control{display:flex;flex-direction:column;align-items:stretch;min-width:0;max-width:100%}
+.bs-photo-control>.workspace-cover,.bs-photo-control>.part-workspace-cover{flex:none}
+.bs-photo-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-top:9px}
+.bs-photo-more:not([hidden]){display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bs-photo-more[hidden],.bs-photo-toggle[hidden]{display:none!important}
+.bs-photo-actions .btn{font-size:.82rem;padding:7px 11px;min-height:34px;white-space:nowrap}
+.bs-photo-toggle{font-weight:650}
+.bs-photo-toggle[aria-expanded="true"]{background:var(--color-accent-soft);border-color:var(--color-accent)}
+.bs-photo-status{font-size:.8rem;color:var(--color-text-muted);margin:5px 0 0;text-align:right}
+.bs-photo-status:empty{display:none}
+.workspace-heading>.bs-photo-control{flex:0 0 auto;align-self:flex-start}
+.workspace-heading>.bs-photo-control .workspace-cover{width:132px}
+.bom-part-workspace .workspace-heading>.bs-photo-control .part-workspace-cover{width:132px}
+.project-summary-gallery .bs-photo-control{width:100%}
+.project-summary-gallery .bs-photo-control>.project-summary-photo-stage{width:100%}
+@media(max-width:650px){.workspace-heading>.bs-photo-control{max-width:100%}.bs-photo-actions{justify-content:flex-start}.bs-photo-more:not([hidden]){gap:5px}.bs-photo-actions .btn{padding:6px 8px;font-size:.76rem}}
