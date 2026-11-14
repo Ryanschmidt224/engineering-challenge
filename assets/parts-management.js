@@ -18,7 +18,7 @@
   target.classList.add("bs-parts-page");
   const header=el("header","bs-parts-header"),heading=el("div"),back=el("button","btn","← Project"),title=el("h1","","Parts Management");
   back.type="button";back.onclick=()=>onBack?.();heading.append(back,title);header.append(heading);
-  const controls=el("div","bs-parts-controls"),search=el("input","field"),filter=dropdown([["all","All statuses"],...statusValues,...purchaseValues.filter(x=>x[0])],"all"),typeFilter=dropdown([["all","All types"],...typeValues],"all");
+  const controls=el("div","bs-parts-controls"),search=el("input","field"),filter=dropdown([["all","All statuses"],...statusValues,...purchaseValues.filter(x=>x[0]!=="not_started")],"all"),typeFilter=dropdown([["all","All types"],...typeValues],"all");
   search.type="search";search.placeholder="Search part number or name";search.setAttribute("aria-label","Search parts");
   controls.append(search,typeFilter,filter);
   const guide=el("p","muted","Edit a name, type, status or attention note. Drag column dividers to resize. Numbers marked * appear in the name but are not formally assigned.");
@@ -68,7 +68,7 @@
    entries.sort((a,b)=>{
     if(order==="number"){
      const an=numberFor(a),bn=numberFor(b);
-     const ai=/^\d+$/.test(an)?Number(an):Infinity,bi=/^\d+$/.test(bn)?Number(bn):Infinity;
+     const ai=/\d+$/.test(an)?Number(an.match(/\d+$/)[0]):Infinity,bi=/\d+$/.test(bn)?Number(bn.match(/\d+$/)[0]):Infinity;
      if(ai!==bi)return (ai-bi)*direction;
     }
     return sortKey(a).localeCompare(sortKey(b),undefined,{numeric:true,sensitivity:"base"})*direction;
