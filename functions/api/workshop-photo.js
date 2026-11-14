@@ -29,12 +29,13 @@ export async function onRequest({request,env}){
   try{
    const binary=Array.from(bytes,byte=>String.fromCharCode(byte)).join("");
    const encoded=btoa(binary);
-   const prompt="Identify the primary electronics tool, equipment or component pictured. Reply ONLY with a compact JSON object having string keys name, category, kind, manufacturer, model, partNumber, notes. Use kind tool, equipment, material, component or other. If text/identification is uncertain, omit the field rather than guess. Do not claim exact specifications unless legible.";
+   const prompt="Identify the primary electronics tool, equipment or component pictured. Reply ONLY with a compact JSON object having string keys name, category, kind, manufacturer, model, partNumber, notes, plus specifications as an array of objects with string name and value. Use kind tool, equipment, material, component or other. If text/identification is uncertain, omit the field rather than guess. Do not claim exact specifications unless legible.";
    const result=await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct",{prompt,image:"data:"+file.type+";base64,"+encoded,max_tokens:350});
    const raw=String(result?.response||result?.result||"");
    const parsed=JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0]||"null");
    if(parsed&&typeof parsed==="object"){
-    suggestion={};for(const prop of ["name","category","kind","manufacturer","model","partNumber","notes"])
+    suggestion={};if(Array.isArray(parsed.specifications))suggestion.specifications=parsed.specifications.slice(0,20).filter(x=>typeof x.name==="string"&&typeof x.value==="string").map(x=>({name:x.name.slice(0,80),value:x.value.slice(0,240)}));
+    for(const prop of ["name","category","kind","manufacturer","model","partNumber","notes"])
      if(typeof parsed[prop]==="string")suggestion[prop]=parsed[prop].slice(0,240);
    }else recognitionError="Image was saved but no usable identification was returned.";
   }catch(error){recognitionError="Image saved; automatic recognition was unavailable. Enter or correct the details manually.";}
