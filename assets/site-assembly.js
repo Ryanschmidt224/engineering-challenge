@@ -827,7 +827,7 @@ function setupAssemblyTrees(){
    }
    progressNotes.hidden=part.isTool===true;
    // The independent panel is expanded by default at every part status.
-   progressNotes.open=true;
+   progressNotes.open=part.progressStatus!=="complete";
    progressNoteAdd.hidden=!editable;progressNoteAdd.disabled=!editable;
   };
   progressNoteAdd.onclick=()=>void saveProgressOperation(currentPartInfo,{progressOperationAdd:true},progressNoteAdd);
