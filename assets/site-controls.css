@@ -1710,6 +1710,11 @@
 }
 
 
+/* Keep display option checkboxes in their own simple rows, independent of the field grid. */
+.part-editor-dialog .component-review>.part-display-options,.workspace-main-bom-editor .component-review>.part-display-options{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin:10px 0 20px;width:100%;max-width:none}
+.part-editor-dialog .part-display-options>.part-visibility-field,.workspace-main-bom-editor .part-display-options>.part-visibility-field{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:8px!important;width:auto!important;max-width:100%!important;margin:0!important;padding:0!important;font-weight:500;white-space:normal}
+.part-display-options .part-visibility-field input{width:17px!important;height:17px!important;margin:0!important;flex:0 0 17px}
+.part-display-options .part-option-help{margin-left:4px}
 /* Standard centered modal for Add/Edit Part: keep the existing form and
    controller but stop replacing the entire assembly workspace. */
 .part-editor-dialog{
