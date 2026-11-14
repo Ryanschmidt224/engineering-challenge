@@ -1428,7 +1428,12 @@ function setupAssemblyTrees(){
   bomEditorCancel.type="button";
   bomEditorCancel.className="btn workspace-bom-editor-cancel";
   bomEditorCancel.textContent="Cancel editing";
-  bomEditorHeader.append(bomEditorHeading,bomEditorCancel);
+  const bomDialogClose=document.createElement("button");
+  bomDialogClose.type="button";bomDialogClose.className="part-editor-close";
+  bomDialogClose.textContent="×";bomDialogClose.title="Close part editor";
+  bomDialogClose.setAttribute("aria-label","Close part editor");
+  bomEditorHeader.append(bomEditorHeading,bomDialogClose,bomEditorCancel);
+  bomDialogClose.onclick=()=>bomEditorCancel.click();
   bomEditorMount.prepend(bomEditorHeader);
   // Editing takes over the spacious main pane. Only the editor DOM moves;
   // its event handlers, form state and save API remain unchanged.
