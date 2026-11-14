@@ -65,7 +65,8 @@ const recommendedWorkshopIds=new Set([
  "workshop:heatshrink","workshop:sealshrink","workshop:solder"
 ]);
 const isToolPart=part=>typeof part.isTool==="boolean"?part.isTool:/\btools?\b/i.test(String(part.category||""))||/\bsolder\s+sucker\b/i.test(String(part.name||""));
-const presentPart=part=>({...part,itemType:part.itemType==="document"?"document":"part",progressStatus:["not_started","in_progress","complete"].includes(part.progressStatus)?part.progressStatus:"not_started",needsAttention:part.needsAttention===true,attentionNote:part.attentionNote||"",isTool:isToolPart(part),hideFromFeatureTree:part.hideFromFeatureTree===true||(part.hideFromFeatureTree===undefined&&part.bomOnly===true),assumedOnHand:part.purchaseOverride===true?false:part.purchaseOverride===false?true:standardShopMaterial(part)});
+const generatedFullName=part=>(part.partNumber?part.partNumber+" - ":"")+String(part.name||"");
+const presentPart=part=>({...part,fullName:generatedFullName(part),itemType:part.itemType==="document"?"document":"part",progressStatus:["not_started","in_progress","complete"].includes(part.progressStatus)?part.progressStatus:"not_started",needsAttention:part.needsAttention===true,attentionNote:part.attentionNote||"",isTool:isToolPart(part),hideFromFeatureTree:part.hideFromFeatureTree===true||(part.hideFromFeatureTree===undefined&&part.bomOnly===true),assumedOnHand:part.purchaseOverride===true?false:part.purchaseOverride===false?true:standardShopMaterial(part)});
 // Derived consumables remain tied to their source part. Never require the
 // learner to enter ferrule counts or create a second independent BOM item.
 function syncDerived(items,source){
@@ -146,6 +147,7 @@ export async function handleComponents(request,env){
   try{
    if(input.partNumber||input.assignNumber===true||kind==="custom"&&!record.isTool&&input.assignNumber!==false)record.partNumber=await issueNumber(env,project,"part",record.id,input.partNumber||undefined);
   }catch(error){return json({error:error.message},error.status||400)}
+  record.fullName=generatedFullName(record);
   items.push(record);syncDerived(items,record);
   if(!await saveEditable(env,project,items,state))return conflict();
   return json({component:presentPart(record)},201);
@@ -161,7 +163,7 @@ export async function handleComponents(request,env){
    if(typeof input.name!=="string"||!input.name.trim()||input.name.trim().length>180)return json({error:"Part name must be 1–180 characters"},400);
    const old=entry.name;
    entry.name=input.name.trim();
-   if(!entry.fullName||entry.fullName===old)entry.fullName=entry.name;
+   entry.fullName=generatedFullName(entry);
   }
   if(input.partType!==undefined){
    if(!["purchased","custom","code"].includes(input.partType))return json({error:"Invalid part type"},400);
@@ -178,6 +180,7 @@ export async function handleComponents(request,env){
   if(input.needsAttention!==undefined){if(typeof input.needsAttention!=="boolean")return json({error:"Invalid attention flag"},400);entry.needsAttention=input.needsAttention}
   if(input.attentionNote!==undefined){if(typeof input.attentionNote!=="string"||input.attentionNote.length>2000)return json({error:"Attention note must be 2000 characters or less"},400);entry.attentionNote=input.attentionNote.trim()}
   if(entry.needsAttention&&!(entry.attentionNote||"").trim())return json({error:"Describe what needs attention before flagging this part"},400);
+  entry.fullName=generatedFullName(entry);
   if(!await saveEditable(env,project,items,state))return conflict();
   return json({component:presentPart(entry)});
  }
@@ -209,7 +212,8 @@ export async function handleComponents(request,env){
    if(input.assemblyId!==null&&!(typeof input.assemblyId==="string"&&/^[a-zA-Z0-9-]{1,80}$/.test(input.assemblyId)))return json({error:"Invalid parent assembly"},400);
    updated.assemblyId=input.assemblyId;
   }
-  for(const field of ["manufacturer","model","supplier","asin","category"])updated[field]=clean(input[field]);
+  for(const field of ["manufacturer","model","supplier","asin"])updated[field]=clean(input[field]);
+  if(input.category!==undefined)updated.category=clean(input.category);
   if(updated.partType==="custom")Object.assign(updated,{manufacturer:"",model:"",supplier:"",asin:"",historicalPrice:null,historicalPriceDate:null,historicalPurchasePrice:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
   updated.specifications=input.specifications.map(spec=>({name:clean(spec.name),value:clean(spec.value),source:spec.source==="inferred"?"inferred":"explicit"})).filter(spec=>spec.name&&spec.value);
   // Keep the original shared part reference unless a new valid reference is supplied.
@@ -220,6 +224,7 @@ export async function handleComponents(request,env){
    try{updated.partNumber=await issueNumber(env,project,"part",id,input.partNumber||undefined)}
    catch(error){return json({error:error.message},error.status||400)}
   }
+  updated.fullName=generatedFullName(updated);
   items[index]=updated;syncDerived(items,updated);
   if(!await saveEditable(env,project,items,state))return conflict();
   return json({component:presentPart(updated)});
