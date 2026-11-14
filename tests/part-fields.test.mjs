@@ -118,18 +118,16 @@ test("Parts Management autofits displayed names up to 40 characters without trun
  assert.match(source,/input\.maxLength=180/);
 });
 
-test("Progress Status operations render as editable fields on both pages",()=>{
+test("Parts Management shows only the compact status selection; operations live on the part page",()=>{
  const management=readFileSync(new URL("../assets/parts-management.js",import.meta.url),"utf8");
  const details=readFileSync(new URL("../assets/site-assembly.js",import.meta.url),"utf8");
  assert.match(management,/let order="name",direction=1/);
- assert.match(management,/progressOperationAdd:true/);
- assert.match(management,/progressOperationEdit:\{id:operation\.id,text:input\.value\}/);
- assert.match(management,/for\(const \[index,operation\] of \(part\.progressUpdates\|\|\[\]\)\.entries\(\)\)/);
+ assert.match(management,/stateCell\.append\(state\)/);
+ assert.doesNotMatch(management,/bs-progress-notes|bs-progress-operations|progressOperationAdd|progressOperationEdit/);
  assert.match(details,/detailsPanel\.after\(progressNotes\)/);
  assert.match(details,/progressNotes\.open=true/);
  assert.match(details,/progressOperationAdd:true/);
  assert.match(details,/progressOperationEdit:\{id:operation\.id,text:input\.value\}/);
  assert.doesNotMatch(details,/detailRows\.after\(progressNotes\)/);
  assert.match(details,/const editable=canEdit\(\)/);
- assert.match(management,/input\.disabled=readOnly/);
 });
