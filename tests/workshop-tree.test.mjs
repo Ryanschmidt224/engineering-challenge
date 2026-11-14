@@ -36,12 +36,14 @@ test("New Part Workshop Item picker uses the same four categories",()=>{
  assert.match(picker,/cat==="buck-converters"/);
 });
 
-test("Tree filters use part types instead of a Hidden parts checkbox",()=>{
+test("Tree display offers only Workshop item and Document filters",()=>{
  const source=readFileSync("assets/site-assembly.js","utf8");
- assert.match(source,/filterOption\("Purchased"/);
- assert.match(source,/filterOption\("Custom"/);
- assert.doesNotMatch(source,/filterOption\("Hidden parts"/);
- assert.match(source,/if\(isHiddenPart\(node\)\)return false/);
+ assert.match(source,/filterOption\("Workshop item"/);
+ assert.match(source,/filterOption\("Document"/);
+ for(const old of ["Purchased","Custom","Tools","Documents","Hidden parts"])
+  assert.ok(!source.includes('filterOption("'+old+'"'),"Old tree filter remains: "+old);
+ assert.match(source,/partWorkshopItems\.get\(node\.partId\)===true/);
+ assert.match(source,/return !isHiddenPart\(node\)/);
 });
 test("Parts Management input backgrounds and column grips are uncluttered",()=>{
  const css=readFileSync("assets/parts-management.css","utf8");
