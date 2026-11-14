@@ -2,7 +2,7 @@
 (function(){
  "use strict";
  const progressStatuses=Object.freeze([["not_started","Not started"],["in_progress","In progress"],["complete","Complete"]]);
- const purchaseStatuses=Object.freeze([["not_started","Not started"],["already_have","Already have"],["need_to_buy","Need to buy"],["ignore","Ignore"]]);
+ const purchaseStatuses=Object.freeze([["not_started","Not started"],["already_have","Already own"],["need_to_buy","Need to buy"],["ignore","Ignore"]]);
  const labelFor=(options,value)=>options.find(row=>row[0]===value)?.[1]||options[0][1];
  const isPurchased=part=>part.partType==="purchased";
  const statusesFor=part=>isPurchased(part)?purchaseStatuses:progressStatuses;
