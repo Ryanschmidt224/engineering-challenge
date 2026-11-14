@@ -10,9 +10,11 @@
  function mount(target,{project,canEdit}){
   const section=node("section","bs-part-code hide");
   const head=node("div","bs-code-heading"),title=node("h2","","Source code"),tools=node("div","bs-code-head-actions");
-  const edit=node("button","btn","Edit"),download=node("button","btn","Download");
-  edit.type=download.type="button";
-  tools.append(download,edit);head.append(title,tools);
+  const edit=node("button","btn","Edit"),download=node("button","btn","Download"),importButton=node("button","btn","Import file");
+  const sourceFile=node("input");sourceFile.type="file";sourceFile.hidden=true;
+  sourceFile.accept=".txt,.py,.js,.ts,.c,.h,.cpp,.hpp,.ino,.html,.css,.json,.sh,.sql,.yaml,.yml,.rs,text/plain";
+  edit.type=download.type=importButton.type="button";
+  tools.append(importButton,download,edit,sourceFile);head.append(title,tools);
   const description=node("p","muted bs-code-description","Source is stored as text and is never executed by this website.");
   const metadata=node("div","bs-code-metadata");
   const fileLabel=node("label","","Filename"),filename=node("input","field");
@@ -32,7 +34,7 @@
   const setStatus=message=>{status.textContent=message||""};
   function configureEdit(value){
    editing=!!value;editor.hidden=!editing;viewer.hidden=editing;actions.hidden=!editing;
-   metadata.hidden=!editing;edit.textContent=editing?"Editing…":"Edit";edit.disabled=!canEdit()||editing;
+   metadata.hidden=!editing;importButton.hidden=!editing;edit.textContent=editing?"Editing…":"Edit";edit.disabled=!canEdit()||editing;
   }
   const safeFilename=()=>{const ext=extensions[language.value]||".txt";let name=filename.value.trim().replace(/[^a-zA-Z0-9_. -]/g,"_");if(!name)name=(partName||"code").replace(/[^a-zA-Z0-9_. -]/g,"_").slice(0,70)+ext;return name};
   function showHistory(){
@@ -53,7 +55,21 @@
       setStatus("Viewing an earlier version (read-only). Click Edit to load the latest version before changing code.");
      }catch(error){setStatus(error.message)}
     };
-    row.append(open);historyList.append(row);
+    const restore=node("button","btn","Restore into editor");restore.type="button";
+    restore.hidden=!canEdit();
+    restore.onclick=async()=>{
+     if(dirty&&!confirm("Discard unsaved changes and restore this version into the editor?"))return;
+     try{
+      const res=await fetch(url(project,partId)+"&revision="+encodeURIComponent(v.revision),{credentials:"same-origin",cache:"no-store"});
+      const data=await res.json();if(!res.ok)throw Error(data.error||"Revision unavailable");
+      const version=data.version||{};showCurrent();configureEdit(true);
+      editor.value=version.source||"";filename.value=version.filename||"";
+      language.value=version.language||"text";dirty=true;
+      setStatus("Older version loaded into editor. Click Save code to create a new revision; existing history is unchanged.");
+      editor.focus();
+     }catch(error){setStatus(error.message)}
+    };
+    row.append(open,restore);historyList.append(row);
    }
   }
   function showCurrent(){
@@ -82,6 +98,21 @@
    showCurrent();configureEdit(true);editor.focus();setStatus("Use Tab to indent. Save creates a new revision; older versions are preserved.");
   };
   cancel.onclick=()=>{showCurrent();setStatus("Changes discarded.")};
+  importButton.onclick=()=>{if(editing&&canEdit())sourceFile.click()};
+  sourceFile.onchange=async()=>{
+   const file=sourceFile.files?.[0];sourceFile.value="";
+   if(!file)return;
+   if(file.size>100000){setStatus("Maximum code file size is 100 KB.");return}
+   if(dirty&&!confirm("Replace your unsaved editor text with this file?"))return;
+   try{
+    editor.value=await file.text();
+    filename.value=file.name.slice(0,120).replace(/[^a-zA-Z0-9_. -]/g,"_");
+    const extension=file.name.toLowerCase().split(".").pop();
+    const mapping={py:"python",js:"javascript",ts:"typescript",c:"c",h:"c",cpp:"cpp",hpp:"cpp",ino:"arduino",html:"html",css:"css",json:"json",sh:"bash",sql:"sql",yaml:"yaml",yml:"yaml",rs:"rust"};
+    language.value=mapping[extension]||"text";
+    dirty=true;setStatus("File loaded. Click Save code to preserve this version.");
+   }catch(error){setStatus("Could not read file: "+error.message)}
+  };
   const markDirty=()=>{dirty=true};
   editor.addEventListener("input",markDirty);filename.addEventListener("input",markDirty);language.addEventListener("change",markDirty);
   editor.addEventListener("keydown",event=>{
