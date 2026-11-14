@@ -92,9 +92,9 @@
    ctx.save();ctx.font="bold "+fontPx+"px sans-serif";
    const maxWidth=mark.wrapW?mark.wrapW*w:Infinity;
    let lines=0,longest=0;
-   for(const paragraph of mark.text.split("\\n")){
+   for(const paragraph of mark.text.split("\n")){
     let line="";
-    for(const word of paragraph.split(/(\\s+)/)){
+    for(const word of paragraph.split(/(\s+)/)){
      if(line&&ctx.measureText(line+word).width>maxWidth){
       longest=Math.max(longest,ctx.measureText(line).width);
       lines++;line=word.trimStart();
