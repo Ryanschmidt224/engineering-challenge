@@ -122,7 +122,7 @@
    const preview=$("#workshop-photo-preview",personal);
    if(preview){preview.hidden=!photoId;if(photoId)preview.src="/api/workshop-photo?id="+encodeURIComponent(photoId)}
    const specs=$("#workshop-specifications",personal);
-   if(specs)specs.value=(item.specifications||[]).map(x=>x.name+": "+x.value).join("\\n");
+   if(specs)specs.value=(item.specifications||[]).map(x=>x.name+": "+x.value).join("\n");
    $("#workshop-editor",personal).open=true;
   }
   function render(){
@@ -145,7 +145,7 @@
   async function save(){
    const input={};for(const [key,id] of Object.entries(fields))input[key]=$("#workshop-"+id,personal).value;
    input.photoId=photoId;
-   input.specifications=$("#workshop-specifications",personal).value.split(/\\r?\\n/).map(row=>{
+   input.specifications=$("#workshop-specifications",personal).value.split(/\r?\n/).map(row=>{
     const split=row.indexOf(":");return split<1?null:{name:row.slice(0,split).trim(),value:row.slice(split+1).trim()};
    }).filter(Boolean);
    if(editingId)input.id=editingId;
@@ -165,7 +165,7 @@
     if(data.suggestion){for(const [key,id] of Object.entries(fields)){
      if(typeof data.suggestion[key]==="string"&&data.suggestion[key].trim())$("#workshop-"+id,personal).value=data.suggestion[key];
     }}
-    if(Array.isArray(data.suggestion?.specifications))$("#workshop-specifications",personal).value=data.suggestion.specifications.map(x=>x.name+": "+x.value).join("\\n");
+    if(Array.isArray(data.suggestion?.specifications))$("#workshop-specifications",personal).value=data.suggestion.specifications.map(x=>x.name+": "+x.value).join("\n");
     setStatus(data.recognitionError||"Identification proposed. Review every detail, then save.");
    }catch(e){setStatus(e.message)}
   }
