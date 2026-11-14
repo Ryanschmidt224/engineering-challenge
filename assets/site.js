@@ -1,3 +1,6 @@
+// One pristine project workspace template for Projects and Mini Projects.
+// Capture before any photo, BOM or assembly controller modifies the DOM.
+window.BSProjectTemplate=document.getElementById("linear")?.cloneNode(true);
 
 const tiles=[
 {id:"speed",title:"How fast does a dart need to travel?",category:"Mechanics",short:"Distance depends on launch speed, angle, release height, and air resistance. A theoretical starting point is useful, but real darts experience substantial drag.",deep:"Ignoring air resistance and assuming equal launch and landing height, range R = v² sin(2θ)/g. At 45°, a 50-foot (15.24 m) range suggests about 12.2 m/s. This is only an ideal lower-bound model; foam darts slow dramatically in air. Test actual range and repeatability.",related:["measurement","mechanisms"]},
@@ -11,7 +14,7 @@ const tiles=[
 ];
 const disciplines=["All","Mechanics","Electronics","Controls","Manufacturing","Testing"];let activeDiscipline="All";
 const topicDisciplines={speed:["Mechanics","Testing"],mechanisms:["Mechanics"],motors:["Electronics","Controls"],rpm:["Mechanics","Testing"],voltage:["Electronics"],power:["Electronics","Testing"],measurement:["Testing"],threads:["Manufacturing"]};
-const topicProjects={speed:[["Foam-dart launcher","launcher"]],mechanisms:[["Foam-dart launcher","launcher"]],motors:[["Foam-dart launcher","launcher"],["Brushless motor","motorlab"]],rpm:[["Foam-dart launcher","launcher"],["Brushless motor","motorlab"]],voltage:[["Linear actuator","linear"],["Switch a coil","coiltest"],["Buck converter","buck"]],power:[["Buck converter","buck"]],measurement:[["Foam-dart launcher","launcher"],["Buck converter","buck"],["Robotic arm","robot"]],threads:[]};
+const topicProjects={speed:[["Foam-dart launcher","launcher"]],mechanisms:[["Foam-dart launcher","launcher"]],motors:[["Foam-dart launcher","launcher"]],rpm:[["Foam-dart launcher","launcher"]],voltage:[["Linear actuator","linear"]],power:[],measurement:[["Foam-dart launcher","launcher"],["Robotic arm","robot"]],threads:[]};
 const byId=id=>tiles.find(t=>t.id===id);const safe=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const store=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){alert("Browser storage is unavailable. Export your notes instead.")}};
 const load=k=>{try{return JSON.parse(localStorage.getItem(k))||[]}catch(e){return []}};
