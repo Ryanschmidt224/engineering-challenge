@@ -26,7 +26,8 @@ test("Edit Part inputs use paired descriptor/value layout with mobile fallback",
 test("New Part Workshop Item picker uses the same four categories",()=>{
  const picker=readFileSync("assets/library-part-picker.js","utf8");
  const api=readFileSync("functions/api/commonparts.js","utf8");
- assert.match(picker,/option\(mode\.input,"library","Workshop Item"\)/);
+ assert.match(picker,/document\.createTextNode\("This part is from the workshop"\)/);
+ assert.match(picker,/const lib=workshopCheckbox\.checked/);
  for(const [id,label] of [["wire","Wire and cable"],["power","Power and electronics"],["fasteners","Fasteners"],["other","Other"]]){
   assert.ok(picker.includes('["'+id+'","'+label+'"]'),"Missing "+label+" in the picker");
   assert.ok(api.includes('"'+id+'"'),"Missing "+id+" category in save API");
@@ -34,4 +35,17 @@ test("New Part Workshop Item picker uses the same four categories",()=>{
  assert.match(picker,/commonGroup\(p\)/);
  assert.match(picker,/p\.category==="screws"/);
  assert.match(picker,/p\.category==="buck-converters"/);
+});
+
+test("Tree filters use part types instead of a Hidden parts checkbox",()=>{
+ const source=readFileSync("assets/site-assembly.js","utf8");
+ assert.match(source,/filterOption\("Purchased"/);
+ assert.match(source,/filterOption\("Custom"/);
+ assert.doesNotMatch(source,/filterOption\("Hidden parts"/);
+ assert.match(source,/if\(isHiddenPart\(node\)\)return false/);
+});
+test("Parts Management input backgrounds and column grips are uncluttered",()=>{
+ const css=readFileSync("assets/parts-management.css","utf8");
+ assert.match(css,/background-color:#fff!important/);
+ assert.match(css,/border-radius:7px/);
 });
