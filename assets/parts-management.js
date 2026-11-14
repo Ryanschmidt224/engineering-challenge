@@ -186,16 +186,18 @@
     const res=await fetch("/api/components?project="+encodeURIComponent(project),{credentials:"same-origin",cache:"no-store"}),data=await res.json();
     if(!res.ok)throw Error(data.error||"Unable to load parts");
     if(id!==fetchId)return;
-    parts=(data.components||[]).filter(p=>!p.generatedFrom);render();
+    parts=(data.components||[]).filter(p=>!p.generatedFrom);refreshStatusFilter();render();
    }catch(error){if(id===fetchId)feedback.textContent=error.message}
   }
   // Keep the status filter relevant to the selected sourcing type. All types
   // shows the union of purchasing and progress statuses, without duplicates.
   const refreshStatusFilter=()=>{
    const previous=filter.value;
-   const options=typeFilter.value==="purchased"?fields.purchaseStatuses:
-    typeFilter.value==="custom"||typeFilter.value==="code"?fields.progressStatuses:
-    [...fields.progressStatuses,...fields.purchaseStatuses.filter(([id])=>!fields.progressStatuses.some(([key])=>key===id))];
+   const matching=parts.filter(part=>typeFilter.value==="all"||partTypeFor(part)===typeFilter.value);
+   const available=typeFilter.value==="all"?[...fields.progressStatuses,...fields.purchaseStatuses]:
+    matching.length?matching.flatMap(part=>fields.statusesFor(part)):
+    typeFilter.value==="purchased"?fields.purchaseStatuses:fields.progressStatuses;
+   const options=[...new Map(available.map(([value,label])=>[value,label])).entries()];
    filter.replaceChildren();
    for(const [value,label] of [["all","All statuses"],...options]){
     const option=el("option","",label);option.value=value;filter.append(option);
