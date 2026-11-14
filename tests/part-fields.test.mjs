@@ -13,6 +13,9 @@ test("purchased and custom status options remain separate",()=>{
  assert.equal(fields.statusField(purchased),"purchaseStatus");
  assert.equal(fields.statusValue(purchased),"not_started");
  assert.equal(fields.statusValue({...purchased,purchaseStatus:"need_to_buy"}),"need_to_buy");
+ assert.equal(fields.labelFor(fields.statusesFor(purchased),"already_have"),"Already own");
+ assert.equal(fields.labelFor(fields.statusesFor(purchased),"need_to_buy"),"Need to buy");
+ assert.equal(fields.labelFor(fields.statusesFor(purchased),"not_started"),"Not started");
  assert.equal(fields.statusField(custom),"progressStatus");
  assert.equal(fields.statusValue(custom),"in_progress");
  assert.equal(fields.statusesFor(purchased).some(([key])=>key==="need_to_buy"),true);
