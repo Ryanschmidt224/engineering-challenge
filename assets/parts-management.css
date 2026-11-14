@@ -36,3 +36,15 @@
 
 .bs-parts-resize{position:absolute;right:0;top:0;bottom:0;width:10px;cursor:col-resize;touch-action:none;border-right:2px solid transparent}
 .bs-parts-resize:hover,.bs-parts-resize:focus-visible{border-right-color:var(--color-accent);outline:none}
+
+/* Part-number ownership lookup and inline attention notes. */
+.bs-number-lookup{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:6px 0}
+.bs-number-lookup .field{flex:1 1 260px;max-width:450px;margin:0}
+.bs-number-lookup .btn{white-space:nowrap}
+.bs-number-result{margin:4px 0 10px;font-size:.85rem;color:var(--color-text-muted)}
+.bs-number-result:empty{display:none}
+.bs-parts-attention{min-width:0}
+.bs-attention-line{display:flex;align-items:center;gap:7px;font-size:.83rem;white-space:nowrap;cursor:pointer}
+.bs-attention-line input{width:16px;height:16px;flex:none;accent-color:var(--color-accent)}
+.bs-parts-table .bs-attention-note{width:100%;min-width:0;max-height:110px;resize:vertical;margin-top:7px;line-height:1.4}
+.bs-parts-table .bs-attention-note[hidden]{display:none!important}
