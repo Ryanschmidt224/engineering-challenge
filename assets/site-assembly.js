@@ -1388,7 +1388,7 @@ function setupAssemblyTrees(){
   const itemTypeRow=document.createElement("label");itemTypeRow.className="part-type-field";
   itemTypeRow.textContent="Item type";
   const itemTypeSelect=document.createElement("select");itemTypeSelect.className="field part-item-type-select";
-  for(const [value,label] of [["part","Part"],["document","Document"]]){const option=document.createElement("option");option.value=value;option.textContent=label;itemTypeSelect.append(option)}
+  for(const [value,label] of [["part","Part"],["document","Document"],["code","Code"]]){const option=document.createElement("option");option.value=value;option.textContent=label;itemTypeSelect.append(option)}
   itemTypeRow.append(itemTypeSelect);
   const partTypeRow=document.createElement("label");
   partTypeRow.className="part-type-field";
@@ -1396,16 +1396,19 @@ function setupAssemblyTrees(){
   const partTypeSelect=document.createElement("select");
   partTypeSelect.className="field part-type-select";
   for(const [value,label] of [["purchased","Off-the-shelf"],["custom","Custom"],["code","Code"]]){
-   const option=document.createElement("option");option.value=value;option.textContent=label;partTypeSelect.append(option);
+   const option=document.createElement("option");option.value=value;option.textContent=label;if(value==="code")option.hidden=true;partTypeSelect.append(option);
   }
   partTypeRow.append(partTypeSelect);
   // The legacy form is mounted asynchronously into the editor container.
   // Attach this selector when opening the form, not during initial page setup.
   const updatePartTypeFields=()=>{
+   // Code is an item type, not a third sourcing classification.
+   const codeMode=itemTypeSelect.value==="code";
+   if(codeMode)partTypeSelect.value="code";
+   else if(partTypeSelect.value==="code")partTypeSelect.value="purchased";
    const custom=partTypeSelect.value!=="purchased";
-   if(partTypeSelect.value==="code")itemTypeSelect.value="document";
-   const documentMode=itemTypeSelect.value==="document";
-   partTypeRow.hidden=false;
+   const documentMode=itemTypeSelect.value!=="part";
+   partTypeRow.hidden=codeMode;
    toolRow.hidden=documentMode;
    const qtyControl=bomEditorMount.querySelector(".component-quantity");if(qtyControl?.closest("label"))qtyControl.closest("label").hidden=documentMode;
    bomEditorMount.classList.toggle("is-custom-part",custom);
@@ -1511,7 +1514,7 @@ function setupAssemblyTrees(){
   function editBomPart(part,originId){
    if(savingBom)return;
    clearBomDraft();editingPart=part.id;editingPartAssembly=originId;
-   itemTypeSelect.value=part.itemType==="document"?"document":"part";
+   itemTypeSelect.value=part.partType==="code"?"code":part.itemType==="document"?"document":"part";
    partTypeSelect.value=["custom","code"].includes(part.partType)?part.partType:"purchased";visibilityCheckbox.checked=part.hideFromFeatureTree===true;toolCheckbox.checked=part.isTool===true;
    partDescriptionInput.value=part.description||"";
    partNumberInput.value=part.partNumber||"";autoNumberChosen=false;partNumberInput.readOnly=!!part.partNumber;
