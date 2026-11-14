@@ -152,3 +152,33 @@ test("Progress Status notes reject blanks, oversized notes, and non-progress par
  const part=(await response.json()).component;
  assert.equal(part.progressUpdates[0].text,"Inspection complete");
 });
+
+test("Progress operations can be added as blank editable steps and edited in place",async()=>{
+ const {env,req}=await setup(),path="/api/components?project=launcher&id="+id;
+ let response=await handleComponents(req(path,"PATCH",{progressStatus:"in_progress",progressOperationAdd:true}),env);
+ assert.equal(response.status,200);
+ const first=(await response.json()).component;
+ assert.equal(first.progressUpdates.length,1);
+ assert.equal(first.progressUpdates[0].text,"");
+ const operationId=first.progressUpdates[0].id;
+ response=await handleComponents(req(path,"PATCH",{progressOperationEdit:{id:operationId,text:"Material ordered"}}),env);
+ assert.equal(response.status,200);
+ assert.deepEqual((await response.json()).component.progressUpdates.map(item=>item.text),["Material ordered"]);
+ response=await handleComponents(req(path,"PATCH",{progressOperationAdd:true}),env);
+ assert.equal(response.status,200);
+ const second=(await response.json()).component;
+ const nextId=second.progressUpdates[1].id;
+ response=await handleComponents(req(path,"PATCH",{progressOperationEdit:{id:nextId,text:"Waiting on paint"}}),env);
+ assert.equal(response.status,200);
+ const result=(await response.json()).component;
+ assert.deepEqual(result.progressUpdates.map(item=>item.text),["Material ordered","Waiting on paint"]);
+ assert.equal(result.progressUpdates[0].id,operationId);
+ assert.equal(result.progressUpdates[1].id,nextId);
+ response=await handleComponents(req(path,"PATCH",{progressOperationEdit:{id:operationId,text:"Material received"}}),env);
+ assert.equal(response.status,200);
+ assert.deepEqual((await response.json()).component.progressUpdates.map(item=>item.text),["Material received","Waiting on paint"]);
+ response=await handleComponents(req(path,"PATCH",{progressStatus:"complete"}),env);
+ assert.equal(response.status,200);
+ assert.equal((await response.json()).component.progressUpdates.length,2);
+ assert.equal((await handleComponents(req(path,"PATCH",{progressOperationEdit:{id:operationId,text:"Change after completion"}}),env)).status,400);
+});
