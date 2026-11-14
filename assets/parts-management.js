@@ -9,7 +9,7 @@
  const purchaseValues=fields.purchaseStatuses;
  const statusFor=fields.statusValue;
  const numberFor=p=>p.partNumber||(/^([A-Za-z]{1,8}[- ]?\d{2,8})\s*[-–:]\s*\S/.exec(p.name||"")?.[1]||"");
- const typeValues=[["purchased","Purchased"],["custom","Custom"],["code","Code"]];
+ const typeValues=[["purchased","Off-the-shelf"],["custom","Custom"],["code","Code"]];
  const dropdown=(options,current,disabled=false)=>{
   const select=el("select","field");select.disabled=disabled;
   for(const [value,label] of options){const option=el("option","",label);option.value=value;select.append(option)}
