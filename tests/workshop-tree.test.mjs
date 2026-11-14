@@ -2,15 +2,17 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 
-test("every Workshop tool and material appears exactly once in the category tree",()=>{
+test("Workshop reference categories are centralized and preserve stable item IDs",()=>{
  const source=readFileSync("assets/resources.js","utf8");
- const materialIds=[...source.matchAll(/\{id:"(workshop:[^"]+)",kind:"material"/g)].map(match=>match[1]);
- const toolIds=[...source.matchAll(/\{id:"(workshop:[^"]+)",kind:"tool"/g)].map(match=>match[1]);
  const tree=source.slice(source.indexOf("const workshopCategories=["),source.indexOf("const legacyCategory="));
- assert.equal(materialIds.length+toolIds.length,16);
- for(const id of materialIds)assert.equal(tree.split('"'+id+'"').length-1,1,id+" material must be in exactly one category");
- assert.match(tree,/\["tool","Tool",workshopEquipment\.map\(item=>item\.id\)\]/);
- for(const label of ["Wire and cable","Power and electronics","Fasteners","Tool","Other"])assert.ok(tree.includes(label),label+" category missing");
+ for(const name of ["Tools & Equipment","Consumables & Supplies","Electronics & Components","Hardware & Materials","Safety & Measurement"])
+  assert.ok(tree.includes(name),name+" is required");
+ for(const name of ["workshop:solder","workshop:wire22","workshop:meter","workshop:oscilloscope","workshop:ferrule22"])
+  assert.ok(source.includes('id:"'+name+'"'),name+" must retain its stable reference ID");
+ assert.match(tree,/workshopEquipment\.map\(item=>item\.id\)/);
+ assert.match(tree,/workshopComponents\.map\(item=>item\.id\)/);
+ assert.match(tree,/workshopHardware\.map\(item=>item\.id\)/);
+ assert.match(source,/const workshopReferences=.*\.map\(itemMetadata\)/);
  assert.match(source,/branch\("purchased"/);
  assert.match(source,/branch\("saved"/);
  assert.match(source,/ancestor\.tagName==="DETAILS"/);
@@ -22,20 +24,18 @@ test("Edit Part inputs use paired descriptor/value layout with mobile fallback",
  assert.match(css,/@media\(max-width:620px\)/);
 });
 
-test("New Part Workshop Item picker uses the same four categories",()=>{
+test("New Part Workshop picker uses the same five categories",()=>{
  const picker=readFileSync("assets/library-part-picker.js","utf8");
  const api=readFileSync("functions/api/commonparts.js","utf8");
  assert.match(picker,/document\.createTextNode\("This part is from the workshop"\)/);
  assert.match(picker,/const lib=workshopCheckbox\.checked/);
- for(const [id,label] of [["wire","Wire and cable"],["power","Power and electronics"],["fasteners","Fasteners"],["tool","Tool"],["other","Other"]]){
-  assert.ok(picker.includes('["'+id+'","'+label+'"]'),"Missing "+label+" in the picker");
-  assert.ok(api.includes('"'+id+'"'),"Missing "+id+" category in save API");
+ for(const [id,label] of [["tools","Tools & Equipment"],["consumables","Consumables & Supplies"],["electronics","Electronics & Components"],["hardware","Hardware & Materials"],["safety","Safety & Measurement"]]){
+  assert.ok(picker.includes('["'+id+'","'+label+'"]'),"Missing "+label+" in picker");
+  assert.ok(api.includes('"'+id+'"'),"Missing "+id+" category in API");
  }
  assert.match(picker,/commonGroup\(p\)/);
- assert.match(picker,/cat==="screws"/);
- assert.match(picker,/cat==="buck-converters"/);
+ assert.match(picker,/wireModeCheckbox/);
 });
-
 test("Tree display offers only Workshop item and Document filters",()=>{
  const source=readFileSync("assets/site-assembly.js","utf8");
  assert.match(source,/filterOption\("Workshop item"/);
@@ -51,12 +51,12 @@ test("Parts Management input backgrounds and column grips are uncluttered",()=>{
  assert.match(css,/border-radius:7px/);
 });
 
-test("Power and electronics has useful component filters and no duplicate category selector",()=>{
+test("Electronics & Components retains useful subtype filters",()=>{
  const picker=readFileSync("assets/library-part-picker.js","utf8");
  for(const label of ["Power supplies & converters","Motors & motor drives","Controllers & circuit boards","Sensors & switches","Other electronics"])
   assert.ok(picker.includes(label),"Missing power filter: "+label);
  assert.doesNotMatch(picker,/field\("Filter parts","select"\)/);
- assert.match(picker,/powerType\.label\.classList\.toggle\("hide",!lib\|\|category\.input\.value!=="power"\)/);
+ assert.match(picker,/powerType\.label\.classList\.toggle\("hide",!lib\|\|category\.input\.value!=="electronics"\)/);
  assert.match(picker,/fetch\("\/api\/purchased-parts"/);
- assert.match(picker,/workshopToolRows/);
+ assert.match(picker,/workshopStandardRows/);
 });
