@@ -2367,13 +2367,13 @@ function setupAssemblyTrees(){
   };
   // Independent display filters leave all part records, BOM quantities and workspaces intact.
   const treeVisibilityControl=document.createElement("fieldset");treeVisibilityControl.className="assembly-tree-filters";
-  const filterTitle=document.createElement("legend");filterTitle.textContent="Tree display";treeVisibilityControl.append(filterTitle);
+  const filterTitle=document.createElement("legend");filterTitle.textContent="Show / hide items in feature tree";treeVisibilityControl.append(filterTitle);
   const filterOption=(label,apply)=>{
    const wrapper=document.createElement("label");const input=document.createElement("input");input.type="checkbox";
    wrapper.append(input,document.createTextNode(label));input.onchange=()=>{apply(input.checked);render()};treeVisibilityControl.append(wrapper);return input;
   };
-  const workshopFilter=filterOption("Workshop item",value=>{showWorkshopItems=value});
-  const documentsFilter=filterOption("Document",value=>{showTreeDocuments=value});
+  const workshopFilter=filterOption("Show Workshop items",value=>{showWorkshopItems=value});
+  const documentsFilter=filterOption("Show documents",value=>{showTreeDocuments=value});
   workshopFilter.checked=showWorkshopItems;
   documentsFilter.checked=showTreeDocuments;
   nodesEl.parentNode.insertBefore(treeVisibilityControl,nodesEl);
