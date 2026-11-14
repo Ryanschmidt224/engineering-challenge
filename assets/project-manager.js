@@ -263,6 +263,8 @@ window.BSProjectManager=(()=>{
     newButton.hidden=!user;newMiniButton.hidden=!user;archiveButton.hidden=!user&&!adminAuthenticated;
     accountButton.textContent=user?"My account: "+user.displayName:"My account";
     document.querySelectorAll(".project-personal-card").forEach(node=>node.remove());
+    // Keep built-in cards alive before rebuilding custom category containers.
+    customGroups.querySelectorAll(".project-card:not(.project-personal-card)").forEach(card=>grid.append(card));
     customGroups.replaceChildren();
     for(const project of projects){
      ensureProjectPage(project);
