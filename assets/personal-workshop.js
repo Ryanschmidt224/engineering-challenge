@@ -39,6 +39,10 @@
   .workshop-scope .workshop-check{padding:9px 0;border-bottom:1px solid var(--border,#ddd)}
   .workshop-scope .workshop-status{margin:8px 0;min-height:18px}
   .workshop-photo-thumb{max-height:100px;max-width:150px;object-fit:contain}
+  .workshop-recommend-search-label{display:block;margin:12px 0 6px;font-size:.88rem;font-weight:650}
+  #workshop-recommend-search{display:block;width:100%;max-width:500px}
+  .workshop-recommend-results:not(:empty){margin:10px 0 16px;border:1px solid var(--color-border,#ddd);padding:10px;border-radius:10px}
+  .workshop-recommend-results .workshop-reco{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
  `;
  const style=el("style");style.textContent=styles;document.head.append(style);
  function init(){
@@ -47,13 +51,33 @@
   const personal=el("section",undefined,"workshop-scope");
   personal.innerHTML='<h2>My Workshop</h2><p class="muted">Private to your account. Record equipment and materials you actually own; recommendations are not assumed owned.</p><p class="workshop-status" role="status"></p><div class="workshop-private"></div>';
   const shared=el("section",undefined,"workshop-scope");
-  shared.innerHTML='<h2>Website Workshop — recommended equipment</h2><p class="muted">A suggested starting kit, not an inventory of what you own. Filter by experience level.</p><div class="workshop-row"><label for="workshop-level">Show recommendations up to</label><select id="workshop-level" class="field"><option value="0">Beginner</option><option value="1">Intermediate</option><option value="2">Advanced</option></select></div><div class="workshop-recommendations"></div><details><summary>Detailed shared Workshop reference</summary><p class="muted">Detailed specifications, wire and tool recommendations, and shared catalog entries appear below.</p></details>';
+  shared.innerHTML='<h2>Website Workshop — recommended equipment</h2><p class="muted">Recommended specifications are separate from what you own. Everyday consumables such as solder are excluded from BOMs by default.</p><label class="workshop-recommend-search-label" for="workshop-recommend-search">Find a recommended tool or supply</label><input id="workshop-recommend-search" class="field" type="search" placeholder="Search solder, multimeter, heat shrink…" autocomplete="off"><div class="workshop-recommend-results" aria-live="polite"></div><div class="workshop-row"><label for="workshop-level">Show recommendations up to</label><select id="workshop-level" class="field"><option value="0">Beginner</option><option value="1">Intermediate</option><option value="2">Advanced</option></select></div><div class="workshop-recommendations"></div><details><summary>Browse all five Workshop categories</summary><p class="muted">Open a category for specifications, choices, and recommended products.</p></details>';
   header.after(personal,shared);
   // Existing shared tree remains canonical and admin-managed; visually group it under the shared Workshop.
   const sharedDetails=$("details",shared);
   const sharedItems=$(".workshop-essentials",root),saved=$(".workshop-saved-details",root);
   if(sharedItems)sharedDetails.append(sharedItems);
   if(saved)sharedDetails.append(saved);
+  const standards=()=>window.BSResources?.workshopReferences||[];
+  const showRecommendation=id=>{
+   document.querySelector('[data-nav="commonparts"]')?.click();
+   sharedDetails.open=true;
+   window.BSResources?.focusWorkshopItem(id);
+  };
+  const renderSearch=()=>{
+   const term=$("#workshop-recommend-search",shared).value.trim().toLowerCase();
+   const results=$(".workshop-recommend-results",shared);results.replaceChildren();
+   if(!term)return;
+   const found=standards().filter(item=>[item.name,item.spec,item.use,item.category].join(" ").toLowerCase().includes(term));
+   if(!found.length){results.append(el("p","No matching recommendations.","muted"));return}
+   for(const item of found.slice(0,20)){
+    const row=el("div",undefined,"workshop-reco");
+    row.append(el("span",item.name+" · "+(item.bomDefault==="exclude"?"Not added to BOM by default":"BOM item when specified")));
+    const view=el("button","View recommendation","btn");view.type="button";view.onclick=()=>showRecommendation(item.id);
+    row.append(view);results.append(row);
+   }
+  };
+  $("#workshop-recommend-search",shared).addEventListener("input",renderSearch);
   const renderRecs=()=>{
    const level=Number($("#workshop-level",shared).value),list=$(".workshop-recommendations",shared);
    list.replaceChildren();
@@ -63,8 +87,17 @@
     for(const [name,kind] of group.items){
      const row=el("div",undefined,"workshop-reco");
      row.append(el("span",name));
+     const standard=standards().find(item=>item.name.toLowerCase()===name.toLowerCase());
+     if(standard){
+      const view=el("button","View recommendation","btn");view.type="button";
+      view.onclick=()=>showRecommendation(standard.id);row.append(view);
+     }
      const add=el("button","+ Add to My Workshop","btn");add.type="button";
-     add.onclick=()=>{if(!$("#workshop-editor",personal)){setStatus("Sign in to add recommended equipment to your private Workshop.");return}fill({name,kind,category:group.group});$("#workshop-name",personal).focus();personal.scrollIntoView({block:"start",behavior:"smooth"})};
+     add.onclick=()=>{
+      if(!$("#workshop-editor",personal)){setStatus("Sign in to add recommended equipment to your private Workshop.");return}
+      fill({name,kind,category:standard?.category||"tools"});
+      $("#workshop-name",personal).focus();personal.scrollIntoView({block:"start",behavior:"smooth"});
+     };
      row.append(add);details.append(row);
     }
     list.append(details);
