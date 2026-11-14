@@ -1,0 +1,114 @@
+.bs-markup-modal{width:min(96vw,1100px);max-width:1100px;max-height:96vh;border:1px solid var(--color-border,#ccd7d0);border-radius:16px;padding:16px;background:var(--color-surface,#fff);color:var(--color-text,#172a21);box-shadow:0 16px 60px #0005}
+.bs-markup-modal::backdrop{background:#0b151bbd}
+.bs-markup-header,.bs-markup-footer,.bs-markup-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bs-markup-header{justify-content:space-between;margin-bottom:12px}
+.bs-markup-toolbar{margin-bottom:10px}
+.bs-markup-toolbar button[aria-pressed="true"]{background:#cce6d8;border-color:#508d70;color:#153b26}
+.bs-markup-toolbar input[type=color]{width:38px;height:34px;border:0;background:transparent;cursor:pointer}
+.bs-markup-canvas-wrap{max-height:62vh;overflow:auto;text-align:center;background:#262b2d;border-radius:8px;padding:8px;touch-action:pan-x pan-y}
+.bs-markup-canvas{display:block;max-width:100%;height:auto;margin:auto;touch-action:none;cursor:crosshair;user-select:none}
+.bs-markup-footer{justify-content:flex-end;margin-top:10px}
+.bs-markup-modal .muted{margin:8px 0}
+.bs-photo-edit{font-size:13px}
+@media(max-width:600px){.bs-markup-modal{padding:10px}.bs-markup-canvas-wrap{max-height:55vh}.bs-markup-toolbar button{padding:7px}.bs-markup-footer{justify-content:flex-start}}
+
+/* Shared photo action row — placed below the photo, never over its image. */
+.bs-photo-control{position:relative;display:flex;flex-direction:column;align-items:stretch;min-width:0;max-width:100%}
+.bs-photo-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.bs-photo-more{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bs-photo-more[hidden],.bs-photo-toggle[hidden]{display:none!important}
+.bs-photo-actions .btn{min-height:34px;padding:6px 11px;font-size:.82rem;white-space:nowrap}
+.bs-photo-actions .bs-photo-toggle[aria-expanded="true"]{border-color:var(--color-accent);background:var(--color-accent-soft);color:var(--color-text)}
+.bs-photo-actions button:disabled{opacity:.48;cursor:not-allowed}
+.bs-photo-status{font-size:.8rem;line-height:1.4;color:var(--color-text-muted);margin:6px 0 0;text-align:right}
+.bs-photo-status:empty{display:none}
+.bs-photo-control .workspace-cover,.bs-photo-control .part-workspace-cover{position:relative}
+.bs-photo-control .bs-photo-previous,.bs-photo-control .bs-photo-next{
+ position:absolute;top:35%;z-index:1;transform:translateY(-50%);
+ border:0;background:color-mix(in srgb,var(--color-media-backdrop) 80%,transparent);
+ color:var(--color-on-media);padding:2px 5px;border-radius:6px;cursor:pointer;font:inherit;font-size:23px
+}
+.bs-photo-control .bs-photo-previous{left:2px}
+.bs-photo-control .bs-photo-next{right:2px}
+.project-summary-gallery>.bs-photo-control{width:100%;max-width:100%}
+.project-summary-gallery>.bs-photo-control .project-summary-photo-stage{width:100%}
+.project-summary-gallery>.bs-photo-control .bs-photo-actions{padding:0 0 4px}
+.workspace-heading>.bs-photo-control{flex:0 0 auto;align-self:flex-start;width:132px;max-width:none}
+.workspace-heading>.bs-photo-control .bs-photo-actions{
+ position:absolute;left:0;top:100%;margin-top:7px;justify-content:flex-start;width:max-content;max-width:calc(100vw - 50px);z-index:2
+}
+.workspace-heading>.bs-photo-control .bs-photo-more{flex-wrap:nowrap}
+.workspace-heading>.bs-photo-control .bs-photo-status{position:absolute;left:0;top:calc(100% + 44px);width:max-content;max-width:300px;text-align:left}
+.assembly-workspace-page .workspace-heading:has(>.bs-photo-control),
+.bom-part-workspace .workspace-heading:has(>.bs-photo-control){margin-bottom:76px}
+@media(max-width:700px){
+ .workspace-heading>.bs-photo-control{width:94px}
+ .workspace-heading>.bs-photo-control .bs-photo-actions{flex-wrap:wrap;max-width:calc(100vw - 40px)}
+ .workspace-heading>.bs-photo-control .bs-photo-more{flex-wrap:wrap}
+ .assembly-workspace-page .workspace-heading:has(>.bs-photo-control),
+ .bom-part-workspace .workspace-heading:has(>.bs-photo-control){margin-bottom:105px}
+ .bs-photo-actions .btn{padding:6px 9px;font-size:.79rem}
+}
+
+/* Attachment controls match project, assembly and part photo controls. */
+.recipe-compact .recipe-step-photo>.bs-photo-control{width:100%;max-width:100%;align-items:stretch}
+.recipe-compact .recipe-step-photo>.bs-photo-control .recipe-photo-frame{width:100%;max-width:100%}
+.recipe-compact .recipe-step-photo>.bs-photo-control .bs-photo-actions{justify-content:flex-end;margin:3px 0 0}
+.recipe-compact .recipe-step-photo>.bs-photo-control .bs-photo-more{justify-content:flex-end}
+.workspace-heading>.bs-photo-control .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="false"]){
+ width:100%;justify-content:flex-end
+}
+.bs-photo-control .bs-photo-previous,.bs-photo-control .bs-photo-next{top:50%}
+
+
+/* Type directly onto the image while the text tool is selected. */
+.bs-markup-canvas-wrap{position:relative}
+.bs-markup-inline-text{
+ position:absolute;z-index:4;box-sizing:border-box;display:block;
+ min-width:80px;min-height:34px;max-height:170px;resize:both;
+ overflow:auto;padding:4px 6px;margin:0;
+ border:1px solid #fff;border-radius:5px;outline:2px solid #238a7e;
+ background:rgba(24,33,36,.84);box-shadow:0 2px 12px #0008;
+ color:#e63838;font:bold 18px/1.25 sans-serif;
+ text-align:left;white-space:pre-wrap;overflow-wrap:break-word;
+ caret-color:#ffffff;
+}
+.bs-markup-inline-text::placeholder{color:rgba(255,255,255,.75);font-weight:500}
+
+
+/* Discreet pencil at the photo's bottom-right; click expands its actions. */
+.bs-photo-control .bs-photo-toggle{
+ display:inline-flex;align-items:center;justify-content:center;
+ width:32px;height:32px;min-width:32px;min-height:32px;
+ padding:5px;border-radius:7px;
+ color:var(--color-text);line-height:1;
+}
+.bs-photo-control .bs-photo-toggle svg{width:16px;height:16px;display:block;pointer-events:none}
+.bs-photo-control .bs-photo-actions{gap:7px;margin-top:4px;justify-content:flex-end}
+.bs-photo-control .bs-photo-more:not([hidden]){gap:7px}
+.bs-photo-control .bs-photo-toggle[aria-expanded="true"]{background:var(--color-accent-soft);border-color:var(--color-accent)}
+.bs-photo-control .bs-photo-toggle:focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}
+.project-summary-gallery>.bs-photo-control .bs-photo-actions{padding-right:0;margin-top:4px}
+.workspace-heading>.bs-photo-control .bs-photo-actions{
+ margin-top:4px;
+}
+.workspace-heading>.bs-photo-control .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="false"]){
+ justify-content:flex-end
+}
+
+
+/* Project summary: place the pencil at the lower-left inside the photo card
+   (the location indicated on the screenshot), with actions expanding right. */
+.project-summary-gallery>.bs-photo-control{position:relative}
+.project-summary-gallery>.bs-photo-control .bs-photo-actions{
+ position:absolute;bottom:12px;left:14px;right:auto;z-index:4;
+ width:max-content;max-width:calc(100% - 28px);
+ justify-content:flex-start;flex-wrap:wrap;margin:0;padding:0;
+}
+.project-summary-gallery>.bs-photo-control .bs-photo-more:not([hidden]){
+ display:flex;flex-wrap:wrap;gap:7px;
+}
+.project-summary-gallery>.bs-photo-control .bs-photo-status:not(:empty){
+ position:absolute;left:14px;right:14px;bottom:51px;
+ text-align:left;margin:0;z-index:4;
+}

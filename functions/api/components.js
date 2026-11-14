@@ -248,6 +248,8 @@ export async function handleComponentPhoto(request,env){
   const existing=await env.PHOTOS.get(photoKey);
   if(!existing)return json({error:"No picture saved for this part"},404);
   await env.PHOTOS.delete(photoKey);
+  await env.PHOTOS.delete("photo-renders/"+photoKey+".webp");
+  await env.PHOTOS.delete("photo-annotations/"+photoKey+".json");
   return json({ok:true});
  }
  const incomingType=(request.headers.get("content-type")||"").split(";")[0].toLowerCase();
@@ -282,12 +284,16 @@ export async function handleComponentPhoto(request,env){
    String.fromCharCode(...signature.slice(0,4))==="RIFF"&&String.fromCharCode(...signature.slice(8,12))==="WEBP";
   if(!valid)return json({error:"Website returned an invalid image"},422);
   await env.PHOTOS.put(photoKey,buffer,{httpMetadata:{contentType:mime}});
+  await env.PHOTOS.delete("photo-renders/"+photoKey+".webp");
+  await env.PHOTOS.delete("photo-annotations/"+photoKey+".json");
   return json({ok:true,imported:true});
  }
  const mime=(request.headers.get("content-type")||"").split(";")[0].toLowerCase();
  if(!["image/jpeg","image/png","image/webp"].includes(mime))return json({error:"Use a JPG, PNG or WebP picture"},415);
  const bytes=await request.arrayBuffer();if(!bytes.byteLength||bytes.byteLength>3*1024*1024)return json({error:"Picture must be under 3 MB"},413);
  await env.PHOTOS.put(photoKey,bytes,{httpMetadata:{contentType:mime}});
+ await env.PHOTOS.delete("photo-renders/"+photoKey+".webp");
+ await env.PHOTOS.delete("photo-annotations/"+photoKey+".json");
  return json({ok:true});
 }
 export async function handleExtract(request,env){

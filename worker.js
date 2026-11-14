@@ -22,6 +22,7 @@ import {auth} from "./functions/api/auth.js";
 import {handleComponents,handleExtract,handleComponentPhoto} from "./functions/api/components.js";
 import {onRequestGet as listPhotos,onRequestPost as uploadPhoto,onRequestDelete as deletePhoto} from "./functions/api/photos.js";
 import {onRequestGet as getPhoto} from "./functions/api/photo.js";
+import {handlePhotoAnnotations} from "./functions/api/photo-annotations.js";
 export default {
   async fetch(request,env,ctx){
     const path=new URL(request.url).pathname;
@@ -56,6 +57,7 @@ export default {
       if(path==="/api/workspace")return handleWorkspace(request,env);
       if(path==="/api/investigations")return handleInvestigations(request,env);
       if(path==="/api/recipe-files")return handleRecipeFiles(request,env);
+      if(path==="/api/photo-annotations")return handlePhotoAnnotations(request,env);
       if(path==="/api/project/archive")return handleProjectArchive(request,env);
       if(path==="/api/project/staging")return handleArchiveStaging(request,env);
       if(path==="/api/project/backups")return handleAutomaticBackups(request,env);

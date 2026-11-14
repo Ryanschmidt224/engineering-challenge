@@ -19,5 +19,13 @@
     "crons": [
       "0 7 * * SUN"
     ]
+  },
+  "previews": {
+    "r2_buckets": [
+      {
+        "binding": "PHOTOS",
+        "bucket_name": "building-schmidt-photos-preview"
+      }
+    ]
   }
 }

@@ -127,7 +127,7 @@ function setupAssemblyTrees(){
     if(cover){
      let image=art.querySelector(".project-card-cover");
      if(!image){image=document.createElement("img");image.className="project-card-cover";image.alt="";art.append(image)}
-     image.src=cover.url;
+     image.src=window.BSPhotoMarkup.displayUrl("gallery",cover.id);
      art.classList.add("has-project-cover");
     }else{
      art.querySelector(".project-card-cover")?.remove();
@@ -167,7 +167,7 @@ function setupAssemblyTrees(){
    finally{editProjectName.disabled=false}
   };
   // Shared image tile renderer for root projects and all subassemblies.
-  function makeAssemblyPhotoStage(photos,name,onAdd,onDelete,allowEditing=false){
+  function makeAssemblyPhotoStage(photos,name,onAdd,onDelete,allowEditing=false,onEdit=null){
    let active=0;
    const stage=document.createElement("div");stage.className="assembly-photo-stage";
    const picture=document.createElement("img");picture.className="assembly-stage-image";picture.alt="";
@@ -177,9 +177,10 @@ function setupAssemblyTrees(){
    const label=document.createElement("span");label.className="assembly-photo-name";label.textContent=name;
    const actions=document.createElement("div");actions.className="assembly-photo-actions";
    const add=document.createElement("button");add.type="button";add.className="assembly-photo-icon";add.textContent="+";add.title="Add photo";add.setAttribute("aria-label","Add photo");add.onclick=onAdd;
+   const edit= document.createElement("button");edit.type="button";edit.className="btn bs-gallery-markup";edit.textContent="Markup / annotate";edit.title="Crop and mark up current photo";edit.setAttribute("aria-label","Edit current photo");edit.onclick=()=>onEdit?.(photos[active]);
    const del=document.createElement("button");del.type="button";del.className="assembly-photo-icon";del.textContent="×";del.title="Delete current photo";del.setAttribute("aria-label","Delete current photo");del.onclick=()=>onDelete(photos[active]);
-   if(canEdit()&&allowEditing)actions.append(add,del);
-   const show=()=>{const p=photos[active];picture.hidden=!p;empty.hidden=!!p;if(p){picture.src=p.url;picture.alt=p.caption||name}else picture.removeAttribute("src");prev.hidden=next.hidden=photos.length<2;del.hidden=!p};
+   if(canEdit()&&allowEditing)actions.append(add,edit,del);
+   const show=()=>{const p=photos[active];picture.hidden=!p;empty.hidden=!!p;if(p){picture.src=window.BSPhotoMarkup.displayUrl("gallery",p.id);picture.alt=p.caption||name}else picture.removeAttribute("src");prev.hidden=next.hidden=photos.length<2;edit.hidden=del.hidden=!p};
    prev.onclick=()=>{active=(active+photos.length-1)%photos.length;show()};
    next.onclick=()=>{active=(active+1)%photos.length;show()};
    stage.append(picture,empty,prev,next,label,actions);show();return stage;
@@ -198,35 +199,81 @@ function setupAssemblyTrees(){
   });
   // Keep the modal outside the hidden workspace so the project summary can open it.
   workspace.parentElement.append(photoDialog);
-  const openPhotoEditor=window.BSPhotoEditor.pencil(
-   workspace.querySelector(".workspace-cover"),"Edit assembly image"
-  );
-  openPhotoEditor.onclick=()=>{
-   if(!canEdit())return;
-   photoDialog.setAttribute("aria-label","Edit assembly photos");
-   workspacePhotoEditor.querySelector("h2").textContent="Assembly photos";
-   workspacePhotoEditor.querySelector(".muted").textContent="Browse, add, or delete assembly photos.";
-   photoDialog.showModal();
-   void workspacePhotoController.refresh();
-  };
+  // One inline Edit photo control below the thumbnail, shared with part pages.
+  let workspacePhotos=[],workspacePhotoIndex=0;
+  const workspacePhotoBar=window.BSPhotoEditor.actionBar(workspace.querySelector(".workspace-cover"),{
+   onMarkup:()=>{const photo=workspacePhotos[workspacePhotoIndex];if(photo)window.BSPhotoMarkup.open({kind:"gallery",id:photo.id,onSave:()=>{void loadWorkspaceCover();void refreshProjectCover()}})},
+   onAdd:()=>workspacePhotoInput.click(),
+   onDelete:()=>void deleteGalleryPhoto(workspacePhotos[workspacePhotoIndex],workspacePhotoBar)
+  });
+  const workspacePhotoInput=document.createElement("input");workspacePhotoInput.type="file";
+  workspacePhotoInput.accept="image/*,.heic,.heif";workspacePhotoInput.hidden=true;
+  workspacePhotoBar.shell.append(workspacePhotoInput);
+  workspacePhotoInput.onchange=()=>{const file=workspacePhotoInput.files?.[0];workspacePhotoInput.value="";if(file)void uploadGalleryPhoto(file,workspacePhotoBar)};
+  workspacePhotoBar.setEnabled(canEdit());
+  function galleryStatus(bar,message){bar.setStatus(message)}
+  async function uploadGalleryPhoto(file,bar){
+   galleryStatus(bar,"Uploading photo…");
+   const ok=await workspacePhotoController.upload(file);
+   galleryStatus(bar,ok?"Photo uploaded.":"Photo upload failed. Check the photo type and your sign-in.");
+   if(ok){if(isProjectSummary())await refreshProjectSummary();else await loadWorkspaceCover()}
+  }
+  async function deleteGalleryPhoto(photo,bar){
+   if(!photo||!canEdit()||!confirm("Delete this photo?"))return;
+   galleryStatus(bar,"Deleting photo…");
+   try{
+    const response=await fetch("/api/photos?id="+encodeURIComponent(photo.id),{method:"DELETE",credentials:"same-origin"});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(data.error||"Photo deletion failed");
+    galleryStatus(bar,"Photo deleted.");
+    if(isProjectSummary())await refreshProjectSummary();else await loadWorkspaceCover();
+    void refreshProjectCover();
+   }catch(error){galleryStatus(bar,error.message)}
+  }
+  window.BSPhotoMarkup.pasteOn(photoDialog,file=>workspacePhotoController.upload(file));
+  window.BSPhotoMarkup.dropOn(photoDialog,file=>workspacePhotoController.upload(file),{
+   canUpload:canEdit,
+   onBlocked:message=>{workspacePhotoEditor.querySelector(".workspace-photo-status").textContent=message||"Sign in as administrator before uploading photos."}
+  });
   const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>isProjectSummary()?"project-summary":(selected??"root-assembly"),
    workspacePhotoEditor.querySelector(".workspace-photo-status"),true);
+  window.BSPhotoMarkup.dropOn(workspace.querySelector(".workspace-cover"),file=>workspacePhotoController.upload(file),{
+   canUpload:canEdit,
+   onBlocked:message=>{workspacePhotoEditor.querySelector(".workspace-photo-status").textContent=message||"Sign in as administrator before uploading photos."}
+  });
   // The project summary is a landing page, not a separate source of BOM data.
   // It rolls up all assembly occurrences and standard shop materials at project scope.
   const summary=document.createElement("section");
   summary.className="project-summary-page hide";
-  summary.innerHTML='<header class="project-summary-heading"><div><p class="muted">Project summary</p><h1 class="project-summary-title"></h1></div></header><section class="project-summary-gallery"><div class="project-summary-gallery-heading"><h2>Project photos</h2></div><div class="project-summary-photo-stage"><button type="button" class="project-summary-photo-edit" aria-label="Edit project summary photos" title="Edit summary gallery" hidden>✎</button><img alt="Project photo" class="project-summary-photo" hidden><p class="project-summary-photo-empty">No project photos yet.</p><button type="button" class="project-summary-previous" aria-label="Previous project photo">‹</button><button type="button" class="project-summary-next" aria-label="Next project photo">›</button></div><div class="project-summary-photo-footer"><p class="project-summary-photo-caption"></p><span class="project-summary-photo-position"></span></div></section><div class="project-summary-lists"><section class="project-summary-bom-section"><h2>Project BOM</h2><div class="project-summary-bom-items" aria-live="polite"></div></section><section class="project-summary-tools-section"><h2>Tools needed</h2><div class="project-summary-tool-items" aria-live="polite"></div></section></div><section class="project-summary-owner-settings" hidden></section>';
+  summary.innerHTML='<header class="project-summary-heading"><div><p class="muted">Project summary</p><h1 class="project-summary-title"></h1></div></header><section class="project-summary-gallery"><div class="project-summary-gallery-heading"><h2>Project photos</h2></div><div class="project-summary-photo-stage"><img alt="Project photo" class="project-summary-photo" hidden><p class="project-summary-photo-empty">No project photos yet.</p><button type="button" class="project-summary-previous" aria-label="Previous project photo">‹</button><button type="button" class="project-summary-next" aria-label="Next project photo">›</button></div><div class="project-summary-photo-footer"><p class="project-summary-photo-caption"></p><span class="project-summary-photo-position"></span></div></section><div class="project-summary-lists"><section class="project-summary-bom-section"><h2>Project BOM</h2><div class="project-summary-bom-items" aria-live="polite"></div></section><section class="project-summary-tools-section"><h2>Tools needed</h2><div class="project-summary-tool-items" aria-live="polite"></div></section></div><section class="project-summary-owner-settings" hidden></section>';
   detail.after(summary);
   let summaryPhotos=[],summaryPhotoIndex=0,summaryVersion=0;
   const isProjectSummary=()=>decodeURIComponent(location.hash.slice(1))===project;
   const summaryPhotoStage=summary.querySelector(".project-summary-photo-stage");
+  const summaryPhotoBar=window.BSPhotoEditor.actionBar(summaryPhotoStage,{
+   onMarkup:()=>{const photo=summaryPhotos[summaryPhotoIndex];if(photo)window.BSPhotoMarkup.open({kind:"gallery",id:photo.id,onSave:()=>void refreshProjectSummary()})},
+   onAdd:()=>summaryPhotoInput.click(),
+   onDelete:()=>void deleteGalleryPhoto(summaryPhotos[summaryPhotoIndex],summaryPhotoBar)
+  });
+  summaryPhotoBar.setEnabled(canEdit());
+  const summaryPhotoInput=document.createElement("input");summaryPhotoInput.type="file";summaryPhotoInput.accept="image/*,.heic,.heif";summaryPhotoInput.hidden=true;
+  summaryPhotoBar.shell.append(summaryPhotoInput);
+  summaryPhotoInput.onchange=()=>{const file=summaryPhotoInput.files?.[0];summaryPhotoInput.value="";if(file)void uploadGalleryPhoto(file,summaryPhotoBar)};
+  window.BSPhotoMarkup.dropOn(summaryPhotoStage,file=>{
+   selected=null;
+   void workspacePhotoController.upload(file);
+  },{
+   canUpload:canEdit,
+   onBlocked:message=>{summary.querySelector(".project-summary-photo-empty").textContent=message||"Sign in as administrator before uploading photos."}
+  });
   const displaySummaryPhoto=()=>{
    const photo=summaryPhotos[summaryPhotoIndex],picture=summary.querySelector(".project-summary-photo");
    picture.hidden=!photo;summary.querySelector(".project-summary-photo-empty").hidden=!!photo;
-   if(photo){picture.src=photo.url;picture.alt=photo.caption||"Project photo"}else picture.removeAttribute("src");
+   if(photo){picture.src=window.BSPhotoMarkup.displayUrl("gallery",photo.id);picture.alt=photo.caption||"Project photo"}else picture.removeAttribute("src");
    summary.querySelector(".project-summary-photo-caption").textContent=photo?.caption||"";
    summary.querySelector(".project-summary-photo-position").textContent=summaryPhotos.length?(summaryPhotoIndex+1)+" of "+summaryPhotos.length:"";
    for(const selector of [".project-summary-previous",".project-summary-next"])summary.querySelector(selector).hidden=summaryPhotos.length<2;
+   summaryPhotoBar.setPhotoPresent(!!photo);
   };
   const moveSummaryPhoto=step=>{if(!summaryPhotos.length)return;summaryPhotoIndex=(summaryPhotoIndex+step+summaryPhotos.length)%summaryPhotos.length;displaySummaryPhoto()};
   summary.querySelector(".project-summary-previous").onclick=()=>moveSummaryPhoto(-1);
@@ -299,7 +346,7 @@ function setupAssemblyTrees(){
   async function refreshProjectSummary(){
    const version=++summaryVersion;
    summary.querySelector(".project-summary-title").textContent=title;
-   summary.querySelector(".project-summary-photo-edit").hidden=!canEdit();
+   summaryPhotoBar.setEnabled(canEdit());
    const bomList=summary.querySelector(".project-summary-bom-items"),toolList=summary.querySelector(".project-summary-tool-items");
    try{
     const [photosResponse,partsResponse]=await Promise.all([
@@ -325,17 +372,6 @@ function setupAssemblyTrees(){
     toolList.textContent="Could not load tools.";
    }
   }
-  // Project-summary photos have an independent album, never the root assembly gallery.
-  // The compact pencil is over the photo instead of a separate Manage photos button.
-  summary.querySelector(".project-summary-photo-edit").onclick=()=>{
-   if(!canEdit())return;
-   selected=null;
-   photoDialog.setAttribute("aria-label","Edit project summary photos");
-   workspacePhotoEditor.querySelector("h2").textContent="Project summary photos";
-   workspacePhotoEditor.querySelector(".muted").textContent="Photos in this gallery are separate from the top-level assembly.";
-   photoDialog.showModal();void workspacePhotoController.refresh();
-  };
-  photoDialog.addEventListener("close",()=>{if(isProjectSummary())void refreshProjectSummary()});
   // Reuse the canonical BOM panel on its own screen. The editor alone moves
   // into the workspace when editing; no duplicate BOM data or forms.
   const bomScreen=document.createElement("section");
@@ -782,44 +818,57 @@ function setupAssemblyTrees(){
 
   let currentPartInfo=null;
   const pictureCover=partWorkspace.querySelector(".part-workspace-cover");
-  const editPartPicture=window.BSPhotoEditor.pencil(pictureCover,"Edit part image");
-  editPartPicture.hidden=true;
+  const partPhotoActions=window.BSPhotoEditor.actionBar(pictureCover,{
+   onMarkup:()=>{if(currentPartInfo?.id)window.BSPhotoMarkup.open({kind:"part",id:currentPartInfo.id,project,onSave:()=>showPartPicture(currentPartInfo.id,true)})},
+   onAdd:()=>directPartPhotoInput.click(),
+   onDelete:()=>void deletePartPicture()
+  });
+  const directPartPhotoInput=document.createElement("input");directPartPhotoInput.type="file";directPartPhotoInput.accept="image/jpeg,image/png,image/webp";directPartPhotoInput.hidden=true;
+  partPhotoActions.shell.append(directPartPhotoInput);
+  directPartPhotoInput.onchange=()=>{const file=directPartPhotoInput.files?.[0];directPartPhotoInput.value="";if(file)void uploadPartPicture(file)};
+  partPhotoActions.setEnabled(false);
   const partPhotoDialog=window.BSPhotoEditor.dialog({
    parent:partWorkspace,label:"Edit part image",
    className:"workspace-photo-dialog part-photo-dialog",doneClass:"part-photo-done",
-   contentHtml:'<div class="workspace-photos-editor is-editing-photo"><h2>Part image</h2><p class="muted">Add, replace, or delete this part photo.</p><div class="assembly-unified-photo"><div class="part-photo-stage"><img class="part-photo-preview" alt="Part image"><span class="part-photo-placeholder">No picture yet</span></div></div><div class="workspace-photo-tools"><div class="part-photo-actions"><button type="button" class="btn part-photo-add">+ Add / replace image</button><button type="button" class="btn part-photo-delete">Delete image</button><input class="part-photo-file" type="file" accept="image/jpeg,image/png,image/webp" hidden></div></div><p class="part-photo-status muted" role="status" aria-live="polite"></p></div>'
+   contentHtml:'<div class="workspace-photos-editor is-editing-photo"><h2>Part image</h2><p class="muted">Add, replace, or delete this part photo.</p><div class="assembly-unified-photo"><div class="part-photo-stage"><img class="part-photo-preview" alt="Part image"><span class="part-photo-placeholder">No picture yet</span></div></div><div class="workspace-photo-tools"><div class="part-photo-actions"><button type="button" class="btn part-photo-add">+ Add / replace image</button><button type="button" class="btn part-photo-markup">Crop / annotate</button><button type="button" class="btn part-photo-delete">Delete image</button><input class="part-photo-file" type="file" accept="image/jpeg,image/png,image/webp" hidden></div></div><p class="part-photo-status muted" role="status" aria-live="polite"></p></div>'
   });
   const partPhotoFile=partPhotoDialog.querySelector(".part-photo-file");
   const partPhotoAdd=partPhotoDialog.querySelector(".part-photo-add");
   const partPhotoDelete=partPhotoDialog.querySelector(".part-photo-delete");
+  const partPhotoMarkup=partPhotoDialog.querySelector(".part-photo-markup");
   const partPhotoPreview=partPhotoDialog.querySelector(".part-photo-preview");
   const partPhotoPlaceholder=partPhotoDialog.querySelector(".part-photo-placeholder");
   const partPhotoStatus=partPhotoDialog.querySelector(".part-photo-status");
   function showPartPicture(partId,bust=false){
    if(!partId)return;
-   const src=partPhotoUrl(partId)+(bust?"&v="+Date.now():"");
+   const src=window.BSPhotoMarkup.displayUrl("part",partId,project)+(bust?"&v="+Date.now():"");
    const image=document.createElement("img");image.src=src;image.alt=currentPartInfo?.name||"Part image";
-   partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");partPhotoPlaceholder.hidden=false;
+   partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");partPhotoPlaceholder.hidden=false;partPhotoMarkup.disabled=true;partPhotoActions.setPhotoPresent(false);
    image.onload=()=>{
     if(currentPartInfo?.id!==partId)return;
     const main=document.createElement("img");main.src=src;main.alt=image.alt;
     pictureCover.replaceChildren(main);
     partPhotoPreview.src=src;partPhotoPreview.hidden=false;partPhotoPlaceholder.hidden=true;
-    partPhotoDelete.disabled=false;
+    partPhotoDelete.disabled=false;partPhotoMarkup.disabled=false;partPhotoActions.setPhotoPresent(true);
    };
    image.onerror=()=>{
     if(currentPartInfo?.id!==partId)return;
     pictureCover.replaceChildren(Object.assign(document.createElement("span"),{textContent:"No picture yet"}));
     partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");
-    partPhotoPlaceholder.hidden=false;partPhotoDelete.disabled=true;
+    partPhotoPlaceholder.hidden=false;partPhotoDelete.disabled=true;partPhotoMarkup.disabled=true;partPhotoActions.setPhotoPresent(false);
    };
   }
-  editPartPicture.onclick=()=>{
-   if(!canEdit()||!currentPartInfo)return;
-   partPhotoStatus.textContent="";
-   showPartPicture(currentPartInfo.id);partPhotoDialog.showModal();
-  };
   partPhotoAdd.onclick=()=>partPhotoFile.click();
+  partPhotoMarkup.onclick=()=>{if(currentPartInfo&&canEdit())window.BSPhotoMarkup.open({kind:"part",id:currentPartInfo.id,project,onSave:()=>showPartPicture(currentPartInfo.id,true)})};
+  window.BSPhotoMarkup.pasteOn(partPhotoDialog,file=>uploadPartPicture(file));
+  window.BSPhotoMarkup.dropOn(partPhotoDialog,file=>uploadPartPicture(file),{
+   canUpload:()=>canEdit()&&!!currentPartInfo,
+   onBlocked:message=>{partPhotoStatus.textContent=message||"Sign in as administrator before uploading photos."}
+  });
+  window.BSPhotoMarkup.dropOn(pictureCover,file=>uploadPartPicture(file),{
+   canUpload:()=>canEdit()&&!!currentPartInfo,
+   onBlocked:message=>{partPhotoStatus.textContent=message||"Sign in as administrator before uploading photos."}
+  });
   partPhotoFile.onchange=()=>void uploadPartPicture(partPhotoFile.files?.[0]);
   async function uploadPartPicture(file){
    const partId=currentPartInfo?.id;
@@ -828,18 +877,18 @@ function setupAssemblyTrees(){
    if(!["image/jpeg","image/png","image/webp"].includes(mime)||file.size>3*1024*1024){
     partPhotoStatus.textContent="Choose JPG, PNG, or WebP under 3 MB.";return;
    }
-   partPhotoAdd.disabled=true;partPhotoStatus.textContent="Uploading picture…";
+   partPhotoAdd.disabled=true;partPhotoStatus.textContent="Uploading picture…";partPhotoActions.setStatus("Uploading photo…");
    try{
     const response=await fetch(partPhotoUrl(partId),{method:"POST",credentials:"same-origin",headers:{"content-type":mime},body:file});
     const data=await response.json();if(!response.ok)throw Error(data.error||"Upload failed");
-    if(currentPartInfo?.id===partId){showPartPicture(partId,true);partPhotoStatus.textContent="Picture saved."}
-   }catch(error){partPhotoStatus.textContent=error.message||"Upload failed"}
+    if(currentPartInfo?.id===partId){showPartPicture(partId,true);partPhotoStatus.textContent="Picture saved.";partPhotoActions.setStatus("Photo saved.")}
+   }catch(error){partPhotoStatus.textContent=error.message||"Upload failed";partPhotoActions.setStatus(partPhotoStatus.textContent)}
    finally{partPhotoAdd.disabled=false;partPhotoFile.value=""}
   }
-  partPhotoDelete.onclick=async()=>{
+  async function deletePartPicture(){
    const partId=currentPartInfo?.id;
    if(!partId||!canEdit()||!confirm("Delete this part picture? The BOM part and instructions remain."))return;
-   partPhotoDelete.disabled=true;partPhotoStatus.textContent="Deleting picture…";
+   partPhotoDelete.disabled=true;partPhotoStatus.textContent="Deleting picture…";partPhotoActions.setStatus("Deleting photo…");
    try{
     const response=await fetch(partPhotoUrl(partId),{method:"DELETE",credentials:"same-origin"});
     const result=await response.json().catch(()=>({}));
@@ -847,20 +896,10 @@ function setupAssemblyTrees(){
     if(currentPartInfo?.id===partId){
      pictureCover.replaceChildren(Object.assign(document.createElement("span"),{textContent:"No picture yet"}));
      partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");
-     partPhotoPlaceholder.hidden=false;partPhotoStatus.textContent="Picture deleted.";
+     partPhotoPlaceholder.hidden=false;partPhotoMarkup.disabled=true;partPhotoActions.setPhotoPresent(false);partPhotoStatus.textContent="Picture deleted.";partPhotoActions.setStatus("Photo deleted.");
     }
-   }catch(error){partPhotoStatus.textContent=error.message||"Delete failed";partPhotoDelete.disabled=false}
-  };
-  const partPhotoStage=partPhotoDialog.querySelector(".part-photo-stage");
-  partPhotoStage.addEventListener("dragover",event=>{
-   if(!canEdit()||!Array.from(event.dataTransfer?.types||[]).includes("Files"))return;
-   event.preventDefault();event.dataTransfer.dropEffect="copy";
-  });
-  partPhotoStage.addEventListener("drop",event=>{
-   if(!canEdit())return;
-   const file=Array.from(event.dataTransfer?.files||[]).find(f=>f.type.startsWith("image/")||/\.(jpe?g|png|webp)$/i.test(f.name));
-   if(!file)return;event.preventDefault();void uploadPartPicture(file);
-  });
+   }catch(error){partPhotoStatus.textContent=error.message||"Delete failed";partPhotoActions.setStatus(partPhotoStatus.textContent);partPhotoDelete.disabled=false}
+  }
   detailsPanel.querySelector(".part-details-edit").onclick=()=>{
    const part=currentPartInfo;if(!part)return;
    const linked=nodes.find(n=>isPartNode(n)&&n.partId===part.id);
@@ -890,7 +929,7 @@ function setupAssemblyTrees(){
    detailsPanel.querySelector(".part-details-view-actions").classList.toggle("hide",!canEdit());
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
-   if(partPhotoDialog.open)partPhotoDialog.close();editPartPicture.hidden=true;
+   if(partPhotoDialog.open)partPhotoDialog.close();partPhotoActions.setEnabled(false);partPhotoActions.collapse();
    clearTimeout(partStatusTimer);partStatusChangeVersion++;progressPanel.hidden=true;heading.textContent="Loading part…";currentPartInfo=null;partSavedRevision=null;partStatus.textContent="Loading instructions…";partDetailsCollapse.open=false;
    detailRows.replaceChildren();detailsPanel.classList.add("hide");
    partWorkspace.querySelector(".part-harness-preview").classList.add("hide");
@@ -908,7 +947,7 @@ function setupAssemblyTrees(){
     currentPartInfo=part;
     progressPanel.hidden=part.isTool===true;
     if(!part.isTool)fillProgressPanel(part);
-    editPartPicture.hidden=!canEdit();
+    partPhotoActions.setEnabled(canEdit());
     investigationParts=partData.components||[];
     investigations?.showPart(partInvestigationPanel,partId);
     renderPartDetails(part);
@@ -1660,15 +1699,37 @@ function setupAssemblyTrees(){
   },true);
   const workspaceRoute=()=>location.hash.slice(1).startsWith(project+"/workspace/");
   let workspacePhotoVersion=0;
-  async function loadWorkspaceCover(){const id=selected,version=++workspacePhotoVersion,cover=workspace.querySelector(".workspace-cover");cover.replaceChildren();const placeholder=document.createElement("span");placeholder.textContent="No photo yet";cover.append(placeholder);try{
-    // Root assembly photos are distinct from the project summary gallery.
+  async function loadWorkspaceCover(){
+   const id=selected,version=++workspacePhotoVersion,cover=workspace.querySelector(".workspace-cover");
+   const previousId=workspacePhotos[workspacePhotoIndex]?.id;
+   cover.replaceChildren();cover.append(Object.assign(document.createElement("span"),{textContent:"No photo yet"}));
+   workspacePhotoBar.setPhotoPresent(false);
+   try{
     const query="/api/photos?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(id??"root-assembly");
-    const r=await fetch(query,{credentials:"same-origin",cache:"no-store"});if(!r.ok)return;
-    const data=await r.json();if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;
-    let photo=data.photos?.[0];
+    const response=await fetch(query,{credentials:"same-origin",cache:"no-store"});
+    if(!response.ok)throw Error("Unable to load photos");
+    const data=await response.json();
     if(version!==workspacePhotoVersion||selected!==id||!workspaceRoute())return;
-    if(photo){const img=document.createElement("img");img.src=photo.url;img.alt=photo.caption||"Assembly photo";cover.replaceChildren(img)}
-   }catch(e){/* cover is optional */}}
+    workspacePhotos=(data.photos||[]).filter(photo=>photo.assembly===(id??"root-assembly"));
+    workspacePhotoIndex=previousId?Math.max(0,workspacePhotos.findIndex(photo=>photo.id===previousId)):0;
+    const show=()=>{
+     const photo=workspacePhotos[workspacePhotoIndex];
+     workspacePhotoBar.setPhotoPresent(!!photo);cover.replaceChildren();
+     if(!photo){cover.append(Object.assign(document.createElement("span"),{textContent:"No photo yet"}));return}
+     const img=document.createElement("img");img.src=window.BSPhotoMarkup.displayUrl("gallery",photo.id);img.alt=photo.caption||"Assembly photo";
+     cover.append(img);
+     if(workspacePhotos.length>1){
+      const prev=document.createElement("button"),next=document.createElement("button");
+      prev.type=next.type="button";prev.className="bs-photo-previous";next.className="bs-photo-next";
+      prev.textContent="‹";next.textContent="›";prev.setAttribute("aria-label","Previous photo");next.setAttribute("aria-label","Next photo");
+      prev.onclick=()=>{workspacePhotoIndex=(workspacePhotoIndex+workspacePhotos.length-1)%workspacePhotos.length;show()};
+      next.onclick=()=>{workspacePhotoIndex=(workspacePhotoIndex+1)%workspacePhotos.length;show()};
+      cover.append(prev,next);
+     }
+    };
+    show();
+   }catch(e){workspacePhotoBar.setStatus(e.message)}
+  }
   let workspaceLoadVersion=0;
   let workspaceSavedRevision=null;
   const workspaceStatus=workspace.querySelector(".workspace-status");
@@ -1768,7 +1829,7 @@ function setupAssemblyTrees(){
     if(bomView==="pictures")renderTiles();
     return;
    }
-   if(inWorkspace){void loadAssemblyStatus();workspace.querySelector(".workspace-title").textContent=selected===null?title:((nodes.find(n=>n.id===selected)?.partNumber||"")+(nodes.find(n=>n.id===selected)?.partNumber?" · ":"")+(nodes.find(n=>n.id===selected)?.name||"Assembly"));if(photoDialog.open)photoDialog.close();openPhotoEditor.hidden=!canEdit();loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
+   if(inWorkspace){void loadAssemblyStatus();workspace.querySelector(".workspace-title").textContent=selected===null?title:((nodes.find(n=>n.id===selected)?.partNumber||"")+(nodes.find(n=>n.id===selected)?.partNumber?" · ":"")+(nodes.find(n=>n.id===selected)?.name||"Assembly"));if(photoDialog.open)photoDialog.close();workspacePhotoBar.setEnabled(canEdit());workspacePhotoBar.collapse();loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
@@ -1845,7 +1906,7 @@ function setupAssemblyTrees(){
        if(!r.ok)throw Error("Delete failed (HTTP "+r.status+")");
        await refresh();if(tile===workspacePhotoEditor)void loadWorkspaceCover();if(!id)void refreshProjectCover();
       }catch(e){report(e.message)}
-     },allowEditing));
+     },allowEditing,p=>window.BSPhotoMarkup.open({kind:"gallery",id:p.id,onSave:()=>{void refresh();void loadWorkspaceCover();void refreshProjectCover();void refreshProjectSummary()}})));
     }catch(e){report(e.message)}
    }
    async function upload(file){
@@ -1863,23 +1924,18 @@ function setupAssemblyTrees(){
      const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={error:raw.slice(0,160)||"Unexpected server response"}}
      if(!r.ok)throw Error((data.error||"Upload failed")+" (HTTP "+r.status+")");
      input.value="";caption.value="";
-     await refresh();if(tile===workspacePhotoEditor)void loadWorkspaceCover();if(!id)void refreshProjectCover();report("Photo uploaded.");
-    }catch(e){report(e.message||"Upload failed.")}
+     await refresh();if(tile===workspacePhotoEditor)void loadWorkspaceCover();if(!id)void refreshProjectCover();if(id==="project-summary")void refreshProjectSummary();report("Photo uploaded.");
+     return true;
+    }catch(e){report(e.message||"Upload failed.");return false}
     finally{busy=false;zone.removeAttribute("aria-busy")}
    }
    pick.onclick=event=>{event.stopPropagation();input.click()};
    input.onchange=()=>upload(input.files?.[0]);
-   // The zone is hidden in the modern photo-first layout; bind drops to the visible stage.
-   const dropTarget=tile.querySelector(".assembly-unified-photo");
-   if(dropTarget&&allowEditing){
-    dropTarget.addEventListener("dragover",event=>{if(!canEdit()||!event.dataTransfer.types.includes("Files"))return;event.preventDefault();event.stopPropagation();event.dataTransfer.dropEffect="copy";dropTarget.classList.add("is-dragover")});
-    dropTarget.addEventListener("dragleave",event=>{if(!dropTarget.contains(event.relatedTarget))dropTarget.classList.remove("is-dragover")});
-    dropTarget.addEventListener("drop",event=>{if(!canEdit())return;event.preventDefault();event.stopPropagation();dropTarget.classList.remove("is-dragover");void upload(event.dataTransfer.files?.[0])});
-   }
-   zone.ondragover=e=>{e.preventDefault();zone.classList.add("drag-over")};
+   // The visible photo dialog is the drop target; keep legacy zone support.
+   zone.ondragover=e=>{if(!e.dataTransfer?.types?.includes("Files"))return;e.preventDefault();zone.classList.add("drag-over")};
    zone.ondragleave=()=>zone.classList.remove("drag-over");
-   zone.ondrop=e=>{e.preventDefault();zone.classList.remove("drag-over");void upload(e.dataTransfer.files?.[0])};
-   return {refresh};
+   zone.ondrop=e=>{e.preventDefault();e.stopPropagation();zone.classList.remove("drag-over");void upload(e.dataTransfer.files?.[0])};
+   return {refresh,upload};
   }
   // Legacy photo controllers remain available for assembly imagery.
   const rootPhotoController=createPhotoController(main,()=>null,main.querySelector(".root-photo-status"));
@@ -1897,7 +1953,7 @@ function setupAssemblyTrees(){
    for(const n of sorted){
     const tile=document.createElement("article");tile.className="assembly-tile "+(isPartNode(n)?"assembly-bom-part-tile":"assembly-bom-subassembly-tile");
     const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);if(isPartNode(n)){const img=document.createElement("img");img.src=partPhotoUrl(n.partId);img.alt="";img.onerror=()=>{img.src=missingPicture;img.onerror=null};cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}
-    else fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=data.photos[0].url;img.alt="";cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}).catch(()=>{});
+    else fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=window.BSPhotoMarkup.displayUrl("gallery",data.photos[0].id);img.alt="";cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}).catch(()=>{});
     const openAssembly=()=>{if(isPartNode(n)){openTreePart(n);return}selected=n.id;expanded.add(n.parentId);history.pushState(null,"",workspaceHash(n.id));render();notify();window.scrollTo(0,0)};cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" workspace";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
     // Picture BOM tiles reuse the established photo-first design.
     // The old stage/dependency/footer controls are not shown beneath tiles.
