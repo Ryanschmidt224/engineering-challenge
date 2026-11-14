@@ -1581,3 +1581,81 @@
  :is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>.part-api-panel{grid-template-columns:minmax(0,1fr)}
  :is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .part-api-panel>.component-extract{justify-self:start}
 }
+
+
+/* Part details: an Edit button directly beside the heading, visible only when
+   the disclosure is expanded and the viewer has edit permissions. */
+.bom-part-workspace .part-details-view-heading{
+ justify-content:flex-start;
+ gap:14px;
+}
+.bom-part-workspace .part-details-view-heading .part-details-edit{
+ margin-left:6px;
+ flex:0 0 auto;
+ padding:6px 13px;
+ min-height:34px;
+ font-size:.84rem;
+ font-weight:650;
+}
+.bom-part-workspace .part-details-view-heading .part-details-edit[hidden],
+.bom-part-workspace .part-details-collapse:not([open])>.part-details-view-heading .part-details-edit{
+ display:none!important;
+}
+.bom-part-workspace .part-details-view-heading .part-details-toggle-label{
+ margin-left:auto;
+}
+.assembly-parts-management-link{
+ display:block;
+ width:100%;
+ margin:12px 0 4px!important;
+ border-top:1px solid var(--color-border)!important;
+ padding-top:13px!important;
+}
+/* All Part Editor descriptors share a line with their corresponding control.
+   This overrides the older vertical classification/description layout. */
+:is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>label,
+:is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>.part-number-field,
+:is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>.part-type-field,
+:is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>.part-description-field{
+ display:grid!important;
+ grid-template-columns:minmax(150px,190px) minmax(0,1fr)!important;
+ align-items:center!important;
+ gap:7px 16px!important;
+ width:min(100%,960px)!important;
+ max-width:960px!important;
+ margin:0 0 12px!important;
+ text-align:left;
+}
+:is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>label>.field,
+:is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>.part-number-field>.field,
+:is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>.part-type-field>.field,
+:is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>.part-description-field>.field{
+ width:100%!important;
+ min-width:0;
+ max-width:none!important;
+ margin:0!important;
+}
+:is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>.part-number-field>small,
+:is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>.part-number-field>.part-number-existing-option{
+ grid-column:2;
+}
+:is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .part-api-panel>label{
+ display:grid!important;
+ grid-template-columns:minmax(150px,190px) minmax(0,1fr);
+ align-items:center;
+ gap:16px;
+}
+@media(max-width:680px){
+ :is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>label,
+ :is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>.part-number-field,
+ :is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>.part-type-field,
+ :is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>.part-description-field,
+ :is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .part-api-panel>label{
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:5px!important;
+ }
+ :is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>.part-number-field>small,
+ :is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .component-review>.part-number-field>.part-number-existing-option{
+  grid-column:1;
+ }
+}
