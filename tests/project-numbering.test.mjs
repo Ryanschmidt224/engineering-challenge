@@ -20,11 +20,11 @@ test("project numbering reserves numbers 001–099 for assemblies",async()=>{
  assert.equal(await issueNumber(env,project,"assembly","assembly-b"),"NR002");
  assert.equal(await issueNumber(env,project,"part","part-a"),"NR100");
  assert.equal(await issueNumber(env,project,"part","part-b"),"NR101");
- assert.equal(await issueNumber(env,project,"part","part-a"),"NR1001");
+ assert.equal(await issueNumber(env,project,"part","part-a"),"NR100");
  await assert.rejects(issueNumber(env,project,"part","part-reserved","NR050"),/reserved for assemblies/);
  await assert.rejects(issueNumber(env,project,"assembly","assembly-invalid","NR103"),/between 1 and 99/);
- await assert.rejects(issueNumber(env,project,"part","part-duplicate","NR1002"),/already assigned/);
- assert.equal(await issueNumber(env,project,"part","part-manual","NR140"),"NR1040");
+ await assert.rejects(issueNumber(env,project,"part","part-duplicate","NR101"),/already assigned/);
+ assert.equal(await issueNumber(env,project,"part","part-manual","NR140"),"NR140");
  assert.equal(await issueNumber(env,project,"part","part-after-manual"),"NR141");
  const state=await numberingState(env,project);
  assert.equal(state.data.nextAssembly,3);
@@ -58,8 +58,8 @@ test("legacy part and assembly numbers cannot be duplicated",async()=>{
  await env.PHOTOS.put("trees/"+project+".json",JSON.stringify([
   {id:"legacy-assembly",kind:"assembly",name:"Frame",partNumber:"NR003"}
  ]));
- await assert.rejects(issueNumber(env,project,"part","newpart","NR1007"),/already assigned/);
- await assert.rejects(issueNumber(env,project,"assembly","newassembly","NR0003"),/already assigned/);
- assert.equal(await issueNumber(env,project,"part","newpart","NR108"),"NR1008");
- assert.equal(await issueNumber(env,project,"assembly","newassembly","NR004"),"NR0004");
+ await assert.rejects(issueNumber(env,project,"part","newpart","NR107"),/already assigned/);
+ await assert.rejects(issueNumber(env,project,"assembly","newassembly","NR003"),/already assigned/);
+ assert.equal(await issueNumber(env,project,"part","newpart","NR108"),"NR108");
+ assert.equal(await issueNumber(env,project,"assembly","newassembly","NR004"),"NR004");
 });
