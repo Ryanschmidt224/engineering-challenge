@@ -164,8 +164,9 @@ export async function handleComponents(request,env){
   }
   if(input.partType!==undefined){
    if(!["purchased","custom","code"].includes(input.partType))return json({error:"Invalid part type"},400);
-   entry.partType=input.partType;
+   const wasCode=entry.partType==="code";entry.partType=input.partType;
    if(entry.partType==="code"){entry.itemType="document";entry.isTool=false;entry.quantity=null}
+   else if(wasCode){entry.itemType="part"}
    // Keep unrelated metadata when switching types; do not discard history.
   }
   if(Object.prototype.hasOwnProperty.call(input,"purchaseOverride"))entry.purchaseOverride=input.purchaseOverride;
