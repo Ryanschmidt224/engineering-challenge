@@ -32,11 +32,11 @@
   dialog.addEventListener("cancel",e=>{if(textEditor)finishText();if(generation!==savedGeneration){e.preventDefault();void persist(true)}});
   const color=el("input");color.type="color";color.value=strokeColor;color.setAttribute("aria-label","Annotation color");
   color.onchange=()=>strokeColor=color.value;
-  for(const [key,label] of [["pen","Pen"],["highlight","Highlight"],["arrow","Arrow"],["circle","Circle"],["text","Text"],["crop","Crop"]]){
+  for(const [key,label] of [["pen","Pen"],["highlight","Highlight"],["arrow","Arrow"],["circle","Circle"],["text","Text"],["move","Move text"],["crop","Crop"]]){
    const choice=button(label,()=>{finishText();tool=key;activate()});choice.dataset.tool=key;toolbar.append(choice);
   }
   toolbar.append(color);activate();
-  function activate(){for(const b of toolbar.querySelectorAll("[data-tool]"))b.setAttribute("aria-pressed",String(b.dataset.tool===tool))}
+  function activate(){for(const b of toolbar.querySelectorAll("[data-tool]"))b.setAttribute("aria-pressed",String(b.dataset.tool===tool));canvas.style.cursor=tool==="move"?"grab":"crosshair"}
   function commit(next){history.push(snapshot(state));future=[];state=snapshot(next);draw();sync();scheduleSave()}
   function stepBack(){if(!history.length)return;future.push(snapshot(state));state=history.pop();draw();sync();scheduleSave()}
   function stepForward(){if(!future.length)return;history.push(snapshot(state));state=future.pop();draw();sync();scheduleSave()}
@@ -53,6 +53,7 @@
      tool:"text",a:active.anchor,color:active.color,size:active.size,
      top:true,wrapW:active.wrapW,text:value
     }]});
+    tool="move";activate();
    }
   }
   function beginText(a,event){
@@ -83,6 +84,46 @@
    });
    input.addEventListener("blur",()=>finishText());
    frame.append(input);input.focus();
+  }
+  // Match the same font wrapping used when painting, so move grabs precisely
+  // the visible text instead of an invisible full-width region.
+  function textBounds(ctx,mark){
+   const w=canvas.width,h=canvas.height,fontPx=Math.max(12,mark.size*Math.min(w,h)*6);
+   ctx.save();ctx.font="bold "+fontPx+"px sans-serif";
+   const maxWidth=mark.wrapW?mark.wrapW*w:Infinity;
+   let lines=0,longest=0;
+   for(const paragraph of mark.text.split("\\n")){
+    let line="";
+    for(const word of paragraph.split(/(\\s+)/)){
+     if(line&&ctx.measureText(line+word).width>maxWidth){
+      longest=Math.max(longest,ctx.measureText(line).width);
+      lines++;line=word.trimStart();
+     }else line+=word;
+    }
+    longest=Math.max(longest,ctx.measureText(line).width);lines++;
+   }
+   ctx.restore();
+   const x=mark.a[0]*w,y=mark.a[1]*h;
+   const top=y-(mark.top?0:fontPx);
+   return {x,y:top,w:Math.min(w,longest),h:Math.max(fontPx,lines*fontPx*1.25)};
+  }
+  function textAt(point){
+   const ctx=canvas.getContext("2d"),x=point[0]*canvas.width,y=point[1]*canvas.height;
+   for(let i=state.marks.length-1;i>=0;i--){
+    const m=state.marks[i];if(m.tool!=="text")continue;
+    const b=textBounds(ctx,m),padding=9*(canvas.width/canvas.getBoundingClientRect().width);
+    if(x>=b.x-padding&&x<=b.x+b.w+padding&&y>=b.y-padding&&y<=b.y+b.h+padding)return i;
+   }
+   return -1;
+  }
+  function movedText(original,index,from,to){
+   const next=snapshot(original),mark=next.marks[index];
+   const dx=to[0]-from[0],dy=to[1]-from[1];
+   const bounds=textBounds(canvas.getContext("2d"),mark);
+   const maxX=Math.max(0,1-bounds.w/canvas.width);
+   const topOffset=mark.top?0:Math.min(1,bounds.h/canvas.height);
+   mark.a=[Math.max(0,Math.min(maxX,original.marks[index].a[0]+dx)),Math.max(topOffset,Math.min(1,original.marks[index].a[1]+dy))];
+   return next;
   }
   function xy(e){const rect=canvas.getBoundingClientRect();return [clamp((e.clientX-rect.left)/rect.width),clamp((e.clientY-rect.top)/rect.height)]}
   function render(target,s,scale=1){
@@ -151,6 +192,14 @@
    e.preventDefault();
    const a=xy(e);
    if(tool==="text"){beginText(a,e);return}
+   if(tool==="move"){
+    const index=textAt(a);
+    if(index<0)return;
+    canvas.setPointerCapture(e.pointerId);
+    drag={a,index,original:snapshot(state),moveText:true};
+    canvas.style.cursor="grabbing";
+    return;
+   }
    canvas.setPointerCapture(e.pointerId);
    drag={a,original:snapshot(state)};
    if(tool==="pen"||tool==="highlight"){
@@ -158,8 +207,14 @@
    }
   });
   canvas.addEventListener("pointermove",e=>{
-   if(!drag||!image)return;
-   const b=xy(e);const next=snapshot(drag.original);
+   if(!image)return;
+   if(!drag){
+    if(tool==="move")canvas.style.cursor=textAt(xy(e))>=0?"grab":"default";
+    return;
+   }
+   const b=xy(e);
+   if(drag.moveText){state=movedText(drag.original,drag.index,drag.a,b);draw();return}
+   const next=snapshot(drag.original);
    if(tool==="crop"){
     const x=Math.min(drag.a[0],b[0]),y=Math.min(drag.a[1],b[1]);
     next.crop=[x,y,Math.max(.001,Math.abs(b[0]-drag.a[0])),Math.max(.001,Math.abs(b[1]-drag.a[1]))];
@@ -173,6 +228,16 @@
    if(!drag)return;
    const b=xy(e),start=drag.original;
    let next=snapshot(start);
+   if(drag.moveText){
+    const index=drag.index;
+    next=movedText(start,index,drag.a,b);
+    drag=null;state=start;canvas.style.cursor="grab";
+    const before=start.marks[index].a;
+    const after=next.marks[index].a;
+    if(before[0]!==after[0]||before[1]!==after[1])commit(next);
+    else draw();
+    return;
+   }
    if(tool==="crop"){
     const x=Math.min(drag.a[0],b[0]),y=Math.min(drag.a[1],b[1]);
     const w=Math.abs(b[0]-drag.a[0]),h=Math.abs(b[1]-drag.a[1]);
@@ -182,7 +247,7 @@
    }else next.marks.push({tool,a:drag.a,b,color:strokeColor,size:.004});
    drag=null;state=start;commit(next);
   });
-  canvas.addEventListener("pointercancel",()=>{if(drag){state=drag.original;drag=null;draw()}});
+  canvas.addEventListener("pointercancel",()=>{if(drag){state=drag.original;drag=null;activate();draw()}});
   async function load(){
    try{
     const [response,img]=await Promise.all([
@@ -194,7 +259,7 @@
     image=img;state=data.state||{crop:null,marks:[]};
     const max=1800,ratio=Math.min(1,max/Math.max(image.naturalWidth,image.naturalHeight));
     canvas.width=Math.round(image.naturalWidth*ratio);canvas.height=Math.round(image.naturalHeight*ratio);
-    history=[];future=[];draw();sync();status.textContent="Text: click the photo and type directly. Enter to place, Shift+Enter for a new line, Esc to cancel. Original photo is preserved.";
+    history=[];future=[];draw();sync();status.textContent="Text: click and type, then select Move text and drag the label to reposition it. Enter places text; Esc cancels. Original photo is preserved.";
    }catch(e){status.textContent=e.message;save.disabled=true}
   }
   async function persist(closeAfter=false){
