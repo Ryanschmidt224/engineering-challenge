@@ -140,10 +140,10 @@ function open({onCreate,hideDefault=false}){
   if(["fasteners","screws"].includes(category))return "hardware";
   if(["tool"].includes(category))return "tools";
   const words=[p.name,p.model,p.specifications].filter(Boolean).join(" ").toLowerCase();
-  if(/\\b(?:solder|flux|heat.?shrink|electrical tape|wire|cable|adhesive|lubricant)\\b/.test(words))return "consumables";
-  if(/\\b(?:motor|servo|stepper|esc|mosfet|sensor|controller|arduino|relay|pcb|buck|converter)\\b/.test(words))return "electronics";
-  if(/\\b(?:multimeter|oscilloscope|soldering iron|wire stripper|crimper|heat gun|wrench)\\b/.test(words))return "tools";
-  if(/\\b(?:gloves|safety glasses|fume extractor|ventilation)\\b/.test(words))return "safety";
+  if(/\b(?:solder|flux|heat.?shrink|electrical tape|wire|cable|adhesive|lubricant)\b/.test(words))return "consumables";
+  if(/\b(?:motor|servo|stepper|esc|mosfet|sensor|controller|arduino|relay|pcb|buck|converter)\b/.test(words))return "electronics";
+  if(/\b(?:multimeter|oscilloscope|soldering iron|wire stripper|crimper|heat gun|wrench)\b/.test(words))return "tools";
+  if(/\b(?:gloves|safety glasses|fume extractor|ventilation)\b/.test(words))return "safety";
   return "hardware";
  };
  const powerGroup=p=>{
