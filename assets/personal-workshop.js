@@ -93,6 +93,7 @@
       <label>Part number<input id="workshop-partnumber" class="field" maxlength="120"></label>
       <label>Quantity<input id="workshop-quantity" class="field" type="number" min="0" step="any" value="1"></label>
       <label>Unit<input id="workshop-unit" class="field" maxlength="32" value="pcs"></label>
+      <label>Availability<select id="workshop-stockstatus" class="field"><option value="in_stock">In stock</option><option value="in_use_reusable">In use (reusable)</option><option value="committed">Committed</option></select></label>
      </div>
      <label>Specifications (one per line: name: value)<textarea id="workshop-specifications" class="field" rows="3"></textarea></label>
      <label>Notes<textarea id="workshop-notes" class="field" maxlength="1500"></textarea></label>
@@ -112,12 +113,12 @@
    $("#workshop-photo-upload",personal).onclick=uploadPhoto;
    $("#workshop-compare",personal).onclick=compare;
   }
-  const fields={name:"name",kind:"kind",category:"category",manufacturer:"manufacturer",model:"model",partNumber:"partnumber",quantity:"quantity",unit:"unit",notes:"notes"};
+  const fields={name:"name",kind:"kind",category:"category",manufacturer:"manufacturer",model:"model",partNumber:"partnumber",quantity:"quantity",unit:"unit",stockStatus:"stockstatus",notes:"notes"};
   function fill(item){
    editingId=item.id||null;photoId=item.photoId||"";
    for(const [key,id] of Object.entries(fields)){
     const input=$("#workshop-"+id,personal);
-    if(input)input.value=item[key]??(key==="quantity"?1:key==="unit"?"pcs":key==="kind"?"other":"");
+    if(input)input.value=item[key]??(key==="quantity"?1:key==="unit"?"pcs":key==="kind"?"other":key==="stockStatus"?"in_stock":"");
    }
    const preview=$("#workshop-photo-preview",personal);
    if(preview){preview.hidden=!photoId;if(photoId)preview.src="/api/workshop-photo?id="+encodeURIComponent(photoId)}
@@ -133,7 +134,7 @@
    if(!matches.length){list.append(el("p","No matching items in your personal Workshop.","muted"));return}
    for(const item of matches){
     const row=el("article",undefined,"workshop-item"),details=el("div");
-    details.append(el("strong",item.name),el("p",[item.manufacturer,item.model,item.category].filter(Boolean).join(" · ")+" · Qty "+item.quantity+" "+item.unit,"muted"));
+    details.append(el("strong",item.name),el("p",[item.manufacturer,item.model,item.category].filter(Boolean).join(" · ")+" · Qty "+item.quantity+" "+item.unit+" · "+({in_stock:"In stock",in_use_reusable:"In use (reusable)",committed:"Committed"}[item.stockStatus||"in_stock"]),"muted"));
     if(item.photoId){const img=el("img",undefined,"workshop-photo-thumb");img.src="/api/workshop-photo?id="+encodeURIComponent(item.photoId);img.alt="Photo of "+item.name;details.append(img)}
     const actions=el("div",undefined,"workshop-actions"),edit=el("button","Edit","btn"),remove=el("button","Delete","btn");
     edit.onclick=()=>{fill(item);$("#workshop-editor",personal).scrollIntoView({block:"nearest"})};
@@ -179,13 +180,13 @@
    if(!project){setStatus("Select a project.");return}
    target.replaceChildren();try{
     const data=await req("/api/personal-workshop?project="+encodeURIComponent(project));
-    const counts={owned:0,short:0,unknown:0,check:0};
+    const counts={owned:0,reusable:0,short:0,unknown:0,check:0};
     for(const part of data.comparison){counts[part.status]=(counts[part.status]||0)+1;
      const line=el("div",undefined,"workshop-check");
-     const label={owned:"Owned",short:"Not enough",unknown:"Unknown — check inventory",check:"Check details"}[part.status];
-     line.append(el("strong",label+" · "+part.name),el("div",(part.required===null?"Quantity not specified":"Need "+part.required+" "+part.unit)+(part.available===null?"":" · In Workshop "+part.available+" "+part.unit),"muted"));target.append(line);
+     const label={owned:"In stock",reusable:"Available after reuse",short:"Not enough uncommitted stock",unknown:"Unknown — check inventory",check:"Check details"}[part.status];
+     line.append(el("strong",label+" · "+part.name),el("div",(part.required===null?"Quantity not specified":"Need "+part.required+" "+part.unit)+(part.available===null?"":" · In stock "+part.available+" "+part.unit)+(part.reusable?" · Reusable "+part.reusable+" "+part.unit:"")+(part.committed?" · Committed "+part.committed+" "+part.unit:""),"muted"));target.append(line);
     }
-    target.prepend(el("p",counts.owned+" covered · "+counts.short+" short · "+counts.unknown+" unknown · "+counts.check+" need review"));
+    target.prepend(el("p",counts.owned+" in stock · "+counts.reusable+" reusable · "+counts.short+" short · "+counts.unknown+" unknown · "+counts.check+" need review"));
    }catch(e){setStatus(e.message)}
   }
   (async()=>{try{if(!await auth())return;buildUI();items=(await req("/api/personal-workshop")).items;render();await loadProjects()}catch(e){setStatus(e.message)}})();
