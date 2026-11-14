@@ -1,6 +1,7 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
 import {handleAccounts} from "../functions/api/accounts.js";
+import {isAdmin,auth} from "../functions/api/auth.js";
 import {onRequest as projectsApi,projectAllowed,canEditProject} from "../functions/api/projects.js";
 import {handleTree} from "../functions/api/tree.js";
 import {handleComponents} from "../functions/api/components.js";
@@ -129,4 +130,30 @@ test("Projects share one catalog with custom categories and no legacy mini proje
  assert.equal((await projectsApi({request:request("/api/projects","PATCH",{
   id:project.id,category:""
  },owner),env})).status,400);
+});
+
+test("administrator is a role on an existing email/password account, never a public signup option",async()=>{
+ const env={PHOTOS:new Bucket(),admin_password:"role-based-test-admin-secret"};
+ const response=await handleAccounts(request("/api/accounts","POST",{
+  action:"register",email:"role-admin@example.test",password:"strong-account-password",displayName:"Site Owner",role:"admin"
+ }),env);
+ assert.equal(response.status,201);
+ const session=cookie(response);
+ const current=new Request(ORIGIN+"/api/auth",{headers:{cookie:session}});
+ assert.equal(await isAdmin(current,env),false);
+ assert.equal((await handleAccounts(request("/api/accounts","POST",{action:"claim-admin",adminPassword:"incorrect"},session),env)).status,403);
+ const elevated=await handleAccounts(request("/api/accounts","POST",{
+  action:"claim-admin",adminPassword:env.admin_password
+ },session),env);
+ assert.equal(elevated.status,200);
+ assert.equal((await elevated.json()).user.role,"admin");
+ assert.equal(await isAdmin(current,env),true);
+ assert.equal((await (await handleAccounts(request("/api/accounts","GET",undefined,session),env)).json()).user.role,"admin");
+ assert.equal((await auth(request("/api/auth","POST",{password:env.admin_password}),env)).status,410);
+ const other=await handleAccounts(request("/api/accounts","POST",{
+  action:"register",email:"ordinary@example.test",password:"another-strong-password"
+ }),env);
+ assert.equal(other.status,201);
+ assert.equal((await other.json()).user.role,"member");
+ assert.equal(await isAdmin(new Request(ORIGIN+"/api/auth",{headers:{cookie:cookie(other)}}),env),false);
 });
