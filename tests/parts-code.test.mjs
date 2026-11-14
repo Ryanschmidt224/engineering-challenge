@@ -115,3 +115,40 @@ test("Missing legacy purchase status displays Not started without modifying the 
  const saved=JSON.parse(await (await env.PHOTOS.get("components/launcher.json")).text());
  assert.equal(Object.hasOwn(saved[0],"purchaseStatus"),false);
 });
+
+test("Progress Status notes append chronologically and survive later status changes",async()=>{
+ const {env,req}=await setup(),path="/api/components?project=launcher&id="+id;
+ let response=await handleComponents(req(path,"PATCH",{progressStatus:"in_progress"}),env);
+ assert.equal(response.status,200);
+ response=await handleComponents(req(path,"PATCH",{progressUpdate:"Material ordered"}),env);
+ assert.equal(response.status,200);
+ let first=(await response.json()).component;
+ assert.equal(first.progressUpdates.length,1);
+ assert.equal(first.progressUpdates[0].text,"Material ordered");
+ assert.ok(first.progressUpdates[0].id);
+ assert.ok(first.progressUpdates[0].createdAt);
+ response=await handleComponents(req(path,"PATCH",{progressUpdate:"Waiting on paint"}),env);
+ assert.equal(response.status,200);
+ const second=(await response.json()).component;
+ assert.deepEqual(second.progressUpdates.map(item=>item.text),["Material ordered","Waiting on paint"]);
+ assert.notEqual(second.progressUpdates[0].id,second.progressUpdates[1].id);
+ response=await handleComponents(req(path,"PATCH",{progressStatus:"complete"}),env);
+ assert.equal(response.status,200);
+ const completed=(await response.json()).component;
+ assert.equal(completed.progressUpdates.length,2);
+ response=await handleComponents(req(path,"PATCH",{progressUpdate:"Should not save"}),env);
+ assert.equal(response.status,400);
+ const stored=JSON.parse(await (await env.PHOTOS.get("components/launcher.json")).text());
+ assert.deepEqual(stored[0].progressUpdates.map(item=>item.text),["Material ordered","Waiting on paint"]);
+});
+
+test("Progress Status notes reject blanks, oversized notes, and non-progress parts",async()=>{
+ const {env,req}=await setup(),path="/api/components?project=launcher&id="+id;
+ assert.equal((await handleComponents(req(path,"PATCH",{progressUpdate:"not started yet"}),env)).status,400);
+ assert.equal((await handleComponents(req(path,"PATCH",{progressStatus:"in_progress",progressUpdate:"  "}),env)).status,400);
+ assert.equal((await handleComponents(req(path,"PATCH",{progressStatus:"in_progress",progressUpdate:"x".repeat(501)}),env)).status,400);
+ let response=await handleComponents(req(path,"PATCH",{progressStatus:"in_progress",progressUpdate:"   Inspection complete   "}),env);
+ assert.equal(response.status,200);
+ const part=(await response.json()).component;
+ assert.equal(part.progressUpdates[0].text,"Inspection complete");
+});
