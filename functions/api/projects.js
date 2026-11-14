@@ -72,7 +72,7 @@ export async function onRequest({request,env}){
   if(!name||name.length>100||description.length>500)return json({error:"Project name must be 1–100 characters and description at most 500"},400);
   const kind=input.kind==="mini"?"mini":"project";
   if(!user)return json({error:"A personal account is required to create a project"},401);
-  const project={id:"p"+crypto.randomUUID().replace(/-/g,""),name,description,kind,archived:false,ownerId:user.id,visibility:"private",editMode:"approval"};
+  const project={id:"p"+crypto.randomUUID().replace(/-/g,""),name,description,kind,archived:false,ownerId:user.id,visibility:"private",editMode:"approval",authorName:user.displayName};
   updated=[...catalog.stored,project];
  }else{
   const item=catalog.projects.find(p=>p.id===input.id);
