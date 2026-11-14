@@ -1494,7 +1494,7 @@ function setupAssemblyTrees(){
    nextNumberButton.disabled=!!part.partNumber;
    partNumberHelp.textContent=part.partNumber?"Issued number. Existing part numbers are permanent.":"Enter a number or click Choose next available part number.";
    updatePartTypeFields();
-   for(const key of ["name","manufacturer","model","supplier","asin"]){const field=bomField(key);if(field)field.value=part[key]||""}
+   for(const key of ["name","manufacturer","model","supplier","asin","category"]){const field=bomField(key);if(field)field.value=part[key]||""}
 
    const qty=bomField("quantity");if(qty)qty.value=part.quantity??"";
    const unit=bomField("quantity-unit");if(unit)unit.value=part.quantityUnit??"pcs";if(unit?.closest("label"))unit.closest("label").hidden=true;
@@ -1638,7 +1638,8 @@ function setupAssemblyTrees(){
    component.historicalPackageQuantity=pricingBasis==="per_package"?(countInput||null):null;
    component.historicalPriceDate=priceInput===""?null:(dateInput||new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10));
    for(const key of ["name","manufacturer","model","supplier","asin"])component[key]=bomField(key)?.value.trim()||"";
-   // Existing category metadata is intentionally left untouched by the editor.
+   // Preserve the hidden category for existing parts and product extraction.
+   component.category=bomField("category")?.value.trim()||"";
    // The API automatically generates the display/file label: part number + name.
    component.description=partDescriptionInput.value.trim();
    if(component.partType!=="purchased")Object.assign(component,{manufacturer:"",model:"",supplier:"",asin:"",historicalPurchasePrice:null,historicalPriceDate:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
