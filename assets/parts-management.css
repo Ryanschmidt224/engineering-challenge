@@ -1,0 +1,35 @@
+/* Parts Management: compact spreadsheet-like editor, not a second BOM. */
+.assembly-parts-page{padding:8px 12px 40px;min-width:0}
+.bs-parts-header{display:flex;align-items:center;justify-content:space-between;margin:0 0 15px}
+.bs-parts-header h1{font-size:clamp(1.55rem,2.3vw,2rem);margin:12px 0 0}
+.bs-parts-controls{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.bs-parts-controls .field{width:auto;min-width:150px;max-width:100%;flex:0 1 205px}
+.bs-parts-controls input{flex:1 1 270px}
+.bs-parts-page .muted{font-size:.84rem}
+.bs-parts-scroll{overflow-x:auto;width:100%;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface)}
+.bs-parts-table{width:100%;min-width:620px;border-collapse:collapse;table-layout:auto}
+.bs-parts-table th,.bs-parts-table td{border-bottom:1px solid var(--color-border);text-align:left;padding:8px 10px;vertical-align:middle}
+.bs-parts-table tr:last-child td{border-bottom:0}
+.bs-parts-table th{background:var(--color-surface-muted);font-size:.83rem;white-space:nowrap}
+.bs-parts-table .bs-parts-sort{font:inherit;font-weight:650;background:transparent;border:0;padding:5px 2px;color:var(--color-text);cursor:pointer}
+.bs-parts-table .bs-parts-sort:hover{text-decoration:underline}
+.bs-parts-table .field{width:100%;min-width:115px;margin:0;box-sizing:border-box;font-size:.89rem}
+.bs-parts-table td:nth-child(2){min-width:205px;width:42%}
+.bs-parts-table td:last-child{text-align:right}
+.bs-parts-number{font-variant-numeric:tabular-nums;color:var(--color-text-muted);font-size:.85rem;white-space:nowrap}
+.bs-parts-feedback{font-size:.82rem;color:var(--color-text-muted);min-height:1.3em;margin:8px 0}
+.bs-part-code{margin:16px 0 20px;padding:16px;border:1px solid var(--color-border);border-radius:11px;background:var(--color-surface)}
+.bs-code-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.bs-code-heading h2{margin:0;font-size:1.15rem}
+.bs-code-head-actions,.bs-code-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.bs-code-description{font-size:.83rem;margin:6px 0 12px}
+.bs-code-metadata{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 11px}
+.bs-code-metadata label{display:flex;flex-direction:column;gap:4px;min-width:160px;flex:1 1 210px;font-size:.83rem;font-weight:600}
+.bs-code-editor,.bs-code-viewer{display:block;width:100%;box-sizing:border-box;min-height:220px;max-height:65vh;overflow:auto;border:1px solid var(--color-border);border-radius:8px;padding:13px 15px;margin:0 0 12px;background:var(--color-surface-muted);color:var(--color-text);font:13px/1.6 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;tab-size:2;white-space:pre}
+.bs-code-editor{resize:vertical;min-height:320px;outline-color:var(--color-accent)}
+.bs-code-history{margin-top:12px;padding-top:10px;border-top:1px solid var(--color-border)}
+.bs-code-history summary{font-size:.86rem;cursor:pointer}
+.bs-code-history-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--color-border);font-size:.83rem}
+.bs-code-status{margin:8px 0}
+.bs-code-editor[hidden],.bs-code-viewer[hidden],.bs-code-metadata[hidden],.bs-code-actions[hidden],.bs-code-history[hidden]{display:none!important}
+@media(max-width:700px){.assembly-parts-page{padding:8px 0 28px}.bs-parts-scroll{border-radius:6px}.bs-part-code{padding:10px}.bs-code-metadata{flex-direction:column}}
