@@ -1464,3 +1464,33 @@
 .assembly-tree-filters label:has(input){white-space:nowrap}
 .part-item-type-select{width:100%}
 .library-field[hidden],.part-type-field[hidden]{display:none!important}
+
+
+/* Part editor: classification -> identification -> sourcing -> display -> specs.
+   Section labels are visual hierarchy, not separate data containers. */
+.workspace-main-bom-editor .component-review>.part-editor-section-heading{
+ display:block;
+ width:100%;
+ margin:22px 0 0;
+ padding:11px 0 2px;
+ border-top:1px solid var(--color-border);
+ color:var(--color-text);
+ font-size:.96rem;
+ font-weight:700;
+ letter-spacing:0;
+}
+.workspace-main-bom-editor .component-review>.part-editor-section-heading:first-child{
+ margin-top:0;
+ padding-top:0;
+ border-top:0;
+}
+.workspace-main-bom-editor .component-review>.part-number-field{
+ max-width:none;
+}
+.workspace-main-bom-editor .component-review>.part-number-field>.part-number-input{
+ width:100%;
+ max-width:420px;
+}
+.workspace-main-bom-editor .component-review>.part-visibility-field{
+ margin:3px 0;
+}
