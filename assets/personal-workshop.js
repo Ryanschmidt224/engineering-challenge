@@ -64,7 +64,7 @@
      const row=el("div",undefined,"workshop-reco");
      row.append(el("span",name));
      const add=el("button","+ Add to My Workshop","btn");add.type="button";
-     add.onclick=()=>{fill({name,kind,category:group.group});$("#workshop-name",personal).focus();personal.scrollIntoView({block:"start",behavior:"smooth"})};
+     add.onclick=()=>{if(!$("#workshop-editor",personal)){setStatus("Sign in to add recommended equipment to your private Workshop.");return}fill({name,kind,category:group.group});$("#workshop-name",personal).focus();personal.scrollIntoView({block:"start",behavior:"smooth"})};
      row.append(add);details.append(row);
     }
     list.append(details);
@@ -81,7 +81,7 @@
   }
   function buildUI(){
    privateArea.innerHTML=`
-    <div class="workshop-row"><input id="workshop-search" class="field" type="search" placeholder="Search my equipment and parts" aria-label="Search my Workshop"><button class="btn" type="button" id="workshop-new">+ Add item</button></div>
+    <div class="workshop-row"><input id="workshop-search" class="field" type="search" placeholder="Search my equipment and parts" aria-label="Search my Workshop"><select class="field" id="workshop-type-filter" aria-label="Filter inventory by type"><option value="">All types</option><option value="tool">Tools</option><option value="equipment">Equipment</option><option value="component">Components</option><option value="material">Materials</option><option value="other">Other</option></select><button class="btn" type="button" id="workshop-new">+ Add item</button></div>
     <div class="workshop-items" id="workshop-items"></div>
     <details id="workshop-editor"><summary>Item details</summary>
      <div class="workshop-form-grid">
@@ -94,6 +94,7 @@
       <label>Quantity<input id="workshop-quantity" class="field" type="number" min="0" step="any" value="1"></label>
       <label>Unit<input id="workshop-unit" class="field" maxlength="32" value="pcs"></label>
      </div>
+     <label>Specifications (one per line: name: value)<textarea id="workshop-specifications" class="field" rows="3"></textarea></label>
      <label>Notes<textarea id="workshop-notes" class="field" maxlength="1500"></textarea></label>
      <div class="workshop-row"><label>Photo of equipment<input id="workshop-photo" type="file" accept="image/jpeg,image/png,image/webp"></label><button id="workshop-photo-upload" type="button" class="btn">Import photo and identify</button><img id="workshop-photo-preview" class="workshop-photo-thumb" hidden alt="Equipment photo"></div>
      <p class="muted">AI identification is a draft. Check the model and specifications yourself before saving.</p>
@@ -104,6 +105,7 @@
      <div id="workshop-comparison"></div>
     </section>`;
    $("#workshop-search",personal).addEventListener("input",render);
+   $("#workshop-type-filter",personal).addEventListener("change",render);
    $("#workshop-new",personal).onclick=()=>fill({});
    $("#workshop-save",personal).onclick=save;
    $("#workshop-cancel",personal).onclick=()=>$("#workshop-editor",personal).open=false;
@@ -119,12 +121,15 @@
    }
    const preview=$("#workshop-photo-preview",personal);
    if(preview){preview.hidden=!photoId;if(photoId)preview.src="/api/workshop-photo?id="+encodeURIComponent(photoId)}
+   const specs=$("#workshop-specifications",personal);
+   if(specs)specs.value=(item.specifications||[]).map(x=>x.name+": "+x.value).join("\\n");
    $("#workshop-editor",personal).open=true;
   }
   function render(){
    const list=$("#workshop-items",personal);if(!list)return;list.replaceChildren();
    const search=$("#workshop-search",personal).value.toLowerCase();
-   const matches=items.filter(x=>[x.name,x.manufacturer,x.model,x.category,x.partNumber].join(" ").toLowerCase().includes(search));
+   const type=$("#workshop-type-filter",personal).value;
+   const matches=items.filter(x=>(!type||x.kind===type)&&[x.name,x.manufacturer,x.model,x.category,x.partNumber].join(" ").toLowerCase().includes(search));
    if(!matches.length){list.append(el("p","No matching items in your personal Workshop.","muted"));return}
    for(const item of matches){
     const row=el("article",undefined,"workshop-item"),details=el("div");
@@ -139,7 +144,11 @@
   }
   async function save(){
    const input={};for(const [key,id] of Object.entries(fields))input[key]=$("#workshop-"+id,personal).value;
-   input.photoId=photoId;if(editingId)input.id=editingId;
+   input.photoId=photoId;
+   input.specifications=$("#workshop-specifications",personal).value.split(/\\r?\\n/).map(row=>{
+    const split=row.indexOf(":");return split<1?null:{name:row.slice(0,split).trim(),value:row.slice(split+1).trim()};
+   }).filter(Boolean);
+   if(editingId)input.id=editingId;
    try{const data=await req("/api/personal-workshop",editingId?"PUT":"POST",input);
     items=data.items;$("#workshop-editor",personal).open=false;render();setStatus(input.name+" saved to your private Workshop.");
    }catch(e){setStatus(e.message)}
@@ -156,6 +165,7 @@
     if(data.suggestion){for(const [key,id] of Object.entries(fields)){
      if(typeof data.suggestion[key]==="string"&&data.suggestion[key].trim())$("#workshop-"+id,personal).value=data.suggestion[key];
     }}
+    if(Array.isArray(data.suggestion?.specifications))$("#workshop-specifications",personal).value=data.suggestion.specifications.map(x=>x.name+": "+x.value).join("\\n");
     setStatus(data.recognitionError||"Identification proposed. Review every detail, then save.");
    }catch(e){setStatus(e.message)}
   }
