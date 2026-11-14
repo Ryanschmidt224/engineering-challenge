@@ -1541,6 +1541,11 @@ function setupAssemblyTrees(){
      h.textContent=title;return h;
     };
     const field=name=>bomField(name)?.closest("label");
+    // Legacy fields stay in the DOM for the reusable component controller,
+    // but they are no longer editable. Their stored category isn't discarded.
+    const legacyFullName=field("full-name"),legacyCategory=field("category");
+    if(legacyFullName)legacyFullName.hidden=true;
+    if(legacyCategory)legacyCategory.hidden=true;
     const identity=[field("name")];
     if(identity[0]?.firstChild?.nodeType===Node.TEXT_NODE)identity[0].firstChild.nodeValue="Part name";
     const quantities=[field("quantity"),field("quantity-unit")];
@@ -1575,7 +1580,7 @@ function setupAssemblyTrees(){
     const move=(...elements)=>{for(const el of elements)if(el)review.append(el)};
     // Required first six rows. The large lookup box is now a single line.
     move(partNumberRow,identity[0],itemTypeRow,partTypeRow,partDescriptionRow,apiPanel);
-    move(sectionHeading("additional","Additional details"),identity[1],...quantities,...sourcing);
+    move(sectionHeading("additional","Additional details"),...quantities,...sourcing);
     move(sectionHeading("display","Display options"),toolRow,visibilityRow);
     move(...otherFields);
     move(specsHeading||sectionHeading("specifications","Specifications"),specs);
@@ -1633,7 +1638,7 @@ function setupAssemblyTrees(){
    component.historicalPackageQuantity=pricingBasis==="per_package"?(countInput||null):null;
    component.historicalPriceDate=priceInput===""?null:(dateInput||new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10));
    for(const key of ["name","manufacturer","model","supplier","asin"])component[key]=bomField(key)?.value.trim()||"";
-   if(editingPart)component.category=undefined; // Keep any hidden category metadata already saved on this part.
+   // Existing category metadata is intentionally left untouched by the editor.
    // The API automatically generates the display/file label: part number + name.
    component.description=partDescriptionInput.value.trim();
    if(component.partType!=="purchased")Object.assign(component,{manufacturer:"",model:"",supplier:"",asin:"",historicalPurchasePrice:null,historicalPriceDate:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
