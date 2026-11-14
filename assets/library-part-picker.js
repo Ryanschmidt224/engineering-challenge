@@ -34,7 +34,7 @@ function open({onCreate,hideDefault=false}){
  workshopChoice.append(workshopCheckbox,document.createTextNode("This part is from the workshop"));
  const customName=field("Part name");
  const itemKind=field("Item type","select");option(itemKind.input,"part","Part");option(itemKind.input,"document","Document");
- const partClassification=field("Part type","select");option(partClassification.input,"purchased","Purchased or standard part");option(partClassification.input,"custom","Custom-designed part");
+ const partClassification=field("Part type","select");option(partClassification.input,"purchased","Off-the-shelf");option(partClassification.input,"custom","Custom");
  const partNumberField=field("New part number");partNumberField.input.placeholder="Enter an existing / reserved number";partNumberField.input.maxLength=30;
  const numberChoice=el("fieldset","library-number-choice");
  const numberLegend=el("legend","","Part number");numberChoice.append(numberLegend);
