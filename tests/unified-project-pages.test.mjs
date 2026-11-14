@@ -1,11 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {CORE_PROJECTS,VALID_PROJECT_ID} from "../functions/api/projects.js";
+import {CORE_PROJECTS,VALID_PROJECT_ID,projectGroup} from "../functions/api/projects.js";
 
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 
-test("Projects and Mini Projects use one workspace template and controller",()=>{
+test("A single Projects page and common workspace controller are used for every project",()=>{
  const manager=read("assets/project-manager.js");
  const bootstrap=read("assets/site.js");
  const html=read("index.html");
@@ -13,25 +13,30 @@ test("Projects and Mini Projects use one workspace template and controller",()=>
  assert.match(manager,/const template=window\.BSProjectTemplate/);
  assert.match(manager,/const ensureProjectPage=project=>/);
  assert.match(manager,/ensureProjectPage\(project\)/);
- assert.match(manager,/group==="Mini Projects"/);
  assert.match(manager,/setupAssemblyTrees\(\);setupComponents\(\);setupPhotos\(\)/);
- assert.match(html,/<section id="appetizer" class="view">/);
- assert.doesNotMatch(html,/<section id="(?:buck|motorlab|coiltest)" class="view">/);
+ assert.match(html,/<section id="home" class="view active">/);
+ assert.doesNotMatch(html,/data-nav="appetizer"|<section id="appetizer"|<section id="(?:buck|motorlab|coiltest)" class="view">/);
+ assert.doesNotMatch(manager,/miniGrid|newMiniButton|groupGrid/);
 });
 
-test("Creation controls are always visible, with one common create workflow",()=>{
+test("One visible New project action and category/sort controls",()=>{
  const manager=read("assets/project-manager.js");
- assert.match(manager,/const makeCreateButton=\(kind\)=>/);
- assert.match(manager,/newButton\.hidden=false;newMiniButton\.hidden=false/);
- assert.match(manager,/newButton\.onclick=\(\)=>openCreate\("project"\)/);
- assert.match(manager,/newMiniButton\.onclick=\(\)=>openCreate\("mini"\)/);
+ assert.match(manager,/const newButton=element\("button","btn primary","\+ New project"\)/);
+ assert.match(manager,/newButton\.hidden=false/);
+ assert.match(manager,/newButton\.onclick=openCreate/);
  assert.match(manager,/if\(!user\)\{showAccount\(\)/);
+ assert.match(manager,/const categorySelect=element\("select","field project-category-filter"\)/);
+ assert.match(manager,/const sortSelect=element\("select","field project-sort-filter"\)/);
+ for(const value of ["name_asc","name_desc","newest","oldest"])
+  assert.ok(manager.includes('"'+value+'"'),"Missing sort "+value);
+ assert.match(manager,/category:form\.elements\.category\.value\.trim\(\)/);
+ assert.match(manager,/category:groupInput\.value\.trim\(\)/);
 });
 
-test("Disposable legacy mini projects are not migrated into the shared catalog",()=>{
- const ids=CORE_PROJECTS.map(p=>p.id);
- assert.deepEqual(ids,["launcher","linear","robot"]);
- for(const old of ["buck","motorlab","coiltest"])
-  assert.equal(VALID_PROJECT_ID.test(old),false);
+test("Old mini examples are retired; new category metadata is independent of project type",()=>{
+ assert.deepEqual(CORE_PROJECTS.map(p=>p.id),["launcher","linear","robot"]);
+ for(const old of ["buck","motorlab","coiltest"])assert.equal(VALID_PROJECT_ID.test(old),false);
  assert.equal(VALID_PROJECT_ID.test("p"+"a".repeat(32)),true);
+ assert.equal(projectGroup({group:"Mini Projects"}),"Uncategorized");
+ assert.equal(projectGroup({category:"Robotics"}),"Robotics");
 });
