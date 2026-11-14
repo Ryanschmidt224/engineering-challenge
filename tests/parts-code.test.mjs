@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {auth} from "../functions/api/auth.js";
+import {handleAccounts} from "../functions/api/accounts.js";
+import {isAdmin} from "../functions/api/auth.js";
 import {handlePartCode} from "../functions/api/part-code.js";
 import {handleComponents} from "../functions/api/components.js";
 import {folders,isAllowedKey} from "../functions/api/project-archive.js";
@@ -22,9 +23,18 @@ const base="https://example.test";
 async function setup(){
  const env={PHOTOS:new Bucket(),admin_password:"long-test-password"};
  await env.PHOTOS.put("components/launcher.json",JSON.stringify([{id,name:"Motor controller",partType:"code",itemType:"document",progressStatus:"not_started"}]));
- const login=await auth(new Request(base+"/api/auth",{method:"POST",headers:{"origin":base,"content-type":"application/json"},body:JSON.stringify({password:env.admin_password})}),env);
- assert.equal(login.status,200);
+ const login=await handleAccounts(new Request(base+"/api/accounts",{
+  method:"POST",headers:{"origin":base,"content-type":"application/json"},
+  body:JSON.stringify({action:"register",email:"admin@example.test",password:"strong-test-user-password",displayName:"Test Admin"})
+ }),env);
+ assert.equal(login.status,201);
  const cookie=login.headers.get("set-cookie").split(";")[0];
+ const linked=await handleAccounts(new Request(base+"/api/accounts",{
+  method:"POST",headers:{"origin":base,"content-type":"application/json","cookie":cookie},
+  body:JSON.stringify({action:"claim-admin",adminPassword:env.admin_password})
+ }),env);
+ assert.equal(linked.status,200);
+ assert.equal(await isAdmin(new Request(base+"/api/auth",{headers:{"cookie":cookie}}),env),true);
  const req=(path,method="GET",body)=>new Request(base+path,{method,headers:{cookie,...(body?{"content-type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
  return {env,req};
 }
