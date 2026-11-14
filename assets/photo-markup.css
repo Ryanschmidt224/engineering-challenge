@@ -95,3 +95,20 @@
 .workspace-heading>.bs-photo-control .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="false"]){
  justify-content:flex-end
 }
+
+
+/* Project summary: place the pencil at the lower-left inside the photo card
+   (the location indicated on the screenshot), with actions expanding right. */
+.project-summary-gallery>.bs-photo-control{position:relative}
+.project-summary-gallery>.bs-photo-control .bs-photo-actions{
+ position:absolute;bottom:12px;left:14px;right:auto;z-index:4;
+ width:max-content;max-width:calc(100% - 28px);
+ justify-content:flex-start;flex-wrap:wrap;margin:0;padding:0;
+}
+.project-summary-gallery>.bs-photo-control .bs-photo-more:not([hidden]){
+ display:flex;flex-wrap:wrap;gap:7px;
+}
+.project-summary-gallery>.bs-photo-control .bs-photo-status:not(:empty){
+ position:absolute;left:14px;right:14px;bottom:51px;
+ text-align:left;margin:0;z-index:4;
+}
