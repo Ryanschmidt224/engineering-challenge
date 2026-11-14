@@ -30,10 +30,10 @@
   const scroll=el("div","bs-parts-scroll"),table=el("table","bs-parts-table");
   const thead=el("thead"),headingRow=el("tr"),colgroup=el("colgroup");
   // Compact defaults: part number is intentionally narrow, note stays beside its flag.
-  const widths=[112,330,150,160,380,88];
+  const widths=[112,330,150,160,380];
   widths.forEach(w=>{const col=el("col");col.style.width=w+"px";colgroup.append(col)});
   table.style.width=widths.reduce((a,b)=>a+b,0)+"px";table.append(colgroup);
-  const columns=[["number","Part number"],["name","Part name"],["partType","Part type"],["status","Status"],["needsAttention","Needs attention"],["open",""]];
+  const columns=[["number","Part number"],["name","Part name"],["partType","Part type"],["status","Status"],["needsAttention","Needs attention"]];
   let order="number",direction=1,parts=[],fetchId=0;
   const sortButtons={};
   for(const [key,label] of columns){
@@ -99,7 +99,8 @@
     note.value=part.attentionNote||"";note.disabled=readOnly;note.hidden=!attention.checked;
     note.setAttribute("aria-label","Attention note for "+part.name);
     note.title=note.value;
-    attentionRow.append(attentionLine,note);attentionCell.append(attentionRow);
+    const open=el("button","btn bs-parts-open","Open");open.type="button";open.onclick=()=>onOpenPart?.(part.id);
+    attentionRow.append(attentionLine,open,note);attentionCell.append(attentionRow);
     attention.onchange=()=>{
      note.hidden=!attention.checked;
      if(attention.checked){note.focus();feedback.textContent="Enter an attention note. It saves when you leave the field or press Enter."}
@@ -113,9 +114,7 @@
     };
     note.addEventListener("blur",saveNote);
     note.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();note.blur()}});
-    tr.append(attentionCell);
-    const openCell=el("td"),open=el("button","btn","Open");open.type="button";open.onclick=()=>onOpenPart?.(part.id);
-    openCell.append(open);tr.append(openCell);tbody.append(tr);
+    tr.append(attentionCell);tbody.append(tr);
    }
    feedback.textContent=entries.length+" of "+parts.length+" parts shown. Generated consumables are managed through their source part.";
   }
