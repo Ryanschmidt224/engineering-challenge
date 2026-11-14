@@ -1519,6 +1519,7 @@ function setupAssemblyTrees(){
     };
     const field=name=>bomField(name)?.closest("label");
     const identity=[field("name"),field("full-name")];
+    if(identity[0]?.firstChild?.nodeType===Node.TEXT_NODE)identity[0].firstChild.nodeValue="Part name";
     const quantities=[field("quantity"),field("quantity-unit")];
     const sourcing=[field("manufacturer"),field("model"),field("category"),field("supplier"),field("asin"),
      review.querySelector(".historical-price-fields")||bomRoot()?.querySelector(".historical-price-fields")];
@@ -1535,7 +1536,7 @@ function setupAssemblyTrees(){
      const apiLabel=apiInput?.closest("label");
      const extract=bomField("extract");
      const apiFeedback=root.querySelector(".component-extraction-feedback");
-     if(apiLabel)apiPanel.append(apiLabel);
+     if(apiLabel){if(apiLabel.firstChild?.nodeType===Node.TEXT_NODE)apiLabel.firstChild.nodeValue="API input";apiPanel.append(apiLabel)}
      if(extract)apiPanel.append(extract);
      if(apiFeedback)apiPanel.append(apiFeedback);
     }
