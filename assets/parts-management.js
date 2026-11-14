@@ -8,11 +8,12 @@
  const statusValues=fields.progressStatuses;
  const purchaseValues=fields.purchaseStatuses;
  const statusFor=fields.statusValue;
+ const partTypeFor=fields.partTypeFor;
  const numberFor=p=>p.partNumber||(/^([A-Za-z]{1,8}[- ]?\d{2,8})\s*[-–:]\s*\S/.exec(p.name||"")?.[1]||"");
  const typeValues=[["purchased","Off-the-shelf"],["custom","Custom"],["code","Code"]];
  // Keep separate saved records intact. Group repeated names in the interface,
  // with an explicit way to inspect and edit every original record.
- const groupKey=part=>[part.name,part.partType,part.manufacturer,part.model].map(value=>String(value||"").trim().toLocaleLowerCase().replace(/\s+/g," ")).join("|");
+ const groupKey=part=>[part.name,partTypeFor(part),part.manufacturer,part.model].map(value=>String(value||"").trim().toLocaleLowerCase().replace(/\s+/g," ")).join("|");
  const groupParts=parts=>{
   const groups=new Map();
   for(const part of parts){
@@ -79,7 +80,7 @@
   function sortKey(part){
    if(order==="number")return numberFor(part).toLowerCase();
    if(order==="name")return partLabel(part);
-   if(order==="partType")return part.partType||"";
+   if(order==="partType")return partTypeFor(part);
    if(order==="needsAttention")return part.needsAttention?"1":"0";
    return statusFor(part);
   }
@@ -88,7 +89,7 @@
    tbody.replaceChildren();
    const query=search.value.trim().toLowerCase();
    // Search by part number or headline name without overriding the filters.
-   const entries=parts.filter(p=>(filter.value==="all"||statusFor(p)===filter.value)&&(typeFilter.value==="all"||p.partType===typeFilter.value)&&((p.name||"").toLowerCase().includes(query)||numberFor(p).toLowerCase().includes(query)));
+   const entries=parts.filter(p=>(filter.value==="all"||statusFor(p)===filter.value)&&(typeFilter.value==="all"||partTypeFor(p)===typeFilter.value)&&((p.name||"").toLowerCase().includes(query)||numberFor(p).toLowerCase().includes(query)));
    entries.sort((a,b)=>{
     if(order==="number"){
      const an=numberFor(a),bn=numberFor(b);
@@ -104,7 +105,7 @@
      const numberCell=el("td","bs-parts-number","Multiple");
      const nameCell=el("td"),label=el("strong","",example.name),count=el("span","bs-parts-duplicate-count"," · "+group.parts.length+" records");
      nameCell.append(label,count);
-     const typeCell=el("td","",typeValues.find(([key])=>key===example.partType)?.[1]||"Part");
+     const typeCell=el("td","",typeValues.find(([key])=>key===partTypeFor(example))?.[1]||"Part");
      const stateCell=el("td","muted","Individual statuses");
      const controlsCell=el("td"),toggle=el("button","btn bs-parts-group-toggle",expanded?"Hide entries":"Show "+group.parts.length+" entries");
      toggle.type="button";toggle.setAttribute("aria-expanded",String(expanded));
@@ -122,7 +123,7 @@
     input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();input.blur()}else if(e.key==="Escape"){input.value=initial;input.blur()}});
     input.addEventListener("blur",()=>{if(input.value.trim()!==part.name)void change(part,"name",input.value.trim(),input);else input.value=part.name});
     nameCell.append(input);tr.append(nameCell);
-    const typeCell=el("td"),type=dropdown(typeValues,part.partType||"purchased",readOnly);
+    const typeCell=el("td"),type=dropdown(typeValues,partTypeFor(part),readOnly);
     type.setAttribute("aria-label","Part type for "+part.name);
     type.onchange=()=>void change(part,"partType",type.value,type);typeCell.append(type);tr.append(typeCell);
     const stateCell=el("td"),stateKey=fields.statusField(part),state=dropdown(fields.statusesFor(part),statusFor(part),readOnly);
@@ -188,7 +189,23 @@
     parts=(data.components||[]).filter(p=>!p.generatedFrom);render();
    }catch(error){if(id===fetchId)feedback.textContent=error.message}
   }
-  search.oninput=filter.onchange=typeFilter.onchange=render;
+  // Keep the status filter relevant to the selected sourcing type. All types
+  // shows the union of purchasing and progress statuses, without duplicates.
+  const refreshStatusFilter=()=>{
+   const previous=filter.value;
+   const options=typeFilter.value==="purchased"?fields.purchaseStatuses:
+    typeFilter.value==="custom"||typeFilter.value==="code"?fields.progressStatuses:
+    [...fields.progressStatuses,...fields.purchaseStatuses.filter(([id])=>!fields.progressStatuses.some(([key])=>key===id))];
+   filter.replaceChildren();
+   for(const [value,label] of [["all","All statuses"],...options]){
+    const option=el("option","",label);option.value=value;filter.append(option);
+   }
+   filter.value=options.some(([value])=>value===previous)?previous:"all";
+  };
+  search.oninput=render;
+  filter.onchange=render;
+  typeFilter.onchange=()=>{refreshStatusFilter();render()};
+  refreshStatusFilter();
   return {refresh};
  }
  window.BSPartsManager=Object.freeze({mount,groupParts});
