@@ -345,3 +345,33 @@
   padding-top:0;
  }
 }
+
+
+/* Expanded photo controls grow rightward from the pencil instead of being
+   constrained to the thumbnail's 190/245px column. The row stays in normal
+   flow, so the content underneath remains clear of the buttons. */
+.bom-part-workspace>.workspace-heading>.bs-photo-control>.bs-photo-actions,
+.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control>.bs-photo-actions{
+ width:max-content!important;
+ max-width:none!important;
+ flex-wrap:nowrap!important;
+ white-space:nowrap;
+}
+.bom-part-workspace>.workspace-heading>.bs-photo-control .bs-photo-more:not([hidden]),
+.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control .bs-photo-more:not([hidden]){
+ flex-wrap:nowrap!important;
+ white-space:nowrap;
+}
+@media(max-width:650px){
+ .bom-part-workspace>.workspace-heading>.bs-photo-control>.bs-photo-actions,
+ .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control>.bs-photo-actions{
+  max-width:calc(100vw - 48px)!important;
+  flex-wrap:wrap!important;
+  white-space:normal;
+ }
+ .bom-part-workspace>.workspace-heading>.bs-photo-control .bs-photo-more:not([hidden]),
+ .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control .bs-photo-more:not([hidden]){
+  flex-wrap:wrap!important;
+  white-space:normal;
+ }
+}
