@@ -32,8 +32,8 @@ test("New Part Workshop Item picker uses the same four categories",()=>{
   assert.ok(api.includes('"'+id+'"'),"Missing "+id+" category in save API");
  }
  assert.match(picker,/commonGroup\(p\)/);
- assert.match(picker,/p\.category==="screws"/);
- assert.match(picker,/p\.category==="buck-converters"/);
+ assert.match(picker,/cat==="screws"/);
+ assert.match(picker,/cat==="buck-converters"/);
 });
 
 test("Tree filters use part types instead of a Hidden parts checkbox",()=>{
