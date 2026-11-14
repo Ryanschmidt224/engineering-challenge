@@ -142,13 +142,12 @@
  pointer-events:none;
 }
 
-/* Ordered progress notes appear only for parts currently In progress. */
-.bs-parts-table .bs-progress-notes{margin-top:7px;max-width:100%;font-size:.8rem}
-.bs-progress-notes-label{display:block;font-weight:600}
-.bs-progress-composer{display:flex;gap:6px;align-items:center;margin-top:4px}
-.bs-parts-table .bs-progress-composer .bs-progress-input{flex:1 1 0;min-width:0;width:100%;height:35px}
-.bs-progress-add{flex:none;white-space:nowrap}
-.bs-progress-history{margin-top:6px;font-weight:400}
-.bs-progress-history summary{cursor:pointer;color:var(--color-text-muted);font-weight:500}
-.bs-progress-history ol{margin:5px 0 2px;padding-left:20px;overflow-wrap:anywhere}
-.bs-progress-history li{margin:3px 0}
+/* Discrete operations: each add creates a new independently editable field. */
+.bs-parts-table .bs-progress-notes{margin-top:8px;max-width:100%;font-size:.8rem}
+.bs-progress-notes-label{font-weight:650;margin-bottom:6px}
+.bs-progress-operations{margin:5px 0 7px;padding-left:24px}
+.bs-progress-operations li{padding:3px 0}
+.bs-parts-table .bs-progress-operations .bs-progress-operation{
+ width:100%;min-width:0;height:35px;box-sizing:border-box;
+}
+.bs-progress-add{white-space:nowrap}
