@@ -22,3 +22,16 @@ test("Edit Part inputs use paired descriptor/value layout with mobile fallback",
  assert.match(css,/grid-template-columns:minmax\(150px,215px\) minmax\(0,1fr\)/);
  assert.match(css,/@media\(max-width:620px\)/);
 });
+
+test("New Part Workshop Item picker uses the same four categories",()=>{
+ const picker=readFileSync("assets/library-part-picker.js","utf8");
+ const api=readFileSync("functions/api/commonparts.js","utf8");
+ assert.match(picker,/option\(mode\.input,"library","Workshop Item"\)/);
+ for(const [id,label] of [["wire","Wire and cable"],["power","Power and electronics"],["fasteners","Fasteners"],["other","Other"]]){
+  assert.ok(picker.includes('["'+id+'","'+label+'"]'),"Missing "+label+" in the picker");
+  assert.ok(api.includes('"'+id+'"'),"Missing "+id+" category in save API");
+ }
+ assert.match(picker,/commonGroup\(p\)/);
+ assert.match(picker,/p\.category==="screws"/);
+ assert.match(picker,/p\.category==="buck-converters"/);
+});
