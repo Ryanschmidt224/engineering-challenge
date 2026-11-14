@@ -153,9 +153,15 @@ window.BSProjectManager=(()=>{
   const card=project=>{
    const article=element("article","project-card project-personal-card");article.dataset.catalogId=project.id;
    const link=element("button","project-link");link.type="button";link.dataset.project=project.id;
-   link.append(element("div","project-art project-personal-art","◈"));
+   const art=element("div","project-art project-personal-art");
+   art.setAttribute("aria-hidden","true");
+   art.append(element("span","project-personal-initial",(project.name||"P").trim().charAt(0).toUpperCase()));
+   link.append(art);
    const copy=element("div","project-copy");copy.append(element("h2","",project.name),element("p","",project.description||"New engineering project"));
-   copy.append(element("div","project-tags",project.visibility==="private"?"Private project":project.visibility==="unlisted"?"Unlisted project":"Public project"));
+   const tags=element("div","project-tags");
+   tags.append(element("span","",categoryOf(project)));
+   tags.append(element("span","",project.visibility==="private"?"Private":project.visibility==="unlisted"?"Unlisted":"Public"));
+   copy.append(tags);
    if(project.authorName)copy.append(element("p","project-author","By "+project.authorName));
    link.append(copy);article.append(link);
    return article;
