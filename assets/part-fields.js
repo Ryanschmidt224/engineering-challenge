@@ -22,8 +22,8 @@
   const values={
    partNumber:part.partNumber,
    name:part.name,
-   itemType:part.itemType==="document"?"Document":"Part",
-   partType:labelFor([["purchased","Off-the-shelf"],["custom","Custom"],["code","Code"]],part.partType),
+   itemType:part.partType==="code"?"Code":part.itemType==="document"?"Document":"Part",
+   partType:part.partType==="code"?null:labelFor([["purchased","Off-the-shelf"],["custom","Custom"]],part.partType),
    purchaseStatus:isPurchased(part)?labelFor(purchaseStatuses,statusValue(part)):null,
    description:part.description,
    quantity:qty,
