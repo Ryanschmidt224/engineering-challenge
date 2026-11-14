@@ -230,7 +230,7 @@
     for(const id of refs[kind]){
      const row=element("div","linked-resource-row");
      row.append(element("span","",label(kind,id)));
-     const target=kind==="calculators"?"calculators":"commonparts";
+     const target=kind==="calculators"?"learn":"commonparts";
      const open=element("button","btn","Open");open.type="button";open.onclick=()=>{
       location.hash=target;
       if(kind==="tools"){
@@ -469,13 +469,20 @@
  }
  const commonFields=[
   ["category","Category"],["name","Part name"],["manufacturer","Manufacturer"],
-  ["partNumber","Part number"],["specifications","Specifications"],["notes","Notes"]
+  ["partNumber","Part number"],["specifications","Specifications"],["notes","Notes"],
+  ["availabilityAssumption","Availability assumption"],["bomDefault","BOM behavior"]
  ];
  let editingCommonId=null;
  function editCommon(part){
   const form=document.querySelector(".resource-common-form");if(!form)return;
   editingCommonId=part?.id||null;
-  for(const [key] of commonFields)form.querySelector('[data-common-field="'+key+'"]').value=(key==="category"?legacyCategory(part?.[key]):part?.[key])||(key==="category"?"other":"");
+  for(const [key] of commonFields){
+   const field=form.querySelector('[data-common-field="'+key+'"]');
+   field.value=key==="category"?legacyCategory(part?.category):
+    key==="availabilityAssumption"?part?.availabilityAssumption||"optional":
+    key==="bomDefault"?part?.bomDefault||(["consumables","tools","safety"].includes(legacyCategory(part?.category))?"exclude":"include"):
+    part?.[key]||"";
+  }
   form.querySelector(".resource-common-form-title").textContent=editingCommonId?"Edit saved part":"New saved part";
   form.classList.remove("hide");form.querySelector('[data-common-field="name"]').focus();
  }
@@ -490,6 +497,11 @@
     for(const [value,title] of workshopCategories.map(([id,title])=>[id,title])){
      const opt=element("option","",title);opt.value=value;field.append(opt);
     }
+   }else if(key==="availabilityAssumption"||key==="bomDefault"){
+    field=element("select","field");
+    const choices=key==="availabilityAssumption"?[["expected","Expected"],["optional","Optional"],["specialized","Specialized"]]:
+     [["exclude","Exclude from BOM by default"],["include","Include in BOM when specified"]];
+    for(const [value,title] of choices){const opt=element("option","",title);opt.value=value;field.append(opt)}
    }else{field=element("input","field");field.type="text";field.maxLength=key==="notes"||key==="specifications"?1000:100}
    field.dataset.commonField=key;label.append(field);mount.append(label);
   }
@@ -497,7 +509,7 @@
   form.querySelector(".resource-common-cancel").onclick=()=>form.classList.add("hide");
   form.onsubmit=async event=>{
    event.preventDefault();const status=document.querySelector(".resource-common-status");
-   if(!admin){status.textContent="Administrator login required.";return}
+   if(!admin){status.textContent="An administrator account is required.";return}
    const input={};for(const [key] of commonFields)input[key]=form.querySelector('[data-common-field="'+key+'"]').value.trim();
    if(!input.name){status.textContent="Enter a common part name.";return}
    const button=form.querySelector('[type="submit"]');button.disabled=true;status.textContent="Saving common part…";
