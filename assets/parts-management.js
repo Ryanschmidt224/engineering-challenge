@@ -75,7 +75,7 @@
   if(typeof ResizeObserver!=="undefined"){const observer=new ResizeObserver(layoutColumns);observer.observe(scroll)}
   else window.addEventListener("resize",layoutColumns);
   const columns=[["number","Part number"],["name","Part name"],["partType","Part type"],["status","Status"],["needsAttention","Needs attention"]];
-  let order="number",direction=1,parts=[],fetchId=0;
+  let order="name",direction=1,parts=[],fetchId=0;
   const expandedGroups=new Set();
   const sortButtons={};
   for(const [key,label] of columns){
@@ -152,24 +152,27 @@
     state.setAttribute("aria-label","Status for "+part.name);
     state.onchange=()=>void change(part,stateKey,state.value,state);
     stateCell.append(state);
-    // Progress Status is an ordered list of updates, not a replaceable note.
-    if(stateKey==="progressStatus"&&statusFor(part)==="in_progress"){
-     const progress=el("div","bs-progress-notes"),label=el("label","bs-progress-notes-label","Progress Status");
-     const composer=el("div","bs-progress-composer"),entry=el("input","field bs-progress-input"),add=el("button","btn bs-progress-add","Add");
-     entry.placeholder="Material ordered, waiting on paint…";entry.maxLength=500;entry.disabled=readOnly;
-     entry.setAttribute("aria-label","Progress Status update for "+part.name);add.type="button";add.disabled=readOnly;
-     const save=async()=>{
-      if(!entry.value.trim())return;
-      add.disabled=true;entry.disabled=true;
-      await savePatch(part,{progressUpdate:entry.value.trim()},add);
-     };
-     add.onclick=()=>void save();
-     entry.onkeydown=event=>{if(event.key==="Enter"){event.preventDefault();void save()}};
-     composer.append(entry,add);label.append(composer);progress.append(label);
-     if(part.progressUpdates?.length){
-      const history=el("details","bs-progress-history"),summary=el("summary","",part.progressUpdates.length+" previous update"+(part.progressUpdates.length===1?"":"s")),list=el("ol");
-      for(const update of part.progressUpdates){const item=el("li");item.textContent=update.text;item.title=update.createdAt||"";list.append(item)}
-      history.append(summary,list);progress.append(history);
+    // Each operation is a separate editable field, in its saved sequence.
+    if(stateKey==="progressStatus"&&(statusFor(part)==="in_progress"||part.progressUpdates?.length)){
+     const progress=el("div","bs-progress-notes"),label=el("div","bs-progress-notes-label","Progress Status");
+     const list=el("ol","bs-progress-operations");
+     for(const [index,operation] of (part.progressUpdates||[]).entries()){
+      const item=el("li"),input=el("input","field bs-progress-operation");
+      input.type="text";input.maxLength=500;input.value=operation.text||"";
+      input.placeholder="Operation "+(index+1)+" — material ordered, waiting on paint…";
+      input.title=operation.text||"";
+      input.disabled=readOnly||statusFor(part)!=="in_progress";
+      input.setAttribute("aria-label","Progress Status operation "+(index+1)+" for "+part.name);
+      input.onkeydown=event=>{if(event.key==="Enter"){event.preventDefault();input.blur()}};
+      input.onblur=()=>{if(input.value.trim()!==(operation.text||""))void savePatch(part,{progressOperationEdit:{id:operation.id,text:input.value}},input)};
+      item.append(input);list.append(item);
+     }
+     progress.append(label,list);
+     if(statusFor(part)==="in_progress"){
+      const add=el("button","btn bs-progress-add","Add operation");
+      add.type="button";add.disabled=readOnly;
+      add.onclick=()=>void savePatch(part,{progressOperationAdd:true},add);
+      progress.append(add);
      }
      stateCell.append(progress);
     }
