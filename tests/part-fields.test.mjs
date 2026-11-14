@@ -129,3 +129,16 @@ test("Progress Status entry and ordered history appear in both part views",()=>{
  assert.match(details,/JSON\.stringify\(\{progressUpdate:text\}\)/);
  assert.match(details,/progressNoteComposer\.hidden=part\.progressStatus!=="in_progress"/);
 });
+
+test("Duplicate groups retain normal editable rows and use feature-tree expand toggles",()=>{
+ const js=readFileSync(new URL("../assets/parts-management.js",import.meta.url),"utf8");
+ const css=readFileSync(new URL("../assets/parts-management.css",import.meta.url),"utf8");
+ assert.match(js,/const visible=duplicates&&!expanded\?group\.parts\.slice\(0,1\):group\.parts/);
+ assert.match(js,/const toggle=el\("button","bs-parts-tree-toggle"/);
+ assert.match(js,/toggle\.setAttribute\("aria-expanded"/);
+ assert.match(js,/const child=duplicates&&index>0/);
+ assert.doesNotMatch(js,/Show "\+group\.parts\.length\+" entries"/);
+ assert.match(css,/\.bs-parts-tree-toggle/);
+ assert.match(css,/\.bs-parts-tree-connector/);
+ assert.doesNotMatch(css,/\.bs-parts-duplicate-group td/);
+});
