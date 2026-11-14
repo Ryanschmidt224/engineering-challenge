@@ -180,5 +180,10 @@ test("Progress operations can be added as blank editable steps and edited in pla
  response=await handleComponents(req(path,"PATCH",{progressStatus:"complete"}),env);
  assert.equal(response.status,200);
  assert.equal((await response.json()).component.progressUpdates.length,2);
- assert.equal((await handleComponents(req(path,"PATCH",{progressOperationEdit:{id:operationId,text:"Change after completion"}}),env)).status,400);
+ response=await handleComponents(req(path,"PATCH",{progressOperationEdit:{id:operationId,text:"Change after completion"}}),env);
+ assert.equal(response.status,200);
+ assert.deepEqual((await response.json()).component.progressUpdates.map(item=>item.text),["Change after completion","Waiting on paint"]);
+ response=await handleComponents(req(path,"PATCH",{progressOperationAdd:true}),env);
+ assert.equal(response.status,200);
+ assert.equal((await response.json()).component.progressUpdates.length,3);
 });
