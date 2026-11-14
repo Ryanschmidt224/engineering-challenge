@@ -13,6 +13,8 @@ window.BSProjectManager=(()=>{
   const root=document.querySelector("#home .project-index"),grid=root?.querySelector(".project-grid");if(!grid)return;
   const header=root.querySelector(".row.space"),controls=element("div","project-owner-actions");
   const miniRoot=document.querySelector("#appetizer .project-index"),miniGrid=miniRoot?.querySelector(".project-grid");
+  const miniEmpty=element("p","muted project-empty","No mini projects yet. Create one to get started.");
+  miniGrid?.after(miniEmpty);
   // Both lists share the same dashboard layout and project-creation workflow.
   const makeCreateButton=(kind)=>{
    const button=element("button","btn primary",kind==="mini"?"+ New mini project":"+ New project");
@@ -290,6 +292,7 @@ window.BSProjectManager=(()=>{
     }
     setupAssemblyTrees();setupComponents();setupPhotos();
     if(typeof refreshAdminUI==="function")refreshAdminUI();
+    if(miniGrid)miniEmpty.hidden=miniGrid.querySelector(".project-card:not([hidden])")!==null;
     for(const project of projects){window.BSReview?.attach(project,user);mountSummarySettings(project)}
     document.querySelectorAll("[data-assembly-tree]").forEach(root=>root.dispatchEvent(new Event("projectpermissionschanged")));
    }catch(error){console.error("Project catalog unavailable",error)}
