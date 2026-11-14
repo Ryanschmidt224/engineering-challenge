@@ -152,30 +152,6 @@
     state.setAttribute("aria-label","Status for "+part.name);
     state.onchange=()=>void change(part,stateKey,state.value,state);
     stateCell.append(state);
-    // Each operation is a separate editable field, in its saved sequence.
-    if(stateKey==="progressStatus"&&(statusFor(part)==="in_progress"||part.progressUpdates?.length)){
-     const progress=el("div","bs-progress-notes"),label=el("div","bs-progress-notes-label","Progress Status");
-     const list=el("ol","bs-progress-operations");
-     for(const [index,operation] of (part.progressUpdates||[]).entries()){
-      const item=el("li"),input=el("input","field bs-progress-operation");
-      input.type="text";input.maxLength=500;input.value=operation.text||"";
-      input.placeholder="Operation "+(index+1)+" — material ordered, waiting on paint…";
-      input.title=operation.text||"";
-      input.disabled=readOnly;
-      input.setAttribute("aria-label","Progress Status operation "+(index+1)+" for "+part.name);
-      input.onkeydown=event=>{if(event.key==="Enter"){event.preventDefault();input.blur()}};
-      input.onblur=()=>{if(input.value.trim()!==(operation.text||""))void savePatch(part,{progressOperationEdit:{id:operation.id,text:input.value}},input)};
-      item.append(input);list.append(item);
-     }
-     progress.append(label,list);
-     {
-      const add=el("button","btn bs-progress-add","Add operation");
-      add.type="button";add.disabled=readOnly;
-      add.onclick=()=>void savePatch(part,{progressOperationAdd:true},add);
-      progress.append(add);
-     }
-     stateCell.append(progress);
-    }
     tr.append(stateCell);
     const attentionCell=el("td","bs-parts-attention"),attentionRow=el("div","bs-parts-attention-inline");
     const attentionLine=el("label","bs-attention-line"),attention=el("input");
