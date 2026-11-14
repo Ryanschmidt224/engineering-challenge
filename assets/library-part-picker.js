@@ -132,7 +132,19 @@ function open({onCreate,hideDefault=false}){
   ["other","Other electronics"]
  ];
  for(const [id,label] of powerTypes)option(powerType.input,id,label);
- const commonGroup=p=>p.category==="screws"?"fasteners":p.category==="buck-converters"?"power":p.category||"other";
+ const commonGroup=p=>{
+  const cat=String(p.category||"").toLowerCase();
+  if(cat==="screws"||cat==="fasteners")return "fasteners";
+  if(cat==="buck-converters"||cat==="power"||cat.includes("electronic"))return "power";
+  if(cat==="tool"||cat==="tools")return "tool";
+  if(cat==="wire"||cat.includes("wire")||cat.includes("cable"))return "wire";
+  if(cat==="other")return "other";
+  const name=String(p.name||"").toLowerCase();
+  if(/\b(?:motor|servo|stepper|esc|voltage|converter|buck|sensor|controller|pcb|power supply|arduino|relay)\b/.test(name))return "power";
+  if(/\b(?:screw|bolt|nut|washer|fastener)\b/.test(name))return "fasteners";
+  if(/\b(?:multimeter|oscilloscope|soldering iron|wire stripper|crimper|heat gun|wrench)\b/.test(name))return "tool";
+  return "other";
+ };
  const powerGroup=p=>{
   // Existing saved items have no subtype; classify from their recorded names
   // without changing old records or inventing an ownership claim.
@@ -155,21 +167,22 @@ function open({onCreate,hideDefault=false}){
  chooser.append(category.label,wireSection,compSection);
  form.append(heading,subtitle,workshopChoice,itemKind.label,partClassification.label,numberChoice,autoNumberHelp,partNumberField.label,customName.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
  dialog.append(form);document.body.append(dialog);
- let commons=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
+ let commons=[],purchased=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
  cancel.onclick=()=>close(null);dialog.addEventListener("cancel",e=>{e.preventDefault();close(null)});
  const workshopToolRows=()=>window.BSResources?.catalog?.tools?.filter(item=>item.id?.startsWith("workshop:"))||[];
  const refreshCommon=()=>{
   const q=commonSearch.input.value.toLowerCase().trim(),cat=category.input.value,subtype=powerType.input.value;
   const saved=commons.filter(p=>commonGroup(p)===cat&&(cat!=="power"||subtype==="all"||powerGroup(p)===subtype));
+  const recorded=purchased.filter(p=>commonGroup(p)===cat&&(cat!=="power"||subtype==="all"||powerGroup(p)===subtype));
   const standards=cat==="tool"?workshopToolRows():[];
   const matches=item=>[item.name,item.manufacturer,item.partNumber,item.specifications,item.detail].filter(Boolean).join(" ").toLowerCase().includes(q);
-  const filtered=[...saved.map(item=>({...item,origin:"saved"})),...standards.map(item=>({...item,origin:"standard"}))].filter(matches);
+  const filtered=[...saved.map(item=>({...item,origin:"saved"})),...recorded.map(item=>({...item,origin:"purchased"})),...standards.map(item=>({...item,origin:"standard"}))].filter(matches);
   const previous=commonSelect.input.value;
   commonSelect.input.replaceChildren();
   option(commonSelect.input,"",filtered.length?"Select a Workshop item":"No Workshop items match");
-  filtered.forEach(p=>option(commonSelect.input,(p.origin==="standard"?"standard:":"saved:")+p.id,p.name+(p.origin==="standard"?" · Workshop tool":p.partNumber?" · "+p.partNumber:"")));
-  if(filtered.some(p=>(p.origin==="standard"?"standard:":"saved:")+p.id===previous))commonSelect.input.value=previous;
+  filtered.forEach(p=>option(commonSelect.input,p.origin+":"+p.id,p.name+(p.origin==="standard"?" · Workshop tool":p.origin==="purchased"?" · Recorded part":p.partNumber?" · "+p.partNumber:"")));
+  if(filtered.some(p=>p.origin+":"+p.id===previous))commonSelect.input.value=previous;
  };
  const selectWorkflow=value=>{
   wireWorkflow=value;
@@ -245,12 +258,16 @@ function open({onCreate,hideDefault=false}){
     assignNumber:autoNumber,partNumber:autoNumber?null:partNumberField.input.value.trim().toUpperCase()||null};
   }else if(category.input.value!=="wire"){
    const choice=commonSelect.input.value;
-   const isStandard=choice.startsWith("standard:");
-   const p=isStandard?workshopToolRows().find(item=>item.id===choice.slice(9)):commons.find(item=>item.id===choice.slice(6));
+   const isStandard=choice.startsWith("standard:"),isPurchased=choice.startsWith("purchased:");
+   const p=isStandard?workshopToolRows().find(item=>item.id===choice.slice(9)):isPurchased?purchased.find(item=>item.id===choice.slice(10)):commons.find(item=>item.id===choice.slice(6));
    if(!p){status.textContent="Select a Workshop item.";return}
    payload=isStandard?{
     name:p.name,quantity:count,category:"tool",isTool:true,
     specifications:[{name:"Workshop reference",value:p.id},{name:"Tool specification",value:String(p.detail||"Workshop reference").slice(0,300)}]
+   }:isPurchased?{
+    name:p.name,quantity:count,sharedPartRef:"purchased:"+p.id,manufacturer:p.manufacturer||"",
+    model:p.model||"",supplier:p.supplier||"",asin:p.asin||"",category:commonGroup(p),
+    isTool:commonGroup(p)==="tool",specifications:Array.isArray(p.specifications)?p.specifications:[]
    }:{
     name:p.name,quantity:count,sharedPartRef:"common:"+p.id,manufacturer:p.manufacturer||"",model:p.partNumber||"",
     category:commonGroup(p),isTool:commonGroup(p)==="tool",
@@ -275,9 +292,16 @@ function open({onCreate,hideDefault=false}){
   try{await onCreate(payload);close({created:true})}catch(err){status.textContent=err.message||String(err);save.disabled=false}
  });
  update();refreshCommon();updateCalc();dialog.showModal();
- fetch("/api/commonparts",{cache:"no-store"}).then(r=>r.ok?r.json():Promise.reject(Error("Saved parts unavailable"))).then(c=>{
-  if(finished)return;commons=c.parts||[];refreshCommon();
- }).catch(err=>{if(!finished)status.textContent="Could not load saved parts: "+err.message+". Manual Entry and Wire Wizard are still available.";});
+ Promise.allSettled([
+  fetch("/api/commonparts",{cache:"no-store"}).then(r=>r.ok?r.json():Promise.reject(Error("Saved parts unavailable"))),
+  fetch("/api/purchased-parts",{cache:"no-store",credentials:"same-origin"}).then(r=>r.ok?r.json():Promise.reject(Error("Recorded parts unavailable")))
+ ]).then(([saved,recorded])=>{
+  if(finished)return;
+  if(saved.status==="fulfilled")commons=saved.value.parts||[];
+  if(recorded.status==="fulfilled")purchased=recorded.value.parts||[];
+  if(saved.status==="rejected"&&recorded.status==="rejected")status.textContent="Workshop saved items are unavailable; wire tools remain available.";
+  refreshCommon();
+ });
  workshopCheckbox.focus();
  });
 }
