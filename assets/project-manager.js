@@ -1,6 +1,6 @@
 // Project dashboard. Private project data is authorized by the API, never by these DOM filters.
 window.BSProjectManager=(()=>{
- let currentProjects=[];
+ let currentProjects=[],openAccount=()=>{};
  const api=async(method,path,body)=>{
   const response=await fetch(path,{method,credentials:"same-origin",cache:"no-store",
    ...(body?{headers:{"content-type":"application/json"},body:JSON.stringify(body)}:{})});
@@ -13,9 +13,8 @@ window.BSProjectManager=(()=>{
   const root=document.querySelector("#home .project-index"),grid=root?.querySelector(".project-grid");if(!grid)return;
   const header=root.querySelector(".row.space"),controls=element("div","project-owner-actions");
   const newButton=element("button","btn primary","+ New project");newButton.type="button";
-  const accountButton=element("button","btn","My account");accountButton.type="button";
   const archiveButton=element("button","btn","Archived projects");archiveButton.type="button";
-  controls.append(newButton,archiveButton,accountButton);header.append(controls);
+  controls.append(newButton,archiveButton);header.append(controls);
   const filters=element("div","project-directory-controls");
   const categoryLabel=element("label","project-directory-label","Category");
   const categorySelect=element("select","field project-category-filter");
@@ -52,35 +51,53 @@ window.BSProjectManager=(()=>{
   categorySelect.onchange=updateDirectory;
   sortSelect.onchange=updateDirectory;
   const dialog=element("dialog","project-account-dialog");
-  dialog.innerHTML='<form method="dialog" class="project-account-form"><h2>My account</h2><p class="project-account-message muted" role="status"></p><label>Email<input class="field" type="email" name="email" autocomplete="email" required></label><label>Password<input class="field" type="password" name="password" autocomplete="current-password" minlength="12" required></label><label class="project-account-name hide">Display name<input class="field" name="displayName" maxlength="80"></label><div class="row project-account-buttons"><button class="btn primary project-signin" type="button">Log in</button><button class="btn project-register" type="button">Create account</button><button class="btn project-signout hide" type="button">Log out</button><button class="btn project-close" type="button">Close</button></div></form>';
+  dialog.innerHTML='<form class="project-account-form"><div class="project-account-header"><h2 class="project-account-title">Sign in</h2><button type="button" class="btn project-close" aria-label="Close account window">×</button></div><p class="project-account-subtitle muted">Your projects and Workshop are saved to your account.</p><p class="project-account-message" role="status" aria-live="polite"></p><label class="project-account-name hide">Display name<input class="field" name="displayName" maxlength="80" autocomplete="name"></label><label class="project-account-email">Email<input class="field" type="email" name="email" autocomplete="email" required></label><label class="project-account-password">Password<input class="field" type="password" name="password" autocomplete="current-password" minlength="12" required></label><div class="project-account-buttons"><button class="btn primary project-signin" type="submit">Sign in</button><button class="btn project-register" type="button">Create an account</button><button class="btn project-switch-login hide" type="button">Already have an account? Sign in</button><button class="btn project-signout hide" type="button">Sign out</button></div><div class="project-admin-link hide"><p class="muted">Already manage this website? Link your existing administrator access to this account.</p><label>Existing administrator password<input class="field" type="password" name="adminPassword" autocomplete="off"></label><button type="button" class="btn project-link-admin">Link administrator access</button></div></form>';
   document.body.append(dialog);
   const note=dialog.querySelector(".project-account-message"),email=dialog.querySelector('[name="email"]'),
    password=dialog.querySelector('[name="password"]'),name=dialog.querySelector('[name="displayName"]');
-  let user=null,projects=[];
-  const showAccount=()=>{note.textContent=user?"Signed in as "+user.displayName:"Sign in or create an account to manage your projects.";
-   dialog.querySelectorAll(".project-signin,.project-register").forEach(button=>button.classList.toggle("hide",!!user));
-   dialog.querySelector(".project-signout").classList.toggle("hide",!user);
-   dialog.querySelectorAll('[name="email"],[name="password"]').forEach(input=>input.closest("label").classList.toggle("hide",!!user));
-   dialog.showModal();
+  let user=null,projects=[],accountMode="login";
+  const updateAccount=()=>{
+   const signed=!!user,registering=accountMode==="register"&&!signed;
+   dialog.querySelector(".project-account-title").textContent=signed?"My account":registering?"Create account":"Sign in";
+   dialog.querySelector(".project-account-subtitle").textContent=signed?user.email+" · "+(user.role==="admin"?"Administrator":"Member"):"Your projects and Workshop are saved to your account.";
+   for(const selector of [".project-account-email",".project-account-password"])dialog.querySelector(selector).classList.toggle("hide",signed);
+   dialog.querySelector(".project-account-name").classList.toggle("hide",!registering);
+   dialog.querySelector(".project-signin").classList.toggle("hide",signed);
+   dialog.querySelector(".project-signin").textContent=registering?"Create account":"Sign in";
+   dialog.querySelector(".project-register").classList.toggle("hide",signed||registering);
+   dialog.querySelector(".project-switch-login").classList.toggle("hide",signed||!registering);
+   dialog.querySelector(".project-signout").classList.toggle("hide",!signed);
+   dialog.querySelector(".project-admin-link").classList.toggle("hide",!signed||user.role==="admin");
+   password.autocomplete=registering?"new-password":"current-password";
   };
-  accountButton.onclick=showAccount;
-  const register=dialog.querySelector(".project-register");
-  register.onclick=()=>{
-   const field=dialog.querySelector(".project-account-name");
-   if(field.classList.contains("hide")){field.classList.remove("hide");register.textContent="Finish registration";note.textContent="Choose the name that will appear on your published projects.";name.focus();return}
-   if(!name.value.trim()){note.textContent="Enter a display name for your projects.";name.focus();return}
-   void sign("register");
-  };
+  const showAccount=()=>{accountMode="login";note.textContent="";updateAccount();dialog.showModal()};
   dialog.querySelector(".project-close").onclick=()=>dialog.close();
+  dialog.querySelector(".project-register").onclick=()=>{accountMode="register";note.textContent="";updateAccount();name.focus()};
+  dialog.querySelector(".project-switch-login").onclick=()=>{accountMode="login";note.textContent="";updateAccount();email.focus()};
   async function sign(action){
+   if(!email.validity.valid||!password.validity.valid||action==="register"&&!name.value.trim()){
+    note.textContent="Enter a valid email, password of at least 12 characters"+(action==="register"?" and display name.":".");
+    return;
+   }
+   const submit=dialog.querySelector(".project-signin");submit.disabled=true;note.textContent=action==="register"?"Creating account…":"Signing in…";
    try{
     const data=await api("POST","/api/accounts",{action,email:email.value,password:password.value,displayName:name.value});
     user=data.user;password.value="";dialog.close();location.href="#home";location.reload();
    }catch(error){note.textContent=error.message}
+   finally{submit.disabled=false}
   }
-  dialog.querySelector(".project-signin").onclick=()=>sign("login");
-
+  dialog.querySelector("form").onsubmit=event=>{event.preventDefault();void sign(accountMode)};
   dialog.querySelector(".project-signout").onclick=async()=>{await api("DELETE","/api/accounts");user=null;dialog.close();location.href="#home";location.reload()};
+  dialog.querySelector(".project-link-admin").onclick=async()=>{
+   const field=dialog.querySelector('[name="adminPassword"]'),button=dialog.querySelector(".project-link-admin");
+   if(!field.value){note.textContent="Enter your existing administrator password.";return}
+   button.disabled=true;note.textContent="Verifying administrator access…";
+   try{
+    const data=await api("POST","/api/accounts",{action:"claim-admin",adminPassword:field.value});
+    user=data.user;field.value="";dialog.close();location.reload();
+   }catch(error){note.textContent=error.message}finally{button.disabled=false}
+  };
+  openAccount=showAccount;
   const editor=element("dialog","project-create-dialog");
   editor.innerHTML='<form method="dialog" class="project-create-form"><h2>New project</h2><p class="muted">Projects are private by default. Only you can edit them.</p><label>Project name<input class="field" name="name" maxlength="100" required></label><label>Category<input class="field" name="category" maxlength="60" placeholder="Uncategorized" list="project-category-choices"></label><datalist id="project-category-choices"></datalist><label>Description<textarea class="field" name="description" maxlength="500"></textarea></label><p class="project-create-message" role="status"></p><div class="row"><button type="button" class="btn primary project-create-save">Create project</button><button type="button" class="btn project-create-cancel">Cancel</button></div></form>';
   document.body.append(editor);
@@ -292,7 +309,7 @@ window.BSProjectManager=(()=>{
     user=(await api("GET","/api/accounts")).user;
     const data=await api("GET","/api/projects");if(!Array.isArray(data.projects))throw Error("Project catalog response unavailable");projects=data.projects;currentProjects=projects;
     newButton.hidden=false;archiveButton.hidden=!user&&!adminAuthenticated;
-    accountButton.textContent=user?"My account: "+user.displayName:"My account";
+
     document.querySelectorAll(".project-personal-card").forEach(node=>node.remove());
     for(const project of projects){
      ensureProjectPage(project);
@@ -314,5 +331,5 @@ window.BSProjectManager=(()=>{
   }
   void refresh();
  };
- return {init,isOwner:id=>currentProjects.some(project=>project.id===id&&project.isOwner),getProject:id=>currentProjects.find(project=>project.id===id)};
+ return {init,openAccount:()=>openAccount(),isOwner:id=>currentProjects.some(project=>project.id===id&&project.isOwner),getProject:id=>currentProjects.find(project=>project.id===id)};
 })();
