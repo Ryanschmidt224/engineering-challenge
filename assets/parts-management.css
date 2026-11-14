@@ -15,7 +15,7 @@
 .bs-parts-table .bs-parts-sort:hover{text-decoration:underline}
 .bs-parts-table .field{width:100%;min-width:0;margin:0;box-sizing:border-box;font-size:.87rem}
 .bs-parts-table td:nth-child(2){min-width:0}
-.bs-parts-table td:last-child{text-align:right;padding-right:6px}
+.bs-parts-table td:last-child{text-align:left;padding-right:6px}
 .bs-parts-number{font-variant-numeric:tabular-nums;color:var(--color-text-muted);font-size:.85rem;white-space:nowrap}
 .bs-parts-feedback{font-size:.82rem;color:var(--color-text-muted);min-height:1.3em;margin:8px 0}
 .bs-part-code{margin:16px 0 20px;padding:16px;border:1px solid var(--color-border);border-radius:11px;background:var(--color-surface)}
@@ -54,7 +54,8 @@
 .bs-number-result{margin:4px 0 10px;font-size:.85rem;color:var(--color-text-muted)}
 .bs-number-result:empty{display:none}
 .bs-parts-attention{min-width:0}
-.bs-parts-attention-inline{display:flex;align-items:center;gap:9px;min-width:0;width:100%}
+.bs-parts-attention-inline{display:flex;align-items:center;justify-content:flex-start;gap:8px;min-width:0;width:100%}
+.bs-parts-attention-inline .bs-parts-open{flex:none;white-space:nowrap;padding:5px 10px;min-height:34px}
 .bs-attention-line{display:inline-flex;align-items:center;gap:5px;flex:none;font-size:.81rem;white-space:nowrap;cursor:pointer}
 .bs-attention-line input{width:15px;height:15px;flex:none;accent-color:var(--color-accent)}
 .bs-parts-table .bs-attention-note{
