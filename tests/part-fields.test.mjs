@@ -35,3 +35,21 @@ test("display details include recorded source information but no empty fields",(
  assert.equal(rows.find(([label])=>label==="Category")[1],"Mounting");
  assert.equal(rows.some(([label])=>label==="Supplier"),false);
 });
+
+test("Code is displayed as its own item type for existing code records",()=>{
+ const code={name:"Controller source",partType:"code",itemType:"document",quantity:null};
+ const rows=fields.detailRows(code);
+ assert.equal(rows.find(([label])=>label==="Item type")[1],"Code");
+ assert.equal(rows.some(([label])=>label==="Part type"),false);
+});
+
+test("New Part and Part editor each show Part, Document, Code",()=>{
+ const picker=readFileSync(new URL("../assets/library-part-picker.js",import.meta.url),"utf8");
+ const editor=readFileSync(new URL("../assets/site-assembly.js",import.meta.url),"utf8");
+ for(const source of [picker,editor]){
+  for(const [type,label] of [["part","Part"],["document","Document"],["code","Code"]])
+   assert.ok(source.includes('"'+type+'","'+label+'"'),"Missing item type "+label);
+ }
+ assert.match(picker,/partType:itemKind\.input\.value==="code"\?"code":partClassification\.input\.value/);
+ assert.match(editor,/itemTypeSelect\.value=part\.partType==="code"\?"code"/);
+});
