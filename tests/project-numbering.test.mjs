@@ -1,6 +1,6 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
-import {issueNumber,numberingState} from "../functions/api/numbering.js";
+import {issueNumber,numberingState,onRequest} from "../functions/api/numbering.js";
 class MemoryR2{
  constructor(){this.map=new Map()}
  async get(key){
@@ -62,4 +62,26 @@ test("legacy part and assembly numbers cannot be duplicated",async()=>{
  await assert.rejects(issueNumber(env,project,"assembly","newassembly","NR003"),/already assigned/);
  assert.equal(await issueNumber(env,project,"part","newpart","NR108"),"NR108");
  assert.equal(await issueNumber(env,project,"assembly","newassembly","NR004"),"NR004");
+});
+
+test("number lookup identifies active records and historical reservations",async()=>{
+ const env={PHOTOS:new MemoryR2()},project="launcher";
+ await issueNumber(env,project,"part","deleted-part","NR116");
+ await issueNumber(env,project,"part","active-part","NR117");
+ await env.PHOTOS.put("components/"+project+".json",JSON.stringify([{id:"active-part",name:"Flywheel",partNumber:"NR117"},{id:"unassigned",name:"Bearing",partType:"purchased"}]));
+ const get=async query=>{
+  const response=await onRequest({request:new Request("https://example.test/api/numbering?project=launcher&"+query),env});
+  assert.equal(response.status,200);
+  return response.json();
+ };
+ const deleted=await get("lookup=NR116");
+ assert.equal(deleted.reserved,true);assert.equal(deleted.active,false);
+ const active=await get("lookup=NR117");
+ assert.equal(active.active,true);assert.equal(active.record.name,"Flywheel");
+ const unknown=await get("lookup=NR118");
+ assert.equal(unknown.reserved,false);
+ const audit=await get("audit=unassigned");
+ assert.equal(audit.total,1);assert.equal(audit.unassigned[0].name,"Bearing");
+ const data=JSON.parse(await (await env.PHOTOS.get("components/"+project+".json")).text());
+ assert.equal(data.find(p=>p.id==="unassigned").partNumber,undefined);
 });
