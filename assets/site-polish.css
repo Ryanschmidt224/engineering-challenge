@@ -1506,7 +1506,7 @@
 .bs-photo-toggle[aria-expanded="true"]{background:var(--color-accent-soft);border-color:var(--color-accent)}
 .bs-photo-status{font-size:.8rem;color:var(--color-text-muted);margin:5px 0 0;text-align:right}
 .bs-photo-status:empty{display:none}
-.workspace-heading>.bs-photo-control{flex:0 0 auto;align-self:flex-start}
+.workspace-heading>.bs-photo-control{flex:0 0 auto;align-self:flex-start;width:max-content;max-width:min(100%,650px)}
 .workspace-heading>.bs-photo-control .workspace-cover{width:132px}
 .bom-part-workspace .workspace-heading>.bs-photo-control .part-workspace-cover{width:132px}
 .project-summary-gallery .bs-photo-control{width:100%}
