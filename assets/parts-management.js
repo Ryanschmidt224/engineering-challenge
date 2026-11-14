@@ -120,24 +120,26 @@
    fitNameWidth(entries);
    const groups=groupParts(entries);
    for(const group of groups){
-    if(group.parts.length>1){
-     const example=group.parts[0],expanded=expandedGroups.has(group.key),tr=el("tr","bs-parts-duplicate-group");
-     const numberCell=el("td","bs-parts-number","Multiple");
-     const nameCell=el("td"),label=el("strong","",example.name),count=el("span","bs-parts-duplicate-count"," · "+group.parts.length+" records");
-     nameCell.append(label,count);
-     const typeCell=el("td","",typeValues.find(([key])=>key===partTypeFor(example))?.[1]||"Part");
-     const stateCell=el("td","muted","Individual statuses");
-     const controlsCell=el("td"),toggle=el("button","btn bs-parts-group-toggle",expanded?"Hide entries":"Show "+group.parts.length+" entries");
-     toggle.type="button";toggle.setAttribute("aria-expanded",String(expanded));
-     toggle.setAttribute("aria-label",(expanded?"Hide":"Show")+" saved records for "+example.name);
-     toggle.onclick=()=>{expanded?expandedGroups.delete(group.key):expandedGroups.add(group.key);render()};
-     controlsCell.append(toggle);tr.append(numberCell,nameCell,typeCell,stateCell,controlsCell);tbody.append(tr);
-     if(!expanded)continue;
-    }
-    for(const part of group.parts){
-    const tr=el("tr",group.parts.length>1?"bs-parts-duplicate-detail":""),readOnly=!canEdit()||!!part.generatedFrom;
+    // Every saved record has the normal editable row. Duplicates add only a
+    // feature-tree-style disclosure arrow to the first record's name cell.
+    const duplicates=group.parts.length>1;
+    const expanded=expandedGroups.has(group.key);
+    const visible=duplicates&&!expanded?group.parts.slice(0,1):group.parts;
+    for(const [index,part] of visible.entries()){
+     const child=duplicates&&index>0;
+     const tr=el("tr",child?"bs-parts-duplicate-child":""),readOnly=!canEdit()||!!part.generatedFrom;
     const inferred=!part.partNumber&&!!numberFor(part);const number=el("td","bs-parts-number",part.partNumber||(inferred?numberFor(part)+" *":"Unassigned"));if(inferred)number.title="Number appears in name but is not formally assigned.";tr.append(number);
-    const nameCell=el("td"),input=el("input","field",undefined);
+    const nameCell=el("td",duplicates?"bs-parts-name-with-tree":""),input=el("input","field",undefined);
+    if(duplicates&&index===0){
+     const toggle=el("button","bs-parts-tree-toggle",expanded?"▾":"▸");
+     toggle.type="button";
+     toggle.title=(expanded?"Collapse":"Expand")+" "+group.parts.length+" saved records";
+     toggle.setAttribute("aria-expanded",String(expanded));
+     toggle.setAttribute("aria-label",(expanded?"Collapse":"Expand")+" saved records for "+part.name);
+     toggle.onclick=()=>{expanded?expandedGroups.delete(group.key):expandedGroups.add(group.key);render()};
+     nameCell.append(toggle);
+    }
+    if(child){const connector=el("span","bs-parts-tree-connector");connector.setAttribute("aria-hidden","true");nameCell.append(connector)}
     input.value=part.name||"";input.title=part.name||"";input.maxLength=180;input.disabled=readOnly;input.setAttribute("aria-label","Name for "+(part.partNumber||part.name));
     const initial=part.name;
     input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();input.blur()}else if(e.key==="Escape"){input.value=initial;input.blur()}});
@@ -201,7 +203,7 @@
    }
    const repeats=groups.filter(g=>g.parts.length>1).length;
    feedback.textContent=entries.length+" of "+parts.length+" part records across "+groups.length+" distinct groups."+
-    (repeats?" "+repeats+" group"+(repeats===1?"":"s")+" contain multiple saved records. Expand to review each; no records were deleted.":"")+
+    (repeats?" "+repeats+" repeated-name group"+(repeats===1?"":"s")+"; expand the arrow beside a part name to view every saved record. No records were deleted.":"")+
     " Generated consumables are managed through their source part.";
   }
   async function change(part,key,value,control){return savePatch(part,{[key]:value},control)}
