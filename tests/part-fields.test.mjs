@@ -117,3 +117,15 @@ test("Parts Management autofits displayed names up to 40 characters without trun
  assert.match(source,/nameWidthManuallyResized=true/);
  assert.match(source,/input\.maxLength=180/);
 });
+
+test("Progress Status entry and ordered history appear in both part views",()=>{
+ const management=readFileSync(new URL("../assets/parts-management.js",import.meta.url),"utf8");
+ const details=readFileSync(new URL("../assets/site-assembly.js",import.meta.url),"utf8");
+ assert.match(management,/statusFor\(part\)==="in_progress"/);
+ assert.match(management,/progressUpdate:entry\.value\.trim\(\)/);
+ assert.match(management,/for\(const update of part\.progressUpdates\)/);
+ assert.match(details,/progressNotesHeading\.textContent="Progress Status"/);
+ assert.match(details,/for\(const update of part\.progressUpdates\|\|\[\]\)/);
+ assert.match(details,/JSON\.stringify\(\{progressUpdate:text\}\)/);
+ assert.match(details,/progressNoteComposer\.hidden=part\.progressStatus!=="in_progress"/);
+});
