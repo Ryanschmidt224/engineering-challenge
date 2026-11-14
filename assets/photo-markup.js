@@ -14,26 +14,26 @@
   const dialog=el("dialog","bs-markup-modal");dialog.setAttribute("aria-label","Edit photo");
   const header=el("div","bs-markup-header");
   const title=el("strong","", "Edit photo");
-  const close=button("Close",()=>{if(generation!==savedGeneration&&!confirm("The latest edits are still saving. Close anyway?"))return;dialog.close()});header.append(title,close);
+  const close=button("Close",()=>{finishText();void persist(true)});header.append(title,close);
   const toolbar=el("div","bs-markup-toolbar"),frame=el("div","bs-markup-canvas-wrap");
   const canvas=el("canvas","bs-markup-canvas");
   const status=el("p","small muted","Loading photo…");status.setAttribute("role","status");
   const footer=el("div","bs-markup-footer");
-  const save=button("Save & close",()=>void persist(true));save.classList.add("primary");
-  const undo=button("Undo",()=>stepBack());
-  const redo=button("Redo",()=>stepForward());
-  const reset=button("Reset edits",()=>{if(confirm("Clear all crops and annotations?"))commit({crop:null,marks:[]})});
+  const save=button("Save & close",()=>{finishText();void persist(true)});save.classList.add("primary");
+  const undo=button("Undo",()=>{finishText();stepBack()});
+  const redo=button("Redo",()=>{finishText();stepForward()});
+  const reset=button("Reset edits",()=>{if(confirm("Clear all crops and annotations?")){finishText(false);commit({crop:null,marks:[]})}});
   footer.append(undo,redo,reset,save);
   frame.append(canvas);dialog.append(header,toolbar,frame,status,footer);document.body.append(dialog);dialog.showModal();
-  dialog.addEventListener("close",()=>dialog.remove());
-  let image=null,state={crop:null,marks:[]},history=[],future=[],tool="pen",drag=null,strokeColor="#e63838";
+  dialog.addEventListener("close",()=>{finishText(false);dialog.remove()});
+  let image=null,state={crop:null,marks:[]},history=[],future=[],tool="pen",drag=null,strokeColor="#e63838",textEditor=null;
   let generation=0,savedGeneration=0,saveTimer=null,saveInFlight=null;
   const scheduleSave=()=>{generation++;clearTimeout(saveTimer);saveTimer=setTimeout(()=>void persist(false),950);status.textContent="Unsaved changes…"};
-  dialog.addEventListener("cancel",e=>{if(generation!==savedGeneration){e.preventDefault();void persist(true)}});
+  dialog.addEventListener("cancel",e=>{if(textEditor)finishText();if(generation!==savedGeneration){e.preventDefault();void persist(true)}});
   const color=el("input");color.type="color";color.value=strokeColor;color.setAttribute("aria-label","Annotation color");
   color.onchange=()=>strokeColor=color.value;
   for(const [key,label] of [["pen","Pen"],["highlight","Highlight"],["arrow","Arrow"],["circle","Circle"],["text","Text"],["crop","Crop"]]){
-   const choice=button(label,()=>{tool=key;activate()});choice.dataset.tool=key;toolbar.append(choice);
+   const choice=button(label,()=>{finishText();tool=key;activate()});choice.dataset.tool=key;toolbar.append(choice);
   }
   toolbar.append(color);activate();
   function activate(){for(const b of toolbar.querySelectorAll("[data-tool]"))b.setAttribute("aria-pressed",String(b.dataset.tool===tool))}
@@ -41,6 +41,49 @@
   function stepBack(){if(!history.length)return;future.push(snapshot(state));state=history.pop();draw();sync();scheduleSave()}
   function stepForward(){if(!future.length)return;history.push(snapshot(state));state=future.pop();draw();sync();scheduleSave()}
   function sync(){undo.disabled=!history.length;redo.disabled=!future.length}
+  // Type on the photo itself, not in a browser prompt. Keep the original image untouched.
+  function finishText(apply=true){
+   const active=textEditor;
+   if(!active)return;
+   textEditor=null;
+   const value=active.input.value.slice(0,120);
+   active.input.remove();
+   if(apply&&value.trim()){
+    commit({...state,marks:[...state.marks,{
+     tool:"text",a:active.anchor,color:active.color,size:active.size,
+     top:true,wrapW:active.wrapW,text:value
+    }]});
+   }
+  }
+  function beginText(a,event){
+   finishText();
+   const imageRect=canvas.getBoundingClientRect(),frameRect=frame.getBoundingClientRect();
+   const width=Math.max(80,Math.min(280,imageRect.width-12));
+   const left=Math.max(0,Math.min(event.clientX-imageRect.left,imageRect.width-width-4));
+   const top=Math.max(0,Math.min(event.clientY-imageRect.top,imageRect.height-36));
+   const input=el("textarea","bs-markup-inline-text");
+   input.rows=1;input.maxLength=120;input.spellcheck=false;
+   input.placeholder="Type here…";input.setAttribute("aria-label","Text on photo");
+   const fontPixels=18;
+   const scale=imageRect.width/canvas.width;
+   const size=(fontPixels/scale)/(Math.min(canvas.width,canvas.height)*6);
+   input.style.left=(imageRect.left-frameRect.left+frame.scrollLeft+left)+"px";
+   input.style.top=(imageRect.top-frameRect.top+frame.scrollTop+top)+"px";
+   input.style.width=width+"px";
+   input.style.color=strokeColor;
+   const anchor=[left/imageRect.width,top/imageRect.height];
+   textEditor={input,anchor,color:strokeColor,size,wrapW:width/imageRect.width};
+   input.addEventListener("input",()=>{
+    input.style.height="auto";
+    input.style.height=Math.min(170,Math.max(34,input.scrollHeight))+"px";
+   });
+   input.addEventListener("keydown",e=>{
+    if(e.key==="Escape"){e.preventDefault();e.stopPropagation();finishText(false)}
+    else if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();finishText()}
+   });
+   input.addEventListener("blur",()=>finishText());
+   frame.append(input);input.focus();
+  }
   function xy(e){const rect=canvas.getBoundingClientRect();return [clamp((e.clientX-rect.left)/rect.width),clamp((e.clientY-rect.top)/rect.height)]}
   function render(target,s,scale=1){
    const w=target.canvas.width,h=target.canvas.height;
@@ -59,8 +102,23 @@
      target.stroke();
     }else if(m.tool==="text"){
      const [x,y]=p(m.a);
-     target.font="bold "+Math.max(12,m.size*Math.min(w,h)*6)+"px sans-serif";
-     target.fillText(m.text,x,y);
+     const fontPx=Math.max(12,m.size*Math.min(w,h)*6);
+     target.font="bold "+fontPx+"px sans-serif";
+     target.textBaseline=m.top?"top":"alphabetic";
+     const maxWidth=m.wrapW?m.wrapW*w:Infinity;
+     let lineNumber=0;
+     for(const paragraph of m.text.split("\\n")){
+      let line="";
+      for(const word of paragraph.split(/(\\s+)/)){
+       if(line&&target.measureText(line+word).width>maxWidth){
+        target.fillText(line,x,y+lineNumber*fontPx*1.25);
+        lineNumber++;line=word.trimStart();
+       }else line+=word;
+      }
+      target.fillText(line,x,y+lineNumber*fontPx*1.25);
+      lineNumber++;
+     }
+     target.textBaseline="alphabetic";
     }else{
      const [x,y]=p(m.a),[x2,y2]=p(m.b);
      target.beginPath();
@@ -90,12 +148,10 @@
   }
   canvas.addEventListener("pointerdown",e=>{
    if(!image||e.button!==0)return;
-   e.preventDefault();canvas.setPointerCapture(e.pointerId);
+   e.preventDefault();
    const a=xy(e);
-   if(tool==="text"){
-    const content=prompt("Annotation text:");if(!content)return;
-    commit({...state,marks:[...state.marks,{tool:"text",a,color:strokeColor,size:.006,text:content.slice(0,120)}]});return;
-   }
+   if(tool==="text"){beginText(a,e);return}
+   canvas.setPointerCapture(e.pointerId);
    drag={a,original:snapshot(state)};
    if(tool==="pen"||tool==="highlight"){
     drag.mark={tool,points:[a],color:tool==="highlight"?"#fff000":strokeColor,size:tool==="highlight"?.025:.004};
