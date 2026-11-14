@@ -2153,7 +2153,7 @@ function setupAssemblyTrees(){
     return;
    }
    const links=nodes.filter(item=>isPartNode(item)&&item.partId===node.partId);
-   if(!confirm("Delete \""+node.name+"\" from this project?\\n\\nThis removes the part from the feature tree and all assembly BOM references ("+links.length+"). Its stored details are moved to the recovery bin. This action cannot be undone on this page."))return;
+   if(!confirm("Delete \""+node.name+"\" from this project?\n\nThis removes the part from the feature tree and all assembly BOM references ("+links.length+"). Its stored details are moved to the recovery bin. This action cannot be undone on this page."))return;
    // Delete the underlying part through the existing recovery-bin API, not
    // by simply removing the tree node. Only remove links after API success.
    const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{
