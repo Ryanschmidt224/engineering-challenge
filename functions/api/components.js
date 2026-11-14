@@ -194,7 +194,6 @@ export async function handleComponents(request,env){
   // Older progressUpdates remain in the same array, in their original order.
   if(input.progressOperationAdd!==undefined){
    if(input.progressOperationAdd!==true)return json({error:"Invalid Add operation request"},400);
-   if(entry.progressStatus!=="in_progress")return json({error:"Set status to In progress before adding an operation"},400);
    const updates=progressUpdatesFor(entry);
    if(updates.length>=200)return json({error:"Progress Status is limited to 200 operations"},400);
    updates.push({id:crypto.randomUUID(),text:"",createdAt:new Date().toISOString()});
@@ -203,7 +202,6 @@ export async function handleComponents(request,env){
   if(input.progressOperationEdit!==undefined){
    const change=input.progressOperationEdit;
    if(!change||typeof change!=="object"||typeof change.id!=="string"||typeof change.text!=="string"||change.text.length>500)return json({error:"Operation text must be 500 characters or less"},400);
-   if(entry.progressStatus!=="in_progress")return json({error:"Set status to In progress to edit operations"},400);
    const updates=progressUpdatesFor(entry),operation=updates.find(item=>item.id===change.id);
    if(!operation)return json({error:"Progress operation not found"},404);
    operation.text=change.text.trim();
