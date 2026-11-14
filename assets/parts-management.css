@@ -7,14 +7,14 @@
 .bs-parts-controls input{flex:1 1 270px}
 .bs-parts-page .muted{font-size:.84rem}
 .bs-parts-scroll{overflow-x:auto;width:100%;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface)}
-.bs-parts-table{width:100%;min-width:620px;border-collapse:collapse;table-layout:auto}
+.bs-parts-table{min-width:100%;border-collapse:collapse;table-layout:fixed}
 .bs-parts-table th,.bs-parts-table td{border-bottom:1px solid var(--color-border);text-align:left;padding:8px 10px;vertical-align:middle}
 .bs-parts-table tr:last-child td{border-bottom:0}
-.bs-parts-table th{background:var(--color-surface-muted);font-size:.83rem;white-space:nowrap}
+.bs-parts-table th{background:var(--color-surface-muted);font-size:.83rem;white-space:nowrap;position:relative;user-select:none;padding-right:17px}
 .bs-parts-table .bs-parts-sort{font:inherit;font-weight:650;background:transparent;border:0;padding:5px 2px;color:var(--color-text);cursor:pointer}
 .bs-parts-table .bs-parts-sort:hover{text-decoration:underline}
-.bs-parts-table .field{width:100%;min-width:115px;margin:0;box-sizing:border-box;font-size:.89rem}
-.bs-parts-table td:nth-child(2){min-width:205px;width:42%}
+.bs-parts-table .field{width:100%;min-width:0;margin:0;box-sizing:border-box;font-size:.89rem}
+.bs-parts-table td:nth-child(2){min-width:0}
 .bs-parts-table td:last-child{text-align:right}
 .bs-parts-number{font-variant-numeric:tabular-nums;color:var(--color-text-muted);font-size:.85rem;white-space:nowrap}
 .bs-parts-feedback{font-size:.82rem;color:var(--color-text-muted);min-height:1.3em;margin:8px 0}
@@ -33,3 +33,6 @@
 .bs-code-status{margin:8px 0}
 .bs-code-editor[hidden],.bs-code-viewer[hidden],.bs-code-metadata[hidden],.bs-code-actions[hidden],.bs-code-history[hidden]{display:none!important}
 @media(max-width:700px){.assembly-parts-page{padding:8px 0 28px}.bs-parts-scroll{border-radius:6px}.bs-part-code{padding:10px}.bs-code-metadata{flex-direction:column}}
+
+.bs-parts-resize{position:absolute;right:0;top:0;bottom:0;width:10px;cursor:col-resize;touch-action:none;border-right:2px solid transparent}
+.bs-parts-resize:hover,.bs-parts-resize:focus-visible{border-right-color:var(--color-accent);outline:none}
