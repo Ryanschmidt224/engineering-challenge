@@ -48,7 +48,7 @@ function open({onCreate,hideDefault=false}){
  const autoNumberHelp=el("p","muted library-auto-number-help","The number is assigned when you save. Numbers 001–099 are reserved for assemblies; parts begin at 100.");
  const chooser=el("div","library-picker-section hide");
  const category=field("Part category","select");
- for(const [id,label] of [["wire","Wire and cable"],["power","Power and electronics"],["fasteners","Fasteners"],["tool","Tool"],["other","Other"]])option(category.input,id,label);
+ for(const [id,label] of [["tools","Tools & Equipment"],["consumables","Consumables & Supplies"],["electronics","Electronics & Components"],["hardware","Hardware & Materials"],["safety","Safety & Measurement"]])option(category.input,id,label);
  const workflow=el("div","wire-workflow-choice");
  const manualButton=el("button","btn","Manual Entry");manualButton.type="button";
  const wizardButton=el("button","btn","Wire Wizard");wizardButton.type="button";
@@ -133,17 +133,18 @@ function open({onCreate,hideDefault=false}){
  ];
  for(const [id,label] of powerTypes)option(powerType.input,id,label);
  const commonGroup=p=>{
-  const cat=String(p.category||"").toLowerCase();
-  if(cat==="screws"||cat==="fasteners")return "fasteners";
-  if(cat==="buck-converters"||cat==="power"||cat.includes("electronic"))return "power";
-  if(cat==="tool"||cat==="tools")return "tool";
-  if(cat==="wire"||cat.includes("wire")||cat.includes("cable"))return "wire";
-  if(cat==="other")return "other";
-  const name=String(p.name||"").toLowerCase();
-  if(/\b(?:motor|servo|stepper|esc|voltage|converter|buck|sensor|controller|pcb|power supply|arduino|relay)\b/.test(name))return "power";
-  if(/\b(?:screw|bolt|nut|washer|fastener)\b/.test(name))return "fasteners";
-  if(/\b(?:multimeter|oscilloscope|soldering iron|wire stripper|crimper|heat gun|wrench)\b/.test(name))return "tool";
-  return "other";
+  const category=String(p.category||"").toLowerCase();
+  if(["tools","consumables","electronics","hardware","safety"].includes(category))return category;
+  if(["wire","wire and cable"].includes(category))return "consumables";
+  if(["power","buck-converters"].includes(category))return "electronics";
+  if(["fasteners","screws"].includes(category))return "hardware";
+  if(["tool"].includes(category))return "tools";
+  const words=[p.name,p.model,p.specifications].filter(Boolean).join(" ").toLowerCase();
+  if(/\\b(?:solder|flux|heat.?shrink|electrical tape|wire|cable|adhesive|lubricant)\\b/.test(words))return "consumables";
+  if(/\\b(?:motor|servo|stepper|esc|mosfet|sensor|controller|arduino|relay|pcb|buck|converter)\\b/.test(words))return "electronics";
+  if(/\\b(?:multimeter|oscilloscope|soldering iron|wire stripper|crimper|heat gun|wrench)\\b/.test(words))return "tools";
+  if(/\\b(?:gloves|safety glasses|fume extractor|ventilation)\\b/.test(words))return "safety";
+  return "hardware";
  };
  const powerGroup=p=>{
   // Existing saved items have no subtype; classify from their recorded names
@@ -161,27 +162,30 @@ function open({onCreate,hideDefault=false}){
  const status=el("p","library-dialog-status");status.setAttribute("role","status");
  const footer=el("div","library-dialog-actions"),save=el("button","btn primary","Create part"),cancel=el("button","btn","Cancel");
  save.type="submit";cancel.type="button";footer.append(cancel,save);
+ const wireModeChoice=el("label","library-wire-mode");
+ const wireModeCheckbox=el("input");wireModeCheckbox.type="checkbox";
+ wireModeChoice.append(wireModeCheckbox,document.createTextNode(" Create a custom wire or cable using the Wire Wizard"));
  const wireSection=el("div","library-wire-section");
  manualFields.append(wireType.label,gauge.label,construction.label,wireAdvanced,length.label,endA.target.label,endA.choice.label,endA.other.label,endB.target.label,endB.choice.label,endB.other.label,results);
  wireSection.append(workflow,workflowHint,manualFields,wizardFields);
- chooser.append(category.label,wireSection,compSection);
+ chooser.append(category.label,wireModeChoice,wireSection,compSection);
  form.append(heading,subtitle,workshopChoice,itemKind.label,partClassification.label,numberChoice,autoNumberHelp,partNumberField.label,customName.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],purchased=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
  cancel.onclick=()=>close(null);dialog.addEventListener("cancel",e=>{e.preventDefault();close(null)});
- const workshopToolRows=()=>window.BSResources?.catalog?.tools?.filter(item=>item.id?.startsWith("workshop:"))||[];
+ const workshopStandardRows=()=>[...(window.BSResources?.catalog?.tools||[]),...(window.BSResources?.catalog?.parts||[])].filter(item=>item.id?.startsWith("workshop:"));
  const refreshCommon=()=>{
   const q=commonSearch.input.value.toLowerCase().trim(),cat=category.input.value,subtype=powerType.input.value;
-  const saved=commons.filter(p=>commonGroup(p)===cat&&(cat!=="power"||subtype==="all"||powerGroup(p)===subtype));
-  const recorded=purchased.filter(p=>commonGroup(p)===cat&&(cat!=="power"||subtype==="all"||powerGroup(p)===subtype));
-  const standards=cat==="tool"?workshopToolRows():[];
+  const saved=commons.filter(p=>commonGroup(p)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(p)===subtype));
+  const recorded=purchased.filter(p=>commonGroup(p)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(p)===subtype));
+  const standards=workshopStandardRows().filter(item=>item.category===cat);
   const matches=item=>[item.name,item.manufacturer,item.partNumber,item.specifications,item.detail].filter(Boolean).join(" ").toLowerCase().includes(q);
   const filtered=[...saved.map(item=>({...item,origin:"saved"})),...recorded.map(item=>({...item,origin:"purchased"})),...standards.map(item=>({...item,origin:"standard"}))].filter(matches);
   const previous=commonSelect.input.value;
   commonSelect.input.replaceChildren();
   option(commonSelect.input,"",filtered.length?"Select a Workshop item":"No Workshop items match");
-  filtered.forEach(p=>option(commonSelect.input,p.origin+":"+p.id,p.name+(p.origin==="standard"?" · Workshop tool":p.origin==="purchased"?" · Recorded part":p.partNumber?" · "+p.partNumber:"")));
+  filtered.forEach(p=>option(commonSelect.input,p.origin+":"+p.id,p.name+(p.origin==="standard"?" · Recommended Workshop item":p.origin==="purchased"?" · Recorded part":p.partNumber?" · "+p.partNumber:"")));
   if(filtered.some(p=>p.origin+":"+p.id===previous))commonSelect.input.value=previous;
  };
  const selectWorkflow=value=>{
@@ -197,9 +201,10 @@ function open({onCreate,hideDefault=false}){
  wizardButton.onclick=()=>{selectWorkflow("wizard");updateCalc()};
  wizardBack.onclick=()=>selectWorkflow(null);
  const update=()=>{
-  const lib=workshopCheckbox.checked,wire=category.input.value==="wire";
+  const lib=workshopCheckbox.checked,wire=category.input.value==="consumables"&&wireModeCheckbox.checked;
   if(lib&&!wire)refreshCommon();
-  powerType.label.classList.toggle("hide",!lib||category.input.value!=="power");
+  wireModeChoice.classList.toggle("hide",!lib||category.input.value!=="consumables");
+  powerType.label.classList.toggle("hide",!lib||category.input.value!=="electronics");
   customName.label.classList.toggle("hide",lib);
   itemKind.label.classList.toggle("hide",lib);
   const documentMode=!lib&&itemKind.input.value!=="part";
@@ -244,7 +249,7 @@ function open({onCreate,hideDefault=false}){
   status.textContent="Wizard applied "+selectedRecommendation+" AWG "+construction.input.value+" copper and "+length.input.value+" in cut length. Review the wire and termination details before creating the part; ampacity is not verified.";
  };
  workshopCheckbox.onchange=update;itemKind.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;
- category.input.onchange=()=>{powerType.input.value="all";update()};wireType.input.onchange=update;powerType.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
+ category.input.onchange=()=>{powerType.input.value="all";wireModeCheckbox.checked=false;update()};wireModeCheckbox.onchange=update;wireType.input.onchange=update;powerType.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
  form.addEventListener("submit",async e=>{
   e.preventDefault();
   if(!form.reportValidity())return;
@@ -256,21 +261,21 @@ function open({onCreate,hideDefault=false}){
    const autoNumber=autoNumberCheckbox.checked;
    payload={name,quantity:itemKind.input.value==="code"?null:itemKind.input.value==="document"?1:count,specifications:[],itemType:itemKind.input.value==="code"?"document":itemKind.input.value,partType:itemKind.input.value==="code"?"code":partClassification.input.value,
     assignNumber:autoNumber,partNumber:autoNumber?null:partNumberField.input.value.trim().toUpperCase()||null};
-  }else if(category.input.value!=="wire"){
+  }else if(!(category.input.value==="consumables"&&wireModeCheckbox.checked)){
    const choice=commonSelect.input.value;
    const isStandard=choice.startsWith("standard:"),isPurchased=choice.startsWith("purchased:");
-   const p=isStandard?workshopToolRows().find(item=>item.id===choice.slice(9)):isPurchased?purchased.find(item=>item.id===choice.slice(10)):commons.find(item=>item.id===choice.slice(6));
+   const p=isStandard?workshopStandardRows().find(item=>item.id===choice.slice(9)):isPurchased?purchased.find(item=>item.id===choice.slice(10)):commons.find(item=>item.id===choice.slice(6));
    if(!p){status.textContent="Select a Workshop item.";return}
    payload=isStandard?{
-    name:p.name,quantity:count,category:"tool",isTool:true,
+    name:p.name,quantity:count,category:commonGroup(p),isTool:commonGroup(p)==="tools",
     specifications:[{name:"Workshop reference",value:p.id},{name:"Tool specification",value:String(p.detail||"Workshop reference").slice(0,300)}]
    }:isPurchased?{
     name:p.name,quantity:count,sharedPartRef:"purchased:"+p.id,manufacturer:p.manufacturer||"",
     model:p.model||"",supplier:p.supplier||"",asin:p.asin||"",category:commonGroup(p),
-    isTool:commonGroup(p)==="tool",specifications:Array.isArray(p.specifications)?p.specifications:[]
+    isTool:commonGroup(p)==="tools",specifications:Array.isArray(p.specifications)?p.specifications:[]
    }:{
     name:p.name,quantity:count,sharedPartRef:"common:"+p.id,manufacturer:p.manufacturer||"",model:p.partNumber||"",
-    category:commonGroup(p),isTool:commonGroup(p)==="tool",
+    category:commonGroup(p),isTool:commonGroup(p)==="tools",
     specifications:[{name:"Workshop item ID",value:p.id},{name:"Workshop specifications",value:p.specifications||"Saved Workshop item"}]
    };
   }else{
@@ -282,12 +287,12 @@ function open({onCreate,hideDefault=false}){
    const name=(crimp?"Crimped wire — ":"Wire — ")+designation;
    const specs=[{name:"AWG",value:String(g)},{name:"Conductor",value:str},{name:"Insulation",value:insulation.input.value},{name:"Material",value:"Copper (assumed; verify with supplier)"}];
    if(crimp)specs.push({name:"Cut length (in)",value:String(inches)},{name:"End A",value:endA.value()||"Unspecified"},{name:"End B",value:endB.value()||"Unspecified"});
-   payload={name,quantity:count,category:"wire",specifications:specs};
+   payload={name,quantity:count,category:"consumables",specifications:specs};
    payload.wireInfo={gauge:g,construction:str,insulation:insulation.input.value,crimp,mm,endA:endA.value(),endB:endB.value(),wireId:null};
   }
   payload.quantityUnit="pcs";
   payload.hideFromFeatureTree=visibilityInput.checked;
-  payload.isTool=payload.itemType==="document"?false:workshopCheckbox.checked?category.input.value==="tool":toolInput.checked;
+  payload.isTool=payload.itemType==="document"?false:workshopCheckbox.checked?["tools","safety"].includes(category.input.value):toolInput.checked;
   save.disabled=true;status.textContent="Creating part…";
   try{await onCreate(payload);close({created:true})}catch(err){status.textContent=err.message||String(err);save.disabled=false}
  });
