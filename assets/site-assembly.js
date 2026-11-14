@@ -821,7 +821,7 @@ function setupAssemblyTrees(){
   const partPhotoActions=window.BSPhotoEditor.actionBar(pictureCover,{
    onMarkup:()=>{if(currentPartInfo?.id)window.BSPhotoMarkup.open({kind:"part",id:currentPartInfo.id,project,onSave:()=>showPartPicture(currentPartInfo.id,true)})},
    onAdd:()=>directPartPhotoInput.click(),
-   onDelete:()=>partPhotoDelete.click()
+   onDelete:()=>void deletePartPicture()
   });
   const directPartPhotoInput=document.createElement("input");directPartPhotoInput.type="file";directPartPhotoInput.accept="image/jpeg,image/png,image/webp";directPartPhotoInput.hidden=true;
   partPhotoActions.shell.append(directPartPhotoInput);
@@ -885,7 +885,7 @@ function setupAssemblyTrees(){
    }catch(error){partPhotoStatus.textContent=error.message||"Upload failed";partPhotoActions.setStatus(partPhotoStatus.textContent)}
    finally{partPhotoAdd.disabled=false;partPhotoFile.value=""}
   }
-  partPhotoDelete.onclick=async()=>{
+  async function deletePartPicture(){
    const partId=currentPartInfo?.id;
    if(!partId||!canEdit()||!confirm("Delete this part picture? The BOM part and instructions remain."))return;
    partPhotoDelete.disabled=true;partPhotoStatus.textContent="Deleting picture…";partPhotoActions.setStatus("Deleting photo…");
@@ -899,7 +899,7 @@ function setupAssemblyTrees(){
      partPhotoPlaceholder.hidden=false;partPhotoMarkup.disabled=true;partPhotoActions.setPhotoPresent(false);partPhotoStatus.textContent="Picture deleted.";partPhotoActions.setStatus("Photo deleted.");
     }
    }catch(error){partPhotoStatus.textContent=error.message||"Delete failed";partPhotoActions.setStatus(partPhotoStatus.textContent);partPhotoDelete.disabled=false}
-  };
+  }
   detailsPanel.querySelector(".part-details-edit").onclick=()=>{
    const part=currentPartInfo;if(!part)return;
    const linked=nodes.find(n=>isPartNode(n)&&n.partId===part.id);
