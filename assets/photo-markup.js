@@ -188,9 +188,9 @@
  // Otherwise the browser navigates away to display the local image.
  function dropOn(root,onFile,{canUpload=()=>true,onBlocked=()=>{}}={}){
   if(!root)return;
-  const containsFile=event=>Array.from(event.dataTransfer?.types||[]).includes("Files");
+  const incoming=event=>Array.from(event.dataTransfer?.types||[]).some(type=>["Files","text/uri-list","text/html"].includes(type));
   root.addEventListener("dragover",event=>{
-   if(!containsFile(event))return;
+   if(!incoming(event))return;
    event.preventDefault();event.stopPropagation();
    event.dataTransfer.dropEffect=canUpload()?"copy":"none";
    root.classList.add("is-dragover");
@@ -199,10 +199,14 @@
    if(!root.contains(event.relatedTarget))root.classList.remove("is-dragover");
   });
   root.addEventListener("drop",event=>{
-   if(!containsFile(event)&&!event.dataTransfer?.files?.length)return;
+   if(!incoming(event)&&!event.dataTransfer?.files?.length)return;
    event.preventDefault();event.stopPropagation();root.classList.remove("is-dragover");
    if(!canUpload()){onBlocked();return}
    const files=Array.from(event.dataTransfer?.files||[]);
+   if(!files.length){
+    onBlocked("This is a link, not an image file. For Google Photos, use Windows + Shift + S then Ctrl + V, or select a downloaded image.");
+    return;
+   }
    const image=files.find(file=>file.type.startsWith("image/")||/\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file.name||""));
    if(!image){onBlocked("Please drop an image file.");return}
    void onFile(image);
