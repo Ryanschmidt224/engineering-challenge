@@ -364,7 +364,7 @@
       uploadTargetNote=noteIndex;input.click();
      };
      const addPhoto=button("+ Add photo / document",()=>selectAttachment(null),"btn recipe-small-action");
-     function editablePhoto(id){
+     function editablePhoto(id,noteIndex=null){
       const item=el("div","recipe-step-photo");
       const photoName=step.photoNames[id]||"";
       const picture=makeAttachment(id,photoName);
@@ -379,8 +379,13 @@
        changed();saveHint();showNotes();showPhotos();
       },"btn recipe-small-action");
       if(isImageAttachment(id)){
-       const editPicture=button("Crop / annotate",()=>window.BSPhotoMarkup.open({kind:isRecipeFile(id)?"recipe":"gallery",id,onSave:()=>{const newSrc=(isRecipeFile(id)?window.BSPhotoMarkup.displayUrl("recipe",id):window.BSPhotoMarkup.displayUrl("gallery",id))+"&v="+Date.now();picture.src=newSrc}}),"btn recipe-small-action");
-       item.append(frame,editPicture,remove);
+       const actions=window.BSPhotoEditor.actionBar(frame,{
+        onMarkup:()=>window.BSPhotoMarkup.open({kind:isRecipeFile(id)?"recipe":"gallery",id,onSave:()=>{const newSrc=(isRecipeFile(id)?window.BSPhotoMarkup.displayUrl("recipe",id):window.BSPhotoMarkup.displayUrl("gallery",id))+"&v="+Date.now();picture.src=newSrc}}),
+        onAdd:()=>selectAttachment(noteIndex),
+        onDelete:()=>{if(confirm("Remove this photo from the step? The original image will remain in storage."))remove.click()}
+       });
+       actions.setPhotoPresent(true);
+       item.append(actions.shell);
       }else item.append(frame,remove);
       return item;
      }
@@ -393,7 +398,7 @@
        field.maxLength=4000;
        const noteAttachments=el("div","recipe-note-attachments");
        for(const id of step.photos){
-        if(step.photoNoteIds[id]===step.noteIds[index])noteAttachments.append(editablePhoto(id));
+        if(step.photoNoteIds[id]===step.noteIds[index])noteAttachments.append(editablePhoto(id,index));
        }
        const addAfterNote=button("+ Add photo / document",()=>selectAttachment(index),"btn recipe-small-action recipe-add-note-photo");
        addAfterNote.setAttribute("aria-label","Add photo after note "+(index+1));
