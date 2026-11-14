@@ -9,7 +9,7 @@
   cover.before(shell);shell.append(cover);
   const bar=document.createElement("div");bar.className="bs-photo-actions";
   const edit=document.createElement("button");edit.type="button";edit.className="btn bs-photo-toggle";
-  edit.textContent="Edit photo";edit.setAttribute("aria-expanded","false");
+  edit.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L9 17l-4 1 1-4Z"/></svg>';edit.title="Edit photo";edit.setAttribute("aria-label","Edit photo");edit.setAttribute("aria-expanded","false");
   const more=document.createElement("div");more.className="bs-photo-more";more.hidden=true;
   const make=(name,fn,className)=>{
    const button=document.createElement("button");button.type="button";button.className="btn "+className;
