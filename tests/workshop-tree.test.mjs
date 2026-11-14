@@ -5,12 +5,13 @@ import {readFileSync} from "node:fs";
 test("every Workshop tool and material appears exactly once in the category tree",()=>{
  const source=readFileSync("assets/resources.js","utf8");
  const ids=[...source.matchAll(/\{id:"(workshop:[^"]+)",kind:"(?:tool|material)"/g)].map(match=>match[1]);
- const tree=source.slice(source.indexOf("const toolGroups=["),source.indexOf("for(const [id,title,ids] of materialGroups)"));
+ const tree=source.slice(source.indexOf("const workshopCategories=["),source.indexOf("const legacyCategory="));
  assert.equal(ids.length,16);
  for(const id of ids){
   const count=tree.split('"'+id+'"').length-1;
   assert.equal(count,1,id+" must be in exactly one category");
  }
+ for(const label of ["Wire and cable","Power and electronics","Fasteners","Other"])assert.ok(tree.includes(label),label+" category missing");
  assert.match(source,/branch\("purchased"/);
  assert.match(source,/branch\("saved"/);
  assert.match(source,/ancestor\.tagName==="DETAILS"/);
