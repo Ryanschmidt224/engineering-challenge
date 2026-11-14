@@ -11,6 +11,15 @@ function setupAssemblyTrees(){
  document.querySelectorAll("[data-assembly-tree]:not([data-tree-ready])").forEach(root=>{
   root.dataset.treeReady="true";
   const project=root.dataset.assemblyTree,view=document.getElementById(project),nodesEl=root.querySelector(".assembly-tree-nodes"),status=root.querySelector(".assembly-tree-status"),controls=root.querySelector(".assembly-edit");
+  // Navigation is visually divided into two independent cards without changing
+  // the underlying project, tree data, or existing event listeners.
+  const summaryCard=document.createElement("div");
+  summaryCard.className="assembly-summary-sidebar-card";
+  summaryCard.setAttribute("aria-label","Project summary navigation");
+  const featureTreeCard=document.createElement("div");
+  featureTreeCard.className="assembly-feature-tree-card";
+  while(root.firstChild)featureTreeCard.append(root.firstChild);
+  root.append(summaryCard,featureTreeCard);
   // Legacy project pages share the same workspace styling as newer projects.
   if(project==="linear"||project==="robot")view.classList.add("personal-project-view");
   const canEdit=()=>window.BSProjectManager?.isOwner?.(project)===true || (["launcher","linear","robot"].includes(project)&&adminAuthenticated);
@@ -2395,7 +2404,7 @@ function setupAssemblyTrees(){
     summaryEntry.append(count);
    }
    summaryEntry.onclick=()=>{selected=null;history.pushState(null,"","#"+project);render();notify();window.scrollTo(0,0)};
-   nodesEl.append(summaryEntry);
+   summaryCard.replaceChildren(summaryEntry);
    // Project utilities live below, outside the actual feature tree.
    partsEntry.className="assembly-project-summary-entry assembly-parts-management-link"+(partsRoute()?" selected":"");
    partsEntry.setAttribute("aria-current",partsRoute()?"page":"false");
