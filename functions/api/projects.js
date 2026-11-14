@@ -69,7 +69,6 @@ export async function onRequest({request,env}){
  if(method==="POST"){
   const name=String(input.name||"").trim(),description=String(input.description||"").trim();
   if(!name||name.length>100||description.length>500)return json({error:"Project name must be 1–100 characters and description at most 500"},400);
-  const kind=input.kind==="mini"?"mini":"project";
   if(!user)return json({error:"A personal account is required to create a project"},401);
   const category=String(input.category||"Uncategorized").trim();
   if(!validCategory(category))return json({error:"Category must contain 1–60 characters"},400);
