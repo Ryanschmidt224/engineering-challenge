@@ -5,6 +5,7 @@ const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:
 const inventoryKey=id=>"user-workshop/"+id+"/inventory.json";
 const clean=(v,n=160)=>String(v??"").trim().slice(0,n);
 const normalize=v=>clean(v,200).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+const allowedStates=new Set(["in_stock","in_use_reusable","committed"]);
 const validItem=input=>{
  const name=clean(input?.name,180),category=clean(input?.category,80);
  if(!name)return null;
@@ -12,6 +13,7 @@ const validItem=input=>{
  if(!Number.isFinite(quantity)||quantity<0||quantity>1000000)return null;
  return {name,category,manufacturer:clean(input.manufacturer,100),model:clean(input.model,120),
   partNumber:clean(input.partNumber,120),notes:clean(input.notes,1500),
+  stockStatus:allowedStates.has(input.stockStatus)?input.stockStatus:"in_stock",
   quantity,unit:clean(input.unit||"pcs",32),kind:["tool","material","component","equipment","other"].includes(input.kind)?input.kind:"other",
   catalogId:clean(input.catalogId,100),photoId:clean(input.photoId,60),
   specifications:Array.isArray(input.specifications)?input.specifications.slice(0,25).map(x=>({name:clean(x.name,80),value:clean(x.value,240)})).filter(x=>x.name):[]};
@@ -28,12 +30,13 @@ function match(bom,items){
  });
  return bom.filter(p=>!p.generatedFrom&&!p.hideFromBom).map(p=>{
   const matches=find(p),required=Number(p.quantity),known=Number.isFinite(required)&&required>0;
-  const available=matches.reduce((a,x)=>a+x.quantity,0);
   const unit=p.quantityUnit||"pcs",compatible=matches.filter(x=>(x.unit||"pcs")===unit);
-  const count=compatible.reduce((a,x)=>a+x.quantity,0);
-  const status=!matches.length?"unknown":!known?"check":compatible.length===0?"check":count>=required?"owned":"short";
-  return {id:p.id,name:p.name,required:known?required:null,unit,available:compatible.length?count:null,status,
-   matches:matches.map(x=>({id:x.id,name:x.name,quantity:x.quantity,unit:x.unit}))};
+  const inStock=compatible.filter(x=>(x.stockStatus||"in_stock")==="in_stock").reduce((a,x)=>a+x.quantity,0);
+  const reusable=compatible.filter(x=>x.stockStatus==="in_use_reusable").reduce((a,x)=>a+x.quantity,0);
+  const committed=compatible.filter(x=>x.stockStatus==="committed").reduce((a,x)=>a+x.quantity,0);
+  const status=!matches.length?"unknown":!known?"check":compatible.length===0?"check":inStock>=required?"owned":inStock+reusable>=required?"reusable":"short";
+  return {id:p.id,name:p.name,required:known?required:null,unit,available:compatible.length?inStock:null,reusable,committed,status,
+   matches:matches.map(x=>({id:x.id,name:x.name,quantity:x.quantity,unit:x.unit,stockStatus:x.stockStatus||"in_stock"}))};
  });
 }
 export async function onRequest({request,env}){
