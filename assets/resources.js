@@ -103,7 +103,7 @@
   const category=categoryForReference(item.id);
   // "Expected" is guidance, never a claim that an individual owns an item.
   const availabilityAssumption=item.tier==="core"?"Expected":"Optional";
-  const bomDefault=category==="consumables"?"exclude":"include";
+  const bomDefault=["consumables","tools","safety"].includes(category)?"exclude":"include";
   return {...item,category,availabilityAssumption,bomDefault};
  };
  const workshopReferences=[...workshopSupplies,...workshopEquipment].map(itemMetadata);
