@@ -202,7 +202,8 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await page.route("**/api/**",async route=>{
   const url=new URL(route.request().url());
   let data={};
-  if(url.pathname==="/api/auth")data={authenticated:true,isAdmin:true};
+  if(url.pathname==="/api/accounts")data={user:{id:"u"+"1".repeat(32),email:"site-admin@example.test",displayName:"Admin",role:"admin"}};
+   if(url.pathname==="/api/auth")data={authenticated:true,isAdmin:true};
   if(url.pathname==="/api/tree"&&url.searchParams.has("metadata")){
    data=route.request().method()==="PUT"?{ok:true,title:"Renamed Foam Dart Project",revision:"v2"}:{title:null,revision:null};
   }else if(url.pathname==="/api/tree")data={nodes:[
@@ -572,7 +573,8 @@ test("saving a part closes the moved editor and restores part workspace",async({
   const url=new URL(route.request().url());
   const method=route.request().method();
   let data={};
-  if(url.pathname==="/api/auth")data={authenticated:true,isAdmin:true};
+  if(url.pathname==="/api/accounts")data={user:{id:"u"+"1".repeat(32),email:"site-admin@example.test",displayName:"Admin",role:"admin"}};
+   if(url.pathname==="/api/auth")data={authenticated:true,isAdmin:true};
   else if(url.pathname==="/api/tree")data=url.searchParams.has("assembly")?
    {page:{description:""},revision:"test"}:{nodes:[
     {id:"smoke-motor",parentId:null,name:"Motor Control",kind:"assembly"},
