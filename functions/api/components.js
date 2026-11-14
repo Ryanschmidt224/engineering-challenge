@@ -134,9 +134,10 @@ export async function handleComponents(request,env){
   if(!price)return json({error:"Historical price must be a nonnegative USD amount (2 decimals) with a valid recorded date"},400);
   const amount=quantityData(input);if(!amount)return json({error:"Quantity must be a positive number or blank, with a valid unit"},400);
   const clean=s=>String(s??"").slice(0,300);
-  const kind=input.partType==="custom"?"custom":"purchased";
-  const itemType=input.itemType==="document"?"document":"part";
+  const kind=input.partType==="code"?"code":input.partType==="custom"?"custom":"purchased";
+  const itemType=kind==="code"?"document":input.itemType==="document"?"document":"part";
   if(input.itemType!==undefined&&!["part","document"].includes(input.itemType))return json({error:"Choose Part or Document"},400);
+  if(input.partType!==undefined&&!["purchased","custom","code"].includes(input.partType))return json({error:"Invalid part type"},400);
   const record={itemType,partType:kind,assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,hideFromFeatureTree:input.hideFromFeatureTree===true,isTool:itemType==="document"?false:input.isTool===true,progressStatus:"not_started",needsAttention:false,attentionNote:"",purchaseOverride:input.purchaseOverride===true||input.purchaseOverride===false?input.purchaseOverride:null,workshopChoice:recommendedWorkshopIds.has(input.workshopChoice)?input.workshopChoice:null,sharedPartRef:cleanPartRef(input.sharedPartRef),id:crypto.randomUUID(),name:clean(input.name),fullName:clean(input.fullName||input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,historicalPriceBasis:price.basis,historicalPackageQuantity:price.packageQuantity,historicalPurchasePrice:price.purchasePrice,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
   if(kind==="custom")Object.assign(record,{manufacturer:"",model:"",supplier:"",asin:"",historicalPrice:null,historicalPriceDate:null,historicalPurchasePrice:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
   const state=await readEditable(env,project),items=state.items;
@@ -151,9 +152,23 @@ export async function handleComponents(request,env){
  // Tiny opt-in override: no requirement to re-enter part specifications.
  if(request.method==="PATCH"){
   const id=url.searchParams.get("id"),input=await request.json().catch(()=>null);
-  if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"||typeof input.isTool==="boolean"||input.progressStatus!==undefined||input.needsAttention!==undefined||input.attentionNote!==undefined))return json({error:"Invalid part preference"},400);
+  if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"||typeof input.isTool==="boolean"||input.progressStatus!==undefined||input.needsAttention!==undefined||input.attentionNote!==undefined||input.name!==undefined||input.partType!==undefined))return json({error:"Invalid part preference"},400);
   const state=await readEditable(env,project),items=state.items,entry=items.find(item=>item.id===id);
   if(!entry)return json({error:"Part not found"},404);
+  if(entry.generatedFrom&&(input.name!==undefined||input.partType!==undefined))return json({error:"Generated materials are controlled by their source part"},409);
+  if(input.name!==undefined){
+   if(typeof input.name!=="string"||!input.name.trim()||input.name.trim().length>180)return json({error:"Part name must be 1–180 characters"},400);
+   const old=entry.name;
+   entry.name=input.name.trim();
+   if(!entry.fullName||entry.fullName===old)entry.fullName=entry.name;
+  }
+  if(input.partType!==undefined){
+   if(!["purchased","custom","code"].includes(input.partType))return json({error:"Invalid part type"},400);
+   const wasCode=entry.partType==="code";entry.partType=input.partType;
+   if(entry.partType==="code"){entry.itemType="document";entry.isTool=false;entry.quantity=null}
+   else if(wasCode){entry.itemType="part"}
+   // Keep unrelated metadata when switching types; do not discard history.
+  }
   if(Object.prototype.hasOwnProperty.call(input,"purchaseOverride"))entry.purchaseOverride=input.purchaseOverride;
   if(Object.prototype.hasOwnProperty.call(input,"workshopChoice"))entry.workshopChoice=input.workshopChoice;
   if(typeof input.hideFromFeatureTree==="boolean")entry.hideFromFeatureTree=input.hideFromFeatureTree;
@@ -178,8 +193,10 @@ export async function handleComponents(request,env){
 
   const amount=quantityData(input,previous);if(!amount)return json({error:"Quantity must be a positive number or blank, with a valid unit"},400);
   if(input.itemType!==undefined&&!["part","document"].includes(input.itemType))return json({error:"Choose Part or Document"},400);
+  if(input.partType!==undefined&&!["purchased","custom","code"].includes(input.partType))return json({error:"Invalid part type"},400);
   const updated={...previous,itemType:input.itemType==="document"?"document":input.itemType==="part"?"part":previous.itemType||"part",name:clean(input.name.trim()),fullName:clean(input.fullName||input.name.trim()),...amount,historicalPrice:price.price,historicalPriceDate:price.date,historicalPriceBasis:price.basis,historicalPackageQuantity:price.packageQuantity,historicalPurchasePrice:price.purchasePrice,
-   partType:input.partType==="custom"?"custom":"purchased"};
+   partType:input.partType==="code"?"code":input.partType==="custom"?"custom":"purchased"};
+  if(updated.partType==="code"){updated.itemType="document";updated.isTool=false;updated.quantity=null}
   if(input.purchaseOverride===true||input.purchaseOverride===false||input.purchaseOverride===null)updated.purchaseOverride=input.purchaseOverride;
   if(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))updated.workshopChoice=input.workshopChoice;
   // Migrate legacy BOM-only parts on edit; the previous flag is read-only compatibility data.
