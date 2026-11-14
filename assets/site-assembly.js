@@ -1352,8 +1352,8 @@ function setupAssemblyTrees(){
   visibilityRow.append(visibilityCheckbox,document.createTextNode(" Hide from feature tree"));
   const partNumberRow=document.createElement("label");partNumberRow.className="part-number-field";
   const partNumberInput=document.createElement("input");partNumberInput.className="field part-number-input";partNumberInput.placeholder="Automatic for custom parts; optional for purchased";partNumberInput.maxLength=30;
-  partNumberRow.append(document.createTextNode("New part number"),partNumberInput);
-  const partNumberHelp=document.createElement("small");partNumberHelp.textContent="Custom parts receive the next project number (starting at 1001) when saved. Purchased parts and tools can be left unnumbered.";
+  partNumberRow.append(document.createTextNode("Part number"),partNumberInput);
+  const partNumberHelp=document.createElement("small");partNumberHelp.textContent="Use an existing number or assign the next project number. Purchased parts and tools can remain unnumbered.";
   partNumberRow.append(partNumberHelp);
   const assignExistingNumber=document.createElement("label");assignExistingNumber.className="part-number-existing-option";
   const assignExistingCheckbox=document.createElement("input");assignExistingCheckbox.type="checkbox";
