@@ -209,7 +209,7 @@ function setupAssemblyTrees(){
   const workspacePhotoInput=document.createElement("input");workspacePhotoInput.type="file";
   workspacePhotoInput.accept="image/*,.heic,.heif";workspacePhotoInput.hidden=true;
   workspacePhotoBar.shell.append(workspacePhotoInput);
-  workspacePhotoInput.onchange=()=>{const file=workspacePhotoInput.files?.[0];workspacePhotoInput.value="";if(file)void uploadGalleryPhoto(file,isProjectSummary()?summaryPhotoBar:workspacePhotoBar)};
+  workspacePhotoInput.onchange=()=>{const file=workspacePhotoInput.files?.[0];workspacePhotoInput.value="";if(file)void uploadGalleryPhoto(file,workspacePhotoBar)};
   workspacePhotoBar.setEnabled(canEdit());
   function galleryStatus(bar,message){bar.setStatus(message)}
   async function uploadGalleryPhoto(file,bar){
@@ -252,10 +252,13 @@ function setupAssemblyTrees(){
   const summaryPhotoStage=summary.querySelector(".project-summary-photo-stage");
   const summaryPhotoBar=window.BSPhotoEditor.actionBar(summaryPhotoStage,{
    onMarkup:()=>{const photo=summaryPhotos[summaryPhotoIndex];if(photo)window.BSPhotoMarkup.open({kind:"gallery",id:photo.id,onSave:()=>void refreshProjectSummary()})},
-   onAdd:()=>workspacePhotoInput.click(),
+   onAdd:()=>summaryPhotoInput.click(),
    onDelete:()=>void deleteGalleryPhoto(summaryPhotos[summaryPhotoIndex],summaryPhotoBar)
   });
   summaryPhotoBar.setEnabled(canEdit());
+  const summaryPhotoInput=document.createElement("input");summaryPhotoInput.type="file";summaryPhotoInput.accept="image/*,.heic,.heif";summaryPhotoInput.hidden=true;
+  summaryPhotoBar.shell.append(summaryPhotoInput);
+  summaryPhotoInput.onchange=()=>{const file=summaryPhotoInput.files?.[0];summaryPhotoInput.value="";if(file)void uploadGalleryPhoto(file,summaryPhotoBar)};
   window.BSPhotoMarkup.dropOn(summaryPhotoStage,file=>{
    selected=null;
    void workspacePhotoController.upload(file);
