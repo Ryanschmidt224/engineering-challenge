@@ -1511,14 +1511,32 @@ function setupAssemblyTrees(){
    const root=bomRoot();if(!root){bomReport("BOM editor unavailable. Refresh the page.");return}
    const review=root.querySelector(".component-review");
    const lookup=root.querySelector(".component-lookup-panel");
-   if(lookup){
-    if(partTypeRow.nextElementSibling!==lookup)lookup.before(partTypeRow);
-   }else if(review&&!review.contains(partTypeRow))review.prepend(partTypeRow);
    if(review){
-    if(!review.contains(visibilityRow))review.prepend(visibilityRow);
-    if(!review.contains(toolRow))visibilityRow.before(toolRow);
-    if(!review.contains(itemTypeRow))partTypeRow.before(itemTypeRow);
-    if(!review.contains(partNumberRow))toolRow.before(partNumberRow);
+    // One consistent information hierarchy for New Part and Edit Part.
+    // Move existing controls only; never reconstruct inputs or alter saved data.
+    const sectionHeading=(key,title)=>{
+     let h=review.querySelector('[data-part-editor-section="'+key+'"]');
+     if(!h){h=document.createElement("h3");h.className="part-editor-section-heading";h.dataset.partEditorSection=key}
+     h.textContent=title;return h;
+    };
+    const field=name=>bomField(name)?.closest("label");
+    const identity=[field("name"),field("full-name")];
+    const quantities=[field("quantity"),field("quantity-unit")];
+    const sourcing=[field("manufacturer"),field("model"),field("category"),field("supplier"),field("asin"),
+     review.querySelector(".historical-price-fields")||bomRoot()?.querySelector(".historical-price-fields")];
+    const specs=bomRoot()?.querySelector(".component-specs");
+    const specsHeading=[...review.children].find(el=>el.tagName==="H3"&&!el.classList.contains("part-editor-section-heading"));
+    const addSpec=bomRoot()?.querySelector(".component-add-spec");
+    const known=new Set([itemTypeRow,partTypeRow,partNumberRow,...identity,...quantities,...sourcing,
+      toolRow,visibilityRow,specsHeading,specs,addSpec,actions].filter(Boolean));
+    const otherFields=[...review.children].filter(el=>!known.has(el)&&!el.classList.contains("part-editor-section-heading"));
+    const move=(...elements)=>{for(const el of elements)if(el)review.append(el)};
+    move(sectionHeading("classification","Classification"),itemTypeRow,partTypeRow,partNumberRow);
+    move(sectionHeading("identity","Identification"),...identity);
+    move(sectionHeading("sourcing","Quantity and sourcing"),...quantities,...sourcing);
+    move(sectionHeading("display","Display options"),toolRow,visibilityRow);
+    move(...otherFields);
+    move(specsHeading||sectionHeading("specifications","Specifications"),specs,addSpec);
     let actions=review.querySelector(".component-editor-actions");
     if(!actions){
      actions=document.createElement("div");actions.className="component-editor-actions";
