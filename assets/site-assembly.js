@@ -706,19 +706,23 @@ function setupAssemblyTrees(){
   const codeHost=document.createElement("div");codeHost.className="part-source-code-host";detailsPanel.after(codeHost);
   const codePanel=window.BSPartCode.mount(codeHost,{project,canEdit});
   const progressSelect=progressPanel.querySelector(".part-progress-select"),attentionCheckbox=progressPanel.querySelector(".part-needs-attention"),attentionText=progressPanel.querySelector(".part-attention-note");
-  // Part-level progress updates are stored in sequence, separate from the main status.
-  const progressNotes= document.createElement("section");progressNotes.className="part-progress-updates";progressNotes.hidden=true;
-  const progressNotesHeading=document.createElement("h3");progressNotesHeading.textContent="Progress Status";
-  const progressNoteHistory=document.createElement("ol");progressNoteHistory.className="part-progress-updates-history";
-  const progressNoteEntry=document.createElement("textarea");progressNoteEntry.className="field part-progress-update-input";
-  progressNoteEntry.rows=2;progressNoteEntry.maxLength=500;progressNoteEntry.placeholder="Material ordered, waiting on paint…";
-  progressNoteEntry.setAttribute("aria-label","New Progress Status update");
-  const progressNoteAdd=document.createElement("button");progressNoteAdd.type="button";progressNoteAdd.className="btn part-progress-update-add";progressNoteAdd.textContent="Add update";
-  const progressNoteComposer=document.createElement("div");progressNoteComposer.className="part-progress-update-composer";progressNoteComposer.append(progressNoteEntry,progressNoteAdd);
-  const progressNoteFeedback=document.createElement("span");progressNoteFeedback.className="part-progress-update-feedback";progressNoteFeedback.setAttribute("role","status");
-  progressNotes.append(progressNotesHeading,progressNoteHistory,progressNoteComposer,progressNoteFeedback);
-  // Keep Progress Status history inside the expanded Part details section.
-  detailRows.after(progressNotes);
+  // Independent, ordered Progress Status section. The main Part details can
+  // remain collapsed while these operations are always accessible.
+  const progressNotes=document.createElement("details");
+  progressNotes.className="part-progress-updates";progressNotes.hidden=true;
+  const progressSummary=document.createElement("summary");
+  progressSummary.className="part-progress-updates-summary";
+  progressSummary.textContent="Progress Status";
+  const progressNoteHistory=document.createElement("ol");
+  progressNoteHistory.className="part-progress-updates-history";
+  const progressNoteAdd=document.createElement("button");
+  progressNoteAdd.type="button";progressNoteAdd.className="btn part-progress-update-add";
+  progressNoteAdd.textContent="Add operation";
+  const progressNoteFeedback=document.createElement("span");
+  progressNoteFeedback.className="part-progress-update-feedback";
+  progressNoteFeedback.setAttribute("role","status");
+  progressNotes.append(progressSummary,progressNoteHistory,progressNoteAdd,progressNoteFeedback);
+  partWorkspace.querySelector(".workspace-heading").after(progressNotes);
   // Assembly status uses its own record rather than rewriting the tree or instructions.
   const assemblyProgressPanel=progressPanel.cloneNode(true);
   assemblyProgressPanel.classList.add("assembly-progress-panel");
@@ -784,39 +788,49 @@ function setupAssemblyTrees(){
   progressSelect.addEventListener("change",()=>schedulePartStatusSave(true));
   attentionCheckbox.addEventListener("change",()=>{refreshAttentionForm();schedulePartStatusSave(true)});
   attentionText.addEventListener("input",()=>schedulePartStatusSave());
-  const renderProgressNotes=part=>{
-   progressNoteHistory.replaceChildren();
-   for(const update of part.progressUpdates||[]){
-    const item=document.createElement("li");item.textContent=update.text;item.title=update.createdAt||"";
-    progressNoteHistory.append(item);
-   }
-   // Notes remain readable after status changes; entry is available only In progress.
-   progressNotes.hidden=!(part.progressStatus==="in_progress"||part.progressUpdates?.length);
-   progressNoteComposer.hidden=part.progressStatus!=="in_progress";
-   progressNoteEntry.disabled=!canEdit();
-   progressNoteAdd.disabled=!canEdit();
-  };
-  progressNoteAdd.onclick=async()=>{
-   const part=currentPartInfo,text=progressNoteEntry.value.trim();
-   if(!part||!canEdit()||part.progressStatus!=="in_progress"||!text)return;
-   progressNoteAdd.disabled=true;progressNoteFeedback.textContent="Saving…";
+  async function saveProgressOperation(part,change,control){
+   if(!part||!canEdit()||part.progressStatus!=="in_progress")return;
+   control.disabled=true;progressNoteFeedback.textContent="Saving…";
    try{
     if(partStatusSavePromise)await partStatusSavePromise;
     const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{
-     method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({progressUpdate:text})
+     method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(change)
     });
     const data=await response.json();
     if(!response.ok)throw Error(data.error||"Could not save Progress Status");
     if(currentPartInfo?.id===part.id){
      currentPartInfo=data.component;
-     progressNoteEntry.value="";
      renderProgressNotes(data.component);
-     renderPartDetails(data.component);
-     progressNoteFeedback.textContent="Update saved.";
+     progressNoteFeedback.textContent="Saved.";
+     if(change.progressOperationAdd===true){
+      const inputs=progressNoteHistory.querySelectorAll("input");
+      inputs[inputs.length-1]?.focus();
+     }
     }
-   }catch(error){progressNoteFeedback.textContent=error.message}
-   finally{progressNoteAdd.disabled=!canEdit()}
+   }catch(error){progressNoteFeedback.textContent=error.message;control.disabled=false}
+  }
+  const renderProgressNotes=part=>{
+   progressNoteHistory.replaceChildren();
+   const editable=canEdit()&&part.progressStatus==="in_progress";
+   for(const [index,operation] of (part.progressUpdates||[]).entries()){
+    const item=document.createElement("li");
+    const input=document.createElement("input");
+    input.className="field part-progress-operation-input";
+    input.type="text";input.maxLength=500;input.value=operation.text||"";
+    input.placeholder="Operation "+(index+1)+" — material ordered, waiting on paint…";
+    input.title=operation.text||"";
+    input.disabled=!editable;
+    input.setAttribute("aria-label","Progress operation "+(index+1));
+    input.onkeydown=event=>{if(event.key==="Enter"){event.preventDefault();input.blur()}};
+    input.onblur=()=>{if(input.value.trim()!==(operation.text||""))void saveProgressOperation(part,{progressOperationEdit:{id:operation.id,text:input.value}},input)};
+    item.append(input);progressNoteHistory.append(item);
+   }
+   progressNotes.hidden=!(part.progressStatus==="in_progress"||part.progressUpdates?.length);
+   // Automatically expanded when In progress, independently of Part details.
+   progressNotes.open=part.progressStatus==="in_progress";
+   progressNoteAdd.hidden=!editable;progressNoteAdd.disabled=!editable;
   };
+  progressNoteAdd.onclick=()=>void saveProgressOperation(currentPartInfo,{progressOperationAdd:true},progressNoteAdd);
   const fillProgressPanel=part=>{
    progressSelect.value=part.progressStatus||"not_started";
    attentionCheckbox.checked=part.needsAttention===true;attentionText.value=part.attentionNote||"";refreshAttentionForm();
