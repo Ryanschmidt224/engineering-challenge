@@ -1591,7 +1591,7 @@ function setupAssemblyTrees(){
      apiInput.setAttribute("aria-label","API product lookup input");
     }
     const known=new Set([itemTypeRow,partTypeRow,partNumberRow,partDescriptionRow,...identity,...quantities,...sourcing,
-      toolRow,visibilityRow,specsHeading,specs,addSpec,existingActions,apiPanel].filter(Boolean));
+      toolRow,visibilityRow,review.querySelector(".part-display-options"),specsHeading,specs,addSpec,existingActions,apiPanel].filter(Boolean));
     const otherFields=[...review.children].filter(el=>!known.has(el)&&!el.classList.contains("part-editor-section-heading"));
     const move=(...elements)=>{for(const el of elements)if(el)review.append(el)};
     // Use one canonical field order for the editor and expanded part details.
