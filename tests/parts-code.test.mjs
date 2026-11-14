@@ -58,3 +58,27 @@ test("Project exports include Code current files and revision snapshots",()=>{
  assert(isAllowedKey("launcher","part-code/launcher/"+id+"/revisions/"+id+".json"));
  assert(!isAllowedKey("launcher","part-code/robot/"+id+"/current.json"));
 });
+
+
+test("Assigning the next number to an existing purchased part works and locks issued numbers",async()=>{
+ const {env,req}=await setup();
+ const path="/api/components?project=launcher&id="+id;
+ const payload={
+  name:"Motor controller",itemType:"part",partType:"purchased",description:"",
+  quantity:1,quantityUnit:"pcs",specifications:[],partNumber:null,assignNumber:true,
+  historicalPurchasePrice:null,historicalPriceBasis:"per_part",historicalPriceDate:null,
+  manufacturer:"",model:"",supplier:"",asin:""
+ };
+ let response=await handleComponents(req(path,"PUT",payload),env);
+ assert.equal(response.status,200,await response.text().catch(()=>"<unreadable>"));
+ let part=(await (await handleComponents(req("/api/components?project=launcher"),env)).json()).components.find(p=>p.id===id);
+ assert.match(part.partNumber,/^NR\d{3,}$/);
+ assert.equal(part.fullName,part.partNumber+" - Motor controller");
+ const original=part.partNumber;
+ response=await handleComponents(req(path,"PUT",{...payload,partNumber:original,assignNumber:false}),env);
+ assert.equal(response.status,200);
+ response=await handleComponents(req(path,"PUT",{...payload,partNumber:"NR999",assignNumber:false}),env);
+ assert.equal(response.status,409);
+ part=(await (await handleComponents(req("/api/components?project=launcher"),env)).json()).components.find(p=>p.id===id);
+ assert.equal(part.partNumber,original);
+});

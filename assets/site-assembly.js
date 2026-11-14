@@ -1363,6 +1363,8 @@ function setupAssemblyTrees(){
   const partDescriptionRow=document.createElement("label");partDescriptionRow.className="part-description-field";
   const partDescriptionInput=document.createElement("textarea");partDescriptionInput.className="field part-description-input";partDescriptionInput.rows=2;partDescriptionInput.maxLength=2000;partDescriptionInput.placeholder="What is this part and what does it do?";
   partDescriptionRow.append(document.createTextNode("Description"),partDescriptionInput);
+  let autoNumberChosen=false;
+  partNumberInput.addEventListener("input",()=>{autoNumberChosen=false});
   const nextNumberButton=document.createElement("button");nextNumberButton.type="button";nextNumberButton.className="btn part-number-next";nextNumberButton.textContent="Choose next available part number";
   const partNumberHelp=document.createElement("small");partNumberHelp.className="part-number-help";partNumberHelp.textContent="A number is assigned only when the part is saved.";
   partNumberRow.append(nextNumberButton,partNumberHelp);
@@ -1375,6 +1377,7 @@ function setupAssemblyTrees(){
     const data=await response.json();if(!response.ok)throw Error(data.error||"Could not retrieve part number");
     if(!Number.isSafeInteger(data.nextPart)||data.nextPart<100)throw Error("No available part number");
     partNumberInput.value=String(data.prefix||"")+String(data.nextPart).padStart(Number(data.digits)||3,"0");
+    autoNumberChosen=true;
     partNumberHelp.textContent="Available now; the number is reserved when you save. If another part takes it first, you'll be asked to choose again.";
    }catch(error){partNumberHelp.textContent=error.message}
    finally{nextNumberButton.disabled=partNumberInput.readOnly}
@@ -1425,14 +1428,30 @@ function setupAssemblyTrees(){
   bomEditorCancel.type="button";
   bomEditorCancel.className="btn workspace-bom-editor-cancel";
   bomEditorCancel.textContent="Cancel editing";
-  bomEditorHeader.append(bomEditorHeading,bomEditorCancel);
+  const bomDialogClose=document.createElement("button");
+  bomDialogClose.type="button";bomDialogClose.className="part-editor-close";
+  bomDialogClose.textContent="×";bomDialogClose.title="Close part editor";
+  bomDialogClose.setAttribute("aria-label","Close part editor");
+  bomEditorHeader.append(bomEditorHeading,bomDialogClose,bomEditorCancel);
+  bomDialogClose.onclick=()=>bomEditorCancel.click();
   bomEditorMount.prepend(bomEditorHeader);
   // Editing takes over the spacious main pane. Only the editor DOM moves;
   // its event handlers, form state and save API remain unchanged.
   const bomEditPanel=document.createElement("article");
   bomEditPanel.className="workspace-main-bom-editor hide";
   bomEditPanel.setAttribute("aria-label","BOM part editor");
-  workspace.querySelector(".workspace-panels").prepend(bomEditPanel);
+  const partEditDialog=document.createElement("dialog");
+  partEditDialog.className="part-editor-dialog";partEditDialog.setAttribute("aria-label","Part editor");
+  // Keep dialog under the workspace so existing API extraction listeners still
+  // receive clicks. Moving the existing form preserves its controllers.
+  workspace.append(partEditDialog);
+  partEditDialog.append(bomEditPanel);
+  const partDialogError=document.createElement("p");partDialogError.className="part-editor-validation-error";partDialogError.setAttribute("role","alert");partDialogError.hidden=true;
+  bomEditPanel.prepend(partDialogError);
+  partEditDialog.addEventListener("cancel",event=>{
+   if(savingBom){event.preventDefault();return}
+   event.preventDefault();bomEditorCancel.click();
+  });
   let editorDisclosureObserver=null;
   const moveBomEditorToTop=()=>{
    bomEditPanel.append(bomEditorMount);
@@ -1440,9 +1459,10 @@ function setupAssemblyTrees(){
    workspace.classList.add("is-editing-bom-part");
    bomEditPanel.classList.remove("hide");
    bomEditorMount.classList.add("is-editing");
-   bomEditorHeading.textContent=editingPart?"Edit part: "+(bomField("name")?.value||"Part"):"Add new BOM part";
+   bomEditorHeading.textContent=editingPart?"Edit part details":"New part";
    bomEditorCancel.textContent="Cancel";
    bomEditorHeader.classList.remove("hide");
+   if(!partEditDialog.open)partEditDialog.showModal();
   };
   const dismissBomEditor=()=>{
    editorDisclosureObserver?.disconnect();
@@ -1452,6 +1472,7 @@ function setupAssemblyTrees(){
    bomSavedList.after(bomEditorMount);
    workspace.classList.remove("is-editing-bom-part");
    bomEditPanel.classList.add("hide");
+   if(partEditDialog.open)partEditDialog.close();
   };
   bomEditorCancel.onclick=()=>{
    if(savingBom)return;
@@ -1474,7 +1495,7 @@ function setupAssemblyTrees(){
    dismissBomEditor();
    extractedPictureUrl=null;
    editingPart=null;editingPartAssembly=null;
-   itemTypeSelect.value="part";partTypeSelect.value="purchased";visibilityCheckbox.checked=false;toolCheckbox.checked=false;partDescriptionInput.value="";partNumberInput.value="";partNumberInput.readOnly=false;nextNumberButton.disabled=false;partNumberHelp.textContent="A number is assigned only when the part is saved.";updatePartTypeFields();
+   itemTypeSelect.value="part";partTypeSelect.value="purchased";visibilityCheckbox.checked=false;toolCheckbox.checked=false;partDescriptionInput.value="";partNumberInput.value="";autoNumberChosen=false;partNumberInput.readOnly=false;nextNumberButton.disabled=false;partNumberHelp.textContent="A number is assigned only when the part is saved.";updatePartTypeFields();
    for(const name of ["name","manufacturer","model","supplier","asin","description","historical-price","historical-price-date"]){const el=bomField(name);if(el)el.value=""}
    const priceBasis=bomField("historical-price-basis"),packageQty=bomField("historical-package-quantity");
    if(priceBasis)priceBasis.value="per_part";if(packageQty)packageQty.value="";priceBasis?.dispatchEvent(new Event("change"));
@@ -1490,7 +1511,7 @@ function setupAssemblyTrees(){
    itemTypeSelect.value=part.itemType==="document"?"document":"part";
    partTypeSelect.value=["custom","code"].includes(part.partType)?part.partType:"purchased";visibilityCheckbox.checked=part.hideFromFeatureTree===true;toolCheckbox.checked=part.isTool===true;
    partDescriptionInput.value=part.description||"";
-   partNumberInput.value=part.partNumber||"";partNumberInput.readOnly=!!part.partNumber;
+   partNumberInput.value=part.partNumber||"";autoNumberChosen=false;partNumberInput.readOnly=!!part.partNumber;
    nextNumberButton.disabled=!!part.partNumber;
    partNumberHelp.textContent=part.partNumber?"Issued number. Existing part numbers are permanent.":"Enter a number or click Choose next available part number.";
    updatePartTypeFields();
@@ -1516,17 +1537,16 @@ function setupAssemblyTrees(){
     remove.type="button";remove.className="btn component-spec-remove";remove.textContent="×";remove.title="Remove specification";remove.setAttribute("aria-label","Remove specification");remove.onclick=()=>row.remove();
     row.append(a,b,c,remove);specs.append(row);
    }}
-   openBomDraft();
-   const save=bomField("save");if(save)save.textContent="Save changes";
-   bomReport("");
-   // Editing can begin from an overview or build-instructions page, too.
-   // Route into the assembly workspace so the full-width editor is visible.
+   // Ensure the workspace is visible before opening the modal. In particular,
+   // editing from a part detail route must not open a dialog under a hidden page.
    if(!workspaceRoute()){
     if(originId!==undefined)selected=originId;
     history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));
-    void showAssemblyPage();
     render();notify();
    }
+   openBomDraft();
+   const save=bomField("save");if(save)save.textContent="Save changes";
+   bomReport("");
   }
   function openBomDraft(){
    const root=bomRoot();if(!root){bomReport("BOM editor unavailable. Refresh the page.");return}
@@ -1610,7 +1630,8 @@ function setupAssemblyTrees(){
    }
    const form=root.querySelector(".component-admin");if(form)form.open=true;
    root.querySelector(".component-review")?.classList.remove("hide");
-   bomEditorMount.scrollIntoView({behavior:"smooth",block:"start"});
+   partEditDialog.scrollTop=0;
+   partDialogError.hidden=true;partDialogError.textContent="";
    partNumberInput.focus({preventScroll:true});
   }
   let savingBom=false;
@@ -1622,7 +1643,7 @@ function setupAssemblyTrees(){
    const rawQty=bomField("quantity")?.value.trim()??"";
    const amount=rawQty===""?null:Number(rawQty);
    if(amount!==null&&(!Number.isFinite(amount)||amount<=0||amount>10000000)){bomReport("Quantity must be positive or left blank.");return false}
-   const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:partTypeSelect.value==="code"?null:amount,quantityUnit:editingPart?bomField("quantity-unit")?.value??"pcs":"pcs",itemType:partTypeSelect.value==="code"?"document":itemTypeSelect.value,partType:partTypeSelect.value,hideFromFeatureTree:visibilityCheckbox.checked,isTool:toolCheckbox.checked,partNumber:partNumberInput.value.trim().toUpperCase()||null,assignNumber:false};
+   const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:partTypeSelect.value==="code"?null:amount,quantityUnit:editingPart?bomField("quantity-unit")?.value??"pcs":"pcs",itemType:partTypeSelect.value==="code"?"document":itemTypeSelect.value,partType:partTypeSelect.value,hideFromFeatureTree:visibilityCheckbox.checked,isTool:toolCheckbox.checked,partNumber:autoNumberChosen?null:(partNumberInput.value.trim().toUpperCase()||null),assignNumber:autoNumberChosen};
    const priceInput=partTypeSelect.value!=="purchased"?"":(bomField("historical-price")?.value.trim()||"");
    const dateInput=partTypeSelect.value==="custom"?"":(bomField("historical-price-date")?.value||"");
    if(priceInput&&(!Number.isFinite(Number(priceInput))||Number(priceInput)<0||Math.round(Number(priceInput)*100)!==Number(priceInput)*100&&Math.abs(Math.round(Number(priceInput)*100)-Number(priceInput)*100)>1e-6)){
@@ -1648,6 +1669,8 @@ function setupAssemblyTrees(){
    })).filter(entry=>entry.name&&entry.value);
    savingBom=true;
    const saveButton=bomField("save");if(saveButton)saveButton.disabled=true;
+   const validationMessage=partEditDialog.querySelector(".part-editor-validation-error");
+   if(validationMessage){validationMessage.hidden=true;validationMessage.textContent=""}
    bomReport("Saving "+name+"…");
    try{
     const wasEdit=!!editingPart;
@@ -1695,7 +1718,13 @@ function setupAssemblyTrees(){
     bomReport(name+(wasEdit?" updated.":" saved to the BOM.")+photoMessage);
     if(wasEdit)returnToEditedPart();
     return true;
-   }catch(error){bomReport("Could not save part: "+error.message);return false}
+   }catch(error){
+    const message=error.message||"Unknown error";
+    bomReport("Could not save part: "+message);
+    const dialogMessage=partEditDialog.querySelector(".part-editor-validation-error");
+    if(dialogMessage){dialogMessage.textContent=message;dialogMessage.hidden=false}
+    return false;
+   }
    finally{savingBom=false;if(saveButton)saveButton.disabled=false}
   }
   // BOM creation uses the shared part picker and creates a hideable tree occurrence.
