@@ -32,7 +32,16 @@
   // Compact defaults: part number is intentionally narrow, note stays beside its flag.
   const widths=[112,330,150,160,380];
   widths.forEach(w=>{const col=el("col");col.style.width=w+"px";colgroup.append(col)});
-  table.style.width=widths.reduce((a,b)=>a+b,0)+"px";table.append(colgroup);
+  // Fill the available page width with the final column; retain compact, independently resizable columns to its left.
+  const layoutColumns=()=>{
+   const prefix=widths.slice(0,-1).reduce((total,w)=>total+w,0);
+   const last=Math.max(widths[widths.length-1],scroll.clientWidth-prefix);
+   widths.forEach((w,i)=>{colgroup.children[i].style.width=(i===widths.length-1?last:w)+"px"});
+   table.style.width=(prefix+last)+"px";
+  };
+  table.append(colgroup);
+  if(typeof ResizeObserver!=="undefined"){const observer=new ResizeObserver(layoutColumns);observer.observe(scroll)}
+  else window.addEventListener("resize",layoutColumns);
   const columns=[["number","Part number"],["name","Part name"],["partType","Part type"],["status","Status"],["needsAttention","Needs attention"]];
   let order="number",direction=1,parts=[],fetchId=0;
   const sortButtons={};
@@ -44,7 +53,7 @@
    if(key!=="open"){
     const handle=el("span","bs-parts-resize");handle.textContent="⋮⋮";handle.title="Drag to resize "+label+" column";handle.setAttribute("role","separator");handle.setAttribute("aria-label","Resize "+label);handle.setAttribute("aria-orientation","vertical");handle.tabIndex=0;
     const index=columns.findIndex(c=>c[0]===key);
-    const size=w=>{widths[index]=Math.max(index===0?102:index===1?180:index===4?240:85,Math.round(w));colgroup.children[index].style.width=widths[index]+"px";table.style.width=widths.reduce((a,b)=>a+b,0)+"px"};
+    const size=w=>{widths[index]=Math.max(index===0?102:index===1?180:index===4?240:85,Math.round(w));layoutColumns()};
     handle.addEventListener("pointerdown",e=>{if(e.button!==0)return;e.preventDefault();e.stopPropagation();const x=e.clientX,w=widths[index];handle.setPointerCapture(e.pointerId);handle.classList.add("is-resizing");const move=ev=>size(w+ev.clientX-x);const stop=()=>{handle.classList.remove("is-resizing");handle.removeEventListener("pointermove",move);handle.removeEventListener("pointerup",stop);handle.removeEventListener("pointercancel",stop)};handle.addEventListener("pointermove",move);handle.addEventListener("pointerup",stop);handle.addEventListener("pointercancel",stop)});
     handle.addEventListener("keydown",e=>{if(e.key==="ArrowLeft"||e.key==="ArrowRight"){e.preventDefault();size(widths[index]+(e.key==="ArrowLeft"?-15:15))}});
     th.append(handle);
@@ -52,7 +61,7 @@
    headingRow.append(th);
   }
   thead.append(headingRow);
-  const tbody=el("tbody");table.append(thead,tbody);scroll.append(table);target.append(header,controls,guide,lookupForm,lookupResult,scroll,feedback);
+  const tbody=el("tbody");table.append(thead,tbody);scroll.append(table);target.append(header,controls,guide,lookupForm,lookupResult,scroll,feedback);layoutColumns();
   function partLabel(part){return (part.name||"").toLowerCase()}
   function sortKey(part){
    if(order==="number")return numberFor(part).toLowerCase();
