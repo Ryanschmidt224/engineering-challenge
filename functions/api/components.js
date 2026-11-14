@@ -67,7 +67,7 @@ const recommendedWorkshopIds=new Set([
 const isToolPart=part=>typeof part.isTool==="boolean"?part.isTool:/\btools?\b/i.test(String(part.category||""))||/\bsolder\s+sucker\b/i.test(String(part.name||""));
 const generatedFullName=part=>{const name=String(part.name||"").trim(),number=String(part.partNumber||"").trim();return number&&(name.toUpperCase()===number.toUpperCase()||name.toUpperCase().startsWith(number.toUpperCase()+" - "))?name:number?number+" - "+name:name};
 const purchaseStatuses=new Set(["not_started","already_have","need_to_buy","ignore"]);
-const progressUpdatesFor=part=>Array.isArray(part.progressUpdates)?part.progressUpdates.filter(note=>note&&typeof note.text==="string"&&note.text.trim()).map(note=>({id:String(note.id||""),text:note.text,createdAt:String(note.createdAt||"")})):[];
+const progressUpdatesFor=part=>Array.isArray(part.progressUpdates)?part.progressUpdates.filter(note=>note&&typeof note.text==="string").map(note=>({id:String(note.id||""),text:note.text,createdAt:String(note.createdAt||"")})):[];
 const validProgressUpdate=value=>typeof value==="string"&&!!value.trim()&&value.trim().length<=500;
 const presentPart=part=>({...part,progressUpdates:progressUpdatesFor(part),purchaseStatus:purchaseStatuses.has(part.purchaseStatus)?part.purchaseStatus:"not_started",fullName:generatedFullName(part),itemType:part.itemType==="document"?"document":"part",progressStatus:["not_started","in_progress","complete"].includes(part.progressStatus)?part.progressStatus:"not_started",needsAttention:part.needsAttention===true,attentionNote:part.attentionNote||"",isTool:isToolPart(part),hideFromFeatureTree:part.hideFromFeatureTree===true||(part.hideFromFeatureTree===undefined&&part.bomOnly===true),assumedOnHand:part.purchaseOverride===true?false:part.purchaseOverride===false?true:standardShopMaterial(part)});
 // Derived consumables remain tied to their source part. Never require the
@@ -158,7 +158,7 @@ export async function handleComponents(request,env){
  // Tiny opt-in override: no requirement to re-enter part specifications.
  if(request.method==="PATCH"){
   const id=url.searchParams.get("id"),input=await request.json().catch(()=>null);
-  if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"||typeof input.isTool==="boolean"||input.progressStatus!==undefined||input.needsAttention!==undefined||input.attentionNote!==undefined||input.name!==undefined||input.partType!==undefined||input.purchaseStatus!==undefined||input.progressUpdate!==undefined))return json({error:"Invalid part preference"},400);
+  if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"||typeof input.isTool==="boolean"||input.progressStatus!==undefined||input.needsAttention!==undefined||input.attentionNote!==undefined||input.name!==undefined||input.partType!==undefined||input.purchaseStatus!==undefined||input.progressUpdate!==undefined||input.progressOperationAdd!==undefined||input.progressOperationEdit!==undefined))return json({error:"Invalid part preference"},400);
   const state=await readEditable(env,project),items=state.items,entry=items.find(item=>item.id===id);
   if(!entry)return json({error:"Part not found"},404);
   if(entry.generatedFrom&&(input.name!==undefined||input.partType!==undefined))return json({error:"Generated materials are controlled by their source part"},409);
@@ -190,6 +190,25 @@ export async function handleComponents(request,env){
     updates.push({id:crypto.randomUUID(),text:input.progressUpdate.trim(),createdAt:new Date().toISOString()});
     entry.progressUpdates=updates;
    }
+  // Ordered operations are persisted individually with stable identifiers.
+  // Older progressUpdates remain in the same array, in their original order.
+  if(input.progressOperationAdd!==undefined){
+   if(input.progressOperationAdd!==true)return json({error:"Invalid Add operation request"},400);
+   if(entry.progressStatus!=="in_progress")return json({error:"Set status to In progress before adding an operation"},400);
+   const updates=progressUpdatesFor(entry);
+   if(updates.length>=200)return json({error:"Progress Status is limited to 200 operations"},400);
+   updates.push({id:crypto.randomUUID(),text:"",createdAt:new Date().toISOString()});
+   entry.progressUpdates=updates;
+  }
+  if(input.progressOperationEdit!==undefined){
+   const change=input.progressOperationEdit;
+   if(!change||typeof change!=="object"||typeof change.id!=="string"||typeof change.text!=="string"||change.text.length>500)return json({error:"Operation text must be 500 characters or less"},400);
+   if(entry.progressStatus!=="in_progress")return json({error:"Set status to In progress to edit operations"},400);
+   const updates=progressUpdatesFor(entry),operation=updates.find(item=>item.id===change.id);
+   if(!operation)return json({error:"Progress operation not found"},404);
+   operation.text=change.text.trim();
+   entry.progressUpdates=updates;
+  }
   if(input.needsAttention!==undefined){if(typeof input.needsAttention!=="boolean")return json({error:"Invalid attention flag"},400);entry.needsAttention=input.needsAttention}
   if(input.attentionNote!==undefined){if(typeof input.attentionNote!=="string"||input.attentionNote.length>2000)return json({error:"Attention note must be 2000 characters or less"},400);entry.attentionNote=input.attentionNote.trim()}
   if(entry.needsAttention&&!(entry.attentionNote||"").trim())return json({error:"Describe what needs attention before flagging this part"},400);
