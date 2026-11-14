@@ -1395,7 +1395,7 @@ function setupAssemblyTrees(){
   partTypeRow.textContent="Part type";
   const partTypeSelect=document.createElement("select");
   partTypeSelect.className="field part-type-select";
-  for(const [value,label] of [["purchased","Purchased"],["custom","Custom"],["code","Code"]]){
+  for(const [value,label] of [["purchased","Off-the-shelf"],["custom","Custom"],["code","Code"]]){
    const option=document.createElement("option");option.value=value;option.textContent=label;partTypeSelect.append(option);
   }
   partTypeRow.append(partTypeSelect);
