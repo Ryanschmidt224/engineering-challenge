@@ -4,9 +4,10 @@
 (function(){
  "use strict";
  const el=(tag,cls,content)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(content!==undefined)n.textContent=content;return n};
- const statusValues=[["not_started","Not started"],["in_progress","In progress"],["complete","Complete"]];
- const purchaseValues=[["not_started","Not started"],["already_have","Already have"],["need_to_buy","Need to buy"],["ignore","Ignore"]];
- const statusFor=p=>p.partType==="purchased"?(p.purchaseStatus||"not_started"):(p.progressStatus||"not_started");
+ const fields=window.BSPartFields;
+ const statusValues=fields.progressStatuses;
+ const purchaseValues=fields.purchaseStatuses;
+ const statusFor=fields.statusValue;
  const numberFor=p=>p.partNumber||(/^([A-Za-z]{1,8}[- ]?\d{2,8})\s*[-–:]\s*\S/.exec(p.name||"")?.[1]||"");
  const typeValues=[["purchased","Purchased"],["custom","Custom"],["code","Code"]];
  const dropdown=(options,current,disabled=false)=>{
@@ -31,7 +32,7 @@
   const widths=[145,300,150,165,245,100];
   widths.forEach(w=>{const col=el("col");col.style.width=w+"px";colgroup.append(col)});
   table.style.width=widths.reduce((a,b)=>a+b,0)+"px";table.append(colgroup);
-  const columns=[["number","Part number"],["name","Part name"],["partType","Part type"],["progressStatus","Status"],["needsAttention","Needs attention"],["open",""]];
+  const columns=[["number","Part number"],["name","Part name"],["partType","Part type"],["status","Status"],["needsAttention","Needs attention"],["open",""]];
   let order="number",direction=1,parts=[],fetchId=0;
   const sortButtons={};
   for(const [key,label] of columns){
@@ -85,7 +86,7 @@
     const typeCell=el("td"),type=dropdown(typeValues,part.partType||"purchased",readOnly);
     type.setAttribute("aria-label","Part type for "+part.name);
     type.onchange=()=>void change(part,"partType",type.value,type);typeCell.append(type);tr.append(typeCell);
-    const stateCell=el("td"),stateKey=part.partType==="purchased"?"purchaseStatus":"progressStatus",state=dropdown(part.partType==="purchased"?purchaseValues:statusValues,statusFor(part),readOnly);
+    const stateCell=el("td"),stateKey=fields.statusField(part),state=dropdown(fields.statusesFor(part),statusFor(part),readOnly);
     state.setAttribute("aria-label","Status for "+part.name);
     state.onchange=()=>void change(part,stateKey,state.value,state);stateCell.append(state);tr.append(stateCell);
     const attentionCell=el("td","bs-parts-attention"),attentionLine=el("label","bs-attention-line"),attention=el("input");attention.type="checkbox";attention.checked=part.needsAttention===true;attention.disabled=readOnly;attentionLine.append(attention,document.createTextNode(" Needs attention"));attentionCell.append(attentionLine);
