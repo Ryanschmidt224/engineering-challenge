@@ -28,7 +28,10 @@ function open({onCreate,hideDefault=false}){
  const heading=el("h2","","New part"),subtitle=el("p","muted","Create a part for the BOM. Choose whether it appears in the feature tree.");
  const toolField=el("label","library-visibility-field");const toolInput=el("input");toolInput.type="checkbox";toolField.append(toolInput,document.createTextNode(" Tool (not a build component)"));
  const visibility=el("label","library-visibility-field");const visibilityInput=el("input");visibilityInput.type="checkbox";visibilityInput.checked=hideDefault;visibility.append(visibilityInput,document.createTextNode(" Hide from feature tree"));
- const mode=field("How would you like to add this part?","select");option(mode.input,"custom","Enter part details");option(mode.input,"library","Workshop Item");
+ // First choice: tick this only for a reusable item already defined in the Workshop.
+ const workshopChoice=el("label","library-workshop-first");
+ const workshopCheckbox=el("input");workshopCheckbox.type="checkbox";
+ workshopChoice.append(workshopCheckbox,document.createTextNode("This part is from the workshop"));
  const customName=field("Part name");
  const itemKind=field("Item type","select");option(itemKind.input,"part","Part");option(itemKind.input,"document","Document");
  const partClassification=field("Part type","select");option(partClassification.input,"purchased","Purchased or standard part");option(partClassification.input,"custom","Custom-designed part");
@@ -131,7 +134,7 @@ function open({onCreate,hideDefault=false}){
  manualFields.append(wireType.label,gauge.label,construction.label,wireAdvanced,length.label,endA.target.label,endA.choice.label,endA.other.label,endB.target.label,endB.choice.label,endB.other.label,results);
  wireSection.append(workflow,workflowHint,manualFields,wizardFields);
  chooser.append(category.label,wireSection,compSection);
- form.append(heading,subtitle,mode.label,itemKind.label,partClassification.label,numberChoice,autoNumberHelp,partNumberField.label,customName.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
+ form.append(heading,subtitle,workshopChoice,itemKind.label,partClassification.label,numberChoice,autoNumberHelp,partNumberField.label,customName.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
@@ -155,7 +158,7 @@ function open({onCreate,hideDefault=false}){
  wizardButton.onclick=()=>{selectWorkflow("wizard");updateCalc()};
  wizardBack.onclick=()=>selectWorkflow(null);
  const update=()=>{
-  const lib=mode.input.value==="library",wire=category.input.value==="wire";
+  const lib=workshopCheckbox.checked,wire=category.input.value==="wire";
    if(!wire&&commonCategory.input.value!=="all"&&commonCategory.input.value!==category.input.value)commonCategory.input.value=category.input.value;
    if(!wire)refreshCommon();
   customName.label.classList.toggle("hide",lib);
@@ -201,7 +204,7 @@ function open({onCreate,hideDefault=false}){
   selectWorkflow("manual");
   status.textContent="Wizard applied "+selectedRecommendation+" AWG "+construction.input.value+" copper and "+length.input.value+" in cut length. Review the wire and termination details before creating the part; ampacity is not verified.";
  };
- mode.input.onchange=update;itemKind.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;
+ workshopCheckbox.onchange=update;itemKind.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;
  category.input.onchange=()=>{if(category.input.value!=="wire")commonCategory.input.value=category.input.value;update()};wireType.input.onchange=update;commonCategory.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
  form.addEventListener("submit",async e=>{
   e.preventDefault();
@@ -209,7 +212,7 @@ function open({onCreate,hideDefault=false}){
   let payload;
   const rawCount=qty.input.value.trim();const count=rawCount===""?null:Number(rawCount);
   if(count!==null&&(!Number.isFinite(count)||count<=0||count>10000000)){status.textContent="Quantity must be positive, or left blank.";return}
-  if(mode.input.value==="custom"){
+  if(!workshopCheckbox.checked){
    const name=customName.input.value.trim();if(!name||name.length>100){status.textContent="Enter a part name (up to 100 characters).";return}
    const autoNumber=autoNumberCheckbox.checked;
    payload={name,quantity:itemKind.input.value==="document"?1:count,specifications:[],itemType:itemKind.input.value,partType:partClassification.input.value,
@@ -239,7 +242,7 @@ function open({onCreate,hideDefault=false}){
  fetch("/api/commonparts",{cache:"no-store"}).then(r=>r.ok?r.json():Promise.reject(Error("Saved parts unavailable"))).then(c=>{
   if(finished)return;commons=c.parts||[];refreshCommon();
  }).catch(err=>{if(!finished)status.textContent="Could not load saved parts: "+err.message+". Manual Entry and Wire Wizard are still available.";});
- customName.input.focus();
+ workshopCheckbox.focus();
  });
 }
 window.BSLibraryPartPicker={open,recommend};
