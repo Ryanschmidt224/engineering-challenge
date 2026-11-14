@@ -31,6 +31,7 @@ function setupAssemblyTrees(){
     partProgress.set(part.id,part.progressStatus||"not_started");
     partAttention.set(part.id,part.needsAttention===true);
     partQuantities.set(part.id,part.quantity);
+    for(const linked of nodes.filter(n=>isPartNode(n)&&n.partId===part.id))if(linked.name!==part.name){linked.name=part.name;changed=true}
     if(!known.has(part.id)){
      const parentId=nodes.some(n=>n.id===part.assemblyId&&!isPartNode(n))?part.assemblyId:null;
      nodes.push({id:"part-"+part.id,kind:"part",partId:part.id,name:part.name,parentId});
@@ -374,6 +375,8 @@ function setupAssemblyTrees(){
   }
   // Reuse the canonical BOM panel on its own screen. The editor alone moves
   // into the workspace when editing; no duplicate BOM data or forms.
+  const partsPage=document.createElement("section");partsPage.className="assembly-parts-page hide";
+  workspace.after(partsPage);
   const bomScreen=document.createElement("section");
   bomScreen.className="assembly-bom-screen hide";
   bomScreen.innerHTML='<div class="assembly-bom-screen-header"><div><button type="button" class="btn assembly-bom-back">← Workspace</button><h1 class="assembly-bom-screen-title">BOM</h1></div><div class="assembly-bom-view-switch" role="group" aria-label="BOM view"><button type="button" class="btn assembly-bom-list is-active" aria-pressed="true">List</button><button type="button" class="btn assembly-bom-pictures" aria-pressed="false">Pictures</button></div></div><div class="assembly-bom-list-view"></div><div class="assembly-bom-picture-view hide"></div>';
@@ -687,6 +690,8 @@ function setupAssemblyTrees(){
   progressPanel.innerHTML='<label class="part-progress-inline-label" for="part-progress-select-'+project+'">Status</label><select id="part-progress-select-'+project+'" class="field part-progress-select" aria-label="Status"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="complete">Complete</option></select><label class="part-attention-toggle"><input type="checkbox" class="part-needs-attention"> Needs attention</label><label class="part-attention-note-field" hidden>What needs to be fixed?<textarea class="field part-attention-note" rows="2" maxlength="2000" placeholder="What needs attention?"></textarea></label><span class="part-progress-feedback" role="status" aria-live="polite"></span><button type="button" class="part-progress-save" hidden>Save status</button>';
   partWorkspace.querySelector(".workspace-heading > div:not(.workspace-cover)").append(progressPanel);
   partWorkspace.querySelector(".workspace-heading").after(detailsPanel);
+  const codeHost=document.createElement("div");codeHost.className="part-source-code-host";detailsPanel.after(codeHost);
+  const codePanel=window.BSPartCode.mount(codeHost,{project,canEdit});
   const progressSelect=progressPanel.querySelector(".part-progress-select"),attentionCheckbox=progressPanel.querySelector(".part-needs-attention"),attentionText=progressPanel.querySelector(".part-attention-note");
   // Assembly status uses its own record rather than rewriting the tree or instructions.
   const assemblyProgressPanel=progressPanel.cloneNode(true);
@@ -792,7 +797,7 @@ function setupAssemblyTrees(){
    detailRows.replaceChildren();
    const type=document.createElement("div");type.className="part-details-view-row";
    const typeLabel=document.createElement("strong");typeLabel.textContent="Part type";
-   type.append(typeLabel,document.createTextNode(" - "+(part.partType==="custom"?"Custom":"Purchased")));
+   type.append(typeLabel,document.createTextNode(" - "+(part.partType==="code"?"Code":part.partType==="custom"?"Custom":"Purchased")));
    detailRows.append(type);
    const fields=[["Full name",part.fullName||part.name],["Qty",part.quantity===null||part.quantity===undefined?"Not specified":String(part.quantity)+(part.quantityUnit?" "+part.quantityUnit:"")],...(part.partType!=="custom"&&part.historicalPrice!==null&&part.historicalPrice!==undefined&&Number.isFinite(Number(part.historicalPrice))?[["Historical part price",part.historicalPriceBasis==="per_package"?"$"+Number(part.historicalPurchasePrice??0).toFixed(2)+" per package of "+part.historicalPackageQuantity+" ($"+Number(part.historicalPrice).toFixed(4)+" per part)"+(part.historicalPriceDate?" · "+part.historicalPriceDate:""):"$"+Number(part.historicalPrice).toFixed(2)+" per part"+(part.historicalPriceDate?" · "+part.historicalPriceDate:"")]]:[]),...(part.partType==="custom"?[["Category",part.category]]:[["Manufacturer",part.manufacturer],["Model",part.model],["Category",part.category],["Supplier",part.supplier],["ASIN",part.asin]])];
    for(const [title,value] of fields){
@@ -945,6 +950,8 @@ function setupAssemblyTrees(){
     if(!part)throw Error("Part not found");
     heading.textContent=(part.partNumber?part.partNumber+" · ":"")+part.name;
     currentPartInfo=part;
+    codePanel.setVisible(part.partType==="code");
+    if(part.partType==="code")void codePanel.load(part.id,part.name);
     progressPanel.hidden=part.isTool===true;
     if(!part.isTool)fillProgressPanel(part);
     partPhotoActions.setEnabled(canEdit());
@@ -1362,16 +1369,17 @@ function setupAssemblyTrees(){
   partTypeRow.textContent="Part type";
   const partTypeSelect=document.createElement("select");
   partTypeSelect.className="field part-type-select";
-  for(const [value,label] of [["purchased","Purchased"],["custom","Custom"]]){
+  for(const [value,label] of [["purchased","Purchased"],["custom","Custom"],["code","Code"]]){
    const option=document.createElement("option");option.value=value;option.textContent=label;partTypeSelect.append(option);
   }
   partTypeRow.append(partTypeSelect);
   // The legacy form is mounted asynchronously into the editor container.
   // Attach this selector when opening the form, not during initial page setup.
   const updatePartTypeFields=()=>{
-   const custom=partTypeSelect.value==="custom";
+   const custom=partTypeSelect.value!=="purchased";
+   if(partTypeSelect.value==="code")itemTypeSelect.value="document";
    const documentMode=itemTypeSelect.value==="document";
-   partTypeRow.hidden=documentMode;
+   partTypeRow.hidden=false;
    toolRow.hidden=documentMode;
    const qtyControl=bomEditorMount.querySelector(".component-quantity");if(qtyControl?.closest("label"))qtyControl.closest("label").hidden=documentMode;
    bomEditorMount.classList.toggle("is-custom-part",custom);
@@ -1460,7 +1468,7 @@ function setupAssemblyTrees(){
    if(savingBom)return;
    clearBomDraft();editingPart=part.id;editingPartAssembly=originId;
    itemTypeSelect.value=part.itemType==="document"?"document":"part";
-   partTypeSelect.value=part.partType==="custom"?"custom":"purchased";visibilityCheckbox.checked=part.hideFromFeatureTree===true;toolCheckbox.checked=part.isTool===true;
+   partTypeSelect.value=["custom","code"].includes(part.partType)?part.partType:"purchased";visibilityCheckbox.checked=part.hideFromFeatureTree===true;toolCheckbox.checked=part.isTool===true;
    partNumberInput.value=part.partNumber||"";partNumberInput.readOnly=!!part.partNumber;
    assignExistingCheckbox.checked=false;assignExistingNumber.hidden=!!part.partNumber||part.partType!=="custom";
    partNumberHelp.textContent=part.partNumber?"Issued number (kept permanently, independent of revisions).":"Enter a manual number or assign the next number for a custom part.";
@@ -1548,8 +1556,8 @@ function setupAssemblyTrees(){
    const rawQty=bomField("quantity")?.value.trim()??"";
    const amount=rawQty===""?null:Number(rawQty);
    if(amount!==null&&(!Number.isFinite(amount)||amount<=0||amount>10000000)){bomReport("Quantity must be positive or left blank.");return false}
-   const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:amount,quantityUnit:editingPart?bomField("quantity-unit")?.value??"pcs":"pcs",itemType:itemTypeSelect.value,partType:partTypeSelect.value,hideFromFeatureTree:visibilityCheckbox.checked,isTool:toolCheckbox.checked,partNumber:partNumberInput.value.trim().toUpperCase()||null,assignNumber:assignExistingCheckbox.checked};
-   const priceInput=partTypeSelect.value==="custom"?"":(bomField("historical-price")?.value.trim()||"");
+   const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:partTypeSelect.value==="code"?null:amount,quantityUnit:editingPart?bomField("quantity-unit")?.value??"pcs":"pcs",itemType:partTypeSelect.value==="code"?"document":itemTypeSelect.value,partType:partTypeSelect.value,hideFromFeatureTree:visibilityCheckbox.checked,isTool:toolCheckbox.checked,partNumber:partNumberInput.value.trim().toUpperCase()||null,assignNumber:assignExistingCheckbox.checked};
+   const priceInput=partTypeSelect.value!=="purchased"?"":(bomField("historical-price")?.value.trim()||"");
    const dateInput=partTypeSelect.value==="custom"?"":(bomField("historical-price-date")?.value||"");
    if(priceInput&&(!Number.isFinite(Number(priceInput))||Number(priceInput)<0||Math.round(Number(priceInput)*100)!==Number(priceInput)*100&&Math.abs(Math.round(Number(priceInput)*100)-Number(priceInput)*100)>1e-6)){
     bomReport("Historical price must be a positive USD amount with at most two decimal places.");return false;
@@ -1565,7 +1573,7 @@ function setupAssemblyTrees(){
    component.historicalPriceDate=priceInput===""?null:(dateInput||new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10));
    for(const key of ["name","manufacturer","model","category","supplier","asin"])component[key]=bomField(key)?.value.trim()||"";
    component.fullName=bomField("full-name")?.value.trim()||component.name;
-   if(component.partType==="custom")Object.assign(component,{manufacturer:"",model:"",supplier:"",asin:"",historicalPurchasePrice:null,historicalPriceDate:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
+   if(component.partType!=="purchased")Object.assign(component,{manufacturer:"",model:"",supplier:"",asin:"",historicalPurchasePrice:null,historicalPriceDate:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
    component.specifications=[...(bomRoot()?.querySelectorAll(".component-spec-row")||[])].map(row=>({
     name:row.children[0]?.value.trim()||"",value:row.children[1]?.value.trim()||"",source:row.children[2]?.value==="inferred"?"inferred":"explicit"
    })).filter(entry=>entry.name&&entry.value);
@@ -1782,6 +1790,21 @@ function setupAssemblyTrees(){
   }
   workspace.querySelector(".workspace-save").onclick=()=>void saveAssemblyWorkspace().catch(()=>{});
 
+  const partsRoute=()=>decodeURIComponent(location.hash.slice(1))===project+"/parts";
+  const partsManager=window.BSPartsManager.mount(partsPage,{
+   project,canEdit,
+   onBack:()=>{history.pushState(null,"","#"+project);render();notify();window.scrollTo(0,0)},
+   onOpenPart:id=>{
+    const part=nodes.find(n=>isPartNode(n)&&n.partId===id);
+    selected=part?.parentId??null;partBackAssembly=selected;
+    history.pushState(null,"","#"+project+"/part/"+encodeURIComponent(id));
+    render();notify();window.scrollTo(0,0);
+   },
+   onChanged:part=>{
+    syncPartNodes([part]);render();
+    view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));
+   }
+  });
   const workspaceHash=id=>"#"+project+"/workspace/"+encodeURIComponent(id??"__root__");
   const bomHash=id=>"#"+project+"/bom/"+encodeURIComponent(id??"__root__");
   // Keep older overview deep links usable as BOM list destinations.
@@ -1815,14 +1838,16 @@ function setupAssemblyTrees(){
    sidebar.classList.add("bom-sidebar-active");
    if(!isEditingBom)void renderWorkspaceParts();
    const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);
-   const inSummary=isProjectSummary();const inBom=bomRoute(),inWorkspace=!inPart&&!inBom&&!inSummary;
+   const inSummary=isProjectSummary();const inParts=partsRoute(),inBom=bomRoute(),inWorkspace=!inPart&&!inBom&&!inSummary&&!inParts;
    summary.classList.toggle("hide",!inSummary);
+   partsPage.classList.toggle("hide",!inParts);
    workspace.classList.toggle("hide",!inWorkspace);
    bomScreen.classList.toggle("hide",!inBom);
    // Legacy overview DOM remains available for image editing but isn't a page.
    detail.classList.add("hide");
    main.classList.add("hide");
    if(inPart){void showPartWorkspace();return;}
+   if(inParts){void partsManager.refresh();return;}
    if(inSummary){void refreshProjectSummary();return;}
    if(inBom){
     bomScreen.querySelector(".assembly-bom-screen-title").textContent=(selected===null?title:((nodes.find(n=>n.id===selected)?.partNumber||"")+(nodes.find(n=>n.id===selected)?.partNumber?" · ":"")+(nodes.find(n=>n.id===selected)?.name||"Assembly")))+" · BOM";
@@ -1976,6 +2001,7 @@ function setupAssemblyTrees(){
   root.addEventListener("projectpermissionschanged",()=>{refreshSettingsControls();render();notify()});
    root.addEventListener("projectreviewchanged",()=>render());
   root.addEventListener("openpart",()=>{void showAssemblyPage()});
+  root.addEventListener("openparts",()=>{render();void showAssemblyPage()});
   root.addEventListener("openassembly",e=>{const id=e.detail;if(id==="__root__"){selected=null;history.pushState(null,"",workspaceHash(null));render();notify();return}if(!nodes.some(n=>n.id===id))return;selected=id;history.pushState(null,"",workspaceHash(id));let cursor=nodes.find(n=>n.id===id);while(cursor){expanded.add(cursor.parentId);cursor=nodes.find(n=>n.id===cursor.parentId)}render();notify()});
   const validSelection=()=>selected===null||nodes.some(n=>n.id===selected);
   const notify=()=>{assemblySelections[project]=selected;assemblyTreeSnapshots[project]={nodes:[...nodes],title};showAssemblyPage();renderTiles();view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));};
@@ -2180,6 +2206,11 @@ function setupAssemblyTrees(){
    }
    summaryEntry.onclick=()=>{selected=null;history.pushState(null,"","#"+project);render();notify();window.scrollTo(0,0)};
    nodesEl.append(summaryEntry);
+   const partsEntry=document.createElement("button");partsEntry.type="button";
+   partsEntry.className="assembly-project-summary-entry"+(partsRoute()?" selected":"");
+   partsEntry.textContent="Parts Management";partsEntry.setAttribute("aria-current",partsRoute()?"page":"false");
+   partsEntry.onclick=()=>{history.pushState(null,"","#"+project+"/parts");render();notify();window.scrollTo(0,0)};
+   nodesEl.append(partsEntry);
    // Duplicate links to one part under the same assembly render once. Keep
    // all original nodes and their IDs untouched for storage and BOM accuracy.
    const duplicateLinks=new Map(),visiblePartLinks=new Set();
