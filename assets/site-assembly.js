@@ -805,7 +805,10 @@ function setupAssemblyTrees(){
    const typeLabel=document.createElement("strong");typeLabel.textContent="Part type";
    type.append(typeLabel,document.createTextNode(" - "+(part.partType==="code"?"Code":part.partType==="custom"?"Custom":"Purchased")));
    detailRows.append(type);
-   const fields=[["Description",part.description],["Qty",part.quantity===null||part.quantity===undefined?"Not specified":String(part.quantity)+(part.quantityUnit?" "+part.quantityUnit:"")],...(part.partType!=="custom"&&part.historicalPrice!==null&&part.historicalPrice!==undefined&&Number.isFinite(Number(part.historicalPrice))?[["Historical part price",part.historicalPriceBasis==="per_package"?"$"+Number(part.historicalPurchasePrice??0).toFixed(2)+" per package of "+part.historicalPackageQuantity+" ($"+Number(part.historicalPrice).toFixed(4)+" per part)"+(part.historicalPriceDate?" · "+part.historicalPriceDate:""):"$"+Number(part.historicalPrice).toFixed(2)+" per part"+(part.historicalPriceDate?" · "+part.historicalPriceDate:"")]]:[]),...(part.partType==="custom"?[["Category",part.category]]:[["Manufacturer",part.manufacturer],["Model",part.model],["Category",part.category],["Supplier",part.supplier],["ASIN",part.asin]])];
+   const fields=[["Description",part.description],["Quantity",part.quantity===null||part.quantity===undefined?"Not specified":String(part.quantity)+(part.quantityUnit?" "+part.quantityUnit:"")],...(part.partType!=="custom"&&part.historicalPrice!==null&&part.historicalPrice!==undefined&&Number.isFinite(Number(part.historicalPrice))?[["Historical part price",part.historicalPriceBasis==="per_package"?"$"+Number(part.historicalPurchasePrice??0).toFixed(2)+" per package of "+part.historicalPackageQuantity+" ($"+Number(part.historicalPrice).toFixed(4)+" per part)"+(part.historicalPriceDate?" · "+part.historicalPriceDate:""):"$"+Number(part.historicalPrice).toFixed(2)+" per part"+(part.historicalPriceDate?" · "+part.historicalPriceDate:"")]]:[]),...(part.partType==="custom"?[["Category",part.category]]:[["Manufacturer",part.manufacturer],["Model",part.model],["Category",part.category],["Supplier",part.supplier],["ASIN",part.asin]])];
+   fields.unshift(["Part name",part.name],["Item type",part.itemType==="document"?"Document":"Part"]);
+   if(part.partNumber)fields.unshift(["Part number",part.partNumber]);
+   if(part.partType==="purchased"&&part.purchaseStatus)fields.splice(part.partNumber?4:3,0,["Status",({already_have:"Already have",need_to_buy:"Need to buy",ignore:"Ignore"})[part.purchaseStatus]||""]);
    for(const [title,value] of fields){
     if(value===null||value===undefined||String(value).trim()==="")continue;
     const line=document.createElement("div");line.className="part-details-view-row";
@@ -1601,7 +1604,9 @@ function setupAssemblyTrees(){
     // Required first six rows. The large lookup box is now a single line.
     move(partNumberRow,identity[0],itemTypeRow,partTypeRow,partDescriptionRow,apiPanel);
     move(sectionHeading("additional","Additional details"),...quantities,...sourcing);
-    move(sectionHeading("display","Display options"),toolRow,visibilityRow);
+    const displayGroup=review.querySelector(".part-display-options")||document.createElement("div");
+     displayGroup.className="part-display-options";displayGroup.append(toolRow,visibilityRow);
+     move(sectionHeading("display","Display options"),displayGroup);
     move(...otherFields);
     move(specsHeading||sectionHeading("specifications","Specifications"),specs);
     let actions=review.querySelector(".component-editor-actions");
