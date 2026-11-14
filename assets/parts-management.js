@@ -44,6 +44,25 @@
   const thead=el("thead"),headingRow=el("tr"),colgroup=el("colgroup");
   // Compact defaults: part number is intentionally narrow, note stays beside its flag.
   const widths=[112,330,150,160,380];
+  let nameWidthManuallyResized=false;
+  // Size the name column to its visible contents, not to the longest saved string.
+  // Longer names remain intact and editable; the input simply scrolls horizontally.
+  const fitNameWidth=entries=>{
+   if(nameWidthManuallyResized)return;
+   const names=entries.map(part=>String(part.name||"").slice(0,40));
+   const sample=names.reduce((longest,name)=>name.length>longest.length?name:longest,"Part name");
+   const context=document.createElement("canvas").getContext("2d");
+   let width;
+   if(context){
+    const input=tbody.querySelector("td:nth-child(2) input.field");
+    context.font=input?getComputedStyle(input).font:"14px sans-serif";
+    const zero=context.measureText("0").width||8;
+    const maxWidth=zero*40;
+    width=Math.max(zero*13,Math.min(maxWidth,Math.max(...names.map(name=>context.measureText(name).width),context.measureText(sample).width)))+38;
+   }else width=Math.min(40,Math.max(13,sample.length))*8+38;
+   widths[1]=Math.ceil(width);
+   layoutColumns();
+  };
   widths.forEach(w=>{const col=el("col");col.style.width=w+"px";colgroup.append(col)});
   // Fill the available page width with the final column; retain compact, independently resizable columns to its left.
   const layoutColumns=()=>{
@@ -67,7 +86,7 @@
    if(key!=="open"){
     const handle=el("span","bs-parts-resize");handle.textContent="⋮⋮";handle.title="Drag to resize "+label+" column";handle.setAttribute("role","separator");handle.setAttribute("aria-label","Resize "+label);handle.setAttribute("aria-orientation","vertical");handle.tabIndex=0;
     const index=columns.findIndex(c=>c[0]===key);
-    const size=w=>{widths[index]=Math.max(index===0?102:index===1?180:index===4?240:85,Math.round(w));layoutColumns()};
+    const size=w=>{if(index===1)nameWidthManuallyResized=true;widths[index]=Math.max(index===0?102:index===1?140:index===4?240:85,Math.round(w));layoutColumns()};
     handle.addEventListener("pointerdown",e=>{if(e.button!==0)return;e.preventDefault();e.stopPropagation();const x=e.clientX,w=widths[index];handle.setPointerCapture(e.pointerId);handle.classList.add("is-resizing");const move=ev=>size(w+ev.clientX-x);const stop=()=>{handle.classList.remove("is-resizing");handle.removeEventListener("pointermove",move);handle.removeEventListener("pointerup",stop);handle.removeEventListener("pointercancel",stop)};handle.addEventListener("pointermove",move);handle.addEventListener("pointerup",stop);handle.addEventListener("pointercancel",stop)});
     handle.addEventListener("keydown",e=>{if(e.key==="ArrowLeft"||e.key==="ArrowRight"){e.preventDefault();size(widths[index]+(e.key==="ArrowLeft"?-15:15))}});
     th.append(handle);
@@ -98,6 +117,7 @@
     }
     return sortKey(a).localeCompare(sortKey(b),undefined,{numeric:true,sensitivity:"base"})*direction;
    });
+   fitNameWidth(entries);
    const groups=groupParts(entries);
    for(const group of groups){
     if(group.parts.length>1){
@@ -118,7 +138,7 @@
     const tr=el("tr",group.parts.length>1?"bs-parts-duplicate-detail":""),readOnly=!canEdit()||!!part.generatedFrom;
     const inferred=!part.partNumber&&!!numberFor(part);const number=el("td","bs-parts-number",part.partNumber||(inferred?numberFor(part)+" *":"Unassigned"));if(inferred)number.title="Number appears in name but is not formally assigned.";tr.append(number);
     const nameCell=el("td"),input=el("input","field",undefined);
-    input.value=part.name||"";input.maxLength=180;input.disabled=readOnly;input.setAttribute("aria-label","Name for "+(part.partNumber||part.name));
+    input.value=part.name||"";input.title=part.name||"";input.maxLength=180;input.disabled=readOnly;input.setAttribute("aria-label","Name for "+(part.partNumber||part.name));
     const initial=part.name;
     input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();input.blur()}else if(e.key==="Escape"){input.value=initial;input.blur()}});
     input.addEventListener("blur",()=>{if(input.value.trim()!==part.name)void change(part,"name",input.value.trim(),input);else input.value=part.name});
