@@ -1532,17 +1532,16 @@ function setupAssemblyTrees(){
     remove.type="button";remove.className="btn component-spec-remove";remove.textContent="×";remove.title="Remove specification";remove.setAttribute("aria-label","Remove specification");remove.onclick=()=>row.remove();
     row.append(a,b,c,remove);specs.append(row);
    }}
-   openBomDraft();
-   const save=bomField("save");if(save)save.textContent="Save changes";
-   bomReport("");
-   // Editing can begin from an overview or build-instructions page, too.
-   // Route into the assembly workspace so the full-width editor is visible.
+   // Ensure the workspace is visible before opening the modal. In particular,
+   // editing from a part detail route must not open a dialog under a hidden page.
    if(!workspaceRoute()){
     if(originId!==undefined)selected=originId;
     history.pushState(null,"","#"+project+"/workspace/"+encodeURIComponent(selected??"__root__"));
-    void showAssemblyPage();
     render();notify();
    }
+   openBomDraft();
+   const save=bomField("save");if(save)save.textContent="Save changes";
+   bomReport("");
   }
   function openBomDraft(){
    const root=bomRoot();if(!root){bomReport("BOM editor unavailable. Refresh the page.");return}
