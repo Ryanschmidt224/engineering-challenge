@@ -184,5 +184,29 @@
    e.preventDefault();void handler(new File([file],"pasted-photo."+(file.type==="image/webp"?"webp":file.type==="image/jpeg"?"jpg":"png"),{type:file.type||"image/png"}));
   });
  }
- window.BSPhotoMarkup=Object.freeze({open,pasteOn,displayUrl:(kind,id,project)=>url(kind,id,project,true)});
+ // Every visible photo target intercepts image drops even when editing is locked.
+ // Otherwise the browser navigates away to display the local image.
+ function dropOn(root,onFile,{canUpload=()=>true,onBlocked=()=>{}}={}){
+  if(!root)return;
+  const containsFile=event=>Array.from(event.dataTransfer?.types||[]).includes("Files");
+  root.addEventListener("dragover",event=>{
+   if(!containsFile(event))return;
+   event.preventDefault();event.stopPropagation();
+   event.dataTransfer.dropEffect=canUpload()?"copy":"none";
+   root.classList.add("is-dragover");
+  });
+  root.addEventListener("dragleave",event=>{
+   if(!root.contains(event.relatedTarget))root.classList.remove("is-dragover");
+  });
+  root.addEventListener("drop",event=>{
+   if(!containsFile(event)&&!event.dataTransfer?.files?.length)return;
+   event.preventDefault();event.stopPropagation();root.classList.remove("is-dragover");
+   if(!canUpload()){onBlocked();return}
+   const files=Array.from(event.dataTransfer?.files||[]);
+   const image=files.find(file=>file.type.startsWith("image/")||/\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file.name||""));
+   if(!image){onBlocked("Please drop an image file.");return}
+   void onFile(image);
+  });
+ }
+ window.BSPhotoMarkup=Object.freeze({open,pasteOn,dropOn,displayUrl:(kind,id,project)=>url(kind,id,project,true)});
 })();
