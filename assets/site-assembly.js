@@ -1352,8 +1352,8 @@ function setupAssemblyTrees(){
   visibilityRow.append(visibilityCheckbox,document.createTextNode(" Hide from feature tree"));
   const partNumberRow=document.createElement("label");partNumberRow.className="part-number-field";
   const partNumberInput=document.createElement("input");partNumberInput.className="field part-number-input";partNumberInput.placeholder="Automatic for custom parts; optional for purchased";partNumberInput.maxLength=30;
-  partNumberRow.append(document.createTextNode("New part number"),partNumberInput);
-  const partNumberHelp=document.createElement("small");partNumberHelp.textContent="Custom parts receive the next project number (starting at 1001) when saved. Purchased parts and tools can be left unnumbered.";
+  partNumberRow.append(document.createTextNode("Part number"),partNumberInput);
+  const partNumberHelp=document.createElement("small");partNumberHelp.textContent="Use an existing number or assign the next project number. Purchased parts and tools can remain unnumbered.";
   partNumberRow.append(partNumberHelp);
   const assignExistingNumber=document.createElement("label");assignExistingNumber.className="part-number-existing-option";
   const assignExistingCheckbox=document.createElement("input");assignExistingCheckbox.type="checkbox";
@@ -1511,14 +1511,33 @@ function setupAssemblyTrees(){
    const root=bomRoot();if(!root){bomReport("BOM editor unavailable. Refresh the page.");return}
    const review=root.querySelector(".component-review");
    const lookup=root.querySelector(".component-lookup-panel");
-   if(lookup){
-    if(partTypeRow.nextElementSibling!==lookup)lookup.before(partTypeRow);
-   }else if(review&&!review.contains(partTypeRow))review.prepend(partTypeRow);
    if(review){
-    if(!review.contains(visibilityRow))review.prepend(visibilityRow);
-    if(!review.contains(toolRow))visibilityRow.before(toolRow);
-    if(!review.contains(itemTypeRow))partTypeRow.before(itemTypeRow);
-    if(!review.contains(partNumberRow))toolRow.before(partNumberRow);
+    // One consistent information hierarchy for New Part and Edit Part.
+    // Move existing controls only; never reconstruct inputs or alter saved data.
+    const sectionHeading=(key,title)=>{
+     let h=review.querySelector('[data-part-editor-section="'+key+'"]');
+     if(!h){h=document.createElement("h3");h.className="part-editor-section-heading";h.dataset.partEditorSection=key}
+     h.textContent=title;return h;
+    };
+    const field=name=>bomField(name)?.closest("label");
+    const identity=[field("name"),field("full-name")];
+    const quantities=[field("quantity"),field("quantity-unit")];
+    const sourcing=[field("manufacturer"),field("model"),field("category"),field("supplier"),field("asin"),
+     review.querySelector(".historical-price-fields")||bomRoot()?.querySelector(".historical-price-fields")];
+    const specs=bomRoot()?.querySelector(".component-specs");
+    const specsHeading=[...review.children].find(el=>el.tagName==="H3"&&!el.classList.contains("part-editor-section-heading"));
+    const addSpec=bomRoot()?.querySelector(".component-add-spec");
+    const existingActions=review.querySelector(".component-editor-actions");
+    const known=new Set([itemTypeRow,partTypeRow,partNumberRow,...identity,...quantities,...sourcing,
+      toolRow,visibilityRow,specsHeading,specs,addSpec,existingActions].filter(Boolean));
+    const otherFields=[...review.children].filter(el=>!known.has(el)&&!el.classList.contains("part-editor-section-heading"));
+    const move=(...elements)=>{for(const el of elements)if(el)review.append(el)};
+    move(sectionHeading("classification","Classification"),itemTypeRow,partTypeRow,partNumberRow);
+    move(sectionHeading("identity","Identification"),...identity);
+    move(sectionHeading("sourcing","Quantity and sourcing"),...quantities,...sourcing);
+    move(sectionHeading("display","Display options"),toolRow,visibilityRow);
+    move(...otherFields);
+    move(specsHeading||sectionHeading("specifications","Specifications"),specs);
     let actions=review.querySelector(".component-editor-actions");
     if(!actions){
      actions=document.createElement("div");actions.className="component-editor-actions";
@@ -1526,6 +1545,7 @@ function setupAssemblyTrees(){
      actions.append(root.querySelector(".component-add-spec"),right);
      review.append(actions);
     }
+    review.append(actions); // Keep add-spec, Save and Cancel together at the bottom.
     const buttons=actions.querySelector(".component-editor-primary-actions");
     buttons.append(root.querySelector(".component-save"),bomEditorCancel);
    }
