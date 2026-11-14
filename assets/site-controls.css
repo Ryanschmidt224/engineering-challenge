@@ -1850,3 +1850,47 @@
 .part-progress-update-add{margin:3px 0}
 .part-progress-update-feedback{display:block;margin-top:6px;font-size:.82rem;color:var(--color-text-muted)}
 .part-progress-updates[hidden],.part-progress-update-add[hidden]{display:none!important}
+
+
+/* Project Summary is a standalone navigation card above the feature tree.
+   The sidebar remains the existing grid item, so resizing and routing stay intact. */
+.assembly-layout > .assembly-sidebar:has(> .assembly-summary-sidebar-card){
+ background:transparent;
+ border:0;
+ border-radius:0;
+ padding:0;
+ overflow:visible;
+ display:flex;
+ flex-direction:column;
+ gap:12px;
+}
+.assembly-sidebar > .assembly-summary-sidebar-card,
+.assembly-sidebar > .assembly-feature-tree-card{
+ min-width:0;
+ background:var(--color-sidebar);
+ border:1px solid var(--color-border);
+ border-radius:11px;
+ overflow:hidden;
+}
+.assembly-sidebar > .assembly-summary-sidebar-card{
+ flex:none;
+ padding:10px 11px;
+}
+.assembly-summary-sidebar-card .assembly-project-summary-entry{
+ display:flex;
+ width:100%;
+ margin:0;
+ box-sizing:border-box;
+}
+.assembly-sidebar > .assembly-feature-tree-card{
+ flex:1 1 auto;
+ min-height:0;
+ overflow:auto;
+}
+.assembly-sidebar > .assembly-feature-tree-card > h3{
+ margin:0;
+}
+@media(max-width:800px){
+ .assembly-layout > .assembly-sidebar:has(> .assembly-summary-sidebar-card){max-height:none}
+ .assembly-sidebar > .assembly-feature-tree-card{max-height:340px}
+}
