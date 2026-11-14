@@ -33,7 +33,7 @@ function open({onCreate,hideDefault=false}){
  const workshopCheckbox=el("input");workshopCheckbox.type="checkbox";
  workshopChoice.append(workshopCheckbox,document.createTextNode("This part is from the workshop"));
  const customName=field("Part name");
- const itemKind=field("Item type","select");option(itemKind.input,"part","Part");option(itemKind.input,"document","Document");
+ const itemKind=field("Item type","select");option(itemKind.input,"part","Part");option(itemKind.input,"document","Document");option(itemKind.input,"code","Code");
  const partClassification=field("Part type","select");option(partClassification.input,"purchased","Off-the-shelf");option(partClassification.input,"custom","Custom");
  const partNumberField=field("New part number");partNumberField.input.placeholder="Enter an existing / reserved number";partNumberField.input.maxLength=30;
  const numberChoice=el("fieldset","library-number-choice");
@@ -202,12 +202,12 @@ function open({onCreate,hideDefault=false}){
   powerType.label.classList.toggle("hide",!lib||category.input.value!=="power");
   customName.label.classList.toggle("hide",lib);
   itemKind.label.classList.toggle("hide",lib);
-  const documentMode=!lib&&itemKind.input.value==="document";
+  const documentMode=!lib&&itemKind.input.value!=="part";
   partClassification.label.classList.toggle("hide",lib||documentMode);
   qty.label.classList.toggle("hide",documentMode);
   hintUnits.classList.toggle("hide",documentMode);
   toolField.classList.toggle("hide",documentMode||lib);
-  if(documentMode){toolInput.checked=false;qty.input.value="1"}
+  if(documentMode){toolInput.checked=false;if(itemKind.input.value==="document")qty.input.value="1"}
   numberChoice.classList.toggle("hide",lib);
   autoNumberHelp.classList.toggle("hide",lib||!autoNumberCheckbox.checked);
   partNumberField.label.classList.toggle("hide",lib||autoNumberCheckbox.checked);
@@ -254,7 +254,7 @@ function open({onCreate,hideDefault=false}){
   if(!workshopCheckbox.checked){
    const name=customName.input.value.trim();if(!name||name.length>100){status.textContent="Enter a part name (up to 100 characters).";return}
    const autoNumber=autoNumberCheckbox.checked;
-   payload={name,quantity:itemKind.input.value==="document"?1:count,specifications:[],itemType:itemKind.input.value,partType:partClassification.input.value,
+   payload={name,quantity:itemKind.input.value==="code"?null:itemKind.input.value==="document"?1:count,specifications:[],itemType:itemKind.input.value==="code"?"document":itemKind.input.value,partType:itemKind.input.value==="code"?"code":partClassification.input.value,
     assignNumber:autoNumber,partNumber:autoNumber?null:partNumberField.input.value.trim().toUpperCase()||null};
   }else if(category.input.value!=="wire"){
    const choice=commonSelect.input.value;
