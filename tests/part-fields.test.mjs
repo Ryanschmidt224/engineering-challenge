@@ -60,3 +60,22 @@ test("Parts Management table fills viewport after column resizing",()=>{
  assert.match(js,/new ResizeObserver\(layoutColumns\)/);
  assert.match(js,/layoutColumns\(\)/);
 });
+
+test("Parts Management groups repeated names without merging distinct records",()=>{
+ const script=readFileSync(new URL("../assets/parts-management.js",import.meta.url),"utf8");
+ const context={window:{BSPartFields:fields}};
+ runInNewContext(script,context);
+ const group=context.window.BSPartsManager.groupParts;
+ const entries=[
+  {id:"motor-a",name:"C2822 1400KV Brushless Motor",partType:"purchased"},
+  {id:"motor-b",name:" c2822  1400kv brushless motor ",partType:"purchased"},
+  {id:"motor-custom",name:"C2822 1400KV Brushless Motor",partType:"custom"},
+  {id:"regulator",name:"5V Buck Converter",partType:"purchased"}
+ ];
+ const groups=group(entries);
+ assert.equal(groups.length,3);
+ const motors=groups.find(g=>g.parts.some(p=>p.id==="motor-a"));
+ assert.deepEqual(Array.from(motors.parts,p=>p.id),["motor-a","motor-b"]);
+ assert.equal(entries.length,4);
+ assert.notEqual(groups.find(g=>g.parts.some(p=>p.id==="motor-custom")),motors);
+});
