@@ -112,3 +112,79 @@
  position:absolute;left:14px;right:14px;bottom:51px;
  text-align:left;margin:0;z-index:4;
 }
+
+
+/* Assembly photo header: larger preview and all editor controls in normal flow.
+   The expanded buttons must not cover the status or heading. */
+.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading,
+.bom-part-workspace>.workspace-heading{
+ align-items:flex-start!important;
+ flex-wrap:wrap;
+ column-gap:22px;
+ row-gap:14px;
+}
+.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control,
+.bom-part-workspace>.workspace-heading>.bs-photo-control{
+ position:relative;
+ flex:0 1 405px;
+ width:405px;
+ max-width:100%;
+ min-width:0;
+ align-self:flex-start;
+}
+.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control>.workspace-cover,
+.bom-part-workspace>.workspace-heading>.bs-photo-control>.part-workspace-cover{
+ width:205px!important;
+ height:175px;
+ max-width:100%;
+ box-sizing:border-box;
+}
+.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control>.bs-photo-actions,
+.bom-part-workspace>.workspace-heading>.bs-photo-control>.bs-photo-actions{
+ position:static;
+ display:flex;
+ flex-wrap:wrap;
+ width:auto;
+ max-width:100%;
+ margin:8px 0 0;
+ padding:0;
+ justify-content:flex-start;
+ gap:7px;
+ z-index:auto;
+}
+.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control .bs-photo-more,
+.bom-part-workspace>.workspace-heading>.bs-photo-control .bs-photo-more{
+ flex-wrap:wrap;
+}
+.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control>.bs-photo-status,
+.bom-part-workspace>.workspace-heading>.bs-photo-control>.bs-photo-status{
+ position:static;
+ width:auto;
+ max-width:100%;
+ margin:5px 0 0;
+ text-align:left;
+}
+.assembly-workspace-page .workspace-heading:has(>.bs-photo-control),
+.bom-part-workspace .workspace-heading:has(>.bs-photo-control){
+ margin-bottom:26px!important;
+}
+.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.workspace-title-group,
+.bom-part-workspace>.workspace-heading>div:has(>.part-workspace-title){
+ flex:1 1 350px;
+ min-width:min(100%,260px);
+ max-width:none;
+ padding-top:7px;
+}
+@media(max-width:760px){
+ .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control,
+ .bom-part-workspace>.workspace-heading>.bs-photo-control{
+  flex:1 1 100%;
+  width:100%;
+ }
+ .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control>.workspace-cover,
+ .bom-part-workspace>.workspace-heading>.bs-photo-control>.part-workspace-cover{
+  width:min(205px,100%)!important;
+ }
+ .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.workspace-title-group,
+ .bom-part-workspace>.workspace-heading>div:has(>.part-workspace-title){flex:1 1 100%;padding-top:0}
+}
