@@ -16,6 +16,8 @@ window.BSProjectManager=(()=>{
   const archiveButton=element("button","btn","Archived projects");archiveButton.type="button";
   controls.append(newButton,archiveButton);header.append(controls);
   const filters=element("div","project-directory-controls");
+  const searchLabel=element("label","project-directory-label project-directory-search","Find a project");
+  const searchInput=element("input","field project-search");searchInput.type="search";searchInput.placeholder="Search projects…";searchInput.setAttribute("aria-label","Search projects");searchLabel.append(searchInput);
   const categoryLabel=element("label","project-directory-label","Category");
   const categorySelect=element("select","field project-category-filter");
   categoryLabel.append(categorySelect);
@@ -25,11 +27,11 @@ window.BSProjectManager=(()=>{
    const option=element("option","",label);option.value=value;sortSelect.append(option);
   }
   sortLabel.append(sortSelect);
-  const directoryStatus=element("span","project-directory-count muted");
-  filters.append(categoryLabel,sortLabel,directoryStatus);grid.before(filters);
+  const directoryStatus=element("span","project-directory-count muted");directoryStatus.setAttribute("role","status");
+  filters.append(searchLabel,categoryLabel,sortLabel,directoryStatus);grid.before(filters);
   const categoryOf=project=>String(project?.category||"Uncategorized").trim()||"Uncategorized";
   const updateDirectory=()=>{
-   const filter=categorySelect.value,byId=new Map(projects.map(project=>[project.id,project]));
+   const filter=categorySelect.value,search=searchInput.value.trim().toLowerCase(),byId=new Map(projects.map(project=>[project.id,project]));
    const cards=[...grid.querySelectorAll(".project-card")];
    const info=card=>{
     const link=card.querySelector("[data-project],[data-nav]");
@@ -43,11 +45,13 @@ window.BSProjectManager=(()=>{
     return (sortSelect.value==="name_desc"?-1:1)*title(a).localeCompare(title(b),undefined,{numeric:true,sensitivity:"base"});
    });
    for(const card of cards){
-    card.hidden=!info(card)||(filter!=="all"&&categoryOf(info(card))!==filter);
+    const project=info(card);
+    card.hidden=!project||(filter!=="all"&&categoryOf(project)!==filter)||!!search&&![project.name,project.description,categoryOf(project)].join(" ").toLowerCase().includes(search);
     grid.append(card);
    }
    directoryStatus.textContent=cards.filter(card=>!card.hidden).length+" projects";
   };
+  searchInput.oninput=updateDirectory;
   categorySelect.onchange=updateDirectory;
   sortSelect.onchange=updateDirectory;
   const dialog=element("dialog","project-account-dialog");
