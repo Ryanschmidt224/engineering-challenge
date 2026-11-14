@@ -11,6 +11,8 @@ export const CORE_PROJECTS=Object.freeze([
 ]);
 export const CATALOG_KEY="project-catalog/v1.json";
 export const VALID_PROJECT_ID=/^(?:launcher|linear|robot|buck|motorlab|coiltest|p[a-f0-9]{32})$/;
+export const projectGroup=p=>String(p.group||((p.kind==="mini")?"Mini Projects":"Projects")).trim();
+const validGroup=x=>typeof x==="string"&&x.trim().length>0&&x.trim().length<=60;
 const safeRecords=value=>Array.isArray(value?.projects)?value.projects.filter(p=>p&&typeof p.id==="string"&&VALID_PROJECT_ID.test(p.id)):[];
 export async function readCatalog(env){
  if(!env.PHOTOS)throw Error("Project storage unavailable");
@@ -72,7 +74,7 @@ export async function onRequest({request,env}){
   if(!name||name.length>100||description.length>500)return json({error:"Project name must be 1–100 characters and description at most 500"},400);
   const kind=input.kind==="mini"?"mini":"project";
   if(!user)return json({error:"A personal account is required to create a project"},401);
-  const project={id:"p"+crypto.randomUUID().replace(/-/g,""),name,description,kind,archived:false,ownerId:user.id,visibility:"private",editMode:"approval"};
+  const project={id:"p"+crypto.randomUUID().replace(/-/g,""),name,description,kind,group:kind==="mini"?"Mini Projects":"Projects",archived:false,ownerId:user.id,visibility:"private",editMode:"approval",authorName:user.displayName};
   updated=[...catalog.stored,project];
  }else{
   const item=catalog.projects.find(p=>p.id===input.id);
@@ -90,6 +92,10 @@ export async function onRequest({request,env}){
    if(input.visibility!==undefined){
     if(!["private","public"].includes(input.visibility))return json({error:"Invalid visibility"},400);
     changed.visibility=input.visibility;
+   }
+   if(input.group!==undefined){
+    if(!validGroup(input.group))return json({error:"Project group must contain 1–60 characters"},400);
+    changed.group=input.group.trim();
    }
    if(input.editMode!==undefined){
     if(!["locked","approval"].includes(input.editMode))return json({error:"Invalid editing mode"},400);

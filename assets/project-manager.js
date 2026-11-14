@@ -12,6 +12,10 @@ window.BSProjectManager=(()=>{
  const init=({setupAssemblyTrees,setupComponents,setupPhotos,navigate})=>{
   const root=document.querySelector("#home .project-index"),grid=root?.querySelector(".project-grid");if(!grid)return;
   const header=root.querySelector(".row.space"),controls=element("div","project-owner-actions");
+  const miniRoot=document.querySelector("#appetizer .project-index"),miniGrid=miniRoot?.querySelector(".project-grid");
+  const miniControls=element("div","project-owner-actions"),newMiniButton=element("button","btn primary","+ New mini project");
+  newMiniButton.type="button";miniControls.append(newMiniButton);
+  miniRoot?.querySelector(".index-title")?.after(miniControls);
   const newButton=element("button","btn primary","+ New project");newButton.type="button";
   const accountButton=element("button","btn","My account");accountButton.type="button";
   const archiveButton=element("button","btn","Archived projects");archiveButton.type="button";
@@ -29,6 +33,13 @@ window.BSProjectManager=(()=>{
    dialog.showModal();
   };
   accountButton.onclick=showAccount;
+  const register=dialog.querySelector(".project-register");
+  register.onclick=()=>{
+   const field=dialog.querySelector(".project-account-name");
+   if(field.classList.contains("hide")){field.classList.remove("hide");register.textContent="Finish registration";note.textContent="Choose the name that will appear on your published projects.";name.focus();return}
+   if(!name.value.trim()){note.textContent="Enter a display name for your projects.";name.focus();return}
+   void sign("register");
+  };
   dialog.querySelector(".project-close").onclick=()=>dialog.close();
   async function sign(action){
    try{
@@ -37,36 +48,55 @@ window.BSProjectManager=(()=>{
    }catch(error){note.textContent=error.message}
   }
   dialog.querySelector(".project-signin").onclick=()=>sign("login");
-  dialog.querySelector(".project-register").onclick=()=>sign("register");
+
   dialog.querySelector(".project-signout").onclick=async()=>{await api("DELETE","/api/accounts");user=null;dialog.close();location.href="#home";location.reload()};
   const editor=element("dialog","project-create-dialog");
   editor.innerHTML='<form method="dialog" class="project-create-form"><h2>New project</h2><p class="muted">Projects are private by default. Only you can edit them.</p><label>Project name<input class="field" name="name" maxlength="100" required></label><label>Description<textarea class="field" name="description" maxlength="500"></textarea></label><p class="project-create-message" role="status"></p><div class="row"><button type="button" class="btn primary project-create-save">Create project</button><button type="button" class="btn project-create-cancel">Cancel</button></div></form>';
   document.body.append(editor);
   editor.querySelector(".project-create-cancel").onclick=()=>editor.close();
-  newButton.onclick=()=>{if(!user){showAccount();note.textContent="Create an account or log in before creating a project.";return}editor.showModal()};
+  let createKind="project";
+  const openCreate=kind=>{if(!user){showAccount();note.textContent="Create an account or log in before creating a project.";return}
+   createKind=kind;editor.querySelector("h2").textContent=kind==="mini"?"New mini project":"New project";
+   editor.querySelector(".project-create-save").textContent=kind==="mini"?"Create mini project":"Create project";editor.showModal()};
+  newButton.onclick=()=>openCreate("project");
+  newMiniButton.onclick=()=>openCreate("mini");
   editor.querySelector(".project-create-save").onclick=async()=>{
    const form=editor.querySelector("form"),button=editor.querySelector(".project-create-save");button.disabled=true;
-   try{const data=await api("POST","/api/projects",{name:form.elements.name.value,description:form.elements.description.value,kind:"project"});
-    const createdName=form.elements.name.value,created=data.projects.find(p=>p.name===createdName&&p.ownerId===user?.id);
+   try{const data=await api("POST","/api/projects",{name:form.elements.name.value,description:form.elements.description.value,kind:createKind});
+    const createdName=form.elements.name.value,created=data.projects.find(p=>p.name===createdName&&p.ownerId===user?.id&&p.kind===createKind);
     editor.close();form.reset();await refresh();navigate(created?.id||"home");
    }catch(error){editor.querySelector(".project-create-message").textContent=error.message}
    finally{button.disabled=false}
   };
   // The legacy assembly HTML is a stable template until a reusable component replaces it.
   const template=document.getElementById("linear");
+  const groupOf=project=>String(project.group||((project.kind==="mini")?"Mini Projects":"Projects")).trim();
+  const customGroups=element("div","project-custom-groups");grid.after(customGroups);
+  const groupGrid=group=>{
+   if(group==="Mini Projects")return miniGrid||grid;
+   if(group==="Projects")return grid;
+   let panel=[...customGroups.children].find(node=>node.dataset.group===group);
+   if(!panel){panel=element("section","project-custom-group");panel.dataset.group=group;
+    panel.append(element("h2","",group));const list=element("div","project-grid");panel.append(list);customGroups.append(panel)}
+   return panel.querySelector(".project-grid");
+  };
   const ensureProjectPage=project=>{
-   if(document.getElementById(project.id))return;
+   const existing=document.getElementById(project.id);
+   if(existing?.querySelector("[data-assembly-tree]"))return;
    if(!template)return;
    const section=template.cloneNode(true);
    section.id=project.id;section.classList.add("personal-project-view");
+   // All projects, including original mini projects, use the identical assembly template.
+   if(existing)existing.replaceWith(section);
+   else template.parentNode.insertBefore(section,template.nextSibling);
    section.querySelectorAll("[data-assembly-tree],[data-components],[data-photos]").forEach(node=>{
     if(node.hasAttribute("data-assembly-tree"))node.dataset.assemblyTree=project.id;
     if(node.hasAttribute("data-components"))node.dataset.components=project.id;
     if(node.hasAttribute("data-photos"))node.dataset.photos=project.id;
    });
+   section.querySelectorAll('[data-nav="home"]').forEach(node=>node.dataset.nav=groupOf(project)==="Mini Projects"?"appetizer":"home");
    const heading=section.querySelector(".assembly-main h1");
    if(heading)heading.textContent=project.name;
-   template.parentNode.insertBefore(section,template.nextSibling);
   };
   const card=project=>{
    const article=element("article","project-card project-personal-card");article.dataset.catalogId=project.id;
@@ -74,6 +104,7 @@ window.BSProjectManager=(()=>{
    link.append(element("div","project-art project-personal-art","◈"));
    const copy=element("div","project-copy");copy.append(element("h2","",project.name),element("p","",project.description||"New engineering project"));
    copy.append(element("div","project-tags",project.visibility==="private"?"Private project":project.visibility==="unlisted"?"Unlisted project":"Public project"));
+   if(project.authorName)copy.append(element("p","project-author","By "+project.authorName));
    link.append(copy);article.append(link);
    return article;
   };
@@ -120,7 +151,13 @@ window.BSProjectManager=(()=>{
    }
    permissionsSelect.value=project.editMode||"approval";
    permissions.append(permissionsSelect);
-   form.append(visibility,permissions);
+   const groupLabel=element("label","","Project group");
+   const groupInput=element("input","field");groupInput.type="text";groupInput.maxLength=60;groupInput.required=true;
+   groupInput.value=groupOf(project);groupInput.placeholder="Projects, Mini Projects, or a new group";
+   const suggestions=element("datalist");suggestions.id="project-groups-"+project.id;
+   [...new Set(["Projects","Mini Projects",...projects.map(groupOf)])].forEach(g=>{const opt=element("option");opt.value=g;suggestions.append(opt)});
+   groupInput.setAttribute("list",suggestions.id);groupLabel.append(groupInput,suggestions);
+   form.append(groupLabel,visibility,permissions);
    const note=element("p","muted","Changing to Private hides this project from other users. People may still have copies of previously published materials.");
    const status=element("p","project-summary-settings-status");status.setAttribute("role","status");
    const actions=element("div","project-summary-settings-actions");
@@ -128,7 +165,7 @@ window.BSProjectManager=(()=>{
    save.onclick=async()=>{
     save.disabled=true;status.textContent="Saving…";
     try{
-     await api("PATCH","/api/projects",{id:project.id,visibility:visibilitySelect.value,editMode:permissionsSelect.value});
+     await api("PATCH","/api/projects",{id:project.id,group:groupInput.value.trim(),visibility:visibilitySelect.value,editMode:permissionsSelect.value});
      status.textContent="Project settings saved.";await refresh();
     }catch(error){status.textContent=error.message}
     finally{save.disabled=false}
@@ -223,20 +260,25 @@ window.BSProjectManager=(()=>{
    try{
     user=(await api("GET","/api/accounts")).user;
     const data=await api("GET","/api/projects");if(!Array.isArray(data.projects))throw Error("Project catalog response unavailable");projects=data.projects;currentProjects=projects;
-    newButton.hidden=!user;archiveButton.hidden=!user&&!adminAuthenticated;
+    newButton.hidden=!user;newMiniButton.hidden=!user;archiveButton.hidden=!user&&!adminAuthenticated;
+    accountButton.textContent=user?"My account: "+user.displayName:"My account";
     document.querySelectorAll(".project-personal-card").forEach(node=>node.remove());
+    // Keep built-in cards alive before rebuilding custom category containers.
+    customGroups.querySelectorAll(".project-card:not(.project-personal-card)").forEach(card=>grid.append(card));
+    customGroups.replaceChildren();
     for(const project of projects){
-     if(!project.id.startsWith("p"))continue;
      ensureProjectPage(project);
-     grid.append(card(project));
+     if(project.id.startsWith("p"))groupGrid(groupOf(project)).append(card(project));
     }
-    // Existing public cards are hidden when archived or made private.
-    const ids=new Set(projects.map(p=>p.id));
-    root.querySelectorAll(".project-card:not(.project-personal-card)").forEach(article=>{
+    // Built-in and personal cards are grouped in exactly the same way.
+    // Their project IDs stay fixed when the group is changed.
+    for(const article of document.querySelectorAll("#home .project-card:not(.project-personal-card),#appetizer .project-card:not(.project-personal-card)")){
      const link=article.querySelector("[data-project],[data-nav]");
-     if(link&&["launcher","linear","robot"].includes(link.dataset.project||link.dataset.nav))
-      article.hidden=!ids.has(link.dataset.project||link.dataset.nav);
-    });
+     const id=link?.dataset.project||link?.dataset.nav;
+     const project=projects.find(p=>p.id===id);
+     article.hidden=!project;
+     if(project)groupGrid(groupOf(project)).append(article);
+    }
     setupAssemblyTrees();setupComponents();setupPhotos();
     if(typeof refreshAdminUI==="function")refreshAdminUI();
     for(const project of projects){window.BSReview?.attach(project,user);mountSummarySettings(project)}
