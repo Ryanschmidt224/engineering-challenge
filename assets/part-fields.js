@@ -10,7 +10,7 @@
  const statusValue=part=>part[statusField(part)]||"not_started";
  const sectionFields=Object.freeze({
   identity:["partNumber","name","itemType","partType","purchaseStatus","description"],
-  additional:["quantity","historicalPrice","manufacturer","model","category","supplier","asin"],
+  additional:["quantity","manufacturer","model","category","supplier","asin","historicalPrice"],
   display:["isTool","hideFromFeatureTree"],
   specifications:["specifications"]
  });
