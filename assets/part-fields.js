@@ -23,7 +23,7 @@
    partNumber:part.partNumber,
    name:part.name,
    itemType:part.itemType==="document"?"Document":"Part",
-   partType:labelFor([["purchased","Purchased"],["custom","Custom"],["code","Code"]],part.partType),
+   partType:labelFor([["purchased","Off-the-shelf"],["custom","Custom"],["code","Code"]],part.partType),
    purchaseStatus:isPurchased(part)?labelFor(purchaseStatuses,statusValue(part)):null,
    description:part.description,
    quantity:qty,
