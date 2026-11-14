@@ -71,8 +71,8 @@
    input.style.top=(imageRect.top-frameRect.top+frame.scrollTop+top)+"px";
    input.style.width=width+"px";
    input.style.color=strokeColor;
-   const anchor=[left/imageRect.width,top/imageRect.height];
-   textEditor={input,anchor,color:strokeColor,size,wrapW:width/imageRect.width};
+   const anchor=[(left+6)/imageRect.width,(top+4)/imageRect.height];
+   textEditor={input,anchor,color:strokeColor,size,wrapW:(width-12)/imageRect.width};
    input.addEventListener("input",()=>{
     input.style.height="auto";
     input.style.height=Math.min(170,Math.max(34,input.scrollHeight))+"px";
