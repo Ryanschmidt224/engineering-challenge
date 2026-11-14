@@ -211,8 +211,16 @@ function setupAssemblyTrees(){
    void workspacePhotoController.refresh();
   };
   window.BSPhotoMarkup.pasteOn(photoDialog,file=>workspacePhotoController.upload(file));
+  window.BSPhotoMarkup.dropOn(photoDialog,file=>workspacePhotoController.upload(file),{
+   canUpload:canEdit,
+   onBlocked:message=>{workspacePhotoEditor.querySelector(".workspace-photo-status").textContent=message||"Sign in as administrator before uploading photos."}
+  });
   const workspacePhotoController=createPhotoController(workspacePhotoEditor,()=>isProjectSummary()?"project-summary":(selected??"root-assembly"),
    workspacePhotoEditor.querySelector(".workspace-photo-status"),true);
+  window.BSPhotoMarkup.dropOn(workspace.querySelector(".workspace-cover"),file=>workspacePhotoController.upload(file),{
+   canUpload:canEdit,
+   onBlocked:message=>{workspacePhotoEditor.querySelector(".workspace-photo-status").textContent=message||"Sign in as administrator before uploading photos."}
+  });
   // The project summary is a landing page, not a separate source of BOM data.
   // It rolls up all assembly occurrences and standard shop materials at project scope.
   const summary=document.createElement("section");
@@ -222,6 +230,13 @@ function setupAssemblyTrees(){
   let summaryPhotos=[],summaryPhotoIndex=0,summaryVersion=0;
   const isProjectSummary=()=>decodeURIComponent(location.hash.slice(1))===project;
   const summaryPhotoStage=summary.querySelector(".project-summary-photo-stage");
+  window.BSPhotoMarkup.dropOn(summaryPhotoStage,file=>{
+   selected=null;
+   void workspacePhotoController.upload(file);
+  },{
+   canUpload:canEdit,
+   onBlocked:message=>{summary.querySelector(".project-summary-photo-empty").textContent=message||"Sign in as administrator before uploading photos."}
+  });
   const displaySummaryPhoto=()=>{
    const photo=summaryPhotos[summaryPhotoIndex],picture=summary.querySelector(".project-summary-photo");
    picture.hidden=!photo;summary.querySelector(".project-summary-photo-empty").hidden=!!photo;
@@ -825,6 +840,14 @@ function setupAssemblyTrees(){
   partPhotoAdd.onclick=()=>partPhotoFile.click();
   partPhotoMarkup.onclick=()=>{if(currentPartInfo&&canEdit())window.BSPhotoMarkup.open({kind:"part",id:currentPartInfo.id,project,onSave:()=>showPartPicture(currentPartInfo.id,true)})};
   window.BSPhotoMarkup.pasteOn(partPhotoDialog,file=>uploadPartPicture(file));
+  window.BSPhotoMarkup.dropOn(partPhotoDialog,file=>uploadPartPicture(file),{
+   canUpload:()=>canEdit()&&!!currentPartInfo,
+   onBlocked:message=>{partPhotoStatus.textContent=message||"Sign in as administrator before uploading photos."}
+  });
+  window.BSPhotoMarkup.dropOn(pictureCover,file=>uploadPartPicture(file),{
+   canUpload:()=>canEdit()&&!!currentPartInfo,
+   onBlocked:message=>{partPhotoStatus.textContent=message||"Sign in as administrator before uploading photos."}
+  });
   partPhotoFile.onchange=()=>void uploadPartPicture(partPhotoFile.files?.[0]);
   async function uploadPartPicture(file){
    const partId=currentPartInfo?.id;
@@ -856,16 +879,6 @@ function setupAssemblyTrees(){
     }
    }catch(error){partPhotoStatus.textContent=error.message||"Delete failed";partPhotoDelete.disabled=false}
   };
-  const partPhotoStage=partPhotoDialog.querySelector(".part-photo-stage");
-  partPhotoStage.addEventListener("dragover",event=>{
-   if(!canEdit()||!Array.from(event.dataTransfer?.types||[]).includes("Files"))return;
-   event.preventDefault();event.dataTransfer.dropEffect="copy";
-  });
-  partPhotoStage.addEventListener("drop",event=>{
-   if(!canEdit())return;
-   const file=Array.from(event.dataTransfer?.files||[]).find(f=>f.type.startsWith("image/")||/\.(jpe?g|png|webp)$/i.test(f.name));
-   if(!file)return;event.preventDefault();void uploadPartPicture(file);
-  });
   detailsPanel.querySelector(".part-details-edit").onclick=()=>{
    const part=currentPartInfo;if(!part)return;
    const linked=nodes.find(n=>isPartNode(n)&&n.partId===part.id);
@@ -1868,22 +1881,16 @@ function setupAssemblyTrees(){
      const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={error:raw.slice(0,160)||"Unexpected server response"}}
      if(!r.ok)throw Error((data.error||"Upload failed")+" (HTTP "+r.status+")");
      input.value="";caption.value="";
-     await refresh();if(tile===workspacePhotoEditor)void loadWorkspaceCover();if(!id)void refreshProjectCover();report("Photo uploaded.");
+     await refresh();if(tile===workspacePhotoEditor)void loadWorkspaceCover();if(!id)void refreshProjectCover();if(id==="project-summary")void refreshProjectSummary();report("Photo uploaded.");
     }catch(e){report(e.message||"Upload failed.")}
     finally{busy=false;zone.removeAttribute("aria-busy")}
    }
    pick.onclick=event=>{event.stopPropagation();input.click()};
    input.onchange=()=>upload(input.files?.[0]);
-   // The zone is hidden in the modern photo-first layout; bind drops to the visible stage.
-   const dropTarget=tile.querySelector(".assembly-unified-photo");
-   if(dropTarget&&allowEditing){
-    dropTarget.addEventListener("dragover",event=>{if(!canEdit()||!event.dataTransfer.types.includes("Files"))return;event.preventDefault();event.stopPropagation();event.dataTransfer.dropEffect="copy";dropTarget.classList.add("is-dragover")});
-    dropTarget.addEventListener("dragleave",event=>{if(!dropTarget.contains(event.relatedTarget))dropTarget.classList.remove("is-dragover")});
-    dropTarget.addEventListener("drop",event=>{if(!canEdit())return;event.preventDefault();event.stopPropagation();dropTarget.classList.remove("is-dragover");void upload(event.dataTransfer.files?.[0])});
-   }
-   zone.ondragover=e=>{e.preventDefault();zone.classList.add("drag-over")};
+   // The visible photo dialog is the drop target; keep legacy zone support.
+   zone.ondragover=e=>{if(!e.dataTransfer?.types?.includes("Files"))return;e.preventDefault();zone.classList.add("drag-over")};
    zone.ondragleave=()=>zone.classList.remove("drag-over");
-   zone.ondrop=e=>{e.preventDefault();zone.classList.remove("drag-over");void upload(e.dataTransfer.files?.[0])};
+   zone.ondrop=e=>{e.preventDefault();e.stopPropagation();zone.classList.remove("drag-over");void upload(e.dataTransfer.files?.[0])};
    return {refresh,upload};
   }
   // Legacy photo controllers remain available for assembly imagery.
