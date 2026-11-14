@@ -125,7 +125,7 @@ test("Parts Management shows only the compact status selection; operations live 
  assert.match(management,/stateCell\.append\(state\)/);
  assert.doesNotMatch(management,/bs-progress-notes|bs-progress-operations|progressOperationAdd|progressOperationEdit/);
  assert.match(details,/detailsPanel\.after\(progressNotes\)/);
- assert.match(details,/progressNotes\.open=true/);
+ assert.match(details,/progressNotes\.open=part\.progressStatus!=="complete"/);
  assert.match(details,/progressOperationAdd:true/);
  assert.match(details,/progressOperationEdit:\{id:operation\.id,text:input\.value\}/);
  assert.doesNotMatch(details,/detailRows\.after\(progressNotes\)/);
