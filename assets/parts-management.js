@@ -10,6 +10,18 @@
  const statusFor=fields.statusValue;
  const numberFor=p=>p.partNumber||(/^([A-Za-z]{1,8}[- ]?\d{2,8})\s*[-–:]\s*\S/.exec(p.name||"")?.[1]||"");
  const typeValues=[["purchased","Off-the-shelf"],["custom","Custom"],["code","Code"]];
+ // Keep separate saved records intact. Group repeated names in the interface,
+ // with an explicit way to inspect and edit every original record.
+ const groupKey=part=>[part.name,part.partType,part.manufacturer,part.model].map(value=>String(value||"").trim().toLocaleLowerCase().replace(/\s+/g," ")).join("|");
+ const groupParts=parts=>{
+  const groups=new Map();
+  for(const part of parts){
+   const key=groupKey(part);
+   if(!groups.has(key))groups.set(key,{key,parts:[]});
+   groups.get(key).parts.push(part);
+  }
+  return [...groups.values()];
+ };
  const dropdown=(options,current,disabled=false)=>{
   const select=el("select","field");select.disabled=disabled;
   for(const [value,label] of options){const option=el("option","",label);option.value=value;select.append(option)}
@@ -44,6 +56,7 @@
   else window.addEventListener("resize",layoutColumns);
   const columns=[["number","Part number"],["name","Part name"],["partType","Part type"],["status","Status"],["needsAttention","Needs attention"]];
   let order="number",direction=1,parts=[],fetchId=0;
+  const expandedGroups=new Set();
   const sortButtons={};
   for(const [key,label] of columns){
    const th=el("th");
@@ -84,8 +97,24 @@
     }
     return sortKey(a).localeCompare(sortKey(b),undefined,{numeric:true,sensitivity:"base"})*direction;
    });
-   for(const part of entries){
-    const tr=el("tr"),readOnly=!canEdit()||!!part.generatedFrom;
+   const groups=groupParts(entries);
+   for(const group of groups){
+    if(group.parts.length>1){
+     const example=group.parts[0],expanded=expandedGroups.has(group.key),tr=el("tr","bs-parts-duplicate-group");
+     const numberCell=el("td","bs-parts-number","Multiple");
+     const nameCell=el("td"),label=el("strong","",example.name),count=el("span","bs-parts-duplicate-count"," · "+group.parts.length+" records");
+     nameCell.append(label,count);
+     const typeCell=el("td","",typeValues.find(([key])=>key===example.partType)?.[1]||"Part");
+     const stateCell=el("td","muted","Individual statuses");
+     const controlsCell=el("td"),toggle=el("button","btn bs-parts-group-toggle",expanded?"Hide entries":"Show "+group.parts.length+" entries");
+     toggle.type="button";toggle.setAttribute("aria-expanded",String(expanded));
+     toggle.setAttribute("aria-label",(expanded?"Hide":"Show")+" saved records for "+example.name);
+     toggle.onclick=()=>{expanded?expandedGroups.delete(group.key):expandedGroups.add(group.key);render()};
+     controlsCell.append(toggle);tr.append(numberCell,nameCell,typeCell,stateCell,controlsCell);tbody.append(tr);
+     if(!expanded)continue;
+    }
+    for(const part of group.parts){
+    const tr=el("tr",group.parts.length>1?"bs-parts-duplicate-detail":""),readOnly=!canEdit()||!!part.generatedFrom;
     const inferred=!part.partNumber&&!!numberFor(part);const number=el("td","bs-parts-number",part.partNumber||(inferred?numberFor(part)+" *":"Unassigned"));if(inferred)number.title="Number appears in name but is not formally assigned.";tr.append(number);
     const nameCell=el("td"),input=el("input","field",undefined);
     input.value=part.name||"";input.maxLength=180;input.disabled=readOnly;input.setAttribute("aria-label","Name for "+(part.partNumber||part.name));
@@ -124,8 +153,12 @@
     note.addEventListener("blur",saveNote);
     note.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();note.blur()}});
     tr.append(attentionCell);tbody.append(tr);
+    }
    }
-   feedback.textContent=entries.length+" of "+parts.length+" parts shown. Generated consumables are managed through their source part.";
+   const repeats=groups.filter(g=>g.parts.length>1).length;
+   feedback.textContent=entries.length+" of "+parts.length+" part records across "+groups.length+" distinct groups."+
+    (repeats?" "+repeats+" group"+(repeats===1?"":"s")+" contain multiple saved records. Expand to review each; no records were deleted.":"")+
+    " Generated consumables are managed through their source part.";
   }
   async function change(part,key,value,control){return savePatch(part,{[key]:value},control)}
   async function savePatch(part,changes,control){
@@ -158,5 +191,5 @@
   search.oninput=filter.onchange=typeFilter.onchange=render;
   return {refresh};
  }
- window.BSPartsManager=Object.freeze({mount});
+ window.BSPartsManager=Object.freeze({mount,groupParts});
 })();
