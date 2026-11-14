@@ -14,21 +14,21 @@ class MemoryR2{
   const etag=crypto.randomUUID();this.map.set(key,{value,etag});return {etag};
  }
 }
-test("project numbering reserves first 1000 numbers for assemblies",async()=>{
+test("project numbering reserves numbers 001–099 for assemblies",async()=>{
  const env={PHOTOS:new MemoryR2()},project="launcher";
- assert.equal(await issueNumber(env,project,"assembly","assembly-a"),"NR0001");
- assert.equal(await issueNumber(env,project,"assembly","assembly-b"),"NR0002");
+ assert.equal(await issueNumber(env,project,"assembly","assembly-a"),"NR001");
+ assert.equal(await issueNumber(env,project,"assembly","assembly-b"),"NR002");
+ assert.equal(await issueNumber(env,project,"part","part-a"),"NR100");
+ assert.equal(await issueNumber(env,project,"part","part-b"),"NR101");
  assert.equal(await issueNumber(env,project,"part","part-a"),"NR1001");
- assert.equal(await issueNumber(env,project,"part","part-b"),"NR1002");
- assert.equal(await issueNumber(env,project,"part","part-a"),"NR1001");
- await assert.rejects(issueNumber(env,project,"part","part-reserved","NR0050"),/reserved for assemblies/);
- await assert.rejects(issueNumber(env,project,"assembly","assembly-invalid","NR1003"),/between 1 and 1000/);
+ await assert.rejects(issueNumber(env,project,"part","part-reserved","NR050"),/reserved for assemblies/);
+ await assert.rejects(issueNumber(env,project,"assembly","assembly-invalid","NR103"),/between 1 and 99/);
  await assert.rejects(issueNumber(env,project,"part","part-duplicate","NR1002"),/already assigned/);
- assert.equal(await issueNumber(env,project,"part","part-manual","NR1040"),"NR1040");
- assert.equal(await issueNumber(env,project,"part","part-after-manual"),"NR1041");
+ assert.equal(await issueNumber(env,project,"part","part-manual","NR140"),"NR1040");
+ assert.equal(await issueNumber(env,project,"part","part-after-manual"),"NR141");
  const state=await numberingState(env,project);
  assert.equal(state.data.nextAssembly,3);
- assert.equal(state.data.nextPart,1042);
+ assert.equal(state.data.nextPart,142);
 });
 test("formatting changes affect new numbers but preserve previously issued numbers",async()=>{
  const env={PHOTOS:new MemoryR2()},project="launcher";
@@ -38,7 +38,7 @@ test("formatting changes affect new numbers but preserve previously issued numbe
  state.data.prefix="PR";state.data.digits=5;
  await env.PHOTOS.put(key,JSON.stringify(state.data),{onlyIf:{etagMatches:state.etag}});
  assert.equal(await issueNumber(env,project,"part","legacy"),original);
- assert.equal(await issueNumber(env,project,"part","new"),"PR01002");
+ assert.equal(await issueNumber(env,project,"part","new"),"PR00101");
  assert.equal(await issueNumber(env,project,"assembly","first"),"PR00001");
 });
 test("simultaneous allocation never issues one number twice",async()=>{
@@ -53,13 +53,13 @@ test("simultaneous allocation never issues one number twice",async()=>{
 test("legacy part and assembly numbers cannot be duplicated",async()=>{
  const env={PHOTOS:new MemoryR2()},project="launcher";
  await env.PHOTOS.put("components/"+project+".json",JSON.stringify([
-  {id:"legacy-part",name:"Imported CAD bracket",partNumber:"NR1007"}
+  {id:"legacy-part",name:"Imported CAD bracket",partNumber:"NR107"}
  ]));
  await env.PHOTOS.put("trees/"+project+".json",JSON.stringify([
-  {id:"legacy-assembly",kind:"assembly",name:"Frame",partNumber:"NR0003"}
+  {id:"legacy-assembly",kind:"assembly",name:"Frame",partNumber:"NR003"}
  ]));
  await assert.rejects(issueNumber(env,project,"part","newpart","NR1007"),/already assigned/);
  await assert.rejects(issueNumber(env,project,"assembly","newassembly","NR0003"),/already assigned/);
- assert.equal(await issueNumber(env,project,"part","newpart","NR1008"),"NR1008");
- assert.equal(await issueNumber(env,project,"assembly","newassembly","NR0004"),"NR0004");
+ assert.equal(await issueNumber(env,project,"part","newpart","NR108"),"NR1008");
+ assert.equal(await issueNumber(env,project,"assembly","newassembly","NR004"),"NR0004");
 });
