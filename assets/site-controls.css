@@ -1659,3 +1659,52 @@
   grid-column:1;
  }
 }
+
+
+/* Optional next-number preview sits beneath the Part number input.
+   It does not issue/reserve a number until the part is saved. */
+:is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .part-number-field>.part-number-next{
+ grid-column:2;
+ justify-self:start;
+ width:auto;
+ min-height:31px;
+ margin:0;
+ padding:5px 10px;
+ font-size:.79rem;
+ font-weight:550;
+ background:var(--color-surface);
+ border:1px solid var(--color-border);
+ border-radius:7px;
+ cursor:pointer;
+}
+:is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .part-number-field>.part-number-next:disabled{
+ opacity:.55;
+ cursor:default;
+}
+:is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .part-number-field>.part-number-help{
+ grid-column:2;
+ font-weight:400;
+ font-size:.76rem;
+ color:var(--color-text-muted);
+}
+:is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .part-visibility-field{
+ display:flex;
+ align-items:center;
+ gap:6px;
+}
+.part-option-help{
+ display:inline-flex;
+ justify-content:center;
+ align-items:center;
+ margin-left:3px;
+ font-size:.84rem;
+ color:var(--color-accent);
+ cursor:help;
+ text-decoration:none;
+}
+@media(max-width:680px){
+ :is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .part-number-field>.part-number-next,
+ :is(#launcher,#linear,#robot,.personal-project-view) .workspace-main-bom-editor .part-number-field>.part-number-help{
+  grid-column:1;
+ }
+}
