@@ -37,6 +37,19 @@
   {id:"workshop:safety",kind:"tool",tier:"core",name:"Eye protection and bench ventilation",spec:"Safety glasses plus effective solder-fume removal or local exhaust appropriate to the work.",use:"Cutting, crimping, soldering and heating materials."},
   {id:"workshop:oscilloscope",kind:"tool",tier:"conditional",name:"Oscilloscope",spec:"Bench or USB scope with appropriate bandwidth, probes and isolated or correctly grounded measurement setup.",use:"For PWM, ripple and switching waveforms.",caution:"A bench scope ground clip may be earth-referenced. Never attach it to an arbitrary live circuit node."}
  ];
+ // Additional reference standards make all five Workshop branches useful without
+ // implying ownership or requiring these items on every project's BOM.
+ const workshopComponents=[
+  {id:"workshop:resistors",kind:"component",tier:"conditional",name:"Resistor assortment",spec:"Common E12 or E24 through-hole resistor values, e.g. 1/4 W metal-film 1% (check power and voltage rating).",use:"Breadboard prototyping and pull-up/pull-down networks."},
+  {id:"workshop:mosfet",kind:"component",tier:"conditional",name:"Logic-level MOSFETs",spec:"Select N-channel devices using RDS(on) at the actual gate drive, drain current, voltage margin and switching losses.",use:"Low-voltage electronic load switching."},
+  {id:"workshop:arduino",kind:"component",tier:"conditional",name:"Microcontroller development board",spec:"Arduino-compatible microcontroller board with documented supply limits and digital I/O levels.",use:"Embedded control experiments and sensor interfacing."},
+  {id:"workshop:sensors",kind:"component",tier:"conditional",name:"General sensor assortment",spec:"Hall-effect, temperature, optical and limit-switch examples; verify supply voltage, output topology and signal compatibility.",use:"Prototyping and instrumentation."}
+ ];
+ const workshopHardware=[
+  {id:"workshop:fasteners",kind:"material",tier:"conditional",name:"Machine screw assortment",spec:"Common metric and UNC threaded machine screws, nuts and washers. Specify exact thread, material, finish, and length for each BOM item.",use:"Fixture and enclosure assembly."},
+  {id:"workshop:breadboard",kind:"material",tier:"conditional",name:"Breadboard and jumper wires",spec:"Reusable solderless breadboard and flexible jumper leads. Keep below manufacturer current/voltage limits.",use:"Low-power circuit prototyping."},
+  {id:"workshop:stock",kind:"material",tier:"conditional",name:"Aluminum and plastic stock",spec:"Record alloy, temper, dimensions, source and material certification when used for a manufactured part.",use:"Machined brackets, mounts and enclosures."}
+ ];
  const quickSpecs={
   "workshop:wire22":"22 AWG stranded copper · PVC jacket · 105°C, 600 V example rating",
   "workshop:wire18":"18 AWG stranded copper · PVC jacket · 105°C, 600 V example rating",
@@ -80,8 +93,8 @@
  const workshopCategories=[
   ["tools","Tools & Equipment",["workshop:stripper","workshop:ferrule-tool","workshop:heatgun","workshop:meter","workshop:solderstation","workshop:oscilloscope"]],
   ["consumables","Consumables & Supplies",["workshop:wire22","workshop:wire18","workshop:wire16","workshop:silicone","workshop:heatshrink","workshop:sealshrink","workshop:solder"]],
-  ["electronics","Electronics & Components",[]],
-  ["hardware","Hardware & Materials",["workshop:ferrule22","workshop:ferrule18"]],
+  ["electronics","Electronics & Components",workshopComponents.map(item=>item.id)],
+  ["hardware","Hardware & Materials",["workshop:ferrule22","workshop:ferrule18",...workshopHardware.map(item=>item.id)]],
   ["safety","Safety & Measurement",["workshop:safety"]]
  ];
  const categoryNames=Object.fromEntries(workshopCategories.map(([id,name])=>[id,name]));
@@ -106,8 +119,8 @@
   const bomDefault=["consumables","tools","safety"].includes(category)?"exclude":"include";
   return {...item,category,availabilityAssumption,bomDefault};
  };
- const workshopReferences=[...workshopSupplies,...workshopEquipment].map(itemMetadata);
- const catalog={tools:workshopReferences.filter(x=>x.kind==="tool").map(x=>({id:x.id,name:x.name,subtitle:"Workshop standard",detail:x.spec+" "+x.use,caution:x.caution,category:x.category,availabilityAssumption:x.availabilityAssumption,bomDefault:x.bomDefault})),calculators,parts:[...baseParts,...workshopReferences.filter(x=>x.kind==="material").map(x=>({id:x.id,name:x.name,subtitle:x.subtitle,detail:x.spec+" "+x.use,caution:x.caution,category:x.category,availabilityAssumption:x.availabilityAssumption,bomDefault:x.bomDefault}))]};
+ const workshopReferences=[...workshopSupplies,...workshopEquipment,...workshopComponents,...workshopHardware].map(itemMetadata);
+ const catalog={tools:workshopReferences.filter(x=>x.kind==="tool").map(x=>({id:x.id,name:x.name,subtitle:"Workshop standard",detail:x.spec+" "+x.use,caution:x.caution,category:x.category,availabilityAssumption:x.availabilityAssumption,bomDefault:x.bomDefault})),calculators,parts:[...baseParts,...workshopReferences.filter(x=>x.kind!=="tool").map(x=>({id:x.id,name:x.name,subtitle:x.subtitle,detail:x.spec+" "+x.use,caution:x.caution,category:x.category,availabilityAssumption:x.availabilityAssumption,bomDefault:x.bomDefault}))]};
  let wires=[],commonRecords=[],purchasedRecords=[],listeners=new Set(),admin=false;
  const byId=(kind,id)=>catalog[kind]?.find(item=>item.id===id);
  const wireName=w=>[w.name,w.awg?w.awg+" AWG":"",w.color,w.partNumber].filter(Boolean).join(" · ");
