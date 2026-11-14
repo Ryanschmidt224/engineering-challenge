@@ -103,3 +103,30 @@ test("part progress and attention notes are editable only by the project owner",
  const components=await handleComponents(request("/api/components?project="+project,"GET",undefined,owner),env);
  assert.equal((await components.json()).components[0].progressStatus,"complete");
 });
+
+test("Projects share one catalog with custom categories and no legacy mini project type",async()=>{
+ const env={PHOTOS:new Bucket(),admin_password:"test-category-project-secret"};
+ const response=await handleAccounts(request("/api/accounts","POST",{
+  action:"register",email:"categories@example.test",password:"a-strong-category-password"
+ }),env);
+ assert.equal(response.status,201);
+ const owner=cookie(response);
+ const created=await projectsApi({request:request("/api/projects","POST",{
+  name:"Small prototype",kind:"mini",category:"Electronics",description:"Test a control circuit"
+ },owner),env});
+ assert.equal(created.status,200);
+ const project=(await created.json()).projects.find(p=>p.name==="Small prototype");
+ assert.equal(project.kind,"project");
+ assert.equal(project.category,"Electronics");
+ assert.ok(Number.isFinite(Date.parse(project.createdAt)));
+ const changed=await projectsApi({request:request("/api/projects","PATCH",{
+  id:project.id,category:"Automation"
+ },owner),env});
+ assert.equal(changed.status,200);
+ assert.equal((await changed.json()).projects.find(p=>p.id===project.id).category,"Automation");
+ const stored=JSON.parse(await (await env.PHOTOS.get("project-catalog/v1.json")).text());
+ assert.equal(stored.projects.find(p=>p.id===project.id).category,"Automation");
+ assert.equal((await projectsApi({request:request("/api/projects","PATCH",{
+  id:project.id,category:""
+ },owner),env})).status,400);
+});
