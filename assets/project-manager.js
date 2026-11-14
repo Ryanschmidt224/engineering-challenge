@@ -12,6 +12,10 @@ window.BSProjectManager=(()=>{
  const init=({setupAssemblyTrees,setupComponents,setupPhotos,navigate})=>{
   const root=document.querySelector("#home .project-index"),grid=root?.querySelector(".project-grid");if(!grid)return;
   const header=root.querySelector(".row.space"),controls=element("div","project-owner-actions");
+  const miniRoot=document.querySelector("#appetizer .project-index"),miniGrid=miniRoot?.querySelector(".project-grid");
+  const miniControls=element("div","project-owner-actions"),newMiniButton=element("button","btn primary","+ New mini project");
+  newMiniButton.type="button";miniControls.append(newMiniButton);
+  miniRoot?.querySelector(".index-title")?.after(miniControls);
   const newButton=element("button","btn primary","+ New project");newButton.type="button";
   const accountButton=element("button","btn","My account");accountButton.type="button";
   const archiveButton=element("button","btn","Archived projects");archiveButton.type="button";
@@ -29,6 +33,13 @@ window.BSProjectManager=(()=>{
    dialog.showModal();
   };
   accountButton.onclick=showAccount;
+  const register=dialog.querySelector(".project-register");
+  register.onclick=()=>{
+   const field=dialog.querySelector(".project-account-name");
+   if(field.classList.contains("hide")){field.classList.remove("hide");register.textContent="Finish registration";note.textContent="Choose the name that will appear on your published projects.";name.focus();return}
+   if(!name.value.trim()){note.textContent="Enter a display name for your projects.";name.focus();return}
+   void sign("register");
+  };
   dialog.querySelector(".project-close").onclick=()=>dialog.close();
   async function sign(action){
    try{
@@ -37,17 +48,22 @@ window.BSProjectManager=(()=>{
    }catch(error){note.textContent=error.message}
   }
   dialog.querySelector(".project-signin").onclick=()=>sign("login");
-  dialog.querySelector(".project-register").onclick=()=>sign("register");
+
   dialog.querySelector(".project-signout").onclick=async()=>{await api("DELETE","/api/accounts");user=null;dialog.close();location.href="#home";location.reload()};
   const editor=element("dialog","project-create-dialog");
   editor.innerHTML='<form method="dialog" class="project-create-form"><h2>New project</h2><p class="muted">Projects are private by default. Only you can edit them.</p><label>Project name<input class="field" name="name" maxlength="100" required></label><label>Description<textarea class="field" name="description" maxlength="500"></textarea></label><p class="project-create-message" role="status"></p><div class="row"><button type="button" class="btn primary project-create-save">Create project</button><button type="button" class="btn project-create-cancel">Cancel</button></div></form>';
   document.body.append(editor);
   editor.querySelector(".project-create-cancel").onclick=()=>editor.close();
-  newButton.onclick=()=>{if(!user){showAccount();note.textContent="Create an account or log in before creating a project.";return}editor.showModal()};
+  let createKind="project";
+  const openCreate=kind=>{if(!user){showAccount();note.textContent="Create an account or log in before creating a project.";return}
+   createKind=kind;editor.querySelector("h2").textContent=kind==="mini"?"New mini project":"New project";
+   editor.querySelector(".project-create-save").textContent=kind==="mini"?"Create mini project":"Create project";editor.showModal()};
+  newButton.onclick=()=>openCreate("project");
+  newMiniButton.onclick=()=>openCreate("mini");
   editor.querySelector(".project-create-save").onclick=async()=>{
    const form=editor.querySelector("form"),button=editor.querySelector(".project-create-save");button.disabled=true;
-   try{const data=await api("POST","/api/projects",{name:form.elements.name.value,description:form.elements.description.value,kind:"project"});
-    const createdName=form.elements.name.value,created=data.projects.find(p=>p.name===createdName&&p.ownerId===user?.id);
+   try{const data=await api("POST","/api/projects",{name:form.elements.name.value,description:form.elements.description.value,kind:createKind});
+    const createdName=form.elements.name.value,created=data.projects.find(p=>p.name===createdName&&p.ownerId===user?.id&&p.kind===createKind);
     editor.close();form.reset();await refresh();navigate(created?.id||"home");
    }catch(error){editor.querySelector(".project-create-message").textContent=error.message}
    finally{button.disabled=false}
@@ -64,6 +80,7 @@ window.BSProjectManager=(()=>{
     if(node.hasAttribute("data-components"))node.dataset.components=project.id;
     if(node.hasAttribute("data-photos"))node.dataset.photos=project.id;
    });
+   if(project.kind==="mini")section.querySelectorAll('[data-nav="home"]').forEach(node=>node.dataset.nav="appetizer");
    const heading=section.querySelector(".assembly-main h1");
    if(heading)heading.textContent=project.name;
    template.parentNode.insertBefore(section,template.nextSibling);
@@ -74,6 +91,7 @@ window.BSProjectManager=(()=>{
    link.append(element("div","project-art project-personal-art","◈"));
    const copy=element("div","project-copy");copy.append(element("h2","",project.name),element("p","",project.description||"New engineering project"));
    copy.append(element("div","project-tags",project.visibility==="private"?"Private project":project.visibility==="unlisted"?"Unlisted project":"Public project"));
+   if(project.authorName)copy.append(element("p","project-author","By "+project.authorName));
    link.append(copy);article.append(link);
    return article;
   };
@@ -223,14 +241,32 @@ window.BSProjectManager=(()=>{
    try{
     user=(await api("GET","/api/accounts")).user;
     const data=await api("GET","/api/projects");if(!Array.isArray(data.projects))throw Error("Project catalog response unavailable");projects=data.projects;currentProjects=projects;
-    newButton.hidden=!user;archiveButton.hidden=!user&&!adminAuthenticated;
+    newButton.hidden=!user;newMiniButton.hidden=!user;archiveButton.hidden=!user&&!adminAuthenticated;
+    accountButton.textContent=user?"My account: "+user.displayName:"My account";
     document.querySelectorAll(".project-personal-card").forEach(node=>node.remove());
     for(const project of projects){
      if(!project.id.startsWith("p"))continue;
      ensureProjectPage(project);
-     grid.append(card(project));
+     (project.kind==="mini"&&miniGrid?miniGrid:grid).append(card(project));
     }
     // Existing public cards are hidden when archived or made private.
+    miniRoot?.querySelectorAll(".project-card:not(.project-personal-card)").forEach(article=>{
+     const link=article.querySelector("[data-project],[data-nav]");
+     if(link&&["buck","motorlab","coiltest"].includes(link.dataset.project||link.dataset.nav))
+      article.hidden=!projects.some(p=>p.id===(link.dataset.project||link.dataset.nav));
+    });
+    miniRoot?.querySelectorAll(".mini-owner-delete").forEach(node=>node.remove());
+    for(const project of projects.filter(p=>p.kind==="mini"&&p.builtIn&&p.isOwner)){
+     const article=miniRoot?.querySelector('.project-card [data-project="'+project.id+'"]')?.closest(".project-card");
+     if(!article)continue;
+     const remove=element("button","btn mini-owner-delete","Delete mini project");remove.type="button";
+     remove.onclick=async()=>{
+      if(!confirm("Archive mini project “"+project.name+"”? It can be restored later; no build history will be erased."))return;
+      try{await api("DELETE","/api/projects",{id:project.id,confirmName:project.name});await refresh()}
+      catch(error){alert(error.message)}
+     };
+     article.append(remove);
+    }
     const ids=new Set(projects.map(p=>p.id));
     root.querySelectorAll(".project-card:not(.project-personal-card)").forEach(article=>{
      const link=article.querySelector("[data-project],[data-nav]");
