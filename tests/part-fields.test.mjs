@@ -79,3 +79,32 @@ test("Parts Management groups repeated names without merging distinct records",(
  assert.equal(entries.length,4);
  assert.notEqual(groups.find(g=>g.parts.some(p=>p.id==="motor-custom")),motors);
 });
+
+test("Legacy parts without explicit type filter as Off-the-shelf",()=>{
+ const legacy={id:"old",name:"LM2596 DC Converter",itemType:"part"};
+ const explicit={...legacy,id:"new",partType:"purchased"};
+ assert.equal(fields.partTypeFor(legacy),"purchased");
+ assert.equal(fields.partTypeFor(explicit),"purchased");
+ assert.equal(fields.statusField(legacy),"purchaseStatus");
+ assert.equal(fields.labelFor(fields.statusesFor(legacy),"already_have"),"Already own");
+ const script=readFileSync(new URL("../assets/parts-management.js",import.meta.url),"utf8");
+ assert.match(script,/partTypeFor\(p\)===typeFilter\.value/);
+ const context={window:{BSPartFields:fields}};
+ runInNewContext(script,context);
+ const groups=context.window.BSPartsManager.groupParts([legacy,explicit]);
+ assert.equal(groups.length,1);
+});
+
+test("Status choices are based on item type and sourcing",()=>{
+ for(const record of [
+  {name:"COTS part",partType:"purchased",itemType:"part",key:"purchaseStatus"},
+  {name:"Custom part",partType:"custom",itemType:"part",key:"progressStatus"},
+  {name:"Document",partType:"purchased",itemType:"document",key:"progressStatus"},
+  {name:"Code",partType:"code",itemType:"document",key:"progressStatus"}
+ ]){
+  assert.equal(fields.statusField(record),record.key,record.name);
+  const ids=fields.statusesFor(record).map(([id])=>id);
+  assert.equal(ids.includes("already_have"),record.key==="purchaseStatus",record.name);
+  assert.equal(ids.includes("in_progress"),record.key==="progressStatus",record.name);
+ }
+});
