@@ -722,7 +722,7 @@ function setupAssemblyTrees(){
   progressNoteFeedback.className="part-progress-update-feedback";
   progressNoteFeedback.setAttribute("role","status");
   progressNotes.append(progressSummary,progressNoteHistory,progressNoteAdd,progressNoteFeedback);
-  partWorkspace.querySelector(".workspace-heading").after(progressNotes);
+  detailsPanel.after(progressNotes);
   // Assembly status uses its own record rather than rewriting the tree or instructions.
   const assemblyProgressPanel=progressPanel.cloneNode(true);
   assemblyProgressPanel.classList.add("assembly-progress-panel");
@@ -789,7 +789,7 @@ function setupAssemblyTrees(){
   attentionCheckbox.addEventListener("change",()=>{refreshAttentionForm();schedulePartStatusSave(true)});
   attentionText.addEventListener("input",()=>schedulePartStatusSave());
   async function saveProgressOperation(part,change,control){
-   if(!part||!canEdit()||part.progressStatus!=="in_progress")return;
+   if(!part||!canEdit())return;
    control.disabled=true;progressNoteFeedback.textContent="Saving…";
    try{
     if(partStatusSavePromise)await partStatusSavePromise;
@@ -811,7 +811,7 @@ function setupAssemblyTrees(){
   }
   const renderProgressNotes=part=>{
    progressNoteHistory.replaceChildren();
-   const editable=canEdit()&&part.progressStatus==="in_progress";
+   const editable=canEdit();
    for(const [index,operation] of (part.progressUpdates||[]).entries()){
     const item=document.createElement("li");
     const input=document.createElement("input");
@@ -825,9 +825,9 @@ function setupAssemblyTrees(){
     input.onblur=()=>{if(input.value.trim()!==(operation.text||""))void saveProgressOperation(part,{progressOperationEdit:{id:operation.id,text:input.value}},input)};
     item.append(input);progressNoteHistory.append(item);
    }
-   progressNotes.hidden=!(part.progressStatus==="in_progress"||part.progressUpdates?.length);
-   // Automatically expanded when In progress, independently of Part details.
-   progressNotes.open=part.progressStatus==="in_progress";
+   progressNotes.hidden=part.isTool===true;
+   // The independent panel is expanded by default at every part status.
+   progressNotes.open=true;
    progressNoteAdd.hidden=!editable;progressNoteAdd.disabled=!editable;
   };
   progressNoteAdd.onclick=()=>void saveProgressOperation(currentPartInfo,{progressOperationAdd:true},progressNoteAdd);
