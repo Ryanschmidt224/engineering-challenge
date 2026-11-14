@@ -48,7 +48,7 @@ function open({onCreate,hideDefault=false}){
  const autoNumberHelp=el("p","muted library-auto-number-help","The number is assigned when you save. Numbers 001–099 are reserved for assemblies; parts begin at 100.");
  const chooser=el("div","library-picker-section hide");
  const category=field("Part category","select");
- for(const [id,label] of [["wire","Wire and cable"],["power","Power and electronics"],["fasteners","Fasteners"],["other","Other"]])option(category.input,id,label);
+ for(const [id,label] of [["wire","Wire and cable"],["power","Power and electronics"],["fasteners","Fasteners"],["tool","Tool"],["other","Other"]])option(category.input,id,label);
  const workflow=el("div","wire-workflow-choice");
  const manualButton=el("button","btn","Manual Entry");manualButton.type="button";
  const wizardButton=el("button","btn","Wire Wizard");wizardButton.type="button";
@@ -121,12 +121,31 @@ function open({onCreate,hideDefault=false}){
  calcGrid.append(purpose.label,voltage.label,current.label,run.label,drop.label,useCase.label,calcResult,apply,wizardBack,calcNote);
  calc.append(calcGrid);wizardFields.append(calc);
  const compSection=el("div","library-components hide");
- const commonCategory=field("Filter parts","select");
- for(const [id,label] of [["all","All"],["power","Power and electronics"],["fasteners","Fasteners"],["other","Other"]])option(commonCategory.input,id,label);
+ // Only power/electronics needs a second filter; category is already selected above.
+ const powerType=field("Component type","select");
+ const powerTypes=[
+  ["all","All power and electronics"],
+  ["supplies","Power supplies & converters"],
+  ["motors","Motors & motor drives"],
+  ["controllers","Controllers & circuit boards"],
+  ["sensors","Sensors & switches"],
+  ["other","Other electronics"]
+ ];
+ for(const [id,label] of powerTypes)option(powerType.input,id,label);
  const commonGroup=p=>p.category==="screws"?"fasteners":p.category==="buck-converters"?"power":p.category||"other";
+ const powerGroup=p=>{
+  // Existing saved items have no subtype; classify from their recorded names
+  // without changing old records or inventing an ownership claim.
+  const words=[p.name,p.manufacturer,p.model,p.specifications].filter(Boolean).join(" ").toLowerCase();
+  if(/\b(?:power supply|psu|buck|boost|converter|regulator|transformer|battery|charger|dc[- ]?dc|ac[- ]?dc)\b/.test(words))return "supplies";
+  if(/\b(?:motor|stepper|servo|esc|driver|h-bridge|vfd|inverter|actuator)\b/.test(words))return "motors";
+  if(/\b(?:arduino|raspberry|controller|microcontroller|plc|pcb|board|opta|relay|processor|mosfet)\b/.test(words))return "controllers";
+  if(/\b(?:sensor|switch|encoder|hall|proximity|thermistor|photodiode|ultrasonic|limit)\b/.test(words))return "sensors";
+  return "other";
+ };
  const commonSearch=field("Search saved parts");commonSearch.input.placeholder="Search name, manufacturer, model";
  const commonSelect=field("Select part","select");
- compSection.append(commonCategory.label,commonSearch.label,commonSelect.label);
+ compSection.append(powerType.label,commonSearch.label,commonSelect.label);
  const status=el("p","library-dialog-status");status.setAttribute("role","status");
  const footer=el("div","library-dialog-actions"),save=el("button","btn primary","Create part"),cancel=el("button","btn","Cancel");
  save.type="submit";cancel.type="button";footer.append(cancel,save);
@@ -139,11 +158,18 @@ function open({onCreate,hideDefault=false}){
  let commons=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
  cancel.onclick=()=>close(null);dialog.addEventListener("cancel",e=>{e.preventDefault();close(null)});
+ const workshopToolRows=()=>window.BSResources?.catalog?.tools?.filter(item=>item.id?.startsWith("workshop:"))||[];
  const refreshCommon=()=>{
-  const q=commonSearch.input.value.toLowerCase().trim(),cat=commonCategory.input.value;
-  const filtered=commons.filter(p=>(cat==="all"||commonGroup(p)===cat)&&[p.name,p.manufacturer,p.partNumber,p.specifications].join(" ").toLowerCase().includes(q));
-  commonSelect.input.replaceChildren();option(commonSelect.input,"",filtered.length?"Select a saved part":"No saved parts match this filter");
-  filtered.forEach(p=>option(commonSelect.input,p.id,p.name+(p.partNumber?" · "+p.partNumber:"")));
+  const q=commonSearch.input.value.toLowerCase().trim(),cat=category.input.value,subtype=powerType.input.value;
+  const saved=commons.filter(p=>commonGroup(p)===cat&&(cat!=="power"||subtype==="all"||powerGroup(p)===subtype));
+  const standards=cat==="tool"?workshopToolRows():[];
+  const matches=item=>[item.name,item.manufacturer,item.partNumber,item.specifications,item.detail].filter(Boolean).join(" ").toLowerCase().includes(q);
+  const filtered=[...saved.map(item=>({...item,origin:"saved"})),...standards.map(item=>({...item,origin:"standard"}))].filter(matches);
+  const previous=commonSelect.input.value;
+  commonSelect.input.replaceChildren();
+  option(commonSelect.input,"",filtered.length?"Select a Workshop item":"No Workshop items match");
+  filtered.forEach(p=>option(commonSelect.input,(p.origin==="standard"?"standard:":"saved:")+p.id,p.name+(p.origin==="standard"?" · Workshop tool":p.partNumber?" · "+p.partNumber:"")));
+  if(filtered.some(p=>(p.origin==="standard"?"standard:":"saved:")+p.id===previous))commonSelect.input.value=previous;
  };
  const selectWorkflow=value=>{
   wireWorkflow=value;
@@ -159,15 +185,15 @@ function open({onCreate,hideDefault=false}){
  wizardBack.onclick=()=>selectWorkflow(null);
  const update=()=>{
   const lib=workshopCheckbox.checked,wire=category.input.value==="wire";
-   if(!wire&&commonCategory.input.value!=="all"&&commonCategory.input.value!==category.input.value)commonCategory.input.value=category.input.value;
-   if(!wire)refreshCommon();
+  if(lib&&!wire)refreshCommon();
+  powerType.label.classList.toggle("hide",!lib||category.input.value!=="power");
   customName.label.classList.toggle("hide",lib);
   itemKind.label.classList.toggle("hide",lib);
   const documentMode=!lib&&itemKind.input.value==="document";
   partClassification.label.classList.toggle("hide",lib||documentMode);
   qty.label.classList.toggle("hide",documentMode);
   hintUnits.classList.toggle("hide",documentMode);
-  toolField.classList.toggle("hide",documentMode);
+  toolField.classList.toggle("hide",documentMode||lib);
   if(documentMode){toolInput.checked=false;qty.input.value="1"}
   numberChoice.classList.toggle("hide",lib);
   autoNumberHelp.classList.toggle("hide",lib||!autoNumberCheckbox.checked);
@@ -205,7 +231,7 @@ function open({onCreate,hideDefault=false}){
   status.textContent="Wizard applied "+selectedRecommendation+" AWG "+construction.input.value+" copper and "+length.input.value+" in cut length. Review the wire and termination details before creating the part; ampacity is not verified.";
  };
  workshopCheckbox.onchange=update;itemKind.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;
- category.input.onchange=()=>{if(category.input.value!=="wire")commonCategory.input.value=category.input.value;update()};wireType.input.onchange=update;commonCategory.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
+ category.input.onchange=()=>{powerType.input.value="all";update()};wireType.input.onchange=update;powerType.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
  form.addEventListener("submit",async e=>{
   e.preventDefault();
   if(!form.reportValidity())return;
@@ -218,8 +244,18 @@ function open({onCreate,hideDefault=false}){
    payload={name,quantity:itemKind.input.value==="document"?1:count,specifications:[],itemType:itemKind.input.value,partType:partClassification.input.value,
     assignNumber:autoNumber,partNumber:autoNumber?null:partNumberField.input.value.trim().toUpperCase()||null};
   }else if(category.input.value!=="wire"){
-   const p=commons.find(p=>p.id===commonSelect.input.value);if(!p){status.textContent="Select a saved library part.";return}
-   payload={name:p.name,quantity:count,sharedPartRef:"common:"+p.id,manufacturer:p.manufacturer||"",model:p.partNumber||"",category:commonGroup(p),specifications:[{name:"Library part ID",value:p.id},{name:"Library specifications",value:p.specifications||"Shared library component"}]};
+   const choice=commonSelect.input.value;
+   const isStandard=choice.startsWith("standard:");
+   const p=isStandard?workshopToolRows().find(item=>item.id===choice.slice(9)):commons.find(item=>item.id===choice.slice(6));
+   if(!p){status.textContent="Select a Workshop item.";return}
+   payload=isStandard?{
+    name:p.name,quantity:count,category:"tool",isTool:true,
+    specifications:[{name:"Workshop reference",value:p.id},{name:"Tool specification",value:String(p.detail||"Workshop reference").slice(0,300)}]
+   }:{
+    name:p.name,quantity:count,sharedPartRef:"common:"+p.id,manufacturer:p.manufacturer||"",model:p.partNumber||"",
+    category:commonGroup(p),isTool:commonGroup(p)==="tool",
+    specifications:[{name:"Workshop item ID",value:p.id},{name:"Workshop specifications",value:p.specifications||"Saved Workshop item"}]
+   };
   }else{
    if(wireWorkflow!=="manual"){status.textContent="Choose Manual Entry or apply the Wire Wizard recommendation first.";return}
    const g=Number(gauge.input.value),str=construction.input.value,crimp=wireType.input.value==="crimped";
@@ -234,7 +270,7 @@ function open({onCreate,hideDefault=false}){
   }
   payload.quantityUnit="pcs";
   payload.hideFromFeatureTree=visibilityInput.checked;
-  payload.isTool=payload.itemType==="document"?false:toolInput.checked;
+  payload.isTool=payload.itemType==="document"?false:workshopCheckbox.checked?category.input.value==="tool":toolInput.checked;
   save.disabled=true;status.textContent="Creating part…";
   try{await onCreate(payload);close({created:true})}catch(err){status.textContent=err.message||String(err);save.disabled=false}
  });
