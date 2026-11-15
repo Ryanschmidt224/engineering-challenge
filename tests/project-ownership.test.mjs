@@ -200,3 +200,25 @@ test("account registration reports actionable failure codes without exposing sec
  assert.equal(data.code,"ACCOUNT_STORAGE_UNAVAILABLE");
  assert.doesNotMatch(JSON.stringify(data),/registration-error-test-secret/);
 });
+
+test("legacy administrator password can be linked only once",async()=>{
+ const env={PHOTOS:new Bucket(),admin_password:"unique-admin-migration-secret"};
+ const first=await handleAccounts(request("/api/accounts","POST",{
+  action:"register",email:"first-admin@example.test",password:"first-valid-password"
+ }),env);
+ const second=await handleAccounts(request("/api/accounts","POST",{
+  action:"register",email:"second-admin@example.test",password:"second-valid-password"
+ }),env);
+ assert.equal(first.status,201);assert.equal(second.status,201);
+ const firstCookie=cookie(first),secondCookie=cookie(second);
+ let result=await handleAccounts(request("/api/accounts","POST",{
+  action:"claim-admin",adminPassword:env.admin_password
+ },firstCookie),env);
+ assert.equal(result.status,200);
+ result=await handleAccounts(request("/api/accounts","POST",{
+  action:"claim-admin",adminPassword:env.admin_password
+ },secondCookie),env);
+ assert.equal(result.status,409);
+ assert.equal((await result.json()).code,"ADMIN_ALREADY_CLAIMED");
+ assert.equal(await isAdmin(new Request(ORIGIN+"/api/auth",{headers:{cookie:secondCookie}}),env),false);
+});
