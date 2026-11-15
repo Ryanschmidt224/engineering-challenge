@@ -323,7 +323,7 @@ function open({onCreate,hideDefault=false}){
  const workshopLegend=el("legend","","Part source");
  workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,quickSearch,addToWorkshopChoice,saveScope,workshopAddHelp);
  form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,
-  manufacturerNumber.label,manufacturerName.label,workshopDescription.label,shortTreeDescription.label,vendorField.label,
+  manufacturerNumber.label,shortTreeDescription.label,manufacturerName.label,workshopDescription.label,vendorField.label,
   numberChoice,partNumberField.label,customName.label,vendorLinks,vendorInfo,
   chooser,qty.label,hintUnits,toolField,visibility,projectDetailsPanel,status,workshopFinishNote,footer);
  dialog.append(form);document.body.append(dialog);
