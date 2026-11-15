@@ -31,10 +31,11 @@ export async function onRequest({request,env}){
   if(!(type==="image/jpeg"&&jpg||type==="image/png"&&png||type==="image/webp"&&webp))
    return json({error:"Suggested image format failed validation"},422);
   const id=crypto.randomUUID();
-  await env.PHOTOS.put("workshop-reference-photos/"+id,bytes,{
+  const personal=body?.scope==="private";
+  await env.PHOTOS.put(personal?"user-workshop/"+user.id+"/photos/"+id:"workshop-reference-photos/"+id,bytes,{
    httpMetadata:{contentType:type},customMetadata:{ownerId:user.id,sourceUrl:image.href.slice(0,900)}
   });
-  return json({photo:{id,caption:"Product photo — verify against manufacturer"}},201);
+  return json(personal?{photoId:id}:{photo:{id,caption:"Product photo — verify against manufacturer"}},201);
  }catch(error){
   console.error("Workshop image import failed",String(error));
   return json({error:"Could not import this image. Upload a photo manually instead."},502);
