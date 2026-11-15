@@ -40,7 +40,7 @@ async function saveCreatedPartToWorkshop({part,destination,category,projectTitle
     familyId:"community-"+category,familyName:"Community contributions",
     manufacturer:part.manufacturer||"",model:part.model||"",
     partNumber:part.model||"", // Manufacturer MPN, never the project BOM number.
-    subtitle:"Community-contributed purchased part",
+    subtitle:part.description||"Community-contributed purchased part",
     spec:specs.join("\n").slice(0,5000),
     photos:[]
    }})
@@ -58,7 +58,7 @@ async function saveCreatedPartToWorkshop({part,destination,category,projectTitle
    name:part.name,kind:"component",category:part.category||"Purchased parts",
    manufacturer:part.manufacturer||"",model:part.model||"",
    partNumber:part.model||"",quantity:0,unit:"pcs",stockStatus:"committed",
-   notes:"Added from project "+projectTitle+"; inventory quantity not confirmed.",
+   notes:(part.description?part.description+". ":"")+"Added from project "+projectTitle+"; inventory quantity not confirmed.",
    specifications:part.specifications||[]
   })
  });
@@ -308,7 +308,11 @@ function open({onCreate,hideDefault=false}){
  const wireSection=el("div","library-wire-section");
  manualFields.append(wireType.label,gauge.label,construction.label,wireAdvanced,length.label,endA.target.label,endA.choice.label,endA.other.label,endB.target.label,endB.choice.label,endB.other.label,results);
  wireSection.append(workflow,workflowHint,manualFields,wizardFields);
- chooser.append(category.label,wireModeChoice,wireSection,compSection);
+ const referencePreview=el("section","library-workshop-reference-preview hide");
+ referencePreview.append(el("h3","","Selected Workshop item"));
+ const referenceRows=el("div","library-workshop-reference-rows");
+ referencePreview.append(referenceRows);
+ chooser.append(category.label,wireModeChoice,wireSection,compSection,referencePreview);
  const workshopChoices=el("fieldset","library-workshop-choice-group");
  const workshopLegend=el("legend","","Part source");
  workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,quickSearch,addToWorkshopChoice,saveScope,workshopAddHelp);
@@ -325,6 +329,27 @@ function open({onCreate,hideDefault=false}){
  const publishedRows=()=>Object.entries(sharedOverrides)
   .filter(([id,item])=>item?.created&&!workshopStandardRows().some(seed=>seed.id===id))
   .map(([id,item])=>({id,...item}));
+ const selectedReference=()=>{
+  const value=commonSelect.input.value;
+  const idx=value.indexOf(":");if(idx<0)return null;
+  const origin=value.slice(0,idx),itemId=value.slice(idx+1);
+  return allSearchable().find(item=>item.origin===origin&&item.id===itemId)||null;
+ };
+ const showReference=()=>{
+  const item=selectedReference();
+  referencePreview.classList.toggle("hide",!item||!workshopCheckbox.checked);
+  referenceRows.replaceChildren();
+  if(!item)return;
+  for(const [label,value] of [
+   ["Manufacturer part number",item.partNumber||item.model||""],
+   ["Manufacturer",item.manufacturer||""],
+   ["Description",item.subtitle||item.description||item.detail||item.name],
+   ["Vendor",item.supplier||"Not specified"]
+  ]){
+   const row=el("div","library-workshop-reference-row");
+   row.append(el("strong","",label),el("span","",value||"Not specified"));referenceRows.append(row);
+  }
+ };
  const allSearchable=()=>[
   ...commons.map(item=>({...item,origin:"saved"})),
   ...purchased.map(item=>({...item,origin:"purchased"})),
@@ -392,6 +417,7 @@ function open({onCreate,hideDefault=false}){
    p.origin==="purchased"?" · Recorded part":
    p.partNumber?" · "+p.partNumber:"")));
   if(filtered.some(p=>p.origin+":"+p.id===previous))commonSelect.input.value=previous;
+  showReference();
  };
  const selectWorkflow=value=>{
   wireWorkflow=value;
@@ -479,7 +505,7 @@ function open({onCreate,hideDefault=false}){
  addToWorkshopCheckbox.onchange=update;
  privateRadio.onchange=update;publicRadio.onchange=update;
  itemKind.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;noNumberRadio.onchange=update;
- category.input.onchange=()=>{powerType.input.value="all";wireModeCheckbox.checked=false;update()};wireModeCheckbox.onchange=update;wireType.input.onchange=update;powerType.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
+ category.input.onchange=()=>{powerType.input.value="all";wireModeCheckbox.checked=false;update()};wireModeCheckbox.onchange=update;wireType.input.onchange=update;powerType.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;commonSelect.input.onchange=showReference;
  form.addEventListener("submit",async e=>{
   e.preventDefault();
   if(!form.reportValidity())return;
@@ -508,11 +534,13 @@ function open({onCreate,hideDefault=false}){
     commons.find(item=>item.id===choice.slice(6));
    if(!p){status.textContent="Select a Workshop item.";return}
    payload=isStandard?{
-    name:p.name,quantity:count,category:commonGroup(p),isTool:commonGroup(p)==="tools",
+    name:p.name,quantity:count,category:commonGroup(p),manufacturer:p.manufacturer||"",
+    model:p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",
+    isTool:commonGroup(p)==="tools",
     specifications:[{name:"Workshop reference",value:p.id},{name:"Tool specification",value:String(p.detail||p.spec||"Workshop reference").slice(0,300)}]
    }:(isPublic||isMine)?{
     name:p.name,quantity:count,category:commonGroup(p),manufacturer:p.manufacturer||"",
-    model:p.model||"",isTool:commonGroup(p)==="tools",
+    model:p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",isTool:commonGroup(p)==="tools",
     specifications:[
      {name:isPublic?"Public Workshop reference":"My Workshop reference",value:p.id},
      ...(Array.isArray(p.specifications)?p.specifications:
@@ -520,11 +548,11 @@ function open({onCreate,hideDefault=false}){
     ].filter(spec=>spec.name&&spec.value).slice(0,40)
    }:isPurchased?{
     name:p.name,quantity:count,sharedPartRef:"purchased:"+p.id,manufacturer:p.manufacturer||"",
-    model:p.model||"",supplier:p.supplier||"",asin:p.asin||"",category:commonGroup(p),
+    model:p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",asin:p.asin||"",category:commonGroup(p),
     isTool:commonGroup(p)==="tools",specifications:Array.isArray(p.specifications)?p.specifications:[]
    }:{
     name:p.name,quantity:count,sharedPartRef:"common:"+p.id,manufacturer:p.manufacturer||"",model:p.partNumber||"",
-    category:commonGroup(p),isTool:commonGroup(p)==="tools",
+    description:p.subtitle||p.description||"",supplier:p.supplier||"",category:commonGroup(p),isTool:commonGroup(p)==="tools",
     specifications:[{name:"Workshop item ID",value:p.id},{name:"Workshop specifications",value:p.specifications||"Saved Workshop item"}]
    };
   }else{
@@ -539,7 +567,10 @@ function open({onCreate,hideDefault=false}){
    payload={name,quantity:count,category:"consumables",specifications:specs};
    payload.wireInfo={gauge:g,construction:str,insulation:insulation.input.value,crimp,mm,endA:endA.value(),endB:endB.value(),wireId:null};
   }
-  if(itemKind.input.value==="part")payload.projectDetails=getProjectDetails();
+  if(itemKind.input.value==="part"){
+   payload.projectDetails=getProjectDetails();
+   if(workshopCheckbox.checked&&selectedReference())payload.projectDetails.workshopReferenceId=selectedReference().id;
+  }
   payload.quantityUnit="pcs";
   // This client-only instruction is consumed by the project controller after
   // the BOM part is saved; it must never enter the components API record.
