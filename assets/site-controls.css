@@ -1991,3 +1991,100 @@
 .knowledge-topic-card .btn{align-self:flex-start;margin-top:auto}
 .knowledge-base-page #resource-calculators .resource-card{border-radius:14px}
 @media(max-width:650px){.knowledge-base-page{padding-top:30px}.knowledge-directory-toolbar{padding:14px}.knowledge-directory-toolbar label{flex:1 1 100%}}
+
+/* Shared McMaster-style category browsing across Projects, Knowledge and Workshop.
+   Deliberately a view-layer change; no record rewriting or new storage format. */
+.bs-catalog-layout{
+ display:grid;grid-template-columns:minmax(200px,242px) minmax(0,1fr);
+ column-gap:24px;align-items:start;margin:22px 0 0;
+}
+.bs-catalog-sidebar{
+ position:sticky;top:84px;max-height:calc(100vh - 100px);
+ overflow:auto;overscroll-behavior:contain;
+ padding:0 16px 18px 0;border-right:1px solid var(--color-border);
+}
+.bs-catalog-sidebar-heading{
+ margin:3px 0 12px;font-size:.9rem;line-height:1.4;font-weight:750;
+ letter-spacing:.005em;color:var(--color-text);
+}
+.bs-catalog-category-list{display:grid;gap:3px}
+.bs-catalog-category{
+ border:0;border-radius:7px;background:transparent;color:var(--color-text);
+ width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
+ padding:9px 10px;text-align:left;font-size:.88rem;line-height:1.35;
+ font-weight:520;cursor:pointer;
+}
+.bs-catalog-category:hover{background:var(--color-hover)}
+.bs-catalog-category.is-active{background:var(--color-selected);color:var(--color-text);font-weight:750}
+.bs-catalog-category:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px}
+.bs-catalog-category-count{
+ flex:none;color:var(--color-text-muted);font-size:.77rem;
+ font-variant-numeric:tabular-nums;
+}
+.bs-catalog-main{min-width:0}
+.bs-catalog-main .project-directory-controls,
+.bs-catalog-main .knowledge-directory-toolbar{
+ margin:0 0 18px;border-radius:12px;padding:14px 16px;
+}
+.bs-catalog-main #home .project-grid{margin-top:12px}
+#home .bs-catalog-layout .project-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
+#home .bs-catalog-layout .project-card{
+ border:1px solid var(--color-border);border-radius:11px;
+ box-shadow:none;transform:none;min-width:0;
+}
+#home .bs-catalog-layout .project-card:hover{
+ transform:none;border-color:var(--color-accent);
+ box-shadow:0 2px 12px color-mix(in srgb,var(--color-shadow) 10%,transparent);
+}
+#home .bs-catalog-layout .project-link{
+ display:flex;align-items:stretch;min-height:118px;
+}
+#home .bs-catalog-layout .project-art{
+ width:170px;flex:0 0 170px;aspect-ratio:auto;min-height:118px;
+ border-right:1px solid var(--color-border);
+}
+#home .bs-catalog-layout .project-art svg{height:100%;width:100%;object-fit:cover}
+#home .bs-catalog-layout .project-personal-art{
+ min-height:118px;font-size:3rem;background:var(--color-surface-muted);
+}
+#home .bs-catalog-layout .project-copy{
+ flex:1;min-width:0;padding:16px 18px;
+ display:flex;flex-direction:column;gap:6px;
+}
+#home .bs-catalog-layout .project-copy h2{margin:0;font-size:1.1rem}
+#home .bs-catalog-layout .project-copy p{margin:0;font-size:.86rem}
+#home .bs-catalog-layout .project-tags{margin-top:auto}
+#home .bs-catalog-layout .project-personal-card .project-link{height:auto}
+#home .bs-catalog-layout .project-card-actions{padding-top:8px;border-top:1px solid var(--color-border)}
+#learn .bs-catalog-main .knowledge-section-heading{border-bottom:1px solid var(--color-border);padding-bottom:9px}
+#learn .bs-catalog-main #tileList.grid.two{grid-template-columns:minmax(0,1fr);gap:10px}
+#learn .bs-catalog-main .knowledge-topic-card{
+ padding:14px 18px;border-radius:10px;gap:8px;
+}
+#learn .bs-catalog-main .knowledge-topic-card h3{font-size:1.04rem}
+#learn .bs-catalog-main .knowledge-topic-card .btn{padding:6px 12px;font-size:.81rem}
+#learn .bs-catalog-main .knowledge-topic-card .project-tags{margin-bottom:0}
+#learn .bs-catalog-main .resource-grid{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+#commonparts .bs-catalog-main .workshop-scope{margin:0 0 16px}
+#commonparts .bs-catalog-main .workshop-standard-list{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+#commonparts .bs-catalog-main .workshop-tree-branch{
+ border-color:var(--color-border);
+}
+#commonparts [data-workshop-branch][hidden],
+#commonparts .workshop-scope[hidden],
+#commonparts .workshop-recommendations[hidden],
+#commonparts .workshop-row[hidden]{display:none!important}
+@media(max-width:800px){
+ .bs-catalog-layout{display:block;margin-top:16px}
+ .bs-catalog-sidebar{position:static;max-height:none;overflow:visible;padding:0;border:0;margin-bottom:14px}
+ .bs-catalog-sidebar-heading{margin-bottom:8px}
+ .bs-catalog-category-list{display:flex;flex-wrap:wrap;gap:6px}
+ .bs-catalog-category{width:auto;min-height:36px;padding:6px 10px;border:1px solid var(--color-border)}
+ .bs-catalog-category-count{margin-left:5px}
+}
+@media(max-width:540px){
+ #home .bs-catalog-layout .project-link{display:block}
+ #home .bs-catalog-layout .project-art{width:100%;height:150px;min-height:0;border-right:0;border-bottom:1px solid var(--color-border)}
+ #home .bs-catalog-layout .project-copy{padding:14px 16px}
+ .bs-catalog-main .project-directory-controls,.bs-catalog-main .knowledge-directory-toolbar{padding:12px}
+}
