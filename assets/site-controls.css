@@ -2421,3 +2421,59 @@ body>.footer{margin-top:auto}
 .workshop-ai-source-list{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .workshop-ai-image-candidate{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 .workshop-ai-image-candidate img{display:block;width:auto;max-width:240px;max-height:190px;object-fit:contain;border:1px solid var(--color-border,#cbd5d1);border-radius:8px;background:#fff}
+
+/* Shared deletion confirmation: white centered in-page modal, not a browser alert. */
+dialog.bs-delete-confirm{
+ position:fixed;
+ inset:0;
+ margin:auto;
+ box-sizing:border-box;
+ width:min(440px,calc(100vw - 36px));
+ max-width:calc(100vw - 36px);
+ max-height:calc(100dvh - 40px);
+ padding:24px;
+ border:1px solid #d3dad6;
+ border-radius:14px;
+ background:#fff;
+ color:#273832;
+ box-shadow:0 22px 70px rgba(15,30,24,.25);
+ overflow:auto;
+ z-index:10000;
+}
+dialog.bs-delete-confirm::backdrop{background:rgba(17,28,24,.48)}
+dialog.bs-delete-confirm h2{
+ margin:0 0 12px;
+ font-size:1.18rem;
+ font-weight:700;
+ color:#263b34;
+}
+dialog.bs-delete-confirm p{
+ margin:0;
+ line-height:1.55;
+ font-size:.94rem;
+ color:#52635c;
+ overflow-wrap:anywhere;
+}
+dialog.bs-delete-confirm .bs-delete-confirm-actions{
+ display:flex;
+ gap:10px;
+ justify-content:flex-end;
+ margin-top:25px;
+}
+dialog.bs-delete-confirm .bs-delete-confirm-actions .btn{
+ min-width:94px;
+ min-height:39px;
+ display:inline-flex;
+ justify-content:center;
+ align-items:center;
+ border-radius:8px;
+}
+dialog.bs-delete-confirm .bs-delete-confirm-danger{
+ background:#a52a32;
+ border:1px solid #a52a32;
+ color:#fff;
+}
+dialog.bs-delete-confirm .bs-delete-confirm-danger:hover{background:#88212a;border-color:#88212a}
+dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
+ outline:3px solid #ecb6bc;outline-offset:2px;
+}
