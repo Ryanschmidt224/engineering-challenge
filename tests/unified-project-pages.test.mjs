@@ -25,7 +25,8 @@ test("One visible New project action and category/sort controls",()=>{
  assert.match(manager,/newButton\.hidden=false/);
  assert.match(manager,/newButton\.onclick=openCreate/);
  assert.match(manager,/if\(!user\)\{showAccount\(\)/);
- assert.match(manager,/const categorySelect=element\("select","field project-category-filter"\)/);
+ assert.match(manager,/window\.BSCatalogUI\?\.categories\(catalogSidebar/);
+ assert.match(manager,/window\.BSCatalogUI\?\.build\(root,catalogSidebar/);
  assert.match(manager,/const sortSelect=element\("select","field project-sort-filter"\)/);
  for(const value of ["name_asc","name_desc","newest","oldest"])
   assert.ok(manager.includes('"'+value+'"'),"Missing sort "+value);
