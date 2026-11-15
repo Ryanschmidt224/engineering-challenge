@@ -331,14 +331,24 @@
     const link=element("a","workshop-spec-source","Example specification");
     link.href=item.source;link.target="_blank";link.rel="noopener noreferrer";body.append(link);
    }
-   const searchTerm=amazonSearchTerms[item.id];
-   if(searchTerm){
-    const shop=element("a","workshop-amazon-search","Search Amazon");
-    shop.href="https://www.amazon.com/s?k="+encodeURIComponent(searchTerm);
-    shop.target="_blank";shop.rel="noopener noreferrer";
-    shop.title="Search Amazon for: "+searchTerm+". Verify product specifications and suitability before buying.";
-    body.append(shop);
+   const searchTerm=amazonSearchTerms[item.id]||item.name;
+   const sources=element("div","workshop-supplier-search");
+   const searchLabel=element("label","","Find at supplier");
+   const selector=element("select","field");
+   for(const [vendor,label] of [["digikey","DigiKey"],["mouser","Mouser"],["newark","Newark"],["amazon","Amazon"]]){
+    const option=element("option","",label);option.value=vendor;selector.append(option);
    }
+   const lookup=element("a","btn workshop-supplier-go","Search supplier");
+   lookup.target="_blank";lookup.rel="noopener noreferrer nofollow";
+   const update=()=>{
+    const url=window.BSPartSuppliers?.searchUrlFor(selector.value,searchTerm);
+    lookup.href=url||"#";lookup.setAttribute("aria-disabled",String(!url));
+    lookup.title="Search "+selector.selectedOptions[0]?.textContent+" for "+searchTerm+". Verify suitability and exact part specifications.";
+   };
+   selector.onchange=update;update();
+   searchLabel.append(selector);sources.append(searchLabel,lookup);
+   sources.append(element("p","muted workshop-supplier-disclaimer","Search results are not verified equivalents to the recommended specification."));
+   body.append(sources);
    if(workshopChoiceContext&&item.kind==="material"&&workshopAllowedChoices.includes(item.id)){
     const choose=element("button","btn primary workshop-use-choice","Use this for BOM item");
     choose.type="button";
