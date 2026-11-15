@@ -550,7 +550,84 @@
    };
    family.onchange=updateFamily;
    updateFamily();
+
    form.append(grid,classification);
+   // Workshop specifications: family templates are optional suggestions, never
+   // a fixed schema or a required checklist.
+   const specTemplates={
+    mosfet:[
+     ["drain_source_voltage","Drain-source voltage","V"],
+     ["continuous_drain_current","Continuous drain current","A"],
+     ["pulsed_drain_current","Pulsed drain current","A"],
+     ["gate_source_voltage","Gate-source voltage","V"],
+     ["gate_threshold_voltage","Gate threshold voltage","V"],
+     ["on_resistance","On-state resistance","Ω"],
+     ["power_dissipation","Power dissipation","W"],
+     ["operating_temperature","Operating temperature","°C"],
+     ["package","Package",""]
+    ],
+    resistor:[["resistance","Resistance","Ω"],["tolerance","Tolerance","%"],["rated_power","Power rating","W"],["temperature_coefficient","Temperature coefficient","ppm/°C"]],
+    capacitor:[["capacitance","Capacitance","F"],["rated_voltage","Rated voltage","V"],["tolerance","Tolerance","%"],["dielectric","Dielectric",""],["esr","ESR","Ω"]],
+    motor:[["rated_voltage","Rated voltage","V"],["rated_current","Rated current","A"],["torque","Torque","N·cm"],["rated_speed","Speed","rpm"],["step_angle","Step angle","°"]],
+    power:[["input_voltage","Input voltage","V"],["output_voltage","Output voltage","V"],["output_current","Output current","A"],["efficiency","Efficiency","%"]],
+    fastener:[["thread","Thread",""],["length","Length","mm"],["material","Material",""],["strength_grade","Strength grade",""],["finish","Finish",""]],
+    bearing:[["bore_diameter","Bore diameter","mm"],["outside_diameter","Outside diameter","mm"],["dynamic_load","Dynamic load rating","N"],["material","Material",""]],
+    electrical:[["rated_voltage","Voltage rating","V"],["rated_current","Current rating","A"],["rated_power","Power rating","W"],["operating_temperature","Operating temperature","°C"]],
+    general:[["material","Material",""],["dimensions","Dimensions",""],["weight","Weight","g"]]
+   };
+   const suggestedTemplate=()=>{
+    const description=[family.value,families().find(f=>f.id===family.value)?.label,
+     controls.typeName?.value,controls.name?.value,controls.subtitle?.value].filter(Boolean).join(" ").toLowerCase();
+    if(/mosfet|field.effect.transistor/.test(description))return specTemplates.mosfet;
+    if(/resistor/.test(description))return specTemplates.resistor;
+    if(/capacitor/.test(description))return specTemplates.capacitor;
+    if(/stepper|\bmotor\b|servo/.test(description))return specTemplates.motor;
+    if(/regulator|converter|power supply|buck/.test(description))return specTemplates.power;
+    if(/screw|bolt|fastener|nut\b/.test(description))return specTemplates.fastener;
+    if(/bearing|bushing/.test(description))return specTemplates.bearing;
+    return category.value==="electronics"?specTemplates.electrical:specTemplates.general;
+   };
+   const structuredSection=el("section",undefined,"workshop-structured-specs");
+   structuredSection.append(el("h3","Specifications"));
+   structuredSection.append(el("p","Use suggested fields or add your own. Empty specifications are ignored when saving.","muted"));
+   const specRows=el("div",undefined,"workshop-structured-spec-rows");
+   const storedSpecs=()=>[...specRows.children].map(row=>({
+    propertyId:row.dataset.propertyId||"",
+    label:row.querySelector('[data-spec="label"]')?.value.trim()||"",
+    value:row.querySelector('[data-spec="value"]')?.value.trim()||"",
+    unit:row.querySelector('[data-spec="unit"]')?.value.trim()||"",
+    conditions:row.querySelector('[data-spec="conditions"]')?.value.trim()||""
+   })).filter(row=>row.label&&row.value);
+   const addSpec=(spec={})=>{
+    if(specRows.children.length>=60)return;
+    const row=el("div",undefined,"workshop-structured-spec-row");
+    row.dataset.propertyId=spec.propertyId||"";
+    for(const [key,placeholder,max] of [
+     ["label","Property (e.g. Drain voltage)",100],
+     ["value","Value",220],["unit","Unit",32],["conditions","Conditions (optional)",300]
+    ]){
+     const field=el("input");field.type="text";field.className="field";field.placeholder=placeholder;
+     field.maxLength=max;field.value=spec[key]||"";field.dataset.spec=key;
+     if(key==="label")field.addEventListener("input",()=>{if(field.value!==(spec.label||""))row.dataset.propertyId=""});
+     row.append(field);
+    }
+    row.append(itemButton("Remove",()=>row.remove(),"btn"));
+    specRows.append(row);
+   };
+   const addSuggestedSpecs=()=>{
+    const current=new Set([...specRows.children].map(row=>row.dataset.propertyId||row.querySelector('[data-spec="label"]')?.value.trim().toLowerCase()));
+    for(const [propertyId,label,unit] of suggestedTemplate()){
+     if(current.has(propertyId)||current.has(label.toLowerCase()))continue;
+     if(specRows.children.length>=60)break;
+     addSpec({propertyId,label,unit});
+    }
+   };
+   const specActions=el("div",undefined,"workshop-structured-spec-actions");
+   specActions.append(itemButton("Suggest fields for this category",addSuggestedSpecs,"btn"),
+    itemButton("+ Add specification",()=>addSpec(),"btn"));
+   structuredSection.append(specActions,specRows);
+   for(const spec of item.specifications||[])addSpec(spec);
+   form.append(structuredSection);
    const photoTitle=el("h4","Photos");
    form.append(photoTitle);
    const photos=(item.photos||[]).map(p=>({...p}));
