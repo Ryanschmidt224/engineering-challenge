@@ -85,12 +85,12 @@
     const link=button(task.path===current.path?"Go to step":"Open location",()=>go(task),"btn tracker-link");
     row.append(check,body,link);
     if(editable()){
-     row.append(button("Edit",()=>{
-      const title=prompt("Task title",task.title);if(title===null||!title.trim())return;
-      const note=prompt("What to remember when you return",task.note);if(note===null)return;
+     row.append(button("Edit",async()=>{
+      const title=await window.BSDialogs.prompt("Enter a task title",task.title,{title:"Edit task",label:"Task title"});if(title===null||!title.trim())return;
+      const note=await window.BSDialogs.prompt("What to remember when you return",task.note,{title:"Edit task notes",label:"Notes",multiline:true});if(note===null)return;
       void update(project,s=>{const found=s.tasks.find(t=>t.id===task.id);if(found){found.title=title.trim().slice(0,200);found.note=note.slice(0,3000)}}).catch(error=>message(error.message));
      },"btn tracker-link"));
-     row.append(button("×",()=>{if(!confirm("Delete this task?"))return;void update(project,s=>{s.tasks=s.tasks.filter(t=>t.id!==task.id)}).catch(error=>message(error.message))},"btn tracker-remove"));
+     row.append(button("×",async()=>{if(!await window.BSDialogs.danger("Delete this task?",{title:"Delete task?"}))return;void update(project,s=>{s.tasks=s.tasks.filter(t=>t.id!==task.id)}).catch(error=>message(error.message))},"btn tracker-remove"));
     }
     list.append(row);
    }
