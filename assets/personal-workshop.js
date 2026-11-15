@@ -648,18 +648,8 @@
     add.type="button";add.title="Create a private inventory item based on this reference";
     add.onclick=()=>editPersonalReference(item);
     main.append(add);
-    const detail=el("div",undefined,"workshop-catalog-detail");detail.hidden=true;
-    const section=(label,value)=>{if(!value)return;const p=el("p");p.append(el("strong",label+" "),document.createTextNode(value));detail.append(p)};
-    section("Specification:",item.spec);
-    section("Typical use:",item.use);
-    section("Important:",item.caution);
-    section("Level:",friendlyTier(item));
-    if(item.source&&/^https:\/\//.test(item.source)){
-     const link=el("a","Manufacturer / reference source","workshop-catalog-link");
-     link.href=item.source;link.target="_blank";link.rel="noopener noreferrer";detail.append(link);
-    }
     name.onclick=()=>showItem(item.id);
-    row.append(summary,detail);list.append(row);
+    row.append(summary);list.append(row);
    }
    for(const item of personalOnly){
     const row=el("article",undefined,"workshop-catalog-entry workshop-personal-entry");
