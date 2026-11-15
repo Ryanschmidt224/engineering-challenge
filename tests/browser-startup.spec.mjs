@@ -917,6 +917,7 @@ test("New Part ends Workshop edits after identity and confirms public/private sa
  await modal.locator(".library-field",{hasText:"Manufacturer part number (MPN)"}).locator("input").fill("PSU-12V");
  await modal.locator(".library-field",{hasText:"Part name"}).locator("input").fill("Private supply");
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
+ await expect(modal).toHaveCount(0);
  payload=await page.evaluate(()=>window.__createdTestPart);
  expect(payload.addToWorkshop).toBeUndefined();
  expect(payload.workshopSavedMessage).toContain("My Workshop");
@@ -951,9 +952,9 @@ test("Failed Workshop publication remains in New Part dialog and does not create
  });
  await page.goto("/");
  await page.exposeFunction("recordBomCreate",()=>{createCalls++});
- await page.evaluate(()=>window.BSLibraryPartPicker.open({
-  onCreate:async()=>window.recordBomCreate()
- }));
+ await page.evaluate(()=>{
+  void window.BSLibraryPartPicker.open({onCreate:async()=>window.recordBomCreate()});
+ });
  const modal=page.locator(".library-part-dialog");
  await modal.locator(".library-workshop-add input").check();
  await modal.locator('input[name="workshop-destination"][value="public"]').check();
