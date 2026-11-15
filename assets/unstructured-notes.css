@@ -33,3 +33,7 @@
 .assembly-sidebar>.assembly-parts-management-link{order:2;flex:none;width:100%;margin:0;box-sizing:border-box;border-radius:10px}
 .assembly-sidebar>.feature-tree-frame{order:0}
 @media(max-width:680px){.bs-unstructured-notes{padding:14px 12px}.bs-unstructured-photo,.bs-unstructured-edit-photo{width:min(160px,100%)}}
+
+/* Project summary is a single neutral navigation button, not a button nested in a shaded card. */
+.assembly-sidebar>.assembly-summary-sidebar-card{background:transparent;border:0;box-shadow:none;padding:0;border-radius:0}
+.assembly-sidebar>.assembly-summary-sidebar-card .assembly-project-summary-entry{width:100%;margin:0}
