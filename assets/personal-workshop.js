@@ -681,6 +681,17 @@
      updateFamily();
      lookupResults.append(el("p",response.note||"Review these AI-generated details carefully.","muted"));
      const research=response.research||{};
+     if(research.specs?.length){
+      specRows.replaceChildren();
+      const template=suggestedTemplate();
+      for(const spec of research.specs){
+       const key=String(spec.name||"").trim().toLowerCase();
+       const match=template.find(([,label])=>label.toLowerCase()===key)||
+        template.find(([,label])=>label.toLowerCase().includes(key)||key.includes(label.toLowerCase()));
+       const id=match?.[0]||key.replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,80);
+       addSpec({propertyId:/^[a-z][a-z0-9_]*$/.test(id)?id:"",label:spec.name,value:spec.value,unit:spec.unit||"",conditions:spec.conditions||""});
+      }
+     }
      if(research.specs?.length||research.pins?.length||research.applications?.length){
       const review=el("section",undefined,"workshop-ai-engineering-review");
       review.append(el("h4","Engineering details — verify against datasheet"));
@@ -783,7 +794,7 @@
    actions.append(save,cancel);form.append(actions,status);
    form.addEventListener("submit",async event=>{
     event.preventDefault();
-    const details={photos};
+    const details={photos,specifications:storedSpecs()};
     for(const field of saveableFields)if(controls[field])details[field]=controls[field].value;
     details.kind=kind.value;details.category=category.value;
     if(family.value==="new-family"){
