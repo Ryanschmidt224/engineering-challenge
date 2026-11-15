@@ -316,7 +316,7 @@ function open({onCreate,hideDefault=false}){
  const referencePreview=el("section","library-workshop-reference-preview hide");
  referencePreview.append(el("h3","","Selected Workshop item"),
    el("p","muted library-workshop-readonly-note","Reference details are read-only here. Add project-specific details on the Part page afterward."));
- const referenceRows=el("div","library-workshop-reference-rows");
+ const referenceRows=el("div","library-workshop-reference-rows");referenceRows.hidden=true;
  referencePreview.append(referenceRows);
  chooser.append(category.label,wireModeChoice,wireSection,compSection,referencePreview);
  const workshopChoices=el("fieldset","library-workshop-choice-group");
@@ -344,8 +344,17 @@ function open({onCreate,hideDefault=false}){
  };
  const showReference=()=>{
   const item=selectedReference();
-  referencePreview.classList.toggle("hide",!item||!workshopCheckbox.checked);
+  const usingWorkshop=workshopCheckbox.checked;
+  referencePreview.classList.toggle("hide",!usingWorkshop);
   referenceRows.replaceChildren();
+  if(usingWorkshop){
+   manufacturerNumber.input.value=item?.partNumber||item?.model||"";
+   manufacturerName.input.value=item?.manufacturer||"";
+   workshopDescription.input.value=item?.subtitle||item?.description||item?.detail||item?.name||"";
+   shortTreeDescription.input.value=item?.featureTreeDescription||"";
+   const supplier=item?.supplier||"";
+   vendorField.input.value=[...vendorField.input.options].some(option=>option.value===supplier)?supplier:"Other";
+  }
   if(!item)return;
   for(const [label,value] of [
    ["Manufacturer part number",item.partNumber||item.model||""],
@@ -452,10 +461,11 @@ function open({onCreate,hideDefault=false}){
    if(adding)partClassification.input.value="purchased";
   const purchased=!lib&&isPart&&partClassification.input.value==="purchased";
   for(const label of [manufacturerNumber.label,manufacturerName.label,workshopDescription.label,shortTreeDescription.label,vendorField.label])
-   label.classList.toggle("hide",!purchased);
-   // Reference product fields remain immutable while using an existing Workshop item.
-   for(const input of [manufacturerNumber.input,manufacturerName.input,workshopDescription.input,shortTreeDescription.input,vendorField.input])
-    input.disabled=lib;
+   label.classList.toggle("hide",!purchased&&!lib);
+  // Workshop values are visible for reference, but only editable from Workshop itself.
+  for(const input of [manufacturerNumber.input,manufacturerName.input,workshopDescription.input,shortTreeDescription.input])
+   input.readOnly=lib;
+  vendorField.input.disabled=lib;
   projectDetailsPanel.classList.toggle("hide",!isPart||workshopMode);
   vendorLinks.classList.toggle("hide",!purchased||workshopMode);
   vendorInfo.classList.toggle("hide",!purchased||workshopMode);
