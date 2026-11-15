@@ -183,7 +183,7 @@ function setupAssemblyTrees(){
    void refreshProjectCover();
   }
   editProjectName.onclick=async()=>{
-   const value=prompt("Project name",title);
+   const value=await window.BSDialogs.prompt("Enter a new project name",title,{title:"Rename project",label:"Project name"});
    if(!value?.trim()||value.trim()===title)return;
    editProjectName.disabled=true;projectMetaStatus.textContent="Saving…";
    try{
@@ -256,7 +256,7 @@ function setupAssemblyTrees(){
    if(ok){if(isProjectSummary())await refreshProjectSummary();else await loadWorkspaceCover()}
   }
   async function deleteGalleryPhoto(photo,bar){
-   if(!photo||!canEdit()||!confirm("Delete this photo?"))return;
+   if(!photo||!canEdit()||!await window.BSDialogs.danger("Delete this photo?",{title:"Delete photo?"}))return;
    galleryStatus(bar,"Deleting photo…");
    try{
     const response=await fetch("/api/photos?id="+encodeURIComponent(photo.id),{method:"DELETE",credentials:"same-origin"});
@@ -588,7 +588,7 @@ function setupAssemblyTrees(){
    try{
     if(!window.BSArchiveCheck)throw Error("Archive checker not loaded");
     const verified=await window.BSArchiveCheck.inspect(file,project);
-    if(!confirm("Upload this verified archive ("+verified.objectCount+" records) as a SEPARATE recovery copy in Cloudflare? The active project will NOT be overwritten. No records will be deleted."))return;
+    if(!await window.BSDialogs.confirm("Upload this verified archive ("+verified.objectCount+" records) as a SEPARATE recovery copy in Cloudflare? The active project will NOT be overwritten. No records will be deleted."))return;
     archiveStatus.textContent="Creating isolated recovery copy…";
     const response=await fetch("/api/project/staging?project="+encodeURIComponent(project),{
      method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:await file.text()
@@ -1030,7 +1030,7 @@ function setupAssemblyTrees(){
   }
   async function deletePartPicture(){
    const partId=currentPartInfo?.id;
-   if(!partId||!canEdit()||!confirm("Delete this part picture? The BOM part and instructions remain."))return;
+   if(!partId||!canEdit()||!await window.BSDialogs.danger("Delete this part picture? The BOM part and instructions remain.",{title:"Delete part picture?"}))return;
    partPhotoDelete.disabled=true;partPhotoStatus.textContent="Deleting picture…";partPhotoActions.setStatus("Deleting photo…");
    try{
     const response=await fetch(partPhotoUrl(partId),{method:"DELETE",credentials:"same-origin"});
@@ -2282,7 +2282,7 @@ function setupAssemblyTrees(){
      const photos=(data.photos||[]).filter(p=>id==="project-summary"?(p.assembly==="project-summary"||!p.assembly):id?p.assembly===id:!p.assembly);
      const name=id?nodes.find(n=>n.id===id)?.name||title:title;
      gallery.replaceChildren(makeAssemblyPhotoStage(photos,name,()=>input.click(),async p=>{
-      if(!p||!confirm("Delete this photo?"))return;
+      if(!p||!await window.BSDialogs.danger("Delete this photo?",{title:"Delete photo?"}))return;
       try{
        const r=await fetch("/api/photos?id="+encodeURIComponent(p.id),{method:"DELETE",credentials:"same-origin"});
        if(!r.ok)throw Error("Delete failed (HTTP "+r.status+")");
@@ -2403,7 +2403,7 @@ function setupAssemblyTrees(){
    if(selected===null){status.textContent="Select a subassembly first.";return}
    const options=[{id:null,name:"Top-level project"},...nodes.filter(n=>!isPartNode(n)&&n.id!==selected&&!wouldCycle(selected,n.id))];
    const help=options.map((n,i)=>(i+1)+". "+n.name).join("\\n");
-   const answer=prompt("Move the selected subassembly into:\\n"+help);
+   const answer=await window.BSDialogs.prompt("Move the selected subassembly into:\\n"+help,"",{title:"Move subassembly",label:"Destination number"});
    if(answer===null)return;
    const choice=Number(answer)-1;
    if(!Number.isInteger(choice)||choice<0||choice>=options.length){status.textContent="Enter a number from the list.";return}
@@ -2446,7 +2446,7 @@ function setupAssemblyTrees(){
     root.querySelector(".assembly-rename").click();
     return;
    }
-   const value=prompt("Rename part",node.name);
+   const value=await window.BSDialogs.prompt("Enter a new name",node.name,{title:"Rename part",label:"Part name"});
    if(!value?.trim()||value.trim()===node.name)return;
    const response=await fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"});
    const data=await response.json();
@@ -2470,7 +2470,7 @@ function setupAssemblyTrees(){
     return;
    }
    const links=nodes.filter(item=>isPartNode(item)&&item.partId===node.partId);
-   if(!confirm("Delete \""+node.name+"\" from this project?\n\nThis removes the part from the feature tree and all assembly BOM references ("+links.length+"). Its stored details are moved to the recovery bin. This action cannot be undone on this page."))return;
+   if(!await window.BSDialogs.danger("Delete \""+node.name+"\" from this project?\n\nThis removes the part from the feature tree and all assembly BOM references ("+links.length+"). Its stored details are moved to the recovery bin. This action cannot be undone on this page.",{title:"Delete project part?"}))return;
    // Delete the underlying part through the existing recovery-bin API, not
    // by simply removing the tree node. Only remove links after API success.
    const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{
@@ -2762,8 +2762,8 @@ function setupAssemblyTrees(){
    assemblyForm.reset();manualAssemblyRow.hidden=true;manualAssemblyInput.required=false;assemblyError.textContent="";
    assemblyDialog.showModal();assemblyNameInput.focus();
   };
-  root.querySelector(".assembly-rename").onclick=async()=>{if(selected===null){status.textContent="Select a subassembly to rename.";return}const node=nodes.find(n=>n.id===selected),name=prompt("Rename subassembly",node.name);if(!name?.trim())return;try{await save(nodes.map(n=>n.id===selected?{...n,name:name.trim()}:n))}catch(e){status.textContent=e.message}};
-  root.querySelector(".assembly-remove").onclick=async()=>{if(selected===null){status.textContent="Select a subassembly to delete.";return}const node=nodes.find(n=>n.id===selected);if(!confirm("Delete "+node.name+" and its nested subassemblies? Existing BOM components will remain in the project but may become unassigned."))return;const removed=new Set([selected]);let changed=true;while(changed){changed=false;for(const n of nodes)if(removed.has(n.parentId)&&!removed.has(n.id)){removed.add(n.id);changed=true}}try{await save(nodes.filter(n=>!removed.has(n.id)));selected=null;render();notify()}catch(e){status.textContent=e.message}};
+  root.querySelector(".assembly-rename").onclick=async()=>{if(selected===null){status.textContent="Select a subassembly to rename.";return}const node=nodes.find(n=>n.id===selected),name=await window.BSDialogs.prompt("Enter a new name",node.name,{title:"Rename subassembly",label:"Name"});if(!name?.trim())return;try{await save(nodes.map(n=>n.id===selected?{...n,name:name.trim()}:n))}catch(e){status.textContent=e.message}};
+  root.querySelector(".assembly-remove").onclick=async()=>{if(selected===null){status.textContent="Select a subassembly to delete.";return}const node=nodes.find(n=>n.id===selected);if(!await window.BSDialogs.danger("Delete "+node.name+" and its nested subassemblies? Existing BOM components will remain in the project but may become unassigned.",{title:"Delete subassembly?"}))return;const removed=new Set([selected]);let changed=true;while(changed){changed=false;for(const n of nodes)if(removed.has(n.parentId)&&!removed.has(n.id)){removed.add(n.id);changed=true}}try{await save(nodes.filter(n=>!removed.has(n.id)));selected=null;render();notify()}catch(e){status.textContent=e.message}};
   load();
  })
 }
