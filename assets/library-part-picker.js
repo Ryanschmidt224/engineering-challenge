@@ -48,7 +48,7 @@ async function saveCreatedPartToWorkshop({part,destination,category,projectTitle
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw Error(data.error||"Public Workshop save failed");
   window.dispatchEvent(new Event("bsworkshopupdated"));
-  return " Also added to the public Workshop.";
+  return {id:data.id,destination:"public",message:"Added to the public Workshop."};
  }
  if(chosen!=="private")throw Error("Unknown Workshop destination");
  const response=await fetch("/api/personal-workshop",{
@@ -65,7 +65,7 @@ async function saveCreatedPartToWorkshop({part,destination,category,projectTitle
  const data=await response.json().catch(()=>({}));
  if(!response.ok)throw Error(data.error||"My Workshop save failed");
  window.dispatchEvent(new Event("bsworkshopupdated"));
- return " Also added to My Workshop (quantity not confirmed).";
+ return {id:data.items?.at(-1)?.id||null,destination:"private",message:"Added to My Workshop (quantity not confirmed)."};
 }
 function open({onCreate,hideDefault=false}){
  return new Promise(resolve=>{
@@ -300,6 +300,8 @@ function open({onCreate,hideDefault=false}){
  const commonSelect=field("Select part","select");
  compSection.append(powerType.label,commonSearch.label,commonSelect.label);
  const status=el("p","library-dialog-status");status.setAttribute("role","status");
+ const workshopFinishNote=el("p","muted library-workshop-finish-note",
+  "Add further details, notes, and changes on the part page after saving.");
  const footer=el("div","library-dialog-actions"),save=el("button","btn primary","Create part"),cancel=el("button","btn","Cancel");
  save.type="submit";cancel.type="button";footer.append(cancel,save);
  const wireModeChoice=el("label","library-wire-mode");
@@ -319,9 +321,10 @@ function open({onCreate,hideDefault=false}){
  form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,
   manufacturerNumber.label,manufacturerName.label,workshopDescription.label,vendorField.label,
   numberChoice,partNumberField.label,customName.label,vendorLinks,vendorInfo,
-  chooser,qty.label,hintUnits,toolField,visibility,projectDetailsPanel,status,footer);
+  chooser,qty.label,hintUnits,toolField,visibility,projectDetailsPanel,status,workshopFinishNote,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],purchased=[],sharedOverrides={},personalItems=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
+ let savedWorkshopItem=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
  cancel.onclick=()=>close(null);dialog.addEventListener("cancel",e=>{e.preventDefault();close(null)});
  const workshopStandardRows=()=>[...(window.BSResources?.catalog?.tools||[]),...(window.BSResources?.catalog?.parts||[])]
@@ -436,17 +439,22 @@ function open({onCreate,hideDefault=false}){
   if(!isPart){newPartRadio.checked=true;addToWorkshopCheckbox.checked=false}
   const lib=isPart&&workshopCheckbox.checked;
   const adding=isPart&&!lib&&addToWorkshopCheckbox.checked;
+  const workshopMode=lib||adding;
+  // The Workshop selection/creation flow is deliberately short. More
+  // project-specific choices can be made in the full Part Editor after creation.
+  workshopFinishNote.classList.toggle("hide",!workshopMode);
   if(adding)partClassification.input.value="purchased";
   const purchased=!lib&&isPart&&partClassification.input.value==="purchased";
   for(const label of [manufacturerNumber.label,manufacturerName.label,workshopDescription.label,vendorField.label])
    label.classList.toggle("hide",!purchased);
-  projectDetailsPanel.classList.toggle("hide",!isPart);
-  vendorLinks.classList.toggle("hide",!purchased);
-  vendorInfo.classList.toggle("hide",!purchased);
+  projectDetailsPanel.classList.toggle("hide",!isPart||workshopMode);
+  vendorLinks.classList.toggle("hide",!purchased||workshopMode);
+  vendorInfo.classList.toggle("hide",!purchased||workshopMode);
   noNumberRow.classList.toggle("hide",!purchased);
   if(!purchased&&noNumberRadio.checked)autoNumberCheckbox.checked=true;
   manufacturerNumber.input.required=adding;
   if(adding&&autoNumberCheckbox.checked)noNumberRadio.checked=true;
+  if(savedWorkshopItem&&!adding)savedWorkshopItem=null;
   workshopChoices.classList.toggle("hide",!isPart);
   addToWorkshopChoice.classList.toggle("hide",!isPart||lib);
   saveScope.classList.toggle("hide",!adding);
@@ -460,13 +468,16 @@ function open({onCreate,hideDefault=false}){
 
   const documentMode=!lib&&itemKind.input.value!=="part";
   partClassification.label.classList.toggle("hide",lib||documentMode||adding);
-  qty.label.classList.toggle("hide",documentMode);
-  hintUnits.classList.toggle("hide",documentMode);
-  toolField.classList.toggle("hide",documentMode||lib);
+  qty.label.classList.toggle("hide",documentMode||workshopMode);
+  hintUnits.classList.toggle("hide",documentMode||workshopMode);
+  toolField.classList.toggle("hide",documentMode||workshopMode);
   if(documentMode){toolInput.checked=false;if(itemKind.input.value==="document")qty.input.value="1"}
-  numberChoice.classList.toggle("hide",lib);
-  partNumberField.label.classList.toggle("hide",lib||autoNumberCheckbox.checked);
-  partNumberField.input.required=!lib&&manualNumberCheckbox.checked;
+  numberChoice.classList.toggle("hide",workshopMode);
+  partNumberField.label.classList.toggle("hide",workshopMode||autoNumberCheckbox.checked);
+  partNumberField.input.required=!workshopMode&&manualNumberCheckbox.checked;
+  visibility.classList.toggle("hide",workshopMode);
+  // Hidden numeric and project-only fields should not participate in native
+  // form validation when the user is only selecting/creating a Workshop part.
   quickSearch.classList.toggle("hide",!lib);
   chooser.classList.toggle("hide",!lib);
   wireSection.classList.toggle("hide",!lib||!wire);
@@ -583,8 +594,35 @@ function open({onCreate,hideDefault=false}){
   }
   payload.hideFromFeatureTree=visibilityInput.checked;
   payload.isTool=payload.itemType==="document"?false:workshopCheckbox.checked?["tools","safety"].includes(category.input.value):toolInput.checked;
-  save.disabled=true;status.textContent="Creating part…";
-  try{await onCreate(payload);close({created:true})}catch(err){status.textContent=err.message||String(err);save.disabled=false}
+  save.disabled=true;
+  try{
+   if(payload.addToWorkshop){
+    // Save the Workshop item *before* creating its project BOM occurrence.
+    // Otherwise the dialog closes first and a failed Workshop write is hidden
+    // on the page behind it. Reuse a successful publication if BOM creation
+    // fails, so retrying cannot publish duplicate Workshop entries.
+    if(!savedWorkshopItem){
+     const target=payload.addToWorkshop;
+     status.textContent="Saving to "+(target==="public"?"Public Workshop":"My Workshop")+"…";
+     savedWorkshopItem=await saveCreatedPartToWorkshop({
+      part:payload,destination:target,category:payload.workshopCategory
+     });
+     if(!savedWorkshopItem?.id)throw Error("Workshop did not confirm the new item. Please check your Workshop before retrying.");
+    }
+    payload.projectDetails={
+     ...(payload.projectDetails||{}),workshopReferenceId:savedWorkshopItem.id
+    };
+    delete payload.addToWorkshop;
+    delete payload.workshopCategory;
+   }
+   status.textContent="Creating project part…";
+   await onCreate(payload);
+   close({created:true,workshop:savedWorkshopItem});
+  }catch(err){
+   status.textContent=(err.message||String(err))+
+    (savedWorkshopItem?" The item is already in the Workshop; you can retry creating the project part.":"");
+   save.disabled=false;
+  }
  });
  update();refreshCommon();updateCalc();dialog.showModal();
  Promise.allSettled([
