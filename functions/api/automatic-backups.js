@@ -1,4 +1,5 @@
-import {PROJECTS,exportProject,inspectArchive} from "./project-archive.js";
+import {isArchivedProjectId,exportProject,inspectArchive} from "./project-archive.js";
+import {readCatalog} from "./projects.js";
 import {isAdmin} from "./auth.js";
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const backupPrefix="automatic-backups/";
@@ -15,7 +16,8 @@ const isProjectRecord=(project,key)=>
 export async function backupAllProjects(env,date=new Date()){
  if(!env.PHOTOS)throw Error("R2 backup bucket unavailable");
  const summary=[];
- for(const project of PROJECTS){
+ const {projects}=await readCatalog(env);
+ for(const {id:project} of projects){
   try{
    const archive=await exportProject(env.PHOTOS,project);
    if(!archive.objects.some(entry=>isProjectRecord(project,entry.key))){
@@ -47,7 +49,9 @@ export async function backupAllProjects(env,date=new Date()){
 /* Operator-only listing and downloads. No delete or restore endpoint. */
 export async function handleAutomaticBackups(request,env){
  const u=new URL(request.url),project=u.searchParams.get("project"),id=u.searchParams.get("id");
- if(!PROJECTS.includes(project))return json({error:"Unknown project"},400);
+ if(!isArchivedProjectId(project))return json({error:"Unknown project"},400);
+ const {projects}=await readCatalog(env);
+ if(!projects.some(item=>item.id===project))return json({error:"Project not found"},404);
  if(!await isAdmin(request,env))return json({error:"Administrator access required"},401);
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  if(request.method!=="GET")return json({error:"Method not allowed"},405);
