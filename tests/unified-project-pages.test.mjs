@@ -19,19 +19,19 @@ test("A single Projects page and common workspace controller are used for every 
  assert.doesNotMatch(manager,/miniGrid|newMiniButton|groupGrid/);
 });
 
-test("One visible New project action and category/sort controls",()=>{
+test("One visible New project action with tag filters and sorting",()=>{
  const manager=read("assets/project-manager.js");
  assert.match(manager,/const newButton=element\("button","btn primary","\+ New project"\)/);
  assert.match(manager,/newButton\.hidden=false/);
  assert.match(manager,/newButton\.onclick=openCreate/);
  assert.match(manager,/if\(!user\)\{showAccount\(\)/);
- assert.match(manager,/window\.BSCatalogUI\?\.categories\(catalogSidebar/);
- assert.match(manager,/window\.BSCatalogUI\?\.build\(root,catalogSidebar/);
+ assert.match(manager,/bs-project-tag-filter/);
+ assert.doesNotMatch(manager,/categoryNavigation/);
  assert.match(manager,/const sortSelect=element\("select","field project-sort-filter"\)/);
  for(const value of ["name_asc","name_desc","newest","oldest"])
   assert.ok(manager.includes('"'+value+'"'),"Missing sort "+value);
- assert.match(manager,/category:form\.elements\.category\.value\.trim\(\)/);
- assert.match(manager,/category:groupInput\.value\.trim\(\)/);
+ assert.match(manager,/tags:createTagPicker\.getTags\(\)/);
+ assert.match(manager,/tags:settingsTags\.getTags\(\)/);
 });
 
 test("Old mini examples are retired; new category metadata is independent of project type",()=>{
