@@ -612,6 +612,7 @@ function open({onCreate,hideDefault=false}){
     payload.projectDetails={
      ...(payload.projectDetails||{}),workshopReferenceId:savedWorkshopItem.id
     };
+    payload.workshopSavedMessage=savedWorkshopItem.message;
     delete payload.addToWorkshop;
     delete payload.workshopCategory;
    }
