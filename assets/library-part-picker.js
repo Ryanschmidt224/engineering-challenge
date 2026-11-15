@@ -41,6 +41,7 @@ async function saveCreatedPartToWorkshop({part,destination,category,projectTitle
     manufacturer:part.manufacturer||"",model:part.model||"",supplier:part.supplier||"",
     partNumber:part.model||"", // Manufacturer MPN, never the project BOM number.
     subtitle:part.description||"Community-contributed purchased part",
+     featureTreeDescription:part.featureTreeDescription||"",
     spec:specs.join("\n").slice(0,5000),
     photos:[]
    }})
@@ -57,7 +58,7 @@ async function saveCreatedPartToWorkshop({part,destination,category,projectTitle
   body:JSON.stringify({
    name:part.name,kind:"component",category:part.category||"Purchased parts",
    manufacturer:part.manufacturer||"",model:part.model||"",supplier:part.supplier||"",
-   partNumber:part.model||"",description:part.description||"",quantity:0,unit:"pcs",stockStatus:"committed",
+   partNumber:part.model||"",description:part.description||"",featureTreeDescription:part.featureTreeDescription||"",quantity:0,unit:"pcs",stockStatus:"committed",
    notes:"",
    specifications:part.specifications||[]
   })
@@ -129,6 +130,8 @@ function open({onCreate,hideDefault=false}){
  manufacturerName.input.placeholder="e.g. onsemi (select actual manufacturer)";
  manufacturerName.input.maxLength=160;
  const workshopDescription=field("Description","textarea");
+ const shortTreeDescription=field("Feature tree description (20 characters max)");
+ shortTreeDescription.input.maxLength=20;shortTreeDescription.input.placeholder="e.g. Motor switch";
  workshopDescription.input.rows=2;workshopDescription.input.maxLength=2000;
  workshopDescription.input.placeholder="Short description of the product itself";
  const vendorField=field("Suggested vendor","select");
@@ -320,7 +323,7 @@ function open({onCreate,hideDefault=false}){
  const workshopLegend=el("legend","","Part source");
  workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,quickSearch,addToWorkshopChoice,saveScope,workshopAddHelp);
  form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,
-  manufacturerNumber.label,manufacturerName.label,workshopDescription.label,vendorField.label,
+  manufacturerNumber.label,manufacturerName.label,workshopDescription.label,shortTreeDescription.label,vendorField.label,
   numberChoice,partNumberField.label,customName.label,vendorLinks,vendorInfo,
   chooser,qty.label,hintUnits,toolField,visibility,projectDetailsPanel,status,workshopFinishNote,footer);
  dialog.append(form);document.body.append(dialog);
@@ -348,6 +351,7 @@ function open({onCreate,hideDefault=false}){
    ["Manufacturer part number",item.partNumber||item.model||""],
    ["Manufacturer",item.manufacturer||""],
    ["Description",item.subtitle||item.description||item.detail||item.name],
+    ["Feature tree description",item.featureTreeDescription||""],
    ["Vendor",item.supplier||"Not specified"]
   ]){
    const row=el("div","library-workshop-reference-row");
@@ -447,10 +451,10 @@ function open({onCreate,hideDefault=false}){
   save.textContent=lib?"Add to project":"Create part";
    if(adding)partClassification.input.value="purchased";
   const purchased=!lib&&isPart&&partClassification.input.value==="purchased";
-  for(const label of [manufacturerNumber.label,manufacturerName.label,workshopDescription.label,vendorField.label])
+  for(const label of [manufacturerNumber.label,manufacturerName.label,workshopDescription.label,shortTreeDescription.label,vendorField.label])
    label.classList.toggle("hide",!purchased);
    // Reference product fields remain immutable while using an existing Workshop item.
-   for(const input of [manufacturerNumber.input,manufacturerName.input,workshopDescription.input,vendorField.input])
+   for(const input of [manufacturerNumber.input,manufacturerName.input,workshopDescription.input,shortTreeDescription.input,vendorField.input])
     input.disabled=lib;
   projectDetailsPanel.classList.toggle("hide",!isPart||workshopMode);
   vendorLinks.classList.toggle("hide",!purchased||workshopMode);
@@ -539,6 +543,7 @@ function open({onCreate,hideDefault=false}){
     payload.manufacturer=manufacturerName.input.value.trim();
     payload.model=manufacturerNumber.input.value.trim(); // Manufacturer MPN; never the project's issued part number.
     payload.description=workshopDescription.input.value.trim();
+     payload.featureTreeDescription=shortTreeDescription.input.value.trim();
     payload.supplier=vendorField.input.value==="Other"?"":vendorField.input.value;
    }
   }else if(!(category.input.value==="consumables"&&wireModeCheckbox.checked)){
@@ -587,6 +592,7 @@ function open({onCreate,hideDefault=false}){
   }
   if(itemKind.input.value==="part"){
    payload.projectDetails=getProjectDetails();
+   if(workshopCheckbox.checked&&selectedReference())payload.projectDetails.workshopTreeDescription=String(selectedReference().featureTreeDescription||"").slice(0,20);
    if(workshopCheckbox.checked&&selectedReference())payload.projectDetails.workshopReferenceId=selectedReference().id;
   }
   payload.quantityUnit="pcs";
