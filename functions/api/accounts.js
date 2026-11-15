@@ -31,7 +31,7 @@ async function createSession(user,env){
 }
 async function passwordHash(password,salt){
  const imported=await crypto.subtle.importKey("raw",encoder.encode(password),"PBKDF2",false,["deriveBits"]);
- const derived=await crypto.subtle.deriveBits({name:"PBKDF2",salt:unb64(salt),iterations:220000,hash:"SHA-256"},imported,256);
+ const derived=await crypto.subtle.deriveBits({name:"PBKDF2",salt:unb64(salt),iterations:100000,hash:"SHA-256"},imported,256);
  return b64(new Uint8Array(derived));
 }
 function equal(a,b){if(a.length!==b.length)return false;let different=0;for(let i=0;i<a.length;i++)different|=a.charCodeAt(i)^b.charCodeAt(i);return different===0}
