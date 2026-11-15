@@ -2377,3 +2377,8 @@ body>.footer{margin-top:auto}
  #home .bs-catalog-sidebar{position:static;max-height:none;margin-bottom:15px}
  #home .bs-project-tag-options{max-height:230px;overflow-y:auto}
 }
+
+/* Each project is one complete row, even on wide screens. */
+#home .bs-catalog-main>.project-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-auto-flow:row;gap:12px;width:100%}
+#home .bs-catalog-main>.project-grid>.project-card{grid-column:1/-1;width:100%;max-width:none;min-width:0}
+#home .bs-catalog-main>.project-grid>.project-card[hidden]{display:none!important}
