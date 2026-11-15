@@ -106,3 +106,61 @@ test("shared Workshop edits reject unsafe ordering links and invalid image refer
  },session),env}));
  assert.equal(invalid.status,400);
 });
+
+test("administrator can create, retrieve and edit shared Workshop products without mutating personal inventory",async()=>{
+ const env={PHOTOS:new TestBucket(),admin_password:"test-admin-secret"};
+ const session=await register(env,"catalogadmin@example.test");
+ let response=await data(await workshopReference({request:request("/api/workshop-reference","POST",{
+  details:{name:"Bench supply model 123",kind:"equipment",category:"electronics",
+   familyId:"power-supplies",familyName:"Power Supplies & Converters",
+   typeName:"Bench DC Power Supplies",manufacturer:"Example Manufacturing",model:"123",
+   spec:"0–30 V adjustable output",supplierUrl:"https://example.com/item",photos:[]}
+ },session),env}));
+ assert.equal(response.status,403);
+ assert.equal((await handleAccounts(request("/api/accounts","POST",{
+  action:"claim-admin",adminPassword:env.admin_password
+ },session),env)).status,200);
+ response=await data(await workshopReference({request:request("/api/workshop-reference","POST",{
+  details:{name:"Bench supply model 123",kind:"equipment",category:"electronics",
+   familyId:"power-supplies",familyName:"Power Supplies & Converters",
+   typeName:"Bench DC Power Supplies",manufacturer:"Example Manufacturing",model:"123",
+   spec:"0–30 V adjustable output",supplierUrl:"https://example.com/item",photos:[]}
+ },session),env}));
+ assert.equal(response.status,201);
+ assert.match(response.body.id,/^workshop:custom-[a-f0-9-]{36}$/);
+ assert.equal(response.body.details.created,true);
+ const id=response.body.id;
+ const read=await data(await workshopReference({request:request("/api/workshop-reference"),env}));
+ assert.equal(read.body.items[id].familyId,"power-supplies");
+ assert.equal(read.body.items[id].name,"Bench supply model 123");
+ const saved=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{
+  id,details:{...read.body.items[id],notes:"Revised instructions",photos:[]}
+ },session),env}));
+ assert.equal(saved.status,200);
+ assert.equal(saved.body.details.created,true);
+ assert.equal(saved.body.details.notes,"Revised instructions");
+ const second=await data(await workshopReference({request:request("/api/workshop-reference","POST",{
+  details:{name:"Second supply",kind:"equipment",category:"electronics",familyId:"power-supplies"}
+ },session),env}));
+ assert.equal(second.status,201);
+ assert.notEqual(second.body.id,id);
+});
+
+test("shared Workshop creation rejects incomplete categories, unsafe ordering URLs and missing names",async()=>{
+ const env={PHOTOS:new TestBucket(),admin_password:"test-admin-secret"};
+ const session=await register(env,"catalogvalidator@example.test");
+ assert.equal((await handleAccounts(request("/api/accounts","POST",{
+  action:"claim-admin",adminPassword:env.admin_password
+ },session),env)).status,200);
+ for(const details of [
+  {name:"",category:"tools",familyId:"measurement"},
+  {name:"Tool",category:"unknown",familyId:"measurement"},
+  {name:"Tool",category:"tools",familyId:"bad family"},
+  {name:"Tool",category:"tools",familyId:"measurement",supplierUrl:"javascript:alert(1)"}
+ ]){
+  const response=await data(await workshopReference({request:request("/api/workshop-reference","POST",{details},session),env}));
+  assert.equal(response.status,400);
+ }
+ const read=await data(await workshopReference({request:request("/api/workshop-reference"),env}));
+ assert.deepEqual(read.body.items,{});
+});
