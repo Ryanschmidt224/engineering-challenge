@@ -1877,6 +1877,7 @@ function setupAssemblyTrees(){
      partTools.set(result.component.id,result.component.isTool===true);
      partWorkshopItems.set(result.component.id,!!result.component.sharedPartRef||!!result.component.workshopChoice||!!result.component.projectDetails?.workshopReferenceId||result.component.isTool===true);
      partDocuments.set(result.component.id,result.component.itemType==="document");
+      partTreeLabels.set(result.component.id,{mpn:result.component.model||"",description:result.component.description||"",details:result.component.projectDetails||{}});
      if(result.component.partNumber)partNumbers.set(result.component.id,result.component.partNumber);
      if(!nodes.some(n=>isPartNode(n)&&n.partId===result.component.id))nodes.push({id:"part-"+result.component.id,kind:"part",partId:result.component.id,name:result.component.name,parentId:component.assemblyId??null});
      render();
@@ -1928,6 +1929,7 @@ function setupAssemblyTrees(){
      partTools.set(newPart.id,newPart.isTool===true);
      partWorkshopItems.set(newPart.id,!!newPart.sharedPartRef||!!newPart.workshopChoice||!!newPart.projectDetails?.workshopReferenceId||newPart.isTool===true);
      partDocuments.set(newPart.id,newPart.itemType==="document");
+      partTreeLabels.set(newPart.id,{mpn:newPart.model||"",description:newPart.description||"",details:newPart.projectDetails||{}});
      if(newPart.partNumber)partNumbers.set(newPart.id,newPart.partNumber);
      nodes.push({id:"part-"+newPart.id,kind:"part",partId:newPart.id,name:newPart.name,parentId:targetAssembly});render();
      // A cutting list needs an integer wire count; do not invent a count for unspecified quantities.
@@ -2642,6 +2644,7 @@ function setupAssemblyTrees(){
      partTools.set(newPart.id,newPart.isTool===true);
      partWorkshopItems.set(newPart.id,!!newPart.sharedPartRef||!!newPart.workshopChoice||!!newPart.projectDetails?.workshopReferenceId||newPart.isTool===true);
      partDocuments.set(newPart.id,newPart.itemType==="document");
+      partTreeLabels.set(newPart.id,{mpn:newPart.model||"",description:newPart.description||"",details:newPart.projectDetails||{}});
      if(newPart.partNumber)partNumbers.set(newPart.id,newPart.partNumber);
      const next=[...nodes,{id:crypto.randomUUID(),kind:"part",partId:newPart.id,name:newPart.name,parentId:selected}];
      await save(next);expanded.add(selected);
