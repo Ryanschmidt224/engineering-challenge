@@ -629,8 +629,8 @@
     return category.value==="electronics"?specTemplates.electrical:specTemplates.general;
    };
    const structuredSection=el("section",undefined,"workshop-structured-specs");
-   structuredSection.append(el("h3","Specifications"));
-   structuredSection.append(el("p","Use suggested fields or add your own. Empty specifications are ignored when saving.","muted"));
+   structuredSection.append(el("h3","Specifications for this product"));
+   structuredSection.append(el("p","Common specifications appear automatically based on product type. Enter the values you know; empty fields are not saved.","muted"));
    const specRows=el("div",undefined,"workshop-structured-spec-rows");
    const storedSpecs=()=>[...specRows.children].map(row=>({
     propertyId:row.dataset.propertyId||"",
@@ -656,7 +656,9 @@
     specRows.append(row);
    };
    const addSuggestedSpecs=()=>{
-    const current=new Set([...specRows.children].map(row=>row.dataset.propertyId||row.querySelector('[data-spec="label"]')?.value.trim().toLowerCase()));
+    const current=new Set([...specRows.children].flatMap(row=>[
+     row.dataset.propertyId,row.querySelector('[data-spec="label"]')?.value.trim().toLowerCase()
+    ].filter(Boolean)));
     for(const [propertyId,label,unit] of suggestedTemplate()){
      if(current.has(propertyId)||current.has(label.toLowerCase()))continue;
      if(specRows.children.length>=60)break;
@@ -668,6 +670,19 @@
     itemButton("+ Add specification",()=>addSpec(),"btn"));
    structuredSection.append(specActions,specRows);
    for(const spec of item.specifications||[])addSpec(spec);
+   // Existing saved specifications take precedence over suggested empty fields.
+   // When reclassifying, only discard unsaved blank template rows.
+   const refreshSuggestions=()=>{
+    for(const row of [...specRows.children]){
+     if(row.dataset.propertyId&&row.querySelector('[data-spec="value"]')?.value.trim()==="")row.remove();
+    }
+    addSuggestedSpecs();
+   };
+   category.addEventListener("change",refreshSuggestions);
+   family.addEventListener("change",refreshSuggestions);
+   familyName.addEventListener("input",refreshSuggestions);
+   controls.typeName.addEventListener("change",refreshSuggestions);
+   refreshSuggestions();
    form.append(structuredSection);
    const photoTitle=el("h4","Photos");
    form.append(photoTitle);
@@ -720,17 +735,24 @@
      if(familyMatch)family.value=familyMatch.id;
      else if(draft.familyName){family.value="new-family";familyName.value=draft.familyName}
      updateFamily();
+     refreshSuggestions();
      lookupResults.append(el("p",response.note||"Review these AI-generated details carefully.","muted"));
      const research=response.research||{};
      if(research.specs?.length){
-      specRows.replaceChildren();
+      // Retain existing user-entered specifications instead of wiping them.
       const template=suggestedTemplate();
       for(const spec of research.specs){
        const key=String(spec.name||"").trim().toLowerCase();
        const match=template.find(([,label])=>label.toLowerCase()===key)||
         template.find(([,label])=>label.toLowerCase().includes(key)||key.includes(label.toLowerCase()));
        const id=match?.[0]||key.replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,80);
-       addSpec({propertyId:/^[a-z][a-z0-9_]*$/.test(id)?id:"",label:spec.name,value:spec.value,unit:spec.unit||"",conditions:spec.conditions||""});
+       const existing=[...specRows.children].find(row=>row.dataset.propertyId===id||
+        row.querySelector('[data-spec="label"]')?.value.trim().toLowerCase()===key);
+       if(existing){
+        existing.querySelector('[data-spec="value"]').value=spec.value||"";
+        existing.querySelector('[data-spec="unit"]').value=spec.unit||"";
+        existing.querySelector('[data-spec="conditions"]').value=spec.conditions||"";
+       }else addSpec({propertyId:/^[a-z][a-z0-9_]*$/.test(id)?id:"",label:spec.name,value:spec.value,unit:spec.unit||"",conditions:spec.conditions||""});
       }
      }
      if(research.specs?.length||research.pins?.length||research.applications?.length){
