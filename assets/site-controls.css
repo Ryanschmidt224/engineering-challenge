@@ -1569,7 +1569,8 @@
  justify-content:flex-start;
  gap:14px;
 }
-.bom-part-workspace .part-details-view-heading .part-details-edit{
+.bom-part-workspace .part-details-view-heading .part-details-edit,
+.bom-part-workspace .part-details-view-heading .part-details-edit-workshop{
  margin-left:6px;
  flex:0 0 auto;
  padding:6px 13px;
@@ -1578,7 +1579,9 @@
  font-weight:650;
 }
 .bom-part-workspace .part-details-view-heading .part-details-edit[hidden],
-.bom-part-workspace .part-details-collapse:not([open])>.part-details-view-heading .part-details-edit{
+.bom-part-workspace .part-details-view-heading .part-details-edit-workshop[hidden],
+.bom-part-workspace .part-details-collapse:not([open])>.part-details-view-heading .part-details-edit,
+.bom-part-workspace .part-details-collapse:not([open])>.part-details-view-heading .part-details-edit-workshop{
  display:none!important;
 }
 .bom-part-workspace .part-details-view-heading .part-details-toggle-label{
