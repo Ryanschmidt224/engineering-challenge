@@ -24,17 +24,18 @@ function setupAssemblyTrees(){
   if(project==="linear"||project==="robot")view.classList.add("personal-project-view");
   const canEdit=()=>window.BSProjectManager?.isOwner?.(project)===true || (["launcher","linear","robot"].includes(project)&&adminAuthenticated);
   let title=view.querySelector(".assembly-main h1")?.textContent||"Project";let nodes=[],selected=null,expanded=new Set([null]);
-  let showWorkshopItems=true,showTreeDocuments=true,showTreeDescriptions=true,showBomDocuments=true;
+  let showWorkshopItems=true,showTreeDocuments=true,showTreeDescriptions=true,showHiddenParts=false,showBomDocuments=true;
   const workshopReferences=new Map();const partDocuments=new Map(),partVisibility=new Map(),partTools=new Map(),partWorkshopItems=new Map(),partNumbers=new Map(),partProgress=new Map(),partAttention=new Map(),partQuantities=new Map(),partTreeLabels=new Map();
   const isHiddenPart=node=>isPartNode(node)&&partVisibility.get(node.partId)===true;
   const isToolNode=node=>isPartNode(node)&&partTools.get(node.partId)===true;
   const isDocumentNode=node=>isPartNode(node)&&partDocuments.get(node.partId)===true;
   const includeTreeNode=node=>{
    if(!isPartNode(node))return true;
-   // Existing per-part visibility flags stay intact; these are display-only filters.
-   if(isDocumentNode(node))return showTreeDocuments;
-   if(partWorkshopItems.get(node.partId)===true)return showWorkshopItems;
-   return !isHiddenPart(node);
+   // Persisted hidden flags remain intact. Category filters also apply.
+   if(isHiddenPart(node)&&!showHiddenParts)return false;
+   if(isDocumentNode(node)&&!showTreeDocuments)return false;
+   if(partWorkshopItems.get(node.partId)===true&&!showWorkshopItems)return false;
+   return true;
   };
   const referenceTreeDescription=details=>{
    const reference=workshopReferences.get(details?.workshopReferenceId||"");
@@ -2558,9 +2559,11 @@ function setupAssemblyTrees(){
   const workshopFilter=filterOption("Show Workshop items",value=>{showWorkshopItems=value});
   const documentsFilter=filterOption("Show documents",value=>{showTreeDocuments=value});
   const descriptionsFilter=filterOption("Show descriptions",value=>{showTreeDescriptions=value});
+  const hiddenPartsFilter=filterOption("Show hidden parts",value=>{showHiddenParts=value});
   workshopFilter.checked=showWorkshopItems;
   documentsFilter.checked=showTreeDocuments;
   descriptionsFilter.checked=showTreeDescriptions;
+  hiddenPartsFilter.checked=showHiddenParts;
   nodesEl.parentNode.insertBefore(treeVisibilityControl,nodesEl);
   const partsEntry=document.createElement("button");
   partsEntry.type="button";partsEntry.textContent="Parts Management";
@@ -2569,7 +2572,7 @@ function setupAssemblyTrees(){
   // Both links sit outside the feature tree, with the summary directly above Parts Management.
   root.append(partsEntry);
   function render(){nodesEl.replaceChildren();
-   workshopFilter.checked=showWorkshopItems;documentsFilter.checked=showTreeDocuments;descriptionsFilter.checked=showTreeDescriptions;
+   workshopFilter.checked=showWorkshopItems;documentsFilter.checked=showTreeDocuments;descriptionsFilter.checked=showTreeDescriptions;hiddenPartsFilter.checked=showHiddenParts;
    controls.classList.toggle("hide",!canEdit()||isProjectSummary());projectActions.classList.toggle("hide",!canEdit());cardEdit.classList.toggle("hide",!canEdit());
    const summaryEntry=document.createElement("button");summaryEntry.type="button";summaryEntry.className="assembly-project-summary-entry"+(isProjectSummary()?" selected":"");
    summaryEntry.textContent="Project summary";summaryEntry.setAttribute("aria-current",isProjectSummary()?"page":"false");
