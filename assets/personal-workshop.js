@@ -252,7 +252,7 @@
    applyWorkshopCategory();
   }
   const addReference=item=>{
-   closeItem(false);
+   closeItem();
    nav?.select("mine");
    if(!$("#workshop-editor",personal)){
     setStatus("Sign in to add items to your personal Workshop.");
