@@ -11,6 +11,7 @@ import {handleCommonParts} from "./functions/api/commonparts.js";
 import {handlePurchasedParts} from "./functions/api/purchased-parts.js";
 import {onRequest as personalWorkshopApi} from "./functions/api/personal-workshop.js";
 import {onRequest as workshopPhotoApi} from "./functions/api/workshop-photo.js";
+import {onRequest as workshopReferenceApi} from "./functions/api/workshop-reference.js";
 import {handlePartFiles} from "./functions/api/part-files.js";
 import {handlePartPages} from "./functions/api/part-pages.js";
 import {handleWorkspace} from "./functions/api/workspace.js";
@@ -56,6 +57,7 @@ export default {
       if(path==="/api/purchased-parts")return handlePurchasedParts(request,env);
       if(path==="/api/personal-workshop")return personalWorkshopApi({request,env,ctx});
       if(path==="/api/workshop-photo")return workshopPhotoApi({request,env,ctx});
+      if(path==="/api/workshop-reference")return await workshopReferenceApi({request,env,ctx});
       if(path==="/api/part-files")return handlePartFiles(request,env);
       if(path==="/api/part-pages")return handlePartPages(request,env);
       if(path==="/api/harness")return handleHarness(request,env);
