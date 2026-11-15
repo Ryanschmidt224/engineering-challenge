@@ -49,7 +49,7 @@ test("shared Workshop editing requires claimed admin role and preserves saved fi
  const env={PHOTOS:new TestBucket(),admin_password:"test-admin-secret"};
  const session=await register(env,"siteadmin@example.test");
  const before=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{id:"workshop:meter",details:{name:"Modified"}} ,session),env}));
- assert.equal(before.status,201); // Signed-in members can publish their own shared entries.
+ assert.equal(before.status,403); // Members cannot edit seeded catalog entries.
  const claimed=await data(await handleAccounts(request("/api/accounts","POST",{action:"claim-admin",adminPassword:env.admin_password},session),env));
  assert.equal(claimed.status,200);
  assert.equal(claimed.body.user.role,"admin");
@@ -116,7 +116,7 @@ test("administrator can create, retrieve and edit shared Workshop products witho
    typeName:"Bench DC Power Supplies",manufacturer:"Example Manufacturing",model:"123",
    spec:"0–30 V adjustable output",supplierUrl:"https://example.com/item",photos:[]}
  },session),env}));
- assert.equal(response.status,403);
+ assert.equal(response.status,201); // Signed-in member creates their own shared item.
  assert.equal((await handleAccounts(request("/api/accounts","POST",{
   action:"claim-admin",adminPassword:env.admin_password
  },session),env)).status,200);
