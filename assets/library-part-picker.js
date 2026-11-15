@@ -39,7 +39,7 @@ async function saveCreatedPartToWorkshop({part,destination,category,projectTitle
     name:part.name,kind:"component",category,
     familyId:"community-"+category,familyName:"Community contributions",
     manufacturer:part.manufacturer||"",model:part.model||"",
-    partNumber:"", // Project part numbers are NOT manufacturer part numbers.
+    partNumber:part.model||"", // Manufacturer MPN, never the project BOM number.
     subtitle:"Community-contributed purchased part",
     spec:specs.join("\n").slice(0,5000),
     photos:[]
@@ -57,7 +57,7 @@ async function saveCreatedPartToWorkshop({part,destination,category,projectTitle
   body:JSON.stringify({
    name:part.name,kind:"component",category:part.category||"Purchased parts",
    manufacturer:part.manufacturer||"",model:part.model||"",
-   partNumber:part.partNumber||"",quantity:0,unit:"pcs",stockStatus:"committed",
+   partNumber:part.model||"",quantity:0,unit:"pcs",stockStatus:"committed",
    notes:"Added from project "+projectTitle+"; inventory quantity not confirmed.",
    specifications:part.specifications||[]
   })
