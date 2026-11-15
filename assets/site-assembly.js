@@ -728,13 +728,13 @@ function setupAssemblyTrees(){
   const editWorkshopButton=document.createElement("button");
   editWorkshopButton.type="button";
   editWorkshopButton.className="btn part-details-edit-workshop";
-  editWorkshopButton.textContent="Edit in Workshop";
+  editWorkshopButton.textContent="View in Workshop";
   editWorkshopButton.hidden=true;
   detailEditButton.hidden=true;
   const detailHeading=detailsPanel.querySelector(".part-details-view-heading");
   detailHeading.insertBefore(detailEditButton,detailHeading.querySelector(".part-details-toggle-label"));
   detailHeading.insertBefore(editWorkshopButton,detailEditButton);
-  detailEditButton.textContent="Customize Workshop item";
+  detailEditButton.textContent="Modify part";
   detailsPanel.querySelector(".part-details-view-actions").remove();
   partDetailsCollapse.addEventListener("toggle",()=>{partDetailsCollapse.querySelector(".part-details-toggle-label").textContent=partDetailsCollapse.open?"Minimize details":"Show details"});
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
@@ -1053,6 +1053,7 @@ function setupAssemblyTrees(){
    // Switch to the Workshop's item page; only saving inside Workshop edits the reference.
    const url=new URL(location.href);
    url.searchParams.set("workshop-item",workshopId);
+   url.searchParams.set("workshop-return",location.hash);
    url.hash="commonparts";
    history.pushState({workshopItem:workshopId},"",url.pathname+url.search+url.hash);
    window.dispatchEvent(new Event("hashchange"));
@@ -1108,7 +1109,7 @@ function setupAssemblyTrees(){
     currentPartInfo=part;
     const hasWorkshopLink=!!workshopLinkId(part);
     editWorkshopButton.hidden=!hasWorkshopLink;
-    detailEditButton.textContent=hasWorkshopLink?"Customize Workshop item":"Edit part details";
+    detailEditButton.textContent=hasWorkshopLink?"Modify part":"Edit part details";
     codePanel.setVisible(part.partType==="code");
     if(part.partType==="code")void codePanel.load(part.id,part.name);
     progressPanel.hidden=part.isTool===true;
@@ -1652,6 +1653,16 @@ function setupAssemblyTrees(){
   partEditDialog.append(bomEditPanel);
   const partDialogError=document.createElement("p");partDialogError.className="part-editor-validation-error";partDialogError.setAttribute("role","alert");partDialogError.hidden=true;
   bomEditPanel.prepend(partDialogError);
+  const projectEditNotice=document.createElement("div");
+  projectEditNotice.className="part-project-edit-notice";
+  projectEditNotice.hidden=true;
+  projectEditNotice.setAttribute("role","note");
+  const noticeHeading=document.createElement("strong");
+  noticeHeading.textContent="Modifying this project's part only";
+  const noticeBody=document.createElement("p");
+  noticeBody.textContent="Changes here are saved to the part in this project, not the original Workshop item.";
+  projectEditNotice.append(noticeHeading,noticeBody);
+  partDialogError.after(projectEditNotice);
   partEditDialog.addEventListener("cancel",event=>{
    if(savingBom){event.preventDefault();return}
    event.preventDefault();bomEditorCancel.click();
@@ -1663,7 +1674,7 @@ function setupAssemblyTrees(){
    workspace.classList.add("is-editing-bom-part");
    bomEditPanel.classList.remove("hide");
    bomEditorMount.classList.add("is-editing");
-   bomEditorHeading.textContent=editingPart?"Edit part details":"New part";
+   bomEditorHeading.textContent=editingPart?(projectEditNotice.hidden?"Edit part details":"Modify project part"):"New part";
    bomEditorCancel.textContent="Cancel";
    bomEditorHeader.classList.remove("hide");
    if(!partEditDialog.open)partEditDialog.showModal();
@@ -1699,6 +1710,7 @@ function setupAssemblyTrees(){
    dismissBomEditor();
    extractedPictureUrl=null;
    editingPart=null;editingPartAssembly=null;
+   projectEditNotice.hidden=true;
    itemTypeSelect.value="part";partTypeSelect.value="purchased";visibilityCheckbox.checked=false;toolCheckbox.checked=false;partDescriptionInput.value="";setProjectOnly({});partNumberInput.value="";autoNumberChosen=false;partNumberInput.readOnly=false;nextNumberButton.disabled=false;partNumberHelp.textContent="A number is assigned only when the part is saved.";updatePartTypeFields();
    for(const name of ["name","manufacturer","model","supplier","asin","description","historical-price","historical-price-date"]){const el=bomField(name);if(el)el.value=""}
    supplierEditor?.setOffers([]);
@@ -1713,6 +1725,7 @@ function setupAssemblyTrees(){
   function editBomPart(part,originId){
    if(savingBom)return;
    clearBomDraft();editingPart=part.id;editingPartAssembly=originId;
+   projectEditNotice.hidden=!workshopLinkId(part);
    itemTypeSelect.value=part.partType==="code"?"code":part.itemType==="document"?"document":"part";
    partTypeSelect.value=["custom","code"].includes(part.partType)?part.partType:"purchased";visibilityCheckbox.checked=part.hideFromFeatureTree===true;toolCheckbox.checked=part.isTool===true;
    partDescriptionInput.value=part.description||"";
