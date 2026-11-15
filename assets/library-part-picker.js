@@ -249,21 +249,36 @@ function open({onCreate,hideDefault=false}){
  workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,addToWorkshopChoice,saveScope,workshopAddHelp);
  form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,numberChoice,autoNumberHelp,partNumberField.label,customName.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
  dialog.append(form);document.body.append(dialog);
- let commons=[],purchased=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
+ let commons=[],purchased=[],sharedOverrides={},personalItems=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
  cancel.onclick=()=>close(null);dialog.addEventListener("cancel",e=>{e.preventDefault();close(null)});
- const workshopStandardRows=()=>[...(window.BSResources?.catalog?.tools||[]),...(window.BSResources?.catalog?.parts||[])].filter(item=>item.id?.startsWith("workshop:"));
+ const workshopStandardRows=()=>[...(window.BSResources?.catalog?.tools||[]),...(window.BSResources?.catalog?.parts||[])]
+  .filter(item=>item.id?.startsWith("workshop:")).map(item=>({...item,...(sharedOverrides[item.id]||{})}));
+ const publishedRows=()=>Object.entries(sharedOverrides)
+  .filter(([id,item])=>item?.created&&!workshopStandardRows().some(seed=>seed.id===id))
+  .map(([id,item])=>({id,...item}));
  const refreshCommon=()=>{
   const q=commonSearch.input.value.toLowerCase().trim(),cat=category.input.value,subtype=powerType.input.value;
   const saved=commons.filter(p=>commonGroup(p)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(p)===subtype));
   const recorded=purchased.filter(p=>commonGroup(p)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(p)===subtype));
   const standards=workshopStandardRows().filter(item=>item.category===cat);
-  const matches=item=>[item.name,item.manufacturer,item.partNumber,item.specifications,item.detail].filter(Boolean).join(" ").toLowerCase().includes(q);
-  const filtered=[...saved.map(item=>({...item,origin:"saved"})),...recorded.map(item=>({...item,origin:"purchased"})),...standards.map(item=>({...item,origin:"standard"}))].filter(matches);
+  const published=publishedRows().filter(item=>commonGroup(item)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(item)===subtype));
+  const personal=personalItems.filter(item=>commonGroup(item)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(item)===subtype));
+  const matches=item=>[item.name,item.manufacturer,item.partNumber,item.specifications,item.detail,item.spec,item.model].filter(Boolean).join(" ").toLowerCase().includes(q);
+  const filtered=[...saved.map(item=>({...item,origin:"saved"})),
+   ...recorded.map(item=>({...item,origin:"purchased"})),
+   ...standards.map(item=>({...item,origin:"standard"})),
+   ...published.map(item=>({...item,origin:"public"})),
+   ...personal.map(item=>({...item,origin:"mine"}))].filter(matches);
   const previous=commonSelect.input.value;
   commonSelect.input.replaceChildren();
   option(commonSelect.input,"",filtered.length?"Select a Workshop item":"No Workshop items match");
-  filtered.forEach(p=>option(commonSelect.input,p.origin+":"+p.id,p.name+(p.origin==="standard"?" · Recommended Workshop item":p.origin==="purchased"?" · Recorded part":p.partNumber?" · "+p.partNumber:"")));
+  filtered.forEach(p=>option(commonSelect.input,p.origin+":"+p.id,p.name+(
+   p.origin==="standard"?" · Shared starter item":
+   p.origin==="public"?" · Public Workshop":
+   p.origin==="mine"?" · My Workshop":
+   p.origin==="purchased"?" · Recorded part":
+   p.partNumber?" · "+p.partNumber:"")));
   if(filtered.some(p=>p.origin+":"+p.id===previous))commonSelect.input.value=previous;
  };
  const selectWorkflow=value=>{
@@ -356,11 +371,24 @@ function open({onCreate,hideDefault=false}){
   }else if(!(category.input.value==="consumables"&&wireModeCheckbox.checked)){
    const choice=commonSelect.input.value;
    const isStandard=choice.startsWith("standard:"),isPurchased=choice.startsWith("purchased:");
-   const p=isStandard?workshopStandardRows().find(item=>item.id===choice.slice(9)):isPurchased?purchased.find(item=>item.id===choice.slice(10)):commons.find(item=>item.id===choice.slice(6));
+   const isPublic=choice.startsWith("public:"),isMine=choice.startsWith("mine:");
+   const p=isStandard?workshopStandardRows().find(item=>item.id===choice.slice(9)):
+    isPurchased?purchased.find(item=>item.id===choice.slice(10)):
+    isPublic?publishedRows().find(item=>item.id===choice.slice(7)):
+    isMine?personalItems.find(item=>item.id===choice.slice(5)):
+    commons.find(item=>item.id===choice.slice(6));
    if(!p){status.textContent="Select a Workshop item.";return}
    payload=isStandard?{
     name:p.name,quantity:count,category:commonGroup(p),isTool:commonGroup(p)==="tools",
-    specifications:[{name:"Workshop reference",value:p.id},{name:"Tool specification",value:String(p.detail||"Workshop reference").slice(0,300)}]
+    specifications:[{name:"Workshop reference",value:p.id},{name:"Tool specification",value:String(p.detail||p.spec||"Workshop reference").slice(0,300)}]
+   }:(isPublic||isMine)?{
+    name:p.name,quantity:count,category:commonGroup(p),manufacturer:p.manufacturer||"",
+    model:p.model||"",isTool:commonGroup(p)==="tools",
+    specifications:[
+     {name:isPublic?"Public Workshop reference":"My Workshop reference",value:p.id},
+     ...(Array.isArray(p.specifications)?p.specifications:
+       [{name:"Specifications",value:String(p.spec||"Reference specifications not supplied").slice(0,300)}])
+    ].filter(spec=>spec.name&&spec.value).slice(0,40)
    }:isPurchased?{
     name:p.name,quantity:count,sharedPartRef:"purchased:"+p.id,manufacturer:p.manufacturer||"",
     model:p.model||"",supplier:p.supplier||"",asin:p.asin||"",category:commonGroup(p),
@@ -400,12 +428,17 @@ function open({onCreate,hideDefault=false}){
  update();refreshCommon();updateCalc();dialog.showModal();
  Promise.allSettled([
   fetch("/api/commonparts",{cache:"no-store"}).then(r=>r.ok?r.json():Promise.reject(Error("Saved parts unavailable"))),
-  fetch("/api/purchased-parts",{cache:"no-store",credentials:"same-origin"}).then(r=>r.ok?r.json():Promise.reject(Error("Recorded parts unavailable")))
- ]).then(([saved,recorded])=>{
+  fetch("/api/purchased-parts",{cache:"no-store",credentials:"same-origin"}).then(r=>r.ok?r.json():Promise.reject(Error("Recorded parts unavailable"))),
+  fetch("/api/workshop-reference",{cache:"no-store",credentials:"same-origin"}).then(r=>r.ok?r.json():Promise.reject(Error("Public Workshop unavailable"))),
+  fetch("/api/personal-workshop",{cache:"no-store",credentials:"same-origin"}).then(r=>r.ok?r.json():Promise.reject(Error("Personal Workshop unavailable")))
+ ]).then(([saved,recorded,shared,mine])=>{
   if(finished)return;
   if(saved.status==="fulfilled")commons=saved.value.parts||[];
   if(recorded.status==="fulfilled")purchased=recorded.value.parts||[];
-  if(saved.status==="rejected"&&recorded.status==="rejected")status.textContent="Workshop saved items are unavailable; wire tools remain available.";
+  if(shared.status==="fulfilled")sharedOverrides=shared.value.items||{};
+  if(mine.status==="fulfilled")personalItems=mine.value.items||[];
+  if(saved.status==="rejected"&&recorded.status==="rejected"&&shared.status==="rejected"&&mine.status==="rejected")
+   status.textContent="Workshop items are unavailable; wire tools remain available.";
   refreshCommon();
  });
  itemKind.input.focus();
