@@ -177,7 +177,7 @@ function open({onCreate,hideDefault=false}){
  const numberLegend=el("legend","","Part number");numberChoice.append(numberLegend);
  const autoNumberRow=el("label","library-auto-number");
  const autoNumberCheckbox=el("input");autoNumberCheckbox.type="radio";autoNumberCheckbox.name="new-part-number-mode";autoNumberCheckbox.value="auto";autoNumberCheckbox.checked=true;
- autoNumberRow.append(autoNumberCheckbox,document.createTextNode(" Assign next available project number"));
+ autoNumberRow.append(autoNumberCheckbox,document.createTextNode(" Assign next available project number"),el("span","muted library-auto-number-inline-note","Assigned when part is saved"));
  const manualNumberRow=el("label","library-auto-number");
  const manualNumberCheckbox=el("input");manualNumberCheckbox.type="radio";manualNumberCheckbox.name="new-part-number-mode";manualNumberCheckbox.value="manual";
  manualNumberRow.append(manualNumberCheckbox,document.createTextNode(" Enter a part number"));
@@ -185,7 +185,7 @@ function open({onCreate,hideDefault=false}){
  const noNumberRadio=el("input");noNumberRadio.type="radio";noNumberRadio.name="new-part-number-mode";noNumberRadio.value="none";
  noNumberRow.append(noNumberRadio,document.createTextNode(" No project BOM number (purchased part)"));
  numberChoice.append(autoNumberRow,manualNumberRow,noNumberRow);
- const autoNumberHelp=el("p","muted library-auto-number-help","The number is assigned when you save. Numbers 001–099 are reserved for assemblies; parts begin at 100.");
+
  const chooser=el("div","library-picker-section hide");
  const category=field("Part category","select");
  for(const [id,label] of [["tools","Tools & Equipment"],["consumables","Consumables & Supplies"],["electronics","Electronics & Components"],["hardware","Hardware & Materials"],["safety","Safety & Measurement"]])option(category.input,id,label);
@@ -318,7 +318,7 @@ function open({onCreate,hideDefault=false}){
  workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,quickSearch,addToWorkshopChoice,saveScope,workshopAddHelp);
  form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,
   manufacturerNumber.label,manufacturerName.label,workshopDescription.label,vendorField.label,
-  customName.label,vendorLinks,vendorInfo,numberChoice,autoNumberHelp,partNumberField.label,
+  numberChoice,partNumberField.label,customName.label,vendorLinks,vendorInfo,
   chooser,qty.label,hintUnits,toolField,visibility,projectDetailsPanel,status,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],purchased=[],sharedOverrides={},personalItems=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
@@ -465,7 +465,6 @@ function open({onCreate,hideDefault=false}){
   toolField.classList.toggle("hide",documentMode||lib);
   if(documentMode){toolInput.checked=false;if(itemKind.input.value==="document")qty.input.value="1"}
   numberChoice.classList.toggle("hide",lib);
-  autoNumberHelp.classList.toggle("hide",lib||!autoNumberCheckbox.checked);
   partNumberField.label.classList.toggle("hide",lib||autoNumberCheckbox.checked);
   partNumberField.input.required=!lib&&manualNumberCheckbox.checked;
   quickSearch.classList.toggle("hide",!lib);
