@@ -85,7 +85,13 @@ export default {
       }
       return env.ASSETS.fetch(request);
     }catch(error){
-      console.error("Request failed",error);
+      // Return a structured, non-sensitive error for account failures.
+      const diagnosticId=crypto.randomUUID();
+      console.error("Request failed",diagnosticId,path,error);
+      if(path==="/api/accounts")return new Response(JSON.stringify({
+       error:"The account service encountered an unexpected error. Contact the site administrator with this reference if it persists.",
+       code:"ACCOUNT_UNEXPECTED_ERROR",reference:diagnosticId
+      }),{status:500,headers:{"content-type":"application/json","cache-control":"no-store"}});
       return new Response("Internal server error",{status:500});
     }
   },
