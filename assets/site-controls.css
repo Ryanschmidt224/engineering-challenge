@@ -2347,3 +2347,38 @@ body>.footer{margin-top:auto}
 @media(min-width:1500px){
  :is(#home,#learn,#commonparts)>.wrap.section{padding-inline:20px}
 }
+
+/* Projects: keep search and clickable descriptor tiles in the left sidebar.
+   Filter state is client-only; project tags remain canonical metadata. */
+#home .bs-catalog-layout{display:grid;grid-template-columns:minmax(240px,278px) minmax(0,1fr);gap:24px;align-items:start}
+#home .bs-catalog-sidebar{position:sticky;top:20px;min-width:0;max-height:calc(100vh - 40px);overflow-y:auto;padding:17px 15px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface)}
+#home .bs-project-search-sidebar{display:grid;gap:12px;min-width:0}
+#home .bs-project-search-sidebar>.bs-catalog-sidebar-heading{font-size:1.1rem;margin:0}
+#home .bs-project-search-sidebar .project-directory-search{display:grid;gap:5px;margin:0;min-width:0}
+#home .bs-project-search-sidebar .project-search{width:100%;min-width:0;min-height:40px}
+#home .bs-project-tag-filter{display:grid;gap:11px;margin:5px 0 0;padding:15px 0 0;border-top:1px solid var(--color-border);background:transparent;box-shadow:none}
+#home .bs-project-tag-filter-heading{display:flex;justify-content:space-between;align-items:center;gap:9px}
+#home .bs-project-tag-title{font-weight:700;font-size:.89rem}
+#home .bs-project-descriptor-search-label{display:grid;gap:5px;font-size:.79rem;font-weight:600}
+#home .bs-project-descriptor-search{width:100%;min-width:0;min-height:36px}
+#home .bs-project-tag-options{display:flex;flex-wrap:wrap;align-items:flex-start;gap:7px}
+#home .bs-project-tag-chip{white-space:normal;text-align:left;font-size:.78rem;line-height:1.2;padding:7px 9px}
+#home .bs-project-tag-clear{font-size:.76rem;white-space:nowrap;padding:4px 2px}
+#home .bs-project-tag-empty{margin:0;font-size:.8rem}
+#home .bs-catalog-main{min-width:0}
+#home .bs-catalog-main>.project-directory-controls{display:flex;justify-content:flex-end;align-items:end;gap:12px;padding:0;margin:0 0 16px;border:0;background:transparent}
+#home .bs-catalog-main>.project-directory-controls .project-directory-count{margin:0;padding:0}
+@media(max-width:900px){
+ #home .bs-catalog-layout{grid-template-columns:210px minmax(0,1fr);gap:15px}
+ #home .bs-catalog-sidebar{padding:12px 10px}
+}
+@media(max-width:680px){
+ #home .bs-catalog-layout{display:block}
+ #home .bs-catalog-sidebar{position:static;max-height:none;margin-bottom:15px}
+ #home .bs-project-tag-options{max-height:230px;overflow-y:auto}
+}
+
+/* Each project is one complete row, even on wide screens. */
+#home .bs-catalog-main>.project-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-auto-flow:row;gap:12px;width:100%}
+#home .bs-catalog-main>.project-grid>.project-card{grid-column:1/-1;width:100%;max-width:none;min-width:0}
+#home .bs-catalog-main>.project-grid>.project-card[hidden]{display:none!important}
