@@ -9,21 +9,6 @@
   const res=await fetch(path,opts),data=await res.json().catch(()=>({}));
   if(!res.ok)throw Error(data.error||"Request failed");return data;
  };
- const recommendations=[
-  {group:"Beginner",items:[
-   ["Digital multimeter","tool"],["Temperature-controlled soldering station","tool"],
-   ["Electronics solder and flux","material"],["22 AWG signal hook-up wire","material"],
-   ["Wire stripper and flush cutters","tool"],["Breadboard and jumper wires","tool"],
-   ["Safety glasses and solder-fume ventilation","tool"]]},
-  {group:"Intermediate",items:[
-   ["Logic-level N-channel MOSFET assortment","component"],["Arduino-compatible microcontroller","equipment"],
-   ["Resistor and capacitor assortment","component"],["Adjustable DC bench supply","equipment"],
-   ["Crimp terminals and crimper","tool"],["Microcontroller programmer","tool"]]},
-  {group:"Advanced",items:[
-   ["Oscilloscope and suitable probes","equipment"],["Logic analyzer","equipment"],
-   ["Electronic DC load","equipment"],["Hot-air rework station","tool"],
-   ["Precision current measurement","equipment"]]}
- ];
  const styles=`
   .workshop-scope{margin:16px 0 24px;padding:18px;border:1px solid var(--border,#cbd5d1);border-radius:14px}
   .workshop-scope h2{margin:0 0 8px}
@@ -115,7 +100,7 @@
   }
 
   #commonparts .workshop-recommend-results{display:none}
-  #commonparts .workshop-recommendations,#commonparts .workshop-scope>details{margin-top:18px}
+  #commonparts .workshop-legacy-details[hidden]{display:none!important}
   #commonparts .workshop-item{border-radius:3px;padding:12px 14px;gap:14px}
 
   /* Product catalog rows with meaningful, non-photographic thumbnails. */
@@ -153,10 +138,10 @@
   const personal=el("section",undefined,"workshop-scope");
   personal.innerHTML='<h2>My Workshop</h2><p class="muted">Private to your account. Record equipment and materials you actually own; recommendations are not assumed owned.</p><p class="workshop-status" role="status"></p><div class="workshop-private"></div>';
   const shared=el("section",undefined,"workshop-scope");
-  shared.innerHTML='<h2>Website Workshop — recommended equipment</h2><p class="muted">Recommended specifications are separate from what you own. Everyday consumables such as solder are excluded from BOMs by default.</p><label class="workshop-recommend-search-label" for="workshop-recommend-search">Find a recommended tool or supply</label><input id="workshop-recommend-search" class="field" type="search" placeholder="Search solder, multimeter, heat shrink…" autocomplete="off"><div class="workshop-recommend-results" aria-live="polite"></div><div class="workshop-row"><label for="workshop-level">Show recommendations up to</label><select id="workshop-level" class="field"><option value="0">Beginner</option><option value="1">Intermediate</option><option value="2">Advanced</option></select></div><div class="workshop-recommendations"></div><details><summary>Browse all five Workshop categories</summary><p class="muted">Open a category for specifications, choices, and recommended products.</p></details>';
+  shared.innerHTML='<h2>Website Workshop</h2><p class="muted">Browse equipment, materials, and components by product family. Reference items are not automatically owned.</p><label class="workshop-recommend-search-label" for="workshop-recommend-search">Search Workshop</label><input id="workshop-recommend-search" class="field" type="search" placeholder="Search wire, ferrules, power supplies…" autocomplete="off"><div class="workshop-recommend-results" hidden></div><details class="workshop-legacy-details" hidden><summary>Legacy references</summary></details>';
   header.after(personal,shared);
   // Existing shared tree remains canonical and admin-managed; visually group it under the shared Workshop.
-  const sharedDetails=$("details",shared);
+  const sharedDetails=$(".workshop-legacy-details",shared);
   const sharedItems=$(".workshop-essentials",root),saved=$(".workshop-saved-details",root);
   if(sharedItems)sharedDetails.append(sharedItems);
   if(saved)sharedDetails.append(saved);
@@ -164,6 +149,7 @@
   // Only visibility changes here; personal inventory and standard items are
   // still stored separately and keep all their existing identifiers.
   sharedDetails.open=false;
+  sharedDetails.hidden=true;
   const sidebar=el("div",undefined,"bs-workshop-category-sidebar");
   const allPanels=[shared,personal,...[...root.children].filter(node=>node!==header&&node!==shared&&node!==personal)];
   window.BSCatalogUI?.build(root,sidebar,allPanels);
@@ -180,10 +166,6 @@
     if(key!=="all"&&category===key)branch.open=true;
    }
    // Keep the long legacy reference tree collapsed; catalog rows are the primary browse surface.
-   const intro=$(".workshop-recommendations",shared);
-   const level=$(".workshop-row",shared);
-   if(intro)intro.hidden=key!=="all";
-   if(level)level.hidden=key!=="all";
   };
   const nav=window.BSCatalogUI?.categories(sidebar,{
    heading:"Browse Workshop",
@@ -450,51 +432,6 @@
   renderCatalog();
   if(readSelected())showItem(readSelected(),false);
 
-  const showRecommendation=id=>{
-   document.querySelector('[data-nav="commonparts"]')?.click();
-   sharedDetails.open=true;
-   window.BSResources?.focusWorkshopItem(id);
-  };
-  const renderSearch=()=>{
-   const term=$("#workshop-recommend-search",shared).value.trim().toLowerCase();
-   const results=$(".workshop-recommend-results",shared);results.replaceChildren();
-   if(!term)return;
-   const found=standards().filter(item=>[item.name,item.spec,item.use,item.category].join(" ").toLowerCase().includes(term));
-   if(!found.length){results.append(el("p","No matching recommendations.","muted"));return}
-   for(const item of found.slice(0,20)){
-    const row=el("div",undefined,"workshop-reco");
-    row.append(el("span",item.name+" · "+(item.bomDefault==="exclude"?"Not added to BOM by default":"BOM item when specified")));
-    const view=el("button","View recommendation","btn");view.type="button";view.onclick=()=>showRecommendation(item.id);
-    row.append(view);results.append(row);
-   }
-  };
-  $("#workshop-recommend-search",shared).addEventListener("input",renderSearch);
-  const renderRecs=()=>{
-   const level=Number($("#workshop-level",shared).value),list=$(".workshop-recommendations",shared);
-   list.replaceChildren();
-   recommendations.slice(0,level+1).forEach((group)=>{
-    const details=el("details");details.open=true;
-    details.append(el("summary",group.group));
-    for(const [name,kind] of group.items){
-     const row=el("div",undefined,"workshop-reco");
-     row.append(el("span",name));
-     const standard=standards().find(item=>item.name.toLowerCase()===name.toLowerCase());
-     if(standard){
-      const view=el("button","View recommendation","btn");view.type="button";
-      view.onclick=()=>showRecommendation(standard.id);row.append(view);
-     }
-     const add=el("button","+ Add to My Workshop","btn");add.type="button";
-     add.onclick=()=>{
-      if(!$("#workshop-editor",personal)){setStatus("Sign in to add recommended equipment to your private Workshop.");return}
-      fill({name,kind,category:standard?.category||"tools"});
-      $("#workshop-name",personal).focus();personal.scrollIntoView({block:"start",behavior:"smooth"});
-     };
-     row.append(add);details.append(row);
-    }
-    list.append(details);
-   });
-  };
-  $("#workshop-level",shared).addEventListener("change",renderRecs);renderRecs();
   const privateArea=$(".workshop-private",personal),status=$(".workshop-status",personal);
   let items=[],editingId=null,photoId="";
   const setStatus=msg=>status.textContent=msg;
