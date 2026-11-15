@@ -2573,3 +2573,78 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
  border-radius:9px;
  color:#275b48;
 }
+
+/* Page-level action placement: keep controls beside the content they operate on,
+   not stranded on the far edge of a wide monitor. Editing form footers unchanged. */
+#home .bs-catalog-main>.project-directory-controls{
+ display:flex;
+ justify-content:flex-start;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:12px 18px;
+ margin:0 0 16px;
+ padding:12px 0;
+ background:transparent;
+ border:0;
+}
+#home .bs-catalog-main>.project-directory-controls .project-owner-actions{
+ display:flex;
+ justify-content:flex-start;
+ align-items:center;
+ flex:0 1 auto;
+ flex-wrap:wrap;
+ gap:9px;
+ width:auto;
+ margin:0;
+ padding-right:18px;
+ border-right:1px solid var(--color-border);
+}
+#home .bs-catalog-main>.project-directory-controls .project-owner-actions .btn{
+ min-height:39px;
+ margin:0;
+ white-space:nowrap;
+}
+#home .bs-catalog-main>.project-directory-controls .project-directory-label{
+ display:flex;
+ flex:0 0 auto;
+ gap:4px;
+}
+#home .bs-catalog-main>.project-directory-controls .project-sort-filter{
+ min-width:140px;
+ min-height:39px;
+}
+#home .bs-catalog-main>.project-directory-controls .project-directory-count{
+ margin:0;
+ padding:0;
+ align-self:end;
+}
+#home .bs-catalog-layout .project-card>.project-card-edit{
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ box-sizing:border-box;
+ width:auto;
+ min-height:36px;
+ align-self:flex-start;
+ margin:0 18px 13px;
+ padding:7px 15px;
+ font-size:.82rem;
+ font-weight:600;
+ text-align:center;
+}
+@media(max-width:680px){
+ #home .bs-catalog-main>.project-directory-controls{
+  padding:10px 0;
+  gap:10px;
+ }
+ #home .bs-catalog-main>.project-directory-controls .project-owner-actions{
+  flex:1 1 100%;
+  padding-right:0;
+  padding-bottom:10px;
+  border-right:0;
+  border-bottom:1px solid var(--color-border);
+ }
+ #home .bs-catalog-main>.project-directory-controls .project-directory-count{
+  align-self:center;
+ }
+}
