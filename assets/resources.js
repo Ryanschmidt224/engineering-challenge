@@ -50,6 +50,12 @@
   {id:"workshop:breadboard",kind:"material",tier:"conditional",name:"Breadboard and jumper wires",spec:"Reusable solderless breadboard and flexible jumper leads. Keep below manufacturer current/voltage limits.",use:"Low-power circuit prototyping."},
   {id:"workshop:stock",kind:"material",tier:"conditional",name:"Aluminum and plastic stock",spec:"Record alloy, temper, dimensions, source and material certification when used for a manufactured part.",use:"Machined brackets, mounts and enclosures."}
  ];
+ // General equipment classes: reference descriptions, not specific products or inventory.
+ const workshopPower=[
+  {id:"workshop:bench-psu",kind:"equipment",tier:"conditional",name:"Adjustable DC bench power supply",subtitle:"Current-limited laboratory power source",spec:"Adjustable regulated DC voltage and current limit; verify output isolation, over-voltage protection, current-limit behavior, and ripple for the circuit under test.",use:"Safely powering and testing prototypes while controlling current and voltage.",caution:"A current limit is not a substitute for fusing, polarity checks, or safe high-voltage procedures."},
+  {id:"workshop:acdc-psu",kind:"equipment",tier:"conditional",name:"Enclosed AC-to-DC power supply",subtitle:"Fixed-output machine and equipment supply",spec:"Choose rated AC input, DC voltage, continuous current, temperature derating, protective earth, and applicable electrical safety approvals.",use:"Supplying a fixed DC rail for assembled equipment.",caution:"Mains wiring requires a suitable enclosure, protective connections, strain relief, and qualified installation."},
+  {id:"workshop:buck-psu",kind:"component",tier:"conditional",name:"DC-to-DC buck converter",subtitle:"Step-down switching regulator module",spec:"Choose input and output voltage ranges, continuous current, thermal derating, switching ripple, startup behavior, and over-voltage protection.",use:"Converting a higher DC bus voltage to lower regulated DC rails.",caution:"Check input transients, supply sequencing and thermal design; module ratings are product-specific."}
+ ];
  const quickSpecs={
   "workshop:wire22":"22 AWG stranded copper · PVC jacket · 105°C, 600 V example rating",
   "workshop:wire18":"18 AWG stranded copper · PVC jacket · 105°C, 600 V example rating",
@@ -93,7 +99,7 @@
  const workshopCategories=[
   ["tools","Tools & Equipment",["workshop:stripper","workshop:ferrule-tool","workshop:heatgun","workshop:meter","workshop:solderstation","workshop:oscilloscope"]],
   ["consumables","Consumables & Supplies",["workshop:wire22","workshop:wire18","workshop:wire16","workshop:silicone","workshop:heatshrink","workshop:sealshrink","workshop:solder"]],
-  ["electronics","Electronics & Components",workshopComponents.map(item=>item.id)],
+  ["electronics","Electronics & Components",[...workshopComponents,...workshopPower].map(item=>item.id)],
   ["hardware","Hardware & Materials",["workshop:ferrule22","workshop:ferrule18",...workshopHardware.map(item=>item.id)]],
   ["safety","Safety & Measurement",["workshop:safety"]]
  ];
@@ -119,7 +125,25 @@
   const bomDefault=["consumables","tools","safety"].includes(category)?"exclude":"include";
   return {...item,category,availabilityAssumption,bomDefault};
  };
- const workshopReferences=[...workshopSupplies,...workshopEquipment,...workshopComponents,...workshopHardware].map(itemMetadata);
+ const workshopReferences=[...workshopSupplies,...workshopEquipment,...workshopComponents,...workshopHardware,...workshopPower].map(itemMetadata);
+ // Product families are browse-only metadata. They do not change part IDs,
+ // inventory records, project BOMs, or the established broad categories.
+ const workshopGroups=[
+  {id:"wire",label:"Wire & Cable",description:"Hook-up wire, power wire, flexible wire",items:["workshop:wire22","workshop:wire18","workshop:wire16","workshop:silicone"]},
+  {id:"power-supplies",label:"Power Supplies & Converters",description:"Bench supplies, AC/DC supplies, DC/DC converters",items:["workshop:bench-psu","workshop:acdc-psu","workshop:buck-psu"]},
+  {id:"wire-termination",label:"Wire Termination & Crimping",description:"Ferrules and crimping tools",items:["workshop:ferrule22","workshop:ferrule18","workshop:ferrule-tool"]},
+  {id:"heat-shrink",label:"Heat-Shrink Tubing",description:"General-purpose and adhesive-lined tubing",items:["workshop:heatshrink","workshop:sealshrink"]},
+  {id:"soldering",label:"Soldering & Rework",description:"Solder, stations, and heating equipment",items:["workshop:solder","workshop:solderstation","workshop:heatgun"]},
+  {id:"measurement",label:"Measurement & Test",description:"Multimeters and oscilloscopes",items:["workshop:meter","workshop:oscilloscope"]},
+  {id:"wire-tools",label:"Wire Cutting & Stripping",description:"Wire preparation tools",items:["workshop:stripper"]},
+  {id:"semiconductors",label:"Semiconductors & Passive Components",description:"Resistors and power switching",items:["workshop:resistors","workshop:mosfet"]},
+  {id:"controllers",label:"Microcontrollers & Sensors",description:"Embedded development and sensing",items:["workshop:arduino","workshop:sensors"]},
+  {id:"prototyping",label:"Circuit Prototyping",description:"Breadboards and jumper wiring",items:["workshop:breadboard"]},
+  {id:"fasteners",label:"Screws & Fasteners",description:"Machine screws, nuts, and washers",items:["workshop:fasteners"]},
+  {id:"raw-materials",label:"Raw Materials",description:"Aluminum and plastic stock",items:["workshop:stock"]},
+  {id:"safety",label:"Workshop Safety",description:"Eye protection and ventilation",items:["workshop:safety"]}
+ ];
+ const workshopGroupFor=id=>workshopGroups.find(group=>group.items.includes(id))||null;
  const catalog={tools:workshopReferences.filter(x=>x.kind==="tool").map(x=>({id:x.id,name:x.name,subtitle:"Workshop standard",detail:x.spec+" "+x.use,caution:x.caution,category:x.category,availabilityAssumption:x.availabilityAssumption,bomDefault:x.bomDefault})),calculators,parts:[...baseParts,...workshopReferences.filter(x=>x.kind!=="tool").map(x=>({id:x.id,name:x.name,subtitle:x.subtitle,detail:x.spec+" "+x.use,caution:x.caution,category:x.category,availabilityAssumption:x.availabilityAssumption,bomDefault:x.bomDefault}))]};
  let wires=[],commonRecords=[],purchasedRecords=[],listeners=new Set(),admin=false;
  const byId=(kind,id)=>catalog[kind]?.find(item=>item.id===id);
@@ -577,7 +601,7 @@
    }
   }
  }
- window.BSResources={catalog,workshopCategories,workshopReferences,legacyCategory,all,mount,reloadWires,reloadCommonParts,reloadPurchased,init,normalize,setAdmin,focusWorkshopItem};
+ window.BSResources={catalog,workshopCategories,workshopReferences,workshopGroups,workshopGroupFor,legacyCategory,all,mount,reloadWires,reloadCommonParts,reloadPurchased,init,normalize,setAdmin,focusWorkshopItem};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
  else init();
 })();
