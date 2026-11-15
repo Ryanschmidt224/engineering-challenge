@@ -201,6 +201,28 @@
   const itemButton=(label,callback,cls="btn")=>{
    const b=el("button",label,cls);b.type="button";b.onclick=callback;return b;
   };
+  // A project part opening a Workshop reference carries a return route.
+  // Validate it before navigating; never accept arbitrary external destinations.
+  const projectReturnRoute=()=>{
+   const route=new URLSearchParams(location.search).get("workshop-return")||"";
+   return /^#[a-z0-9-]+\/part\/[0-9a-f-]{36}$/i.test(route)?route:"";
+  };
+  const goBackToProject=()=>{
+   const route=projectReturnRoute();
+   if(!route)return;
+   const url=new URL(location.href);
+   url.searchParams.delete("workshop-return");
+   url.searchParams.delete("workshop-item");
+   url.hash=route.slice(1);
+   history.pushState(null,"",url.pathname+url.search+url.hash);
+   closeItem(false);
+   window.dispatchEvent(new Event("hashchange"));
+   window.scrollTo(0,0);
+  };
+  const addProjectBackButton=()=>{
+   if(!projectReturnRoute())return;
+   itemSide.append(itemButton("← Back to project part",goBackToProject,"btn workshop-return-to-project"));
+  };
   const changeUrl=id=>{
    const u=new URL(location.href);
    if(id)u.searchParams.set("workshop-item",id);else u.searchParams.delete("workshop-item");
@@ -262,6 +284,7 @@
    shared.hidden=true;personal.hidden=true;sidebar.hidden=true;
    itemPage.hidden=false;itemSide.hidden=false;
    itemSide.replaceChildren();itemPage.replaceChildren();
+   addProjectBackButton();
    itemSide.append(itemButton("← Back to Workshop",()=>closeItem(),"workshop-item-back"));
    itemSide.append(el("h2",item.name,"workshop-item-side-title"));
    const small=(label,value)=>{if(value){
@@ -312,6 +335,7 @@
    shared.hidden=true;personal.hidden=true;sidebar.hidden=true;
    itemPage.hidden=false;itemSide.hidden=false;
    itemSide.replaceChildren();itemPage.replaceChildren();
+   addProjectBackButton();
    itemSide.append(itemButton("← Back to Workshop",()=>closeItem(),"workshop-item-back"));
    itemSide.append(el("p",categoryLabelFor(item),"workshop-item-eyebrow"));
    itemSide.append(el("h2",item.name,"workshop-item-side-title"));
