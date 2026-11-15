@@ -1,6 +1,7 @@
 // User-owned inventory. Never mix it with the administrator's shared Workshop catalog.
 import {accountUser} from "./accounts.js";
 import {isAdmin} from "./auth.js";
+import {normalizeSpecifications} from "./workshop-specifications.js";
 import {projectAllowed} from "./projects.js";
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff"}});
 const inventoryKey=id=>"user-workshop/"+id+"/inventory.json";
@@ -9,6 +10,8 @@ const normalize=v=>clean(v,200).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
 const allowedStates=new Set(["in_stock","in_use_reusable","committed"]);
 const validItem=input=>{
  const name=clean(input?.name,180),category=clean(input?.category,80);
+ const specRecords=normalizeSpecifications(input?.specRecords);
+ if(specRecords===null)return null;
  if(!name)return null;
  const quantity=input?.quantity===""||input?.quantity===undefined?1:Number(input.quantity);
  if(!Number.isFinite(quantity)||quantity<0||quantity>1000000)return null;
@@ -16,7 +19,7 @@ const validItem=input=>{
   partNumber:clean(input.partNumber,120),featureTreeDescription:clean(input.featureTreeDescription,20),notes:clean(input.notes,1500),
   stockStatus:allowedStates.has(input.stockStatus)?input.stockStatus:"in_stock",
   quantity,unit:clean(input.unit||"pcs",32),kind:["tool","material","component","equipment","other"].includes(input.kind)?input.kind:"other",
-  catalogId:clean(input.catalogId,100),photoId:clean(input.photoId,60),
+  catalogId:clean(input.catalogId,100),photoId:clean(input.photoId,60),specRecords,
   specifications:Array.isArray(input.specifications)?input.specifications.slice(0,25).map(x=>({name:clean(x.name,80),value:clean(x.value,240)})).filter(x=>x.name):[]};
 };
 async function read(env,user){const object=await env.PHOTOS.get(inventoryKey(user.id));return {items:object?JSON.parse(await object.text()):[],etag:object?.etag};}
