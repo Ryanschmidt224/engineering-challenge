@@ -585,6 +585,7 @@
      const response=await req("/api/workshop-reference",isNew?"POST":"PUT",
       isNew?{details}:{id:item.id,details});
      workshopOverrides[response.id]=response.details;
+     if(isNew)editableReferenceIds.add(response.id);
      selectedFamily=details.familyId;selectedType="";
      renderCatalog();
      showItem(response.id,isNew);
