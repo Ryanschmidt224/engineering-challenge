@@ -35,12 +35,12 @@ export async function onRequest({request,env}){
   "partNumber, manufacturer, name, subtitle, featureTreeDescription, kind, category, familyName, typeName,",
   "spec, use, caution, supplier, supplierUrl, documentationUrl, notes, package, pinoutOrientation;",
   "an array specs of objects {name,value,unit,conditions}, array pins of objects {number,name,function},",
-  "an array applications of short strings, and sources as an array of up to 6 verified HTTPS source URLs.",
+  "an array applications of short strings, and optional sources as an array of up to 6 HTTPS URLs.",
   "For specs, return unit separately from the value when possible (e.g. value 60, unit V). Omit unsupported values.",
   "For pins, use strings and include package/face/orientation in pinoutOrientation.",
   "For applications, include 3-6 typical verified practical uses. 'spec' is a fallback human-readable summary; 'use' is a summary of applications.",
   "kind: tool/equipment/component/material/other; category: tools/consumables/electronics/hardware/safety.",
-  "Use best-effort descriptions, mark important uncertainty briefly, and keep optional details empty when unknown."
+  "Use best-effort descriptions, mark important uncertainty briefly, and keep optional details empty when unknown.",
   "Use the requested partNumber exactly if confirmed and no substitute is intended."
  ].join("\n");
  try{
