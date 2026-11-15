@@ -10,40 +10,8 @@
   if(!res.ok)throw Error(data.error||"Request failed");return data;
  };
 
- // A native confirm() belongs to the browser and cannot be positioned or styled.
- // This in-page modal matches the Workshop's white panels and remains keyboard accessible.
- function confirmDelete(title,message){
-  return new Promise(resolve=>{
-   const dialog=el("dialog",undefined,"bs-delete-confirm");
-   dialog.setAttribute("aria-labelledby","bs-delete-confirm-title");
-   dialog.setAttribute("aria-describedby","bs-delete-confirm-message");
-   const heading=el("h2",title);heading.id="bs-delete-confirm-title";
-   const body=el("p",message);body.id="bs-delete-confirm-message";
-   const actions=el("div",undefined,"bs-delete-confirm-actions");
-   const cancel=el("button","Cancel","btn");cancel.type="button";
-   const remove=el("button","Delete","btn bs-delete-confirm-danger");remove.type="button";
-   actions.append(cancel,remove);dialog.append(heading,body,actions);
-   document.body.append(dialog);
-   let settled=false;
-   const finish=confirmed=>{
-    if(settled)return;
-    settled=true;
-    if(dialog.open)dialog.close();
-    dialog.remove();
-    resolve(confirmed);
-   };
-   cancel.addEventListener("click",()=>finish(false));
-   remove.addEventListener("click",()=>finish(true));
-   dialog.addEventListener("cancel",event=>{event.preventDefault();finish(false)});
-   dialog.addEventListener("close",()=>finish(false));
-   dialog.addEventListener("click",event=>{
-    const bounds=dialog.getBoundingClientRect();
-    if(event.clientX<bounds.left||event.clientX>bounds.right||
-       event.clientY<bounds.top||event.clientY>bounds.bottom)finish(false);
-   });
-   dialog.showModal();cancel.focus();
-  });
- }
+ // All Workshop confirmations now use the site's shared white dialog.
+ const confirmDelete=(title,message)=>window.BSDialogs.danger(message,{title,confirmLabel:"Delete"});
  function init(){
   const root=$("#commonparts .resource-page");if(!root)return;
   const header=$(".resource-heading",root);
