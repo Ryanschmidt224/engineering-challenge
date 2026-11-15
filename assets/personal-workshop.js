@@ -218,6 +218,7 @@
   });
   applyWorkshopCategory();
   let workshopOverrides={},canEditReferences=false,accountSignedIn=false;
+  let items=[],editingId=null,photoId="",catalogId="";
   const standards=()=>(window.BSResources?.workshopReferences||[]).map(item=>({...item,...(workshopOverrides[item.id]||{})}));
   const saveableFields=["name","subtitle","spec","use","caution","manufacturer","model","partNumber","supplier","supplierUrl","asin","price","packageQuantity","orderNotes","documentationUrl","notes"];
   const families=()=>window.BSResources?.workshopGroups||[];
@@ -358,7 +359,71 @@
    $("#workshop-editor",personal).scrollIntoView({block:"start"});
    $("#workshop-name",personal).focus();
   };
+  function editPersonalReference(item){
+   if(!accountSignedIn||!$("#workshop-editor",personal)){
+    const message=el("p","Sign in to edit your personal Workshop item. Editing the shared catalog requires administrator access.","workshop-item-editor-status");
+    const mount=$(".workshop-item-editor-mount",itemPage);
+    if(mount)mount.replaceChildren(message);else itemPage.append(message);
+    return;
+   }
+   const copy=ownedFor(item)[0];
+   closeItem();
+   nav?.select("mine");
+   if(copy)fill(copy);
+   else fill({name:item.name,catalogId:item.id,kind:item.kind==="tool"?"tool":item.kind==="equipment"?"equipment":item.kind==="component"?"component":"material",
+    category:categoryLabelFor(item),manufacturer:item.manufacturer||"",model:item.model||"",partNumber:item.partNumber||"",
+    specifications:item.spec?[{name:"Specification",value:item.spec}]:[],notes:item.notes||""});
+   $("#workshop-editor",personal)?.scrollIntoView({block:"start"});
+   $("#workshop-name",personal)?.focus();
+  }
+  function showPersonalItem(id,navigate=true){
+   const item=items.find(record=>record.id===id);
+   if(!item){closeItem(false);return}
+   const route="my:"+item.id;
+   if(navigate&&readSelected()!==route)changeUrl(route);
+   openedItem=route;
+   shared.hidden=true;personal.hidden=true;sidebar.hidden=true;
+   itemPage.hidden=false;itemSide.hidden=false;
+   itemSide.replaceChildren();itemPage.replaceChildren();
+   itemSide.append(itemButton("← Back to Workshop",()=>closeItem(),"workshop-item-back"));
+   itemSide.append(el("h2",item.name,"workshop-item-side-title"));
+   const small=(label,value)=>{if(value){
+    const part=el("section",undefined,"workshop-item-side-row");
+    part.append(el("h3",label),el("p",String(value)));itemSide.append(part);
+   }};
+   small("Category",item.category);
+   small("Manufacturer",item.manufacturer);
+   small("Model",item.model);
+   small("Part number",item.partNumber);
+   small("Stock status",stockLabels[item.stockStatus]||"In stock");
+   small("Quantity",item.quantity+" "+(item.unit||"pcs"));
+   small("Notes",item.notes);
+   itemPage.append(el("p","My Workshop / "+item.name,"workshop-item-breadcrumb"));
+   const head=el("div",undefined,"workshop-item-title-line");
+   head.append(el("h2",item.name));
+   head.append(itemButton("Edit item",()=>{
+    closeItem();nav?.select("mine");fill(item);
+    $("#workshop-editor",personal)?.scrollIntoView({block:"start"});
+   },"btn primary workshop-item-edit-button"));
+   itemPage.append(head);
+   const hero=el("div",undefined,"workshop-item-hero");
+   if(item.photoId){
+    const img=el("img",undefined,"workshop-reference-hero-image");
+    img.src="/api/workshop-photo?id="+encodeURIComponent(item.photoId);
+    img.alt=item.name;hero.append(img);
+   }else{
+    const media=catalogThumb(item);media.classList.add("workshop-item-large-thumb");hero.append(media);
+   }
+   const detail=el("div");
+   detail.append(el("h3","Your inventory"),el("p",(stockLabels[item.stockStatus]||"In stock")+" · "+item.quantity+" "+(item.unit||"pcs")));
+   for(const specification of item.specifications||[]){
+    const line=el("p");line.append(el("strong",specification.name+": "),document.createTextNode(specification.value));detail.append(line);
+   }
+   hero.append(detail);itemPage.append(hero);
+   itemPage.scrollIntoView({block:"start"});
+  }
   function showItem(id,navigate=true){
+   if(id.startsWith("my:")){showPersonalItem(id.slice(3),navigate);return}
    const item=standards().find(x=>x.id===id);
    if(!item){closeItem(false);return}
    if(navigate&&readSelected()!==id)changeUrl(id);
@@ -402,7 +467,9 @@
    const header=el("div",undefined,"workshop-item-page-heading");
    const titleLine=el("div",undefined,"workshop-item-title-line");
    titleLine.append(el("h2",item.name));
-   if(canEditReferences)titleLine.append(itemButton("Edit item",()=>openItemEditor(item),"btn workshop-item-edit-button"));
+   titleLine.append(itemButton(canEditReferences?"Edit shared item":"Edit item",()=>{
+    if(canEditReferences)openItemEditor(item);else editPersonalReference(item);
+   },"btn workshop-item-edit-button"));
    header.append(titleLine);
    if(item.subtitle)header.append(el("p",item.subtitle,"muted"));
    itemPage.append(header);
@@ -421,7 +488,11 @@
    const info=el("div",undefined,"workshop-item-hero-info");
    info.append(el("h3","Recommended Workshop item"));
    info.append(el("p",item.spec||item.use||"Reference specifications have not been provided."));
-   info.append(el("p","This reference does not imply you own the item.","muted"));
+   const owned=ownedFor(item);
+   if(owned.length){
+    info.append(el("p",ownershipLabel(owned),"workshop-owned-note"));
+    info.append(itemButton("Edit My Workshop item",()=>editPersonalReference(item),"btn"));
+   }else info.append(el("p","This reference does not imply you own the item.","muted"));
    info.append(itemButton("+ Add to My Workshop",()=>addReference(item),"btn primary"));
    if(item.supplierUrl){
     const order=el("a","Supplier / ordering page","btn workshop-reference-order-link");
@@ -680,7 +751,6 @@
   })();
 
   const privateArea=$(".workshop-private",personal),status=$(".workshop-status",personal);
-  let items=[],editingId=null,photoId="",catalogId="";
   const setStatus=msg=>status.textContent=msg;
   async function auth(){
    const user=(await req("/api/accounts")).user;
