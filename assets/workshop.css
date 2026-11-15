@@ -247,3 +247,9 @@
  #commonparts .workshop-item-large-thumb{min-height:230px}
  #commonparts .workshop-reference-hero-image{min-height:230px}
 }
+
+/* Keep the MPN and the short feature-tree caption directly stacked in identity. */
+#commonparts .workshop-part-editor-section[data-part-editor-section="identity"] .workshop-identity-priority-field{
+ grid-column:1/-1;
+ max-width:520px;
+}
