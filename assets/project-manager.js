@@ -5,7 +5,11 @@ window.BSProjectManager=(()=>{
   const response=await fetch(path,{method,credentials:"same-origin",cache:"no-store",
    ...(body?{headers:{"content-type":"application/json"},body:JSON.stringify(body)}:{})});
   const data=await response.json().catch(()=>({}));
-  if(!response.ok){const error=new Error(data.error||"Request failed (HTTP "+response.status+")");error.status=response.status;error.code=data.code||"";throw error}
+  if(!response.ok){
+    const error=new Error(data.error||"Server returned HTTP "+response.status+" without a detailed error");
+    error.status=response.status;error.code=data.code||"";error.reference=data.reference||"";
+    throw error
+   }
   return data;
  };
  const element=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node};
@@ -138,6 +142,10 @@ window.BSProjectManager=(()=>{
   const explainAccountFailure=(error,action)=>{
    if(error.status===409||error.code==="EMAIL_IN_USE")
     return ["That email is already registered.","Select “Already have an account? Sign in” to use your existing account.",email];
+   if(error.code==="ACCOUNT_UNEXPECTED_ERROR")return [
+    "The account server encountered an error.",
+    (error.reference?"Reference: "+error.reference+". ":"")+"Please provide this reference to the website administrator. Your account may not have been created.",null
+   ];
    if(error.status===503||error.code==="ACCOUNT_STORAGE_UNAVAILABLE")
     return ["Account creation is temporarily unavailable.","The website could not access its account service. Please try again later. Your account may not have been created.",null];
    if(error.status===429)return ["Too many requests.","Try again later before submitting another request.",null];
