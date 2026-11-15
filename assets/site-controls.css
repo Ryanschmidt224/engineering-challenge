@@ -2291,3 +2291,30 @@ body>.footer{margin-top:auto}
 .project-account-dialog .field[aria-invalid="true"]{
  border-color:#ae4141;outline:2px solid #ae414133;
 }
+
+/* Optional supplier-cart handoff, separated from the engineering BOM. */
+.bs-bom-purchasing-mount{margin:16px 0 24px}
+.bs-bom-purchasing{
+ border:1px solid var(--color-border);border-radius:12px;
+ background:var(--color-surface);padding:16px 20px;
+}
+.bs-bom-purchasing>summary{
+ font-size:1.05rem;font-weight:750;cursor:pointer;
+}
+.bs-bom-purchasing>p{margin:12px 0;font-size:.85rem;line-height:1.55}
+.bs-digikey-cart-form{display:grid;gap:12px}
+.bs-digikey-cart-lines{display:grid;gap:0;border:1px solid var(--color-border);border-radius:8px;overflow:hidden}
+.bs-digikey-cart-row{
+ display:flex;align-items:center;gap:12px;padding:12px;
+ border-bottom:1px solid var(--color-border);font-size:.85rem;font-weight:450;
+ cursor:pointer;
+}
+.bs-digikey-cart-row:last-child{border-bottom:0}
+.bs-digikey-cart-row input{width:17px;height:17px;accent-color:var(--color-accent);flex:none}
+.bs-digikey-cart-row span{flex:1;min-width:0;overflow-wrap:anywhere}
+.bs-digikey-cart-row strong{white-space:nowrap}
+.bs-digikey-cart-form>.btn{justify-self:start}
+.bs-digikey-cart-form .bs-digikey-cart-hint{margin:0;font-size:.82rem}
+.bs-digikey-exclusions{margin-top:12px;font-size:.83rem}
+.bs-digikey-exclusions summary{cursor:pointer;color:var(--color-text-muted)}
+.bs-digikey-exclusions ul{margin:8px 0 0;padding-left:24px}
