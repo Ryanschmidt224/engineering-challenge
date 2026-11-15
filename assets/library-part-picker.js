@@ -311,7 +311,8 @@ function open({onCreate,hideDefault=false}){
  manualFields.append(wireType.label,gauge.label,construction.label,wireAdvanced,length.label,endA.target.label,endA.choice.label,endA.other.label,endB.target.label,endB.choice.label,endB.other.label,results);
  wireSection.append(workflow,workflowHint,manualFields,wizardFields);
  const referencePreview=el("section","library-workshop-reference-preview hide");
- referencePreview.append(el("h3","","Selected Workshop item"));
+ referencePreview.append(el("h3","","Selected Workshop item"),
+   el("p","muted library-workshop-readonly-note","Reference details are read-only here. Add project-specific details on the Part page afterward."));
  const referenceRows=el("div","library-workshop-reference-rows");
  referencePreview.append(referenceRows);
  chooser.append(category.label,wireModeChoice,wireSection,compSection,referencePreview);
@@ -443,10 +444,14 @@ function open({onCreate,hideDefault=false}){
   // The Workshop selection/creation flow is deliberately short. More
   // project-specific choices can be made in the full Part Editor after creation.
   workshopFinishNote.classList.toggle("hide",!workshopMode);
-  if(adding)partClassification.input.value="purchased";
+  save.textContent=lib?"Add to project":"Create part";
+   if(adding)partClassification.input.value="purchased";
   const purchased=!lib&&isPart&&partClassification.input.value==="purchased";
   for(const label of [manufacturerNumber.label,manufacturerName.label,workshopDescription.label,vendorField.label])
    label.classList.toggle("hide",!purchased);
+   // Reference product fields remain immutable while using an existing Workshop item.
+   for(const input of [manufacturerNumber.input,manufacturerName.input,workshopDescription.input,vendorField.input])
+    input.disabled=lib;
   projectDetailsPanel.classList.toggle("hide",!isPart||workshopMode);
   vendorLinks.classList.toggle("hide",!purchased||workshopMode);
   vendorInfo.classList.toggle("hide",!purchased||workshopMode);
