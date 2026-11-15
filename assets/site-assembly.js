@@ -2557,7 +2557,7 @@ function setupAssemblyTrees(){
    const treeInfo=isPartNode(node)?partTreeLabels.get(node.partId):null;
    const firstLine=treeInfo?.mpn||nodeNumber||node?.name||title;
    const treeDetails=treeInfo?.details||{};
-   const secondLine=String(treeDetails.featureTreeName||referenceTreeDescription(treeDetails)||treeDetails.workshopTreeDescription||treeInfo?.description?.slice(0,20)||(node?.name!==firstLine?node?.name:"")||"").trim();
+   const secondLine=String(treeDetails.featureTreeName||referenceTreeDescription(treeDetails)||treeDetails.workshopTreeDescription||treeInfo?.description?.slice(0,20)||(node?.name!==firstLine?node?.name:"")||(partWorkshopItems.get(node?.partId)?"Description not set":"")||"").trim();
    name.textContent=node?(isDocumentNode(node)?"📄  ":isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+(isPartNode(node)?firstLine:(nodeNumber?nodeNumber+" · ":"")+node.name):"📦  "+title;
    if(isPartNode(node)&&showTreeDescriptions&&treeDetails.showTreeDescription!=="false"&&secondLine&&secondLine!==firstLine){
     const detail=document.createElement("small");detail.className="assembly-tree-description";detail.textContent=secondLine;name.append(detail);
