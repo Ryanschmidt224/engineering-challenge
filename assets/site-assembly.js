@@ -19,7 +19,7 @@ function setupAssemblyTrees(){
   const featureTreeCard=document.createElement("div");
   featureTreeCard.className="assembly-feature-tree-card";
   while(root.firstChild)featureTreeCard.append(root.firstChild);
-  root.append(summaryCard,featureTreeCard);
+  root.append(featureTreeCard,summaryCard);
   // Legacy project pages share the same workspace styling as newer projects.
   if(project==="linear"||project==="robot")view.classList.add("personal-project-view");
   const canEdit=()=>window.BSProjectManager?.isOwner?.(project)===true || (["launcher","linear","robot"].includes(project)&&adminAuthenticated);
@@ -2409,7 +2409,8 @@ function setupAssemblyTrees(){
   partsEntry.type="button";partsEntry.textContent="Parts Management";
   partsEntry.className="assembly-project-summary-entry assembly-parts-management-link";
   partsEntry.onclick=()=>{history.pushState(null,"","#"+project+"/parts");render();notify();window.scrollTo(0,0)};
-  nodesEl.after(partsEntry);
+  // Both links sit outside the feature tree, with the summary directly above Parts Management.
+  root.append(partsEntry);
   function render(){nodesEl.replaceChildren();
    workshopFilter.checked=showWorkshopItems;documentsFilter.checked=showTreeDocuments;
    controls.classList.toggle("hide",!canEdit()||isProjectSummary());projectActions.classList.toggle("hide",!canEdit());cardEdit.classList.toggle("hide",!canEdit());
