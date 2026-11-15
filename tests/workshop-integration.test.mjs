@@ -49,7 +49,7 @@ test("shared Workshop editing requires claimed admin role and preserves saved fi
  const env={PHOTOS:new TestBucket(),admin_password:"test-admin-secret"};
  const session=await register(env,"siteadmin@example.test");
  const before=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{id:"workshop:meter",details:{name:"Modified"}} ,session),env}));
- assert.equal(before.status,403);
+ assert.equal(before.status,201); // Signed-in members can publish their own shared entries.
  const claimed=await data(await handleAccounts(request("/api/accounts","POST",{action:"claim-admin",adminPassword:env.admin_password},session),env));
  assert.equal(claimed.status,200);
  assert.equal(claimed.body.user.role,"admin");
