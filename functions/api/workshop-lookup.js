@@ -22,23 +22,31 @@ export async function onRequest({request,env}){
  const count=Number(usage?await usage.text():0)||0;
  if(count>=15)return json({error:"Daily AI lookup limit reached (15). Try again tomorrow."},429);
  const prompt=[
-  "Search the web to identify the EXACT manufacturer product with part number "+JSON.stringify(mpn)+".",
-  "Prefer manufacturer datasheets and manufacturer product pages; use reputable authorized distributors second.",
-  "Do not confuse equivalent components, variants, package suffixes or supplier SKUs with the requested MPN.",
-  "Return ONLY one valid JSON object, no markdown, with these string keys:",
+  "Research the EXACT electronic/manufactured part number "+JSON.stringify(mpn)+" using real manufacturer datasheets and reliable distributor product pages.",
+  "Produce the depth of a detailed engineering component overview, not merely a one-sentence description.",
+  "Use multiple reputable references where possible. Never invent URLs, electrical ratings, pinouts, photos, vendors or citations.",
+  "Important: a generic number (e.g. 2N7000) may be sold by multiple manufacturers in different packages.",
+  "Do NOT silently merge manufacturer-specific ratings. Where ambiguous, describe variants in caution and omit unverified values.",
+  "Pinouts MUST specify package, viewing orientation and manufacturer. If these are not confirmed, leave pins empty and flag verification.",
+  "Include voltage/current limits, Rds(on), threshold, power dissipation, temperature, switching behavior and package only where supported.",
+  "Report test conditions for ratings (e.g. VGS, temperature, pulsed vs continuous) and distinguish typical from absolute maximum.",
+  "Provide a practical 2-4 sentence summary and a concise feature tree description (<=20 characters).",
+  "Return ONLY valid JSON, without fences or commentary, with string keys:",
   "partNumber, manufacturer, name, subtitle, featureTreeDescription, kind, category, familyName, typeName,",
-  "spec, use, caution, supplier, supplierUrl, documentationUrl, notes, and sources (array of HTTPS URLs).",
-  "name should be a descriptive product name; subtitle a concise description; featureTreeDescription at most 20 characters.",
-  "spec should contain important verified specs with units and conditions, separated by newlines.",
-  "kind must be one of tool/equipment/component/material/other; category one of tools/consumables/electronics/hardware/safety.",
-  "Do not fabricate specs, images, exact vendor availability or prices; leave unknown details as empty strings.",
-  "If MPN is ambiguous among manufacturers or insufficiently supported, set manufacturer empty and explain in notes.",
-  "Return at most 4 source URLs, preferably exact MPN pages. No JSON fields outside those named."
+  "spec, use, caution, supplier, supplierUrl, documentationUrl, notes, package, pinoutOrientation;",
+  "an array specs of objects {name,value,conditions,sourceUrl}, array pins of objects {number,name,function},",
+  "an array applications of short strings, and sources as an array of up to 6 verified HTTPS source URLs.",
+  "For specs, include actual measured/maximum values and units. Omit unsupported ones, do not use ranges across manufacturers as a single spec.",
+  "For pins, use strings and include package/face/orientation in pinoutOrientation.",
+  "For applications, include 3-6 typical verified practical uses. 'spec' is a fallback human-readable summary; 'use' is a summary of applications.",
+  "kind: tool/equipment/component/material/other; category: tools/consumables/electronics/hardware/safety.",
+  "Leave uncertain strings blank and report unknowns and differing manufacturers in caution or notes.",
+  "Use the requested partNumber exactly if confirmed and no substitute is intended."
  ].join("\n");
  try{
   const response=await fetch("https://api.openai.com/v1/responses",{
    method:"POST",headers:{"authorization":"Bearer "+env.OPENAI_API_KEY,"content-type":"application/json"},
-   body:JSON.stringify({model:"gpt-5.4",reasoning:{effort:"low"},max_output_tokens:1800,
+   body:JSON.stringify({model:"gpt-5.4",reasoning:{effort:"low"},max_output_tokens:3600,
     tools:[{type:"web_search",search_context_size:"medium",search_content_types:["text","image"],image_settings:{max_results:4,caption:true}}],
     tool_choice:"required",include:["web_search_call.results"],input:prompt})
   });
@@ -52,7 +60,22 @@ export async function onRequest({request,env}){
   let data;
   try{data=JSON.parse(stripped)}catch{return json({error:"The lookup did not return usable product details. Try again or enter the item manually."},502)}
   if(!data||typeof data!=="object"||Array.isArray(data))return json({error:"Product lookup returned invalid details"},502);
-  const sources=(Array.isArray(data.sources)?data.sources:[]).map(validUrl).filter(Boolean).slice(0,4);
+  const sources=(Array.isArray(data.sources)?data.sources:[]).map(validUrl).filter(Boolean).slice(0,6);
+  const research={
+   package:text(data.package,120),pinoutOrientation:text(data.pinoutOrientation,240),
+   specs:(Array.isArray(data.specs)?data.specs:[]).slice(0,24).map(row=>({
+    name:text(row?.name,100),value:text(row?.value,180),
+    conditions:text(row?.conditions,240),sourceUrl:validUrl(row?.sourceUrl)
+   })).filter(row=>row.name&&row.value),
+   pins:(Array.isArray(data.pins)?data.pins:[]).slice(0,32).map(pin=>({
+    number:text(pin?.number,24),name:text(pin?.name,80),function:text(pin?.function,240)
+   })).filter(pin=>pin.number&&pin.name),
+   applications:(Array.isArray(data.applications)?data.applications:[]).slice(0,10).map(x=>text(x,200)).filter(Boolean)
+  };
+  const engineeringSpecs=research.specs.map(row=>row.name+": "+row.value+(row.conditions?" ("+row.conditions+")":"")).join("\n");
+  const pinout=research.pins.length?("Pinout — "+[research.package,research.pinoutOrientation].filter(Boolean).join(", ")+":\n"+
+   research.pins.map(pin=>"Pin "+pin.number+": "+pin.name+(pin.function?" — "+pin.function:"")).join("\n")):"";
+  const applications=research.applications.map(x=>"• "+x).join("\n");
   const draft={
    partNumber:text(data.partNumber,160)||mpn,
    manufacturer:text(data.manufacturer,160),name:text(data.name,180),
@@ -61,10 +84,10 @@ export async function onRequest({request,env}){
    kind:kinds.has(data.kind)?data.kind:"component",
    category:categories.has(data.category)?data.category:"electronics",
    familyName:text(data.familyName,120),typeName:text(data.typeName,120),
-   spec:text(data.spec,5000),use:text(data.use,3000),
+   spec:(engineeringSpecs||text(data.spec,5000)).slice(0,5000),use:(applications||text(data.use,3000)).slice(0,3000),
    caution:text(data.caution,3000),supplier:text(data.supplier,160),
    supplierUrl:validUrl(data.supplierUrl),documentationUrl:validUrl(data.documentationUrl),
-   notes:text(data.notes,5000)
+   notes:([pinout,text(data.notes,3000)].filter(Boolean).join("\n\n")).slice(0,5000)
   };
   // A generated answer is not a verified identity: require an exact part-number match.
   const normalize=v=>String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
@@ -78,7 +101,7 @@ export async function onRequest({request,env}){
   });
   const imageSuggestion=candidate?{url:validUrl(candidate.image_url),sourceUrl:validUrl(candidate.source_website_url),caption:text(candidate.caption,180)}:null;
   await env.PHOTOS.put(key,String(count+1));
-  return json({draft,sources,imageSuggestion,needsReview:true,
+  return json({draft,research,sources,imageSuggestion,needsReview:true,
    note:"AI-generated draft. Confirm the exact manufacturer, package, ratings, sources and photo before saving."});
  }catch(error){
   console.error("Workshop lookup failed",String(error));
