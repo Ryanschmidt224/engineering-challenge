@@ -85,6 +85,42 @@
   #commonparts .workshop-item-hero-info h3{margin:0 0 10px}
   #commonparts .workshop-item-hero-info p{max-width:650px;line-height:1.55}
   #commonparts .workshop-item-related{margin-top:25px}
+  #commonparts .workshop-item-related{margin-top:104px;padding-top:26px;border-top:2px solid var(--color-border)}
+  #commonparts .workshop-item-related:before{content:"Related Workshop items";display:block;color:var(--color-text-muted);font-weight:650;text-transform:uppercase;letter-spacing:.07em;font-size:.71rem;margin-bottom:14px}
+  #commonparts .workshop-item-related-grid{grid-template-columns:repeat(auto-fill,minmax(115px,155px));gap:12px}
+  #commonparts .workshop-item-related-choice{padding:9px;gap:6px;min-height:135px}
+  #commonparts .workshop-item-related-choice .workshop-catalog-thumb{height:80px;width:100%}
+  #commonparts .workshop-item-related-choice .workshop-catalog-thumb svg{height:55px;width:55px}
+  #commonparts .workshop-item-related-choice strong{font-size:.78rem;line-height:1.3}
+  #commonparts .workshop-item-related-choice small{font-size:.7rem}
+  #commonparts .workshop-item-title-line{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  #commonparts .workshop-item-edit-button{white-space:nowrap}
+  #commonparts .workshop-catalog-photo-thumb img{height:100%;width:100%;object-fit:contain;border-radius:inherit}
+  #commonparts .workshop-reference-hero-image{display:block;width:100%;max-height:340px;object-fit:contain;background:var(--color-surface-muted);border:1px solid var(--color-border);border-radius:5px}
+  #commonparts .workshop-reference-related-photo{width:100%;height:80px;object-fit:contain;background:var(--color-surface-muted)}
+  #commonparts .workshop-reference-order-link,#commonparts .workshop-reference-doc-link{display:inline-block;margin:8px 8px 0 0;text-decoration:none}
+  #commonparts .workshop-item-editor-mount:not(:empty){margin-top:28px}
+  #commonparts .workshop-item-edit-form{background:var(--color-surface);border:1px solid var(--color-border);border-radius:8px;padding:22px}
+  #commonparts .workshop-item-editor-heading{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+  #commonparts .workshop-item-editor-heading h3{margin:0;font-size:1.12rem}
+  #commonparts .workshop-item-editor-heading p{margin:0;font-size:.79rem}
+  #commonparts .workshop-item-edit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:15px}
+  #commonparts .workshop-item-edit-grid label{display:flex;flex-direction:column;gap:5px;font-size:.83rem;font-weight:650;min-width:0}
+  #commonparts .workshop-item-edit-grid label.workshop-edit-wide{grid-column:1/-1}
+  #commonparts .workshop-item-edit-grid .field{width:100%;max-width:none;font-size:.86rem;font-weight:400}
+  #commonparts .workshop-item-edit-form h4{margin:25px 0 12px}
+  #commonparts .workshop-item-edit-photos{display:flex;flex-wrap:wrap;gap:12px}
+  #commonparts .workshop-item-edit-photo{display:flex;flex-direction:column;gap:6px;width:180px;padding:8px;border:1px solid var(--color-border);border-radius:6px}
+  #commonparts .workshop-item-edit-photo img{width:100%;height:125px;object-fit:contain}
+  #commonparts .workshop-item-photo-upload{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:15px}
+  #commonparts .workshop-item-photo-upload input{font-size:.8rem;max-width:100%}
+  #commonparts .workshop-item-editor-actions{display:flex;gap:12px;margin-top:22px}
+  #commonparts .workshop-item-editor-status{font-size:.83rem;color:var(--color-text-muted)}
+  @media(max-width:650px){
+   #commonparts .workshop-item-related{margin-top:68px}
+   #commonparts .workshop-item-edit-form{padding:14px}
+  }
+
   #commonparts .workshop-item-related h3{font-size:1.07rem;margin:0 0 15px}
   #commonparts .workshop-item-related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:12px}
   #commonparts .workshop-item-related-choice{display:flex;flex-direction:column;align-items:start;gap:8px;background:var(--color-surface);border:1px solid var(--color-border);padding:12px;border-radius:6px;text-align:left;color:var(--color-text);cursor:pointer}
@@ -205,6 +241,11 @@
   const friendlyTier=item=>item.tier==="core"?"Beginner / essential":"Additional / specialized";
   // Catalog illustrations where a verified product image is not available.
   const catalogThumb=item=>{
+   if(item.photos?.length){
+    const frame=el("span",undefined,"workshop-catalog-thumb workshop-catalog-photo-thumb");
+    const img=el("img");img.src="/api/workshop-reference?photo="+encodeURIComponent(item.photos[0].id);
+    img.alt=item.photos[0].caption||item.name;frame.append(img);return frame;
+   }
    const term=(item.name+" "+item.kind).toLowerCase();
    const kind=/wire|cable|shrink|ferrule/.test(term)?"wire":
     /screw|fastener|bolt|nut/.test(term)?"fastener":
@@ -302,8 +343,7 @@
    sideRow("Price / package",[item.price,item.packageQuantity].filter(Boolean).join(" · "));
    sideRow("Ordering notes",item.orderNotes);
    sideRow("Notes",item.notes);
-   itemSide.append(itemButton("+ Add to My Workshop",()=>addReference(item),"btn primary workshop-item-side-action"));
-   if(canEditReferences)itemSide.append(itemButton("Edit item details",()=>openItemEditor(item),"btn workshop-item-edit-button"));
+
    if(item.source&&/^https:\/\//.test(item.source)){
     const link=el("a","Manufacturer reference","workshop-item-source");
     link.href=item.source;link.target="_blank";link.rel="noopener noreferrer";itemSide.append(link);
@@ -317,7 +357,10 @@
    crumb.append(el("span"," / "+item.name));
    itemPage.append(crumb);
    const header=el("div",undefined,"workshop-item-page-heading");
-   header.append(el("h2",item.name));
+   const titleLine=el("div",undefined,"workshop-item-title-line");
+   titleLine.append(el("h2",item.name));
+   if(canEditReferences)titleLine.append(itemButton("Edit item",()=>openItemEditor(item),"btn workshop-item-edit-button"));
+   header.append(titleLine);
    if(item.subtitle)header.append(el("p",item.subtitle,"muted"));
    itemPage.append(header);
    const hero=el("section",undefined,"workshop-item-hero");
@@ -345,7 +388,7 @@
     const docs=el("a","Documentation","workshop-reference-doc-link");
     docs.href=item.documentationUrl;docs.target="_blank";docs.rel="noopener noreferrer";info.append(docs);
    }
-   if(canEditReferences)info.append(itemButton("Edit details",()=>openItemEditor(item),"btn workshop-item-edit-button"));
+
    hero.append(big,info);itemPage.append(hero);
    const related=standards().filter(x=>x.id!==id&&familyFor(x)?.id===familyFor(item)?.id);
    const editorMount=el("div",undefined,"workshop-item-editor-mount");
