@@ -28,21 +28,40 @@ function open({onCreate,hideDefault=false}){
  const heading=el("h2","","New part"),subtitle=el("p","muted","Create a part for the BOM. Choose whether it appears in the feature tree.");
  const toolField=el("label","library-visibility-field");const toolInput=el("input");toolInput.type="checkbox";toolField.append(toolInput,document.createTextNode(" Tool (not a build component)"));
  const visibility=el("label","library-visibility-field");const visibilityInput=el("input");visibilityInput.type="checkbox";visibilityInput.checked=hideDefault;visibility.append(visibilityInput,document.createTextNode(" Hide from feature tree"));
- // Shared catalog lookup and personal-inventory saving are different
- // actions. Use two aligned options with mutually exclusive selection.
+ // Choose the item type first, then select how a Part is created.
+ // The workshop-origin choices are exclusive; saving a newly created part to
+ // a Workshop is a separate, optional action.
  const workshopChoice=el("label","library-workshop-first");
- const workshopCheckbox=el("input");workshopCheckbox.type="checkbox";
+ const workshopCheckbox=el("input");workshopCheckbox.type="radio";workshopCheckbox.name="new-part-source";workshopCheckbox.value="from";
  const fromText=el("span","library-workshop-choice-copy");
- fromText.append(el("strong","","Use from"),el("span","","Workshop"));
- const fromHelp=el("small","muted library-workshop-choice-description","Choose an existing catalog item");
+ fromText.append(el("strong","","Use from"),document.createTextNode(" Workshop"));
+ const fromHelp=el("small","muted library-workshop-choice-description","Choose an existing shared or saved item");
  workshopChoice.append(workshopCheckbox,fromText,fromHelp);
+ const newPartChoice=el("label","library-workshop-first");
+ const newPartRadio=el("input");newPartRadio.type="radio";newPartRadio.name="new-part-source";newPartRadio.value="new";newPartRadio.checked=true;
+ const newText=el("span","library-workshop-choice-copy");
+ newText.append(el("strong","","Create new"),document.createTextNode(" part"));
+ newPartChoice.append(newPartRadio,newText,el("small","muted library-workshop-choice-description","Make a new part for this project"));
  const addToWorkshopChoice=el("label","library-workshop-first library-workshop-add");
  const addToWorkshopCheckbox=el("input");addToWorkshopCheckbox.type="checkbox";
  const addText=el("span","library-workshop-choice-copy");
- addText.append(el("strong","","Add to"),el("span","","My Workshop"));
- const addHelp=el("small","muted library-workshop-choice-description","Save a purchased part for reuse");
+ addText.append(document.createTextNode("Add this part to a Workshop"));
+ const addHelp=el("small","muted library-workshop-choice-description","Optional, for purchased parts only");
  addToWorkshopChoice.append(addToWorkshopCheckbox,addText,addHelp);
- const workshopAddHelp=el("p","muted library-workshop-add-help","Only purchased parts can be added to your private My Workshop. This does not publish an item to the shared catalog.");
+ const saveScope=el("fieldset","library-workshop-scope hide");
+ saveScope.append(el("legend","","Where should it be saved?"));
+ const privateScope=el("label","library-workshop-scope-option");
+ const privateRadio=el("input");privateRadio.type="radio";privateRadio.name="workshop-destination";privateRadio.value="private";privateRadio.checked=true;
+ privateScope.append(privateRadio,document.createTextNode("Private Workshop"),el("small","muted","Only your account can see and edit it"));
+ const publicScope=el("label","library-workshop-scope-option");
+ const publicRadio=el("input");publicRadio.type="radio";publicRadio.name="workshop-destination";publicRadio.value="public";
+ publicScope.append(publicRadio,document.createTextNode("Public Workshop"),el("small","muted","Visible to everyone; any signed-in user can contribute"));
+ saveScope.append(privateScope,publicScope);
+ const publicCategory=field("Public Workshop category","select");
+ for(const [id,label] of [["tools","Tools & Equipment"],["consumables","Consumables & Supplies"],["electronics","Electronics & Components"],["hardware","Hardware & Materials"],["safety","Safety & Measurement"]])option(publicCategory.input,id,label);
+ publicCategory.input.value="electronics";
+ saveScope.append(publicCategory.label);
+ const workshopAddHelp=el("p","muted library-workshop-add-help","Public Workshop items are shared with everyone. You'll be able to edit items you submit; other members cannot modify them.");
  const customName=field("Part name");
  const itemKind=field("Item type","select");option(itemKind.input,"part","Part");option(itemKind.input,"document","Document");option(itemKind.input,"code","Code");
  const partClassification=field("Part type","select");option(partClassification.input,"purchased","Off-the-shelf");option(partClassification.input,"custom","Custom");
@@ -181,9 +200,9 @@ function open({onCreate,hideDefault=false}){
  wireSection.append(workflow,workflowHint,manualFields,wizardFields);
  chooser.append(category.label,wireModeChoice,wireSection,compSection);
  const workshopChoices=el("fieldset","library-workshop-choice-group");
- const workshopLegend=el("legend","","Workshop");
- workshopChoices.append(workshopLegend,workshopChoice,addToWorkshopChoice,workshopAddHelp);
- form.append(heading,subtitle,workshopChoices,itemKind.label,partClassification.label,numberChoice,autoNumberHelp,partNumberField.label,customName.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
+ const workshopLegend=el("legend","","Part source");
+ workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,addToWorkshopChoice,saveScope,workshopAddHelp);
+ form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,numberChoice,autoNumberHelp,partNumberField.label,customName.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],purchased=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
@@ -215,18 +234,21 @@ function open({onCreate,hideDefault=false}){
  wizardButton.onclick=()=>{selectWorkflow("wizard");updateCalc()};
  wizardBack.onclick=()=>selectWorkflow(null);
  const update=()=>{
-  const lib=workshopCheckbox.checked,adding=addToWorkshopCheckbox.checked;
-  if(adding){
-   itemKind.input.value="part";
-   partClassification.input.value="purchased";
-  }
+  const isPart=itemKind.input.value==="part";
+  const lib=isPart&&workshopCheckbox.checked;
+  const adding=isPart&&!lib&&addToWorkshopCheckbox.checked;
+  if(adding)partClassification.input.value="purchased";
+  workshopChoices.classList.toggle("hide",!isPart);
+  addToWorkshopChoice.classList.toggle("hide",!isPart||lib);
+  saveScope.classList.toggle("hide",!adding);
+  publicCategory.label.classList.toggle("hide",!adding||!publicRadio.checked);
+  workshopAddHelp.hidden=!adding||!publicRadio.checked;
   const wire=category.input.value==="consumables"&&wireModeCheckbox.checked;
-  workshopAddHelp.hidden=!adding;
   if(lib&&!wire)refreshCommon();
   wireModeChoice.classList.toggle("hide",!lib||category.input.value!=="consumables");
   powerType.label.classList.toggle("hide",!lib||category.input.value!=="electronics");
   customName.label.classList.toggle("hide",lib);
-  itemKind.label.classList.toggle("hide",lib||adding);
+
   const documentMode=!lib&&itemKind.input.value!=="part";
   partClassification.label.classList.toggle("hide",lib||documentMode||adding);
   qty.label.classList.toggle("hide",documentMode);
@@ -268,8 +290,10 @@ function open({onCreate,hideDefault=false}){
   selectWorkflow("manual");
   status.textContent="Wizard applied "+selectedRecommendation+" AWG "+construction.input.value+" copper and "+length.input.value+" in cut length. Review the wire and termination details before creating the part; ampacity is not verified.";
  };
- workshopCheckbox.onchange=()=>{if(workshopCheckbox.checked)addToWorkshopCheckbox.checked=false;update()};
- addToWorkshopCheckbox.onchange=()=>{if(addToWorkshopCheckbox.checked)workshopCheckbox.checked=false;update()};
+ workshopCheckbox.onchange=()=>{addToWorkshopCheckbox.checked=false;update()};
+ newPartRadio.onchange=update;
+ addToWorkshopCheckbox.onchange=update;
+ privateRadio.onchange=update;publicRadio.onchange=update;
  itemKind.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;
  category.input.onchange=()=>{powerType.input.value="all";wireModeCheckbox.checked=false;update()};wireModeCheckbox.onchange=update;wireType.input.onchange=update;powerType.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
  form.addEventListener("submit",async e=>{
@@ -315,11 +339,12 @@ function open({onCreate,hideDefault=false}){
   payload.quantityUnit="pcs";
   // This client-only instruction is consumed by the project controller after
   // the BOM part is saved; it must never enter the components API record.
-  if(addToWorkshopCheckbox.checked){
-   if(workshopCheckbox.checked||payload.itemType!=="part"||payload.partType!=="purchased"){
-    status.textContent="Only purchased parts can be added to My Workshop.";return;
+  if(addToWorkshopCheckbox.checked&&itemKind.input.value==="part"&&!workshopCheckbox.checked){
+   if(payload.itemType!=="part"||payload.partType!=="purchased"){
+    status.textContent="Only purchased parts can be saved to a Workshop.";return;
    }
-   payload.addToWorkshop=true;
+   payload.addToWorkshop=publicRadio.checked?"public":"private";
+   if(publicRadio.checked)payload.workshopCategory=publicCategory.input.value;
   }
   payload.hideFromFeatureTree=visibilityInput.checked;
   payload.isTool=payload.itemType==="document"?false:workshopCheckbox.checked?["tools","safety"].includes(category.input.value):toolInput.checked;
@@ -337,7 +362,7 @@ function open({onCreate,hideDefault=false}){
   if(saved.status==="rejected"&&recorded.status==="rejected")status.textContent="Workshop saved items are unavailable; wire tools remain available.";
   refreshCommon();
  });
- workshopCheckbox.focus();
+ itemKind.input.focus();
  });
 }
 window.BSLibraryPartPicker={open,recommend};
