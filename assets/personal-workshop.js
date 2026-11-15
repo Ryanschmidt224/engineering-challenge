@@ -341,9 +341,10 @@
    const specs=el("table",undefined,"workshop-spec-table");
    const specBody=el("tbody");
    const specRows=[
-    ["Manufacturer",item.manufacturer],["Model",item.model],["Part number",item.partNumber],
+    ["Manufacturer part number",item.partNumber||item.model],["Manufacturer",item.manufacturer],
+    ["Description",item.subtitle||item.name],["Vendor",item.supplier],["Model",item.model],
     ["Specifications",item.spec],["Typical use",item.use],["Important considerations",item.caution],
-    ["Supplier",item.supplier],["Reference price",item.price],["Package quantity",item.packageQuantity],
+    ["Reference price",item.price],["Package quantity",item.packageQuantity],
     ["Buying suggestion",item.orderNotes],["Notes",item.notes]
    ];
    for(const [label,value] of specRows){
@@ -466,12 +467,12 @@
    };
    const sectionFields=window.BSPartFields?.sectionFields;
    const sections=[
-    ["identity","Part details",["name","subtitle","partNumber","typeName"]],
-    ["additional","Manufacturer and ordering",[
-     ...(sectionFields?.additional||[]).filter(key=>fieldDescriptors[key]&&key!=="category"),
-     "supplierUrl","price","packageQuantity","documentationUrl"
+    // Identify a purchased item by MPN and manufacturer first.
+    ["identity","Product identity",["partNumber","manufacturer","subtitle","supplier"]],
+    ["additional","Additional product information",[
+     "name","typeName","model","supplierUrl","asin","price","packageQuantity","documentationUrl"
     ]],
-    ["specifications","Specifications and notes",["spec","use","caution","orderNotes","notes"]]
+    ["specifications","Specifications and reference notes",["spec","use","caution","orderNotes","notes"]]
    ];
    const controls={};
    for(const [key,title,fields] of sections){
