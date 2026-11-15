@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {handleAccounts} from "../functions/api/accounts.js";
 import {onRequest as personalWorkshop} from "../functions/api/personal-workshop.js";
 import {onRequest as workshopReference} from "../functions/api/workshop-reference.js";
+import {handleComponents} from "../functions/api/components.js";
 
 const ORIGIN="https://schmidt.example";
 class TestBucket{
@@ -221,4 +222,56 @@ test("shared Workshop rejects stale saves without deleting another contributor's
  assert.equal(stale.status,409);
  const check=await data(await workshopReference({request:request("/api/workshop-reference"),env}));
  assert.equal(check.body.items[id].name,"2N7000 N-channel MOSFET");
+});
+
+test("project notes and KiCad metadata are saved on BOM parts, not Workshop references",async()=>{
+ const env={PHOTOS:new TestBucket(),admin_password:"test-admin-secret"};
+ const session=await register(env,"project-details@example.test");
+ const claim=await handleAccounts(request("/api/accounts","POST",{
+  action:"claim-admin",adminPassword:env.admin_password
+ },session),env);
+ assert.equal(claim.status,200);
+ const details={
+  name:"2N7000 MOSFET",manufacturer:"onsemi",partNumber:"2N7000",
+  category:"electronics",kind:"component",familyId:"community-electronics",photos:[]
+ };
+ const shared=await data(await workshopReference({request:request("/api/workshop-reference","POST",{details},session),env}));
+ assert.equal(shared.status,201);
+ const projectDetails={
+  workshopReferenceId:shared.body.id,
+  notes:"Switches the indicator LED",
+  changes:"Lead orientation checked against chosen package",
+  referenceDesignators:"Q1, Q2",
+  footprint:"Package_TO_SOT_THT:TO-92_Inline",
+  schematicValue:"2N7000",
+  sourceApplication:"KiCad",
+  sourceFile:"led-button.kicad_sch",
+  sourceComponentId:"e2f1-test-uuid"
+ };
+ const added=await data(await handleComponents(request("/api/components?project=launcher","POST",{
+  name:"2N7000 MOSFET",partType:"purchased",itemType:"part",assignNumber:false,
+  manufacturer:"onsemi",model:"2N7000",supplier:"DigiKey",
+  description:"N-channel switching MOSFET",specifications:[],projectDetails
+ },session),env));
+ assert.equal(added.status,201,JSON.stringify(added.body));
+ assert.equal(added.body.component.projectDetails.referenceDesignators,"Q1, Q2");
+ const id=added.body.component.id;
+ const edited=await data(await handleComponents(request("/api/components?project=launcher&id="+id,"PUT",{
+  ...added.body.component,
+  projectDetails:{...projectDetails,notes:"Moved Q1 closer to connector"}
+ },session),env));
+ assert.equal(edited.status,200,JSON.stringify(edited.body));
+ assert.equal(edited.body.component.projectDetails.notes,"Moved Q1 closer to connector");
+ const reread=await data(await handleComponents(request("/api/components?project=launcher"),env));
+ const projectRecord=reread.body.components.find(component=>component.id===id);
+ assert.equal(projectRecord.projectDetails.footprint,"Package_TO_SOT_THT:TO-92_Inline");
+ assert.equal(projectRecord.projectDetails.workshopReferenceId,shared.body.id);
+ const workshop=await data(await workshopReference({request:request("/api/workshop-reference"),env}));
+ assert.equal(workshop.body.items[shared.body.id].name,"2N7000 MOSFET");
+ assert.equal(workshop.body.items[shared.body.id].notes||"","");
+ assert.equal(workshop.body.items[shared.body.id].changes,undefined);
+ const invalid=await data(await handleComponents(request("/api/components?project=launcher","POST",{
+  name:"Invalid project note",specifications:[],projectDetails:{notes:"x".repeat(6001)}
+ },session),env));
+ assert.equal(invalid.status,400);
 });

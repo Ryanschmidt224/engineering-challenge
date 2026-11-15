@@ -287,14 +287,15 @@
     section.append(el("h3",title),el("p",value));
     itemSide.append(section);
    };
+   sideRow("Manufacturer part number",item.partNumber||item.model);
+   sideRow("Manufacturer",item.manufacturer);
+   sideRow("Description",item.subtitle||item.name);
+   sideRow("Vendor",item.supplier);
    sideRow("Specification",item.spec);
    sideRow("Typical use",item.use);
    sideRow("Considerations",item.caution);
    sideRow("Level",friendlyTier(item));
    sideRow("Product family",familyFor(item)?.label);
-   sideRow("Manufacturer",item.manufacturer);
-   sideRow("Model / part number",[item.model,item.partNumber].filter(Boolean).join(" · "));
-   sideRow("Supplier",item.supplier);
    sideRow("Price / package",[item.price,item.packageQuantity].filter(Boolean).join(" · "));
    sideRow("Buying suggestion",item.orderNotes);
    sideRow("Picture",item.illustration?"Illustrative reference; not an exact manufacturer photograph":"");
@@ -341,9 +342,10 @@
    const specs=el("table",undefined,"workshop-spec-table");
    const specBody=el("tbody");
    const specRows=[
-    ["Manufacturer",item.manufacturer],["Model",item.model],["Part number",item.partNumber],
+    ["Manufacturer part number",item.partNumber||item.model],["Manufacturer",item.manufacturer],
+    ["Description",item.subtitle||item.name],["Vendor",item.supplier],["Model",item.model],
     ["Specifications",item.spec],["Typical use",item.use],["Important considerations",item.caution],
-    ["Supplier",item.supplier],["Reference price",item.price],["Package quantity",item.packageQuantity],
+    ["Reference price",item.price],["Package quantity",item.packageQuantity],
     ["Buying suggestion",item.orderNotes],["Notes",item.notes]
    ];
    for(const [label,value] of specRows){
@@ -466,12 +468,12 @@
    };
    const sectionFields=window.BSPartFields?.sectionFields;
    const sections=[
-    ["identity","Part details",["name","subtitle","partNumber","typeName"]],
-    ["additional","Manufacturer and ordering",[
-     ...(sectionFields?.additional||[]).filter(key=>fieldDescriptors[key]&&key!=="category"),
-     "supplierUrl","price","packageQuantity","documentationUrl"
+    // Identify a purchased item by MPN and manufacturer first.
+    ["identity","Product identity",["partNumber","manufacturer","subtitle","supplier"]],
+    ["additional","Additional product information",[
+     "name","typeName","model","supplierUrl","asin","price","packageQuantity","documentationUrl"
     ]],
-    ["specifications","Specifications and notes",["spec","use","caution","orderNotes","notes"]]
+    ["specifications","Specifications and reference notes",["spec","use","caution","orderNotes","notes"]]
    ];
    const controls={};
    for(const [key,title,fields] of sections){
@@ -517,7 +519,7 @@
    };
    family.onchange=updateFamily;
    updateFamily();
-   form.append(classification,grid);
+   form.append(grid,classification);
    const photoTitle=el("h4","Photos");
    form.append(photoTitle);
    const photos=(item.photos||[]).map(p=>({...p}));

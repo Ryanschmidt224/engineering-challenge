@@ -40,7 +40,7 @@ async function saveCreatedPartToWorkshop({part,destination,category,projectTitle
     familyId:"community-"+category,familyName:"Community contributions",
     manufacturer:part.manufacturer||"",model:part.model||"",
     partNumber:part.model||"", // Manufacturer MPN, never the project BOM number.
-    subtitle:"Community-contributed purchased part",
+    subtitle:part.description||"Community-contributed purchased part",
     spec:specs.join("\n").slice(0,5000),
     photos:[]
    }})
@@ -58,7 +58,7 @@ async function saveCreatedPartToWorkshop({part,destination,category,projectTitle
    name:part.name,kind:"component",category:part.category||"Purchased parts",
    manufacturer:part.manufacturer||"",model:part.model||"",
    partNumber:part.model||"",quantity:0,unit:"pcs",stockStatus:"committed",
-   notes:"Added from project "+projectTitle+"; inventory quantity not confirmed.",
+   notes:(part.description?part.description+". ":"")+"Added from project "+projectTitle+"; inventory quantity not confirmed.",
    specifications:part.specifications||[]
   })
  });
@@ -123,11 +123,14 @@ function open({onCreate,hideDefault=false}){
  const partClassification=field("Part type","select");option(partClassification.input,"purchased","Off-the-shelf");option(partClassification.input,"custom","Custom");
  const partNumberField=field("Project BOM number (not manufacturer's number)");
  partNumberField.input.placeholder="Project-specific number, e.g. 100";partNumberField.input.maxLength=30;
+ const manufacturerNumber=field("Manufacturer part number (MPN)");
+ manufacturerNumber.input.placeholder="e.g. 2N7000";manufacturerNumber.input.maxLength=160;
  const manufacturerName=field("Manufacturer");
  manufacturerName.input.placeholder="e.g. onsemi (select actual manufacturer)";
  manufacturerName.input.maxLength=160;
- const manufacturerNumber=field("Manufacturer part number (MPN)");
- manufacturerNumber.input.placeholder="e.g. 2N7000";manufacturerNumber.input.maxLength=160;
+ const workshopDescription=field("Description","textarea");
+ workshopDescription.input.rows=2;workshopDescription.input.maxLength=2000;
+ workshopDescription.input.placeholder="Short description of the product itself";
  const vendorField=field("Suggested vendor","select");
  for(const [id,label] of [["DigiKey","DigiKey"],["Mouser","Mouser"],["Newark","Newark"],["Arrow","Arrow"],["Other","Other / not yet selected"]])option(vendorField.input,id,label);
  const vendorLinks=el("div","library-vendor-links muted");
@@ -143,6 +146,33 @@ function open({onCreate,hideDefault=false}){
   }
  };
  manufacturerNumber.input.oninput=renderVendorLinks;
+ const projectDetailsPanel=el("section","library-project-only");
+ projectDetailsPanel.append(el("h3","","Project-specific information"),
+  el("p","library-project-only-warning","Changes below apply only to this project. They will not modify the original Workshop part."));
+ const projectNotes=field("Project notes","textarea");projectNotes.input.rows=3;projectNotes.input.maxLength=6000;
+ const projectChanges=field("Project changes / modifications","textarea");projectChanges.input.rows=3;projectChanges.input.maxLength=6000;
+ projectDetailsPanel.append(projectNotes.label,projectChanges.label);
+ const kicad=el("details","library-project-kicad");
+ const summary=el("summary","","Schematic / KiCad information (optional)");
+ kicad.append(summary);
+ const kicadFields=[
+  ["referenceDesignators","Reference designators","Q1, Q2",500],
+  ["footprint","Footprint","Package_TO_SOT_THT:TO-92_Inline",240],
+  ["schematicValue","Schematic value","2N7000",240],
+  ["sourceApplication","Source application","KiCad",80],
+  ["sourceFile","Source schematic file","motor-control.kicad_sch",500],
+  ["sourceComponentId","Source component ID","Identifier from source schematic",240]
+ ];
+ const projectCadFields={};
+ for(const [key,title,placeholder,limit] of kicadFields){
+  const fieldRow=field(title);fieldRow.input.placeholder=placeholder;fieldRow.input.maxLength=limit;
+  projectCadFields[key]=fieldRow.input;kicad.append(fieldRow.label);
+ }
+ projectDetailsPanel.append(kicad);
+ const getProjectDetails=()=>({
+  notes:projectNotes.input.value.trim(),changes:projectChanges.input.value.trim(),
+  ...Object.fromEntries(Object.entries(projectCadFields).map(([key,input])=>[key,input.value.trim()]))
+ });
  const numberChoice=el("fieldset","library-number-choice");
  const numberLegend=el("legend","","Part number");numberChoice.append(numberLegend);
  const autoNumberRow=el("label","library-auto-number");
@@ -278,11 +308,18 @@ function open({onCreate,hideDefault=false}){
  const wireSection=el("div","library-wire-section");
  manualFields.append(wireType.label,gauge.label,construction.label,wireAdvanced,length.label,endA.target.label,endA.choice.label,endA.other.label,endB.target.label,endB.choice.label,endB.other.label,results);
  wireSection.append(workflow,workflowHint,manualFields,wizardFields);
- chooser.append(category.label,wireModeChoice,wireSection,compSection);
+ const referencePreview=el("section","library-workshop-reference-preview hide");
+ referencePreview.append(el("h3","","Selected Workshop item"));
+ const referenceRows=el("div","library-workshop-reference-rows");
+ referencePreview.append(referenceRows);
+ chooser.append(category.label,wireModeChoice,wireSection,compSection,referencePreview);
  const workshopChoices=el("fieldset","library-workshop-choice-group");
  const workshopLegend=el("legend","","Part source");
  workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,quickSearch,addToWorkshopChoice,saveScope,workshopAddHelp);
- form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,customName.label,manufacturerName.label,manufacturerNumber.label,vendorField.label,vendorLinks,vendorInfo,numberChoice,autoNumberHelp,partNumberField.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
+ form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,
+  manufacturerNumber.label,manufacturerName.label,workshopDescription.label,vendorField.label,
+  customName.label,vendorLinks,vendorInfo,numberChoice,autoNumberHelp,partNumberField.label,
+  chooser,qty.label,hintUnits,toolField,visibility,projectDetailsPanel,status,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],purchased=[],sharedOverrides={},personalItems=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
@@ -292,6 +329,27 @@ function open({onCreate,hideDefault=false}){
  const publishedRows=()=>Object.entries(sharedOverrides)
   .filter(([id,item])=>item?.created&&!workshopStandardRows().some(seed=>seed.id===id))
   .map(([id,item])=>({id,...item}));
+ const selectedReference=()=>{
+  const value=commonSelect.input.value;
+  const idx=value.indexOf(":");if(idx<0)return null;
+  const origin=value.slice(0,idx),itemId=value.slice(idx+1);
+  return allSearchable().find(item=>item.origin===origin&&item.id===itemId)||null;
+ };
+ const showReference=()=>{
+  const item=selectedReference();
+  referencePreview.classList.toggle("hide",!item||!workshopCheckbox.checked);
+  referenceRows.replaceChildren();
+  if(!item)return;
+  for(const [label,value] of [
+   ["Manufacturer part number",item.partNumber||item.model||""],
+   ["Manufacturer",item.manufacturer||""],
+   ["Description",item.subtitle||item.description||item.detail||item.name],
+   ["Vendor",item.supplier||"Not specified"]
+  ]){
+   const row=el("div","library-workshop-reference-row");
+   row.append(el("strong","",label),el("span","",value||"Not specified"));referenceRows.append(row);
+  }
+ };
  const allSearchable=()=>[
   ...commons.map(item=>({...item,origin:"saved"})),
   ...purchased.map(item=>({...item,origin:"purchased"})),
@@ -359,6 +417,7 @@ function open({onCreate,hideDefault=false}){
    p.origin==="purchased"?" · Recorded part":
    p.partNumber?" · "+p.partNumber:"")));
   if(filtered.some(p=>p.origin+":"+p.id===previous))commonSelect.input.value=previous;
+  showReference();
  };
  const selectWorkflow=value=>{
   wireWorkflow=value;
@@ -379,8 +438,9 @@ function open({onCreate,hideDefault=false}){
   const adding=isPart&&!lib&&addToWorkshopCheckbox.checked;
   if(adding)partClassification.input.value="purchased";
   const purchased=!lib&&isPart&&partClassification.input.value==="purchased";
-  for(const label of [manufacturerName.label,manufacturerNumber.label,vendorField.label])
+  for(const label of [manufacturerNumber.label,manufacturerName.label,workshopDescription.label,vendorField.label])
    label.classList.toggle("hide",!purchased);
+  projectDetailsPanel.classList.toggle("hide",!isPart);
   vendorLinks.classList.toggle("hide",!purchased);
   vendorInfo.classList.toggle("hide",!purchased);
   noNumberRow.classList.toggle("hide",!purchased);
@@ -445,7 +505,7 @@ function open({onCreate,hideDefault=false}){
  addToWorkshopCheckbox.onchange=update;
  privateRadio.onchange=update;publicRadio.onchange=update;
  itemKind.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;noNumberRadio.onchange=update;
- category.input.onchange=()=>{powerType.input.value="all";wireModeCheckbox.checked=false;update()};wireModeCheckbox.onchange=update;wireType.input.onchange=update;powerType.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
+ category.input.onchange=()=>{powerType.input.value="all";wireModeCheckbox.checked=false;update()};wireModeCheckbox.onchange=update;wireType.input.onchange=update;powerType.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;commonSelect.input.onchange=showReference;
  form.addEventListener("submit",async e=>{
   e.preventDefault();
   if(!form.reportValidity())return;
@@ -460,6 +520,7 @@ function open({onCreate,hideDefault=false}){
    if(itemKind.input.value==="part"&&partClassification.input.value==="purchased"){
     payload.manufacturer=manufacturerName.input.value.trim();
     payload.model=manufacturerNumber.input.value.trim(); // Manufacturer MPN; never the project's issued part number.
+    payload.description=workshopDescription.input.value.trim();
     payload.supplier=vendorField.input.value==="Other"?"":vendorField.input.value;
    }
   }else if(!(category.input.value==="consumables"&&wireModeCheckbox.checked)){
@@ -473,11 +534,13 @@ function open({onCreate,hideDefault=false}){
     commons.find(item=>item.id===choice.slice(6));
    if(!p){status.textContent="Select a Workshop item.";return}
    payload=isStandard?{
-    name:p.name,quantity:count,category:commonGroup(p),isTool:commonGroup(p)==="tools",
+    name:p.name,quantity:count,category:commonGroup(p),manufacturer:p.manufacturer||"",
+    model:p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",
+    isTool:commonGroup(p)==="tools",
     specifications:[{name:"Workshop reference",value:p.id},{name:"Tool specification",value:String(p.detail||p.spec||"Workshop reference").slice(0,300)}]
    }:(isPublic||isMine)?{
     name:p.name,quantity:count,category:commonGroup(p),manufacturer:p.manufacturer||"",
-    model:p.model||"",isTool:commonGroup(p)==="tools",
+    model:p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",isTool:commonGroup(p)==="tools",
     specifications:[
      {name:isPublic?"Public Workshop reference":"My Workshop reference",value:p.id},
      ...(Array.isArray(p.specifications)?p.specifications:
@@ -485,11 +548,11 @@ function open({onCreate,hideDefault=false}){
     ].filter(spec=>spec.name&&spec.value).slice(0,40)
    }:isPurchased?{
     name:p.name,quantity:count,sharedPartRef:"purchased:"+p.id,manufacturer:p.manufacturer||"",
-    model:p.model||"",supplier:p.supplier||"",asin:p.asin||"",category:commonGroup(p),
+    model:p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",asin:p.asin||"",category:commonGroup(p),
     isTool:commonGroup(p)==="tools",specifications:Array.isArray(p.specifications)?p.specifications:[]
    }:{
     name:p.name,quantity:count,sharedPartRef:"common:"+p.id,manufacturer:p.manufacturer||"",model:p.partNumber||"",
-    category:commonGroup(p),isTool:commonGroup(p)==="tools",
+    description:p.subtitle||p.description||"",supplier:p.supplier||"",category:commonGroup(p),isTool:commonGroup(p)==="tools",
     specifications:[{name:"Workshop item ID",value:p.id},{name:"Workshop specifications",value:p.specifications||"Saved Workshop item"}]
    };
   }else{
@@ -503,6 +566,10 @@ function open({onCreate,hideDefault=false}){
    if(crimp)specs.push({name:"Cut length (in)",value:String(inches)},{name:"End A",value:endA.value()||"Unspecified"},{name:"End B",value:endB.value()||"Unspecified"});
    payload={name,quantity:count,category:"consumables",specifications:specs};
    payload.wireInfo={gauge:g,construction:str,insulation:insulation.input.value,crimp,mm,endA:endA.value(),endB:endB.value(),wireId:null};
+  }
+  if(itemKind.input.value==="part"){
+   payload.projectDetails=getProjectDetails();
+   if(workshopCheckbox.checked&&selectedReference())payload.projectDetails.workshopReferenceId=selectedReference().id;
   }
   payload.quantityUnit="pcs";
   // This client-only instruction is consumed by the project controller after

@@ -95,6 +95,22 @@ const normalizeSupplierOffers=input=>{
  }
  return saved;
 };
+// Project-only annotations and future CAD/BOM mapping hints. These values
+// never write back to a shared/private Workshop reference.
+const projectDetailLimits=Object.freeze({notes:6000,changes:6000,referenceDesignators:500,
+ footprint:240,schematicValue:240,sourceApplication:80,sourceFile:500,sourceComponentId:240,workshopReferenceId:200});
+const cleanProjectDetails=(incoming,previous={})=>{
+ if(incoming===undefined)return previous&&typeof previous==="object"?previous:{};
+ if(!incoming||typeof incoming!=="object"||Array.isArray(incoming))return null;
+ if(Object.keys(incoming).some(key=>!Object.hasOwn(projectDetailLimits,key)))return null;
+ const result={};
+ for(const [key,limit] of Object.entries(projectDetailLimits)){
+  const value=incoming[key]??previous?.[key]??"";
+  if(typeof value!=="string"||value.length>limit)return null;
+  result[key]=value.trim();
+ }
+ return result;
+};
 const progressUpdatesFor=part=>Array.isArray(part.progressUpdates)?part.progressUpdates.filter(note=>note&&typeof note.text==="string").map(note=>({id:String(note.id||""),text:note.text,createdAt:String(note.createdAt||"")})):[];
 const validProgressUpdate=value=>typeof value==="string"&&!!value.trim()&&value.trim().length<=500;
 const presentPart=part=>({...part,progressUpdates:progressUpdatesFor(part),purchaseStatus:purchaseStatuses.has(part.purchaseStatus)?part.purchaseStatus:"not_started",fullName:part.fullName||generatedFullName(part),itemType:part.itemType==="document"?"document":"part",progressStatus:["not_started","in_progress","complete"].includes(part.progressStatus)?part.progressStatus:"not_started",needsAttention:part.needsAttention===true,attentionNote:part.attentionNote||"",isTool:isToolPart(part),hideFromFeatureTree:part.hideFromFeatureTree===true||(part.hideFromFeatureTree===undefined&&part.bomOnly===true),assumedOnHand:part.purchaseOverride===true?false:part.purchaseOverride===false?true:standardShopMaterial(part)});
@@ -173,7 +189,9 @@ export async function handleComponents(request,env){
   if(input.itemType!==undefined&&!["part","document"].includes(input.itemType))return json({error:"Choose Part or Document"},400);
   if(input.partType!==undefined&&!["purchased","custom","code"].includes(input.partType))return json({error:"Invalid part type"},400);
   if(input.description!==undefined&&(typeof input.description!=="string"||input.description.length>2000))return json({error:"Description must be 2000 characters or less"},400);
-  const record={description:String(input.description||"").trim(),itemType,partType:kind,assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,hideFromFeatureTree:input.hideFromFeatureTree===true,isTool:itemType==="document"?false:input.isTool===true,purchaseStatus:"not_started",progressStatus:"not_started",progressUpdates:[],needsAttention:false,attentionNote:"",purchaseOverride:input.purchaseOverride===true||input.purchaseOverride===false?input.purchaseOverride:null,workshopChoice:recommendedWorkshopIds.has(input.workshopChoice)?input.workshopChoice:null,sharedPartRef:cleanPartRef(input.sharedPartRef),id:crypto.randomUUID(),name:clean(input.name),fullName:clean(input.fullName||input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),supplierOffers:supplierOffers||[],category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,historicalPriceBasis:price.basis,historicalPackageQuantity:price.packageQuantity,historicalPurchasePrice:price.purchasePrice,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
+  const projectDetails=cleanProjectDetails(input.projectDetails);
+  if(!projectDetails)return json({error:"Invalid project-specific notes or schematic metadata"},400);
+  const record={description:String(input.description||"").trim(),projectDetails,itemType,partType:kind,assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,hideFromFeatureTree:input.hideFromFeatureTree===true,isTool:itemType==="document"?false:input.isTool===true,purchaseStatus:"not_started",progressStatus:"not_started",progressUpdates:[],needsAttention:false,attentionNote:"",purchaseOverride:input.purchaseOverride===true||input.purchaseOverride===false?input.purchaseOverride:null,workshopChoice:recommendedWorkshopIds.has(input.workshopChoice)?input.workshopChoice:null,sharedPartRef:cleanPartRef(input.sharedPartRef),id:crypto.randomUUID(),name:clean(input.name),fullName:clean(input.fullName||input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),supplierOffers:supplierOffers||[],category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,historicalPriceBasis:price.basis,historicalPackageQuantity:price.packageQuantity,historicalPurchasePrice:price.purchasePrice,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
   if(kind==="custom")Object.assign(record,{manufacturer:"",model:"",supplier:"",asin:"",historicalPrice:null,historicalPriceDate:null,historicalPurchasePrice:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
   const state=await readEditable(env,project),items=state.items;
   if(items.length>=300)return json({error:"Component limit reached"},400);
@@ -261,7 +279,9 @@ export async function handleComponents(request,env){
   if(input.description!==undefined&&(typeof input.description!=="string"||input.description.length>2000))return json({error:"Description must be 2000 characters or less"},400);
   if(input.itemType!==undefined&&!["part","document"].includes(input.itemType))return json({error:"Choose Part or Document"},400);
   if(input.partType!==undefined&&!["purchased","custom","code"].includes(input.partType))return json({error:"Invalid part type"},400);
-  const updated={...previous,description:input.description===undefined?(previous.description||""):input.description.trim(),itemType:input.itemType==="document"?"document":input.itemType==="part"?"part":previous.itemType||"part",name:clean(input.name.trim()),fullName:clean(input.fullName||input.name.trim()),...amount,historicalPrice:price.price,historicalPriceDate:price.date,historicalPriceBasis:price.basis,historicalPackageQuantity:price.packageQuantity,historicalPurchasePrice:price.purchasePrice,
+  const projectDetails=cleanProjectDetails(input.projectDetails,previous.projectDetails||{});
+  if(!projectDetails)return json({error:"Invalid project-specific notes or schematic metadata"},400);
+  const updated={...previous,projectDetails,description:input.description===undefined?(previous.description||""):input.description.trim(),itemType:input.itemType==="document"?"document":input.itemType==="part"?"part":previous.itemType||"part",name:clean(input.name.trim()),fullName:clean(input.fullName||input.name.trim()),...amount,historicalPrice:price.price,historicalPriceDate:price.date,historicalPriceBasis:price.basis,historicalPackageQuantity:price.packageQuantity,historicalPurchasePrice:price.purchasePrice,
    partType:input.partType==="code"?"code":input.partType==="custom"?"custom":"purchased"};
   if(updated.partType==="code"){updated.itemType="document";updated.isTool=false;updated.quantity=null}
   if(input.purchaseOverride===true||input.purchaseOverride===false||input.purchaseOverride===null)updated.purchaseOverride=input.purchaseOverride;
