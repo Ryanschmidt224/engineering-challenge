@@ -109,3 +109,47 @@ dialog.workspace-photo-dialog :is(.workspace-photos-editor,.workspace-photo-tool
  dialog.bs-dialog{padding:18px;width:calc(100vw - 22px)}
  .bs-dialog .bs-dialog-actions .btn{flex:1 1 auto}
 }
+
+/* Larger part forms: the fields, descriptions and project-only sections need
+   room to breathe. This overrides the original 680px/760px dialog widths,
+   without enlarging brief confirmation dialogs or photo viewers. */
+dialog.library-part-dialog:modal{
+ width:min(980px,calc(100vw - 44px));
+ max-width:calc(100vw - 44px);
+ height:min(92dvh,1020px);
+ max-height:calc(100dvh - 30px);
+ margin:auto;
+ overflow-y:auto;
+ overscroll-behavior:contain;
+}
+dialog.part-editor-dialog:modal{
+ width:min(1100px,calc(100vw - 44px));
+ max-width:calc(100vw - 44px);
+ height:min(94dvh,1080px);
+ max-height:calc(100dvh - 24px);
+ margin:auto;
+ overflow-y:auto;
+ overscroll-behavior:contain;
+}
+dialog.library-part-dialog .library-part-form{
+ padding:26px 30px;
+}
+dialog.part-editor-dialog .workspace-main-bom-editor{
+ padding-left:32px!important;
+ padding-right:32px!important;
+}
+@media(max-width:700px){
+ dialog.library-part-dialog:modal,
+ dialog.part-editor-dialog:modal{
+  width:calc(100vw - 16px);
+  max-width:calc(100vw - 16px);
+  height:calc(100dvh - 16px);
+  max-height:calc(100dvh - 16px);
+  border-radius:10px;
+ }
+ dialog.library-part-dialog .library-part-form{padding:17px}
+ dialog.part-editor-dialog .workspace-main-bom-editor{
+  padding-left:16px!important;
+  padding-right:16px!important;
+ }
+}
