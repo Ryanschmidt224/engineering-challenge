@@ -22,6 +22,51 @@ function recommend(voltage,current,length,dropPercent=3,purpose="power"){
  if(preferredDrop>maxDrop)reasons.push("the voltage-drop limit ("+preferredDrop.toFixed(3)+" V estimated)");
  return {chosen,drop:chosen?current*(2*length*chosen.r/1000):null,maxDrop,preferred,reasons};
 }
+// Called after the BOM part has been created successfully, so Workshop
+// publication failures cannot delete or duplicate an otherwise valid part.
+async function saveCreatedPartToWorkshop({part,destination,category,projectTitle=""}){
+ if(!destination)return "";
+ const chosen=destination===true?"private":destination;
+ if(chosen==="public"){
+  const valid=["tools","consumables","electronics","hardware","safety"];
+  if(!valid.includes(category))throw Error("Select a public Workshop category");
+  const specs=(part.specifications||[]).map(x=>
+   [String(x.name||"").trim(),String(x.value||"").trim()].filter(Boolean).join(": ")).filter(Boolean);
+  const response=await fetch("/api/workshop-reference",{
+   method:"POST",credentials:"same-origin",
+   headers:{"content-type":"application/json"},
+   body:JSON.stringify({details:{
+    name:part.name,kind:"component",category,
+    familyId:"community-"+category,familyName:"Community contributions",
+    manufacturer:part.manufacturer||"",model:part.model||"",
+    partNumber:part.partNumber||"",
+    subtitle:"Community-contributed purchased part",
+    spec:specs.join("\\n").slice(0,5000),
+    photos:[]
+   }})
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(data.error||"Public Workshop save failed");
+  window.dispatchEvent(new Event("bsworkshopupdated"));
+  return " Also added to the public Workshop.";
+ }
+ if(chosen!=="private")throw Error("Unknown Workshop destination");
+ const response=await fetch("/api/personal-workshop",{
+  method:"POST",credentials:"same-origin",
+  headers:{"content-type":"application/json"},
+  body:JSON.stringify({
+   name:part.name,kind:"component",category:part.category||"Purchased parts",
+   manufacturer:part.manufacturer||"",model:part.model||"",
+   partNumber:part.partNumber||"",quantity:0,unit:"pcs",stockStatus:"committed",
+   notes:"Added from project "+projectTitle+"; inventory quantity not confirmed.",
+   specifications:part.specifications||[]
+  })
+ });
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error(data.error||"My Workshop save failed");
+ window.dispatchEvent(new Event("bsworkshopupdated"));
+ return " Also added to My Workshop (quantity not confirmed).";
+}
 function open({onCreate,hideDefault=false}){
  return new Promise(resolve=>{
  const dialog=el("dialog","library-part-dialog"),form=el("form","library-part-form");form.method="dialog";
@@ -365,5 +410,5 @@ function open({onCreate,hideDefault=false}){
  itemKind.input.focus();
  });
 }
-window.BSLibraryPartPicker={open,recommend};
+window.BSLibraryPartPicker={open,recommend,saveCreatedPartToWorkshop};
 })();
