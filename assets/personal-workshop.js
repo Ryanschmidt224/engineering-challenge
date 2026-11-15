@@ -583,7 +583,7 @@
     status.textContent=isNew?"Creating item…":"Saving…";save.disabled=true;
     try{
      const response=await req("/api/workshop-reference",isNew?"POST":"PUT",
-      isNew?{details}:{id:item.id,details,expectedUpdatedAt:item.updatedAt||null});
+      isNew?{details}:{id:item.id,details,expectedRevision:item.revision||null});
      workshopOverrides[response.id]=response.details;
      if(isNew)editableReferenceIds.add(response.id);
      selectedFamily=details.familyId;selectedType="";
