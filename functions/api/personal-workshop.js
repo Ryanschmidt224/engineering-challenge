@@ -1,5 +1,6 @@
 // User-owned inventory. Never mix it with the administrator's shared Workshop catalog.
 import {accountUser} from "./accounts.js";
+import {isAdmin} from "./auth.js";
 import {projectAllowed} from "./projects.js";
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff"}});
 const inventoryKey=id=>"user-workshop/"+id+"/inventory.json";
@@ -51,13 +52,14 @@ export async function onRequest({request,env}){
   const bom=source?JSON.parse(await source.text()):[];
   return json({project,comparison:match(bom,(await read(env,user)).items)});
  }
- if(request.method==="GET")return json({items:(await read(env,user)).items});
+ if(request.method==="GET")return json({items:(await read(env,user)).items,canDelete:await isAdmin(request,env)});
  if(!["POST","PUT","DELETE"].includes(request.method))return json({error:"Method not allowed"},405);
  if(request.headers.get("origin")!==url.origin)return json({error:"Invalid origin"},403);
  const body=await request.json().catch(()=>null);
  if(!body||typeof body!=="object")return json({error:"Invalid item"},400);
  const previous=await read(env,user);let items=previous.items;
  if(request.method==="DELETE"){
+  if(!await isAdmin(request,env))return json({error:"Only administrators can delete Workshop items"},403);
   if(typeof body.id!=="string"||!items.some(x=>x.id===body.id))return json({error:"Item not found"},404);
   items=items.filter(x=>x.id!==body.id);
  }else{
