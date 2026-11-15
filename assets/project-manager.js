@@ -34,7 +34,8 @@ window.BSProjectManager=(()=>{
   // descriptors are together in a left panel, not separate filter toolbars.
   const searchPanel=element("div","bs-project-search-sidebar");
   searchPanel.append(element("h2","bs-catalog-sidebar-heading","Find projects"),searchLabel);
-  window.BSCatalogUI?.build(root,searchPanel,[filters,grid]);
+  const catalogLayout=window.BSCatalogUI?.build(root,searchPanel,[filters,grid]);
+  catalogLayout?.querySelector(".bs-catalog-sidebar")?.setAttribute("aria-label","Find projects and filter by descriptors");
   const suggestions=["Mechanical","Electronics","Software","Controls","CAD","3D Printing","Woodworking","PCB Design","Machining","Robotics","Measurement","Fabrication"];
   const projectTags=project=>Array.isArray(project?.tags)?project.tags:[];
   const parseTags=text=>[...new Map(String(text||"").split(",").map(x=>x.trim().replace(/\\s+/g," ")).filter(Boolean).map(x=>[x.toLowerCase(),x])).values()].slice(0,20);
