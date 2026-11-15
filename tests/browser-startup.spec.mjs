@@ -37,14 +37,17 @@ test("project feature tree and workspace initialize without browser errors", asy
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
  });
  await page.goto("/");
+ const initialTree=page.locator("#launcher .assembly-tree-nodes");
+ await expect(initialTree.locator(".assembly-name")).toHaveCount(2);
  await page.locator('.project-link[data-nav="launcher"]').click();
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
  const screen=page.locator("#launcher .assembly-bom-screen");
  const tree=page.locator("#launcher .assembly-tree-nodes");
  const summary=page.locator("#launcher .project-summary-page");
  await expect(summary).toBeVisible();
- await expect(tree.locator(".assembly-project-summary-entry")).toHaveText("Project summary");
- await expect(tree.locator(".assembly-project-summary-entry")).toHaveAttribute("aria-current","page");
+ const summaryEntry=page.locator("#launcher .assembly-summary-sidebar-card .assembly-project-summary-entry");
+ await expect(summaryEntry).toHaveText("Project summary");
+ await expect(summaryEntry).toHaveAttribute("aria-current","page");
  await expect(summary.locator(".project-summary-title")).toContainText("Foam");
  await expect(summary.locator(".project-summary-bom-items")).toContainText("C2822 Brushless Motor");
  await expect(summary.locator(".project-summary-bom-items")).toContainText("20A ESC");
@@ -64,13 +67,13 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(workspace.locator(".workspace-cover img")).toHaveAttribute("src",/photo-annotations/);
  await tree.locator(".assembly-name").first().click();
  await expect(page).toHaveURL(/#launcher\/workspace\/__root__/);
- await tree.locator(".assembly-project-summary-entry").click();
+ await summaryEntry.click();
  await expect(summary).toBeVisible();
  await tree.locator(".assembly-name").first().click();
  const header=workspace.locator(":scope > .workspace-heading");
  const buttonBounds=await header.locator(".workspace-back").boundingBox();
  const titleBounds=await header.locator(".workspace-title").boundingBox();
- expect(buttonBounds.x).toBeGreaterThan(titleBounds.x+titleBounds.width);
+ expect(buttonBounds.y).toBeGreaterThan(titleBounds.y+titleBounds.height);
  await expect(header.locator(".workspace-back")).toBeVisible();
  await workspace.locator(".workspace-back").click();
  await expect(page).toHaveURL(/#launcher\/bom\/__root__/);
@@ -81,7 +84,7 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(toolbar.locator("h2")).toHaveText("Bill of materials");
  await expect(toolbar.locator(".assembly-bom-list")).toBeVisible();
  await expect(toolbar.locator(".assembly-bom-pictures")).toBeVisible();
- await expect(toolbar.locator(".workspace-new-part")).toBeVisible();
+ await expect(toolbar.locator(".workspace-new-part")).toBeHidden();
  await expect(screen.locator(".assembly-bom-screen-header .assembly-bom-view-switch")).toHaveCount(0);
  await expect(screen.locator(".assembly-bom-picture-view")).toBeHidden();
  await expect(screen.locator(".workspace-bom")).toBeVisible();
@@ -181,7 +184,7 @@ test("linear and robot projects share the complete feature tree, summary, BOM an
   await page.goto("/#"+id);
   const root=page.locator("#"+id);
   const tree=root.locator(".assembly-tree-nodes");
-  await expect(tree.locator(".assembly-project-summary-entry")).toBeVisible();
+  await expect(root.locator(".assembly-summary-sidebar-card .assembly-project-summary-entry")).toBeVisible();
   await expect(root.locator(".project-summary-page")).toBeVisible();
   await expect(root.locator(".project-summary-gallery")).toBeVisible();
   await expect(root.locator(".project-summary-bom-section")).toBeVisible();
@@ -215,6 +218,10 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
     manufacturer:"Example Motors",model:"C2822",specifications:[],category:"Motor",supplier:"",asin:"",bomOnly:false}
   ]};
   if(url.pathname==="/api/photos")data={photos:[]};
+  if(url.pathname==="/api/workspace")data={workspace:{recipe:[
+   {id:"step-one",title:"Prepare components",standard:"Inspect the parts",notes:[],photos:[]},
+   {id:"step-two",title:"Measure resistance",standard:"Verify resistance",notes:[],photos:[]}
+  ],resources:[]},revision:"test"};
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
  });
  await page.goto("/");
@@ -238,7 +245,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  // Overview and workspace should share the same desktop gutter.
  const overviewSidebar=await sidebar.boundingBox();
  const overviewContent=await page.locator("#launcher .assembly-layout > .assembly-content").boundingBox();
- expect(Math.abs((overviewContent.x-(overviewSidebar.x+overviewSidebar.width))-22)).toBeLessThanOrEqual(2);
+ expect(Math.abs((overviewContent.x-(overviewSidebar.x+overviewSidebar.width))-26)).toBeLessThanOrEqual(2);
  await row.click({button:"right"});
  const menu=page.locator(".assembly-context-menu:visible").last();
  await expect(menu).toBeVisible();
@@ -266,15 +273,15 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  expect(Number(await divider.getAttribute("aria-valuenow"))).toBeGreaterThan(31);
  await expect(browser.locator(".recipe-step-list")).toBeVisible();
  await expect(browser.locator(".recipe-step-detail")).toBeVisible();
- // Assembly and part photo dialogs reuse the same small pencil launcher.
- const assemblyPencil=workspace.locator(".workspace-photo-launch");
+ // Assembly and part photo controls share the inline photo action bar.
+ const assemblyPencil=workspace.locator(".bs-photo-toggle");
  await expect(assemblyPencil).toBeVisible();
  await assemblyPencil.click();
- const assemblyPhotoDialog=page.locator("#launcher .workspace-photo-dialog");
- await expect(assemblyPhotoDialog).toBeVisible();
- await expect(assemblyPhotoDialog.locator(".assembly-photo-pick")).toBeVisible();
- await assemblyPhotoDialog.getByRole("button",{name:"Done"}).click();
- await expect(assemblyPhotoDialog).toBeHidden();
+ const assemblyPhotoActions=workspace.locator(".bs-photo-more");
+ await expect(assemblyPhotoActions).toBeVisible();
+ await expect(assemblyPhotoActions.getByRole("button",{name:"Add"})).toBeVisible();
+ await assemblyPencil.click();
+ await expect(assemblyPhotoActions).toBeHidden();
  await workspace.locator(".workspace-back").click();
  const bomScreen=page.locator("#launcher .assembly-bom-screen");
  const rowPart=bomScreen.locator(".workspace-saved-parts .bom-part",{hasText:"Linked Motor"}).first();
@@ -294,14 +301,14 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  });
  expect(partCardSurface.background).toBe("rgb(255, 255, 255)");
  expect(partCardSurface.border).toBe("solid");
- const partPencil=partPage.locator(".workspace-photo-launch");
+ const partPencil=partPage.locator(".bs-photo-toggle");
  await expect(partPencil).toBeVisible();
  await partPencil.click();
- const partPhotoDialog=partPage.locator(".part-photo-dialog");
- await expect(partPhotoDialog).toBeVisible();
- await expect(partPhotoDialog.locator(".part-photo-add")).toBeVisible();
- await partPhotoDialog.getByRole("button",{name:"Done"}).click();
- await expect(partPhotoDialog).toBeHidden();
+ const partPhotoActions=partPage.locator(".bs-photo-more");
+ await expect(partPhotoActions).toBeVisible();
+ await expect(partPhotoActions.getByRole("button",{name:"Add"})).toBeVisible();
+ await partPencil.click();
+ await expect(partPhotoActions).toBeHidden();
  await partPage.locator(".part-details-collapse summary").click();
  await expect(partPage.locator(".part-details-edit")).toBeVisible();
  await partPage.locator(".part-details-edit").click();
@@ -316,14 +323,10 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  expect(optionalLabels.some(label=>label.includes("(optional)"))).toBe(false);
 
  await expect(editor.locator(".component-name")).toHaveValue("Linked Motor");
- await expect(editor.locator(".component-full-name")).toHaveValue("Long descriptive motor part name");
- // The short headline is the BOM and tree label, while the full name stays editable.
+ await expect(editor.locator(".component-full-name")).toBeHidden();
+ // The short headline is the BOM and tree label; the legacy full-name field remains hidden.
  await expect(bomScreen.locator(".workspace-saved-parts")).toContainText("Linked Motor");
  await expect(bomScreen.locator(".workspace-saved-parts")).not.toContainText("Long descriptive motor part name");
- // First typing replaces the saved value; subsequent typing edits normally.
- await editor.locator(".component-full-name").click();
- await page.keyboard.type("Replacement full name");
- await expect(editor.locator(".component-full-name")).toHaveValue("Replacement full name");
  await editor.locator(".component-name").click();
  await page.keyboard.type("Short motor");
  await expect(editor.locator(".component-name")).toHaveValue("Short motor");
@@ -369,21 +372,20 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(editor.locator(".component-supplier")).toBeHidden();
  await expect(editor.locator(".component-asin")).toBeHidden();
  await expect(editor.locator(".component-historical-price")).toBeHidden();
- await expect(editor.locator(".component-category")).toBeVisible();
+ await expect(editor.locator(".component-category")).toBeHidden();
  await expect(editor.locator(".component-name")).toBeVisible();
  await kind.selectOption("purchased");
  await expect(editor.locator(".component-manufacturer")).toBeVisible();
  // The old component list must not be duplicated inside the editing form.
  await expect(editor.locator(".component-list")).toBeHidden();
  await expect(bomScreen.locator(".workspace-bom")).toBeHidden();
- await expect(workspace.locator(".workspace-saved-parts")).toContainText("Linked Motor");
- expect(await editor.locator(".workspace-bom-mount").evaluate(el=>el.closest(".workspace-main-bom-editor")!==null)).toBe(true);
+ expect(await editor.evaluate(el=>el.closest(".part-editor-dialog")!==null)).toBe(true);
  await expect(workspace.locator(".recipe-instructions")).toBeHidden();
  await editor.locator(".workspace-bom-editor-cancel").click();
  await expect(editor).toBeHidden();
  // Editing was launched from Part Details, so Cancel returns to that page.
  await expect(partPage).toBeVisible();
- await partPage.locator(".part-workspace-back").click();
+ await sidebar.locator(".assembly-name",{hasText:"Motor and Motor Control"}).click();
  await expect(workspace).toBeVisible();
  // Linked resources show one action until a user creates a reference.
  const resources=workspace.locator(".workspace-resources");
@@ -440,6 +442,7 @@ test("step editor keeps photo attachments with their note and saves from either 
  await (await chooser).setFiles({name:"measurement.png",mimeType:"image/png",buffer:Buffer.from("sample")});
  await expect(notes.nth(0).locator(".recipe-step-photo")).toHaveCount(1);
  await expect(notes.nth(1).locator(".recipe-step-photo")).toHaveCount(0);
+ await expect.poll(()=>page.evaluate(()=>window.testRecipe.hasPendingUploads())).toBe(false);
  await card.locator(".recipe-save-step-bottom").click();
  await expect(card.locator(".recipe-step-edit-toggle")).toHaveText("Edit");
  const saved=await page.evaluate(()=>window.lastRecipeSave?.[0]);
@@ -547,6 +550,9 @@ test("Workshop and Document tree filters operate independently",async({page})=>{
  await expect(controls).toBeVisible();
  await expect(controls.getByLabel("Workshop item")).toBeVisible();
  await expect(controls.getByLabel("Document")).toBeVisible();
+ const assemblyRow=tree.locator(".assembly-node",{hasText:"Electronics assembly"});
+ await expect(assemblyRow).toBeVisible();
+ await assemblyRow.locator(".assembly-expander").click();
  await expect(tree).toContainText("Mount Plate");
  await expect(tree).toContainText("Assembly Drawing");
  await expect(tree).not.toContainText("Solder Sucker");
@@ -589,7 +595,9 @@ test("saving a part closes the moved editor and restores part workspace",async({
  });
  await page.goto("/");
  await page.locator('.project-link[data-nav="launcher"]').click();
- await page.locator("#launcher .assembly-tree-nodes .assembly-name",{hasText:"Motor Control"}).click();
+ const motorRow=page.locator("#launcher .assembly-tree-nodes .assembly-node",{hasText:"Motor Control"});
+ await expect(motorRow).toBeVisible();
+ await motorRow.locator(".assembly-expander").click();
  await page.locator("#launcher .assembly-tree-nodes .assembly-name",{hasText:"Linked Motor"}).click();
  const partWorkspace=page.locator("#launcher .bom-part-workspace");
  await expect(partWorkspace).toBeVisible();
@@ -637,7 +645,7 @@ test("personal project builds a private editable workspace from the shared proje
  await expect(section.locator(".assembly-workspace-page .workspace-back")).toHaveText("Open BOM");
  await expect(section.locator(".assembly-tree-nodes")).toContainText("Test Personal Project");
  await expect(section.locator(".assembly-add")).not.toHaveClass(/hide/);
- await expect(section.locator(".project-proposals-button")).toHaveText("Review suggestions");
+ await expect(section.locator(".project-proposals-button")).toHaveCount(0);
  await section.locator(".workspace-back").click();
  await expect(section.locator(".assembly-bom-screen")).toBeVisible();
  await expect(section.locator(".assembly-bom-list")).toHaveAttribute("aria-pressed","true");
@@ -672,6 +680,7 @@ test("owner manages project privacy and removal from the summary",async({page})=
   else if(url.pathname==="/api/components")value={components:[]};
   else if(url.pathname==="/api/photos")value={photos:[]};
   else if(url.pathname==="/api/workspace")value={workspace:{recipe:[],resources:{tools:[],parts:[],calculators:[]}},revision:null};
+  else if(url.pathname==="/api/personal-workshop")value={items:[]};
   else if(url.pathname==="/api/auth")value={authenticated:false};
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(value)});
  });
@@ -682,7 +691,7 @@ test("owner manages project privacy and removal from the summary",async({page})=
  const settings=summary.locator(".project-summary-owner-settings");
  await expect(settings).toBeVisible();
  const tree=page.locator("#"+id+" .assembly-tree-nodes");
- const summaryEntry=tree.locator(".assembly-project-summary-entry");
+ const summaryEntry=page.locator("#"+id+" .assembly-summary-sidebar-card .assembly-project-summary-entry");
  await expect(summaryEntry).toContainText("1 change waiting");
  await expect(summary.locator(".project-summary-review")).toBeVisible();
  await expect(summary.locator(".project-summary-review-list li")).toHaveCount(1);
@@ -725,7 +734,7 @@ test("owner manages project privacy and removal from the summary",async({page})=
  await tree.locator(".assembly-name").first().click();
  await expect(page).toHaveURL(new RegExp("#"+id+"/workspace/__root__"));
  await expect(page.locator("#"+id+" .workspace-project-settings")).toHaveCount(0);
- await tree.locator(".assembly-project-summary-entry").click();
+ await page.locator("#"+id+" .assembly-summary-sidebar-card .assembly-project-summary-entry").click();
  await expect(summary).toBeVisible();
  expect(errors).toEqual([]);
 });
