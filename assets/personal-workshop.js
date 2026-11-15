@@ -716,7 +716,7 @@
    const applySuggestion=response=>{
     const draft=response.draft||{};
      for(const key of saveableFields){
-      if(controls[key]&&typeof draft[key]==="string")controls[key].value=draft[key];
+      if(controls[key]&&typeof draft[key]==="string"&&draft[key].trim())controls[key].value=draft[key];
      }
      if(draft.partNumber)lookupInput.value=draft.partNumber;
      if(draft.kind)kind.value=draft.kind;
