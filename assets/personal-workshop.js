@@ -71,7 +71,7 @@
     .map(([id,details])=>({id,...details}));
    return [...seeded.map(item=>({...item,...(workshopOverrides[item.id]||{})})),...generated];
   };
-  const saveableFields=["name","subtitle","spec","use","caution","manufacturer","model","partNumber","supplier","supplierUrl","asin","price","packageQuantity","orderNotes","documentationUrl","notes","category","kind","familyId","familyName","typeName"];
+  const saveableFields=["name","subtitle","featureTreeDescription","spec","use","caution","manufacturer","model","partNumber","supplier","supplierUrl","asin","price","packageQuantity","orderNotes","documentationUrl","notes","category","kind","familyId","familyName","typeName"];
   const families=()=>{
    const groups=(window.BSResources?.workshopGroups||[]).map(group=>({...group,items:[...group.items]}));
    for(const item of standards()){
@@ -290,6 +290,7 @@
    sideRow("Manufacturer part number",item.partNumber||item.model);
    sideRow("Manufacturer",item.manufacturer);
    sideRow("Description",item.subtitle||item.name);
+   sideRow("Feature tree description",item.featureTreeDescription);
    sideRow("Vendor",item.supplier);
    sideRow("Specification",item.spec);
    sideRow("Typical use",item.use);
@@ -343,7 +344,7 @@
    const specBody=el("tbody");
    const specRows=[
     ["Manufacturer part number",item.partNumber||item.model],["Manufacturer",item.manufacturer],
-    ["Description",item.subtitle||item.name],["Vendor",item.supplier],["Model",item.model],
+    ["Description",item.subtitle||item.name],["Feature tree description",item.featureTreeDescription],["Vendor",item.supplier],["Model",item.model],
     ["Specifications",item.spec],["Typical use",item.use],["Important considerations",item.caution],
     ["Reference price",item.price],["Package quantity",item.packageQuantity],
     ["Buying suggestion",item.orderNotes],["Notes",item.notes]
@@ -465,7 +466,7 @@
    // Reuse the New Part editor's canonical identity/additional/specification
    // sections and fields order, keeping Workshop-specific ordering fields.
    const fieldDescriptors={
-    name:["Item name","text"],subtitle:["Short description","text"],
+    name:["Item name","text"],subtitle:["Short description","text"],featureTreeDescription:["Feature tree description (20 characters max)","text"],
     manufacturer:["Manufacturer","text"],model:["Model","text"],
     partNumber:["Manufacturer part number","text"],supplier:["Supplier","text"],
     supplierUrl:["Supplier / ordering URL","url"],asin:["Amazon ASIN","text"],
@@ -478,7 +479,7 @@
    const sectionFields=window.BSPartFields?.sectionFields;
    const sections=[
     // Identify a purchased item by MPN and manufacturer first.
-    ["identity","Product identity",["partNumber","manufacturer","subtitle","supplier"]],
+    ["identity","Product identity",["partNumber","manufacturer","subtitle","featureTreeDescription","supplier"]],
     ["additional","Additional product information",[
      "name","typeName","model","supplierUrl","asin","price","packageQuantity","documentationUrl"
     ]],
@@ -497,6 +498,7 @@
      const control=type==="textarea"?el("textarea"):el("input");
      if(type==="textarea")control.rows=3;else control.type=type;
      control.className="field";control.value=item[name]||"";
+      if(name==="featureTreeDescription"){control.maxLength=20;control.placeholder="e.g. Motor switch";}
      label.append(control);fieldsGrid.append(label);controls[name]=control;
     }
     section.append(fieldsGrid);grid.append(section);
@@ -840,6 +842,7 @@
       <label>Manufacturer<input id="workshop-manufacturer" class="field" maxlength="100"></label>
       <label>Model<input id="workshop-model" class="field" maxlength="120"></label>
       <label>Part number<input id="workshop-partnumber" class="field" maxlength="120"></label>
+       <label>Feature tree description (20 characters max)<input id="workshop-featuretreedescription" class="field" maxlength="20" placeholder="e.g. Hall sensor"></label>
       <label>Quantity<input id="workshop-quantity" class="field" type="number" min="0" step="any" value="1"></label>
       <label>Unit<input id="workshop-unit" class="field" maxlength="32" value="pcs"></label>
       <label>Availability<select id="workshop-stockstatus" class="field"><option value="in_stock">In stock</option><option value="in_use_reusable">In use (reusable)</option><option value="committed">Committed</option></select></label>
@@ -862,7 +865,7 @@
    $("#workshop-photo-upload",personal).onclick=uploadPhoto;
    $("#workshop-compare",personal).onclick=compare;
   }
-  const fields={name:"name",kind:"kind",category:"category",manufacturer:"manufacturer",model:"model",partNumber:"partnumber",quantity:"quantity",unit:"unit",stockStatus:"stockstatus",notes:"notes"};
+  const fields={name:"name",kind:"kind",category:"category",manufacturer:"manufacturer",model:"model",partNumber:"partnumber",featureTreeDescription:"featuretreedescription",quantity:"quantity",unit:"unit",stockStatus:"stockstatus",notes:"notes"};
   function fill(item){
    editingId=item.id||null;photoId=item.photoId||"";catalogId=item.catalogId||"";
    for(const [key,id] of Object.entries(fields)){
