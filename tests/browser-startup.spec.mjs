@@ -779,3 +779,47 @@ test("documents can be hidden independently in feature tree and BOM",async({page
  await bom.locator(".assembly-bom-pictures").click();
  await expect(bom.locator(".assembly-bom-picture-view")).not.toContainText("Assembly drawing");
 });
+
+test("administrator can add a catalog item from the Workshop and open its details",async({page})=>{
+ let posted=null;
+ page.on("pageerror",error=>{throw error});
+ await page.route("**/api/**",async route=>{
+  const url=new URL(route.request().url()),method=route.request().method();
+  let data={};
+  if(url.pathname==="/api/workshop-reference"){
+   if(method==="GET")data={items:{},canEdit:true};
+   else if(method==="POST"&&route.request().headers()["content-type"]?.includes("application/json")){
+    posted=route.request().postDataJSON();
+    data={id:"workshop:custom-test-item",details:{...posted.details,created:true}};
+   }
+  }else if(url.pathname==="/api/accounts"){
+   data={user:{id:"u"+("1".repeat(32)),role:"admin",displayName:"Test Administrator",email:"admin@example.test"}};
+  }else if(url.pathname==="/api/auth"){
+   data={authenticated:true,isAdmin:true};
+  }else if(url.pathname==="/api/personal-workshop")data={items:[]};
+  else if(url.pathname==="/api/tree")data={nodes:[],revision:"test"};
+  else if(url.pathname==="/api/components")data={components:[]};
+  else if(url.pathname==="/api/photos")data={photos:[]};
+  else if(url.pathname==="/api/workspace")data={workspace:{recipe:[],resources:[]},revision:"test"};
+  await route.fulfill({status:url.pathname==="/api/workshop-reference"&&method==="POST"?201:200,
+   contentType:"application/json",body:JSON.stringify(data)});
+ });
+ await page.goto("/#commonparts");
+ const workshop=page.locator("#commonparts");
+ const create=workshop.locator(".workshop-catalog-create");
+ await expect(create).toBeVisible();
+ await create.click();
+ const editor=workshop.locator(".workshop-item-edit-form");
+ await expect(editor).toBeVisible();
+ await editor.getByLabel("Item name").fill("Adjustable 24 V supply");
+ await editor.getByLabel("Product type (e.g. Multimeters)").fill("Bench DC Power Supplies");
+ await editor.getByLabel("Specifications").fill("24 V DC output");
+ await editor.getByLabel("Website category").selectOption("electronics");
+ await editor.getByLabel("Product family").selectOption("power-supplies");
+ await editor.getByRole("button",{name:"Create catalog item"}).click();
+ await expect(workshop.locator(".workshop-item-page-heading h2")).toContainText("Adjustable 24 V supply");
+ await expect(workshop.locator(".workshop-spec-table")).toContainText("24 V DC output");
+ expect(posted.details.familyId).toBe("power-supplies");
+ expect(posted.details.category).toBe("electronics");
+ expect(posted.details.typeName).toBe("Bench DC Power Supplies");
+});
