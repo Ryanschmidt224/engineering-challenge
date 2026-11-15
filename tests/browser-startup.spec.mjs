@@ -865,6 +865,7 @@ test("New Part starts with item type and lets purchased parts choose private or 
  await publicRadio.check();
  await modal.getByLabel("Public Workshop category").selectOption("electronics");
  await expect(modal.locator(".library-field",{hasText:"Part type"}).first()).toBeHidden();
+ await modal.locator(".library-field",{hasText:"Manufacturer part number (MPN)"}).locator("input").fill("PSU-24V");
  await modal.locator(".library-field",{hasText:"Part name"}).locator("input").fill("Purchased DC supply");
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
  await expect(modal).toHaveCount(0);
@@ -877,6 +878,7 @@ test("New Part starts with item type and lets purchased parts choose private or 
  await open();
  modal=page.locator(".library-part-dialog");
  await modal.locator(".library-workshop-add input").check();
+ await modal.locator(".library-field",{hasText:"Manufacturer part number (MPN)"}).locator("input").fill("PSU-12V");
  await modal.locator(".library-field",{hasText:"Part name"}).locator("input").fill("Private supply");
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
  payload=await page.evaluate(()=>window.__createdTestPart);
@@ -890,6 +892,46 @@ test("New Part starts with item type and lets purchased parts choose private or 
  payload=await page.evaluate(()=>window.__createdTestPart);
  expect(payload.itemType).toBe("document");
  expect(payload.addToWorkshop).toBeUndefined();
+});
+test("Searching Workshop for missing 2N7000 opens a purchased part with separate manufacturer number",async({page})=>{
+ await page.route("**/api/**",async route=>{
+  const url=new URL(route.request().url());let data={};
+  if(["/api/commonparts","/api/purchased-parts"].includes(url.pathname))data={parts:[]};
+  else if(url.pathname==="/api/workshop-reference")data={items:{},canEdit:true};
+  else if(url.pathname==="/api/personal-workshop")data={items:[]};
+  else if(url.pathname==="/api/accounts")data={user:null};
+  else if(url.pathname==="/api/projects")data={projects:[]};
+  else if(url.pathname==="/api/auth")data={authenticated:false,isAdmin:false};
+  else if(url.pathname==="/api/tree")data={nodes:[],revision:"test"};
+  else if(url.pathname==="/api/components")data={components:[]};
+  else if(url.pathname==="/api/workspace")data={workspace:{recipe:[],resources:[]},revision:"test"};
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
+ });
+ await page.goto("/");
+ await page.evaluate(()=>{
+  window.__partPayload=null;
+  window.BSLibraryPartPicker.open({onCreate:async value=>{window.__partPayload=value}});
+ });
+ const dialog=page.locator(".library-part-dialog");
+ await dialog.locator('input[name="new-part-source"][value="from"]').check();
+ await dialog.getByLabel("Search all Workshop items").fill("2N7000");
+ await expect(dialog.locator(".library-workshop-quick-results")).toContainText("No matching Workshop items");
+ await dialog.getByRole("button",{name:"Not listed? Create a purchased part"}).click();
+ await expect(dialog.locator('input[name="new-part-source"][value="new"]')).toBeChecked();
+ await expect(dialog.locator(".library-field",{hasText:"Part name"}).locator("input")).toHaveValue("2N7000");
+ await expect(dialog.locator(".library-field",{hasText:"Manufacturer part number (MPN)"}).locator("input")).toHaveValue("2N7000");
+ await expect(dialog.locator('input[name="new-part-number-mode"][value="none"]')).toBeChecked();
+ await expect(dialog.locator(".library-vendor-links")).toContainText("DigiKey search");
+ await dialog.locator(".library-field",{hasText:"Manufacturer"}).locator("input").fill("onsemi");
+ await dialog.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
+ await expect(dialog).toHaveCount(0);
+ const saved=await page.evaluate(()=>window.__partPayload);
+ expect(saved.name).toBe("2N7000");
+ expect(saved.model).toBe("2N7000");
+ expect(saved.manufacturer).toBe("onsemi");
+ expect(saved.partNumber).toBeNull();
+ expect(saved.assignNumber).toBe(false);
+ expect(saved.addToWorkshop).toBe("private");
 });
 test("project navigation orders summary below tree and page notes can be created with existing photo upload",async({page})=>{
  const saves=[],seen=[];
