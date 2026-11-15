@@ -33,7 +33,7 @@ export async function onRequest({request,env}){
   const admin=await isAdmin(request,env);
   if(request.method==="GET"){
    const {value}=await read(env);
-   return json({items:value,canEdit:admin,canCreate:!!user||admin,
+   return json({items:value,canEdit:!!user||admin,canCreate:!!user||admin,
     editableIds:user||admin?Object.keys(value):[]});
   }
   if(!user&&!admin)return json({error:"Sign in to contribute to the public Workshop"},401);
