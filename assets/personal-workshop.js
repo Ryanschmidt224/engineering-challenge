@@ -58,6 +58,45 @@
   const sharedItems=$(".workshop-essentials",root),saved=$(".workshop-saved-details",root);
   if(sharedItems)sharedDetails.append(sharedItems);
   if(saved)sharedDetails.append(saved);
+  // One McMaster-style browsing shell, shared with Projects and Knowledge.
+  // Only visibility changes here; personal inventory and standard items are
+  // still stored separately and keep all their existing identifiers.
+  sharedDetails.open=true;
+  const sidebar=el("div",undefined,"bs-workshop-category-sidebar");
+  const allPanels=[shared,personal,...[...root.children].filter(node=>node!==header&&node!==shared&&node!==personal)];
+  window.BSCatalogUI?.build(root,sidebar,allPanels);
+  const workshopCategories=window.BSResources?.workshopCategories||[];
+  let selectedWorkshopCategory="all";
+  const applyWorkshopCategory=()=>{
+   const key=selectedWorkshopCategory;
+   shared.hidden=key==="mine";
+   personal.hidden=key!=="mine";
+   const details=$("#workshop-essentials-list",shared);
+   for(const branch of details?.querySelectorAll('[data-workshop-branch^="category-"]')||[]){
+    const category=branch.dataset.workshopBranch.slice("category-".length);
+    branch.hidden=key!=="all"&&category!==key;
+    if(key!=="all"&&category===key)branch.open=true;
+   }
+   if(key!=="all"&&key!=="mine")sharedDetails.open=true;
+   const intro=$(".workshop-recommendations",shared);
+   const level=$(".workshop-row",shared);
+   if(intro)intro.hidden=key!=="all";
+   if(level)level.hidden=key!=="all";
+  };
+  const nav=window.BSCatalogUI?.categories(sidebar,{
+   heading:"Browse Workshop",
+   onChange:key=>{selectedWorkshopCategory=key;applyWorkshopCategory()}
+  });
+  nav?.setItems([{value:"all",label:"All workshop items"},
+   ...workshopCategories.map(([id,name])=>({value:id,label:name})),
+   {value:"mine",label:"My Workshop"}]);
+  root.addEventListener("bsworkshopupdated",applyWorkshopCategory);
+  window.addEventListener("bsworkshopfocus",event=>{
+   const id=event.detail?.id;
+   const category=workshopCategories.find(([, ,ids])=>ids.includes(id))?.[0];
+   if(category)nav?.select(category);
+  });
+  applyWorkshopCategory();
   const standards=()=>window.BSResources?.workshopReferences||[];
   const showRecommendation=id=>{
    document.querySelector('[data-nav="commonparts"]')?.click();
