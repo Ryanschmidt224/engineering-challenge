@@ -32,9 +32,9 @@
   target.classList.add("bs-parts-page");
   const header=el("header","bs-parts-header"),heading=el("div"),back=el("button","btn","← Project"),title=el("h1","","Parts Management");
   back.type="button";back.onclick=()=>onBack?.();heading.append(back,title);header.append(heading);
-  const controls=el("div","bs-parts-controls"),search=el("input","field"),filter=dropdown([["all","All statuses"],...statusValues,...purchaseValues.filter(x=>x[0]!=="not_started")],"all"),typeFilter=dropdown([["all","All types"],...typeValues],"all");
+  const controls=el("div","bs-parts-controls"),search=el("input","field"),filter=dropdown([["all","All statuses"],...statusValues,...purchaseValues.filter(x=>x[0]!=="not_started")],"all");
   search.type="search";search.placeholder="Search part number or name";search.setAttribute("aria-label","Search parts");
-  controls.append(search,typeFilter,filter);
+  controls.append(search,filter);
   const guide=el("p","muted","Edit a name, type, status or attention note. Drag column dividers to resize. Numbers marked * appear in the name but are not formally assigned.");
   const lookupForm=el("form","bs-number-lookup"),lookupInput=el("input","field"),lookupButton=el("button","btn","Find number"),lookupResult=el("p","bs-number-result");
   lookupInput.placeholder="Find assigned or reserved number (e.g. NR116)";lookupInput.setAttribute("aria-label","Look up part number");lookupButton.type="submit";lookupResult.setAttribute("role","status");
@@ -77,6 +77,24 @@
   const columns=[["number","Part number"],["name","Part name"],["partType","Part type"],["status","Status"],["needsAttention","Needs attention"]];
   let order="name",direction=1,parts=[],fetchId=0;
   const expandedGroups=new Set();
+  const sidebar=el("div","bs-part-category-nav");
+  window.BSCatalogUI?.build(target,sidebar,[controls,guide,lookupForm,lookupResult,scroll,feedback]);
+  const selectedType=()=>categoryNavigation?.value||"all";
+  const matchesType=part=>selectedType()==="all"||
+   selectedType()==="document"&&part.itemType==="document"||
+   selectedType()==="tool"&&part.isTool===true||
+   selectedType()!=="document"&&selectedType()!=="tool"&&partTypeFor(part)===selectedType();
+  const categoryNavigation=window.BSCatalogUI?.categories(sidebar,{
+   heading:"Browse parts",onChange:()=>{refreshStatusFilter();render()}
+  });
+  const refreshPartCategories=()=>{
+   categoryNavigation?.setItems([
+    {value:"all",label:"All parts",count:parts.length},
+    ...typeValues.map(([value,label])=>({value,label,count:parts.filter(part=>partTypeFor(part)===value).length})),
+    {value:"document",label:"Documents",count:parts.filter(part=>part.itemType==="document").length},
+    {value:"tool",label:"Workshop tools",count:parts.filter(part=>part.isTool===true).length}
+   ]);
+  };
   const sortButtons={};
   for(const [key,label] of columns){
    const th=el("th");
@@ -108,7 +126,7 @@
    tbody.replaceChildren();
    const query=search.value.trim().toLowerCase();
    // Search by part number or headline name without overriding the filters.
-   const entries=parts.filter(p=>(filter.value==="all"||statusFor(p)===filter.value)&&(typeFilter.value==="all"||partTypeFor(p)===typeFilter.value)&&((p.name||"").toLowerCase().includes(query)||numberFor(p).toLowerCase().includes(query)));
+   const entries=parts.filter(p=>(filter.value==="all"||statusFor(p)===filter.value)&&matchesType(p)&&((p.name||"").toLowerCase().includes(query)||numberFor(p).toLowerCase().includes(query)));
    entries.sort((a,b)=>{
     if(order==="number"){
      const an=numberFor(a),bn=numberFor(b);
@@ -210,17 +228,17 @@
     const res=await fetch("/api/components?project="+encodeURIComponent(project),{credentials:"same-origin",cache:"no-store"}),data=await res.json();
     if(!res.ok)throw Error(data.error||"Unable to load parts");
     if(id!==fetchId)return;
-    parts=(data.components||[]).filter(p=>!p.generatedFrom);refreshStatusFilter();render();
+    parts=(data.components||[]).filter(p=>!p.generatedFrom);refreshPartCategories();refreshStatusFilter();render();
    }catch(error){if(id===fetchId)feedback.textContent=error.message}
   }
   // Keep the status filter relevant to the selected sourcing type. All types
   // shows the union of purchasing and progress statuses, without duplicates.
   const refreshStatusFilter=()=>{
    const previous=filter.value;
-   const matching=parts.filter(part=>typeFilter.value==="all"||partTypeFor(part)===typeFilter.value);
-   const available=typeFilter.value==="all"?[...fields.progressStatuses,...fields.purchaseStatuses]:
+   const matching=parts.filter(matchesType);
+   const available=selectedType()==="all"?[...fields.progressStatuses,...fields.purchaseStatuses]:
     matching.length?matching.flatMap(part=>fields.statusesFor(part)):
-    typeFilter.value==="purchased"?fields.purchaseStatuses:fields.progressStatuses;
+    selectedType()==="purchased"?fields.purchaseStatuses:[...fields.progressStatuses,...fields.purchaseStatuses];
    const options=[...new Map(available.map(([value,label])=>[value,label])).entries()];
    filter.replaceChildren();
    for(const [value,label] of [["all","All statuses"],...options]){
@@ -230,8 +248,8 @@
   };
   search.oninput=render;
   filter.onchange=render;
-  typeFilter.onchange=()=>{refreshStatusFilter();render()};
-  refreshStatusFilter();
+
+  refreshPartCategories();refreshStatusFilter();
   return {refresh};
  }
  window.BSPartsManager=Object.freeze({mount,groupParts});
