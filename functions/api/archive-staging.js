@@ -1,5 +1,6 @@
 import {isAdmin} from "./auth.js";
-import {PROJECTS,inspectArchive,decodeBytes,encodeBytes,sha256} from "./project-archive.js";
+import {isArchivedProjectId,inspectArchive,decodeBytes,encodeBytes,sha256} from "./project-archive.js";
+import {readCatalog} from "./projects.js";
 
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const idPattern=/^[0-9a-f-]{36}$/i;
@@ -46,7 +47,9 @@ async function verifyStage(bucket,project,id){
 }
 export async function handleArchiveStaging(request,env){
  const u=new URL(request.url),project=u.searchParams.get("project"),id=u.searchParams.get("id");
- if(!PROJECTS.includes(project))return json({error:"Unknown project"},400);
+ if(!isArchivedProjectId(project))return json({error:"Unknown project"},400);
+ const {projects}=await readCatalog(env);
+ if(!projects.some(item=>item.id===project))return json({error:"Project not found"},404);
  if(!await isAdmin(request,env))return json({error:"Administrator access required"},401);
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  if(request.method==="GET"){
