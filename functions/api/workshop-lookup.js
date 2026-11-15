@@ -34,9 +34,9 @@ export async function onRequest({request,env}){
   "Return ONLY valid JSON, without fences or commentary, with string keys:",
   "partNumber, manufacturer, name, subtitle, featureTreeDescription, kind, category, familyName, typeName,",
   "spec, use, caution, supplier, supplierUrl, documentationUrl, notes, package, pinoutOrientation;",
-  "an array specs of objects {name,value,conditions,sourceUrl}, array pins of objects {number,name,function},",
+  "an array specs of objects {name,value,unit,conditions}, array pins of objects {number,name,function},",
   "an array applications of short strings, and sources as an array of up to 6 verified HTTPS source URLs.",
-  "For specs, include actual measured/maximum values and units. Omit unsupported ones, do not use ranges across manufacturers as a single spec.",
+  "For specs, return unit separately from the value when possible (e.g. value 60, unit V). Omit unsupported values.",
   "For pins, use strings and include package/face/orientation in pinoutOrientation.",
   "For applications, include 3-6 typical verified practical uses. 'spec' is a fallback human-readable summary; 'use' is a summary of applications.",
   "kind: tool/equipment/component/material/other; category: tools/consumables/electronics/hardware/safety.",
@@ -64,7 +64,7 @@ export async function onRequest({request,env}){
   const research={
    package:text(data.package,120),pinoutOrientation:text(data.pinoutOrientation,240),
    specs:(Array.isArray(data.specs)?data.specs:[]).slice(0,24).map(row=>({
-    name:text(row?.name,100),value:text(row?.value,180),
+    name:text(row?.name,100),value:text(row?.value,180),unit:text(row?.unit,32),
     conditions:text(row?.conditions,240),sourceUrl:validUrl(row?.sourceUrl)
    })).filter(row=>row.name&&row.value),
    pins:(Array.isArray(data.pins)?data.pins:[]).slice(0,32).map(pin=>({
@@ -72,7 +72,7 @@ export async function onRequest({request,env}){
    })).filter(pin=>pin.number&&pin.name),
    applications:(Array.isArray(data.applications)?data.applications:[]).slice(0,10).map(x=>text(x,200)).filter(Boolean)
   };
-  const engineeringSpecs=research.specs.map(row=>row.name+": "+row.value+(row.conditions?" ("+row.conditions+")":"")).join("\n");
+  const engineeringSpecs=research.specs.map(row=>row.name+": "+row.value+(row.unit?" "+row.unit:"")+(row.conditions?" ("+row.conditions+")":"")).join("\n");
   const pinout=research.pins.length?("Pinout — "+[research.package,research.pinoutOrientation].filter(Boolean).join(", ")+":\n"+
    research.pins.map(pin=>"Pin "+pin.number+": "+pin.name+(pin.function?" — "+pin.function:"")).join("\n")):"";
   const applications=research.applications.map(x=>"• "+x).join("\n");
