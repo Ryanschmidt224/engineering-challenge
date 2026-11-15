@@ -864,3 +864,61 @@ test("New Part separates Workshop source from purchased-only inventory save",asy
  expect(payload.itemType).toBe("part");
  expect(payload.addToWorkshop).toBe(true);
 });
+
+test("project navigation orders summary below tree and page notes can be created with existing photo upload",async({page})=>{
+ const saves=[],seen=[];
+ page.on("pageerror",e=>{throw e});
+ await page.route("**/api/**",async route=>{
+  const url=new URL(route.request().url()),method=route.request().method();
+  let data={};
+  if(url.pathname==="/api/unstructured-notes"){
+   const scope=url.searchParams.get("scope"),id=url.searchParams.get("id");
+   seen.push(scope+":"+id);
+   if(method==="PUT"){
+    const body=route.request().postDataJSON();saves.push({scope,id,...body});
+    data={notes:body.notes,revision:"new-revision"};
+   }else data={notes:[],revision:null,canEdit:true};
+  }else if(url.pathname==="/api/photos"){
+   if(method==="POST")data={ok:true,id:"launcher/11111111-1111-4111-8111-111111111111.png"};
+   else data={photos:[]};
+  }else if(url.pathname==="/api/components")data={components:[]};
+  else if(url.pathname==="/api/tree")data={nodes:[],revision:"test"};
+  else if(url.pathname==="/api/workspace")data={workspace:{recipe:[],resources:[]},revision:"test"};
+  else if(url.pathname==="/api/projects")data={projects:[]};
+  else if(url.pathname==="/api/auth")data={authenticated:false,isAdmin:false};
+  else if(url.pathname==="/api/accounts")data={user:null};
+  else if(url.pathname==="/api/commonparts"||url.pathname==="/api/purchased-parts")data={parts:[]};
+  else if(url.pathname==="/api/wires")data={wires:[]};
+  else if(url.pathname==="/api/part-files")data={files:[]};
+  else if(url.pathname==="/api/drawings")data={drawings:[]};
+  await route.fulfill({status:method==="POST"&&url.pathname==="/api/photos"?201:200,
+   contentType:"application/json",body:JSON.stringify(data)});
+ });
+ await page.goto("/#launcher");
+ const sidebar=page.locator("#launcher .assembly-sidebar");
+ await expect(sidebar.locator(".assembly-summary-sidebar-card")).toBeVisible();
+ const order=await sidebar.evaluate(root=>[...root.children].map(e=>e.className));
+ const tree=order.findIndex(c=>c.includes("feature-tree-frame"));
+ const summary=order.findIndex(c=>c.includes("assembly-summary-sidebar-card"));
+ const parts=order.findIndex(c=>c.includes("assembly-parts-management-link"));
+ expect(tree).toBeGreaterThanOrEqual(0);expect(summary).toBe(tree+1);expect(parts).toBe(summary+1);
+ const panel=page.locator("#launcher .project-summary-page .bs-unstructured-notes");
+ await expect(panel).toBeVisible();
+ await panel.getByRole("button",{name:"+ Add note"}).click();
+ await panel.getByPlaceholder("Enter a note title").fill("Loose thoughts");
+ await panel.getByPlaceholder("Write anything useful here…").fill("Test mounting orientation");
+ await panel.locator('input[type="file"]').setInputFiles({
+  name:"fixture.png",mimeType:"image/png",buffer:Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/qLkAAAAASUVORK5CYII=","base64")
+ });
+ await expect(panel.getByText("Photo uploaded.")).toBeVisible();
+ await panel.getByRole("button",{name:"Save note"}).click();
+ await expect(panel.getByRole("button",{name:"Loose thoughts"})).toBeVisible();
+ await panel.getByRole("button",{name:"Loose thoughts"}).click();
+ await expect(panel.getByText("Test mounting orientation")).toBeVisible();
+ expect(saves).toHaveLength(1);
+ expect(saves[0].scope).toBe("summary");
+ expect(saves[0].notes[0].photos).toHaveLength(1);
+ await sidebar.locator(".assembly-tree-nodes .assembly-name").first().click();
+ await expect(page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace) .bs-unstructured-notes")).toBeVisible();
+ expect(seen).toContain("summary:root");expect(seen.some(x=>x.startsWith("workspace:"))).toBe(true);
+});
