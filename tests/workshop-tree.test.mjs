@@ -10,7 +10,7 @@ test("Workshop reference categories are centralized and preserve stable item IDs
  for(const name of ["workshop:solder","workshop:wire22","workshop:meter","workshop:oscilloscope","workshop:ferrule22"])
   assert.ok(source.includes('id:"'+name+'"'),name+" must retain its stable reference ID");
  assert.match(tree,/\["tools","Tools & Equipment",\[/);
- assert.match(tree,/workshopComponents\.map\(item=>item\.id\)/);
+ assert.match(tree,/\[\.\.\.workshopComponents,\.\.\.workshopPower\]\.map\(item=>item\.id\)/);
  assert.match(tree,/workshopHardware\.map\(item=>item\.id\)/);
  assert.match(source,/const workshopReferences=.*\.map\(itemMetadata\)/);
  assert.match(source,/branch\("purchased"/);
@@ -18,7 +18,7 @@ test("Workshop reference categories are centralized and preserve stable item IDs
  assert.match(source,/ancestor\.tagName==="DETAILS"/);
 });
 test("Edit Part inputs use paired descriptor/value layout with mobile fallback",()=>{
- const css=readFileSync("assets/site.css","utf8");
+ const css=readFileSync("assets/site-workspaces.css","utf8");
  assert.match(css,/\.component-review>label\s*\{\s*display:grid/);
  assert.match(css,/grid-template-columns:minmax\(150px,215px\) minmax\(0,1fr\)/);
  assert.match(css,/@media\(max-width:620px\)/);
