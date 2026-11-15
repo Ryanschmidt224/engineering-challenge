@@ -2388,3 +2388,16 @@ body>.footer{margin-top:auto}
 #home .bs-catalog-main>.project-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-auto-flow:row;gap:12px;width:100%}
 #home .bs-catalog-main>.project-grid>.project-card{grid-column:1/-1;width:100%;max-width:none;min-width:0}
 #home .bs-catalog-main>.project-grid>.project-card[hidden]{display:none!important}
+
+/* Compact two-line feature-tree labels: identifier first, purpose below. */
+.assembly-tree-nodes .assembly-name .assembly-tree-description{
+ display:block;
+ font-size:0.78em;
+ font-weight:400;
+ line-height:1.4;
+ opacity:.75;
+ text-align:left;
+ padding-left:1.6em;
+ white-space:normal;
+ overflow-wrap:anywhere;
+}
