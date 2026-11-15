@@ -823,3 +823,44 @@ test("administrator can add a catalog item from the Workshop and open its detail
  expect(posted.details.category).toBe("electronics");
  expect(posted.details.typeName).toBe("Bench DC Power Supplies");
 });
+
+test("New Part separates Workshop source from purchased-only inventory save",async({page})=>{
+ await page.route("**/api/**",async route=>{
+  const u=new URL(route.request().url());
+  let data={};
+  if(u.pathname==="/api/commonparts"||u.pathname==="/api/purchased-parts")data={parts:[]};
+  else if(u.pathname==="/api/projects")data={projects:[]};
+  else if(u.pathname==="/api/accounts")data={user:null};
+  else if(u.pathname==="/api/auth")data={authenticated:false,isAdmin:false};
+  else if(u.pathname==="/api/tree")data={nodes:[],revision:"test"};
+  else if(u.pathname==="/api/components")data={components:[]};
+  else if(u.pathname==="/api/photos")data={photos:[]};
+  else if(u.pathname==="/api/workspace")data={workspace:{recipe:[],resources:[]},revision:"test"};
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
+ });
+ await page.goto("/");
+ await page.evaluate(()=>{
+  window.__createdTestPart=null;
+  window.BSLibraryPartPicker.open({onCreate:async payload=>{window.__createdTestPart=payload}});
+ });
+ const modal=page.locator(".library-part-dialog");
+ await expect(modal).toBeVisible();
+ const from=modal.locator(".library-workshop-first:not(.library-workshop-add) input");
+ const add=modal.locator(".library-workshop-add input");
+ await expect(modal.locator(".library-workshop-first strong")).toContainText(["is from","Add to"]);
+ await from.check();
+ await expect(add).not.toBeChecked();
+ await add.check();
+ await expect(from).not.toBeChecked();
+ await expect(modal.locator(".library-field",{hasText:"Item type"})).toBeHidden();
+ await expect(modal.locator(".library-field",{hasText:"Part type"})).toBeHidden();
+ await expect(modal.locator(".library-workshop-add-help")).toContainText("My Workshop");
+ await modal.locator(".library-field",{hasText:"Part name"}).locator("input").fill("Purchased DC supply");
+ await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
+ await expect(modal).toHaveCount(0);
+ const payload=await page.evaluate(()=>window.__createdTestPart);
+ expect(payload.name).toBe("Purchased DC supply");
+ expect(payload.partType).toBe("purchased");
+ expect(payload.itemType).toBe("part");
+ expect(payload.addToWorkshop).toBe(true);
+});
