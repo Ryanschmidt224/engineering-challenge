@@ -354,3 +354,31 @@
  #commonparts .workshop-structured-spec-row{grid-template-columns:repeat(2,minmax(0,1fr))}
  #commonparts .workshop-structured-spec-row .btn{justify-self:start}
 }
+
+/* Copy an image, right-click the editable photo target, then choose Paste. */
+#commonparts .workshop-photo-paste-zone{
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ min-height:104px;
+ width:min(100%,680px);
+ margin:12px 0;
+ padding:18px;
+ border:2px dashed #a5bdb1;
+ border-radius:11px;
+ background:#f7faf8;
+ color:#426452;
+ font-size:.88rem;
+ font-weight:600;
+ text-align:center;
+ cursor:text;
+ outline:none;
+ white-space:normal;
+}
+#commonparts .workshop-photo-paste-zone:hover,
+#commonparts .workshop-photo-paste-zone:focus-visible,
+#commonparts .workshop-photo-paste-zone.dragover{
+ border-color:#35795f;
+ background:#edf6f0;
+ box-shadow:0 0 0 2px #b7d8c5;
+}
