@@ -40,3 +40,25 @@ test("top-level catalog pages fill the desktop width and shrink responsibly",()=
  assert.match(resources,/className|workshop-supplier-search/);
  assert.match(resources,/BSPa(?:rtSuppliers)\?\.searchUrlFor/);
 });
+
+test("DigiKey cart handoff includes only explicit codes and buyable quantities, combining repeats",()=>{
+ const ctx={window:{}};
+ runInNewContext(source("assets/bom-purchasing.js"),ctx);
+ const linesFor=ctx.window.BSBomPurchasing.linesFor;
+ const sample=[
+  {name:"Hall 1",supplierOffers:[{vendor:"digikey",sku:"1234-ND"}],quantity:2,quantityUnit:"pcs",purchaseStatus:"need_to_buy"},
+  {name:"Hall 2",supplierOffers:[{vendor:"digikey",sku:"1234-ND"}],quantity:3,quantityUnit:"pcs",purchaseStatus:"need_to_buy"},
+  {name:"Owned",supplierOffers:[{vendor:"digikey",sku:"OWN-ND"}],quantity:1,purchaseStatus:"already_have"},
+  {name:"Solder",supplierOffers:[{vendor:"digikey",sku:"SOLD-ND"}],quantity:1,assumedOnHand:true},
+  {name:"Unmapped",quantity:3},
+  {name:"Cut stock",supplierOffers:[{vendor:"digikey",sku:"CUT-ND"}],quantity:2.5},
+  {name:"Source doc",itemType:"document",supplierOffers:[{vendor:"digikey",sku:"DOC-ND"}],quantity:1}
+ ];
+ const result=linesFor(sample);
+ assert.equal(result.lines.length,1);
+ assert.equal(result.lines[0].sku,"1234-ND");
+ assert.equal(result.lines[0].qty,5);
+ assert.equal(result.skipped.length,2);
+ assert.match(source("assets/bom-purchasing.js"),/classic\/ordering\/fastadd\.aspx/);
+ assert.match(source("assets/site-assembly.js"),/BSBomPurchasing\?\.render\(purchasingMount,purchasedParts\)/);
+});
