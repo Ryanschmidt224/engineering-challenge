@@ -422,6 +422,8 @@ function setupAssemblyTrees(){
   const sidebar=root;
   const bomPanel=workspace.querySelector(".workspace-bom");
   bomScreen.querySelector(".assembly-bom-list-view").append(bomPanel);
+  const purchasingMount=document.createElement("div");purchasingMount.className="bs-bom-purchasing-mount";
+  bomScreen.querySelector(".assembly-bom-list-view").append(purchasingMount);
   // Shared BOM toolbar: show view and document controls, without a New part action.
   const bomHeading=bomPanel.querySelector(".workspace-bom-heading");
   const viewSwitch=bomScreen.querySelector(".assembly-bom-view-switch");
@@ -1409,9 +1411,12 @@ function setupAssemblyTrees(){
     if(!stack.childElementCount){const empty=document.createElement("p");empty.className="bom-empty";empty.textContent=shopItems.length?"No purchased components in this assembly. Standard materials appear below.":"No parts yet. Use + New part to add one.";stack.append(empty)}
     container.append(stack);
     const shopSection=shopMaterialsPanel(shopItems);if(shopSection)container.append(shopSection);
+    const purchasedParts=visibleParts.filter(part=>treeIds.has(part.assemblyId??null)||
+     nodes.some(node=>isPartNode(node)&&node.partId===part.id&&treeIds.has(node.parentId)));
+    window.BSBomPurchasing?.render(purchasingMount,purchasedParts);
    }catch(error){
     if(version!==bomDisplayVersion)return;
-    container.replaceChildren();
+    container.replaceChildren();purchasingMount.replaceChildren();
     const message=document.createElement("p");message.className="bom-error";message.textContent="Unable to load BOM: "+error.message;container.append(message);
    }
   }
