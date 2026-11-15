@@ -32,11 +32,16 @@ test("New Part Workshop picker uses the same five categories",()=>{
  const picker=readFileSync("assets/library-part-picker.js","utf8");
  const api=readFileSync("functions/api/commonparts.js","utf8");
  assert.match(picker,/el\("strong","","Use from"\)/);
- assert.match(picker,/el\("strong","","Add to"\)/);
+ assert.match(picker,/el\("strong","","Create new"\)/);
  assert.match(picker,/addToWorkshopCheckbox\.onchange/);
  assert.match(picker,/partClassification\.input\.value="purchased"/);
- assert.match(picker,/payload\.addToWorkshop=true/);
- assert.match(picker,/const lib=workshopCheckbox\.checked,adding=addToWorkshopCheckbox\.checked/);
+ assert.match(picker,/payload\.addToWorkshop=publicRadio\.checked\?"public":"private"/);
+ assert.match(picker,/const lib=isPart&&workshopCheckbox\.checked/);
+ assert.match(picker,/form\.append\(heading,subtitle,itemKind\.label,workshopChoices/);
+ assert.match(picker,/name="new-part-source"/);
+ assert.match(picker,/name="workshop-destination"/);
+ assert.match(picker,/saveCreatedPartToWorkshop/);
+ assert.match(picker,/publicCategory\.input\.value/);
  for(const [id,label] of [["tools","Tools & Equipment"],["consumables","Consumables & Supplies"],["electronics","Electronics & Components"],["hardware","Hardware & Materials"],["safety","Safety & Measurement"]]){
   assert.ok(picker.includes('["'+id+'","'+label+'"]'),"Missing "+label+" in picker");
   assert.ok(api.includes('"'+id+'"'),"Missing "+id+" category in API");
