@@ -52,6 +52,27 @@
 
 
   /* Inventory ownership is visible during all shared-catalog searches. */
+  /* Keep the related product strip at the bottom of the item viewport.
+     A long edit form naturally pushes this section below its contents. */
+  #commonparts .workshop-item-page:not([hidden]){
+   display:flex;
+   flex-direction:column;
+   min-height:max(760px,calc(100vh - 180px));
+   box-sizing:border-box;
+  }
+  #commonparts .workshop-item-related{
+   margin-top:auto!important;
+   padding-top:30px;
+   border-top:2px solid var(--color-border);
+   flex:none;
+  }
+  #commonparts .workshop-item-editor-mount:not(:empty){margin-bottom:34px}
+  #commonparts .workshop-detail-edit-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:8px 0 18px}
+  #commonparts .workshop-detail-edit-actions .workshop-item-edit-button{min-height:42px}
+  #commonparts .workshop-item-edit-button{display:inline-flex!important;align-items:center;justify-content:center;opacity:1!important;visibility:visible!important}
+  @media(max-width:800px){
+   #commonparts .workshop-item-page:not([hidden]){min-height:calc(100vh - 110px)}
+  }
   #commonparts .workshop-catalog-entry.is-owned{background:color-mix(in srgb,var(--color-selected,#dcece4) 36%,var(--color-surface,#fff));border-left:3px solid var(--color-accent,#30795f)}
   #commonparts .workshop-personal-entry{border-left:3px solid var(--color-accent,#30795f);background:color-mix(in srgb,var(--color-selected,#dcece4) 24%,var(--color-surface,#fff))}
   #commonparts .workshop-owned-label,#commonparts .workshop-owned-note{display:inline-block;font-size:.78rem;line-height:1.45;font-weight:650;color:var(--color-accent,#30795f)}
@@ -487,9 +508,9 @@
    const header=el("div",undefined,"workshop-item-page-heading");
    const titleLine=el("div",undefined,"workshop-item-title-line");
    titleLine.append(el("h2",item.name));
-   titleLine.append(itemButton(canEditReferences?"Edit shared item":"Edit item",()=>{
+   titleLine.append(itemButton(canEditReferences?"Edit shared catalog":"Edit My Workshop item",()=>{
     if(canEditReferences)openItemEditor(item);else editPersonalReference(item);
-   },"btn workshop-item-edit-button"));
+   },"btn primary workshop-item-edit-button"));
    header.append(titleLine);
    if(item.subtitle)header.append(el("p",item.subtitle,"muted"));
    itemPage.append(header);
@@ -506,7 +527,16 @@
     big.append(fallback);
    }
    const info=el("div",undefined,"workshop-item-hero-info");
-   info.append(el("h3","Recommended Workshop item"));
+   info.append(el("h3","Workshop item details"));
+   const controls=el("div",undefined,"workshop-detail-edit-actions");
+   if(canEditReferences){
+    controls.append(itemButton("Edit shared item",()=>openItemEditor(item),"btn primary workshop-item-edit-button"));
+    if(accountSignedIn)controls.append(itemButton("Edit My Workshop copy",()=>editPersonalReference(item),"btn"));
+   }else{
+    controls.append(itemButton(accountSignedIn?"Edit item in My Workshop":"Sign in to edit item",
+     ()=>editPersonalReference(item),"btn primary workshop-item-edit-button"));
+   }
+   info.append(controls);
    info.append(el("p",item.spec||item.use||"Reference specifications have not been provided."));
    const owned=ownedFor(item);
    if(owned.length){
@@ -537,7 +567,8 @@
     itemPage.append(gallery);
    }
    const related=standards().filter(x=>x.id!==id&&familyFor(x)?.id===familyFor(item)?.id);
-   const editorMount=el("div",undefined,"workshop-item-editor-mount");
+   const editorMount=el("section",undefined,"workshop-item-editor-mount");
+   editorMount.setAttribute("aria-label","Workshop item editor");
    itemPage.append(editorMount);
    const relatedSection=el("section",undefined,"workshop-item-related");
    relatedSection.append(el("h3","Other selections in "+(familyFor(item)?.label||categoryLabelFor(item))));
