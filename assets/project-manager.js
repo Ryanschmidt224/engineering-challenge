@@ -18,9 +18,6 @@ window.BSProjectManager=(()=>{
   const filters=element("div","project-directory-controls");
   const searchLabel=element("label","project-directory-label project-directory-search","Find a project");
   const searchInput=element("input","field project-search");searchInput.type="search";searchInput.placeholder="Search projects…";searchInput.setAttribute("aria-label","Search projects");searchLabel.append(searchInput);
-  const categoryLabel=element("label","project-directory-label","Category");
-  const categorySelect=element("select","field project-category-filter");
-  categoryLabel.append(categorySelect);
   const sortLabel=element("label","project-directory-label","Sort by");
   const sortSelect=element("select","field project-sort-filter");
   for(const [value,label] of [["name_asc","Name A–Z"],["name_desc","Name Z–A"],["newest","Newest first"],["oldest","Oldest first"]]){
@@ -28,10 +25,15 @@ window.BSProjectManager=(()=>{
   }
   sortLabel.append(sortSelect);
   const directoryStatus=element("span","project-directory-count muted");directoryStatus.setAttribute("role","status");
-  filters.append(searchLabel,categoryLabel,sortLabel,directoryStatus);grid.before(filters);
+  filters.append(searchLabel,sortLabel,directoryStatus);grid.before(filters);
+  const catalogSidebar=element("div","bs-project-category-nav");
+  const catalogLayout=window.BSCatalogUI?.build(root,catalogSidebar,[filters,grid]);
+  const categoryNavigation=window.BSCatalogUI?.categories(catalogSidebar,{
+   heading:"Browse projects",onChange:()=>updateDirectory()
+  });
   const categoryOf=project=>String(project?.category||"Uncategorized").trim()||"Uncategorized";
   const updateDirectory=()=>{
-   const filter=categorySelect.value,search=searchInput.value.trim().toLowerCase(),byId=new Map(projects.map(project=>[project.id,project]));
+   const filter=categoryNavigation?.value||"all",search=searchInput.value.trim().toLowerCase(),byId=new Map(projects.map(project=>[project.id,project]));
    const cards=[...grid.querySelectorAll(".project-card")];
    const info=card=>{
     const link=card.querySelector("[data-project],[data-nav]");
@@ -52,7 +54,6 @@ window.BSProjectManager=(()=>{
    directoryStatus.textContent=cards.filter(card=>!card.hidden).length+" projects";
   };
   searchInput.oninput=updateDirectory;
-  categorySelect.onchange=updateDirectory;
   sortSelect.onchange=updateDirectory;
   const dialog=element("dialog","project-account-dialog");
   dialog.innerHTML='<form class="project-account-form"><div class="project-account-header"><h2 class="project-account-title">Sign in</h2><button type="button" class="btn project-close" aria-label="Close account window">×</button></div><p class="project-account-subtitle muted">Your projects and Workshop are saved to your account.</p><p class="project-account-message" role="status" aria-live="polite"></p><label class="project-account-name hide">Display name<input class="field" name="displayName" maxlength="80" autocomplete="name"></label><label class="project-account-email">Email<input class="field" type="email" name="email" autocomplete="email" required></label><label class="project-account-password">Password<input class="field" type="password" name="password" autocomplete="current-password" minlength="12" required></label><div class="project-account-buttons"><button class="btn primary project-signin" type="submit">Sign in</button><button class="btn project-register" type="button">Create an account</button><button class="btn project-switch-login hide" type="button">Already have an account? Sign in</button><button class="btn project-signout hide" type="button">Sign out</button></div><div class="project-admin-link hide"><p class="muted">Already manage this website? Link your existing administrator access to this account.</p><label>Existing administrator password<input class="field" type="password" name="adminPassword" autocomplete="off"></label><button type="button" class="btn project-link-admin">Link administrator access</button></div></form>';
@@ -325,13 +326,12 @@ window.BSProjectManager=(()=>{
      ensureProjectPage(project);
      if(project.id.startsWith("p"))grid.append(card(project));
     }
-    const selected=categorySelect.value||"all";
-    categorySelect.replaceChildren();
-    const all=element("option","","All categories");all.value="all";categorySelect.append(all);
-    for(const category of [...new Set(projects.map(categoryOf))].sort((a,b)=>a.localeCompare(b))){
-     const option=element("option","",category);option.value=category;categorySelect.append(option);
-    }
-    categorySelect.value=[...categorySelect.options].some(option=>option.value===selected)?selected:"all";
+    const categoryCounts=new Map();
+    for(const project of projects)categoryCounts.set(categoryOf(project),(categoryCounts.get(categoryOf(project))||0)+1);
+    categoryNavigation?.setItems([
+     {value:"all",label:"All projects",count:projects.length},
+     ...[...categoryCounts].sort(([a],[b])=>a.localeCompare(b)).map(([value,count])=>({value,label:value,count}))
+    ]);
     updateDirectory();
     setupAssemblyTrees();setupComponents();setupPhotos();
     if(typeof refreshAdminUI==="function")refreshAdminUI();
