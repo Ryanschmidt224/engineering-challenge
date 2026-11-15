@@ -1833,7 +1833,7 @@ function setupAssemblyTrees(){
    if(!window.BSLibraryPartPicker){bomReport("Part library unavailable. Refresh and try again.");return}
    const targetAssembly=selected;
    await window.BSLibraryPartPicker.open({hideDefault:true,onCreate:async payload=>{
-    const {wireInfo,...part}=payload;
+    const {wireInfo,addToWorkshop=false,workshopCategory="",...part}=payload;
     let newPart=null,wireId=wireInfo?.wireId||null;
     try{
      if(wireInfo&&!wireId){
@@ -1868,7 +1868,17 @@ function setupAssemblyTrees(){
       const data=await res.json();if(!res.ok)throw Error(data.error||"Could not save wire cutting list");
      }
      await renderWorkspaceParts();
-     bomReport(newPart.name+" saved to the BOM. Required ferrules are calculated automatically.");
+     let workshopNotice="";
+     if(addToWorkshop){
+      try{
+       workshopNotice=await window.BSLibraryPartPicker.saveCreatedPartToWorkshop({
+        part:newPart,destination:addToWorkshop,category:workshopCategory,projectTitle:title
+       });
+      }catch(error){
+       workshopNotice=" The BOM part was created, but the Workshop save failed: "+error.message;
+      }
+     }
+     bomReport(newPart.name+" saved to the BOM."+workshopNotice);
     }catch(error){
      if(newPart)await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(newPart.id),{method:"DELETE",credentials:"same-origin"}).catch(()=>{});
      if(newPart){nodes=nodes.filter(n=>n.partId!==newPart.id);partVisibility.delete(newPart.id);partTools.delete(newPart.id);render()}
@@ -2545,7 +2555,7 @@ function setupAssemblyTrees(){
        wireId=wireData.wire.id;
       }
      }
-     const {wireInfo,addToWorkshop=false,...part}=payload;
+     const {wireInfo,addToWorkshop=false,workshopCategory="",...part}=payload;
      if(wireId){part.sharedPartRef="wire:"+wireId;part.specifications.push({name:"Library wire ID",value:wireId,source:"explicit"})}
      const res=await fetch("/api/components?project="+encodeURIComponent(project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({assemblyId:selected,...part})});
      const data=await res.json();if(!res.ok)throw Error(data.error||"Unable to create part");
@@ -2567,27 +2577,12 @@ function setupAssemblyTrees(){
      await save(next);expanded.add(selected);
      let workshopNotice="";
      if(addToWorkshop){
-      // Inventory is a separate authorized record. A failure must not undo a
-      // successfully saved BOM part or invite an accidental duplicate retry.
       try{
-       const response=await fetch("/api/personal-workshop",{
-        method:"POST",credentials:"same-origin",
-        headers:{"content-type":"application/json"},
-        body:JSON.stringify({
-         name:newPart.name,kind:"component",category:newPart.category||"Purchased parts",
-         manufacturer:newPart.manufacturer||"",model:newPart.model||"",
-         partNumber:newPart.partNumber||"",quantity:0,unit:"pcs",
-         stockStatus:"committed",
-         notes:"Added from project "+title+"; inventory quantity not confirmed.",
-         specifications:newPart.specifications||[]
-        })
+       workshopNotice=await window.BSLibraryPartPicker.saveCreatedPartToWorkshop({
+        part:newPart,destination:addToWorkshop,category:workshopCategory,projectTitle:title
        });
-       const result=await response.json().catch(()=>({}));
-       if(!response.ok)throw Error(result.error||"Workshop save failed");
-       workshopNotice=" Also saved to My Workshop as committed (quantity not confirmed).";
-       window.dispatchEvent(new Event("bsworkshopupdated"));
       }catch(error){
-       workshopNotice=" The BOM part was created, but My Workshop could not be updated: "+error.message;
+       workshopNotice=" The part was created, but the Workshop save failed: "+error.message;
       }
      }
      if(!newPart.hideFromFeatureTree&&!newPart.isTool)openTreePart(next[next.length-1]);
