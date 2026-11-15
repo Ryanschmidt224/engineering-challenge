@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {planContentReset,executeContentReset,isContentKey} from "../scripts/content-reset.mjs";
 class Bucket{
  constructor(keys){this.keys=new Set(keys);this.deleted=[]}
+ async get(key){if(!this.keys.has(key))return null;return {async text(){return JSON.stringify({projects:[]})}}}
  async list({prefix,cursor,limit=1000}){
   const all=[...this.keys].filter(key=>key.startsWith(prefix)).sort();
   const start=cursor?Number(cursor):0;
