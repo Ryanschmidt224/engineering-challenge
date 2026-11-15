@@ -847,7 +847,7 @@ test("New Part separates Workshop source from purchased-only inventory save",asy
  await expect(modal).toBeVisible();
  const from=modal.locator(".library-workshop-first:not(.library-workshop-add) input");
  const add=modal.locator(".library-workshop-add input");
- await expect(modal.locator(".library-workshop-first strong")).toContainText(["is from","Add to"]);
+ await expect(modal.locator(".library-workshop-choice-copy strong")).toContainText(["Use from","Add to"]);
  await from.check();
  await expect(add).not.toBeChecked();
  await add.check();

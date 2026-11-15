@@ -28,80 +28,62 @@
   {id:"workshop:solder",kind:"material",tier:"core",name:"Electronics solder and flux",subtitle:"Lead-free, rosin / no-clean electronics grade",spec:"Known-alloy lead-free electronic solder wire, ~0.5–0.8 mm diameter, flux cored; matching non-acid electronics flux. Example alloys: SAC305 or Sn99.3Cu0.7; follow component and alloy temperature guidance.",use:"PCB pads, electronics connections and repairs—not a default replacement for correctly crimped moving-wire terminals.",caution:"Use ventilation and eye protection; do not use plumbing acid-core flux on electronics."},
   {id:"workshop:silicone",kind:"material",tier:"conditional",name:"Highly flexible silicone-jacketed wire",subtitle:"For moving or high-flex DC leads",spec:"Fine-stranded copper, silicone rubber insulation, typically 18 or 22 AWG; choose voltage, temperature and abrasion ratings from the actual manufacturer.",use:"Repeated movement, vibration and flexible bench test leads where the mounting and insulation are suitable.",caution:"Silicone insulation is often softer and less abrasion-resistant; use protection and strain relief where necessary."}
  ];
- const workshopEquipment=[
-  {id:"workshop:stripper",kind:"tool",tier:"core",name:"Adjustable wire stripper and flush cutters",spec:"Reliable range covering 22 and 18 AWG without nicking strands; flush cutters for clean wire ends.",use:"Cutting and preparing every harness."},
-  {id:"workshop:ferrule-tool",kind:"tool",tier:"core",name:"Ferrule crimping tool",spec:"Ratcheting or controlled-cycle crimper with dies verified for the chosen ferrules and the 22/18 AWG conductor range.",use:"Repeatable ferrule crimps; inspect pull retention and barrel profile.",caution:"A generic crimper may not meet a given ferrule maker's crimp specification."},
-  {id:"workshop:heatgun",kind:"tool",tier:"core",name:"Temperature-controlled heat gun",spec:"Variable temperature and airflow, narrow nozzle preferred; use the tubing manufacturer's recovery temperature.",use:"Heat shrink installation without a flame."},
-  {id:"workshop:meter",kind:"tool",tier:"core",name:"Digital multimeter",spec:"DC voltage, resistance, continuity; appropriate measurement category and rated leads.",use:"Check polarity, shorts and continuity before first power-up."},
-  {id:"workshop:solderstation",kind:"tool",tier:"core",name:"Temperature-controlled soldering station",spec:"Adjustable temperature, replaceable tips, stand, brass wool/sponge and suitable work ventilation.",use:"PCB work and soldered connections."},
-  {id:"workshop:safety",kind:"tool",tier:"core",name:"Eye protection and bench ventilation",spec:"Safety glasses plus effective solder-fume removal or local exhaust appropriate to the work.",use:"Cutting, crimping, soldering and heating materials."},
-  {id:"workshop:oscilloscope",kind:"tool",tier:"conditional",name:"Oscilloscope",spec:"Bench or USB scope with appropriate bandwidth, probes and isolated or correctly grounded measurement setup.",use:"For PWM, ripple and switching waveforms.",caution:"A bench scope ground clip may be earth-referenced. Never attach it to an arbitrary live circuit node."}
- ];
- // Additional reference standards make all five Workshop branches useful without
- // implying ownership or requiring these items on every project's BOM.
- const workshopComponents=[
-  {id:"workshop:resistors",kind:"component",tier:"conditional",name:"Resistor assortment",spec:"Common E12 or E24 through-hole resistor values, e.g. 1/4 W metal-film 1% (check power and voltage rating).",use:"Breadboard prototyping and pull-up/pull-down networks."},
-  {id:"workshop:mosfet",kind:"component",tier:"conditional",name:"Logic-level MOSFETs",spec:"Select N-channel devices using RDS(on) at the actual gate drive, drain current, voltage margin and switching losses.",use:"Low-voltage electronic load switching."},
-  {id:"workshop:arduino",kind:"component",tier:"conditional",name:"Microcontroller development board",spec:"Arduino-compatible microcontroller board with documented supply limits and digital I/O levels.",use:"Embedded control experiments and sensor interfacing."},
-  {id:"workshop:sensors",kind:"component",tier:"conditional",name:"General sensor assortment",spec:"Hall-effect, temperature, optical and limit-switch examples; verify supply voltage, output topology and signal compatibility.",use:"Prototyping and instrumentation."}
- ];
- const workshopHardware=[
-  {id:"workshop:fasteners",kind:"material",tier:"conditional",name:"Machine screw assortment",spec:"Common metric and UNC threaded machine screws, nuts and washers. Specify exact thread, material, finish, and length for each BOM item.",use:"Fixture and enclosure assembly."},
-  {id:"workshop:breadboard",kind:"material",tier:"conditional",name:"Breadboard and jumper wires",spec:"Reusable solderless breadboard and flexible jumper leads. Keep below manufacturer current/voltage limits.",use:"Low-power circuit prototyping."},
-  {id:"workshop:stock",kind:"material",tier:"conditional",name:"Aluminum and plastic stock",spec:"Record alloy, temper, dimensions, source and material certification when used for a manufactured part.",use:"Machined brackets, mounts and enclosures."}
- ];
- // General equipment classes: reference descriptions, not specific products or inventory.
- const workshopPower=[
-  {id:"workshop:bench-psu",kind:"equipment",tier:"conditional",name:"Adjustable DC bench power supply",subtitle:"Current-limited laboratory power source",spec:"Adjustable regulated DC voltage and current limit; verify output isolation, over-voltage protection, current-limit behavior, and ripple for the circuit under test.",use:"Safely powering and testing prototypes while controlling current and voltage.",caution:"A current limit is not a substitute for fusing, polarity checks, or safe high-voltage procedures."},
-  {id:"workshop:acdc-psu",kind:"equipment",tier:"conditional",name:"Enclosed AC-to-DC power supply",subtitle:"Fixed-output machine and equipment supply",spec:"Choose rated AC input, DC voltage, continuous current, temperature derating, protective earth, and applicable electrical safety approvals.",use:"Supplying a fixed DC rail for assembled equipment.",caution:"Mains wiring requires a suitable enclosure, protective connections, strain relief, and qualified installation."},
-  {id:"workshop:buck-psu",kind:"component",tier:"conditional",name:"DC-to-DC buck converter",subtitle:"Step-down switching regulator module",spec:"Choose input and output voltage ranges, continuous current, thermal derating, switching ripple, startup behavior, and over-voltage protection.",use:"Converting a higher DC bus voltage to lower regulated DC rails.",caution:"Check input transients, supply sequencing and thermal design; module ratings are product-specific."}
- ];
+ // Tool, equipment, component and raw-material templates are deliberately not
+ // preloaded. Administrators can create them when needed; all five categories
+ // and their browseable families remain available.
+ const workshopEquipment=[];
+ const workshopComponents=[];
+ const workshopHardware=[];
+ const workshopPower=[];
  const quickSpecs={
-  "workshop:wire22":"22 AWG stranded copper · PVC jacket · 105°C, 600 V example rating",
-  "workshop:wire18":"18 AWG stranded copper · PVC jacket · 105°C, 600 V example rating",
-  "workshop:wire16":"16 AWG stranded copper · Rated insulation · Size for load",
-  "workshop:ferrule22":"For 22 AWG stranded wire · Tin-plated copper · Matching crimp die",
-  "workshop:ferrule18":"For 18 AWG stranded wire · Tin-plated copper · Matching crimp die",
-  "workshop:heatshrink":"2:1 single-wall polyolefin · 1/16–3/8 in assortment",
-  "workshop:sealshrink":"3:1 adhesive-lined polyolefin · For damp connections",
-  "workshop:solder":"Lead-free, flux-core electronics solder · 0.5–0.8 mm",
-  "workshop:silicone":"Fine-stranded copper · Silicone jacket · For moving leads",
-  "workshop:stripper":"Wire stripper / cutters that handle 18–22 AWG",
-  "workshop:ferrule-tool":"Controlled-cycle crimper · Dies matched to ferrules",
-  "workshop:heatgun":"Variable temperature and airflow · Narrow nozzle",
-  "workshop:meter":"DC volts, resistance and continuity · Rated leads",
-  "workshop:solderstation":"Temperature control · Suitable tips · Safe stand",
-  "workshop:safety":"Safety glasses · Local solder-fume extraction",
-  "workshop:oscilloscope":"Suitable bandwidth and probes · Safe grounding setup"
+  "workshop:wire22":"22 AWG stranded copper · PVC insulation · choose rated wire",
+  "workshop:wire18":"18 AWG stranded copper · PVC insulation · choose rated wire",
+  "workshop:wire16":"16 AWG stranded copper · rated insulation · size for load",
+  "workshop:ferrule22":"Ferrules compatible with actual 22 AWG strands and terminal",
+  "workshop:ferrule18":"Ferrules compatible with actual 18 AWG strands and terminal",
+  "workshop:heatshrink":"2:1 single-wall polyolefin · correctly sized",
+  "workshop:sealshrink":"3:1 adhesive-lined heat shrink · for sealed splices",
+  "workshop:solder":"Lead-free flux-core electronics solder · 0.5–0.8 mm",
+  "workshop:silicone":"Fine-stranded flexible silicone wire · match rated application"
  };
- // Search queries, not product endorsements. Keep one useful search per Workshop item.
  const amazonSearchTerms={
-  "workshop:wire22":"22 AWG stranded hook up wire PVC 600V",
-  "workshop:wire18":"18 AWG stranded copper hook up wire PVC insulation",
-  "workshop:wire16":"16 AWG stranded copper hook up wire PVC 600V",
-  "workshop:ferrule22":"22 AWG insulated wire ferrules",
-  "workshop:ferrule18":"18 AWG insulated wire ferrules",
-  "workshop:heatshrink":"2:1 polyolefin heat shrink tubing assortment",
-  "workshop:sealshrink":"3:1 adhesive lined heat shrink tubing",
-  "workshop:solder":"SAC305 lead free rosin core solder wire 0.6mm",
-  "workshop:silicone":"18 AWG silicone wire stranded copper",
-  "workshop:stripper":"self adjusting wire stripper 10-24 AWG flush cutters",
-  "workshop:ferrule-tool":"ratcheting ferrule crimping tool 22-16 AWG",
-  "workshop:heatgun":"variable temperature heat gun electronics",
-  "workshop:meter":"digital multimeter auto ranging continuity",
-  "workshop:solderstation":"digital temperature controlled soldering station",
-  "workshop:safety":"ANSI Z87.1 safety glasses solder fume extractor",
-  "workshop:oscilloscope":"2 channel digital oscilloscope 100MHz"
+  "workshop:wire22":"22 AWG stranded PVC hook up wire 600 V tinned copper",
+  "workshop:wire18":"18 AWG stranded PVC hook up wire rated",
+  "workshop:wire16":"16 AWG stranded copper hook up wire rated",
+  "workshop:ferrule22":"22 AWG insulated wire end ferrules",
+  "workshop:ferrule18":"18 AWG insulated wire end ferrules",
+  "workshop:heatshrink":"3M FP-301 2:1 heat shrink tubing",
+  "workshop:sealshrink":"3M EPS-300 3:1 adhesive lined heat shrink",
+  "workshop:solder":"lead free SAC305 no clean flux core solder wire",
+  "workshop:silicone":"fine stranded flexible silicone wire 18 AWG"
+ };
+ // Buying suggestions are examples, not a guarantee of model compatibility.
+ const essentialsGuidance={
+  "workshop:wire22":{manufacturer:"Alpha Wire",model:"3071 series",orderNotes:"Example: Alpha Wire 3071-series 22 AWG stranded, tinned copper PVC hook-up wire. Select a color and spool length; verify the actual insulation listing.",documentationUrl:"https://www.alphawire.com/products/wire/hook-up-wire/premium/3071"},
+  "workshop:wire18":{manufacturer:"Alpha Wire",orderNotes:"Look for stranded copper 18 AWG with documented insulation type, temperature and voltage rating. Red and black make useful starting colors; confirm actual supplier datasheet.",documentationUrl:"https://www.alphawire.com/"},
+  "workshop:wire16":{manufacturer:"Alpha Wire",orderNotes:"Consider 16 AWG stranded hook-up wire only when load, run length, terminal capacity and protection justify it. Confirm rating and color before buying.",documentationUrl:"https://www.alphawire.com/"},
+  "workshop:ferrule22":{manufacturer:"Weidmüller",orderNotes:"Choose an insulated wire-end ferrule rated for the conductor's actual cross-section and barrel length, and a matching crimp die. Nominal mm² is not an exact AWG equivalent.",documentationUrl:"https://www.weidmueller.com/"},
+  "workshop:ferrule18":{manufacturer:"Weidmüller",orderNotes:"Compare conductor fill to the ferrule manufacturer's rated AWG/mm² range; select a compatible terminal and crimper. Do not select by collar color alone.",documentationUrl:"https://www.weidmueller.com/"},
+  "workshop:heatshrink":{manufacturer:"3M",model:"FP-301 family",orderNotes:"Example: 3M FP-301 2:1 polyolefin tubing. Select the expanded diameter to pass over the splice and the recovered diameter to grip it.",documentationUrl:"https://www.3m.com/3M/en_US/p/d/b00019872/"},
+  "workshop:sealshrink":{manufacturer:"3M",model:"EPS-300 family",orderNotes:"Example: 3M EPS-300 adhesive-lined 3:1 tubing. Pick a diameter that shrinks over the connection; check recovery temperature and sealed-joint requirements.",documentationUrl:"https://www.3m.com/3M/en_US/p/d/b5005036027/"},
+  "workshop:solder":{orderNotes:"Look for genuine lead-free electronics solder wire with a stated alloy (e.g. SAC305), compatible rosin/no-clean flux core and about 0.5–0.8 mm wire diameter. Avoid acid-core plumbing solder."},
+  "workshop:silicone":{orderNotes:"Choose soft, fine-stranded copper silicone-insulated wire sized for the intended flexing, current, insulation rating and environmental exposure. Verify datasheet, not marketing labels."}
+ };
+ const essentialsIllustrations={
+  "workshop:wire22":"wire22","workshop:wire18":"wire18","workshop:wire16":"wire16",
+  "workshop:ferrule22":"ferrule22","workshop:ferrule18":"ferrule18",
+  "workshop:heatshrink":"heatshrink","workshop:sealshrink":"sealshrink",
+  "workshop:solder":"solder","workshop:silicone":"silicone"
  };
  // Legacy IDs remain unchanged so existing project links and saved history continue to work.
  // Classification is independent of stocking assumptions and BOM behavior.
  // Stable IDs retain links from existing projects and instructions.
  const workshopCategories=[
-  ["tools","Tools & Equipment",["workshop:stripper","workshop:ferrule-tool","workshop:heatgun","workshop:meter","workshop:solderstation","workshop:oscilloscope"]],
+  ["tools","Tools & Equipment",[]],
   ["consumables","Consumables & Supplies",["workshop:wire22","workshop:wire18","workshop:wire16","workshop:silicone","workshop:heatshrink","workshop:sealshrink","workshop:solder"]],
-  ["electronics","Electronics & Components",[...workshopComponents,...workshopPower].map(item=>item.id)],
-  ["hardware","Hardware & Materials",["workshop:ferrule22","workshop:ferrule18",...workshopHardware.map(item=>item.id)]],
-  ["safety","Safety & Measurement",["workshop:safety"]]
+  ["electronics","Electronics & Components",[]],
+  ["hardware","Hardware & Materials",["workshop:ferrule22","workshop:ferrule18"]],
+  ["safety","Safety & Measurement",[]]
  ];
  const categoryNames=Object.fromEntries(workshopCategories.map(([id,name])=>[id,name]));
  const categoryForReference=id=>workshopCategories.find(([, ,ids])=>ids.includes(id))?.[0]||"hardware";
@@ -123,9 +105,9 @@
   // "Expected" is guidance, never a claim that an individual owns an item.
   const availabilityAssumption=item.tier==="core"?"Expected":"Optional";
   const bomDefault=["consumables","tools","safety"].includes(category)?"exclude":"include";
-  return {...item,category,availabilityAssumption,bomDefault};
+  return {...item,...(essentialsGuidance[item.id]||{}),illustration:essentialsIllustrations[item.id]||"",category,availabilityAssumption,bomDefault};
  };
- const workshopReferences=[...workshopSupplies,...workshopEquipment,...workshopComponents,...workshopHardware,...workshopPower].map(itemMetadata);
+ const workshopReferences=workshopSupplies.map(itemMetadata);
  // Product families are browse-only metadata. They do not change part IDs,
  // inventory records, project BOMs, or the established broad categories.
  const workshopGroups=[

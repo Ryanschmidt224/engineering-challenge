@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="244" viewBox="0 0 360 244" role="img" aria-label="Wire ferrule illustration">
+ <rect width="360" height="244" fill="#f3f5f4"/>
+ <rect x="13" y="12" width="334" height="220" rx="20" fill="#fcfdfd" stroke="#e0e5e7"/>
+ <ellipse cx="180" cy="193" rx="108" ry="15" fill="#18332b" opacity=".08"/>
+ <g transform="rotate(-15 180 120)">
+ <path d="M91 107 L172 107 L182 95 L219 95 L219 146 L182 146 L172 134 L91 134Z" fill="#c9d4d8" stroke="#7d8c8f" stroke-width="2"/>
+ <rect x="218" y="89" width="45" height="63" rx="7" fill="#4c9bb6" stroke="#7d8c8f" stroke-width="2"/>
+ <ellipse cx="263" cy="120" rx="9" ry="30" fill="#c6d2d5" stroke="#7d8c8f" stroke-width="2"/>
+ <ellipse cx="263" cy="120" rx="5" ry="19" fill="#41575e"/>
+ <path d="M112 107 L112 134 M132 107 L132 134 M154 107 L154 134" stroke="#edf1f3" stroke-width="3"/>
+ </g>
+ <rect x="26" y="23" width="101" height="28" rx="14" fill="#4c9bb6"/>
+ <text x="76" y="42" font-family="Arial,sans-serif" font-size="14" font-weight="700" text-anchor="middle" fill="white">22 AWG</text>
+ <text x="180" y="220" font-family="Arial,sans-serif" font-size="14" font-weight="600" text-anchor="middle" fill="#415a57">Wire ferrule</text>
+ </svg>

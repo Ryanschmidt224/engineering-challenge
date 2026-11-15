@@ -121,6 +121,15 @@
     const img=el("img");img.src="/api/workshop-reference?photo="+encodeURIComponent(item.photos[0].id);
     img.alt=item.photos[0].caption||item.name;frame.append(img);return frame;
    }
+   // Seeded essentials have local illustrative images. An administrator's
+   // uploaded product photo, if present, always takes priority.
+   if(item.illustration&&/^[a-z0-9-]+$/.test(item.illustration)){
+    const frame=el("span",undefined,"workshop-catalog-thumb workshop-catalog-photo-thumb workshop-reference-illustration");
+    const img=el("img");
+    img.src="/assets/workshop-illustrations/"+item.illustration+".svg";
+    img.alt="Illustration of "+item.name;
+    frame.append(img);return frame;
+   }
    const term=(item.name+" "+item.kind).toLowerCase();
    const kind=/wire|cable|shrink|ferrule/.test(term)?"wire":
     /screw|fastener|bolt|nut/.test(term)?"fastener":
@@ -286,7 +295,8 @@
    sideRow("Model / part number",[item.model,item.partNumber].filter(Boolean).join(" · "));
    sideRow("Supplier",item.supplier);
    sideRow("Price / package",[item.price,item.packageQuantity].filter(Boolean).join(" · "));
-   sideRow("Ordering notes",item.orderNotes);
+   sideRow("Buying suggestion",item.orderNotes);
+   sideRow("Picture",item.illustration?"Illustrative reference; not an exact manufacturer photograph":"");
    sideRow("Notes",item.notes);
 
    if(item.source&&/^https:\/\//.test(item.source)){
@@ -333,7 +343,7 @@
     ["Manufacturer",item.manufacturer],["Model",item.model],["Part number",item.partNumber],
     ["Specifications",item.spec],["Typical use",item.use],["Important considerations",item.caution],
     ["Supplier",item.supplier],["Reference price",item.price],["Package quantity",item.packageQuantity],
-    ["How to order",item.orderNotes],["Notes",item.notes]
+    ["Buying suggestion",item.orderNotes],["Notes",item.notes]
    ];
    for(const [label,value] of specRows){
     if(!value)continue;
