@@ -29,20 +29,31 @@ window.BSProjectManager=(()=>{
   }
   sortLabel.append(sortSelect);
   const directoryStatus=element("span","project-directory-count muted");directoryStatus.setAttribute("role","status");
-  filters.append(searchLabel,sortLabel,directoryStatus);grid.before(filters);
-  // Project discovery is tag-driven. Legacy category metadata remains in
-  // stored records for backward compatibility but is no longer displayed.
+  filters.append(sortLabel,directoryStatus);grid.before(filters);
+  // Keep project tags as the sole discovery classification. Search and
+  // descriptors are together in a left panel, not separate filter toolbars.
+  const searchPanel=element("div","bs-project-search-sidebar");
+  searchPanel.append(element("h2","bs-catalog-sidebar-heading","Find projects"),searchLabel);
+  window.BSCatalogUI?.build(root,searchPanel,[filters,grid]);
   const suggestions=["Mechanical","Electronics","Software","Controls","CAD","3D Printing","Woodworking","PCB Design","Machining","Robotics","Measurement","Fabrication"];
   const projectTags=project=>Array.isArray(project?.tags)?project.tags:[];
   const parseTags=text=>[...new Map(String(text||"").split(",").map(x=>x.trim().replace(/\\s+/g," ")).filter(Boolean).map(x=>[x.toLowerCase(),x])).values()].slice(0,20);
   const tagFilter=element("div","bs-project-tag-filter");
-  const tagTitle=element("span","bs-project-tag-title","Filter by skills and methods");
+  const tagTitle=element("span","bs-project-tag-title","Descriptors");
+  const tagSearchLabel=element("label","bs-project-descriptor-search-label","Find a descriptor");
+  const tagSearch=element("input","field bs-project-descriptor-search");
+  tagSearch.type="search";tagSearch.placeholder="e.g. Electronics or CAD";
+  tagSearch.setAttribute("aria-label","Search descriptor tiles");
+  tagSearchLabel.append(tagSearch);
   const tagChoices=element("div","bs-project-tag-options");
-  const clearTags=element("button","bs-project-tag-clear","Clear");clearTags.type="button";
-  tagFilter.append(tagTitle,clearTags,tagChoices);
-  grid.before(tagFilter);
+  const clearTags=element("button","bs-project-tag-clear","Clear selected");clearTags.type="button";
+  const tagHeader=element("div","bs-project-tag-filter-heading");
+  tagHeader.append(tagTitle,clearTags);
+  tagFilter.append(tagHeader,tagSearchLabel,tagChoices);
+  searchPanel.append(tagFilter);
   const activeTags=new Set();
   clearTags.onclick=()=>{activeTags.clear();renderTagFilters();updateDirectory()};
+  tagSearch.oninput=renderTagFilters;
   const renderTagFilters=()=>{
    tagChoices.replaceChildren();
    const counts=new Map();
@@ -51,13 +62,18 @@ window.BSProjectManager=(()=>{
     if(!counts.has(key))counts.set(key,{name:tag,count:0});
     counts.get(key).count++;
    }
+   const filter=tagSearch.value.trim().toLowerCase();
+   let visibleCount=0;
    for(const [key,{name,count}] of [...counts].sort((a,b)=>a[1].name.localeCompare(b[1].name))){
+    if(filter&&!key.includes(filter)&&!activeTags.has(key))continue;
+    visibleCount++;
     const chip=element("button","bs-project-tag-chip"+(activeTags.has(key)?" is-active":""),name);
     chip.type="button";chip.setAttribute("aria-pressed",String(activeTags.has(key)));
     chip.append(element("span","bs-project-tag-count",String(count)));
     chip.onclick=()=>{activeTags.has(key)?activeTags.delete(key):activeTags.add(key);renderTagFilters();updateDirectory()};
     tagChoices.append(chip);
    }
+   if(!visibleCount)tagChoices.append(element("p","muted bs-project-tag-empty","No matching descriptors"));
    tagFilter.hidden=!counts.size;
    clearTags.hidden=!activeTags.size;
   };
@@ -85,7 +101,8 @@ window.BSProjectManager=(()=>{
    return {element:holder,getTags:()=>parseTags(input.value)};
   };
   const updateDirectory=()=>{
-   const search=searchInput.value.trim().toLowerCase(),byId=new Map(projects.map(project=>[project.id,project]));
+   const search=searchInput.value.trim().toLowerCase(),terms=search.split(/\s+/).filter(Boolean),
+    byId=new Map(projects.map(project=>[project.id,project]));
    const cards=[...grid.querySelectorAll(".project-card")];
    const info=card=>{
     const link=card.querySelector("[data-project],[data-nav]");
@@ -102,10 +119,11 @@ window.BSProjectManager=(()=>{
     const project=info(card);
     card.hidden=!project||
      [...activeTags].some(tag=>!projectTags(project).some(value=>value.toLowerCase()===tag))||
-     !!search&&![project.name,project.description,...projectTags(project)].join(" ").toLowerCase().includes(search);
+     terms.some(term=>![project.name,project.description,...projectTags(project)].join(" ").toLowerCase().includes(term));
     grid.append(card);
    }
-   directoryStatus.textContent=cards.filter(card=>!card.hidden).length+" projects";
+   const shown=cards.filter(card=>!card.hidden).length;
+   directoryStatus.textContent=shown+" of "+projects.length+" projects";
   };
   searchInput.oninput=updateDirectory;
   sortSelect.onchange=updateDirectory;
