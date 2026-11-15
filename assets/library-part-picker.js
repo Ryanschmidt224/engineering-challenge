@@ -280,6 +280,7 @@ function open({onCreate,hideDefault=false}){
  wizardBack.onclick=()=>selectWorkflow(null);
  const update=()=>{
   const isPart=itemKind.input.value==="part";
+  if(!isPart){newPartRadio.checked=true;addToWorkshopCheckbox.checked=false}
   const lib=isPart&&workshopCheckbox.checked;
   const adding=isPart&&!lib&&addToWorkshopCheckbox.checked;
   if(adding)partClassification.input.value="purchased";
@@ -347,7 +348,7 @@ function open({onCreate,hideDefault=false}){
   let payload;
   const rawCount=qty.input.value.trim();const count=rawCount===""?null:Number(rawCount);
   if(count!==null&&(!Number.isFinite(count)||count<=0||count>10000000)){status.textContent="Quantity must be positive, or left blank.";return}
-  if(!workshopCheckbox.checked){
+  if(itemKind.input.value!=="part"||!workshopCheckbox.checked){
    const name=customName.input.value.trim();if(!name||name.length>100){status.textContent="Enter a part name (up to 100 characters).";return}
    const autoNumber=autoNumberCheckbox.checked;
    payload={name,quantity:itemKind.input.value==="code"?null:itemKind.input.value==="document"?1:count,specifications:[],itemType:itemKind.input.value==="code"?"document":itemKind.input.value,partType:itemKind.input.value==="code"?"code":partClassification.input.value,
