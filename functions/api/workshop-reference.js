@@ -2,6 +2,7 @@
 // Reference IDs and authored defaults remain in assets/resources.js.
 import {isAdmin} from "./auth.js";
 import {accountUser} from "./accounts.js";
+import {normalizeSpecifications} from "./workshop-specifications.js";
 const indexKey="workshop-reference-overrides/v1.json";
 const photoKey=id=>"workshop-reference-photos/"+id;
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json","cache-control":"no-store","x-content-type-options":"nosniff"}});
@@ -109,6 +110,9 @@ export async function onRequest({request,env}){
    photos.push({id:p.id,caption:String(p.caption||"").slice(0,180)});
   }
   patch.photos=photos;
+  const specifications=normalizeSpecifications(body.details.specifications);
+  if(specifications===null)return json({error:"Invalid Workshop specifications (up to 60 editable fields)"},400);
+  patch.specifications=specifications;
   const id=creating?"workshop:custom-"+crypto.randomUUID():body.id;
   // Preserve compatibility with seed references while marking new records as
   // first-class catalog items. Never trust the client to set the created flag.
