@@ -592,6 +592,7 @@ function open({onCreate,hideDefault=false}){
   }
   if(itemKind.input.value==="part"){
    payload.projectDetails=getProjectDetails();
+   if(addToWorkshopCheckbox.checked)payload.projectDetails.workshopTreeDescription=shortTreeDescription.input.value.trim();
    if(workshopCheckbox.checked&&selectedReference())payload.projectDetails.workshopTreeDescription=String(selectedReference().featureTreeDescription||"").slice(0,20);
    if(workshopCheckbox.checked&&selectedReference())payload.projectDetails.workshopReferenceId=selectedReference().id;
   }
