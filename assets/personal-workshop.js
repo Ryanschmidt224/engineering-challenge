@@ -59,7 +59,7 @@
    if(category)nav?.select(category);
   });
   applyWorkshopCategory();
-  let workshopOverrides={},canEditReferences=false,canCreateReferences=false,editableReferenceIds=new Set(),accountSignedIn=false;
+  let workshopOverrides={},canEditReferences=false,canCreateReferences=false,canDeleteReferences=false,canDeletePersonal=false,editableReferenceIds=new Set(),accountSignedIn=false;
   const canEditCatalog=item=>canEditReferences||editableReferenceIds.has(item?.id);
   let items=[],editingId=null,photoId="",catalogId="";
   // Seeded references keep stable IDs; administrator-created parts are loaded
@@ -377,6 +377,15 @@
    mediaWithEdit.append(big);
    if(canEditCatalog(item))
     mediaWithEdit.append(itemButton("Edit",()=>openItemEditor(item),"btn workshop-under-image-edit"));
+   if(canDeleteReferences&&item.created)
+    mediaWithEdit.append(itemButton("Delete",async()=>{
+     if(!confirm("Permanently delete \""+item.name+"\" from the public Workshop? This cannot be undone."))return;
+     try{
+      await req("/api/workshop-reference","DELETE",{id:item.id,expectedRevision:item.revision||null});
+      delete workshopOverrides[item.id];
+      closeItem();renderCatalog();window.dispatchEvent(new Event("bsworkshopupdated"));
+     }catch(error){alert(error.message||"Unable to delete Workshop item.")}
+    },"btn workshop-under-image-delete"));
    hero.append(mediaWithEdit,info);itemPage.append(hero);
    if(item.photos?.length>1){
     const gallery=el("div",undefined,"workshop-item-photo-gallery");
@@ -801,6 +810,7 @@
     workshopOverrides=data.items||{};
     canEditReferences=!!data.canEdit;
     canCreateReferences=!!data.canCreate||canEditReferences;
+    canDeleteReferences=!!data.canDelete;
     editableReferenceIds=new Set(data.editableIds||[]);
     $(".workshop-catalog-create",catalog).hidden=!canCreateReferences;
     renderCatalog();
@@ -876,11 +886,16 @@
     details.append(el("strong",item.name),el("p",[item.manufacturer,item.model,item.category].filter(Boolean).join(" · ")+" · Qty "+item.quantity+" "+item.unit+" · "+({in_stock:"In stock",in_use_reusable:"In use (reusable)",committed:"Committed"}[item.stockStatus||"in_stock"]),"muted"));
     if(item.photoId){const img=el("img",undefined,"workshop-photo-thumb");img.src="/api/workshop-photo?id="+encodeURIComponent(item.photoId);img.alt="Photo of "+item.name;details.append(img)}
     if(!item.photoId)row.append(catalogThumb(item));
-    const actions=el("div",undefined,"workshop-actions"),edit=el("button","Edit","btn"),remove=el("button","Delete","btn");
+    const actions=el("div",undefined,"workshop-actions"),edit=el("button","Edit","btn");
     edit.onclick=()=>{fill(item);$("#workshop-editor",personal).scrollIntoView({block:"nearest"})};
-    remove.onclick=async()=>{if(!confirm("Delete "+item.name+" from your private Workshop?"))return;
-     try{items=(await req("/api/personal-workshop","DELETE",{id:item.id})).items;render()}catch(e){setStatus(e.message)}};
-    actions.append(edit,remove);row.append(details,actions);list.append(row);
+    actions.append(edit);
+    if(canDeletePersonal){
+     const remove=el("button","Delete","btn");
+     remove.onclick=async()=>{if(!confirm("Permanently delete \""+item.name+"\" from this Workshop? This cannot be undone."))return;
+      try{items=(await req("/api/personal-workshop","DELETE",{id:item.id})).items;render();renderCatalog()}catch(e){setStatus(e.message)}};
+     actions.append(remove);
+    }
+    row.append(details,actions);list.append(row);
    }
   }
   async function save(){
@@ -930,7 +945,7 @@
     target.prepend(el("p",counts.owned+" in stock · "+counts.reusable+" reusable · "+counts.short+" short · "+counts.unknown+" unknown · "+counts.check+" need review"));
    }catch(e){setStatus(e.message)}
   }
-  (async()=>{try{if(!await auth())return;buildUI();items=(await req("/api/personal-workshop")).items;render();renderCatalog();if(openedItem)showItem(openedItem,false);await loadProjects()}catch(e){setStatus(e.message)}})();
+  (async()=>{try{if(!await auth())return;buildUI();{const inventory=await req("/api/personal-workshop");items=inventory.items;canDeletePersonal=!!inventory.canDelete;}render();renderCatalog();if(openedItem)showItem(openedItem,false);await loadProjects()}catch(e){setStatus(e.message)}})();
  }
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
 })();
