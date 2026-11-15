@@ -22,7 +22,7 @@
   const save=button("Save & close",()=>{finishText();void persist(true)});save.classList.add("primary");
   const undo=button("Undo",()=>{finishText();stepBack()});
   const redo=button("Redo",()=>{finishText();stepForward()});
-  const reset=button("Reset edits",()=>{if(confirm("Clear all crops and annotations?")){finishText(false);commit({crop:null,marks:[]})}});
+  const reset=button("Reset edits",async()=>{if(await window.BSDialogs.danger("Clear all crops and annotations?",{title:"Reset photo edits?",confirmLabel:"Reset"})){finishText(false);commit({crop:null,marks:[]})}});
   footer.append(undo,redo,reset,save);
   frame.append(canvas);dialog.append(header,toolbar,frame,status,footer);document.body.append(dialog);dialog.showModal();
   dialog.addEventListener("close",()=>{finishText(false);dialog.remove()});
