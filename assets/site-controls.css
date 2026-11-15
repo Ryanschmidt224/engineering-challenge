@@ -2401,3 +2401,20 @@ body>.footer{margin-top:auto}
  white-space:normal;
  overflow-wrap:anywhere;
 }
+
+/* AI-assisted manufacturer-part-number lookup in the Workshop editor. */
+.workshop-ai-lookup{
+ border:1px solid var(--color-border,#cbd5d1);
+ border-radius:12px;
+ padding:16px;
+ margin:12px 0 18px;
+ background:var(--color-surface,#fff);
+}
+.workshop-ai-lookup h3{margin:0 0 7px}
+.workshop-ai-lookup-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.workshop-ai-lookup-row input{flex:1;min-width:200px}
+.workshop-ai-lookup-status{margin:9px 0 0}
+.workshop-ai-lookup-results{display:grid;gap:10px;margin-top:10px}
+.workshop-ai-source-list{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.workshop-ai-image-candidate{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.workshop-ai-image-candidate img{display:block;width:auto;max-width:240px;max-height:190px;object-fit:contain;border:1px solid var(--color-border,#cbd5d1);border-radius:8px;background:#fff}
