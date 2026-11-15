@@ -67,7 +67,7 @@
      if(admin()){
       const replace=text("button","btn","Replace");replace.type="button";replace.onclick=()=>{pendingReplacement=drawing.id;replaceInput.click()};
       const remove=text("button","btn","Delete");remove.type="button";remove.onclick=async()=>{
-       if(!confirm("Delete drawing \""+drawing.name+"\" from this "+(current.type==="part"?"part":"assembly")+"?"))return;
+       if(!await window.BSDialogs.danger("Delete drawing \""+drawing.name+"\" from this "+(current.type==="part"?"part":"assembly")+"?",{title:"Delete drawing?"}))return;
        remove.disabled=true;
        try{
         const response=await fetch(address(drawing.id),{method:"DELETE",credentials:"same-origin"});
