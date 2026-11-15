@@ -94,7 +94,7 @@
   // the right, and specifications expanded in context. All records are the
   // existing curated Workshop references; this does not scrape third parties.
   const catalog=el("section",undefined,"workshop-catalog");
-  catalog.innerHTML='<div class="workshop-catalog-bar"><div><h3>Workshop catalog</h3><p class="muted workshop-catalog-subtitle">Browse reference equipment, components, and materials. These are not automatically in your inventory.</p></div><div class="workshop-catalog-controls"><button type="button" class="btn primary workshop-catalog-create" hidden>+ Add catalog item</button><label class="workshop-sort-label">Sort <select class="field workshop-catalog-sort"><option value="name">Name A–Z</option><option value="type">Type</option><option value="level">Skill level</option></select></label></div></div><p class="workshop-catalog-count" role="status"></p><div class="workshop-catalog-list"></div>';
+  catalog.innerHTML='<div class="workshop-catalog-bar"><div><h3>Workshop catalog</h3><p class="muted workshop-catalog-subtitle">Browse reference equipment, components, and materials. These are not automatically in your inventory.</p></div><div class="workshop-catalog-controls"><button type="button" class="btn workshop-personal-create">+ Add to My Workshop</button><button type="button" class="btn primary workshop-catalog-create" hidden>+ Add catalog item</button><label class="workshop-sort-label">Sort <select class="field workshop-catalog-sort"><option value="name">Name A–Z</option><option value="type">Type</option><option value="level">Skill level</option></select></label></div></div><p class="workshop-catalog-count" role="status"></p><div class="workshop-catalog-list"></div>';
   const searchLabel=$("#workshop-recommend-search",shared).parentElement.querySelector(".workshop-recommend-search-label");
   if(searchLabel)searchLabel.textContent="Search catalog by name, size, type, or specification";
   const results=$("#workshop-recommend-search",shared);
@@ -433,6 +433,17 @@
     kind:"equipment",familyId:selectedFamily||"measurement",photos:[]});
   }
   $(".workshop-catalog-create",catalog).onclick=createCatalogItem;
+  $(".workshop-personal-create",catalog).onclick=()=>{
+   nav?.select("mine");
+   if($("#workshop-editor",personal)){
+    fill({});
+    $("#workshop-editor",personal)?.scrollIntoView({block:"start"});
+    $("#workshop-name",personal)?.focus();
+   }else{
+    setStatus("Sign in to add items to your personal Workshop.");
+    document.getElementById("accountMenuButton")?.click();
+   }
+  };
   function openItemEditor(item){
    if(!canEditReferences)return;
    const isNew=!item.id;
