@@ -1157,3 +1157,30 @@
 .library-vendor-links{display:flex;flex-wrap:wrap;gap:12px;margin:-5px 0 2px}
 .library-vendor-search-link{font-size:.84rem;text-decoration:underline}
 .library-vendor-info{margin:-4px 0 3px;font-size:.77rem;line-height:1.4}
+
+/* Hard boundary between a reusable Workshop product and local project annotations. */
+.library-project-only,.part-project-only-editor,.part-project-only-view{
+ display:grid;gap:12px;margin:23px 0 8px;padding:19px 20px;
+ border:1px solid var(--color-border);border-top:4px solid var(--color-accent);
+ border-radius:10px;background:var(--color-surface);
+}
+.library-project-only h3,.part-project-only-editor h3,.part-project-only-view h3{font-size:1.06rem;margin:0}
+.library-project-only-warning,.part-project-only-warning{
+ margin:0 0 7px;max-width:850px;color:var(--color-text-muted);font-size:.88rem;line-height:1.5
+}
+.library-project-only>.library-field,.part-project-only-field{display:grid;gap:7px;font-weight:650;font-size:.85rem}
+.library-project-only textarea,.part-project-only-editor textarea{width:100%;min-height:95px;resize:vertical;font-weight:400}
+.library-project-kicad,.part-project-only-cad{border-top:1px solid var(--color-border);margin-top:8px;padding-top:13px}
+.library-project-kicad summary,.part-project-only-cad summary{font-size:.88rem;font-weight:700;cursor:pointer;margin-bottom:10px}
+.library-project-kicad>.library-field,.part-project-only-cad>.part-project-only-field{display:grid;gap:6px;margin:11px 0;font-size:.85rem}
+.library-project-kicad input,.part-project-only-cad input{width:100%;font-weight:400}
+.library-workshop-reference-preview{margin:14px 0;padding:15px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:9px}
+.library-workshop-reference-preview h3{margin:0 0 11px;font-size:.97rem}
+.library-workshop-reference-rows{display:grid;gap:10px}
+.library-workshop-reference-row{display:grid;grid-template-columns:minmax(140px,210px) minmax(0,1fr);gap:12px;font-size:.87rem}
+.library-workshop-reference-row strong{font-weight:700}
+.part-project-only-view{margin:20px 0}
+@media(max-width:620px){
+ .library-project-only,.part-project-only-editor,.part-project-only-view{padding:14px 12px}
+ .library-workshop-reference-row{grid-template-columns:1fr;gap:2px}
+}
