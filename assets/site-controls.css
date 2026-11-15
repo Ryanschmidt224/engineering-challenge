@@ -2538,3 +2538,8 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
  #commonparts .workshop-ai-lookup-row>input{flex-basis:100%}
  #commonparts .workshop-ai-diff-table{font-size:.8rem}
 }
+
+#commonparts .workshop-ai-review-trigger[hidden],
+#commonparts .workshop-ai-changes-panel[hidden]{
+ display:none!important;
+}
