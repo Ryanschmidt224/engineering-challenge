@@ -603,6 +603,43 @@
      else if(draft.familyName){family.value="new-family";familyName.value=draft.familyName}
      updateFamily();
      lookupResults.append(el("p",response.note||"Review these AI-generated details carefully.","muted"));
+     const research=response.research||{};
+     if(research.specs?.length||research.pins?.length||research.applications?.length){
+      const review=el("section",undefined,"workshop-ai-engineering-review");
+      review.append(el("h4","Engineering details — verify against datasheet"));
+      if(research.specs?.length){
+       review.append(el("h5","Key specifications"));
+       const list=el("ul");
+       for(const spec of research.specs){
+        const li=el("li");
+        li.append(el("strong",(spec.name||"Specification")+": "),
+         document.createTextNode((spec.value||"")+(spec.conditions?" — "+spec.conditions:"")));
+        if(spec.sourceUrl&&/^https:\/\//i.test(spec.sourceUrl)){
+         const source=el("a"," Datasheet");source.href=spec.sourceUrl;
+         source.target="_blank";source.rel="noopener noreferrer";li.append(source);
+        }
+        list.append(li);
+       }
+       review.append(list);
+      }
+      if(research.pins?.length){
+       review.append(el("h5","Pinout"+(research.package?" — "+research.package:"")));
+       if(research.pinoutOrientation)review.append(el("p",research.pinoutOrientation,"muted"));
+       const list=el("ol");
+       for(const pin of research.pins){
+        const li=el("li","Pin "+pin.number+": "+pin.name+(pin.function?" — "+pin.function:""));
+        list.append(li);
+       }
+       review.append(list);
+      }
+      if(research.applications?.length){
+       review.append(el("h5","Common applications"));
+       const list=el("ul");
+       for(const entry of research.applications)list.append(el("li",entry));
+       review.append(list);
+      }
+      lookupResults.append(review);
+     }
      const sources=(response.sources||[]).filter(url=>/^https:\/\//i.test(url));
      if(sources.length){
       const sourcesBox=el("div",undefined,"workshop-ai-source-list");
@@ -996,6 +1033,13 @@
      }
      $("#workshop-specifications",personal).value=(d.spec||"").split(/\r?\n/).filter(Boolean).map(line=>line.includes(":")?line:"Spec: "+line).join("\n");
      mineResults.append(el("p",result.note||"Review AI suggestions before saving.","muted"));
+     if(result.research?.pins?.length){
+      const pinSummary=el("div",undefined,"workshop-ai-engineering-review");
+      pinSummary.append(el("strong","Pinout — verify package and orientation"));
+      pinSummary.append(el("p",[result.research.package,result.research.pinoutOrientation].filter(Boolean).join(" · "),"muted"));
+      for(const pin of result.research.pins)pinSummary.append(el("p","Pin "+pin.number+": "+pin.name));
+      mineResults.append(pinSummary);
+     }
      const urls=(result.sources||[]).filter(url=>/^https:\/\//i.test(url));
      if(urls.length){
       const sources=el("div",undefined,"workshop-ai-source-list");sources.append(el("strong","Sources"));
