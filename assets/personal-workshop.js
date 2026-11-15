@@ -592,7 +592,7 @@
    family.onchange=updateFamily;
    updateFamily();
 
-   form.append(grid,classification);
+   form.append(grid);
    // Workshop specifications: family templates are optional suggestions, never
    // a fixed schema or a required checklist.
    const specTemplates={
@@ -683,7 +683,9 @@
    familyName.addEventListener("input",refreshSuggestions);
    controls.typeName.addEventListener("change",refreshSuggestions);
    refreshSuggestions();
-   form.append(structuredSection);
+   // Keep the product classification and its suggested ratings together,
+   // ahead of the legacy free-text specifications section.
+   grid.querySelector('[data-part-editor-section="specifications"]').before(classification,structuredSection);
    const photoTitle=el("h4","Photos");
    form.append(photoTitle);
    const photos=(item.photos||[]).map(p=>({...p}));
