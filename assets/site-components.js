@@ -90,7 +90,7 @@ function setupComponents(){
      if(adminAuthenticated){
       const del=document.createElement("button");del.type="button";del.className="btn";del.textContent="Delete part";
       del.onclick=async()=>{
-       if(!confirm("Delete "+c.name+" from "+group.name+"?"))return;
+       if(!await window.BSDialogs.danger("Delete "+c.name+" from "+group.name+"?",{title:"Delete part?"}))return;
        del.disabled=true;
        try{
         const res=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(c.id),{method:"DELETE",credentials:"same-origin"});
