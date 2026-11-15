@@ -32,12 +32,26 @@ window.addEventListener("hashchange",()=>{
   if(manager)document.querySelector('[data-assembly-tree="'+manager[1]+'"]')?.dispatchEvent(new Event("openparts"));
  }
 });
+// Use the same catalog column/navigation component as the Projects page.
+const knowledgeRoot=document.querySelector("#learn .knowledge-base-page");
+const knowledgeNavMount=document.getElementById("topicFilters");
+window.BSCatalogUI?.build(knowledgeRoot,knowledgeNavMount,[
+ document.querySelector("#learn .knowledge-directory-toolbar"),
+ document.getElementById("knowledgeResultsCount"),
+ document.getElementById("knowledgeExplanations"),
+ document.getElementById("knowledgeCalculators")
+]);
+const knowledgeNav=window.BSCatalogUI?.categories(knowledgeNavMount,{
+ heading:"Browse by discipline",
+ onChange:value=>{activeDiscipline=value==="all"?"All":value;renderTiles()}
+});
+knowledgeNav?.setItems([
+ {value:"all",label:"All disciplines"},
+ ...disciplines.filter(value=>value!=="All").map(value=>({value,label:value}))
+]);
 function renderTiles(){
  const q=document.getElementById("search").value.toLowerCase().trim();
  const kind=document.getElementById("knowledgeTypeFilter")?.value||"all";
- document.getElementById("topicFilters").innerHTML=disciplines.map(d=>
-  '<button type="button" class="filter'+(d===activeDiscipline?' selected':'')+'" data-filter="'+d+'" aria-pressed="'+(d===activeDiscipline)+'">'+d+'</button>'
- ).join("");
  const found=tiles.filter(t=>(activeDiscipline==="All"||topicDisciplines[t.id].includes(activeDiscipline))&&
   (t.title+" "+t.category+" "+t.short+" "+topicDisciplines[t.id].join(" ")).toLowerCase().includes(q));
  const section=document.getElementById("knowledgeExplanations"),calculators=document.getElementById("knowledgeCalculators");
@@ -61,9 +75,6 @@ function renderTiles(){
  document.getElementById("knowledgeResultsCount").textContent=total+" result"+(total===1?"":"s");
  if(kind!=="calculators"&&!found.length)section.hidden=true;
 }
-document.getElementById("topicFilters").addEventListener("click",e=>{
- const b=e.target.closest("[data-filter]");if(b){activeDiscipline=b.dataset.filter;renderTiles()}
-});
 document.getElementById("search").addEventListener("input",renderTiles);
 document.getElementById("knowledgeTypeFilter").addEventListener("change",renderTiles);
 function modal(body){document.getElementById("modalRoot").className="modalback";document.getElementById("modalRoot").innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-label="Knowledge detail"><header><span class="eyebrow">Building Schmidt</span><button class="close" id="closeModal" aria-label="Close">×</button></header>'+body+'</div>';document.getElementById("closeModal").focus()}
