@@ -50,6 +50,14 @@
   #commonparts .workshop-catalog-detail p{margin:0 0 8px}
   #commonparts .workshop-catalog-detail[hidden]{display:none!important}
 
+
+  /* Inventory ownership is visible during all shared-catalog searches. */
+  #commonparts .workshop-catalog-entry.is-owned{background:color-mix(in srgb,var(--color-selected,#dcece4) 36%,var(--color-surface,#fff));border-left:3px solid var(--color-accent,#30795f)}
+  #commonparts .workshop-personal-entry{border-left:3px solid var(--color-accent,#30795f);background:color-mix(in srgb,var(--color-selected,#dcece4) 24%,var(--color-surface,#fff))}
+  #commonparts .workshop-owned-label,#commonparts .workshop-owned-note{display:inline-block;font-size:.78rem;line-height:1.45;font-weight:650;color:var(--color-accent,#30795f)}
+  #commonparts .workshop-owned-note{font-size:.9rem;margin:12px 0}
+  #commonparts .workshop-item-edit-button{border-color:var(--color-accent,#30795f);font-weight:650}
+  #commonparts .workshop-catalog-thumb-action:hover .workshop-catalog-thumb{border-color:var(--color-accent,#30795f)}
   #commonparts .workshop-family-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:12px;margin-top:10px}
   #commonparts .workshop-family-tile{display:flex;align-items:flex-start;gap:14px;min-height:114px;padding:14px;border:1px solid var(--color-border);border-radius:5px;background:var(--color-surface);text-align:left;color:var(--color-text);cursor:pointer}
   #commonparts .workshop-family-tile:hover,#commonparts .workshop-family-tile:focus-visible{background:var(--color-hover);border-color:var(--color-accent)}
@@ -96,7 +104,11 @@
   #commonparts .workshop-item-title-line{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
   #commonparts .workshop-item-edit-button{white-space:nowrap}
   #commonparts .workshop-catalog-photo-thumb img{height:100%;width:100%;object-fit:contain;border-radius:inherit}
-  #commonparts .workshop-item-photo-gallery{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 0}\n  #commonparts .workshop-item-photo-choice{padding:4px;border:1px solid var(--color-border);border-radius:5px;background:var(--color-surface);cursor:pointer}\n  #commonparts .workshop-item-photo-choice:hover{border-color:var(--color-accent)}\n  #commonparts .workshop-item-photo-choice img{display:block;width:72px;height:60px;object-fit:contain}\n  #commonparts .workshop-reference-hero-image{display:block;width:100%;max-height:340px;object-fit:contain;background:var(--color-surface-muted);border:1px solid var(--color-border);border-radius:5px}
+  #commonparts .workshop-item-photo-gallery{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 0}
+  #commonparts .workshop-item-photo-choice{padding:4px;border:1px solid var(--color-border);border-radius:5px;background:var(--color-surface);cursor:pointer}
+  #commonparts .workshop-item-photo-choice:hover{border-color:var(--color-accent)}
+  #commonparts .workshop-item-photo-choice img{display:block;width:72px;height:60px;object-fit:contain}
+  #commonparts .workshop-reference-hero-image{display:block;width:100%;max-height:340px;object-fit:contain;background:var(--color-surface-muted);border:1px solid var(--color-border);border-radius:5px}
   #commonparts .workshop-reference-related-photo{width:100%;height:80px;object-fit:contain;background:var(--color-surface-muted)}
   #commonparts .workshop-reference-order-link,#commonparts .workshop-reference-doc-link{display:inline-block;margin:8px 8px 0 0;text-decoration:none}
   #commonparts .workshop-item-editor-mount:not(:empty){margin-top:28px}
