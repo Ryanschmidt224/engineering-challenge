@@ -2543,3 +2543,52 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
 #commonparts .workshop-ai-changes-panel[hidden]{
  display:none!important;
 }
+
+/* Expanded Part details: project actions in a neat, right-aligned row. */
+.bom-part-workspace .part-details-top-actions{
+ display:flex;
+ justify-content:flex-end;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:10px;
+ padding:14px 18px 4px;
+}
+.bom-part-workspace .part-details-top-actions .btn{
+ flex:0 0 auto;
+ min-height:38px;
+ padding:8px 15px;
+ margin:0;
+ font-size:.86rem;
+ font-weight:600;
+ border-radius:9px;
+}
+.bom-part-workspace .part-details-top-actions .btn[hidden]{display:none!important}
+.part-editor-dialog .part-project-edit-notice{
+ margin:12px 18px 18px;
+ padding:17px 18px;
+ border:1px solid #bed2c8;
+ border-left:4px solid #35795f;
+ border-radius:10px;
+ background:#fff;
+ color:#243a32;
+}
+.part-editor-dialog .part-project-edit-notice[hidden]{display:none!important}
+.part-editor-dialog .part-project-edit-notice strong{display:block;font-size:1.07rem}
+.part-editor-dialog .part-project-edit-notice p{
+ margin:6px 0 0;
+ font-size:.96rem;
+ line-height:1.5;
+}
+#commonparts .workshop-return-to-project{
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ width:100%;
+ margin-bottom:12px;
+ padding:10px 12px;
+ font-weight:650;
+ background:#fff;
+ border:1px solid var(--color-border,#ccd8d1);
+ border-radius:9px;
+ color:#275b48;
+}
