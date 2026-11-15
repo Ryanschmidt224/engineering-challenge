@@ -36,10 +36,10 @@ test("New Part Workshop picker uses the same five categories",()=>{
  assert.match(picker,/commonGroup\(p\)/);
  assert.match(picker,/wireModeCheckbox/);
 });
-test("Tree display offers only Workshop item and Document filters",()=>{
+test("Feature tree uses explicit show/hide controls for Workshop items and documents",()=>{
  const source=readFileSync("assets/site-assembly.js","utf8");
- assert.match(source,/filterOption\("Workshop item"/);
- assert.match(source,/filterOption\("Document"/);
+ assert.match(source,/filterOption\("Show Workshop items"/);
+ assert.match(source,/filterOption\("Show documents"/);
  for(const old of ["Purchased","Custom","Tools","Documents","Hidden parts"])
   assert.ok(!source.includes('filterOption("'+old+'"'),"Old tree filter remains: "+old);
  assert.match(source,/partWorkshopItems\.get\(node\.partId\)===true/);
