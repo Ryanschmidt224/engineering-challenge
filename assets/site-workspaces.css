@@ -73,6 +73,11 @@
  width:18px;height:18px;margin:0;flex:none;accent-color:var(--color-accent);
 }
 
+.library-workshop-first{border-bottom:0;padding:6px 0;margin:0}
+.library-workshop-first strong{font-weight:800}
+.library-workshop-add{padding:5px 0}
+.library-workshop-add-help{margin:-8px 0 4px!important;padding:0 0 10px 28px;color:var(--color-text-muted);font-size:.79rem!important;line-height:1.45}
+.library-workshop-add-help[hidden]{display:none!important}
 .library-part-form>.muted{margin:0;font-size:.87rem}
 .library-field{display:flex;flex-direction:column;gap:6px;font-size:.87rem;font-weight:600;min-width:0}
 .library-field .field{width:100%;font-weight:400;min-height:38px}

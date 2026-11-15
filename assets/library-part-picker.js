@@ -31,7 +31,11 @@ function open({onCreate,hideDefault=false}){
  // First choice: tick this only for a reusable item already defined in the Workshop.
  const workshopChoice=el("label","library-workshop-first");
  const workshopCheckbox=el("input");workshopCheckbox.type="checkbox";
- workshopChoice.append(workshopCheckbox,document.createTextNode("This part is from the workshop"));
+ workshopChoice.append(workshopCheckbox,document.createTextNode("This part "),el("strong","","is from"),document.createTextNode(" the Workshop"));
+ const addToWorkshopChoice=el("label","library-workshop-first library-workshop-add");
+ const addToWorkshopCheckbox=el("input");addToWorkshopCheckbox.type="checkbox";
+ addToWorkshopChoice.append(addToWorkshopCheckbox,el("strong","","Add to"),document.createTextNode(" the Workshop"));
+ const workshopAddHelp=el("p","muted library-workshop-add-help","Save this purchased part to My Workshop for future projects. It will not be published to the website-wide catalog.");
  const customName=field("Part name");
  const itemKind=field("Item type","select");option(itemKind.input,"part","Part");option(itemKind.input,"document","Document");option(itemKind.input,"code","Code");
  const partClassification=field("Part type","select");option(partClassification.input,"purchased","Off-the-shelf");option(partClassification.input,"custom","Custom");
@@ -169,7 +173,7 @@ function open({onCreate,hideDefault=false}){
  manualFields.append(wireType.label,gauge.label,construction.label,wireAdvanced,length.label,endA.target.label,endA.choice.label,endA.other.label,endB.target.label,endB.choice.label,endB.other.label,results);
  wireSection.append(workflow,workflowHint,manualFields,wizardFields);
  chooser.append(category.label,wireModeChoice,wireSection,compSection);
- form.append(heading,subtitle,workshopChoice,itemKind.label,partClassification.label,numberChoice,autoNumberHelp,partNumberField.label,customName.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
+ form.append(heading,subtitle,workshopChoice,addToWorkshopChoice,workshopAddHelp,itemKind.label,partClassification.label,numberChoice,autoNumberHelp,partNumberField.label,customName.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],purchased=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
@@ -201,14 +205,20 @@ function open({onCreate,hideDefault=false}){
  wizardButton.onclick=()=>{selectWorkflow("wizard");updateCalc()};
  wizardBack.onclick=()=>selectWorkflow(null);
  const update=()=>{
-  const lib=workshopCheckbox.checked,wire=category.input.value==="consumables"&&wireModeCheckbox.checked;
+  const lib=workshopCheckbox.checked,adding=addToWorkshopCheckbox.checked;
+  if(adding){
+   itemKind.input.value="part";
+   partClassification.input.value="purchased";
+  }
+  const wire=category.input.value==="consumables"&&wireModeCheckbox.checked;
+  workshopAddHelp.hidden=!adding;
   if(lib&&!wire)refreshCommon();
   wireModeChoice.classList.toggle("hide",!lib||category.input.value!=="consumables");
   powerType.label.classList.toggle("hide",!lib||category.input.value!=="electronics");
   customName.label.classList.toggle("hide",lib);
-  itemKind.label.classList.toggle("hide",lib);
+  itemKind.label.classList.toggle("hide",lib||adding);
   const documentMode=!lib&&itemKind.input.value!=="part";
-  partClassification.label.classList.toggle("hide",lib||documentMode);
+  partClassification.label.classList.toggle("hide",lib||documentMode||adding);
   qty.label.classList.toggle("hide",documentMode);
   hintUnits.classList.toggle("hide",documentMode);
   toolField.classList.toggle("hide",documentMode||lib);
@@ -248,7 +258,9 @@ function open({onCreate,hideDefault=false}){
   selectWorkflow("manual");
   status.textContent="Wizard applied "+selectedRecommendation+" AWG "+construction.input.value+" copper and "+length.input.value+" in cut length. Review the wire and termination details before creating the part; ampacity is not verified.";
  };
- workshopCheckbox.onchange=update;itemKind.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;
+ workshopCheckbox.onchange=()=>{if(workshopCheckbox.checked)addToWorkshopCheckbox.checked=false;update()};
+ addToWorkshopCheckbox.onchange=()=>{if(addToWorkshopCheckbox.checked)workshopCheckbox.checked=false;update()};
+ itemKind.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;
  category.input.onchange=()=>{powerType.input.value="all";wireModeCheckbox.checked=false;update()};wireModeCheckbox.onchange=update;wireType.input.onchange=update;powerType.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
  form.addEventListener("submit",async e=>{
   e.preventDefault();
@@ -291,6 +303,14 @@ function open({onCreate,hideDefault=false}){
    payload.wireInfo={gauge:g,construction:str,insulation:insulation.input.value,crimp,mm,endA:endA.value(),endB:endB.value(),wireId:null};
   }
   payload.quantityUnit="pcs";
+  // This client-only instruction is consumed by the project controller after
+  // the BOM part is saved; it must never enter the components API record.
+  if(addToWorkshopCheckbox.checked){
+   if(workshopCheckbox.checked||payload.itemType!=="part"||payload.partType!=="purchased"){
+    status.textContent="Only purchased parts can be added to My Workshop.";return;
+   }
+   payload.addToWorkshop=true;
+  }
   payload.hideFromFeatureTree=visibilityInput.checked;
   payload.isTool=payload.itemType==="document"?false:workshopCheckbox.checked?["tools","safety"].includes(category.input.value):toolInput.checked;
   save.disabled=true;status.textContent="Creating part…";

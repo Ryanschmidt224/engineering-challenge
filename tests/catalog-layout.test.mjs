@@ -14,13 +14,14 @@ test("one shared catalog component is loaded before all three main page controll
  assert.match(module,/categories\(mount,options/);
 });
 
-test("Projects, Knowledge Base, Workshop and Parts Management share category sidebar behavior",()=>{
+test("Projects use tag discovery while Knowledge, Workshop and Parts Management retain catalog sidebars",()=>{
  const projects=read("assets/project-manager.js");
  const knowledge=read("assets/site.js");
  const workshop=read("assets/personal-workshop.js");
  const parts=read("assets/parts-management.js");
- assert.match(projects,/BSCatalogUI\?\.build\(root,catalogSidebar/);
- assert.match(projects,/BSCatalogUI\?\.categories\(catalogSidebar/);
+ assert.doesNotMatch(projects,/BSCatalogUI\?\.build\(root,catalogSidebar/);
+ assert.match(projects,/bs-project-tag-filter/);
+ assert.match(projects,/activeTags/);
  assert.match(knowledge,/BSCatalogUI\?\.build\(knowledgeRoot,knowledgeNavMount/);
  assert.match(knowledge,/BSCatalogUI\?\.categories\(knowledgeNavMount/);
  assert.match(workshop,/BSCatalogUI\?\.build\(root,sidebar,allPanels/);

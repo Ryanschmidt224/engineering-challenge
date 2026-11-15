@@ -27,8 +27,12 @@ test("Edit Part inputs use paired descriptor/value layout with mobile fallback",
 test("New Part Workshop picker uses the same five categories",()=>{
  const picker=readFileSync("assets/library-part-picker.js","utf8");
  const api=readFileSync("functions/api/commonparts.js","utf8");
- assert.match(picker,/document\.createTextNode\("This part is from the workshop"\)/);
- assert.match(picker,/const lib=workshopCheckbox\.checked/);
+ assert.match(picker,/el\("strong","","is from"\)/);
+ assert.match(picker,/el\("strong","","Add to"\)/);
+ assert.match(picker,/addToWorkshopCheckbox\.onchange/);
+ assert.match(picker,/partClassification\.input\.value="purchased"/);
+ assert.match(picker,/payload\.addToWorkshop=true/);
+ assert.match(picker,/const lib=workshopCheckbox\.checked,adding=addToWorkshopCheckbox\.checked/);
  for(const [id,label] of [["tools","Tools & Equipment"],["consumables","Consumables & Supplies"],["electronics","Electronics & Components"],["hardware","Hardware & Materials"],["safety","Safety & Measurement"]]){
   assert.ok(picker.includes('["'+id+'","'+label+'"]'),"Missing "+label+" in picker");
   assert.ok(api.includes('"'+id+'"'),"Missing "+id+" category in API");
@@ -59,4 +63,22 @@ test("Electronics & Components retains useful subtype filters",()=>{
  assert.match(picker,/powerType\.label\.classList\.toggle\("hide",!lib\|\|category\.input\.value!=="electronics"\)/);
  assert.match(picker,/fetch\("\/api\/purchased-parts"/);
  assert.match(picker,/workshopStandardRows/);
+});
+
+test("Projects use tags instead of a category selector, without deleting legacy API metadata",()=>{
+ const source=readFileSync("assets/project-manager.js","utf8");
+ const api=readFileSync("functions/api/projects.js","utf8");
+ assert.doesNotMatch(source,/name="category"/);
+ assert.doesNotMatch(source,/groupInput|categoryNavigation|categoryCounts/);
+ assert.match(source,/makeTagPicker\(projectTags\(project\)\)/);
+ assert.match(source,/getTags\(\)/);
+ assert.match(api,/category/); // Historical records must remain readable.
+});
+test("Saving a purchased project part to My Workshop never publishes private inventory to the shared catalog",()=>{
+ const source=readFileSync("assets/site-assembly.js","utf8");
+ assert.match(source,/const \{wireInfo,addToWorkshop=false,\.\.\.part\}=payload/);
+ assert.match(source,/fetch\("\/api\/personal-workshop"/);
+ assert.match(source,/quantity:0,unit:"pcs"/);
+ assert.match(source,/stockStatus:"committed"/);
+ assert.doesNotMatch(source,/fetch\("\/api\/workshop-reference".*addToWorkshop/);
 });
