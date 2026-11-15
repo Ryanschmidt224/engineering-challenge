@@ -6,11 +6,14 @@ export const CONTENT_PREFIXES=Object.freeze([
  "project-catalog/","trees/","components/","workspaces/","part-workspaces/",
  "assembly-pages/","harnesses/","drawings/","component-thumbnails/",
  "part-files/","part-pages/","recipe-files/","part-revisions/","part-code/",
- "investigations/","proposals/","photos/","user-workshop/",
- "workshop-reference-overrides/","workshop-reference-photos/"
+ "investigations/","change-proposals/","photos/","photo-renders/","photo-annotations/",
+ "project-numbering/","project-tasks/","my-build/","build-confusion/",
+ "extraction-snapshots/","user-workshop/",
+ "workshop-reference-overrides/","workshop-reference-photos/",
+ "launcher/","linear/","robot/","buck/","motorlab/","coiltest/"
 ]);
 export const CONTENT_EXACT_KEYS=Object.freeze([
- "libraries/common-parts.json","libraries/wires.json"
+ "libraries/common-parts.json","libraries/wires.json","libraries/purchased-parts.json"
 ]);
 export const PROTECTED_PREFIXES=Object.freeze([
  "accounts/","account-admin-claim/","automatic-backups/","archives/"
@@ -18,12 +21,21 @@ export const PROTECTED_PREFIXES=Object.freeze([
 export function isContentKey(key){
  if(typeof key!=="string")return false;
  if(PROTECTED_PREFIXES.some(prefix=>key.startsWith(prefix)))return false;
- return CONTENT_EXACT_KEYS.includes(key)||CONTENT_PREFIXES.some(prefix=>key.startsWith(prefix));
+ return CONTENT_EXACT_KEYS.includes(key)||CONTENT_PREFIXES.some(prefix=>key.startsWith(prefix))||
+  /^p[a-f0-9]{32}\//.test(key);
 }
 export async function planContentReset(bucket){
  if(!bucket?.list)throw Error("Cloudflare R2 bucket binding required");
  const keys=new Set();
- for(const prefix of CONTENT_PREFIXES){
+ const dynamicPrefixes=[];
+ const catalog=await bucket.get("project-catalog/v1.json");
+ if(catalog){
+  const parsed=JSON.parse(await catalog.text());
+  for(const project of parsed.projects||[]){
+   if(/^p[a-f0-9]{32}$/.test(project.id))dynamicPrefixes.push(project.id+"/");
+  }
+ }
+ for(const prefix of [...CONTENT_PREFIXES,...new Set(dynamicPrefixes)]){
   let cursor;
   do{
    const listing=await bucket.list({prefix,limit:1000,...(cursor?{cursor}:{})});
