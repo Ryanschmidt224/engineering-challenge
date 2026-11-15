@@ -732,8 +732,12 @@ function setupAssemblyTrees(){
   editWorkshopButton.hidden=true;
   detailEditButton.hidden=true;
   const detailHeading=detailsPanel.querySelector(".part-details-view-heading");
-  detailHeading.insertBefore(detailEditButton,detailHeading.querySelector(".part-details-toggle-label"));
-  detailHeading.insertBefore(editWorkshopButton,detailEditButton);
+  // Keep actions in the expanded content, aligned to the upper-right,
+  // instead of crowding the Part details heading.
+  const detailActions=document.createElement("div");
+  detailActions.className="part-details-top-actions";
+  detailActions.append(editWorkshopButton,detailEditButton);
+  detailsPanel.querySelector(".part-details-view-rows").before(detailActions);
   detailEditButton.textContent="Modify part";
   detailsPanel.querySelector(".part-details-view-actions").remove();
   partDetailsCollapse.addEventListener("toggle",()=>{partDetailsCollapse.querySelector(".part-details-toggle-label").textContent=partDetailsCollapse.open?"Minimize details":"Show details"});
