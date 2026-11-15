@@ -842,11 +842,18 @@ test("administrator can add a catalog item from the Workshop and open its detail
  expect(posted.details.typeName).toBe("Bench DC Power Supplies");
 });
 
-test("New Part starts with item type and lets purchased parts choose private or public Workshop",async({page})=>{
+test("New Part ends Workshop edits after identity and confirms public/private saves before creating a project part",async({page})=>{
+ const workshopPosts=[];
  await page.route("**/api/**",async route=>{
   const u=new URL(route.request().url());
   let data={};
-  if(u.pathname==="/api/commonparts"||u.pathname==="/api/purchased-parts")data={parts:[]};
+  if(u.pathname==="/api/workshop-reference"&&route.request().method()==="POST"){
+   const posted=route.request().postDataJSON();workshopPosts.push({scope:"public",body:posted});
+   data={id:"workshop:custom-11111111-1111-4111-8111-111111111111",details:posted.details};
+  }else if(u.pathname==="/api/personal-workshop"&&route.request().method()==="POST"){
+   const posted=route.request().postDataJSON();workshopPosts.push({scope:"private",body:posted});
+   data={items:[{id:"22222222-2222-4222-8222-222222222222",...posted}]};
+  }else if(u.pathname==="/api/commonparts"||u.pathname==="/api/purchased-parts")data={parts:[]};
   else if(u.pathname==="/api/projects")data={projects:[]};
   else if(u.pathname==="/api/accounts")data={user:null};
   else if(u.pathname==="/api/auth")data={authenticated:false,isAdmin:false};
@@ -885,32 +892,39 @@ test("New Part starts with item type and lets purchased parts choose private or 
  await expect(modal.locator(".library-field",{hasText:"Part type"}).first()).toBeHidden();
  await modal.locator(".library-field",{hasText:"Manufacturer part number (MPN)"}).locator("input").fill("PSU-24V");
  await modal.locator(".library-field",{hasText:"Part name"}).locator("input").fill("Purchased DC supply");
- await expect(modal.locator(".library-project-only-warning")).toContainText("will not modify the original Workshop part");
- await modal.locator(".library-project-only").getByLabel("Project notes").fill("Used as the machine's secondary supply");
- await modal.locator(".library-project-only").getByLabel("Project changes / modifications").fill("Mounted on left-hand bracket");
- await modal.locator(".library-project-kicad summary").click();
- await modal.locator(".library-project-kicad").getByLabel("Reference designators").fill("U1");
- await modal.locator(".library-project-kicad").getByLabel("Source application").fill("KiCad");
+ await expect(modal.locator(".library-project-only")).toBeHidden();
+ await expect(modal.locator(".library-number-choice")).toBeHidden();
+ await expect(modal.locator(".library-field",{hasText:"Quantity (optional)"})).toBeHidden();
+ await expect(modal.locator(".library-vendor-info")).toBeHidden();
+ await expect(modal.locator(".library-workshop-finish-note")).toBeVisible();
+ await expect(modal.locator(".library-workshop-finish-note")).toContainText("part page after saving");
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
  await expect(modal).toHaveCount(0);
  let payload=await page.evaluate(()=>window.__createdTestPart);
  expect(payload.name).toBe("Purchased DC supply");
  expect(payload.partType).toBe("purchased");
  expect(payload.itemType).toBe("part");
- expect(payload.addToWorkshop).toBe("public");
- expect(payload.workshopCategory).toBe("electronics");
- expect(payload.projectDetails.notes).toBe("Used as the machine's secondary supply");
- expect(payload.projectDetails.changes).toBe("Mounted on left-hand bracket");
- expect(payload.projectDetails.referenceDesignators).toBe("U1");
- expect(payload.projectDetails.sourceApplication).toBe("KiCad");
+ expect(payload.addToWorkshop).toBeUndefined();
+ expect(payload.workshopSavedMessage).toContain("public Workshop");
+ expect(payload.projectDetails.workshopReferenceId).toBe("workshop:custom-11111111-1111-4111-8111-111111111111");
+ expect(payload.projectDetails.notes).toBe("");
+ expect(workshopPosts).toHaveLength(1);
+ expect(workshopPosts[0].scope).toBe("public");
+ expect(workshopPosts[0].body.details.partNumber).toBe("PSU-24V");
  await open();
  modal=page.locator(".library-part-dialog");
  await modal.locator(".library-workshop-add input").check();
  await modal.locator(".library-field",{hasText:"Manufacturer part number (MPN)"}).locator("input").fill("PSU-12V");
  await modal.locator(".library-field",{hasText:"Part name"}).locator("input").fill("Private supply");
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
+ await expect(modal).toHaveCount(0);
  payload=await page.evaluate(()=>window.__createdTestPart);
- expect(payload.addToWorkshop).toBe("private");
+ expect(payload.addToWorkshop).toBeUndefined();
+ expect(payload.workshopSavedMessage).toContain("My Workshop");
+ expect(payload.projectDetails.workshopReferenceId).toBe("22222222-2222-4222-8222-222222222222");
+ expect(workshopPosts).toHaveLength(2);
+ expect(workshopPosts[1].scope).toBe("private");
+ expect(workshopPosts[1].body.partNumber).toBe("PSU-12V");
  await open();
  modal=page.locator(".library-part-dialog");
  await modal.locator(".library-field",{hasText:"Item type"}).first().locator("select").selectOption("document");
@@ -921,12 +935,46 @@ test("New Part starts with item type and lets purchased parts choose private or 
  expect(payload.itemType).toBe("document");
  expect(payload.addToWorkshop).toBeUndefined();
 });
+test("Failed Workshop publication remains in New Part dialog and does not create a BOM part",async({page})=>{
+ let createCalls=0,postCalls=0;
+ await page.route("**/api/**",async route=>{
+  const url=new URL(route.request().url());
+  if(url.pathname==="/api/workshop-reference"&&route.request().method()==="POST"){
+   postCalls++;
+   return route.fulfill({status:401,contentType:"application/json",
+    body:JSON.stringify({error:"Sign in to contribute to the public Workshop"})});
+  }
+  const body=url.pathname==="/api/commonparts"||url.pathname==="/api/purchased-parts"?{parts:[]}:
+   url.pathname==="/api/workshop-reference"?{items:{}}:
+   url.pathname==="/api/personal-workshop"?{items:[]}:
+   url.pathname==="/api/projects"?{projects:[]}:{};
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(body)});
+ });
+ await page.goto("/");
+ await page.exposeFunction("recordBomCreate",()=>{createCalls++});
+ await page.evaluate(()=>{
+  void window.BSLibraryPartPicker.open({onCreate:async()=>window.recordBomCreate()});
+ });
+ const modal=page.locator(".library-part-dialog");
+ await modal.locator(".library-workshop-add input").check();
+ await modal.locator('input[name="workshop-destination"][value="public"]').check();
+ await modal.locator(".library-field",{hasText:"Manufacturer part number (MPN)"}).locator("input").fill("2N7000");
+ await modal.locator(".library-field",{hasText:"Part name"}).locator("input").fill("2N7000 MOSFET");
+ await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
+ await expect(modal).toBeVisible();
+ await expect(modal.locator(".library-dialog-status")).toContainText("Sign in to contribute to the public Workshop");
+ expect(createCalls).toBe(0);
+ expect(postCalls).toBe(1);
+ await modal.locator(".library-dialog-actions").getByRole("button",{name:"Cancel"}).click();
+});
+
 test("Searching Workshop for missing 2N7000 opens a purchased part with separate manufacturer number",async({page})=>{
  await page.route("**/api/**",async route=>{
   const url=new URL(route.request().url());let data={};
   if(["/api/commonparts","/api/purchased-parts"].includes(url.pathname))data={parts:[]};
   else if(url.pathname==="/api/workshop-reference")data={items:{},canEdit:true};
-  else if(url.pathname==="/api/personal-workshop")data={items:[]};
+  else if(url.pathname==="/api/personal-workshop")data=route.request().method()==="POST"?
+   {items:[{id:"33333333-3333-4333-8333-333333333333"}]}:{items:[]};
   else if(url.pathname==="/api/accounts")data={user:null};
   else if(url.pathname==="/api/projects")data={projects:[]};
   else if(url.pathname==="/api/auth")data={authenticated:false,isAdmin:false};
@@ -959,7 +1007,8 @@ test("Searching Workshop for missing 2N7000 opens a purchased part with separate
  expect(saved.manufacturer).toBe("onsemi");
  expect(saved.partNumber).toBeNull();
  expect(saved.assignNumber).toBe(false);
- expect(saved.addToWorkshop).toBe("private");
+ expect(saved.addToWorkshop).toBeUndefined();
+ expect(saved.projectDetails.workshopReferenceId).toBe("33333333-3333-4333-8333-333333333333");
 });
 test("project navigation orders summary below tree and page notes can be created with existing photo upload",async({page})=>{
  const saves=[],seen=[];

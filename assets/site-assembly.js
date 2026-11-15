@@ -1895,7 +1895,7 @@ function setupAssemblyTrees(){
    if(!window.BSLibraryPartPicker){bomReport("Part library unavailable. Refresh and try again.");return}
    const targetAssembly=selected;
    await window.BSLibraryPartPicker.open({hideDefault:true,onCreate:async payload=>{
-    const {wireInfo,addToWorkshop=false,workshopCategory="",...part}=payload;
+    const {wireInfo,workshopSavedMessage="",addToWorkshop=false,workshopCategory="",...part}=payload;
     let newPart=null,wireId=wireInfo?.wireId||null;
     try{
      if(wireInfo&&!wireId){
@@ -1930,17 +1930,9 @@ function setupAssemblyTrees(){
       const data=await res.json();if(!res.ok)throw Error(data.error||"Could not save wire cutting list");
      }
      await renderWorkspaceParts();
-     let workshopNotice="";
-     if(addToWorkshop){
-      try{
-       workshopNotice=await window.BSLibraryPartPicker.saveCreatedPartToWorkshop({
-        part:newPart,destination:addToWorkshop,category:workshopCategory,projectTitle:title
-       });
-      }catch(error){
-       workshopNotice=" The BOM part was created, but the Workshop save failed: "+error.message;
-      }
-     }
-     bomReport(newPart.name+" saved to the BOM."+workshopNotice);
+     // The picker now confirms Workshop publication *before* creating the BOM
+     // part. Do not attempt a second Workshop write here.
+     bomReport(newPart.name+" saved to the BOM."+(workshopSavedMessage?" "+workshopSavedMessage:""));
     }catch(error){
      if(newPart)await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(newPart.id),{method:"DELETE",credentials:"same-origin"}).catch(()=>{});
      if(newPart){nodes=nodes.filter(n=>n.partId!==newPart.id);partVisibility.delete(newPart.id);partTools.delete(newPart.id);render()}
@@ -2617,7 +2609,7 @@ function setupAssemblyTrees(){
        wireId=wireData.wire.id;
       }
      }
-     const {wireInfo,addToWorkshop=false,workshopCategory="",...part}=payload;
+     const {wireInfo,workshopSavedMessage="",addToWorkshop=false,workshopCategory="",...part}=payload;
      if(wireId){part.sharedPartRef="wire:"+wireId;part.specifications.push({name:"Library wire ID",value:wireId,source:"explicit"})}
      const res=await fetch("/api/components?project="+encodeURIComponent(project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({assemblyId:selected,...part})});
      const data=await res.json();if(!res.ok)throw Error(data.error||"Unable to create part");
@@ -2637,18 +2629,8 @@ function setupAssemblyTrees(){
      if(newPart.partNumber)partNumbers.set(newPart.id,newPart.partNumber);
      const next=[...nodes,{id:crypto.randomUUID(),kind:"part",partId:newPart.id,name:newPart.name,parentId:selected}];
      await save(next);expanded.add(selected);
-     let workshopNotice="";
-     if(addToWorkshop){
-      try{
-       workshopNotice=await window.BSLibraryPartPicker.saveCreatedPartToWorkshop({
-        part:newPart,destination:addToWorkshop,category:workshopCategory,projectTitle:title
-       });
-      }catch(error){
-       workshopNotice=" The part was created, but the Workshop save failed: "+error.message;
-      }
-     }
      if(!newPart.hideFromFeatureTree&&!newPart.isTool)openTreePart(next[next.length-1]);
-     status.textContent="Part added to the feature tree and BOM."+workshopNotice;
+     status.textContent="Part added to the feature tree and BOM."+(workshopSavedMessage?" "+workshopSavedMessage:"");
     }catch(error){
      if(newPart)await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(newPart.id),{method:"DELETE",credentials:"same-origin"}).catch(()=>{});
      status.textContent="Could not add part: "+error.message;throw error;

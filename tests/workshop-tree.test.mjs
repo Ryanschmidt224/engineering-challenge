@@ -85,9 +85,12 @@ test("Projects use tags instead of a category selector, without deleting legacy 
 });
 test("Saving a purchased project part to My Workshop never publishes private inventory to the shared catalog",()=>{
  const source=readFileSync("assets/site-assembly.js","utf8");
- assert.match(source,/const \{wireInfo,addToWorkshop=false,workshopCategory="",\.\.\.part\}=payload/);
+ assert.match(source,/const \{wireInfo,workshopSavedMessage="",addToWorkshop=false,workshopCategory="",\.\.\.part\}=payload/);
  const picker=readFileSync("assets/library-part-picker.js","utf8");
- assert.match(source,/saveCreatedPartToWorkshop\(/);
+ assert.match(picker,/savedWorkshopItem=await saveCreatedPartToWorkshop\(/);
+ assert.match(picker,/delete payload\.addToWorkshop/);
+ assert.match(source,/workshopSavedMessage/);
+ assert.doesNotMatch(source,/await window\.BSLibraryPartPicker\.saveCreatedPartToWorkshop\(/);
  assert.match(picker,/fetch\("\/api\/personal-workshop"/);
  assert.match(picker,/quantity:0,unit:"pcs"/);
  assert.match(picker,/stockStatus:"committed"/);
