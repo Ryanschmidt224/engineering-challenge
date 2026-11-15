@@ -285,6 +285,8 @@
   workshopChoiceContext=typeof choose==="function"?choose:null;
   workshopAllowedChoices=Array.isArray(allowed)?allowed:[];
   renderWorkshopEssentials();
+  // When arriving from Work Instructions or a BOM, show the matching category.
+  window.dispatchEvent(new CustomEvent("bsworkshopfocus",{detail:{id}}));
   const entry=document.querySelector('[data-workshop-id="'+id+'"]');
   if(!entry)return false;
   // Open every level of the Workshop feature tree when a BOM item links here.
@@ -378,6 +380,8 @@
    saved.open=savedOpen;
    savedChildren.append(saved);
   }
+  // Keep the shared category sidebar in sync with saved-item refreshes.
+  document.querySelector("#commonparts .resource-page")?.dispatchEvent(new Event("bsworkshopupdated"));
  }
  const allProjects=[["launcher","Foam-dart launcher"],["linear","Linear actuator"],["robot","Robotic arm"]];
  async function reloadPurchased(){
