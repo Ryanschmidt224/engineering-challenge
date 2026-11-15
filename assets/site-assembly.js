@@ -1528,9 +1528,7 @@ function setupAssemblyTrees(){
   const projectOnlyPanel=document.createElement("section");
   projectOnlyPanel.className="part-project-only-editor";
   const onlyTitle=document.createElement("h3");onlyTitle.textContent="Project-specific information";
-  const onlyNotice=document.createElement("p");onlyNotice.className="part-project-only-warning";
-  onlyNotice.textContent="Changes below apply only to this project. They will not modify the original Workshop part.";
-  projectOnlyPanel.append(onlyTitle,onlyNotice);
+  projectOnlyPanel.append(onlyTitle);
   const treeDescriptionToggle=document.createElement("label");treeDescriptionToggle.className="part-project-only-field";
   const treeDescriptionCheckbox=document.createElement("input");treeDescriptionCheckbox.type="checkbox";treeDescriptionCheckbox.checked=true;
   treeDescriptionToggle.append(treeDescriptionCheckbox,document.createTextNode(" Show description in feature tree"));
