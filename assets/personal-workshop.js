@@ -464,9 +464,10 @@
    form.append(heading);
    // AI lookup fills a draft; only the existing Save action publishes an item.
    const lookupPanel=el("section",undefined,"workshop-ai-lookup");
-   lookupPanel.hidden=!isNew;
-   lookupPanel.append(el("h3","Look up a manufacturer part number"));
-   const lookupHint=el("p","Enter an MPN (e.g. 2N7000), then verify the suggested product and picture before saving.","muted");
+   // Available when creating or editing a Workshop item.
+   lookupPanel.hidden=false;
+   lookupPanel.append(el("h3","Fill product details with AI"));
+   const lookupHint=el("p","Enter a manufacturer part number (e.g. 2N7000) to research and fill the fields below. Review all suggested details and the picture before saving.","muted");
    const lookupRow=el("div",undefined,"workshop-ai-lookup-row");
    const lookupInput=el("input");lookupInput.type="text";lookupInput.className="field";
    lookupInput.maxLength=80;lookupInput.placeholder="Manufacturer part number, e.g. 2N7000";
@@ -474,7 +475,7 @@
    lookupInput.setAttribute("aria-label","Part number for AI product lookup");
    const lookupResults=el("div",undefined,"workshop-ai-lookup-results");
    const lookupMessage=el("p",undefined,"workshop-ai-lookup-status");lookupMessage.setAttribute("role","status");
-   const lookupButton=itemButton("Fill details with AI",()=>{},"btn primary");
+   const lookupButton=itemButton("Look up part number with AI",()=>{},"btn primary");
    lookupRow.append(lookupInput,lookupButton);
    lookupPanel.append(lookupHint,lookupRow,lookupMessage,lookupResults);
    form.append(lookupPanel);
@@ -495,7 +496,7 @@
    const sectionFields=window.BSPartFields?.sectionFields;
    const sections=[
     // Identify a purchased item by MPN and manufacturer first.
-    ["identity","Product identity",["partNumber","manufacturer","subtitle","featureTreeDescription","supplier"]],
+    ["identity","Product identity",["partNumber","featureTreeDescription","manufacturer","subtitle","supplier"]],
     ["additional","Additional product information",[
      "name","typeName","model","supplierUrl","asin","price","packageQuantity","documentationUrl"
     ]],
@@ -510,6 +511,7 @@
     for(const name of [...new Set(fields)]){
      const [labelText,type]=fieldDescriptors[name];
      const label=el("label",undefined,type==="textarea"?"workshop-edit-wide":"");
+     if(key==="identity"&&(name==="partNumber"||name==="featureTreeDescription"))label.classList.add("workshop-identity-priority-field");
      label.append(el("span",labelText));
      const control=type==="textarea"?el("textarea"):el("input");
      if(type==="textarea")control.rows=3;else control.type=type;
@@ -570,8 +572,9 @@
     if(event.key==="Enter"){event.preventDefault();lookupButton.click()}
    });
    lookupButton.onclick=async()=>{
-    const mpn=lookupInput.value.trim();
+    const mpn=lookupInput.value.trim()||controls.partNumber.value.trim();
     if(mpn.length<2){lookupMessage.textContent="Enter a manufacturer part number first.";lookupInput.focus();return}
+    if(!isNew&&!confirm("Replace the current editable fields with AI suggestions? Review the results before saving."))return;
     lookupButton.disabled=true;lookupMessage.textContent="Searching manufacturer and datasheet information…";
     lookupResults.replaceChildren();
     try{
