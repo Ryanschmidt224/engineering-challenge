@@ -900,6 +900,28 @@ function setupAssemblyTrees(){
      line.append(label,separator,value);detailRows.append(line);
     }
    }
+   const annotations=part.projectDetails||{};
+   if(Object.values(annotations).some(Boolean)){
+    const projectSection=document.createElement("section");
+    projectSection.className="part-project-only-view";
+    const title=document.createElement("h3");title.textContent="Project-specific information";
+    const notice=document.createElement("p");notice.className="part-project-only-warning";
+    notice.textContent="These notes and schematic details apply only to this project; they do not modify the Workshop reference.";
+    projectSection.append(title,notice);
+    for(const [key,label] of [
+     ["notes","Project notes"],["changes","Project changes / modifications"],
+     ["referenceDesignators","Reference designators"],["footprint","Footprint"],
+     ["schematicValue","Schematic value"],["sourceApplication","Source application"],
+     ["sourceFile","Source schematic file"],["sourceComponentId","Source component ID"]
+    ]){
+     if(!annotations[key])continue;
+     const row=document.createElement("div");row.className="part-details-view-row";
+     const name=document.createElement("strong");name.textContent=label;
+     const value=document.createElement("span");value.textContent=annotations[key];
+     row.append(name,document.createTextNode(" - "),value);projectSection.append(row);
+    }
+    detailRows.append(projectSection);
+   }
    window.BSPartSuppliers?.renderLinks(detailRows,part);
    renderProgressNotes(part);
    detailsPanel.classList.remove("hide");
@@ -1445,6 +1467,44 @@ function setupAssemblyTrees(){
   const partDescriptionRow=document.createElement("label");partDescriptionRow.className="part-description-field";
   const partDescriptionInput=document.createElement("textarea");partDescriptionInput.className="field part-description-input";partDescriptionInput.rows=2;partDescriptionInput.maxLength=2000;partDescriptionInput.placeholder="What is this part and what does it do?";
   partDescriptionRow.append(document.createTextNode("Description"),partDescriptionInput);
+  // Same project-only fields used in the New Part picker; editing these never
+  // sends a PUT to /api/workshop-reference or /api/personal-workshop.
+  const projectOnlyPanel=document.createElement("section");
+  projectOnlyPanel.className="part-project-only-editor";
+  const onlyTitle=document.createElement("h3");onlyTitle.textContent="Project-specific information";
+  const onlyNotice=document.createElement("p");onlyNotice.className="part-project-only-warning";
+  onlyNotice.textContent="Changes below apply only to this project. They will not modify the original Workshop part.";
+  projectOnlyPanel.append(onlyTitle,onlyNotice);
+  const projectOnlyFields={};
+  for(const [key,title,multiline,limit] of [
+   ["notes","Project notes",true,6000],["changes","Project changes / modifications",true,6000],
+   ["referenceDesignators","Reference designators",false,500],["footprint","Footprint",false,240],
+   ["schematicValue","Schematic value",false,240],["sourceApplication","Source application",false,80],
+   ["sourceFile","Source schematic file",false,500],["sourceComponentId","Source component ID",false,240]
+  ]){
+   const label=document.createElement("label");label.className="part-project-only-field";
+   const caption=document.createElement("span");caption.textContent=title;
+   const input=document.createElement(multiline?"textarea":"input");
+   input.className="field";input.maxLength=limit;
+   if(multiline)input.rows=3;
+   label.append(caption,input);
+   projectOnlyFields[key]=input;projectOnlyPanel.append(label);
+  }
+  const projectOnlyCad=document.createElement("details");projectOnlyCad.className="part-project-only-cad";
+  const cadTitle=document.createElement("summary");cadTitle.textContent="Schematic / KiCad information (optional)";
+  projectOnlyCad.append(cadTitle);
+  for(const key of ["referenceDesignators","footprint","schematicValue","sourceApplication","sourceFile","sourceComponentId"])
+   projectOnlyCad.append(projectOnlyFields[key].parentElement);
+  projectOnlyPanel.append(projectOnlyCad);
+  let editingProjectReferenceId="";
+  const readProjectOnly=()=>({
+   ...Object.fromEntries(Object.entries(projectOnlyFields).map(([key,input])=>[key,input.value.trim()])),
+   workshopReferenceId:editingProjectReferenceId
+  });
+  const setProjectOnly=details=>{
+   for(const [key,input] of Object.entries(projectOnlyFields))input.value=details?.[key]||"";
+   editingProjectReferenceId=details?.workshopReferenceId||"";
+  };
   let autoNumberChosen=false;
   partNumberInput.addEventListener("input",()=>{autoNumberChosen=false});
   const nextNumberButton=document.createElement("button");nextNumberButton.type="button";nextNumberButton.className="btn part-number-next";nextNumberButton.textContent="Choose next available part number";
@@ -1580,7 +1640,7 @@ function setupAssemblyTrees(){
    dismissBomEditor();
    extractedPictureUrl=null;
    editingPart=null;editingPartAssembly=null;
-   itemTypeSelect.value="part";partTypeSelect.value="purchased";visibilityCheckbox.checked=false;toolCheckbox.checked=false;partDescriptionInput.value="";partNumberInput.value="";autoNumberChosen=false;partNumberInput.readOnly=false;nextNumberButton.disabled=false;partNumberHelp.textContent="A number is assigned only when the part is saved.";updatePartTypeFields();
+   itemTypeSelect.value="part";partTypeSelect.value="purchased";visibilityCheckbox.checked=false;toolCheckbox.checked=false;partDescriptionInput.value="";setProjectOnly({});partNumberInput.value="";autoNumberChosen=false;partNumberInput.readOnly=false;nextNumberButton.disabled=false;partNumberHelp.textContent="A number is assigned only when the part is saved.";updatePartTypeFields();
    for(const name of ["name","manufacturer","model","supplier","asin","description","historical-price","historical-price-date"]){const el=bomField(name);if(el)el.value=""}
    supplierEditor?.setOffers([]);
    const priceBasis=bomField("historical-price-basis"),packageQty=bomField("historical-package-quantity");
@@ -1597,6 +1657,7 @@ function setupAssemblyTrees(){
    itemTypeSelect.value=part.partType==="code"?"code":part.itemType==="document"?"document":"part";
    partTypeSelect.value=["custom","code"].includes(part.partType)?part.partType:"purchased";visibilityCheckbox.checked=part.hideFromFeatureTree===true;toolCheckbox.checked=part.isTool===true;
    partDescriptionInput.value=part.description||"";
+   setProjectOnly(part.projectDetails||{});
    partNumberInput.value=part.partNumber||"";autoNumberChosen=false;partNumberInput.readOnly=!!part.partNumber;
    nextNumberButton.disabled=!!part.partNumber;
    partNumberHelp.textContent=part.partNumber?"Issued number. Existing part numbers are permanent.":"Enter a number or click Choose next available part number.";
@@ -1701,7 +1762,7 @@ function setupAssemblyTrees(){
     displayGroup.append(...ordered(fields.display));
     move(sectionHeading("display","Display options"),displayGroup);
     move(...otherFields);
-    move(specsHeading||sectionHeading("specifications","Specifications"),specs);
+    move(specsHeading||sectionHeading("specifications","Specifications"),specs,projectOnlyPanel);
     let actions=review.querySelector(".component-editor-actions");
     if(!actions){
      actions=document.createElement("div");actions.className="component-editor-actions";
@@ -1762,6 +1823,7 @@ function setupAssemblyTrees(){
    component.category=bomField("category")?.value.trim()||"";
    // The API automatically generates the display/file label: part number + name.
    component.description=partDescriptionInput.value.trim();
+   component.projectDetails=readProjectOnly();
    if(component.partType!=="purchased")Object.assign(component,{manufacturer:"",model:"",supplier:"",asin:"",historicalPurchasePrice:null,historicalPriceDate:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
    component.specifications=[...(bomRoot()?.querySelectorAll(".component-spec-row")||[])].map(row=>({
     name:row.children[0]?.value.trim()||"",value:row.children[1]?.value.trim()||"",source:row.children[2]?.value==="inferred"?"inferred":"explicit"
