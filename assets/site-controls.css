@@ -2318,3 +2318,32 @@ body>.footer{margin-top:auto}
 .bs-digikey-exclusions{margin-top:12px;font-size:.83rem}
 .bs-digikey-exclusions summary{cursor:pointer;color:var(--color-text-muted)}
 .bs-digikey-exclusions ul{margin:8px 0 0;padding-left:24px}
+
+
+/* Edge-aligned desktop navigation and near full-width top-level catalogs.
+   Assembly/workspace editing pages keep their own constrained layouts. */
+@media(min-width:801px){
+ :is(#home,#learn,#commonparts)>.wrap.section{
+  box-sizing:border-box;
+  width:100%;
+  max-width:none;
+  margin:0;
+  padding:20px clamp(12px,1.35vw,28px) 42px;
+ }
+ :is(#home,#learn,#commonparts) .bs-catalog-layout{
+  width:100%;
+  margin-top:16px;
+  grid-template-columns:clamp(205px,15vw,250px) minmax(0,1fr);
+  gap:clamp(12px,1.35vw,24px);
+ }
+ :is(#home,#learn,#commonparts) .bs-catalog-sidebar{
+  padding-right:12px;
+ }
+ :is(#home,#learn,#commonparts) .bs-catalog-category{padding-left:6px}
+ :is(#home,#learn,#commonparts) .bs-catalog-main{min-width:0}
+ #home .project-index,#learn .knowledge-base-page{max-width:none}
+ #commonparts .resource-page{max-width:none}
+}
+@media(min-width:1500px){
+ :is(#home,#learn,#commonparts)>.wrap.section{padding-inline:20px}
+}
