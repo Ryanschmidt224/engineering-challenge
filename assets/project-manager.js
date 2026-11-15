@@ -15,10 +15,10 @@ window.BSProjectManager=(()=>{
  const element=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node};
  const init=({setupAssemblyTrees,setupComponents,setupPhotos,navigate})=>{
   const root=document.querySelector("#home .project-index"),grid=root?.querySelector(".project-grid");if(!grid)return;
-  const header=root.querySelector(".row.space"),controls=element("div","project-owner-actions");
+  const controls=element("div","project-owner-actions");
   const newButton=element("button","btn primary","+ New project");newButton.type="button";
   const archiveButton=element("button","btn","Archived projects");archiveButton.type="button";
-  controls.append(newButton,archiveButton);header.append(controls);
+  controls.append(newButton,archiveButton);
   const filters=element("div","project-directory-controls");
   const searchLabel=element("label","project-directory-label project-directory-search","Find a project");
   const searchInput=element("input","field project-search");searchInput.type="search";searchInput.placeholder="Search projects…";searchInput.setAttribute("aria-label","Search projects");searchLabel.append(searchInput);
@@ -29,7 +29,9 @@ window.BSProjectManager=(()=>{
   }
   sortLabel.append(sortSelect);
   const directoryStatus=element("span","project-directory-count muted");directoryStatus.setAttribute("role","status");
-  filters.append(sortLabel,directoryStatus);grid.before(filters);
+  // Keep creation, archive access and sorting together above the project cards,
+  // instead of scattering actions across a full-width page heading.
+  filters.append(controls,sortLabel,directoryStatus);grid.before(filters);
   // Keep project tags as the sole discovery classification. Search and
   // descriptors are together in a left panel, not separate filter toolbars.
   const searchPanel=element("div","bs-project-search-sidebar");
