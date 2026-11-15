@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {handleAccounts} from "../functions/api/accounts.js";
 import {onRequest as notes} from "../functions/api/unstructured-notes.js";
+import {onRequest as projectsApi} from "../functions/api/projects.js";
+import worker from "../worker.js";
 const ORIGIN="https://schmidt.example";
 class Bucket{
  constructor(){this.objects=new Map()}
@@ -91,4 +93,37 @@ test("notes reuse gallery photo storage and reject cross-note photo links",async
  assert.equal(bad.status,400);
  const read=await parse(await send(env,URL));
  assert.deepEqual(read.body.notes[0].photos,[photo]);
+});
+
+test("production worker routes notes requests instead of serving the app shell",async()=>{
+ const env={PHOTOS:new Bucket(),ASSETS:{fetch:async()=>new Response("<html>Fallback</html>")},admin_password:"test-admin-secret"};
+ const cookie=await access(env);
+ const note={id:noteId,title:"Routed note",description:"Saved through worker",photos:[]};
+ const saved=await parse(await worker.fetch(request(URL,"PUT",{notes:[note],expectedRevision:null},cookie),env,{}));
+ assert.equal(saved.status,200);
+ assert.equal(saved.body.notes[0].description,"Saved through worker");
+ const result=await parse(await worker.fetch(request(URL),env,{}));
+ assert.equal(result.status,200);
+ assert.equal(result.body.notes[0].title,"Routed note");
+});
+
+test("project rename uses the authorized settings API and keeps project ID stable",async()=>{
+ const env={PHOTOS:new Bucket(),admin_password:"test-admin-secret"};
+ const cookie=await access(env);
+ const updated=await parse(await projectsApi({request:request("/api/projects","PATCH",{
+  id:"launcher",name:"Renamed launcher project"
+ },cookie),env}));
+ assert.equal(updated.status,200);
+ const project=updated.body.projects.find(p=>p.id==="launcher");
+ assert.equal(project.name,"Renamed launcher project");
+ const reread=await parse(await projectsApi({request:request("/api/projects"),env}));
+ assert.equal(reread.body.projects.find(p=>p.id==="launcher").name,"Renamed launcher project");
+ const rejected=await parse(await projectsApi({request:request("/api/projects","PATCH",{
+  id:"launcher",name:""
+ },cookie),env}));
+ assert.equal(rejected.status,400);
+ const forbidden=await parse(await projectsApi({request:request("/api/projects","PATCH",{
+  id:"launcher",name:"Unauthorized name"
+ }),env}));
+ assert.equal(forbidden.status,401);
 });
