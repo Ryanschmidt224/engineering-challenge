@@ -575,10 +575,20 @@
     const mpn=lookupInput.value.trim()||controls.partNumber.value.trim();
     if(mpn.length<2){lookupMessage.textContent="Enter a manufacturer part number first.";lookupInput.focus();return}
     if(!isNew&&!confirm("Replace the current editable fields with AI suggestions? Review the results before saving."))return;
-    lookupButton.disabled=true;lookupMessage.textContent="Searching manufacturer and datasheet information…";
+    lookupButton.disabled=true;lookupButton.textContent="Searching…";
+    lookupMessage.textContent="Looking up "+mpn+" using manufacturer and datasheet sources. This may take a little while.";
+    lookupMessage.scrollIntoView({block:"nearest"});
     lookupResults.replaceChildren();
     try{
-     const response=await req("/api/workshop-lookup","POST",{partNumber:mpn});
+     const controller=new AbortController();
+     const timeout=setTimeout(()=>controller.abort(),60000);
+     let response;
+     try{
+      const res=await fetch("/api/workshop-lookup",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({partNumber:mpn}),signal:controller.signal});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok)throw Error(data.error||"Lookup returned HTTP "+res.status);
+      response=data;
+     }finally{clearTimeout(timeout)}
      const draft=response.draft||{};
      for(const key of saveableFields){
       if(controls[key]&&typeof draft[key]==="string")controls[key].value=draft[key];
@@ -624,8 +634,9 @@
       imageBox.append(usePicture);lookupResults.append(imageBox);
      }else lookupResults.append(el("p","No suitable picture found. You can upload one below.","muted"));
      lookupMessage.textContent="Draft populated. Review the manufacturer, MPN, specifications, classification, sources and photo before saving.";
-    }catch(error){lookupMessage.textContent=error.message||"Lookup failed."}
-    finally{lookupButton.disabled=false}
+    }catch(error){lookupMessage.textContent=error.name==="AbortError"?"Lookup timed out. Try again; no fields were changed.":error.message||"Lookup failed.";
+     lookupMessage.scrollIntoView({block:"nearest"});}
+    finally{lookupButton.disabled=false;lookupButton.textContent="Look up part number with AI"}
    };
    const uploadRow=el("div",undefined,"workshop-item-photo-upload");
    const picker=el("input");picker.type="file";picker.accept="image/jpeg,image/png,image/webp";
