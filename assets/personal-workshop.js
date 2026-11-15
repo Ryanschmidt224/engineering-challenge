@@ -287,14 +287,15 @@
     section.append(el("h3",title),el("p",value));
     itemSide.append(section);
    };
+   sideRow("Manufacturer part number",item.partNumber||item.model);
+   sideRow("Manufacturer",item.manufacturer);
+   sideRow("Description",item.subtitle||item.name);
+   sideRow("Vendor",item.supplier);
    sideRow("Specification",item.spec);
    sideRow("Typical use",item.use);
    sideRow("Considerations",item.caution);
    sideRow("Level",friendlyTier(item));
    sideRow("Product family",familyFor(item)?.label);
-   sideRow("Manufacturer",item.manufacturer);
-   sideRow("Model / part number",[item.model,item.partNumber].filter(Boolean).join(" · "));
-   sideRow("Supplier",item.supplier);
    sideRow("Price / package",[item.price,item.packageQuantity].filter(Boolean).join(" · "));
    sideRow("Buying suggestion",item.orderNotes);
    sideRow("Picture",item.illustration?"Illustrative reference; not an exact manufacturer photograph":"");
@@ -518,7 +519,7 @@
    };
    family.onchange=updateFamily;
    updateFamily();
-   form.append(classification,grid);
+   form.append(grid,classification);
    const photoTitle=el("h4","Photos");
    form.append(photoTitle);
    const photos=(item.photos||[]).map(p=>({...p}));
