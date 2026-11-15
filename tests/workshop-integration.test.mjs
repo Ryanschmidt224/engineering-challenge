@@ -210,13 +210,13 @@ test("shared Workshop rejects stale saves without deleting another contributor's
   familyId:"community-electronics",familyName:"Community contributions",partNumber:"2N7000",photos:[]};
  const first=await data(await workshopReference({request:request("/api/workshop-reference","POST",{details},maker),env}));
  assert.equal(first.status,201);
- const id=first.body.id,stamp=first.body.details.updatedAt;
+ const id=first.body.id,stamp=first.body.details.revision;
  const changed=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{
-  id,details:{...details,name:"2N7000 N-channel MOSFET"},expectedUpdatedAt:stamp
+  id,details:{...details,name:"2N7000 N-channel MOSFET"},expectedRevision:stamp
  },editor),env}));
  assert.equal(changed.status,200);
  const stale=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{
-  id,details:{...details,name:"Outdated entry"},expectedUpdatedAt:stamp
+  id,details:{...details,name:"Outdated entry"},expectedRevision:stamp
  },maker),env}));
  assert.equal(stale.status,409);
  const check=await data(await workshopReference({request:request("/api/workshop-reference"),env}));
