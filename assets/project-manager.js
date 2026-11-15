@@ -30,12 +30,8 @@ window.BSProjectManager=(()=>{
   sortLabel.append(sortSelect);
   const directoryStatus=element("span","project-directory-count muted");directoryStatus.setAttribute("role","status");
   filters.append(searchLabel,sortLabel,directoryStatus);grid.before(filters);
-  const catalogSidebar=element("div","bs-project-category-nav");
-  const catalogLayout=window.BSCatalogUI?.build(root,catalogSidebar,[filters,grid]);
-  const categoryNavigation=window.BSCatalogUI?.categories(catalogSidebar,{
-   heading:"Browse projects",onChange:()=>updateDirectory()
-  });
-  const categoryOf=project=>String(project?.category||"Uncategorized").trim()||"Uncategorized";
+  // Project discovery is tag-driven. Legacy category metadata remains in
+  // stored records for backward compatibility but is no longer displayed.
   const suggestions=["Mechanical","Electronics","Software","Controls","CAD","3D Printing","Woodworking","PCB Design","Machining","Robotics","Measurement","Fabrication"];
   const projectTags=project=>Array.isArray(project?.tags)?project.tags:[];
   const parseTags=text=>[...new Map(String(text||"").split(",").map(x=>x.trim().replace(/\\s+/g," ")).filter(Boolean).map(x=>[x.toLowerCase(),x])).values()].slice(0,20);
@@ -89,7 +85,7 @@ window.BSProjectManager=(()=>{
    return {element:holder,getTags:()=>parseTags(input.value)};
   };
   const updateDirectory=()=>{
-   const filter=categoryNavigation?.value||"all",search=searchInput.value.trim().toLowerCase(),byId=new Map(projects.map(project=>[project.id,project]));
+   const search=searchInput.value.trim().toLowerCase(),byId=new Map(projects.map(project=>[project.id,project]));
    const cards=[...grid.querySelectorAll(".project-card")];
    const info=card=>{
     const link=card.querySelector("[data-project],[data-nav]");
@@ -104,9 +100,9 @@ window.BSProjectManager=(()=>{
    });
    for(const card of cards){
     const project=info(card);
-    card.hidden=!project||(filter!=="all"&&categoryOf(project)!==filter)||
+    card.hidden=!project||
      [...activeTags].some(tag=>!projectTags(project).some(value=>value.toLowerCase()===tag))||
-     !!search&&![project.name,project.description,categoryOf(project),...projectTags(project)].join(" ").toLowerCase().includes(search);
+     !!search&&![project.name,project.description,...projectTags(project)].join(" ").toLowerCase().includes(search);
     grid.append(card);
    }
    directoryStatus.textContent=cards.filter(card=>!card.hidden).length+" projects";
@@ -210,17 +206,13 @@ window.BSProjectManager=(()=>{
   };
   openAccount=showAccount;
   const editor=element("dialog","project-create-dialog");
-  editor.innerHTML='<form method="dialog" class="project-create-form"><h2>New project</h2><p class="muted">Projects are private by default. Only you can edit them.</p><label>Project name<input class="field" name="name" maxlength="100" required></label><label>Category<input class="field" name="category" maxlength="60" placeholder="Uncategorized" list="project-category-choices"></label><datalist id="project-category-choices"></datalist><label>Description<textarea class="field" name="description" maxlength="500"></textarea></label><p class="project-create-message" role="status"></p><div class="row"><button type="button" class="btn primary project-create-save">Create project</button><button type="button" class="btn project-create-cancel">Cancel</button></div></form>';
+  editor.innerHTML='<form method="dialog" class="project-create-form"><h2>New project</h2><p class="muted">Projects are private by default. Only you can edit them.</p><label>Project name<input class="field" name="name" maxlength="100" required></label><label>Description<textarea class="field" name="description" maxlength="500"></textarea></label><p class="project-create-message" role="status"></p><div class="row"><button type="button" class="btn primary project-create-save">Create project</button><button type="button" class="btn project-create-cancel">Cancel</button></div></form>';
   document.body.append(editor);
   const createTagPicker=makeTagPicker();
-  editor.querySelector(".project-create-form > label:nth-of-type(2)")?.after(createTagPicker.element);
+  editor.querySelector('.project-create-form [name="name"]')?.closest("label")?.after(createTagPicker.element);
   editor.querySelector(".project-create-cancel").onclick=()=>editor.close();
   const openCreate=()=>{
    if(!user){showAccount();note.textContent="Create an account or log in before creating a project.";return}
-   const list=editor.querySelector("#project-category-choices");list.replaceChildren();
-   for(const category of [...new Set(projects.map(categoryOf))].filter(value=>value!=="Uncategorized").sort()){
-    const option=element("option");option.value=category;list.append(option);
-   }
    editor.querySelector(".project-create-message").textContent="";
    editor.showModal();
   };
@@ -231,7 +223,7 @@ window.BSProjectManager=(()=>{
    button.disabled=true;
    try{
     const response=await api("POST","/api/projects",{name:form.elements.name.value,description:form.elements.description.value,
-     category:form.elements.category.value.trim()||"Uncategorized",tags:createTagPicker.getTags(),kind:"project"});
+     tags:createTagPicker.getTags(),kind:"project"});
     const name=form.elements.name.value;
     const created=response.projects.find(project=>project.name===name&&project.ownerId===user?.id);
     editor.close();form.reset();createTagPicker.element.querySelector("input").value="";await refresh();navigate(created?.id||"home");
@@ -268,7 +260,6 @@ window.BSProjectManager=(()=>{
    link.append(art);
    const copy=element("div","project-copy");copy.append(element("h2","",project.name),element("p","",project.description||"New engineering project"));
    const tags=element("div","project-tags");
-   tags.append(element("span","",categoryOf(project)));
    for(const tag of projectTags(project))tags.append(element("span","",tag));
    tags.append(element("span","",project.visibility==="private"?"Private":project.visibility==="unlisted"?"Unlisted":"Public"));
    copy.append(tags);
@@ -319,14 +310,8 @@ window.BSProjectManager=(()=>{
    }
    permissionsSelect.value=project.editMode||"approval";
    permissions.append(permissionsSelect);
-   const groupLabel=element("label","","Category");
-   const groupInput=element("input","field");groupInput.type="text";groupInput.maxLength=60;groupInput.required=true;
-   groupInput.value=categoryOf(project);groupInput.placeholder="Uncategorized or a custom category";
-   const suggestions=element("datalist");suggestions.id="project-groups-"+project.id;
-   [...new Set(["Uncategorized",...projects.map(categoryOf)])].forEach(g=>{const opt=element("option");opt.value=g;suggestions.append(opt)});
-   groupInput.setAttribute("list",suggestions.id);groupLabel.append(groupInput,suggestions);
    const settingsTags=makeTagPicker(projectTags(project));
-   form.append(groupLabel,settingsTags.element,visibility,permissions);
+   form.append(settingsTags.element,visibility,permissions);
    const note=element("p","muted","Changing to Private hides this project from other users. People may still have copies of previously published materials.");
    const status=element("p","project-summary-settings-status");status.setAttribute("role","status");
    const actions=element("div","project-summary-settings-actions");
@@ -334,7 +319,7 @@ window.BSProjectManager=(()=>{
    save.onclick=async()=>{
     save.disabled=true;status.textContent="Saving…";
     try{
-     await api("PATCH","/api/projects",{id:project.id,category:groupInput.value.trim()||"Uncategorized",tags:settingsTags.getTags(),visibility:visibilitySelect.value,editMode:permissionsSelect.value});
+     await api("PATCH","/api/projects",{id:project.id,tags:settingsTags.getTags(),visibility:visibilitySelect.value,editMode:permissionsSelect.value});
      status.textContent="Project settings saved.";await refresh();
     }catch(error){status.textContent=error.message}
     finally{save.disabled=false}
@@ -436,12 +421,6 @@ window.BSProjectManager=(()=>{
      ensureProjectPage(project);
      if(project.id.startsWith("p"))grid.append(card(project));
     }
-    const categoryCounts=new Map();
-    for(const project of projects)categoryCounts.set(categoryOf(project),(categoryCounts.get(categoryOf(project))||0)+1);
-    categoryNavigation?.setItems([
-     {value:"all",label:"All projects",count:projects.length},
-     ...[...categoryCounts].sort(([a],[b])=>a.localeCompare(b)).map(([value,count])=>({value,label:value,count}))
-    ]);
     renderTagFilters();updateDirectory();
     setupAssemblyTrees();setupComponents();setupPhotos();
     if(typeof refreshAdminUI==="function")refreshAdminUI();
