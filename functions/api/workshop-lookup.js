@@ -74,7 +74,7 @@ export async function onRequest({request,env}){
   const images=(payload.output||[]).filter(v=>v.type==="web_search_call").flatMap(v=>v.results||[]).filter(v=>v.type==="image_result");
   const candidate=images.find(img=>{
    const page=validUrl(img.source_website_url),image=validUrl(img.image_url);
-   return page&&image&&normalize((img.caption||"")+" "+decodeURIComponent(page.split("?")[0])).includes(normalize(mpn));
+   return page&&image&&normalize((img.caption||"")+" "+page.split("?")[0]).includes(normalize(mpn));
   });
   const imageSuggestion=candidate?{url:validUrl(candidate.image_url),sourceUrl:validUrl(candidate.source_website_url),caption:text(candidate.caption,180)}:null;
   await env.PHOTOS.put(key,String(count+1));
