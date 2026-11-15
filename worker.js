@@ -30,7 +30,7 @@ export default {
   async fetch(request,env,ctx){
     const path=new URL(request.url).pathname;
     try{
-      if(path==="/api/accounts")return handleAccounts(request,env);
+      if(path==="/api/accounts")return await handleAccounts(request,env);
       if(path==="/api/projects")return projectsApi({request,env,ctx});
       if(path==="/api/numbering")return numberingApi({request,env,ctx});
       if(path==="/api/proposals")return handleProposals(request,env);
