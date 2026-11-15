@@ -7,12 +7,15 @@ test("Workshop reference categories are centralized and preserve stable item IDs
  const tree=source.slice(source.indexOf("const workshopCategories=["),source.indexOf("const legacyCategory="));
  for(const name of ["Tools & Equipment","Consumables & Supplies","Electronics & Components","Hardware & Materials","Safety & Measurement"])
   assert.ok(tree.includes(name),name+" is required");
- for(const name of ["workshop:solder","workshop:wire22","workshop:meter","workshop:oscilloscope","workshop:ferrule22"])
-  assert.ok(source.includes('id:"'+name+'"'),name+" must retain its stable reference ID");
+ for(const name of ["workshop:solder","workshop:wire22","workshop:wire18","workshop:ferrule22","workshop:heatshrink"])
+  assert.ok(source.includes('id:"'+name+'"'),name+" must remain a shared essential");
+ assert.match(source,/const workshopEquipment=\[\];/);
+ assert.match(source,/const workshopComponents=\[\];/);
+ assert.match(source,/const workshopPower=\[\];/);
  assert.match(tree,/\["tools","Tools & Equipment",\[/);
- assert.match(tree,/\[\.\.\.workshopComponents,\.\.\.workshopPower\]\.map\(item=>item\.id\)/);
- assert.match(tree,/workshopHardware\.map\(item=>item\.id\)/);
- assert.match(source,/const workshopReferences=.*\.map\(itemMetadata\)/);
+ assert.match(tree,/\["electronics","Electronics & Components",\[\]\]/);
+ assert.match(tree,/\["tools","Tools & Equipment",\[\]\]/);
+ assert.match(source,/const workshopReferences=workshopSupplies\.map\(itemMetadata\)/);
  assert.match(source,/branch\("purchased"/);
  assert.match(source,/branch\("saved"/);
  assert.match(source,/ancestor\.tagName==="DETAILS"/);
@@ -27,7 +30,7 @@ test("Edit Part inputs use paired descriptor/value layout with mobile fallback",
 test("New Part Workshop picker uses the same five categories",()=>{
  const picker=readFileSync("assets/library-part-picker.js","utf8");
  const api=readFileSync("functions/api/commonparts.js","utf8");
- assert.match(picker,/el\("strong","","is from"\)/);
+ assert.match(picker,/el\("strong","","Use from"\)/);
  assert.match(picker,/el\("strong","","Add to"\)/);
  assert.match(picker,/addToWorkshopCheckbox\.onchange/);
  assert.match(picker,/partClassification\.input\.value="purchased"/);
