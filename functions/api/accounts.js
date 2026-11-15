@@ -36,7 +36,7 @@ async function passwordHash(password,salt){
 }
 function equal(a,b){if(a.length!==b.length)return false;let different=0;for(let i=0;i<a.length;i++)different|=a.charCodeAt(i)^b.charCodeAt(i);return different===0}
 export async function handleAccounts(request,env){
- if(!env.PHOTOS||!env.admin_password)return json({error:"Account storage or signing secret unavailable"},503);
+ if(!env.PHOTOS||!env.admin_password)return json({error:"Account service temporarily unavailable",code:"ACCOUNT_STORAGE_UNAVAILABLE"},503);
  if(request.method==="GET")return json({user:await accountUser(request,env)});
  if(!["POST","DELETE"].includes(request.method))return json({error:"Method not allowed"},405);
  if(request.headers.get("origin")!==new URL(request.url).origin)return json({error:"Invalid request origin"},403);
@@ -65,14 +65,14 @@ export async function handleAccounts(request,env){
   return json({user:{id:user.id,email:user.email,displayName:user.displayName,role:"admin"}});
  }
  const email=String(body?.email||"").toLowerCase().trim(),password=body?.password;
- if(!/^[^\s@]{1,80}@[^\s@]{1,120}\.[^\s@]{2,30}$/.test(email)||typeof password!=="string"||password.length<12||password.length>256)return json({error:"Enter a valid email and a password of at least 12 characters"},400);
+ if(!/^[^\s@]{1,80}@[^\s@]{1,120}\.[^\s@]{2,30}$/.test(email)||typeof password!=="string"||password.length<12||password.length>256)return json({error:"Enter a valid email and a password between 12 and 256 characters",code:"INVALID_REGISTRATION"},400);
  const emailObject=await env.PHOTOS.get(await emailKey(email));
  if(body.action==="register"){
-  if(emailObject)return json({error:"Account already exists"},409);
+  if(emailObject)return json({error:"An account already exists for this email address",code:"EMAIL_IN_USE"},409);
   const id="u"+crypto.randomUUID().replace(/-/g,""),salt=b64(crypto.getRandomValues(new Uint8Array(16)));
   const user={id,email,role:"member",displayName:String(body.displayName||"").trim().slice(0,80)||email.split("@")[0],salt,passwordHash:await passwordHash(password,salt),sessionVersion:crypto.randomUUID()};
   const claimed=await env.PHOTOS.put(await emailKey(email),JSON.stringify({id}),{onlyIf:{etagDoesNotMatch:"*"}});
-  if(!claimed)return json({error:"Account already exists"},409);
+  if(!claimed)return json({error:"An account already exists for this email address",code:"EMAIL_IN_USE"},409);
   await env.PHOTOS.put(userKey(id),JSON.stringify(user),{onlyIf:{etagDoesNotMatch:"*"}});
   return json({user:{id,email,displayName:user.displayName,role:"member"}},201,{"set-cookie":cookie(await createSession(user,env),30*86400)});
  }
