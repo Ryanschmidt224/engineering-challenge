@@ -464,7 +464,7 @@ function open({onCreate,hideDefault=false}){
   if(lib&&!wire)refreshCommon();
   wireModeChoice.classList.toggle("hide",!lib||category.input.value!=="consumables");
   powerType.label.classList.toggle("hide",!lib||category.input.value!=="electronics");
-  customName.label.classList.toggle("hide",lib);
+  customName.label.classList.toggle("hide",lib||adding);
 
   const documentMode=!lib&&itemKind.input.value!=="part";
   partClassification.label.classList.toggle("hide",lib||documentMode||adding);
@@ -523,7 +523,10 @@ function open({onCreate,hideDefault=false}){
   const rawCount=qty.input.value.trim();const count=rawCount===""?null:Number(rawCount);
   if(count!==null&&(!Number.isFinite(count)||count<=0||count>10000000)){status.textContent="Quantity must be positive, or left blank.";return}
   if(itemKind.input.value!=="part"||!workshopCheckbox.checked){
-   const name=customName.input.value.trim();if(!name||name.length>100){status.textContent="Enter a part name (up to 100 characters).";return}
+   // Workshop items use the manufacturer part number for their initial display name.
+    // The project part can be renamed later on its Part page.
+    const name=addToWorkshopCheckbox.checked&&itemKind.input.value==="part"?manufacturerNumber.input.value.trim().slice(0,100):customName.input.value.trim();
+    if(!name||name.length>100){status.textContent=addToWorkshopCheckbox.checked?"Enter a manufacturer part number.":"Enter a part name (up to 100 characters).";return}
    const autoNumber=autoNumberCheckbox.checked;
    payload={name,quantity:itemKind.input.value==="code"?null:itemKind.input.value==="document"?1:count,specifications:[],itemType:itemKind.input.value==="code"?"document":itemKind.input.value,partType:itemKind.input.value==="code"?"code":partClassification.input.value,
     assignNumber:autoNumber,partNumber:autoNumber?null:noNumberRadio.checked?null:partNumberField.input.value.trim().toUpperCase()||null};
