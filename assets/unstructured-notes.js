@@ -28,7 +28,8 @@
     if(!response.ok)throw Error(data.error||"Unable to load notes");
     if(stamp!==version)return;
     records=data.notes||[];revision=data.revision||null;
-    editable=!!data.canEdit&&!!canEdit();
+    // The API is the permission authority; the project sidebar may still be initializing.
+    editable=!!data.canEdit;
     report("");render();
    }catch(error){if(stamp===version){report(error.message);add.hidden=true}}
   }
@@ -132,7 +133,7 @@
      try{
       const response=await fetch("/api/photos",{method:"POST",credentials:"same-origin",
        headers:{"content-type":type,"x-photo-project":project,"x-photo-assembly":"note-"+working.id,
-        "x-photo-name":encodeURIComponent(file.name),"x-photo-caption":encodeURIComponent(working.title)},
+        "x-photo-name":encodeURIComponent(file.name),"x-photo-caption":encodeURIComponent(name.value.trim())},
        body:file});
       const data=await response.json().catch(()=>({}));
       if(!response.ok)throw Error(data.error||"Photo upload failed");
