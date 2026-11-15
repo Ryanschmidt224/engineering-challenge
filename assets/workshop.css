@@ -333,3 +333,24 @@
 #commonparts .workshop-ai-engineering-review ol{margin:5px 0 8px;padding-left:25px}
 #commonparts .workshop-ai-engineering-review li{line-height:1.55;margin-bottom:7px}
 #commonparts .workshop-ai-engineering-review a{margin-left:6px;font-size:.82rem}
+
+/* First-pass Workshop specification editor: simple, editable, optional rows. */
+#commonparts .workshop-structured-specs{
+ margin:18px 0;
+ border:1px solid var(--color-border);
+ border-radius:8px;
+ padding:15px;
+}
+#commonparts .workshop-structured-specs h3{margin:0 0 5px;font-size:1rem}
+#commonparts .workshop-structured-spec-actions{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}
+#commonparts .workshop-structured-spec-rows{display:grid;gap:8px;margin:12px 0}
+#commonparts .workshop-structured-spec-row{
+ display:grid;
+ grid-template-columns:minmax(130px,1.5fr) minmax(80px,1fr) minmax(65px,.5fr) minmax(130px,1.4fr) auto;
+ gap:8px;align-items:center;
+}
+#commonparts .workshop-structured-spec-row .field{width:100%;min-width:0}
+@media(max-width:760px){
+ #commonparts .workshop-structured-spec-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #commonparts .workshop-structured-spec-row .btn{justify-self:start}
+}
