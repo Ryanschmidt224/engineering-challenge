@@ -760,10 +760,13 @@ test("documents can be hidden independently in feature tree and BOM",async({page
  const bom=page.locator("#launcher .assembly-bom-screen");
  const documentToggle=bom.locator(".assembly-bom-documents-toggle input");
  await expect(documentToggle).toBeChecked();
- await expect(bom.locator(".assembly-bom-list-view")).toContainText("Assembly drawing");
+ // Scope visibility assertions to rendered BOM rows. The surrounding
+ // screen also contains the part editor, which does not inherit BOM filters.
+ const bomRows=bom.locator(".workspace-saved-parts");
+ await expect(bomRows).toContainText("Assembly drawing");
  await documentToggle.uncheck();
- await expect(bom.locator(".assembly-bom-list-view")).not.toContainText("Assembly drawing");
- await expect(bom.locator(".assembly-bom-list-view")).toContainText("Housing");
+ await expect(bomRows).not.toContainText("Assembly drawing");
+ await expect(bomRows).toContainText("Housing");
  await bom.locator(".assembly-bom-pictures").click();
  await expect(bom.locator(".assembly-bom-picture-view")).not.toContainText("Assembly drawing");
 });
