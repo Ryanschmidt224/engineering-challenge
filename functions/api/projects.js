@@ -10,6 +10,18 @@ export const CATALOG_KEY="project-catalog/v1.json";
 export const VALID_PROJECT_ID=/^(?:launcher|linear|robot|p[a-f0-9]{32})$/;
 export const projectGroup=p=>String(p.category||"Uncategorized").trim()||"Uncategorized";
 const validCategory=x=>typeof x==="string"&&x.trim().length>0&&x.trim().length<=60;
+const normalizeTags=value=>{
+ if(value===undefined)return undefined;
+ if(!Array.isArray(value)||value.length>20)return null;
+ const result=[];
+ for(const tag of value){
+  if(typeof tag!=="string"||tag.length>50)return null;
+  const name=tag.trim().replace(/\s+/g," ");
+  if(!name)return null;
+  if(!result.some(x=>x.toLowerCase()===name.toLowerCase()))result.push(name);
+ }
+ return result;
+};
 const safeRecords=value=>Array.isArray(value?.projects)?value.projects.filter(p=>p&&typeof p.id==="string"&&VALID_PROJECT_ID.test(p.id)):[];
 export async function readCatalog(env){
  if(!env.PHOTOS)throw Error("Project storage unavailable");
@@ -71,8 +83,10 @@ export async function onRequest({request,env}){
   if(!name||name.length>100||description.length>500)return json({error:"Project name must be 1–100 characters and description at most 500"},400);
   if(!user)return json({error:"A personal account is required to create a project"},401);
   const category=String(input.category||"Uncategorized").trim();
+  const tags=normalizeTags(input.tags);
+  if(tags===null)return json({error:"Choose up to 20 short project tags"},400);
   if(!validCategory(category))return json({error:"Category must contain 1–60 characters"},400);
-  const project={id:"p"+crypto.randomUUID().replace(/-/g,""),name,description,kind:"project",category,createdAt:new Date().toISOString(),archived:false,ownerId:user.id,visibility:"private",editMode:"approval",authorName:user.displayName};
+  const project={id:"p"+crypto.randomUUID().replace(/-/g,""),name,description,kind:"project",category,tags:tags||[],createdAt:new Date().toISOString(),archived:false,ownerId:user.id,visibility:"private",editMode:"approval",authorName:user.displayName};
   updated=[...catalog.stored,project];
  }else{
   const item=catalog.projects.find(p=>p.id===input.id);
@@ -90,6 +104,11 @@ export async function onRequest({request,env}){
    if(input.visibility!==undefined){
     if(!["private","public"].includes(input.visibility))return json({error:"Invalid visibility"},400);
     changed.visibility=input.visibility;
+   }
+   if(input.tags!==undefined){
+    const tags=normalizeTags(input.tags);
+    if(tags===null)return json({error:"Choose up to 20 short project tags"},400);
+    changed.tags=tags;
    }
    if(input.category!==undefined){
     if(!validCategory(input.category))return json({error:"Category must contain 1–60 characters"},400);
