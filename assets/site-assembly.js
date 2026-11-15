@@ -441,7 +441,8 @@ function setupAssemblyTrees(){
   const featureTreeFrame=document.createElement("div");
   featureTreeFrame.className="feature-tree-frame";
   while(sidebar.firstChild)featureTreeFrame.append(sidebar.firstChild);
-  sidebar.append(featureTreeFrame);
+  // Keep the summary card outside the scrolling tree card, immediately above Parts Management.
+  sidebar.append(featureTreeFrame,summaryCard);
   const bomResizer=document.createElement("div");
   bomResizer.className="workspace-bom-resizer";
   bomResizer.setAttribute("role","separator");
