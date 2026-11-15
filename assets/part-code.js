@@ -46,7 +46,7 @@
     row.append(node("span","",new Date(v.savedAt).toLocaleString()+" · "+(v.filename||v.language||"Code")));
     const open=node("button","btn","View");open.type="button";
     open.onclick=async()=>{
-     if(dirty&&!confirm("Discard unsaved changes before viewing an older version?"))return;
+     if(dirty&&!await window.BSDialogs.confirm("Discard unsaved changes before viewing an older version?",{title:"Discard changes?"}))return;
      try{
       const res=await fetch(url(project,partId)+"&revision="+encodeURIComponent(v.revision),{credentials:"same-origin",cache:"no-store"});
       const data=await res.json();if(!res.ok)throw Error(data.error||"Revision unavailable");
@@ -58,7 +58,7 @@
     const restore=node("button","btn","Restore into editor");restore.type="button";
     restore.hidden=!canEdit();
     restore.onclick=async()=>{
-     if(dirty&&!confirm("Discard unsaved changes and restore this version into the editor?"))return;
+     if(dirty&&!await window.BSDialogs.confirm("Discard unsaved changes and restore this version into the editor?",{title:"Restore older version?"}))return;
      try{
       const res=await fetch(url(project,partId)+"&revision="+encodeURIComponent(v.revision),{credentials:"same-origin",cache:"no-store"});
       const data=await res.json();if(!res.ok)throw Error(data.error||"Revision unavailable");
@@ -103,7 +103,7 @@
    const file=sourceFile.files?.[0];sourceFile.value="";
    if(!file)return;
    if(file.size>100000){setStatus("Maximum code file size is 100 KB.");return}
-   if(dirty&&!confirm("Replace your unsaved editor text with this file?"))return;
+   if(dirty&&!await window.BSDialogs.confirm("Replace your unsaved editor text with this file?",{title:"Replace unsaved text?"}))return;
    try{
     editor.value=await file.text();
     filename.value=file.name.slice(0,120).replace(/[^a-zA-Z0-9_. -]/g,"_");
