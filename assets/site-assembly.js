@@ -897,6 +897,7 @@ function setupAssemblyTrees(){
      line.append(label,separator,value);detailRows.append(line);
     }
    }
+   window.BSPartSuppliers?.renderLinks(detailRows,part);
    renderProgressNotes(part);
    detailsPanel.classList.remove("hide");
   };
@@ -1417,6 +1418,7 @@ function setupAssemblyTrees(){
   // Workspace owns its part editor actions. Keep the mini-project component
   // editors separate; this panel saves one assembly part per request.
   const bomEditorMount=bomPanel.querySelector(".workspace-bom-mount");
+  const supplierEditor=window.BSPartSuppliers?.createEditor();
   // Explicit type, shared by the overview and main editor. Older records default
   // to Purchased to preserve their existing manufacturer/supplier fields.
   const toolRow=document.createElement("label");toolRow.className="part-visibility-field";
@@ -1574,6 +1576,7 @@ function setupAssemblyTrees(){
    editingPart=null;editingPartAssembly=null;
    itemTypeSelect.value="part";partTypeSelect.value="purchased";visibilityCheckbox.checked=false;toolCheckbox.checked=false;partDescriptionInput.value="";partNumberInput.value="";autoNumberChosen=false;partNumberInput.readOnly=false;nextNumberButton.disabled=false;partNumberHelp.textContent="A number is assigned only when the part is saved.";updatePartTypeFields();
    for(const name of ["name","manufacturer","model","supplier","asin","description","historical-price","historical-price-date"]){const el=bomField(name);if(el)el.value=""}
+   supplierEditor?.setOffers([]);
    const priceBasis=bomField("historical-price-basis"),packageQty=bomField("historical-package-quantity");
    if(priceBasis)priceBasis.value="per_part";if(packageQty)packageQty.value="";priceBasis?.dispatchEvent(new Event("change"));
    const qty=bomField("quantity");if(qty)qty.value="";
@@ -1593,6 +1596,7 @@ function setupAssemblyTrees(){
    partNumberHelp.textContent=part.partNumber?"Issued number. Existing part numbers are permanent.":"Enter a number or click Choose next available part number.";
    updatePartTypeFields();
    for(const key of ["name","manufacturer","model","supplier","asin","category"]){const field=bomField(key);if(field)field.value=part[key]||""}
+   supplierEditor?.setOffers(part.supplierOffers||[]);
 
    const qty=bomField("quantity");if(qty)qty.value=part.quantity??"";
    const unit=bomField("quantity-unit");if(unit)unit.value=part.quantityUnit??"pcs";if(unit?.closest("label"))unit.closest("label").hidden=true;
@@ -1685,6 +1689,7 @@ function setupAssemblyTrees(){
     const ordered=keys=>keys.map(key=>controls[key]).filter(Boolean);
     move(...ordered(fields.identity),apiPanel);
     move(sectionHeading("additional","Additional details"),...ordered(fields.additional),quantities[1]);
+    if(supplierEditor)move(supplierEditor.element);
     const displayGroup=review.querySelector(".part-display-options")||document.createElement("div");
     displayGroup.className="part-display-options";
     displayGroup.append(...ordered(fields.display));
@@ -1746,6 +1751,7 @@ function setupAssemblyTrees(){
    component.historicalPackageQuantity=pricingBasis==="per_package"?(countInput||null):null;
    component.historicalPriceDate=priceInput===""?null:(dateInput||new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10));
    for(const key of ["name","manufacturer","model","supplier","asin"])component[key]=bomField(key)?.value.trim()||"";
+   try{component.supplierOffers=supplierEditor?.getOffers()||[]}catch(error){bomReport(error.message);return false}
    // Preserve the hidden category for existing parts and product extraction.
    component.category=bomField("category")?.value.trim()||"";
    // The API automatically generates the display/file label: part number + name.
