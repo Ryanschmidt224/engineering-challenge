@@ -82,3 +82,18 @@ test("Saving a purchased project part to My Workshop never publishes private inv
  assert.match(source,/stockStatus:"committed"/);
  assert.doesNotMatch(source,/fetch\("\/api\/workshop-reference".*addToWorkshop/);
 });
+
+test("Workshop detail editing is tied to the opened record, with one image-adjacent Edit action",()=>{
+ const source=readFileSync("assets/personal-workshop.js","utf8");
+ const css=readFileSync("assets/workshop.css","utf8");
+ const shared=source.slice(source.indexOf("  function showItem("),source.indexOf("  function openItemEditor("));
+ assert.doesNotMatch(shared,/Edit shared catalog|Edit My Workshop copy|Edit item in My Workshop/);
+ assert.match(shared,/if\(canEditReferences\)\s*mediaWithEdit\.append\(itemButton\("Edit"/);
+ assert.match(shared,/itemButton\("View in My Workshop",\(\)=>showPersonalItem\(owned\[0\]\.id\)/);
+ const personal=source.slice(source.indexOf("  function showPersonalItem("),source.indexOf("  function showItem("));
+ assert.equal((personal.match(/itemButton\("Edit"/g)||[]).length,1);
+ assert.match(source,/window\.BSPartFields\?\.sectionFields/);
+ assert.match(source,/part-editor-section-heading/);
+ assert.match(css,/\.workshop-item-hero\{grid-template-columns:minmax\(260px,440px\)/);
+ assert.match(css,/\.workshop-under-image-edit\{min-width:0/);
+});
