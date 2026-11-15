@@ -518,7 +518,7 @@
    lookupInput.setAttribute("aria-label","Part number for AI product lookup");
    const lookupResults=el("div",undefined,"workshop-ai-lookup-results");
    const lookupMessage=el("p",undefined,"workshop-ai-lookup-status");lookupMessage.setAttribute("role","status");
-   const lookupButton=itemButton("Look up part number with AI",()=>{},"btn primary");
+   const lookupButton=itemButton("Find with AI",()=>{},"btn primary");
    lookupRow.append(lookupInput,lookupButton);
    lookupPanel.append(lookupHint,lookupRow,lookupMessage,lookupResults);
    form.append(lookupPanel);
@@ -705,28 +705,16 @@
    };
    redrawPhotos();form.append(gallery);
    // Lookup populates the existing editable fields, not an alternate AI record.
-   lookupInput.addEventListener("keydown",event=>{
-    if(event.key==="Enter"){event.preventDefault();lookupButton.click()}
-   });
-   lookupButton.onclick=async()=>{
-    const mpn=lookupInput.value.trim()||controls.partNumber.value.trim();
-    if(mpn.length<2){lookupMessage.textContent="Enter a manufacturer part number first.";lookupInput.focus();return}
-    if(!isNew&&!confirm("Replace the current editable fields with AI suggestions? Review the results before saving."))return;
-    lookupButton.disabled=true;lookupButton.textContent="Searching…";
-    lookupMessage.textContent="Looking up "+mpn+" using manufacturer and datasheet sources. This may take a little while.";
-    lookupMessage.scrollIntoView({block:"nearest"});
-    lookupResults.replaceChildren();
-    try{
-     const controller=new AbortController();
-     const timeout=setTimeout(()=>controller.abort(),60000);
-     let response;
-     try{
-      const res=await fetch("/api/workshop-lookup",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({partNumber:mpn}),signal:controller.signal});
-      const data=await res.json().catch(()=>({}));
-      if(!res.ok)throw Error(data.error||"Lookup returned HTTP "+res.status);
-      response=data;
-     }finally{clearTimeout(timeout)}
-     const draft=response.draft||{};
+   const identitySection=grid.querySelector('[data-part-editor-section="identity"]');
+   const identityHeading=identitySection.querySelector(".part-editor-section-heading");
+   const viewSuggested=itemButton("View suggested changes",()=>{},"btn workshop-ai-review-trigger");
+   viewSuggested.type="button";viewSuggested.hidden=true;identityHeading.append(viewSuggested);
+   const reviewPanel=el("section",undefined,"workshop-ai-changes-panel");
+   reviewPanel.hidden=true;identityHeading.after(reviewPanel);
+   let pendingSuggestion=null;
+   const closeReview=()=>{reviewPanel.hidden=true;reviewPanel.replaceChildren()};
+   const applySuggestion=response=>{
+    const draft=response.draft||{};
      for(const key of saveableFields){
       if(controls[key]&&typeof draft[key]==="string")controls[key].value=draft[key];
      }
@@ -830,10 +818,82 @@
       },"btn");
       imageBox.append(usePicture);lookupResults.append(imageBox);
      }else lookupResults.append(el("p","No suitable picture found. You can upload one below.","muted"));
-     lookupMessage.textContent="Draft populated. Review the manufacturer, MPN, specifications, classification, sources and photo before saving.";
+     lookupMessage.textContent="Suggested changes applied. Review the form and Save at the bottom.";
+    
+   };
+   const showReview=()=>{
+    if(!pendingSuggestion)return;
+    const draft=pendingSuggestion.draft||{};
+    reviewPanel.replaceChildren(el("h4","Suggested changes"),
+     el("p","Compare the suggested values. Apply them to the form, then scroll to the bottom to Save.","muted"));
+    const changes=[];
+    for(const [key,control] of Object.entries(controls)){
+     if(typeof draft[key]!=="string"||!draft[key].trim()||draft[key].trim()===control.value.trim())continue;
+     changes.push([fieldDescriptors[key]?.[0]||key,control.value.trim(),draft[key].trim()]);
+    }
+    if(draft.kind&&draft.kind!==kind.value)changes.push(["Item type",kind.value,draft.kind]);
+    if(draft.category&&draft.category!==category.value)changes.push(["Website category",category.value,draft.category]);
+    if(draft.familyName){
+     const current=family.value==="new-family"?familyName.value:family.selectedOptions[0]?.textContent||family.value;
+     if(current.toLowerCase()!==draft.familyName.toLowerCase())changes.push(["Product family",current,draft.familyName]);
+    }
+    if(changes.length){
+     const table=el("table",undefined,"workshop-ai-diff-table");
+     const head=el("tr");for(const name of ["Field","Current","Suggested"])head.append(el("th",name));
+     const thead=el("thead");thead.append(head);table.append(thead);
+     const tbody=el("tbody");
+     for(const [label,oldValue,newValue] of changes){
+      const tr=el("tr");tr.append(el("th",label),el("td",oldValue||"—"),el("td",newValue));tbody.append(tr);
+     }
+     table.append(tbody);reviewPanel.append(table);
+    }else reviewPanel.append(el("p","No new identity field values were suggested.","muted"));
+    const specs=pendingSuggestion.research?.specs||[];
+    if(specs.length){
+     reviewPanel.append(el("h5","Suggested specifications ("+specs.length+")"));
+     const list=el("ul");
+     for(const spec of specs)list.append(el("li",spec.name+": "+spec.value+(spec.unit?" "+spec.unit:"")+(spec.conditions?" ("+spec.conditions+")":"")));
+     reviewPanel.append(list);
+    }
+    const actions=el("div",undefined,"workshop-ai-changes-actions");
+    actions.append(itemButton("Cancel",closeReview,"btn"),
+     itemButton("Apply suggested changes",()=>{
+      const result=pendingSuggestion;
+      pendingSuggestion=null;viewSuggested.hidden=true;closeReview();
+      applySuggestion(result);
+     },"btn primary"));
+    reviewPanel.append(actions);reviewPanel.hidden=false;reviewPanel.scrollIntoView({block:"nearest"});
+   };
+   viewSuggested.onclick=showReview;
+   lookupInput.addEventListener("input",()=>{pendingSuggestion=null;viewSuggested.hidden=true;closeReview()});
+   lookupInput.addEventListener("keydown",event=>{
+    if(event.key==="Enter"){event.preventDefault();lookupButton.click()}
+   });
+   lookupButton.onclick=async()=>{
+    const mpn=lookupInput.value.trim()||controls.partNumber.value.trim();
+    if(mpn.length<2){lookupMessage.textContent="Enter a manufacturer part number first.";lookupInput.focus();return}
+    
+    lookupButton.disabled=true;lookupButton.textContent="Searching…";
+    pendingSuggestion=null;viewSuggested.hidden=true;closeReview();
+    lookupMessage.textContent="Looking up "+mpn+"… The form will not change until you approve suggestions.";
+    lookupMessage.scrollIntoView({block:"nearest"});
+    lookupResults.replaceChildren();
+    try{
+     const controller=new AbortController();
+     const timeout=setTimeout(()=>controller.abort(),60000);
+     let response;
+     try{
+      const res=await fetch("/api/workshop-lookup",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({partNumber:mpn}),signal:controller.signal});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok)throw Error(data.error||"Lookup returned HTTP "+res.status);
+      response=data;
+     }finally{clearTimeout(timeout)}
+     pendingSuggestion=response;
+     viewSuggested.hidden=false;
+     lookupMessage.textContent="AI suggestions ready. Choose View suggested changes under Product identity.";
+     viewSuggested.scrollIntoView({block:"nearest"});
     }catch(error){lookupMessage.textContent=error.name==="AbortError"?"Lookup timed out. Try again; no fields were changed.":error.message||"Lookup failed.";
      lookupMessage.scrollIntoView({block:"nearest"});}
-    finally{lookupButton.disabled=false;lookupButton.textContent="Look up part number with AI"}
+    finally{lookupButton.disabled=false;lookupButton.textContent="Find with AI"}
    };
    const uploadRow=el("div",undefined,"workshop-item-photo-upload");
    const picker=el("input");picker.type="file";picker.accept="image/jpeg,image/png,image/webp";
