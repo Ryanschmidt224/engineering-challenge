@@ -847,7 +847,7 @@
      reviewPanel.append(list);
     }
     const actions=el("div",undefined,"workshop-ai-changes-actions");
-    actions.append(itemButton("Cancel",closeReview,"btn"),
+    actions.append(
      itemButton("Apply suggested changes and save",()=>{
       if(!pendingSuggestion)return;
       const result=pendingSuggestion;
@@ -856,7 +856,8 @@
       // Reuse the ordinary validated Workshop save, which closes only on success.
       lookupMessage.textContent="Applying suggestions and saving Workshop item…";
       form.requestSubmit();
-     },"btn primary"));
+     },"btn primary"),
+     itemButton("Cancel",closeReview,"btn"));
     reviewPanel.append(actions);reviewPanel.hidden=false;reviewPanel.scrollIntoView({block:"nearest"});
    };
    viewSuggested.onclick=showReview;
