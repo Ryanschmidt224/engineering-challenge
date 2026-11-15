@@ -30,7 +30,16 @@
   if(!sku)return null;
   if(vendor==="amazon")return isAsin(sku)?"https://www.amazon.com/dp/"+sku.toUpperCase():null;
   if(vendor==="mcmaster"&&/^[A-Za-z0-9-]{3,40}$/.test(sku))return "https://www.mcmaster.com/"+encodeURIComponent(sku)+"/";
-  return null; // Prefer exact product URLs to guessing supplier search paths.
+  return searchUrlFor(vendor,sku); // Unmatched codes open supplier search, not an assumed exact product.
+ };
+ const searchUrlFor=(vendor,term)=>{
+  const q=encodeURIComponent(String(term||"").trim().slice(0,150));
+  if(!q)return null;
+  if(vendor==="digikey")return "https://www.digikey.com/en/products/result?keywords="+q;
+  if(vendor==="mouser")return "https://www.mouser.com/c/?q="+q;
+  if(vendor==="newark")return "https://www.newark.com/search?st="+q;
+  if(vendor==="amazon")return "https://www.amazon.com/s?k="+q;
+  return null;
  };
  const labelFor=vendor=>vendors.find(x=>x[0]===vendor)?.[1]||vendor;
  function createEditor(){
@@ -94,11 +103,12 @@
   group.append(make("p","muted","Confirm the exact specifications, availability, price and seller before ordering."));
   const list=make("div","bs-part-buy-options");
   for(const {offer,url} of usable){
-   const a=make("a","bs-part-buy-link",labelFor(offer.vendor)+(offer.sku?" · "+offer.sku:""));
+   const exact=!!offer.url||offer.vendor==="amazon"&&isAsin(offer.sku)||offer.vendor==="mcmaster";
+   const a=make("a","bs-part-buy-link",(exact?"Open ":"Search ")+labelFor(offer.vendor)+(offer.sku?" · "+offer.sku:""));
    a.href=url;a.target="_blank";a.rel="noopener noreferrer nofollow";
    list.append(a);
   }
   group.append(list);target.append(group);
  }
- window.BSPartSuppliers=Object.freeze({vendors,safeUrl,linkFor,createEditor,renderLinks});
+ window.BSPartSuppliers=Object.freeze({vendors,safeUrl,searchUrlFor,linkFor,createEditor,renderLinks});
 })();
