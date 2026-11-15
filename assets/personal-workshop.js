@@ -668,8 +668,9 @@
    }
    if(selectedType){
     const type=typeRules.find(rule=>rule[0]===selectedType);
-    const label=type?.[1]||"Other products";
-    title.textContent=label;
+    const selectedItem=matched.find(item=>typeFor(item).id===selectedType)||
+     personalMatched.find(item=>typeFor(matchingReference(item)||item).id===selectedType);
+    title.textContent=type?.[1]||(selectedItem?typeFor(selectedItem).label:"Other products");
     const back=itemButton("← All "+(family?.label||"product")+" types",()=>{selectedType="";renderCatalog()},"workshop-family-back");
     list.append(back);
    }
