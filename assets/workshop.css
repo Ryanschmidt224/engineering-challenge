@@ -223,3 +223,27 @@
  #commonparts .workshop-catalog-controls{justify-content:flex-start;width:100%}
  #commonparts .workshop-catalog-create{width:100%;justify-content:center}
 }
+
+/* Workshop item details: one contextual Edit action under a larger product photo.
+ * Shared catalog and My Workshop are separate records and editor destinations. */
+#commonparts .workshop-item-hero{grid-template-columns:minmax(260px,440px) minmax(0,1fr);gap:30px}
+#commonparts .workshop-item-large-thumb{min-height:290px;aspect-ratio:1.2}
+#commonparts .workshop-item-large-thumb svg{width:min(76%,260px);height:min(76%,260px)}
+#commonparts .workshop-reference-hero-image{min-height:290px;max-height:440px;object-fit:contain}
+#commonparts .workshop-item-media-actions{max-width:440px}
+#commonparts .workshop-under-image-edit{min-width:0;min-height:30px;padding:5px 12px;font-size:.78rem;font-weight:600;border-radius:5px;align-self:flex-start}
+#commonparts .workshop-product-image .workshop-catalog-thumb{height:160px}
+#commonparts .workshop-product-image .workshop-catalog-thumb svg{height:120px;width:120px}
+#commonparts .workshop-product-edit{font-size:.75rem;padding:5px 11px;min-height:29px}
+#commonparts .workshop-item-edit-grid:has(>.workshop-part-editor-section){display:block}
+#commonparts .workshop-part-editor-section{margin-bottom:18px}
+#commonparts .workshop-part-editor-section>.part-editor-section-heading{margin:0 0 12px;padding-bottom:9px;border-bottom:1px solid var(--color-border);font-size:.98rem}
+#commonparts .workshop-part-editor-section .workshop-item-edit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:13px}
+#commonparts .workshop-part-editor-section:has(textarea) .workshop-edit-wide{grid-column:1/-1}
+#commonparts .workshop-personal-record-link{font-size:.81rem;padding:6px 11px}
+@media(max-width:800px){
+ #commonparts .workshop-item-hero{grid-template-columns:1fr}
+ #commonparts .workshop-item-media-actions{max-width:440px}
+ #commonparts .workshop-item-large-thumb{min-height:230px}
+ #commonparts .workshop-reference-hero-image{min-height:230px}
+}
