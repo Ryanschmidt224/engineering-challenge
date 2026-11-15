@@ -61,9 +61,30 @@
   applyWorkshopCategory();
   let workshopOverrides={},canEditReferences=false,accountSignedIn=false;
   let items=[],editingId=null,photoId="",catalogId="";
-  const standards=()=>(window.BSResources?.workshopReferences||[]).map(item=>({...item,...(workshopOverrides[item.id]||{})}));
-  const saveableFields=["name","subtitle","spec","use","caution","manufacturer","model","partNumber","supplier","supplierUrl","asin","price","packageQuantity","orderNotes","documentationUrl","notes"];
-  const families=()=>window.BSResources?.workshopGroups||[];
+  // Seeded references keep stable IDs; administrator-created parts are loaded
+  // from R2 and appear in exactly the same browsing and editing workflows.
+  const standards=()=>{
+   const seeded=window.BSResources?.workshopReferences||[];
+   const generated=Object.entries(workshopOverrides)
+    .filter(([id,details])=>details?.created&&!seeded.some(item=>item.id===id))
+    .map(([id,details])=>({id,...details}));
+   return [...seeded.map(item=>({...item,...(workshopOverrides[item.id]||{})})),...generated];
+  };
+  const saveableFields=["name","subtitle","spec","use","caution","manufacturer","model","partNumber","supplier","supplierUrl","asin","price","packageQuantity","orderNotes","documentationUrl","notes","category","kind","familyId","familyName","typeName"];
+  const families=()=>{
+   const groups=(window.BSResources?.workshopGroups||[]).map(group=>({...group,items:[...group.items]}));
+   for(const item of standards()){
+    if(!item.familyId)continue;
+    let group=groups.find(entry=>entry.id===item.familyId);
+    if(!group){
+     group={id:item.familyId,label:item.familyName||"Other Workshop items",
+      description:"Workshop catalog products",items:[]};
+     groups.push(group);
+    }
+    if(!group.items.includes(item.id))group.items.push(item.id);
+   }
+   return groups;
+  };
 
   const model=window.BSWorkshopModel.create({standards,families,categoryFor,getItems:()=>items});
   const {stockLabels,matchingReference,familyOfPersonal,categoryOfPersonal,ownedFor,ownershipLabel,familyFor,typeRules,typeFor}=model;
@@ -73,7 +94,7 @@
   // the right, and specifications expanded in context. All records are the
   // existing curated Workshop references; this does not scrape third parties.
   const catalog=el("section",undefined,"workshop-catalog");
-  catalog.innerHTML='<div class="workshop-catalog-bar"><div><h3>Workshop catalog</h3><p class="muted workshop-catalog-subtitle">Browse reference equipment, components, and materials. These are not automatically in your inventory.</p></div><label class="workshop-sort-label">Sort <select class="field workshop-catalog-sort"><option value="name">Name A–Z</option><option value="type">Type</option><option value="level">Skill level</option></select></label></div><p class="workshop-catalog-count" role="status"></p><div class="workshop-catalog-list"></div>';
+  catalog.innerHTML='<div class="workshop-catalog-bar"><div><h3>Workshop catalog</h3><p class="muted workshop-catalog-subtitle">Browse reference equipment, components, and materials. These are not automatically in your inventory.</p></div><div class="workshop-catalog-controls"><button type="button" class="btn primary workshop-catalog-create" hidden>+ Add catalog item</button><label class="workshop-sort-label">Sort <select class="field workshop-catalog-sort"><option value="name">Name A–Z</option><option value="type">Type</option><option value="level">Skill level</option></select></label></div></div><p class="workshop-catalog-count" role="status"></p><div class="workshop-catalog-list"></div>';
   const searchLabel=$("#workshop-recommend-search",shared).parentElement.querySelector(".workshop-recommend-search-label");
   if(searchLabel)searchLabel.textContent="Search catalog by name, size, type, or specification";
   const results=$("#workshop-recommend-search",shared);
@@ -394,14 +415,33 @@
    itemPage.scrollIntoView({block:"start"});
   }
 
+  function createCatalogItem(){
+   if(!canEditReferences)return;
+   selectedType="";openedItem="";
+   shared.hidden=true;personal.hidden=true;sidebar.hidden=true;
+   itemPage.hidden=false;itemSide.hidden=false;
+   itemSide.replaceChildren();itemPage.replaceChildren();
+   itemSide.append(itemButton("← Back to catalog",()=>closeItem(),"workshop-item-back"));
+   itemSide.append(el("h2","Create catalog item","workshop-item-side-title"));
+   const heading=el("div",undefined,"workshop-item-page-heading");
+   heading.append(el("h2","New Workshop item"),
+    el("p","Add a product to the shared website catalog.","muted"));
+   itemPage.append(heading);
+   const mount=el("section",undefined,"workshop-item-editor-mount");
+   itemPage.append(mount);
+   openItemEditor({category:selectedWorkshopCategory==="all"?"tools":selectedWorkshopCategory,
+    kind:"equipment",familyId:selectedFamily||"measurement",photos:[]});
+  }
+  $(".workshop-catalog-create",catalog).onclick=createCatalogItem;
   function openItemEditor(item){
    if(!canEditReferences)return;
+   const isNew=!item.id;
    const mount=$(".workshop-item-editor-mount",itemPage);
    if(!mount)return;
    mount.replaceChildren();
    const form=el("form",undefined,"workshop-item-edit-form");
    const heading=el("div",undefined,"workshop-item-editor-heading");
-   heading.append(el("h3","Edit "+item.name),el("p","Shared Workshop catalog · administrator only","muted"));
+   heading.append(el("h3",isNew?"Create new catalog item":"Edit "+item.name),el("p","Shared Workshop catalog · administrator only","muted"));
    form.append(heading);
    const grid=el("div",undefined,"workshop-item-edit-grid");
    const descriptors=[
@@ -411,6 +451,7 @@
     ["supplierUrl","Supplier / ordering URL","url"],["asin","Amazon ASIN","text"],
     ["price","Reference price","text"],["packageQuantity","Quantity / package","text"],
     ["documentationUrl","Documentation URL","url"],
+    ["typeName","Product type (e.g. Multimeters)","text"],
     ["spec","Specifications","textarea"],["use","Typical use","textarea"],
     ["caution","Important considerations","textarea"],["orderNotes","How to order","textarea"],
     ["notes","Additional notes","textarea"]
@@ -424,7 +465,34 @@
     control.className="field";control.value=item[key]||"";
     label.append(control);grid.append(label);controls[key]=control;
    }
-   form.append(grid);
+   const classification=el("div",undefined,"workshop-item-classification");
+   const addSelect=(labelText,values,value)=>{
+    const label=el("label");
+    label.append(el("span",labelText));
+    const field=el("select",undefined,"field");
+    for(const [id,title] of values){const option=el("option",title);option.value=id;field.append(option)}
+    field.value=value;label.append(field);classification.append(label);return field;
+   };
+   const kind=addSelect("Item type",[
+    ["tool","Tool"],["equipment","Equipment"],["component","Component"],
+    ["material","Material"],["other","Other"]],item.kind||"equipment");
+   const category=addSelect("Website category",workshopCategories.map(([id,label])=>[id,label]),
+    categoryFor(item)==="other"?"tools":categoryFor(item));
+   const familyOptions=families().map(group=>[group.id,group.label]);
+   familyOptions.push(["new-family","Create a new product family…"]);
+   const family=addSelect("Product family",familyOptions,item.familyId||familyFor(item)?.id||selectedFamily||familyOptions[0]?.[0]);
+   const newFamily=el("label");
+   newFamily.append(el("span","New family name"));
+   const familyName=el("input");familyName.className="field";
+   familyName.maxLength=120;familyName.placeholder="e.g. Motors & Drives";
+   newFamily.append(familyName);classification.append(newFamily);
+   const updateFamily=()=>{
+    newFamily.hidden=family.value!=="new-family";
+    familyName.required=family.value==="new-family";
+   };
+   family.onchange=updateFamily;
+   updateFamily();
+   form.append(classification,grid);
    const photoTitle=el("h4","Photos");
    form.append(photoTitle);
    const photos=(item.photos||[]).map(p=>({...p}));
@@ -467,19 +535,34 @@
    const status=el("p","","workshop-item-editor-status");
    status.setAttribute("role","status");
    const actions=el("div",undefined,"workshop-item-editor-actions");
-   const save=itemButton("Save changes",()=>form.requestSubmit(),"btn primary");
-   const cancel=itemButton("Cancel",()=>mount.replaceChildren(),"btn");
+   const save=itemButton(isNew?"Create catalog item":"Save changes",()=>form.requestSubmit(),"btn primary");
+   const cancel=itemButton("Cancel",()=>isNew?closeItem():mount.replaceChildren(),"btn");
    actions.append(save,cancel);form.append(actions,status);
    form.addEventListener("submit",async event=>{
     event.preventDefault();
     const details={photos};
-    for(const field of saveableFields)details[field]=controls[field]?.value||"";
-    status.textContent="Saving…";save.disabled=true;
+    for(const field of saveableFields)if(controls[field])details[field]=controls[field].value;
+    details.kind=kind.value;details.category=category.value;
+    if(family.value==="new-family"){
+     const label=familyName.value.trim();
+     if(!label){status.textContent="Enter the new family name.";return}
+     const slug=label.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,85);
+     if(slug.length<2){status.textContent="Enter a longer family name.";return}
+     details.familyId="custom-"+slug;
+     details.familyName=label;
+    }else{
+     details.familyId=family.value;
+     details.familyName=families().find(group=>group.id===family.value)?.label||"";
+    }
+    if(!details.name?.trim()){status.textContent="Enter an item name.";return}
+    status.textContent=isNew?"Creating item…":"Saving…";save.disabled=true;
     try{
-     const response=await req("/api/workshop-reference","PUT",{id:item.id,details});
-     workshopOverrides[item.id]=response.details;
+     const response=await req("/api/workshop-reference",isNew?"POST":"PUT",
+      isNew?{details}:{id:item.id,details});
+     workshopOverrides[response.id]=response.details;
+     selectedFamily=details.familyId;selectedType="";
      renderCatalog();
-     showItem(item.id,false);
+     showItem(response.id,isNew);
     }catch(error){status.textContent=error.message;save.disabled=false}
    });
    mount.append(form);
@@ -687,6 +770,7 @@
     const data=await req("/api/workshop-reference");
     workshopOverrides=data.items||{};
     canEditReferences=!!data.canEdit;
+    $(".workshop-catalog-create",catalog).hidden=!canEditReferences;
     renderCatalog();
     if(openedItem)showItem(openedItem,false);
    }catch(error){
