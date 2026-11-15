@@ -1006,6 +1006,12 @@
   const fields={name:"name",kind:"kind",category:"category",manufacturer:"manufacturer",model:"model",partNumber:"partnumber",featureTreeDescription:"featuretreedescription",quantity:"quantity",unit:"unit",stockStatus:"stockstatus",notes:"notes"};
   function fill(item){
    editingId=item.id||null;photoId=item.photoId||"";catalogId=item.catalogId||"";
+   const aiMpn=$("#workshop-editor .workshop-ai-lookup input",personal);
+   if(aiMpn)aiMpn.value=item.partNumber||"";
+   const aiResults=$("#workshop-editor .workshop-ai-lookup-results",personal);
+   if(aiResults)aiResults.replaceChildren();
+   const aiStatus=$("#workshop-editor .workshop-ai-lookup-status",personal);
+   if(aiStatus)aiStatus.textContent="";
    for(const [key,id] of Object.entries(fields)){
     const input=$("#workshop-"+id,personal);
     if(input)input.value=item[key]??(key==="quantity"?1:key==="unit"?"pcs":key==="kind"?"other":key==="stockStatus"?"in_stock":"");
