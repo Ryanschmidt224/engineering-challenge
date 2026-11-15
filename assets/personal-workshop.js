@@ -927,23 +927,48 @@
    const picker=el("input");picker.type="file";picker.accept="image/jpeg,image/png,image/webp";
    picker.multiple=true;picker.setAttribute("aria-label","Upload item photos");
    const uploadStatus=el("p","","muted");
-   const upload=itemButton("Upload photos",async()=>{
-    if(!picker.files?.length)return;
-    if(photos.length+picker.files.length>12){uploadStatus.textContent="Up to 12 photos per item.";return}
-    upload.disabled=true;
+   const uploadFiles=async files=>{
+    const images=[...files].filter(file=>["image/jpeg","image/png","image/webp"].includes(file.type));
+    if(!images.length){uploadStatus.textContent="Paste or select a JPEG, PNG, or WebP image.";return}
+    if(photos.length+images.length>12){uploadStatus.textContent="Up to 12 photos per item.";return}
+    upload.disabled=true;uploadStatus.textContent="Uploading image…";
     try{
-     for(const file of picker.files){
-      const body=new FormData();body.append("photo",file);
+     for(const file of images){
+      const body=new FormData();body.append("photo",file,file.name||"pasted-image.png");
       const res=await fetch("/api/workshop-reference",{method:"POST",credentials:"same-origin",body});
       const data=await res.json().catch(()=>({}));
       if(!res.ok)throw Error(data.error||"Photo upload failed");
       photos.push(data.photo);
      }
-     picker.value="";redrawPhotos();uploadStatus.textContent="Photos uploaded. Save changes to publish.";
+     picker.value="";redrawPhotos();uploadStatus.textContent="Photo added to draft. Save the item to publish it.";
     }catch(error){uploadStatus.textContent=error.message}
     finally{upload.disabled=false}
+   };
+   const upload=itemButton("Upload photos",()=>uploadFiles(picker.files||[]));
+   const pasteZone=el("div","Right-click here and choose Paste to add a copied photo (or press Ctrl+V).","workshop-photo-paste-zone");
+   pasteZone.contentEditable="true";
+   pasteZone.setAttribute("role","textbox");
+   pasteZone.setAttribute("aria-label","Paste a copied Workshop product photo");
+   pasteZone.setAttribute("aria-multiline","false");
+   pasteZone.setAttribute("spellcheck","false");
+   pasteZone.setAttribute("tabindex","0");
+   pasteZone.addEventListener("paste",event=>{
+    event.preventDefault();
+    const files=[...(event.clipboardData?.items||[])]
+     .filter(item=>item.kind==="file"&&item.type.startsWith("image/"))
+     .map(item=>item.getAsFile()).filter(Boolean);
+    if(files.length)void uploadFiles(files);
+    else uploadStatus.textContent="Clipboard has no image. Copy a photo, then right-click here and choose Paste.";
    });
-   uploadRow.append(picker,upload);form.append(uploadRow,uploadStatus);
+   pasteZone.addEventListener("beforeinput",event=>{if(event.inputType!=="insertFromPaste")event.preventDefault()});
+   pasteZone.addEventListener("dragover",event=>{event.preventDefault();pasteZone.classList.add("dragover")});
+   pasteZone.addEventListener("dragleave",()=>pasteZone.classList.remove("dragover"));
+   pasteZone.addEventListener("drop",event=>{
+    event.preventDefault();pasteZone.classList.remove("dragover");
+    void uploadFiles(event.dataTransfer?.files||[]);
+   });
+   uploadRow.append(picker,upload);
+   form.append(uploadRow,pasteZone,uploadStatus);
    const status=el("p","","workshop-item-editor-status");
    status.setAttribute("role","status");
    const actions=el("div",undefined,"workshop-item-editor-actions");
@@ -1244,6 +1269,7 @@
      </section>
      <label>Notes<textarea id="workshop-notes" class="field" maxlength="1500"></textarea></label>
      <div class="workshop-row"><label>Photo of equipment<input id="workshop-photo" type="file" accept="image/jpeg,image/png,image/webp"></label><button id="workshop-photo-upload" type="button" class="btn">Import photo and identify</button><img id="workshop-photo-preview" class="workshop-photo-thumb" hidden alt="Equipment photo"></div>
+     <div id="workshop-private-photo-paste" class="workshop-photo-paste-zone" contenteditable="true" role="textbox" aria-label="Paste a copied photo into My Workshop" aria-multiline="false" spellcheck="false" tabindex="0">Right-click here and choose Paste to add a copied photo (or press Ctrl+V).</div>
      <p class="muted">AI identification is a draft. Check the model and specifications yourself before saving.</p>
      <div class="workshop-row"><button id="workshop-save" type="button" class="btn primary">Save item</button><button id="workshop-cancel" type="button" class="btn">Cancel</button></div>
     </details>
@@ -1331,7 +1357,23 @@
    $("#workshop-new",personal).onclick=()=>fill({});
    $("#workshop-save",personal).onclick=save;
    $("#workshop-cancel",personal).onclick=()=>$("#workshop-editor",personal).open=false;
-   $("#workshop-photo-upload",personal).onclick=uploadPhoto;
+   $("#workshop-photo-upload",personal).onclick=()=>uploadPhoto();
+   const privatePaste=$("#workshop-private-photo-paste",personal);
+   privatePaste.addEventListener("paste",event=>{
+    event.preventDefault();
+    const file=[...(event.clipboardData?.items||[])]
+     .find(item=>item.kind==="file"&&item.type.startsWith("image/"))?.getAsFile();
+    if(file)void uploadPhoto(file);
+    else setStatus("Clipboard has no image. Copy a photo, then right-click the paste box and choose Paste.");
+   });
+   privatePaste.addEventListener("beforeinput",event=>{if(event.inputType!=="insertFromPaste")event.preventDefault()});
+   privatePaste.addEventListener("dragover",event=>{event.preventDefault();privatePaste.classList.add("dragover")});
+   privatePaste.addEventListener("dragleave",()=>privatePaste.classList.remove("dragover"));
+   privatePaste.addEventListener("drop",event=>{
+    event.preventDefault();privatePaste.classList.remove("dragover");
+    const file=[...(event.dataTransfer?.files||[])].find(file=>file.type.startsWith("image/"));
+    if(file)void uploadPhoto(file);
+   });
    $("#workshop-compare",personal).onclick=compare;
   }
   const fields={name:"name",kind:"kind",category:"category",manufacturer:"manufacturer",model:"model",partNumber:"partnumber",featureTreeDescription:"featuretreedescription",quantity:"quantity",unit:"unit",stockStatus:"stockstatus",notes:"notes"};
@@ -1412,8 +1454,8 @@
     items=data.items;$("#workshop-editor",personal).open=false;render();renderCatalog();if(openedItem)showItem(openedItem,false);setStatus(input.name+" saved to your private Workshop.");
    }catch(e){setStatus(e.message)}
   }
-  async function uploadPhoto(){
-   const input=$("#workshop-photo",personal),file=input.files?.[0];if(!file){setStatus("Select a photo first.");return}
+  async function uploadPhoto(fileOverride=null){
+   const input=$("#workshop-photo",personal),file=fileOverride||input.files?.[0];if(!file){setStatus("Select a photo first.");return}
    const body=new FormData();body.append("photo",file);
    setStatus("Uploading and checking photo...");
    try{
