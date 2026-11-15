@@ -670,7 +670,7 @@
     }
     itemPage.append(gallery);
    }
-   const related=standards().filter(x=>x.id!==id&&familyFor(x)?.id===familyFor(item)?.id);
+   const related=standards().filter(x=>x.id!==id&&familyFor(x)?.id===familyFor(item)?.id&&typeFor(x).id===typeFor(item).id);
    const editorMount=el("section",undefined,"workshop-item-editor-mount");
    editorMount.setAttribute("aria-label","Workshop item editor");
    itemPage.append(editorMount);
@@ -890,7 +890,9 @@
     list.append(back);
    }
    const shownShared=selectedType?matched.filter(item=>typeFor(item).id===selectedType):matched;
-   const shownPersonal=selectedType?personalOnly.filter(item=>typeFor(matchingReference(item)||item).id===selectedType):personalOnly;
+   // Display each owned model at the final product-type level, even when it
+   // references the generic shared type, such as "Digital multimeter".
+   const shownPersonal=selectedType?personalMatched.filter(item=>typeFor(matchingReference(item)||item).id===selectedType):personalOnly;
    if(selectedFamily&&!query){
     count.textContent=shownShared.length+" catalog parts · "+shownPersonal.length+" personal parts";
     const products=el("div",undefined,"workshop-product-grid");
