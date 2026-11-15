@@ -46,7 +46,7 @@
    "My Workshop · "+records.map(item=>(stockLabels[item.stockStatus]||"In stock")+
     " ("+item.quantity+" "+(item.unit||"pcs")+")").join(", "):"";
 
-  const familyFor=item=>families().find(g=>g.items.includes(item.id));
+  const familyFor=item=>families().find(g=>g.items.includes(item.id)||g.id===item.familyId);
 
   const typeRules=[
    ["multimeters","Multimeters",/multimeter/],
@@ -66,6 +66,10 @@
    ["fasteners","Screws, Nuts & Washers",/screw|fastener|washer|bolt/]
   ];
   const typeFor=item=>{
+   if(item.typeName){
+    const label=String(item.typeName).trim();
+    if(label)return {id:"custom-"+label.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,80),label};
+   }
    const group=typeRules.find(([, ,pattern])=>pattern.test(
     [item.name,item.subtitle||"",item.category||""].join(" ").toLowerCase()));
    if(group)return {id:group[0],label:group[1]};
