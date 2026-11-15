@@ -319,3 +319,17 @@
   min-height:0;
  }
 }
+
+/* Readable, source-linked engineering research before committing an AI draft. */
+#commonparts .workshop-ai-engineering-review{
+ border:1px solid var(--color-border,#cbd5d1);
+ border-radius:8px;
+ padding:14px 16px;
+ background:var(--color-surface-muted,#f6f8f7);
+}
+#commonparts .workshop-ai-engineering-review h4{margin:0 0 12px;font-size:1rem}
+#commonparts .workshop-ai-engineering-review h5{margin:15px 0 6px;font-size:.88rem}
+#commonparts .workshop-ai-engineering-review ul,
+#commonparts .workshop-ai-engineering-review ol{margin:5px 0 8px;padding-left:25px}
+#commonparts .workshop-ai-engineering-review li{line-height:1.55;margin-bottom:7px}
+#commonparts .workshop-ai-engineering-review a{margin-left:6px;font-size:.82rem}
