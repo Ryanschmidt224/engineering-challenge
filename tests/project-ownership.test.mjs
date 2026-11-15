@@ -179,3 +179,24 @@ test("project tags are optional, case-insensitive unique, and can describe sever
  result=await projectsApi({request:request("/api/projects","PATCH",{id:project.id,tags:Array(21).fill("CAD")},owner),env});
  assert.equal(result.status,400);
 });
+
+test("account registration reports actionable failure codes without exposing secrets",async()=>{
+ const env={PHOTOS:new Bucket(),admin_password:"registration-error-test-secret"};
+ const payload={action:"register",email:"existing@example.test",password:"a-long-valid-test-password"};
+ let result=await handleAccounts(request("/api/accounts","POST",payload),env);
+ assert.equal(result.status,201);
+ result=await handleAccounts(request("/api/accounts","POST",payload),env);
+ assert.equal(result.status,409);
+ let data=await result.json();
+ assert.equal(data.code,"EMAIL_IN_USE");
+ assert.match(data.error,/email address/);
+ result=await handleAccounts(request("/api/accounts","POST",{...payload,email:"bad",password:"short"}),env);
+ assert.equal(result.status,400);
+ data=await result.json();
+ assert.equal(data.code,"INVALID_REGISTRATION");
+ result=await handleAccounts(request("/api/accounts","POST",payload),{PHOTOS:env.PHOTOS});
+ assert.equal(result.status,503);
+ data=await result.json();
+ assert.equal(data.code,"ACCOUNT_STORAGE_UNAVAILABLE");
+ assert.doesNotMatch(JSON.stringify(data),/registration-error-test-secret/);
+});
