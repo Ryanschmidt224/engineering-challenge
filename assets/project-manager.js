@@ -312,9 +312,15 @@ window.BSProjectManager=(()=>{
    section.hidden=!project.isOwner;
    if(!project.isOwner)return;
    section.append(element("h2","","Project settings"));
-   const intro=element("p","muted","Only the owner can change the visibility, permissions, or delete this project.");
+   const intro=element("p","muted","Only the owner can rename this project, change its visibility or permissions, or delete it.");
    section.append(intro);
    const form=element("div","project-summary-settings-form");
+   const nameLabel=element("label","","Project name");
+   const nameInput=element("input","field project-settings-name");
+   nameInput.type="text";nameInput.maxLength=100;nameInput.required=true;
+   nameInput.autocomplete="off";nameInput.value=project.name;
+   nameInput.setAttribute("aria-label","Project name");
+   nameLabel.append(nameInput);
    const visibility=element("label","","Visibility");
    const visibilitySelect=element("select","field");
    for(const [value,label] of [["private","Private — only you can view"],["public","Public — everyone can view"]]){
@@ -330,15 +336,25 @@ window.BSProjectManager=(()=>{
    permissionsSelect.value=project.editMode||"approval";
    permissions.append(permissionsSelect);
    const settingsTags=makeTagPicker(projectTags(project));
-   form.append(settingsTags.element,visibility,permissions);
+   form.append(nameLabel,settingsTags.element,visibility,permissions);
    const note=element("p","muted","Changing to Private hides this project from other users. People may still have copies of previously published materials.");
    const status=element("p","project-summary-settings-status");status.setAttribute("role","status");
    const actions=element("div","project-summary-settings-actions");
    const save=element("button","btn primary","Save settings");save.type="button";
    save.onclick=async()=>{
+    const name=nameInput.value.trim();
+    if(!name){status.textContent="Enter a project name.";nameInput.focus();return}
+    if(name.length>100){status.textContent="Project names must be 100 characters or fewer.";return}
+    const renamed=name!==project.name;
     save.disabled=true;status.textContent="Saving…";
     try{
-     await api("PATCH","/api/projects",{id:project.id,tags:settingsTags.getTags(),visibility:visibilitySelect.value,editMode:permissionsSelect.value});
+     await api("PATCH","/api/projects",{id:project.id,name,tags:settingsTags.getTags(),
+      visibility:visibilitySelect.value,editMode:permissionsSelect.value});
+     if(renamed){
+      // Assembly controller caches the initial project title. Reload the
+      // current route after saving so every heading, card and BOM uses the new name.
+      location.reload();return;
+     }
      status.textContent="Project settings saved.";await refresh();
     }catch(error){status.textContent=error.message}
     finally{save.disabled=false}
