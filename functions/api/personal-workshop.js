@@ -13,7 +13,7 @@ const validItem=input=>{
  const quantity=input?.quantity===""||input?.quantity===undefined?1:Number(input.quantity);
  if(!Number.isFinite(quantity)||quantity<0||quantity>1000000)return null;
  return {name,category,manufacturer:clean(input.manufacturer,100),model:clean(input.model,120),
-  partNumber:clean(input.partNumber,120),notes:clean(input.notes,1500),
+  partNumber:clean(input.partNumber,120),featureTreeDescription:clean(input.featureTreeDescription,20),notes:clean(input.notes,1500),
   stockStatus:allowedStates.has(input.stockStatus)?input.stockStatus:"in_stock",
   quantity,unit:clean(input.unit||"pcs",32),kind:["tool","material","component","equipment","other"].includes(input.kind)?input.kind:"other",
   catalogId:clean(input.catalogId,100),photoId:clean(input.photoId,60),
