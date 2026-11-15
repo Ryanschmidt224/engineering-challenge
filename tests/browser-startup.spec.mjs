@@ -883,6 +883,12 @@ test("New Part starts with item type and lets purchased parts choose private or 
  await expect(modal.locator(".library-field",{hasText:"Part type"}).first()).toBeHidden();
  await modal.locator(".library-field",{hasText:"Manufacturer part number (MPN)"}).locator("input").fill("PSU-24V");
  await modal.locator(".library-field",{hasText:"Part name"}).locator("input").fill("Purchased DC supply");
+ await expect(modal.locator(".library-project-only-warning")).toContainText("will not modify the original Workshop part");
+ await modal.locator(".library-project-only").getByLabel("Project notes").fill("Used as the machine's secondary supply");
+ await modal.locator(".library-project-only").getByLabel("Project changes / modifications").fill("Mounted on left-hand bracket");
+ await modal.locator(".library-project-kicad summary").click();
+ await modal.locator(".library-project-kicad").getByLabel("Reference designators").fill("U1");
+ await modal.locator(".library-project-kicad").getByLabel("Source application").fill("KiCad");
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
  await expect(modal).toHaveCount(0);
  let payload=await page.evaluate(()=>window.__createdTestPart);
@@ -891,6 +897,10 @@ test("New Part starts with item type and lets purchased parts choose private or 
  expect(payload.itemType).toBe("part");
  expect(payload.addToWorkshop).toBe("public");
  expect(payload.workshopCategory).toBe("electronics");
+ expect(payload.projectDetails.notes).toBe("Used as the machine's secondary supply");
+ expect(payload.projectDetails.changes).toBe("Mounted on left-hand bracket");
+ expect(payload.projectDetails.referenceDesignators).toBe("U1");
+ expect(payload.projectDetails.sourceApplication).toBe("KiCad");
  await open();
  modal=page.locator(".library-part-dialog");
  await modal.locator(".library-workshop-add input").check();
