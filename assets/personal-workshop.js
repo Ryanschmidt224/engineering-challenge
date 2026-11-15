@@ -217,7 +217,7 @@
    if(category)nav?.select(category);
   });
   applyWorkshopCategory();
-  let workshopOverrides={},canEditReferences=false;
+  let workshopOverrides={},canEditReferences=false,accountSignedIn=false;
   const standards=()=>(window.BSResources?.workshopReferences||[]).map(item=>({...item,...(workshopOverrides[item.id]||{})}));
   const saveableFields=["name","subtitle","spec","use","caution","manufacturer","model","partNumber","supplier","supplierUrl","asin","price","packageQuantity","orderNotes","documentationUrl","notes"];
   const families=()=>window.BSResources?.workshopGroups||[];
@@ -310,7 +310,7 @@
     setStatus("Sign in to add items to your personal Workshop.");
     return;
    }
-   fill({name:item.name,kind:item.kind==="tool"?"tool":item.kind==="component"?"component":"material",
+   fill({name:item.name,catalogId:item.id,kind:item.kind==="tool"?"tool":item.kind==="component"?"component":item.kind==="equipment"?"equipment":"material",
     category:categoryLabelFor(item),specifications:item.spec?[{name:"Recommended specification",value:item.spec}]:[]});
    $("#workshop-editor",personal).scrollIntoView({block:"start"});
    $("#workshop-name",personal).focus();
@@ -637,10 +637,11 @@
   })();
 
   const privateArea=$(".workshop-private",personal),status=$(".workshop-status",personal);
-  let items=[],editingId=null,photoId="";
+  let items=[],editingId=null,photoId="",catalogId="";
   const setStatus=msg=>status.textContent=msg;
   async function auth(){
    const user=(await req("/api/accounts")).user;
+   accountSignedIn=!!user;
    if(!user){privateArea.replaceChildren(el("p","Sign in through My account on the Projects page to use your personal Workshop."));return false}
    return true;
   }
@@ -680,7 +681,7 @@
   }
   const fields={name:"name",kind:"kind",category:"category",manufacturer:"manufacturer",model:"model",partNumber:"partnumber",quantity:"quantity",unit:"unit",stockStatus:"stockstatus",notes:"notes"};
   function fill(item){
-   editingId=item.id||null;photoId=item.photoId||"";
+   editingId=item.id||null;photoId=item.photoId||"";catalogId=item.catalogId||"";
    for(const [key,id] of Object.entries(fields)){
     const input=$("#workshop-"+id,personal);
     if(input)input.value=item[key]??(key==="quantity"?1:key==="unit"?"pcs":key==="kind"?"other":key==="stockStatus"?"in_stock":"");
@@ -712,12 +713,13 @@
   async function save(){
    const input={};for(const [key,id] of Object.entries(fields))input[key]=$("#workshop-"+id,personal).value;
    input.photoId=photoId;
+   input.catalogId=catalogId;
    input.specifications=$("#workshop-specifications",personal).value.split(/\r?\n/).map(row=>{
     const split=row.indexOf(":");return split<1?null:{name:row.slice(0,split).trim(),value:row.slice(split+1).trim()};
    }).filter(Boolean);
    if(editingId)input.id=editingId;
    try{const data=await req("/api/personal-workshop",editingId?"PUT":"POST",input);
-    items=data.items;$("#workshop-editor",personal).open=false;render();setStatus(input.name+" saved to your private Workshop.");
+    items=data.items;$("#workshop-editor",personal).open=false;render();renderCatalog();if(openedItem)showItem(openedItem,false);setStatus(input.name+" saved to your private Workshop.");
    }catch(e){setStatus(e.message)}
   }
   async function uploadPhoto(){
@@ -755,7 +757,7 @@
     target.prepend(el("p",counts.owned+" in stock · "+counts.reusable+" reusable · "+counts.short+" short · "+counts.unknown+" unknown · "+counts.check+" need review"));
    }catch(e){setStatus(e.message)}
   }
-  (async()=>{try{if(!await auth())return;buildUI();items=(await req("/api/personal-workshop")).items;render();await loadProjects()}catch(e){setStatus(e.message)}})();
+  (async()=>{try{if(!await auth())return;buildUI();items=(await req("/api/personal-workshop")).items;render();renderCatalog();if(openedItem)showItem(openedItem,false);await loadProjects()}catch(e){setStatus(e.message)}})();
  }
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
 })();
