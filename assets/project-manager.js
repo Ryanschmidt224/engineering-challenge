@@ -5,7 +5,7 @@ window.BSProjectManager=(()=>{
   const response=await fetch(path,{method,credentials:"same-origin",cache:"no-store",
    ...(body?{headers:{"content-type":"application/json"},body:JSON.stringify(body)}:{})});
   const data=await response.json().catch(()=>({}));
-  if(!response.ok)throw Error(data.error||"Request failed");
+  if(!response.ok){const error=new Error(data.error||"Request failed (HTTP "+response.status+")");error.status=response.status;error.code=data.code||"";throw error}
   return data;
  };
  const element=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node};
@@ -112,9 +112,42 @@ window.BSProjectManager=(()=>{
   const dialog=element("dialog","project-account-dialog");
   dialog.innerHTML='<form class="project-account-form"><div class="project-account-header"><h2 class="project-account-title">Sign in</h2><button type="button" class="btn project-close" aria-label="Close account window">×</button></div><p class="project-account-subtitle muted">Your projects and Workshop are saved to your account.</p><p class="project-account-message" role="status" aria-live="polite"></p><label class="project-account-name hide">Display name<input class="field" name="displayName" maxlength="80" autocomplete="name"></label><label class="project-account-email">Email<input class="field" type="email" name="email" autocomplete="email" required></label><label class="project-account-password">Password<input class="field" type="password" name="password" autocomplete="current-password" minlength="12" required></label><div class="project-account-buttons"><button class="btn primary project-signin" type="submit">Sign in</button><button class="btn project-register" type="button">Create an account</button><button class="btn project-switch-login hide" type="button">Already have an account? Sign in</button><button class="btn project-signout hide" type="button">Sign out</button></div><div class="project-admin-link hide"><p class="muted">Already manage this website? Link your existing administrator access to this account.</p><label>Existing administrator password<input class="field" type="password" name="adminPassword" autocomplete="off"></label><button type="button" class="btn project-link-admin">Link administrator access</button></div></form>';
   document.body.append(dialog);
+  const form=dialog.querySelector(".project-account-form");
+  form.noValidate=true; // Use specific, actionable inline errors instead of browser bubbles.
+  const passwordHint=element("p","project-password-hint muted","Use 12–256 characters.");
+  dialog.querySelector(".project-account-password")?.append(passwordHint);
+  const retryHelp=element("p","project-account-recovery muted");
+  retryHelp.hidden=true;
+  dialog.querySelector(".project-account-message")?.after(retryHelp);
   const note=dialog.querySelector(".project-account-message"),email=dialog.querySelector('[name="email"]'),
    password=dialog.querySelector('[name="password"]'),name=dialog.querySelector('[name="displayName"]');
   let user=null,projects=[],accountMode="login";
+  const clearAccountError=()=>{
+   note.textContent="";note.classList.remove("is-error");retryHelp.textContent="";retryHelp.hidden=true;
+   for(const control of [email,password,name])control.removeAttribute("aria-invalid");
+  };
+  const showAccountError=(message,detail="",field=null)=>{
+   note.classList.add("is-error");note.textContent=message;
+   retryHelp.textContent=detail;retryHelp.hidden=!detail;
+   if(field){field.setAttribute("aria-invalid","true");field.focus()}
+  };
+  for(const control of [email,password,name])control.addEventListener("input",()=>{
+   control.removeAttribute("aria-invalid");
+   if(note.classList.contains("is-error"))clearAccountError();
+  });
+  const explainAccountFailure=(error,action)=>{
+   if(error.status===409||error.code==="EMAIL_IN_USE")
+    return ["That email is already registered.","Select “Already have an account? Sign in” to use your existing account.",email];
+   if(error.status===503||error.code==="ACCOUNT_STORAGE_UNAVAILABLE")
+    return ["Account creation is temporarily unavailable.","The website could not access its account service. Please try again later. Your account may not have been created.",null];
+   if(error.status===429)return ["Too many requests.","Try again later before submitting another request.",null];
+   if(error.status===403)return ["Account request was not accepted.","Reload this website and try again. If the problem continues, the session or request origin may be invalid.",null];
+   if(error.status===401)return ["Email or password not recognized.","Check both fields and try signing in again.",password];
+   if(error.status===400||error.code==="INVALID_REGISTRATION")
+    return ["Please check your account information.",error.message||"Use a valid email and a password between 12 and 256 characters.",null];
+   return [action==="register"?"We couldn't create your account.":"We couldn't sign you in.",
+    error.status?"Server error (HTTP "+error.status+"). "+error.message+" Try again later.":"Could not reach the server. Check your connection and try again.",null];
+  };
   const updateAccount=()=>{
    const signed=!!user,registering=accountMode==="register"&&!signed;
    dialog.querySelector(".project-account-title").textContent=signed?"My account":registering?"Create account":"Sign in";
@@ -129,21 +162,32 @@ window.BSProjectManager=(()=>{
    dialog.querySelector(".project-admin-link").classList.toggle("hide",!signed||user.role==="admin");
    password.autocomplete=registering?"new-password":"current-password";
   };
-  const showAccount=()=>{accountMode="login";note.textContent="";updateAccount();dialog.showModal()};
+  const showAccount=()=>{accountMode="login";clearAccountError();updateAccount();dialog.showModal()};
   dialog.querySelector(".project-close").onclick=()=>dialog.close();
-  dialog.querySelector(".project-register").onclick=()=>{accountMode="register";note.textContent="";updateAccount();name.focus()};
-  dialog.querySelector(".project-switch-login").onclick=()=>{accountMode="login";note.textContent="";updateAccount();email.focus()};
+  dialog.querySelector(".project-register").onclick=()=>{accountMode="register";clearAccountError();updateAccount();name.focus()};
+  dialog.querySelector(".project-switch-login").onclick=()=>{accountMode="login";clearAccountError();updateAccount();email.focus()};
   async function sign(action){
-   if(!email.validity.valid||!password.validity.valid||action==="register"&&!name.value.trim()){
-    note.textContent="Enter a valid email, password of at least 12 characters"+(action==="register"?" and display name.":".");
-    return;
+   clearAccountError();
+   const address=email.value.trim(),secret=password.value;
+   if(!address||!email.validity.valid){
+    showAccountError("Enter a valid email address.","Example: name@example.com",email);return
    }
-   const submit=dialog.querySelector(".project-signin");submit.disabled=true;note.textContent=action==="register"?"Creating account…":"Signing in…";
+   if(secret.length<12||secret.length>256){
+    showAccountError("Your password must be between 12 and 256 characters.",
+     secret.length<12?"Add "+(12-secret.length)+" more character"+(12-secret.length===1?"":"s")+" to continue.":"Shorten the password to 256 characters or fewer.",password);return
+   }
+   if(action==="register"&&!name.value.trim()){
+    showAccountError("Enter a display name.","This is the name shown on projects you create.",name);return
+   }
+   const submit=dialog.querySelector(".project-signin");submit.disabled=true;
+   note.textContent=action==="register"?"Creating account…":"Signing in…";
    try{
-    const data=await api("POST","/api/accounts",{action,email:email.value,password:password.value,displayName:name.value});
+    const data=await api("POST","/api/accounts",{action,email:address,password:secret,displayName:name.value});
     user=data.user;password.value="";dialog.close();location.href="#home";location.reload();
-   }catch(error){note.textContent=error.message}
-   finally{submit.disabled=false}
+   }catch(error){
+    const [message,detail,control]=explainAccountFailure(error,action);
+    showAccountError(message,detail,control);
+   }finally{submit.disabled=false}
   }
   dialog.querySelector("form").onsubmit=event=>{event.preventDefault();void sign(accountMode)};
   dialog.querySelector(".project-signout").onclick=async()=>{await api("DELETE","/api/accounts");user=null;dialog.close();location.href="#home";location.reload()};
