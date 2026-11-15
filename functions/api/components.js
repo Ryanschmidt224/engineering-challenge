@@ -98,7 +98,7 @@ const normalizeSupplierOffers=input=>{
 // Project-only annotations and future CAD/BOM mapping hints. These values
 // never write back to a shared/private Workshop reference.
 const projectDetailLimits=Object.freeze({notes:6000,changes:6000,referenceDesignators:500,
- footprint:240,schematicValue:240,sourceApplication:80,sourceFile:500,sourceComponentId:240,workshopReferenceId:200});
+ footprint:240,schematicValue:240,sourceApplication:80,sourceFile:500,sourceComponentId:240,workshopReferenceId:200,featureTreeName:120,workshopTreeDescription:20,showTreeDescription:5});
 const cleanProjectDetails=(incoming,previous={})=>{
  if(incoming===undefined)return previous&&typeof previous==="object"?previous:{};
  if(!incoming||typeof incoming!=="object"||Array.isArray(incoming))return null;
