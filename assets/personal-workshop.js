@@ -67,6 +67,7 @@
    flex:none;
   }
   #commonparts .workshop-item-editor-mount:not(:empty){margin-bottom:34px}
+  #commonparts .workshop-item-signin-prompt{margin:18px 0;padding:16px;border:1px solid var(--color-border);border-radius:7px;background:var(--color-surface)}
   #commonparts .workshop-detail-edit-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:8px 0 18px}
   #commonparts .workshop-detail-edit-actions .workshop-item-edit-button{min-height:42px}
   #commonparts .workshop-item-edit-button{display:inline-flex!important;align-items:center;justify-content:center;opacity:1!important;visibility:visible!important}
@@ -402,9 +403,11 @@
   };
   function editPersonalReference(item){
    if(!accountSignedIn||!$("#workshop-editor",personal)){
-    const message=el("p","Sign in to edit your personal Workshop item. Editing the shared catalog requires administrator access.","workshop-item-editor-status");
-    const mount=$(".workshop-item-editor-mount",itemPage);
-    if(mount)mount.replaceChildren(message);else itemPage.append(message);
+    const mount=$(".workshop-item-editor-mount",itemPage)||itemPage;
+    const message=el("div",undefined,"workshop-item-signin-prompt");
+    message.append(el("p","Sign in to create or edit your own Workshop item. Editing the website-wide reference requires administrator access."));
+    message.append(itemButton("Sign in / My account",()=>document.getElementById("accountMenuButton")?.click(),"btn primary"));
+    mount.replaceChildren(message);
     return;
    }
    const copy=ownedFor(item)[0];
