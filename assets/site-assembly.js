@@ -725,9 +725,15 @@ function setupAssemblyTrees(){
   const partDetailsCollapse=detailsPanel.querySelector(".part-details-collapse");
   // Edit belongs beside the heading, not at the bottom of the expanded details.
   const detailEditButton=detailsPanel.querySelector(".part-details-edit");
+  const editWorkshopButton=document.createElement("button");
+  editWorkshopButton.type="button";
+  editWorkshopButton.className="btn part-details-edit-workshop";
+  editWorkshopButton.textContent="Edit in Workshop";
+  editWorkshopButton.hidden=true;
   detailEditButton.hidden=true;
   const detailHeading=detailsPanel.querySelector(".part-details-view-heading");
   detailHeading.insertBefore(detailEditButton,detailHeading.querySelector(".part-details-toggle-label"));
+  detailEditButton.after(editWorkshopButton);
   detailsPanel.querySelector(".part-details-view-actions").remove();
   partDetailsCollapse.addEventListener("toggle",()=>{partDetailsCollapse.querySelector(".part-details-toggle-label").textContent=partDetailsCollapse.open?"Minimize details":"Show details"});
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
@@ -1032,6 +1038,25 @@ function setupAssemblyTrees(){
     }
    }catch(error){partPhotoStatus.textContent=error.message||"Delete failed";partPhotoActions.setStatus(partPhotoStatus.textContent);partPhotoDelete.disabled=false}
   }
+  const workshopLinkId=part=>{
+   const linked=String(part?.projectDetails?.workshopReferenceId||"").trim();
+   if(linked)return linked;
+   const legacy=String(part?.sharedPartRef||"");
+   return legacy.startsWith("workshop:")?legacy:"";
+  };
+  editWorkshopButton.onclick=event=>{
+   event.preventDefault();event.stopPropagation();
+   const id=workshopLinkId(currentPartInfo);
+   if(!id)return;
+   const workshopId=id.startsWith("workshop:")?id:"my:"+id;
+   // Switch to the Workshop's item page; only saving inside Workshop edits the reference.
+   const url=new URL(location.href);
+   url.searchParams.set("workshop-item",workshopId);
+   url.hash="commonparts";
+   history.pushState({workshopItem:workshopId},"",url.pathname+url.search+url.hash);
+   window.dispatchEvent(new Event("hashchange"));
+   window.dispatchEvent(new CustomEvent("bsopenworkshopitem",{detail:{id:workshopId}}));
+  };
   detailEditButton.onclick=event=>{
    event.preventDefault();event.stopPropagation();
    const part=currentPartInfo;if(!part)return;
@@ -1060,6 +1085,8 @@ function setupAssemblyTrees(){
    const partId=partRoute();if(!partId)return;
    const version=++partLoadVersion;
    detailEditButton.hidden=!canEdit();
+   editWorkshopButton.hidden=true;
+   detailEditButton.textContent="Edit part details";
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
    if(partPhotoDialog.open)partPhotoDialog.close();partPhotoActions.setEnabled(false);partPhotoActions.collapse();
@@ -1078,6 +1105,9 @@ function setupAssemblyTrees(){
     if(!part)throw Error("Part not found");
     heading.textContent=(part.partNumber?part.partNumber+" · ":"")+part.name;
     currentPartInfo=part;
+    const hasWorkshopLink=!!workshopLinkId(part);
+    editWorkshopButton.hidden=!hasWorkshopLink;
+    detailEditButton.textContent=hasWorkshopLink?"Customize Workshop item":"Edit part details";
     codePanel.setVisible(part.partType==="code");
     if(part.partType==="code")void codePanel.load(part.id,part.name);
     progressPanel.hidden=part.isTool===true;
