@@ -358,6 +358,13 @@
     const tr=el("tr"),td=el("td","Reference specifications have not been provided.");
     td.colSpan=2;tr.append(td);specBody.append(tr);
    }
+   if(Array.isArray(item.specifications)&&item.specifications.length){
+    for(const entry of item.specifications){
+     if(!entry.label||!entry.value)continue;
+     const tr=el("tr"),th=el("th",entry.label),td=el("td",[entry.value,entry.unit].filter(Boolean).join(" ")+(entry.conditions?" · "+entry.conditions:""));
+     th.scope="row";tr.append(th,td);specBody.append(tr);
+    }
+   }
    specs.append(specBody);info.append(specs);
    const owned=ownedFor(item);
    if(owned.length){
