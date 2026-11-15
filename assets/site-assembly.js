@@ -41,7 +41,7 @@ function setupAssemblyTrees(){
     if(part.generatedFrom)continue;
     partVisibility.set(part.id,part.hideFromFeatureTree===true);
     partTools.set(part.id,part.isTool===true);
-    partWorkshopItems.set(part.id,!!part.sharedPartRef||!!part.workshopChoice||part.isTool===true);
+    partWorkshopItems.set(part.id,!!part.sharedPartRef||!!part.workshopChoice||!!part.projectDetails?.workshopReferenceId||part.isTool===true);
     partDocuments.set(part.id,part.itemType==="document");
     if(part.partNumber)partNumbers.set(part.id,part.partNumber);
     partProgress.set(part.id,part.progressStatus||"not_started");
@@ -1866,7 +1866,7 @@ function setupAssemblyTrees(){
     if(result.component&&!result.component.generatedFrom){
      partVisibility.set(result.component.id,result.component.hideFromFeatureTree===true);
      partTools.set(result.component.id,result.component.isTool===true);
-     partWorkshopItems.set(result.component.id,!!result.component.sharedPartRef||!!result.component.workshopChoice||result.component.isTool===true);
+     partWorkshopItems.set(result.component.id,!!result.component.sharedPartRef||!!result.component.workshopChoice||!!result.component.projectDetails?.workshopReferenceId||result.component.isTool===true);
      partDocuments.set(result.component.id,result.component.itemType==="document");
      if(result.component.partNumber)partNumbers.set(result.component.id,result.component.partNumber);
      if(!nodes.some(n=>isPartNode(n)&&n.partId===result.component.id))nodes.push({id:"part-"+result.component.id,kind:"part",partId:result.component.id,name:result.component.name,parentId:component.assemblyId??null});
@@ -1917,7 +1917,7 @@ function setupAssemblyTrees(){
      newPart=data.component;
      partVisibility.set(newPart.id,newPart.hideFromFeatureTree===true);
      partTools.set(newPart.id,newPart.isTool===true);
-     partWorkshopItems.set(newPart.id,!!newPart.sharedPartRef||!!newPart.workshopChoice||newPart.isTool===true);
+     partWorkshopItems.set(newPart.id,!!newPart.sharedPartRef||!!newPart.workshopChoice||!!newPart.projectDetails?.workshopReferenceId||newPart.isTool===true);
      partDocuments.set(newPart.id,newPart.itemType==="document");
      if(newPart.partNumber)partNumbers.set(newPart.id,newPart.partNumber);
      nodes.push({id:"part-"+newPart.id,kind:"part",partId:newPart.id,name:newPart.name,parentId:targetAssembly});render();
@@ -2624,7 +2624,7 @@ function setupAssemblyTrees(){
      }
      partVisibility.set(newPart.id,newPart.hideFromFeatureTree===true);
      partTools.set(newPart.id,newPart.isTool===true);
-     partWorkshopItems.set(newPart.id,!!newPart.sharedPartRef||!!newPart.workshopChoice||newPart.isTool===true);
+     partWorkshopItems.set(newPart.id,!!newPart.sharedPartRef||!!newPart.workshopChoice||!!newPart.projectDetails?.workshopReferenceId||newPart.isTool===true);
      partDocuments.set(newPart.id,newPart.itemType==="document");
      if(newPart.partNumber)partNumbers.set(newPart.id,newPart.partNumber);
      const next=[...nodes,{id:crypto.randomUUID(),kind:"part",partId:newPart.id,name:newPart.name,parentId:selected}];
