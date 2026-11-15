@@ -842,14 +842,14 @@
       },"btn");
       imageBox.append(usePicture);lookupResults.append(imageBox);
      }else lookupResults.append(el("p","No suitable picture found. You can upload one below.","muted"));
-     lookupMessage.textContent="Suggested changes applied. Review the form and Save at the bottom.";
+     lookupMessage.textContent="Suggested changes applied. Saving the Workshop item…";
     
    };
    const showReview=()=>{
     if(!pendingSuggestion)return;
     const draft=pendingSuggestion.draft||{};
     reviewPanel.replaceChildren(el("h4","Suggested changes"),
-     el("p","Compare the suggested values. Apply them to the form, then scroll to the bottom to Save.","muted"));
+     el("p","Review the proposed values. Applying saves the Workshop item and closes this editor after a successful save.","muted"));
     const changes=[];
     for(const [key,control] of Object.entries(controls)){
      if(typeof draft[key]!=="string"||!draft[key].trim()||draft[key].trim()===control.value.trim())continue;
@@ -880,10 +880,14 @@
     }
     const actions=el("div",undefined,"workshop-ai-changes-actions");
     actions.append(itemButton("Cancel",closeReview,"btn"),
-     itemButton("Apply suggested changes",()=>{
+     itemButton("Apply suggested changes and save",()=>{
+      if(!pendingSuggestion)return;
       const result=pendingSuggestion;
       pendingSuggestion=null;viewSuggested.hidden=true;closeReview();
       applySuggestion(result);
+      // Reuse the ordinary validated Workshop save, which closes only on success.
+      lookupMessage.textContent="Applying suggestions and saving Workshop item…";
+      form.requestSubmit();
      },"btn primary"));
     reviewPanel.append(actions);reviewPanel.hidden=false;reviewPanel.scrollIntoView({block:"nearest"});
    };
