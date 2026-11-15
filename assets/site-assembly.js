@@ -24,7 +24,8 @@ function setupAssemblyTrees(){
   if(project==="linear"||project==="robot")view.classList.add("personal-project-view");
   const canEdit=()=>window.BSProjectManager?.isOwner?.(project)===true || (["launcher","linear","robot"].includes(project)&&adminAuthenticated);
   let title=view.querySelector(".assembly-main h1")?.textContent||"Project";let nodes=[],selected=null,expanded=new Set([null]);
-  let showWorkshopItems=false,showTreeDocuments=true,showBomDocuments=true;const partDocuments=new Map(),partVisibility=new Map(),partTools=new Map(),partWorkshopItems=new Map(),partNumbers=new Map(),partProgress=new Map(),partAttention=new Map(),partQuantities=new Map(),partTreeLabels=new Map();
+  let showWorkshopItems=false,showTreeDocuments=true,showTreeDescriptions=true,showBomDocuments=true;
+  const workshopReferences=new Map();const partDocuments=new Map(),partVisibility=new Map(),partTools=new Map(),partWorkshopItems=new Map(),partNumbers=new Map(),partProgress=new Map(),partAttention=new Map(),partQuantities=new Map(),partTreeLabels=new Map();
   const isHiddenPart=node=>isPartNode(node)&&partVisibility.get(node.partId)===true;
   const isToolNode=node=>isPartNode(node)&&partTools.get(node.partId)===true;
   const isDocumentNode=node=>isPartNode(node)&&partDocuments.get(node.partId)===true;
@@ -34,6 +35,24 @@ function setupAssemblyTrees(){
    if(isDocumentNode(node))return showTreeDocuments;
    if(partWorkshopItems.get(node.partId)===true)return showWorkshopItems;
    return !isHiddenPart(node);
+  };
+  const referenceTreeDescription=details=>{
+   const reference=workshopReferences.get(details?.workshopReferenceId||"");
+   return String(reference?.featureTreeDescription||reference?.subtitle||reference?.description||reference?.name||"").trim().slice(0,20);
+  };
+  // Refresh the shared/personal Workshop captions without changing project BOM records.
+  const loadWorkshopCaptions=async()=>{
+   const [shared,personal]=await Promise.allSettled([
+    fetch("/api/workshop-reference",{credentials:"same-origin",cache:"no-store"}).then(r=>r.ok?r.json():null),
+    fetch("/api/personal-workshop",{credentials:"same-origin",cache:"no-store"}).then(r=>r.ok?r.json():null)
+   ]);
+   const builtIn=window.BSResources?.workshopReferences||[];
+   for(const item of builtIn)if(item.id)workshopReferences.set(item.id,item);
+   if(shared.status==="fulfilled")for(const [id,item] of Object.entries(shared.value?.items||{}))
+    workshopReferences.set(id,{...(workshopReferences.get(id)||{}),...item});
+   if(personal.status==="fulfilled")for(const item of personal.value?.items||[])
+    if(item.id)workshopReferences.set(item.id,item);
+   render();
   };
   const syncPartNodes=parts=>{
    const known=new Set(nodes.filter(isPartNode).map(n=>n.partId));let changed=false;
@@ -2297,7 +2316,7 @@ function setupAssemblyTrees(){
   const notify=()=>{assemblySelections[project]=selected;assemblyTreeSnapshots[project]={nodes:[...nodes],title};showAssemblyPage();renderTiles();view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));};
   let treeSavedRevision=null;
   async function load(){void loadProjectMetadata();try{const [r,partsResponse]=await Promise.all([fetch("/api/tree?project="+project),fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"})]);const data=await r.json();if(!r.ok)throw Error(data.error);nodes=data.nodes||[];
-   if(partsResponse.ok){const partData=await partsResponse.json();syncPartNodes(partData.components||[])}treeSavedRevision=data.revision??null;if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/(?:assembly|workspace|bom)/([^/]+)(?:/overview)?$"));if(deepLink&&(deepLink[1]==="__root__"||nodes.some(n=>n.id===deepLink[1])))selected=deepLink[1]==="__root__"?null:deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
+   if(partsResponse.ok){const partData=await partsResponse.json();syncPartNodes(partData.components||[])}void loadWorkshopCaptions();treeSavedRevision=data.revision??null;if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/(?:assembly|workspace|bom)/([^/]+)(?:/overview)?$"));if(deepLink&&(deepLink[1]==="__root__"||nodes.some(n=>n.id===deepLink[1])))selected=deepLink[1]==="__root__"?null:deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
   async function save(next){const r=await fetch("/api/tree?project="+project,{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({nodes:next,expectedRevision:treeSavedRevision})});const data=await r.json();if(!r.ok)throw Error(data.error||"Save failed");treeSavedRevision=data.revision??treeSavedRevision;nodes=data.nodes||next;render();notify()}
   // Tree ordering is the order of node records; moving a node keeps its permanent ID.
   const siblings=parent=>nodes.filter(n=>n.parentId===parent);
@@ -2492,8 +2511,10 @@ function setupAssemblyTrees(){
   };
   const workshopFilter=filterOption("Show Workshop items",value=>{showWorkshopItems=value});
   const documentsFilter=filterOption("Show documents",value=>{showTreeDocuments=value});
+  const descriptionsFilter=filterOption("Show descriptions",value=>{showTreeDescriptions=value});
   workshopFilter.checked=showWorkshopItems;
   documentsFilter.checked=showTreeDocuments;
+  descriptionsFilter.checked=showTreeDescriptions;
   nodesEl.parentNode.insertBefore(treeVisibilityControl,nodesEl);
   const partsEntry=document.createElement("button");
   partsEntry.type="button";partsEntry.textContent="Parts Management";
@@ -2502,7 +2523,7 @@ function setupAssemblyTrees(){
   // Both links sit outside the feature tree, with the summary directly above Parts Management.
   root.append(partsEntry);
   function render(){nodesEl.replaceChildren();
-   workshopFilter.checked=showWorkshopItems;documentsFilter.checked=showTreeDocuments;
+   workshopFilter.checked=showWorkshopItems;documentsFilter.checked=showTreeDocuments;descriptionsFilter.checked=showTreeDescriptions;
    controls.classList.toggle("hide",!canEdit()||isProjectSummary());projectActions.classList.toggle("hide",!canEdit());cardEdit.classList.toggle("hide",!canEdit());
    const summaryEntry=document.createElement("button");summaryEntry.type="button";summaryEntry.className="assembly-project-summary-entry"+(isProjectSummary()?" selected":"");
    summaryEntry.textContent="Project summary";summaryEntry.setAttribute("aria-current",isProjectSummary()?"page":"false");
@@ -2536,9 +2557,9 @@ function setupAssemblyTrees(){
    const treeInfo=isPartNode(node)?partTreeLabels.get(node.partId):null;
    const firstLine=treeInfo?.mpn||nodeNumber||node?.name||title;
    const treeDetails=treeInfo?.details||{};
-   const secondLine=treeDetails.featureTreeName||treeDetails.workshopTreeDescription||treeInfo?.description?.slice(0,20)||node?.name||"";
+   const secondLine=String(treeDetails.featureTreeName||referenceTreeDescription(treeDetails)||treeDetails.workshopTreeDescription||treeInfo?.description?.slice(0,20)||(node?.name!==firstLine?node?.name:"")||"").trim();
    name.textContent=node?(isDocumentNode(node)?"📄  ":isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+(isPartNode(node)?firstLine:(nodeNumber?nodeNumber+" · ":"")+node.name):"📦  "+title;
-   if(isPartNode(node)&&treeDetails.showTreeDescription!=="false"&&secondLine&&secondLine!==firstLine){
+   if(isPartNode(node)&&showTreeDescriptions&&treeDetails.showTreeDescription!=="false"&&secondLine&&secondLine!==firstLine){
     const detail=document.createElement("small");detail.className="assembly-tree-description";detail.textContent=secondLine;name.append(detail);
    }
    if(isPartNode(node)){
