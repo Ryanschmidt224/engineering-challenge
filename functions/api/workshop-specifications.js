@@ -11,7 +11,8 @@ export function normalizeSpecifications(raw){
   const value=clip(record.value,220);
   const unit=clip(record.unit,32);
   const conditions=clip(record.conditions,300);
-  const propertyId=clip(record.propertyId,80).toLowerCase();
+  const inferredId=label.toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,80);
+  const propertyId=clip(record.propertyId,80).toLowerCase()||( /^[a-z]/.test(inferredId)?inferredId:"");
   if(propertyId&&!/^[a-z][a-z0-9_]*$/.test(propertyId))return null;
   if(!label&&!value)continue;
   if(!label)return null;
