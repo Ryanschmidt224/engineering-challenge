@@ -932,6 +932,69 @@
      <div class="workshop-row"><select id="workshop-project" class="field" aria-label="Select project"><option value="">Select a project</option></select><button id="workshop-compare" class="btn" type="button">Compare BOM</button></div>
      <div id="workshop-comparison"></div>
     </section>`;
+   // MPN lookup populates personal inventory as an editable draft.
+   const mineLookup=el("section",undefined,"workshop-ai-lookup");
+   mineLookup.append(el("h3","Look up a manufacturer part number"),
+    el("p","Search product details, then review the draft before saving.","muted"));
+   const mineRow=el("div",undefined,"workshop-ai-lookup-row");
+   const mineMpn=el("input");mineMpn.className="field";mineMpn.maxLength=80;
+   mineMpn.placeholder="Manufacturer part number, e.g. 2N7000";
+   mineMpn.setAttribute("aria-label","Manufacturer part number for AI lookup");
+   const mineFind=itemButton("Fill details with AI",()=>{},"btn primary");
+   mineRow.append(mineMpn,mineFind);
+   const mineMessage=el("p",undefined,"workshop-ai-lookup-status");mineMessage.setAttribute("role","status");
+   const mineResults=el("div",undefined,"workshop-ai-lookup-results");
+   mineLookup.append(mineRow,mineMessage,mineResults);
+   $("#workshop-editor > summary",personal).after(mineLookup);
+   mineFind.onclick=async()=>{
+    const mpn=mineMpn.value.trim();
+    if(mpn.length<2){mineMessage.textContent="Enter a manufacturer part number.";return}
+    mineFind.disabled=true;mineMessage.textContent="Searching product information…";
+    mineResults.replaceChildren();
+    try{
+     const result=await req("/api/workshop-lookup","POST",{partNumber:mpn});
+     const d=result.draft||{};
+     const values={
+      name:d.name||mpn,partNumber:d.partNumber||mpn,featureTreeDescription:d.featureTreeDescription||"",
+      manufacturer:d.manufacturer||"",model:d.partNumber||mpn,
+      kind:d.kind||"component",
+      category:workshopCategories.find(([id])=>id===d.category)?.[1]||d.category||"",
+      notes:[d.subtitle,d.use,d.caution].filter(Boolean).join("\n\n").slice(0,1500)
+     };
+     for(const [key,value] of Object.entries(values)){
+      const field=$("#workshop-"+fields[key],personal);if(field)field.value=value;
+     }
+     $("#workshop-specifications",personal).value=(d.spec||"").split(/\r?\n/).filter(Boolean).map(line=>line.includes(":")?line:"Spec: "+line).join("\n");
+     mineResults.append(el("p",result.note||"Review AI suggestions before saving.","muted"));
+     const urls=(result.sources||[]).filter(url=>/^https:\/\//i.test(url));
+     if(urls.length){
+      const sources=el("div",undefined,"workshop-ai-source-list");sources.append(el("strong","Sources"));
+      for(const [index,url] of urls.entries()){
+       const link=el("a","Source "+(index+1));link.href=url;link.target="_blank";link.rel="noopener noreferrer";sources.append(link);
+      }mineResults.append(sources);
+     }
+     if(result.imageSuggestion?.url){
+      const imageBox=el("div",undefined,"workshop-ai-image-candidate");
+      imageBox.append(el("strong","Suggested picture — verify exact part"));
+      const picture=el("img");picture.src=result.imageSuggestion.url;picture.alt=result.imageSuggestion.caption||"Suggested product photo";
+      picture.referrerPolicy="no-referrer";imageBox.append(picture);
+      const use=itemButton("Add verified picture",async()=>{
+       use.disabled=true;mineMessage.textContent="Importing selected picture…";
+       try{
+        const imported=await req("/api/workshop-image-import","POST",{url:result.imageSuggestion.url,scope:"private"});
+        photoId=imported.photoId;
+        const preview=$("#workshop-photo-preview",personal);preview.hidden=false;
+        preview.src="/api/workshop-photo?id="+encodeURIComponent(photoId);
+        mineMessage.textContent="Picture added to draft. Review the details and save.";
+        imageBox.remove();
+       }catch(error){mineMessage.textContent=error.message;use.disabled=false}
+      },"btn");imageBox.append(use);mineResults.append(imageBox);
+     }else mineResults.append(el("p","No reliable picture found. Upload a photo below.","muted"));
+     mineMessage.textContent="Draft filled. Confirm the exact product and specifications before saving.";
+    }catch(error){mineMessage.textContent=error.message||"Lookup failed."}
+    finally{mineFind.disabled=false}
+   };
+   mineMpn.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();mineFind.click()}});
    $("#workshop-search",personal).addEventListener("input",render);
    $("#workshop-type-filter",personal).addEventListener("change",render);
    $("#workshop-new",personal).onclick=()=>fill({});
