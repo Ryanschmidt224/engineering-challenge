@@ -55,7 +55,7 @@
       photo.src=window.BSPhotoMarkup.displayUrl("gallery",photoId);
       photo.loading="lazy";frame.append(photo);
       const actions=el("div","bs-unstructured-photo-actions");
-      actions.append(button("View",()=>window.open("/api/photo?id="+encodeURIComponent(photoId),"_blank","btn"));
+      actions.append(button("View",()=>window.open("/api/photo?id="+encodeURIComponent(photoId),"_blank"),"btn"));
       if(editable)actions.append(button("Edit photo",()=>window.BSPhotoMarkup.open({
        kind:"gallery",id:photoId,onSave:()=>{photo.src=window.BSPhotoMarkup.displayUrl("gallery",photoId)+"&updated="+Date.now()}
       }),"btn"));
