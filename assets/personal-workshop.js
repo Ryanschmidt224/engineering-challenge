@@ -67,6 +67,26 @@
   #commonparts .workshop-recommend-results{display:none}
   #commonparts .workshop-recommendations,#commonparts .workshop-scope>details{margin-top:18px}
   #commonparts .workshop-item{border-radius:3px;padding:12px 14px;gap:14px}
+
+  /* Product catalog rows with meaningful, non-photographic thumbnails. */
+  #commonparts .workshop-catalog-columns,#commonparts .workshop-catalog-line{grid-template-columns:82px minmax(210px,2.3fr) minmax(105px,.8fr) minmax(170px,1.7fr);gap:14px}
+  #commonparts .workshop-catalog-line{min-height:102px}
+  #commonparts .workshop-catalog-thumb{width:78px;height:78px;display:grid;place-items:center;border:1px solid var(--color-border,#d6ded9);border-radius:5px;background:#f6f8f7;color:#50736a;flex:none}
+  #commonparts .workshop-catalog-thumb svg{width:63px;height:63px;display:block}
+  #commonparts .workshop-catalog-main-item{gap:6px}
+  #commonparts .workshop-catalog-add{align-self:start;margin-top:2px}
+  #commonparts .workshop-catalog-detail{padding-left:107px}
+  #commonparts .workshop-catalog-columns span:first-child{text-align:center}
+  #commonparts .workshop-scope{padding:12px 16px}
+  #commonparts #workshop-recommend-search{max-width:none}
+  @media(max-width:850px){
+   #commonparts .workshop-catalog-line{grid-template-columns:72px minmax(0,1fr);gap:8px 12px}
+   #commonparts .workshop-catalog-thumb{grid-column:1;grid-row:1/4;width:68px;height:68px}
+   #commonparts .workshop-catalog-thumb svg{width:56px;height:56px}
+   #commonparts .workshop-catalog-main-item{grid-column:2;grid-row:1}
+   #commonparts .workshop-catalog-category,#commonparts .workshop-catalog-use{grid-column:2}
+   #commonparts .workshop-catalog-detail{padding-left:16px}
+  }
   @media(max-width:850px){
    #commonparts .workshop-catalog-columns{display:none}
    #commonparts .workshop-catalog-line{grid-template-columns:minmax(0,1fr) auto;gap:6px}
@@ -146,6 +166,29 @@
   };
   const categoryLabelFor=item=>workshopCategories.find(([key])=>key===categoryFor(item))?.[1]||"Other";
   const friendlyTier=item=>item.tier==="core"?"Beginner / essential":"Additional / specialized";
+  // Catalog illustrations where a verified product image is not available.
+  const catalogThumb=item=>{
+   const term=(item.name+" "+item.kind).toLowerCase();
+   const kind=/wire|cable|shrink|ferrule/.test(term)?"wire":
+    /screw|fastener|bolt|nut/.test(term)?"fastener":
+    /multimeter|oscilloscope|meter|supply|load/.test(term)?"meter":
+    /resistor|mosfet|arduino|sensor|breadboard|component/.test(term)?"pcb":
+    /solder|stripper|crimp|gun|tool|cutter/.test(term)?"tool":"material";
+   const drawings={
+    wire:'<path d="M13 45c8-34 18-34 25 0s17 34 25 0 17-34 25 0"/><path d="M13 57c8-34 18-34 25 0s17 34 25 0 17-34 25 0"/>',
+    fastener:'<path d="M20 42h58v19H20z"/><path d="M25 35h15v33H25z"/><path d="M48 43l8 17m0-17 8 17m0-17 8 17"/>',
+    meter:'<rect x="27" y="12" width="49" height="76" rx="8"/><rect x="36" y="23" width="31" height="21" rx="2"/><circle cx="52" cy="61" r="9"/><path d="M35 78h11m12 0h11"/>',
+    pcb:'<rect x="18" y="19" width="65" height="63" rx="5"/><path d="M29 32h20v17H29zM57 29h12v12H57zM27 63h21m0 0v9h22m-13-24v10h13M37 49v14"/><circle cx="30" cy="70" r="2"/>',
+    tool:'<path d="M70 17a20 20 0 0 0-25 27L21 68a11 11 0 0 0 16 16l24-24a20 20 0 0 0 27-25L75 48 58 31z"/>',
+    material:'<path d="M50 13 84 32v38L50 89 16 70V32zM16 32l34 19 34-19M50 51v38"/>'
+   };
+   const frame=el("span",undefined,"workshop-catalog-thumb workshop-thumb-"+kind);
+   frame.setAttribute("role","img");
+   frame.setAttribute("aria-label","Illustrative "+kind+" thumbnail");
+   frame.innerHTML='<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">'+drawings[kind]+'</svg>';
+   return frame;
+  };
+
   const renderCatalog=()=>{
    const query=results.value.trim().toLowerCase(),sort=$(".workshop-catalog-sort",catalog).value;
    const list=$(".workshop-catalog-list",catalog);
@@ -159,7 +202,7 @@
    $(".workshop-catalog-count",catalog).textContent=matched.length+" reference items"+(query?" matching search":"");
    if(!matched.length){list.append(el("p","No matching catalog items. Try another search or category.","muted"));return}
    const heading=el("div",undefined,"workshop-catalog-columns");
-   for(const t of ["Item / description","Category","Recommended use",""])heading.append(el("span",t));
+   for(const t of ["Image","Item / description","Category","Recommended use",""])heading.append(el("span",t));
    list.append(heading);
    for(const item of matched){
     const row=el("article",undefined,"workshop-catalog-entry");
@@ -169,7 +212,7 @@
     const main=el("div",undefined,"workshop-catalog-main-item");
     main.append(name);
     if(item.subtitle)main.append(el("small",item.subtitle,"muted"));
-    summary.append(main,el("span",categoryLabelFor(item),"workshop-catalog-category"),
+    summary.append(catalogThumb(item),main,el("span",categoryLabelFor(item),"workshop-catalog-category"),
      el("span",item.use||friendlyTier(item),"workshop-catalog-use"));
     const add=el("button","+ My Workshop","btn workshop-catalog-add");
     add.type="button";add.title="Create a private inventory item based on this reference";
@@ -181,7 +224,7 @@
      $("#workshop-editor",personal)?.scrollIntoView({block:"start",behavior:"smooth"});
      $("#workshop-name",personal)?.focus();
     };
-    summary.append(add);
+    main.append(add);
     const detail=el("div",undefined,"workshop-catalog-detail");detail.hidden=true;
     const section=(label,value)=>{if(!value)return;const p=el("p");p.append(el("strong",label+" "),document.createTextNode(value));detail.append(p)};
     section("Specification:",item.spec);
@@ -317,6 +360,7 @@
     const row=el("article",undefined,"workshop-item"),details=el("div");
     details.append(el("strong",item.name),el("p",[item.manufacturer,item.model,item.category].filter(Boolean).join(" · ")+" · Qty "+item.quantity+" "+item.unit+" · "+({in_stock:"In stock",in_use_reusable:"In use (reusable)",committed:"Committed"}[item.stockStatus||"in_stock"]),"muted"));
     if(item.photoId){const img=el("img",undefined,"workshop-photo-thumb");img.src="/api/workshop-photo?id="+encodeURIComponent(item.photoId);img.alt="Photo of "+item.name;details.append(img)}
+    if(!item.photoId)row.append(catalogThumb(item));
     const actions=el("div",undefined,"workshop-actions"),edit=el("button","Edit","btn"),remove=el("button","Delete","btn");
     edit.onclick=()=>{fill(item);$("#workshop-editor",personal).scrollIntoView({block:"nearest"})};
     remove.onclick=async()=>{if(!confirm("Delete "+item.name+" from your private Workshop?"))return;
