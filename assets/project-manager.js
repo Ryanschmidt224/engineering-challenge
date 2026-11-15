@@ -54,7 +54,6 @@ window.BSProjectManager=(()=>{
   searchPanel.append(tagFilter);
   const activeTags=new Set();
   clearTags.onclick=()=>{activeTags.clear();renderTagFilters();updateDirectory()};
-  tagSearch.oninput=renderTagFilters;
   const renderTagFilters=()=>{
    tagChoices.replaceChildren();
    const counts=new Map();
@@ -78,6 +77,7 @@ window.BSProjectManager=(()=>{
    tagFilter.hidden=!counts.size;
    clearTags.hidden=!activeTags.size;
   };
+  tagSearch.oninput=renderTagFilters;
   const makeTagPicker=(initial=[])=>{
    const holder=element("div","bs-project-tag-picker");
    const label=element("label","","Project tags (choose any that apply)");
