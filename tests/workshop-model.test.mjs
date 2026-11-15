@@ -50,3 +50,16 @@ test("owner matching keeps catalog ID primary and carries stock status into cata
  assert.match(model.ownershipLabel(model.ownedFor(refs[4])),/Committed/);
  assert.equal(model.ownedFor(refs[1]).length,0);
 });
+
+test("new custom product types and product families are classified without renaming their products",()=>{
+ const custom={id:"workshop:custom-123",name:"PX-240 supply",familyId:"power-supplies",
+  typeName:"Programmable Bench Supplies",category:"electronics",kind:"equipment"};
+ const augmented=[...refs,custom];
+ const dynamic=window.BSWorkshopModel.create({
+  standards:()=>augmented,families:()=>families,categoryFor:item=>item.category,getItems:()=>owned
+ });
+ assert.equal(dynamic.familyFor(custom).id,"power-supplies");
+ const type=dynamic.typeFor(custom);
+ assert.equal(type.label,"Programmable Bench Supplies");
+ assert.equal(type.id,"custom-programmable-bench-supplies");
+});
