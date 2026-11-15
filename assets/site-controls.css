@@ -2215,3 +2215,14 @@ body>.footer{margin-top:auto}
  .bs-supplier-offer{grid-template-columns:1fr}
  .bs-supplier-offer .bs-offer-url{grid-column:auto}
 }
+
+.workshop-supplier-search{
+ display:flex;align-items:end;gap:9px;flex-wrap:wrap;
+ margin-top:12px;padding-top:12px;border-top:1px solid var(--color-border);
+}
+.workshop-supplier-search label{flex:1 1 150px;font-size:.81rem}
+.workshop-supplier-search .field{min-width:145px;width:100%;margin:4px 0 0;min-height:38px}
+.workshop-supplier-search .workshop-supplier-go{white-space:nowrap;min-height:38px;padding:8px 13px}
+.workshop-supplier-search .workshop-supplier-disclaimer{
+ flex:1 1 100%;margin:0;font-size:.75rem;line-height:1.45;
+}
