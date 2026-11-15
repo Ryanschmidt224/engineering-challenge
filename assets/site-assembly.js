@@ -24,7 +24,7 @@ function setupAssemblyTrees(){
   if(project==="linear"||project==="robot")view.classList.add("personal-project-view");
   const canEdit=()=>window.BSProjectManager?.isOwner?.(project)===true || (["launcher","linear","robot"].includes(project)&&adminAuthenticated);
   let title=view.querySelector(".assembly-main h1")?.textContent||"Project";let nodes=[],selected=null,expanded=new Set([null]);
-  let showWorkshopItems=false,showTreeDocuments=true,showBomDocuments=true;const partDocuments=new Map(),partVisibility=new Map(),partTools=new Map(),partWorkshopItems=new Map(),partNumbers=new Map(),partProgress=new Map(),partAttention=new Map(),partQuantities=new Map();
+  let showWorkshopItems=false,showTreeDocuments=true,showBomDocuments=true;const partDocuments=new Map(),partVisibility=new Map(),partTools=new Map(),partWorkshopItems=new Map(),partNumbers=new Map(),partProgress=new Map(),partAttention=new Map(),partQuantities=new Map(),partTreeLabels=new Map();
   const isHiddenPart=node=>isPartNode(node)&&partVisibility.get(node.partId)===true;
   const isToolNode=node=>isPartNode(node)&&partTools.get(node.partId)===true;
   const isDocumentNode=node=>isPartNode(node)&&partDocuments.get(node.partId)===true;
@@ -47,6 +47,7 @@ function setupAssemblyTrees(){
     partProgress.set(part.id,part.progressStatus||"not_started");
     partAttention.set(part.id,part.needsAttention===true);
     partQuantities.set(part.id,part.quantity);
+    partTreeLabels.set(part.id,{mpn:part.model||"",description:part.description||"",details:part.projectDetails||{}});
     for(const linked of nodes.filter(n=>isPartNode(n)&&n.partId===part.id))if(linked.name!==part.name){linked.name=part.name;changed=true}
     if(!known.has(part.id)){
      const parentId=nodes.some(n=>n.id===part.assemblyId&&!isPartNode(n))?part.assemblyId:null;
@@ -910,6 +911,7 @@ function setupAssemblyTrees(){
     projectSection.append(title,notice);
     for(const [key,label] of [
      ["notes","Project notes"],["changes","Project changes / modifications"],
+     ["featureTreeName","Feature tree name"],
      ["referenceDesignators","Reference designators"],["footprint","Footprint"],
      ["schematicValue","Schematic value"],["sourceApplication","Source application"],
      ["sourceFile","Source schematic file"],["sourceComponentId","Source component ID"]
@@ -1475,9 +1477,14 @@ function setupAssemblyTrees(){
   const onlyNotice=document.createElement("p");onlyNotice.className="part-project-only-warning";
   onlyNotice.textContent="Changes below apply only to this project. They will not modify the original Workshop part.";
   projectOnlyPanel.append(onlyTitle,onlyNotice);
+  const treeDescriptionToggle=document.createElement("label");treeDescriptionToggle.className="part-project-only-field";
+  const treeDescriptionCheckbox=document.createElement("input");treeDescriptionCheckbox.type="checkbox";treeDescriptionCheckbox.checked=true;
+  treeDescriptionToggle.append(treeDescriptionCheckbox,document.createTextNode(" Show description in feature tree"));
+  projectOnlyPanel.append(treeDescriptionToggle);
   const projectOnlyFields={};
   for(const [key,title,multiline,limit] of [
    ["notes","Project notes",true,6000],["changes","Project changes / modifications",true,6000],
+   ["featureTreeName","Feature tree name (optional override)",false,120],
    ["referenceDesignators","Reference designators",false,500],["footprint","Footprint",false,240],
    ["schematicValue","Schematic value",false,240],["sourceApplication","Source application",false,80],
    ["sourceFile","Source schematic file",false,500],["sourceComponentId","Source component ID",false,240]
@@ -1499,11 +1506,13 @@ function setupAssemblyTrees(){
   let editingProjectReferenceId="";
   const readProjectOnly=()=>({
    ...Object.fromEntries(Object.entries(projectOnlyFields).map(([key,input])=>[key,input.value.trim()])),
-   workshopReferenceId:editingProjectReferenceId
+   workshopReferenceId:editingProjectReferenceId,
+   showTreeDescription:treeDescriptionCheckbox.checked?"true":"false"
   });
   const setProjectOnly=details=>{
    for(const [key,input] of Object.entries(projectOnlyFields))input.value=details?.[key]||"";
    editingProjectReferenceId=details?.workshopReferenceId||"";
+   treeDescriptionCheckbox.checked=details?.showTreeDescription!=="false";
   };
   let autoNumberChosen=false;
   partNumberInput.addEventListener("input",()=>{autoNumberChosen=false});
@@ -2522,11 +2531,18 @@ function setupAssemblyTrees(){
    const expand=document.createElement("button");expand.type="button";expand.className="assembly-expander";expand.textContent=children.length?(expanded.has(id)?"▾":"▸"):" ";expand.setAttribute("aria-label",expanded.has(id)?"Collapse":"Expand");expand.onclick=()=>{expanded.has(id)?expanded.delete(id):expanded.add(id);render()};
    const name=document.createElement("button");name.type="button";name.className="assembly-name";
    const nodeNumber=node?(isPartNode(node)?partNumbers.get(node.partId):node.partNumber):null;
-   name.textContent=node?(isDocumentNode(node)?"📄  ":isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+(nodeNumber?nodeNumber+" · ":"")+node.name:"📦  "+title;
+   const treeInfo=isPartNode(node)?partTreeLabels.get(node.partId):null;
+   const firstLine=treeInfo?.mpn||nodeNumber||node?.name||title;
+   const treeDetails=treeInfo?.details||{};
+   const secondLine=treeDetails.featureTreeName||treeDetails.workshopTreeDescription||treeInfo?.description?.slice(0,20)||"";
+   name.textContent=node?(isDocumentNode(node)?"📄  ":isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+(isPartNode(node)?firstLine:(nodeNumber?nodeNumber+" · ":"")+node.name):"📦  "+title;
+   if(isPartNode(node)&&treeDetails.showTreeDescription!=="false"&&secondLine&&secondLine!==firstLine){
+    const detail=document.createElement("small");detail.className="assembly-tree-description";detail.textContent=secondLine;name.append(detail);
+   }
    if(isPartNode(node)){
     const quantity=partQuantities.get(node.partId),links=duplicateLinks.get(String(node.parentId)+"|"+node.partId)||1;
     const count=Number.isFinite(quantity)&&quantity>1?Math.max(quantity,links):links;
-    if(count>1)name.textContent+=" ("+count+")";
+    if(count>1)name.firstChild.textContent+=" ("+count+")";
     const status=partProgress.get(node.partId);
     if(status==="complete"||status==="in_progress")el.classList.add("part-progress-"+status);
     if(partAttention.get(node.partId)){el.classList.add("part-needs-attention");name.title="Needs attention — open part to view the reminder"}
