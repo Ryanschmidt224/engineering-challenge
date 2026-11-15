@@ -22,14 +22,14 @@ export async function onRequest({request,env}){
  const count=Number(usage?await usage.text():0)||0;
  if(count>=15)return json({error:"Daily AI lookup limit reached (15). Try again tomorrow."},429);
  const prompt=[
-  "Research the EXACT electronic/manufactured part number "+JSON.stringify(mpn)+" using real manufacturer datasheets and reliable distributor product pages.",
-  "Produce the depth of a detailed engineering component overview, not merely a one-sentence description.",
-  "Use multiple reputable references where possible. Never invent URLs, electrical ratings, pinouts, photos, vendors or citations.",
+  "Identify the product with part number "+JSON.stringify(mpn)+" and suggest practical details for a beginner-friendly Workshop inventory.",
+  "Provide a useful component overview: main specifications, typical uses, and basic pinout where relevant.",
+  "Prefer manufacturer specifications where readily available. Sources are optional; never fabricate links.",
   "Important: a generic number (e.g. 2N7000) may be sold by multiple manufacturers in different packages.",
-  "Do NOT silently merge manufacturer-specific ratings. Where ambiguous, describe variants in caution and omit unverified values.",
-  "Pinouts MUST specify package, viewing orientation and manufacturer. If these are not confirmed, leave pins empty and flag verification.",
+  "Where ratings vary by manufacturer or package, use a useful representative value when reasonable, and note differences in caution.",
+  "Suggest pinouts only when reasonably confident; include package and viewing orientation when known.",
   "Include voltage/current limits, Rds(on), threshold, power dissipation, temperature, switching behavior and package only where supported.",
-  "Report test conditions for ratings (e.g. VGS, temperature, pulsed vs continuous) and distinguish typical from absolute maximum.",
+  "Include test conditions when readily available, without requiring extensive verification.",
   "Provide a practical 2-4 sentence summary and a concise feature tree description (<=20 characters).",
   "Return ONLY valid JSON, without fences or commentary, with string keys:",
   "partNumber, manufacturer, name, subtitle, featureTreeDescription, kind, category, familyName, typeName,",
@@ -40,7 +40,7 @@ export async function onRequest({request,env}){
   "For pins, use strings and include package/face/orientation in pinoutOrientation.",
   "For applications, include 3-6 typical verified practical uses. 'spec' is a fallback human-readable summary; 'use' is a summary of applications.",
   "kind: tool/equipment/component/material/other; category: tools/consumables/electronics/hardware/safety.",
-  "Leave uncertain strings blank and report unknowns and differing manufacturers in caution or notes.",
+  "Use best-effort descriptions, mark important uncertainty briefly, and keep optional details empty when unknown."
   "Use the requested partNumber exactly if confirmed and no substitute is intended."
  ].join("\n");
  try{
@@ -102,7 +102,7 @@ export async function onRequest({request,env}){
   const imageSuggestion=candidate?{url:validUrl(candidate.image_url),sourceUrl:validUrl(candidate.source_website_url),caption:text(candidate.caption,180)}:null;
   await env.PHOTOS.put(key,String(count+1));
   return json({draft,research,sources,imageSuggestion,needsReview:true,
-   note:"AI-generated draft. Confirm the exact manufacturer, package, ratings, sources and photo before saving."});
+   note:"AI-generated draft. Check the ratings and package before saving."});
  }catch(error){
   console.error("Workshop lookup failed",String(error));
   return json({error:"Product lookup failed. Try again or enter the details manually."},502);
