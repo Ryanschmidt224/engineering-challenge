@@ -9,14 +9,21 @@ const ctx=extra=>({
  TextEncoder,TextDecoder,Number,String,RegExp,Error,console,
  crypto:webcrypto,btoa:text=>Buffer.from(text,"binary").toString("base64"),
  atob:text=>Buffer.from(text,"base64").toString("binary"),
- isAdmin:async()=>true,...extra
+ isAdmin:async()=>true,
+ CORE_PROJECTS:[{id:"launcher"},{id:"linear"},{id:"robot"}],
+ VALID_PROJECT_ID:/^(?:launcher|linear|robot|p[a-f0-9]{32})$/,
+ readCatalog:async env=>{
+  const object=await env.PHOTOS.get("project-catalog/v1.json");
+  const stored=object?JSON.parse(await object.text()).projects||[]:[];
+  return {projects:[{id:"launcher"},{id:"linear"},{id:"robot"},...stored]};
+ },...extra
 });
 const compile=(path,exports,additional={})=>{
  const code=readFileSync(path,"utf8")
   .replace(/^import .*?;\s*$/gm,"").replace(/^export /gm,"");
  return runInNewContext(code+"\n({"+exports.join(",")+"})",ctx(additional));
 };
-const archive=compile("functions/api/project-archive.js",["handleProjectArchive","inspectArchive","sha256","encodeBytes","decodeBytes","PROJECTS","exportProject"]);
+const archive=compile("functions/api/project-archive.js",["handleProjectArchive","inspectArchive","sha256","encodeBytes","decodeBytes","PROJECTS","isArchivedProjectId","exportProject"]);
 const staging=compile("functions/api/archive-staging.js",["handleArchiveStaging"],archive);
 const automatic=compile("functions/api/automatic-backups.js",["backupAllProjects","handleAutomaticBackups"],archive);
 const url=p=>"https://test.example"+p;
@@ -128,4 +135,26 @@ test("automatic project snapshots preserve prior snapshots and avoid modifying p
  assert.equal((await archive.inspectArchive(await download.json(),"launcher")).ok,true);
  for(const [key,data] of baseline)assert.deepEqual(bucket.records.get(key).bytes,data);
  assert.ok(bucket.modified.every(key=>key.startsWith("automatic-backups/")));
+});
+
+test("catalog-backed projects are exported, staged and included in weekly snapshots",async()=>{
+ const project="p"+"a".repeat(32);
+ const bucket=fakeBucket({
+  ["components/"+project+".json"]:'[{"id":"part-1","name":"Hall sensor","quantity":2}]',
+  ["trees/"+project+".json"]:'[]',
+  "project-catalog/v1.json":JSON.stringify({schemaVersion:1,projects:[{id:project,name:"Hall Sensor Project"}]})
+ });
+ const env={PHOTOS:bucket};
+ const result=await archive.handleProjectArchive(request("GET","/api/project/archive?project="+project),env);
+ assert.equal(result.status,200);
+ const exported=await result.json();
+ assert.equal((await archive.inspectArchive(exported,project)).ok,true);
+ const stage=await staging.handleArchiveStaging(request("POST","/api/project/staging?project="+project,exported),env);
+ assert.equal(stage.status,201);
+ const summary=await automatic.backupAllProjects(env,new Date("2026-11-14T12:00:00Z"));
+ assert.equal(summary.find(item=>item.project===project)?.status,"saved");
+ const backup=await automatic.handleAutomaticBackups(request("GET","/api/project/backups?project="+project),env);
+ assert.equal(backup.status,200);
+ assert.equal((await backup.json()).backups.length,1);
+ assert.equal(bucket.modified.some(key=>key.startsWith("components/"+project)),false);
 });
