@@ -2,7 +2,7 @@
 import {accountUser} from "./accounts.js";
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json","cache-control":"no-store","x-content-type-options":"nosniff"}});
 const text=(v,n=200)=>typeof v==="string"?v.trim().slice(0,n):"";
-const validUrl=v=>{try{const u=new URL(v);return u.protocol==="https:"&&!u.username&&!u.password&&!/(^|\\.)(localhost|local)$/.test(u.hostname)&&!/^\\d+\\.\\d+\\.\\d+\\.\\d+$/.test(u.hostname)&&!u.hostname.includes(":")?u.href:""}catch{return ""}};
+const validUrl=v=>{try{const u=new URL(v);return u.protocol==="https:"&&!u.username&&!u.password&&!u.hostname.endsWith(".local")&&u.hostname!=="localhost"&&!/^\d+\.\d+\.\d+\.\d+$/.test(u.hostname)&&!u.hostname.includes(":")?u.href:""}catch{return ""}};
 const categories=new Set(["tools","consumables","electronics","hardware","safety"]);
 const kinds=new Set(["tool","equipment","component","material","other"]);
 export async function onRequest({request,env}){
@@ -14,7 +14,7 @@ export async function onRequest({request,env}){
  if(request.headers.get("origin")!==url.origin)return json({error:"Invalid request origin"},403);
  const body=await request.json().catch(()=>null);
  const mpn=text(body?.partNumber,80);
- if(!/^[a-zA-Z0-9][a-zA-Z0-9.\\/_+ #()-]{1,79}$/.test(mpn))return json({error:"Enter a valid manufacturer part number (2–80 characters)."},400);
+ if(!/^[A-Za-z0-9][A-Za-z0-9._+ #()/\-]{1,79}$/.test(mpn))return json({error:"Enter a valid manufacturer part number (2–80 characters)."},400);
  // Limit paid lookups per signed-in account. A failure does not count against the daily limit.
  if(!env.PHOTOS)return json({error:"Workshop storage unavailable"},503);
  const date=new Date().toISOString().slice(0,10),key="workshop-ai-lookup/"+user.id+"/"+date;
@@ -48,7 +48,7 @@ export async function onRequest({request,env}){
    return json({error:"Product lookup is unavailable. Verify the AI service configuration and try again."},502);
   }
   const raw=(payload.output||[]).filter(v=>v.type==="message").flatMap(v=>v.content||[]).filter(v=>v.type==="output_text").map(v=>v.text).join("\n");
-  const stripped=raw.replace(/^\\s*```(?:json)?\\s*/i,"").replace(/\\s*```\\s*$/,"").trim();
+  const stripped=raw.replace(/^\s*```(?:json)?\s*/i,"").replace(/\s*```\s*$/,"").trim();
   let data;
   try{data=JSON.parse(stripped)}catch{return json({error:"The lookup did not return usable product details. Try again or enter the item manually."},502)}
   if(!data||typeof data!=="object"||Array.isArray(data))return json({error:"Product lookup returned invalid details"},502);
