@@ -2175,3 +2175,43 @@ body>.footer{margin-top:auto}
  #home .bs-catalog-layout .project-link{display:block;min-height:0}
  #learn .bs-catalog-main #resource-calculators.resource-grid{grid-template-columns:1fr}
 }
+
+/* Supplier selection is optional, and does not change the component identity. */
+.part-editor-dialog .bs-supplier-editor,.workspace-main-bom-editor .bs-supplier-editor{
+ display:grid;gap:10px;border-top:1px solid var(--color-border);
+ margin-top:18px;padding-top:18px;max-width:100%;
+}
+.bs-supplier-heading{font-size:1.08rem;line-height:1.35;margin:0;font-weight:750}
+.bs-supplier-hint{font-size:.83rem;line-height:1.5;margin:0}
+.bs-supplier-offers{display:grid;gap:12px}
+.bs-supplier-offer{
+ display:grid;grid-template-columns:minmax(115px,160px) minmax(145px,1fr) minmax(200px,1.55fr) auto;
+ gap:10px;align-items:center;border:1px solid var(--color-border);background:var(--color-surface);
+ border-radius:11px;padding:12px;
+}
+.bs-supplier-offer .field{margin:0;min-width:0;max-width:none!important;width:100%;height:40px}
+.bs-supplier-add{justify-self:start}
+.bs-offer-remove{padding:8px 11px;white-space:nowrap}
+.bs-supplier-validation{margin:0;font-size:.85rem;color:var(--color-danger,var(--color-text-muted))}
+.bs-supplier-validation:empty{display:none}
+.bs-part-buy-links{
+ margin:16px 0 6px;padding:15px 0 0;border-top:1px solid var(--color-border);
+}
+.bs-part-buy-links h3{font-size:1.03rem;margin:0 0 5px}
+.bs-part-buy-links p{font-size:.83rem;line-height:1.5;margin:0 0 10px}
+.bs-part-buy-options{display:flex;gap:9px;flex-wrap:wrap}
+.bs-part-buy-link{display:inline-flex;align-items:center;min-height:36px;
+ border-radius:8px;border:1px solid var(--color-border);padding:8px 12px;
+ background:var(--color-surface-muted);color:var(--color-text);text-decoration:none;
+ font-size:.85rem;font-weight:650;
+}
+.bs-part-buy-link:hover{border-color:var(--color-accent);background:var(--color-hover)}
+@media(max-width:900px){
+ .bs-supplier-offer{grid-template-columns:minmax(130px,1fr) minmax(130px,1fr)}
+ .bs-supplier-offer .bs-offer-url{grid-column:1/-1}
+ .bs-supplier-offer .bs-offer-remove{justify-self:start}
+}
+@media(max-width:540px){
+ .bs-supplier-offer{grid-template-columns:1fr}
+ .bs-supplier-offer .bs-offer-url{grid-column:auto}
+}
