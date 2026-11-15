@@ -2004,6 +2004,19 @@ function setupAssemblyTrees(){
     view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));
    }
   });
+  // Every project-level page gets the same notes component, but each page
+  // keeps its own records. BOM and workspace for an assembly are independent.
+  const notePanels=Object.fromEntries([
+   ["summary",summary],["workspace",workspace],["bom",bomScreen],
+   ["part",partWorkspace],["parts",partsPage]
+  ].map(([scope,mount])=>[scope,window.BSUnstructuredNotes.mount(mount,{project,scope,canEdit})]));
+  let lastNotePage="";
+  const showNotes=(scope,id="root")=>{
+   const page=scope+":"+id;
+   if(page===lastNotePage)return;
+   lastNotePage=page;
+   void notePanels[scope].read(id);
+  };
   const workspaceHash=id=>"#"+project+"/workspace/"+encodeURIComponent(id??"__root__");
   const bomHash=id=>"#"+project+"/bom/"+encodeURIComponent(id??"__root__");
   // Keep older overview deep links usable as BOM list destinations.
@@ -2046,10 +2059,11 @@ function setupAssemblyTrees(){
    // Legacy overview DOM remains available for image editing but isn't a page.
    detail.classList.add("hide");
    main.classList.add("hide");
-   if(inPart){void showPartWorkspace();return;}
-   if(inParts){void partsManager.refresh();return;}
-   if(inSummary){void refreshProjectSummary();return;}
+   if(inPart){showNotes("part",partRoute());void showPartWorkspace();return;}
+   if(inParts){showNotes("parts");void partsManager.refresh();return;}
+   if(inSummary){showNotes("summary");void refreshProjectSummary();return;}
    if(inBom){
+    showNotes("bom",selected??"root");
     bomScreen.querySelector(".assembly-bom-screen-title").textContent=(selected===null?title:((nodes.find(n=>n.id===selected)?.partNumber||"")+(nodes.find(n=>n.id===selected)?.partNumber?" · ":"")+(nodes.find(n=>n.id===selected)?.name||"Assembly")))+" · BOM";
     if(bomView==="pictures")renderTiles();
     return;
