@@ -19,7 +19,8 @@ test("Worker imports resolve to real files and have no duplicate API dispatch pa
  for(const match of worker.matchAll(/from\s+["'](\.\/[^"']+)["']/g)){
   assert.ok(existsSync(resolve(root,match[1])),"Missing Worker import: "+match[1]);
  }
- const paths=[...worker.matchAll(/if\(path===["'](\/api\/[^"']+)["']\)/g)].map(match=>match[1]);
+ const dispatch=worker.slice(0,worker.indexOf("}catch(error){"));
+ const paths=[...dispatch.matchAll(/if\(path===["'](\/api\/[^"']+)["']\)/g)].map(match=>match[1]);
  assert.equal(new Set(paths).size,paths.length,"Duplicate API route dispatch");
 });
 

@@ -58,9 +58,9 @@ test('failure investigations load at every level and preserve their API route',(
 });
 
 test('part and assembly photo editors use the same reusable UI controls',()=>{
- assert.match(photoUI,/function pencil\(/);
+ assert.match(photoUI,/function actionBar\(/);
  assert.match(photoUI,/function dialog\(/);
- assert.equal((assemblies.match(/BSPhotoEditor\.pencil\(/g)||[]).length,2);
+ assert.equal((assemblies.match(/BSPhotoEditor\.actionBar\(/g)||[]).length,3);
  assert.equal((assemblies.match(/BSPhotoEditor\.dialog\(/g)||[]).length,2);
  assert.doesNotMatch(assemblies,/part-workspace-picture|part-workspace-tools|part-image-dragover/);
  assert.doesNotMatch(css,/\.part-workspace-tools|\.part-picture-dialog|\.part-image-dragover/);

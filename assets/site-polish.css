@@ -1258,9 +1258,9 @@
  width:min(520px,calc(100vw - 32px));max-width:520px;
  border:1px solid var(--color-border);border-radius:13px;
  padding:20px 22px;background:var(--color-surface);color:var(--color-text);
- box-shadow:0 16px 50px #0003;
+ box-shadow:0 16px 50px color-mix(in srgb,var(--color-shadow-base) 20%,transparent);
 }
-.my-build-feedback-dialog::backdrop{background:#0007}
+.my-build-feedback-dialog::backdrop{background:color-mix(in srgb,var(--color-shadow-base) 46.6667%,transparent)}
 .my-build-feedback-dialog h3{font-size:1.15rem;margin:0 0 9px}
 .my-build-feedback-dialog .muted{font-size:.84rem;line-height:1.5;margin:0 0 15px}
 .my-build-feedback-dialog textarea{width:100%;box-sizing:border-box;margin-bottom:13px}
@@ -1281,7 +1281,7 @@
  border-radius:50%!important;background:var(--color-surface)!important;
  color:var(--color-text-muted)!important;font-size:14px!important;
  font-weight:700!important;line-height:1!important;cursor:pointer;
- box-shadow:0 1px 3px #00000012;
+ box-shadow:0 1px 3px color-mix(in srgb,var(--color-shadow-base) 7.0588%,transparent);
 }
 .build-confusion-control .build-confusion-button:hover,
 .build-confusion-control .build-confusion-button:focus-visible{
@@ -1291,7 +1291,7 @@
  position:absolute;right:30px;bottom:0;
  width:max-content;max-width:min(300px,60vw);
  padding:5px 9px;border:1px solid var(--color-border);
- border-radius:7px;background:var(--color-surface);box-shadow:0 2px 6px #00000010;
+ border-radius:7px;background:var(--color-surface);box-shadow:0 2px 6px color-mix(in srgb,var(--color-shadow-base) 6.2745%,transparent);
  font-size:.78rem;
 }
 .project-summary-gallery,.project-summary-bom-section,.project-summary-tools-section,
@@ -1469,8 +1469,8 @@
 
 /* Record dates remain visible in collapsed headers; destructive action is separated from Save. */
 .investigation-record-date{font-size:.8rem;font-weight:500;color:var(--color-text-muted);white-space:nowrap;font-variant-numeric:tabular-nums}
-.investigation-edit-actions .investigation-delete{margin-left:12px;margin-right:0;color:#a52d35;border-color:#a52d3560;background:transparent}
-.investigation-edit-actions .investigation-delete:hover{background:#a52d3510}
+.investigation-edit-actions .investigation-delete{margin-left:12px;margin-right:0;color:var(--color-danger-action);border-color:color-mix(in srgb,var(--color-danger-action) 37.6471%,transparent);background:transparent}
+.investigation-edit-actions .investigation-delete:hover{background:color-mix(in srgb,var(--color-danger-action) 6.2745%,transparent)}
 
 /* Compact title composer with the same typography as other investigation descriptors. */
 .investigation-new-record.investigation-create{

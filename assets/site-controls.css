@@ -1069,7 +1069,7 @@
 .project-summary-photo-stage img{width:100%;height:100%;object-fit:contain;display:block}
 .project-summary-photo-stage img[hidden],.project-summary-photo-stage p[hidden],.project-summary-photo-stage button[hidden]{display:none!important}
 .project-summary-photo-empty{color:var(--color-text-muted);font-size:.94rem}
-.project-summary-photo-stage>button{position:absolute;top:50%;transform:translateY(-50%);width:41px;height:48px;padding:0;border:1px solid var(--color-border);border-radius:9px;background:var(--color-surface);color:var(--color-text);font-size:1.6rem;cursor:pointer;box-shadow:0 2px 8px #0002}
+.project-summary-photo-stage>button{position:absolute;top:50%;transform:translateY(-50%);width:41px;height:48px;padding:0;border:1px solid var(--color-border);border-radius:9px;background:var(--color-surface);color:var(--color-text);font-size:1.6rem;cursor:pointer;box-shadow:0 2px 8px color-mix(in srgb,var(--color-shadow-base) 13.3333%,transparent)}
 .project-summary-photo-stage>button:hover{background:var(--color-hover)}
 .project-summary-previous{left:12px}.project-summary-next{right:12px}
 .project-summary-photo-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:24px;padding:8px 2px;color:var(--color-text-muted);font-size:.83rem}
@@ -1187,7 +1187,7 @@
 .project-summary-lists>.project-summary-tools-section{
  border:1px solid var(--color-border);border-radius:14px;
  background:var(--color-surface);padding:21px 22px 25px;
- box-shadow:0 1px 3px #00000008;
+ box-shadow:0 1px 3px color-mix(in srgb,var(--color-shadow-base) 3.1373%,transparent);
  min-width:0;
 }
 .project-summary-lists h2{padding:0 0 13px;margin:0 0 6px}
@@ -1201,7 +1201,7 @@
  height:clamp(250px,35vw,490px);padding:10px;
  border-radius:16px;background:var(--color-surface);
  border:1px solid var(--color-border);
- box-shadow:0 3px 14px #0000000c;overflow:hidden;
+ box-shadow:0 3px 14px color-mix(in srgb,var(--color-shadow-base) 4.7059%,transparent);overflow:hidden;
 }
 .project-summary-photo-stage img{
  width:100%;height:100%;object-fit:contain;object-position:left center;
@@ -1256,7 +1256,7 @@
 .bom-part-workspace .part-progress-heading{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .bom-part-workspace .part-progress-heading h2{font-size:1rem;margin:0}
 .bom-part-workspace .part-progress-badge{font-size:.79rem;color:var(--color-text-muted);font-weight:600}
-.bom-part-workspace .part-progress-panel.is-flagged .part-progress-badge{color:var(--color-danger,#ad452d)}
+.bom-part-workspace .part-progress-panel.is-flagged .part-progress-badge{color:var(--color-danger)}
 .bom-part-workspace .part-progress-fields{display:flex;align-items:end;gap:22px;flex-wrap:wrap}
 .bom-part-workspace .part-progress-fields>label:first-child{display:grid;gap:7px;font-size:.85rem;font-weight:650}
 .bom-part-workspace .part-progress-select{min-width:170px}
@@ -1268,8 +1268,8 @@
 .bom-part-workspace .part-progress-feedback{color:var(--color-text-muted);font-size:.82rem}
 .assembly-node.part-progress-complete>.assembly-name::after{content:" ✓";color:var(--color-accent);font-weight:750}
 .assembly-node.part-progress-in_progress>.assembly-name::after{content:" ◐";color:var(--color-text-muted)}
-.assembly-node.part-needs-attention>.assembly-name{color:var(--color-danger,#ad452d)}
-.assembly-node.part-needs-attention>.assembly-name::after{content:" ⚑";color:var(--color-danger,#ad452d)}
+.assembly-node.part-needs-attention>.assembly-name{color:var(--color-danger)}
+.assembly-node.part-needs-attention>.assembly-name::after{content:" ⚑";color:var(--color-danger)}
 
 
 /* Project-level review queue; subtle highlight signals action without dominating navigation. */
@@ -1309,7 +1309,7 @@
  display:grid;gap:14px;padding:23px 25px;
  border:1px solid var(--color-border);
  border-radius:14px;background:var(--color-surface);
- box-shadow:0 2px 9px #00000009;
+ box-shadow:0 2px 9px color-mix(in srgb,var(--color-shadow-base) 3.5294%,transparent);
 }
 .project-summary-owner-settings>.project-settings-card h2,
 .project-summary-owner-settings>.project-numbering-card h3{margin:0}
@@ -1327,8 +1327,8 @@
  border:1px solid var(--color-border);color:var(--color-text);
 }
 .project-summary-settings-actions .project-delete-button:hover{
- border-color:var(--color-danger,#a54135);
- color:var(--color-danger,#a54135);
+ border-color:var(--color-danger);
+ color:var(--color-danger);
  background:var(--color-surface);
 }
 /* Explicit destructive confirmation dialog; archive behavior is described inside. */
@@ -1337,17 +1337,17 @@
  border:1px solid var(--color-border);
  border-radius:14px;padding:0;
  background:var(--color-surface);color:var(--color-text);
- box-shadow:0 24px 70px #0003;
+ box-shadow:0 24px 70px color-mix(in srgb,var(--color-shadow-base) 20%,transparent);
 }
-.project-delete-dialog::backdrop{background:#0008}
+.project-delete-dialog::backdrop{background:color-mix(in srgb,var(--color-shadow-base) 53.3333%,transparent)}
 .project-delete-form{display:grid;gap:16px;padding:25px}
 .project-delete-form h2{font-size:1.3rem;margin:0}
 .project-delete-form p{font-size:.9rem;line-height:1.55;margin:0}
 .project-delete-form label{display:grid;gap:7px;font-size:.86rem;font-weight:600}
 .project-delete-form .field{width:100%}
-.project-delete-feedback{color:var(--color-danger,#a54135);min-height:1rem}
+.project-delete-feedback{color:var(--color-danger);min-height:1rem}
 .project-delete-actions{display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap}
-.project-delete-confirm{background:var(--color-danger,#a54135);color:white;border-color:transparent}
+.project-delete-confirm{background:var(--color-danger);color:var(--color-on-accent);border-color:transparent}
 .project-delete-confirm:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:660px){
  .project-summary-owner-settings>.project-settings-card,
@@ -1360,7 +1360,7 @@
  max-height:calc(100vh - 24px);overflow-y:auto;
  padding:9px;background:var(--color-surface);
  border:1px solid var(--color-border);border-radius:14px;
- box-shadow:0 16px 42px #00000025;
+ box-shadow:0 16px 42px color-mix(in srgb,var(--color-shadow-base) 14.5098%,transparent);
 }
 .assembly-context-heading{
  display:grid;gap:5px;padding:12px 13px 13px;
@@ -1439,9 +1439,9 @@
 .assembly-create-dialog{
  width:min(510px,calc(100vw - 32px));max-height:90vh;overflow:auto;
  padding:0;border:1px solid var(--color-border);border-radius:14px;
- background:var(--color-surface);color:var(--color-text);box-shadow:0 24px 65px #0003;
+ background:var(--color-surface);color:var(--color-text);box-shadow:0 24px 65px color-mix(in srgb,var(--color-shadow-base) 20%,transparent);
 }
-.assembly-create-dialog::backdrop{background:#0008}
+.assembly-create-dialog::backdrop{background:color-mix(in srgb,var(--color-shadow-base) 53.3333%,transparent)}
 .assembly-create-form{display:grid;gap:16px;padding:24px}
 .assembly-create-form h2{font-size:1.35rem;margin:0}
 .assembly-create-form p{margin:0;line-height:1.5;font-size:.85rem}
@@ -1449,7 +1449,7 @@
 .assembly-create-form>label[hidden]{display:none!important}
 .assembly-create-form .field{width:100%;min-width:0}
 .assembly-create-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
-.assembly-create-status{min-height:1em;color:var(--color-danger,#ad452d)}
+.assembly-create-status{min-height:1em;color:var(--color-danger)}
 
 
 /* Documents are ordinary project records with independent display toggles. */
@@ -1906,7 +1906,7 @@
 }
 .project-directory-label .field{
  min-width:170px;max-width:240px;margin:0;
- background:#fff;
+ background:var(--color-on-media);
 }
 .project-directory-count{font-size:.82rem;padding-bottom:10px}
 @media(max-width:600px){
@@ -2276,7 +2276,7 @@ body>.footer{margin-top:auto}
 /* Specific, accessible account registration feedback. */
 .project-account-dialog .project-account-message.is-error{
  padding:11px 13px;margin:0;border-radius:9px;
- border:1px solid var(--color-border);border-left:3px solid #a83d3d;
+ border:1px solid var(--color-border);border-left:3px solid var(--color-danger-strong);
  background:var(--color-surface-muted);color:var(--color-text);
  font-size:.91rem;font-weight:700;line-height:1.45;
 }
@@ -2289,7 +2289,7 @@ body>.footer{margin-top:auto}
  margin:3px 0 0;font-size:.78rem;font-weight:400;line-height:1.4;
 }
 .project-account-dialog .field[aria-invalid="true"]{
- border-color:#ae4141;outline:2px solid #ae414133;
+ border-color:var(--color-danger-alert);outline:2px solid color-mix(in srgb,var(--color-danger-alert) 20%,transparent);
 }
 
 /* Optional supplier-cart handoff, separated from the engineering BOM. */

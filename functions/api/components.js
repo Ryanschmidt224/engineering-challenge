@@ -97,7 +97,7 @@ const normalizeSupplierOffers=input=>{
 };
 const progressUpdatesFor=part=>Array.isArray(part.progressUpdates)?part.progressUpdates.filter(note=>note&&typeof note.text==="string").map(note=>({id:String(note.id||""),text:note.text,createdAt:String(note.createdAt||"")})):[];
 const validProgressUpdate=value=>typeof value==="string"&&!!value.trim()&&value.trim().length<=500;
-const presentPart=part=>({...part,progressUpdates:progressUpdatesFor(part),purchaseStatus:purchaseStatuses.has(part.purchaseStatus)?part.purchaseStatus:"not_started",fullName:generatedFullName(part),itemType:part.itemType==="document"?"document":"part",progressStatus:["not_started","in_progress","complete"].includes(part.progressStatus)?part.progressStatus:"not_started",needsAttention:part.needsAttention===true,attentionNote:part.attentionNote||"",isTool:isToolPart(part),hideFromFeatureTree:part.hideFromFeatureTree===true||(part.hideFromFeatureTree===undefined&&part.bomOnly===true),assumedOnHand:part.purchaseOverride===true?false:part.purchaseOverride===false?true:standardShopMaterial(part)});
+const presentPart=part=>({...part,progressUpdates:progressUpdatesFor(part),purchaseStatus:purchaseStatuses.has(part.purchaseStatus)?part.purchaseStatus:"not_started",fullName:part.fullName||generatedFullName(part),itemType:part.itemType==="document"?"document":"part",progressStatus:["not_started","in_progress","complete"].includes(part.progressStatus)?part.progressStatus:"not_started",needsAttention:part.needsAttention===true,attentionNote:part.attentionNote||"",isTool:isToolPart(part),hideFromFeatureTree:part.hideFromFeatureTree===true||(part.hideFromFeatureTree===undefined&&part.bomOnly===true),assumedOnHand:part.purchaseOverride===true?false:part.purchaseOverride===false?true:standardShopMaterial(part)});
 // Derived consumables remain tied to their source part. Never require the
 // learner to enter ferrule counts or create a second independent BOM item.
 function syncDerived(items,source){
@@ -180,7 +180,7 @@ export async function handleComponents(request,env){
   try{
    if(input.partNumber||input.assignNumber===true||kind==="custom"&&!record.isTool&&input.assignNumber!==false)record.partNumber=await issueNumber(env,project,"part",record.id,input.partNumber||undefined);
   }catch(error){return json({error:error.message},error.status||400)}
-  record.fullName=generatedFullName(record);
+  record.fullName=clean(input.fullName||generatedFullName(record));
   items.push(record);syncDerived(items,record);
   if(!await saveEditable(env,project,items,state))return conflict();
   return json({component:presentPart(record)},201);
@@ -287,7 +287,7 @@ export async function handleComponents(request,env){
    try{updated.partNumber=await issueNumber(env,project,"part",id,input.partNumber||undefined)}
    catch(error){return json({error:error.message},error.status||400)}
   }
-  updated.fullName=generatedFullName(updated);
+  updated.fullName=clean(input.fullName||generatedFullName(updated));
   items[index]=updated;syncDerived(items,updated);
   if(!await saveEditable(env,project,items,state))return conflict();
   return json({component:presentPart(updated)});

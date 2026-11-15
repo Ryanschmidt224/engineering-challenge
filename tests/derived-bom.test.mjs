@@ -9,6 +9,7 @@ function handler(path,name){
  const source=readFileSync(path,"utf8").replace(/^import .*;\s*$/gm,"").replace(/^export /gm,"");
  return runInNewContext(source+"\n"+name+";",{
   Response,Request,URL,crypto:{randomUUID},isAdmin:async()=>true,
+  projectAllowed:async()=>true,canEditProject:async()=>true,
   console,Date,JSON,Number,String,Array,Map,Set,RegExp
  });
 }
