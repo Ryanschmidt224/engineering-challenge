@@ -383,7 +383,7 @@
        const actions=window.BSPhotoEditor.actionBar(frame,{
         onMarkup:()=>window.BSPhotoMarkup.open({kind:isRecipeFile(id)?"recipe":"gallery",id,onSave:()=>{const newSrc=(isRecipeFile(id)?window.BSPhotoMarkup.displayUrl("recipe",id):window.BSPhotoMarkup.displayUrl("gallery",id))+"&v="+Date.now();picture.src=newSrc}}),
         onAdd:()=>selectAttachment(noteIndex),
-        onDelete:()=>{if(confirm("Remove this photo from the step? The original image will remain in storage."))remove.click()}
+        onDelete:async()=>{if(await window.BSDialogs.danger("Remove this photo from the step? The original image will remain in storage.",{title:"Remove step photo?",confirmLabel:"Remove"}))remove.click()}
        });
        actions.setPhotoPresent(true);
        item.append(actions.shell);
@@ -457,7 +457,7 @@
      const actions=el("div","recipe-edit-controls");
      const up=button("↑",()=>move(i,-1));up.disabled=i===0;up.title="Move up";
      const down=button("↓",()=>move(i,1));down.disabled=i===steps.length-1;down.title="Move down";
-     const remove=button("Remove",()=>{if(!confirm("Remove this step?"))return;steps.splice(i,1);editing.delete(step.id);expanded=null;changed();saveHint();render()});
+     const remove=button("Remove",async()=>{if(!await window.BSDialogs.danger("Remove this step?",{title:"Remove instruction step?",confirmLabel:"Remove"}))return;steps.splice(i,1);editing.delete(step.id);expanded=null;changed();saveHint();render()});
      const bottomSave=button("Save",saveStep,"btn primary recipe-save-step-bottom");
      actions.append(up,down,remove,bottomSave);body.append(actions);
     }else{
