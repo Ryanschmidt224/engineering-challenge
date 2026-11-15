@@ -39,7 +39,7 @@ async function saveCreatedPartToWorkshop({part,destination,category,projectTitle
     name:part.name,kind:"component",category,
     familyId:"community-"+category,familyName:"Community contributions",
     manufacturer:part.manufacturer||"",model:part.model||"",
-    partNumber:"", // Project part numbers are NOT manufacturer part numbers.
+    partNumber:part.model||"", // Manufacturer MPN, never the project BOM number.
     subtitle:"Community-contributed purchased part",
     spec:specs.join("\n").slice(0,5000),
     photos:[]
@@ -57,7 +57,7 @@ async function saveCreatedPartToWorkshop({part,destination,category,projectTitle
   body:JSON.stringify({
    name:part.name,kind:"component",category:part.category||"Purchased parts",
    manufacturer:part.manufacturer||"",model:part.model||"",
-   partNumber:part.partNumber||"",quantity:0,unit:"pcs",stockStatus:"committed",
+   partNumber:part.model||"",quantity:0,unit:"pcs",stockStatus:"committed",
    notes:"Added from project "+projectTitle+"; inventory quantity not confirmed.",
    specifications:part.specifications||[]
   })
@@ -87,6 +87,17 @@ function open({onCreate,hideDefault=false}){
  const newText=el("span","library-workshop-choice-copy");
  newText.append(el("strong","","Create new"),document.createTextNode(" part"));
  newPartChoice.append(newPartRadio,newText,el("small","muted library-workshop-choice-description","Make a new part for this project"));
+ const quickSearch=el("div","library-workshop-quick-search hide");
+ const quickSearchLabel=el("label","library-workshop-search-label");
+ quickSearchLabel.append(el("span","","Search all Workshop items"));
+ const quickQuery=el("input","field");quickQuery.type="search";
+ quickQuery.placeholder="Search name or MPN, e.g. 2N7000";quickQuery.autocomplete="off";
+ quickQuery.setAttribute("aria-label","Search all Workshop items");
+ quickSearchLabel.append(quickQuery);
+ const quickResults=el("div","library-workshop-quick-results");
+ const quickCreate=el("button","btn library-workshop-quick-create","Not listed? Create a purchased part");
+ quickCreate.type="button";
+ quickSearch.append(quickSearchLabel,quickResults,quickCreate);
  const addToWorkshopChoice=el("label","library-workshop-first library-workshop-add");
  const addToWorkshopCheckbox=el("input");addToWorkshopCheckbox.type="checkbox";
  const addText=el("span","library-workshop-choice-copy");
@@ -106,11 +117,32 @@ function open({onCreate,hideDefault=false}){
  for(const [id,label] of [["tools","Tools & Equipment"],["consumables","Consumables & Supplies"],["electronics","Electronics & Components"],["hardware","Hardware & Materials"],["safety","Safety & Measurement"]])option(publicCategory.input,id,label);
  publicCategory.input.value="electronics";
  saveScope.append(publicCategory.label);
- const workshopAddHelp=el("p","muted library-workshop-add-help","Public Workshop items are shared with everyone. You'll be able to edit items you submit; other members cannot modify them.");
+ const workshopAddHelp=el("p","muted library-workshop-add-help","Public Workshop items are shared and may be edited by any signed-in member. Changes to existing items are checked for conflicts.");
  const customName=field("Part name");
  const itemKind=field("Item type","select");option(itemKind.input,"part","Part");option(itemKind.input,"document","Document");option(itemKind.input,"code","Code");
  const partClassification=field("Part type","select");option(partClassification.input,"purchased","Off-the-shelf");option(partClassification.input,"custom","Custom");
- const partNumberField=field("New part number");partNumberField.input.placeholder="Enter an existing / reserved number";partNumberField.input.maxLength=30;
+ const partNumberField=field("Project BOM number (not manufacturer's number)");
+ partNumberField.input.placeholder="Project-specific number, e.g. 100";partNumberField.input.maxLength=30;
+ const manufacturerName=field("Manufacturer");
+ manufacturerName.input.placeholder="e.g. onsemi (select actual manufacturer)";
+ manufacturerName.input.maxLength=160;
+ const manufacturerNumber=field("Manufacturer part number (MPN)");
+ manufacturerNumber.input.placeholder="e.g. 2N7000";manufacturerNumber.input.maxLength=160;
+ const vendorField=field("Suggested vendor","select");
+ for(const [id,label] of [["DigiKey","DigiKey"],["Mouser","Mouser"],["Newark","Newark"],["Arrow","Arrow"],["Other","Other / not yet selected"]])option(vendorField.input,id,label);
+ const vendorLinks=el("div","library-vendor-links muted");
+ const vendorInfo=el("p","muted library-vendor-info","Vendor links search by manufacturer part number. Confirm manufacturer, package, specifications, stock and price before ordering.");
+ const renderVendorLinks=()=>{
+  vendorLinks.replaceChildren();
+  const part=manufacturerNumber.input.value.trim();if(!part)return;
+  for(const [name,base] of [["DigiKey","https://www.digikey.com/en/products/result?keywords="],
+   ["Mouser","https://www.mouser.com/c/?q="]]){
+   const link=el("a","library-vendor-search-link",name+" search");
+   link.href=base+encodeURIComponent(part);link.target="_blank";link.rel="noopener noreferrer";
+   vendorLinks.append(link);
+  }
+ };
+ manufacturerNumber.input.oninput=renderVendorLinks;
  const numberChoice=el("fieldset","library-number-choice");
  const numberLegend=el("legend","","Part number");numberChoice.append(numberLegend);
  const autoNumberRow=el("label","library-auto-number");
@@ -119,7 +151,10 @@ function open({onCreate,hideDefault=false}){
  const manualNumberRow=el("label","library-auto-number");
  const manualNumberCheckbox=el("input");manualNumberCheckbox.type="radio";manualNumberCheckbox.name="new-part-number-mode";manualNumberCheckbox.value="manual";
  manualNumberRow.append(manualNumberCheckbox,document.createTextNode(" Enter a part number"));
- numberChoice.append(autoNumberRow,manualNumberRow);
+ const noNumberRow=el("label","library-auto-number");
+ const noNumberRadio=el("input");noNumberRadio.type="radio";noNumberRadio.name="new-part-number-mode";noNumberRadio.value="none";
+ noNumberRow.append(noNumberRadio,document.createTextNode(" No project BOM number (purchased part)"));
+ numberChoice.append(autoNumberRow,manualNumberRow,noNumberRow);
  const autoNumberHelp=el("p","muted library-auto-number-help","The number is assigned when you save. Numbers 001–099 are reserved for assemblies; parts begin at 100.");
  const chooser=el("div","library-picker-section hide");
  const category=field("Part category","select");
@@ -246,8 +281,8 @@ function open({onCreate,hideDefault=false}){
  chooser.append(category.label,wireModeChoice,wireSection,compSection);
  const workshopChoices=el("fieldset","library-workshop-choice-group");
  const workshopLegend=el("legend","","Part source");
- workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,addToWorkshopChoice,saveScope,workshopAddHelp);
- form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,numberChoice,autoNumberHelp,partNumberField.label,customName.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
+ workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,quickSearch,addToWorkshopChoice,saveScope,workshopAddHelp);
+ form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,customName.label,manufacturerName.label,manufacturerNumber.label,vendorField.label,vendorLinks,vendorInfo,numberChoice,autoNumberHelp,partNumberField.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],purchased=[],sharedOverrides={},personalItems=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
@@ -257,6 +292,50 @@ function open({onCreate,hideDefault=false}){
  const publishedRows=()=>Object.entries(sharedOverrides)
   .filter(([id,item])=>item?.created&&!workshopStandardRows().some(seed=>seed.id===id))
   .map(([id,item])=>({id,...item}));
+ const allSearchable=()=>[
+  ...commons.map(item=>({...item,origin:"saved"})),
+  ...purchased.map(item=>({...item,origin:"purchased"})),
+  ...workshopStandardRows().map(item=>({...item,origin:"standard"})),
+  ...publishedRows().map(item=>({...item,origin:"public"})),
+  ...personalItems.map(item=>({...item,origin:"mine"}))
+ ];
+ const renderQuickSearch=()=>{
+  quickResults.replaceChildren();
+  const query=quickQuery.value.trim().toLowerCase();
+  if(!query){quickResults.append(el("p","muted","Search the shared and personal Workshop before creating a new part."));return}
+  const found=allSearchable().filter(item=>
+   [item.name,item.partNumber,item.model,item.manufacturer,item.spec,item.detail]
+    .filter(Boolean).join(" ").toLowerCase().includes(query)).slice(0,15);
+  for(const item of found){
+   const choice=el("button","library-workshop-found-item");
+   choice.type="button";
+   choice.append(el("strong","",item.name),el("small","muted",
+    item.origin==="mine"?"My Workshop":item.origin==="public"||item.origin==="standard"?"Public Workshop":"Saved part"));
+   choice.onclick=()=>{
+    category.input.value=commonGroup(item);
+    powerType.input.value="all";
+    commonSearch.input.value="";
+    refreshCommon();
+    commonSelect.input.value=item.origin+":"+item.id;
+    status.textContent="Selected "+item.name+". Review the part details before saving.";
+    update();
+   };
+   quickResults.append(choice);
+  }
+  if(!found.length)quickResults.append(el("p","muted","No matching Workshop items."));
+ };
+ quickQuery.addEventListener("input",renderQuickSearch);
+ quickCreate.onclick=()=>{
+  const query=quickQuery.value.trim();
+  newPartRadio.checked=true;
+  if(query){customName.input.value=query;manufacturerNumber.input.value=query}
+  partClassification.input.value="purchased";
+  addToWorkshopCheckbox.checked=true;
+  publicCategory.input.value="electronics";
+  update();renderVendorLinks();
+  manufacturerNumber.input.focus();
+  status.textContent="New purchased part. Confirm its manufacturer, part number and supplier, then choose a Workshop.";
+ };
  const refreshCommon=()=>{
   const q=commonSearch.input.value.toLowerCase().trim(),cat=category.input.value,subtype=powerType.input.value;
   const saved=commons.filter(p=>commonGroup(p)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(p)===subtype));
@@ -299,6 +378,15 @@ function open({onCreate,hideDefault=false}){
   const lib=isPart&&workshopCheckbox.checked;
   const adding=isPart&&!lib&&addToWorkshopCheckbox.checked;
   if(adding)partClassification.input.value="purchased";
+  const purchased=!lib&&isPart&&partClassification.input.value==="purchased";
+  for(const label of [manufacturerName.label,manufacturerNumber.label,vendorField.label])
+   label.classList.toggle("hide",!purchased);
+  vendorLinks.classList.toggle("hide",!purchased);
+  vendorInfo.classList.toggle("hide",!purchased);
+  noNumberRow.classList.toggle("hide",!purchased);
+  if(!purchased&&noNumberRadio.checked)autoNumberCheckbox.checked=true;
+  manufacturerNumber.input.required=adding;
+  if(adding&&autoNumberCheckbox.checked)noNumberRadio.checked=true;
   workshopChoices.classList.toggle("hide",!isPart);
   addToWorkshopChoice.classList.toggle("hide",!isPart||lib);
   saveScope.classList.toggle("hide",!adding);
@@ -320,6 +408,7 @@ function open({onCreate,hideDefault=false}){
   autoNumberHelp.classList.toggle("hide",lib||!autoNumberCheckbox.checked);
   partNumberField.label.classList.toggle("hide",lib||autoNumberCheckbox.checked);
   partNumberField.input.required=!lib&&manualNumberCheckbox.checked;
+  quickSearch.classList.toggle("hide",!lib);
   chooser.classList.toggle("hide",!lib);
   wireSection.classList.toggle("hide",!lib||!wire);
   compSection.classList.toggle("hide",!lib||wire);
@@ -355,7 +444,7 @@ function open({onCreate,hideDefault=false}){
  newPartRadio.onchange=update;
  addToWorkshopCheckbox.onchange=update;
  privateRadio.onchange=update;publicRadio.onchange=update;
- itemKind.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;
+ itemKind.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;noNumberRadio.onchange=update;
  category.input.onchange=()=>{powerType.input.value="all";wireModeCheckbox.checked=false;update()};wireModeCheckbox.onchange=update;wireType.input.onchange=update;powerType.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
  form.addEventListener("submit",async e=>{
   e.preventDefault();
@@ -367,7 +456,12 @@ function open({onCreate,hideDefault=false}){
    const name=customName.input.value.trim();if(!name||name.length>100){status.textContent="Enter a part name (up to 100 characters).";return}
    const autoNumber=autoNumberCheckbox.checked;
    payload={name,quantity:itemKind.input.value==="code"?null:itemKind.input.value==="document"?1:count,specifications:[],itemType:itemKind.input.value==="code"?"document":itemKind.input.value,partType:itemKind.input.value==="code"?"code":partClassification.input.value,
-    assignNumber:autoNumber,partNumber:autoNumber?null:partNumberField.input.value.trim().toUpperCase()||null};
+    assignNumber:autoNumber,partNumber:autoNumber?null:noNumberRadio.checked?null:partNumberField.input.value.trim().toUpperCase()||null};
+   if(itemKind.input.value==="part"&&partClassification.input.value==="purchased"){
+    payload.manufacturer=manufacturerName.input.value.trim();
+    payload.model=manufacturerNumber.input.value.trim(); // Manufacturer MPN; never the project's issued part number.
+    payload.supplier=vendorField.input.value==="Other"?"":vendorField.input.value;
+   }
   }else if(!(category.input.value==="consumables"&&wireModeCheckbox.checked)){
    const choice=commonSelect.input.value;
    const isStandard=choice.startsWith("standard:"),isPurchased=choice.startsWith("purchased:");
@@ -417,6 +511,7 @@ function open({onCreate,hideDefault=false}){
    if(payload.itemType!=="part"||payload.partType!=="purchased"){
     status.textContent="Only purchased parts can be saved to a Workshop.";return;
    }
+   if(!payload.model){status.textContent="Enter the manufacturer part number before saving to a Workshop.";manufacturerNumber.input.focus();return}
    payload.addToWorkshop=publicRadio.checked?"public":"private";
    if(publicRadio.checked)payload.workshopCategory=publicCategory.input.value;
   }
@@ -439,7 +534,7 @@ function open({onCreate,hideDefault=false}){
   if(mine.status==="fulfilled")personalItems=mine.value.items||[];
   if(saved.status==="rejected"&&recorded.status==="rejected"&&shared.status==="rejected"&&mine.status==="rejected")
    status.textContent="Workshop items are unavailable; wire tools remain available.";
-  refreshCommon();
+  refreshCommon();renderQuickSearch();
  });
  itemKind.input.focus();
  });

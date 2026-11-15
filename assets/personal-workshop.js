@@ -448,7 +448,7 @@
    mount.replaceChildren();
    const form=el("form",undefined,"workshop-item-edit-form");
    const heading=el("div",undefined,"workshop-item-editor-heading");
-   heading.append(el("h3",isNew?"Create new catalog item":"Edit "+item.name),el("p","Public Workshop catalog · signed-in contributors can add and edit their own items","muted"));
+   heading.append(el("h3",isNew?"Create new catalog item":"Edit "+item.name),el("p","Public Workshop catalog · any signed-in member may edit shared items","muted"));
    form.append(heading);
    const grid=el("div",undefined,"workshop-item-edit-grid");
    // Reuse the New Part editor's canonical identity/additional/specification
@@ -583,7 +583,7 @@
     status.textContent=isNew?"Creating item…":"Saving…";save.disabled=true;
     try{
      const response=await req("/api/workshop-reference",isNew?"POST":"PUT",
-      isNew?{details}:{id:item.id,details});
+      isNew?{details}:{id:item.id,details,expectedRevision:item.revision||null});
      workshopOverrides[response.id]=response.details;
      if(isNew)editableReferenceIds.add(response.id);
      selectedFamily=details.familyId;selectedType="";

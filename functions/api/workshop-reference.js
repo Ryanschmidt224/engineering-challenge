@@ -1,4 +1,4 @@
-// Editable details for public Workshop reference items. Anyone with an account may submit new shared entries; editing stays owner/admin only.
+// Shared public Workshop references: any signed-in member can contribute and edit. R2 optimistic locking protects concurrent writes.
 // Reference IDs and authored defaults remain in assets/resources.js.
 import {isAdmin} from "./auth.js";
 import {accountUser} from "./accounts.js";
@@ -33,8 +33,8 @@ export async function onRequest({request,env}){
   const admin=await isAdmin(request,env);
   if(request.method==="GET"){
    const {value}=await read(env);
-   return json({items:value,canEdit:admin,canCreate:!!user||admin,
-    editableIds:admin?Object.keys(value):Object.keys(value).filter(id=>user&&value[id]?.ownerId===user.id)});
+   return json({items:value,canEdit:!!user||admin,canCreate:!!user||admin,
+    editableIds:user||admin?Object.keys(value):[]});
   }
   if(!user&&!admin)return json({error:"Sign in to contribute to the public Workshop"},401);
   if(request.headers.get("origin")!==url.origin)return json({error:"Invalid request origin"},403);
@@ -56,14 +56,7 @@ export async function onRequest({request,env}){
   if(!body||typeof body!=="object"||!body.details||typeof body.details!=="object")
    return json({error:"Item details are required"},400);
   if(!creating&&!validId(body.id))return json({error:"Invalid Workshop reference ID"},400);
-  // Seed records belong to the website. User-created records belong to their
-  // original contributor even if another user edits them later.
-  if(!creating){
-   const current=await read(env);
-   const saved=current.value[body.id];
-   if(!admin&&(!user||!saved?.created||saved.ownerId!==user.id))
-    return json({error:"Only the contributor or an administrator can edit this public item"},403);
-  }
+  // Shared records can be edited by any authenticated member; the original contributor remains recorded.
   const patch={};
   for(const [name,limit] of Object.entries(fields)){
    const val=body?.details?.[name];
@@ -88,8 +81,12 @@ export async function onRequest({request,env}){
    if(photos.some(x=>x.id===p.id))continue;
    const storedPhoto=await env.PHOTOS.head(photoKey(p.id));
    if(!storedPhoto)return json({error:"Photo was not uploaded"},400);
-   if(!admin&&storedPhoto.customMetadata?.ownerId!==user?.id)
-    return json({error:"Only attach photos you uploaded"},403);
+   // Existing reference photos can remain when another contributor edits text.
+   // Freshly attached photos must belong to the current member.
+   const currentValue=creating?null:(await read(env)).value[body.id];
+   const isExisting=Array.isArray(currentValue?.photos)&&currentValue.photos.some(entry=>entry.id===p.id);
+   if(!admin&&!isExisting&&storedPhoto.customMetadata?.ownerId!==user?.id)
+    return json({error:"Only attach photos you uploaded or photos already on this item"},403);
    photos.push({id:p.id,caption:String(p.caption||"").slice(0,180)});
   }
   patch.photos=photos;
@@ -100,13 +97,17 @@ export async function onRequest({request,env}){
    const {value,etag}=await read(env);
    if(Object.keys(value).length>=300&&!(id in value))return json({error:"Workshop index is full"},413);
    const previous=value[id];
-   if(!creating&&!admin&&(!previous?.created||previous.ownerId!==user?.id))
-    return json({error:"Only the contributor or an administrator can edit this public item"},403);
+   // New clients provide an item revision. Reject stale edits even if the
+   // R2 index itself has changed for an unrelated catalog item.
+   if(!creating&&Object.hasOwn(body,"expectedRevision")&&
+      (body.expectedRevision||null)!==(previous?.revision||null))
+    return json({error:"This public item changed since you opened it. Reload before saving."},409);
    const ownedCount=Object.values(value).filter(entry=>entry.ownerId===user?.id&&entry.created).length;
    if(creating&&user&&!admin&&ownedCount>=50)return json({error:"Public Workshop contribution limit reached"},413);
    const details={...patch,...((creating||previous?.created)?{created:true}:{}),
     ...(creating?(user?{ownerId:user.id}:{ownerId:"site-admin"}):
-      previous?.ownerId?{ownerId:previous.ownerId}:{})};
+      previous?.ownerId?{ownerId:previous.ownerId}:{}),
+    updatedAt:new Date().toISOString(),revision:crypto.randomUUID()};
    const next={...value,[id]:details};
    const options=etag?{onlyIf:{etagMatches:etag}}:{onlyIf:{etagDoesNotMatch:"*"}};
    const saved=await env.PHOTOS.put(indexKey,JSON.stringify(next),options);

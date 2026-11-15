@@ -45,11 +45,11 @@ test("public Workshop references are readable, but visitors cannot edit shared c
  assert.equal(result.status,401);
 });
 
-test("shared Workshop editing requires claimed admin role and preserves saved fields",async()=>{
+test("signed-in users may edit seeded public Workshop references and saved fields persist",async()=>{
  const env={PHOTOS:new TestBucket(),admin_password:"test-admin-secret"};
  const session=await register(env,"siteadmin@example.test");
  const before=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{id:"workshop:meter",details:{name:"Modified"}} ,session),env}));
- assert.equal(before.status,403); // Members cannot edit seeded catalog entries.
+ assert.equal(before.status,200); // Members may edit seeded public catalog entries.
  const claimed=await data(await handleAccounts(request("/api/accounts","POST",{action:"claim-admin",adminPassword:env.admin_password},session),env));
  assert.equal(claimed.status,200);
  assert.equal(claimed.body.user.role,"admin");
@@ -165,7 +165,7 @@ test("shared Workshop creation rejects incomplete categories, unsafe ordering UR
  assert.deepEqual(read.body.items,{});
 });
 
-test("any signed-in member may publish a public Workshop entry but cannot edit other people's entries",async()=>{
+test("signed-in members may publish and collaboratively edit public Workshop entries",async()=>{
  const env={PHOTOS:new TestBucket(),admin_password:"test-admin-secret"};
  const creator=await register(env,"maker-one@example.test");
  const other=await register(env,"maker-two@example.test");
@@ -180,19 +180,19 @@ test("any signed-in member may publish a public Workshop entry but cannot edit o
  assert.equal(created.body.details.created,true);
  const mine=await data(await workshopReference({request:request("/api/workshop-reference","GET",undefined,creator),env}));
  assert.equal(mine.body.canCreate,true);
- assert.equal(mine.body.canEdit,false);
+ assert.equal(mine.body.canEdit,true);
  assert.ok(mine.body.editableIds.includes(id));
  const theirs=await data(await workshopReference({request:request("/api/workshop-reference","GET",undefined,other),env}));
  assert.equal(theirs.body.canCreate,true);
- assert.ok(!theirs.body.editableIds.includes(id));
+ assert.ok(theirs.body.editableIds.includes(id));
  const blocked=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{
   id,details:{...details,name:"Hijacked"}
  },other),env}));
- assert.equal(blocked.status,403);
+ assert.equal(blocked.status,200);
  const seeded=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{
   id:"workshop:wire22",details:{name:"Edited seed"}
  },creator),env}));
- assert.equal(seeded.status,403);
+ assert.equal(seeded.status,200);
  const changed=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{
   id,details:{...details,name:"Revised sensor"}
  },creator),env}));
@@ -200,4 +200,25 @@ test("any signed-in member may publish a public Workshop entry but cannot edit o
  assert.equal(changed.body.details.name,"Revised sensor");
  const stillOwned=await data(await workshopReference({request:request("/api/workshop-reference","GET",undefined,creator),env}));
  assert.ok(stillOwned.body.editableIds.includes(id));
+});
+
+test("shared Workshop rejects stale saves without deleting another contributor's changes",async()=>{
+ const env={PHOTOS:new TestBucket(),admin_password:"test-admin-secret"};
+ const maker=await register(env,"revision-maker@example.test");
+ const editor=await register(env,"revision-editor@example.test");
+ const details={name:"2N7000 MOSFET",category:"electronics",kind:"component",
+  familyId:"community-electronics",familyName:"Community contributions",partNumber:"2N7000",photos:[]};
+ const first=await data(await workshopReference({request:request("/api/workshop-reference","POST",{details},maker),env}));
+ assert.equal(first.status,201);
+ const id=first.body.id,stamp=first.body.details.revision;
+ const changed=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{
+  id,details:{...details,name:"2N7000 N-channel MOSFET"},expectedRevision:stamp
+ },editor),env}));
+ assert.equal(changed.status,200);
+ const stale=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{
+  id,details:{...details,name:"Outdated entry"},expectedRevision:stamp
+ },maker),env}));
+ assert.equal(stale.status,409);
+ const check=await data(await workshopReference({request:request("/api/workshop-reference"),env}));
+ assert.equal(check.body.items[id].name,"2N7000 N-channel MOSFET");
 });
