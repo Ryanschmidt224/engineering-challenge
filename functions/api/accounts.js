@@ -99,9 +99,21 @@ export async function handleAccounts(request,env){
   if(emailObject)return json({error:"An account already exists for this email address",code:"EMAIL_IN_USE"},409);
   const id="u"+crypto.randomUUID().replace(/-/g,""),salt=b64(crypto.getRandomValues(new Uint8Array(16)));
   const user={id,email,role:"member",displayName:String(body.displayName||"").trim().slice(0,80)||email.split("@")[0],salt,passwordHash:await passwordHash(password,salt),sessionVersion:crypto.randomUUID()};
-  const claimed=await env.PHOTOS.put(await emailKey(email),JSON.stringify({id}),{onlyIf:{etagDoesNotMatch:"*"}});
-  if(!claimed)return json({error:"An account already exists for this email address",code:"EMAIL_IN_USE"},409);
-  await env.PHOTOS.put(userKey(id),JSON.stringify(user),{onlyIf:{etagDoesNotMatch:"*"}});
+  // Persist the account before publishing its email lookup. If the lookup fails,
+  // remove only this newly generated account so registration can be retried.
+  const stored=await env.PHOTOS.put(userKey(id),JSON.stringify(user),{onlyIf:{etagDoesNotMatch:"*"}});
+  if(!stored)throw Error("New account ID collision");
+  let claimed;
+  try{
+   claimed=await env.PHOTOS.put(await emailKey(email),JSON.stringify({id}),{onlyIf:{etagDoesNotMatch:"*"}});
+  }catch(error){
+   await env.PHOTOS.delete(userKey(id)).catch(()=>{});
+   throw error;
+  }
+  if(!claimed){
+   await env.PHOTOS.delete(userKey(id)).catch(()=>{});
+   return json({error:"An account already exists for this email address",code:"EMAIL_IN_USE"},409);
+  }
   return json({user:{id,email,displayName:user.displayName,role:"member"}},201,{"set-cookie":cookie(await createSession(user,env),30*86400)});
  }
  if(!emailObject)return json({error:"Invalid email or password"},401);
@@ -112,4 +124,12 @@ export async function handleAccounts(request,env){
  return json({user:{id:user.id,email,displayName:user.displayName,role:user.role==="admin"?"admin":"member"}},200,{"set-cookie":cookie(await createSession(user,env),30*86400)});
 }
 
-export async function onRequest({request,env}){return handleAccounts(request,env)}
+export async function onRequest({request,env}){
+ try{return await handleAccounts(request,env)}
+ catch(error){
+  const reference=crypto.randomUUID();
+  // Logs retain diagnostic detail; the public response never exposes credentials.
+  console.error("Account API failure",reference,error?.stack||String(error));
+  return json({error:"The account service encountered an unexpected error. Contact the website administrator with the reference number.",code:"ACCOUNT_UNEXPECTED_ERROR",reference},500);
+ }
+}
