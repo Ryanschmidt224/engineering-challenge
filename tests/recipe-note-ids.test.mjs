@@ -8,6 +8,7 @@ const source=readFileSync("functions/api/workspace.js","utf8")
  .replace(/^import .*;\s*$/gm,"").replace(/^export /gm,"");
 const handleWorkspace=runInNewContext(source+"\nhandleWorkspace;",{
  Request,Response,URL,crypto:{randomUUID},isAdmin:async()=>true,
+ projectAllowed:async()=>true,canEditProject:async()=>true,
  console,Date,JSON,Number,String,Array,Object,Map,Set,RegExp
 });
 const path="/api/workspace?project=launcher&assembly=__root__";

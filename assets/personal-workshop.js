@@ -79,10 +79,10 @@
   const results=$("#workshop-recommend-search",shared);
   results.placeholder="Search wire, ferrules, oscilloscope, MOSFET…";
   results.after(catalog);
-  const categoryFor=item=>{
+  function categoryFor(item){
    const found=workshopCategories.find(([, ,ids])=>ids?.includes(item.id));
    return found?.[0]||item.category||"other";
-  };
+  }
   const categoryLabelFor=item=>workshopCategories.find(([key])=>key===categoryFor(item))?.[1]||"Other";
   const friendlyTier=item=>item.tier==="core"?"Beginner / essential":"Additional / specialized";
   // Catalog illustrations where a verified product image is not available.

@@ -10,11 +10,12 @@ test("work instructions expose one Add step action rather than separate preview 
  assert.doesNotMatch(site,/Preview steps|Hide preview/);
  assert.match(recipe,/el\("details","recipe-one-step"\)/);
 });
-test("optional step fields appear only when populated or explicitly added",()=>{
+test("optional step text appears only when populated",()=>{
  const recipe=readFileSync("assets/recipe-editor.js","utf8");
- assert.match(recipe,/if\(present\)/);
+ assert.match(recipe,/if\(hasDetail\)/);
+ assert.match(recipe,/if\(step\.standard\.trim\(\)\)/);
+ assert.match(recipe,/if\(step\.detail\.trim\(\)\)/);
  assert.match(recipe,/\+ Add /);
- assert.match(recipe,/step\[property\]/);
  assert.match(recipe,/getData:\(\)=>steps\.map\(normalize\)/);
  assert.doesNotMatch(recipe,/Previous written instructions|Original written instructions/);
 });

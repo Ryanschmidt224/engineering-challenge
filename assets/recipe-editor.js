@@ -310,35 +310,36 @@
     const name=el("span","recipe-one-step-title",(i+1)+". "+(step.title||"Untitled step"));
     summary.append(name);
     if(step.kind!=="action")summary.append(el("small","recipe-kind-caption",kinds.find(k=>k[0]===step.kind)?.[1]||step.kind));
+    const saveStep=async event=>{
+     event.preventDefault();event.stopPropagation();
+     if(!editing.has(step.id)){
+      editing.add(step.id);expanded=step.id;render();
+      return;
+     }
+     if(saving)return;
+     if(pendingUploads){feedback.textContent="Wait for photo uploads to finish before saving.";return}
+     if(!step.title.trim()){
+      feedback.textContent="Enter a step name before saving.";
+      card.querySelector(".recipe-one-field input")?.focus();
+      return;
+     }
+     const edit=card.querySelector(".recipe-step-edit-toggle");
+     const bottomSave=card.querySelector(".recipe-save-step-bottom");
+     saving=true;if(edit){edit.disabled=true;edit.textContent="Saving…"}
+     if(bottomSave){bottomSave.disabled=true;bottomSave.textContent="Saving…"}
+     try{
+      if(typeof options.onSave!=="function")throw Error("Save is unavailable.");
+      await options.onSave();
+      dirty=false;window.BSTransient?.show(feedback,"Step saved.");
+      editing.delete(step.id);expanded=step.id;render();
+     }catch(error){
+      feedback.textContent=error.message||"Could not save step.";
+      if(edit){edit.disabled=false;edit.textContent="Save"}
+      if(bottomSave){bottomSave.disabled=false;bottomSave.textContent="Save"}
+     }finally{saving=false}
+    };
     if(admin()){
-     const edit=button(editing.has(step.id)?"Save":"Edit",async event=>{
-      event.preventDefault();event.stopPropagation();
-      if(!editing.has(step.id)){
-       editing.add(step.id);expanded=step.id;render();
-       return;
-      }
-      if(saving)return;
-      if(pendingUploads){feedback.textContent="Wait for photo uploads to finish before saving.";return}
-      if(!step.title.trim()){
-       feedback.textContent="Enter a step name before saving.";
-       card.querySelector(".recipe-one-field input")?.focus();
-       return;
-      }
-      const bottomSave=card.querySelector(".recipe-save-step-bottom");
-      saving=true;edit.disabled=true;edit.textContent="Saving…";
-      if(bottomSave){bottomSave.disabled=true;bottomSave.textContent="Saving…"}
-      try{
-       if(typeof options.onSave!=="function")throw Error("Save is unavailable.");
-       await options.onSave();
-       dirty=false;window.BSTransient?.show(feedback,"Step saved.");
-       editing.delete(step.id);expanded=step.id;render();
-      }catch(error){
-       feedback.textContent=error.message||"Could not save step.";
-       edit.disabled=false;edit.textContent="Save";
-       if(bottomSave){bottomSave.disabled=false;bottomSave.textContent="Save"}
-      }finally{saving=false}
-     },"btn recipe-step-edit-toggle");
-     edit.addEventListener("click",event=>{event.preventDefault();event.stopPropagation()});
+     const edit=button(editing.has(step.id)?"Save":"Edit",saveStep,"btn recipe-step-edit-toggle");
      summary.append(edit);
     }
     // Step selection happens in the navigation list; keep the detail panel open.
@@ -457,7 +458,7 @@
      const up=button("↑",()=>move(i,-1));up.disabled=i===0;up.title="Move up";
      const down=button("↓",()=>move(i,1));down.disabled=i===steps.length-1;down.title="Move down";
      const remove=button("Remove",()=>{if(!confirm("Remove this step?"))return;steps.splice(i,1);editing.delete(step.id);expanded=null;changed();saveHint();render()});
-     const bottomSave=button("Save",()=>edit.click(),"btn primary recipe-save-step-bottom");
+     const bottomSave=button("Save",saveStep,"btn primary recipe-save-step-bottom");
      actions.append(up,down,remove,bottomSave);body.append(actions);
     }else{
      const displayed=el("div","recipe-reader-text");

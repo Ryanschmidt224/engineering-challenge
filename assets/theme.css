@@ -40,9 +40,13 @@
   --color-danger: #a83f3e;
   --color-success: #2e7554;
   --color-warning: #956913;
+  --color-danger-strong: #a83d3d;
+  --color-danger-alert: #ae4141;
+  --color-danger-action: #a52d35;
 
   --color-media-backdrop: #13201b;
   --color-shadow: #1b3129;
+  --color-shadow-base: #000000;
 
   /* Short aliases used by the original core components. */
   --panel: var(--color-surface);

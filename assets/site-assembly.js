@@ -1888,7 +1888,8 @@ function setupAssemblyTrees(){
     const row=document.createElement("div");row.className="row component-spec-row";
     const name=document.createElement("input"),value=document.createElement("input"),source=document.createElement("select"),remove=document.createElement("button");
     name.className=value.className="field";name.placeholder="Specification";value.placeholder="Value";
-    for(const entry of ["explicit","inferred"]){const option=document.createElement("option");option.value=entry;option.textContent=entry==="explicit"?"Stated in listing":"Inferred";source.append(option)}
+    source.className="field component-spec-source";source.setAttribute("aria-label","Specification source");
+    for(const entry of ["explicit","inferred"]){const option=document.createElement("option");option.value=entry;option.textContent=entry==="explicit"?"✓ From product listing":"◇ Estimated / inferred";source.append(option)}
     remove.className="btn";remove.type="button";remove.textContent="Remove";remove.onclick=()=>row.remove();
     row.append(name,value,source,remove);container.append(row);
     bomRoot()?.querySelector(".component-review")?.classList.remove("hide");
@@ -2167,7 +2168,7 @@ function setupAssemblyTrees(){
   async function renderRootPhotos(){await rootPhotoController.refresh()}
   function renderTiles(){
    const target=bomPictureMount;
-   target.replaceChildren();const children=nodes.filter(n=>n.parentId===selected&&(showBomDocuments||!isDocumentNode(n)));
+   target.replaceChildren();const children=nodes.filter(n=>n.parentId===selected&&(!isPartNode(n)||!isToolNode(n))&&(showBomDocuments||!isDocumentNode(n)));
    
    if(!children.length)return;
    const bomGrid=document.createElement("div");bomGrid.className="assembly-tile-grid";
@@ -2269,7 +2270,14 @@ function setupAssemblyTrees(){
   const closeTreeMenu=()=>{treeMenu.hidden=true;menuTarget=null;treeMenu.replaceChildren()};
   document.addEventListener("pointerdown",event=>{if(!treeMenu.hidden&&!treeMenu.contains(event.target))closeTreeMenu()});
   document.addEventListener("keydown",event=>{if(event.key==="Escape")closeTreeMenu()});
-  window.addEventListener("hashchange",closeTreeMenu);
+  window.addEventListener("hashchange",()=>{
+   closeTreeMenu();
+   if(isProjectSummary()){
+    selected=null;
+    render();
+    void showAssemblyPage();
+   }
+  });
   const useTreeTarget=node=>{
    // Context menu on a part acts on its containing assembly for Add actions.
    selected=isPartNode(node)?node.parentId:(node?.id??null);
