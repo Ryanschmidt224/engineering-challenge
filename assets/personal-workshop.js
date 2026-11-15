@@ -96,7 +96,7 @@
   #commonparts .workshop-item-title-line{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
   #commonparts .workshop-item-edit-button{white-space:nowrap}
   #commonparts .workshop-catalog-photo-thumb img{height:100%;width:100%;object-fit:contain;border-radius:inherit}
-  #commonparts .workshop-reference-hero-image{display:block;width:100%;max-height:340px;object-fit:contain;background:var(--color-surface-muted);border:1px solid var(--color-border);border-radius:5px}
+  #commonparts .workshop-item-photo-gallery{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 0}\n  #commonparts .workshop-item-photo-choice{padding:4px;border:1px solid var(--color-border);border-radius:5px;background:var(--color-surface);cursor:pointer}\n  #commonparts .workshop-item-photo-choice:hover{border-color:var(--color-accent)}\n  #commonparts .workshop-item-photo-choice img{display:block;width:72px;height:60px;object-fit:contain}\n  #commonparts .workshop-reference-hero-image{display:block;width:100%;max-height:340px;object-fit:contain;background:var(--color-surface-muted);border:1px solid var(--color-border);border-radius:5px}
   #commonparts .workshop-reference-related-photo{width:100%;height:80px;object-fit:contain;background:var(--color-surface-muted)}
   #commonparts .workshop-reference-order-link,#commonparts .workshop-reference-doc-link{display:inline-block;margin:8px 8px 0 0;text-decoration:none}
   #commonparts .workshop-item-editor-mount:not(:empty){margin-top:28px}
@@ -390,6 +390,18 @@
    }
 
    hero.append(big,info);itemPage.append(hero);
+   if(item.photos?.length>1){
+    const gallery=el("div",undefined,"workshop-item-photo-gallery");
+    for(const photo of item.photos){
+     const select=itemButton("",()=>{
+      const view=big.querySelector("img");
+      if(view){view.src="/api/workshop-reference?photo="+encodeURIComponent(photo.id);view.alt=photo.caption||item.name}
+     },"workshop-item-photo-choice");
+     const thumb=el("img");thumb.src="/api/workshop-reference?photo="+encodeURIComponent(photo.id);
+     thumb.alt=photo.caption||"Select item photo";select.append(thumb);gallery.append(select);
+    }
+    itemPage.append(gallery);
+   }
    const related=standards().filter(x=>x.id!==id&&familyFor(x)?.id===familyFor(item)?.id);
    const editorMount=el("div",undefined,"workshop-item-editor-mount");
    itemPage.append(editorMount);
