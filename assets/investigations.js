@@ -183,7 +183,7 @@
    },"btn primary");
    const actions=make("div","investigation-edit-actions");
    const deleteBtn=btn("Delete",async()=>{
-    if(!confirm('Delete "'+record.title+'"? This removes the revision record and its notes from the project.'))return;
+    if(!await window.BSDialogs.danger('Delete "'+record.title+'"? This removes the revision record and its notes from the project.',{title:"Delete revision?"}))return;
     deleteBtn.disabled=true;saveBtn.disabled=true;
     try{await save({action:"deleteRecord",id:record.id});reportHere("Revision deleted.")}
     catch(error){reportHere(error.message);deleteBtn.disabled=false;saveBtn.disabled=false}
