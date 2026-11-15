@@ -64,6 +64,19 @@
   #commonparts .workshop-catalog-detail{border-top:1px solid var(--color-border,#ddd);padding:14px 18px 16px 26px;background:var(--color-page,#fff);font-size:.85rem}
   #commonparts .workshop-catalog-detail p{margin:0 0 8px}
   #commonparts .workshop-catalog-detail[hidden]{display:none!important}
+
+  #commonparts .workshop-family-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:12px;margin-top:10px}
+  #commonparts .workshop-family-tile{display:flex;align-items:flex-start;gap:14px;min-height:114px;padding:14px;border:1px solid var(--color-border);border-radius:5px;background:var(--color-surface);text-align:left;color:var(--color-text);cursor:pointer}
+  #commonparts .workshop-family-tile:hover,#commonparts .workshop-family-tile:focus-visible{background:var(--color-hover);border-color:var(--color-accent)}
+  #commonparts .workshop-family-tile .workshop-catalog-thumb{width:88px;height:88px;flex:none}
+  #commonparts .workshop-family-tile .workshop-catalog-thumb svg{width:72px;height:72px}
+  #commonparts .workshop-family-text{display:flex;flex-direction:column;gap:7px;min-width:0}
+  #commonparts .workshop-family-text strong{font-size:.96rem;line-height:1.3}
+  #commonparts .workshop-family-text small{font-size:.8rem;line-height:1.4}
+  #commonparts .workshop-family-count{font-size:.75rem;color:var(--color-text-muted)}
+  #commonparts .workshop-family-back{font:inherit;font-size:.85rem;font-weight:650;color:var(--color-accent);border:0;background:transparent;padding:6px 0;cursor:pointer}
+  #commonparts .workshop-family-description{font-size:.85rem;color:var(--color-text-muted);margin:4px 0 14px}
+  @media(max-width:650px){#commonparts .workshop-family-grid{grid-template-columns:1fr}}
   #commonparts .workshop-catalog-thumb-action{border:0;padding:0;background:transparent;cursor:pointer;text-align:left}
   #commonparts .workshop-catalog-thumb-action:focus-visible{outline:2px solid var(--color-accent);outline-offset:3px}
   #commonparts .workshop-item-page[hidden],#commonparts .workshop-item-side[hidden]{display:none!important}
@@ -174,7 +187,7 @@
   };
   const nav=window.BSCatalogUI?.categories(sidebar,{
    heading:"Browse Workshop",
-   onChange:key=>{selectedWorkshopCategory=key;applyWorkshopCategory();queueMicrotask(()=>root.querySelector(".workshop-catalog-sort")?.dispatchEvent(new Event("change")))}
+   onChange:key=>{selectedWorkshopCategory=key;selectedFamily="";applyWorkshopCategory();queueMicrotask(()=>root.querySelector(".workshop-catalog-sort")?.dispatchEvent(new Event("change")))}
   });
   nav?.setItems([{value:"all",label:"All workshop items"},
    ...workshopCategories.map(([id,name])=>({value:id,label:name})),
@@ -187,6 +200,9 @@
   });
   applyWorkshopCategory();
   const standards=()=>window.BSResources?.workshopReferences||[];
+  const families=()=>window.BSResources?.workshopGroups||[];
+  const familyFor=item=>families().find(g=>g.items.includes(item.id));
+  let selectedFamily="";
   // McMaster-style catalog: category on the left, quick-filtered item table on
   // the right, and specifications expanded in context. All records are the
   // existing curated Workshop references; this does not scrape third parties.
@@ -284,6 +300,7 @@
    sideRow("Typical use",item.use);
    sideRow("Considerations",item.caution);
    sideRow("Level",friendlyTier(item));
+   sideRow("Product family",familyFor(item)?.label);
    itemSide.append(itemButton("+ Add to My Workshop",()=>addReference(item),"btn primary workshop-item-side-action"));
    if(item.source&&/^https:\/\//.test(item.source)){
     const link=el("a","Manufacturer reference","workshop-item-source");
@@ -292,7 +309,10 @@
    const crumb=el("nav",undefined,"workshop-item-breadcrumb");
    crumb.setAttribute("aria-label","Workshop item breadcrumb");
    crumb.append(itemButton("Workshop",()=>closeItem(),"workshop-item-crumb-link"));
-   crumb.append(el("span"," / "+categoryLabelFor(item)+" / "+item.name));
+   crumb.append(el("span"," / "+categoryLabelFor(item)+" / "));
+   const family=familyFor(item);
+   if(family)crumb.append(itemButton(family.label,()=>{closeItem();selectedFamily=family.id;renderCatalog();},"workshop-item-crumb-link"));
+   crumb.append(el("span"," / "+item.name));
    itemPage.append(crumb);
    const header=el("div",undefined,"workshop-item-page-heading");
    header.append(el("h2",item.name));
@@ -306,9 +326,9 @@
    info.append(el("p","This reference does not imply you own the item.","muted"));
    info.append(itemButton("+ Add to My Workshop",()=>addReference(item),"btn primary"));
    hero.append(big,info);itemPage.append(hero);
-   const related=standards().filter(x=>x.id!==id&&categoryFor(x)===categoryFor(item));
+   const related=standards().filter(x=>x.id!==id&&familyFor(x)?.id===familyFor(item)?.id);
    const relatedSection=el("section",undefined,"workshop-item-related");
-   relatedSection.append(el("h3","Other selections in "+categoryLabelFor(item)));
+   relatedSection.append(el("h3","Other selections in "+(familyFor(item)?.label||categoryLabelFor(item))));
    const grid=el("div",undefined,"workshop-item-related-grid");
    for(const other of related){
     const tile=itemButton("",()=>showItem(other.id),"workshop-item-related-choice");
@@ -331,14 +351,52 @@
    const query=results.value.trim().toLowerCase(),sort=$(".workshop-catalog-sort",catalog).value;
    const list=$(".workshop-catalog-list",catalog);
    list.replaceChildren();
-   const matched=standards().filter(item=>(selectedWorkshopCategory==="all"||categoryFor(item)===selectedWorkshopCategory)&&
-    [item.name,item.subtitle,item.spec,item.use,item.kind,item.category,categoryLabelFor(item)].join(" ").toLowerCase().includes(query));
+   const allowed=item=>selectedWorkshopCategory==="all"||categoryFor(item)===selectedWorkshopCategory;
+   const byCategory=standards().filter(allowed);
+   const matched=byCategory.filter(item=>(!selectedFamily||familyFor(item)?.id===selectedFamily)&&
+    [item.name,item.subtitle,item.spec,item.use,item.kind,item.category,categoryLabelFor(item),familyFor(item)?.label]
+     .join(" ").toLowerCase().includes(query));
+   const familyGrid=families().map(group=>({...group,visible:byCategory.filter(item=>group.items.includes(item.id))}))
+    .filter(group=>group.visible.length);
+   const count=$(".workshop-catalog-count",catalog);
+   const title=$(".workshop-catalog-bar h3",catalog);
+   if(!selectedFamily&&!query){
+    title.textContent="Browse product families";
+    count.textContent=familyGrid.length+" groups · "+byCategory.length+" reference items";
+    const grid=el("div",undefined,"workshop-family-grid");
+    for(const group of familyGrid){
+     const tile=el("button",undefined,"workshop-family-tile");tile.type="button";
+     const sample=group.visible[0];
+     tile.append(catalogThumb(sample));
+     const text=el("span",undefined,"workshop-family-text");
+     text.append(el("strong",group.label),el("small",group.description,"muted"),
+      el("span",group.visible.length+" items","workshop-family-count"));
+     tile.append(text);
+     tile.onclick=()=>{selectedFamily=group.id;renderCatalog();catalog.scrollIntoView({block:"start"})};
+     grid.append(tile);
+    }
+    list.append(grid);
+    return;
+   }
+   const family=families().find(group=>group.id===selectedFamily);
+   title.textContent=family?.label||"Search Workshop";
+   if(selectedFamily){
+    const back=el("button","← All product families","workshop-family-back");back.type="button";
+    back.onclick=()=>{selectedFamily="";renderCatalog()};
+    list.append(back);
+    if(family)list.append(el("p",family.description,"workshop-family-description"));
+   }else if(query){
+    const clear=el("button","Show product families","workshop-family-back");clear.type="button";
+    clear.onclick=()=>{results.value="";renderCatalog()};
+    list.append(clear);
+   }
    matched.sort((a,b)=>{
-    const col=sort==="type"?(String(a.kind||"").localeCompare(String(b.kind||""))):sort==="level"?(String(a.tier||"").localeCompare(String(b.tier||""))):0;
+    const col=sort==="type"?String(a.kind||"").localeCompare(String(b.kind||"")):
+     sort==="level"?String(a.tier||"").localeCompare(String(b.tier||"")):0;
     return col||a.name.localeCompare(b.name,undefined,{numeric:true});
    });
-   $(".workshop-catalog-count",catalog).textContent=matched.length+" reference items"+(query?" matching search":"");
-   if(!matched.length){list.append(el("p","No matching catalog items. Try another search or category.","muted"));return}
+   count.textContent=matched.length+" matching items";
+   if(!matched.length){list.append(el("p","No matching items. Change the search or product family.","muted"));return}
    const heading=el("div",undefined,"workshop-catalog-columns");
    for(const t of ["Image","Item / description","Category","Recommended use",""])heading.append(el("span",t));
    list.append(heading);
