@@ -894,7 +894,7 @@
    };
    const uploadRow=el("div",undefined,"workshop-item-photo-upload");
    const picker=el("input");picker.type="file";picker.accept="image/jpeg,image/png,image/webp";
-   picker.multiple=true;picker.setAttribute("aria-label","Upload item photos");
+   picker.multiple=true;picker.setAttribute("aria-label","Choose item photos");picker.hidden=true;
    const uploadStatus=el("p","","muted");
    const uploadFiles=async files=>{
     const images=[...files].filter(file=>["image/jpeg","image/png","image/webp"].includes(file.type));
@@ -913,7 +913,11 @@
     }catch(error){uploadStatus.textContent=error.message}
     finally{upload.disabled=false}
    };
-   const upload=itemButton("Upload photos",()=>uploadFiles(picker.files||[]));
+   const upload=itemButton("Add photos",()=>picker.click(),"btn");
+   upload.type="button";
+   picker.addEventListener("change",()=>{
+    if(picker.files?.length)void uploadFiles(picker.files);
+   });
    const pasteZone=el("div","Right-click here and choose Paste to add a copied photo (or press Ctrl+V).","workshop-photo-paste-zone");
    pasteZone.contentEditable="true";
    pasteZone.setAttribute("role","textbox");
