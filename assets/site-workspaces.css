@@ -1144,3 +1144,16 @@
  }
 }
 
+
+/* Purchased-part discovery: search before selecting a category or issuing a BOM number. */
+.library-workshop-quick-search{display:grid;gap:8px;padding:10px 12px;border:1px solid var(--color-border);border-radius:8px}
+.library-workshop-search-label{display:grid;gap:6px;font-size:.85rem;font-weight:700}
+.library-workshop-search-label input{font-weight:400}
+.library-workshop-quick-results{display:grid;gap:6px;max-height:230px;overflow:auto}
+.library-workshop-found-item{display:flex;align-items:center;justify-content:space-between;text-align:left;gap:12px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:6px;padding:9px 11px;cursor:pointer}
+.library-workshop-found-item:hover,.library-workshop-found-item:focus-visible{border-color:var(--color-accent)}
+.library-workshop-found-item small{white-space:nowrap;font-size:.72rem}
+.library-workshop-quick-create{justify-self:start;font-size:.82rem}
+.library-vendor-links{display:flex;flex-wrap:wrap;gap:12px;margin:-5px 0 2px}
+.library-vendor-search-link{font-size:.84rem;text-decoration:underline}
+.library-vendor-info{margin:-4px 0 3px;font-size:.77rem;line-height:1.4}
