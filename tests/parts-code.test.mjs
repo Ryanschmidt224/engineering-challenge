@@ -197,3 +197,41 @@ test("Progress operations can be added as blank editable steps and edited in pla
  assert.equal(response.status,200);
  assert.equal((await response.json()).component.progressUpdates.length,3);
 });
+
+test("supplier entries preserve distinct distributor order codes and legacy Amazon ASINs",async()=>{
+ const {env,req}=await setup();
+ const basePath="/api/components?project=launcher";
+ const offers=[
+  {vendor:"digikey",sku:"KE1102-ND",url:"https://www.digikey.com/en/products/detail/example/123"},
+  {vendor:"mcmaster",sku:"91290A115",url:""},
+  {vendor:"amazon",sku:"B0149K4JTY",url:""}
+ ];
+ let response=await handleComponents(req(basePath,"POST",{
+  name:"Solder wire",partType:"purchased",itemType:"part",
+  quantity:1,quantityUnit:"pcs",specifications:[],supplierOffers:offers,asin:"B0149K4JTY"
+ }),env);
+ assert.equal(response.status,201);
+ const created=(await response.json()).component;
+ assert.deepEqual(created.supplierOffers,offers);
+ assert.equal(created.asin,"B0149K4JTY");
+ const id=created.id;
+ response=await handleComponents(req(basePath+"&id="+id,"PUT",{
+  name:"Solder wire",partType:"purchased",itemType:"part",quantity:1,quantityUnit:"pcs",
+  manufacturer:"Kester",model:"",supplier:"",asin:"B0149K4JTY",specifications:[],
+  supplierOffers:offers.slice(1)
+ }),env);
+ assert.equal(response.status,200);
+ const updated=(await response.json()).component;
+ assert.equal(updated.supplierOffers.length,2);
+ assert.equal(updated.asin,"B0149K4JTY");
+ response=await handleComponents(req(basePath+"&id="+id,"PUT",{
+  name:"Solder wire",partType:"purchased",itemType:"part",quantity:1,quantityUnit:"pcs",
+  specifications:[],supplierOffers:[{vendor:"digikey",sku:"bad",url:"https://amazon.com/dp/B0149K4JTY"}]
+ }),env);
+ assert.equal(response.status,400);
+ response=await handleComponents(req(basePath,"POST",{
+  name:"Invalid link",specifications:[],
+  supplierOffers:[{vendor:"other",sku:"bad",url:"javascript:alert(1)"}]
+ }),env);
+ assert.equal(response.status,400);
+});
