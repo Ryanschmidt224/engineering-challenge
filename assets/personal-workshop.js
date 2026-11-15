@@ -234,10 +234,7 @@
    itemPage.append(el("p","My Workshop / "+item.name,"workshop-item-breadcrumb"));
    const head=el("div",undefined,"workshop-item-title-line");
    head.append(el("h2",item.name));
-   head.append(itemButton("Edit item",()=>{
-    closeItem();nav?.select("mine");fill(item);
-    $("#workshop-editor",personal)?.scrollIntoView({block:"start"});
-   },"btn primary workshop-item-edit-button"));
+
    itemPage.append(head);
    const hero=el("div",undefined,"workshop-item-hero");
    if(item.photoId){
@@ -312,9 +309,7 @@
    const header=el("div",undefined,"workshop-item-page-heading");
    const titleLine=el("div",undefined,"workshop-item-title-line");
    titleLine.append(el("h2",item.name));
-   titleLine.append(itemButton(canEditReferences?"Edit shared catalog":"Edit My Workshop item",()=>{
-    if(canEditReferences)openItemEditor(item);else editPersonalReference(item);
-   },"btn primary workshop-item-edit-button"));
+
    header.append(titleLine);
    if(item.subtitle)header.append(el("p",item.subtitle,"muted"));
    itemPage.append(header);
@@ -332,15 +327,6 @@
    }
    const info=el("div",undefined,"workshop-item-hero-info");
    info.append(el("h3","Workshop item details"));
-   const controls=el("div",undefined,"workshop-detail-edit-actions");
-   if(canEditReferences){
-    controls.append(itemButton("Edit shared item",()=>openItemEditor(item),"btn primary workshop-item-edit-button"));
-    if(accountSignedIn)controls.append(itemButton("Edit My Workshop copy",()=>editPersonalReference(item),"btn"));
-   }else{
-    controls.append(itemButton(accountSignedIn?"Edit item in My Workshop":"Sign in to edit item",
-     ()=>editPersonalReference(item),"btn primary workshop-item-edit-button"));
-   }
-   info.append(controls);
    const specs=el("table",undefined,"workshop-spec-table");
    const specBody=el("tbody");
    const specRows=[
@@ -362,7 +348,7 @@
    const owned=ownedFor(item);
    if(owned.length){
     info.append(el("p",ownershipLabel(owned),"workshop-owned-note"));
-    info.append(itemButton("Edit My Workshop item",()=>editPersonalReference(item),"btn"));
+    info.append(itemButton("View in My Workshop",()=>showPersonalItem(owned[0].id),"btn workshop-personal-record-link"));
    }else info.append(el("p","This reference does not imply you own the item.","muted"));
    info.append(itemButton("+ Add to My Workshop",()=>addReference(item),"btn primary"));
    if(item.supplierUrl){
@@ -376,9 +362,8 @@
 
    const mediaWithEdit=el("div",undefined,"workshop-item-media-actions");
    mediaWithEdit.append(big);
-   mediaWithEdit.append(itemButton("Edit",()=>canEditReferences?openItemEditor(item):editPersonalReference(item),"btn primary workshop-under-image-edit"));
-   if(canEditReferences&&accountSignedIn)
-    mediaWithEdit.append(itemButton("Edit My Workshop copy",()=>editPersonalReference(item),"btn"));
+   if(canEditReferences)
+    mediaWithEdit.append(itemButton("Edit",()=>openItemEditor(item),"btn workshop-under-image-edit"));
    hero.append(mediaWithEdit,info);itemPage.append(hero);
    if(item.photos?.length>1){
     const gallery=el("div",undefined,"workshop-item-photo-gallery");
@@ -455,26 +440,44 @@
    heading.append(el("h3",isNew?"Create new catalog item":"Edit "+item.name),el("p","Shared Workshop catalog · administrator only","muted"));
    form.append(heading);
    const grid=el("div",undefined,"workshop-item-edit-grid");
-   const descriptors=[
-    ["name","Item name","text"],["subtitle","Short description","text"],
-    ["manufacturer","Manufacturer","text"],["model","Model","text"],
-    ["partNumber","Manufacturer part number","text"],["supplier","Supplier","text"],
-    ["supplierUrl","Supplier / ordering URL","url"],["asin","Amazon ASIN","text"],
-    ["price","Reference price","text"],["packageQuantity","Quantity / package","text"],
-    ["documentationUrl","Documentation URL","url"],
-    ["typeName","Product type (e.g. Multimeters)","text"],
-    ["spec","Specifications","textarea"],["use","Typical use","textarea"],
-    ["caution","Important considerations","textarea"],["orderNotes","How to order","textarea"],
-    ["notes","Additional notes","textarea"]
+   // Reuse the New Part editor's canonical identity/additional/specification
+   // sections and fields order, keeping Workshop-specific ordering fields.
+   const fieldDescriptors={
+    name:["Item name","text"],subtitle:["Short description","text"],
+    manufacturer:["Manufacturer","text"],model:["Model","text"],
+    partNumber:["Manufacturer part number","text"],supplier:["Supplier","text"],
+    supplierUrl:["Supplier / ordering URL","url"],asin:["Amazon ASIN","text"],
+    price:["Reference price","text"],packageQuantity:["Quantity / package","text"],
+    documentationUrl:["Documentation URL","url"],typeName:["Product type (e.g. Multimeters)","text"],
+    spec:["Specifications","textarea"],use:["Typical use","textarea"],
+    caution:["Important considerations","textarea"],orderNotes:["How to order","textarea"],
+    notes:["Additional notes","textarea"]
+   };
+   const sectionFields=window.BSPartFields?.sectionFields;
+   const sections=[
+    ["identity","Part details",["name","subtitle","partNumber","typeName"]],
+    ["additional","Manufacturer and ordering",[
+     ...(sectionFields?.additional||[]).filter(key=>fieldDescriptors[key]&&key!=="category"),
+     "supplierUrl","price","packageQuantity","documentationUrl"
+    ]],
+    ["specifications","Specifications and notes",["spec","use","caution","orderNotes","notes"]]
    ];
    const controls={};
-   for(const [key,title,type] of descriptors){
-    const label=el("label",undefined,type==="textarea"?"workshop-edit-wide":"");
-    label.append(el("span",title));
-    const control=type==="textarea"?el("textarea"):el("input");
-    if(type==="textarea")control.rows=3;else control.type=type;
-    control.className="field";control.value=item[key]||"";
-    label.append(control);grid.append(label);controls[key]=control;
+   for(const [key,title,fields] of sections){
+    const section=el("section",undefined,"workshop-part-editor-section");
+    section.dataset.partEditorSection=key;
+    section.append(el("h3",title,"part-editor-section-heading"));
+    const fieldsGrid=el("div",undefined,"workshop-item-edit-grid");
+    for(const name of [...new Set(fields)]){
+     const [labelText,type]=fieldDescriptors[name];
+     const label=el("label",undefined,type==="textarea"?"workshop-edit-wide":"");
+     label.append(el("span",labelText));
+     const control=type==="textarea"?el("textarea"):el("input");
+     if(type==="textarea")control.rows=3;else control.type=type;
+     control.className="field";control.value=item[name]||"";
+     label.append(control);fieldsGrid.append(label);controls[name]=control;
+    }
+    section.append(fieldsGrid);grid.append(section);
    }
    const classification=el("div",undefined,"workshop-item-classification");
    const addSelect=(labelText,values,value)=>{
@@ -702,10 +705,11 @@
      if(item.manufacturer||item.model)tile.append(el("small",[item.manufacturer,item.model].filter(Boolean).join(" · "),"muted"));
      if(isPersonal)tile.append(el("span","My Workshop · "+(stockLabels[item.stockStatus]||"In stock"),"workshop-owned-label"));
      else if(ownedFor(item).length)tile.append(el("span",ownershipLabel(ownedFor(item)),"workshop-owned-label"));
-     tile.append(itemButton("Edit",()=>isPersonal?
-       (nav?.select("mine"),fill(item),$("#workshop-editor",personal)?.scrollIntoView({block:"start"})):
-       canEditReferences?(showItem(item.id),openItemEditor(standards().find(r=>r.id===item.id))):
-       editPersonalReference(item),"btn workshop-product-edit"));
+     if(isPersonal||canEditReferences)
+      tile.append(itemButton("Edit",()=>isPersonal?
+        (showPersonalItem(item.id),closeItem(),nav?.select("mine"),fill(item),$("#workshop-editor",personal)?.scrollIntoView({block:"start"})):
+        (showItem(item.id),openItemEditor(standards().find(r=>r.id===item.id))),
+       "btn workshop-product-edit"));
      return tile;
     };
     for(const item of shownShared)products.append(tileFor(item,false));
@@ -759,10 +763,10 @@
     photo.append(personalThumb(item));
     summary.append(photo,main,el("span",item.category||"My Workshop","workshop-catalog-category"),
      el("span",item.notes||"Personal inventory item","workshop-catalog-use"));
-    main.append(itemButton("Edit item",()=>{
+    main.append(itemButton("Edit",()=>{
      nav?.select("mine");fill(item);
      $("#workshop-editor",personal)?.scrollIntoView({block:"start"});
-    },"btn workshop-catalog-add"));
+    },"btn workshop-product-edit"));
     row.append(summary);list.append(row);
    }
   };
