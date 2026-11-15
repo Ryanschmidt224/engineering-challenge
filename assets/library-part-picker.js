@@ -123,11 +123,14 @@ function open({onCreate,hideDefault=false}){
  const partClassification=field("Part type","select");option(partClassification.input,"purchased","Off-the-shelf");option(partClassification.input,"custom","Custom");
  const partNumberField=field("Project BOM number (not manufacturer's number)");
  partNumberField.input.placeholder="Project-specific number, e.g. 100";partNumberField.input.maxLength=30;
+ const manufacturerNumber=field("Manufacturer part number (MPN)");
+ manufacturerNumber.input.placeholder="e.g. 2N7000";manufacturerNumber.input.maxLength=160;
  const manufacturerName=field("Manufacturer");
  manufacturerName.input.placeholder="e.g. onsemi (select actual manufacturer)";
  manufacturerName.input.maxLength=160;
- const manufacturerNumber=field("Manufacturer part number (MPN)");
- manufacturerNumber.input.placeholder="e.g. 2N7000";manufacturerNumber.input.maxLength=160;
+ const workshopDescription=field("Description","textarea");
+ workshopDescription.input.rows=2;workshopDescription.input.maxLength=2000;
+ workshopDescription.input.placeholder="Short description of the product itself";
  const vendorField=field("Suggested vendor","select");
  for(const [id,label] of [["DigiKey","DigiKey"],["Mouser","Mouser"],["Newark","Newark"],["Arrow","Arrow"],["Other","Other / not yet selected"]])option(vendorField.input,id,label);
  const vendorLinks=el("div","library-vendor-links muted");
@@ -143,6 +146,33 @@ function open({onCreate,hideDefault=false}){
   }
  };
  manufacturerNumber.input.oninput=renderVendorLinks;
+ const projectDetailsPanel=el("section","library-project-only");
+ projectDetailsPanel.append(el("h3","","Project-specific information"),
+  el("p","library-project-only-warning","Changes below apply only to this project. They will not modify the original Workshop part."));
+ const projectNotes=field("Project notes","textarea");projectNotes.input.rows=3;projectNotes.input.maxLength=6000;
+ const projectChanges=field("Project changes / modifications","textarea");projectChanges.input.rows=3;projectChanges.input.maxLength=6000;
+ projectDetailsPanel.append(projectNotes.label,projectChanges.label);
+ const kicad=el("details","library-project-kicad");
+ const summary=el("summary","","Schematic / KiCad information (optional)");
+ kicad.append(summary);
+ const kicadFields=[
+  ["referenceDesignators","Reference designators","Q1, Q2",500],
+  ["footprint","Footprint","Package_TO_SOT_THT:TO-92_Inline",240],
+  ["schematicValue","Schematic value","2N7000",240],
+  ["sourceApplication","Source application","KiCad",80],
+  ["sourceFile","Source schematic file","motor-control.kicad_sch",500],
+  ["sourceComponentId","Source component ID","Identifier from source schematic",240]
+ ];
+ const projectCadFields={};
+ for(const [key,title,placeholder,limit] of kicadFields){
+  const fieldRow=field(title);fieldRow.input.placeholder=placeholder;fieldRow.input.maxLength=limit;
+  projectCadFields[key]=fieldRow.input;kicad.append(fieldRow.label);
+ }
+ projectDetailsPanel.append(kicad);
+ const getProjectDetails=()=>({
+  notes:projectNotes.input.value.trim(),changes:projectChanges.input.value.trim(),
+  ...Object.fromEntries(Object.entries(projectCadFields).map(([key,input])=>[key,input.value.trim()]))
+ });
  const numberChoice=el("fieldset","library-number-choice");
  const numberLegend=el("legend","","Part number");numberChoice.append(numberLegend);
  const autoNumberRow=el("label","library-auto-number");
@@ -282,7 +312,10 @@ function open({onCreate,hideDefault=false}){
  const workshopChoices=el("fieldset","library-workshop-choice-group");
  const workshopLegend=el("legend","","Part source");
  workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,quickSearch,addToWorkshopChoice,saveScope,workshopAddHelp);
- form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,customName.label,manufacturerName.label,manufacturerNumber.label,vendorField.label,vendorLinks,vendorInfo,numberChoice,autoNumberHelp,partNumberField.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
+ form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,
+  manufacturerNumber.label,manufacturerName.label,workshopDescription.label,vendorField.label,
+  customName.label,vendorLinks,vendorInfo,numberChoice,autoNumberHelp,partNumberField.label,
+  chooser,qty.label,hintUnits,toolField,visibility,projectDetailsPanel,status,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],purchased=[],sharedOverrides={},personalItems=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
@@ -379,8 +412,9 @@ function open({onCreate,hideDefault=false}){
   const adding=isPart&&!lib&&addToWorkshopCheckbox.checked;
   if(adding)partClassification.input.value="purchased";
   const purchased=!lib&&isPart&&partClassification.input.value==="purchased";
-  for(const label of [manufacturerName.label,manufacturerNumber.label,vendorField.label])
+  for(const label of [manufacturerNumber.label,manufacturerName.label,workshopDescription.label,vendorField.label])
    label.classList.toggle("hide",!purchased);
+  projectDetailsPanel.classList.toggle("hide",!isPart);
   vendorLinks.classList.toggle("hide",!purchased);
   vendorInfo.classList.toggle("hide",!purchased);
   noNumberRow.classList.toggle("hide",!purchased);
@@ -460,6 +494,7 @@ function open({onCreate,hideDefault=false}){
    if(itemKind.input.value==="part"&&partClassification.input.value==="purchased"){
     payload.manufacturer=manufacturerName.input.value.trim();
     payload.model=manufacturerNumber.input.value.trim(); // Manufacturer MPN; never the project's issued part number.
+    payload.description=workshopDescription.input.value.trim();
     payload.supplier=vendorField.input.value==="Other"?"":vendorField.input.value;
    }
   }else if(!(category.input.value==="consumables"&&wireModeCheckbox.checked)){
@@ -504,6 +539,7 @@ function open({onCreate,hideDefault=false}){
    payload={name,quantity:count,category:"consumables",specifications:specs};
    payload.wireInfo={gauge:g,construction:str,insulation:insulation.input.value,crimp,mm,endA:endA.value(),endB:endB.value(),wireId:null};
   }
+  if(itemKind.input.value==="part")payload.projectDetails=getProjectDetails();
   payload.quantityUnit="pcs";
   // This client-only instruction is consumed by the project controller after
   // the BOM part is saved; it must never enter the components API record.
