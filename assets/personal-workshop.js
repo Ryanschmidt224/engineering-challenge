@@ -181,7 +181,9 @@
    if(category)nav?.select(category);
   });
   applyWorkshopCategory();
-  const standards=()=>window.BSResources?.workshopReferences||[];
+  let workshopOverrides={},canEditReferences=false;
+  const standards=()=>(window.BSResources?.workshopReferences||[]).map(item=>({...item,...(workshopOverrides[item.id]||{})}));
+  const saveableFields=["name","subtitle","spec","use","caution","manufacturer","model","partNumber","supplier","supplierUrl","asin","price","packageQuantity","orderNotes","documentationUrl","notes"];
   const families=()=>window.BSResources?.workshopGroups||[];
   const familyFor=item=>families().find(g=>g.items.includes(item.id));
   let selectedFamily="";
@@ -244,6 +246,17 @@
    if(id)u.searchParams.set("workshop-item",id);else u.searchParams.delete("workshop-item");
    history.pushState({workshopItem:id},"",u.pathname+u.search+u.hash);
   };
+  // The main navigation must reset product detail even if the #commonparts
+  // route is already active and no hashchange event will fire.
+  document.querySelectorAll('[data-nav="commonparts"]').forEach(button=>{
+   button.addEventListener("click",()=>{
+    selectedFamily="";
+    results.value="";
+    nav?.select("all");
+    closeItem();
+    renderCatalog();
+   });
+  });
   function closeItem(navigate=true){
    if(navigate&&readSelected())changeUrl("");
    openedItem="";itemPage.hidden=true;itemSide.hidden=true;sidebar.hidden=false;
@@ -283,7 +296,14 @@
    sideRow("Considerations",item.caution);
    sideRow("Level",friendlyTier(item));
    sideRow("Product family",familyFor(item)?.label);
+   sideRow("Manufacturer",item.manufacturer);
+   sideRow("Model / part number",[item.model,item.partNumber].filter(Boolean).join(" · "));
+   sideRow("Supplier",item.supplier);
+   sideRow("Price / package",[item.price,item.packageQuantity].filter(Boolean).join(" · "));
+   sideRow("Ordering notes",item.orderNotes);
+   sideRow("Notes",item.notes);
    itemSide.append(itemButton("+ Add to My Workshop",()=>addReference(item),"btn primary workshop-item-side-action"));
+   if(canEditReferences)itemSide.append(itemButton("Edit item details",()=>openItemEditor(item),"btn workshop-item-edit-button"));
    if(item.source&&/^https:\/\//.test(item.source)){
     const link=el("a","Manufacturer reference","workshop-item-source");
     link.href=item.source;link.target="_blank";link.rel="noopener noreferrer";itemSide.append(link);
@@ -301,26 +321,144 @@
    if(item.subtitle)header.append(el("p",item.subtitle,"muted"));
    itemPage.append(header);
    const hero=el("section",undefined,"workshop-item-hero");
-   const big=catalogThumb(item);big.classList.add("workshop-item-large-thumb");
+   const big=el("div",undefined,"workshop-item-primary-media");
+   if(item.photos?.length){
+    const img=el("img",undefined,"workshop-reference-hero-image");
+    img.src="/api/workshop-reference?photo="+encodeURIComponent(item.photos[0].id);
+    img.alt=item.photos[0].caption||item.name;
+    big.append(img);
+   }else{
+    const fallback=catalogThumb(item);
+    fallback.classList.add("workshop-item-large-thumb");
+    big.append(fallback);
+   }
    const info=el("div",undefined,"workshop-item-hero-info");
    info.append(el("h3","Recommended Workshop item"));
    info.append(el("p",item.spec||item.use||"Reference specifications have not been provided."));
    info.append(el("p","This reference does not imply you own the item.","muted"));
    info.append(itemButton("+ Add to My Workshop",()=>addReference(item),"btn primary"));
+   if(item.supplierUrl){
+    const order=el("a","Supplier / ordering page","btn workshop-reference-order-link");
+    order.href=item.supplierUrl;order.target="_blank";order.rel="noopener noreferrer";info.append(order);
+   }
+   if(item.documentationUrl){
+    const docs=el("a","Documentation","workshop-reference-doc-link");
+    docs.href=item.documentationUrl;docs.target="_blank";docs.rel="noopener noreferrer";info.append(docs);
+   }
+   if(canEditReferences)info.append(itemButton("Edit details",()=>openItemEditor(item),"btn workshop-item-edit-button"));
    hero.append(big,info);itemPage.append(hero);
    const related=standards().filter(x=>x.id!==id&&familyFor(x)?.id===familyFor(item)?.id);
+   const editorMount=el("div",undefined,"workshop-item-editor-mount");
+   itemPage.append(editorMount);
    const relatedSection=el("section",undefined,"workshop-item-related");
    relatedSection.append(el("h3","Other selections in "+(familyFor(item)?.label||categoryLabelFor(item))));
    const grid=el("div",undefined,"workshop-item-related-grid");
    for(const other of related){
     const tile=itemButton("",()=>showItem(other.id),"workshop-item-related-choice");
-    tile.append(catalogThumb(other),el("strong",other.name));
+    if(other.photos?.length){
+     const img=el("img",undefined,"workshop-reference-related-photo");
+     img.src="/api/workshop-reference?photo="+encodeURIComponent(other.photos[0].id);
+     img.alt=other.name;tile.append(img);
+    }else tile.append(catalogThumb(other));
+    tile.append(el("strong",other.name));
     if(other.subtitle)tile.append(el("small",other.subtitle));
     grid.append(tile);
    }
    if(!related.length)grid.append(el("p","No other references in this category yet.","muted"));
    relatedSection.append(grid);itemPage.append(relatedSection);
    itemPage.scrollIntoView({block:"start"});
+  }
+
+  function openItemEditor(item){
+   if(!canEditReferences)return;
+   const mount=$(".workshop-item-editor-mount",itemPage);
+   if(!mount)return;
+   mount.replaceChildren();
+   const form=el("form",undefined,"workshop-item-edit-form");
+   const heading=el("div",undefined,"workshop-item-editor-heading");
+   heading.append(el("h3","Edit "+item.name),el("p","Shared Workshop catalog · administrator only","muted"));
+   form.append(heading);
+   const grid=el("div",undefined,"workshop-item-edit-grid");
+   const descriptors=[
+    ["name","Item name","text"],["subtitle","Short description","text"],
+    ["manufacturer","Manufacturer","text"],["model","Model","text"],
+    ["partNumber","Manufacturer part number","text"],["supplier","Supplier","text"],
+    ["supplierUrl","Supplier / ordering URL","url"],["asin","Amazon ASIN","text"],
+    ["price","Reference price","text"],["packageQuantity","Quantity / package","text"],
+    ["documentationUrl","Documentation URL","url"],
+    ["spec","Specifications","textarea"],["use","Typical use","textarea"],
+    ["caution","Important considerations","textarea"],["orderNotes","How to order","textarea"],
+    ["notes","Additional notes","textarea"]
+   ];
+   const controls={};
+   for(const [key,title,type] of descriptors){
+    const label=el("label",undefined,type==="textarea"?"workshop-edit-wide":"");
+    label.append(el("span",title));
+    const control=type==="textarea"?el("textarea"):el("input");
+    if(type==="textarea")control.rows=3;else control.type=type;
+    control.className="field";control.value=item[key]||"";
+    label.append(control);grid.append(label);controls[key]=control;
+   }
+   form.append(grid);
+   const photoTitle=el("h4","Photos");
+   form.append(photoTitle);
+   const photos=(item.photos||[]).map(p=>({...p}));
+   const gallery=el("div",undefined,"workshop-item-edit-photos");
+   const redrawPhotos=()=>{
+    gallery.replaceChildren();
+    for(const photo of photos){
+     const card=el("div",undefined,"workshop-item-edit-photo");
+     const img=el("img");img.src="/api/workshop-reference?photo="+encodeURIComponent(photo.id);
+     img.alt=photo.caption||"Workshop reference photo";card.append(img);
+     const cap=el("input");cap.className="field";cap.value=photo.caption||"";
+     cap.placeholder="Photo caption";cap.maxLength=180;cap.setAttribute("aria-label","Photo caption");
+     cap.oninput=()=>{photo.caption=cap.value};
+     card.append(cap,itemButton("Remove",()=>{photos.splice(photos.indexOf(photo),1);redrawPhotos()},"btn"));
+     gallery.append(card);
+    }
+   };
+   redrawPhotos();form.append(gallery);
+   const uploadRow=el("div",undefined,"workshop-item-photo-upload");
+   const picker=el("input");picker.type="file";picker.accept="image/jpeg,image/png,image/webp";
+   picker.multiple=true;picker.setAttribute("aria-label","Upload item photos");
+   const uploadStatus=el("p","","muted");
+   const upload=itemButton("Upload photos",async()=>{
+    if(!picker.files?.length)return;
+    if(photos.length+picker.files.length>12){uploadStatus.textContent="Up to 12 photos per item.";return}
+    upload.disabled=true;
+    try{
+     for(const file of picker.files){
+      const body=new FormData();body.append("photo",file);
+      const res=await fetch("/api/workshop-reference",{method:"POST",credentials:"same-origin",body});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok)throw Error(data.error||"Photo upload failed");
+      photos.push(data.photo);
+     }
+     picker.value="";redrawPhotos();uploadStatus.textContent="Photos uploaded. Save changes to publish.";
+    }catch(error){uploadStatus.textContent=error.message}
+    finally{upload.disabled=false}
+   });
+   uploadRow.append(picker,upload);form.append(uploadRow,uploadStatus);
+   const status=el("p","","workshop-item-editor-status");
+   status.setAttribute("role","status");
+   const actions=el("div",undefined,"workshop-item-editor-actions");
+   const save=itemButton("Save changes",()=>form.requestSubmit(),"btn primary");
+   const cancel=itemButton("Cancel",()=>mount.replaceChildren(),"btn");
+   actions.append(save,cancel);form.append(actions,status);
+   form.addEventListener("submit",async event=>{
+    event.preventDefault();
+    const details={photos};
+    for(const field of saveableFields)details[field]=controls[field]?.value||"";
+    status.textContent="Saving…";save.disabled=true;
+    try{
+     const response=await req("/api/workshop-reference","PUT",{id:item.id,details});
+     workshopOverrides[item.id]=response.details;
+     renderCatalog();
+     showItem(item.id,false);
+    }catch(error){status.textContent=error.message;save.disabled=false}
+   });
+   mount.append(form);
+   form.scrollIntoView({block:"start"});
   }
   window.addEventListener("popstate",()=>{
    const id=readSelected();if(id)showItem(id,false);else closeItem(false);
@@ -431,6 +569,17 @@
   window.addEventListener("bsworkshopfocus",()=>queueMicrotask(renderCatalog));
   renderCatalog();
   if(readSelected())showItem(readSelected(),false);
+  (async()=>{
+   try{
+    const data=await req("/api/workshop-reference");
+    workshopOverrides=data.items||{};
+    canEditReferences=!!data.canEdit;
+    renderCatalog();
+    if(openedItem)showItem(openedItem,false);
+   }catch(error){
+    console.warn("Workshop reference edits are unavailable",error);
+   }
+  })();
 
   const privateArea=$(".workshop-private",personal),status=$(".workshop-status",personal);
   let items=[],editingId=null,photoId="";
