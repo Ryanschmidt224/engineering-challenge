@@ -64,6 +64,43 @@
   #commonparts .workshop-catalog-detail{border-top:1px solid var(--color-border,#ddd);padding:14px 18px 16px 26px;background:var(--color-page,#fff);font-size:.85rem}
   #commonparts .workshop-catalog-detail p{margin:0 0 8px}
   #commonparts .workshop-catalog-detail[hidden]{display:none!important}
+  #commonparts .workshop-catalog-thumb-action{border:0;padding:0;background:transparent;cursor:pointer;text-align:left}
+  #commonparts .workshop-catalog-thumb-action:focus-visible{outline:2px solid var(--color-accent);outline-offset:3px}
+  #commonparts .workshop-item-page[hidden],#commonparts .workshop-item-side[hidden]{display:none!important}
+  #commonparts .workshop-item-side{padding:0 12px 24px 0}
+  #commonparts .workshop-item-back,#commonparts .workshop-item-crumb-link{padding:0;border:0;background:none;color:var(--color-accent);text-align:left;cursor:pointer;font:inherit;font-weight:650}
+  #commonparts .workshop-item-back{margin:0 0 26px;font-size:.88rem}
+  #commonparts .workshop-item-eyebrow{font-size:.8rem;color:var(--color-text-muted);margin:0 0 8px}
+  #commonparts .workshop-item-side-title{font-size:1.25rem;line-height:1.3;margin:0 0 20px}
+  #commonparts .workshop-item-side-row{padding:12px 0;border-top:1px solid var(--color-border)}
+  #commonparts .workshop-item-side-row h3{font-size:.86rem;margin:0 0 7px}
+  #commonparts .workshop-item-side-row p{font-size:.82rem;line-height:1.5;margin:0}
+  #commonparts .workshop-item-side-action{width:100%;margin:14px 0}
+  #commonparts .workshop-item-source{display:block;font-size:.83rem;margin:10px 0}
+  #commonparts .workshop-item-page{min-width:0;padding:5px 0 30px}
+  #commonparts .workshop-item-breadcrumb{display:flex;gap:5px;flex-wrap:wrap;font-size:.82rem;color:var(--color-text-muted);margin-bottom:18px}
+  #commonparts .workshop-item-page-heading h2{font-size:clamp(1.5rem,2.2vw,2rem);margin:0}
+  #commonparts .workshop-item-page-heading p{margin:5px 0 18px}
+  #commonparts .workshop-item-hero{display:grid;grid-template-columns:minmax(200px,330px) minmax(0,1fr);align-items:start;gap:32px;padding:18px 0 28px;border-bottom:1px solid var(--color-border)}
+  #commonparts .workshop-item-large-thumb{width:100%;height:auto;aspect-ratio:1.15;background:var(--color-surface-muted);border-radius:6px}
+  #commonparts .workshop-item-large-thumb svg{width:min(70%,200px);height:min(70%,200px)}
+  #commonparts .workshop-item-hero-info h3{margin:0 0 10px}
+  #commonparts .workshop-item-hero-info p{max-width:650px;line-height:1.55}
+  #commonparts .workshop-item-related{margin-top:25px}
+  #commonparts .workshop-item-related h3{font-size:1.07rem;margin:0 0 15px}
+  #commonparts .workshop-item-related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:12px}
+  #commonparts .workshop-item-related-choice{display:flex;flex-direction:column;align-items:start;gap:8px;background:var(--color-surface);border:1px solid var(--color-border);padding:12px;border-radius:6px;text-align:left;color:var(--color-text);cursor:pointer}
+  #commonparts .workshop-item-related-choice:hover{border-color:var(--color-accent);background:var(--color-hover)}
+  #commonparts .workshop-item-related-choice .workshop-catalog-thumb{width:100%;height:105px}
+  #commonparts .workshop-item-related-choice .workshop-catalog-thumb svg{width:73px;height:73px}
+  #commonparts .workshop-item-related-choice strong{font-size:.86rem}
+  #commonparts .workshop-item-related-choice small{font-size:.75rem;color:var(--color-text-muted)}
+  @media(max-width:800px){
+   #commonparts .workshop-item-hero{grid-template-columns:1fr;gap:18px}
+   #commonparts .workshop-item-large-thumb{max-width:340px}
+   #commonparts .workshop-item-side{border-bottom:1px solid var(--color-border);margin-bottom:20px}
+  }
+
   #commonparts .workshop-recommend-results{display:none}
   #commonparts .workshop-recommendations,#commonparts .workshop-scope>details{margin-top:18px}
   #commonparts .workshop-item{border-radius:3px;padding:12px 14px;gap:14px}
@@ -189,6 +226,107 @@
    return frame;
   };
 
+
+  // Dedicated, URL-addressable Workshop item view. Existing catalog records
+  // remain the single source of truth and personal inventory stays separate.
+  const itemPage=el("section",undefined,"workshop-item-page");
+  itemPage.hidden=true;
+  shared.after(itemPage);
+  const sideHost=root.querySelector(".bs-catalog-sidebar");
+  const itemSide=el("div",undefined,"workshop-item-side");
+  itemSide.hidden=true;
+  sideHost?.append(itemSide);
+  const readSelected=()=>new URLSearchParams(location.search).get("workshop-item")||"";
+  let openedItem="";
+  const itemButton=(label,callback,cls="btn")=>{
+   const b=el("button",label,cls);b.type="button";b.onclick=callback;return b;
+  };
+  const changeUrl=id=>{
+   const u=new URL(location.href);
+   if(id)u.searchParams.set("workshop-item",id);else u.searchParams.delete("workshop-item");
+   history.pushState({workshopItem:id},"",u.pathname+u.search+u.hash);
+  };
+  function closeItem(navigate=true){
+   if(navigate&&readSelected())changeUrl("");
+   openedItem="";itemPage.hidden=true;itemSide.hidden=true;sidebar.hidden=false;
+   applyWorkshopCategory();
+  }
+  const addReference=item=>{
+   closeItem(false);
+   nav?.select("mine");
+   if(!$("#workshop-editor",personal)){
+    setStatus("Sign in to add items to your personal Workshop.");
+    return;
+   }
+   fill({name:item.name,kind:item.kind==="tool"?"tool":item.kind==="component"?"component":"material",
+    category:categoryLabelFor(item),specifications:item.spec?[{name:"Recommended specification",value:item.spec}]:[]});
+   $("#workshop-editor",personal).scrollIntoView({block:"start"});
+   $("#workshop-name",personal).focus();
+  };
+  function showItem(id,navigate=true){
+   const item=standards().find(x=>x.id===id);
+   if(!item){closeItem(false);return}
+   if(navigate&&readSelected()!==id)changeUrl(id);
+   openedItem=id;
+   shared.hidden=true;personal.hidden=true;sidebar.hidden=true;
+   itemPage.hidden=false;itemSide.hidden=false;
+   itemSide.replaceChildren();itemPage.replaceChildren();
+   itemSide.append(itemButton("← Back to Workshop",()=>closeItem(),"workshop-item-back"));
+   itemSide.append(el("p",categoryLabelFor(item),"workshop-item-eyebrow"));
+   itemSide.append(el("h2",item.name,"workshop-item-side-title"));
+   const sideRow=(title,value)=>{
+    if(!value)return;
+    const section=el("section",undefined,"workshop-item-side-row");
+    section.append(el("h3",title),el("p",value));
+    itemSide.append(section);
+   };
+   sideRow("Specification",item.spec);
+   sideRow("Typical use",item.use);
+   sideRow("Considerations",item.caution);
+   sideRow("Level",friendlyTier(item));
+   itemSide.append(itemButton("+ Add to My Workshop",()=>addReference(item),"btn primary workshop-item-side-action"));
+   if(item.source&&/^https:\/\//.test(item.source)){
+    const link=el("a","Manufacturer reference","workshop-item-source");
+    link.href=item.source;link.target="_blank";link.rel="noopener noreferrer";itemSide.append(link);
+   }
+   const crumb=el("nav",undefined,"workshop-item-breadcrumb");
+   crumb.setAttribute("aria-label","Workshop item breadcrumb");
+   crumb.append(itemButton("Workshop",()=>closeItem(),"workshop-item-crumb-link"));
+   crumb.append(el("span"," / "+categoryLabelFor(item)+" / "+item.name));
+   itemPage.append(crumb);
+   const header=el("div",undefined,"workshop-item-page-heading");
+   header.append(el("h2",item.name));
+   if(item.subtitle)header.append(el("p",item.subtitle,"muted"));
+   itemPage.append(header);
+   const hero=el("section",undefined,"workshop-item-hero");
+   const big=catalogThumb(item);big.classList.add("workshop-item-large-thumb");
+   const info=el("div",undefined,"workshop-item-hero-info");
+   info.append(el("h3","Recommended Workshop item"));
+   info.append(el("p",item.spec||item.use||"Reference specifications have not been provided."));
+   info.append(el("p","This reference does not imply you own the item.","muted"));
+   info.append(itemButton("+ Add to My Workshop",()=>addReference(item),"btn primary"));
+   hero.append(big,info);itemPage.append(hero);
+   const related=standards().filter(x=>x.id!==id&&categoryFor(x)===categoryFor(item));
+   const relatedSection=el("section",undefined,"workshop-item-related");
+   relatedSection.append(el("h3","Other selections in "+categoryLabelFor(item)));
+   const grid=el("div",undefined,"workshop-item-related-grid");
+   for(const other of related){
+    const tile=itemButton("",()=>showItem(other.id),"workshop-item-related-choice");
+    tile.append(catalogThumb(other),el("strong",other.name));
+    if(other.subtitle)tile.append(el("small",other.subtitle));
+    grid.append(tile);
+   }
+   if(!related.length)grid.append(el("p","No other references in this category yet.","muted"));
+   relatedSection.append(grid);itemPage.append(relatedSection);
+   itemPage.scrollIntoView({block:"start"});
+  }
+  window.addEventListener("popstate",()=>{
+   const id=readSelected();if(id)showItem(id,false);else closeItem(false);
+  });
+  window.addEventListener("hashchange",()=>{
+   if(location.hash&&location.hash!=="#commonparts"&&openedItem)closeItem(false);
+  });
+
   const renderCatalog=()=>{
    const query=results.value.trim().toLowerCase(),sort=$(".workshop-catalog-sort",catalog).value;
    const list=$(".workshop-catalog-list",catalog);
@@ -212,7 +350,10 @@
     const main=el("div",undefined,"workshop-catalog-main-item");
     main.append(name);
     if(item.subtitle)main.append(el("small",item.subtitle,"muted"));
-    summary.append(catalogThumb(item),main,el("span",categoryLabelFor(item),"workshop-catalog-category"),
+    const thumbButton=itemButton("",()=>showItem(item.id),"workshop-catalog-thumb-action");
+    thumbButton.setAttribute("aria-label","Open "+item.name);
+    thumbButton.append(catalogThumb(item));
+    summary.append(thumbButton,main,el("span",categoryLabelFor(item),"workshop-catalog-category"),
      el("span",item.use||friendlyTier(item),"workshop-catalog-use"));
     const add=el("button","+ My Workshop","btn workshop-catalog-add");
     add.type="button";add.title="Create a private inventory item based on this reference";
@@ -235,7 +376,7 @@
      const link=el("a","Manufacturer / reference source","workshop-catalog-link");
      link.href=item.source;link.target="_blank";link.rel="noopener noreferrer";detail.append(link);
     }
-    name.onclick=()=>{detail.hidden=!detail.hidden;name.setAttribute("aria-expanded",String(!detail.hidden))};
+    name.onclick=()=>showItem(item.id);
     row.append(summary,detail);list.append(row);
    }
   };
@@ -249,6 +390,7 @@
   });
   window.addEventListener("bsworkshopfocus",()=>queueMicrotask(renderCatalog));
   renderCatalog();
+  if(readSelected())showItem(readSelected(),false);
 
   const showRecommendation=id=>{
    document.querySelector('[data-nav="commonparts"]')?.click();
