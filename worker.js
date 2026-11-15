@@ -1,6 +1,7 @@
 import {onRequest as numberingApi} from "./functions/api/numbering.js";
 import {handleProposals} from "./functions/api/proposals.js";
 import {onRequest as projectsApi,projectAllowed,canEditProject} from "./functions/api/projects.js";
+import {onRequest as unstructuredNotesApi} from "./functions/api/unstructured-notes.js";
 import {handleAccounts} from "./functions/api/accounts.js";
 import {onRequest as myBuildApi} from "./functions/api/my-build.js";
 import {onRequest as buildConfusionApi} from "./functions/api/build-confusion.js";
@@ -62,6 +63,7 @@ export default {
       if(path==="/api/part-pages")return handlePartPages(request,env);
       if(path==="/api/harness")return handleHarness(request,env);
       if(path==="/api/workspace")return handleWorkspace(request,env);
+      if(path==="/api/unstructured-notes")return unstructuredNotesApi({request,env,ctx});
       if(path==="/api/investigations")return handleInvestigations(request,env);
       if(path==="/api/recipe-files")return handleRecipeFiles(request,env);
       if(path==="/api/photo-annotations")return handlePhotoAnnotations(request,env);
