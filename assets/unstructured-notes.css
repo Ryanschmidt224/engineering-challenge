@@ -1,0 +1,35 @@
+/* Reusable Unstructured Notes layout, shared across project pages. */
+.bs-unstructured-notes{margin:28px 0 18px;padding:18px 20px;border:1px solid var(--color-border);border-radius:11px;background:var(--color-surface);min-width:0}
+.bs-unstructured-notes-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.bs-unstructured-notes-heading h2{margin:0;font-size:1.07rem}
+.bs-unstructured-add{padding:6px 9px;background:transparent;border:0;color:var(--color-accent);font:inherit;font-size:.85rem;font-weight:700;cursor:pointer}
+.bs-unstructured-add:hover{text-decoration:underline}
+.bs-unstructured-add[hidden]{display:none!important}
+.bs-unstructured-status{margin:6px 0;font-size:.82rem;min-height:0}
+.bs-unstructured-list{display:grid;gap:9px}
+.bs-unstructured-empty{margin:5px 0;color:var(--color-text-muted);font-size:.85rem}
+.bs-unstructured-card{border:1px solid var(--color-border);border-radius:8px;overflow:hidden;background:var(--color-surface)}
+.bs-unstructured-note-title{display:block;width:100%;padding:11px 14px;text-align:left;color:var(--color-text);background:transparent;border:0;font:inherit;font-size:.9rem;font-weight:700;cursor:pointer}
+.bs-unstructured-note-title:before{content:"▸";display:inline-block;margin-right:9px;color:var(--color-text-muted)}
+.bs-unstructured-note-title[aria-expanded="true"]:before{content:"▾"}
+.bs-unstructured-note-content{padding:3px 14px 15px}
+.bs-unstructured-note-content[hidden]{display:none!important}
+.bs-unstructured-description{margin:5px 0 14px;white-space:pre-wrap;line-height:1.55;overflow-wrap:anywhere}
+.bs-unstructured-note-actions,.bs-unstructured-photo-actions{display:flex;gap:8px;flex-wrap:wrap}
+.bs-unstructured-note-actions{margin-top:15px}
+.bs-unstructured-photos,.bs-unstructured-edit-photos{display:flex;gap:12px;flex-wrap:wrap;margin:9px 0}
+.bs-unstructured-photo,.bs-unstructured-edit-photo{width:min(190px,100%);display:grid;gap:7px;padding:7px;border:1px solid var(--color-border);border-radius:6px}
+.bs-unstructured-photo img,.bs-unstructured-edit-photo img{display:block;width:100%;height:148px;object-fit:contain;background:var(--color-surface-muted)}
+.bs-unstructured-photo-actions>.btn,.bs-unstructured-edit-photo>.btn{font-size:.75rem;padding:5px 8px}
+.bs-unstructured-editor{display:grid;gap:13px;margin-top:14px}
+.bs-unstructured-field{display:grid;gap:5px;font-size:.83rem;font-weight:650}
+.bs-unstructured-field input,.bs-unstructured-field textarea{font-weight:400;width:100%;max-width:none}
+.bs-unstructured-field textarea{min-height:130px;resize:vertical}
+.bs-unstructured-editor-actions{display:flex;gap:10px;margin-top:5px}
+.bs-unstructured-editor>.btn{justify-self:start}
+.assembly-sidebar>.feature-tree-frame{width:100%;border:1px solid var(--color-border);border-radius:11px;background:var(--color-sidebar);overflow:auto;min-height:0;flex:1 1 auto}
+.assembly-sidebar>.feature-tree-frame>.assembly-feature-tree-card{border:0;background:transparent;border-radius:0}
+.assembly-sidebar>.assembly-summary-sidebar-card{flex:none;order:1}
+.assembly-sidebar>.assembly-parts-management-link{order:2;flex:none;width:100%;margin:0;box-sizing:border-box;border-radius:10px}
+.assembly-sidebar>.feature-tree-frame{order:0}
+@media(max-width:680px){.bs-unstructured-notes{padding:14px 12px}.bs-unstructured-photo,.bs-unstructured-edit-photo{width:min(160px,100%)}}
