@@ -54,6 +54,34 @@ export async function handleAccounts(request,env){
   const expected=new Uint8Array(await crypto.subtle.digest("SHA-256",encoder.encode(env.admin_password)));
   let difference=0;for(let i=0;i<expected.length;i++)difference|=candidate[i]^expected[i];
   if(difference!==0)return json({error:"Administrator verification failed"},403);
+  // Claim the legacy administrator credential only once across the site.
+  // A failed account update can be retried by the same claimant.
+  const claimKey="account-admin-claim/v1.json";
+  const existing=await env.PHOTOS.get(claimKey);
+  if(existing){
+   const claim=JSON.parse(await existing.text());
+   if(claim.accountId!==member.id)return json({error:"Administrator access has already been linked to an account. Contact the site administrator.",code:"ADMIN_ALREADY_CLAIMED"},409);
+  }else{
+   // Detect administrators migrated before the one-time marker existed.
+   if(typeof env.PHOTOS.list==="function"){
+    let cursor,rounds=0;
+    do{
+     const page=await env.PHOTOS.list({prefix:"users/",limit:250,cursor});
+     for(const record of page.objects||[]){
+      if(record.key===userKey(member.id))continue;
+      const stored=await env.PHOTOS.get(record.key);
+      if(!stored)continue;
+      const other=JSON.parse(await stored.text());
+      if(other.role==="admin")return json({error:"An administrator account already exists. Ask that administrator to manage access.",code:"ADMIN_ALREADY_CLAIMED"},409);
+     }
+     if(!page.truncated)break;
+     if(!page.cursor||page.cursor===cursor||++rounds>100)return json({error:"Unable to verify administrator setup; try again later"},503);
+     cursor=page.cursor;
+    }while(true);
+   }
+   const written=await env.PHOTOS.put(claimKey,JSON.stringify({accountId:member.id,createdAt:new Date().toISOString()}),{onlyIf:{etagDoesNotMatch:"*"}});
+   if(written===null)return json({error:"Administrator access was claimed by another account. Refresh and try again.",code:"ADMIN_ALREADY_CLAIMED"},409);
+  }
   const object=await env.PHOTOS.get(userKey(member.id));
   if(!object)return json({error:"Account not found"},404);
   const user=JSON.parse(await object.text());
