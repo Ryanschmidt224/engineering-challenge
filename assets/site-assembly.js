@@ -733,7 +733,8 @@ function setupAssemblyTrees(){
   detailEditButton.hidden=true;
   const detailHeading=detailsPanel.querySelector(".part-details-view-heading");
   detailHeading.insertBefore(detailEditButton,detailHeading.querySelector(".part-details-toggle-label"));
-  detailEditButton.after(editWorkshopButton);
+  detailHeading.insertBefore(editWorkshopButton,detailEditButton);
+  detailEditButton.textContent="Customize Workshop item";
   detailsPanel.querySelector(".part-details-view-actions").remove();
   partDetailsCollapse.addEventListener("toggle",()=>{partDetailsCollapse.querySelector(".part-details-toggle-label").textContent=partDetailsCollapse.open?"Minimize details":"Show details"});
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
