@@ -2536,7 +2536,7 @@ function setupAssemblyTrees(){
    const treeInfo=isPartNode(node)?partTreeLabels.get(node.partId):null;
    const firstLine=treeInfo?.mpn||nodeNumber||node?.name||title;
    const treeDetails=treeInfo?.details||{};
-   const secondLine=treeDetails.featureTreeName||treeDetails.workshopTreeDescription||treeInfo?.description?.slice(0,20)||"";
+   const secondLine=treeDetails.featureTreeName||treeDetails.workshopTreeDescription||treeInfo?.description?.slice(0,20)||node?.name||"";
    name.textContent=node?(isDocumentNode(node)?"📄  ":isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+(isPartNode(node)?firstLine:(nodeNumber?nodeNumber+" · ":"")+node.name):"📦  "+title;
    if(isPartNode(node)&&treeDetails.showTreeDescription!=="false"&&secondLine&&secondLine!==firstLine){
     const detail=document.createElement("small");detail.className="assembly-tree-description";detail.textContent=secondLine;name.append(detail);
