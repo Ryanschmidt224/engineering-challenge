@@ -402,11 +402,6 @@
     const order=el("a","Supplier / ordering page","btn workshop-reference-order-link");
     order.href=item.supplierUrl;order.target="_blank";order.rel="noopener noreferrer";info.append(order);
    }
-   if(item.documentationUrl){
-    const docs=el("a","Documentation","workshop-reference-doc-link");
-    docs.href=item.documentationUrl;docs.target="_blank";docs.rel="noopener noreferrer";info.append(docs);
-   }
-
    const mediaWithEdit=el("div",undefined,"workshop-item-media-actions");
    mediaWithEdit.append(big);
    const mediaButtons=el("div",undefined,"workshop-item-media-buttons");
@@ -422,6 +417,11 @@
      }catch(error){alert(error.message||"Unable to delete Workshop item.")}
     },"btn workshop-under-image-delete"));
    if(mediaButtons.childElementCount)mediaWithEdit.append(mediaButtons);
+   if(item.documentationUrl){
+    const docs=el("a","Documentation","btn workshop-reference-doc-link workshop-under-image-documentation");
+    docs.href=item.documentationUrl;docs.target="_blank";docs.rel="noopener noreferrer";
+    mediaWithEdit.append(docs);
+   }
    hero.append(mediaWithEdit,info);itemPage.append(hero);
    if(item.photos?.length>1){
     const gallery=el("div",undefined,"workshop-item-photo-gallery");
