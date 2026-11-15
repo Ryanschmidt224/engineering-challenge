@@ -462,6 +462,22 @@
    const heading=el("div",undefined,"workshop-item-editor-heading");
    heading.append(el("h3",isNew?"Create new catalog item":"Edit "+item.name),el("p","Public Workshop catalog · any signed-in member may edit shared items","muted"));
    form.append(heading);
+   // AI lookup fills a draft; only the existing Save action publishes an item.
+   const lookupPanel=el("section",undefined,"workshop-ai-lookup");
+   lookupPanel.hidden=!isNew;
+   lookupPanel.append(el("h3","Look up a manufacturer part number"));
+   const lookupHint=el("p","Enter an MPN (e.g. 2N7000), then verify the suggested product and picture before saving.","muted");
+   const lookupRow=el("div",undefined,"workshop-ai-lookup-row");
+   const lookupInput=el("input");lookupInput.type="text";lookupInput.className="field";
+   lookupInput.maxLength=80;lookupInput.placeholder="Manufacturer part number, e.g. 2N7000";
+   lookupInput.value=item.partNumber||"";
+   lookupInput.setAttribute("aria-label","Part number for AI product lookup");
+   const lookupResults=el("div",undefined,"workshop-ai-lookup-results");
+   const lookupMessage=el("p",undefined,"workshop-ai-lookup-status");lookupMessage.setAttribute("role","status");
+   const lookupButton=itemButton("Fill details with AI",()=>{},"btn primary");
+   lookupRow.append(lookupInput,lookupButton);
+   lookupPanel.append(lookupHint,lookupRow,lookupMessage,lookupResults);
+   form.append(lookupPanel);
    const grid=el("div",undefined,"workshop-item-edit-grid");
    // Reuse the New Part editor's canonical identity/additional/specification
    // sections and fields order, keeping Workshop-specific ordering fields.
@@ -549,6 +565,65 @@
     }
    };
    redrawPhotos();form.append(gallery);
+   // Lookup populates the existing editable fields, not an alternate AI record.
+   lookupInput.addEventListener("keydown",event=>{
+    if(event.key==="Enter"){event.preventDefault();lookupButton.click()}
+   });
+   lookupButton.onclick=async()=>{
+    const mpn=lookupInput.value.trim();
+    if(mpn.length<2){lookupMessage.textContent="Enter a manufacturer part number first.";lookupInput.focus();return}
+    lookupButton.disabled=true;lookupMessage.textContent="Searching manufacturer and datasheet information…";
+    lookupResults.replaceChildren();
+    try{
+     const response=await req("/api/workshop-lookup","POST",{partNumber:mpn});
+     const draft=response.draft||{};
+     for(const key of saveableFields){
+      if(controls[key]&&typeof draft[key]==="string")controls[key].value=draft[key];
+     }
+     if(draft.partNumber)lookupInput.value=draft.partNumber;
+     if(draft.kind)kind.value=draft.kind;
+     if(draft.category)category.value=draft.category;
+     const familyMatch=families().find(entry=>entry.label.toLowerCase()===String(draft.familyName||"").toLowerCase());
+     if(familyMatch)family.value=familyMatch.id;
+     else if(draft.familyName){family.value="new-family";familyName.value=draft.familyName}
+     updateFamily();
+     lookupResults.append(el("p",response.note||"Review these AI-generated details carefully.","muted"));
+     const sources=(response.sources||[]).filter(url=>/^https:\/\//i.test(url));
+     if(sources.length){
+      const sourcesBox=el("div",undefined,"workshop-ai-source-list");
+      sourcesBox.append(el("strong","Sources to check"));
+      for(const [index,url] of sources.entries()){
+       const link=el("a","Source "+(index+1));link.href=url;link.target="_blank";link.rel="noopener noreferrer";
+       sourcesBox.append(link);
+      }
+      lookupResults.append(sourcesBox);
+     }else lookupResults.append(el("p","No sources returned. Confirm the exact part against its manufacturer datasheet.","muted"));
+     if(response.imageSuggestion?.url&&/^https:\/\//i.test(response.imageSuggestion.url)){
+      const imageBox=el("div",undefined,"workshop-ai-image-candidate");
+      imageBox.append(el("strong","Suggested product picture — check exact MPN"));
+      const picture=el("img");picture.src=response.imageSuggestion.url;
+      picture.alt=response.imageSuggestion.caption||"AI-suggested product photo";
+      picture.referrerPolicy="no-referrer";picture.loading="lazy";imageBox.append(picture);
+      if(response.imageSuggestion.sourceUrl){
+       const source=el("a","Image source");source.href=response.imageSuggestion.sourceUrl;
+       source.target="_blank";source.rel="noopener noreferrer";imageBox.append(source);
+      }
+      const usePicture=itemButton("Add verified picture",async()=>{
+       if(photos.length>=12){uploadStatus.textContent="No more than 12 photos per item.";return}
+       usePicture.disabled=true;uploadStatus.textContent="Importing reviewed picture…";
+       try{
+        const result=await req("/api/workshop-image-import","POST",{url:response.imageSuggestion.url});
+        photos.push(result.photo);redrawPhotos();
+        uploadStatus.textContent="Picture added to the draft. Save the item to publish it.";
+        imageBox.remove();
+       }catch(error){uploadStatus.textContent=error.message;usePicture.disabled=false}
+      },"btn");
+      imageBox.append(usePicture);lookupResults.append(imageBox);
+     }else lookupResults.append(el("p","No suitable picture found. You can upload one below.","muted"));
+     lookupMessage.textContent="Draft populated. Review the manufacturer, MPN, specifications, classification, sources and photo before saving.";
+    }catch(error){lookupMessage.textContent=error.message||"Lookup failed."}
+    finally{lookupButton.disabled=false}
+   };
    const uploadRow=el("div",undefined,"workshop-item-photo-upload");
    const picker=el("input");picker.type="file";picker.accept="image/jpeg,image/png,image/webp";
    picker.multiple=true;picker.setAttribute("aria-label","Upload item photos");
