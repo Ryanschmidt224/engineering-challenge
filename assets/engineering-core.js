@@ -9,7 +9,8 @@
 })(typeof globalThis!=="undefined"?globalThis:null,function(){
  "use strict";
  const SCHEMA_VERSION=1;
- const PROJECT_IDS=Object.freeze(["launcher","linear","robot","buck","motorlab","coiltest"]);
+ const PROJECT_IDS=Object.freeze(["launcher","linear","robot"]);
+ const isProjectId=id=>typeof id==="string"&&(/^(?:launcher|linear|robot|p[a-f0-9]{32})$/).test(id);
  const asText=x=>typeof x==="string"?x:"";
  const jsonRecord=(bytes,decoder)=>{
   try{return JSON.parse(decoder(bytes))}catch{return null}
@@ -18,7 +19,7 @@
  // A BOM occurrence is not a part definition. Separate without changing legacy IDs
  // or rewriting any stored object.
  function projectModel(projectId, records, options={}){
-  if(!PROJECT_IDS.includes(projectId))throw Error("Unsupported project");
+  if(!isProjectId(projectId))throw Error("Unsupported project");
   const get=key=>records instanceof Map?records.get(key):records[key];
   const parse=key=>{
    const raw=get(key);
@@ -90,5 +91,5 @@
   }
   return [...byId.values()];
  };
- return Object.freeze({SCHEMA_VERSION,PROJECT_IDS,projectModel,validateRecipe,canonicalPartIdentity,groupedDefinitions,unique});
+ return Object.freeze({SCHEMA_VERSION,PROJECT_IDS,isProjectId,projectModel,validateRecipe,canonicalPartIdentity,groupedDefinitions,unique});
 });
