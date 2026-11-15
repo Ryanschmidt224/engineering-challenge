@@ -71,9 +71,7 @@ async function saveCreatedPartToWorkshop({part,destination,category,projectTitle
 function open({onCreate,hideDefault=false}){
  return new Promise(resolve=>{
  const dialog=el("dialog","library-part-dialog"),form=el("form","library-part-form");form.method="dialog";
- const heading=el("h2","","New part"),subtitle=el("p","muted","Create a part for the BOM. Choose whether it appears in the feature tree.");
- const toolField=el("label","library-visibility-field");const toolInput=el("input");toolInput.type="checkbox";toolField.append(toolInput,document.createTextNode(" Tool (not a build component)"));
- const visibility=el("label","library-visibility-field");const visibilityInput=el("input");visibilityInput.type="checkbox";visibilityInput.checked=hideDefault;visibility.append(visibilityInput,document.createTextNode(" Hide from feature tree"));
+ const heading=el("h2","","New part"),subtitle=el("p","muted","Create a part for this project or select an item from the Workshop.");
  // Choose the item type first, then select how a Part is created.
  // The workshop-origin choices are exclusive; saving a newly created part to
  // a Workshop is a separate, optional action.
@@ -325,7 +323,7 @@ function open({onCreate,hideDefault=false}){
  form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,
   manufacturerNumber.label,shortTreeDescription.label,manufacturerName.label,workshopDescription.label,vendorField.label,
   numberChoice,partNumberField.label,customName.label,vendorLinks,vendorInfo,
-  chooser,qty.label,hintUnits,toolField,visibility,projectDetailsPanel,status,workshopFinishNote,footer);
+  chooser,qty.label,hintUnits,projectDetailsPanel,status,workshopFinishNote,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],purchased=[],sharedOverrides={},personalItems=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  let savedWorkshopItem=null;
@@ -489,12 +487,10 @@ function open({onCreate,hideDefault=false}){
   partClassification.label.classList.toggle("hide",lib||documentMode||adding);
   qty.label.classList.toggle("hide",documentMode||workshopMode);
   hintUnits.classList.toggle("hide",documentMode||workshopMode);
-  toolField.classList.toggle("hide",documentMode||workshopMode);
-  if(documentMode){toolInput.checked=false;if(itemKind.input.value==="document")qty.input.value="1"}
+  if(documentMode&&itemKind.input.value==="document")qty.input.value="1";
   numberChoice.classList.toggle("hide",workshopMode);
   partNumberField.label.classList.toggle("hide",workshopMode||autoNumberCheckbox.checked);
   partNumberField.input.required=!workshopMode&&manualNumberCheckbox.checked;
-  visibility.classList.toggle("hide",workshopMode);
   // Hidden numeric and project-only fields should not participate in native
   // form validation when the user is only selecting/creating a Workshop part.
   quickSearch.classList.toggle("hide",!lib);
@@ -617,8 +613,10 @@ function open({onCreate,hideDefault=false}){
    payload.addToWorkshop=publicRadio.checked?"public":"private";
    if(publicRadio.checked)payload.workshopCategory=publicCategory.input.value;
   }
-  payload.hideFromFeatureTree=visibilityInput.checked;
-  payload.isTool=payload.itemType==="document"?false:workshopCheckbox.checked?["tools","safety"].includes(category.input.value):toolInput.checked;
+  // Workshop category determines whether this part is a reusable tool.
+  // Keep any existing tool designation supplied by a selected Workshop item.
+  payload.hideFromFeatureTree=false;
+  payload.isTool=payload.itemType==="document"?false:!!payload.isTool||(workshopCheckbox.checked&&["tools","safety"].includes(category.input.value));
   save.disabled=true;
   try{
    if(payload.addToWorkshop){
