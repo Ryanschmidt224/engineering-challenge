@@ -67,7 +67,7 @@
      const actions=el("div","bs-unstructured-note-actions");
      actions.append(button("Edit",()=>edit(note),"btn"));
      actions.append(button("Delete",async()=>{
-      if(!confirm("Delete this note? Its original photos will be retained in storage."))return;
+      if(!await window.BSDialogs.danger("Delete this note? Its original photos will be retained in storage.",{title:"Delete note?"}))return;
       await save(records.filter(x=>x.id!==note.id));
      },"btn"));
      content.append(actions);
