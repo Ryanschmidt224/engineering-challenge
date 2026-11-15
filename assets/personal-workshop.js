@@ -618,7 +618,7 @@
    };
    const suggestedTemplate=()=>{
     const description=[family.value,families().find(f=>f.id===family.value)?.label,
-     controls.typeName?.value,controls.name?.value,controls.subtitle?.value].filter(Boolean).join(" ").toLowerCase();
+     familyName.value,controls.typeName?.value,controls.name?.value,controls.subtitle?.value].filter(Boolean).join(" ").toLowerCase();
     if(/mosfet|field.effect.transistor/.test(description))return specTemplates.mosfet;
     if(/resistor/.test(description))return specTemplates.resistor;
     if(/capacitor/.test(description))return specTemplates.capacitor;
@@ -731,11 +731,16 @@
      if(draft.partNumber)lookupInput.value=draft.partNumber;
      if(draft.kind)kind.value=draft.kind;
      if(draft.category)category.value=draft.category;
-     const familyMatch=families().find(entry=>entry.label.toLowerCase()===String(draft.familyName||"").toLowerCase());
-     if(familyMatch)family.value=familyMatch.id;
-     else if(draft.familyName){family.value="new-family";familyName.value=draft.familyName}
+     const suggestedFamily=String(draft.familyName||"").trim();
+     const familyMatch=families().find(entry=>entry.label.toLowerCase()===suggestedFamily.toLowerCase());
+     if(familyMatch){family.value=familyMatch.id;familyName.value=""}
+     else if(suggestedFamily){family.value="new-family";familyName.value=suggestedFamily}
      updateFamily();
      refreshSuggestions();
+     const categoryTitle=workshopCategories.find(([id])=>id===category.value)?.[1]||category.value;
+     const proposedFamily=family.value==="new-family"?familyName.value:families().find(x=>x.id===family.value)?.label;
+     lookupResults.append(el("p","Suggested classification: "+categoryTitle+
+      (proposedFamily?" → "+proposedFamily:"")+". Change it before saving if needed.","muted"));
      lookupResults.append(el("p",response.note||"Review these AI-generated details carefully.","muted"));
      const research=response.research||{};
      if(research.specs?.length){
