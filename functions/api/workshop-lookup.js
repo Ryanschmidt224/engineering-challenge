@@ -87,7 +87,7 @@ export async function onRequest({request,env}){
    spec:(engineeringSpecs||text(data.spec,5000)).slice(0,5000),use:(applications||text(data.use,3000)).slice(0,3000),
    caution:text(data.caution,3000),supplier:text(data.supplier,160),
    supplierUrl:validUrl(data.supplierUrl),documentationUrl:validUrl(data.documentationUrl),
-   notes:([pinout,text(data.notes,3000)].filter(Boolean).join("\n\n")).slice(0,5000)
+   notes:([pinout,text(data.notes,2400),sources.length?"Research sources (verify against manufacturer datasheet):\n"+sources.join("\n"):""].filter(Boolean).join("\n\n")).slice(0,5000)
   };
   // A generated answer is not a verified identity: require an exact part-number match.
   const normalize=v=>String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
