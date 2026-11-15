@@ -934,6 +934,39 @@ test("New Part ends Workshop edits after identity and confirms public/private sa
  expect(payload.itemType).toBe("document");
  expect(payload.addToWorkshop).toBeUndefined();
 });
+test("Failed Workshop publication remains in New Part dialog and does not create a BOM part",async({page})=>{
+ let createCalls=0,postCalls=0;
+ await page.route("**/api/**",async route=>{
+  const url=new URL(route.request().url());
+  if(url.pathname==="/api/workshop-reference"&&route.request().method()==="POST"){
+   postCalls++;
+   return route.fulfill({status:401,contentType:"application/json",
+    body:JSON.stringify({error:"Sign in to contribute to the public Workshop"})});
+  }
+  const body=url.pathname==="/api/commonparts"||url.pathname==="/api/purchased-parts"?{parts:[]}:
+   url.pathname==="/api/workshop-reference"?{items:{}}:
+   url.pathname==="/api/personal-workshop"?{items:[]}:
+   url.pathname==="/api/projects"?{projects:[]}:{};
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(body)});
+ });
+ await page.goto("/");
+ await page.exposeFunction("recordBomCreate",()=>{createCalls++});
+ await page.evaluate(()=>window.BSLibraryPartPicker.open({
+  onCreate:async()=>window.recordBomCreate()
+ }));
+ const modal=page.locator(".library-part-dialog");
+ await modal.locator(".library-workshop-add input").check();
+ await modal.locator('input[name="workshop-destination"][value="public"]').check();
+ await modal.locator(".library-field",{hasText:"Manufacturer part number (MPN)"}).locator("input").fill("2N7000");
+ await modal.locator(".library-field",{hasText:"Part name"}).locator("input").fill("2N7000 MOSFET");
+ await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
+ await expect(modal).toBeVisible();
+ await expect(modal.locator(".library-dialog-status")).toContainText("Sign in to contribute to the public Workshop");
+ expect(createCalls).toBe(0);
+ expect(postCalls).toBe(1);
+ await modal.locator(".library-dialog-actions").getByRole("button",{name:"Cancel"}).click();
+});
+
 test("Searching Workshop for missing 2N7000 opens a purchased part with separate manufacturer number",async({page})=>{
  await page.route("**/api/**",async route=>{
   const url=new URL(route.request().url());let data={};
