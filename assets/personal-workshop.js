@@ -284,6 +284,14 @@
   const categoryLabelFor=item=>workshopCategories.find(([key])=>key===categoryFor(item))?.[1]||"Other";
   const friendlyTier=item=>item.tier==="core"?"Beginner / essential":"Additional / specialized";
   // Catalog illustrations where a verified product image is not available.
+  const personalThumb=item=>{
+   if(item.photoId){
+    const frame=el("span",undefined,"workshop-catalog-thumb workshop-catalog-photo-thumb");
+    const img=el("img");img.src="/api/workshop-photo?id="+encodeURIComponent(item.photoId);
+    img.alt=item.name;frame.append(img);return frame;
+   }
+   return catalogThumb(item);
+  };
   const catalogThumb=item=>{
    if(item.photos?.length){
     const frame=el("span",undefined,"workshop-catalog-thumb workshop-catalog-photo-thumb");
@@ -642,33 +650,50 @@
    list.replaceChildren();
    const allowed=item=>selectedWorkshopCategory==="all"||categoryFor(item)===selectedWorkshopCategory;
    const byCategory=standards().filter(allowed);
+   const personalAllowed=items.filter(item=>selectedWorkshopCategory==="all"||categoryOfPersonal(item)===selectedWorkshopCategory);
    const matched=byCategory.filter(item=>(!selectedFamily||familyFor(item)?.id===selectedFamily)&&
     [item.name,item.subtitle,item.spec,item.use,item.kind,item.category,categoryLabelFor(item),familyFor(item)?.label]
      .join(" ").toLowerCase().includes(query));
-   const familyGrid=families().map(group=>({...group,visible:byCategory.filter(item=>group.items.includes(item.id))}))
-    .filter(group=>group.visible.length);
+   const personalMatched=personalAllowed.filter(item=>(!selectedFamily||
+    (selectedFamily==="personal-other"?!familyOfPersonal(item):familyOfPersonal(item)===selectedFamily))&&
+    [item.name,item.manufacturer,item.model,item.partNumber,item.category,item.kind,item.notes,
+     ...(item.specifications||[]).flatMap(spec=>[spec.name,spec.value])].join(" ").toLowerCase().includes(query));
+   const personalOnly=personalMatched.filter(item=>!matchingReference(item)||
+    !matched.some(ref=>ref.id===matchingReference(item)?.id));
+   const familyGrid=families().map(group=>({...group,
+    visible:byCategory.filter(item=>group.items.includes(item.id)),
+    owned:personalAllowed.filter(item=>familyOfPersonal(item)===group.id)}))
+    .filter(group=>group.visible.length||group.owned.length);
    const count=$(".workshop-catalog-count",catalog);
    const title=$(".workshop-catalog-bar h3",catalog);
    if(!selectedFamily&&!query){
     title.textContent="Browse product families";
-    count.textContent=familyGrid.length+" groups · "+byCategory.length+" reference items";
+    const ungrouped=personalAllowed.filter(item=>!familyOfPersonal(item));
+   count.textContent=familyGrid.length+" product families · "+byCategory.length+" shared references · "+personalAllowed.length+" personal items";
     const grid=el("div",undefined,"workshop-family-grid");
     for(const group of familyGrid){
      const tile=el("button",undefined,"workshop-family-tile");tile.type="button";
-     const sample=group.visible[0];
-     tile.append(catalogThumb(sample));
+     const sample=group.visible[0]||group.owned[0];
+     tile.append(group.owned[0]?.photoId&&!group.visible.length?personalThumb(group.owned[0]):catalogThumb(sample));
      const text=el("span",undefined,"workshop-family-text");
      text.append(el("strong",group.label),el("small",group.description,"muted"),
-      el("span",group.visible.length+" items","workshop-family-count"));
+      el("span",group.visible.length+" references"+(group.owned.length?" · "+group.owned.length+" in My Workshop":""),"workshop-family-count"));
      tile.append(text);
      tile.onclick=()=>{selectedFamily=group.id;renderCatalog();catalog.scrollIntoView({block:"start"})};
      grid.append(tile);
+    }
+    if(ungrouped.length){
+     const tile=itemButton("",()=>{selectedFamily="personal-other";renderCatalog()},"workshop-family-tile");
+     const title=el("span",undefined,"workshop-family-text");
+     title.append(el("strong","Other items in My Workshop"),el("small","Uncategorized personal inventory","muted"),
+      el("span",ungrouped.length+" items","workshop-family-count"));
+     tile.append(catalogThumb({name:"Workshop equipment",kind:"equipment"}),title);grid.append(tile);
     }
     list.append(grid);
     return;
    }
    const family=families().find(group=>group.id===selectedFamily);
-   title.textContent=family?.label||"Search Workshop";
+   title.textContent=family?.label||(selectedFamily==="personal-other"?"Other items in My Workshop":"Search Workshop");
    if(selectedFamily){
     const back=el("button","← All product families","workshop-family-back");back.type="button";
     back.onclick=()=>{selectedFamily="";renderCatalog()};
@@ -684,34 +709,29 @@
      sort==="level"?String(a.tier||"").localeCompare(String(b.tier||"")):0;
     return col||a.name.localeCompare(b.name,undefined,{numeric:true});
    });
-   count.textContent=matched.length+" matching items";
-   if(!matched.length){list.append(el("p","No matching items. Change the search or product family.","muted"));return}
+   count.textContent=matched.length+" shared references · "+personalOnly.length+" personal items";
+   if(!matched.length&&!personalOnly.length){list.append(el("p","No matching items. Change the search or product family.","muted"));return}
    const heading=el("div",undefined,"workshop-catalog-columns");
    for(const t of ["Image","Item / description","Category","Recommended use",""])heading.append(el("span",t));
    list.append(heading);
    for(const item of matched){
     const row=el("article",undefined,"workshop-catalog-entry");
+    if(ownedFor(item).length)row.classList.add("is-owned");
     const summary=el("div",undefined,"workshop-catalog-line");
     const name=el("button",undefined,"workshop-catalog-name");
     name.type="button";name.textContent=item.name;name.setAttribute("aria-expanded","false");
     const main=el("div",undefined,"workshop-catalog-main-item");
     main.append(name);
     if(item.subtitle)main.append(el("small",item.subtitle,"muted"));
+    if(ownedFor(item).length)main.append(el("span",ownershipLabel(ownedFor(item)),"workshop-owned-label"));
     const thumbButton=itemButton("",()=>showItem(item.id),"workshop-catalog-thumb-action");
     thumbButton.setAttribute("aria-label","Open "+item.name);
     thumbButton.append(catalogThumb(item));
     summary.append(thumbButton,main,el("span",categoryLabelFor(item),"workshop-catalog-category"),
      el("span",item.use||friendlyTier(item),"workshop-catalog-use"));
-    const add=el("button","+ My Workshop","btn workshop-catalog-add");
+    const add=el("button",ownedFor(item).length?"Edit My Workshop item":"+ My Workshop","btn workshop-catalog-add");
     add.type="button";add.title="Create a private inventory item based on this reference";
-    add.onclick=()=>{
-     if(!$("#workshop-editor",personal)){nav?.select("mine");setStatus("Sign in to add items to your personal Workshop.");return}
-     nav?.select("mine");
-     fill({name:item.name,kind:item.kind==="tool"?"tool":item.kind==="component"?"component":"material",
-      category:categoryLabelFor(item),specifications:item.spec?[{name:"Recommended specification",value:item.spec}]:[]});
-     $("#workshop-editor",personal)?.scrollIntoView({block:"start",behavior:"smooth"});
-     $("#workshop-name",personal)?.focus();
-    };
+    add.onclick=()=>editPersonalReference(item);
     main.append(add);
     const detail=el("div",undefined,"workshop-catalog-detail");detail.hidden=true;
     const section=(label,value)=>{if(!value)return;const p=el("p");p.append(el("strong",label+" "),document.createTextNode(value));detail.append(p)};
@@ -725,6 +745,25 @@
     }
     name.onclick=()=>showItem(item.id);
     row.append(summary,detail);list.append(row);
+   }
+   for(const item of personalOnly){
+    const row=el("article",undefined,"workshop-catalog-entry workshop-personal-entry");
+    const summary=el("div",undefined,"workshop-catalog-line");
+    const main=el("div",undefined,"workshop-catalog-main-item");
+    main.append(itemButton(item.name,()=>showPersonalItem(item.id),"workshop-catalog-name"));
+    main.append(el("span","My Workshop · "+(stockLabels[item.stockStatus]||"In stock")+
+     " · "+item.quantity+" "+(item.unit||"pcs"),"workshop-owned-label"));
+    if(item.manufacturer||item.model)main.append(el("small",[item.manufacturer,item.model].filter(Boolean).join(" · "),"muted"));
+    const photo=itemButton("",()=>showPersonalItem(item.id),"workshop-catalog-thumb-action");
+    photo.setAttribute("aria-label","Open personal Workshop item "+item.name);
+    photo.append(personalThumb(item));
+    summary.append(photo,main,el("span",item.category||"My Workshop","workshop-catalog-category"),
+     el("span",item.notes||"Personal inventory item","workshop-catalog-use"));
+    main.append(itemButton("Edit item",()=>{
+     nav?.select("mine");fill(item);
+     $("#workshop-editor",personal)?.scrollIntoView({block:"start"});
+    },"btn workshop-catalog-add"));
+    row.append(summary);list.append(row);
    }
   };
   results.addEventListener("input",renderCatalog);
