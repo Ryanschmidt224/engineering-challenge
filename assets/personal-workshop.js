@@ -59,7 +59,8 @@
    if(category)nav?.select(category);
   });
   applyWorkshopCategory();
-  let workshopOverrides={},canEditReferences=false,accountSignedIn=false;
+  let workshopOverrides={},canEditReferences=false,canCreateReferences=false,editableReferenceIds=new Set(),accountSignedIn=false;
+  const canEditCatalog=item=>canEditReferences||editableReferenceIds.has(item?.id);
   let items=[],editingId=null,photoId="",catalogId="";
   // Seeded references keep stable IDs; administrator-created parts are loaded
   // from R2 and appear in exactly the same browsing and editing workflows.
@@ -372,7 +373,7 @@
 
    const mediaWithEdit=el("div",undefined,"workshop-item-media-actions");
    mediaWithEdit.append(big);
-   if(canEditReferences)
+   if(canEditCatalog(item))
     mediaWithEdit.append(itemButton("Edit",()=>openItemEditor(item),"btn workshop-under-image-edit"));
    hero.append(mediaWithEdit,info);itemPage.append(hero);
    if(item.photos?.length>1){
@@ -411,7 +412,7 @@
   }
 
   function createCatalogItem(){
-   if(!canEditReferences)return;
+   if(!canCreateReferences)return;
    selectedType="";openedItem="";
    shared.hidden=true;personal.hidden=true;sidebar.hidden=true;
    itemPage.hidden=false;itemSide.hidden=false;
@@ -440,14 +441,14 @@
    }
   };
   function openItemEditor(item){
-   if(!canEditReferences)return;
    const isNew=!item.id;
+   if(isNew?!canCreateReferences:!canEditCatalog(item))return;
    const mount=$(".workshop-item-editor-mount",itemPage);
    if(!mount)return;
    mount.replaceChildren();
    const form=el("form",undefined,"workshop-item-edit-form");
    const heading=el("div",undefined,"workshop-item-editor-heading");
-   heading.append(el("h3",isNew?"Create new catalog item":"Edit "+item.name),el("p","Shared Workshop catalog · administrator only","muted"));
+   heading.append(el("h3",isNew?"Create new catalog item":"Edit "+item.name),el("p","Public Workshop catalog · signed-in contributors can add and edit their own items","muted"));
    form.append(heading);
    const grid=el("div",undefined,"workshop-item-edit-grid");
    // Reuse the New Part editor's canonical identity/additional/specification
@@ -715,7 +716,7 @@
      if(item.manufacturer||item.model)tile.append(el("small",[item.manufacturer,item.model].filter(Boolean).join(" · "),"muted"));
      if(isPersonal)tile.append(el("span","My Workshop · "+(stockLabels[item.stockStatus]||"In stock"),"workshop-owned-label"));
      else if(ownedFor(item).length)tile.append(el("span",ownershipLabel(ownedFor(item)),"workshop-owned-label"));
-     if(isPersonal||canEditReferences)
+     if(isPersonal||canEditCatalog(item))
       tile.append(itemButton("Edit",()=>isPersonal?
         (showPersonalItem(item.id),closeItem(),nav?.select("mine"),fill(item),$("#workshop-editor",personal)?.scrollIntoView({block:"start"})):
         (showItem(item.id),openItemEditor(standards().find(r=>r.id===item.id))),
@@ -796,7 +797,9 @@
     const data=await req("/api/workshop-reference");
     workshopOverrides=data.items||{};
     canEditReferences=!!data.canEdit;
-    $(".workshop-catalog-create",catalog).hidden=!canEditReferences;
+    canCreateReferences=!!data.canCreate||canEditReferences;
+    editableReferenceIds=new Set(data.editableIds||[]);
+    $(".workshop-catalog-create",catalog).hidden=!canCreateReferences;
     renderCatalog();
     if(openedItem)showItem(openedItem,false);
    }catch(error){
