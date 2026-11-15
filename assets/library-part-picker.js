@@ -110,7 +110,28 @@ function open({onCreate,hideDefault=false}){
  const customName=field("Part name");
  const itemKind=field("Item type","select");option(itemKind.input,"part","Part");option(itemKind.input,"document","Document");option(itemKind.input,"code","Code");
  const partClassification=field("Part type","select");option(partClassification.input,"purchased","Off-the-shelf");option(partClassification.input,"custom","Custom");
- const partNumberField=field("New part number");partNumberField.input.placeholder="Enter an existing / reserved number";partNumberField.input.maxLength=30;
+ const partNumberField=field("Project BOM number (not manufacturer's number)");
+ partNumberField.input.placeholder="Project-specific number, e.g. 100";partNumberField.input.maxLength=30;
+ const manufacturerName=field("Manufacturer");
+ manufacturerName.input.placeholder="e.g. onsemi (select actual manufacturer)";
+ manufacturerName.input.maxLength=160;
+ const manufacturerNumber=field("Manufacturer part number (MPN)");
+ manufacturerNumber.input.placeholder="e.g. 2N7000";manufacturerNumber.input.maxLength=160;
+ const vendorField=field("Suggested vendor","select");
+ for(const [id,label] of [["DigiKey","DigiKey"],["Mouser","Mouser"],["Newark","Newark"],["Arrow","Arrow"],["Other","Other / not yet selected"]])option(vendorField.input,id,label);
+ const vendorLinks=el("div","library-vendor-links muted");
+ const vendorInfo=el("p","muted library-vendor-info","Vendor links search by manufacturer part number. Confirm manufacturer, package, specifications, stock and price before ordering.");
+ const renderVendorLinks=()=>{
+  vendorLinks.replaceChildren();
+  const part=manufacturerNumber.input.value.trim();if(!part)return;
+  for(const [name,base] of [["DigiKey","https://www.digikey.com/en/products/result?keywords="],
+   ["Mouser","https://www.mouser.com/c/?q="]]){
+   const link=el("a","library-vendor-search-link",name+" search");
+   link.href=base+encodeURIComponent(part);link.target="_blank";link.rel="noopener noreferrer";
+   vendorLinks.append(link);
+  }
+ };
+ manufacturerNumber.input.oninput=renderVendorLinks;
  const numberChoice=el("fieldset","library-number-choice");
  const numberLegend=el("legend","","Part number");numberChoice.append(numberLegend);
  const autoNumberRow=el("label","library-auto-number");
@@ -119,7 +140,10 @@ function open({onCreate,hideDefault=false}){
  const manualNumberRow=el("label","library-auto-number");
  const manualNumberCheckbox=el("input");manualNumberCheckbox.type="radio";manualNumberCheckbox.name="new-part-number-mode";manualNumberCheckbox.value="manual";
  manualNumberRow.append(manualNumberCheckbox,document.createTextNode(" Enter a part number"));
- numberChoice.append(autoNumberRow,manualNumberRow);
+ const noNumberRow=el("label","library-auto-number");
+ const noNumberRadio=el("input");noNumberRadio.type="radio";noNumberRadio.name="new-part-number-mode";noNumberRadio.value="none";
+ noNumberRow.append(noNumberRadio,document.createTextNode(" No project BOM number (purchased part)"));
+ numberChoice.append(autoNumberRow,manualNumberRow,noNumberRow);
  const autoNumberHelp=el("p","muted library-auto-number-help","The number is assigned when you save. Numbers 001–099 are reserved for assemblies; parts begin at 100.");
  const chooser=el("div","library-picker-section hide");
  const category=field("Part category","select");
@@ -247,7 +271,7 @@ function open({onCreate,hideDefault=false}){
  const workshopChoices=el("fieldset","library-workshop-choice-group");
  const workshopLegend=el("legend","","Part source");
  workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,addToWorkshopChoice,saveScope,workshopAddHelp);
- form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,numberChoice,autoNumberHelp,partNumberField.label,customName.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
+ form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,customName.label,manufacturerName.label,manufacturerNumber.label,vendorField.label,vendorLinks,vendorInfo,numberChoice,autoNumberHelp,partNumberField.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],purchased=[],sharedOverrides={},personalItems=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
@@ -299,6 +323,15 @@ function open({onCreate,hideDefault=false}){
   const lib=isPart&&workshopCheckbox.checked;
   const adding=isPart&&!lib&&addToWorkshopCheckbox.checked;
   if(adding)partClassification.input.value="purchased";
+  const purchased=!lib&&isPart&&partClassification.input.value==="purchased";
+  for(const label of [manufacturerName.label,manufacturerNumber.label,vendorField.label])
+   label.classList.toggle("hide",!purchased);
+  vendorLinks.classList.toggle("hide",!purchased);
+  vendorInfo.classList.toggle("hide",!purchased);
+  noNumberRow.classList.toggle("hide",!purchased);
+  if(!purchased&&noNumberRadio.checked)autoNumberCheckbox.checked=true;
+  manufacturerNumber.input.required=adding;
+  if(adding&&autoNumberCheckbox.checked)noNumberRadio.checked=true;
   workshopChoices.classList.toggle("hide",!isPart);
   addToWorkshopChoice.classList.toggle("hide",!isPart||lib);
   saveScope.classList.toggle("hide",!adding);
@@ -355,7 +388,7 @@ function open({onCreate,hideDefault=false}){
  newPartRadio.onchange=update;
  addToWorkshopCheckbox.onchange=update;
  privateRadio.onchange=update;publicRadio.onchange=update;
- itemKind.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;
+ itemKind.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;noNumberRadio.onchange=update;
  category.input.onchange=()=>{powerType.input.value="all";wireModeCheckbox.checked=false;update()};wireModeCheckbox.onchange=update;wireType.input.onchange=update;powerType.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;
  form.addEventListener("submit",async e=>{
   e.preventDefault();
@@ -367,7 +400,12 @@ function open({onCreate,hideDefault=false}){
    const name=customName.input.value.trim();if(!name||name.length>100){status.textContent="Enter a part name (up to 100 characters).";return}
    const autoNumber=autoNumberCheckbox.checked;
    payload={name,quantity:itemKind.input.value==="code"?null:itemKind.input.value==="document"?1:count,specifications:[],itemType:itemKind.input.value==="code"?"document":itemKind.input.value,partType:itemKind.input.value==="code"?"code":partClassification.input.value,
-    assignNumber:autoNumber,partNumber:autoNumber?null:partNumberField.input.value.trim().toUpperCase()||null};
+    assignNumber:autoNumber,partNumber:autoNumber?null:noNumberRadio.checked?null:partNumberField.input.value.trim().toUpperCase()||null};
+   if(itemKind.input.value==="part"&&partClassification.input.value==="purchased"){
+    payload.manufacturer=manufacturerName.input.value.trim();
+    payload.model=manufacturerNumber.input.value.trim(); // Manufacturer MPN; never the project's issued part number.
+    payload.supplier=vendorField.input.value==="Other"?"":vendorField.input.value;
+   }
   }else if(!(category.input.value==="consumables"&&wireModeCheckbox.checked)){
    const choice=commonSelect.input.value;
    const isStandard=choice.startsWith("standard:"),isPurchased=choice.startsWith("purchased:");
@@ -417,6 +455,7 @@ function open({onCreate,hideDefault=false}){
    if(payload.itemType!=="part"||payload.partType!=="purchased"){
     status.textContent="Only purchased parts can be saved to a Workshop.";return;
    }
+   if(!payload.model){status.textContent="Enter the manufacturer part number before saving to a Workshop.";manufacturerNumber.input.focus();return}
    payload.addToWorkshop=publicRadio.checked?"public":"private";
    if(publicRadio.checked)payload.workshopCategory=publicCategory.input.value;
   }
