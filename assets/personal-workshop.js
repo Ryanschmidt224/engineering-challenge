@@ -699,6 +699,20 @@
   window.addEventListener("popstate",()=>{
    const id=readSelected();if(id)showItem(id,false);else closeItem(false);
   });
+  // Open a linked catalog item when navigating here from a project part page.
+  window.addEventListener("bsopenworkshopitem",event=>{
+   const id=event.detail?.id;
+   if(!id)return;
+   if(id.startsWith("my:")&&!items.some(item=>"my:"+item.id===id)){
+    void req("/api/personal-workshop").then(data=>{items=data.items||[];showItem(id,false)})
+     .catch(error=>console.warn("Workshop navigation unavailable",error));
+    return;
+   }
+   if(id.startsWith("my:")||standards().some(item=>item.id===id)){showItem(id,false);return}
+   void req("/api/workshop-reference").then(data=>{
+    workshopOverrides=data.items||{};showItem(id,false);
+   }).catch(error=>console.warn("Workshop navigation unavailable",error));
+  });
   window.addEventListener("hashchange",()=>{
    if(location.hash&&location.hash!=="#commonparts"&&openedItem)closeItem(false);
   });
