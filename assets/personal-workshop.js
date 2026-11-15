@@ -376,10 +376,11 @@
 
    const mediaWithEdit=el("div",undefined,"workshop-item-media-actions");
    mediaWithEdit.append(big);
+   const mediaButtons=el("div",undefined,"workshop-item-media-buttons");
    if(canEditCatalog(item))
-    mediaWithEdit.append(itemButton("Edit",()=>openItemEditor(item),"btn workshop-under-image-edit"));
+    mediaButtons.append(itemButton("Edit",()=>openItemEditor(item),"btn workshop-under-image-edit"));
    if(canDeleteReferences&&item.created)
-    mediaWithEdit.append(itemButton("Delete",async()=>{
+    mediaButtons.append(itemButton("Delete",async()=>{
      if(!confirm("Permanently delete \""+item.name+"\" from the public Workshop? This cannot be undone."))return;
      try{
       await req("/api/workshop-reference","DELETE",{id:item.id,expectedRevision:item.revision||null});
@@ -387,6 +388,7 @@
       closeItem();renderCatalog();window.dispatchEvent(new Event("bsworkshopupdated"));
      }catch(error){alert(error.message||"Unable to delete Workshop item.")}
     },"btn workshop-under-image-delete"));
+   if(mediaButtons.childElementCount)mediaWithEdit.append(mediaButtons);
    hero.append(mediaWithEdit,info);itemPage.append(hero);
    if(item.photos?.length>1){
     const gallery=el("div",undefined,"workshop-item-photo-gallery");
