@@ -1,8 +1,10 @@
 import {isAdmin} from "./auth.js";
+import {CORE_PROJECTS,VALID_PROJECT_ID,readCatalog} from "./projects.js";
 
 // Read-only, versioned export and validation-only import. No live record is modified.
 // The first format is a lossless JSON envelope with base64 object bodies.
-export const PROJECTS=Object.freeze(["launcher","linear","robot","buck","motorlab","coiltest"]);
+export const PROJECTS=Object.freeze(CORE_PROJECTS.map(project=>project.id));
+export const isArchivedProjectId=id=>typeof id==="string"&&VALID_PROJECT_ID.test(id);
 export const ARCHIVE_FORMAT="building-schmidt-project";
 export const ARCHIVE_VERSION=1;
 const MAX_OBJECTS=1500;
@@ -114,7 +116,7 @@ export async function exportProject(r2,project){
 }
 export async function inspectArchive(archive,expectedProject){
  if(!archive||archive.format!==ARCHIVE_FORMAT||archive.schemaVersion!==ARCHIVE_VERSION||
-    !PROJECTS.includes(archive.projectId)||archive.projectId!==expectedProject||
+    !isArchivedProjectId(archive.projectId)||archive.projectId!==expectedProject||
     !Array.isArray(archive.objects)||archive.objects.length>MAX_OBJECTS||
     archive.objectCount!==archive.objects.length)throw Error("Invalid or incompatible project archive");
  const seen=new Set();let total=0;
@@ -137,7 +139,9 @@ export async function inspectArchive(archive,expectedProject){
 }
 export async function handleProjectArchive(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project");
- if(!PROJECTS.includes(project))return json({error:"Unknown project"},400);
+ if(!isArchivedProjectId(project))return json({error:"Unknown project"},400);
+ const catalog=await readCatalog(env);
+ if(!catalog.projects.some(item=>item.id===project))return json({error:"Project not found"},404);
  if(!["GET","POST"].includes(request.method))return json({error:"Method not allowed"},405);
  if(!await isAdmin(request,env))return json({error:"Administrator access required to protect private project data"},401);
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
