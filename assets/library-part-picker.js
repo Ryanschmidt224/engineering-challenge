@@ -28,14 +28,21 @@ function open({onCreate,hideDefault=false}){
  const heading=el("h2","","New part"),subtitle=el("p","muted","Create a part for the BOM. Choose whether it appears in the feature tree.");
  const toolField=el("label","library-visibility-field");const toolInput=el("input");toolInput.type="checkbox";toolField.append(toolInput,document.createTextNode(" Tool (not a build component)"));
  const visibility=el("label","library-visibility-field");const visibilityInput=el("input");visibilityInput.type="checkbox";visibilityInput.checked=hideDefault;visibility.append(visibilityInput,document.createTextNode(" Hide from feature tree"));
- // First choice: tick this only for a reusable item already defined in the Workshop.
+ // Shared catalog lookup and personal-inventory saving are different
+ // actions. Use two aligned options with mutually exclusive selection.
  const workshopChoice=el("label","library-workshop-first");
  const workshopCheckbox=el("input");workshopCheckbox.type="checkbox";
- workshopChoice.append(workshopCheckbox,document.createTextNode("This part "),el("strong","","is from"),document.createTextNode(" the Workshop"));
+ const fromText=el("span","library-workshop-choice-copy");
+ fromText.append(el("strong","","Use from"),el("span","","Workshop"));
+ const fromHelp=el("small","muted library-workshop-choice-description","Choose an existing catalog item");
+ workshopChoice.append(workshopCheckbox,fromText,fromHelp);
  const addToWorkshopChoice=el("label","library-workshop-first library-workshop-add");
  const addToWorkshopCheckbox=el("input");addToWorkshopCheckbox.type="checkbox";
- addToWorkshopChoice.append(addToWorkshopCheckbox,el("strong","","Add to"),document.createTextNode(" the Workshop"));
- const workshopAddHelp=el("p","muted library-workshop-add-help","Save this purchased part to My Workshop for future projects. It will not be published to the website-wide catalog.");
+ const addText=el("span","library-workshop-choice-copy");
+ addText.append(el("strong","","Add to"),el("span","","My Workshop"));
+ const addHelp=el("small","muted library-workshop-choice-description","Save a purchased part for reuse");
+ addToWorkshopChoice.append(addToWorkshopCheckbox,addText,addHelp);
+ const workshopAddHelp=el("p","muted library-workshop-add-help","Only purchased parts can be added to your private My Workshop. This does not publish an item to the shared catalog.");
  const customName=field("Part name");
  const itemKind=field("Item type","select");option(itemKind.input,"part","Part");option(itemKind.input,"document","Document");option(itemKind.input,"code","Code");
  const partClassification=field("Part type","select");option(partClassification.input,"purchased","Off-the-shelf");option(partClassification.input,"custom","Custom");
@@ -173,7 +180,10 @@ function open({onCreate,hideDefault=false}){
  manualFields.append(wireType.label,gauge.label,construction.label,wireAdvanced,length.label,endA.target.label,endA.choice.label,endA.other.label,endB.target.label,endB.choice.label,endB.other.label,results);
  wireSection.append(workflow,workflowHint,manualFields,wizardFields);
  chooser.append(category.label,wireModeChoice,wireSection,compSection);
- form.append(heading,subtitle,workshopChoice,addToWorkshopChoice,workshopAddHelp,itemKind.label,partClassification.label,numberChoice,autoNumberHelp,partNumberField.label,customName.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
+ const workshopChoices=el("fieldset","library-workshop-choice-group");
+ const workshopLegend=el("legend","","Workshop");
+ workshopChoices.append(workshopLegend,workshopChoice,addToWorkshopChoice,workshopAddHelp);
+ form.append(heading,subtitle,workshopChoices,itemKind.label,partClassification.label,numberChoice,autoNumberHelp,partNumberField.label,customName.label,chooser,qty.label,hintUnits,toolField,visibility,status,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],purchased=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  const close=result=>{if(finished)return;finished=true;dialog.close();dialog.remove();resolve(result||null)};
