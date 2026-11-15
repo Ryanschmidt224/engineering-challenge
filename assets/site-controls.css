@@ -2226,3 +2226,49 @@ body>.footer{margin-top:auto}
 .workshop-supplier-search .workshop-supplier-disclaimer{
  flex:1 1 100%;margin:0;font-size:.75rem;line-height:1.45;
 }
+
+/* Nonexclusive project attributes. Clicking several chips matches all selected tags. */
+#home .bs-project-tag-filter{
+ display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;
+ margin:0 0 15px;padding:5px 0 4px;
+}
+#home .bs-project-tag-filter[hidden]{display:none!important}
+.bs-project-tag-title{
+ font-size:.82rem;font-weight:750;color:var(--color-text);
+ white-space:nowrap;
+}
+.bs-project-tag-options,.bs-project-tag-suggestions{
+ display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+}
+.bs-project-tag-options{flex:1 1 100%;gap:7px}
+.bs-project-tag-chip{
+ display:inline-flex;align-items:center;gap:7px;
+ border:1px solid var(--color-border);border-radius:999px;
+ background:var(--color-surface);color:var(--color-text);
+ padding:7px 12px;font-size:.82rem;font-weight:550;line-height:1.2;
+ cursor:pointer;transition:background .12s,border-color .12s;
+}
+.bs-project-tag-chip:hover{border-color:var(--color-accent);background:var(--color-hover)}
+.bs-project-tag-chip.is-active{
+ border-color:var(--color-accent);background:var(--color-selected);
+ font-weight:750;
+}
+.bs-project-tag-chip:focus-visible,.bs-project-tag-clear:focus-visible{
+ outline:2px solid var(--color-accent);outline-offset:2px;
+}
+.bs-project-tag-count{font-size:.75rem;color:var(--color-text-muted)}
+.bs-project-tag-clear{
+ border:0;background:transparent;color:var(--color-accent);
+ font-size:.82rem;cursor:pointer;padding:3px 6px;
+}
+.bs-project-tag-clear[hidden]{display:none!important}
+.bs-project-tag-picker{display:grid;gap:8px;margin:12px 0 16px}
+.bs-project-tag-picker>label{font-weight:700;font-size:.88rem}
+.bs-project-tag-picker .field{margin:6px 0 0}
+.bs-project-tag-suggestions{gap:6px}
+.bs-project-tag-suggestions .bs-project-tag-chip{padding:6px 10px;font-size:.8rem}
+@media(max-width:600px){
+ #home .bs-project-tag-filter{gap:8px}
+ .bs-project-tag-options{gap:5px}
+ .bs-project-tag-chip{padding:7px 10px;font-size:.78rem}
+}
