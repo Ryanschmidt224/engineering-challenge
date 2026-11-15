@@ -85,11 +85,15 @@ test("Projects use tags instead of a category selector, without deleting legacy 
 });
 test("Saving a purchased project part to My Workshop never publishes private inventory to the shared catalog",()=>{
  const source=readFileSync("assets/site-assembly.js","utf8");
- assert.match(source,/const \{wireInfo,addToWorkshop=false,\.\.\.part\}=payload/);
- assert.match(source,/fetch\("\/api\/personal-workshop"/);
- assert.match(source,/quantity:0,unit:"pcs"/);
- assert.match(source,/stockStatus:"committed"/);
- assert.doesNotMatch(source,/fetch\("\/api\/workshop-reference".*addToWorkshop/);
+ assert.match(source,/const \{wireInfo,addToWorkshop=false,workshopCategory="",\.\.\.part\}=payload/);
+ const picker=readFileSync("assets/library-part-picker.js","utf8");
+ assert.match(source,/saveCreatedPartToWorkshop\(/);
+ assert.match(picker,/fetch\("\/api\/personal-workshop"/);
+ assert.match(picker,/quantity:0,unit:"pcs"/);
+ assert.match(picker,/stockStatus:"committed"/);
+ assert.match(picker,/if\(chosen==="public"\)/);
+ assert.match(picker,/fetch\("\/api\/workshop-reference"/);
+ assert.match(picker,/if\(chosen!=="private"\)/);
 });
 
 test("Workshop detail editing is tied to the opened record, with one image-adjacent Edit action",()=>{
@@ -97,7 +101,7 @@ test("Workshop detail editing is tied to the opened record, with one image-adjac
  const css=readFileSync("assets/workshop.css","utf8");
  const shared=source.slice(source.indexOf("  function showItem("),source.indexOf("  function openItemEditor("));
  assert.doesNotMatch(shared,/Edit shared catalog|Edit My Workshop copy|Edit item in My Workshop/);
- assert.match(shared,/if\(canEditReferences\)\s*mediaWithEdit\.append\(itemButton\("Edit"/);
+ assert.match(shared,/if\(canEditCatalog\(item\)\)\s*mediaWithEdit\.append\(itemButton\("Edit"/);
  assert.match(shared,/itemButton\("View in My Workshop",\(\)=>showPersonalItem\(owned\[0\]\.id\)/);
  const personal=source.slice(source.indexOf("  function showPersonalItem("),source.indexOf("  function showItem("));
  assert.equal((personal.match(/itemButton\("Edit"/g)||[]).length,1);
