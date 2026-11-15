@@ -19,7 +19,7 @@ function setupAssemblyTrees(){
   const featureTreeCard=document.createElement("div");
   featureTreeCard.className="assembly-feature-tree-card";
   while(root.firstChild)featureTreeCard.append(root.firstChild);
-  root.append(summaryCard,featureTreeCard);
+  root.append(featureTreeCard,summaryCard);
   // Legacy project pages share the same workspace styling as newer projects.
   if(project==="linear"||project==="robot")view.classList.add("personal-project-view");
   const canEdit=()=>window.BSProjectManager?.isOwner?.(project)===true || (["launcher","linear","robot"].includes(project)&&adminAuthenticated);
@@ -441,7 +441,8 @@ function setupAssemblyTrees(){
   const featureTreeFrame=document.createElement("div");
   featureTreeFrame.className="feature-tree-frame";
   while(sidebar.firstChild)featureTreeFrame.append(sidebar.firstChild);
-  sidebar.append(featureTreeFrame);
+  // Keep the summary card outside the scrolling tree card, immediately above Parts Management.
+  sidebar.append(featureTreeFrame,summaryCard);
   const bomResizer=document.createElement("div");
   bomResizer.className="workspace-bom-resizer";
   bomResizer.setAttribute("role","separator");
@@ -2004,6 +2005,19 @@ function setupAssemblyTrees(){
     view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));
    }
   });
+  // Every project-level page gets the same notes component, but each page
+  // keeps its own records. BOM and workspace for an assembly are independent.
+  const notePanels=Object.fromEntries([
+   ["summary",summary],["workspace",workspace],["bom",bomScreen],
+   ["part",partWorkspace],["parts",partsPage]
+  ].map(([scope,mount])=>[scope,window.BSUnstructuredNotes.mount(mount,{project,scope,canEdit})]));
+  let lastNotePage="";
+  const showNotes=(scope,id="root")=>{
+   const page=scope+":"+id;
+   if(page===lastNotePage)return;
+   lastNotePage=page;
+   void notePanels[scope].read(id);
+  };
   const workspaceHash=id=>"#"+project+"/workspace/"+encodeURIComponent(id??"__root__");
   const bomHash=id=>"#"+project+"/bom/"+encodeURIComponent(id??"__root__");
   // Keep older overview deep links usable as BOM list destinations.
@@ -2046,15 +2060,16 @@ function setupAssemblyTrees(){
    // Legacy overview DOM remains available for image editing but isn't a page.
    detail.classList.add("hide");
    main.classList.add("hide");
-   if(inPart){void showPartWorkspace();return;}
-   if(inParts){void partsManager.refresh();return;}
-   if(inSummary){void refreshProjectSummary();return;}
+   if(inPart){showNotes("part",partRoute());void showPartWorkspace();return;}
+   if(inParts){showNotes("parts");void partsManager.refresh();return;}
+   if(inSummary){showNotes("summary");void refreshProjectSummary();return;}
    if(inBom){
+    showNotes("bom",selected??"root");
     bomScreen.querySelector(".assembly-bom-screen-title").textContent=(selected===null?title:((nodes.find(n=>n.id===selected)?.partNumber||"")+(nodes.find(n=>n.id===selected)?.partNumber?" · ":"")+(nodes.find(n=>n.id===selected)?.name||"Assembly")))+" · BOM";
     if(bomView==="pictures")renderTiles();
     return;
    }
-   if(inWorkspace){void loadAssemblyStatus();workspace.querySelector(".workspace-title").textContent=selected===null?title:((nodes.find(n=>n.id===selected)?.partNumber||"")+(nodes.find(n=>n.id===selected)?.partNumber?" · ":"")+(nodes.find(n=>n.id===selected)?.name||"Assembly"));if(photoDialog.open)photoDialog.close();workspacePhotoBar.setEnabled(canEdit());workspacePhotoBar.collapse();loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
+   if(inWorkspace){showNotes("workspace",selected??"root");void loadAssemblyStatus();workspace.querySelector(".workspace-title").textContent=selected===null?title:((nodes.find(n=>n.id===selected)?.partNumber||"")+(nodes.find(n=>n.id===selected)?.partNumber?" · ":"")+(nodes.find(n=>n.id===selected)?.name||"Assembly"));if(photoDialog.open)photoDialog.close();workspacePhotoBar.setEnabled(canEdit());workspacePhotoBar.collapse();loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
@@ -2409,7 +2424,8 @@ function setupAssemblyTrees(){
   partsEntry.type="button";partsEntry.textContent="Parts Management";
   partsEntry.className="assembly-project-summary-entry assembly-parts-management-link";
   partsEntry.onclick=()=>{history.pushState(null,"","#"+project+"/parts");render();notify();window.scrollTo(0,0)};
-  nodesEl.after(partsEntry);
+  // Both links sit outside the feature tree, with the summary directly above Parts Management.
+  root.append(partsEntry);
   function render(){nodesEl.replaceChildren();
    workshopFilter.checked=showWorkshopItems;documentsFilter.checked=showTreeDocuments;
    controls.classList.toggle("hide",!canEdit()||isProjectSummary());projectActions.classList.toggle("hide",!canEdit());cardEdit.classList.toggle("hide",!canEdit());
