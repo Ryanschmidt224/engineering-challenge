@@ -37,3 +37,37 @@
 /* Project summary is a single neutral navigation button, not a button nested in a shaded card. */
 .assembly-sidebar>.assembly-summary-sidebar-card{background:transparent;border:0;box-shadow:none;padding:0;border-radius:0}
 .assembly-sidebar>.assembly-summary-sidebar-card .assembly-project-summary-entry{width:100%;margin:0}
+
+/* Sidebar peer navigation: Project summary and Parts Management are identical
+ * full-width controls, without a second surrounding summary card. */
+.assembly-layout .assembly-sidebar > .assembly-summary-sidebar-card{
+ display:contents;
+}
+.assembly-layout .assembly-sidebar .assembly-summary-sidebar-card > .assembly-project-summary-entry,
+.assembly-layout .assembly-sidebar > .assembly-parts-management-link{
+ display:flex;
+ align-items:center;
+ box-sizing:border-box;
+ width:100%;
+ min-height:55px;
+ padding:12px 15px!important;
+ margin:0!important;
+ border:1px solid var(--color-border)!important;
+ border-radius:10px;
+ background:var(--color-surface);
+ color:var(--color-text);
+ font-size:.84rem;
+ font-weight:650;
+ line-height:1.3;
+ text-align:left;
+ cursor:pointer;
+}
+.assembly-layout .assembly-sidebar .assembly-summary-sidebar-card > .assembly-project-summary-entry:hover,
+.assembly-layout .assembly-sidebar > .assembly-parts-management-link:hover{
+ background:var(--color-hover);
+}
+.assembly-layout .assembly-sidebar .assembly-summary-sidebar-card > .assembly-project-summary-entry.selected,
+.assembly-layout .assembly-sidebar > .assembly-parts-management-link.selected{
+ background:var(--color-selected);
+ border-color:var(--color-accent)!important;
+}

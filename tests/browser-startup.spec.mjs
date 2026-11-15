@@ -48,6 +48,22 @@ test("project feature tree and workspace initialize without browser errors", asy
  const summaryEntry=page.locator("#launcher .assembly-summary-sidebar-card .assembly-project-summary-entry");
  await expect(summaryEntry).toHaveText("Project summary");
  await expect(summaryEntry).toHaveAttribute("aria-current","page");
+ const partsEntry=page.locator("#launcher .assembly-parts-management-link");
+ await expect(partsEntry).toBeVisible();
+ const navVisual=await page.locator("#launcher .assembly-sidebar").evaluate(sidebar=>{
+  const a=sidebar.querySelector(".assembly-summary-sidebar-card .assembly-project-summary-entry");
+  const b=sidebar.querySelector(".assembly-parts-management-link");
+  const box=element=>{const r=element.getBoundingClientRect(),style=getComputedStyle(element);
+   return {x:r.x,width:r.width,height:r.height,padding:style.padding,borderRadius:style.borderRadius,
+    borderWidth:style.borderWidth,fontSize:style.fontSize}};
+  return {summary:box(a),parts:box(b),wrapperDisplay:getComputedStyle(a.parentElement).display};
+ });
+ expect(navVisual.wrapperDisplay).toBe("contents");
+ expect(navVisual.summary.width).toBeCloseTo(navVisual.parts.width,1);
+ expect(navVisual.summary.height).toBeCloseTo(navVisual.parts.height,1);
+ expect(navVisual.summary.x).toBeCloseTo(navVisual.parts.x,1);
+ expect(navVisual.summary.padding).toBe(navVisual.parts.padding);
+ expect(navVisual.summary.borderRadius).toBe(navVisual.parts.borderRadius);
  await expect(summary.locator(".project-summary-title")).toContainText("Foam");
  await expect(summary.locator(".project-summary-bom-items")).toContainText("C2822 Brushless Motor");
  await expect(summary.locator(".project-summary-bom-items")).toContainText("20A ESC");
