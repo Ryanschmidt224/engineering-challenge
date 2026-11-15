@@ -2529,7 +2529,7 @@ function setupAssemblyTrees(){
        wireId=wireData.wire.id;
       }
      }
-     const {wireInfo,...part}=payload;
+     const {wireInfo,addToWorkshop=false,...part}=payload;
      if(wireId){part.sharedPartRef="wire:"+wireId;part.specifications.push({name:"Library wire ID",value:wireId,source:"explicit"})}
      const res=await fetch("/api/components?project="+encodeURIComponent(project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({assemblyId:selected,...part})});
      const data=await res.json();if(!res.ok)throw Error(data.error||"Unable to create part");
@@ -2549,8 +2549,33 @@ function setupAssemblyTrees(){
      if(newPart.partNumber)partNumbers.set(newPart.id,newPart.partNumber);
      const next=[...nodes,{id:crypto.randomUUID(),kind:"part",partId:newPart.id,name:newPart.name,parentId:selected}];
      await save(next);expanded.add(selected);
+     let workshopNotice="";
+     if(addToWorkshop){
+      // Inventory is a separate authorized record. A failure must not undo a
+      // successfully saved BOM part or invite an accidental duplicate retry.
+      try{
+       const response=await fetch("/api/personal-workshop",{
+        method:"POST",credentials:"same-origin",
+        headers:{"content-type":"application/json"},
+        body:JSON.stringify({
+         name:newPart.name,kind:"component",category:newPart.category||"Purchased parts",
+         manufacturer:newPart.manufacturer||"",model:newPart.model||"",
+         partNumber:newPart.partNumber||"",quantity:0,unit:"pcs",
+         stockStatus:"committed",
+         notes:"Added from project "+title+"; inventory quantity not confirmed.",
+         specifications:newPart.specifications||[]
+        })
+       });
+       const result=await response.json().catch(()=>({}));
+       if(!response.ok)throw Error(result.error||"Workshop save failed");
+       workshopNotice=" Also saved to My Workshop as committed (quantity not confirmed).";
+       window.dispatchEvent(new Event("bsworkshopupdated"));
+      }catch(error){
+       workshopNotice=" The BOM part was created, but My Workshop could not be updated: "+error.message;
+      }
+     }
      if(!newPart.hideFromFeatureTree&&!newPart.isTool)openTreePart(next[next.length-1]);
-     status.textContent="Part added to the feature tree and BOM. Required ferrules are calculated automatically.";
+     status.textContent="Part added to the feature tree and BOM."+workshopNotice;
     }catch(error){
      if(newPart)await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(newPart.id),{method:"DELETE",credentials:"same-origin"}).catch(()=>{});
      status.textContent="Could not add part: "+error.message;throw error;
