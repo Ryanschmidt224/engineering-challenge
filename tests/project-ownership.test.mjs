@@ -157,3 +157,25 @@ test("administrator is a role on an existing email/password account, never a pub
  assert.equal((await other.json()).user.role,"member");
  assert.equal(await isAdmin(new Request(ORIGIN+"/api/auth",{headers:{cookie:cookie(other)}}),env),false);
 });
+
+test("project tags are optional, case-insensitive unique, and can describe several disciplines",async()=>{
+ const env={PHOTOS:new Bucket(),admin_password:"role-tags-test-password"};
+ const response=await handleAccounts(request("/api/accounts","POST",{
+  action:"register",email:"tags@example.test",password:"strong-tags-test-password"
+ }),env);
+ assert.equal(response.status,201);
+ const owner=cookie(response);
+ let result=await projectsApi({request:request("/api/projects","POST",{
+  name:"CAD with electronics",description:"A mixed build",tags:["CAD","Electronics","cad","3D Printing","Software"],category:"Uncategorized"
+ },owner),env});
+ assert.equal(result.status,200);
+ const project=(await result.json()).projects.find(item=>item.name==="CAD with electronics");
+ assert.deepEqual(project.tags,["CAD","Electronics","3D Printing","Software"]);
+ result=await projectsApi({request:request("/api/projects","PATCH",{id:project.id,tags:["Woodworking","CAD"]},owner),env});
+ assert.equal(result.status,200);
+ assert.deepEqual((await result.json()).projects.find(item=>item.id===project.id).tags,["Woodworking","CAD"]);
+ result=await projectsApi({request:request("/api/projects","PATCH",{id:project.id,tags:["   "]},owner),env});
+ assert.equal(result.status,400);
+ result=await projectsApi({request:request("/api/projects","PATCH",{id:project.id,tags:Array(21).fill("CAD")},owner),env});
+ assert.equal(result.status,400);
+});
