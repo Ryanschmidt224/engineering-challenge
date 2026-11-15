@@ -2532,7 +2532,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
 }
 #commonparts .workshop-ai-diff-table thead th{background:#f4f7f5}
 #commonparts .workshop-ai-changes-actions{
- display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;margin-top:18px;
+ display:flex;justify-content:flex-start;flex-wrap:wrap;gap:10px;margin-top:18px;
 }
 @media(max-width:550px){
  #commonparts .workshop-ai-lookup-row>input{flex-basis:100%}
