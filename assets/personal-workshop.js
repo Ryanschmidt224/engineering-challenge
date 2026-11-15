@@ -52,6 +52,35 @@
 
 
   /* Inventory ownership is visible during all shared-catalog searches. */
+
+  /* McMaster-inspired hierarchy: product family → type tiles → individual parts. */
+  #commonparts .workshop-type-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin:18px 0}
+  #commonparts .workshop-type-tile{display:flex;align-items:start;gap:14px;text-align:left;border:1px solid var(--color-border);border-radius:5px;background:var(--color-surface);padding:12px;cursor:pointer;color:var(--color-text)}
+  #commonparts .workshop-type-tile:hover{border-color:var(--color-accent);background:var(--color-hover)}
+  #commonparts .workshop-type-tile .workshop-catalog-thumb{width:82px;height:82px;flex:none}
+  #commonparts .workshop-type-text{display:flex;flex-direction:column;gap:8px}
+  #commonparts .workshop-type-text strong{font-size:.94rem}
+  #commonparts .workshop-type-text small{font-size:.78rem}
+  #commonparts .workshop-product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,210px));gap:14px;margin:14px 0 28px}
+  #commonparts .workshop-product-tile{display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:12px;border:1px solid var(--color-border);border-radius:6px;background:var(--color-surface);min-width:0}
+  #commonparts .workshop-product-image{background:var(--color-surface-muted);border:1px solid var(--color-border);padding:0;cursor:pointer;border-radius:4px;display:grid;place-items:center}
+  #commonparts .workshop-product-image .workshop-catalog-thumb{width:100%;height:122px;border:0}
+  #commonparts .workshop-product-image .workshop-catalog-thumb svg{width:92px;height:92px}
+  #commonparts .workshop-product-name{background:transparent;border:0;padding:0;text-align:left;color:var(--color-accent);font-weight:700;cursor:pointer;font-size:.89rem}
+  #commonparts .workshop-product-tile small{font-size:.77rem}
+  #commonparts .workshop-product-edit{align-self:start;margin-top:auto;padding:6px 20px}
+  #commonparts .workshop-item-media-actions{display:flex;flex-direction:column;align-items:start;gap:10px;min-width:0}
+  #commonparts .workshop-item-media-actions .workshop-item-primary-media{width:100%}
+  #commonparts .workshop-under-image-edit{min-width:100px}
+  #commonparts .workshop-spec-table{width:100%;border-collapse:collapse;margin:16px 0}
+  #commonparts .workshop-spec-table th,#commonparts .workshop-spec-table td{border-bottom:1px solid var(--color-border);text-align:left;vertical-align:top;padding:10px 12px;font-size:.86rem;line-height:1.5}
+  #commonparts .workshop-spec-table th{font-weight:650;width:185px;background:var(--color-surface-muted)}
+  #commonparts .workshop-spec-table td{overflow-wrap:anywhere}
+  @media(max-width:650px){
+   #commonparts .workshop-type-grid{grid-template-columns:1fr}
+   #commonparts .workshop-product-grid{grid-template-columns:repeat(auto-fill,minmax(145px,1fr))}
+   #commonparts .workshop-spec-table th{width:110px}
+  }
   /* Keep the related product strip at the bottom of the item viewport.
      A long edit form naturally pushes this section below its contents. */
   #commonparts .workshop-item-page:not([hidden]){
@@ -239,7 +268,7 @@
   };
   const nav=window.BSCatalogUI?.categories(sidebar,{
    heading:"Browse Workshop",
-   onChange:key=>{selectedWorkshopCategory=key;selectedFamily="";applyWorkshopCategory();queueMicrotask(()=>root.querySelector(".workshop-catalog-sort")?.dispatchEvent(new Event("change")))}
+   onChange:key=>{selectedWorkshopCategory=key;selectedFamily="";selectedType="";applyWorkshopCategory();queueMicrotask(()=>root.querySelector(".workshop-catalog-sort")?.dispatchEvent(new Event("change")))}
   });
   nav?.setItems([{value:"all",label:"All workshop items"},
    ...workshopCategories.map(([id,name])=>({value:id,label:name})),
@@ -301,6 +330,44 @@
 
   const familyFor=item=>families().find(g=>g.items.includes(item.id));
   let selectedFamily="";
+  // Product types form the final browse step: Family > Type > Part detail.
+  // Every personal item joins the same type as an equivalent shared reference.
+  const typeRules=[
+   ["multimeters","Multimeters",/multimeter/],
+   ["oscilloscopes","Oscilloscopes",/oscilloscope|scope probes/],
+   ["dc-bench","Bench DC Power Supplies",/bench power supply|bench dc supply/],
+   ["ac-dc","AC-to-DC Power Supplies",/ac.to.dc|enclosed.*power supply/],
+   ["dc-dc","DC-to-DC Converters",/dc.to.dc|buck converter|boost converter/],
+   ["hookup-wire","Hook-Up & Power Wire",/hook.up wire|power wire|signal wire/],
+   ["silicone-wire","Flexible Wire",/silicone|high.flex/],
+   ["ferrules","Ferrules",/ferrule/],
+   ["heat-shrink","Heat-Shrink Tubing",/heat.shrink|shrink tubing/],
+   ["solder","Solder & Flux",/solder|flux/],
+   ["crimpers","Crimping Tools",/crimping tool|crimper/],
+   ["wire-strippers","Wire Strippers & Cutters",/wire stripper|flush cutter/],
+   ["sensors","Sensors",/sensor/],
+   ["controllers","Development Boards & Controllers",/arduino|microcontroller|plc/],
+   ["fasteners","Screws, Nuts & Washers",/screw|fastener|washer|bolt/]
+  ];
+  const typeFor=item=>{
+   const group=typeRules.find(([, ,pattern])=>pattern.test(
+    [item.name,item.subtitle||"",item.category||""].join(" ").toLowerCase()));
+   if(group)return {id:group[0],label:group[1]};
+   const name=String(item.name||"").trim();
+   const simplified=name.replace(/^\d+(?:\.\d+)?\s*(?:awg|mm|in)\s+/i,"")
+    .replace(/\b(?:assortment|general-purpose|temperature-controlled)\b/gi,"").trim();
+   return {id:"other-"+(familyFor(item)?.id||familyOfPersonal(item)||"general"),
+    label:simplified?("Other "+(families().find(g=>g.id===(familyFor(item)?.id||familyOfPersonal(item)))?.label||"Products")):"Other products"};
+  };
+  let selectedType="";
+  const familyItems=()=>{
+   const shared=standards().filter(item=>(selectedWorkshopCategory==="all"||categoryFor(item)===selectedWorkshopCategory)&&
+    (selectedFamily==="personal-other"?false:!selectedFamily||familyFor(item)?.id===selectedFamily));
+   const mine=items.filter(item=>(selectedWorkshopCategory==="all"||categoryOfPersonal(item)===selectedWorkshopCategory)&&
+    (selectedFamily==="personal-other"?!familyOfPersonal(item):!selectedFamily||familyOfPersonal(item)===selectedFamily));
+   return {shared,mine};
+  };
+
   // McMaster-style catalog: category on the left, quick-filtered item table on
   // the right, and specifications expanded in context. All records are the
   // existing curated Workshop references; this does not scrape third parties.
@@ -377,7 +444,7 @@
   // route is already active and no hashchange event will fire.
   document.querySelectorAll('[data-nav="commonparts"]').forEach(button=>{
    button.addEventListener("click",()=>{
-    selectedFamily="";
+    selectedFamily="";selectedType="";
     results.value="";
     nav?.select("all");
     closeItem();
@@ -463,6 +530,13 @@
    for(const specification of item.specifications||[]){
     const line=el("p");line.append(el("strong",specification.name+": "),document.createTextNode(specification.value));detail.append(line);
    }
+   const edit=itemButton("Edit",()=>{
+    closeItem();nav?.select("mine");fill(item);
+    $("#workshop-editor",personal)?.scrollIntoView({block:"start"});
+   },"btn primary workshop-under-image-edit");
+   const media=el("div",undefined,"workshop-item-media-actions");
+   media.append(hero.firstElementChild,edit);
+   hero.prepend(media);
    hero.append(detail);itemPage.append(hero);
    itemPage.scrollIntoView({block:"start"});
   }
@@ -505,7 +579,12 @@
    crumb.append(itemButton("Workshop",()=>closeItem(),"workshop-item-crumb-link"));
    crumb.append(el("span"," / "+categoryLabelFor(item)+" / "));
    const family=familyFor(item);
-   if(family)crumb.append(itemButton(family.label,()=>{closeItem();selectedFamily=family.id;renderCatalog();},"workshop-item-crumb-link"));
+   if(family){
+    crumb.append(itemButton(family.label,()=>{closeItem();selectedFamily=family.id;selectedType="";renderCatalog();},"workshop-item-crumb-link"));
+    const type=typeFor(item);
+    crumb.append(el("span"," / "));
+    crumb.append(itemButton(type.label,()=>{closeItem();selectedFamily=family.id;selectedType=type.id;renderCatalog();},"workshop-item-crumb-link"));
+   }
    crumb.append(el("span"," / "+item.name));
    itemPage.append(crumb);
    const header=el("div",undefined,"workshop-item-page-heading");
@@ -540,7 +619,24 @@
      ()=>editPersonalReference(item),"btn primary workshop-item-edit-button"));
    }
    info.append(controls);
-   info.append(el("p",item.spec||item.use||"Reference specifications have not been provided."));
+   const specs=el("table",undefined,"workshop-spec-table");
+   const specBody=el("tbody");
+   const specRows=[
+    ["Manufacturer",item.manufacturer],["Model",item.model],["Part number",item.partNumber],
+    ["Specifications",item.spec],["Typical use",item.use],["Important considerations",item.caution],
+    ["Supplier",item.supplier],["Reference price",item.price],["Package quantity",item.packageQuantity],
+    ["How to order",item.orderNotes],["Notes",item.notes]
+   ];
+   for(const [label,value] of specRows){
+    if(!value)continue;
+    const tr=el("tr"),th=el("th",label),td=el("td",value);
+    th.scope="row";tr.append(th,td);specBody.append(tr);
+   }
+   if(!specBody.children.length){
+    const tr=el("tr"),td=el("td","Reference specifications have not been provided.");
+    td.colSpan=2;tr.append(td);specBody.append(tr);
+   }
+   specs.append(specBody);info.append(specs);
    const owned=ownedFor(item);
    if(owned.length){
     info.append(el("p",ownershipLabel(owned),"workshop-owned-note"));
@@ -556,7 +652,12 @@
     docs.href=item.documentationUrl;docs.target="_blank";docs.rel="noopener noreferrer";info.append(docs);
    }
 
-   hero.append(big,info);itemPage.append(hero);
+   const mediaWithEdit=el("div",undefined,"workshop-item-media-actions");
+   mediaWithEdit.append(big);
+   mediaWithEdit.append(itemButton("Edit",()=>canEditReferences?openItemEditor(item):editPersonalReference(item),"btn primary workshop-under-image-edit"));
+   if(canEditReferences&&accountSignedIn)
+    mediaWithEdit.append(itemButton("Edit My Workshop copy",()=>editPersonalReference(item),"btn"));
+   hero.append(mediaWithEdit,info);itemPage.append(hero);
    if(item.photos?.length>1){
     const gallery=el("div",undefined,"workshop-item-photo-gallery");
     for(const photo of item.photos){
@@ -725,7 +826,7 @@
      text.append(el("strong",group.label),el("small",group.description,"muted"),
       el("span",group.visible.length+" references"+(group.owned.length?" · "+group.owned.length+" in My Workshop":""),"workshop-family-count"));
      tile.append(text);
-     tile.onclick=()=>{selectedFamily=group.id;renderCatalog();catalog.scrollIntoView({block:"start"})};
+     tile.onclick=()=>{selectedFamily=group.id;selectedType="";renderCatalog();catalog.scrollIntoView({block:"start"})};
      grid.append(tile);
     }
     if(ungrouped.length){
@@ -742,13 +843,78 @@
    title.textContent=family?.label||(selectedFamily==="personal-other"?"Other items in My Workshop":"Search Workshop");
    if(selectedFamily){
     const back=el("button","← All product families","workshop-family-back");back.type="button";
-    back.onclick=()=>{selectedFamily="";renderCatalog()};
+    back.onclick=()=>{selectedFamily="";selectedType="";renderCatalog()};
     list.append(back);
     if(family)list.append(el("p",family.description,"workshop-family-description"));
    }else if(query){
     const clear=el("button","Show product families","workshop-family-back");clear.type="button";
     clear.onclick=()=>{results.value="";renderCatalog()};
     list.append(clear);
+   }
+
+   // No search term: show product-type thumbnails first. The final click opens
+   // the actual parts in this product type, including personal equipment.
+   if(selectedFamily&&!selectedType&&!query){
+    const grouped=new Map();
+    for(const item of matched){
+     const type=typeFor(item);
+     if(!grouped.has(type.id))grouped.set(type.id,{...type,shared:[],mine:[]});
+     grouped.get(type.id).shared.push(item);
+    }
+    for(const item of personalMatched){
+     const linked=matchingReference(item);
+     const type=typeFor(linked||item);
+     if(!grouped.has(type.id))grouped.set(type.id,{...type,shared:[],mine:[]});
+     grouped.get(type.id).mine.push(item);
+    }
+    const grid=el("div",undefined,"workshop-type-grid");
+    for(const group of [...grouped.values()].sort((a,b)=>a.label.localeCompare(b.label))){
+     const sample=group.shared[0]||group.mine[0];
+     const tile=itemButton("",()=>{selectedType=group.id;renderCatalog();catalog.scrollIntoView({block:"start"})},"workshop-type-tile");
+     tile.append(sample.photoId?personalThumb(sample):catalogThumb(sample));
+     const content=el("span",undefined,"workshop-type-text");
+     content.append(el("strong",group.label),el("small",group.shared.length+" reference"+(group.shared.length===1?"":"s")+
+      (group.mine.length?" · "+group.mine.length+" in My Workshop":""),"muted"));
+     tile.append(content);grid.append(tile);
+    }
+    count.textContent=grouped.size+" product types";
+    title.textContent=(family?.label||"Workshop")+" · Select a product type";
+    list.append(grid);
+    return;
+   }
+   if(selectedType){
+    const type=typeRules.find(rule=>rule[0]===selectedType);
+    const label=type?.[1]||"Other products";
+    title.textContent=label;
+    const back=itemButton("← All "+(family?.label||"product")+" types",()=>{selectedType="";renderCatalog()},"workshop-family-back");
+    list.append(back);
+   }
+   const shownShared=selectedType?matched.filter(item=>typeFor(item).id===selectedType):matched;
+   const shownPersonal=selectedType?personalOnly.filter(item=>typeFor(matchingReference(item)||item).id===selectedType):personalOnly;
+   if(selectedFamily&&!query){
+    count.textContent=shownShared.length+" catalog parts · "+shownPersonal.length+" personal parts";
+    const products=el("div",undefined,"workshop-product-grid");
+    const tileFor=(item,isPersonal)=>{
+     const tile=el("article",undefined,"workshop-product-tile");
+     const open=()=>isPersonal?showPersonalItem(item.id):showItem(item.id);
+     const image=itemButton("",open,"workshop-product-image");
+     image.setAttribute("aria-label","View "+item.name);
+     image.append(isPersonal?personalThumb(item):catalogThumb(item));
+     tile.append(image,itemButton(item.name,open,"workshop-product-name"));
+     if(item.manufacturer||item.model)tile.append(el("small",[item.manufacturer,item.model].filter(Boolean).join(" · "),"muted"));
+     if(isPersonal)tile.append(el("span","My Workshop · "+(stockLabels[item.stockStatus]||"In stock"),"workshop-owned-label"));
+     else if(ownedFor(item).length)tile.append(el("span",ownershipLabel(ownedFor(item)),"workshop-owned-label"));
+     tile.append(itemButton("Edit",()=>isPersonal?
+       (nav?.select("mine"),fill(item),$("#workshop-editor",personal)?.scrollIntoView({block:"start"})):
+       canEditReferences?(showItem(item.id),openItemEditor(standards().find(r=>r.id===item.id))):
+       editPersonalReference(item),"btn workshop-product-edit"));
+     return tile;
+    };
+    for(const item of shownShared)products.append(tileFor(item,false));
+    for(const item of shownPersonal)products.append(tileFor(item,true));
+    if(!products.children.length)products.append(el("p","No parts in this type yet.","muted"));
+    list.append(products);
+    return;
    }
    matched.sort((a,b)=>{
     const col=sort==="type"?String(a.kind||"").localeCompare(String(b.kind||"")):
