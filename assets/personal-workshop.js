@@ -43,6 +43,38 @@
   #workshop-recommend-search{display:block;width:100%;max-width:500px}
   .workshop-recommend-results:not(:empty){margin:10px 0 16px;border:1px solid var(--color-border,#ddd);padding:10px;border-radius:10px}
   .workshop-recommend-results .workshop-reco{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  #commonparts .workshop-catalog{margin:12px 0 20px}
+  #commonparts .workshop-catalog-bar{display:flex;justify-content:space-between;align-items:end;gap:16px;border-bottom:2px solid var(--color-border,#cbd5d1);padding:0 0 12px}
+  #commonparts .workshop-catalog-bar h3{margin:0;font-size:1.15rem}
+  #commonparts .workshop-catalog-subtitle{margin:4px 0 0;font-size:.82rem}
+  #commonparts .workshop-sort-label{font-size:.78rem;font-weight:600;white-space:nowrap}
+  #commonparts .workshop-sort-label select{display:block;width:155px;max-width:100%;padding:5px}
+  #commonparts .workshop-catalog-count{color:var(--color-text-muted,#667);font-size:.82rem;margin:10px 0}
+  #commonparts .workshop-catalog-columns,#commonparts .workshop-catalog-line{display:grid;grid-template-columns:minmax(180px,2fr) minmax(100px,.9fr) minmax(140px,2.2fr) 120px;gap:12px;align-items:center}
+  #commonparts .workshop-catalog-columns{background:var(--color-sidebar,#edf2ef);padding:9px 12px;font-weight:650;font-size:.76rem;color:var(--color-text-muted,#52645c)}
+  #commonparts .workshop-catalog-entry{border-bottom:1px solid var(--color-border,#d7dedb)}
+  #commonparts .workshop-catalog-line{padding:10px 12px;min-height:57px}
+  #commonparts .workshop-catalog-entry:nth-child(even){background:var(--color-surface-muted,#fafbfa)}
+  #commonparts .workshop-catalog-entry:hover{background:var(--color-hover,#eff5f0)}
+  #commonparts .workshop-catalog-main-item{display:flex;flex-direction:column;align-items:start;gap:3px;min-width:0}
+  #commonparts .workshop-catalog-name{background:none;border:0;padding:0;text-align:left;font:inherit;font-weight:650;color:var(--color-accent,#2d7159);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+  #commonparts .workshop-catalog-main-item small{font-size:.77rem;line-height:1.3}
+  #commonparts .workshop-catalog-category,#commonparts .workshop-catalog-use{font-size:.79rem;line-height:1.4}
+  #commonparts .workshop-catalog-add{font-size:.75rem;padding:6px 8px;white-space:nowrap}
+  #commonparts .workshop-catalog-detail{border-top:1px solid var(--color-border,#ddd);padding:14px 18px 16px 26px;background:var(--color-page,#fff);font-size:.85rem}
+  #commonparts .workshop-catalog-detail p{margin:0 0 8px}
+  #commonparts .workshop-catalog-detail[hidden]{display:none!important}
+  #commonparts .workshop-recommend-results{display:none}
+  #commonparts .workshop-recommendations,#commonparts .workshop-scope>details{margin-top:18px}
+  #commonparts .workshop-item{border-radius:3px;padding:12px 14px;gap:14px}
+  @media(max-width:850px){
+   #commonparts .workshop-catalog-columns{display:none}
+   #commonparts .workshop-catalog-line{grid-template-columns:minmax(0,1fr) auto;gap:6px}
+   #commonparts .workshop-catalog-category,#commonparts .workshop-catalog-use{grid-column:1}
+   #commonparts .workshop-catalog-add{grid-column:2;grid-row:1/4}
+   #commonparts .workshop-catalog-bar{align-items:start;flex-wrap:wrap}
+  }
+
  `;
  const style=el("style");style.textContent=styles;document.head.append(style);
  function init(){
@@ -61,7 +93,7 @@
   // One McMaster-style browsing shell, shared with Projects and Knowledge.
   // Only visibility changes here; personal inventory and standard items are
   // still stored separately and keep all their existing identifiers.
-  sharedDetails.open=true;
+  sharedDetails.open=false;
   const sidebar=el("div",undefined,"bs-workshop-category-sidebar");
   const allPanels=[shared,personal,...[...root.children].filter(node=>node!==header&&node!==shared&&node!==personal)];
   window.BSCatalogUI?.build(root,sidebar,allPanels);
@@ -77,7 +109,7 @@
     branch.hidden=key!=="all"&&category!==key;
     if(key!=="all"&&category===key)branch.open=true;
    }
-   if(key!=="all"&&key!=="mine")sharedDetails.open=true;
+   // Keep the long legacy reference tree collapsed; catalog rows are the primary browse surface.
    const intro=$(".workshop-recommendations",shared);
    const level=$(".workshop-row",shared);
    if(intro)intro.hidden=key!=="all";
@@ -85,7 +117,7 @@
   };
   const nav=window.BSCatalogUI?.categories(sidebar,{
    heading:"Browse Workshop",
-   onChange:key=>{selectedWorkshopCategory=key;applyWorkshopCategory()}
+   onChange:key=>{selectedWorkshopCategory=key;applyWorkshopCategory();queueMicrotask(()=>root.querySelector(".workshop-catalog-sort")?.dispatchEvent(new Event("change")))}
   });
   nav?.setItems([{value:"all",label:"All workshop items"},
    ...workshopCategories.map(([id,name])=>({value:id,label:name})),
@@ -98,6 +130,83 @@
   });
   applyWorkshopCategory();
   const standards=()=>window.BSResources?.workshopReferences||[];
+  // McMaster-style catalog: category on the left, quick-filtered item table on
+  // the right, and specifications expanded in context. All records are the
+  // existing curated Workshop references; this does not scrape third parties.
+  const catalog=el("section",undefined,"workshop-catalog");
+  catalog.innerHTML='<div class="workshop-catalog-bar"><div><h3>Workshop catalog</h3><p class="muted workshop-catalog-subtitle">Browse reference equipment, components, and materials. These are not automatically in your inventory.</p></div><label class="workshop-sort-label">Sort <select class="field workshop-catalog-sort"><option value="name">Name A–Z</option><option value="type">Type</option><option value="level">Skill level</option></select></label></div><p class="workshop-catalog-count" role="status"></p><div class="workshop-catalog-list"></div>';
+  const searchLabel=$("#workshop-recommend-search",shared).parentElement.querySelector(".workshop-recommend-search-label");
+  if(searchLabel)searchLabel.textContent="Search catalog by name, size, type, or specification";
+  const results=$("#workshop-recommend-search",shared);
+  results.placeholder="Search wire, ferrules, oscilloscope, MOSFET…";
+  results.after(catalog);
+  const categoryFor=item=>{
+   const found=workshopCategories.find(([, ,ids])=>ids?.includes(item.id));
+   return found?.[0]||item.category||"other";
+  };
+  const categoryLabelFor=item=>workshopCategories.find(([key])=>key===categoryFor(item))?.[1]||"Other";
+  const friendlyTier=item=>item.tier==="core"?"Beginner / essential":"Additional / specialized";
+  const renderCatalog=()=>{
+   const query=results.value.trim().toLowerCase(),sort=$(".workshop-catalog-sort",catalog).value;
+   const list=$(".workshop-catalog-list",catalog);
+   list.replaceChildren();
+   const matched=standards().filter(item=>(selectedWorkshopCategory==="all"||categoryFor(item)===selectedWorkshopCategory)&&
+    [item.name,item.subtitle,item.spec,item.use,item.kind,item.category,categoryLabelFor(item)].join(" ").toLowerCase().includes(query));
+   matched.sort((a,b)=>{
+    const col=sort==="type"?(String(a.kind||"").localeCompare(String(b.kind||""))):sort==="level"?(String(a.tier||"").localeCompare(String(b.tier||""))):0;
+    return col||a.name.localeCompare(b.name,undefined,{numeric:true});
+   });
+   $(".workshop-catalog-count",catalog).textContent=matched.length+" reference items"+(query?" matching search":"");
+   if(!matched.length){list.append(el("p","No matching catalog items. Try another search or category.","muted"));return}
+   const heading=el("div",undefined,"workshop-catalog-columns");
+   for(const t of ["Item / description","Category","Recommended use",""])heading.append(el("span",t));
+   list.append(heading);
+   for(const item of matched){
+    const row=el("article",undefined,"workshop-catalog-entry");
+    const summary=el("div",undefined,"workshop-catalog-line");
+    const name=el("button",undefined,"workshop-catalog-name");
+    name.type="button";name.textContent=item.name;name.setAttribute("aria-expanded","false");
+    const main=el("div",undefined,"workshop-catalog-main-item");
+    main.append(name);
+    if(item.subtitle)main.append(el("small",item.subtitle,"muted"));
+    summary.append(main,el("span",categoryLabelFor(item),"workshop-catalog-category"),
+     el("span",item.use||friendlyTier(item),"workshop-catalog-use"));
+    const add=el("button","+ My Workshop","btn workshop-catalog-add");
+    add.type="button";add.title="Create a private inventory item based on this reference";
+    add.onclick=()=>{
+     if(!$("#workshop-editor",personal)){nav?.select("mine");setStatus("Sign in to add items to your personal Workshop.");return}
+     nav?.select("mine");
+     fill({name:item.name,kind:item.kind==="tool"?"tool":item.kind==="component"?"component":"material",
+      category:categoryLabelFor(item),specifications:item.spec?[{name:"Recommended specification",value:item.spec}]:[]});
+     $("#workshop-editor",personal)?.scrollIntoView({block:"start",behavior:"smooth"});
+     $("#workshop-name",personal)?.focus();
+    };
+    summary.append(add);
+    const detail=el("div",undefined,"workshop-catalog-detail");detail.hidden=true;
+    const section=(label,value)=>{if(!value)return;const p=el("p");p.append(el("strong",label+" "),document.createTextNode(value));detail.append(p)};
+    section("Specification:",item.spec);
+    section("Typical use:",item.use);
+    section("Important:",item.caution);
+    section("Level:",friendlyTier(item));
+    if(item.source&&/^https:\/\//.test(item.source)){
+     const link=el("a","Manufacturer / reference source","workshop-catalog-link");
+     link.href=item.source;link.target="_blank";link.rel="noopener noreferrer";detail.append(link);
+    }
+    name.onclick=()=>{detail.hidden=!detail.hidden;name.setAttribute("aria-expanded",String(!detail.hidden))};
+    row.append(summary,detail);list.append(row);
+   }
+  };
+  results.addEventListener("input",renderCatalog);
+  $(".workshop-catalog-sort",catalog).addEventListener("change",renderCatalog);
+  root.addEventListener("bsworkshopupdated",renderCatalog);
+  // A category switch must update the searchable table as well as the old tree.
+  // category callbacks use this shared listener, without changing any canonical data.
+  sidebar.addEventListener("click",event=>{
+   if(event.target.closest(".bs-catalog-category"))queueMicrotask(renderCatalog);
+  });
+  window.addEventListener("bsworkshopfocus",()=>queueMicrotask(renderCatalog));
+  renderCatalog();
+
   const showRecommendation=id=>{
    document.querySelector('[data-nav="commonparts"]')?.click();
    sharedDetails.open=true;
