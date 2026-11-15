@@ -1085,6 +1085,12 @@
       <label>Availability<select id="workshop-stockstatus" class="field"><option value="in_stock">In stock</option><option value="in_use_reusable">In use (reusable)</option><option value="committed">Committed</option></select></label>
      </div>
      <label>Specifications (one per line: name: value)<textarea id="workshop-specifications" class="field" rows="3"></textarea></label>
+     <section class="workshop-structured-specs" id="workshop-personal-specs">
+      <h3>Additional specifications</h3>
+      <p class="muted">Optional. AI can populate these, or add your own properties.</p>
+      <div class="workshop-structured-spec-rows" id="workshop-personal-spec-rows"></div>
+      <button type="button" id="workshop-add-personal-spec" class="btn">+ Add specification</button>
+     </section>
      <label>Notes<textarea id="workshop-notes" class="field" maxlength="1500"></textarea></label>
      <div class="workshop-row"><label>Photo of equipment<input id="workshop-photo" type="file" accept="image/jpeg,image/png,image/webp"></label><button id="workshop-photo-upload" type="button" class="btn">Import photo and identify</button><img id="workshop-photo-preview" class="workshop-photo-thumb" hidden alt="Equipment photo"></div>
      <p class="muted">AI identification is a draft. Check the model and specifications yourself before saving.</p>
@@ -1094,6 +1100,7 @@
      <div class="workshop-row"><select id="workshop-project" class="field" aria-label="Select project"><option value="">Select a project</option></select><button id="workshop-compare" class="btn" type="button">Compare BOM</button></div>
      <div id="workshop-comparison"></div>
     </section>`;
+   $("#workshop-add-personal-spec",personal).onclick=()=>addPersonalSpec();
    // MPN lookup populates personal inventory as an editable draft.
    const mineLookup=el("section",undefined,"workshop-ai-lookup");
    mineLookup.append(el("h3","Look up a manufacturer part number"),
@@ -1127,6 +1134,10 @@
       const field=$("#workshop-"+fields[key],personal);if(field)field.value=value;
      }
      $("#workshop-specifications",personal).value=(d.spec||"").split(/\r?\n/).filter(Boolean).map(line=>line.includes(":")?line:"Spec: "+line).join("\n");
+     if(result.research?.specs?.length){
+      const target=$("#workshop-personal-spec-rows",personal);target.replaceChildren();
+      for(const spec of result.research.specs)addPersonalSpec({label:spec.name,value:spec.value,unit:spec.unit||"",conditions:spec.conditions||""});
+     }
      mineResults.append(el("p",result.note||"Review AI suggestions before saving.","muted"));
      if(result.research?.pins?.length){
       const pinSummary=el("div",undefined,"workshop-ai-engineering-review");
@@ -1173,6 +1184,27 @@
    $("#workshop-compare",personal).onclick=compare;
   }
   const fields={name:"name",kind:"kind",category:"category",manufacturer:"manufacturer",model:"model",partNumber:"partnumber",featureTreeDescription:"featuretreedescription",quantity:"quantity",unit:"unit",stockStatus:"stockstatus",notes:"notes"};
+  function addPersonalSpec(spec={}){
+   const target=$("#workshop-personal-spec-rows",personal);
+   if(!target||target.children.length>=60)return;
+   const row=el("div",undefined,"workshop-structured-spec-row");row.dataset.propertyId=spec.propertyId||"";
+   for(const [name,placeholder,max] of [["label","Property",100],["value","Value",220],["unit","Unit",32],["conditions","Conditions (optional)",300]]){
+    const field=el("input");field.type="text";field.className="field";field.dataset.spec=name;
+    field.maxLength=max;field.placeholder=placeholder;field.value=spec[name]||"";
+    if(name==="label")field.oninput=()=>{row.dataset.propertyId=""};
+    row.append(field);
+   }
+   row.append(itemButton("Remove",()=>row.remove(),"btn"));target.append(row);
+  }
+  function personalSpecRecords(){
+   return [...$("#workshop-personal-spec-rows",personal).children].map(row=>({
+    propertyId:row.dataset.propertyId||"",
+    label:row.querySelector('[data-spec="label"]').value.trim(),
+    value:row.querySelector('[data-spec="value"]').value.trim(),
+    unit:row.querySelector('[data-spec="unit"]').value.trim(),
+    conditions:row.querySelector('[data-spec="conditions"]').value.trim()
+   })).filter(row=>row.label&&row.value);
+  }
   function fill(item){
    editingId=item.id||null;photoId=item.photoId||"";catalogId=item.catalogId||"";
    const aiMpn=$("#workshop-editor .workshop-ai-lookup input",personal);
@@ -1187,6 +1219,8 @@
    }
    const preview=$("#workshop-photo-preview",personal);
    if(preview){preview.hidden=!photoId;if(photoId)preview.src="/api/workshop-photo?id="+encodeURIComponent(photoId)}
+   const specTarget=$("#workshop-personal-spec-rows",personal);
+   if(specTarget){specTarget.replaceChildren();for(const spec of item.specRecords||[])addPersonalSpec(spec)}
    const specs=$("#workshop-specifications",personal);
    if(specs)specs.value=(item.specifications||[]).map(x=>x.name+": "+x.value).join("\n");
    $("#workshop-editor",personal).open=true;
@@ -1218,6 +1252,7 @@
    const input={};for(const [key,id] of Object.entries(fields))input[key]=$("#workshop-"+id,personal).value;
    input.photoId=photoId;
    input.catalogId=catalogId;
+   input.specRecords=personalSpecRecords();
    input.specifications=$("#workshop-specifications",personal).value.split(/\r?\n/).map(row=>{
     const split=row.indexOf(":");return split<1?null:{name:row.slice(0,split).trim(),value:row.slice(split+1).trim()};
    }).filter(Boolean);
