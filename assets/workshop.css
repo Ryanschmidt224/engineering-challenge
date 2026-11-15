@@ -256,7 +256,7 @@
 
 /* Let the main Workshop item image use the full column beside the details. */
 #commonparts .workshop-item-hero:has(.workshop-item-primary-media){
- grid-template-columns:minmax(300px,45%) minmax(0,1fr);
+ grid-template-columns:minmax(180px,220px) minmax(0,1fr);
  align-items:start;
  gap:28px;
 }
@@ -274,26 +274,26 @@
 #commonparts .workshop-item-hero .workshop-item-primary-media .workshop-item-large-thumb{
  width:100%;
  height:auto;
- min-height:300px;
+ min-height:0;
  aspect-ratio:4/3;
  flex:none;
  box-sizing:border-box;
 }
 #commonparts .workshop-item-hero .workshop-item-primary-media .workshop-item-large-thumb svg{
- width:min(55%,230px);
- height:min(55%,230px);
+ width:min(55%,120px);
+ height:min(55%,120px);
 }
 #commonparts .workshop-item-hero .workshop-item-primary-media .workshop-reference-hero-image{
  width:100%;
  height:auto;
- min-height:300px;
- max-height:480px;
+ min-height:0;
+ max-height:165px;
  object-fit:contain;
  box-sizing:border-box;
 }
 #commonparts .workshop-item-media-buttons{
  display:grid;
- grid-template-columns:repeat(2,minmax(0,136px));
+ grid-template-columns:repeat(2,minmax(0,1fr));
  gap:10px;
  width:100%;
 }
@@ -314,7 +314,8 @@
 }
 @media(max-width:800px){
  #commonparts .workshop-item-hero:has(.workshop-item-primary-media){grid-template-columns:minmax(0,1fr)}
+ #commonparts .workshop-item-hero .workshop-item-media-actions:has(.workshop-item-primary-media){max-width:220px}
  #commonparts .workshop-item-hero .workshop-item-primary-media .workshop-item-large-thumb{
-  min-height:230px;
+  min-height:0;
  }
 }
