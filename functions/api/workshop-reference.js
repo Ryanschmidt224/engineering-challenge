@@ -33,11 +33,30 @@ export async function onRequest({request,env}){
   const admin=await isAdmin(request,env);
   if(request.method==="GET"){
    const {value}=await read(env);
-   return json({items:value,canEdit:!!user||admin,canCreate:!!user||admin,
+   return json({items:value,canEdit:!!user||admin,canCreate:!!user||admin,canDelete:admin,
     editableIds:user||admin?Object.keys(value):[]});
   }
   if(!user&&!admin)return json({error:"Sign in to contribute to the public Workshop"},401);
   if(request.headers.get("origin")!==url.origin)return json({error:"Invalid request origin"},403);
+  if(request.method==="DELETE"){
+   if(!admin)return json({error:"Only administrators can delete Workshop items"},403);
+   const body=await request.json().catch(()=>null);
+   if(!validId(body?.id))return json({error:"Invalid Workshop reference ID"},400);
+   for(let attempt=0;attempt<3;attempt++){
+    const {value,etag}=await read(env);
+    const current=value[body.id];
+    // Built-in reference definitions belong to the checked-in catalog. Only
+    // separately created references can be deleted without altering site data.
+    if(!current?.created)return json({error:"Only custom Workshop items can be deleted. Built-in references are protected."},404);
+    if(Object.hasOwn(body,"expectedRevision")&&(body.expectedRevision||null)!==(current.revision||null))
+     return json({error:"This item changed since you opened it. Refresh before deleting."},409);
+    const next={...value};delete next[body.id];
+    const options=etag?{onlyIf:{etagMatches:etag}}:{onlyIf:{etagDoesNotMatch:"*"}};
+    const saved=await env.PHOTOS.put(indexKey,JSON.stringify(next),options);
+    if(saved)return json({deleted:true,id:body.id});
+   }
+   return json({error:"The Workshop changed while deleting. Try again."},409);
+  }
   const creating=request.method==="POST"&&request.headers.get("content-type")?.includes("application/json");
   if(request.method==="POST"&&!creating){
    const form=await request.formData().catch(()=>null);
