@@ -42,14 +42,14 @@ test("public Workshop references are readable, but visitors cannot edit shared c
  let result=await data(await workshopReference({request:request("/api/workshop-reference"),env}));
  assert.equal(result.status,200);assert.deepEqual(result.body.items,{});assert.equal(result.body.canEdit,false);
  result=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{id:"workshop:meter",details:{name:"Modified"}}),env}));
- assert.equal(result.status,403);
+ assert.equal(result.status,401);
 });
 
 test("shared Workshop editing requires claimed admin role and preserves saved fields",async()=>{
  const env={PHOTOS:new TestBucket(),admin_password:"test-admin-secret"};
  const session=await register(env,"siteadmin@example.test");
  const before=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{id:"workshop:meter",details:{name:"Modified"}} ,session),env}));
- assert.equal(before.status,403);
+ assert.equal(before.status,403); // Members cannot edit seeded catalog entries.
  const claimed=await data(await handleAccounts(request("/api/accounts","POST",{action:"claim-admin",adminPassword:env.admin_password},session),env));
  assert.equal(claimed.status,200);
  assert.equal(claimed.body.user.role,"admin");
@@ -116,7 +116,7 @@ test("administrator can create, retrieve and edit shared Workshop products witho
    typeName:"Bench DC Power Supplies",manufacturer:"Example Manufacturing",model:"123",
    spec:"0–30 V adjustable output",supplierUrl:"https://example.com/item",photos:[]}
  },session),env}));
- assert.equal(response.status,403);
+ assert.equal(response.status,201); // Signed-in member creates their own shared item.
  assert.equal((await handleAccounts(request("/api/accounts","POST",{
   action:"claim-admin",adminPassword:env.admin_password
  },session),env)).status,200);
@@ -163,4 +163,41 @@ test("shared Workshop creation rejects incomplete categories, unsafe ordering UR
  }
  const read=await data(await workshopReference({request:request("/api/workshop-reference"),env}));
  assert.deepEqual(read.body.items,{});
+});
+
+test("any signed-in member may publish a public Workshop entry but cannot edit other people's entries",async()=>{
+ const env={PHOTOS:new TestBucket(),admin_password:"test-admin-secret"};
+ const creator=await register(env,"maker-one@example.test");
+ const other=await register(env,"maker-two@example.test");
+ const details={name:"Member-created sensor",category:"electronics",kind:"component",
+  familyId:"community-electronics",familyName:"Community contributions",spec:"5 V sensor",photos:[]};
+ const guest=await data(await workshopReference({request:request("/api/workshop-reference","POST",{details}),env}));
+ assert.equal(guest.status,401);
+ const created=await data(await workshopReference({request:request("/api/workshop-reference","POST",{details},creator),env}));
+ assert.equal(created.status,201);
+ const id=created.body.id;
+ assert.match(id,/^workshop:custom-/);
+ assert.equal(created.body.details.created,true);
+ const mine=await data(await workshopReference({request:request("/api/workshop-reference","GET",undefined,creator),env}));
+ assert.equal(mine.body.canCreate,true);
+ assert.equal(mine.body.canEdit,false);
+ assert.ok(mine.body.editableIds.includes(id));
+ const theirs=await data(await workshopReference({request:request("/api/workshop-reference","GET",undefined,other),env}));
+ assert.equal(theirs.body.canCreate,true);
+ assert.ok(!theirs.body.editableIds.includes(id));
+ const blocked=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{
+  id,details:{...details,name:"Hijacked"}
+ },other),env}));
+ assert.equal(blocked.status,403);
+ const seeded=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{
+  id:"workshop:wire22",details:{name:"Edited seed"}
+ },creator),env}));
+ assert.equal(seeded.status,403);
+ const changed=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{
+  id,details:{...details,name:"Revised sensor"}
+ },creator),env}));
+ assert.equal(changed.status,200);
+ assert.equal(changed.body.details.name,"Revised sensor");
+ const stillOwned=await data(await workshopReference({request:request("/api/workshop-reference","GET",undefined,creator),env}));
+ assert.ok(stillOwned.body.editableIds.includes(id));
 });

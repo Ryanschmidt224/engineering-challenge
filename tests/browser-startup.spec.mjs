@@ -824,7 +824,7 @@ test("administrator can add a catalog item from the Workshop and open its detail
  expect(posted.details.typeName).toBe("Bench DC Power Supplies");
 });
 
-test("New Part separates Workshop source from purchased-only inventory save",async({page})=>{
+test("New Part starts with item type and lets purchased parts choose private or public Workshop",async({page})=>{
  await page.route("**/api/**",async route=>{
   const u=new URL(route.request().url());
   let data={};
@@ -839,32 +839,58 @@ test("New Part separates Workshop source from purchased-only inventory save",asy
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
  });
  await page.goto("/");
- await page.evaluate(()=>{
+ const open=()=>page.evaluate(()=>{
   window.__createdTestPart=null;
   window.BSLibraryPartPicker.open({onCreate:async payload=>{window.__createdTestPart=payload}});
  });
- const modal=page.locator(".library-part-dialog");
+ await open();
+ let modal=page.locator(".library-part-dialog");
  await expect(modal).toBeVisible();
- const from=modal.locator(".library-workshop-first:not(.library-workshop-add) input");
+ const type=modal.locator(".library-field",{hasText:"Item type"}).first();
+ await expect(type).toBeVisible();
+ const from=modal.locator('input[name="new-part-source"][value="from"]');
+ const create=modal.locator('input[name="new-part-source"][value="new"]');
  const add=modal.locator(".library-workshop-add input");
- await expect(modal.locator(".library-workshop-choice-copy strong")).toContainText(["Use from","Add to"]);
+ await expect(create).toBeChecked();
+ await expect(modal.locator(".library-workshop-choice-copy strong")).toContainText(["Use from","Create new"]);
  await from.check();
- await expect(add).not.toBeChecked();
+ await expect(modal.locator(".library-workshop-add")).toBeHidden();
+ await create.check();
+ await expect(add).toBeVisible();
  await add.check();
- await expect(from).not.toBeChecked();
- await expect(modal.locator(".library-field",{hasText:"Item type"})).toBeHidden();
+ await expect(modal.locator(".library-workshop-scope")).toBeVisible();
+ const privateRadio=modal.locator('input[name="workshop-destination"][value="private"]');
+ const publicRadio=modal.locator('input[name="workshop-destination"][value="public"]');
+ await expect(privateRadio).toBeChecked();
+ await publicRadio.check();
+ await modal.getByLabel("Public Workshop category").selectOption("electronics");
  await expect(modal.locator(".library-field",{hasText:"Part type"}).first()).toBeHidden();
- await expect(modal.locator(".library-workshop-add-help")).toContainText("My Workshop");
  await modal.locator(".library-field",{hasText:"Part name"}).locator("input").fill("Purchased DC supply");
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
  await expect(modal).toHaveCount(0);
- const payload=await page.evaluate(()=>window.__createdTestPart);
+ let payload=await page.evaluate(()=>window.__createdTestPart);
  expect(payload.name).toBe("Purchased DC supply");
  expect(payload.partType).toBe("purchased");
  expect(payload.itemType).toBe("part");
- expect(payload.addToWorkshop).toBe(true);
+ expect(payload.addToWorkshop).toBe("public");
+ expect(payload.workshopCategory).toBe("electronics");
+ await open();
+ modal=page.locator(".library-part-dialog");
+ await modal.locator(".library-workshop-add input").check();
+ await modal.locator(".library-field",{hasText:"Part name"}).locator("input").fill("Private supply");
+ await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
+ payload=await page.evaluate(()=>window.__createdTestPart);
+ expect(payload.addToWorkshop).toBe("private");
+ await open();
+ modal=page.locator(".library-part-dialog");
+ await modal.locator(".library-field",{hasText:"Item type"}).first().locator("select").selectOption("document");
+ await expect(modal.locator(".library-workshop-choice-group")).toBeHidden();
+ await modal.locator(".library-field",{hasText:"Part name"}).locator("input").fill("Design notes");
+ await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
+ payload=await page.evaluate(()=>window.__createdTestPart);
+ expect(payload.itemType).toBe("document");
+ expect(payload.addToWorkshop).toBeUndefined();
 });
-
 test("project navigation orders summary below tree and page notes can be created with existing photo upload",async({page})=>{
  const saves=[],seen=[];
  page.on("pageerror",e=>{throw e});

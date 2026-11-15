@@ -1,6 +1,7 @@
-// Editable details for public Workshop reference items. All writes require an administrator.
+// Editable details for public Workshop reference items. Anyone with an account may submit new shared entries; editing stays owner/admin only.
 // Reference IDs and authored defaults remain in assets/resources.js.
 import {isAdmin} from "./auth.js";
+import {accountUser} from "./accounts.js";
 const indexKey="workshop-reference-overrides/v1.json";
 const photoKey=id=>"workshop-reference-photos/"+id;
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json","cache-control":"no-store","x-content-type-options":"nosniff"}});
@@ -28,11 +29,14 @@ export async function onRequest({request,env}){
    if(!object)return json({error:"Image not found"},404);
    return new Response(object.body,{headers:{"content-type":object.httpMetadata?.contentType||"image/jpeg","cache-control":"public, max-age=300","x-content-type-options":"nosniff"}});
   }
+  const user=await accountUser(request,env);
+  const admin=await isAdmin(request,env);
   if(request.method==="GET"){
    const {value}=await read(env);
-   return json({items:value,canEdit:await isAdmin(request,env)});
+   return json({items:value,canEdit:admin,canCreate:!!user||admin,
+    editableIds:admin?Object.keys(value):Object.keys(value).filter(id=>user&&value[id]?.ownerId===user.id)});
   }
-  if(!await isAdmin(request,env))return json({error:"Only the website administrator can edit shared Workshop references"},403);
+  if(!user&&!admin)return json({error:"Sign in to contribute to the public Workshop"},401);
   if(request.headers.get("origin")!==url.origin)return json({error:"Invalid request origin"},403);
   const creating=request.method==="POST"&&request.headers.get("content-type")?.includes("application/json");
   if(request.method==="POST"&&!creating){
@@ -41,7 +45,10 @@ export async function onRequest({request,env}){
    if(!file||typeof file.arrayBuffer!=="function"||!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size<1||file.size>5*1024*1024)
     return json({error:"Choose a JPEG, PNG, or WebP photo up to 5 MB"},400);
    const id=crypto.randomUUID();
-   await env.PHOTOS.put(photoKey(id),new Uint8Array(await file.arrayBuffer()),{httpMetadata:{contentType:file.type}});
+   await env.PHOTOS.put(photoKey(id),new Uint8Array(await file.arrayBuffer()),{
+    httpMetadata:{contentType:file.type},
+    customMetadata:{ownerId:user?.id||"site-admin"}
+   });
    return json({photo:{id,caption:""}},201);
   }
   if(!creating&&request.method!=="PUT")return json({error:"Method not allowed"},405);
@@ -49,6 +56,14 @@ export async function onRequest({request,env}){
   if(!body||typeof body!=="object"||!body.details||typeof body.details!=="object")
    return json({error:"Item details are required"},400);
   if(!creating&&!validId(body.id))return json({error:"Invalid Workshop reference ID"},400);
+  // Seed records belong to the website. User-created records belong to their
+  // original contributor even if another user edits them later.
+  if(!creating){
+   const current=await read(env);
+   const saved=current.value[body.id];
+   if(!admin&&(!user||!saved?.created||saved.ownerId!==user.id))
+    return json({error:"Only the contributor or an administrator can edit this public item"},403);
+  }
   const patch={};
   for(const [name,limit] of Object.entries(fields)){
    const val=body?.details?.[name];
@@ -71,7 +86,10 @@ export async function onRequest({request,env}){
   for(const p of rawPhotos){
    if(!/^[a-f0-9-]{36}$/.test(String(p?.id||"")))return json({error:"Invalid photo ID"},400);
    if(photos.some(x=>x.id===p.id))continue;
-   if(!await env.PHOTOS.head(photoKey(p.id)))return json({error:"Photo was not uploaded"},400);
+   const storedPhoto=await env.PHOTOS.head(photoKey(p.id));
+   if(!storedPhoto)return json({error:"Photo was not uploaded"},400);
+   if(!admin&&storedPhoto.customMetadata?.ownerId!==user?.id)
+    return json({error:"Only attach photos you uploaded"},403);
    photos.push({id:p.id,caption:String(p.caption||"").slice(0,180)});
   }
   patch.photos=photos;
@@ -82,7 +100,13 @@ export async function onRequest({request,env}){
    const {value,etag}=await read(env);
    if(Object.keys(value).length>=300&&!(id in value))return json({error:"Workshop index is full"},413);
    const previous=value[id];
-   const details={...patch,...((creating||previous?.created)?{created:true}:{})};
+   if(!creating&&!admin&&(!previous?.created||previous.ownerId!==user?.id))
+    return json({error:"Only the contributor or an administrator can edit this public item"},403);
+   const ownedCount=Object.values(value).filter(entry=>entry.ownerId===user?.id&&entry.created).length;
+   if(creating&&user&&!admin&&ownedCount>=50)return json({error:"Public Workshop contribution limit reached"},413);
+   const details={...patch,...((creating||previous?.created)?{created:true}:{}),
+    ...(creating?(user?{ownerId:user.id}:{ownerId:"site-admin"}):
+      previous?.ownerId?{ownerId:previous.ownerId}:{})};
    const next={...value,[id]:details};
    const options=etag?{onlyIf:{etagMatches:etag}}:{onlyIf:{etagDoesNotMatch:"*"}};
    const saved=await env.PHOTOS.put(indexKey,JSON.stringify(next),options);
