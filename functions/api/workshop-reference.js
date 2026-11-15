@@ -99,15 +99,15 @@ export async function onRequest({request,env}){
    const previous=value[id];
    // New clients provide an item revision. Reject stale edits even if the
    // R2 index itself has changed for an unrelated catalog item.
-   if(!creating&&Object.hasOwn(body,"expectedUpdatedAt")&&
-      (body.expectedUpdatedAt||null)!==(previous?.updatedAt||null))
+   if(!creating&&Object.hasOwn(body,"expectedRevision")&&
+      (body.expectedRevision||null)!==(previous?.revision||null))
     return json({error:"This public item changed since you opened it. Reload before saving."},409);
    const ownedCount=Object.values(value).filter(entry=>entry.ownerId===user?.id&&entry.created).length;
    if(creating&&user&&!admin&&ownedCount>=50)return json({error:"Public Workshop contribution limit reached"},413);
    const details={...patch,...((creating||previous?.created)?{created:true}:{}),
     ...(creating?(user?{ownerId:user.id}:{ownerId:"site-admin"}):
       previous?.ownerId?{ownerId:previous.ownerId}:{}),
-    updatedAt:new Date().toISOString()};
+    updatedAt:new Date().toISOString(),revision:crypto.randomUUID()};
    const next={...value,[id]:details};
    const options=etag?{onlyIf:{etagMatches:etag}}:{onlyIf:{etagDoesNotMatch:"*"}};
    const saved=await env.PHOTOS.put(indexKey,JSON.stringify(next),options);
