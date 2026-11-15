@@ -41,3 +41,15 @@ test("Old mini examples are retired; new category metadata is independent of pro
  assert.equal(projectGroup({group:"Mini Projects"}),"Uncategorized");
  assert.equal(projectGroup({category:"Robotics"}),"Robotics");
 });
+
+test("Project discovery supports inclusive multi-select tags without forcing one exclusive category",()=>{
+ const manager=read("assets/project-manager.js"),api=read("functions/api/projects.js");
+ assert.match(manager,/const activeTags=new Set\(\)/);
+ assert.match(manager,/\.some\(tag=>!projectTags\(project\)\.some/);
+ assert.match(manager,/chip\.setAttribute\("aria-pressed"/);
+ assert.match(manager,/makeTagPicker\(projectTags\(project\)\)/);
+ assert.match(manager,/tags:createTagPicker\.getTags\(\)/);
+ assert.match(manager,/tags:settingsTags\.getTags\(\)/);
+ assert.match(api,/const normalizeTags=value=>/);
+ assert.match(api,/tags:tags\|\|\[\]/);
+});
