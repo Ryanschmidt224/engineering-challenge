@@ -88,7 +88,8 @@ test("Legacy parts without explicit type filter as Off-the-shelf",()=>{
  assert.equal(fields.statusField(legacy),"purchaseStatus");
  assert.equal(fields.labelFor(fields.statusesFor(legacy),"already_have"),"Already own");
  const script=readFileSync(new URL("../assets/parts-management.js",import.meta.url),"utf8");
- assert.match(script,/partTypeFor\(p\)===typeFilter\.value/);
+ assert.match(script,/const matchesType=part=>/);
+  assert.match(script,/window\.BSCatalogUI\?\.categories\(sidebar/);
  const context={window:{BSPartFields:fields}};
  runInNewContext(script,context);
  const groups=context.window.BSPartsManager.groupParts([legacy,explicit]);
