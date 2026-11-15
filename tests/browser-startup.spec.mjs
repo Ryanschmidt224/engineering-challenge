@@ -111,7 +111,7 @@ test("project feature tree and workspace initialize without browser errors", asy
 });
 
 
-test("new custom part offers explicit automatic numbering before the name",async({page})=>{
+test("new custom part retains explicit project numbering without confusing it with manufacturer MPN",async({page})=>{
  await page.goto("/");
  const selection=await page.evaluate(async()=>{
   const opened=window.BSLibraryPartPicker.open({onCreate:async part=>{window.__testCreatedPart=part}});
@@ -130,7 +130,7 @@ test("new custom part offers explicit automatic numbering before the name",async
  expect(selection.checked).toBe(true);
  expect(selection.manualAvailable).toBe(true);
  expect(selection.numberingText).toContain("Assign next available project number");
- expect(selection.nameBeforeNumber).toBe(true);
+ expect(selection.nameBeforeNumber).toBe(false); // Project numbering is secondary to part identity.
  expect(selection.numberVisible).toBe(true);
  const itemType=page.locator(".library-part-dialog .library-field",{hasText:"Item type"}).locator("select");
  await expect(itemType).toBeVisible();
@@ -140,9 +140,9 @@ test("new custom part offers explicit automatic numbering before the name",async
  await itemType.selectOption("part");
  await page.locator('.library-part-dialog input[name="new-part-number-mode"][value="manual"]').check();
  await expect(page.locator(".library-part-dialog .library-number-choice")).toBeVisible();
- await expect(page.locator(".library-part-dialog .library-field",{hasText:"New part number"})).toBeVisible();
+ await expect(page.locator(".library-part-dialog .library-field",{hasText:"Project BOM number"})).toBeVisible();
  await page.locator('.library-part-dialog input[name="new-part-number-mode"][value="auto"]').check();
- await expect(page.locator(".library-part-dialog .library-field",{hasText:"New part number"})).toBeHidden();
+ await expect(page.locator(".library-part-dialog .library-field",{hasText:"Project BOM number"})).toBeHidden();
  await page.locator(".library-part-dialog .library-dialog-actions").getByRole("button",{name:"Cancel"}).click();
 });
 
@@ -922,7 +922,7 @@ test("Searching Workshop for missing 2N7000 opens a purchased part with separate
  await expect(dialog.locator(".library-field",{hasText:"Manufacturer part number (MPN)"}).locator("input")).toHaveValue("2N7000");
  await expect(dialog.locator('input[name="new-part-number-mode"][value="none"]')).toBeChecked();
  await expect(dialog.locator(".library-vendor-links")).toContainText("DigiKey search");
- await dialog.locator(".library-field",{hasText:"Manufacturer"}).locator("input").fill("onsemi");
+ await dialog.getByRole("textbox",{name:"Manufacturer",exact:true}).fill("onsemi");
  await dialog.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
  await expect(dialog).toHaveCount(0);
  const saved=await page.evaluate(()=>window.__partPayload);
