@@ -117,7 +117,7 @@ function open({onCreate,hideDefault=false}){
  for(const [id,label] of [["tools","Tools & Equipment"],["consumables","Consumables & Supplies"],["electronics","Electronics & Components"],["hardware","Hardware & Materials"],["safety","Safety & Measurement"]])option(publicCategory.input,id,label);
  publicCategory.input.value="electronics";
  saveScope.append(publicCategory.label);
- const workshopAddHelp=el("p","muted library-workshop-add-help","Public Workshop items are shared with everyone. You'll be able to edit items you submit; other members cannot modify them.");
+ const workshopAddHelp=el("p","muted library-workshop-add-help","Public Workshop items are shared and may be edited by any signed-in member. Changes to existing items are checked for conflicts.");
  const customName=field("Part name");
  const itemKind=field("Item type","select");option(itemKind.input,"part","Part");option(itemKind.input,"document","Document");option(itemKind.input,"code","Code");
  const partClassification=field("Part type","select");option(partClassification.input,"purchased","Off-the-shelf");option(partClassification.input,"custom","Custom");
