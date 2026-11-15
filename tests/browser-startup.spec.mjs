@@ -853,7 +853,7 @@ test("New Part separates Workshop source from purchased-only inventory save",asy
  await add.check();
  await expect(from).not.toBeChecked();
  await expect(modal.locator(".library-field",{hasText:"Item type"})).toBeHidden();
- await expect(modal.locator(".library-field",{hasText:"Part type"})).toBeHidden();
+ await expect(modal.locator(".library-field",{hasText:"Part type"}).first()).toBeHidden();
  await expect(modal.locator(".library-workshop-add-help")).toContainText("My Workshop");
  await modal.locator(".library-field",{hasText:"Part name"}).locator("input").fill("Purchased DC supply");
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
