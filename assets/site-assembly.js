@@ -323,8 +323,13 @@ function setupAssemblyTrees(){
    if(!items.length){container.append(Object.assign(document.createElement("p"),{className:"muted",textContent:emptyText}));return}
    const list=document.createElement("ul");list.className="project-summary-part-list";
    for(const part of items){
-    const row=document.createElement("li"),name=document.createElement("span"),quantity=document.createElement("span");
+    const row=document.createElement("li"),name=document.createElement(part.id&&/^[0-9a-f-]{36}$/i.test(part.id)&&!part.generatedFrom?"button":"span"),quantity=document.createElement("span");
     name.className="project-summary-part-name";name.textContent=(part.partNumber?part.partNumber+" · ":"")+part.name;
+    if(name.tagName==="BUTTON"){
+     name.type="button";name.classList.add("project-summary-part-link");
+     name.setAttribute("aria-label","Open "+part.name+" part page");
+     name.onclick=()=>openPartInstructions(part,part.assemblyId??null);
+    }
     quantity.className="project-summary-part-quantity";quantity.textContent=window.BSBomModel.quantityText(part);
     row.append(name,quantity);list.append(row);
    }
@@ -350,8 +355,13 @@ function setupAssemblyTrees(){
     if(unique.size){
      const list=document.createElement("ul");list.className="project-summary-part-list";
      for(const part of unique.values()){
-      const row=document.createElement("li"),name=document.createElement("span"),quantity=document.createElement("span");
+      const row=document.createElement("li"),name=document.createElement(part.id&&/^[0-9a-f-]{36}$/i.test(part.id)&&!part.generatedFrom?"button":"span"),quantity=document.createElement("span");
       name.className="project-summary-part-name";name.textContent=(part.partNumber?part.partNumber+" · ":"")+part.name;
+    if(name.tagName==="BUTTON"){
+     name.type="button";name.classList.add("project-summary-part-link");
+     name.setAttribute("aria-label","Open "+part.name+" part page");
+     name.onclick=()=>openPartInstructions(part,part.assemblyId??null);
+    }
       quantity.className="project-summary-part-quantity";quantity.textContent=window.BSBomModel.quantityText(part);
       row.append(name,quantity);list.append(row);
      }
@@ -714,7 +724,7 @@ function setupAssemblyTrees(){
   const partExtras=installInstructionExtras(partWorkspace,"part",resources=>partResourcePicker?.setData(resources,canEdit()),snapshot=>partRecipe?.setData(snapshot));
   const creatorInsightsTarget=document.createElement("div");
   creatorInsightsTarget.className="creator-feedback-target";
-  summary.querySelector(".project-summary-lists").after(creatorInsightsTarget);
+  // Creator feedback is mounted at the end of the summary, after the notes and settings.
   if(canEdit())window.BSMyBuild?.insights(creatorInsightsTarget,{project});
   // A single feedback control on each Work Instructions section.
   const instructionsFeedback=(panel,scope)=>window.BSMyBuild?.reportControl(panel.querySelector(".recipe-instructions"),{project,scope});
@@ -2151,6 +2161,7 @@ function setupAssemblyTrees(){
    ["summary",summary],["workspace",workspace],["bom",bomScreen],
    ["part",partWorkspace],["parts",partsPage]
   ].map(([scope,mount])=>[scope,window.BSUnstructuredNotes.mount(mount,{project,scope,canEdit})]));
+  summary.append(creatorInsightsTarget);
   let lastNotePage="";
   const showNotes=(scope,id="root")=>{
    const page=scope+":"+id;
