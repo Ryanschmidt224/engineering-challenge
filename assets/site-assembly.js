@@ -1057,6 +1057,7 @@ function setupAssemblyTrees(){
    const url=new URL(location.href);
    url.searchParams.set("workshop-item",workshopId);
    url.searchParams.set("workshop-return",location.hash);
+   url.searchParams.set("workshop-return-y",String(Math.max(0,Math.round(window.scrollY))));
    url.hash="commonparts";
    history.pushState({workshopItem:workshopId},"",url.pathname+url.search+url.hash);
    window.dispatchEvent(new Event("hashchange"));
