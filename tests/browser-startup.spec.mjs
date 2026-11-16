@@ -1136,6 +1136,15 @@ test("linked Workshop items open, search current fields and return to the origin
  await page.locator('nav [data-nav="commonparts"]').click();
  await page.getByRole("button",{name:"+ Add catalog item"}).click();
  await itemPage.getByLabel("Manufacturer part number",{exact:true}).fill("NEW-42");
+ const placement=await itemPage.locator('[data-part-editor-section="identity"]').evaluate(section=>{
+  const [,description,manufacturer]=section.querySelectorAll("input");
+  const button=section.querySelector(".workshop-ai-lookup-row button");
+  return [description,button,manufacturer].map(element=>element.getBoundingClientRect().toJSON());
+ });
+ const [description,button,manufacturer]=placement;
+ expect(button.top).toBeGreaterThanOrEqual(description.bottom);
+ expect(button.left).toBeCloseTo(description.left,1);
+ expect(manufacturer.top).toBeGreaterThan(button.bottom);
  await itemPage.getByRole("button",{name:"Find with AI"}).click();
  await expect.poll(()=>searches.at(-1)).toEqual({partNumber:"NEW-42",featureTreeDescription:""});
  expect(errors).toEqual([]);

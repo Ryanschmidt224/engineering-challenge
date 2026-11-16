@@ -507,18 +507,13 @@
    heading.append(el("h3",isNew?"Create new catalog item":"Edit "+item.name),el("p","Public Workshop catalog · any signed-in member may edit shared items","muted"));
    form.append(heading);
    // AI lookup fills a draft; only the existing Save action publishes an item.
-   const lookupPanel=el("section",undefined,"workshop-ai-lookup");
-   // Available when creating or editing a Workshop item.
-   lookupPanel.hidden=false;
-   lookupPanel.append(el("h3","Fill product details with AI"));
-   const lookupHint=el("p","Search using the manufacturer's part number and feature tree description below. Either field can be used on its own.","muted");
+   const lookupActions=el("div",undefined,"workshop-identity-priority-field");
    const lookupRow=el("div",undefined,"workshop-ai-lookup-row");
    const lookupResults=el("div",undefined,"workshop-ai-lookup-results");
    const lookupMessage=el("p",undefined,"workshop-ai-lookup-status");lookupMessage.setAttribute("role","status");
    const lookupButton=itemButton("Find with AI",()=>{},"btn primary");
-   lookupRow.append(lookupButton);
-   lookupPanel.append(lookupHint,lookupRow,lookupMessage,lookupResults);
-   form.append(lookupPanel);
+   lookupRow.append(lookupButton,el("span","Either field can be used on its own.","muted"));
+   lookupActions.append(lookupRow,lookupMessage,lookupResults);
    const grid=el("div",undefined,"workshop-item-edit-grid");
    // Reuse the New Part editor's canonical identity/additional/specification
    // sections and fields order, keeping Workshop-specific ordering fields.
@@ -558,6 +553,7 @@
      control.className="field";control.value=item[name]||"";
       if(name==="featureTreeDescription"){control.maxLength=20;control.placeholder="e.g. Motor switch";}
      label.append(control);fieldsGrid.append(label);controls[name]=control;
+     if(name==="featureTreeDescription")fieldsGrid.append(lookupActions);
     }
     section.append(fieldsGrid);grid.append(section);
    }
