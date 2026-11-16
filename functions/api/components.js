@@ -1,6 +1,8 @@
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
 import {issueNumber} from "./numbering.js";
+import {getPartPhoto,linkedWorkshopItem,partPhotoKey,workshopLinkId,workshopPartDetails} from "./workshop-linked-part.js";
+import {annotationKey,renditionKey} from "./photo-annotations.js";
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const authorized=async(request,env)=>{const u=new URL(request.url),project=u.searchParams.get("project");return project?canEditProject(request,env,project):isAdmin(request,env)};
 const key=project=>"components/"+project+".json";
@@ -170,6 +172,42 @@ const safePublicImageUrl=value=>{
  }catch{return null}
 };
 
+async function saveWithWorkshopPhoto(env,project,state,part,photo){
+ const photoKey=photo&&partPhotoKey(project,part);
+ if(photo)await env.PHOTOS.put(photoKey,await photo.arrayBuffer(),{httpMetadata:photo.httpMetadata});
+ // A storage exception can leave the write outcome unknown. In that case,
+ // keep the staged photo in case the component write reached storage.
+ if(await saveEditable(env,project,state.items,state))return true;
+ if(photoKey)await env.PHOTOS.delete(photoKey);
+ return false;
+}
+
+async function reloadWorkshopPart(request,env,project,id){
+ const state=await readEditable(env,project);
+ const index=state.items.findIndex(part=>part.id===id);
+ if(index<0)return json({error:"Part not found"},404);
+ const previous=state.items[index];
+ if(previous.generatedFrom||!workshopLinkId(previous))return json({error:"This part has no reloadable Workshop link"},400);
+ const source=await linkedWorkshopItem(request,env,previous);
+ if(!source?.item?.name)return json({error:"The linked Workshop item is missing or unavailable to your account."},404);
+ const photo=source.photoKey?await env.PHOTOS.get(source.photoKey):null;
+ if(source.photoKey&&!photo)return json({error:"The Workshop photo could not be loaded. Try again after checking the source item."},409);
+ const updated={
+  ...workshopPartDetails(source),
+  id:previous.id,partNumber:previous.partNumber,assemblyId:previous.assemblyId,
+  quantity:previous.quantity,quantityUnit:previous.quantityUnit,createdAt:previous.createdAt,
+  photoRevision:crypto.randomUUID(),purchaseStatus:"not_started",progressStatus:"not_started",progressUpdates:[]
+ };
+ updated.fullName=generatedFullName(updated);
+ state.items[index]=updated;
+ syncDerived(state.items,updated);
+ if(!await saveWithWorkshopPhoto(env,project,state,updated,photo))return conflict();
+ const oldKey=partPhotoKey(project,previous);
+ try{await env.PHOTOS.delete([oldKey,renditionKey(oldKey),annotationKey(oldKey)])}
+ catch(error){console.warn("Could not remove superseded project photo",String(error))}
+ return json({component:presentPart(updated)});
+}
+
 export async function handleComponents(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project");
  if(!await projectAllowed(env,project,request))return json({error:"Invalid project"},400);
@@ -199,13 +237,20 @@ export async function handleComponents(request,env){
    if(input.partNumber||input.assignNumber===true||kind==="custom"&&!record.isTool&&input.assignNumber!==false)record.partNumber=await issueNumber(env,project,"part",record.id,input.partNumber||undefined);
   }catch(error){return json({error:error.message},error.status||400)}
   record.fullName=clean(input.fullName||generatedFullName(record));
+  const source=await linkedWorkshopItem(request,env,record);
+  const photo=source?.photoKey?await env.PHOTOS.get(source.photoKey):null;
+  if(photo)record.photoRevision=crypto.randomUUID();
   items.push(record);syncDerived(items,record);
-  if(!await saveEditable(env,project,items,state))return conflict();
+  if(!await saveWithWorkshopPhoto(env,project,state,record,photo))return conflict();
   return json({component:presentPart(record)},201);
  }
  // Tiny opt-in override: no requirement to re-enter part specifications.
  if(request.method==="PATCH"){
   const id=url.searchParams.get("id"),input=await request.json().catch(()=>null);
+  if(id&&input?.reloadWorkshop===true){
+   if(request.headers.get("origin")!==url.origin)return json({error:"Invalid request origin"},403);
+   return reloadWorkshopPart(request,env,project,id);
+  }
   if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"||typeof input.isTool==="boolean"||input.progressStatus!==undefined||input.needsAttention!==undefined||input.attentionNote!==undefined||input.name!==undefined||input.partType!==undefined||input.purchaseStatus!==undefined||input.progressUpdate!==undefined||input.progressOperationAdd!==undefined||input.progressOperationEdit!==undefined))return json({error:"Invalid part preference"},400);
   const state=await readEditable(env,project),items=state.items,entry=items.find(item=>item.id===id);
   if(!entry)return json({error:"Part not found"},404);
@@ -319,7 +364,7 @@ export async function handleComponents(request,env){
   // Preserve the deleted definition and its linked original bytes before
   // removing anything. Recycle records are never automatically purged.
   const recycle="recycle-bin/"+project+"/"+id+"/"+crypto.randomUUID()+"/";
-  const linked=["component-thumbnails/"+project+"/"+id,
+  const linked=[partPhotoKey(project,target),
    "part-workspaces/"+project+"/"+id+".json","harnesses/"+project+"/"+id+".json"];
   const originals=[];
   for(const originalKey of linked){
@@ -343,22 +388,26 @@ export async function handleComponentPhoto(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project"),id=url.searchParams.get("id");
  if(!await projectAllowed(env,project,request)||!/^[0-9a-f-]{36}$/i.test(id||""))return json({error:"Invalid part"},400);
  if(!env.PHOTOS)return json({error:"Photo storage unavailable"},503);
- const photoKey="component-thumbnails/"+project+"/"+id;
+ if(!["GET","POST","DELETE"].includes(request.method))return json({error:"Method not allowed"},405);
+ if(request.method!=="GET"&&!await authorized(request,env))return json({error:"Admin login required"},401);
+ const state=await readEditable(env,project),part=state.items.find(record=>record.id===id);
+ if(!part)return json({error:"Part not found"},404);
+ const photoKey=partPhotoKey(project,part);
  if(request.method==="GET"){
-  const object=await env.PHOTOS.get(photoKey);if(!object)return new Response("Not found",{status:404});
-  const headers=new Headers();object.writeHttpMetadata(headers);headers.set("cache-control","no-store");headers.set("x-content-type-options","nosniff");
+  const object=await getPartPhoto(request,env,project,part,photoKey);if(!object)return new Response("Not found",{status:404});
+  const headers=new Headers();object.writeHttpMetadata(headers);headers.set("cache-control","private, no-store");headers.set("x-content-type-options","nosniff");
   return new Response(object.body,{headers});
  }
- if(request.method!=="POST"&&request.method!=="DELETE")return json({error:"Method not allowed"},405);
- if(!await authorized(request,env))return json({error:"Admin login required"},401);
- const records=await read(env,project);
- if(!records.some(part=>part.id===id))return json({error:"Part not found"},404);
  if(request.method==="DELETE"){
-  const existing=await env.PHOTOS.get(photoKey);
+  const existing=await getPartPhoto(request,env,project,part,photoKey);
   if(!existing)return json({error:"No picture saved for this part"},404);
+  if(!part.photoRevision&&workshopLinkId(part)){
+   part.photoRevision=crypto.randomUUID();
+   if(!await saveEditable(env,project,state.items,state))return conflict();
+  }
   await env.PHOTOS.delete(photoKey);
-  await env.PHOTOS.delete("photo-renders/"+photoKey+".webp");
-  await env.PHOTOS.delete("photo-annotations/"+photoKey+".json");
+  await env.PHOTOS.delete(renditionKey(photoKey));
+  await env.PHOTOS.delete(annotationKey(photoKey));
   return json({ok:true});
  }
  const incomingType=(request.headers.get("content-type")||"").split(";")[0].toLowerCase();

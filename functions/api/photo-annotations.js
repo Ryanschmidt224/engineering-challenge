@@ -2,6 +2,7 @@
  * A saved WebP rendition and edit instructions are stored under separate prefixes.
  */
 import {projectAllowed,canEditProject} from "./projects.js";
+import {getPartPhoto,partPhotoKey} from "./workshop-linked-part.js";
 const json=(x,status=200)=>new Response(JSON.stringify(x),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"private, no-store"}});
 const projectPattern="(?:launcher|linear|robot|buck|motorlab|coiltest|p[a-f0-9]{32})";
 const galleryPattern=new RegExp("^("+projectPattern+")/[0-9a-f-]{36}\\.(?:jpg|png|webp|gif|heic|heif)$","i");
@@ -38,10 +39,18 @@ export async function handlePhotoAnnotations(request,env){
  const target=resolvePhotoSource(new URL(request.url));
  if(!target)return json({error:"Invalid image"},400);
  if(!await projectAllowed(env,target.project,request))return json({error:"Image not found"},404);
- const {key,project}=target;
+ const {project}=target;
+ let {key}=target,part;
+ if(key.startsWith("component-thumbnails/")){
+  const object=await env.PHOTOS.get("components/"+project+".json");
+  const id=new URL(request.url).searchParams.get("id");
+  part=object&&JSON.parse(await object.text()).find(item=>item.id===id);
+  if(part)key=partPhotoKey(project,part);
+ }
+ const originalPhoto=()=>part?getPartPhoto(request,env,project,part,key):env.PHOTOS.get(key);
  if(request.method==="GET"&&new URL(request.url).searchParams.get("view")==="1"){
   const rendered=await env.PHOTOS.get(renditionKey(key));
-  const original=rendered?null:await env.PHOTOS.get(key);
+  const original=rendered?null:await originalPhoto();
   const object=rendered||original;
   if(!object)return new Response("Not found",{status:404});
   const headers=new Headers();object.writeHttpMetadata(headers);
@@ -49,14 +58,14 @@ export async function handlePhotoAnnotations(request,env){
   return new Response(object.body,{headers});
  }
  if(request.method==="GET"){
-  if(!await env.PHOTOS.head(key))return json({error:"Image not found"},404);
+  if(!await originalPhoto())return json({error:"Image not found"},404);
   const obj=await env.PHOTOS.get(annotationKey(key));
   if(!obj)return json({state:{crop:null,marks:[]}});
   return json({state:JSON.parse(await obj.text())});
  }
  if(request.method!=="PUT")return json({error:"Method not allowed"},405);
  if(!await canEditProject(request,env,project))return json({error:"Sign in to edit photos"},401);
- if(!await env.PHOTOS.head(key))return json({error:"Original photo not found"},404);
+ if(!await originalPhoto())return json({error:"Original photo not found"},404);
  const declared=Number(request.headers.get("content-length")||0);
  if(declared>9*1024*1024)return json({error:"Edited image is too large"},413);
  const form=await request.formData().catch(()=>null);

@@ -4,7 +4,8 @@ import {handleAccounts} from "../functions/api/accounts.js";
 import {onRequest as personalWorkshop} from "../functions/api/personal-workshop.js";
 import {onRequest as workshopReference} from "../functions/api/workshop-reference.js";
 import {onRequest as workshopLookup} from "../functions/api/workshop-lookup.js";
-import {handleComponents} from "../functions/api/components.js";
+import {handleComponentPhoto,handleComponents} from "../functions/api/components.js";
+import {handlePhotoAnnotations} from "../functions/api/photo-annotations.js";
 
 const ORIGIN="https://schmidt.example";
 class TestBucket{
@@ -13,6 +14,8 @@ class TestBucket{
   const entry=this.objects.get(key);if(!entry)return null;
   return {etag:entry.etag,size:entry.body.byteLength,httpMetadata:entry.meta,
    async text(){return new TextDecoder().decode(entry.body)},
+   async arrayBuffer(){return entry.body.slice().buffer},
+   writeHttpMetadata(headers){if(entry.meta?.contentType)headers.set("content-type",entry.meta.contentType)},
    get body(){return new ReadableStream({start(ctrl){ctrl.enqueue(entry.body);ctrl.close()}})}};
  }
  async head(key){const e=this.objects.get(key);return e?{etag:e.etag,size:e.body.byteLength}:null}
@@ -20,11 +23,11 @@ class TestBucket{
   const old=this.objects.get(key);
   if(opts.onlyIf?.etagDoesNotMatch==="*"&&old)return null;
   if(opts.onlyIf?.etagMatches&&old?.etag!==opts.onlyIf.etagMatches)return null;
-  const body=typeof value==="string"?new TextEncoder().encode(value):value;
+  const body=typeof value==="string"?new TextEncoder().encode(value):new Uint8Array(value);
   const entry={body,etag:crypto.randomUUID(),meta:opts.httpMetadata||{}};
   this.objects.set(key,entry);return {etag:entry.etag};
  }
- async delete(key){this.objects.delete(key)}
+ async delete(key){for(const path of Array.isArray(key)?key:[key])this.objects.delete(path)}
 }
 const request=(path,method="GET",body,session)=>{
  const headers={...(method!=="GET"?{origin:ORIGIN}:{}),...(session?{cookie:session}:{})};
@@ -335,4 +338,96 @@ test("Parts Management patches preserve linked public and personal Workshop reco
  for(const [key,record] of before){
   assert.equal(env.PHOTOS.objects.get(key),record,key);
  }
+});
+
+test("Workshop reload replaces project part details and the active photo in one component update",async()=>{
+ const env={PHOTOS:new TestBucket(),admin_password:"test-admin-secret"};
+ const session=await register(env,"reload@example.test");
+ await handleAccounts(request("/api/accounts","POST",{action:"claim-admin",adminPassword:env.admin_password},session),env);
+ const workshopKey="workshop-reference-overrides/v1.json";
+ const workshopId="workshop:custom-motor-switch";
+ const partId="02874271-6998-406f-a1f8-f9d0817085af";
+ const photoId="eeb61668-a92b-491f-915b-81a3c4d78912";
+ const photoKey="workshop-reference-photos/"+photoId;
+ const partPhotoKey="component-thumbnails/launcher/"+partId;
+ const components="/api/components?project=launcher";
+ const photo="/api/components/photo?project=launcher&id="+partId;
+ const view="/api/photo-annotations?kind=part&project=launcher&id="+partId+"&view=1";
+ const item={created:true,name:"Current switch",partNumber:"ABC-10",featureTreeDescription:"Motor switch",
+  kind:"component",category:"electronics",notes:"Workshop notes",specifications:[{label:"Rated voltage",value:"24",unit:"V"}],photos:[{id:photoId}]};
+ const saveWorkshop=()=>env.PHOTOS.put(workshopKey,JSON.stringify({[workshopId]:item}));
+ await saveWorkshop();
+ await env.PHOTOS.put(photoKey,new Uint8Array([1,2,3]),{httpMetadata:{contentType:"image/png"}});
+ const original={id:partId,partNumber:"101",assemblyId:"motor",quantity:2,quantityUnit:"pcs",name:"Project edit",
+  manufacturer:"Old manufacturer",attentionNote:"Check",needsAttention:true,progressStatus:"complete",
+  projectDetails:{workshopReferenceId:workshopId,changes:"Local change",notes:"Local note"},
+  specifications:[{name:"Old spec",value:"Old value"}]};
+ await env.PHOTOS.put("components/launcher.json",JSON.stringify([original]));
+ const rawPath="/api/components/photo?project=launcher&id=";
+ const create=await data(await handleComponents(request(components,"POST",{
+  name:"New linked switch",specifications:[],assignNumber:false,projectDetails:{workshopReferenceId:workshopId}
+ },session),env));
+ assert.equal(create.status,201);
+ const inherited=await handleComponentPhoto(request(rawPath+create.body.component.id),env);
+ assert.deepEqual([...new Uint8Array(await inherited.arrayBuffer())],[1,2,3]);
+ assert.ok(create.body.component.photoRevision);
+ const readPhoto=async(path,handler)=>[...new Uint8Array(await (await handler(request(path),env)).arrayBuffer())];
+ assert.deepEqual(await readPhoto(view,handlePhotoAnnotations),[1,2,3]);
+ await env.PHOTOS.put(partPhotoKey,new Uint8Array([9]),{httpMetadata:{contentType:"image/png"}});
+ await env.PHOTOS.put("photo-renders/"+partPhotoKey+".webp",new Uint8Array([8]),{httpMetadata:{contentType:"image/webp"}});
+ const reload=()=>handleComponents(request(components+"&id="+partId,"PATCH",{reloadWorkshop:true},session),env);
+ assert.deepEqual(await readPhoto(view,handlePhotoAnnotations),[8]);
+ const result=await data(await reload());
+ assert.equal(result.status,200,JSON.stringify(result.body));
+ const {component}=result.body;
+ assert.equal(component.name,"Current switch");
+ assert.equal(component.model,"ABC-10");
+ assert.equal(component.manufacturer,"");
+ assert.equal(component.partNumber,"101");
+ assert.equal(component.assemblyId,"motor");
+ assert.equal(component.quantity,2);
+ assert.equal(component.needsAttention,false);
+ assert.equal(component.progressStatus,"not_started");
+ assert.deepEqual(component.projectDetails,{workshopReferenceId:workshopId,workshopTreeDescription:"Motor switch",notes:"Workshop notes"});
+ assert.deepEqual(component.specifications,[{name:"Rated voltage",value:"24 V",source:"explicit"}]);
+ assert.deepEqual(await readPhoto(view,handlePhotoAnnotations),[1,2,3]);
+ assert.deepEqual(await readPhoto(photo,handleComponentPhoto),[1,2,3]);
+ assert.deepEqual(await readPhoto("/api/workshop-reference?photo="+photoId,req=>workshopReference({request:req,env})),[1,2,3]);
+
+ await env.PHOTOS.delete(photoKey);
+ item.name="Unsaved because photo is missing";
+ await saveWorkshop();
+ assert.equal((await reload()).status,409);
+ assert.deepEqual(await readPhoto(view,handlePhotoAnnotations),[1,2,3]);
+ const peek=await data(await handleComponents(request(components),env));
+ assert.equal(peek.body.components.find(p=>p.id===partId).name,"Current switch");
+ item.photos=[];
+ await saveWorkshop();
+ assert.equal((await reload()).status,200);
+ assert.equal((await handlePhotoAnnotations(request(view),env)).status,404);
+ assert.equal((await handleComponentPhoto(request(photo),env)).status,404);
+});
+
+test("legacy personal Workshop photos are readable only by the inventory owner",async()=>{
+ const env={PHOTOS:new TestBucket(),admin_password:"test-admin-secret"};
+ const owner=await register(env,"photo-owner@example.test");
+ const other=await register(env,"photo-other@example.test");
+ const photoId=crypto.randomUUID();
+ const saved=await data(await personalWorkshop({request:request("/api/personal-workshop","POST",{
+  name:"Personal switch",photoId
+ },owner),env}));
+ assert.equal(saved.status,200);
+ const item=saved.body.items[0];
+ const inventory=[...env.PHOTOS.objects.keys()].find(key=>key.endsWith("/inventory.json"));
+ await env.PHOTOS.put(inventory.replace(/inventory\.json$/,"photos/"+photoId),new Uint8Array([1,2,3]),{
+  httpMetadata:{contentType:"image/png"}
+ });
+ const id=crypto.randomUUID();
+ await env.PHOTOS.put("components/launcher.json",JSON.stringify([{
+  id,name:"Linked switch",projectDetails:{workshopReferenceId:item.id}
+ }]));
+ const photo="/api/components/photo?project=launcher&id="+id;
+ assert.equal((await handleComponentPhoto(request(photo,"GET",undefined,owner),env)).status,200);
+ assert.equal((await handleComponentPhoto(request(photo,"GET",undefined,other),env)).status,404);
+ assert.equal((await handleComponentPhoto(request(photo),env)).status,404);
 });

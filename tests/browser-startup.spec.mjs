@@ -1149,3 +1149,40 @@ test("linked Workshop items open, search current fields and return to the origin
  await expect.poll(()=>searches.at(-1)).toEqual({partNumber:"NEW-42",featureTreeDescription:""});
  expect(errors).toEqual([]);
 });
+
+test("Reload Workshop data sits after Modify part and refreshes the linked project copy",async({page})=>{
+ const id="22222222-2222-4222-8222-222222222222";
+ let part={id,name:"Project edit",specifications:[],projectDetails:{workshopReferenceId:"workshop:custom-switch"}};
+ const updates=[];
+ await page.route("**/api/**",async route=>{
+  const url=new URL(route.request().url());
+  let data={};
+  if(url.pathname==="/api/accounts")data={user:{id:"test-admin",displayName:"Test admin",role:"admin"}};
+  if(url.pathname==="/api/tree")data={nodes:[],revision:"test"};
+  if(url.pathname==="/api/components"){
+   if(route.request().method()==="PATCH"){
+    updates.push({id:url.searchParams.get("id"),body:route.request().postDataJSON()});
+    part={...part,name:"Workshop switch"};
+    data={component:part};
+   }else data={components:[part]};
+  }
+  if(url.pathname==="/api/workspace")data={workspace:{recipe:[],resources:[]}};
+  await route.fulfill({json:data});
+ });
+ await page.goto("/#launcher/part/"+id);
+ await expect(page.locator("#launcher .part-workspace-title")).toHaveText("Project edit");
+ const details=page.locator("#launcher .part-details-collapse");
+ const summary=details.locator("summary.part-details-view-heading");
+ await summary.click();
+ const actions=summary.getByRole("button");
+ await expect(actions).toHaveText(["View in Workshop","Modify part","Reload Workshop data"]);
+ await actions.last().click();
+ const confirmation=page.getByRole("dialog",{name:"Reload Workshop data?"});
+ await confirmation.getByRole("button",{name:"Cancel"}).click();
+ expect(updates).toHaveLength(0);
+ await actions.last().click();
+ await confirmation.getByRole("button",{name:"Reload Workshop data"}).click();
+ await expect(page.locator("#launcher .part-workspace-title")).toHaveText("Workshop switch");
+ await expect(details.getByRole("status")).toHaveText("Workshop data reloaded.");
+ expect(updates).toEqual([{id,body:{reloadWorkshop:true}}]);
+});

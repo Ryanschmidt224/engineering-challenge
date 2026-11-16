@@ -1567,6 +1567,7 @@
    the disclosure is expanded and the viewer has edit permissions. */
 .bom-part-workspace .part-details-view-heading{
  justify-content:flex-start;
+ flex-wrap:wrap;
  gap:14px;
 }
 .bom-part-workspace .part-details-view-heading .part-details-edit,

@@ -108,6 +108,26 @@
   return {...item,...(essentialsGuidance[item.id]||{}),illustration:essentialsIllustrations[item.id]||"",category,availabilityAssumption,bomDefault};
  };
  const workshopReferences=workshopSupplies.map(itemMetadata);
+ const workshopLinkId=part=>{
+   const canonical=id=>{
+    id=String(id||"").trim();
+    if(/^(?:workshop:[a-z0-9-]+|my:[0-9a-f-]{36})$/i.test(id))return id;
+    return "";
+   };
+   const linked=String(part?.projectDetails?.workshopReferenceId||"").trim();
+   const shared=String(part?.sharedPartRef||"");
+   const references=part?.specifications||[];
+   const referenceValue=name=>references.find(spec=>spec.name===name)?.value;
+   const personal=String(referenceValue("My Workshop reference")||
+    (/^(?:common|purchased):/.test(shared)?"":linked)).trim();
+   return canonical(linked)||canonical(shared)||
+    canonical(referenceValue("Public Workshop reference"))||canonical(referenceValue("Workshop reference"))||
+    (/^[0-9a-f-]{36}$/i.test(personal)?"my:"+personal:"")||canonical(part?.workshopChoice);
+  };
+ if(typeof document==="undefined"){
+  globalThis.BSResources={workshopReferences,workshopLinkId};
+  return;
+ }
  // Product families are browse-only metadata. They do not change part IDs,
  // inventory records, project BOMs, or the established broad categories.
  const workshopGroups=[
@@ -583,7 +603,7 @@
    }
   }
  }
- window.BSResources={catalog,workshopCategories,workshopReferences,workshopGroups,workshopGroupFor,legacyCategory,all,mount,reloadWires,reloadCommonParts,reloadPurchased,init,normalize,setAdmin,focusWorkshopItem};
+ window.BSResources={catalog,workshopCategories,workshopReferences,workshopLinkId,workshopGroups,workshopGroupFor,legacyCategory,all,mount,reloadWires,reloadCommonParts,reloadPurchased,init,normalize,setAdmin,focusWorkshopItem};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
  else init();
 })();

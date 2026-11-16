@@ -1,3 +1,4 @@
+import {getPartPhoto} from "./workshop-linked-part.js";
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
 const uuid=/^[a-f0-9-]{36}$/i;
@@ -76,7 +77,7 @@ export async function handleInvestigations(request,env){
   const workspaceObject=await env.PHOTOS.get("part-workspaces/"+project+"/"+partId+".json");
   const workspace=workspaceObject?JSON.parse(await workspaceObject.text()):{};
   const revisionId=crypto.randomUUID();
-  const thumbnail=await env.PHOTOS.get("component-thumbnails/"+project+"/"+partId);
+  const thumbnail=await getPartPhoto(request,env,project,part);
   let archivedThumbnail=null;
   if(thumbnail){
    archivedThumbnail="part-revisions/"+project+"/"+partId+"/"+revisionId+"/thumbnail";

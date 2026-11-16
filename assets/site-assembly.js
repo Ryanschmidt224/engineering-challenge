@@ -52,7 +52,7 @@ function setupAssemblyTrees(){
    if(shared.status==="fulfilled")for(const [id,item] of Object.entries(shared.value?.items||{}))
     workshopReferences.set(id,{...(workshopReferences.get(id)||{}),...item});
    if(personal.status==="fulfilled")for(const item of personal.value?.items||[])
-    if(item.id)workshopReferences.set(item.id,item);
+    if(item.id){workshopReferences.set(item.id,item);workshopReferences.set("my:"+item.id,item)}
    render();
   };
   const syncPartNodes=parts=>{
@@ -742,14 +742,29 @@ function setupAssemblyTrees(){
   editWorkshopButton.textContent="View in Workshop";
   editWorkshopButton.hidden=true;
   detailEditButton.hidden=true;
+  const reloadWorkshopButton=document.createElement("button");
+  reloadWorkshopButton.type="button";
+  reloadWorkshopButton.className="btn part-details-edit";
+  reloadWorkshopButton.textContent="Reload Workshop data";
+  reloadWorkshopButton.hidden=true;
+  const reloadWorkshopStatus=document.createElement("p");
+  reloadWorkshopStatus.setAttribute("role","status");
+  reloadWorkshopStatus.hidden=true;
   const detailHeading=detailsPanel.querySelector(".part-details-view-heading");
   // Keep the linked-part actions beside the Part details heading.
   // Collapsed sections hide both actions through the existing heading styles.
   detailHeading.insertBefore(detailEditButton,detailHeading.querySelector(".part-details-toggle-label"));
   detailHeading.insertBefore(editWorkshopButton,detailEditButton);
   detailEditButton.textContent="Modify part";
-  detailsPanel.querySelector(".part-details-view-actions").remove();
-  partDetailsCollapse.addEventListener("toggle",()=>{partDetailsCollapse.querySelector(".part-details-toggle-label").textContent=partDetailsCollapse.open?"Minimize details":"Show details"});
+  detailHeading.insertBefore(reloadWorkshopButton,detailHeading.querySelector(".part-details-toggle-label"));
+  detailsPanel.querySelector(".part-details-view-actions").replaceWith(reloadWorkshopStatus);
+  partDetailsCollapse.addEventListener("toggle",()=>{
+   partDetailsCollapse.querySelector(".part-details-toggle-label").textContent=partDetailsCollapse.open?"Minimize details":"Show details";
+   if(partDetailsCollapse.open&&currentPartInfo){
+    detailEditButton.hidden=!canEdit();
+    reloadWorkshopButton.hidden=!canEdit()||!workshopLinkId(currentPartInfo)||!!currentPartInfo.generatedFrom;
+   }
+  });
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
   const progressPanel=document.createElement("section");progressPanel.className="part-progress-panel";
   progressPanel.innerHTML='<label class="part-progress-inline-label" for="part-progress-select-'+project+'">Status</label><select id="part-progress-select-'+project+'" class="field part-progress-select" aria-label="Status"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="complete">Complete</option></select><label class="part-attention-toggle"><input type="checkbox" class="part-needs-attention"> Needs attention</label><label class="part-attention-note-field" hidden>What needs to be fixed?<textarea class="field part-attention-note" rows="2" maxlength="2000" placeholder="What needs attention?"></textarea></label><span class="part-progress-feedback" role="status" aria-live="polite"></span><button type="button" class="part-progress-save" hidden>Save status</button>';
@@ -991,20 +1006,22 @@ function setupAssemblyTrees(){
   const partPhotoPreview=partPhotoDialog.querySelector(".part-photo-preview");
   const partPhotoPlaceholder=partPhotoDialog.querySelector(".part-photo-placeholder");
   const partPhotoStatus=partPhotoDialog.querySelector(".part-photo-status");
+  let partPictureLoad=0;
   function showPartPicture(partId,bust=false){
    if(!partId)return;
+   const load=++partPictureLoad;
    const src=window.BSPhotoMarkup.displayUrl("part",partId,project)+(bust?"&v="+Date.now():"");
    const image=document.createElement("img");image.src=src;image.alt=currentPartInfo?.name||"Part image";
    partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");partPhotoPlaceholder.hidden=false;partPhotoMarkup.disabled=true;partPhotoActions.setPhotoPresent(false);
    image.onload=()=>{
-    if(currentPartInfo?.id!==partId)return;
+    if(load!==partPictureLoad||currentPartInfo?.id!==partId)return;
     const main=document.createElement("img");main.src=src;main.alt=image.alt;
     pictureCover.replaceChildren(main);
     partPhotoPreview.src=src;partPhotoPreview.hidden=false;partPhotoPlaceholder.hidden=true;
     partPhotoDelete.disabled=false;partPhotoMarkup.disabled=false;partPhotoActions.setPhotoPresent(true);
    };
    image.onerror=()=>{
-    if(currentPartInfo?.id!==partId)return;
+    if(load!==partPictureLoad||currentPartInfo?.id!==partId)return;
     pictureCover.replaceChildren(Object.assign(document.createElement("span"),{textContent:"No picture yet"}));
     partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");
     partPhotoPlaceholder.hidden=false;partPhotoDelete.disabled=true;partPhotoMarkup.disabled=true;partPhotoActions.setPhotoPresent(false);
@@ -1052,22 +1069,7 @@ function setupAssemblyTrees(){
     }
    }catch(error){partPhotoStatus.textContent=error.message||"Delete failed";partPhotoActions.setStatus(partPhotoStatus.textContent);partPhotoDelete.disabled=false}
   }
-  const workshopLinkId=part=>{
-   const canonical=id=>{
-    id=String(id||"").trim();
-    if(/^(?:workshop:[a-z0-9-]+|my:[0-9a-f-]{36})$/i.test(id))return id;
-    return "";
-   };
-   const linked=String(part?.projectDetails?.workshopReferenceId||"").trim();
-   const shared=String(part?.sharedPartRef||"");
-   const references=part?.specifications||[];
-   const referenceValue=name=>references.find(spec=>spec.name===name)?.value;
-   const personal=String(referenceValue("My Workshop reference")||
-    (/^(?:common|purchased):/.test(shared)?"":linked)).trim();
-   return canonical(linked)||canonical(shared)||
-    canonical(referenceValue("Public Workshop reference"))||canonical(referenceValue("Workshop reference"))||
-    (/^[0-9a-f-]{36}$/i.test(personal)?"my:"+personal:"")||canonical(part?.workshopChoice);
-  };
+  const {workshopLinkId}=window.BSResources;
   editWorkshopButton.onclick=event=>{
    event.preventDefault();event.stopPropagation();
    const workshopId=workshopLinkId(currentPartInfo);
@@ -1080,6 +1082,37 @@ function setupAssemblyTrees(){
    url.hash="commonparts";
    history.pushState({workshopItem:workshopId},"",url.pathname+url.search+url.hash);
    window.dispatchEvent(new Event("hashchange"));
+  };
+  reloadWorkshopButton.onclick=async event=>{
+   event.preventDefault();event.stopPropagation();
+   const part=currentPartInfo;
+   if(!part||!canEdit()||!workshopLinkId(part)||reloadWorkshopButton.disabled)return;
+   reloadWorkshopButton.disabled=true;
+   try{
+    if(!await window.BSDialogs.danger(
+     "Replace this part’s details with the current Workshop data? Project edits to its part details, status and photo will be cleared. If the Workshop item has no photo, the current photo will be removed.",
+     {title:"Reload Workshop data?",confirmLabel:"Reload Workshop data"}))return;
+    reloadWorkshopStatus.hidden=false;
+    reloadWorkshopStatus.textContent="Reloading Workshop data…";
+    const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{
+     method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},
+     body:JSON.stringify({reloadWorkshop:true})
+    });
+    const data=await response.json();
+    if(!response.ok)throw Error(data.error||"Unable to reload Workshop data.");
+    syncPartNodes([data.component]);
+    if(partRoute()!==part.id)return;
+    await showPartWorkspace({keepDetailsOpen:true});
+    if(partRoute()===part.id){
+     reloadWorkshopStatus.hidden=false;
+     reloadWorkshopStatus.textContent="Workshop data reloaded.";
+    }
+    view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));
+   }catch(error){
+    if(partRoute()===part.id){
+     reloadWorkshopStatus.hidden=false;reloadWorkshopStatus.textContent=error.message;
+    }
+   }finally{reloadWorkshopButton.disabled=false}
   };
   detailEditButton.onclick=event=>{
    event.preventDefault();event.stopPropagation();
@@ -1105,11 +1138,11 @@ function setupAssemblyTrees(){
   }
   const partStatus=partWorkspace.querySelector(".part-workspace-status");
   let partSavedRevision=null;
-  async function showPartWorkspace(){
+  async function showPartWorkspace({keepDetailsOpen=false}={}){
    const partId=partRoute();if(!partId)return;
    const version=++partLoadVersion;
    detailEditButton.hidden=!canEdit();
-   editWorkshopButton.hidden=true;
+   editWorkshopButton.hidden=true;reloadWorkshopButton.hidden=true;reloadWorkshopStatus.hidden=true;
    detailEditButton.textContent="Edit part details";
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");
@@ -1131,6 +1164,8 @@ function setupAssemblyTrees(){
     currentPartInfo=part;
     const hasWorkshopLink=!!workshopLinkId(part);
     editWorkshopButton.hidden=!hasWorkshopLink;
+    reloadWorkshopButton.hidden=!hasWorkshopLink||!canEdit()||!!part.generatedFrom;
+    partDetailsCollapse.open=keepDetailsOpen;
     detailEditButton.textContent=hasWorkshopLink?"Modify part":"Edit part details";
     codePanel.setVisible(part.partType==="code");
     if(part.partType==="code")void codePanel.load(part.id,part.name);
@@ -1148,7 +1183,7 @@ function setupAssemblyTrees(){
     partRecipe?.setData(data.workspace);
     partSavedRevision=data.workspace?.revision??null;
     partExtras.setData(data.workspace);
-    showPartPicture(partId);
+    showPartPicture(partId,keepDetailsOpen);
     partStatus.textContent="";
     if(partEditReturn?.id===partId){
      const y=partEditReturn.scrollY;partEditReturn=null;
