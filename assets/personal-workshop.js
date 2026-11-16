@@ -37,6 +37,7 @@
   let selectedWorkshopCategory="all";
   const applyWorkshopCategory=()=>{
    const key=selectedWorkshopCategory;
+   if(root.querySelector(".workshop-item-page:not([hidden])"))return;
    shared.hidden=key==="mine";
    personal.hidden=key!=="mine";
    const details=$("#workshop-essentials-list",shared);
@@ -184,16 +185,15 @@
    url.searchParams.delete("workshop-return-y");
    url.searchParams.delete("workshop-item");
    url.hash=route.slice(1);
-   history.pushState(null,"",url.pathname+url.search+url.hash);
-   closeItem(false);
+   const y=Number(savedPosition);
+   history.pushState({projectPartScrollY:Number.isFinite(y)&&y>=0?y:0},"",url.pathname+url.search+url.hash);
    window.dispatchEvent(new Event("hashchange"));
-   // Return to the exact project part and roughly the same vertical position.
-   const y=savedPosition===null?0:Number(savedPosition);
-   if(Number.isFinite(y)&&y>=0){
-    requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,y)));
-   }else window.scrollTo(0,0);
   };
+  const browseProjectBack=itemButton("← Back to project part",goBackToProject,"btn workshop-return-to-project");
+  browseProjectBack.hidden=true;
+  header.append(browseProjectBack);
   const addProjectBackButton=()=>{
+   browseProjectBack.hidden=true;
    if(!projectReturnRoute())return;
    // Make the return control obvious in the main content area.
    itemPage.append(itemButton("← Back to project part",goBackToProject,"btn workshop-return-to-project"));
@@ -217,6 +217,7 @@
   function closeItem(navigate=true){
    if(navigate&&readSelected())changeUrl("");
    openedItem="";itemPage.hidden=true;itemSide.hidden=true;sidebar.hidden=false;
+   browseProjectBack.hidden=location.hash!=="#commonparts"||!projectReturnRoute();
    applyWorkshopCategory();
   }
   const addReference=item=>{
@@ -471,6 +472,7 @@
    shared.hidden=true;personal.hidden=true;sidebar.hidden=true;
    itemPage.hidden=false;itemSide.hidden=false;
    itemSide.replaceChildren();itemPage.replaceChildren();
+   addProjectBackButton();
    itemSide.append(itemButton("← Back to catalog",()=>closeItem(),"workshop-item-back"));
    itemSide.append(el("h2","Create catalog item","workshop-item-side-title"));
    const heading=el("div",undefined,"workshop-item-page-heading");
@@ -509,16 +511,12 @@
    // Available when creating or editing a Workshop item.
    lookupPanel.hidden=false;
    lookupPanel.append(el("h3","Fill product details with AI"));
-   const lookupHint=el("p","Enter a manufacturer part number (e.g. 2N7000) to research and fill the fields below. Review all suggested details and the picture before saving.","muted");
+   const lookupHint=el("p","Search using the manufacturer's part number and feature tree description below. Either field can be used on its own.","muted");
    const lookupRow=el("div",undefined,"workshop-ai-lookup-row");
-   const lookupInput=el("input");lookupInput.type="text";lookupInput.className="field";
-   lookupInput.maxLength=80;lookupInput.placeholder="Manufacturer part number, e.g. 2N7000";
-   lookupInput.value=item.partNumber||"";
-   lookupInput.setAttribute("aria-label","Part number for AI product lookup");
    const lookupResults=el("div",undefined,"workshop-ai-lookup-results");
    const lookupMessage=el("p",undefined,"workshop-ai-lookup-status");lookupMessage.setAttribute("role","status");
    const lookupButton=itemButton("Find with AI",()=>{},"btn primary");
-   lookupRow.append(lookupInput,lookupButton);
+   lookupRow.append(lookupButton);
    lookupPanel.append(lookupHint,lookupRow,lookupMessage,lookupResults);
    form.append(lookupPanel);
    const grid=el("div",undefined,"workshop-item-edit-grid");
@@ -717,7 +715,6 @@
      for(const key of saveableFields){
       if(controls[key]&&typeof draft[key]==="string"&&draft[key].trim())controls[key].value=draft[key];
      }
-     if(draft.partNumber)lookupInput.value=draft.partNumber;
      if(draft.kind)kind.value=draft.kind;
      if(draft.category)category.value=draft.category;
      const suggestedFamily=String(draft.familyName||"").trim();
@@ -868,17 +865,20 @@
     reviewPanel.append(actions);reviewPanel.hidden=false;reviewPanel.scrollIntoView({block:"nearest"});
    };
    viewSuggested.onclick=showReview;
-   lookupInput.addEventListener("input",()=>{pendingSuggestion=null;viewSuggested.hidden=true;closeReview()});
-   lookupInput.addEventListener("keydown",event=>{
-    if(event.key==="Enter"){event.preventDefault();lookupButton.click()}
-   });
+   const clearSuggestion=()=>{pendingSuggestion=null;viewSuggested.hidden=true;closeReview()};
+   for(const field of [controls.partNumber,controls.featureTreeDescription]){
+    field.addEventListener("input",clearSuggestion);
+   }
    lookupButton.onclick=async()=>{
-    const mpn=lookupInput.value.trim()||controls.partNumber.value.trim();
-    if(mpn.length<2){lookupMessage.textContent="Enter a manufacturer part number first.";lookupInput.focus();return}
-    
+    const partNumber=controls.partNumber.value.trim();
+    const featureTreeDescription=controls.featureTreeDescription.value.trim();
+    if(!partNumber&&!featureTreeDescription){
+     lookupMessage.textContent="Enter a manufacturer part number or feature tree description.";
+     controls.partNumber.focus();return;
+    }
     lookupButton.disabled=true;lookupButton.textContent="Searching…";
     pendingSuggestion=null;viewSuggested.hidden=true;closeReview();
-    lookupMessage.textContent="Looking up "+mpn+"… The form will not change until you approve suggestions.";
+    lookupMessage.textContent="Looking up "+[partNumber,featureTreeDescription].filter(Boolean).join(" · ")+"… Review suggestions before applying them.";
     lookupMessage.scrollIntoView({block:"nearest"});
     lookupResults.replaceChildren();
     try{
@@ -886,11 +886,14 @@
      const timeout=setTimeout(()=>controller.abort(),60000);
      let response;
      try{
-      const res=await fetch("/api/workshop-lookup",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({partNumber:mpn}),signal:controller.signal});
+      const res=await fetch("/api/workshop-lookup",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({partNumber,featureTreeDescription}),signal:controller.signal});
       const data=await res.json().catch(()=>({}));
       if(!res.ok)throw Error(data.error||"Lookup returned HTTP "+res.status);
       response=data;
      }finally{clearTimeout(timeout)}
+     if(partNumber!==controls.partNumber.value.trim()||featureTreeDescription!==controls.featureTreeDescription.value.trim()){
+      lookupMessage.textContent="Search fields changed. Run the lookup again.";return;
+     }
      pendingSuggestion=response;
      viewSuggested.hidden=false;
      lookupMessage.textContent="AI suggestions ready. Choose View suggested changes under Product identity.";
@@ -986,9 +989,6 @@
    mount.append(form);
    form.scrollIntoView({block:"start"});
   }
-  window.addEventListener("popstate",()=>{
-   const id=readSelected();if(id)showItem(id,false);else closeItem(false);
-  });
   // Linked items may not yet be in memory when arriving from a project.
   // Resolve the exact record before showing the item view. Never silently
   // replace a failed deep link with the general Workshop catalog.
@@ -1029,12 +1029,21 @@
      el("p",error.message||"The Workshop item could not be loaded.","muted"));
    }
   };
-  window.addEventListener("bsopenworkshopitem",event=>{
-   void openLinkedWorkshopItem(event.detail?.id||readSelected());
+  const syncItemRoute=()=>{
+   const id=location.hash==="#commonparts"?readSelected():"";
+   if(id){
+    if(openedItem===id)itemPage.scrollIntoView({block:"start"});
+    else void openLinkedWorkshopItem(id);
+   }else{
+    linkedItemRequest++;
+    closeItem(false);
+   }
+  };
+  // Browser history can change the item query without changing the hash.
+  window.addEventListener("popstate",event=>{
+   if(location.hash==="#commonparts"&&event.state?.workshopItem!==openedItem)syncItemRoute();
   });
-  window.addEventListener("hashchange",()=>{
-   if(location.hash&&location.hash!=="#commonparts"&&openedItem)closeItem(false);
-  });
+  window.addEventListener("hashchange",syncItemRoute);
 
   const renderCatalog=()=>{
    const query=results.value.trim().toLowerCase(),sort=$(".workshop-catalog-sort",catalog).value;
@@ -1238,8 +1247,7 @@
     editableReferenceIds=new Set(data.editableIds||[]);
     $(".workshop-catalog-create",catalog).hidden=!canCreateReferences;
     renderCatalog();
-    if(readSelected()&&location.hash==="#commonparts")void openLinkedWorkshopItem(readSelected());
-   else if(openedItem)showItem(openedItem,false);
+    if(openedItem&&!openedItem.startsWith("my:")&&location.hash==="#commonparts")showItem(openedItem,false);
    }catch(error){
     console.warn("Workshop reference edits are unavailable",error);
    }
@@ -1288,34 +1296,35 @@
      <div id="workshop-comparison"></div>
     </section>`;
    $("#workshop-add-personal-spec",personal).onclick=()=>addPersonalSpec();
-   // MPN lookup populates personal inventory as an editable draft.
    const mineLookup=el("section",undefined,"workshop-ai-lookup");
-   mineLookup.append(el("h3","Look up a manufacturer part number"),
-    el("p","Search product details, then review the draft before saving.","muted"));
-   const mineRow=el("div",undefined,"workshop-ai-lookup-row");
-   const mineMpn=el("input");mineMpn.className="field";mineMpn.maxLength=80;
-   mineMpn.placeholder="Manufacturer part number, e.g. 2N7000";
-   mineMpn.setAttribute("aria-label","Manufacturer part number for AI lookup");
+   mineLookup.append(el("h3","Fill product details with AI"),
+    el("p","Search using the manufacturer's part number and feature tree description below. Either field can be used on its own.","muted"));
    const mineFind=itemButton("Fill details with AI",()=>{},"btn primary");
-   mineRow.append(mineMpn,mineFind);
+   const minePartNumber=$("#workshop-partnumber",personal);
+   const mineDescription=$("#workshop-featuretreedescription",personal);
    const mineMessage=el("p",undefined,"workshop-ai-lookup-status");mineMessage.setAttribute("role","status");
    const mineResults=el("div",undefined,"workshop-ai-lookup-results");
-   mineLookup.append(mineRow,mineMessage,mineResults);
+   mineLookup.append(mineFind,mineMessage,mineResults);
    $("#workshop-editor > summary",personal).after(mineLookup);
    mineFind.onclick=async()=>{
-    const mpn=mineMpn.value.trim();
-    if(mpn.length<2){mineMessage.textContent="Enter a manufacturer part number.";return}
+    const itemId=editingId;
+    const partNumber=minePartNumber.value.trim();
+    const featureTreeDescription=mineDescription.value.trim();
+    if(!partNumber&&!featureTreeDescription){mineMessage.textContent="Enter a manufacturer part number or feature tree description.";return}
     mineFind.disabled=true;mineMessage.textContent="Searching product information…";
     mineResults.replaceChildren();
     try{
-     const result=await req("/api/workshop-lookup","POST",{partNumber:mpn});
+     const result=await req("/api/workshop-lookup","POST",{partNumber,featureTreeDescription});
+     if(itemId!==editingId||partNumber!==minePartNumber.value.trim()||featureTreeDescription!==mineDescription.value.trim()){
+      mineMessage.textContent="Search fields changed. Run the lookup again.";return;
+     }
      const d=result.draft||{};
      const values={
-      name:d.name||mpn,partNumber:d.partNumber||mpn,featureTreeDescription:d.featureTreeDescription||"",
-      manufacturer:d.manufacturer||"",model:d.partNumber||mpn,
+      name:d.name||$("#workshop-name",personal).value||partNumber||featureTreeDescription,partNumber:d.partNumber||partNumber,featureTreeDescription:d.featureTreeDescription||featureTreeDescription,
+      manufacturer:d.manufacturer||"",model:d.partNumber||partNumber,
       kind:d.kind||"component",
       category:workshopCategories.find(([id])=>id===d.category)?.[1]||d.category||"",
-      notes:[d.subtitle,d.use,d.caution].filter(Boolean).join("\n\n").slice(0,1500)
+      notes:[d.subtitle,d.use,d.caution,d.notes].filter(Boolean).join("\n\n").slice(0,1500)
      };
      for(const [key,value] of Object.entries(values)){
       const field=$("#workshop-"+fields[key],personal);if(field)field.value=value;
@@ -1361,7 +1370,6 @@
     }catch(error){mineMessage.textContent=error.message||"Lookup failed."}
     finally{mineFind.disabled=false}
    };
-   mineMpn.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();mineFind.click()}});
    $("#workshop-search",personal).addEventListener("input",render);
    $("#workshop-type-filter",personal).addEventListener("change",render);
    $("#workshop-new",personal).onclick=()=>fill({});
@@ -1410,8 +1418,6 @@
   }
   function fill(item){
    editingId=item.id||null;photoId=item.photoId||"";catalogId=item.catalogId||"";
-   const aiMpn=$("#workshop-editor .workshop-ai-lookup input",personal);
-   if(aiMpn)aiMpn.value=item.partNumber||"";
    const aiResults=$("#workshop-editor .workshop-ai-lookup-results",personal);
    if(aiResults)aiResults.replaceChildren();
    const aiStatus=$("#workshop-editor .workshop-ai-lookup-status",personal);
@@ -1499,7 +1505,7 @@
     target.prepend(el("p",counts.owned+" in stock · "+counts.reusable+" reusable · "+counts.short+" short · "+counts.unknown+" unknown · "+counts.check+" need review"));
    }catch(e){setStatus(e.message)}
   }
-  (async()=>{try{if(!await auth())return;buildUI();{const inventory=await req("/api/personal-workshop");items=inventory.items;canDeletePersonal=!!inventory.canDelete;}render();renderCatalog();if(openedItem)showItem(openedItem,false);await loadProjects()}catch(e){setStatus(e.message)}})();
+  (async()=>{try{if(!await auth())return;buildUI();{const inventory=await req("/api/personal-workshop");items=inventory.items;canDeletePersonal=!!inventory.canDelete;}render();renderCatalog();await loadProjects()}catch(e){setStatus(e.message)}})();
  }
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
 })();

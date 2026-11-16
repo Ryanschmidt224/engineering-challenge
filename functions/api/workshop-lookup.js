@@ -13,8 +13,10 @@ export async function onRequest({request,env}){
  const url=new URL(request.url);
  if(request.headers.get("origin")!==url.origin)return json({error:"Invalid request origin"},403);
  const body=await request.json().catch(()=>null);
- const mpn=text(body?.partNumber,80);
- if(!/^[A-Za-z0-9][A-Za-z0-9._+ #()/\-]{1,79}$/.test(mpn))return json({error:"Enter a valid manufacturer part number (2–80 characters)."},400);
+ const partNumber=text(body?.partNumber,160);
+ const featureTreeDescription=text(body?.featureTreeDescription,20);
+ if(!partNumber&&!featureTreeDescription)return json({error:"Enter a manufacturer part number or feature tree description."},400);
+ if(partNumber&&!/^[A-Za-z0-9][A-Za-z0-9._+ #()/\-]{0,159}$/.test(partNumber))return json({error:"Enter a valid manufacturer part number."},400);
  // Limit paid lookups per signed-in account. A failure does not count against the daily limit.
  if(!env.PHOTOS)return json({error:"Workshop storage unavailable"},503);
  const date=new Date().toISOString().slice(0,10),key="workshop-ai-lookup/"+user.id+"/"+date;
@@ -22,7 +24,11 @@ export async function onRequest({request,env}){
  const count=Number(usage?await usage.text():0)||0;
  if(count>=15)return json({error:"Daily AI lookup limit reached (15). Try again tomorrow."},429);
  const prompt=[
-  "Identify the product with part number "+JSON.stringify(mpn)+" and suggest practical details for a beginner-friendly Workshop inventory.",
+  "Research a product for a beginner-friendly Workshop inventory using these two search fields: "+JSON.stringify({partNumber,featureTreeDescription}),
+  "When both fields are supplied, search first for the exact manufacturer part number, using the feature tree description as context. If the combined search misses, search the exact part number separately.",
+  "Use the feature tree description to look for related or equivalent products. Mention any supported alternatives and important differences in notes. Keep those alternatives separate from the primary product details.",
+  "If only the feature tree description is supplied, use it to find a relevant product. Mark the result as a candidate in notes and leave the manufacturer part number blank if no specific identifier can be verified.",
+  "If a manufacturer part number is supplied but cannot be verified, do not silently substitute a different identifier.",
   "Provide a useful component overview: main specifications, typical uses, and basic pinout where relevant.",
   "Prefer manufacturer specifications where readily available. Sources are optional; never fabricate links.",
   "Important: a generic number (e.g. 2N7000) may be sold by multiple manufacturers in different packages.",
@@ -41,7 +47,7 @@ export async function onRequest({request,env}){
   "For applications, include 3-6 typical verified practical uses. 'spec' is a fallback human-readable summary; 'use' is a summary of applications.",
   "kind: tool/equipment/component/material/other; category: tools/consumables/electronics/hardware/safety.",
   "Use best-effort descriptions, mark important uncertainty briefly, and keep optional details empty when unknown.",
-  "Use the requested partNumber exactly if confirmed and no substitute is intended."
+  "Return the exact requested partNumber if confirmed. Leave partNumber blank if it could not be confirmed."
  ].join("\n");
  try{
   const response=await fetch("https://api.openai.com/v1/responses",{
@@ -77,7 +83,7 @@ export async function onRequest({request,env}){
    research.pins.map(pin=>"Pin "+pin.number+": "+pin.name+(pin.function?" — "+pin.function:"")).join("\n")):"";
   const applications=research.applications.map(x=>"• "+x).join("\n");
   const draft={
-   partNumber:text(data.partNumber,160)||mpn,
+   partNumber:text(data.partNumber,160),
    manufacturer:text(data.manufacturer,160),name:text(data.name,180),
    subtitle:text(data.subtitle,240),
    featureTreeDescription:text(data.featureTreeDescription,20),
@@ -91,13 +97,16 @@ export async function onRequest({request,env}){
   };
   // A generated answer is not a verified identity: require an exact part-number match.
   const normalize=v=>String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
-  if(normalize(draft.partNumber)!==normalize(mpn))return json({error:"The lookup returned a different part number. No fields were populated."},422);
+  if(partNumber&&draft.partNumber.toUpperCase()!==partNumber.toUpperCase())
+   return json({error:"The exact manufacturer part number could not be confirmed. Check the number or search by description alone."},422);
+  if(partNumber)draft.partNumber=partNumber;
   // Image search is a candidate, never authoritative. Require a visible part-number
   // match in its caption or source page and have the user review the picture.
   const images=(payload.output||[]).filter(v=>v.type==="web_search_call").flatMap(v=>v.results||[]).filter(v=>v.type==="image_result");
-  const candidate=images.find(img=>{
+  const imagePartNumber=normalize(draft.partNumber);
+  const candidate=imagePartNumber&&images.find(img=>{
    const page=validUrl(img.source_website_url),image=validUrl(img.image_url);
-   return page&&image&&normalize((img.caption||"")+" "+page.split("?")[0]).includes(normalize(mpn));
+   return page&&image&&normalize((img.caption||"")+" "+page.split("?")[0]).includes(imagePartNumber);
   });
   const imageSuggestion=candidate?{url:validUrl(candidate.image_url),sourceUrl:validUrl(candidate.source_website_url),caption:text(candidate.caption,180)}:null;
   await env.PHOTOS.put(key,String(count+1));

@@ -1067,3 +1067,76 @@ test("project navigation orders summary below tree and page notes can be created
  await expect(page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace) .bs-unstructured-notes")).toBeVisible();
  expect(seen).toContain("summary:root");expect(seen.some(x=>x.startsWith("workspace:"))).toBe(true);
 });
+
+test("linked Workshop items open, search current fields and return to the originating part",async ({page})=>{
+ const publicId="workshop:custom-motor-switch";
+ const personalId="11111111-1111-4111-8111-111111111111";
+ const publicPart="22222222-2222-4222-8222-222222222222";
+ const privatePart="33333333-3333-4333-8333-333333333333";
+ const item={name:"Public motor switch",partNumber:"ABC-10",featureTreeDescription:"Motor switch",
+  category:"electronics",kind:"component",familyId:"test-switches",created:true};
+ const searches=[],errors=[];
+ page.on("pageerror",error=>errors.push(error.message));
+ await page.route("**/api/**",async route=>{
+  const path=new URL(route.request().url()).pathname;
+  let data={};
+  if(path==="/api/accounts")data={user:{id:"test-user",displayName:"Test user"}};
+  if(path==="/api/tree")data={nodes:[],revision:"test"};
+  if(path==="/api/components")data={components:[
+   {id:publicPart,name:"Project switch",specifications:[],projectDetails:{workshopReferenceId:publicId}},
+   {id:privatePart,name:"Project spare switch",specifications:[{name:"My Workshop reference",value:personalId}]}
+  ]};
+  if(path==="/api/workspace")data={workspace:{recipe:[],resources:[]}};
+  if(path==="/api/workshop-reference"){
+   await new Promise(resolve=>setTimeout(resolve,150));
+   data={items:{[publicId]:item},canEdit:true,canCreate:true};
+  }
+  if(path==="/api/personal-workshop")data={items:[{...item,id:personalId,name:"Personal spare switch",quantity:1}]};
+  if(path==="/api/workshop-lookup"){
+   searches.push(route.request().postDataJSON());
+   data={draft:{name:"Suggested switch"},needsReview:true};
+  }
+  await route.fulfill({json:data});
+ });
+ const details=page.locator("#launcher .part-details-collapse");
+ const itemPage=page.locator(".workshop-item-page");
+ async function openFromProject(id,name){
+  await page.goto("/#launcher/part/"+id);
+  await expect(page.locator("#launcher .part-workspace-title")).toHaveText(name);
+  await details.locator("summary").click();
+  await details.getByRole("button",{name:"View in Workshop"}).click();
+ }
+ await openFromProject(publicPart,"Project switch");
+ await expect(itemPage.getByRole("heading",{name:item.name,exact:true})).toBeVisible();
+ await page.evaluate(()=>history.back());
+ await expect(page).toHaveURL(new RegExp("#launcher/part/"+publicPart+"$"));
+ await page.evaluate(()=>history.forward());
+ await expect(itemPage.getByRole("heading",{name:item.name,exact:true})).toBeVisible();
+ await page.reload();
+ await expect(itemPage.getByRole("heading",{name:item.name,exact:true})).toBeVisible();
+ await itemPage.getByRole("button",{name:"Edit",exact:true}).click();
+ await itemPage.getByRole("button",{name:"Find with AI"}).click();
+ await expect.poll(()=>searches.at(-1)).toEqual({partNumber:"ABC-10",featureTreeDescription:"Motor switch"});
+ await itemPage.getByLabel("Manufacturer part number",{exact:true}).fill("");
+ await itemPage.getByRole("button",{name:"Find with AI"}).click();
+ await expect.poll(()=>searches.at(-1)).toEqual({partNumber:"",featureTreeDescription:"Motor switch"});
+ await itemPage.getByRole("button",{name:"Back to project part"}).click();
+ await expect(page).toHaveURL(new RegExp("#launcher/part/"+publicPart+"$"));
+ await expect(page.locator("#launcher .part-workspace-title")).toHaveText("Project switch");
+
+ await openFromProject(privatePart,"Project spare switch");
+ await expect(itemPage.getByRole("heading",{name:"Personal spare switch"})).toBeVisible();
+ await itemPage.getByRole("button",{name:"Edit",exact:true}).click();
+ await page.locator("#workshop-editor").getByRole("button",{name:"Fill details with AI"}).click();
+ await expect.poll(()=>searches.length).toBe(3);
+ await expect.poll(()=>searches.at(-1)).toEqual({partNumber:"ABC-10",featureTreeDescription:"Motor switch"});
+ await page.getByRole("button",{name:"Back to project part"}).click();
+ await expect(page).toHaveURL(new RegExp("#launcher/part/"+privatePart+"$"));
+ await expect(page.locator("#launcher .part-workspace-title")).toHaveText("Project spare switch");
+ await page.locator('nav [data-nav="commonparts"]').click();
+ await page.getByRole("button",{name:"+ Add catalog item"}).click();
+ await itemPage.getByLabel("Manufacturer part number",{exact:true}).fill("NEW-42");
+ await itemPage.getByRole("button",{name:"Find with AI"}).click();
+ await expect.poll(()=>searches.at(-1)).toEqual({partNumber:"NEW-42",featureTreeDescription:""});
+ expect(errors).toEqual([]);
+});

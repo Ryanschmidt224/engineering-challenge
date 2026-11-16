@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {handleAccounts} from "../functions/api/accounts.js";
 import {onRequest as personalWorkshop} from "../functions/api/personal-workshop.js";
 import {onRequest as workshopReference} from "../functions/api/workshop-reference.js";
+import {onRequest as workshopLookup} from "../functions/api/workshop-lookup.js";
 import {handleComponents} from "../functions/api/components.js";
 
 const ORIGIN="https://schmidt.example";
@@ -274,4 +275,64 @@ test("project notes and KiCad metadata are saved on BOM parts, not Workshop refe
   name:"Invalid project note",specifications:[],projectDetails:{notes:"x".repeat(6001)}
  },session),env));
  assert.equal(invalid.status,400);
+});
+
+test("Workshop AI receives both identity fields and prioritizes the exact manufacturer number",async t=>{
+ const env={PHOTOS:new TestBucket(),OPENAI_API_KEY:"test-key",admin_password:"test-admin-secret"};
+ const session=await register(env,"lookup@example.test");
+ let query,draft;
+ t.mock.method(globalThis,"fetch",async (url,options)=>{
+  assert.equal(url,"https://api.openai.com/v1/responses");
+  query=JSON.parse(options.body).input;
+  return Response.json({output:[{type:"message",content:[{type:"output_text",text:JSON.stringify(draft)}]}]});
+ });
+ const lookUp=async body=>data(await workshopLookup({request:request("/api/workshop-lookup","POST",body,session),env}));
+ for(const fields of [
+  {partNumber:"ABC-10",featureTreeDescription:"Motor switch"},
+  {partNumber:"ABC-10",featureTreeDescription:""},
+  {partNumber:"",featureTreeDescription:"Motor switch"}
+ ]){
+  draft={partNumber:fields.partNumber||"SW123",name:"Motor switch"};
+  const result=await lookUp(fields);
+  assert.equal(result.status,200);
+  assert.equal(result.body.draft.partNumber,draft.partNumber);
+  assert.ok(query.includes(JSON.stringify(fields)));
+  assert.match(query,/search first for the exact manufacturer part number/);
+ }
+ draft={partNumber:"ABC10",name:"Different part"};
+ assert.equal((await lookUp({partNumber:"ABC-10",featureTreeDescription:"Motor switch"})).status,422);
+ draft={partNumber:"",name:"Unverified part"};
+ assert.equal((await lookUp({partNumber:"ABC-10"})).status,422);
+ assert.equal((await lookUp({partNumber:"",featureTreeDescription:""})).status,400);
+});
+
+test("Parts Management patches preserve linked public and personal Workshop records",async()=>{
+ const env={PHOTOS:new TestBucket(),admin_password:"test-admin-secret"};
+ const session=await register(env,"parts-management@example.test");
+ const claim=await handleAccounts(request("/api/accounts","POST",{
+  action:"claim-admin",adminPassword:env.admin_password
+ },session),env);
+ assert.equal(claim.status,200);
+ const details={name:"Motor switch",partNumber:"ABC-10",featureTreeDescription:"Motor switch",category:"electronics",kind:"component",familyId:"community-electronics",photos:[]};
+ const shared=await data(await workshopReference({request:request("/api/workshop-reference","POST",{details},session),env}));
+ assert.equal(shared.status,201,JSON.stringify(shared.body));
+ const mine=await data(await personalWorkshop({request:request("/api/personal-workshop","POST",details,session),env}));
+ assert.equal(mine.status,200);
+ const personal=mine.body.items.at(-1);
+ const before=new Map(env.PHOTOS.objects);
+ for(const workshopReferenceId of [shared.body.id,"my:"+personal.id,personal.id]){
+  const added=await data(await handleComponents(request("/api/components?project=launcher","POST",{
+   name:details.name,partType:"purchased",itemType:"part",specifications:[],assignNumber:false,projectDetails:{workshopReferenceId}
+  },session),env));
+  assert.equal(added.status,201,JSON.stringify(added.body));
+  const updated=await data(await handleComponents(request("/api/components?project=launcher&id="+added.body.component.id,"PATCH",{
+   name:"Project motor switch",partType:"custom",progressStatus:"in_progress",needsAttention:true,attentionNote:"Confirm mounting hole"
+  },session),env));
+  assert.equal(updated.status,200,JSON.stringify(updated.body));
+  assert.equal(updated.body.component.name,"Project motor switch");
+  assert.equal(updated.body.component.projectDetails.workshopReferenceId,workshopReferenceId);
+ }
+ for(const [key,record] of before){
+  assert.equal(env.PHOTOS.objects.get(key),record,key);
+ }
 });

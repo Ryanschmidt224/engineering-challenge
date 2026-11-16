@@ -600,7 +600,9 @@ function open({onCreate,hideDefault=false}){
    payload.projectDetails=getProjectDetails();
    if(addToWorkshopCheckbox.checked)payload.projectDetails.workshopTreeDescription=shortTreeDescription.input.value.trim();
    if(workshopCheckbox.checked&&selectedReference())payload.projectDetails.workshopTreeDescription=String(selectedReference().featureTreeDescription||"").slice(0,20);
-   if(workshopCheckbox.checked&&selectedReference())payload.projectDetails.workshopReferenceId=selectedReference().id;
+   const reference=workshopCheckbox.checked?selectedReference():null;
+   if(reference?.origin==="mine")payload.projectDetails.workshopReferenceId="my:"+reference.id;
+   if(reference?.origin==="public"||reference?.origin==="standard")payload.projectDetails.workshopReferenceId=reference.id;
   }
   payload.quantityUnit="pcs";
   // This client-only instruction is consumed by the project controller after
@@ -633,7 +635,7 @@ function open({onCreate,hideDefault=false}){
      if(!savedWorkshopItem?.id)throw Error("Workshop did not confirm the new item. Please check your Workshop before retrying.");
     }
     payload.projectDetails={
-     ...(payload.projectDetails||{}),workshopReferenceId:savedWorkshopItem.id
+     ...(payload.projectDetails||{}),workshopReferenceId:savedWorkshopItem.destination==="private"?"my:"+savedWorkshopItem.id:savedWorkshopItem.id
     };
     payload.workshopSavedMessage=savedWorkshopItem.message;
     delete payload.addToWorkshop;

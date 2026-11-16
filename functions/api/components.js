@@ -259,6 +259,8 @@ export async function handleComponents(request,env){
   if(input.attentionNote!==undefined){if(typeof input.attentionNote!=="string"||input.attentionNote.length>2000)return json({error:"Attention note must be 2000 characters or less"},400);entry.attentionNote=input.attentionNote.trim()}
   if(entry.needsAttention&&!(entry.attentionNote||"").trim())return json({error:"Describe what needs attention before flagging this part"},400);
   entry.fullName=generatedFullName(entry);
+  // Parts Management updates the project occurrence. Workshop references
+  // are links and are written only by their own Workshop endpoints.
   if(!await saveEditable(env,project,items,state))return conflict();
   return json({component:presentPart(entry)});
  }

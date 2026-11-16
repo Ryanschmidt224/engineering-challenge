@@ -1053,16 +1053,25 @@ function setupAssemblyTrees(){
    }catch(error){partPhotoStatus.textContent=error.message||"Delete failed";partPhotoActions.setStatus(partPhotoStatus.textContent);partPhotoDelete.disabled=false}
   }
   const workshopLinkId=part=>{
+   const canonical=id=>{
+    id=String(id||"").trim();
+    if(/^(?:workshop:[a-z0-9-]+|my:[0-9a-f-]{36})$/i.test(id))return id;
+    return "";
+   };
    const linked=String(part?.projectDetails?.workshopReferenceId||"").trim();
-   if(linked)return linked;
-   const legacy=String(part?.sharedPartRef||"");
-   return legacy.startsWith("workshop:")?legacy:"";
+   const shared=String(part?.sharedPartRef||"");
+   const references=part?.specifications||[];
+   const referenceValue=name=>references.find(spec=>spec.name===name)?.value;
+   const personal=String(referenceValue("My Workshop reference")||
+    (/^(?:common|purchased):/.test(shared)?"":linked)).trim();
+   return canonical(linked)||canonical(shared)||
+    canonical(referenceValue("Public Workshop reference"))||canonical(referenceValue("Workshop reference"))||
+    (/^[0-9a-f-]{36}$/i.test(personal)?"my:"+personal:"")||canonical(part?.workshopChoice);
   };
   editWorkshopButton.onclick=event=>{
    event.preventDefault();event.stopPropagation();
-   const id=workshopLinkId(currentPartInfo);
-   if(!id)return;
-   const workshopId=id.startsWith("workshop:")||id.startsWith("my:")?id:"my:"+id;
+   const workshopId=workshopLinkId(currentPartInfo);
+   if(!workshopId)return;
    // Switch to the Workshop's item page; only saving inside Workshop edits the reference.
    const url=new URL(location.href);
    url.searchParams.set("workshop-item",workshopId);
@@ -1071,7 +1080,6 @@ function setupAssemblyTrees(){
    url.hash="commonparts";
    history.pushState({workshopItem:workshopId},"",url.pathname+url.search+url.hash);
    window.dispatchEvent(new Event("hashchange"));
-   window.dispatchEvent(new CustomEvent("bsopenworkshopitem",{detail:{id:workshopId}}));
   };
   detailEditButton.onclick=event=>{
    event.preventDefault();event.stopPropagation();
@@ -1145,6 +1153,9 @@ function setupAssemblyTrees(){
     if(partEditReturn?.id===partId){
      const y=partEditReturn.scrollY;partEditReturn=null;
      requestAnimationFrame(()=>window.scrollTo(0,y));
+    }else if(Number.isFinite(history.state?.projectPartScrollY)){
+     const y=history.state.projectPartScrollY;
+     requestAnimationFrame(()=>{if(partRoute()===partId)window.scrollTo(0,y)});
     }
    }catch(e){if(version===partLoadVersion)partStatus.textContent=e.message}
   }
