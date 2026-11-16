@@ -2658,3 +2658,34 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
   align-self:center;
  }
 }
+
+/* Project Summary BOM: make saved parts navigable without adding visual clutter. */
+.project-summary-part-list .project-summary-part-link{
+ appearance:none;
+ display:inline;
+ max-width:100%;
+ min-width:0;
+ margin:0;
+ padding:0;
+ border:0;
+ border-radius:3px;
+ background:transparent;
+ color:var(--color-accent,#2d755b);
+ font:inherit;
+ font-weight:600;
+ text-align:left;
+ line-height:inherit;
+ overflow-wrap:anywhere;
+ cursor:pointer;
+ text-decoration:underline;
+ text-decoration-color:transparent;
+ text-underline-offset:3px;
+}
+.project-summary-part-list .project-summary-part-link:hover{
+ text-decoration-color:currentColor;
+}
+.project-summary-part-list .project-summary-part-link:focus-visible{
+ outline:2px solid var(--color-accent,#2d755b);
+ outline-offset:3px;
+ text-decoration-color:currentColor;
+}
