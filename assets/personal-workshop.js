@@ -989,19 +989,48 @@
   window.addEventListener("popstate",()=>{
    const id=readSelected();if(id)showItem(id,false);else closeItem(false);
   });
-  // Open a linked catalog item when navigating here from a project part page.
-  window.addEventListener("bsopenworkshopitem",event=>{
-   const id=event.detail?.id;
+  // Linked items may not yet be in memory when arriving from a project.
+  // Resolve the exact record before showing the item view. Never silently
+  // replace a failed deep link with the general Workshop catalog.
+  let linkedItemRequest=0;
+  const openLinkedWorkshopItem=async id=>{
    if(!id)return;
-   if(id.startsWith("my:")&&!items.some(item=>"my:"+item.id===id)){
-    void req("/api/personal-workshop").then(data=>{items=data.items||[];showItem(id,false)})
-     .catch(error=>console.warn("Workshop navigation unavailable",error));
-    return;
+   const request=++linkedItemRequest;
+   const current=()=>request===linkedItemRequest&&readSelected()===id&&location.hash==="#commonparts";
+   const found=()=>id.startsWith("my:")
+    ?items.some(item=>"my:"+item.id===id)
+    :standards().some(item=>item.id===id);
+   if(found()){if(current())showItem(id,false);return}
+   itemPage.replaceChildren();
+   itemSide.replaceChildren();
+   shared.hidden=true;personal.hidden=true;sidebar.hidden=true;
+   itemPage.hidden=false;itemSide.hidden=false;
+   addProjectBackButton();
+   itemPage.append(el("p","Opening Workshop item…","muted"));
+   try{
+    if(id.startsWith("my:")){
+     const data=await req("/api/personal-workshop");
+     if(!current())return;
+     items=data.items||[];
+    }else{
+     const data=await req("/api/workshop-reference");
+     if(!current())return;
+     workshopOverrides=data.items||{};
+     renderCatalog();
+    }
+    if(!current())return;
+    if(!found())throw Error("The linked Workshop item could not be found. It may have been removed or the project link may need updating.");
+    showItem(id,false);
+   }catch(error){
+    if(!current())return;
+    itemPage.replaceChildren();
+    addProjectBackButton();
+    itemPage.append(el("h2","Unable to open Workshop item"),
+     el("p",error.message||"The Workshop item could not be loaded.","muted"));
    }
-   if(id.startsWith("my:")||standards().some(item=>item.id===id)){showItem(id,false);return}
-   void req("/api/workshop-reference").then(data=>{
-    workshopOverrides=data.items||{};showItem(id,false);
-   }).catch(error=>console.warn("Workshop navigation unavailable",error));
+  };
+  window.addEventListener("bsopenworkshopitem",event=>{
+   void openLinkedWorkshopItem(event.detail?.id||readSelected());
   });
   window.addEventListener("hashchange",()=>{
    if(location.hash&&location.hash!=="#commonparts"&&openedItem)closeItem(false);
