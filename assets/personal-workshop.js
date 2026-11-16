@@ -1227,7 +1227,7 @@
   });
   window.addEventListener("bsworkshopfocus",()=>queueMicrotask(renderCatalog));
   renderCatalog();
-  if(readSelected())showItem(readSelected(),false);
+  if(readSelected()&&location.hash==="#commonparts")void openLinkedWorkshopItem(readSelected());
   (async()=>{
    try{
     const data=await req("/api/workshop-reference");
@@ -1238,7 +1238,8 @@
     editableReferenceIds=new Set(data.editableIds||[]);
     $(".workshop-catalog-create",catalog).hidden=!canCreateReferences;
     renderCatalog();
-    if(openedItem)showItem(openedItem,false);
+    if(readSelected()&&location.hash==="#commonparts")void openLinkedWorkshopItem(readSelected());
+   else if(openedItem)showItem(openedItem,false);
    }catch(error){
     console.warn("Workshop reference edits are unavailable",error);
    }
