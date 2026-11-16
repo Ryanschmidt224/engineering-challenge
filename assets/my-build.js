@@ -161,7 +161,7 @@
  }
  function insights(target,{project}){
   const panel=node("details","build-confusion-insights");
-  const heading=node("summary","","Where learners get stuck");
+  const heading=node("summary","","Areas that need clarification");
   const body=node("div","build-confusion-insights-body");
   panel.append(heading,body);target.append(panel);
   panel.addEventListener("toggle",async()=>{
