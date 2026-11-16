@@ -179,17 +179,24 @@
    const route=projectReturnRoute();
    if(!route)return;
    const url=new URL(location.href);
+   const savedPosition=url.searchParams.get("workshop-return-y");
    url.searchParams.delete("workshop-return");
+   url.searchParams.delete("workshop-return-y");
    url.searchParams.delete("workshop-item");
    url.hash=route.slice(1);
    history.pushState(null,"",url.pathname+url.search+url.hash);
    closeItem(false);
    window.dispatchEvent(new Event("hashchange"));
-   window.scrollTo(0,0);
+   // Return to the exact project part and roughly the same vertical position.
+   const y=savedPosition===null?0:Number(savedPosition);
+   if(Number.isFinite(y)&&y>=0){
+    requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,y)));
+   }else window.scrollTo(0,0);
   };
   const addProjectBackButton=()=>{
    if(!projectReturnRoute())return;
-   itemSide.append(itemButton("← Back to project part",goBackToProject,"btn workshop-return-to-project"));
+   // Make the return control obvious in the main content area.
+   itemPage.append(itemButton("← Back to project part",goBackToProject,"btn workshop-return-to-project"));
   };
   const changeUrl=id=>{
    const u=new URL(location.href);
