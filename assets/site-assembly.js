@@ -1062,7 +1062,7 @@ function setupAssemblyTrees(){
    event.preventDefault();event.stopPropagation();
    const id=workshopLinkId(currentPartInfo);
    if(!id)return;
-   const workshopId=id.startsWith("workshop:")?id:"my:"+id;
+   const workshopId=id.startsWith("workshop:")||id.startsWith("my:")?id:"my:"+id;
    // Switch to the Workshop's item page; only saving inside Workshop edits the reference.
    const url=new URL(location.href);
    url.searchParams.set("workshop-item",workshopId);
