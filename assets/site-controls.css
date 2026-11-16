@@ -2564,14 +2564,24 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
  display:inline-flex;
  align-items:center;
  justify-content:center;
- width:100%;
- margin-bottom:12px;
- padding:10px 12px;
+ width:max-content;
+ max-width:100%;
+ min-height:40px;
+ position:sticky;
+ top:72px;
+ z-index:12;
+ margin:0 0 16px;
+ padding:10px 15px;
  font-weight:650;
  background:#fff;
  border:1px solid var(--color-border,#ccd8d1);
  border-radius:9px;
+ box-shadow:0 2px 8px rgba(16,34,25,.09);
  color:#275b48;
+}
+#commonparts .workshop-return-to-project:hover{
+ background:var(--color-hover,#edf4f0);
+ border-color:#428368;
 }
 
 /* Page-level action placement: keep controls beside the content they operate on,
