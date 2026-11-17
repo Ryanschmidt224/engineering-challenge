@@ -669,21 +669,43 @@
     }
     row.append(itemButton("Remove",()=>row.remove(),"btn"));
     specRows.append(row);
+    return row;
    };
    const addSuggestedSpecs=()=>{
-    const current=new Set([...specRows.children].flatMap(row=>[
-     row.dataset.propertyId,row.querySelector('[data-spec="label"]')?.value.trim().toLowerCase()
-    ].filter(Boolean)));
+    const current=new Map([...specRows.children].flatMap(row=>[
+     row.dataset.propertyId,row.querySelector('[data-spec="label"]').value.trim().toLowerCase()
+    ].filter(Boolean).map(key=>[key,row])));
+    const suggestedRows=[];
+    let added=0,atLimit=false;
     for(const [propertyId,label,unit] of suggestedTemplate()){
-     if(current.has(propertyId)||current.has(label.toLowerCase()))continue;
-     if(specRows.children.length>=60)break;
-     addSpec({propertyId,label,unit});
+     const existing=current.get(propertyId)||current.get(label.toLowerCase());
+     const row=existing||addSpec({propertyId,label,unit});
+     if(!row){atLimit=true;continue}
+     if(!existing)added++;
+     suggestedRows.push(row);
     }
+    return {suggestedRows,added,atLimit};
    };
+   const specStatus=el("p","","muted");
+   specStatus.setAttribute("role","status");
+   specStatus.hidden=true;
+   const reportSpecStatus=message=>{specStatus.hidden=false;specStatus.textContent=message};
    const specActions=el("div",undefined,"workshop-structured-spec-actions");
-   specActions.append(itemButton("Suggest fields for this category",addSuggestedSpecs,"btn"),
-    itemButton("+ Add specification",()=>addSpec(),"btn"));
-   structuredSection.append(specActions,specRows);
+   specActions.append(itemButton("Suggest fields for this category",()=>{
+    const {suggestedRows,added,atLimit}=addSuggestedSpecs();
+    const next=suggestedRows.map(row=>row.querySelector('[data-spec="value"]')).find(field=>!field.value.trim());
+    const message=added?"Added "+added+" suggested "+(added===1?"field.":"fields."):
+     next?"Suggested fields are ready for values.":"All suggested fields are already filled.";
+    reportSpecStatus(atLimit?"Limit reached. Remove a specification to add more suggested fields.":message);
+    next?.focus();
+   },"btn"),
+    itemButton("+ Add specification",()=>{
+     const row=addSpec();
+     if(!row){reportSpecStatus("Limit reached. Remove a specification to add another.");return}
+     reportSpecStatus("Added a blank specification.");
+     row.querySelector('[data-spec="label"]').focus();
+    },"btn"));
+   structuredSection.append(specActions,specStatus,specRows);
    for(const spec of item.specifications||[])addSpec(spec);
    // Existing saved specifications take precedence over suggested empty fields.
    // When reclassifying, only discard unsaved blank template rows.

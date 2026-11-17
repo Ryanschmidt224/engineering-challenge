@@ -1168,6 +1168,18 @@ test("linked Workshop items open, search current fields and return to the origin
  await expect.poll(()=>itemPage.locator('.workshop-structured-spec-rows [data-spec="label"]').evaluateAll(fields=>fields.map(field=>field.value))).toEqual([
   "Cutting diameter","Shank diameter","Length of cut","Overall length","Flute count","Tool material","Coating","End geometry"
  ]);
+ const specs=itemPage.locator(".workshop-structured-specs");
+ const values=specs.locator('[data-spec="value"]');
+ await specs.getByRole("button",{name:"Suggest fields for this category"}).click();
+ await expect(values.first()).toBeFocused();
+ await expect(values).toHaveCount(8);
+ await expect(specs.getByRole("status")).toHaveText("Suggested fields are ready for values.");
+ await specs.getByRole("button",{name:"+ Add specification"}).click();
+ const newProperty=specs.locator('[data-spec="label"]').last();
+ await expect(values).toHaveCount(9);
+ await expect(newProperty).toBeFocused();
+ await newProperty.fill("Helix angle");
+ await expect(specs.getByRole("status")).toHaveText("Added a blank specification.");
  expect(errors).toEqual([]);
 });
 
