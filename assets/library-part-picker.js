@@ -118,12 +118,15 @@ function open({onCreate,hideDefault=false}){
  saveScope.append(publicCategory.label);
  const workshopAddHelp=el("p","muted library-workshop-add-help","Public Workshop items are shared and may be edited by any signed-in member. Changes to existing items are checked for conflicts.");
  const customName=field("Part name");
+ const genericWorkshopHelp=el("small","muted","For a generic Workshop item, enter a name and leave the manufacturer part number blank.");
+ genericWorkshopHelp.hidden=true;
+ customName.label.append(genericWorkshopHelp);
  const itemKind=field("Item type","select");option(itemKind.input,"part","Part");option(itemKind.input,"document","Document");option(itemKind.input,"code","Code");
  const partClassification=field("Part type","select");option(partClassification.input,"purchased","Off-the-shelf");option(partClassification.input,"custom","Custom");
  const partNumberField=field("Project BOM number (not manufacturer's number)");
  partNumberField.input.placeholder="Project-specific number, e.g. 100";partNumberField.input.maxLength=30;
  const manufacturerNumber=field("Manufacturer part number (MPN)");
- manufacturerNumber.input.placeholder="e.g. 2N7000";manufacturerNumber.input.maxLength=160;
+ manufacturerNumber.input.placeholder="Optional, e.g. 2N7000";manufacturerNumber.input.maxLength=160;
  const manufacturerName=field("Manufacturer");
  manufacturerName.input.placeholder="e.g. onsemi (select actual manufacturer)";
  manufacturerName.input.maxLength=160;
@@ -469,7 +472,6 @@ function open({onCreate,hideDefault=false}){
   vendorInfo.classList.toggle("hide",!purchased||workshopMode);
   noNumberRow.classList.toggle("hide",!purchased);
   if(!purchased&&noNumberRadio.checked)autoNumberCheckbox.checked=true;
-  manufacturerNumber.input.required=adding;
   if(adding&&autoNumberCheckbox.checked)noNumberRadio.checked=true;
   if(savedWorkshopItem&&!adding)savedWorkshopItem=null;
   workshopChoices.classList.toggle("hide",!isPart);
@@ -481,7 +483,8 @@ function open({onCreate,hideDefault=false}){
   if(lib&&!wire)refreshCommon();
   wireModeChoice.classList.toggle("hide",!lib||category.input.value!=="consumables");
   powerType.label.classList.toggle("hide",!lib||category.input.value!=="electronics");
-  customName.label.classList.toggle("hide",lib||adding);
+  customName.label.classList.toggle("hide",lib);
+  genericWorkshopHelp.hidden=!adding;
 
   const documentMode=!lib&&itemKind.input.value!=="part";
   partClassification.label.classList.toggle("hide",lib||documentMode||adding);
@@ -538,10 +541,12 @@ function open({onCreate,hideDefault=false}){
   const rawCount=qty.input.value.trim();const count=rawCount===""?null:Number(rawCount);
   if(count!==null&&(!Number.isFinite(count)||count<=0||count>10000000)){status.textContent="Quantity must be positive, or left blank.";return}
   if(itemKind.input.value!=="part"||!workshopCheckbox.checked){
-   // Workshop items use the manufacturer part number for their initial display name.
-    // The project part can be renamed later on its Part page.
-    const name=addToWorkshopCheckbox.checked&&itemKind.input.value==="part"?manufacturerNumber.input.value.trim().slice(0,100):customName.input.value.trim();
-    if(!name||name.length>100){status.textContent=addToWorkshopCheckbox.checked?"Enter a manufacturer part number.":"Enter a part name (up to 100 characters).";return}
+   const adding=addToWorkshopCheckbox.checked&&itemKind.input.value==="part";
+   const name=customName.input.value.trim()||(adding?manufacturerNumber.input.value.trim().slice(0,100):"");
+   if(!name||name.length>100){
+    status.textContent=adding?"Enter a part name (up to 100 characters) or a manufacturer part number.":"Enter a part name (up to 100 characters).";
+    customName.input.focus();return;
+   }
    const autoNumber=autoNumberCheckbox.checked;
    payload={name,quantity:itemKind.input.value==="code"?null:itemKind.input.value==="document"?1:count,specifications:[],itemType:itemKind.input.value==="code"?"document":itemKind.input.value,partType:itemKind.input.value==="code"?"code":partClassification.input.value,
     assignNumber:autoNumber,partNumber:autoNumber?null:noNumberRadio.checked?null:partNumberField.input.value.trim().toUpperCase()||null};
@@ -611,7 +616,6 @@ function open({onCreate,hideDefault=false}){
    if(payload.itemType!=="part"||payload.partType!=="purchased"){
     status.textContent="Only purchased parts can be saved to a Workshop.";return;
    }
-   if(!payload.model){status.textContent="Enter the manufacturer part number before saving to a Workshop.";manufacturerNumber.input.focus();return}
    payload.addToWorkshop=publicRadio.checked?"public":"private";
    if(publicRadio.checked)payload.workshopCategory=publicCategory.input.value;
   }

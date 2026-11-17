@@ -914,17 +914,18 @@ test("New Part ends Workshop edits after identity and confirms public/private sa
  await open();
  modal=page.locator(".library-part-dialog");
  await modal.locator(".library-workshop-add input").check();
- await modal.locator(".library-field",{hasText:"Manufacturer part number (MPN)"}).locator("input").fill("PSU-12V");
- await modal.locator(".library-field",{hasText:"Part name"}).locator("input").fill("Private supply");
+ await modal.locator(".library-field",{hasText:"Part name"}).locator("input").fill("1/4 W resistor");
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
  await expect(modal).toHaveCount(0);
  payload=await page.evaluate(()=>window.__createdTestPart);
+ expect(payload.name).toBe("1/4 W resistor");
  expect(payload.addToWorkshop).toBeUndefined();
  expect(payload.workshopSavedMessage).toContain("My Workshop");
- expect(payload.projectDetails.workshopReferenceId).toBe("22222222-2222-4222-8222-222222222222");
+ expect(payload.projectDetails.workshopReferenceId).toBe("my:22222222-2222-4222-8222-222222222222");
  expect(workshopPosts).toHaveLength(2);
  expect(workshopPosts[1].scope).toBe("private");
- expect(workshopPosts[1].body.partNumber).toBe("PSU-12V");
+ expect(workshopPosts[1].body.partNumber).toBe("");
+ expect(workshopPosts[1].body.name).toBe("1/4 W resistor");
  await open();
  modal=page.locator(".library-part-dialog");
  await modal.locator(".library-field",{hasText:"Item type"}).first().locator("select").selectOption("document");
@@ -1008,7 +1009,7 @@ test("Searching Workshop for missing 2N7000 opens a purchased part with separate
  expect(saved.partNumber).toBeNull();
  expect(saved.assignNumber).toBe(false);
  expect(saved.addToWorkshop).toBeUndefined();
- expect(saved.projectDetails.workshopReferenceId).toBe("33333333-3333-4333-8333-333333333333");
+ expect(saved.projectDetails.workshopReferenceId).toBe("my:33333333-3333-4333-8333-333333333333");
 });
 test("project navigation orders summary below tree and page notes can be created with existing photo upload",async({page})=>{
  const saves=[],seen=[];

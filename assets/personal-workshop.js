@@ -566,6 +566,7 @@
      const control=type==="textarea"?el("textarea"):el("input");
      if(type==="textarea")control.rows=3;else control.type=type;
      control.className="field";control.value=item[name]||"";
+     if(name==="partNumber")control.placeholder="Optional for generic items";
       if(name==="featureTreeDescription"){control.maxLength=20;control.placeholder="e.g. Motor switch";}
      label.append(control);fieldsGrid.append(label);controls[name]=control;
      if(name==="featureTreeDescription")fieldsGrid.append(lookupActions);
