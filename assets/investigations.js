@@ -6,12 +6,13 @@
  const types=[["observation","What happened?"],["theory","What do you think caused it?"],["note","Additional notes"]]; 
  const legacyType={attempt:"Attempt / change",theory:"Hypothesis",lesson:"How was it fixed?",revision:"Revision / design change",result:"Result"};
  const categories={
-  practice:{label:"Practice",fields:[["attempt","What did you practice?"],["lesson","What did you learn?"]]},
+  practice:{label:"Practice",fields:[["attempt","What did you practice?"]]},
   test:{label:"Tests",fields:[["theory","What did you want to verify?"],["attempt","How did you test it?"],["result","What happened?"]]},
-  revision:{label:"Revision",fields:[["revision","What changed?"],["theory","Why did you change it?"],["result","What was the result?"]]},
-  failure:{label:"Failures",fields:[...types.slice(0,2),["resolution","Did you fix it?"],types[2]]},
-  note:{label:"Notes",fields:[["note","Notes"]]}
+  revision:{label:"Revision",fields:[["revision","What changed?"],["theory","Why did you change it?"]]},
+  failure:{label:"Failures",fields:[...types.slice(0,2),["resolution","Did you fix it?"]]},
+  note:{label:"Notes",fields:[]}
  };
+ const retiredLabels={practice:{lesson:"What did you learn?"},revision:{result:"What was the result?"},note:{note:"Notes"}};
  const categoryOf=record=>record.category||(record.partSnapshot?"revision":"failure");
  const sectionTitle="Practice, Tests, Revision, Failures, Notes";
  const acceptedAttachments=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.dwg,.dxf,.sldprt,.sldasm,.step,.stp,.stl,.igs,.iges,.x_t,.x_b,.obj,.3mf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip,.py,.js,.ts,.ino,.c,.cpp,.h,.hpp,.json,.md,.kicad_sch,.kicad_pcb,.kicad_pro";
@@ -110,9 +111,9 @@
    const reportHere=message=>report(message,target);
    const category=categories[categoryOf(record)];
    const entryList=make("div","investigation-entries");
-   for(const entry of record.entries||[]){
+   for(const entry of [...(record.entries||[]),...(record.notes||[])]){
     const item=make("article","investigation-entry");
-    const label=entry.type==="resolution"?("Did you fix it? "+({yes:"Yes — How?",no:"No — Why?",maybe:"Maybe — How?"})[entry.resolution]):category.fields.find(x=>x[0]===entry.type)?.[1]||types.find(x=>x[0]===entry.type)?.[1]||legacyType[entry.type]||"Update";
+    const label=entry.descriptor||(entry.type==="resolution"?("Did you fix it? "+({yes:"Yes — How?",no:"No — Why?",maybe:"Maybe — How?"})[entry.resolution]):category.fields.find(x=>x[0]===entry.type)?.[1]||types.find(x=>x[0]===entry.type)?.[1]||legacyType[entry.type]||"Update");
     const stamp=entry.date||entry.createdAt?.slice(0,10)||"";
     const labelRow=make("div","investigation-entry-heading");
     labelRow.append(make("strong","",label));
@@ -142,12 +143,12 @@
    const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
    date.value=record.date||[...(record.entries||[])].reverse().find(entry=>entry.date)?.date||date.value;
    dateLabel.append(date);controls.append(dateLabel);
-   function fieldRow(type,label,placeholder){
+   function fieldRow(type,label,stored=latest.get(type),parent=controls){
     const wrap=make("div","investigation-entry-field");
     const caption=make("label","investigation-field-label");
     const descriptor=make("span","investigation-field-descriptor",label);
     const field=make("textarea","field");field.rows=2;field.maxLength=5000;
-    field.placeholder=placeholder;field.value=latest.get(type)?.text||"";caption.append(descriptor,field);
+    field.value=stored?.text||"";caption.append(descriptor,field);
     const fileInput=make("input");fileInput.type="file";fileInput.multiple=true;fileInput.hidden=true;
     fileInput.accept=acceptedAttachments;
     const selected=[];
@@ -162,7 +163,7 @@
     const attachments=make("div","investigation-field-attachments");
     attachments.append(btn("+ Add attachments",()=>fileInput.click(),"investigation-attachment-link"),fileInput,fileChoice,
      window.BSPhotoMarkup.pasteTarget(queue));
-    const existingFiles=[...(latest.get(type)?.files||[])];
+    const existingFiles=[...(stored?.files||[])];
     const existingList=make("div","investigation-existing-files");
     function drawFiles(){
      existingList.replaceChildren();
@@ -175,19 +176,19 @@
      }
     }
     drawFiles();
-    wrap.append(caption,attachments,existingList);controls.append(wrap);
-    return {type,field,selected,wrap,descriptor,existingFiles};
+    wrap.append(caption,attachments,existingList);parent.append(wrap);
+    return {type,field,selected,wrap,descriptor,existingFiles,stored};
    }
    const inputs=[];
    const fixed=make("select","field investigation-fixed-select");
    for(const [type,label] of (record.category?category:categories.failure).fields){
-    if(type!=="resolution"){inputs.push(fieldRow(type,label,""));continue}
+    if(type!=="resolution"){inputs.push(fieldRow(type,label));continue}
     const fixedRow=make("label","investigation-fixed-row");
     fixedRow.append(make("span","",label),fixed);controls.append(fixedRow);
     for(const [value,caption] of [["","Select"],["yes","Yes"],["no","No"],["maybe","Maybe"]]){
      const option=make("option","",caption);option.value=value;fixed.append(option);
     }
-    const resolution=fieldRow("resolution","How?","");
+    const resolution=fieldRow("resolution","How?");
     inputs.push(resolution);
     let previous=latest.get("resolution")?.resolution||"";
     fixed.onchange=()=>{
@@ -198,14 +199,41 @@
     };
     fixed.value=previous;fixed.onchange();
    }
+   const notes=[];
+   const noteList=make("div","investigation-note-list");
+   function addNote(stored){
+    const panel=make("div","investigation-note-editor");
+    const heading=make("label","investigation-field-label");
+    const name=make("input","field");name.maxLength=180;name.value=stored?.descriptor||"";
+    heading.append(make("span","investigation-field-descriptor","Descriptor"),name);
+    panel.append(heading);noteList.append(panel);
+    const note={...fieldRow("note","Description",stored??null,panel),name};
+    notes.push(note);
+    panel.append(btn("Remove note",()=>{
+     notes.splice(notes.indexOf(note),1);panel.remove();add.disabled=false;
+    },"btn"));
+    if(!stored)name.focus();
+   }
+   const add=btn("+ Add note",()=>{
+    if(notes.length>=30)return;
+    addNote();add.disabled=notes.length>=30;
+   });
+   controls.append(noteList,add);
+   for(const note of record.notes||[])addNote(note);
+   add.disabled=notes.length>=30;
    const saveBtn=btn("Save",async()=>{
     const fields=inputs.filter(item=>item.type==="resolution"?!!fixed.value:!!(item.field.value.trim()||item.selected.length||item.existingFiles.length));
     if(!titleInput.value.trim()){titleInput.focus();return}
     if(!date.value){reportHere("Choose a date.");date.focus();return}
+    const notesToSave=notes.filter(note=>note.name.value.trim()||note.field.value.trim()||note.selected.length||note.existingFiles.length);
+    for(const note of notesToSave){
+     if(!note.name.value.trim()){reportHere("Enter a descriptor for the note.");note.name.focus();return}
+     if(!note.field.value.trim()){reportHere("Enter a description for the note.");note.field.focus();return}
+    }
     saveBtn.disabled=true;
     try{
-     const entries=[];
-     for(const {type,field,selected,existingFiles} of fields){
+     const entries=[],savedNotes=[];
+     for(const {type,field,selected,existingFiles,stored,name} of [...fields,...notesToSave]){
       if(selected.length+existingFiles.length>12)throw Error("Attach no more than 12 files to each field.");
       const files=[...existingFiles];
       for(const file of selected){
@@ -215,9 +243,12 @@
        const data=await up.json();if(!up.ok)throw Error(data.error||"Attachment failed");
        files.push(data.id);
       }
-      entries.push({type,text:field.value,date:date.value,files,fileName:selected[0]?.name.slice(0,120)||latest.get(type)?.fileName||"",...(type==="resolution"?{resolution:fixed.value}:{})});
+      const entry={type,text:field.value,date:name?(stored?.date||date.value):date.value,files,
+       fileName:selected[0]?.name.slice(0,120)||stored?.fileName||""};
+      if(name)savedNotes.push({...entry,descriptor:name.value.trim()});
+      else entries.push({...entry,...(type==="resolution"?{resolution:fixed.value}:{})});
      }
-     const details={title:titleInput.value.trim(),date:date.value,entries};
+     const details={title:titleInput.value.trim(),date:date.value,entries,notes:savedNotes};
      const result=await save(creating?{...record,...details,action:"create"}:{...details,action:"editRecord",id:record.id});
      if(creating){
       const card=[...target.querySelectorAll(".investigation-card[data-record-id]")].find(item=>item.dataset.recordId===result.createdId);

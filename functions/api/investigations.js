@@ -24,6 +24,13 @@ const normalizedEntry=(entry)=>({id:crypto.randomUUID(),type:entry.type,text:ent
  files:[...new Set(entry.files||[])],fileName:trim(entry.fileName,120),...(entry.type==="resolution"?{resolution:entry.resolution}:{}),createdAt:new Date().toISOString()});
 const validEntries=(entries,fields,project)=>Array.isArray(entries)&&entries.length<=fields.length&&
  entries.every(item=>safeEntry(item,project)&&fields.includes(item.type))&&new Set(entries.map(item=>item.type)).size===entries.length;
+// These fields remain in older records after their fixed inputs are retired.
+const retiredField={practice:"lesson",revision:"result",failure:"note",note:"note"};
+const validNotes=(notes,project)=>notes===undefined||(Array.isArray(notes)&&notes.length<=30&&notes.every(note=>
+ note?.type==="note"&&validText(note.descriptor,180)&&note.descriptor.trim()&&safeEntry(note,project)&&note.text.trim()));
+const normalizeNotes=notes=>notes===undefined?{}:{notes:notes.map(note=>({
+ ...normalizedEntry(note),descriptor:note.descriptor.trim()
+}))};
 const entryStatus=entries=>{
  const resolution=entries.find(entry=>entry.type==="resolution");
  return resolution?({yes:"resolved",no:"unresolved",maybe:"investigating"})[resolution.resolution]:"investigating";
@@ -61,6 +68,7 @@ export async function handleInvestigations(request,env){
     (scope==="step"?!idPattern.test(stepId):!!stepId)||
     (scope==="part"&&ownerType!=="part")||(scope==="assembly"&&ownerType!=="assembly"))
     return json({error:"Invalid investigation details"},400);
+  if(!validNotes(data.notes,project))return json({error:"Invalid notes"},400);
   if(data.category!==undefined&&(typeof data.category!=="string"||!Object.hasOwn(categoryFields,data.category)||!validDate(data.date)||!validEntries(data.entries,categoryFields[data.category],project)))
    return json({error:"Invalid record category or fields"},400);
   if(records.length>=300)return json({error:"Project investigation limit reached"},413);
@@ -77,7 +85,7 @@ export async function handleInvestigations(request,env){
   record={id:crypto.randomUUID(),scope,ownerType,ownerId,stepId,title:data.title.trim(),
    status:"investigating",entries:[],createdAt:new Date().toISOString()};
   if(data.category!==undefined)Object.assign(record,{category:data.category,date:data.date,
-   entries:data.entries.map(normalizedEntry),status:entryStatus(data.entries)});
+   entries:data.entries.map(normalizedEntry),status:entryStatus(data.entries),...normalizeNotes(data.notes)});
   createdId=record.id;
   changed=[...records,record];
  }else if(data.action==="archivePart"){
@@ -126,7 +134,9 @@ export async function handleInvestigations(request,env){
  }else if(data.action==="editRecord"){
   record=records.find(item=>item.id===data.id);
   if(!record)return json({error:"Investigation not found"},404);
-  const fields=categoryFields[record.category]||legacyFields;
+  if(!validNotes(data.notes,project))return json({error:"Invalid notes"},400);
+  const allFields=categoryFields[record.category]||legacyFields;
+  const fields=data.notes===undefined?allFields:allFields.filter(type=>type!==retiredField[record.category||"failure"]);
   if(!validText(data.title,180)||!data.title.trim()||!validDate(data.date)||!validEntries(data.entries,fields,project))return json({error:"Invalid record details"},400);
   const status=entryStatus(data.entries);
   // Retain older entry types and earlier updates; replace only the latest editable entry per field.
@@ -136,7 +146,7 @@ export async function handleInvestigations(request,env){
   const retained=previous.filter((entry,index)=>latest.get(entry.type)!==index);
   const entries=[...retained,...data.entries.map(normalizedEntry)];
   if(entries.length>100)return json({error:"Too many entries in investigation"},413);
-  changed=records.map(item=>item.id===record.id?{...item,title:data.title.trim(),date:data.date,status,entries}:item);
+  changed=records.map(item=>item.id===record.id?{...item,title:data.title.trim(),date:data.date,status,entries,...normalizeNotes(data.notes)}:item);
  }else if(data.action==="appendBatch"){
   record=records.find(item=>item.id===data.id);
   if(!record)return json({error:"Investigation not found"},404);
