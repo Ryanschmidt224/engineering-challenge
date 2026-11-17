@@ -500,3 +500,27 @@ test("Workshop AI verifies a McMaster catalog SKU independently of the manufactu
  assert.equal(mismatch.status,422);
  assert.equal(mismatch.body.supplierPage,supplierPage);
 });
+
+test("Workshop AI checks supplier numbers for vendors other than McMaster",async t=>{
+ const env={PHOTOS:new TestBucket(),OPENAI_API_KEY:"test-key",admin_password:"test-admin-secret"};
+ const session=await register(env,"supplier-lookup@example.test");
+ const supplierPartNumber="296-LM358P-ND",supplier="DigiKey";
+ let sku=supplierPartNumber;
+ t.mock.method(globalThis,"fetch",async (_url,options)=>{
+  const prompt=JSON.parse(options.body).input;
+  assert.ok(prompt.includes(JSON.stringify({partNumber:"",featureTreeDescription:"",supplierPartNumber,supplier})));
+  return Response.json({output:[{type:"message",content:[{type:"output_text",text:JSON.stringify({
+   partNumber:"LM358P",supplierPartNumber:sku,name:"Dual op amp"
+  })}]}]});
+ });
+ const lookup=async()=>data(await workshopLookup({request:request("/api/workshop-lookup","POST",{
+  supplierPartNumber,supplier
+ },session),env}));
+ const result=await lookup();
+ assert.equal(result.status,200);
+ assert.equal(result.body.draft.partNumber,"LM358P");
+ assert.equal(result.body.draft.supplierPartNumber,supplierPartNumber);
+ assert.equal(result.body.draft.supplier,supplier);
+ sku="296-OTHER-ND";
+ assert.equal((await lookup()).status,422);
+});

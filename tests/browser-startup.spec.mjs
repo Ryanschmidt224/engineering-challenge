@@ -1154,8 +1154,14 @@ test("linked Workshop items open, search current fields and return to the origin
   partNumber:"NEW-42",featureTreeDescription:"",searchHint:"DigiKey https://www.digikey.com/example"
  });
  await expect(itemPage.getByText("Estimated API cost $0.051 · 2 web searches",{exact:true})).toBeVisible();
+ const review=itemPage.locator(".workshop-ai-changes-panel");
+ await expect(review.getByText("Could not verify: Coating.",{exact:true})).toBeVisible();
+ await expect(review.getByRole("button",{name:"Apply suggested changes and save"})).toBeVisible();
+ await expect(itemPage.getByLabel("Item name",{exact:true})).toHaveValue("");
+ await review.getByRole("button",{name:"Cancel"}).click();
+ await expect(review).toBeHidden();
  await itemPage.getByRole("button",{name:"View suggested changes"}).click();
- await expect(itemPage.getByText("Could not verify: Coating.",{exact:true})).toBeVisible();
+ await expect(review).toBeVisible();
  const endMillType=itemPage.getByLabel("Product type (e.g. Multimeters)",{exact:true});
  await endMillType.fill("End mills");
  await endMillType.blur();

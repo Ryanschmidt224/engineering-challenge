@@ -884,7 +884,8 @@
       lookupMessage.textContent="Applying suggestions and saving Workshop item…";
       form.requestSubmit();
      },"btn primary"),
-     itemButton("Cancel",closeReview,"btn"));
+     itemButton("Cancel",()=>{closeReview();viewSuggested.hidden=false;viewSuggested.focus()},"btn"));
+    viewSuggested.hidden=true;
     reviewPanel.append(actions);reviewPanel.hidden=false;reviewPanel.scrollIntoView({block:"nearest"});
    };
    viewSuggested.onclick=showReview;
@@ -935,9 +936,8 @@
       lookupMessage.textContent="Search fields changed. Run the lookup again.";return;
      }
      pendingSuggestion=response;
-     viewSuggested.hidden=false;
-     lookupMessage.textContent="AI suggestions ready. Choose View suggested changes under Product identity.";
-     viewSuggested.scrollIntoView({block:"nearest"});
+     lookupMessage.textContent="AI suggestions ready for review.";
+     showReview();
     }catch(error){lookupMessage.textContent=error.name==="AbortError"?"Lookup timed out. Try again; no fields were changed.":error.message||"Lookup failed.";
      lookupMessage.scrollIntoView({block:"nearest"});}
     finally{lookupButton.disabled=false;lookupButton.textContent="Find with AI"}
