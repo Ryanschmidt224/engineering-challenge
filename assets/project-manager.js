@@ -15,6 +15,7 @@ window.BSProjectManager=(()=>{
  const element=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node};
  const init=({setupAssemblyTrees,setupComponents,setupPhotos,navigate})=>{
   const root=document.querySelector("#home .project-index"),grid=root?.querySelector(".project-grid");if(!grid)return;
+  const loading=root.querySelector(".project-catalog-loading");
   const controls=element("div","project-owner-actions");
   const newButton=element("button","btn primary","+ New project");newButton.type="button";
   const archiveButton=element("button","btn","Archived projects");archiveButton.type="button";
@@ -449,6 +450,7 @@ window.BSProjectManager=(()=>{
   }
   async function refresh(){
    try{
+    if(grid.hidden)loading.textContent="Loading projects…";
     user=(await api("GET","/api/accounts")).user;
     const data=await api("GET","/api/projects");if(!Array.isArray(data.projects))throw Error("Project catalog response unavailable");projects=data.projects;currentProjects=projects;
     newButton.hidden=false;archiveButton.hidden=!user&&!adminAuthenticated;
@@ -459,11 +461,18 @@ window.BSProjectManager=(()=>{
      if(project.id.startsWith("p"))grid.append(card(project));
     }
     renderTagFilters();updateDirectory();
+    grid.hidden=false;loading.hidden=true;
     setupAssemblyTrees();setupComponents();setupPhotos();
     if(typeof refreshAdminUI==="function")refreshAdminUI();
     for(const project of projects){window.BSReview?.attach(project,user);mountSummarySettings(project)}
     document.querySelectorAll("[data-assembly-tree]").forEach(root=>root.dispatchEvent(new Event("projectpermissionschanged")));
-   }catch(error){console.error("Project catalog unavailable",error)}
+   }catch(error){
+    console.error("Project catalog unavailable",error);
+    if(grid.hidden){
+     const retry=element("button","btn","Retry");retry.type="button";retry.onclick=refresh;
+     loading.replaceChildren("Projects could not load. ",retry);
+    }
+   }
   }
   void refresh();
  };

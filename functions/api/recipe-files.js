@@ -47,11 +47,12 @@ export async function handleRecipeFiles(request,env){
    customMetadata:{filename}});
   return json({ok:true,id,name:filename,isImage:IMAGE_TYPES.has(extension)},201);
  }
- if(request.method==="GET"){
+ if(request.method==="GET"||request.method==="HEAD"){
   const id=url.searchParams.get("id")||"",match=id.match(pattern);
   if(!match||!Object.hasOwn(TYPES,match[3]))return json({error:"File not found"},404);
   if(!await projectAllowed(env,match[1],request))return json({error:"File not found"},404);
-  const file=await env.PHOTOS.get(id);
+  const metadataOnly=request.method==="HEAD";
+  const file=await (metadataOnly?env.PHOTOS.head(id):env.PHOTOS.get(id));
   if(!file)return json({error:"File not found"},404);
   const ext=match[3],isImage=IMAGE_TYPES.has(ext);
   const filename=file.customMetadata?.filename||"attachment."+ext;
@@ -63,7 +64,7 @@ export async function handleRecipeFiles(request,env){
    "x-content-type-options":"nosniff",
    "content-security-policy":"default-src 'none'; sandbox"
   });
-  return new Response(file.body,{headers});
+  return new Response(metadataOnly?null:file.body,{headers});
  }
  return json({error:"Method not allowed"},405);
 }

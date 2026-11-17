@@ -47,3 +47,27 @@ test("PDF work-instruction attachment is retrievable",async()=>{
  assert.equal(response.headers.get("content-type"),"application/pdf");
  assert.match(response.headers.get("content-disposition"),/inline/);
 });
+
+test("attachment HEAD recovers each stored filename without downloading the file",async()=>{
+ const files=new Map([
+  ["png","image.png"],
+  ["kicad_sch","Practice schematic (rev 1).kicad_sch"],
+  ["kicad_pcb","Practice board (rev 1).kicad_pcb"],
+  ["kicad_pro","Practice project (rev 1).kicad_pro"]
+ ]);
+ const storage=fakeStorage();
+ const get=storage.get;
+ storage.get=async key=>{
+  assert.ok(!key.startsWith("recipe-files/"),"HEAD should read only object metadata");
+  return get(key);
+ };
+ storage.head=async id=>({customMetadata:{filename:files.get(id.split(".").pop())}});
+ for(const [extension,name] of files){
+  const id=fileId.replace(/pdf$/,extension);
+  const response=await handleRecipeFiles(new Request(
+   "https://example.test/api/recipe-files?id="+encodeURIComponent(id),{method:"HEAD"}),{PHOTOS:storage});
+  assert.equal(response.status,200);
+  assert.equal(response.body,null);
+  assert.equal(decodeURIComponent(response.headers.get("content-disposition").split("UTF-8''")[1]),name);
+ }
+});

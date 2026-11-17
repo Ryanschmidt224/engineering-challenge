@@ -1493,6 +1493,8 @@
 .investigation-new-record>.btn[hidden]{display:none}
 .investigation-new-fields{flex:1 1 100%;min-width:0}
 .investigation-field-attachments .bs-photo-paste{margin-block:4px}
+.investigation-file-links{display:flex;flex-wrap:wrap;gap:6px 14px}
+#home .project-grid[hidden]{display:none!important}
 @media(max-width:650px){
  .investigation-new-record .investigation-record-title{flex:1 1 100%;grid-template-columns:max-content minmax(0,1fr)}
 }

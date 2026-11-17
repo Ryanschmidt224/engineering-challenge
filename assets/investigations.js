@@ -28,6 +28,36 @@
   let records=[],revision=null;
   let assemblySlot=null,partSlot=null,stepSlots=new Map(),activeContext=null,loadSerial=0;
   const openCards=new Set();
+  const attachmentNames=new Map();
+  function showAttachmentNames(container){
+   for(const link of container.querySelectorAll("[data-investigation-file]")){
+    const id=link.dataset.investigationFile;
+    if(!attachmentNames.has(id)){
+     attachmentNames.set(id,fetch(fileUrl(id),{method:"HEAD",credentials:"same-origin"})
+      .then(response=>{
+       if(!response.ok)return "";
+       const encoded=response.headers.get("content-disposition")?.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+       return encoded?decodeURIComponent(encoded):"";
+      }).catch(()=> "").then(name=>{
+       if(!name)attachmentNames.delete(id);
+       return name;
+      }));
+    }
+    void attachmentNames.get(id).then(name=>{
+     if(!name)return;
+     const image=link.querySelector("img");
+     if(image)image.alt=name;
+     else link.textContent=name;
+    });
+   }
+  }
+  function attachmentLink(file){
+   const extension=file.split(".").pop();
+   const link=make("a","investigation-file","Download ."+extension+" file");
+   link.href=fileUrl(file);link.target="_blank";link.rel="noopener noreferrer";
+   link.dataset.investigationFile=file;
+   return link;
+  }
   const openSections=new Set();
   const api="/api/investigations?project="+encodeURIComponent(project);
   const feedback=target=>(target||activeContext?.target)?.querySelector(".investigation-feedback");
@@ -88,14 +118,15 @@
     labelRow.append(make("strong","",label));
     if(stamp)labelRow.append(make("time","investigation-entry-date",stamp));
     item.append(labelRow);if(entry.text)item.append(make("p","",entry.text));
+    const links=make("div","investigation-file-links");
     for(const file of entry.files||[]){
      if(photoExt.test(file)){
-      const img=make("img","investigation-image");img.src=fileUrl(file);img.loading="lazy";img.alt=entry.fileName||"Investigation evidence";item.append(img);
+      const img=make("img","investigation-image");img.src=fileUrl(file);img.loading="lazy";img.alt="Attached photo";item.append(img);
      }else{
-      const link=make("a","investigation-file",entry.fileName||"View attached evidence");
-      link.href=fileUrl(file);link.target="_blank";link.rel="noopener noreferrer";item.append(link);
+      links.append(attachmentLink(file));
      }
     }
+    if(links.childElementCount)item.append(links);
     entryList.append(item);
    }
    if(!editing){if(entryList.childElementCount)container.append(entryList);return;}
@@ -137,8 +168,7 @@
      existingList.replaceChildren();
      for(const file of existingFiles){
       const row=make("div","investigation-existing-file");
-      const link=make("a","investigation-file",latest.get(type)?.fileName||"Existing attachment");
-      link.href=fileUrl(file);link.target="_blank";link.rel="noopener noreferrer";
+      const link=attachmentLink(file);
       if(photoExt.test(file)){const img=make("img","investigation-edit-thumbnail");img.src=fileUrl(file);img.alt="Attached photo";link.replaceChildren(img)}
       row.append(link,btn("Remove",()=>{existingFiles.splice(existingFiles.indexOf(file),1);drawFiles()},"investigation-attachment-link"));
       existingList.append(row);
@@ -265,7 +295,9 @@
      if(record.partSnapshot)showSnapshot(record.partSnapshot,body);
      edit.hidden=editing;
      attach(record,body,target,editing,()=>{editing=false;draw()});
+     if(card.open)showAttachmentNames(body);
     };
+    card.addEventListener("toggle",()=>{if(card.open)showAttachmentNames(body)});
     draw();card.append(body);content.append(card);
    };
    own.forEach(item=>renderRecord(item));
@@ -291,7 +323,10 @@
      const origin=make("a","investigation-origin",sourceName+(record.scope==="step"?" · Work instruction":""));
      origin.href="#"+project+(record.ownerType==="part"?"/part/":"/workspace/")+encodeURIComponent(record.ownerId);
      body.append(origin);
-     attach(record,body,target);card.append(body);wrapper.append(card);inner.append(wrapper);
+     attach(record,body,target);
+     card.addEventListener("toggle",()=>{if(card.open)showAttachmentNames(body)});
+     if(card.open)showAttachmentNames(body);
+     card.append(body);wrapper.append(card);inner.append(wrapper);
     }
     group.append(inner);content.append(group);
    }
