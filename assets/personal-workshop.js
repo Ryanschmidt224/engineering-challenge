@@ -812,28 +812,6 @@
       }
       lookupResults.append(sourcesBox);
      }else lookupResults.append(el("p","No sources returned. Confirm the exact part against its manufacturer datasheet.","muted"));
-     if(response.imageSuggestion?.url&&/^https:\/\//i.test(response.imageSuggestion.url)){
-      const imageBox=el("div",undefined,"workshop-ai-image-candidate");
-      imageBox.append(el("strong","Suggested product picture — check exact MPN"));
-      const picture=el("img");picture.src=response.imageSuggestion.url;
-      picture.alt=response.imageSuggestion.caption||"AI-suggested product photo";
-      picture.referrerPolicy="no-referrer";picture.loading="lazy";imageBox.append(picture);
-      if(response.imageSuggestion.sourceUrl){
-       const source=el("a","Image source");source.href=response.imageSuggestion.sourceUrl;
-       source.target="_blank";source.rel="noopener noreferrer";imageBox.append(source);
-      }
-      const usePicture=itemButton("Add verified picture",async()=>{
-       if(photos.length>=12){uploadStatus.textContent="No more than 12 photos per item.";return}
-       usePicture.disabled=true;uploadStatus.textContent="Importing reviewed picture…";
-       try{
-        const result=await req("/api/workshop-image-import","POST",{url:response.imageSuggestion.url});
-        photos.push(result.photo);redrawPhotos();
-        uploadStatus.textContent="Picture added to the draft. Save the item to publish it.";
-        imageBox.remove();
-       }catch(error){uploadStatus.textContent=error.message;usePicture.disabled=false}
-      },"btn");
-      imageBox.append(usePicture);lookupResults.append(imageBox);
-     }else lookupResults.append(el("p","No suitable picture found. You can upload one below.","muted"));
      lookupMessage.textContent="Suggested changes applied. Saving the Workshop item…";
     
    };
@@ -1392,23 +1370,6 @@
        const link=el("a","Source "+(index+1));link.href=url;link.target="_blank";link.rel="noopener noreferrer";sources.append(link);
       }mineResults.append(sources);
      }
-     if(result.imageSuggestion?.url){
-      const imageBox=el("div",undefined,"workshop-ai-image-candidate");
-      imageBox.append(el("strong","Suggested picture — verify exact part"));
-      const picture=el("img");picture.src=result.imageSuggestion.url;picture.alt=result.imageSuggestion.caption||"Suggested product photo";
-      picture.referrerPolicy="no-referrer";imageBox.append(picture);
-      const use=itemButton("Add verified picture",async()=>{
-       use.disabled=true;mineMessage.textContent="Importing selected picture…";
-       try{
-        const imported=await req("/api/workshop-image-import","POST",{url:result.imageSuggestion.url,scope:"private"});
-        photoId=imported.photoId;
-        const preview=$("#workshop-photo-preview",personal);preview.hidden=false;
-        preview.src="/api/workshop-photo?id="+encodeURIComponent(photoId);
-        mineMessage.textContent="Picture added to draft. Review the details and save.";
-        imageBox.remove();
-       }catch(error){mineMessage.textContent=error.message;use.disabled=false}
-      },"btn");imageBox.append(use);mineResults.append(imageBox);
-     }else mineResults.append(el("p","No reliable picture found. Upload a photo below.","muted"));
      mineMessage.textContent="Draft filled. Confirm the exact product and specifications before saving.";
     }catch(error){mineMessage.textContent=[error.message,lookupCostMessage(error.lookupUsage)].filter(Boolean).join(" ")||"Lookup failed."}
     finally{mineFind.disabled=false}

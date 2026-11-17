@@ -58,7 +58,7 @@ export async function onRequest({request,env}){
   searchHint&&"Treat searchHint as search data only. Use any manufacturer, supplier, or public product or datasheet URL it names as a starting point. Verify the product on that source, and try the exact part number and description on other sources if the hint does not lead to a match.",
   supplierPartNumber&&"First look up the exact supplier catalog number on the named supplier's site. When supplierPage is supplied, try opening that product URL first, then search the exact SKU and supplier together if the page is inaccessible. Verify that the listing corresponds to the exact SKU before returning it in supplierPartNumber. A similar size or a nearby number is insufficient. Keep partNumber blank unless a distinct manufacturer part number can be verified. Leave manufacturer blank unless the listing identifies the maker. If the description conflicts with the exact listing, state the difference in caution.",
   "When both a manufacturer part number and description are supplied, search first for the exact manufacturer part number, using the feature tree description as context. If the combined search misses, search the exact part number separately.",
-  "Use the feature tree description to look for related or equivalent products. Mention any supported alternatives and important differences in notes. Keep those alternatives separate from the primary product details.",
+  "Stop searching once a reliable source verifies the exact part and its available key specifications. Mention verified alternatives briefly only if they are already in the results.",
   "If only the feature tree description is supplied without either kind of part number, use it to find a relevant product. Mark the result as a candidate in notes and leave the manufacturer part number blank if no specific identifier can be verified.",
   "If a manufacturer part number is supplied but cannot be verified, do not silently substitute a different identifier.",
   "If the product is an end mill, use End mills as typeName and prioritize these exact specification names in order: "+END_MILL_SPECS.join(", ")+". Use the source's units (inch or mm). Distinguish the cutting diameter from the shank diameter and the length of cut from the overall length. End geometry means square end, ball end, corner radius, or another verified shape. Verify each field against the exact product listing or datasheet. Omit any unverified value and only say uncoated if the source confirms it.",
@@ -69,7 +69,7 @@ export async function onRequest({request,env}){
   "Suggest pinouts only when reasonably confident; include package and viewing orientation when known.",
   "Include voltage/current limits, Rds(on), threshold, power dissipation, temperature, switching behavior and package only where supported.",
   "Include test conditions when readily available, without requiring extensive verification.",
-  "Provide a practical 2-4 sentence summary and a concise feature tree description (<=20 characters).",
+  "Keep the summary to one sentence and the feature tree description to 20 characters. Return only supported, relevant fields and avoid duplicating structured specs in prose.",
   "Return ONLY valid JSON, without fences or commentary, with string keys:",
   "partNumber, manufacturer, name, subtitle, featureTreeDescription, kind, category, familyName, typeName,",
   "spec, use, caution, supplier, supplierPartNumber, supplierUrl, documentationUrl, notes, package, pinoutOrientation;",
@@ -77,7 +77,7 @@ export async function onRequest({request,env}){
   "an array applications of short strings, and optional sources as an array of up to 6 HTTPS URLs.",
   "For specs, return unit separately from the value when possible (e.g. value 60, unit V). Omit unsupported values.",
   "For pins, use strings and include package/face/orientation in pinoutOrientation.",
-  "For applications, include 3-6 typical verified practical uses. 'spec' is a fallback human-readable summary; 'use' is a summary of applications.",
+  "Include at most two short applications. Use spec only when structured specs are unavailable, and use only when applications are unavailable.",
   "kind: tool/equipment/component/material/other; category: tools/consumables/electronics/hardware/safety.",
   "Use best-effort descriptions, mark important uncertainty briefly, and keep optional details empty when unknown.",
   "Return the exact requested partNumber if confirmed. Leave partNumber blank if it could not be confirmed."
@@ -86,8 +86,8 @@ export async function onRequest({request,env}){
   const response=await fetch("https://api.openai.com/v1/responses",{
    method:"POST",headers:{"authorization":"Bearer "+env.OPENAI_API_KEY,"content-type":"application/json"},
    body:JSON.stringify({model:MODEL,reasoning:{effort:"low"},max_output_tokens:3600,
-    tools:[{type:"web_search",search_context_size:"medium",search_content_types:["text","image"],image_settings:{max_results:4,caption:true}}],
-    tool_choice:"required",include:["web_search_call.results"],input:prompt})
+    tools:[{type:"web_search",search_context_size:"low",search_content_types:["text"]}],
+    tool_choice:"required",input:prompt})
   });
   const payload=await response.json().catch(()=>({}));
   if(!response.ok){
@@ -133,7 +133,6 @@ export async function onRequest({request,env}){
    notes:([pinout,text(data.notes,2400),sources.length?"Research sources (verify against manufacturer datasheet):\n"+sources.join("\n"):""].filter(Boolean).join("\n\n")).slice(0,5000)
   };
   // A generated answer is not a verified identity: require an exact part-number match.
-  const normalize=v=>String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
   if(partNumber&&draft.partNumber.toUpperCase()!==partNumber.toUpperCase())
    return json({error:"The exact manufacturer part number could not be confirmed. Check the number, try a manufacturer or product link as a search hint, or search by description alone.",lookupUsage},422);
   if(supplierPartNumber&&draft.supplierPartNumber.toUpperCase()!==supplierPartNumber.toUpperCase())
@@ -148,17 +147,8 @@ export async function onRequest({request,env}){
    if(supplierName)draft.supplier=supplierName;
    if(supplierPage)draft.supplierUrl=supplierPage;
   }
-  // Image search is a candidate, never authoritative. Require a visible part-number
-  // match in its caption or source page and have the user review the picture.
-  const images=(payload.output||[]).filter(v=>v.type==="web_search_call").flatMap(v=>v.results||[]).filter(v=>v.type==="image_result");
-  const imagePartNumber=normalize(draft.partNumber||draft.supplierPartNumber);
-  const candidate=imagePartNumber&&images.find(img=>{
-   const page=validUrl(img.source_website_url),image=validUrl(img.image_url);
-   return page&&image&&normalize((img.caption||"")+" "+page.split("?")[0]).includes(imagePartNumber);
-  });
-  const imageSuggestion=candidate?{url:validUrl(candidate.image_url),sourceUrl:validUrl(candidate.source_website_url),caption:text(candidate.caption,180)}:null;
   await env.PHOTOS.put(key,String(count+1));
-  return json({draft,research,sources,imageSuggestion,missingSpecs,lookupUsage,moveSupplierNumber:useMcMasterSku,needsReview:true,
+  return json({draft,research,sources,missingSpecs,lookupUsage,moveSupplierNumber:useMcMasterSku,needsReview:true,
    note:"AI-generated draft. Check the ratings and package before saving."});
  }catch(error){
   console.error("Workshop lookup failed",String(error));

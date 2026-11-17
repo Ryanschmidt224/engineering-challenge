@@ -437,7 +437,9 @@ test("Workshop AI estimates API cost and identifies unverified end mill specific
  const session=await register(env,"endmill-lookup@example.test");
  let reportUsage=true,partNumber="ABC-10";
  t.mock.method(globalThis,"fetch",async (_url,options)=>{
-  const prompt=JSON.parse(options.body).input;
+  const {input:prompt,tools}=JSON.parse(options.body);
+  assert.deepEqual(tools,[{type:"web_search",search_context_size:"low",search_content_types:["text"]}]);
+  assert.match(prompt,/Stop searching once a reliable source verifies the exact part/);
   assert.match(prompt,/Cutting diameter, Shank diameter, Length of cut, Overall length, Flute count, Tool material, Coating, End geometry/);
   return Response.json({
    ...(reportUsage&&{usage:{input_tokens:10000,input_tokens_details:{cached_tokens:4000},output_tokens:1000}}),
