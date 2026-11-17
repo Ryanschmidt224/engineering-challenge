@@ -377,7 +377,7 @@ function open({onCreate,hideDefault=false}){
   const query=quickQuery.value.trim().toLowerCase();
   if(!query){quickResults.append(el("p","muted","Search the shared and personal Workshop before creating a new part."));return}
   const found=allSearchable().filter(item=>
-   [item.name,item.partNumber,item.model,item.manufacturer,item.spec,item.detail]
+   [item.name,item.partNumber,item.supplierPartNumber,item.model,item.manufacturer,item.spec,item.detail]
     .filter(Boolean).join(" ").toLowerCase().includes(query)).slice(0,15);
   for(const item of found){
    const choice=el("button","library-workshop-found-item");
@@ -416,7 +416,7 @@ function open({onCreate,hideDefault=false}){
   const standards=workshopStandardRows().filter(item=>item.category===cat);
   const published=publishedRows().filter(item=>commonGroup(item)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(item)===subtype));
   const personal=personalItems.filter(item=>commonGroup(item)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(item)===subtype));
-  const matches=item=>[item.name,item.manufacturer,item.partNumber,item.specifications,item.detail,item.spec,item.model].filter(Boolean).join(" ").toLowerCase().includes(q);
+  const matches=item=>[item.name,item.manufacturer,item.partNumber,item.supplierPartNumber,item.specifications,item.detail,item.spec,item.model].filter(Boolean).join(" ").toLowerCase().includes(q);
   const filtered=[...saved.map(item=>({...item,origin:"saved"})),
    ...recorded.map(item=>({...item,origin:"purchased"})),
    ...standards.map(item=>({...item,origin:"standard"})),

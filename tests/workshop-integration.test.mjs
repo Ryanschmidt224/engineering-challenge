@@ -469,3 +469,34 @@ test("Workshop AI estimates API cost and identifies unverified end mill specific
  reportUsage=false;
  assert.equal((await lookup()).body.lookupUsage,null);
 });
+
+test("Workshop AI verifies a McMaster catalog SKU independently of the manufacturer number",async t=>{
+ const env={PHOTOS:new TestBucket(),OPENAI_API_KEY:"test-key",admin_password:"test-admin-secret"};
+ const session=await register(env,"mcmaster-lookup@example.test");
+ const sku="90044A535",supplierPage="https://www.mcmaster.com/"+sku+"/";
+ let verifiedSku=sku;
+ t.mock.method(globalThis,"fetch",async (_url,options)=>{
+  const prompt=JSON.parse(options.body).input;
+  assert.ok(prompt.includes(JSON.stringify({partNumber:"",featureTreeDescription:"10-32 SHCS 3/16 long",
+   searchHint:"Mcmaster",supplierPartNumber:sku,supplier:"McMaster-Carr",supplierPage})));
+  return Response.json({output:[{type:"message",content:[{type:"output_text",text:JSON.stringify({
+   partNumber:"",supplierPartNumber:verifiedSku,name:"Socket head cap screw"
+  })}]}]});
+ });
+ const lookup=async numbers=>data(await workshopLookup({request:request("/api/workshop-lookup","POST",{
+  ...numbers,featureTreeDescription:"10-32 SHCS 3/16 long",searchHint:"Mcmaster"
+ },session),env}));
+ const result=await lookup({partNumber:sku});
+ assert.equal(result.status,200);
+ assert.equal(result.body.draft.partNumber,"");
+ assert.equal(result.body.draft.supplierPartNumber,sku);
+ assert.equal(result.body.draft.supplierUrl,supplierPage);
+ assert.equal(result.body.moveSupplierNumber,true);
+ const explicit=await lookup({supplierPartNumber:sku});
+ assert.equal(explicit.status,200);
+ assert.equal(explicit.body.moveSupplierNumber,false);
+ verifiedSku="90044A525";
+ const mismatch=await lookup({partNumber:sku});
+ assert.equal(mismatch.status,422);
+ assert.equal(mismatch.body.supplierPage,supplierPage);
+});

@@ -81,7 +81,7 @@
     .map(([id,details])=>({id,...details}));
    return [...seeded.map(item=>({...item,...(workshopOverrides[item.id]||{})})),...generated];
   };
-  const saveableFields=["name","subtitle","featureTreeDescription","spec","use","caution","manufacturer","model","partNumber","supplier","supplierUrl","asin","price","packageQuantity","orderNotes","documentationUrl","notes","category","kind","familyId","familyName","typeName"];
+  const saveableFields=["name","subtitle","featureTreeDescription","spec","use","caution","manufacturer","model","partNumber","supplier","supplierPartNumber","supplierUrl","asin","price","packageQuantity","orderNotes","documentationUrl","notes","category","kind","familyId","familyName","typeName"];
   const families=()=>{
    const groups=(window.BSResources?.workshopGroups||[]).map(group=>({...group,items:[...group.items]}));
    for(const item of standards()){
@@ -329,6 +329,7 @@
     itemSide.append(section);
    };
    sideRow("Manufacturer part number",item.partNumber||item.model);
+   sideRow("Supplier part number",item.supplierPartNumber);
    sideRow("Manufacturer",item.manufacturer);
    sideRow("Description",item.subtitle||item.name);
    sideRow("Feature tree description",item.featureTreeDescription);
@@ -385,7 +386,7 @@
    const specBody=el("tbody");
    const specRows=[
     ["Manufacturer part number",item.partNumber||item.model],["Manufacturer",item.manufacturer],
-    ["Description",item.subtitle||item.name],["Feature tree description",item.featureTreeDescription],["Vendor",item.supplier],["Model",item.model],
+    ["Description",item.subtitle||item.name],["Feature tree description",item.featureTreeDescription],["Vendor",item.supplier],["Supplier part number",item.supplierPartNumber],["Model",item.model],
     ["Specifications",item.spec],["Typical use",item.use],["Important considerations",item.caution],
     ["Reference price",item.price],["Package quantity",item.packageQuantity],
     ["Buying suggestion",item.orderNotes],["Notes",item.notes]
@@ -535,7 +536,7 @@
     name:["Item name","text"],subtitle:["Short description","text"],featureTreeDescription:["Feature tree description (20 characters max)","text"],
     manufacturer:["Manufacturer","text"],model:["Model","text"],
     partNumber:["Manufacturer part number","text"],supplier:["Supplier","text"],
-    supplierUrl:["Supplier / ordering URL","url"],asin:["Amazon ASIN","text"],
+    supplierPartNumber:["Supplier part number","text"],supplierUrl:["Supplier / ordering URL","url"],asin:["Amazon ASIN","text"],
     price:["Reference price","text"],packageQuantity:["Quantity / package","text"],
     documentationUrl:["Documentation URL","url"],typeName:["Product type (e.g. Multimeters)","text"],
     spec:["Specifications","textarea"],use:["Typical use","textarea"],
@@ -547,7 +548,7 @@
     // Identify a purchased item by MPN and manufacturer first.
     ["identity","Product identity",["partNumber","featureTreeDescription","manufacturer","subtitle","supplier"]],
     ["additional","Additional product information",[
-     "name","typeName","model","supplierUrl","asin","price","packageQuantity","documentationUrl"
+     "name","typeName","model","supplierPartNumber","supplierUrl","asin","price","packageQuantity","documentationUrl"
     ]],
     ["specifications","Specifications and reference notes",["spec","use","caution","orderNotes","notes"]]
    ];
@@ -730,6 +731,7 @@
    const closeReview=()=>{reviewPanel.hidden=true;reviewPanel.replaceChildren()};
    const applySuggestion=response=>{
     const draft=response.draft||{};
+     if(response.moveSupplierNumber)controls.partNumber.value="";
      for(const key of saveableFields){
       if(controls[key]&&typeof draft[key]==="string"&&draft[key].trim())controls[key].value=draft[key];
      }
@@ -845,6 +847,7 @@
      if(typeof draft[key]!=="string"||!draft[key].trim()||draft[key].trim()===control.value.trim())continue;
      changes.push([fieldDescriptors[key]?.[0]||key,control.value.trim(),draft[key].trim()]);
     }
+    if(pendingSuggestion.moveSupplierNumber&&!draft.partNumber)changes.push(["Manufacturer part number",controls.partNumber.value.trim(),"—"]);
     if(draft.kind&&draft.kind!==kind.value)changes.push(["Item type",kind.value,draft.kind]);
     if(draft.category&&draft.category!==category.value)changes.push(["Website category",category.value,draft.category]);
     if(draft.familyName){
@@ -889,20 +892,22 @@
    lookupHint.addEventListener("keydown",event=>{
     if(event.key==="Enter"&&!event.isComposing){event.preventDefault();lookupButton.click()}
    });
-   for(const field of [controls.partNumber,controls.featureTreeDescription,lookupHint]){
+   for(const field of [controls.partNumber,controls.featureTreeDescription,controls.supplierPartNumber,controls.supplier,lookupHint]){
     field.addEventListener("input",clearSuggestion);
    }
    lookupButton.onclick=async()=>{
     const partNumber=controls.partNumber.value.trim();
     const featureTreeDescription=controls.featureTreeDescription.value.trim();
     const searchHint=lookupHint.value.trim();
-    if(!partNumber&&!featureTreeDescription){
-     lookupMessage.textContent="Enter a manufacturer part number or feature tree description.";
+    const supplierPartNumber=controls.supplierPartNumber.value.trim();
+    const supplier=controls.supplier.value.trim();
+    if(!partNumber&&!supplierPartNumber&&!featureTreeDescription){
+     lookupMessage.textContent="Enter a part number or feature tree description.";
      controls.partNumber.focus();return;
     }
     lookupButton.disabled=true;lookupButton.textContent="Searching…";
     pendingSuggestion=null;viewSuggested.hidden=true;closeReview();
-    lookupMessage.textContent="Looking up "+[partNumber,featureTreeDescription].filter(Boolean).join(" · ")+"… Review suggestions before applying them.";
+    lookupMessage.textContent="Looking up "+[partNumber,supplierPartNumber,featureTreeDescription].filter(Boolean).join(" · ")+"… Review suggestions before applying them.";
     lookupMessage.scrollIntoView({block:"nearest"});
     lookupResults.replaceChildren();
     lookupCost.hidden=true;
@@ -911,14 +916,22 @@
      const timeout=setTimeout(()=>controller.abort(),60000);
      let response;
      try{
-      const res=await fetch("/api/workshop-lookup",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({partNumber,featureTreeDescription,...(searchHint&&{searchHint})}),signal:controller.signal});
+      const res=await fetch("/api/workshop-lookup",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({partNumber,featureTreeDescription,...(searchHint&&{searchHint}),...(supplierPartNumber&&{supplierPartNumber}),...(supplier&&{supplier})}),signal:controller.signal});
       const data=await res.json().catch(()=>({}));
       lookupCost.textContent=lookupCostMessage(data.lookupUsage);
       lookupCost.hidden=!lookupCost.textContent;
-      if(!res.ok)throw Error(data.error||"Lookup returned HTTP "+res.status);
+      if(!res.ok){
+       if(/^https:\/\/www\.mcmaster\.com\/\d{5}[a-z]\d{1,4}\/$/i.test(data.supplierPage||"")){
+        const link=el("a","Open the McMaster listing");
+        link.href=data.supplierPage;link.target="_blank";link.rel="noopener noreferrer";
+        lookupResults.append(link);
+       }
+       throw Error(data.error||"Lookup returned HTTP "+res.status);
+      }
       response=data;
      }finally{clearTimeout(timeout)}
-     if(partNumber!==controls.partNumber.value.trim()||featureTreeDescription!==controls.featureTreeDescription.value.trim()||searchHint!==lookupHint.value.trim()){
+     if(partNumber!==controls.partNumber.value.trim()||featureTreeDescription!==controls.featureTreeDescription.value.trim()||searchHint!==lookupHint.value.trim()||
+      supplierPartNumber!==controls.supplierPartNumber.value.trim()||supplier!==controls.supplier.value.trim()){
       lookupMessage.textContent="Search fields changed. Run the lookup again.";return;
      }
      pendingSuggestion=response;
@@ -1080,7 +1093,7 @@
    const byCategory=standards().filter(allowed);
    const personalAllowed=items.filter(item=>selectedWorkshopCategory==="all"||categoryOfPersonal(item)===selectedWorkshopCategory);
    const matched=byCategory.filter(item=>(!selectedFamily||familyFor(item)?.id===selectedFamily)&&
-    [item.name,item.subtitle,item.spec,item.use,item.kind,item.category,categoryLabelFor(item),familyFor(item)?.label]
+    [item.name,item.partNumber,item.supplierPartNumber,item.subtitle,item.spec,item.use,item.kind,item.category,categoryLabelFor(item),familyFor(item)?.label]
      .join(" ").toLowerCase().includes(query));
    const personalMatched=personalAllowed.filter(item=>(!selectedFamily||
     (selectedFamily==="personal-other"?!familyOfPersonal(item):familyOfPersonal(item)===selectedFamily))&&

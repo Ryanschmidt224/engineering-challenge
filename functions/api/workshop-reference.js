@@ -6,7 +6,7 @@ import {normalizeSpecifications} from "./workshop-specifications.js";
 const indexKey="workshop-reference-overrides/v1.json";
 const photoKey=id=>"workshop-reference-photos/"+id;
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json","cache-control":"no-store","x-content-type-options":"nosniff"}});
-const fields={name:180,subtitle:240,featureTreeDescription:20,spec:5000,use:3000,caution:3000,manufacturer:160,model:160,partNumber:160,supplier:160,supplierUrl:1200,asin:20,price:80,packageQuantity:80,orderNotes:2000,documentationUrl:1200,notes:5000,category:40,kind:20,familyId:100,familyName:120,typeName:120};
+const fields={name:180,subtitle:240,featureTreeDescription:20,spec:5000,use:3000,caution:3000,manufacturer:160,model:160,partNumber:160,supplier:160,supplierPartNumber:160,supplierUrl:1200,asin:20,price:80,packageQuantity:80,orderNotes:2000,documentationUrl:1200,notes:5000,category:40,kind:20,familyId:100,familyName:120,typeName:120};
 const validId=id=>/^workshop:[a-z0-9-]{2,100}$/.test(String(id||""));
 const validUrl=url=>!url||/^https:\/\//i.test(url);
 async function read(env){

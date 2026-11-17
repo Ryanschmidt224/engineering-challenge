@@ -36,7 +36,7 @@ export function workshopPartDetails({id,item}){
  })).filter(spec=>spec.name&&spec.value);
  const additional=[
   ["Specifications",item.spec],["Typical use",item.use],["Considerations",item.caution],
-  ["Supplier URL",item.supplierUrl],["Documentation URL",item.documentationUrl||item.source],
+  ["Supplier part number",item.supplierPartNumber],["Supplier URL",item.supplierUrl],["Documentation URL",item.documentationUrl||item.source],
   ["Reference price",item.price],["Quantity per package",item.packageQuantity],["How to order",item.orderNotes]
  ];
  for(const [name,value] of additional){
