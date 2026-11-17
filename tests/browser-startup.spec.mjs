@@ -1137,7 +1137,7 @@ test("linked Workshop items open, search current fields and return to the origin
  await page.getByRole("button",{name:"+ Add catalog item"}).click();
  await itemPage.getByLabel("Manufacturer part number",{exact:true}).fill("NEW-42");
  const placement=await itemPage.locator('[data-part-editor-section="identity"]').evaluate(section=>{
-  const [,description,manufacturer]=section.querySelectorAll("input");
+  const [,description,,manufacturer]=section.querySelectorAll("input");
   const button=section.querySelector(".workshop-ai-lookup-row button");
   return [description,button,manufacturer].map(element=>element.getBoundingClientRect().toJSON());
  });
@@ -1147,6 +1147,11 @@ test("linked Workshop items open, search current fields and return to the origin
  expect(manufacturer.top).toBeGreaterThan(button.bottom);
  await itemPage.getByRole("button",{name:"Find with AI"}).click();
  await expect.poll(()=>searches.at(-1)).toEqual({partNumber:"NEW-42",featureTreeDescription:""});
+ await itemPage.getByLabel("Help AI find the item (optional)",{exact:true}).fill("DigiKey https://www.digikey.com/example");
+ await itemPage.getByLabel("Help AI find the item (optional)",{exact:true}).press("Enter");
+ await expect.poll(()=>searches.at(-1)).toEqual({
+  partNumber:"NEW-42",featureTreeDescription:"",searchHint:"DigiKey https://www.digikey.com/example"
+ });
  expect(errors).toEqual([]);
 });
 

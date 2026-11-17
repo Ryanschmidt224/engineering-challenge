@@ -512,8 +512,13 @@
    const lookupResults=el("div",undefined,"workshop-ai-lookup-results");
    const lookupMessage=el("p",undefined,"workshop-ai-lookup-status");lookupMessage.setAttribute("role","status");
    const lookupButton=itemButton("Find with AI",()=>{},"btn primary");
-   lookupRow.append(lookupButton,el("span","Either field can be used on its own.","muted"));
-   lookupActions.append(lookupRow,lookupMessage,lookupResults);
+   const lookupHintLabel=el("label");
+   const lookupHint=el("input",undefined,"field");
+   lookupHint.type="text";lookupHint.maxLength=500;
+   lookupHint.placeholder="Manufacturer, supplier, product link, or datasheet link";
+   lookupHintLabel.append(el("span","Help AI find the item (optional)"),lookupHint);
+   lookupRow.append(lookupButton,el("span","Either part number or description can be used on its own.","muted"));
+   lookupActions.append(lookupHintLabel,lookupRow,lookupMessage,lookupResults);
    const grid=el("div",undefined,"workshop-item-edit-grid");
    // Reuse the New Part editor's canonical identity/additional/specification
    // sections and fields order, keeping Workshop-specific ordering fields.
@@ -862,12 +867,16 @@
    };
    viewSuggested.onclick=showReview;
    const clearSuggestion=()=>{pendingSuggestion=null;viewSuggested.hidden=true;closeReview()};
-   for(const field of [controls.partNumber,controls.featureTreeDescription]){
+   lookupHint.addEventListener("keydown",event=>{
+    if(event.key==="Enter"&&!event.isComposing){event.preventDefault();lookupButton.click()}
+   });
+   for(const field of [controls.partNumber,controls.featureTreeDescription,lookupHint]){
     field.addEventListener("input",clearSuggestion);
    }
    lookupButton.onclick=async()=>{
     const partNumber=controls.partNumber.value.trim();
     const featureTreeDescription=controls.featureTreeDescription.value.trim();
+    const searchHint=lookupHint.value.trim();
     if(!partNumber&&!featureTreeDescription){
      lookupMessage.textContent="Enter a manufacturer part number or feature tree description.";
      controls.partNumber.focus();return;
@@ -882,12 +891,12 @@
      const timeout=setTimeout(()=>controller.abort(),60000);
      let response;
      try{
-      const res=await fetch("/api/workshop-lookup",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({partNumber,featureTreeDescription}),signal:controller.signal});
+      const res=await fetch("/api/workshop-lookup",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({partNumber,featureTreeDescription,...(searchHint&&{searchHint})}),signal:controller.signal});
       const data=await res.json().catch(()=>({}));
       if(!res.ok)throw Error(data.error||"Lookup returned HTTP "+res.status);
       response=data;
      }finally{clearTimeout(timeout)}
-     if(partNumber!==controls.partNumber.value.trim()||featureTreeDescription!==controls.featureTreeDescription.value.trim()){
+     if(partNumber!==controls.partNumber.value.trim()||featureTreeDescription!==controls.featureTreeDescription.value.trim()||searchHint!==lookupHint.value.trim()){
       lookupMessage.textContent="Search fields changed. Run the lookup again.";return;
      }
      pendingSuggestion=response;
