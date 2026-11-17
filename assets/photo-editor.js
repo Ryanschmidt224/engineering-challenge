@@ -1,9 +1,9 @@
 /* Shared photo editing controls for projects, assemblies and parts.
- * Only the markup, add, and delete callbacks differ by photo source.
+ * Only the markup, add, paste, and delete callbacks differ by photo source.
  */
 (function(){
  "use strict";
- function actionBar(cover,{onMarkup,onAdd,onDelete}={}){
+ function actionBar(cover,{onMarkup,onAdd,onPaste,onDelete}={}){
   if(!cover)throw Error("Photo actions require a photo element");
   const shell=document.createElement("div");shell.className="bs-photo-control";
   cover.before(shell);shell.append(cover);
@@ -19,11 +19,23 @@
   const add=make("Add",onAdd,"bs-photo-add");
   const remove=make("Delete",onDelete,"bs-photo-delete");
   more.append(markup,add,remove);bar.append(edit,more);shell.append(bar);
+  const paste=onPaste?document.createElement("div"):null;
+  if(paste){
+   paste.className="bs-photo-paste";
+   paste.contentEditable="true";
+   paste.setAttribute("role","textbox");
+   paste.setAttribute("aria-label","Paste a copied photo");
+   paste.textContent="Right-click here and choose Paste (or press Ctrl+V).";
+   paste.addEventListener("beforeinput",event=>event.preventDefault());
+   window.BSPhotoMarkup.pasteOn(paste,file=>{if(!paste.hidden)void onPaste(file)});
+   shell.append(paste);
+  }
   const status=document.createElement("p");status.className="bs-photo-status";status.setAttribute("role","status");
   status.setAttribute("aria-live","polite");shell.append(status);
   let enabled=true,present=false;
   const sync=()=>{
    edit.hidden=!enabled;more.hidden=!enabled||edit.getAttribute("aria-expanded")!=="true";
+   if(paste)paste.hidden=more.hidden;
    markup.disabled=!present;remove.disabled=!present;
   };
   edit.onclick=()=>{

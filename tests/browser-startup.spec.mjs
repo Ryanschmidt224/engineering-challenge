@@ -1220,3 +1220,68 @@ test("Reload Workshop data sits after Modify part and refreshes the linked proje
  await expect(details.getByRole("status")).toHaveText("Workshop data reloaded.");
  expect(updates).toEqual([{id,body:{reloadWorkshop:true}}]);
 });
+
+test("photo pencil accepts pasted images and Code and Document items have distinct defaults",async({page})=>{
+ const code="22222222-2222-4222-8222-222222222222",doc="33333333-3333-4333-8333-333333333333";
+ const uploads=[];
+ let partHasImage=false;
+ await page.route("**/api/**",async route=>{
+  const url=new URL(route.request().url());
+  const method=route.request().method();
+  let data={};
+  if(url.pathname==="/api/accounts")data={user:{id:"test-admin",displayName:"Test admin",role:"admin"}};
+  if(url.pathname==="/api/tree")data={nodes:[],revision:"test"};
+  if(url.pathname==="/api/workspace")data={workspace:{recipe:[],resources:[]}};
+  if(url.pathname==="/api/components")data={components:[
+   {id:code,name:"Controller code",itemType:"document",partType:"code"},
+   {id:doc,name:"Wiring notes",itemType:"document"}
+  ]};
+  if(url.pathname==="/api/photos"){
+   data={photos:[]};
+   if(method==="POST")uploads.push({scope:route.request().headers()["x-photo-assembly"],mime:route.request().headers()["content-type"]});
+  }
+  if(url.pathname==="/api/components/photo"&&method==="POST"){
+   partHasImage=true;
+   uploads.push({scope:url.searchParams.get("id"),mime:route.request().headers()["content-type"]});
+  }
+  if(url.pathname==="/api/photo-annotations"&&url.searchParams.get("view")==="1"){
+   if(partHasImage&&url.searchParams.get("id")===code)
+    return route.fulfill({path:"assets/default-document-photo.webp",contentType:"image/webp"});
+   return route.fulfill({status:404});
+  }
+  await route.fulfill({json:data});
+ });
+ const pasteImage=async field=>field.evaluate(element=>{
+  const data=new DataTransfer();
+  data.items.add(new File([new Uint8Array([137,80,78,71])],"clipboard.png",{type:"image/png"}));
+  element.dispatchEvent(new ClipboardEvent("paste",{clipboardData:data,bubbles:true,cancelable:true}));
+ });
+ await page.goto("/#launcher/workspace/__root__");
+ const assembly=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
+ const pasteField=scope=>scope.getByRole("textbox",{name:"Paste a copied photo",includeHidden:true});
+ await expect(pasteField(assembly)).toBeHidden();
+ await assembly.getByRole("button",{name:"Edit photo"}).click();
+ await expect(pasteField(assembly)).toBeVisible();
+ await expect(pasteField(assembly)).toHaveAttribute("contenteditable","true");
+ await pasteImage(pasteField(assembly));
+ await expect.poll(()=>uploads.at(0)).toEqual({scope:"root-assembly",mime:"image/png"});
+ await assembly.getByRole("button",{name:"Edit photo"}).click();
+ await expect(pasteField(assembly)).toBeHidden();
+
+ await page.goto("/#launcher/part/"+code);
+ const part=page.locator("#launcher .bom-part-workspace");
+ const cover=part.locator(".part-workspace-cover img");
+ await expect(cover).toHaveAttribute("src","/assets/default-code-photo.webp");
+ await expect.poll(()=>cover.evaluate(image=>image.naturalWidth)).toBeGreaterThan(0);
+ await part.getByRole("button",{name:"Edit photo"}).click();
+ await expect(part.getByRole("button",{name:"Delete",exact:true})).toBeDisabled();
+ await expect(pasteField(part)).toBeVisible();
+ await pasteImage(pasteField(part));
+ await expect.poll(()=>uploads.at(1)).toEqual({scope:code,mime:"image/png"});
+ await expect(cover).toHaveAttribute("src",/\/api\/photo-annotations/);
+ await expect(part.getByRole("button",{name:"Delete",exact:true})).toBeEnabled();
+
+ await page.goto("/#launcher/part/"+doc);
+ await expect(cover).toHaveAttribute("src","/assets/default-document-photo.webp");
+ await expect.poll(()=>cover.evaluate(image=>image.naturalWidth)).toBeGreaterThan(0);
+});
