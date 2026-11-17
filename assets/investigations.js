@@ -217,8 +217,9 @@
    const add=btn("+ Add note",()=>{
     if(notes.length>=30)return;
     addNote();add.disabled=notes.length>=30;
-   });
-   controls.append(noteList,add);
+   },"btn investigation-add-note");
+   const noteSection=make("div","investigation-note-section");
+   noteSection.append(noteList,add);controls.append(noteSection);
    for(const note of record.notes||[])addNote(note);
    add.disabled=notes.length>=30;
    const saveBtn=btn("Save",async()=>{

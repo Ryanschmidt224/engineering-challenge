@@ -1520,6 +1520,8 @@
 .project-summary-gallery .bs-photo-control>.project-summary-photo-stage{width:100%}
 @media(max-width:650px){.workspace-heading>.bs-photo-control{max-width:100%}.bs-photo-actions{justify-content:flex-start}.bs-photo-more:not([hidden]){gap:5px}.bs-photo-actions .btn{padding:6px 8px;font-size:.76rem}}
 
+.investigation-note-section{border-block:1px solid var(--color-border);padding-block:10px}
+.investigation-add-controls .investigation-add-note{font-size:.82rem;padding:5px 10px;min-height:34px}
 .investigation-note-list:empty{display:none}
 .investigation-note-editor{
  padding:12px;margin:10px 0;border:1px solid var(--color-border);border-radius:8px;
