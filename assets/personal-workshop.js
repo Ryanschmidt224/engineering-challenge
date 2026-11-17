@@ -7,8 +7,15 @@
   const opts={method,credentials:"same-origin",cache:"no-store"};
   if(body){opts.headers={"content-type":"application/json"};opts.body=JSON.stringify(body)}
   const res=await fetch(path,opts),data=await res.json().catch(()=>({}));
-  if(!res.ok)throw Error(data.error||"Request failed");return data;
+  if(!res.ok)throw Object.assign(Error(data.error||"Request failed"),{lookupUsage:data.lookupUsage});return data;
  };
+
+ const lookupCostMessage=usage=>{
+  if(!Number.isFinite(usage?.estimatedUsd))return "";
+  const cost=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:4}).format(usage.estimatedUsd);
+  return "Estimated API cost "+cost+" · "+usage.searches+" web "+(usage.searches===1?"search":"searches");
+ };
+ const missingSpecsMessage=specs=>specs?.length?"Could not verify: "+specs.join(", ")+".":"";
 
  // All Workshop confirmations now use the site's shared white dialog.
  const confirmDelete=(title,message)=>window.BSDialogs.danger(message,{title,confirmLabel:"Delete"});
@@ -518,7 +525,9 @@
    lookupHint.placeholder="Manufacturer, supplier, product link, or datasheet link";
    lookupHintLabel.append(el("span","Help AI find the item (optional)"),lookupHint);
    lookupRow.append(lookupButton,el("span","Either part number or description can be used on its own.","muted"));
-   lookupActions.append(lookupHintLabel,lookupRow,lookupMessage,lookupResults);
+   const lookupCost=el("p",undefined,"muted");
+   lookupCost.hidden=true;
+   lookupActions.append(lookupHintLabel,lookupRow,lookupMessage,lookupCost,lookupResults);
    const grid=el("div",undefined,"workshop-item-edit-grid");
    // Reuse the New Part editor's canonical identity/additional/specification
    // sections and fields order, keeping Workshop-specific ordering fields.
@@ -605,6 +614,12 @@
      ["operating_temperature","Operating temperature","°C"],
      ["package","Package",""]
     ],
+    endMill:[
+     ["cutting_diameter","Cutting diameter",""],["shank_diameter","Shank diameter",""],
+     ["length_of_cut","Length of cut",""],["overall_length","Overall length",""],
+     ["flute_count","Flute count",""],["tool_material","Tool material",""],
+     ["coating","Coating",""],["end_geometry","End geometry",""]
+    ],
     resistor:[["resistance","Resistance","Ω"],["tolerance","Tolerance","%"],["rated_power","Power rating","W"],["temperature_coefficient","Temperature coefficient","ppm/°C"]],
     capacitor:[["capacitance","Capacitance","F"],["rated_voltage","Rated voltage","V"],["tolerance","Tolerance","%"],["dielectric","Dielectric",""],["esr","ESR","Ω"]],
     motor:[["rated_voltage","Rated voltage","V"],["rated_current","Rated current","A"],["torque","Torque","N·cm"],["rated_speed","Speed","rpm"],["step_angle","Step angle","°"]],
@@ -616,7 +631,8 @@
    };
    const suggestedTemplate=()=>{
     const description=[family.value,families().find(f=>f.id===family.value)?.label,
-     familyName.value,controls.typeName?.value,controls.name?.value,controls.subtitle?.value].filter(Boolean).join(" ").toLowerCase();
+     familyName.value,controls.typeName?.value,controls.name?.value,controls.subtitle?.value,controls.featureTreeDescription?.value].filter(Boolean).join(" ").toLowerCase();
+    if(/\bend[\s-]*mills?\b/.test(description))return specTemplates.endMill;
     if(/mosfet|field.effect.transistor/.test(description))return specTemplates.mosfet;
     if(/resistor/.test(description))return specTemplates.resistor;
     if(/capacitor/.test(description))return specTemplates.capacitor;
@@ -680,6 +696,7 @@
    family.addEventListener("change",refreshSuggestions);
    familyName.addEventListener("input",refreshSuggestions);
    controls.typeName.addEventListener("change",refreshSuggestions);
+   controls.featureTreeDescription.addEventListener("change",refreshSuggestions);
    refreshSuggestions();
    // Keep the product classification and its suggested ratings together,
    // ahead of the legacy free-text specifications section.
@@ -851,6 +868,8 @@
      for(const spec of specs)list.append(el("li",spec.name+": "+spec.value+(spec.unit?" "+spec.unit:"")+(spec.conditions?" ("+spec.conditions+")":"")));
      reviewPanel.append(list);
     }
+    const missing=missingSpecsMessage(pendingSuggestion.missingSpecs);
+    if(missing)reviewPanel.append(el("p",missing,"muted"));
     const actions=el("div",undefined,"workshop-ai-changes-actions");
     actions.append(
      itemButton("Apply suggested changes and save",()=>{
@@ -886,6 +905,7 @@
     lookupMessage.textContent="Looking up "+[partNumber,featureTreeDescription].filter(Boolean).join(" · ")+"… Review suggestions before applying them.";
     lookupMessage.scrollIntoView({block:"nearest"});
     lookupResults.replaceChildren();
+    lookupCost.hidden=true;
     try{
      const controller=new AbortController();
      const timeout=setTimeout(()=>controller.abort(),60000);
@@ -893,6 +913,8 @@
      try{
       const res=await fetch("/api/workshop-lookup",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({partNumber,featureTreeDescription,...(searchHint&&{searchHint})}),signal:controller.signal});
       const data=await res.json().catch(()=>({}));
+      lookupCost.textContent=lookupCostMessage(data.lookupUsage);
+      lookupCost.hidden=!lookupCost.textContent;
       if(!res.ok)throw Error(data.error||"Lookup returned HTTP "+res.status);
       response=data;
      }finally{clearTimeout(timeout)}
@@ -1339,7 +1361,10 @@
       const target=$("#workshop-personal-spec-rows",personal);target.replaceChildren();
       for(const spec of result.research.specs)addPersonalSpec({label:spec.name,value:spec.value,unit:spec.unit||"",conditions:spec.conditions||""});
      }
-     mineResults.append(el("p",result.note||"Review AI suggestions before saving.","muted"));
+     for(const message of [lookupCostMessage(result.lookupUsage),missingSpecsMessage(result.missingSpecs),
+      result.note||"Review AI suggestions before saving."]){
+      if(message)mineResults.append(el("p",message,"muted"));
+     }
      if(result.research?.pins?.length){
       const pinSummary=el("div",undefined,"workshop-ai-engineering-review");
       pinSummary.append(el("strong","Pinout — verify package and orientation"));
@@ -1372,7 +1397,7 @@
       },"btn");imageBox.append(use);mineResults.append(imageBox);
      }else mineResults.append(el("p","No reliable picture found. Upload a photo below.","muted"));
      mineMessage.textContent="Draft filled. Confirm the exact product and specifications before saving.";
-    }catch(error){mineMessage.textContent=error.message||"Lookup failed."}
+    }catch(error){mineMessage.textContent=[error.message,lookupCostMessage(error.lookupUsage)].filter(Boolean).join(" ")||"Lookup failed."}
     finally{mineFind.disabled=false}
    };
    $("#workshop-search",personal).addEventListener("input",render);

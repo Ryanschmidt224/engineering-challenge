@@ -431,3 +431,41 @@ test("legacy personal Workshop photos are readable only by the inventory owner",
  assert.equal((await handleComponentPhoto(request(photo,"GET",undefined,other),env)).status,404);
  assert.equal((await handleComponentPhoto(request(photo),env)).status,404);
 });
+
+test("Workshop AI estimates API cost and identifies unverified end mill specifications",async t=>{
+ const env={PHOTOS:new TestBucket(),OPENAI_API_KEY:"test-key",admin_password:"test-admin-secret"};
+ const session=await register(env,"endmill-lookup@example.test");
+ let reportUsage=true,partNumber="ABC-10";
+ t.mock.method(globalThis,"fetch",async (_url,options)=>{
+  const prompt=JSON.parse(options.body).input;
+  assert.match(prompt,/Cutting diameter, Shank diameter, Length of cut, Overall length, Flute count, Tool material, Coating, End geometry/);
+  return Response.json({
+   ...(reportUsage&&{usage:{input_tokens:10000,input_tokens_details:{cached_tokens:4000},output_tokens:1000}}),
+   output:[
+    {type:"web_search_call",action:{type:"search"}},{type:"web_search_call",action:{type:"open_page"}},
+    {type:"web_search_call",action:{type:"search"}},{type:"web_search_call",action:{type:"find_in_page"}},
+    {type:"message",content:[{type:"output_text",text:JSON.stringify({
+     partNumber,typeName:"End mills",name:"Carbide end mill",
+     specs:[{name:"Cutting diameter",value:"1/4",unit:"in"},{name:"Flute count",value:"4"}]
+    })}]}
+   ]
+  });
+ });
+ const lookup=async()=>data(await workshopLookup({request:request("/api/workshop-lookup","POST",{
+  partNumber:"ABC-10",featureTreeDescription:"End mill"
+ },session),env}));
+ const result=await lookup();
+ assert.equal(result.status,200);
+ assert.deepEqual(result.body.lookupUsage,{
+  estimatedUsd:0.051,searches:2,inputTokens:10000,cachedInputTokens:4000,outputTokens:1000
+ });
+ assert.deepEqual(result.body.missingSpecs,["Shank diameter","Length of cut","Overall length","Tool material","Coating","End geometry"]);
+ assert.equal(result.body.research.specs[0].unit,"in");
+ partNumber="ABC-11";
+ const rejected=await lookup();
+ assert.equal(rejected.status,422);
+ assert.deepEqual(rejected.body.lookupUsage,result.body.lookupUsage);
+ partNumber="ABC-10";
+ reportUsage=false;
+ assert.equal((await lookup()).body.lookupUsage,null);
+});

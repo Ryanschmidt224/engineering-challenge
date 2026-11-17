@@ -5,6 +5,24 @@ const text=(v,n=200)=>typeof v==="string"?v.trim().slice(0,n):"";
 const validUrl=v=>{try{const u=new URL(v);return u.protocol==="https:"&&!u.username&&!u.password&&!u.hostname.endsWith(".local")&&u.hostname!=="localhost"&&!/^\d+\.\d+\.\d+\.\d+$/.test(u.hostname)&&!u.hostname.includes(":")?u.href:""}catch{return ""}};
 const categories=new Set(["tools","consumables","electronics","hardware","safety"]);
 const kinds=new Set(["tool","equipment","component","material","other"]);
+const MODEL="gpt-5.4";
+// Standard OpenAI API rates in USD. Output usage includes reasoning tokens.
+const TOKEN_RATES={input:2.50,cached:0.25,output:15};
+const WEB_SEARCH_RATE=0.01;
+const END_MILL_SPECS=[
+ "Cutting diameter","Shank diameter","Length of cut","Overall length",
+ "Flute count","Tool material","Coating","End geometry"
+];
+function estimateLookupUsage(payload){
+ const usage=payload.usage;
+ const input=usage?.input_tokens,output=usage?.output_tokens,cached=usage?.input_tokens_details?.cached_tokens??0;
+ if(![input,output,cached].every(value=>Number.isSafeInteger(value)&&value>=0)||cached>input)return null;
+ const searches=(payload.output||[]).filter(item=>item.type==="web_search_call"&&item.action?.type==="search").length;
+ const tokenCostPerMillion=(input-cached)*TOKEN_RATES.input+cached*TOKEN_RATES.cached+output*TOKEN_RATES.output;
+ const estimatedUsd=(tokenCostPerMillion+searches*WEB_SEARCH_RATE*1e6)/1e6;
+ return {estimatedUsd,searches,inputTokens:input,outputTokens:output,cachedInputTokens:cached};
+}
+
 export async function onRequest({request,env}){
  if(request.method!=="POST")return json({error:"Method not allowed"},405);
  if(!env.OPENAI_API_KEY)return json({error:"AI lookup is not configured. Set OPENAI_API_KEY for this website."},503);
@@ -31,6 +49,7 @@ export async function onRequest({request,env}){
   "Use the feature tree description to look for related or equivalent products. Mention any supported alternatives and important differences in notes. Keep those alternatives separate from the primary product details.",
   "If only the feature tree description is supplied, use it to find a relevant product. Mark the result as a candidate in notes and leave the manufacturer part number blank if no specific identifier can be verified.",
   "If a manufacturer part number is supplied but cannot be verified, do not silently substitute a different identifier.",
+  "If the product is an end mill, use End mills as typeName and prioritize these exact specification names in order: "+END_MILL_SPECS.join(", ")+". Use the source's units (inch or mm). Distinguish the cutting diameter from the shank diameter and the length of cut from the overall length. End geometry means square end, ball end, corner radius, or another verified shape. Verify each field against the exact product listing or datasheet. Omit any unverified value and only say uncoated if the source confirms it.",
   "Provide a useful component overview: main specifications, typical uses, and basic pinout where relevant.",
   "Prefer manufacturer specifications where readily available. Sources are optional; never fabricate links.",
   "Important: a generic number (e.g. 2N7000) may be sold by multiple manufacturers in different packages.",
@@ -54,7 +73,7 @@ export async function onRequest({request,env}){
  try{
   const response=await fetch("https://api.openai.com/v1/responses",{
    method:"POST",headers:{"authorization":"Bearer "+env.OPENAI_API_KEY,"content-type":"application/json"},
-   body:JSON.stringify({model:"gpt-5.4",reasoning:{effort:"low"},max_output_tokens:3600,
+   body:JSON.stringify({model:MODEL,reasoning:{effort:"low"},max_output_tokens:3600,
     tools:[{type:"web_search",search_context_size:"medium",search_content_types:["text","image"],image_settings:{max_results:4,caption:true}}],
     tool_choice:"required",include:["web_search_call.results"],input:prompt})
   });
@@ -63,11 +82,12 @@ export async function onRequest({request,env}){
    console.error("Workshop lookup model error",response.status,JSON.stringify(payload.error||{}).slice(0,300));
    return json({error:"Product lookup is unavailable. Verify the AI service configuration and try again."},502);
   }
+  const lookupUsage=estimateLookupUsage(payload);
   const raw=(payload.output||[]).filter(v=>v.type==="message").flatMap(v=>v.content||[]).filter(v=>v.type==="output_text").map(v=>v.text).join("\n");
   const stripped=raw.replace(/^\s*```(?:json)?\s*/i,"").replace(/\s*```\s*$/,"").trim();
   let data;
-  try{data=JSON.parse(stripped)}catch{return json({error:"The lookup did not return usable product details. Try again or enter the item manually."},502)}
-  if(!data||typeof data!=="object"||Array.isArray(data))return json({error:"Product lookup returned invalid details"},502);
+  try{data=JSON.parse(stripped)}catch{return json({error:"The lookup did not return usable product details. Try again or enter the item manually.",lookupUsage},502)}
+  if(!data||typeof data!=="object"||Array.isArray(data))return json({error:"Product lookup returned invalid details",lookupUsage},502);
   const sources=(Array.isArray(data.sources)?data.sources:[]).map(validUrl).filter(Boolean).slice(0,6);
   const research={
    package:text(data.package,120),pinoutOrientation:text(data.pinoutOrientation,240),
@@ -80,6 +100,9 @@ export async function onRequest({request,env}){
    })).filter(pin=>pin.number&&pin.name),
    applications:(Array.isArray(data.applications)?data.applications:[]).slice(0,10).map(x=>text(x,200)).filter(Boolean)
   };
+  const isEndMill=/\bend[\s-]*mills?\b/i.test([data.typeName,data.familyName,data.name,data.subtitle,featureTreeDescription].join(" "));
+  const missingSpecs=isEndMill?END_MILL_SPECS.filter(label=>
+   !research.specs.some(spec=>spec.name.toLowerCase()===label.toLowerCase())):[];
   const engineeringSpecs=research.specs.map(row=>row.name+": "+row.value+(row.unit?" "+row.unit:"")+(row.conditions?" ("+row.conditions+")":"")).join("\n");
   const pinout=research.pins.length?("Pinout — "+[research.package,research.pinoutOrientation].filter(Boolean).join(", ")+":\n"+
    research.pins.map(pin=>"Pin "+pin.number+": "+pin.name+(pin.function?" — "+pin.function:"")).join("\n")):"";
@@ -100,7 +123,7 @@ export async function onRequest({request,env}){
   // A generated answer is not a verified identity: require an exact part-number match.
   const normalize=v=>String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
   if(partNumber&&draft.partNumber.toUpperCase()!==partNumber.toUpperCase())
-   return json({error:"The exact manufacturer part number could not be confirmed. Check the number, try a manufacturer or product link as a search hint, or search by description alone."},422);
+   return json({error:"The exact manufacturer part number could not be confirmed. Check the number, try a manufacturer or product link as a search hint, or search by description alone.",lookupUsage},422);
   if(partNumber)draft.partNumber=partNumber;
   // Image search is a candidate, never authoritative. Require a visible part-number
   // match in its caption or source page and have the user review the picture.
@@ -112,7 +135,7 @@ export async function onRequest({request,env}){
   });
   const imageSuggestion=candidate?{url:validUrl(candidate.image_url),sourceUrl:validUrl(candidate.source_website_url),caption:text(candidate.caption,180)}:null;
   await env.PHOTOS.put(key,String(count+1));
-  return json({draft,research,sources,imageSuggestion,needsReview:true,
+  return json({draft,research,sources,imageSuggestion,missingSpecs,lookupUsage,needsReview:true,
    note:"AI-generated draft. Check the ratings and package before saving."});
  }catch(error){
   console.error("Workshop lookup failed",String(error));

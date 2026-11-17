@@ -1094,7 +1094,8 @@ test("linked Workshop items open, search current fields and return to the origin
   if(path==="/api/personal-workshop")data={items:[{...item,id:personalId,name:"Personal spare switch",quantity:1}]};
   if(path==="/api/workshop-lookup"){
    searches.push(route.request().postDataJSON());
-   data={draft:{name:"Suggested switch"},needsReview:true};
+   data={draft:{name:"Suggested switch"},needsReview:true,
+    lookupUsage:{estimatedUsd:0.051,searches:2},missingSpecs:searches.at(-1).searchHint?["Coating"]:[]};
   }
   await route.fulfill({json:data});
  });
@@ -1152,6 +1153,15 @@ test("linked Workshop items open, search current fields and return to the origin
  await expect.poll(()=>searches.at(-1)).toEqual({
   partNumber:"NEW-42",featureTreeDescription:"",searchHint:"DigiKey https://www.digikey.com/example"
  });
+ await expect(itemPage.getByText("Estimated API cost $0.051 · 2 web searches",{exact:true})).toBeVisible();
+ await itemPage.getByRole("button",{name:"View suggested changes"}).click();
+ await expect(itemPage.getByText("Could not verify: Coating.",{exact:true})).toBeVisible();
+ const endMillType=itemPage.getByLabel("Product type (e.g. Multimeters)",{exact:true});
+ await endMillType.fill("End mills");
+ await endMillType.blur();
+ await expect.poll(()=>itemPage.locator('.workshop-structured-spec-rows [data-spec="label"]').evaluateAll(fields=>fields.map(field=>field.value))).toEqual([
+  "Cutting diameter","Shank diameter","Length of cut","Overall length","Flute count","Tool material","Coating","End geometry"
+ ]);
  expect(errors).toEqual([]);
 });
 
