@@ -1,9 +1,8 @@
 import {getPartPhoto} from "./workshop-linked-part.js";
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
-import {isAdmin} from "./auth.js";
+import {isProjectRecipeFile} from "./recipe-files.js";
 const uuid=/^[a-f0-9-]{36}$/i;
 const idPattern=/^[a-zA-Z0-9_-]{1,80}$/;
-const filePattern=/^recipe-files\/(?:launcher|linear|robot|buck|motorlab|coiltest|p[a-f0-9]{32})\/[a-f0-9-]{36}\.(?:jpg|jpeg|png|webp|gif|heic|heif|pdf|dwg|dxf|sldprt|sldasm|step|stp|stl|igs|iges|x_t|x_b|obj|3mf|doc|docx|xls|xlsx|txt|csv|zip)$/;
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const validText=(v,max)=>typeof v==="string"&&v.length<=max;
 const statuses=new Set(["investigating","resolved","unresolved"]);
@@ -12,12 +11,23 @@ const scopes=new Set(["assembly","part","step"]);
 const trim=(text,max)=>String(text||"").trim().slice(0,max);
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value+"T12:00:00Z"))&&new Date(value+"T12:00:00Z").toISOString().slice(0,10)===value;
 const entryTypes=new Set(["observation","attempt","lesson","theory","revision","result","note","resolution"]);
+const legacyFields=["observation","theory","resolution","note"];
+const categoryFields={
+ practice:["attempt","lesson"],test:["theory","attempt","result"],
+ revision:["revision","theory","result"],failure:legacyFields,note:["note"]
+};
 const resolutionChoices=new Set(["yes","no","maybe"]);
 const safeEntry=(entry,project)=>entry&&entryTypes.has(entry.type)&&(entry.type!=="resolution"||resolutionChoices.has(entry.resolution))&&validText(entry.text,5000)&&(entry.text.trim()||(Array.isArray(entry.files)&&entry.files.length>0)||entry.type==="resolution")&&
  validDate(entry.date)&&Array.isArray(entry.files||[])&&(entry.files||[]).length<=12&&
- (entry.files||[]).every(file=>typeof file==="string"&&filePattern.test(file)&&file.startsWith("recipe-files/"+project+"/"))&&validText(entry.fileName||"",120);
+ (entry.files||[]).every(file=>isProjectRecipeFile(file,project))&&validText(entry.fileName||"",120);
 const normalizedEntry=(entry)=>({id:crypto.randomUUID(),type:entry.type,text:entry.text.trim(),date:entry.date,
  files:[...new Set(entry.files||[])],fileName:trim(entry.fileName,120),...(entry.type==="resolution"?{resolution:entry.resolution}:{}),createdAt:new Date().toISOString()});
+const validEntries=(entries,fields,project)=>Array.isArray(entries)&&entries.length<=fields.length&&
+ entries.every(item=>safeEntry(item,project)&&fields.includes(item.type))&&new Set(entries.map(item=>item.type)).size===entries.length;
+const entryStatus=entries=>{
+ const resolution=entries.find(entry=>entry.type==="resolution");
+ return resolution?({yes:"resolved",no:"unresolved",maybe:"investigating"})[resolution.resolution]:"investigating";
+};
 export async function handleInvestigations(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project");
  if(!await projectAllowed(env,project,request))return json({error:"Invalid project"},400);
@@ -42,7 +52,7 @@ export async function handleInvestigations(request,env){
  if((data.expectedRevision??null)!==(saved.revision??null))return json({error:"Investigations changed elsewhere. Reload before saving.",revision:saved.revision??null},409);
  const records=Array.isArray(saved.records)?saved.records:[];
  if(records.length>300)return json({error:"Project investigation limit reached"},413);
- let changed,record;
+ let changed,record,createdId;
  if(data.action==="create"){
   const scope=data.scope,ownerType=data.ownerType,ownerId=data.ownerId,stepId=data.stepId||"";
   if(!scopes.has(scope)||!validText(data.title,180)||!data.title.trim()||
@@ -51,6 +61,8 @@ export async function handleInvestigations(request,env){
     (scope==="step"?!idPattern.test(stepId):!!stepId)||
     (scope==="part"&&ownerType!=="part")||(scope==="assembly"&&ownerType!=="assembly"))
     return json({error:"Invalid investigation details"},400);
+  if(data.category!==undefined&&(typeof data.category!=="string"||!Object.hasOwn(categoryFields,data.category)||!validDate(data.date)||!validEntries(data.entries,categoryFields[data.category],project)))
+   return json({error:"Invalid record category or fields"},400);
   if(records.length>=300)return json({error:"Project investigation limit reached"},413);
   // Verify the owner still exists rather than accepting orphan investigations.
   if(ownerType==="part"){
@@ -64,6 +76,9 @@ export async function handleInvestigations(request,env){
   }
   record={id:crypto.randomUUID(),scope,ownerType,ownerId,stepId,title:data.title.trim(),
    status:"investigating",entries:[],createdAt:new Date().toISOString()};
+  if(data.category!==undefined)Object.assign(record,{category:data.category,date:data.date,
+   entries:data.entries.map(normalizedEntry),status:entryStatus(data.entries)});
+  createdId=record.id;
   changed=[...records,record];
  }else if(data.action==="archivePart"){
   const partId=data.partId;
@@ -111,13 +126,13 @@ export async function handleInvestigations(request,env){
  }else if(data.action==="editRecord"){
   record=records.find(item=>item.id===data.id);
   if(!record)return json({error:"Investigation not found"},404);
-  if(!validText(data.title,180)||!data.title.trim()||!validDate(data.date)||!Array.isArray(data.entries)||data.entries.length>4||data.entries.some(item=>!safeEntry(item,project)||!["observation","theory","resolution","note"].includes(item.type))||new Set(data.entries.map(item=>item.type)).size!==data.entries.length)return json({error:"Invalid record details"},400);
-  const resolution=data.entries.find(entry=>entry.type==="resolution");
-  const status=resolution?({yes:"resolved",no:"unresolved",maybe:"investigating"})[resolution.resolution]:"investigating";
+  const fields=categoryFields[record.category]||legacyFields;
+  if(!validText(data.title,180)||!data.title.trim()||!validDate(data.date)||!validEntries(data.entries,fields,project))return json({error:"Invalid record details"},400);
+  const status=entryStatus(data.entries);
   // Retain older entry types and earlier updates; replace only the latest editable entry per field.
   const previous=record.entries||[];
   const latest=new Map();
-  previous.forEach((entry,index)=>{if(["observation","theory","resolution","note"].includes(entry.type))latest.set(entry.type,index)});
+  previous.forEach((entry,index)=>{if(fields.includes(entry.type))latest.set(entry.type,index)});
   const retained=previous.filter((entry,index)=>latest.get(entry.type)!==index);
   const entries=[...retained,...data.entries.map(normalizedEntry)];
   if(entries.length>100)return json({error:"Too many entries in investigation"},413);
@@ -138,7 +153,7 @@ export async function handleInvestigations(request,env){
   if(!record)return json({error:"Investigation not found"},404);
   if(!entry||!types.has(entry.type)||(entry.type==="resolution"&&!resolutionChoices.has(entry.resolution))||!validText(entry.text,5000)||(!entry.text.trim()&&!(Array.isArray(entry.files)&&entry.files.length)&&entry.type!=="resolution")||
      !Array.isArray(entry.files||[])||(entry.files||[]).length>12||
-     !(entry.files||[]).every(file=>typeof file==="string"&&filePattern.test(file)&&file.startsWith("recipe-files/"+project+"/"))||
+     !(entry.files||[]).every(file=>isProjectRecipeFile(file,project))||
      !validText(entry.fileName||"",120))return json({error:"Invalid investigation entry"},400);
   if((record.entries||[]).length>=100)return json({error:"Too many entries in investigation"},413);
   const next={...normalizedEntry({...entry,date:validDate(entry.date)?entry.date:new Date().toISOString().slice(0,10)})};
@@ -155,5 +170,5 @@ export async function handleInvestigations(request,env){
  const conditions=object?.etag?{onlyIf:{etagMatches:object.etag}}:{onlyIf:{etagDoesNotMatch:"*"}};
  const result=await env.PHOTOS.put(key,JSON.stringify({records:changed,revision:nextRevision}),conditions);
  if(result===null)return json({error:"Another edit was saved first. Reload and try again."},409);
- return json({ok:true,revision:nextRevision,records:changed});
+ return json({ok:true,revision:nextRevision,records:changed,createdId});
 }

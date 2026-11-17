@@ -969,27 +969,8 @@
    picker.addEventListener("change",()=>{
     if(picker.files?.length)void uploadFiles(picker.files);
    });
-   const pasteZone=el("div","Right-click here and choose Paste to add a copied photo (or press Ctrl+V).","workshop-photo-paste-zone");
-   pasteZone.contentEditable="true";
-   pasteZone.setAttribute("role","textbox");
-   pasteZone.setAttribute("aria-label","Paste a copied Workshop product photo");
-   pasteZone.setAttribute("aria-multiline","false");
-   pasteZone.setAttribute("spellcheck","false");
-   pasteZone.setAttribute("tabindex","0");
-   pasteZone.addEventListener("paste",event=>{
-    event.preventDefault();
-    const files=[...(event.clipboardData?.items||[])]
-     .filter(item=>item.kind==="file"&&item.type.startsWith("image/"))
-     .map(item=>item.getAsFile()).filter(Boolean);
-    if(files.length)void uploadFiles(files);
-    else uploadStatus.textContent="Clipboard has no image. Copy a photo, then right-click here and choose Paste.";
-   });
-   pasteZone.addEventListener("beforeinput",event=>{if(event.inputType!=="insertFromPaste")event.preventDefault()});
-   pasteZone.addEventListener("dragover",event=>{event.preventDefault();pasteZone.classList.add("dragover")});
-   pasteZone.addEventListener("dragleave",()=>pasteZone.classList.remove("dragover"));
-   pasteZone.addEventListener("drop",event=>{
-    event.preventDefault();pasteZone.classList.remove("dragover");
-    void uploadFiles(event.dataTransfer?.files||[]);
+   const pasteZone=window.BSPhotoMarkup.pasteTarget(uploadFiles,{
+    onEmpty:()=>{uploadStatus.textContent="Copy an image or choose a photo file."}
    });
    uploadRow.append(picker,upload);
    form.append(uploadRow,pasteZone,uploadStatus);
@@ -1328,7 +1309,7 @@
      </section>
      <label>Notes<textarea id="workshop-notes" class="field" maxlength="1500"></textarea></label>
      <div class="workshop-row"><label>Photo of equipment<input id="workshop-photo" type="file" accept="image/jpeg,image/png,image/webp"></label><button id="workshop-photo-upload" type="button" class="btn">Import photo and identify</button><img id="workshop-photo-preview" class="workshop-photo-thumb" hidden alt="Equipment photo"></div>
-     <div id="workshop-private-photo-paste" class="workshop-photo-paste-zone" contenteditable="true" role="textbox" aria-label="Paste a copied photo into My Workshop" aria-multiline="false" spellcheck="false" tabindex="0">Right-click here and choose Paste to add a copied photo (or press Ctrl+V).</div>
+     <div id="workshop-private-photo-paste"></div>
      <p class="muted">AI identification is a draft. Check the model and specifications yourself before saving.</p>
      <div class="workshop-row"><button id="workshop-save" type="button" class="btn primary">Save item</button><button id="workshop-cancel" type="button" class="btn">Cancel</button></div>
     </details>
@@ -1403,22 +1384,9 @@
    $("#workshop-save",personal).onclick=save;
    $("#workshop-cancel",personal).onclick=()=>$("#workshop-editor",personal).open=false;
    $("#workshop-photo-upload",personal).onclick=()=>uploadPhoto();
-   const privatePaste=$("#workshop-private-photo-paste",personal);
-   privatePaste.addEventListener("paste",event=>{
-    event.preventDefault();
-    const file=[...(event.clipboardData?.items||[])]
-     .find(item=>item.kind==="file"&&item.type.startsWith("image/"))?.getAsFile();
-    if(file)void uploadPhoto(file);
-    else setStatus("Clipboard has no image. Copy a photo, then right-click the paste box and choose Paste.");
-   });
-   privatePaste.addEventListener("beforeinput",event=>{if(event.inputType!=="insertFromPaste")event.preventDefault()});
-   privatePaste.addEventListener("dragover",event=>{event.preventDefault();privatePaste.classList.add("dragover")});
-   privatePaste.addEventListener("dragleave",()=>privatePaste.classList.remove("dragover"));
-   privatePaste.addEventListener("drop",event=>{
-    event.preventDefault();privatePaste.classList.remove("dragover");
-    const file=[...(event.dataTransfer?.files||[])].find(file=>file.type.startsWith("image/"));
-    if(file)void uploadPhoto(file);
-   });
+   $("#workshop-private-photo-paste",personal).replaceWith(window.BSPhotoMarkup.pasteTarget(
+    files=>uploadPhoto(files[0]),{onEmpty:()=>setStatus("Copy an image or choose a photo file.")}
+   ));
    $("#workshop-compare",personal).onclick=compare;
   }
   const fields={name:"name",kind:"kind",category:"category",manufacturer:"manufacturer",model:"model",partNumber:"partnumber",featureTreeDescription:"featuretreedescription",quantity:"quantity",unit:"unit",stockStatus:"stockstatus",notes:"notes"};

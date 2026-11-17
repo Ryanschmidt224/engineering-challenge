@@ -19,17 +19,10 @@
   const add=make("Add",onAdd,"bs-photo-add");
   const remove=make("Delete",onDelete,"bs-photo-delete");
   more.append(markup,add,remove);bar.append(edit,more);shell.append(bar);
-  const paste=onPaste?document.createElement("div"):null;
-  if(paste){
-   paste.className="bs-photo-paste";
-   paste.contentEditable="true";
-   paste.setAttribute("role","textbox");
-   paste.setAttribute("aria-label","Paste a copied photo");
-   paste.textContent="Right-click here and choose Paste (or press Ctrl+V).";
-   paste.addEventListener("beforeinput",event=>event.preventDefault());
-   window.BSPhotoMarkup.pasteOn(paste,file=>{if(!paste.hidden)void onPaste(file)});
-   shell.append(paste);
-  }
+  const paste=onPaste?window.BSPhotoMarkup.pasteTarget(files=>onPaste(files[0]),{
+   onEmpty:()=>{status.textContent="Copy an image or choose a photo file."}
+  }):null;
+  if(paste)shell.append(paste);
   const status=document.createElement("p");status.className="bs-photo-status";status.setAttribute("role","status");
   status.setAttribute("aria-live","polite");shell.append(status);
   let enabled=true,present=false;

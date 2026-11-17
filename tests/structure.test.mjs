@@ -53,7 +53,7 @@ test('failure investigations load at every level and preserve their API route',(
   assert.match(assemblies,/investigations\?\.showAssembly/);
   assert.match(assemblies,/investigations\?\.showPart/);
   assert.match(recipe,/renderInvestigations/);
-  assert.match(investigations,/Related failures in child parts/);
+  assert.match(investigations,/Related records in child parts/);
   assert.match(api,/etagMatches/);
 });
 

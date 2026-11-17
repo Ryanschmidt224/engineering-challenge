@@ -12,12 +12,19 @@ const TYPES={
  obj:"application/octet-stream","3mf":"application/octet-stream",
  doc:"application/octet-stream",docx:"application/octet-stream",
  xls:"application/octet-stream",xlsx:"application/octet-stream",
- txt:"text/plain",csv:"text/plain",zip:"application/octet-stream"
+ txt:"text/plain",csv:"text/plain",zip:"application/octet-stream",
+ py:"text/plain",js:"text/plain",ts:"text/plain",ino:"text/plain",c:"text/plain",cpp:"text/plain",
+ h:"text/plain",hpp:"text/plain",json:"text/plain",md:"text/plain",
+ kicad_sch:"application/octet-stream",kicad_pcb:"application/octet-stream",kicad_pro:"application/octet-stream"
 };
 const IMAGE_TYPES=new Set(["jpg","jpeg","png","webp","gif","heic","heif"]);
 const MAX_BYTES=20*1024*1024;
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
-const pattern=/^recipe-files\/(launcher|linear|robot|buck|motorlab|coiltest|p[a-f0-9]{32})\/([a-f0-9-]{36})\.([a-z0-9_]{1,8})$/;
+const pattern=/^recipe-files\/(launcher|linear|robot|buck|motorlab|coiltest|p[a-f0-9]{32})\/([a-f0-9-]{36})\.([a-z0-9_]{1,12})$/;
+export function isProjectRecipeFile(id,project){
+ const match=typeof id==="string"?id.match(pattern):null;
+ return !!match&&match[1]===project&&Object.hasOwn(TYPES,match[3]);
+}
 export async function handleRecipeFiles(request,env){
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  const url=new URL(request.url);

@@ -1,11 +1,20 @@
-/* Shared failure and lessons component, used at project, assembly, part, and step levels. */
+/* Project, assembly, part, and work-instruction records. */
 (function(){
  "use strict";
  const make=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el};
  const btn=(label,fn,cls="btn")=>{const b=make("button",cls,label);b.type="button";b.onclick=fn;return b};
  const types=[["observation","What happened?"],["theory","What do you think caused it?"],["note","Additional notes"]]; 
  const legacyType={attempt:"Attempt / change",theory:"Hypothesis",lesson:"How was it fixed?",revision:"Revision / design change",result:"Result"};
- const statuses=[["investigating","Investigating"],["resolved","Resolved"],["unresolved","Unresolved"]];
+ const categories={
+  practice:{label:"Practice",fields:[["attempt","What did you practice?"],["lesson","What did you learn?"]]},
+  test:{label:"Tests",fields:[["theory","What did you want to verify?"],["attempt","How did you test it?"],["result","What happened?"]]},
+  revision:{label:"Revision",fields:[["revision","What changed?"],["theory","Why did you change it?"],["result","What was the result?"]]},
+  failure:{label:"Failures",fields:[...types.slice(0,2),["resolution","Did you fix it?"],types[2]]},
+  note:{label:"Notes",fields:[["note","Notes"]]}
+ };
+ const categoryOf=record=>record.category||(record.partSnapshot?"revision":"failure");
+ const sectionTitle="Practice, Tests, Revision, Failures, Notes";
+ const acceptedAttachments=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.dwg,.dxf,.sldprt,.sldasm,.step,.stp,.stl,.igs,.iges,.x_t,.x_b,.obj,.3mf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip,.py,.js,.ts,.ino,.c,.cpp,.h,.hpp,.json,.md,.kicad_sch,.kicad_pcb,.kicad_pro";
  const photoExt=/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i;
  const fileUrl=id=>"/api/recipe-files?id="+encodeURIComponent(id);
  const recordDate=record=>record.date||[...(record.entries||[])].reverse().find(entry=>entry.date)?.date||record.createdAt?.slice(0,10)||"";
@@ -67,12 +76,13 @@
    records=d.records;revision=d.revision;renderAll();
    return d;
   }
-  function attach(record,container,target,editing=false,onDone=()=>{}){
+  function attach(record,container,target,editing=false,onDone=()=>{},creating=false){
    const reportHere=message=>report(message,target);
+   const category=categories[categoryOf(record)];
    const entryList=make("div","investigation-entries");
    for(const entry of record.entries||[]){
     const item=make("article","investigation-entry");
-    const label=entry.type==="resolution"?("Did you fix it? "+({yes:"Yes — How?",no:"No — Why?",maybe:"Maybe — How?"})[entry.resolution]):types.find(x=>x[0]===entry.type)?.[1]||legacyType[entry.type]||"Update";
+    const label=entry.type==="resolution"?("Did you fix it? "+({yes:"Yes — How?",no:"No — Why?",maybe:"Maybe — How?"})[entry.resolution]):category.fields.find(x=>x[0]===entry.type)?.[1]||types.find(x=>x[0]===entry.type)?.[1]||legacyType[entry.type]||"Update";
     const stamp=entry.date||entry.createdAt?.slice(0,10)||"";
     const labelRow=make("div","investigation-entry-heading");
     labelRow.append(make("strong","",label));
@@ -101,7 +111,6 @@
    const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
    date.value=record.date||[...(record.entries||[])].reverse().find(entry=>entry.date)?.date||date.value;
    dateLabel.append(date);controls.append(dateLabel);
-   const descriptions={observation:"Describe what happened or failed.",theory:"Describe your suspected cause or explanation.",note:"Other relevant details, measurements, or notes."};
    function fieldRow(type,label,placeholder){
     const wrap=make("div","investigation-entry-field");
     const caption=make("label","investigation-field-label");
@@ -109,11 +118,19 @@
     const field=make("textarea","field");field.rows=2;field.maxLength=5000;
     field.placeholder=placeholder;field.value=latest.get(type)?.text||"";caption.append(descriptor,field);
     const fileInput=make("input");fileInput.type="file";fileInput.multiple=true;fileInput.hidden=true;
-    fileInput.accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.dwg,.dxf,.stp,.step,.stl,.txt,.csv,.doc,.docx,.xls,.xlsx,.zip";
+    fileInput.accept=acceptedAttachments;
+    const selected=[];
     const fileChoice=make("span","investigation-file-label");
-    fileInput.onchange=()=>{fileChoice.textContent=[...fileInput.files].map(x=>x.name).join(", ")};
+    function queue(files){
+     selected.push(...files);
+     fileChoice.replaceChildren(...selected.map((file,index)=>btn(file.name+" ×",()=>{
+      selected.splice(index,1);queue([]);
+     },"investigation-attachment-link")));
+    }
+    fileInput.onchange=()=>{queue(fileInput.files);fileInput.value=""};
     const attachments=make("div","investigation-field-attachments");
-    attachments.append(btn("+ Add photo / document",()=>fileInput.click(),"investigation-attachment-link"),fileInput,fileChoice);
+    attachments.append(btn("+ Add attachments",()=>fileInput.click(),"investigation-attachment-link"),fileInput,fileChoice,
+     window.BSPhotoMarkup.pasteTarget(queue));
     const existingFiles=[...(latest.get(type)?.files||[])];
     const existingList=make("div","investigation-existing-files");
     function drawFiles(){
@@ -129,43 +146,36 @@
     }
     drawFiles();
     wrap.append(caption,attachments,existingList);controls.append(wrap);
-    return {type,field,fileInput,wrap,descriptor,existingFiles};
+    return {type,field,selected,wrap,descriptor,existingFiles};
    }
-   const inputs=types.map(([type,label])=>fieldRow(type,label,descriptions[type]));
-   const fixedRow=make("label","investigation-fixed-row");
-   fixedRow.append(make("span","","Did you fix it?"));
+   const inputs=[];
    const fixed=make("select","field investigation-fixed-select");
-   for(const [value,label] of [["","Select"],["yes","Yes"],["no","No"],["maybe","Maybe"]]){
-    const option=make("option","",label);option.value=value;fixed.append(option);
+   for(const [type,label] of (record.category?category:categories.failure).fields){
+    if(type!=="resolution"){inputs.push(fieldRow(type,label,""));continue}
+    const fixedRow=make("label","investigation-fixed-row");
+    fixedRow.append(make("span","",label),fixed);controls.append(fixedRow);
+    for(const [value,caption] of [["","Select"],["yes","Yes"],["no","No"],["maybe","Maybe"]]){
+     const option=make("option","",caption);option.value=value;fixed.append(option);
+    }
+    const resolution=fieldRow("resolution","How?","");
+    inputs.push(resolution);
+    let previous=latest.get("resolution")?.resolution||"";
+    fixed.onchange=()=>{
+     if(previous&&fixed.value&&(fixed.value==="no")!==(previous==="no"))resolution.field.value="";
+     if(fixed.value)previous=fixed.value;
+     resolution.wrap.hidden=!fixed.value;
+     resolution.descriptor.textContent=fixed.value==="no"?"Why?":"How?";
+    };
+    fixed.value=previous;fixed.onchange();
    }
-   fixedRow.append(fixed);controls.append(fixedRow);
-   const resolution=fieldRow("resolution","How?","Describe the fix and how you verified it.");
-   resolution.wrap.hidden=true;
-   let previousResolution=latest.get("resolution")?.resolution||"";
-   fixed.onchange=()=>{
-    const nextResolution=fixed.value;
-    const previousGroup=previousResolution==="no"?"why":(["yes","maybe"].includes(previousResolution)?"how":"");
-    const nextGroup=nextResolution==="no"?"why":(["yes","maybe"].includes(nextResolution)?"how":"");
-    if(previousGroup&&nextGroup&&previousGroup!==nextGroup)resolution.field.value="";
-    if(nextGroup)previousResolution=nextResolution;
-    resolution.wrap.hidden=!fixed.value;
-    resolution.descriptor.textContent=fixed.value==="no"?"Why?":"How?";
-    resolution.field.placeholder=fixed.value==="no"?"Explain why the problem remains unresolved.":"Describe what you changed and what happened.";
-   };
-   // Keep the cause directly after the observation, followed by the resolution.
-   controls.insertBefore(fixedRow,inputs[2].wrap);
-   controls.insertBefore(resolution.wrap,inputs[2].wrap);
-   inputs.splice(2,0,resolution);
-   fixed.value=latest.get("resolution")?.resolution||"";fixed.onchange();
    const saveBtn=btn("Save",async()=>{
-    const fields=inputs.filter(item=>item.type==="resolution"?!!fixed.value:!!(item.field.value.trim()||item.fileInput.files.length||item.existingFiles.length));
+    const fields=inputs.filter(item=>item.type==="resolution"?!!fixed.value:!!(item.field.value.trim()||item.selected.length||item.existingFiles.length));
     if(!titleInput.value.trim()){titleInput.focus();return}
     if(!date.value){reportHere("Choose a date.");date.focus();return}
     saveBtn.disabled=true;
     try{
      const entries=[];
-     for(const {type,field,fileInput,existingFiles} of fields){
-      const selected=[...fileInput.files];
+     for(const {type,field,selected,existingFiles} of fields){
       if(selected.length+existingFiles.length>12)throw Error("Attach no more than 12 files to each field.");
       const files=[...existingFiles];
       for(const file of selected){
@@ -177,18 +187,28 @@
       }
       entries.push({type,text:field.value,date:date.value,files,fileName:selected[0]?.name.slice(0,120)||latest.get(type)?.fileName||"",...(type==="resolution"?{resolution:fixed.value}:{})});
      }
-     await save({action:"editRecord",id:record.id,title:titleInput.value.trim(),date:date.value,entries});
+     const details={title:titleInput.value.trim(),date:date.value,entries};
+     const result=await save(creating?{...record,...details,action:"create"}:{...details,action:"editRecord",id:record.id});
+     if(creating){
+      const card=[...target.querySelectorAll(".investigation-card[data-record-id]")].find(item=>item.dataset.recordId===result.createdId);
+      if(card){
+       card.open=true;
+       openCards.add(record.ownerType+":"+record.ownerId+":"+(record.stepId||"")+":"+result.createdId);
+      }
+     }
      onDone();reportHere("Record saved.");
     }catch(error){reportHere(error.message);saveBtn.disabled=false}
    },"btn primary");
    const actions=make("div","investigation-edit-actions");
-   const deleteBtn=btn("Delete",async()=>{
-    if(!await window.BSDialogs.danger('Delete "'+record.title+'"? This removes the revision record and its notes from the project.',{title:"Delete revision?"}))return;
+   actions.append(saveBtn,btn("Cancel",onDone));
+   if(!creating)actions.append(btn("Delete",async()=>{
+    const deleteBtn=actions.querySelector(".investigation-delete");
+    if(!await window.BSDialogs.danger('Delete "'+record.title+'"? This removes the record from the project.',{title:"Delete record?"}))return;
     deleteBtn.disabled=true;saveBtn.disabled=true;
-    try{await save({action:"deleteRecord",id:record.id});reportHere("Revision deleted.")}
+    try{await save({action:"deleteRecord",id:record.id});reportHere("Record deleted.")}
     catch(error){reportHere(error.message);deleteBtn.disabled=false;saveBtn.disabled=false}
-   },"btn investigation-delete");
-   actions.append(saveBtn,btn("Cancel",onDone),deleteBtn);controls.append(actions);
+   },"btn investigation-delete"));
+   controls.append(actions);
    container.append(controls);
   }
   function render(target,context,compact=false){
@@ -201,7 +221,7 @@
    const disclosure=make("details","investigation-collapse");
    disclosure.open=openSections.has(sectionKey);
    const summary=make("summary","investigation-collapse-heading");
-   const title=make(compact?"h4":"h2","",compact?"Revisions & lessons":"Revisions, Failures & Lessons Learned");
+   const title=make(compact?"h4":"h2","",sectionTitle);
    const toggleLabel=make("span","investigation-toggle-label",disclosure.open?(compact?"Hide":"Minimize details"):(compact?"Show":"Show details"));
    summary.append(title,toggleLabel);
    disclosure.append(summary);
@@ -227,7 +247,7 @@
     card.open=openCards.has(openKey);
     card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
     const summary=make("summary","investigation-summary");
-    summary.append(make("strong","",record.title));
+    summary.append(make("strong","",record.title),make("span","small muted",categories[categoryOf(record)].label));
     summary.append(dateLabelFor(record));
     card.append(summary);
     const body=make("div","investigation-body");
@@ -252,7 +272,7 @@
    if(header.childElementCount)content.append(header);
    if(rolled.length){
     const group=make("details","investigation-rollup");
-    const summary=make("summary","", "Related failures in child parts, assemblies and steps ("+rolled.length+")");
+    const summary=make("summary","", "Related records in child parts, assemblies and steps ("+rolled.length+")");
     group.append(summary);
     const inner=make("div","investigation-rollup-body");
     for(const record of rolled){
@@ -262,7 +282,7 @@
      card.open=openCards.has(openKey);
      card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
      const title=make("summary","investigation-summary");
-     title.append(make("strong","",record.title),dateLabelFor(record));
+     title.append(make("strong","",record.title),make("span","small muted",categories[categoryOf(record)].label),dateLabelFor(record));
      card.append(title);
      const body=make("div","investigation-body");
      const sourceName=record.ownerType==="part"?
@@ -275,7 +295,7 @@
     }
     group.append(inner);content.append(group);
    }
-   if(!own.length&&!rolled.length)content.append(make("p","muted investigation-empty","No failures recorded yet."));
+   if(!own.length&&!rolled.length)content.append(make("p","muted investigation-empty","No records yet."));
    content.append(make("p","investigation-feedback muted"));
   }
 
@@ -349,35 +369,26 @@
    const heading=target.querySelector(".investigation-heading");
    if(!heading)return;
    const existing=target.querySelector(".investigation-new-record");
-   if(existing){existing.querySelector("input")?.focus();return;}
-   const reportHere=message=>report(message,target);
+   if(existing){existing.querySelector("select")?.focus();return;}
    const form=make("div","investigation-create investigation-new-record");
-   const name=make("input","field");name.placeholder="Enter a short, descriptive title";name.maxLength=180;
-   const saveBtn=btn("Save",async()=>{
-    if(!name.value.trim()){name.focus();return}
-    saveBtn.disabled=true;
-    try{
-     const previousIds=new Set(records.map(record=>record.id));
-     const result=await save({action:"create",...context,title:name.value.trim()});
-     const created=result.records.find(record=>!previousIds.has(record.id)&&localRecord(record,context)&&record.title===name.value.trim());
-     if(created){
-      const card=[...target.querySelectorAll(".investigation-card[data-record-id]")].find(item=>item.dataset.recordId===created.id);
-      if(card){
-       card.open=true;
-       openCards.add(context.ownerType+":"+context.ownerId+":"+(context.stepId||"")+":"+created.id);
-       card.querySelector(".investigation-rename")?.click();
-       card.querySelector(".investigation-add-controls textarea")?.focus();
-      }
-     }
-     window.BSTransient?.show(feedback(target),"Record saved.");
-    }
-    catch(error){reportHere(error.message);saveBtn.disabled=false}
-   },"btn primary");
-   const cancel=btn("Cancel",()=>form.remove(),"btn");
-   const titleLabel=make("label","investigation-record-title");titleLabel.append(make("span","investigation-field-descriptor","Title"),name);
-   form.append(titleLabel,saveBtn,cancel);
+   const label=make("label","investigation-record-title","Entry type");
+   const select=make("select","field");
+   const prompt=make("option","","Choose an entry type");prompt.value="";prompt.disabled=true;prompt.selected=true;
+   select.append(prompt);
+   for(const [value,category] of Object.entries(categories)){
+    const option=make("option","",category.label);option.value=value;select.append(option);
+   }
+   const fields=make("div","investigation-new-fields");fields.hidden=true;
+   label.append(select);
+   const cancel=btn("Cancel",()=>form.remove());
+   form.append(label,cancel,fields);
    heading.before(form);
-   name.focus();
+   select.onchange=()=>{
+    fields.replaceChildren();
+    fields.hidden=false;cancel.hidden=true;
+    attach({...context,category:select.value,title:"",entries:[]},fields,target,true,()=>form.remove(),true);
+   };
+   select.focus();
   }
   function renderAll(){
    if(assemblySlot)render(assemblySlot.target,assemblySlot.context);

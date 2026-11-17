@@ -122,8 +122,7 @@
     }
    };
    drawPhotos();
-   photoInput.onchange=async()=>{
-    const files=[...(photoInput.files||[])];photoInput.value="";
+   const uploadPhotos=async files=>{
     for(const file of files){
      if(working.photos.length>=12){photoStatus.textContent="Maximum 12 photos per note.";break}
      if(file.size>10*1024*1024){photoStatus.textContent="Maximum photo size is 10 MB.";continue}
@@ -142,11 +141,14 @@
      finally{uploading--;submit.disabled=uploading>0}
     }
    };
+   photoInput.onchange=()=>{const files=[...photoInput.files];photoInput.value="";void uploadPhotos(files)};
    const actions=el("div","bs-unstructured-editor-actions");
    const submit=button("Save note",()=>editor.requestSubmit(),"btn primary");
    const cancel=button("Cancel",()=>{editing=null;render()},"btn");
    actions.append(submit,cancel);
-   editor.append(title,detail,photos,pick,photoInput,photoStatus,actions);
+   editor.append(title,detail,photos,pick,photoInput,window.BSPhotoMarkup.pasteTarget(uploadPhotos,{
+    onEmpty:()=>{photoStatus.textContent="Copy an image or choose a photo file."}
+   }),photoStatus,actions);
    editor.onsubmit=async e=>{
     e.preventDefault();if(uploading)return;
     if(!name.value.trim()){name.focus();photoStatus.textContent="Enter a note header.";return}

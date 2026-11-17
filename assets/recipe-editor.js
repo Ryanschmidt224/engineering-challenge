@@ -449,11 +449,14 @@
      };
      const addNote=button("+ Add note",()=>{step.notes.push("");step.noteIds.push(newId());changed();saveHint();showNotes();noteList.lastElementChild?.querySelector("textarea")?.focus()},"btn recipe-small-action");
      additions.append(addNote,addPhoto,input);
-     body.append(noteList,photoList,additions);
+     const paste=window.BSPhotoMarkup.pasteTarget(async files=>{for(const file of files)await upload(file,null)});
+     body.append(noteList,photoList,additions,paste);
      showNotes();showPhotos();
      body.addEventListener("dragover",event=>{if(event.dataTransfer?.types?.includes("Files"))event.preventDefault()});
      body.addEventListener("drop",event=>{const files=[...(event.dataTransfer?.files||[])];if(files.length){event.preventDefault();const line=event.target.closest(".recipe-step-note");const index=line?Number(line.dataset.noteIndex):null;(async()=>{for(const file of files)await upload(file,index)})()}});
-     body.addEventListener("paste",event=>{const file=[...(event.clipboardData?.files||[])].find(f=>f.type.startsWith("image/"));if(file){event.preventDefault();const line=event.target.closest(".recipe-step-note");void upload(file,line?Number(line.dataset.noteIndex):null)}});
+     window.BSPhotoMarkup.pasteOn(body,(file,event)=>{
+      const line=event.target.closest(".recipe-step-note");void upload(file,line?Number(line.dataset.noteIndex):null);
+     });
      const actions=el("div","recipe-edit-controls");
      const up=button("↑",()=>move(i,-1));up.disabled=i===0;up.title="Move up";
      const down=button("↓",()=>move(i,1));down.disabled=i===steps.length-1;down.title="Move down";

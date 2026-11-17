@@ -33,7 +33,7 @@
  line-height:1.4;
  cursor:text;
 }
-.bs-photo-paste:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
+.bs-photo-paste.is-dragover,.bs-photo-paste:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
 .bs-photo-status{font-size:.8rem;line-height:1.4;color:var(--color-text-muted);margin:6px 0 0;text-align:right}
 .bs-photo-status:empty{display:none}
 .bs-photo-control .workspace-cover,.bs-photo-control .part-workspace-cover{position:relative}
