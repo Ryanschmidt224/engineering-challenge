@@ -1456,6 +1456,8 @@
 }
 
 /* Investigation cards open in reading mode; editing is an explicit action. */
+.investigation-title-actions{display:flex;align-items:center;gap:10px;min-width:0;margin-inline-end:auto}
+.investigation-title-actions strong{overflow-wrap:anywhere}
 .investigation-summary .investigation-rename[hidden]{display:none!important}
 .investigation-edit-actions{display:flex;justify-content:flex-start;align-items:center;gap:9px;margin-top:8px;flex-wrap:wrap}
 .investigation-existing-files{display:flex;flex-wrap:wrap;gap:10px;margin-left:187px}

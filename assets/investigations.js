@@ -277,7 +277,9 @@
     card.open=openCards.has(openKey);
     card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
     const summary=make("summary","investigation-summary");
-    summary.append(make("strong","",record.title),make("span","small muted",categories[categoryOf(record)].label));
+    const heading=make("span","investigation-title-actions");
+    heading.append(make("strong","",record.title));
+    summary.append(heading,make("span","small muted",categories[categoryOf(record)].label));
     summary.append(dateLabelFor(record));
     card.append(summary);
     const body=make("div","investigation-body");
@@ -289,7 +291,7 @@
     const edit=btn("Edit",event=>{
      event.preventDefault();event.stopPropagation();card.open=true;editing=true;draw();
     },"btn investigation-rename");
-    if(admin()){summary.append(edit);edit.addEventListener("click",event=>{event.preventDefault();event.stopPropagation()})}
+    if(admin()){heading.append(edit);edit.addEventListener("click",event=>{event.preventDefault();event.stopPropagation()})}
     const draw=()=>{
      body.replaceChildren();
      if(record.partSnapshot)showSnapshot(record.partSnapshot,body);
