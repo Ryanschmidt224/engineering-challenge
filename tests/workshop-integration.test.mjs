@@ -61,13 +61,18 @@ test("signed-in users may edit seeded public Workshop references and saved field
  const edited=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{id:"workshop:meter",details:{
   name:"Digital multimeter",spec:"DC volts and resistance",manufacturer:"Example Instruments",model:"ABC-100",
   partNumber:"ABC100",supplier:"Example Supplier",supplierUrl:"https://example.com/abc100",
-  asin:"B012345678",price:"$100",packageQuantity:"1",orderNotes:"Order the genuine item",notes:"Workshop standard",
+  asin:"\u200eB0FCYRWB3K",price:"$100",packageQuantity:"1",orderNotes:"Order the genuine item",notes:"Workshop standard",
   photos:[]
  }},session),env}));
  assert.equal(edited.status,200);
  const fetched=await data(await workshopReference({request:request("/api/workshop-reference"),env}));
  assert.equal(fetched.body.items["workshop:meter"].model,"ABC-100");
  assert.equal(fetched.body.items["workshop:meter"].spec,"DC volts and resistance");
+ assert.equal(fetched.body.items["workshop:meter"].asin,"B0FCYRWB3K");
+ const invalid=await data(await workshopReference({request:request("/api/workshop-reference","PUT",{
+  id:"workshop:meter",details:{asin:"B0FCYRWB3K!"}
+ },session),env}));
+ assert.equal(invalid.status,400);
 });
 
 test("private Workshop inventory is isolated between users and retains shared catalog links",async()=>{

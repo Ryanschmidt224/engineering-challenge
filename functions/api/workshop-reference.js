@@ -81,7 +81,9 @@ export async function onRequest({request,env}){
   for(const [name,limit] of Object.entries(fields)){
    const val=body?.details?.[name];
    if(val!==undefined&&typeof val!=="string")return json({error:"Invalid field: "+name},400);
-   patch[name]=String(val||"").trim().slice(0,limit);
+   // Copying an ASIN can carry invisible directional or zero-width marks.
+   const text=String(val||"");
+   patch[name]=name==="asin"?text.replace(/\p{Cf}/gu,"").trim():text.trim().slice(0,limit);
   }
   if(patch.kind&&!["tool","equipment","component","material","other"].includes(patch.kind))
    return json({error:"Invalid item type"},400);
