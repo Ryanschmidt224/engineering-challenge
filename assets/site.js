@@ -8,7 +8,7 @@ const byId=id=>tiles.find(t=>t.id===id);const safe=s=>String(s||"").replace(/[&<
 const store=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){alert("Browser storage is unavailable. Export your notes instead.")}};
 const load=k=>{try{return JSON.parse(localStorage.getItem(k))||[]}catch(e){return []}};
 let notes=load("bs_notes"),drafts=load("bs_drafts"),feedback=load("bs_feedback"),hintIndex=0,selectionText="";
-function navigate(page){const route=page.match(/^([a-z0-9]+)\/(?:(?:assembly|workspace|part|bom)\/([^/]+)|parts)$/);if(route)page=route[1];if(page==="challenge"||page==="workshop")page="launcher";if(page==="community"||page==="calculators")page="learn";if(page==="tools")page="commonparts";if(!document.getElementById(page))page="home";document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===page));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.nav===page));if(!route||location.hash.slice(1)!==route[0])location.hash=page;window.scrollTo({top:0,behavior:"instant"});if(page==="learn")renderTiles()}
+function navigate(page){const route=page.match(/^([a-z0-9]+)\/(?:(?:assembly|workspace|part|bom)\/([^/]+)|parts|settings)$/);if(route)page=route[1];if(page==="challenge"||page==="workshop")page="launcher";if(page==="community"||page==="calculators")page="learn";if(page==="tools")page="commonparts";if(!document.getElementById(page))page="home";document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===page));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.nav===page));if(!route||location.hash.slice(1)!==route[0])location.hash=page;window.scrollTo({top:0,behavior:"instant"});if(page==="learn")renderTiles()}
 document.addEventListener("click",e=>{const nav=e.target.closest("[data-nav]");if(nav){e.preventDefault();navigate(nav.dataset.nav)}const topic=e.target.closest("[data-topic]");if(topic)openTile(topic.dataset.topic);const project=e.target.closest("[data-project]");if(project)navigate(project.dataset.project)});
 window.addEventListener("hashchange",()=>{
  const hash=location.hash.slice(1)||"home";navigate(hash);
@@ -17,8 +17,8 @@ window.addEventListener("hashchange",()=>{
   const root=document.querySelector('[data-assembly-tree="'+route[1]+'"]');
   root?.dispatchEvent(new CustomEvent(hash.includes("/part/")?"openpart":"openassembly",{detail:decodeURIComponent(route[2])}));
  }else{
-  const manager=hash.match(/^([a-z0-9]+)\/parts$/);
-  if(manager)document.querySelector('[data-assembly-tree="'+manager[1]+'"]')?.dispatchEvent(new Event("openparts"));
+  const manager=hash.match(/^([a-z0-9]+)\/(?:parts|settings)$/);
+  if(manager)document.querySelector('[data-assembly-tree="'+manager[1]+'"]')?.dispatchEvent(new Event("openprojectpage"));
  }
 });
 // Use the same catalog column/navigation component as the Projects page.

@@ -222,3 +222,50 @@ test("legacy administrator password can be linked only once",async()=>{
  assert.equal((await result.json()).code,"ADMIN_ALREADY_CLAIMED");
  assert.equal(await isAdmin(new Request(ORIGIN+"/api/auth",{headers:{cookie:secondCookie}}),env),false);
 });
+
+test("short summary and hierarchical quantities persist independently of existing project data",async()=>{
+ const env={PHOTOS:new Bucket(),admin_password:"test-separate-administrator-secret"};
+ const registered=await handleAccounts(request("/api/accounts","POST",{
+  action:"register",email:"quantities@example.test",password:"a-strong-test-password"
+ }),env);
+ assert.equal(registered.status,201);
+ const owner=cookie(registered);
+ const created=await projectsApi({request:request("/api/projects","POST",{
+  name:"Quantity test",description:"Existing directory description"
+ },owner),env});
+ const id=(await created.json()).projects.find(p=>p.name==="Quantity test").id;
+ const patch=body=>projectsApi({request:request("/api/projects","PATCH",{id,...body},owner),env});
+ assert.equal((await patch({summary:"Keep this long summary."})).status,200);
+ assert.equal((await patch({shortSummary:"a".repeat(41)})).status,400);
+ assert.equal((await patch({shortSummary:"Two\nlines"})).status,400);
+ const result=await read(await patch({shortSummary:"a".repeat(40)}));
+ assert.equal(result.status,200);
+ const record=result.data.projects.find(p=>p.id===id);
+ assert.equal(record.shortSummary,"a".repeat(40));
+ assert.equal(record.summary,"Keep this long summary.");
+ assert.equal(record.description,"Existing directory description");
+
+ const treeUrl="/api/tree?project="+id;
+ const saveTree=nodes=>handleTree(request(treeUrl,"PUT",{nodes},owner),env);
+ const assembly={id:"testing-assembly",name:"Test assembly",parentId:null};
+ assert.equal((await saveTree([{...assembly,quantity:1.5}])).status,400);
+ assert.equal((await saveTree([{...assembly,quantity:2}])).status,200);
+ assert.equal((await saveTree([{...assembly,name:"Renamed assembly"}])).status,200);
+ const tree=await read(await handleTree(request(treeUrl,"GET",undefined,owner),env));
+ assert.equal(tree.data.nodes[0].quantity,2);
+
+ const partUrl="/api/components?project="+id;
+ const newPart=await handleComponents(request(partUrl,"POST",{
+  name:"Stock",description:"Supply",assemblyId:assembly.id,quantity:2,quantityUnit:"mm",specifications:[]
+ },owner),env);
+ assert.equal(newPart.status,201);
+ const original=(await newPart.json()).component;
+ const partRequest=quantity=>handleComponents(request(partUrl+"&id="+original.id,"PATCH",{quantity},owner),env);
+ assert.equal((await partRequest(0)).status,400);
+ const updated=await read(await partRequest(3.5));
+ assert.equal(updated.status,200);
+ assert.equal(updated.data.component.quantity,3.5);
+ assert.equal(updated.data.component.description,original.description);
+ assert.equal(updated.data.component.quantityUnit,"mm");
+ assert.equal((await read(await partRequest(null))).data.component.quantity,null);
+});

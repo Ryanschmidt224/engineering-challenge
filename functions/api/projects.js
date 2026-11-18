@@ -115,6 +115,11 @@ export async function onRequest({request,env}){
     if(!["locked","approval"].includes(input.editMode))return json({error:"Invalid editing mode"},400);
     changed.editMode=input.editMode;
    }
+   if(input.shortSummary!==undefined){
+    if(typeof input.shortSummary!=="string"||input.shortSummary.length>40||/[\r\n\u2028\u2029]/.test(input.shortSummary))
+     return json({error:"Short project summary must be a single line of at most 40 characters"},400);
+    changed.shortSummary=input.shortSummary.trim();
+   }
    if(input.summary!==undefined){
     if(typeof input.summary!=="string"||input.summary.length>5000)return json({error:"Project summary must be at most 5,000 characters"},400);
     changed.summary=input.summary.trim();

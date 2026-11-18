@@ -26,6 +26,29 @@
   return included;
  }
 
+ const assemblyQuantity=node=>Number.isSafeInteger(node?.quantity)&&node.quantity>0?node.quantity:1;
+
+ function quantityMultiplier(nodes,assemblyId){
+  const assemblies=new Map(nodes.filter(node=>!isPartNode(node)).map(node=>[node.id,node]));
+  const visited=new Set();
+  let multiplier=1;
+  while(assemblies.has(assemblyId)&&!visited.has(assemblyId)){
+   visited.add(assemblyId);
+   const assembly=assemblies.get(assemblyId);
+   multiplier*=assemblyQuantity(assembly);
+   assemblyId=assembly.parentId;
+  }
+  return multiplier;
+ }
+
+ function projectQuantity(part,nodes){
+  if(part.quantity==null||part.isTool||part.itemType==="document")return part.quantity;
+  const multiplier=quantityMultiplier(nodes,part.assemblyId);
+  if(multiplier===1)return part.quantity;
+  const total=part.quantity*multiplier;
+  return Number.isInteger(part.quantity)?total:Number(total.toPrecision(15));
+ }
+
  /** Split the visible BOM into purchased parts and presumed on-hand shop materials.
   * Linked part-tree entries remain ordinary BOM items and are not duplicated.
   */
@@ -51,5 +74,5 @@
   return nodes.find(node=>node.id===part.assemblyId)?.name||"Project";
  }
 
- return Object.freeze({isPartNode,assemblyIds,selectWorkspaceParts,quantityText,assemblyText});
+ return Object.freeze({isPartNode,assemblyIds,assemblyQuantity,quantityMultiplier,projectQuantity,selectWorkspaceParts,quantityText,assemblyText});
 });

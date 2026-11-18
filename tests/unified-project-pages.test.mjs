@@ -21,7 +21,7 @@ test("A single Projects page and common workspace controller are used for every 
 
 test("One visible New project action with tag filters and sorting",()=>{
  const manager=read("assets/project-manager.js");
- assert.match(manager,/const newButton=element\("button","btn primary","\+ New project"\)/);
+ assert.match(manager,/const newButton=element\("button","btn primary project-directory-new","\+ New project"\)/);
  assert.match(manager,/newButton\.hidden=false/);
  assert.match(manager,/newButton\.onclick=openCreate/);
  assert.match(manager,/if\(!user\)\{showAccount\(\)/);
@@ -57,7 +57,7 @@ test("Project discovery supports inclusive multi-select tags without forcing one
 test("Projects use a compact toolbar and optional descriptor filters",()=>{
  const manager=read("assets/project-manager.js");
  const css=read("assets/site-polish.css");
- assert.match(manager,/filters\.append\(searchLabel,filterMenu,sortLabel/);
+ assert.match(manager,/filters\.append\(newButton,searchLabel,filterMenu,sortLabel/);
  assert.match(manager,/project-selected-descriptors/);
  assert.match(manager,/bs-project-descriptor-search/);
  assert.match(manager,/tagSearch\.oninput=renderTagFilters/);

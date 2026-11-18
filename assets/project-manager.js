@@ -1,6 +1,6 @@
 // Project dashboard. Private project data is authorized by the API, never by these DOM filters.
 window.BSProjectManager=(()=>{
- let currentProjects=[],openAccount=()=>{};
+ let currentProjects=[],openAccount=()=>{},updateProjectSummary=()=>{};
  const api=async(method,path,body)=>{
   const response=await fetch(path,{method,credentials:"same-origin",cache:"no-store",
    ...(body?{headers:{"content-type":"application/json"},body:JSON.stringify(body)}:{})});
@@ -16,12 +16,10 @@ window.BSProjectManager=(()=>{
  const init=({setupAssemblyTrees,setupComponents,setupPhotos,navigate})=>{
   const root=document.querySelector("#home .project-index"),grid=root?.querySelector(".project-grid");if(!grid)return;
   const loading=root.querySelector(".project-catalog-loading");
-  const controls=element("div","project-owner-actions");
-  const newButton=element("button","btn primary","+ New project");newButton.type="button";
+  const newButton=element("button","btn primary project-directory-new","+ New project");newButton.type="button";
   const archiveButton=element("button","btn","Archived projects");archiveButton.type="button";
   const more=element("details","project-directory-menu");
   more.append(element("summary","btn","More"),archiveButton);
-  controls.append(newButton,more);
   const filters=element("div","project-directory-controls");
   const searchLabel=element("label","project-directory-label project-directory-search","Find a project");
   const searchInput=element("input","field project-search");searchInput.type="search";searchInput.placeholder="Search projects…";searchInput.setAttribute("aria-label","Search projects");searchLabel.append(searchInput);
@@ -36,7 +34,7 @@ window.BSProjectManager=(()=>{
   const filterMenu=element("details","project-filter-menu");
   filterMenu.append(element("summary","btn","Filters"));
   const selectedTags=element("div","project-selected-descriptors");
-  filters.append(searchLabel,filterMenu,sortLabel,directoryStatus,controls);
+  filters.append(newButton,searchLabel,filterMenu,sortLabel,directoryStatus,more);
   grid.before(filters,selectedTags);
   const suggestions=["Mechanical","Electronics","Software","Controls","CAD","3D Printing","Woodworking","PCB Design","Machining","Robotics","Measurement","Fabrication"];
   const projectTags=project=>Array.isArray(project?.tags)?project.tags:[];
@@ -133,9 +131,11 @@ window.BSProjectManager=(()=>{
    });
    for(const card of cards){
     const project=info(card);
+    const description=card.querySelector(".project-copy p");
+    if(project&&description)description.textContent=project.shortSummary||project.description||"";
     card.hidden=!project||
      [...activeTags].some(tag=>!projectTags(project).some(value=>value.toLowerCase()===tag))||
-     terms.some(term=>![project.name,project.description,...projectTags(project)].join(" ").toLowerCase().includes(term));
+     terms.some(term=>![project.name,project.shortSummary,project.description,...projectTags(project)].join(" ").toLowerCase().includes(term));
     grid.append(card);
    }
    const shown=cards.filter(card=>!card.hidden).length;
@@ -145,6 +145,10 @@ window.BSProjectManager=(()=>{
   };
   searchInput.oninput=updateDirectory;
   sortSelect.onchange=updateDirectory;
+  updateProjectSummary=(id,summary)=>{
+   const project=projects.find(item=>item.id===id);
+   if(project){Object.assign(project,summary);updateDirectory()}
+  };
   const dialog=element("dialog","project-account-dialog");
   dialog.innerHTML='<form class="project-account-form"><div class="project-account-header"><h2 class="project-account-title">Sign in</h2><button type="button" class="btn project-close" aria-label="Close account window">×</button></div><p class="project-account-subtitle muted">Your projects and Workshop are saved to your account.</p><p class="project-account-message" role="status" aria-live="polite"></p><label class="project-account-name hide">Display name<input class="field" name="displayName" maxlength="80" autocomplete="name"></label><label class="project-account-email">Email<input class="field" type="email" name="email" autocomplete="email" required></label><label class="project-account-password">Password<input class="field" type="password" name="password" autocomplete="current-password" minlength="12" required></label><div class="project-account-buttons"><button class="btn primary project-signin" type="submit">Sign in</button><button class="btn project-register" type="button">Create an account</button><button class="btn project-switch-login hide" type="button">Already have an account? Sign in</button><button class="btn project-signout hide" type="button">Sign out</button></div><div class="project-admin-link hide"><p class="muted">Already manage this website? Link your existing administrator access to this account.</p><label>Existing administrator password<input class="field" type="password" name="adminPassword" autocomplete="off"></label><button type="button" class="btn project-link-admin">Link administrator access</button></div></form>';
   document.body.append(dialog);
@@ -334,7 +338,7 @@ window.BSProjectManager=(()=>{
    section.replaceChildren();
    section.hidden=!project.isOwner;
    if(!project.isOwner)return;
-   section.append(element("h2","","Project settings"));
+   section.append(element("h2","","General"));
    const intro=element("p","muted","Only the owner can rename this project, change its visibility or permissions, or delete it.");
    section.append(intro);
    const form=element("div","project-summary-settings-form");
@@ -483,6 +487,9 @@ window.BSProjectManager=(()=>{
     renderTagFilters();updateDirectory();
     grid.hidden=false;loading.hidden=true;
     setupAssemblyTrees();setupComponents();setupPhotos();
+    const route=location.hash.slice(1);
+    const routedProject=projects.find(project=>route.startsWith(project.id+"/"));
+    if(routedProject&&!document.getElementById(routedProject.id)?.classList.contains("active"))navigate(route);
     if(typeof refreshAdminUI==="function")refreshAdminUI();
     for(const project of projects){window.BSReview?.attach(project,user);mountProjectSettings(project)}
     document.querySelectorAll("[data-assembly-tree]").forEach(root=>root.dispatchEvent(new Event("projectpermissionschanged")));
@@ -496,5 +503,5 @@ window.BSProjectManager=(()=>{
   }
   void refresh();
  };
- return {init,openAccount:()=>openAccount(),isOwner:id=>currentProjects.some(project=>project.id===id&&project.isOwner),getProject:id=>currentProjects.find(project=>project.id===id)};
+ return {init,openAccount:()=>openAccount(),updateProjectSummary:(...args)=>updateProjectSummary(...args),isOwner:id=>currentProjects.some(project=>project.id===id&&project.isOwner),getProject:id=>currentProjects.find(project=>project.id===id)};
 })();

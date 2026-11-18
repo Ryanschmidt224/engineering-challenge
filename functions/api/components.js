@@ -251,10 +251,10 @@ export async function handleComponents(request,env){
    if(request.headers.get("origin")!==url.origin)return json({error:"Invalid request origin"},403);
    return reloadWorkshopPart(request,env,project,id);
   }
-  if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"||typeof input.isTool==="boolean"||input.progressStatus!==undefined||input.needsAttention!==undefined||input.attentionNote!==undefined||input.name!==undefined||input.partType!==undefined||input.purchaseStatus!==undefined||input.progressUpdate!==undefined||input.progressOperationAdd!==undefined||input.progressOperationEdit!==undefined))return json({error:"Invalid part preference"},400);
+  if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"||typeof input.isTool==="boolean"||input.progressStatus!==undefined||input.needsAttention!==undefined||input.attentionNote!==undefined||input.name!==undefined||input.partType!==undefined||input.quantity!==undefined||input.purchaseStatus!==undefined||input.progressUpdate!==undefined||input.progressOperationAdd!==undefined||input.progressOperationEdit!==undefined))return json({error:"Invalid part preference"},400);
   const state=await readEditable(env,project),items=state.items,entry=items.find(item=>item.id===id);
   if(!entry)return json({error:"Part not found"},404);
-  if(entry.generatedFrom&&(input.name!==undefined||input.partType!==undefined))return json({error:"Generated materials are controlled by their source part"},409);
+  if(entry.generatedFrom&&(input.name!==undefined||input.partType!==undefined||input.quantity!==undefined))return json({error:"Generated materials are controlled by their source part"},409);
   if(input.name!==undefined){
    if(typeof input.name!=="string"||!input.name.trim()||input.name.trim().length>180)return json({error:"Part name must be 1–180 characters"},400);
    const old=entry.name;
@@ -303,6 +303,14 @@ export async function handleComponents(request,env){
   if(input.needsAttention!==undefined){if(typeof input.needsAttention!=="boolean")return json({error:"Invalid attention flag"},400);entry.needsAttention=input.needsAttention}
   if(input.attentionNote!==undefined){if(typeof input.attentionNote!=="string"||input.attentionNote.length>2000)return json({error:"Attention note must be 2000 characters or less"},400);entry.attentionNote=input.attentionNote.trim()}
   if(entry.needsAttention&&!(entry.attentionNote||"").trim())return json({error:"Describe what needs attention before flagging this part"},400);
+  if(input.quantity!==undefined){
+   if(entry.itemType==="document"||entry.partType==="code")return json({error:"Quantity is only available for parts"},400);
+   if(input.quantity!==null&&typeof input.quantity!=="number")return json({error:"Quantity must be a positive number or blank"},400);
+   const amount=quantityData({quantity:input.quantity},entry);
+   if(!amount)return json({error:"Quantity must be a positive number or blank"},400);
+   Object.assign(entry,amount);
+   syncDerived(items,entry);
+  }
   entry.fullName=generatedFullName(entry);
   // Parts Management updates the project occurrence. Workshop references
   // are links and are written only by their own Workshop endpoints.

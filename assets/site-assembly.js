@@ -67,7 +67,7 @@ function setupAssemblyTrees(){
     if(part.partNumber)partNumbers.set(part.id,part.partNumber);
     partProgress.set(part.id,part.progressStatus||"not_started");
     partAttention.set(part.id,part.needsAttention===true);
-    partQuantities.set(part.id,part.quantity);
+    partQuantities.set(part.id,part);
     partTreeLabels.set(part.id,{mpn:part.model||"",description:part.description||"",details:part.projectDetails||{},defaultPicture:defaultPartPicture(part)});
     for(const linked of nodes.filter(n=>isPartNode(n)&&n.partId===part.id))if(linked.name!==part.name){linked.name=part.name;changed=true}
     if(!known.has(part.id)){
@@ -132,19 +132,6 @@ function setupAssemblyTrees(){
   projectMetaStatus.className="project-root-status";projectMetaStatus.setAttribute("role","status");
   projectActions.append(editProjectName,projectMetaStatus);
   projectHeading.after(projectActions);
-  // The Projects landing page also exposes a small editing entry point.
-  // Project names are edited here; photos use the shared workspace image editor.
-  const landingCard=document.querySelector('.project-link[data-nav="'+project+'"],.project-link[data-project="'+project+'"]')?.closest(".project-card");
-  const cardEdit=document.createElement("button");
-  cardEdit.type="button";cardEdit.className="btn project-card-edit hide";
-  cardEdit.textContent="Edit project";
-  cardEdit.setAttribute("aria-label","Rename project");
-  if(landingCard)landingCard.append(cardEdit);
-  cardEdit.onclick=()=>{
-   navigate(project);
-   main.scrollIntoView({block:"start",behavior:"instant"});
-   editProjectName.focus();
-  };
   const updateProjectTitle=value=>{
    title=value;
    projectHeading.textContent=value;
@@ -226,7 +213,7 @@ function setupAssemblyTrees(){
   }
   // Project and subassembly workspaces remain independent of the BOM screen.
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
-  workspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div class="workspace-title-group"><h1 class="workspace-title"></h1><button type="button" class="btn workspace-back">Open BOM</button></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
+  workspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div class="workspace-title-group"><h1 class="workspace-title"></h1><button type="button" class="btn workspace-back">Open BOM</button></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save">Save</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
   // Assembly photo management lives in the workspace, not the read-only overview.
   const workspacePhotoEditor=document.createElement("article");
@@ -288,7 +275,19 @@ function setupAssemblyTrees(){
   summary.innerHTML='<header class="project-summary-heading"><div><p class="muted">Project summary</p><h1 class="project-summary-title"></h1></div></header><section class="project-summary-gallery"><div class="project-summary-gallery-heading"><h2>Project photos</h2></div><div class="project-summary-photo-stage"><img alt="Project photo" class="project-summary-photo" hidden><p class="project-summary-photo-empty">No project photos yet.</p><button type="button" class="project-summary-previous" aria-label="Previous project photo">‹</button><button type="button" class="project-summary-next" aria-label="Next project photo">›</button></div><div class="project-summary-photo-footer"><p class="project-summary-photo-caption"></p><span class="project-summary-photo-position"></span></div></section><div class="project-summary-lists"><section class="project-summary-bom-section"><h2>Project BOM</h2><div class="project-summary-bom-items" aria-live="polite"></div></section><section class="project-summary-tools-section"><h2>Tools needed</h2><div class="project-summary-tool-items" aria-live="polite"></div></section></div>';
   detail.after(summary);
   const overview=document.createElement("section");overview.className="project-summary-overview";
-  overview.innerHTML='<section class="project-overview-card"><h2>Project summary</h2><p class="project-summary-text"></p><textarea class="field" aria-label="Project summary" rows="5" maxlength="5000" placeholder="Describe your project"></textarea><div class="project-summary-edit-actions" hidden><button type="button" class="btn primary project-summary-save">Save</button><button type="button" class="btn project-summary-cancel">Cancel</button></div><p class="muted project-summary-message" role="status"></p></section><section class="project-overview-card project-descriptor-card"><h2>Descriptors</h2><div class="project-tags project-summary-tags"></div></section><section class="project-overview-card"><h2>Estimated project cost</h2><p class="project-summary-cost" aria-live="polite">Loading estimate…</p></section>';
+  overview.innerHTML=`<section class="project-overview-card">
+   <h2>Project summary</h2>
+   <p class="project-short-summary-text" hidden></p>
+   <p class="project-summary-text"></p>
+   <label class="project-short-summary-label">Short summary (40 characters max)
+    <input class="field project-short-summary" type="text" maxlength="40">
+   </label>
+   <textarea class="field" aria-label="Project summary" rows="5" maxlength="5000" placeholder="Describe your project"></textarea>
+   <div class="project-summary-edit-actions" hidden><button type="button" class="btn primary project-summary-save">Save</button><button type="button" class="btn project-summary-cancel">Cancel</button></div>
+   <p class="muted project-summary-message" role="status"></p>
+  </section>
+  <section class="project-overview-card project-descriptor-card"><h2>Descriptors</h2><div class="project-tags project-summary-tags"></div></section>
+  <section class="project-overview-card"><h2>Estimated project cost</h2><p class="project-summary-cost" aria-live="polite">Loading estimate…</p></section>`;
   summary.querySelector(".project-summary-gallery").after(overview);
   const summaryInput=overview.querySelector("textarea");
   const summarySave=overview.querySelector(".project-summary-save");
@@ -296,43 +295,105 @@ function setupAssemblyTrees(){
   const summaryCost=overview.querySelector(".project-summary-cost");
   const summaryActions=overview.querySelector(".project-summary-edit-actions");
   const summaryCancel=overview.querySelector(".project-summary-cancel");
-  let savedSummary,summaryBaseline="";
-  const hasSummaryChanges=()=>summaryInput.value!==summaryBaseline;
+  const shortSummaryLabel=overview.querySelector(".project-short-summary-label");
+  const shortSummaryText=overview.querySelector(".project-short-summary-text");
+  const summaryText=overview.querySelector(".project-summary-text");
+  const summaryFields={shortSummary:shortSummaryLabel.querySelector("input"),summary:summaryInput};
+  const summaryBaseline={shortSummary:"",summary:""};
+  const summaryEntries=Object.entries(summaryFields);
+  const hasSummaryChanges=()=>summaryEntries.some(([key,field])=>field.value!==summaryBaseline[key]);
   const showSummaryActions=()=>{summaryActions.hidden=!canEdit()||!hasSummaryChanges()};
-  summaryInput.oninput=()=>{summaryMessage.textContent="";showSummaryActions()};
+  for(const field of Object.values(summaryFields))field.oninput=()=>{summaryMessage.textContent="";showSummaryActions()};
   summaryCancel.onclick=()=>{
-   summaryInput.value=summaryBaseline;summaryMessage.textContent="";
-   showSummaryActions();summaryInput.focus();
+   const changed=summaryEntries.find(([key,field])=>field.value!==summaryBaseline[key]);
+   for(const [key,field] of summaryEntries)field.value=summaryBaseline[key];
+   summaryMessage.textContent="";showSummaryActions();changed?.[1].focus();
   };
   summarySave.onclick=async()=>{
    if(!canEdit()||!hasSummaryChanges())return;
-   const submitted=summaryInput.value;
+   const draft=Object.fromEntries(summaryEntries.map(([key,field])=>[key,field.value]));
+   const changes=Object.fromEntries(Object.entries(draft).filter(([key,value])=>value!==summaryBaseline[key]));
    summarySave.disabled=summaryCancel.disabled=true;summaryMessage.textContent="Saving…";
    try{
     const response=await fetch("/api/projects",{method:"PATCH",credentials:"same-origin",
-     headers:{"content-type":"application/json"},body:JSON.stringify({id:project,summary:submitted})});
+     headers:{"content-type":"application/json"},body:JSON.stringify({id:project,...changes})});
     const data=await response.json();
     if(!response.ok)throw Error(data.error||"Unable to save project summary");
-    savedSummary=data.projects?.find(item=>item.id===project)?.summary??submitted.trim();
-    summaryBaseline=savedSummary;
-    if(summaryInput.value===submitted)summaryInput.value=savedSummary;
+    const saved=data.projects?.find(item=>item.id===project);
+    for(const [key,field] of summaryEntries){
+     const value=saved?.[key]??changes[key]?.trim()??summaryBaseline[key];
+     summaryBaseline[key]=value;
+     if(field.value===draft[key])field.value=value;
+    }
+    window.BSProjectManager?.updateProjectSummary(project,summaryBaseline);
+    renderSummaryOverview();
     summaryMessage.textContent="Summary saved.";
    }catch(error){summaryMessage.textContent=error.message}
    finally{summarySave.disabled=summaryCancel.disabled=false;showSummaryActions()}
   };
   function renderSummaryOverview(){
    const record=window.BSProjectManager?.getProject(project);
-   const value=savedSummary??record?.summary??record?.description??"";
-   const text=overview.querySelector(".project-summary-text");
-   text.textContent=value||"No summary yet.";text.hidden=canEdit();
+   const values={shortSummary:record?.shortSummary??"",summary:record?.summary??record?.description??""};
+   shortSummaryText.textContent=values.shortSummary;
+   shortSummaryText.hidden=canEdit()||!values.shortSummary;
+   shortSummaryLabel.hidden=!canEdit();
+   summaryText.textContent=values.summary||"No summary yet.";summaryText.hidden=canEdit();
    summaryInput.hidden=!canEdit();
-   if(!hasSummaryChanges())summaryInput.value=value;
-   summaryBaseline=value;showSummaryActions();
+   for(const [key,field] of summaryEntries){
+    if(field.value===summaryBaseline[key])field.value=values[key];
+    summaryBaseline[key]=values[key];
+   }
+   showSummaryActions();
    const tags=overview.querySelector(".project-summary-tags");
    tags.replaceChildren(...(record?.tags||[]).map(tag=>{
     const tile=document.createElement("span");tile.textContent=tag;return tile;
    }));
    if(!tags.childElementCount)tags.textContent="No descriptors yet.";
+  }
+  const rolledUpPart=part=>({...part,quantity:window.BSBomModel.projectQuantity(part,nodes)});
+  function createQuantityField(container,{assembly=false,saveQuantity}){
+   const row=document.createElement("div");
+   row.className="workspace-quantity";
+   row.hidden=true;
+   row.innerHTML='<label>Quantity <input class="field" type="number" inputmode="decimal" max="10000000" step="any"></label><span class="workspace-quantity-total"></span><span class="muted workspace-quantity-status" role="status"></span>';
+   container.append(row);
+   const input=row.querySelector("input"),total=row.querySelector(".workspace-quantity-total"),feedback=row.querySelector(".workspace-quantity-status");
+   if(assembly){input.step="1";input.min="1";input.inputMode="numeric"}
+   let record=null,revision=0;
+   const show=value=>{
+    revision++;
+    record=value;
+    row.hidden=!value;
+    if(!value)return;
+    input.disabled=!canEdit();
+    input.value=value.quantity??"";
+    total.textContent=value.total||"";
+    feedback.textContent="";
+   };
+   input.onchange=async()=>{
+    if(!record||!canEdit())return;
+    const quantity=input.value===""?null:input.valueAsNumber;
+    if(!input.validity.valid||(quantity!==null&&quantity<=0)||(assembly&&quantity===null)){
+     feedback.textContent=assembly?"Enter a whole quantity from 1 to 10,000,000.":"Enter a positive quantity up to 10,000,000, or leave it blank.";
+     input.value=record.quantity??"";
+     return;
+    }
+    if(quantity===record.quantity)return;
+    const version=revision;
+    input.disabled=true;feedback.textContent="Saving…";
+    try{
+     const saved=await saveQuantity(record.id,quantity);
+     if(version!==revision)return;
+     show(saved);
+     feedback.textContent="Saved.";
+    }catch(error){
+     if(version!==revision)return;
+     input.disabled=!canEdit();
+     input.value=record.quantity??"";
+     feedback.textContent=error.message;
+    }
+   };
+   return show;
   }
   function renderEstimatedCost(parts){
    const materials=parts.filter(part=>!part.isTool&&window.BSPartFields.itemTypeFor(part)==="part");
@@ -343,19 +404,23 @@ function setupAssemblyTrees(){
    const currency=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(sum);
    summaryCost.textContent=currency+" · "+priced.length+" of "+materials.length+" materials priced from historical BOM prices";
   }
-  const settingsDialog=document.createElement("dialog");
-  settingsDialog.className="project-manage-dialog project-settings-dialog";
-  settingsDialog.setAttribute("aria-label","Project settings");
+  const settingsPage=document.createElement("section");
+  settingsPage.className="assembly-parts-page project-settings-page hide";
+  settingsPage.innerHTML='<button type="button" class="btn project-settings-back">← Project summary</button><h1>Project settings</h1><p class="project-settings-unavailable muted" hidden>Only the project owner can edit these settings.</p>';
   const settingsSection=document.createElement("section");
   settingsSection.className="project-summary-owner-settings";settingsSection.hidden=true;
-  const closeSettings=document.createElement("button");
-  closeSettings.type="button";closeSettings.className="btn";closeSettings.textContent="Close";
-  closeSettings.onclick=()=>settingsDialog.close();
-  settingsDialog.append(settingsSection,closeSettings);view.append(settingsDialog);
+  settingsPage.append(settingsSection);
+  summary.after(settingsPage);
+  settingsPage.querySelector(".project-settings-back").onclick=()=>{
+   selected=null;history.pushState(null,"","#"+project);render();notify();window.scrollTo(0,0);
+  };
+  const settingsRoute=()=>location.hash.slice(1)===project+"/settings";
   const settingsEntry=document.createElement("button");
   settingsEntry.type="button";settingsEntry.className="assembly-project-summary-entry assembly-project-settings-entry";
   settingsEntry.textContent="Project Settings";settingsEntry.hidden=true;
-  settingsEntry.onclick=()=>settingsDialog.showModal();
+  settingsEntry.onclick=()=>{
+   selected=null;history.pushState(null,"","#"+project+"/settings");render();notify();window.scrollTo(0,0);
+  };
 
   let summaryPhotos=[],summaryPhotoIndex=0,summaryVersion=0;
   const isProjectSummary=()=>decodeURIComponent(location.hash.slice(1))===project;
@@ -454,7 +519,8 @@ function setupAssemblyTrees(){
      const countLabel=document.createElement("span");countLabel.className="muted";
      const descendants=window.BSBomModel.assemblyIds(nodes,node.id);
      const qty=included.filter(p=>descendants.has(p.assemblyId??null)).length;
-     countLabel.textContent=qty+" "+(qty===1?"part":"parts");
+     const copies=window.BSBomModel.quantityMultiplier(nodes,node.id);
+     countLabel.textContent=(copies>1?copies+" pcs · ":"")+qty+" "+(qty===1?"part":"parts");
      heading.append(title,countLabel);detail.append(heading);
      const body=document.createElement("div");body.className="project-summary-assembly-contents";
      visit(node.id,body,new Set([...seen,node.id]));
@@ -486,8 +552,8 @@ function setupAssemblyTrees(){
     const parts=partData.components||[];
     const rollup=window.BSBomModel.selectWorkspaceParts(parts,nodes,null);
     // Tool status is independent of feature-tree visibility.
-    makeSummaryBomTree(bomList,[...rollup.listItems,...rollup.shopItems]);
-    renderEstimatedCost(rollup.listItems);
+    makeSummaryBomTree(bomList,[...rollup.listItems,...rollup.shopItems].map(rolledUpPart));
+    renderEstimatedCost(rollup.listItems.map(rolledUpPart));
     makeSummaryList(toolList,parts.filter(part=>part.isTool),"No tools specified yet.");
    }catch(error){
     if(version!==summaryVersion)return;
@@ -609,7 +675,7 @@ function setupAssemblyTrees(){
   });
   // Each saved BOM part has its own independent instructions document.
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
-  partWorkspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1></div></div><section class="workspace-panels"><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
+  partWorkspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1></div></div><section class="workspace-panels"><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save</button><span class="part-workspace-status" role="status"></span></div></section>';
   workspace.after(partWorkspace);
   const archiveActions=document.createElement("div");archiveActions.className="workspace-archive-actions";
   const archiveStatus=document.createElement("span");archiveStatus.className="muted workspace-archive-status";
@@ -718,6 +784,7 @@ function setupAssemblyTrees(){
    instructions.after(tools,history);
    const resources=window.BSResources?.mount(resourcesPanel,{addTo:toolsActions,onCount:count=>{
     toolsCount.textContent="("+count+(count===1?" record)":" records)");
+    tools.classList.toggle("is-empty",count===0);
    }});
    const extras=installInstructionExtras(panel,scope==="part"?"part":"workspace",
     data=>resources?.setData(data,canEdit()),data=>recipe?.setData(data));
@@ -811,6 +878,39 @@ function setupAssemblyTrees(){
   const assemblyProgressFeedback=assemblyProgressPanel.querySelector(".part-progress-feedback");
   const assemblyAttentionField=assemblyProgressPanel.querySelector(".part-attention-note-field");
   workspace.querySelector(".workspace-title-group").append(assemblyProgressPanel);
+  const assemblyQuantityDisplay=node=>{
+   const quantity=window.BSBomModel.assemblyQuantity(node);
+   const total=window.BSBomModel.quantityMultiplier(nodes,node.id);
+   return {id:node.id,quantity,total:total!==quantity?total+" pcs in project":""};
+  };
+  const showAssemblyQuantity=createQuantityField(workspace.querySelector(".workspace-title-group"),{
+   assembly:true,
+   saveQuantity:async(id,quantity)=>{
+    await save(nodes.map(node=>node.id===id?{...node,quantity}:node),refreshBom);
+    return assemblyQuantityDisplay(nodes.find(node=>node.id===id));
+   }
+  });
+  const partQuantityDisplay=part=>{
+   const rolledUp=rolledUpPart(part);
+   return {id:part.id,quantity:part.quantity??null,total:rolledUp.quantity!==part.quantity
+    ?window.BSBomModel.quantityText(rolledUp)+" in project":part.quantityUnit||"pcs"};
+  };
+  const showPartQuantity=createQuantityField(progressPanel.parentElement,{
+   saveQuantity:async(id,quantity)=>{
+    const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id),{
+     method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({quantity})
+    });
+    const data=await response.json();
+    if(!response.ok)throw Error(data.error||"Quantity could not be saved");
+    syncPartNodes([data.component]);
+    if(currentPartInfo?.id===id){
+     currentPartInfo=data.component;
+     renderPartDetails(data.component);
+    }
+    refreshBom();
+    return partQuantityDisplay(data.component);
+   }
+  });
   const resetPartAttention=installAttentionExpander(progressPanel);
   const resetAssemblyAttention=installAttentionExpander(assemblyProgressPanel);
   let assemblyStatusId=null,assemblyStatusVersion=0,assemblyStatusQueue=Promise.resolve();
@@ -1138,6 +1238,8 @@ function setupAssemblyTrees(){
    if(partPhotoDialog.open)partPhotoDialog.close();partPhotoActions.setEnabled(false);partPhotoActions.collapse();
    clearTimeout(partStatusTimer);partStatusChangeVersion++;progressPanel.hidden=true;heading.textContent="Loading part…";currentPartInfo=null;partSavedRevision=null;partStatus.textContent="Loading instructions…";partDetailsCollapse.open=false;resetPartAttention();
    detailRows.replaceChildren();detailsPanel.classList.add("hide");
+   showPartQuantity(null);
+   partRecipe?.setLoading(true);
    partWorkspace.querySelector(".part-harness-preview").classList.add("hide");
    cover.replaceChildren();
    const placeholder=document.createElement("span");placeholder.textContent="No picture yet";cover.append(placeholder);
@@ -1151,6 +1253,7 @@ function setupAssemblyTrees(){
     if(!part)throw Error("Part not found");
     heading.textContent=(part.partNumber?part.partNumber+" · ":"")+part.name;
     currentPartInfo=part;
+    if(window.BSPartFields.itemTypeFor(part)==="part"&&!part.generatedFrom)showPartQuantity(partQuantityDisplay(part));
     const hasWorkshopLink=!!workshopLinkId(part);
     editWorkshopButton.hidden=!hasWorkshopLink;
     reloadWorkshopButton.hidden=!hasWorkshopLink||!canEdit()||!!part.generatedFrom;
@@ -1169,7 +1272,7 @@ function setupAssemblyTrees(){
     void showHarnessPreview(partId,version);
     if(partBackAssembly===null)partBackAssembly=part.assemblyId??null;
     partResourcePicker?.setData(data.workspace?.resources,canEdit());
-    partRecipe?.setData(data.workspace);
+    partRecipe?.setData(data.workspace,partId);
     partSavedRevision=data.workspace?.revision??null;
     partExtras.setData(data.workspace);
     showPartPicture(partId,keepDetailsOpen);
@@ -1493,7 +1596,8 @@ function setupAssemblyTrees(){
     if(version!==bomDisplayVersion||assemblyId!==selected)return;
     const parts=Array.isArray(result.components)?result.components:[];
     syncPartNodes(parts);
-    const visibleParts=showBomDocuments?parts:parts.filter(part=>part.itemType!=="document");
+    if(bomView==="pictures"&&bomRoute())renderTiles();
+    const visibleParts=(showBomDocuments?parts:parts.filter(part=>part.itemType!=="document")).map(rolledUpPart);
     const {shopItems,shopIds}=window.BSBomModel.selectWorkspaceParts(visibleParts,nodes,assemblyId);
     container.replaceChildren();
     // A real subassembly is shown once as an expandable BOM row, not duplicated as a normal part.
@@ -1515,7 +1619,8 @@ function setupAssemblyTrees(){
       const descendantIds=new Set([node.id]);const collect=id=>{for(const child of nodes.filter(x=>x.parentId===id))if(!descendantIds.has(child.id)){descendantIds.add(child.id);collect(child.id)}};collect(node.id);
       const count=document.createElement("span");count.className="bom-subassembly-count";
       const nParts=visibleParts.filter(part=>descendantIds.has(part.assemblyId??null)||nodes.some(x=>isPartNode(x)&&x.partId===part.id&&descendantIds.has(x.parentId))).length;
-      count.textContent=nParts+" part"+(nParts===1?"":"s");
+      const copies=window.BSBomModel.quantityMultiplier(nodes,node.id);
+      count.textContent=(copies>1?copies+" pcs · ":"")+nParts+" part"+(nParts===1?"":"s");
       summary.append(name,count);item.append(summary);
       const body=document.createElement("div");body.className="bom-part-body bom-subassembly-children";
       const inner=document.createElement("div");inner.className="bom-part-stack";
@@ -2131,10 +2236,11 @@ function setupAssemblyTrees(){
   const workspaceUrl=()=>"/api/workspace?project="+encodeURIComponent(project)+"&assembly="+encodeURIComponent(selected??"__root__");
   async function loadWorkspace(){
    const version=++workspaceLoadVersion,url=workspaceUrl();workspaceSavedRevision=null;workspaceStatus.textContent="Loading…";
+   assemblyRecipe?.setLoading(true);
    try{const res=await fetch(url,{credentials:"same-origin",cache:"no-store"});const data=await res.json();if(!res.ok)throw Error(data.error||"Unable to load workspace");
     if(version!==workspaceLoadVersion||url!==workspaceUrl())return;
     assemblyResourcePicker?.setData(data.workspace?.resources,canEdit());
-    assemblyRecipe?.setData(data.workspace);
+    assemblyRecipe?.setData(data.workspace,url);
     workspaceSavedRevision=data.workspace?.revision??null;
     assemblyExtras.setData(data.workspace);
     workspaceStatus.textContent="";
@@ -2242,9 +2348,14 @@ function setupAssemblyTrees(){
    sidebar.classList.add("bom-sidebar-active");
    if(!isEditingBom)void renderWorkspaceParts();
    const inPart=!!partRoute();partWorkspace.classList.toggle("hide",!inPart);
-   const inSummary=isProjectSummary();const inParts=partsRoute(),inBom=bomRoute(),inWorkspace=!inPart&&!inBom&&!inSummary&&!inParts;
+   const inSummary=isProjectSummary(),inParts=partsRoute(),inSettings=settingsRoute(),inBom=bomRoute();
+   const inWorkspace=!inPart&&!inBom&&!inSummary&&!inParts&&!inSettings;
+   const quantityNode=inWorkspace&&nodes.find(node=>node.id===selected);
+   showAssemblyQuantity(quantityNode?assemblyQuantityDisplay(quantityNode):null);
    summary.classList.toggle("hide",!inSummary);
    partsPage.classList.toggle("hide",!inParts);
+   settingsPage.classList.toggle("hide",!inSettings);
+   settingsPage.querySelector(".project-settings-unavailable").hidden=!!window.BSProjectManager?.isOwner?.(project);
    workspace.classList.toggle("hide",!inWorkspace);
    bomScreen.classList.toggle("hide",!inBom);
    // Legacy overview DOM remains available for image editing but isn't a page.
@@ -2253,6 +2364,7 @@ function setupAssemblyTrees(){
    if(inPart){showNotes("part",partRoute());void showPartWorkspace();return;}
    if(inParts){showNotes("parts");void partsManager.refresh();return;}
    if(inSummary){showNotes("summary");void refreshProjectSummary();return;}
+   if(inSettings)return;
    if(inBom){
     showNotes("bom",selected??"root");
     bomScreen.querySelector(".assembly-bom-screen-title").textContent=(selected===null?title:((nodes.find(n=>n.id===selected)?.partNumber||"")+(nodes.find(n=>n.id===selected)?.partNumber?" · ":"")+(nodes.find(n=>n.id===selected)?.name||"Assembly")))+" · BOM";
@@ -2385,6 +2497,10 @@ function setupAssemblyTrees(){
     const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);if(isPartNode(n)){const img=document.createElement("img");img.src=partPhotoUrl(n.partId);img.alt="";img.onerror=()=>{img.onerror=null;img.src=partTreeLabels.get(n.partId)?.defaultPicture||missingPicture};cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}
     else fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=window.BSPhotoMarkup.displayUrl("gallery",data.photos[0].id);img.alt="";cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}).catch(()=>{});
     const openAssembly=()=>{if(isPartNode(n)){openTreePart(n);return}selected=n.id;expanded.add(n.parentId);history.pushState(null,"",workspaceHash(n.id));render();notify();window.scrollTo(0,0)};cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" workspace";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
+    const part=partQuantities.get(n.partId);
+    const copies=isPartNode(n)?null:window.BSBomModel.quantityMultiplier(nodes,n.id);
+    const quantity=part?.quantity!=null?window.BSBomModel.quantityText(rolledUpPart(part)):copies>1?copies+" pcs":"";
+    if(quantity)overlay.append(document.createTextNode(" · "+quantity));
     // Picture BOM tiles reuse the established photo-first design.
     // The old stage/dependency/footer controls are not shown beneath tiles.
     bomGrid.append(tile)
@@ -2406,14 +2522,19 @@ function setupAssemblyTrees(){
   root.addEventListener("projectpermissionschanged",()=>{refreshSettingsControls();render();notify()});
    root.addEventListener("projectreviewchanged",()=>render());
   root.addEventListener("openpart",()=>{void showAssemblyPage()});
-  root.addEventListener("openparts",()=>{render();void showAssemblyPage()});
+  root.addEventListener("openprojectpage",()=>{render();void showAssemblyPage()});
   root.addEventListener("openassembly",e=>{const id=e.detail;if(id==="__root__"){selected=null;history.pushState(null,"",workspaceHash(null));render();notify();return}if(!nodes.some(n=>n.id===id))return;selected=id;history.pushState(null,"",workspaceHash(id));let cursor=nodes.find(n=>n.id===id);while(cursor){expanded.add(cursor.parentId);cursor=nodes.find(n=>n.id===cursor.parentId)}render();notify()});
   const validSelection=()=>selected===null||nodes.some(n=>n.id===selected);
-  const notify=()=>{assemblySelections[project]=selected;assemblyTreeSnapshots[project]={nodes:[...nodes],title};showAssemblyPage();renderTiles();view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));};
+  const publishTree=()=>{assemblySelections[project]=selected;assemblyTreeSnapshots[project]={nodes:[...nodes],title}};
+  const refreshBom=()=>{
+   publishTree();void renderWorkspaceParts();
+   if(isProjectSummary())void refreshProjectSummary();
+  };
+  const notify=()=>{publishTree();showAssemblyPage();renderTiles();view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));};
   let treeSavedRevision=null;
   async function load(){void loadProjectMetadata();try{const [r,partsResponse]=await Promise.all([fetch("/api/tree?project="+project),fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"})]);const data=await r.json();if(!r.ok)throw Error(data.error);nodes=data.nodes||[];
    if(partsResponse.ok){const partData=await partsResponse.json();syncPartNodes(partData.components||[])}void loadWorkshopCaptions();treeSavedRevision=data.revision??null;if(!validSelection())selected=null;const deepLink=decodeURIComponent(location.hash.slice(1)).match(new RegExp("^"+project+"/(?:assembly|workspace|bom)/([^/]+)(?:/overview)?$"));if(deepLink&&(deepLink[1]==="__root__"||nodes.some(n=>n.id===deepLink[1])))selected=deepLink[1]==="__root__"?null:deepLink[1];render();notify()}catch(e){status.textContent="Feature tree unavailable: "+e.message}}
-  async function save(next){const r=await fetch("/api/tree?project="+project,{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({nodes:next,expectedRevision:treeSavedRevision})});const data=await r.json();if(!r.ok)throw Error(data.error||"Save failed");treeSavedRevision=data.revision??treeSavedRevision;nodes=data.nodes||next;render();notify()}
+  async function save(next,afterSave=notify){const r=await fetch("/api/tree?project="+project,{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({nodes:next,expectedRevision:treeSavedRevision})});const data=await r.json();if(!r.ok)throw Error(data.error||"Save failed");treeSavedRevision=data.revision??treeSavedRevision;nodes=data.nodes||next;render();afterSave()}
   // Tree ordering is the order of node records; moving a node keeps its permanent ID.
   const siblings=parent=>nodes.filter(n=>n.parentId===parent);
   async function moveSelected(direction){
@@ -2621,7 +2742,7 @@ function setupAssemblyTrees(){
 
   function render(){nodesEl.replaceChildren();
    workshopFilter.checked=showWorkshopItems;documentsFilter.checked=showTreeDocuments;descriptionsFilter.checked=showTreeDescriptions;hiddenPartsFilter.checked=showHiddenParts;
-   controls.classList.toggle("hide",!canEdit()||isProjectSummary());projectActions.classList.toggle("hide",!canEdit());cardEdit.classList.toggle("hide",!canEdit());
+   controls.classList.toggle("hide",!canEdit()||isProjectSummary());projectActions.classList.toggle("hide",!canEdit());
    const summaryEntry=document.createElement("button");summaryEntry.type="button";summaryEntry.className="assembly-project-summary-entry"+(isProjectSummary()?" selected":"");
    summaryEntry.textContent="Project summary";summaryEntry.setAttribute("aria-current",isProjectSummary()?"page":"false");
    const pendingCount=window.BSReview?.getPendingCount?.(project);
@@ -2634,6 +2755,8 @@ function setupAssemblyTrees(){
    summaryEntry.onclick=()=>{selected=null;history.pushState(null,"","#"+project);render();notify();window.scrollTo(0,0)};
    summaryCard.replaceChildren(summaryEntry,partsEntry,settingsEntry);
    settingsEntry.hidden=!window.BSProjectManager?.isOwner?.(project);
+   settingsEntry.classList.toggle("selected",settingsRoute());
+   settingsEntry.setAttribute("aria-current",settingsRoute()?"page":"false");
    backupDetails.hidden=!adminAuthenticated&&!window.BSProjectManager?.isOwner?.(project);
    // Project utilities live below, outside the actual feature tree.
    partsEntry.className="assembly-project-summary-entry assembly-project-parts-entry"+(partsRoute()?" selected":"");
@@ -2649,7 +2772,7 @@ function setupAssemblyTrees(){
     if(count===0)visiblePartLinks.add(item.id);
    }
    const row=(node,depth)=>{
-   const id=node?.id??null,children=nodes.filter(n=>n.parentId===id&&includeTreeNode(n)&&(!isPartNode(n)||visiblePartLinks.has(n.id))),el=document.createElement("div");el.className="assembly-node"+(selected===id&&!isProjectSummary()?" selected":"")+(node&&isHiddenPart(node)?" is-hidden-part":"")+(node&&isToolNode(node)?" is-tool-part":"");el.style.paddingLeft=(depth*17+3)+"px";
+   const id=node?.id??null,children=nodes.filter(n=>n.parentId===id&&includeTreeNode(n)&&(!isPartNode(n)||visiblePartLinks.has(n.id))),el=document.createElement("div");el.className="assembly-node"+(selected===id&&!isProjectSummary()&&!settingsRoute()?" selected":"")+(node&&isHiddenPart(node)?" is-hidden-part":"")+(node&&isToolNode(node)?" is-tool-part":"");el.style.paddingLeft=(depth*17+3)+"px";
    const expand=document.createElement("button");expand.type="button";expand.className="assembly-expander";expand.textContent=children.length?(expanded.has(id)?"▾":"▸"):" ";expand.setAttribute("aria-label",expanded.has(id)?"Collapse":"Expand");expand.onclick=()=>{expanded.has(id)?expanded.delete(id):expanded.add(id);render()};
    const name=document.createElement("button");name.type="button";name.className="assembly-name";
    const nodeNumber=node?(isPartNode(node)?partNumbers.get(node.partId):node.partNumber):null;
@@ -2662,7 +2785,7 @@ function setupAssemblyTrees(){
     const detail=document.createElement("small");detail.className="assembly-tree-description";detail.textContent=secondLine;name.append(detail);
    }
    if(isPartNode(node)){
-    const quantity=partQuantities.get(node.partId),links=duplicateLinks.get(String(node.parentId)+"|"+node.partId)||1;
+    const quantity=partQuantities.get(node.partId)?.quantity,links=duplicateLinks.get(String(node.parentId)+"|"+node.partId)||1;
     const count=Number.isFinite(quantity)&&quantity>1?Math.max(quantity,links):links;
     if(count>1)name.firstChild.textContent+=" ("+count+")";
     const status=partProgress.get(node.partId);

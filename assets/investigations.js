@@ -285,6 +285,7 @@
    const own=records.filter(item=>owns(item,context));
    const rolled=records.filter(item=>within(item,context)&&!owns(item,context));
    const count=own.length+rolled.length;
+   disclosure.classList.toggle("is-empty",count===0);
    const summary=make("summary","investigation-collapse-heading");
    const title=make(compact?"h4":"h2","",sectionTitle);
 

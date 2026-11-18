@@ -47,3 +47,15 @@ test("malformed cyclic assembly references never recurse indefinitely",()=>{
  const cyclic=[{id:"a",parentId:"b"},{id:"b",parentId:"a"}];
  assert.deepEqual([...bom.assemblyIds(cyclic,"a")],["a","b"]);
 });
+
+test("nested subassembly counts multiply part and material quantities without changing the BOM records",()=>{
+ const repeated=nodes.map(node=>({...node,quantity:({motor:2,board:3})[node.id]}));
+ assert.equal(bom.quantityMultiplier(repeated,"board"),6);
+ assert.equal(bom.projectQuantity(parts[0],repeated),4);
+ assert.equal(bom.projectQuantity(parts[1],repeated),6);
+ assert.equal(bom.projectQuantity(parts[3],repeated),1);
+ assert.equal(bom.projectQuantity({assemblyId:"board",quantity:0.1,quantityUnit:"m"},repeated),0.6);
+ assert.equal(bom.projectQuantity({assemblyId:"board",quantity:1,isTool:true},repeated),1);
+ assert.equal(bom.projectQuantity({assemblyId:"board",quantity:null},repeated),null);
+ assert.equal(parts[1].quantity,1);
+});

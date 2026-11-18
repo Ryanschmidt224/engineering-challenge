@@ -177,23 +177,6 @@
 .assembly-sidebar .assembly-edit{display:none!important}
 
 
-/* Small admin-only edit entry on the Projects landing cards. */
-.project-card>.project-card-edit{
- display:block;
- width:calc(100% - 36px);
- margin:0 18px 17px;
- padding:7px 10px;
- text-align:center;
- font-size:.8rem;
- font-weight:500;
- border:1px solid var(--color-border);
- background:var(--color-surface);
- color:var(--color-text);
- border-radius:6px;
-}
-.project-card>.project-card-edit.hide{display:none!important}
-.project-card>.project-card-edit:hover{background:var(--color-hover)}
-
 
 /* Shared disclosures for secondary workspace sections. */
 .assembly-workspace-page .workspace-secondary-disclosure{
@@ -2610,20 +2593,6 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
  margin:0;
  padding:0;
  align-self:end;
-}
-#home .bs-catalog-layout .project-card>.project-card-edit{
- display:inline-flex;
- align-items:center;
- justify-content:center;
- box-sizing:border-box;
- width:auto;
- min-height:36px;
- align-self:flex-start;
- margin:0 18px 13px;
- padding:7px 15px;
- font-size:.82rem;
- font-weight:600;
- text-align:center;
 }
 @media(max-width:680px){
  #home .bs-catalog-main>.project-directory-controls{

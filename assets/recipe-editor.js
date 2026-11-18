@@ -79,7 +79,7 @@
    heading.before(headingRow);headingActions.append(heading);headingRow.append(headingActions,count);headingRow.after(panel);
   }else article.prepend(headingActions,panel);
   const admin=()=>!!options.admin?.();
-  let steps=[],expanded=null,dirty=false,level="standard",pendingUploads=0,saving=false,draft=null;
+  let steps=[],expanded=null,dirty=false,level="standard",pendingUploads=0,saving=false,draft=null,scope=null,loading=true;
   const editing=new Set();
   window.addEventListener("beforeunload",event=>{if(!dirty&&!pendingUploads&&!saving&&!draft)return;event.preventDefault();event.returnValue="";});
   try{const saved=localStorage.getItem("bs-recipe-detail");if(["brief","standard","detailed"].includes(saved))level=saved}catch{}
@@ -317,6 +317,7 @@
      event.preventDefault();event.stopPropagation();
      if(!editing.has(step.id)){
       editing.add(step.id);expanded=step.id;render();
+      content.querySelector(".recipe-step-name")?.focus();
       return;
      }
      if(saving)return;
@@ -353,8 +354,14 @@
     card.append(summary);
     const body=el("div","recipe-one-step-body");
     if(admin()&&editing.has(step.id)){
-     const title=el("label","recipe-one-field","Step");
-     const nameInput=editField(step.title,"Describe the action",v=>{step.title=v;name.textContent=(i+1)+". "+(v||"Untitled step")});
+     const title=el("label","recipe-one-field","Step name");
+     const nameInput=editField(step.title,"Describe the action",value=>{
+      step.title=value;
+      const label=value||"Untitled step";
+      name.textContent=navButton.textContent=(i+1)+". "+label;
+      navButton.setAttribute("aria-label","Step "+(i+1)+": "+label);
+     });
+     nameInput.classList.add("recipe-step-name");
      nameInput.maxLength=180;title.append(nameInput);body.append(title);
 
      // Photos remain in the existing step.photos list. photoAfterNote keeps
@@ -479,7 +486,7 @@
      }else{
       // Keep the draft at the end while existing steps are reordered.
       if(steps[i+1]&&steps[i+1]===draft)down.disabled=true;
-      actions.append(up,down,remove,bottomSave);
+      actions.append(bottomSave,up,down,remove);
      }
      body.append(actions);
     }else{
@@ -518,27 +525,40 @@
    add.hidden=!admin();
   }
   const add=button("+ Add entry",()=>{
-   if(saving||pendingUploads)return;
+   if(!admin()||loading||saving||pendingUploads)return;
    if(!draft){
     draft={id:newId(),title:"",standard:"",detail:"",kind:"action",notes:[],noteIds:[],photos:[],photoNames:{},photoNoteIds:{},photoAfterNote:{}};
     steps.push(draft);
    }
    expanded=draft.id;editing.clear();editing.add(draft.id);render();
-   content.querySelector(".recipe-one-step input")?.focus();
+   content.querySelector(".recipe-step-name")?.focus();
   },"btn recipe-add-step");
   headingActions.append(add);
-  function setData(data){
-   draft=null;
+  function setLoading(value){
+   loading=value;
+   add.disabled=value;
+   panel.inert=value;
+   panel.setAttribute("aria-busy",String(value));
+  }
+  function setData(data,nextScope){
+   const keepDraft=scope===nextScope&&draft;
+   const resumeDraft=keepDraft&&expanded===draft.id;
+   scope=nextScope;
+   if(!keepDraft)draft=null;
    steps=Array.isArray(data?.recipe)?data.recipe.map(normalize):[];
+   if(draft)steps.push(draft);
    clearTimeout(saveTimer);dirty=false;expanded=steps[0]?.id||null;
    const resumeKey="bs-resume-step:"+location.hash;
    const desired=sessionStorage.getItem(resumeKey);
    if(desired&&steps.some(step=>step.id===desired)){expanded=desired;sessionStorage.removeItem(resumeKey)}
    editing.clear();feedback.textContent="";
+   if(resumeDraft){expanded=draft.id;editing.add(draft.id)}
+   setLoading(false);
    render();
   }
+  setLoading(true);
   render();
-  return {setData,getData:()=>savedSteps().map(normalize),getSelected:()=>steps.find(step=>step.id===expanded)||null,isDirty:()=>dirty,hasPendingUploads:()=>pendingUploads>0,savePending,markSaved:()=>{if(!savePromise){dirty=false;window.BSTransient?.show(feedback,"Saved.")}},render};
+  return {setData,setLoading,getData:()=>savedSteps().map(normalize),getSelected:()=>steps.find(step=>step.id===expanded)||null,isDirty:()=>dirty,hasPendingUploads:()=>pendingUploads>0,savePending,markSaved:()=>{if(!savePromise){dirty=false;window.BSTransient?.show(feedback,"Saved.")}},render};
  }
  window.BSRecipes={mount};
 })();

@@ -91,6 +91,8 @@ export async function handleTree(request,env){
  }
  for(const n of nodes){
   if(n.kind!==undefined&&!["assembly","part"].includes(n.kind))return reply({error:"Invalid node type"},400);
+  if(n.quantity!==undefined&&(n.kind==="part"||!Number.isSafeInteger(n.quantity)||n.quantity<1||n.quantity>10000000))
+   return reply({error:"Subassembly quantity must be a whole number from 1 to 10,000,000"},400);
   if(n.kind==="part"&&(!/^[0-9a-f-]{36}$/i.test(n.partId||"")||nodes.some(child=>child.parentId===n.id)))return reply({error:"A part must link to a BOM record and cannot contain children"},400);
   if(n.parentId!==null&&nodes.find(parent=>parent.id===n.parentId)?.kind==="part")return reply({error:"Parts cannot contain subassemblies"},400);
  }
@@ -109,6 +111,8 @@ export async function handleTree(request,env){
    const entry={id:node.id,name:node.name.trim(),parentId:node.parentId,dependsOn:node.dependsOn||[],stage:node.stage||"independent",kind,...(kind==="part"?{partId:node.partId}:{})};
    if(kind==="assembly"){
     const original=previousIds.get(node.id);
+    const quantity=node.quantity??original?.quantity;
+    if(quantity!==undefined)entry.quantity=quantity;
     // Preserve existing identifiers. Issue a number only for a newly created assembly.
     if(original){
      if(original.kind==="part")return reply({error:"Cannot change a part node into an assembly"},400);
