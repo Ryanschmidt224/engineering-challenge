@@ -706,8 +706,8 @@ test("owner manages project privacy and removal from the summary",async({page})=
  await expect(page.locator(".project-owner-actions")).toBeVisible();
  await page.locator(".project-personal-card .project-link").click();
  const summary=page.locator("#"+id+" .project-summary-page");
- const settings=summary.locator(".project-summary-owner-settings");
- await expect(settings).toBeVisible();
+ const settings=page.locator(".project-settings-dialog .project-summary-owner-settings");
+ await expect(settings).toBeHidden();
  const tree=page.locator("#"+id+" .assembly-tree-nodes");
  const summaryEntry=page.locator("#"+id+" .assembly-summary-sidebar-card .assembly-project-summary-entry");
  await expect(summaryEntry).toContainText("1 change waiting");
@@ -721,6 +721,7 @@ test("owner manages project privacy and removal from the summary",async({page})=
  await expect(summaryEntry).not.toContainText("change waiting");
  await modal.getByRole("button",{name:"Close"}).click();
 
+ await page.getByRole("button",{name:"Project Settings",exact:true}).click();
  await expect(settings.getByRole("heading",{name:"Project settings"})).toBeVisible();
  await expect(settings.locator(".project-settings-card")).toBeVisible();
  await expect(settings.locator(".project-numbering-card")).toBeVisible();
@@ -749,6 +750,7 @@ test("owner manages project privacy and removal from the summary",async({page})=
  await settings.getByRole("button",{name:"Save settings"}).click();
  await expect.poll(()=>catalog[0].visibility).toBe("public");
  await expect(settings.getByLabel("Visibility")).toHaveValue("public");
+ await page.getByRole("dialog",{name:"Project settings"}).getByRole("button",{name:"Close",exact:true}).click();
  await tree.locator(".assembly-name").first().click();
  await expect(page).toHaveURL(new RegExp("#"+id+"/workspace/__root__"));
  await expect(page.locator("#"+id+" .workspace-project-settings")).toHaveCount(0);

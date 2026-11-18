@@ -307,8 +307,8 @@ window.BSProjectManager=(()=>{
    }catch(e){alert(e.message)}
   };
 
-  // Project-wide permissions belong to the summary, never to assembly instructions.
-  function mountSummarySettings(project){
+  // Project-wide settings open independently from the summary.
+  function mountProjectSettings(project){
    const section=document.getElementById(project.id)?.querySelector(".project-summary-owner-settings");
    if(!section)return;
    section.replaceChildren();
@@ -464,7 +464,7 @@ window.BSProjectManager=(()=>{
     grid.hidden=false;loading.hidden=true;
     setupAssemblyTrees();setupComponents();setupPhotos();
     if(typeof refreshAdminUI==="function")refreshAdminUI();
-    for(const project of projects){window.BSReview?.attach(project,user);mountSummarySettings(project)}
+    for(const project of projects){window.BSReview?.attach(project,user);mountProjectSettings(project)}
     document.querySelectorAll("[data-assembly-tree]").forEach(root=>root.dispatchEvent(new Event("projectpermissionschanged")));
    }catch(error){
     console.error("Project catalog unavailable",error);

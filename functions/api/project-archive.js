@@ -1,5 +1,5 @@
 import {isAdmin} from "./auth.js";
-import {CORE_PROJECTS,VALID_PROJECT_ID,readCatalog} from "./projects.js";
+import {CORE_PROJECTS,VALID_PROJECT_ID,readCatalog,canEditProject} from "./projects.js";
 
 // Read-only, versioned export and validation-only import. No live record is modified.
 // The first format is a lossless JSON envelope with base64 object bodies.
@@ -24,10 +24,11 @@ export const folders=project=>[
  "part-files/"+project+"/",
  "part-pages/"+project+"/",
  "recipe-files/"+project+"/",
+ "unstructured-notes/"+project+"/",
  "part-revisions/"+project+"/",
   "part-code/"+project+"/"
 ];
-export const singles=project=>["trees/"+project+".json","components/"+project+".json","investigations/"+project+".json",
+export const singles=project=>["trees/"+project+".json","components/"+project+".json","investigations/"+project+".json","project-numbering/"+project+".json",
  "libraries/wires.json","libraries/common-parts.json","libraries/purchased-parts.json"];
 export const isAllowedKey=(project,key)=>
  typeof key==="string"&&key.length>0&&key.length<=1000&&
@@ -52,7 +53,7 @@ async function listAll(r2,prefix){
  }while(true);
  return keys;
 }
-async function allKeys(r2,project){
+async function allKeys(r2,project,includeShared){
  const keys=new Set();
  for(const prefix of folders(project)){
   for(const key of await listAll(r2,prefix)){
@@ -62,7 +63,7 @@ async function allKeys(r2,project){
   }
  }
  for(const key of singles(project)){
-  if(await r2.head(key))keys.add(key);
+  if((includeShared||!key.startsWith("libraries/"))&&await r2.head(key))keys.add(key);
  }
  return [...keys].sort();
 }
@@ -94,8 +95,8 @@ const mimeFor=(key,object)=>{
  if(key.endsWith(".jpg"))return "image/jpeg";
  return "application/octet-stream";
 };
-export async function exportProject(r2,project){
- const keys=await allKeys(r2,project),objects=[];
+export async function exportProject(r2,project,{includeShared=true}={}){
+ const keys=await allKeys(r2,project,includeShared),objects=[];
  if(!keys.length)throw Error("No saved project records found; there is nothing to back up");
  let bytesTotal=0;
  for(const key of keys){
@@ -143,11 +144,12 @@ export async function handleProjectArchive(request,env){
  const catalog=await readCatalog(env);
  if(!catalog.projects.some(item=>item.id===project))return json({error:"Project not found"},404);
  if(!["GET","POST"].includes(request.method))return json({error:"Method not allowed"},405);
- if(!await isAdmin(request,env))return json({error:"Administrator access required to protect private project data"},401);
+ const admin=await isAdmin(request,env);
+ if(!admin&&(request.method!=="GET"||!await canEditProject(request,env,project)))return json({error:"Project owner or administrator access required"},401);
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  try{
   if(request.method==="GET"){
-   const archive=await exportProject(env.PHOTOS,project);
+   const archive=await exportProject(env.PHOTOS,project,{includeShared:admin});
    const filename="building-schmidt-"+project+"-"+new Date().toISOString().slice(0,10)+".bsproject";
    return new Response(JSON.stringify(archive),{headers:{
     "content-type":"application/vnd.buildingschmidt.project+json; charset=utf-8",

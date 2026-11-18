@@ -11,11 +11,12 @@
   project+"/","assembly-pages/"+project+"/","workspaces/"+project+"/",
   "part-workspaces/"+project+"/","harnesses/"+project+"/","drawings/"+project+"/",
   "component-thumbnails/"+project+"/",
-  "part-files/"+project+"/","part-pages/"+project+"/"
+  "part-files/"+project+"/","part-pages/"+project+"/","recipe-files/"+project+"/","part-code/"+project+"/",
+   "part-revisions/"+project+"/","unstructured-notes/"+project+"/"
  ].some(prefix=>key.startsWith(prefix))||
- ["trees/"+project+".json","components/"+project+".json","libraries/wires.json","libraries/common-parts.json","libraries/purchased-parts.json"].includes(key);
+ ["trees/"+project+".json","components/"+project+".json","investigations/"+project+".json","project-numbering/"+project+".json","libraries/wires.json","libraries/common-parts.json","libraries/purchased-parts.json"].includes(key);
  async function inspect(file,project){
-  if(!supported.has(project))throw Error("Unknown project");
+  if(!supported.has(project)&&!/^p[a-f0-9]{32}$/.test(project))throw Error("Unknown project");
   if(!window.crypto?.subtle)throw Error("A secure browser connection is required for checksum verification");
   if(file.size>MAX_TOTAL*1.45)throw Error("Archive exceeds the current size limit");
   const archive=JSON.parse(await file.text());

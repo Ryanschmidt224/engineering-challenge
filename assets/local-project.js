@@ -10,8 +10,9 @@
  const allowed=(p,key)=>{if(!safeKey(key))return false;
   const dirs=[p+"/","assembly-pages/"+p+"/","workspaces/"+p+"/","part-workspaces/"+p+"/",
    "harnesses/"+p+"/","drawings/"+p+"/","component-thumbnails/"+p+"/",
-   "part-files/"+p+"/","part-pages/"+p+"/"];
-  const files=["trees/"+p+".json","components/"+p+".json",
+   "part-files/"+p+"/","part-pages/"+p+"/","recipe-files/"+p+"/","part-code/"+p+"/",
+   "part-revisions/"+p+"/","unstructured-notes/"+p+"/"];
+  const files=["trees/"+p+".json","components/"+p+".json","investigations/"+p+".json","project-numbering/"+p+".json",
    "libraries/wires.json","libraries/common-parts.json","libraries/purchased-parts.json"];
   return dirs.some(d=>key.startsWith(d))||files.includes(key);
  };

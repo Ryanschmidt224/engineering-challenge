@@ -284,8 +284,22 @@ function setupAssemblyTrees(){
   // It rolls up all assembly occurrences and standard shop materials at project scope.
   const summary=document.createElement("section");
   summary.className="project-summary-page hide";
-  summary.innerHTML='<header class="project-summary-heading"><div><p class="muted">Project summary</p><h1 class="project-summary-title"></h1></div></header><section class="project-summary-gallery"><div class="project-summary-gallery-heading"><h2>Project photos</h2></div><div class="project-summary-photo-stage"><img alt="Project photo" class="project-summary-photo" hidden><p class="project-summary-photo-empty">No project photos yet.</p><button type="button" class="project-summary-previous" aria-label="Previous project photo">‹</button><button type="button" class="project-summary-next" aria-label="Next project photo">›</button></div><div class="project-summary-photo-footer"><p class="project-summary-photo-caption"></p><span class="project-summary-photo-position"></span></div></section><div class="project-summary-lists"><section class="project-summary-bom-section"><h2>Project BOM</h2><div class="project-summary-bom-items" aria-live="polite"></div></section><section class="project-summary-tools-section"><h2>Tools needed</h2><div class="project-summary-tool-items" aria-live="polite"></div></section></div><section class="project-summary-owner-settings" hidden></section>';
+  summary.innerHTML='<header class="project-summary-heading"><div><p class="muted">Project summary</p><h1 class="project-summary-title"></h1></div></header><section class="project-summary-gallery"><div class="project-summary-gallery-heading"><h2>Project photos</h2></div><div class="project-summary-photo-stage"><img alt="Project photo" class="project-summary-photo" hidden><p class="project-summary-photo-empty">No project photos yet.</p><button type="button" class="project-summary-previous" aria-label="Previous project photo">‹</button><button type="button" class="project-summary-next" aria-label="Next project photo">›</button></div><div class="project-summary-photo-footer"><p class="project-summary-photo-caption"></p><span class="project-summary-photo-position"></span></div></section><div class="project-summary-lists"><section class="project-summary-bom-section"><h2>Project BOM</h2><div class="project-summary-bom-items" aria-live="polite"></div></section><section class="project-summary-tools-section"><h2>Tools needed</h2><div class="project-summary-tool-items" aria-live="polite"></div></section></div>';
   detail.after(summary);
+  const settingsDialog=document.createElement("dialog");
+  settingsDialog.className="project-manage-dialog project-settings-dialog";
+  settingsDialog.setAttribute("aria-label","Project settings");
+  const settingsSection=document.createElement("section");
+  settingsSection.className="project-summary-owner-settings";settingsSection.hidden=true;
+  const closeSettings=document.createElement("button");
+  closeSettings.type="button";closeSettings.className="btn";closeSettings.textContent="Close";
+  closeSettings.onclick=()=>settingsDialog.close();
+  settingsDialog.append(settingsSection,closeSettings);view.append(settingsDialog);
+  const settingsEntry=document.createElement("button");
+  settingsEntry.type="button";settingsEntry.className="assembly-project-summary-entry assembly-project-settings-entry";
+  settingsEntry.textContent="Project Settings";settingsEntry.hidden=true;
+  settingsEntry.onclick=()=>settingsDialog.showModal();
+
   let summaryPhotos=[],summaryPhotoIndex=0,summaryVersion=0;
   const isProjectSummary=()=>decodeURIComponent(location.hash.slice(1))===project;
   const summaryPhotoStage=summary.querySelector(".project-summary-photo-stage");
@@ -475,7 +489,7 @@ function setupAssemblyTrees(){
   featureTreeFrame.className="feature-tree-frame";
   while(sidebar.firstChild)featureTreeFrame.append(sidebar.firstChild);
   // Keep the summary card outside the scrolling tree card, immediately above Parts Management.
-  sidebar.append(featureTreeFrame,summaryCard);
+  sidebar.append(featureTreeFrame,summaryCard,settingsEntry);
   const bomResizer=document.createElement("div");
   bomResizer.className="workspace-bom-resizer";
   bomResizer.setAttribute("role","separator");
@@ -537,114 +551,37 @@ function setupAssemblyTrees(){
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
   partWorkspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1></div></div><section class="workspace-panels"><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save part instructions</button><span class="part-workspace-status" role="status"></span></div></section>';
   workspace.after(partWorkspace);
-  // Safe project portability: export is read-only; import currently verifies only.
-  // No operation here can overwrite or delete Cloudflare project records.
   const archiveActions=document.createElement("div");archiveActions.className="workspace-archive-actions";
-  const backupButton=document.createElement("button");backupButton.type="button";backupButton.className="btn";backupButton.textContent="Download project backup";
-  const inspectButton=document.createElement("button");inspectButton.type="button";inspectButton.className="btn";inspectButton.textContent="Check project backup";
-  const archiveInput=document.createElement("input");archiveInput.type="file";archiveInput.accept=".bsproject,application/json";archiveInput.hidden=true;
-  const archiveStatus=document.createElement("span");archiveStatus.className="muted workspace-archive-status";archiveStatus.setAttribute("role","status");
-  const archiveUrl=()=>"/api/project/archive?project="+encodeURIComponent(project);
-  backupButton.onclick=async()=>{
-   if(!adminAuthenticated){archiveStatus.textContent="Administrator login required to export private data.";return}
-   backupButton.disabled=true;archiveStatus.textContent="Preparing complete project archive…";
-   try{
-    const response=await fetch(archiveUrl(),{credentials:"same-origin",cache:"no-store"});
-    if(!response.ok){const error=await response.json().catch(()=>({}));throw Error(error.error||"Project export failed")}
-    const blob=await response.blob();
-    const archive=JSON.parse(await blob.text());
-    if(archive.format!=="building-schmidt-project"||archive.projectId!==project||archive.objectCount!==archive.objects?.length)throw Error("Archive response is incomplete");
-    const url=URL.createObjectURL(blob);
-    const link=document.createElement("a");link.href=url;link.download="building-schmidt-"+project+"-"+new Date().toISOString().slice(0,10)+".bsproject";
-    document.body.append(link);link.click();link.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),3000);
-    archiveStatus.textContent="Downloaded "+archive.objectCount+" records. Keep a copy outside Cloudflare and verify it using Check project backup.";
-   }catch(error){archiveStatus.textContent="Backup failed: "+error.message}
-   finally{backupButton.disabled=false}
+  const archiveStatus=document.createElement("span");archiveStatus.className="muted workspace-archive-status";
+  archiveStatus.setAttribute("role","status");
+  const backupButton=(label,readable)=>{
+   const button=document.createElement("button");button.type="button";button.className="btn";button.textContent=label;
+   button.onclick=async()=>{
+    button.disabled=true;archiveStatus.textContent="Preparing backup…";
+    try{
+     const response=await fetch("/api/project/archive?project="+encodeURIComponent(project),{credentials:"same-origin",cache:"no-store"});
+     if(!response.ok){const error=await response.json().catch(()=>({}));throw Error(error.error||"Project export failed")}
+     const source=await response.blob();
+     const archive=JSON.parse(await source.text());
+     if(archive.format!=="building-schmidt-project"||archive.projectId!==project||archive.objectCount!==archive.objects?.length)throw Error("Archive response is incomplete");
+     const blob=readable?new Blob([window.BSReadableBackup.build(archive,window.BSProjectManager?.getProject(project)?.name)],{type:"text/html;charset=utf-8"}):source;
+     const url=URL.createObjectURL(blob);
+     const link=document.createElement("a");link.href=url;
+     link.download="building-schmidt-"+project+"-"+new Date().toISOString().slice(0,10)+(readable?".html":".bsproject");
+     document.body.append(link);link.click();link.remove();
+     setTimeout(()=>URL.revokeObjectURL(url),3000);
+     archiveStatus.textContent=readable?"HTML backup downloaded. Open it in any browser, or print it to PDF.":"Project backup downloaded.";
+    }catch(error){archiveStatus.textContent="Backup failed: "+error.message}
+    finally{button.disabled=false}
+   };
+   return button;
   };
-  inspectButton.onclick=()=>{if(!adminAuthenticated){archiveStatus.textContent="Administrator login required to inspect backups.";return}archiveInput.click()};
-  archiveInput.onchange=async()=>{
-   const file=archiveInput.files?.[0];archiveInput.value="";if(!file)return;
-   inspectButton.disabled=true;archiveStatus.textContent="Checking archive contents and checksums…";
-   try{
-    if(!window.BSArchiveCheck)throw Error("Archive checker not loaded");
-    const data=await window.BSArchiveCheck.inspect(file,project);
-    if(!window.BSLocalProject)throw Error("Local project reader unavailable");
-    // Actually hydrate every record into an independent local store and rebuild
-    // a project archive to prove that export/import retains the same bytes.
-    const local=await window.BSLocalProject.open(JSON.parse(await file.text()));
-    const recovered=await local.exportArchive();
-    if(recovered.objectCount!==data.objectCount||recovered.totalBytes!==data.totalBytes)
-     throw Error("Local recovery round-trip mismatch");
-    const expected=JSON.parse(await file.text());
-    const before=new Map(expected.objects.map(o=>[o.key,o.sha256]));
-    for(const entry of recovered.objects){
-     if(before.get(entry.key)!==entry.sha256)throw Error("Local recovery changed "+entry.key);
-    }
-    const model=local.model();
-    archiveStatus.textContent="Verified and reopened locally: "+data.objectCount+" records, "+
-     (model?.partDefinitions.length||0)+" parts, "+(model?.bomOccurrences.length||0)+" BOM entries. "+
-     "All file checksums survived export/import. No upload or live data changes.";
-   }catch(error){archiveStatus.textContent="Backup check failed: "+error.message}
-   finally{inspectButton.disabled=false}
-  };
-  // An archive can be inspected entirely locally, or explicitly staged in a
-  // separate recovery namespace. Neither operation overwrites project data.
-  const recoveryButton=document.createElement("button");recoveryButton.type="button";
-  recoveryButton.className="btn";recoveryButton.textContent="Create safe recovery copy";
-  const recoveryInput=document.createElement("input");recoveryInput.type="file";
-  recoveryInput.accept=".bsproject,application/json";recoveryInput.hidden=true;
-  recoveryButton.onclick=()=>{if(!adminAuthenticated){archiveStatus.textContent="Administrator login required.";return}recoveryInput.click()};
-  recoveryInput.onchange=async()=>{
-   const file=recoveryInput.files?.[0];recoveryInput.value="";if(!file)return;
-   recoveryButton.disabled=true;archiveStatus.textContent="Verifying archive locally…";
-   try{
-    if(!window.BSArchiveCheck)throw Error("Archive checker not loaded");
-    const verified=await window.BSArchiveCheck.inspect(file,project);
-    if(!await window.BSDialogs.confirm("Upload this verified archive ("+verified.objectCount+" records) as a SEPARATE recovery copy in Cloudflare? The active project will NOT be overwritten. No records will be deleted."))return;
-    archiveStatus.textContent="Creating isolated recovery copy…";
-    const response=await fetch("/api/project/staging?project="+encodeURIComponent(project),{
-     method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:await file.text()
-    });
-    const data=await response.json();if(!response.ok)throw Error(data.error||"Recovery copy failed");
-    archiveStatus.textContent="Isolated recovery copy verified. Recovery ID: "+data.id+". Active project unchanged.";
-   }catch(error){archiveStatus.textContent="Recovery copy failed: "+error.message}
-   finally{recoveryButton.disabled=false}
-  };
-  const historyButton=document.createElement("button");historyButton.type="button";
-  historyButton.className="btn";historyButton.textContent="Automatic backups";
-  const historyList=document.createElement("div");historyList.className="workspace-backup-history hide";
-  historyButton.onclick=async()=>{
-   if(!adminAuthenticated){archiveStatus.textContent="Administrator login required.";return}
-   if(!historyList.classList.contains("hide")){historyList.classList.add("hide");return}
-   historyButton.disabled=true;archiveStatus.textContent="Loading backup history…";
-   try{
-    const response=await fetch("/api/project/backups?project="+encodeURIComponent(project),{credentials:"same-origin",cache:"no-store"});
-    const data=await response.json();if(!response.ok)throw Error(data.error||"Backups unavailable");
-    historyList.replaceChildren();
-    if(!data.backups?.length){historyList.textContent="No scheduled backups have been saved yet."}
-    for(const entry of data.backups||[]){
-     const row=document.createElement("div");row.className="workspace-backup-item";
-     const label=document.createElement("span");
-     label.textContent=(entry.date?new Date(entry.date).toLocaleDateString():"Backup")+" · "+entry.count+" records · "+Math.round(entry.size/1024)+" KB";
-     const download=document.createElement("a");download.className="btn";
-     download.textContent="Download";download.href="/api/project/backups?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(entry.id);
-     download.download=project+"-"+entry.id+".bsproject";
-     row.append(label,download);historyList.append(row);
-    }
-    historyList.classList.remove("hide");
-    archiveStatus.textContent="These copies remain in Cloudflare. Download one for an independent backup.";
-   }catch(error){archiveStatus.textContent=error.message}
-   finally{historyButton.disabled=false}
-  };
-  archiveActions.append(backupButton,inspectButton,recoveryButton,historyButton,archiveInput,recoveryInput,archiveStatus);
-  // Backups are maintenance tools, not a primary step in building an assembly.
-  // Keep them available below the workspace inside a collapsed disclosure.
+  archiveActions.append(backupButton("Create project backup",false),backupButton("Create readable backup (HTML)",true),archiveStatus);
   const backupDetails=document.createElement("details");
   backupDetails.className="workspace-backup-details workspace-secondary-disclosure";
   const backupSummary=document.createElement("summary");
-  backupSummary.textContent="Project backups & recovery";
-  backupDetails.append(backupSummary,archiveActions,historyList);
+  backupSummary.textContent="Project backups";
+  backupDetails.append(backupSummary,archiveActions);
   workspace.append(backupDetails);
   const partDrawingPanel=window.BSDrawings?.mount(partWorkspace.querySelector(".part-drawing-panel"),()=>canEdit());
   const partFilesPanel=window.BSPartFiles?.mount(partWorkspace.querySelector(".part-files-panel"),()=>canEdit());
@@ -652,7 +589,11 @@ function setupAssemblyTrees(){
   const resourceDetails=document.createElement("details");
   resourceDetails.className="workspace-secondary-disclosure workspace-resource-disclosure";
   const resourceSummary=document.createElement("summary");
-  resourceSummary.textContent="Linked resources";
+  const resourceHeading=document.createElement("span");resourceHeading.className="workspace-disclosure-title";
+  resourceHeading.textContent="Helpful tools";
+  const resourceHint=document.createElement("small");resourceHint.className="workspace-section-hint";
+  resourceHint.textContent="(Calculators, Tools, Etc)";
+  resourceHeading.append(" ",resourceHint);resourceSummary.append(resourceHeading);
   const resourcePanel=workspace.querySelector(".workspace-resources");
   resourceDetails.append(resourceSummary,resourcePanel);
   const assemblyResourcePicker=window.BSResources?.mount(resourcePanel);
@@ -693,7 +634,7 @@ function setupAssemblyTrees(){
      label.textContent=new Date(snapshot.savedAt).toLocaleString();
      item.append(label);
      if(canEdit()){
-      const restore=document.createElement("button");restore.type="button";restore.className="btn";restore.textContent="Load this version";
+      const restore=document.createElement("button");restore.type="button";restore.className="instruction-history-restore";restore.textContent="Load this version";
       restore.onclick=()=>{
        experiments=Array.isArray(snapshot.experiments)?snapshot.experiments.map(x=>({...x})):[];
        renderLogs();onRestoreResources?.(snapshot.resources);onRestoreRecipe?.(snapshot);
@@ -2226,7 +2167,7 @@ function setupAssemblyTrees(){
    ["part",partWorkspace],["parts",partsPage]
   ].map(([scope,mount])=>[scope,window.BSUnstructuredNotes.mount(mount,{project,scope,canEdit})]));
   assemblyInvestigationPanel.after(notePanels.workspace.element);
-  workspace.append(resourceDetails);
+  workspace.querySelector(".recipe-instructions").after(resourceDetails);
   summary.append(creatorInsightsTarget);
   let lastNotePage="";
   const showNotes=(scope,id="root")=>{
@@ -2661,6 +2602,8 @@ function setupAssemblyTrees(){
    }
    summaryEntry.onclick=()=>{selected=null;history.pushState(null,"","#"+project);render();notify();window.scrollTo(0,0)};
    summaryCard.replaceChildren(summaryEntry);
+   settingsEntry.hidden=!window.BSProjectManager?.isOwner?.(project);
+   backupDetails.hidden=!adminAuthenticated&&!window.BSProjectManager?.isOwner?.(project);
    // Project utilities live below, outside the actual feature tree.
    partsEntry.className="assembly-project-summary-entry assembly-parts-management-link"+(partsRoute()?" selected":"");
    partsEntry.setAttribute("aria-current",partsRoute()?"page":"false");

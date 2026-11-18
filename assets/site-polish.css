@@ -1526,3 +1526,14 @@
 .workspace-secondary-disclosure .instruction-history-list,
 .workspace-resource-disclosure>.workspace-resources{padding:12px 17px;margin:0}
 .workspace-resource-disclosure>.workspace-resources>h2{display:none}
+
+.workspace-section-hint{font-size:.75rem;font-weight:450;color:var(--color-text-muted)}
+.workspace-disclosure-title{font-weight:650;color:var(--color-text)}
+.assembly-project-settings-entry[hidden],.workspace-backup-details[hidden]{display:none!important}
+.project-settings-dialog>.project-summary-owner-settings{margin:0 0 12px}
+:is(#launcher,.personal-project-view,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-resource-disclosure{
+ order:2;margin:0 0 20px;
+}
+.assembly-workspace-page .instruction-history-list{gap:5px}
+.assembly-workspace-page .instruction-history-item{display:flex;align-items:baseline;gap:6px 16px;flex-wrap:wrap;border:0;padding:0}
+.instruction-history-restore{font:inherit;color:var(--color-accent);background:transparent;border:0;padding:3px 0;cursor:pointer;text-decoration:underline}

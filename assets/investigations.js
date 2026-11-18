@@ -14,7 +14,7 @@
  };
  const retiredLabels={practice:{lesson:"What did you learn?"},revision:{result:"What was the result?"},note:{note:"Notes"}};
  const categoryOf=record=>record.category||(record.partSnapshot?"revision":"failure");
- const sectionTitle="Practice, tests, revisions, failures & notes";
+ const sectionTitle="Project History";
  const acceptedAttachments=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.dwg,.dxf,.sldprt,.sldasm,.step,.stp,.stl,.igs,.iges,.x_t,.x_b,.obj,.3mf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip,.py,.js,.ts,.ino,.c,.cpp,.h,.hpp,.json,.md,.kicad_sch,.kicad_pcb,.kicad_pro";
  const photoExt=/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i;
  const fileUrl=id=>"/api/recipe-files?id="+encodeURIComponent(id);
@@ -287,6 +287,7 @@
    const count=own.length+rolled.length;
    const summary=make("summary","investigation-collapse-heading");
    const title=make(compact?"h4":"h2","",sectionTitle);
+   title.append(" ",make("small","workspace-section-hint","(Practice, Tests, Revisions, Etc)"));
    const heading=make("div","investigation-heading-label");
 
    const actions=make("div","investigation-heading-actions");

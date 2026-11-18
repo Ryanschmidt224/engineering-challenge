@@ -9,19 +9,9 @@
 import {readFile,writeFile,mkdir,rename,stat,rm} from "node:fs/promises";
 import {dirname,basename,resolve,join,sep} from "node:path";
 import {createHash,randomUUID} from "node:crypto";
+import {isAllowedKey,isArchivedProjectId} from "../functions/api/project-archive.js";
 
 const MAX_BYTES=72*1024*1024,MAX_SINGLE=24*1024*1024,MAX_OBJECTS=1500;
-const projects=new Set(["launcher","linear","robot","buck","motorlab","coiltest"]);
-const forbidden=/[\\\x00-\x1f\x7f]/;
-const isAllowed=(p,key)=>{
- if(typeof key!=="string"||!key||key.length>1000||forbidden.test(key)||
-    !key.split("/").every(x=>x&&x!=="."&&x!==".."))return false;
- const prefixes=[p+"/","assembly-pages/"+p+"/","workspaces/"+p+"/","part-workspaces/"+p+"/",
-  "harnesses/"+p+"/","drawings/"+p+"/","component-thumbnails/"+p+"/","part-files/"+p+"/","part-pages/"+p+"/"];
- const singles=["trees/"+p+".json","components/"+p+".json",
-  "libraries/wires.json","libraries/common-parts.json","libraries/purchased-parts.json"];
- return prefixes.some(x=>key.startsWith(x))||singles.includes(key);
-};
 const hex=data=>createHash("sha256").update(data).digest("hex");
 const strictDecode=encoded=>{
  if(typeof encoded!=="string"||encoded.length%4!==0||
@@ -38,12 +28,12 @@ async function archiveFromFile(filename){
 }
 function validate(archive){
  if(!archive||archive.format!=="building-schmidt-project"||
-    archive.schemaVersion!==1||!projects.has(archive.projectId)||
+    archive.schemaVersion!==1||!isArchivedProjectId(archive.projectId)||
     !Array.isArray(archive.objects)||archive.objects.length>MAX_OBJECTS||
     archive.objectCount!==archive.objects.length)throw Error("Invalid archive manifest");
  const seen=new Set(),files=new Map();let total=0;
  for(const item of archive.objects){
-  if(!item||!isAllowed(archive.projectId,item.key)||seen.has(item.key)||
+  if(!item||!isAllowedKey(archive.projectId,item.key)||seen.has(item.key)||
      !Number.isInteger(item.size)||item.size<0||item.size>MAX_SINGLE||
      typeof item.sha256!=="string"||!/^[0-9a-f]{64}$/.test(item.sha256))
    throw Error("Invalid key, duplicate ID or metadata in archive");
