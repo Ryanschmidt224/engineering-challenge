@@ -1466,7 +1466,7 @@
 .workspace-primary-disclosure>summary::before,
 .part-details-collapse>summary::before,
 .bs-unstructured-note-title::before{
- content:"";width:6px;height:6px;border-block-start:1.5px solid currentColor;
+ content:"";width:6px;height:6px;color:var(--color-text-muted);border-block-start:1.5px solid currentColor;
  border-inline-end:1.5px solid currentColor;transform:rotate(45deg);flex:none;display:inline-block;
 }
 .investigation-collapse[open]>summary.investigation-collapse-heading::before,
@@ -1481,7 +1481,7 @@
  padding:12px 20px;
 }
 .assembly-workspace-page .investigations-panel .investigation-collapse>summary.investigation-collapse-heading::before{
- position:absolute;left:7px;top:21px;
+ position:absolute;left:7px;top:calc(12px + (30px - 6px)/2);
 }
 :is(#launcher,.personal-project-view,#linear,#robot) .assembly-workspace-page .workspace-panels>article.recipe-instructions{
  padding:12px 20px;
@@ -1535,16 +1535,15 @@
 .workspace-primary-disclosure>summary{
  position:relative;padding:12px 20px;list-style:none;cursor:pointer;
 }
-.workspace-primary-disclosure>summary::before{position:absolute;left:7px;top:21px}
+.workspace-primary-disclosure>summary::before{position:absolute;left:7px;top:calc(12px + (30px - 6px)/2)}
 .workspace-primary-disclosure>summary h2{margin:0;min-height:30px;display:flex;align-items:center;flex-wrap:wrap;gap:5px;font-size:1.05rem;font-weight:650}
 .workspace-primary-disclosure[open]>summary{border-bottom:1px solid var(--color-border)}
 .assembly-workspace-page.bom-part-workspace .workspace-secondary-disclosure{margin:12px 0 0}
 .bom-part-workspace .part-details-view-heading{list-style:none;cursor:pointer}
 .part-details-collapse:not([open])>.part-details-view-heading{border-bottom:0}
-.part-details-summary-fields{display:flex;flex-wrap:wrap;gap:8px 20px;margin:0;min-width:0;font-size:.85rem}
-.part-details-summary-fields>div{display:flex;gap:6px;min-width:0}
-.part-details-summary-fields dt{color:var(--color-text-muted);flex:none}
-.part-details-summary-fields dd{margin:0;overflow-wrap:anywhere}
+.part-details-heading-copy{min-width:0}
+.part-details-summary-fields{display:block;color:var(--color-text-muted);font-size:.8rem;line-height:1.4;overflow-wrap:anywhere}
+.part-details-summary-fields:empty{display:none}
 
 
 .workspace-tool-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:30px}
@@ -1555,10 +1554,11 @@
 .workspace-tool-actions .linked-resource-add[hidden]{display:none}
 .workspace-tool-actions .linked-resource-add:hover{text-decoration:underline}
 .assembly-workspace-page .workspace-panels>article.investigations-panel{overflow:visible}
-.bs-section-tooltip{position:relative;display:inline-flex}
+.bs-section-tooltip{position:relative;display:inline-flex;align-items:center;align-self:center}
 .bs-section-tooltip>button{
  border:0;background:transparent;color:var(--color-text-muted);
- font:inherit;font-size:.9rem;padding:2px 3px;cursor:help;
+ display:grid;place-items:center;width:22px;height:22px;padding:0;
+ font:inherit;font-size:.72rem;line-height:1;cursor:help;
 }
 .bs-section-tooltip-content{
  position:absolute;z-index:5;top:calc(100% + 3px);left:0;
@@ -1567,3 +1567,17 @@
  font-weight:400;line-height:1.4;white-space:normal;visibility:hidden;
 }
 .bs-section-tooltip:not(.tooltip-dismissed):is(:hover,:focus-within)>.bs-section-tooltip-content{visibility:visible}
+
+
+.workspace-tool-actions>h2,
+.investigation-heading-actions>:is(h2,h4){line-height:1.3}
+.assembly-workspace-page .workspace-panels :is(.workspace-tool-actions,.investigation-heading-actions)>h2{
+ display:block;min-height:0;margin:0;font-size:1.05rem;font-weight:650;
+}
+.assembly-workspace-page .workspace-secondary-disclosure>summary,
+.assembly-workspace-page .part-details-collapse>summary{
+ position:relative;gap:8px;padding-inline-start:20px;
+}
+.assembly-workspace-page :is(.workspace-secondary-disclosure,.part-details-collapse)>summary::before{
+ position:absolute;left:7px;top:calc(50% - 4px);
+}

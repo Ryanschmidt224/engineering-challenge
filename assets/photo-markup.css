@@ -389,3 +389,21 @@
   white-space:normal;
  }
 }
+
+
+/* The pencil shares the image grid cell. Its menu and paste target stay below. */
+.assembly-workspace-page>.workspace-heading>.bs-photo-control{
+ display:grid;grid-template-columns:minmax(0,1fr);
+}
+.assembly-workspace-page>.workspace-heading>.bs-photo-control>:is(.workspace-cover,.part-workspace-cover),
+.assembly-workspace-page>.workspace-heading>.bs-photo-control>.bs-photo-actions>.bs-photo-toggle{
+ grid-area:1 / 1;
+}
+.assembly-workspace-page>.workspace-heading>.bs-photo-control>.bs-photo-actions{display:contents!important}
+.assembly-workspace-page>.workspace-heading>.bs-photo-control .bs-photo-toggle{
+ z-index:2;place-self:end end;margin:7px;
+ background:var(--color-surface);color:var(--color-text);
+}
+.assembly-workspace-page>.workspace-heading>.bs-photo-control .bs-photo-more:not([hidden]){
+ margin-top:6px;flex-wrap:wrap!important;white-space:normal;
+}

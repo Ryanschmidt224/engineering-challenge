@@ -680,7 +680,7 @@ function setupAssemblyTrees(){
   instructionsFeedback(partWorkspace,()=> "section:instructions_"+(partRoute()||"root"));
 
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
-  detailsPanel.innerHTML='<details class="part-details-collapse"><summary class="part-details-view-heading"><h2>Part details</h2><dl class="part-details-summary-fields"></dl></summary><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div><div class="part-drawing-panel"></div><div class="part-files-panel"></div></details>';
+  detailsPanel.innerHTML='<details class="part-details-collapse"><summary class="part-details-view-heading"><div class="part-details-heading-copy"><h2>Part details</h2><span class="part-details-summary-fields"></span></div></summary><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div><div class="part-drawing-panel"></div><div class="part-files-panel"></div></details>';
   const partDetailsCollapse=detailsPanel.querySelector(".part-details-collapse");
   // Edit belongs beside the heading, not at the bottom of the expanded details.
   const detailEditButton=detailsPanel.querySelector(".part-details-edit");
@@ -721,23 +721,6 @@ function setupAssemblyTrees(){
   const codeHost=document.createElement("div");codeHost.className="part-source-code-host";detailsPanel.after(codeHost);
   const codePanel=window.BSPartCode.mount(codeHost,{project,canEdit});
   const progressSelect=progressPanel.querySelector(".part-progress-select"),attentionCheckbox=progressPanel.querySelector(".part-needs-attention"),attentionText=progressPanel.querySelector(".part-attention-note");
-  // Independent, ordered Progress Status section. The main Part details can
-  // remain collapsed while these operations are always accessible.
-  const progressNotes=document.createElement("details");
-  progressNotes.className="part-progress-updates";progressNotes.hidden=true;
-  const progressSummary=document.createElement("summary");
-  progressSummary.className="part-progress-updates-summary";
-  progressSummary.textContent="Progress Status";
-  const progressNoteHistory=document.createElement("ol");
-  progressNoteHistory.className="part-progress-updates-history";
-  const progressNoteAdd=document.createElement("button");
-  progressNoteAdd.type="button";progressNoteAdd.className="btn part-progress-update-add";
-  progressNoteAdd.textContent="Add operation";
-  const progressNoteFeedback=document.createElement("span");
-  progressNoteFeedback.className="part-progress-update-feedback";
-  progressNoteFeedback.setAttribute("role","status");
-  progressNotes.append(progressSummary,progressNoteHistory,progressNoteAdd,progressNoteFeedback);
-  detailsPanel.after(progressNotes);
   // Assembly status uses its own record rather than rewriting the tree or instructions.
   const assemblyProgressPanel=progressPanel.cloneNode(true);
   assemblyProgressPanel.classList.add("assembly-progress-panel");
@@ -803,49 +786,6 @@ function setupAssemblyTrees(){
   progressSelect.addEventListener("change",()=>schedulePartStatusSave(true));
   attentionCheckbox.addEventListener("change",()=>{refreshAttentionForm();schedulePartStatusSave(true)});
   attentionText.addEventListener("input",()=>schedulePartStatusSave());
-  async function saveProgressOperation(part,change,control){
-   if(!part||!canEdit())return;
-   control.disabled=true;progressNoteFeedback.textContent="Saving…";
-   try{
-    if(partStatusSavePromise)await partStatusSavePromise;
-    const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{
-     method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(change)
-    });
-    const data=await response.json();
-    if(!response.ok)throw Error(data.error||"Could not save Progress Status");
-    if(currentPartInfo?.id===part.id){
-     currentPartInfo=data.component;
-     renderProgressNotes(data.component);
-     progressNoteFeedback.textContent="Saved.";
-     if(change.progressOperationAdd===true){
-      const inputs=progressNoteHistory.querySelectorAll("input");
-      inputs[inputs.length-1]?.focus();
-     }
-    }
-   }catch(error){progressNoteFeedback.textContent=error.message;control.disabled=false}
-  }
-  const renderProgressNotes=part=>{
-   progressNoteHistory.replaceChildren();
-   const editable=canEdit();
-   for(const [index,operation] of (part.progressUpdates||[]).entries()){
-    const item=document.createElement("li");
-    const input=document.createElement("input");
-    input.className="field part-progress-operation-input";
-    input.type="text";input.maxLength=500;input.value=operation.text||"";
-    input.placeholder="Operation "+(index+1)+" — material ordered, waiting on paint…";
-    input.title=operation.text||"";
-    input.disabled=!editable;
-    input.setAttribute("aria-label","Progress operation "+(index+1));
-    input.onkeydown=event=>{if(event.key==="Enter"){event.preventDefault();input.blur()}};
-    input.onblur=()=>{if(input.value.trim()!==(operation.text||""))void saveProgressOperation(part,{progressOperationEdit:{id:operation.id,text:input.value}},input)};
-    item.append(input);progressNoteHistory.append(item);
-   }
-   progressNotes.hidden=part.isTool===true;
-   // The independent panel is expanded by default at every part status.
-   progressNotes.open=part.progressStatus!=="complete";
-   progressNoteAdd.hidden=!editable;progressNoteAdd.disabled=!editable;
-  };
-  progressNoteAdd.onclick=()=>void saveProgressOperation(currentPartInfo,{progressOperationAdd:true},progressNoteAdd);
   const fillProgressPanel=part=>{
    progressSelect.value=part.progressStatus||"not_started";
    attentionCheckbox.checked=part.needsAttention===true;attentionText.value=part.attentionNote||"";refreshAttentionForm();
@@ -853,7 +793,6 @@ function setupAssemblyTrees(){
    progressSelect.disabled=!canEdit();
    attentionCheckbox.disabled=!canEdit();
    attentionText.readOnly=!canEdit();
-   renderProgressNotes(part);
   };
   async function savePartProgress(){
    if(!canEdit()||!currentPartInfo)return;
@@ -886,13 +825,9 @@ function setupAssemblyTrees(){
    detailRows.replaceChildren();
    const fields=window.BSPartFields.detailRows(part);
    const values=new Map(fields);
-   detailSummary.replaceChildren();
-   for(const title of ["Part name","Description","Quantity"]){
-    const item=document.createElement("div");
-    const label=document.createElement("dt");label.textContent=title;
-    const value=document.createElement("dd");value.textContent=values.get(title)||"—";
-    item.append(label,value);detailSummary.append(item);
-   }
+   const quantity=part.quantity==null?"":"Qty "+values.get("Quantity");
+   const summary=[values.get("Part name"),values.get("Description"),quantity];
+   detailSummary.textContent=summary.filter(Boolean).join(" · ");
    for(const [title,value] of fields){
     if(value===null||value===undefined||String(value).trim()==="")continue;
     const line=document.createElement("div");line.className="part-details-view-row";
@@ -935,7 +870,6 @@ function setupAssemblyTrees(){
     detailRows.append(projectSection);
    }
    window.BSPartSuppliers?.renderLinks(detailRows,part);
-   renderProgressNotes(part);
    detailsPanel.classList.remove("hide");
   };
 
