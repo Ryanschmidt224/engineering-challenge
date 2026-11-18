@@ -72,16 +72,17 @@
   const panel=el("section","recipe-editor recipe-compact"),content=el("div","recipe-content"),feedback=el("p","recipe-feedback muted");
   panel.append(content,feedback);
   const heading=article.querySelector("h2");
+  const headingActions=el("div","recipe-heading-actions");
   if(heading){
    const headingRow=el("div","recipe-heading-row");
    const tip=el("p","recipe-right-click-tip");
    tip.append(el("span","recipe-right-click-icon","ⓘ"),document.createTextNode(" Right-click any word or highlighted text in a step to search the knowledge base or request an explanation."));
-   heading.before(headingRow);headingRow.append(heading,tip);headingRow.after(panel);
-  }else article.prepend(panel);
+   heading.before(headingRow);headingActions.append(heading);headingRow.append(headingActions,tip);headingRow.after(panel);
+  }else article.prepend(headingActions,panel);
   const admin=()=>!!options.admin?.();
-  let steps=[],expanded=null,dirty=false,level="standard",pendingUploads=0,saving=false;
+  let steps=[],expanded=null,dirty=false,level="standard",pendingUploads=0,saving=false,draft=null;
   const editing=new Set();
-  window.addEventListener("beforeunload",event=>{if(!dirty&&!pendingUploads&&!saving)return;event.preventDefault();event.returnValue="";});
+  window.addEventListener("beforeunload",event=>{if(!dirty&&!pendingUploads&&!saving&&!draft)return;event.preventDefault();event.returnValue="";});
   try{const saved=localStorage.getItem("bs-recipe-detail");if(["brief","standard","detailed"].includes(saved))level=saved}catch{}
   let changeVersion=0,saveTimer=null,savePromise=null,allowReplay=false;
   async function savePending(){
@@ -89,7 +90,7 @@
    if(savePromise){await savePromise;if(!dirty)return; }
    if(!dirty)return;
    if(pendingUploads)throw Error("Finish uploading photos or documents before leaving this step.");
-   if(steps.some(step=>!step.title.trim()))throw Error("Every step needs a name before it can be saved.");
+   if(savedSteps().some(step=>!step.title.trim()))throw Error("Every step needs a name before it can be saved.");
    if(!admin()||typeof options.onSave!=="function")throw Error("Sign in to save your instructions.");
    const version=changeVersion;
    feedback.textContent="Saving…";
@@ -107,7 +108,8 @@
    clearTimeout(saveTimer);
    saveTimer=setTimeout(()=>{void savePending().catch(()=>{})},1100);
   }
-  const changed=()=>{dirty=true;changeVersion++;options.onChange?.();scheduleSave()};
+  const savedSteps=()=>steps.filter(step=>step!==draft);
+  const changed=()=>{if(draft?.id===expanded)return;dirty=true;changeVersion++;options.onChange?.();scheduleSave()};
   const saveHint=()=>{feedback.textContent="Unsaved step changes."};
   // Capture navigation before the page replaces its editor or changes the workspace endpoint.
   // Replay the original click only after the save has succeeded.
@@ -294,11 +296,11 @@
     detailPane.append(preferences);
    }
    for(let i=0;i<steps.length;i++){
-    const step=steps[i],isCurrent=expanded===step.id;
+    const step=steps[i],isCurrent=expanded===step.id,isDraft=step===draft;
     const navButton=button((i+1)+". "+(step.title||"Untitled step"),async()=>{
-     if(expanded===step.id)return;
+     if(expanded===step.id||saving||pendingUploads)return;
      try{await savePending()}catch(error){feedback.textContent=error.message||"Save failed; still on this step.";return}
-     expanded=step.id;editing.clear();closeKnowledgeMenu();render();options.onStepChange?.(step.id);
+     expanded=step.id;editing.clear();if(isDraft)editing.add(step.id);closeKnowledgeMenu();render();options.onStepChange?.(step.id);
     },"recipe-step-nav-item"+(isCurrent?" is-active":""));
     navButton.setAttribute("aria-current",isCurrent?"step":"false");
     navButton.setAttribute("aria-label","Step "+(i+1)+": "+(step.title||"Untitled step"));
@@ -328,11 +330,14 @@
      saving=true;if(edit){edit.disabled=true;edit.textContent="Saving…"}
      if(bottomSave){bottomSave.disabled=true;bottomSave.textContent="Saving…"}
      try{
+      if(savePromise)await savePromise;
+      if(isDraft)draft=null;
       if(typeof options.onSave!=="function")throw Error("Save is unavailable.");
       await options.onSave();
       dirty=false;window.BSTransient?.show(feedback,"Step saved.");
       editing.delete(step.id);expanded=step.id;render();
      }catch(error){
+      if(isDraft)draft=step;
       feedback.textContent=error.message||"Could not save step.";
       if(edit){edit.disabled=false;edit.textContent="Save"}
       if(bottomSave){bottomSave.disabled=false;bottomSave.textContent="Save"}
@@ -462,7 +467,20 @@
      const down=button("↓",()=>move(i,1));down.disabled=i===steps.length-1;down.title="Move down";
      const remove=button("Remove",async()=>{if(!await window.BSDialogs.danger("Remove this step?",{title:"Remove instruction step?",confirmLabel:"Remove"}))return;steps.splice(i,1);editing.delete(step.id);expanded=null;changed();saveHint();render()});
      const bottomSave=button("Save",saveStep,"btn primary recipe-save-step-bottom");
-     actions.append(up,down,remove,bottomSave);body.append(actions);
+     if(isDraft){
+      actions.append(bottomSave,button("Cancel",()=>{
+       if(saving||pendingUploads)return;
+       steps=steps.filter(item=>item!==step);draft=null;
+       editing.delete(step.id);expanded=steps[i-1]?.id||steps[0]?.id||null;
+       feedback.textContent=dirty?"Unsaved step changes.":"";
+       render();add.focus();
+      },"btn"));
+     }else{
+      // Keep the draft at the end while existing steps are reordered.
+      if(steps[i+1]&&steps[i+1]===draft)down.disabled=true;
+      actions.append(up,down,remove,bottomSave);
+     }
+     body.append(actions);
     }else{
      const displayed=el("div","recipe-reader-text");
      if(step.standard.trim())displayed.append(el("p","recipe-reader-note",step.standard));
@@ -488,7 +506,7 @@
       // The context menu provides knowledge lookup without a redundant button.
      }
     }
-    if(typeof options.renderInvestigations==="function"){
+    if(!isDraft&&typeof options.renderInvestigations==="function"){
      const investigationArea=el("div","recipe-step-investigations");
      body.append(investigationArea);
      options.renderInvestigations(step,investigationArea);
@@ -496,17 +514,20 @@
     if(typeof options.decorateStep==="function")options.decorateStep(step,body);
     card.append(body);detailPane.append(card);
    }
-   if(admin()){
-    const add=button("+ Add step",()=>{
-     const item={id:newId(),title:"New step",standard:"",detail:"",kind:"action",notes:[],noteIds:[],photos:[],photoNames:{},photoNoteIds:{},photoAfterNote:{}};
-     steps.push(item);expanded=item.id;editing.add(item.id);changed();saveHint();render();
-     const newCard=[...content.querySelectorAll(".recipe-one-step")].find(x=>x.dataset.stepId===item.id);
-     newCard?.querySelector("input")?.focus();
-    },"btn recipe-add-step");
-    content.append(add);
-   }
+   add.hidden=!admin();
   }
+  const add=button("+ Add step",()=>{
+   if(saving||pendingUploads)return;
+   if(!draft){
+    draft={id:newId(),title:"",standard:"",detail:"",kind:"action",notes:[],noteIds:[],photos:[],photoNames:{},photoNoteIds:{},photoAfterNote:{}};
+    steps.push(draft);
+   }
+   expanded=draft.id;editing.clear();editing.add(draft.id);render();
+   content.querySelector(".recipe-one-step input")?.focus();
+  },"btn recipe-add-step");
+  headingActions.append(add);
   function setData(data){
+   draft=null;
    steps=Array.isArray(data?.recipe)?data.recipe.map(normalize):[];
    clearTimeout(saveTimer);dirty=false;expanded=steps[0]?.id||null;
    const resumeKey="bs-resume-step:"+location.hash;
@@ -516,7 +537,7 @@
    render();
   }
   render();
-  return {setData,getData:()=>steps.map(normalize),getSelected:()=>steps.find(step=>step.id===expanded)||null,isDirty:()=>dirty,hasPendingUploads:()=>pendingUploads>0,savePending,markSaved:()=>{if(!savePromise){dirty=false;window.BSTransient?.show(feedback,"Saved.")}},render};
+  return {setData,getData:()=>savedSteps().map(normalize),getSelected:()=>steps.find(step=>step.id===expanded)||null,isDirty:()=>dirty,hasPendingUploads:()=>pendingUploads>0,savePending,markSaved:()=>{if(!savePromise){dirty=false;window.BSTransient?.show(feedback,"Saved.")}},render};
  }
  window.BSRecipes={mount};
 })();

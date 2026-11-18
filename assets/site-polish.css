@@ -365,22 +365,6 @@
 .recipe-compact .recipe-step-edit-toggle:focus-visible,
 .investigation-collapse-heading:focus-visible .investigation-toggle-label{outline:2px solid var(--color-focus);outline-offset:2px}
 
-/* Work instructions are the main workspace. Give them a distinct end
-   and generous breathing room before secondary revisions/resources. */
-.assembly-workspace-page .workspace-panels > article.recipe-instructions{
- position:relative;margin-bottom:88px!important;
-}
-.assembly-workspace-page .workspace-panels > article.recipe-instructions::after{
- content:"";position:absolute;left:0;right:0;bottom:-20px;height:2px;
- background:linear-gradient(90deg,var(--color-accent),var(--color-selected) 78%,transparent);
- pointer-events:none;
-}
-@media(max-width:800px){
- .assembly-workspace-page .workspace-panels > article.recipe-instructions{margin-bottom:68px!important}
- .assembly-workspace-page .workspace-panels > article.recipe-instructions::after{bottom:-14px}
-}
-
-
 /* Shared part / subassembly photo editor: discreet pencil overlay. */
 .workspace-cover-shell .workspace-photo-launch{
  background:color-mix(in srgb, var(--color-media-backdrop) 52%, transparent);
@@ -517,18 +501,12 @@
  color:var(--color-text);
  font-weight:650;
 }
-:is(:is(#launcher,.personal-project-view),#linear,#robot) .assembly-workspace-page.bom-part-workspace .workspace-panels > article.recipe-instructions{
- margin-bottom:88px!important;
-}
-:is(:is(#launcher,.personal-project-view),#linear,#robot) .assembly-workspace-page.bom-part-workspace .workspace-panels > article.recipe-instructions::after{
- bottom:-20px;
-}
 :is(:is(#launcher,.personal-project-view),#linear,#robot) .assembly-workspace-page.bom-part-workspace .workspace-panels > article.investigations-panel{
  padding:0;
  overflow:hidden;
 }
 :is(:is(#launcher,.personal-project-view),#linear,#robot) .assembly-workspace-page.bom-part-workspace .investigations-panel .investigation-collapse-heading{
- padding:16px 20px;
+ padding:6px 12px;
  background:var(--color-surface);
 }
 :is(:is(#launcher,.personal-project-view),#linear,#robot) .assembly-workspace-page.bom-part-workspace .workspace-panels > article.part-linked-resources{
@@ -1018,11 +996,11 @@
 }
 .assembly-workspace-page .investigations-panel .investigation-collapse > summary.investigation-collapse-heading{
  background:var(--color-surface)!important;
- padding:16px 20px;
+ padding:6px 12px;
  border:0;
 }
 .recipe-instructions .recipe-heading-row{
- align-items:stretch;
+ align-items:center;
 }
 .recipe-instructions .recipe-heading-row .recipe-right-click-tip{
  align-self:stretch!important;
@@ -1527,3 +1505,18 @@
  padding:12px;margin:10px 0;border:1px solid var(--color-border);border-radius:8px;
 }
 .investigation-note-editor>.btn{margin-top:8px}
+
+
+.recipe-heading-actions,.investigation-heading-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.recipe-instructions .recipe-heading-actions h2{margin:0}
+.recipe-instructions .recipe-heading-actions .recipe-add-step,
+.investigation-heading-actions .investigation-add{font-size:.82rem;padding:4px 9px;min-height:30px}
+.recipe-instructions .recipe-add-step[hidden]{display:none}
+.investigation-record-count{display:block;color:var(--color-text-muted);font-size:.75rem}
+:is(#launcher,.personal-project-view,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article:is(.recipe-instructions,.investigations-panel){
+ margin:0 0 10px;
+}
+.assembly-workspace-page>.workspace-resources{margin-top:12px}
+
+.assembly-workspace-page .recipe-instructions .recipe-heading-actions h2,
+.assembly-workspace-page .investigation-heading-label h2{margin:0}

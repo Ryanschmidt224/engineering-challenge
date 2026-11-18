@@ -705,19 +705,18 @@ function setupAssemblyTrees(){
   const assemblyRecipe=window.BSRecipes?.mount(workspace.querySelector(".recipe-instructions"),{
    admin:()=>canEdit(),project,
    renderInvestigations:(step,target)=>investigations?.showStep(target,step,"assembly",selected??"__root__"),
-   onSave:()=>saveAssemblyWorkspace()
+   onSave:async()=>{if(assemblySaveFlight)await assemblySaveFlight;return saveAssemblyWorkspace()}
   });
   const partRecipe=window.BSRecipes?.mount(partWorkspace.querySelector(".recipe-instructions"),{
    admin:()=>canEdit(),project,
    renderInvestigations:(step,target)=>investigations?.showStep(target,step,"part",partRoute()),
-   onSave:()=>savePartWorkspace()
+   onSave:async()=>{if(partSaveFlight)await partSaveFlight;return savePartWorkspace()}
   });
   const assemblyInvestigationPanel=document.createElement("article");
   assemblyInvestigationPanel.className="investigations-panel";
   const partInvestigationPanel=document.createElement("article");
   partInvestigationPanel.className="investigations-panel";
-  // Keep lessons and revision history after the primary workspace materials.
-  workspace.querySelector(".workspace-resources").after(assemblyInvestigationPanel);
+  workspace.querySelector(".recipe-instructions").after(assemblyInvestigationPanel);
   partWorkspace.querySelector(".recipe-instructions").after(partInvestigationPanel);
   investigations=window.BSInvestigations?.mount({project,admin:()=>canEdit(),getTree:()=>nodes,
    getPart:()=>currentPartInfo,getPartList:()=>investigationParts,
@@ -2220,6 +2219,8 @@ function setupAssemblyTrees(){
    ["summary",summary],["workspace",workspace],["bom",bomScreen],
    ["part",partWorkspace],["parts",partsPage]
   ].map(([scope,mount])=>[scope,window.BSUnstructuredNotes.mount(mount,{project,scope,canEdit})]));
+  assemblyInvestigationPanel.after(notePanels.workspace.element);
+  workspace.append(workspace.querySelector(".workspace-resources"));
   summary.append(creatorInsightsTarget);
   let lastNotePage="";
   const showNotes=(scope,id="root")=>{

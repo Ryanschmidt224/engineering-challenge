@@ -16,7 +16,7 @@ test("optional step text appears only when populated",()=>{
  assert.match(recipe,/if\(step\.standard\.trim\(\)\)/);
  assert.match(recipe,/if\(step\.detail\.trim\(\)\)/);
  assert.match(recipe,/\+ Add /);
- assert.match(recipe,/getData:\(\)=>steps\.map\(normalize\)/);
+ assert.match(recipe,/getData:\(\)=>savedSteps\(\)\.map\(normalize\)/);
  assert.doesNotMatch(recipe,/Previous written instructions|Original written instructions/);
 });
 test("legacy freeform instruction panels are removed, not merely hidden",()=>{

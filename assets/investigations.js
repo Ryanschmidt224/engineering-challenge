@@ -14,7 +14,7 @@
  };
  const retiredLabels={practice:{lesson:"What did you learn?"},revision:{result:"What was the result?"},note:{note:"Notes"}};
  const categoryOf=record=>record.category||(record.partSnapshot?"revision":"failure");
- const sectionTitle="Practice, Tests, Revision, Failures, Notes";
+ const sectionTitle="Practice, tests, revisions, failures & notes";
  const acceptedAttachments=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.dwg,.dxf,.sldprt,.sldasm,.step,.stp,.stl,.igs,.iges,.x_t,.x_b,.obj,.3mf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip,.py,.js,.ts,.ino,.c,.cpp,.h,.hpp,.json,.md,.kicad_sch,.kicad_pcb,.kicad_pro";
  const photoExt=/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i;
  const fileUrl=id=>"/api/recipe-files?id="+encodeURIComponent(id);
@@ -282,10 +282,21 @@
    activeContext={...context,target};
    const disclosure=make("details","investigation-collapse");
    disclosure.open=openSections.has(sectionKey);
+   const own=records.filter(item=>owns(item,context));
+   const rolled=records.filter(item=>within(item,context)&&!owns(item,context));
+   const count=own.length+rolled.length;
    const summary=make("summary","investigation-collapse-heading");
    const title=make(compact?"h4":"h2","",sectionTitle);
    const toggleLabel=make("span","investigation-toggle-label",disclosure.open?(compact?"Hide":"Minimize details"):(compact?"Show":"Show details"));
-   summary.append(title,toggleLabel);
+   const heading=make("div","investigation-heading-label");
+   heading.append(title,make("span","investigation-record-count","("+count+(count===1?" record)":" records)")));
+   const actions=make("div","investigation-heading-actions");
+   actions.append(heading);
+   if(admin())actions.append(btn("+ Add entry",event=>{
+    event.preventDefault();event.stopPropagation();disclosure.open=true;
+    newRecord(context,target);
+   },"btn investigation-add"));
+   summary.append(actions,toggleLabel);
    disclosure.append(summary);
    disclosure.addEventListener("toggle",()=>{
     toggleLabel.textContent=disclosure.open?(compact?"Hide":"Minimize details"):(compact?"Show":"Show details");
@@ -294,14 +305,11 @@
    const content=make("div","investigation-collapse-content");
    const header=make("div","investigation-heading");
    if(admin()){
-    header.append(btn("+ Add record",()=>newRecord(context,target),"btn investigation-add"));
     if(context.ownerType==="part"&&!context.stepId&&typeof getPart==="function"&&getPart()?.id===context.ownerId&&
      typeof onReplacePart==="function")header.append(btn("Replace part / save revision",()=>replacePart(context,target),"btn investigation-add"));
    }
    disclosure.append(content);
    target.append(disclosure);
-   const own=records.filter(item=>owns(item,context));
-   const rolled=records.filter(item=>within(item,context)&&!owns(item,context));
    const renderRecord=(record,inherited=false)=>{
     const card=make("details","investigation-card");
     card.dataset.recordId=record.id;
@@ -435,8 +443,8 @@
    field.focus();
   }
   function newRecord(context,target){
-   const heading=target.querySelector(".investigation-heading");
-   if(!heading)return;
+   const content=target.querySelector(".investigation-collapse-content");
+   if(!content)return;
    const existing=target.querySelector(".investigation-new-record");
    if(existing){existing.querySelector("select")?.focus();return;}
    const form=make("div","investigation-create investigation-new-record");
@@ -451,7 +459,7 @@
    label.append(select);
    const cancel=btn("Cancel",()=>form.remove());
    form.append(label,cancel,fields);
-   heading.before(form);
+   content.prepend(form);
    select.onchange=()=>{
     fields.replaceChildren();
     fields.hidden=false;cancel.hidden=true;

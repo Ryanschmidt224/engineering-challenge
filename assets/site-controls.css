@@ -885,7 +885,6 @@
 :is(:is(#launcher,.personal-project-view),#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels{display:flex;flex-direction:column;align-items:stretch;gap:0;min-width:0}
 :is(:is(#launcher,.personal-project-view),#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.recipe-instructions{order:1}
 :is(:is(#launcher,.personal-project-view),#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-bom{order:2;display:block;min-width:0}
-:is(:is(#launcher,.personal-project-view),#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-resources{order:3}
 :is(:is(#launcher,.personal-project-view),#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-actions{order:4}
 :is(:is(#launcher,.personal-project-view),#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-main-bom-editor{order:0}
 :is(:is(#launcher,.personal-project-view),#linear,#robot) .workspace-bom .workspace-saved-parts{width:100%;min-width:0;overflow-x:auto}
@@ -1032,10 +1031,10 @@
 .assembly-bom-screen .bom-row-thumbnail{display:none!important;}
 .assembly-bom-screen .bom-duplicate-group{border:0;background:transparent;}
 
-/* Assembly workspace sequence: instructions, resources, then lessons and revisions.
-   Flex order must match the DOM placement or this panel jumps to the top. */
-:is(:is(#launcher,.personal-project-view),#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.investigations-panel{order:4}
+/* Keep the record panel and unstructured notes ahead of the workspace actions. */
+:is(:is(#launcher,.personal-project-view),#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.investigations-panel{order:3}
 :is(:is(#launcher,.personal-project-view),#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-actions{order:5}
+:is(#launcher,.personal-project-view,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.bs-unstructured-notes{order:4}
 
 
 /* Private account and personal project management (no public data toggled by CSS). */
