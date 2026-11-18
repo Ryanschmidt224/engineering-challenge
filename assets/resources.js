@@ -222,7 +222,7 @@
   for(const kind of Object.keys(data)){const rawList=Array.isArray(raw?.[kind])?raw[kind]:[];data[kind]=[...new Set(rawList.filter(value=>typeof value==="string"&&value.length<120))].slice(0,60)}
   return data;
  }
- function mount(panel,{onChange=()=>{}}={}){
+ function mount(panel,{onChange=()=>{},onCount=()=>{}}={}){
   let refs=normalize(null),editable=false,adding=false;
   panel.classList.add("linked-resources");
   const heading=element("h2","","Linked resources");
@@ -261,6 +261,7 @@
    body.replaceChildren();
    const total=Object.values(refs).reduce((sum,list)=>sum+list.length,0);
    description.hidden=total===0;
+   onCount(total);
    for(const kind of ["tools","calculators","parts"]){
     if(!refs[kind].length)continue;
     const group=element("div","linked-resource-group");

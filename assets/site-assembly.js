@@ -586,19 +586,6 @@ function setupAssemblyTrees(){
   const partDrawingPanel=window.BSDrawings?.mount(partWorkspace.querySelector(".part-drawing-panel"),()=>canEdit());
   const partFilesPanel=window.BSPartFiles?.mount(partWorkspace.querySelector(".part-files-panel"),()=>canEdit());
 
-  const resourceDetails=document.createElement("details");
-  resourceDetails.className="workspace-secondary-disclosure workspace-resource-disclosure";
-  const resourceSummary=document.createElement("summary");
-  const resourceHeading=document.createElement("span");resourceHeading.className="workspace-disclosure-title";
-  resourceHeading.textContent="Helpful tools";
-  const resourceHint=document.createElement("small");resourceHint.className="workspace-section-hint";
-  resourceHint.textContent="(Calculators, Tools, Etc)";
-  resourceHeading.append(" ",resourceHint);resourceSummary.append(resourceHeading);
-  const resourcePanel=workspace.querySelector(".workspace-resources");
-  resourceDetails.append(resourceSummary,resourcePanel);
-  const assemblyResourcePicker=window.BSResources?.mount(resourcePanel);
-  const partResourcePicker=window.BSResources?.mount(partWorkspace.querySelector(".part-linked-resources"));
-
   // Optional progressive disclosure: the textarea remains the simplest authoring tool.
   // Steps, test logs and history never require separate forms or mandatory fields.
   function installInstructionExtras(panel,prefix,onRestoreResources,onRestoreRecipe){
@@ -620,7 +607,7 @@ function setupAssemblyTrees(){
     }
     logDetails.classList.toggle("hide",experiments.length===0);
    };
-   const historyDetails=document.createElement("details");historyDetails.className=prefix==="part"?"instruction-history":"instruction-history workspace-secondary-disclosure";
+   const historyDetails=document.createElement("details");historyDetails.className="instruction-history workspace-secondary-disclosure";
    const historySummary=document.createElement("summary");historySummary.textContent="Recent changes";
    const historyList=document.createElement("div");historyList.className="instruction-history-list";
    historyDetails.append(historySummary,historyList);panel.querySelector(prefix==="part"?".part-workspace-save":".workspace-save").after(historyDetails);
@@ -649,27 +636,41 @@ function setupAssemblyTrees(){
    return {setData,getExperiments:()=>experiments};
   }
   let investigations=null,investigationParts=[];
-  const assemblyRecipe=window.BSRecipes?.mount(workspace.querySelector(".recipe-instructions"),{
-   admin:()=>canEdit(),project,
-   renderInvestigations:(step,target)=>investigations?.showStep(target,step,"assembly",selected??"__root__"),
-   onSave:async()=>{if(assemblySaveFlight)await assemblySaveFlight;return saveAssemblyWorkspace()}
-  });
-  const partRecipe=window.BSRecipes?.mount(partWorkspace.querySelector(".recipe-instructions"),{
-   admin:()=>canEdit(),project,
-   renderInvestigations:(step,target)=>investigations?.showStep(target,step,"part",partRoute()),
-   onSave:async()=>{if(partSaveFlight)await partSaveFlight;return savePartWorkspace()}
-  });
-  const assemblyInvestigationPanel=document.createElement("article");
-  assemblyInvestigationPanel.className="investigations-panel";
-  const partInvestigationPanel=document.createElement("article");
-  partInvestigationPanel.className="investigations-panel";
-  workspace.querySelector(".recipe-instructions").after(assemblyInvestigationPanel);
-  partWorkspace.querySelector(".recipe-instructions").after(partInvestigationPanel);
+  function mountWorkspaceSections(panel,{scope,ownerId,save,saveInProgress}){
+   const instructions=panel.querySelector(".recipe-instructions");
+   const recipe=window.BSRecipes?.mount(instructions,{
+    admin:canEdit,project,
+    renderInvestigations:(step,target)=>investigations?.showStep(target,step,scope,ownerId()),
+    onSave:async()=>{await saveInProgress();return save()}
+   });
+   const resourcesPanel=panel.querySelector(".workspace-resources,.part-linked-resources");
+   resourcesPanel.classList.add("workspace-resources");
+   const tools=document.createElement("details");
+   tools.className="workspace-resource-disclosure workspace-primary-disclosure";
+   const toolsSummary=document.createElement("summary");
+   const toolsHeading=document.createElement("h2");toolsHeading.textContent="Helpful tools";
+   const toolsHint=document.createElement("small");toolsHint.className="workspace-section-hint";
+   toolsHint.textContent="(Calculators, Tools, Etc)";
+   toolsHeading.append(" ",toolsHint);
+   const toolsCount=document.createElement("span");toolsCount.className="workspace-record-count";
+   const toolsLabel=document.createElement("div");toolsLabel.append(toolsHeading,toolsCount);
+   toolsSummary.append(toolsLabel);tools.append(toolsSummary,resourcesPanel);
+   const history=document.createElement("article");history.className="investigations-panel";
+   instructions.after(tools,history);
+   const resources=window.BSResources?.mount(resourcesPanel,{onCount:count=>{
+    toolsCount.textContent="("+count+(count===1?" record)":" records)");
+   }});
+   const extras=installInstructionExtras(panel,scope==="part"?"part":"workspace",
+    data=>resources?.setData(data,canEdit()),data=>recipe?.setData(data));
+   return {recipe,history,resources,extras};
+  }
+  const {recipe:assemblyRecipe,history:assemblyInvestigationPanel,resources:assemblyResourcePicker,extras:assemblyExtras}=
+   mountWorkspaceSections(workspace,{scope:"assembly",ownerId:()=>selected??"__root__",save:saveAssemblyWorkspace,saveInProgress:()=>assemblySaveFlight});
+  const {recipe:partRecipe,history:partInvestigationPanel,resources:partResourcePicker,extras:partExtras}=
+   mountWorkspaceSections(partWorkspace,{scope:"part",ownerId:()=>partRoute(),save:savePartWorkspace,saveInProgress:()=>partSaveFlight});
   investigations=window.BSInvestigations?.mount({project,admin:()=>canEdit(),getTree:()=>nodes,
    getPart:()=>currentPartInfo,getPartList:()=>investigationParts,
     onReplacePart:()=>detailsPanel.querySelector(".part-details-edit")?.click()});
-  const assemblyExtras=installInstructionExtras(workspace,"workspace",resources=>assemblyResourcePicker?.setData(resources,canEdit()),snapshot=>assemblyRecipe?.setData(snapshot));
-  const partExtras=installInstructionExtras(partWorkspace,"part",resources=>partResourcePicker?.setData(resources,canEdit()),snapshot=>partRecipe?.setData(snapshot));
   const creatorInsightsTarget=document.createElement("div");
   creatorInsightsTarget.className="creator-feedback-target";
   // Creator feedback is mounted at the end of the summary, after the notes and settings.
@@ -680,7 +681,7 @@ function setupAssemblyTrees(){
   instructionsFeedback(partWorkspace,()=> "section:instructions_"+(partRoute()||"root"));
 
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
-  detailsPanel.innerHTML='<details class="part-details-collapse"><summary class="part-details-view-heading"><h2>Part details</h2><span class="part-details-toggle-label">Show details</span></summary><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div><div class="part-drawing-panel"></div><div class="part-files-panel"></div></details>';
+  detailsPanel.innerHTML='<details class="part-details-collapse"><summary class="part-details-view-heading"><h2>Part details</h2><dl class="part-details-summary-fields"></dl></summary><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div><div class="part-drawing-panel"></div><div class="part-files-panel"></div></details>';
   const partDetailsCollapse=detailsPanel.querySelector(".part-details-collapse");
   // Edit belongs beside the heading, not at the bottom of the expanded details.
   const detailEditButton=detailsPanel.querySelector(".part-details-edit");
@@ -701,19 +702,19 @@ function setupAssemblyTrees(){
   const detailHeading=detailsPanel.querySelector(".part-details-view-heading");
   // Keep the linked-part actions beside the Part details heading.
   // Collapsed sections hide both actions through the existing heading styles.
-  detailHeading.insertBefore(detailEditButton,detailHeading.querySelector(".part-details-toggle-label"));
+  detailHeading.append(detailEditButton);
   detailHeading.insertBefore(editWorkshopButton,detailEditButton);
   detailEditButton.textContent="Modify part";
-  detailHeading.insertBefore(reloadWorkshopButton,detailHeading.querySelector(".part-details-toggle-label"));
+  detailHeading.append(reloadWorkshopButton);
   detailsPanel.querySelector(".part-details-view-actions").replaceWith(reloadWorkshopStatus);
   partDetailsCollapse.addEventListener("toggle",()=>{
-   partDetailsCollapse.querySelector(".part-details-toggle-label").textContent=partDetailsCollapse.open?"Minimize details":"Show details";
    if(partDetailsCollapse.open&&currentPartInfo){
     detailEditButton.hidden=!canEdit();
     reloadWorkshopButton.hidden=!canEdit()||!workshopLinkId(currentPartInfo)||!!currentPartInfo.generatedFrom;
    }
   });
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
+  const detailSummary=detailsPanel.querySelector(".part-details-summary-fields");
   const progressPanel=document.createElement("section");progressPanel.className="part-progress-panel";
   progressPanel.innerHTML='<label class="part-progress-inline-label" for="part-progress-select-'+project+'">Status</label><select id="part-progress-select-'+project+'" class="field part-progress-select" aria-label="Status"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="complete">Complete</option></select><label class="part-attention-toggle"><input type="checkbox" class="part-needs-attention"> Needs attention</label><label class="part-attention-note-field" hidden>What needs to be fixed?<textarea class="field part-attention-note" rows="2" maxlength="2000" placeholder="What needs attention?"></textarea></label><span class="part-progress-feedback" role="status" aria-live="polite"></span><button type="button" class="part-progress-save" hidden>Save status</button>';
   partWorkspace.querySelector(".workspace-heading > div:not(.workspace-cover)").append(progressPanel);
@@ -885,6 +886,14 @@ function setupAssemblyTrees(){
   const renderPartDetails=part=>{
    detailRows.replaceChildren();
    const fields=window.BSPartFields.detailRows(part);
+   const values=new Map(fields);
+   detailSummary.replaceChildren();
+   for(const title of ["Part name","Description","Quantity"]){
+    const item=document.createElement("div");
+    const label=document.createElement("dt");label.textContent=title;
+    const value=document.createElement("dd");value.textContent=values.get(title)||"—";
+    item.append(label,value);detailSummary.append(item);
+   }
    for(const [title,value] of fields){
     if(value===null||value===undefined||String(value).trim()==="")continue;
     const line=document.createElement("div");line.className="part-details-view-row";
@@ -2167,7 +2176,7 @@ function setupAssemblyTrees(){
    ["part",partWorkspace],["parts",partsPage]
   ].map(([scope,mount])=>[scope,window.BSUnstructuredNotes.mount(mount,{project,scope,canEdit})]));
   assemblyInvestigationPanel.after(notePanels.workspace.element);
-  workspace.querySelector(".recipe-instructions").after(resourceDetails);
+  partInvestigationPanel.after(notePanels.part.element);
   summary.append(creatorInsightsTarget);
   let lastNotePage="";
   const showNotes=(scope,id="root")=>{

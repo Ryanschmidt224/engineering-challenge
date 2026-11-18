@@ -196,24 +196,24 @@
 
 
 /* Shared disclosures for secondary workspace sections. */
-.assembly-workspace-page:not(.bom-part-workspace) .workspace-secondary-disclosure{
+.assembly-workspace-page .workspace-secondary-disclosure{
  margin:12px 0 0;
  padding:0;
  border:1px solid var(--color-border);
  border-radius:8px;
  background:var(--color-page);
 }
-.assembly-workspace-page:not(.bom-part-workspace) .workspace-secondary-disclosure>summary{
+.assembly-workspace-page .workspace-secondary-disclosure>summary{
  cursor:pointer;
  padding:13px 17px;
  color:var(--color-text-muted);
  font-size:.82rem;
  font-weight:550;
 }
-.assembly-workspace-page:not(.bom-part-workspace) .workspace-secondary-disclosure>summary:hover{
+.assembly-workspace-page .workspace-secondary-disclosure>summary:hover{
  background:var(--color-hover);
 }
-.assembly-workspace-page:not(.bom-part-workspace) .workspace-secondary-disclosure[open]>summary{
+.assembly-workspace-page .workspace-secondary-disclosure[open]>summary{
  border-bottom:1px solid var(--color-border);
  color:var(--color-text);
 }
@@ -224,7 +224,7 @@
 :is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details .workspace-backup-history{
  padding:0 17px 16px;
 }
-:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-secondary-disclosure .btn{
+:is(#launcher,.personal-project-view) .assembly-workspace-page .workspace-secondary-disclosure .btn{
  background:var(--color-surface-muted);
  border:1px solid var(--color-border);
  color:var(--color-text);
@@ -1586,9 +1586,6 @@
 .bom-part-workspace .part-details-collapse:not([open])>.part-details-view-heading .part-details-edit,
 .bom-part-workspace .part-details-collapse:not([open])>.part-details-view-heading .part-details-edit-workshop{
  display:none!important;
-}
-.bom-part-workspace .part-details-view-heading .part-details-toggle-label{
- margin-left:auto;
 }
 .assembly-parts-management-link{
  display:block;
