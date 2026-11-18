@@ -1,7 +1,7 @@
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
 import {issueNumber} from "./numbering.js";
-import {getPartPhoto,linkedWorkshopItem,partPhotoKey,workshopLinkId,workshopPartDetails} from "./workshop-linked-part.js";
+import {getPartPhoto,linkedWorkshopItem,partPhotoKey,workshopItemLookup,workshopLinkId,workshopPartDetails,workshopSourcing} from "./workshop-linked-part.js";
 import {annotationKey,renditionKey} from "./photo-annotations.js";
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const authorized=async(request,env)=>{const u=new URL(request.url),project=u.searchParams.get("project");return project?canEditProject(request,env,project):isAdmin(request,env)};
@@ -211,7 +211,17 @@ async function reloadWorkshopPart(request,env,project,id){
 export async function handleComponents(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project");
  if(!await projectAllowed(env,project,request))return json({error:"Invalid project"},400);
- if(request.method==="GET")return json({components:(await read(env,project)).map(presentPart)});
+ if(request.method==="GET"){
+  const parts=await read(env,project),lookup=workshopItemLookup(request,env);
+  const components=await Promise.all(parts.map(async part=>{
+   if(!part.workshopSourcing&&part.partType!=="custom"&&part.itemType!=="document"&&workshopLinkId(part)){
+    const source=await lookup(part).catch(()=>null);
+    if(source)return presentPart({...part,workshopSourcing:workshopSourcing(source.item)});
+   }
+   return presentPart(part);
+  }));
+  return json({components});
+ }
  if(!await authorized(request,env))return json({error:"Administrator token required"},401);
  if(request.method==="POST"){
   const input=await request.json().catch(()=>null);
@@ -238,6 +248,7 @@ export async function handleComponents(request,env){
   }catch(error){return json({error:error.message},error.status||400)}
   record.fullName=clean(input.fullName||generatedFullName(record));
   const source=await linkedWorkshopItem(request,env,record);
+  if(source)record.workshopSourcing=workshopSourcing(source.item);
   const photo=source?.photoKey?await env.PHOTOS.get(source.photoKey):null;
   if(photo)record.photoRevision=crypto.randomUUID();
   items.push(record);syncDerived(items,record);
@@ -254,6 +265,7 @@ export async function handleComponents(request,env){
   if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"||typeof input.isTool==="boolean"||input.progressStatus!==undefined||input.needsAttention!==undefined||input.attentionNote!==undefined||input.name!==undefined||input.partType!==undefined||input.quantity!==undefined||input.purchaseStatus!==undefined||input.progressUpdate!==undefined||input.progressOperationAdd!==undefined||input.progressOperationEdit!==undefined))return json({error:"Invalid part preference"},400);
   const state=await readEditable(env,project),items=state.items,entry=items.find(item=>item.id===id);
   if(!entry)return json({error:"Part not found"},404);
+  const previousWorkshopId=workshopLinkId(entry);
   if(entry.generatedFrom&&(input.name!==undefined||input.partType!==undefined||input.quantity!==undefined))return json({error:"Generated materials are controlled by their source part"},409);
   if(input.name!==undefined){
    if(typeof input.name!=="string"||!input.name.trim()||input.name.trim().length>180)return json({error:"Part name must be 1–180 characters"},400);
@@ -312,6 +324,11 @@ export async function handleComponents(request,env){
    syncDerived(items,entry);
   }
   entry.fullName=generatedFullName(entry);
+  if(workshopLinkId(entry)!==previousWorkshopId){
+   const source=await linkedWorkshopItem(request,env,entry);
+   if(source)entry.workshopSourcing=workshopSourcing(source.item);
+   else delete entry.workshopSourcing;
+  }
   // Parts Management updates the project occurrence. Workshop references
   // are links and are written only by their own Workshop endpoints.
   if(!await saveEditable(env,project,items,state))return conflict();
@@ -363,6 +380,11 @@ export async function handleComponents(request,env){
    catch(error){return json({error:error.message},error.status||400)}
   }
   updated.fullName=clean(input.fullName||generatedFullName(updated));
+  if(workshopLinkId(updated)!==workshopLinkId(previous)){
+   const source=await linkedWorkshopItem(request,env,updated);
+   if(source)updated.workshopSourcing=workshopSourcing(source.item);
+   else delete updated.workshopSourcing;
+  }
   items[index]=updated;syncDerived(items,updated);
   if(!await saveEditable(env,project,items,state))return conflict();
   return json({component:presentPart(updated)});

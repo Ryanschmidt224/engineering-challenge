@@ -396,13 +396,11 @@ function setupAssemblyTrees(){
    return show;
   }
   function renderEstimatedCost(parts){
-   const materials=parts.filter(part=>!part.isTool&&window.BSPartFields.itemTypeFor(part)==="part");
-   const priced=materials.filter(part=>part.historicalPrice!=null&&part.quantity!=null&&
-    Number.isFinite(Number(part.historicalPrice))&&Number.isFinite(Number(part.quantity)));
-   if(!priced.length){summaryCost.textContent="No BOM items have both a quantity and a recorded price.";return}
-   const sum=priced.reduce((total,part)=>total+Number(part.historicalPrice)*Number(part.quantity),0);
-   const currency=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(sum);
-   summaryCost.textContent=currency+" · "+priced.length+" of "+materials.length+" materials priced from historical BOM prices";
+   const {total,priced,workshop,materials}=window.BSPartFields.estimateCost(parts);
+   if(!priced){summaryCost.textContent="A cost estimate needs at least one BOM part with a quantity and either a recorded price or a numeric Workshop reference price.";return}
+   const currency=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(total);
+   summaryCost.textContent=currency+" · "+priced+" of "+materials+" materials priced"+
+    (workshop?" ("+workshop+" from Workshop reference prices)":" from recorded BOM prices");
   }
   const settingsPage=document.createElement("section");
   settingsPage.className="assembly-parts-page project-settings-page hide";
@@ -1008,9 +1006,10 @@ function setupAssemblyTrees(){
    const fields=window.BSPartFields.detailRows(part);
    const values=new Map(fields);
    const quantity=part.quantity==null?"":"Qty "+values.get("Quantity");
-   const unitCost=part.historicalPrice;
+   const sourcing=window.BSPartFields.sourcingFor(part);
+   const {unitCost}=sourcing;
    let cost="";
-   if(unitCost!=null&&Number.isFinite(Number(unitCost))){
+   if(unitCost!==null){
     const dollars=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:4});
     cost=dollars.format(unitCost)+" per unit";
     if(part.quantity!=null&&Number.isFinite(Number(part.quantity)))
@@ -1018,17 +1017,23 @@ function setupAssemblyTrees(){
    }
    const summary=[values.get("Part name"),treeDescription(part.projectDetails,part.description),quantity,cost];
    detailSummary.textContent=summary.filter(Boolean).join(" · ");
-   for(const [title,value] of fields){
-    if(value===null||value===undefined||String(value).trim()==="")continue;
+   const appendDetail=(title,value,isLink=false)=>{
+    if(value===null||value===undefined||String(value).trim()==="")return;
     const line=document.createElement("div");line.className="part-details-view-row";
     const label=document.createElement("strong");label.textContent=title;
     const separator=document.createElement("span");separator.textContent=" - ";
-    const content=document.createElement("span");content.textContent=String(value);
+    const content=document.createElement(isLink?"a":"span");content.textContent=String(value);
+    if(isLink){content.href=value;content.target="_blank";content.rel="noopener noreferrer";content.className="part-order-url"}
     line.append(label,separator,content);detailRows.append(line);
-   }
-   if(part.specifications?.length){
+   };
+   appendDetail("Order URL",sourcing.url,true);
+   appendDetail("Cost",sourcing.price);
+   appendDetail("Package size",sourcing.packageSize);
+   for(const [title,value] of fields)appendDetail(title,value);
+   const specs=(part.specifications||[]).filter(spec=>!window.BSPartFields.isPurchased(part)||!window.BSPartFields.sourcingLabels.includes(spec.name));
+   if(specs.length){
     const heading=document.createElement("h3");heading.textContent="Specifications";detailRows.append(heading);
-    for(const spec of part.specifications){
+    for(const spec of specs){
      const line=document.createElement("div");line.className="part-details-view-row";
      const label=document.createElement("strong");label.textContent=spec.name||"Specification";
      const separator=document.createElement("span");separator.textContent=" - ";

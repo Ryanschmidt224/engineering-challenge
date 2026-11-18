@@ -5,20 +5,35 @@ const {workshopReferences,workshopLinkId}=globalThis.BSResources;
 export {workshopLinkId};
 const uuid=/^[0-9a-f-]{36}$/i;
 
-export async function linkedWorkshopItem(request,env,part){
+async function readJSON(env,key){
+ const object=await env.PHOTOS.get(key);
+ return object?JSON.parse(await object.text()):null;
+}
+
+export function workshopItemLookup(request,env){
+ const records=new Map();
+ let user;
+ const cachedRead=key=>{
+  if(!records.has(key))records.set(key,readJSON(env,key));
+  return records.get(key);
+ };
+ return part=>linkedWorkshopItem(request,env,part,cachedRead,()=>user??=accountUser(request,env));
+}
+
+export async function linkedWorkshopItem(request,env,part,read=key=>readJSON(env,key),getUser=()=>accountUser(request,env)){
  const id=workshopLinkId(part);
  if(!id)return null;
  if(id.startsWith("my:")){
-  const user=await accountUser(request,env);
+  const user=await getUser();
   if(!user)return null;
-  const object=await env.PHOTOS.get("user-workshop/"+user.id+"/inventory.json");
-  const item=object&&JSON.parse(await object.text()).find(entry=>entry.id===id.slice(3));
+  const inventory=await read("user-workshop/"+user.id+"/inventory.json");
+  const item=inventory?.find(entry=>entry.id===id.slice(3));
   if(!item)return null;
   const photoKey=uuid.test(item.photoId||"")?"user-workshop/"+user.id+"/photos/"+item.photoId:null;
   return {id,item,photoKey};
  }
- const stored=await env.PHOTOS.get("workshop-reference-overrides/v1.json");
- const override=stored&&JSON.parse(await stored.text())[id];
+ const stored=await read("workshop-reference-overrides/v1.json");
+ const override=stored?.[id];
  const seed=workshopReferences.find(item=>item.id===id);
  if(!seed&&!override?.created)return null;
  const item={...seed,...override};
@@ -26,6 +41,12 @@ export async function linkedWorkshopItem(request,env,part){
  const photoKey=uuid.test(photoId||"")?"workshop-reference-photos/"+photoId:null;
  return {id,item,photoKey};
 }
+
+export const workshopSourcing=item=>({
+ url:String(item.supplierUrl??"").trim().slice(0,1200),
+ price:String(item.price??"").trim().slice(0,80),
+ packageQuantity:String(item.packageQuantity??"").trim().slice(0,80)
+});
 
 export function workshopPartDetails({id,item}){
  const clean=(value,n=300)=>String(value??"").trim().slice(0,n);
@@ -36,8 +57,7 @@ export function workshopPartDetails({id,item}){
  })).filter(spec=>spec.name&&spec.value);
  const additional=[
   ["Specifications",item.spec],["Typical use",item.use],["Considerations",item.caution],
-  ["Supplier part number",item.supplierPartNumber],["Supplier URL",item.supplierUrl],["Documentation URL",item.documentationUrl||item.source],
-  ["Reference price",item.price],["Quantity per package",item.packageQuantity],["How to order",item.orderNotes]
+  ["Supplier part number",item.supplierPartNumber],["Documentation URL",item.documentationUrl||item.source],["How to order",item.orderNotes]
  ];
  for(const [name,value] of additional){
   if(value&&!specifications.some(spec=>spec.name===name))specifications.push({name,value:clean(value,1200),source:"explicit"});
@@ -46,7 +66,7 @@ export function workshopPartDetails({id,item}){
   name:clean(item.name,180),description:clean(item.subtitle||item.description,2000),
   category:clean(item.category),manufacturer:clean(item.manufacturer),
   model:clean(item.partNumber||item.model),supplier:clean(item.supplier),asin:clean(item.asin),
-  specifications:specifications.slice(0,35),supplierOffers:[],
+  specifications:specifications.slice(0,35),supplierOffers:[],workshopSourcing:workshopSourcing(item),
   partType:"purchased",itemType:"part",isTool:item.kind==="tool"||item.category==="tools",
   projectDetails:{workshopReferenceId:id,workshopTreeDescription:clean(item.featureTreeDescription,20),notes:clean(item.notes,6000)}
  };

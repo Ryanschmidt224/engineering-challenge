@@ -1544,6 +1544,7 @@
 .part-details-heading-copy{min-width:0}
 .part-details-summary-fields{display:block;color:var(--color-text-muted);font-size:.8rem;line-height:1.4;overflow-wrap:anywhere}
 .part-details-summary-fields:empty{display:none}
+.part-order-url{overflow-wrap:anywhere;min-width:0}
 
 
 .workspace-tool-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:30px}

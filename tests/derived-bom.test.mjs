@@ -4,14 +4,14 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {runInNewContext} from "node:vm";
 import {randomUUID} from "node:crypto";
-import {linkedWorkshopItem,partPhotoKey} from "../functions/api/workshop-linked-part.js";
+import {linkedWorkshopItem,partPhotoKey,workshopItemLookup,workshopLinkId,workshopSourcing} from "../functions/api/workshop-linked-part.js";
 
 function handler(path,name){
  const source=readFileSync(path,"utf8").replace(/^import .*;\s*$/gm,"").replace(/^export /gm,"");
  return runInNewContext(source+"\n"+name+";",{
   Response,Request,URL,crypto:{randomUUID},isAdmin:async()=>true,
   projectAllowed:async()=>true,canEditProject:async()=>true,
-  linkedWorkshopItem,partPhotoKey,console,Date,JSON,Number,String,Array,Map,Set,RegExp
+  linkedWorkshopItem,partPhotoKey,workshopItemLookup,workshopLinkId,workshopSourcing,console,Date,JSON,Number,String,Array,Map,Set,RegExp
  });
 }
 function storage(){

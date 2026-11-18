@@ -359,6 +359,7 @@ test("Workshop reload replaces project part details and the active photo in one 
  const photo="/api/components/photo?project=launcher&id="+partId;
  const view="/api/photo-annotations?kind=part&project=launcher&id="+partId+"&view=1";
  const item={created:true,name:"Current switch",partNumber:"ABC-10",featureTreeDescription:"Motor switch",
+  supplierUrl:"https://example.test/switch",price:"3.00",packageQuantity:"1",
   kind:"component",category:"electronics",notes:"Workshop notes",specifications:[{label:"Rated voltage",value:"24",unit:"V"}],photos:[{id:photoId}]};
  const saveWorkshop=()=>env.PHOTOS.put(workshopKey,JSON.stringify({[workshopId]:item}));
  await saveWorkshop();
@@ -368,11 +369,16 @@ test("Workshop reload replaces project part details and the active photo in one 
   projectDetails:{workshopReferenceId:workshopId,changes:"Local change",notes:"Local note"},
   specifications:[{name:"Old spec",value:"Old value"}]};
  await env.PHOTOS.put("components/launcher.json",JSON.stringify([original]));
+ const expectedSourcing={url:item.supplierUrl,price:item.price,packageQuantity:item.packageQuantity};
+ const existing=await data(await handleComponents(request(components),env));
+ assert.deepEqual(existing.body.components[0].workshopSourcing,expectedSourcing);
+ assert.equal(JSON.parse(await (await env.PHOTOS.get("components/launcher.json")).text())[0].workshopSourcing,undefined);
  const rawPath="/api/components/photo?project=launcher&id=";
  const create=await data(await handleComponents(request(components,"POST",{
   name:"New linked switch",specifications:[],assignNumber:false,projectDetails:{workshopReferenceId:workshopId}
  },session),env));
  assert.equal(create.status,201);
+ assert.deepEqual(create.body.component.workshopSourcing,expectedSourcing);
  const inherited=await handleComponentPhoto(request(rawPath+create.body.component.id),env);
  assert.deepEqual([...new Uint8Array(await inherited.arrayBuffer())],[1,2,3]);
  assert.ok(create.body.component.photoRevision);
@@ -385,6 +391,7 @@ test("Workshop reload replaces project part details and the active photo in one 
  const result=await data(await reload());
  assert.equal(result.status,200,JSON.stringify(result.body));
  const {component}=result.body;
+ assert.deepEqual(component.workshopSourcing,expectedSourcing);
  assert.equal(component.name,"Current switch");
  assert.equal(component.model,"ABC-10");
  assert.equal(component.manufacturer,"");

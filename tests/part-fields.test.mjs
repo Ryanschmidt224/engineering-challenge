@@ -3,9 +3,31 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {runInNewContext} from "node:vm";
 
-const browser={window:{}};
+const browser={window:{},URL};
 runInNewContext(readFileSync(new URL("../assets/part-fields.js",import.meta.url),"utf8"),browser);
 const fields=browser.window.BSPartFields;
+
+test("cost rolls up Workshop packages with recorded prices taking priority",()=>{
+ const sourcing={url:"https://example.test/parts/123",price:"$12.50",packageQuantity:"5 pcs"};
+ const part={quantity:6,workshopSourcing:sourcing};
+ assert.equal(fields.sourcingFor(part).url,sourcing.url);
+ assert.equal(fields.sourcingFor(part).unitCost,2.5);
+ assert.equal(fields.sourcingFor(part).packageSize,"5 pcs");
+ const historic={...part,historicalPrice:3};
+ assert.equal(fields.sourcingFor(historic).source,"historical");
+ assert.equal(fields.sourcingFor(historic).unitCost,3);
+ const legacy={quantity:1,specifications:[
+  {name:"Supplier URL",value:"javascript:alert(1)"},{name:"Reference price",value:"9.00 USD"},{name:"Quantity per package",value:"3"}
+ ]};
+ assert.equal(fields.sourcingFor(legacy).url,"");
+ assert.equal(fields.sourcingFor(legacy).unitCost,3);
+ const ambiguous={...part,workshopSourcing:{...sourcing,packageQuantity:"assortment"}};
+ const result=fields.estimateCost([part,historic,legacy,ambiguous,{...part,quantity:null},{...part,isTool:true}]);
+ assert.equal(result.total,36);
+ assert.equal(result.priced,3);
+ assert.equal(result.workshop,2);
+ assert.equal(result.materials,5);
+});
 
 test("purchased and custom status options remain separate",()=>{
  const purchased={partType:"purchased"};
