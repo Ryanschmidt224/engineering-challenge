@@ -1581,3 +1581,26 @@
 .assembly-workspace-page :is(.workspace-secondary-disclosure,.part-details-collapse)>summary::before{
  position:absolute;left:7px;top:calc(50% - 4px);
 }
+
+.assembly-layout .assembly-sidebar>.assembly-summary-sidebar-card{
+ display:grid;gap:12px;padding:0;border:0;background:transparent;overflow:visible;
+}
+.part-attention-note-field[hidden]+.attention-note-expand{display:none}
+.assembly-workspace-page .part-progress-panel.attention-note-expanded{flex-wrap:wrap!important}
+.attention-note-expand{font-size:.78rem;padding:4px 8px;min-height:32px}
+.assembly-workspace-page .attention-note-expanded .part-attention-note-field:not([hidden]){
+ flex:1 1 min(100%,620px);width:min(100%,620px);max-width:none;
+}
+.assembly-workspace-page .attention-note-expanded .part-attention-note-field .part-attention-note{
+ height:132px;min-height:132px;max-width:none;font-weight:400;
+}
+.project-summary-overview{
+ margin:16px 0;padding:16px 20px;border:1px solid var(--color-border);
+ border-radius:10px;background:var(--color-surface);
+}
+.project-summary-overview h2{margin:0 0 8px;font-size:1.05rem}
+.project-summary-overview textarea{width:100%;resize:vertical;margin:0 0 8px}
+.project-summary-text{white-space:pre-wrap;overflow-wrap:anywhere}
+.project-summary-message:empty,.project-summary-tags:empty{display:none}
+.project-summary-tags{margin:14px 0}
+.project-summary-cost{margin:0}

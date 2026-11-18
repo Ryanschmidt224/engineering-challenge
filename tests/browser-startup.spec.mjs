@@ -45,20 +45,20 @@ test("project feature tree and workspace initialize without browser errors", asy
  const tree=page.locator("#launcher .assembly-tree-nodes");
  const summary=page.locator("#launcher .project-summary-page");
  await expect(summary).toBeVisible();
- const summaryEntry=page.locator("#launcher .assembly-summary-sidebar-card .assembly-project-summary-entry");
+ const summaryEntry=page.locator("#launcher .assembly-summary-sidebar-card .assembly-project-summary-entry:first-child");
  await expect(summaryEntry).toHaveText("Project summary");
  await expect(summaryEntry).toHaveAttribute("aria-current","page");
- const partsEntry=page.locator("#launcher .assembly-parts-management-link");
+ const partsEntry=page.locator("#launcher .assembly-project-parts-entry");
  await expect(partsEntry).toBeVisible();
  const navVisual=await page.locator("#launcher .assembly-sidebar").evaluate(sidebar=>{
-  const a=sidebar.querySelector(".assembly-summary-sidebar-card .assembly-project-summary-entry");
-  const b=sidebar.querySelector(".assembly-parts-management-link");
+  const a=sidebar.querySelector(".assembly-summary-sidebar-card .assembly-project-summary-entry:first-child");
+  const b=sidebar.querySelector(".assembly-project-parts-entry");
   const box=element=>{const r=element.getBoundingClientRect(),style=getComputedStyle(element);
    return {x:r.x,width:r.width,height:r.height,padding:style.padding,borderRadius:style.borderRadius,
     borderWidth:style.borderWidth,fontSize:style.fontSize}};
   return {summary:box(a),parts:box(b),wrapperDisplay:getComputedStyle(a.parentElement).display};
  });
- expect(navVisual.wrapperDisplay).toBe("contents");
+ expect(navVisual.wrapperDisplay).toBe("grid");
  expect(navVisual.summary.width).toBeCloseTo(navVisual.parts.width,1);
  expect(navVisual.summary.height).toBeCloseTo(navVisual.parts.height,1);
  expect(navVisual.summary.x).toBeCloseTo(navVisual.parts.x,1);
@@ -202,7 +202,7 @@ test("linear and robot projects share the complete feature tree, summary, BOM an
   await page.goto("/#"+id);
   const root=page.locator("#"+id);
   const tree=root.locator(".assembly-tree-nodes");
-  await expect(root.locator(".assembly-summary-sidebar-card .assembly-project-summary-entry")).toBeVisible();
+  await expect(root.locator(".assembly-summary-sidebar-card .assembly-project-summary-entry:first-child")).toBeVisible();
   await expect(root.locator(".project-summary-page")).toBeVisible();
   await expect(root.locator(".project-summary-gallery")).toBeVisible();
   await expect(root.locator(".project-summary-bom-section")).toBeVisible();
@@ -709,7 +709,7 @@ test("owner manages project privacy and removal from the summary",async({page})=
  const settings=page.locator(".project-settings-dialog .project-summary-owner-settings");
  await expect(settings).toBeHidden();
  const tree=page.locator("#"+id+" .assembly-tree-nodes");
- const summaryEntry=page.locator("#"+id+" .assembly-summary-sidebar-card .assembly-project-summary-entry");
+ const summaryEntry=page.locator("#"+id+" .assembly-summary-sidebar-card .assembly-project-summary-entry:first-child");
  await expect(summaryEntry).toContainText("1 change waiting");
  await expect(summary.locator(".project-summary-review")).toBeVisible();
  await expect(summary.locator(".project-summary-review-list li")).toHaveCount(1);
@@ -754,7 +754,7 @@ test("owner manages project privacy and removal from the summary",async({page})=
  await tree.locator(".assembly-name").first().click();
  await expect(page).toHaveURL(new RegExp("#"+id+"/workspace/__root__"));
  await expect(page.locator("#"+id+" .workspace-project-settings")).toHaveCount(0);
- await page.locator("#"+id+" .assembly-summary-sidebar-card .assembly-project-summary-entry").click();
+ await page.locator("#"+id+" .assembly-summary-sidebar-card .assembly-project-summary-entry:first-child").click();
  await expect(summary).toBeVisible();
  expect(errors).toEqual([]);
 });
@@ -1048,8 +1048,8 @@ test("project navigation orders summary below tree and page notes can be created
  const order=await sidebar.evaluate(root=>[...root.children].map(e=>e.className));
  const tree=order.findIndex(c=>c.includes("feature-tree-frame"));
  const summary=order.findIndex(c=>c.includes("assembly-summary-sidebar-card"));
- const parts=order.findIndex(c=>c.includes("assembly-parts-management-link"));
- expect(tree).toBeGreaterThanOrEqual(0);expect(summary).toBe(tree+1);expect(parts).toBe(summary+1);
+ expect(tree).toBeGreaterThanOrEqual(0);expect(summary).toBe(tree+1);
+ await expect(sidebar.locator(".assembly-summary-sidebar-card button:visible")).toHaveText(["Project summary","Parts Management","Project Settings"]);
  const panel=page.locator("#launcher .project-summary-page .bs-unstructured-notes");
  await expect(panel).toBeVisible();
  await panel.getByRole("button",{name:"+ Add entry"}).click();

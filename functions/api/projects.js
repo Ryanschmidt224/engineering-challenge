@@ -115,6 +115,10 @@ export async function onRequest({request,env}){
     if(!["locked","approval"].includes(input.editMode))return json({error:"Invalid editing mode"},400);
     changed.editMode=input.editMode;
    }
+   if(input.summary!==undefined){
+    if(typeof input.summary!=="string"||input.summary.length>5000)return json({error:"Project summary must be at most 5,000 characters"},400);
+    changed.summary=input.summary.trim();
+   }
    if(input.name!==undefined){if(typeof input.name!=="string"||!input.name.trim()||input.name.length>100)return json({error:"Invalid project name"},400);changed.name=input.name.trim()}
   }
   delete changed.builtIn;
