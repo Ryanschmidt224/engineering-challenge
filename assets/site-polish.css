@@ -1518,7 +1518,6 @@
 .workspace-resource-disclosure>.workspace-resources{padding:12px 17px;margin:0}
 .workspace-resource-disclosure>.workspace-resources>h2{display:none}
 
-.workspace-section-hint{font-size:.75rem;font-weight:450;color:var(--color-text-muted)}
 .workspace-disclosure-title{font-weight:650;color:var(--color-text)}
 .assembly-project-settings-entry[hidden],.workspace-backup-details[hidden]{display:none!important}
 .project-settings-dialog>.project-summary-owner-settings{margin:0 0 12px}
@@ -1546,3 +1545,25 @@
 .part-details-summary-fields>div{display:flex;gap:6px;min-width:0}
 .part-details-summary-fields dt{color:var(--color-text-muted);flex:none}
 .part-details-summary-fields dd{margin:0;overflow-wrap:anywhere}
+
+
+.workspace-tool-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:30px}
+.workspace-tool-actions .linked-resource-add{
+ border:0;background:transparent;color:var(--color-accent);padding:4px 0;
+ font:inherit;font-size:.82rem;font-weight:650;cursor:pointer;
+}
+.workspace-tool-actions .linked-resource-add[hidden]{display:none}
+.workspace-tool-actions .linked-resource-add:hover{text-decoration:underline}
+.assembly-workspace-page .workspace-panels>article.investigations-panel{overflow:visible}
+.bs-section-tooltip{position:relative;display:inline-flex}
+.bs-section-tooltip>button{
+ border:0;background:transparent;color:var(--color-text-muted);
+ font:inherit;font-size:.9rem;padding:2px 3px;cursor:help;
+}
+.bs-section-tooltip-content{
+ position:absolute;z-index:5;top:calc(100% + 3px);left:0;
+ width:max-content;max-width:min(220px,45vw);padding:6px 8px;border-radius:6px;
+ background:var(--color-text);color:var(--color-surface);font-size:.78rem;
+ font-weight:400;line-height:1.4;white-space:normal;visibility:hidden;
+}
+.bs-section-tooltip:not(.tooltip-dismissed):is(:hover,:focus-within)>.bs-section-tooltip-content{visibility:visible}

@@ -222,13 +222,13 @@
   for(const kind of Object.keys(data)){const rawList=Array.isArray(raw?.[kind])?raw[kind]:[];data[kind]=[...new Set(rawList.filter(value=>typeof value==="string"&&value.length<120))].slice(0,60)}
   return data;
  }
- function mount(panel,{onChange=()=>{},onCount=()=>{}}={}){
+ function mount(panel,{onChange=()=>{},onCount=()=>{},addTo=null}={}){
   let refs=normalize(null),editable=false,adding=false;
   panel.classList.add("linked-resources");
   const heading=element("h2","","Linked resources");
   const description=element("p","muted","Linked resources are references, not additional BOM quantities.");
   const body=element("div","linked-resource-groups");
-  const addButton=element("button","linked-resource-add","+ Add resources");
+  const addButton=element("button","linked-resource-add",addTo?"+ Add entry":"+ Add resources");
   addButton.type="button";addButton.setAttribute("aria-expanded","false");
   const chooser=element("div","linked-resource-chooser");
   const typePicker=element("select","field");
@@ -241,7 +241,9 @@
   const confirm=element("button","btn","Add selected resource");confirm.type="button";
   const cancel=element("button","btn","Cancel");cancel.type="button";
   chooser.append(typePicker,resourcePicker,confirm,cancel);
-  panel.append(heading,description,body,addButton,chooser);
+  panel.append(heading,description,body);
+  (addTo||panel).append(addButton);
+  panel.append(chooser);
   const onLibraryUpdate=()=>render();listeners.add(onLibraryUpdate);
   const kindLabels={tools:"Tools",calculators:"Calculators",parts:"Workshop parts"};
   function refreshChoices(){
@@ -293,7 +295,15 @@
    addButton.setAttribute("aria-expanded",String(editable&&adding));
    if(adding)refreshChoices();
   }
-  addButton.onclick=()=>{adding=!adding;render();if(adding)typePicker.focus()};
+  addButton.onclick=event=>{
+   if(addTo){
+    event.preventDefault();event.stopPropagation();
+    const disclosure=addTo.closest("details");
+    if(disclosure&&!disclosure.open){disclosure.open=true;adding=false}
+   }
+   adding=!adding;render();
+   if(adding)typePicker.focus();
+  };
   cancel.onclick=()=>{adding=false;render();addButton.focus()};
   typePicker.onchange=refreshChoices;
   confirm.onclick=()=>{

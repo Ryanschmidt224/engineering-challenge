@@ -649,15 +649,14 @@ function setupAssemblyTrees(){
    tools.className="workspace-resource-disclosure workspace-primary-disclosure";
    const toolsSummary=document.createElement("summary");
    const toolsHeading=document.createElement("h2");toolsHeading.textContent="Helpful tools";
-   const toolsHint=document.createElement("small");toolsHint.className="workspace-section-hint";
-   toolsHint.textContent="(Calculators, Tools, Etc)";
-   toolsHeading.append(" ",toolsHint);
+   const toolsActions=document.createElement("div");toolsActions.className="workspace-tool-actions";
+   toolsActions.append(toolsHeading,window.BSDialogs.tooltip("About Helpful tools","Link calculators, tools, and Workshop references for this work."));
    const toolsCount=document.createElement("span");toolsCount.className="workspace-record-count";
-   const toolsLabel=document.createElement("div");toolsLabel.append(toolsHeading,toolsCount);
+   const toolsLabel=document.createElement("div");toolsLabel.append(toolsActions,toolsCount);
    toolsSummary.append(toolsLabel);tools.append(toolsSummary,resourcesPanel);
    const history=document.createElement("article");history.className="investigations-panel";
    instructions.after(tools,history);
-   const resources=window.BSResources?.mount(resourcesPanel,{onCount:count=>{
+   const resources=window.BSResources?.mount(resourcesPanel,{addTo:toolsActions,onCount:count=>{
     toolsCount.textContent="("+count+(count===1?" record)":" records)");
    }});
    const extras=installInstructionExtras(panel,scope==="part"?"part":"workspace",

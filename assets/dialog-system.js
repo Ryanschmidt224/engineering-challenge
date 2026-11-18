@@ -53,7 +53,27 @@
   dialog.showModal();
   (field||cancel).focus();
  });
+ let tooltipId=0;
+ function tooltip(label,message){
+  const wrapper=document.createElement("span");wrapper.className="bs-section-tooltip";
+  const button=document.createElement("button");button.type="button";button.textContent="ⓘ";
+  button.setAttribute("aria-label",label);
+  const tip=document.createElement("span");tip.id="bs-section-tooltip-"+(++tooltipId);
+  tip.className="bs-section-tooltip-content";tip.setAttribute("role","tooltip");tip.textContent=message;
+  button.setAttribute("aria-describedby",tip.id);
+  button.onclick=event=>{event.preventDefault();event.stopPropagation();button.focus()};
+  button.onkeydown=event=>{
+   if(event.key==="Escape"){
+    event.stopPropagation();
+    wrapper.classList.add("tooltip-dismissed");
+   }
+  };
+  button.onblur=()=>wrapper.classList.remove("tooltip-dismissed");
+  wrapper.append(button,tip);
+  return wrapper;
+ }
  window.BSDialogs=Object.freeze({
+  tooltip,
   confirm:(message,options={})=>open({...options,message,confirmLabel:options.confirmLabel||"Confirm"}),
   danger:(message,options={})=>open({...options,message,danger:true,confirmLabel:options.confirmLabel||"Delete"}),
   prompt:(message,value="",options={})=>open({...options,message,value,input:true,confirmLabel:options.confirmLabel||"Save"})

@@ -287,11 +287,11 @@
    const count=own.length+rolled.length;
    const summary=make("summary","investigation-collapse-heading");
    const title=make(compact?"h4":"h2","",sectionTitle);
-   title.append(" ",make("small","workspace-section-hint","(Practice, Tests, Revisions, Etc)"));
+
    const heading=make("div","investigation-heading-label");
 
    const actions=make("div","investigation-heading-actions");
-   actions.append(title);
+   actions.append(title,window.BSDialogs.tooltip("About Project History","Record practice, tests, revisions, failures, and notes."));
    if(admin())actions.append(btn("+ Add entry",event=>{
     event.preventDefault();event.stopPropagation();disclosure.open=true;
     newRecord(context,target);
