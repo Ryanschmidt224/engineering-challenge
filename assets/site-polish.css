@@ -1476,12 +1476,16 @@
 .investigation-collapse>summary.investigation-collapse-heading,
 .investigation-card>summary.investigation-summary{position:relative}
 .investigation-collapse>summary.investigation-collapse-heading::before,
-.investigation-card>summary.investigation-summary::before{
+.investigation-card>summary.investigation-summary::before,
+.workspace-secondary-disclosure>summary::before,
+.bs-unstructured-note-title::before{
  content:"";width:6px;height:6px;border-block-start:1.5px solid currentColor;
- border-inline-end:1.5px solid currentColor;transform:rotate(45deg);flex:none;
+ border-inline-end:1.5px solid currentColor;transform:rotate(45deg);flex:none;display:inline-block;
 }
 .investigation-collapse[open]>summary.investigation-collapse-heading::before,
-.investigation-card[open]>summary.investigation-summary::before{transform:rotate(135deg)}
+.investigation-card[open]>summary.investigation-summary::before,
+.workspace-secondary-disclosure[open]>summary::before,
+.bs-unstructured-note-title[aria-expanded="true"]::before{transform:rotate(135deg)}
 :is(.investigations-panel,.recipe-step-investigations) .investigation-card>summary.investigation-summary{justify-content:flex-start}
 .investigation-collapse>summary.investigation-collapse-heading{justify-content:flex-start;gap:8px}
 .assembly-workspace-page .investigations-panel .investigation-collapse>summary.investigation-collapse-heading{
@@ -1501,7 +1505,10 @@
 }
 .assembly-workspace-page .workspace-panels>.bs-unstructured-notes{margin-top:0;padding:12px 20px}
 .assembly-workspace-page .workspace-panels .bs-unstructured-notes-heading h2{margin:0}
-.investigation-summary::-webkit-details-marker{display:none}
+.investigation-summary::-webkit-details-marker,
+.workspace-secondary-disclosure>summary::-webkit-details-marker{display:none}
+.workspace-secondary-disclosure>summary{display:flex;align-items:center;gap:8px;list-style:none}
+.bs-unstructured-note-title{display:flex;align-items:center;gap:8px}
 
 
 .recipe-instructions .recipe-heading-row{display:block}
@@ -1511,7 +1518,6 @@
 .investigation-heading-actions .investigation-add,
 .bs-unstructured-notes-heading .bs-unstructured-add,
 .investigation-add-controls .investigation-add-note,
-.recipe-edit-controls .recipe-add-entry,
 .recipe-step-additions .recipe-add-entry{
  background:transparent;border:0;box-shadow:none;color:var(--color-accent);padding-inline:0;
 }

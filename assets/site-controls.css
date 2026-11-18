@@ -1032,6 +1032,9 @@
 .assembly-bom-screen .bom-duplicate-group{border:0;background:transparent;}
 
 /* Keep the record panel and unstructured notes ahead of the workspace actions. */
+:is(#launcher,.personal-project-view,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-actions{
+ margin-bottom:0;
+}
 :is(:is(#launcher,.personal-project-view),#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.investigations-panel{order:3}
 :is(:is(#launcher,.personal-project-view),#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-actions{order:5}
 :is(#launcher,.personal-project-view,#linear,#robot) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.bs-unstructured-notes{order:4}
