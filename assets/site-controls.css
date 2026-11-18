@@ -195,36 +195,36 @@
 .project-card>.project-card-edit:hover{background:var(--color-hover)}
 
 
-/* Backup/recovery controls are secondary project maintenance tools. */
-:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details{
- margin:34px 0 16px;
+/* Shared disclosures for secondary workspace sections. */
+.assembly-workspace-page:not(.bom-part-workspace) .workspace-secondary-disclosure{
+ margin:12px 0 0;
  padding:0;
  border:1px solid var(--color-border);
  border-radius:8px;
  background:var(--color-page);
 }
-:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details>summary{
+.assembly-workspace-page:not(.bom-part-workspace) .workspace-secondary-disclosure>summary{
  cursor:pointer;
  padding:13px 17px;
  color:var(--color-text-muted);
  font-size:.82rem;
  font-weight:550;
 }
-:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details>summary:hover{
+.assembly-workspace-page:not(.bom-part-workspace) .workspace-secondary-disclosure>summary:hover{
  background:var(--color-hover);
 }
-:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details[open]>summary{
+.assembly-workspace-page:not(.bom-part-workspace) .workspace-secondary-disclosure[open]>summary{
  border-bottom:1px solid var(--color-border);
  color:var(--color-text);
 }
-:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details .workspace-archive-actions{
+.assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details .workspace-archive-actions{
  padding:15px 17px 8px;
  margin:0;
 }
 :is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details .workspace-backup-history{
  padding:0 17px 16px;
 }
-:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-backup-details .btn{
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-secondary-disclosure .btn{
  background:var(--color-surface-muted);
  border:1px solid var(--color-border);
  color:var(--color-text);
@@ -247,7 +247,7 @@
 :is(#launcher,.personal-project-view) .assembly-workspace-page.is-editing-bom-part .workspace-panels>.workspace-actions{
  display:none!important;
 }
-:is(#launcher,.personal-project-view) .assembly-workspace-page.is-editing-bom-part>.workspace-backup-details{
+:is(#launcher,.personal-project-view) .assembly-workspace-page.is-editing-bom-part>.workspace-secondary-disclosure{
  display:none;
 }
 :is(#launcher,.personal-project-view) .assembly-workspace-page.is-editing-bom-part .workspace-main-bom-editor .workspace-bom-mount{

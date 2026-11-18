@@ -641,7 +641,7 @@ function setupAssemblyTrees(){
   // Backups are maintenance tools, not a primary step in building an assembly.
   // Keep them available below the workspace inside a collapsed disclosure.
   const backupDetails=document.createElement("details");
-  backupDetails.className="workspace-backup-details";
+  backupDetails.className="workspace-backup-details workspace-secondary-disclosure";
   const backupSummary=document.createElement("summary");
   backupSummary.textContent="Project backups & recovery";
   backupDetails.append(backupSummary,archiveActions,historyList);
@@ -649,7 +649,13 @@ function setupAssemblyTrees(){
   const partDrawingPanel=window.BSDrawings?.mount(partWorkspace.querySelector(".part-drawing-panel"),()=>canEdit());
   const partFilesPanel=window.BSPartFiles?.mount(partWorkspace.querySelector(".part-files-panel"),()=>canEdit());
 
-  const assemblyResourcePicker=window.BSResources?.mount(workspace.querySelector(".workspace-resources"));
+  const resourceDetails=document.createElement("details");
+  resourceDetails.className="workspace-secondary-disclosure workspace-resource-disclosure";
+  const resourceSummary=document.createElement("summary");
+  resourceSummary.textContent="Linked resources";
+  const resourcePanel=workspace.querySelector(".workspace-resources");
+  resourceDetails.append(resourceSummary,resourcePanel);
+  const assemblyResourcePicker=window.BSResources?.mount(resourcePanel);
   const partResourcePicker=window.BSResources?.mount(partWorkspace.querySelector(".part-linked-resources"));
 
   // Optional progressive disclosure: the textarea remains the simplest authoring tool.
@@ -673,7 +679,7 @@ function setupAssemblyTrees(){
     }
     logDetails.classList.toggle("hide",experiments.length===0);
    };
-   const historyDetails=document.createElement("details");historyDetails.className="instruction-history";
+   const historyDetails=document.createElement("details");historyDetails.className=prefix==="part"?"instruction-history":"instruction-history workspace-secondary-disclosure";
    const historySummary=document.createElement("summary");historySummary.textContent="Recent changes";
    const historyList=document.createElement("div");historyList.className="instruction-history-list";
    historyDetails.append(historySummary,historyList);panel.querySelector(prefix==="part"?".part-workspace-save":".workspace-save").after(historyDetails);
@@ -2220,7 +2226,7 @@ function setupAssemblyTrees(){
    ["part",partWorkspace],["parts",partsPage]
   ].map(([scope,mount])=>[scope,window.BSUnstructuredNotes.mount(mount,{project,scope,canEdit})]));
   assemblyInvestigationPanel.after(notePanels.workspace.element);
-  workspace.append(workspace.querySelector(".workspace-resources"));
+  workspace.append(resourceDetails);
   summary.append(creatorInsightsTarget);
   let lastNotePage="";
   const showNotes=(scope,id="root")=>{

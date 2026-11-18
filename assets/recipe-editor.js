@@ -73,9 +73,10 @@
   panel.append(content,feedback);
   const heading=article.querySelector("h2");
   const headingActions=el("div","recipe-heading-actions");
+  const count=el("span","workspace-record-count");
   if(heading){
    const headingRow=el("div","recipe-heading-row");
-   heading.before(headingRow);headingActions.append(heading);headingRow.append(headingActions);headingRow.after(panel);
+   heading.before(headingRow);headingActions.append(heading);headingRow.append(headingActions,count);headingRow.after(panel);
   }else article.prepend(headingActions,panel);
   const admin=()=>!!options.admin?.();
   let steps=[],expanded=null,dirty=false,level="standard",pendingUploads=0,saving=false,draft=null;
@@ -235,6 +236,8 @@
   };
   function render(){
    content.replaceChildren();
+   const total=savedSteps().length;
+   count.textContent="("+total+(total===1?" record)":" records)");
    // One step at a time: the list is navigation, the right pane is the selected step.
    if(steps.length&&!steps.some(step=>step.id===expanded))expanded=steps[0].id;
    const browser=el("div","recipe-step-browser");
@@ -450,7 +453,7 @@
       for(const file of [...(input.files||[])])await upload(file,target);
       uploadTargetNote=null;
      };
-     const addNote=button("+ Add entry",()=>{step.notes.push("");step.noteIds.push(newId());changed();saveHint();showNotes();noteList.lastElementChild?.querySelector("textarea")?.focus()},"btn recipe-small-action");
+     const addNote=button("+ Add entry",()=>{step.notes.push("");step.noteIds.push(newId());changed();saveHint();showNotes();noteList.lastElementChild?.querySelector("textarea")?.focus()},"btn recipe-small-action recipe-add-entry");
      additions.append(addNote,addPhoto,input);
      const paste=window.BSPhotoMarkup.pasteTarget(async files=>{for(const file of files)await upload(file,null)});
      body.append(noteList,photoList,additions,paste);

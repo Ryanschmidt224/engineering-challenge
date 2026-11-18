@@ -12,16 +12,17 @@
   const bar=el("div","bs-unstructured-notes-heading");
   bar.append(el("h2","","Unstructured Notes"));
   const add=button("+ Add entry",()=>edit(null),"btn bs-unstructured-add");
+  const count=el("span","workspace-record-count");
   const status=el("p","muted bs-unstructured-status");status.setAttribute("role","status");
   const list=el("div","bs-unstructured-list");
-  bar.append(add);panel.append(bar,status,list);parent.append(panel);
+  bar.append(add);panel.append(bar,count,status,list);parent.append(panel);
   let pageId="root",records=[],revision=null,editable=false,version=0,editing=null;
   const endpoint=()=>"/api/unstructured-notes?project="+encodeURIComponent(project)+
    "&scope="+encodeURIComponent(scope)+"&id="+encodeURIComponent(pageId);
   const report=value=>{status.textContent=value||""};
   async function read(idValue="root"){
    pageId=idValue||"root";const stamp=++version;editing=null;
-   list.replaceChildren();report("Loading notes…");add.hidden=true;
+   count.textContent="";list.replaceChildren();report("Loading notes…");add.hidden=true;
    try{
     const response=await fetch(endpoint(),{credentials:"same-origin",cache:"no-store"});
     const data=await response.json();
@@ -35,6 +36,7 @@
   }
   function render(){
    list.replaceChildren();add.hidden=!editable;
+   count.textContent="("+records.length+(records.length===1?" record)":" records)");
    if(!records.length)list.append(el("p","muted bs-unstructured-empty","No notes yet."));
    for(const note of records){
     const card=el("article","bs-unstructured-card");

@@ -295,7 +295,7 @@
     event.preventDefault();event.stopPropagation();disclosure.open=true;
     newRecord(context,target);
    },"btn investigation-add"));
-   heading.append(actions,make("span","investigation-record-count","("+count+(count===1?" record)":" records)")));
+   heading.append(actions,make("span","workspace-record-count","("+count+(count===1?" record)":" records)")));
    summary.append(heading);
    disclosure.append(summary);
    disclosure.addEventListener("toggle",()=>{
