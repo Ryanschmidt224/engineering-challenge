@@ -19,7 +19,9 @@ window.BSProjectManager=(()=>{
   const controls=element("div","project-owner-actions");
   const newButton=element("button","btn primary","+ New project");newButton.type="button";
   const archiveButton=element("button","btn","Archived projects");archiveButton.type="button";
-  controls.append(newButton,archiveButton);
+  const more=element("details","project-directory-menu");
+  more.append(element("summary","btn","More"),archiveButton);
+  controls.append(newButton,more);
   const filters=element("div","project-directory-controls");
   const searchLabel=element("label","project-directory-label project-directory-search","Find a project");
   const searchInput=element("input","field project-search");searchInput.type="search";searchInput.placeholder="Search projects…";searchInput.setAttribute("aria-label","Search projects");searchLabel.append(searchInput);
@@ -30,15 +32,12 @@ window.BSProjectManager=(()=>{
   }
   sortLabel.append(sortSelect);
   const directoryStatus=element("span","project-directory-count muted");directoryStatus.setAttribute("role","status");
-  // Keep creation, archive access and sorting together above the project cards,
-  // instead of scattering actions across a full-width page heading.
-  filters.append(controls,sortLabel,directoryStatus);grid.before(filters);
-  // Keep project tags as the sole discovery classification. Search and
-  // descriptors are together in a left panel, not separate filter toolbars.
-  const searchPanel=element("div","bs-project-search-sidebar");
-  searchPanel.append(element("h2","bs-catalog-sidebar-heading","Find projects"),searchLabel);
-  const catalogLayout=window.BSCatalogUI?.build(root,searchPanel,[filters,grid]);
-  catalogLayout?.querySelector(".bs-catalog-sidebar")?.setAttribute("aria-label","Find projects and filter by descriptors");
+  root.classList.add("compact-project-directory");
+  const filterMenu=element("details","project-filter-menu");
+  filterMenu.append(element("summary","btn","Filters"));
+  const selectedTags=element("div","project-selected-descriptors");
+  filters.append(searchLabel,filterMenu,sortLabel,directoryStatus,controls);
+  grid.before(filters,selectedTags);
   const suggestions=["Mechanical","Electronics","Software","Controls","CAD","3D Printing","Woodworking","PCB Design","Machining","Robotics","Measurement","Fabrication"];
   const projectTags=project=>Array.isArray(project?.tags)?project.tags:[];
   const parseTags=text=>[...new Map(String(text||"").split(",").map(x=>x.trim().replace(/\\s+/g," ")).filter(Boolean).map(x=>[x.toLowerCase(),x])).values()].slice(0,20);
@@ -54,11 +53,12 @@ window.BSProjectManager=(()=>{
   const tagHeader=element("div","bs-project-tag-filter-heading");
   tagHeader.append(tagTitle,clearTags);
   tagFilter.append(tagHeader,tagSearchLabel,tagChoices);
-  searchPanel.append(tagFilter);
+  filterMenu.append(tagFilter);
   const activeTags=new Set();
   clearTags.onclick=()=>{activeTags.clear();renderTagFilters();updateDirectory()};
   const renderTagFilters=()=>{
    tagChoices.replaceChildren();
+   selectedTags.replaceChildren();
    const counts=new Map();
    for(const project of projects)for(const tag of projectTags(project)){
     const key=tag.toLowerCase();
@@ -77,7 +77,18 @@ window.BSProjectManager=(()=>{
     tagChoices.append(chip);
    }
    if(!visibleCount)tagChoices.append(element("p","muted bs-project-tag-empty","No matching descriptors"));
-   tagFilter.hidden=!counts.size;
+   filterMenu.hidden=!counts.size;
+   for(const key of activeTags){
+    const name=counts.get(key)?.name;
+    if(!name){activeTags.delete(key);continue}
+    const chip=element("button","bs-project-tag-chip is-active",name+" ×");
+    chip.type="button";chip.setAttribute("aria-label","Remove "+name+" filter");
+    chip.onclick=()=>{
+     activeTags.delete(key);renderTagFilters();updateDirectory();
+     (selectedTags.querySelector("button")||filterMenu.querySelector("summary")).focus();
+    };
+    selectedTags.append(chip);
+   }
    clearTags.hidden=!activeTags.size;
   };
   tagSearch.oninput=renderTagFilters;
@@ -104,6 +115,7 @@ window.BSProjectManager=(()=>{
    input.oninput=draw;draw();label.append(input);holder.append(label,choices);
    return {element:holder,getTags:()=>parseTags(input.value)};
   };
+  const empty=element("p","project-directory-empty muted");empty.hidden=true;grid.after(empty);
   const updateDirectory=()=>{
    const search=searchInput.value.trim().toLowerCase(),terms=search.split(/\s+/).filter(Boolean),
     byId=new Map(projects.map(project=>[project.id,project]));
@@ -128,6 +140,8 @@ window.BSProjectManager=(()=>{
    }
    const shown=cards.filter(card=>!card.hidden).length;
    directoryStatus.textContent=shown+" of "+projects.length+" projects";
+   empty.hidden=shown>0;
+   empty.textContent=projects.length?"No projects match your search or filters.":"No projects yet.";
   };
   searchInput.oninput=updateDirectory;
   sortSelect.onchange=updateDirectory;
@@ -280,17 +294,23 @@ window.BSProjectManager=(()=>{
    art.setAttribute("aria-hidden","true");
    art.append(element("span","project-personal-initial",(project.name||"P").trim().charAt(0).toUpperCase()));
    link.append(art);
-   const copy=element("div","project-copy");copy.append(element("h2","",project.name),element("p","",project.description||"New engineering project"));
+   const copy=element("div","project-copy");copy.append(element("h2","",project.name),element("p","project-row-description",project.description||""));
    const tags=element("div","project-tags");
-   for(const tag of projectTags(project))tags.append(element("span","",tag));
-   tags.append(element("span","",project.visibility==="private"?"Private":project.visibility==="unlisted"?"Unlisted":"Public"));
-   copy.append(tags);
-   if(project.authorName)copy.append(element("p","project-author","By "+project.authorName));
+   const descriptors=projectTags(project);
+   for(const tag of descriptors.slice(0,3))tags.append(element("span","",tag));
+   if(descriptors.length>3){
+    const extra=element("span","project-other-tags","+"+(descriptors.length-3));
+    extra.title=descriptors.slice(3).join(", ");tags.append(extra);
+   }
+   const visibility=project.visibility==="private"?"Private":project.visibility==="unlisted"?"Unlisted":"Public";
+   const metadata=project.authorName?visibility+" · By "+project.authorName:visibility;
+   copy.append(tags,element("p","project-author",metadata));
    link.append(copy);article.append(link);
    return article;
   };
   const manageDialog=element("dialog","project-manage-dialog");document.body.append(manageDialog);
   archiveButton.onclick=async()=>{
+   more.open=false;
    if(!user&&!adminAuthenticated){showAccount();return}
    try{
     const all=(await api("GET","/api/projects?includeArchived=1")).projects.filter(p=>p.archived&&p.isOwner);
@@ -453,7 +473,7 @@ window.BSProjectManager=(()=>{
     if(grid.hidden)loading.textContent="Loading projects…";
     user=(await api("GET","/api/accounts")).user;
     const data=await api("GET","/api/projects");if(!Array.isArray(data.projects))throw Error("Project catalog response unavailable");projects=data.projects;currentProjects=projects;
-    newButton.hidden=false;archiveButton.hidden=!user&&!adminAuthenticated;
+    newButton.hidden=false;more.hidden=!user&&!adminAuthenticated;
 
     document.querySelectorAll(".project-personal-card").forEach(node=>node.remove());
     for(const project of projects){

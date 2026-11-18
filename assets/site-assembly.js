@@ -288,41 +288,51 @@ function setupAssemblyTrees(){
   summary.innerHTML='<header class="project-summary-heading"><div><p class="muted">Project summary</p><h1 class="project-summary-title"></h1></div></header><section class="project-summary-gallery"><div class="project-summary-gallery-heading"><h2>Project photos</h2></div><div class="project-summary-photo-stage"><img alt="Project photo" class="project-summary-photo" hidden><p class="project-summary-photo-empty">No project photos yet.</p><button type="button" class="project-summary-previous" aria-label="Previous project photo">‹</button><button type="button" class="project-summary-next" aria-label="Next project photo">›</button></div><div class="project-summary-photo-footer"><p class="project-summary-photo-caption"></p><span class="project-summary-photo-position"></span></div></section><div class="project-summary-lists"><section class="project-summary-bom-section"><h2>Project BOM</h2><div class="project-summary-bom-items" aria-live="polite"></div></section><section class="project-summary-tools-section"><h2>Tools needed</h2><div class="project-summary-tool-items" aria-live="polite"></div></section></div>';
   detail.after(summary);
   const overview=document.createElement("section");overview.className="project-summary-overview";
-  overview.innerHTML='<h2>Project summary</h2><p class="project-summary-text"></p><textarea class="field" aria-label="Project summary" rows="5" maxlength="5000" placeholder="Describe your project"></textarea><button type="button" class="btn project-summary-save">Save summary</button><p class="muted project-summary-message" role="status"></p><div class="project-tags project-summary-tags" aria-label="Project descriptors"></div><h2>Estimated project cost</h2><p class="project-summary-cost" aria-live="polite">Loading estimate…</p>';
+  overview.innerHTML='<section class="project-overview-card"><h2>Project summary</h2><p class="project-summary-text"></p><textarea class="field" aria-label="Project summary" rows="5" maxlength="5000" placeholder="Describe your project"></textarea><div class="project-summary-edit-actions" hidden><button type="button" class="btn primary project-summary-save">Save</button><button type="button" class="btn project-summary-cancel">Cancel</button></div><p class="muted project-summary-message" role="status"></p></section><section class="project-overview-card project-descriptor-card"><h2>Descriptors</h2><div class="project-tags project-summary-tags"></div></section><section class="project-overview-card"><h2>Estimated project cost</h2><p class="project-summary-cost" aria-live="polite">Loading estimate…</p></section>';
   summary.querySelector(".project-summary-gallery").after(overview);
   const summaryInput=overview.querySelector("textarea");
   const summarySave=overview.querySelector(".project-summary-save");
   const summaryMessage=overview.querySelector(".project-summary-message");
   const summaryCost=overview.querySelector(".project-summary-cost");
-  let savedSummary,draftSummary=false;
-  summaryInput.oninput=()=>{draftSummary=true;summaryMessage.textContent=""};
+  const summaryActions=overview.querySelector(".project-summary-edit-actions");
+  const summaryCancel=overview.querySelector(".project-summary-cancel");
+  let savedSummary,summaryBaseline="";
+  const hasSummaryChanges=()=>summaryInput.value!==summaryBaseline;
+  const showSummaryActions=()=>{summaryActions.hidden=!canEdit()||!hasSummaryChanges()};
+  summaryInput.oninput=()=>{summaryMessage.textContent="";showSummaryActions()};
+  summaryCancel.onclick=()=>{
+   summaryInput.value=summaryBaseline;summaryMessage.textContent="";
+   showSummaryActions();summaryInput.focus();
+  };
   summarySave.onclick=async()=>{
-   if(!canEdit())return;
+   if(!canEdit()||!hasSummaryChanges())return;
    const submitted=summaryInput.value;
-   summarySave.disabled=true;summaryMessage.textContent="Saving…";
+   summarySave.disabled=summaryCancel.disabled=true;summaryMessage.textContent="Saving…";
    try{
     const response=await fetch("/api/projects",{method:"PATCH",credentials:"same-origin",
      headers:{"content-type":"application/json"},body:JSON.stringify({id:project,summary:submitted})});
     const data=await response.json();
     if(!response.ok)throw Error(data.error||"Unable to save project summary");
     savedSummary=data.projects?.find(item=>item.id===project)?.summary??submitted.trim();
-    draftSummary=summaryInput.value!==submitted;
-    if(!draftSummary)summaryInput.value=savedSummary;
+    summaryBaseline=savedSummary;
+    if(summaryInput.value===submitted)summaryInput.value=savedSummary;
     summaryMessage.textContent="Summary saved.";
    }catch(error){summaryMessage.textContent=error.message}
-   finally{summarySave.disabled=false}
+   finally{summarySave.disabled=summaryCancel.disabled=false;showSummaryActions()}
   };
   function renderSummaryOverview(){
    const record=window.BSProjectManager?.getProject(project);
    const value=savedSummary??record?.summary??record?.description??"";
    const text=overview.querySelector(".project-summary-text");
    text.textContent=value||"No summary yet.";text.hidden=canEdit();
-   summaryInput.hidden=summarySave.hidden=!canEdit();
-   if(!draftSummary)summaryInput.value=value;
+   summaryInput.hidden=!canEdit();
+   if(!hasSummaryChanges())summaryInput.value=value;
+   summaryBaseline=value;showSummaryActions();
    const tags=overview.querySelector(".project-summary-tags");
    tags.replaceChildren(...(record?.tags||[]).map(tag=>{
     const tile=document.createElement("span");tile.textContent=tag;return tile;
    }));
+   if(!tags.childElementCount)tags.textContent="No descriptors yet.";
   }
   function renderEstimatedCost(parts){
    const materials=parts.filter(part=>!part.isTool&&window.BSPartFields.itemTypeFor(part)==="part");
@@ -898,7 +908,15 @@ function setupAssemblyTrees(){
    const fields=window.BSPartFields.detailRows(part);
    const values=new Map(fields);
    const quantity=part.quantity==null?"":"Qty "+values.get("Quantity");
-   const summary=[values.get("Part name"),treeDescription(part.projectDetails,part.description),quantity];
+   const unitCost=part.historicalPrice;
+   let cost="";
+   if(unitCost!=null&&Number.isFinite(Number(unitCost))){
+    const dollars=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:4});
+    cost=dollars.format(unitCost)+" per unit";
+    if(part.quantity!=null&&Number.isFinite(Number(part.quantity)))
+     cost+=" · "+dollars.format(Number(unitCost)*Number(part.quantity))+" total";
+   }
+   const summary=[values.get("Part name"),treeDescription(part.projectDetails,part.description),quantity,cost];
    detailSummary.textContent=summary.filter(Boolean).join(" · ");
    for(const [title,value] of fields){
     if(value===null||value===undefined||String(value).trim()==="")continue;
