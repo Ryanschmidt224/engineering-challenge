@@ -383,8 +383,8 @@
  box-shadow:0 0 0 2px #b7d8c5;
 }
 
-/* Documentation sits beneath the image actions, spanning both button columns. */
-#commonparts .workshop-item-hero .workshop-under-image-documentation{
+/* Documentation and ordering links span both image action columns. */
+#commonparts .workshop-item-hero :is(.workshop-under-image-documentation,.workshop-reference-order-link){
  display:inline-flex;
  align-items:center;
  justify-content:center;
@@ -403,6 +403,15 @@
  font-weight:600;
  text-decoration:none;
 }
-#commonparts .workshop-item-hero .workshop-under-image-documentation:hover{
+#commonparts .workshop-item-hero :is(.workshop-under-image-documentation,.workshop-reference-order-link):hover{
  background:var(--color-hover,#eaf1ed);
 }
+#commonparts .workshop-item-pricing{
+ display:grid;
+ grid-template-columns:max-content minmax(0,1fr);
+ gap:4px 12px;
+ margin:0;
+ font-size:.84rem;
+}
+#commonparts .workshop-item-pricing dt{font-weight:600}
+#commonparts .workshop-item-pricing dd{margin:0;overflow-wrap:anywhere}

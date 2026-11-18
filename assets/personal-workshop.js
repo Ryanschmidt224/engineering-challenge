@@ -339,7 +339,6 @@
    sideRow("Considerations",item.caution);
    sideRow("Level",friendlyTier(item));
    sideRow("Product family",familyFor(item)?.label);
-   sideRow("Price / package",[item.price,item.packageQuantity].filter(Boolean).join(" · "));
    sideRow("Buying suggestion",item.orderNotes);
    sideRow("Picture",item.illustration?"Illustrative reference; not an exact manufacturer photograph":"");
    sideRow("Notes",item.notes);
@@ -388,7 +387,6 @@
     ["Manufacturer part number",item.partNumber||item.model],["Manufacturer",item.manufacturer],
     ["Description",item.subtitle||item.name],["Feature tree description",item.featureTreeDescription],["Vendor",item.supplier],["Supplier part number",item.supplierPartNumber],["Model",item.model],
     ["Specifications",item.spec],["Typical use",item.use],["Important considerations",item.caution],
-    ["Reference price",item.price],["Package quantity",item.packageQuantity],
     ["Buying suggestion",item.orderNotes],["Notes",item.notes]
    ];
    for(const [label,value] of specRows){
@@ -414,10 +412,6 @@
     info.append(itemButton("View in My Workshop",()=>showPersonalItem(owned[0].id),"btn workshop-personal-record-link"));
    }else info.append(el("p","This reference does not imply you own the item.","muted"));
    info.append(itemButton("+ Add to My Workshop",()=>addReference(item),"btn primary"));
-   if(item.supplierUrl){
-    const order=el("a","Supplier / ordering page","btn workshop-reference-order-link");
-    order.href=item.supplierUrl;order.target="_blank";order.rel="noopener noreferrer";info.append(order);
-   }
    const mediaWithEdit=el("div",undefined,"workshop-item-media-actions");
    mediaWithEdit.append(big);
    const mediaButtons=el("div",undefined,"workshop-item-media-buttons");
@@ -437,6 +431,16 @@
     const docs=el("a","Documentation","btn workshop-reference-doc-link workshop-under-image-documentation");
     docs.href=item.documentationUrl;docs.target="_blank";docs.rel="noopener noreferrer";
     mediaWithEdit.append(docs);
+   }
+   const pricing=el("dl",undefined,"workshop-item-pricing");
+   for(const [label,value] of [["Reference price",item.price],["Quantity / package",item.packageQuantity]]){
+    if(value)pricing.append(el("dt",label),el("dd",value));
+   }
+   if(pricing.childElementCount)mediaWithEdit.append(pricing);
+   if(item.supplierUrl&&/^https:\/\//i.test(item.supplierUrl)){
+    const order=el("a","Supplier / ordering page","btn workshop-reference-order-link");
+    order.href=item.supplierUrl;order.target="_blank";order.rel="noopener noreferrer";
+    mediaWithEdit.append(order);
    }
    hero.append(mediaWithEdit,info);itemPage.append(hero);
    if(item.photos?.length>1){
