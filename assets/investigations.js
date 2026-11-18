@@ -214,7 +214,7 @@
     },"btn"));
     if(!stored)name.focus();
    }
-   const add=btn("+ Add note",()=>{
+   const add=btn("+ Add entry",()=>{
     if(notes.length>=30)return;
     addNote();add.disabled=notes.length>=30;
    },"btn investigation-add-note");
@@ -287,19 +287,18 @@
    const count=own.length+rolled.length;
    const summary=make("summary","investigation-collapse-heading");
    const title=make(compact?"h4":"h2","",sectionTitle);
-   const toggleLabel=make("span","investigation-toggle-label",disclosure.open?(compact?"Hide":"Minimize details"):(compact?"Show":"Show details"));
    const heading=make("div","investigation-heading-label");
-   heading.append(title,make("span","investigation-record-count","("+count+(count===1?" record)":" records)")));
+
    const actions=make("div","investigation-heading-actions");
-   actions.append(heading);
+   actions.append(title);
    if(admin())actions.append(btn("+ Add entry",event=>{
     event.preventDefault();event.stopPropagation();disclosure.open=true;
     newRecord(context,target);
    },"btn investigation-add"));
-   summary.append(actions,toggleLabel);
+   heading.append(actions,make("span","investigation-record-count","("+count+(count===1?" record)":" records)")));
+   summary.append(heading);
    disclosure.append(summary);
    disclosure.addEventListener("toggle",()=>{
-    toggleLabel.textContent=disclosure.open?(compact?"Hide":"Minimize details"):(compact?"Show":"Show details");
     if(disclosure.open)openSections.add(sectionKey);else openSections.delete(sectionKey);
    });
    const content=make("div","investigation-collapse-content");

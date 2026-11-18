@@ -2,10 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 
-test("work instructions expose one Add step action rather than separate preview and editor",()=>{
+test("work instructions expose one header Add entry action rather than separate preview and editor",()=>{
  const recipe=readFileSync("assets/recipe-editor.js","utf8");
  const site=readFileSync("assets/site.js","utf8");
- assert.equal((recipe.match(/\+ Add step/g)||[]).length,1);
+ assert.equal((recipe.match(/"btn recipe-add-step"/g)||[]).length,1);
+ assert.match(recipe,/button\("\+ Add entry"/);
  assert.doesNotMatch(recipe,/Edit recipe|View recipe|No recipe steps yet/);
  assert.doesNotMatch(site,/Preview steps|Hide preview/);
  assert.match(recipe,/el\("details","recipe-one-step"\)/);

@@ -11,7 +11,7 @@
   panel.setAttribute("aria-label","Unstructured Notes");
   const bar=el("div","bs-unstructured-notes-heading");
   bar.append(el("h2","","Unstructured Notes"));
-  const add=button("+ Add note",()=>edit(null),"bs-unstructured-add");
+  const add=button("+ Add entry",()=>edit(null),"btn bs-unstructured-add");
   const status=el("p","muted bs-unstructured-status");status.setAttribute("role","status");
   const list=el("div","bs-unstructured-list");
   bar.append(add);panel.append(bar,status,list);parent.append(panel);

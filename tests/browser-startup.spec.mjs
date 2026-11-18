@@ -1050,7 +1050,7 @@ test("project navigation orders summary below tree and page notes can be created
  expect(tree).toBeGreaterThanOrEqual(0);expect(summary).toBe(tree+1);expect(parts).toBe(summary+1);
  const panel=page.locator("#launcher .project-summary-page .bs-unstructured-notes");
  await expect(panel).toBeVisible();
- await panel.getByRole("button",{name:"+ Add note"}).click();
+ await panel.getByRole("button",{name:"+ Add entry"}).click();
  await panel.getByPlaceholder("Enter a note title").fill("Loose thoughts");
  await panel.getByPlaceholder("Write anything useful here…").fill("Test mounting orientation");
  await panel.locator('input[type="file"]').setInputFiles({
