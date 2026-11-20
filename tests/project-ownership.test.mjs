@@ -268,4 +268,15 @@ test("short summary and hierarchical quantities persist independently of existin
  assert.equal(updated.data.component.description,original.description);
  assert.equal(updated.data.component.quantityUnit,"mm");
  assert.equal((await read(await partRequest(null))).data.component.quantity,null);
+ const offers=[{vendor:"other",supplierName:"JLCPCB",sku:"",url:"https://jlcpcb.com/"}];
+ const custom=await read(await handleComponents(request(partUrl+"&id="+original.id,"PUT",{
+  ...original,partType:"custom_purchased",supplier:"JLCPCB",supplierOffers:offers,
+  historicalPrice:12.50,historicalPurchasePrice:12.50,historicalPriceDate:"2026-11-19"
+ },owner),env));
+ assert.equal(custom.status,200);
+ assert.equal(custom.data.component.partType,"custom_purchased");
+ assert.equal(custom.data.component.historicalPrice,12.50);
+ assert.equal(custom.data.component.supplier,"JLCPCB");
+ assert.deepEqual(custom.data.component.supplierOffers,offers);
+
 });

@@ -10,7 +10,7 @@
  const statusFor=fields.statusValue;
  const partTypeFor=fields.partTypeFor;
  const numberFor=p=>p.partNumber||(/^([A-Za-z]{1,8}[- ]?\d{2,8})\s*[-–:]\s*\S/.exec(p.name||"")?.[1]||"");
- const typeValues=[["purchased","Off-the-shelf"],["custom","Custom"],["code","Code"]];
+ const typeValues=[["purchased","Off-the-shelf"],["custom","Custom — made in-house"],["custom_purchased","Custom — purchased"],["code","Code"]];
  // Keep separate saved records intact. Group repeated names in the interface,
  // with an explicit way to inspect and edit every original record.
  const groupKey=part=>[part.name,fields.valueFor(part),partTypeFor(part),part.manufacturer,part.model].map(value=>String(value||"").trim().toLocaleLowerCase().replace(/\s+/g," ")).join("|");
@@ -43,7 +43,7 @@
   const scroll=el("div","bs-parts-scroll"),table=el("table","bs-parts-table");
   const thead=el("thead"),headingRow=el("tr"),colgroup=el("colgroup");
   // Compact defaults: part number is intentionally narrow, note stays beside its flag.
-  const widths=[112,330,140,125,150,160,140,170,380];
+  const widths=[112,330,140,125,235,160,140,170,380];
   let nameWidthManuallyResized=false;
   // Size the name column to its visible contents, not to the longest saved string.
   // Longer names remain intact and editable; the input simply scrolls horizontally.

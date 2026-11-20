@@ -1768,7 +1768,7 @@ function setupAssemblyTrees(){
   partTypeRow.textContent="Part type";
   const partTypeSelect=document.createElement("select");
   partTypeSelect.className="field part-type-select";
-  for(const [value,label] of [["purchased","Off-the-shelf"],["custom","Custom"],["code","Code"]]){
+  for(const [value,label] of [["purchased","Off-the-shelf"],["custom","Custom — made in-house"],["custom_purchased","Custom — purchased"],["code","Code"]]){
    const option=document.createElement("option");option.value=value;option.textContent=label;if(value==="code")option.hidden=true;partTypeSelect.append(option);
   }
   partTypeRow.append(partTypeSelect);
@@ -1779,7 +1779,7 @@ function setupAssemblyTrees(){
    const codeMode=itemTypeSelect.value==="code";
    if(codeMode)partTypeSelect.value="code";
    else if(partTypeSelect.value==="code")partTypeSelect.value="purchased";
-   const custom=partTypeSelect.value!=="purchased";
+   const custom=["custom","code"].includes(partTypeSelect.value);
    const documentMode=itemTypeSelect.value!=="part";
    partTypeRow.hidden=codeMode;
    toolRow.hidden=documentMode;
@@ -1901,7 +1901,7 @@ function setupAssemblyTrees(){
    clearBomDraft();editingPart=part.id;editingPartAssembly=originId;
    projectEditNotice.hidden=!workshopLinkId(part);
    itemTypeSelect.value=part.partType==="code"?"code":part.itemType==="document"?"document":"part";
-   partTypeSelect.value=["custom","code"].includes(part.partType)?part.partType:"purchased";visibilityCheckbox.checked=part.hideFromFeatureTree===true;toolCheckbox.checked=part.isTool===true;
+   partTypeSelect.value=["custom","custom_purchased","code"].includes(part.partType)?part.partType:"purchased";visibilityCheckbox.checked=part.hideFromFeatureTree===true;toolCheckbox.checked=part.isTool===true;
    partDescriptionInput.value=part.description||"";
    setProjectOnly(part.projectDetails||{});
    partNumberInput.value=part.partNumber||"";autoNumberChosen=false;partNumberInput.readOnly=!!part.partNumber;
@@ -2049,7 +2049,7 @@ function setupAssemblyTrees(){
    const amount=rawQty===""?null:Number(rawQty);
    if(amount!==null&&(!Number.isFinite(amount)||amount<=0||amount>10000000)){bomReport("Quantity must be positive or left blank.");return false}
    const component={assemblyId:editingPart?editingPartAssembly:selected,quantity:partTypeSelect.value==="code"?null:amount,quantityUnit:editingPart?bomField("quantity-unit")?.value??"pcs":"pcs",itemType:partTypeSelect.value==="code"?"document":itemTypeSelect.value,partType:partTypeSelect.value,hideFromFeatureTree:visibilityCheckbox.checked,isTool:toolCheckbox.checked,partNumber:autoNumberChosen?null:(partNumberInput.value.trim().toUpperCase()||null),assignNumber:autoNumberChosen};
-   const priceInput=partTypeSelect.value!=="purchased"?"":(bomField("historical-price")?.value.trim()||"");
+   const priceInput=!["purchased","custom_purchased"].includes(partTypeSelect.value)?"":(bomField("historical-price")?.value.trim()||"");
    const dateInput=partTypeSelect.value==="custom"?"":(bomField("historical-price-date")?.value||"");
    if(priceInput&&(!Number.isFinite(Number(priceInput))||Number(priceInput)<0||Math.round(Number(priceInput)*100)!==Number(priceInput)*100&&Math.abs(Math.round(Number(priceInput)*100)-Number(priceInput)*100)>1e-6)){
     bomReport("Historical price must be a positive USD amount with at most two decimal places.");return false;
@@ -2070,7 +2070,7 @@ function setupAssemblyTrees(){
    // The API automatically generates the display/file label: part number + name.
    component.description=partDescriptionInput.value.trim();
    component.projectDetails=readProjectOnly();
-   if(component.partType!=="purchased")Object.assign(component,{manufacturer:"",model:"",supplier:"",asin:"",historicalPurchasePrice:null,historicalPriceDate:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
+   if(!["purchased","custom_purchased"].includes(component.partType))Object.assign(component,{manufacturer:"",model:"",supplier:"",asin:"",historicalPurchasePrice:null,historicalPriceDate:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
    component.specifications=[...(bomRoot()?.querySelectorAll(".component-spec-row")||[])].map(row=>({
     name:row.children[0]?.value.trim()||"",value:row.children[1]?.value.trim()||"",source:row.children[2]?.value==="inferred"?"inferred":"explicit"
    })).filter(entry=>entry.name&&entry.value);

@@ -6,9 +6,9 @@
  const labelFor=(options,value)=>options.find(row=>row[0]===value)?.[1]||options[0][1];
  // Legacy records without a partType are off-the-shelf parts. Documents and
  // Code always use workflow progress, never inventory purchasing status.
- const partTypeFor=part=>["custom","code"].includes(part?.partType)?part.partType:"purchased";
+ const partTypeFor=part=>["custom","custom_purchased","code"].includes(part?.partType)?part.partType:"purchased";
  const itemTypeFor=part=>partTypeFor(part)==="code"?"code":part?.itemType==="document"?"document":"part";
- const isPurchased=part=>itemTypeFor(part)==="part"&&partTypeFor(part)==="purchased";
+ const isPurchased=part=>itemTypeFor(part)==="part"&&["purchased","custom_purchased"].includes(partTypeFor(part));
  const statusesFor=part=>isPurchased(part)?purchaseStatuses:progressStatuses;
  const statusField=part=>isPurchased(part)?"purchaseStatus":"progressStatus";
  const statusValue=part=>part[statusField(part)]||"not_started";
@@ -81,7 +81,7 @@
    partNumber:part.partNumber,
    name:displayName(part),
    itemType:labelFor([["part","Part"],["document","Document"],["code","Code"]],itemTypeFor(part)),
-   partType:partTypeFor(part)==="code"?null:labelFor([["purchased","Off-the-shelf"],["custom","Custom"]],partTypeFor(part)),
+   partType:partTypeFor(part)==="code"?null:labelFor([["purchased","Off-the-shelf"],["custom","Custom — made in-house"],["custom_purchased","Custom — purchased"]],partTypeFor(part)),
    purchaseStatus:labelFor(statusesFor(part),statusValue(part)),
    description:part.description,
    quantity:qty,

@@ -171,3 +171,11 @@ test("part values distinguish variants in display names and whole-package totals
  assert.equal(fields.estimateCost([{...a,quantity:null},b]).priceAvailable,2);
  assert.equal(fields.estimateCost([{...a,quantity:null},b]).priced,1);
 });
+
+test("purchased custom parts expose purchase costs and buying status",()=>{
+ const part={partType:"custom_purchased",supplier:"JLCPCB",quantity:2,historicalPrice:12.5};
+ assert.equal(fields.statusField(part),"purchaseStatus");
+ assert.equal(fields.sourcingFor(part).unitCost,12.5);
+ assert.equal(fields.estimateCost([part]).total,25);
+ assert.equal(fields.detailRows(part).find(([label])=>label==="Supplier")[1],"JLCPCB");
+});

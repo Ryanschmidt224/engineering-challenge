@@ -122,7 +122,7 @@ function open({onCreate,hideDefault=false}){
  genericWorkshopHelp.hidden=true;
  customName.label.append(genericWorkshopHelp);
  const itemKind=field("Item type","select");option(itemKind.input,"part","Part");option(itemKind.input,"document","Document");option(itemKind.input,"code","Code");
- const partClassification=field("Part type","select");option(partClassification.input,"purchased","Off-the-shelf");option(partClassification.input,"custom","Custom");
+ const partClassification=field("Part type","select");option(partClassification.input,"purchased","Off-the-shelf");option(partClassification.input,"custom","Custom — made in-house");option(partClassification.input,"custom_purchased","Custom — purchased");
  const partNumberField=field("Project BOM number (not manufacturer's number)");
  partNumberField.input.placeholder="Project-specific number, e.g. 100";partNumberField.input.maxLength=30;
  const manufacturerNumber=field("Manufacturer part number (MPN)");
@@ -135,6 +135,7 @@ function open({onCreate,hideDefault=false}){
  shortTreeDescription.input.maxLength=20;shortTreeDescription.input.placeholder="e.g. Motor switch";
  workshopDescription.input.rows=2;workshopDescription.input.maxLength=2000;
  workshopDescription.input.placeholder="Short description of the product itself";
+ const ownSupplier=field("Supplier name");ownSupplier.input.maxLength=120;ownSupplier.input.placeholder="e.g. JLCPCB";
  const vendorField=field("Suggested vendor","select");
  for(const [id,label] of [["DigiKey","DigiKey"],["Mouser","Mouser"],["Newark","Newark"],["Arrow","Arrow"],["Other","Other / not yet selected"]])option(vendorField.input,id,label);
  const vendorLinks=el("div","library-vendor-links muted");
@@ -325,7 +326,7 @@ function open({onCreate,hideDefault=false}){
  const workshopLegend=el("legend","","Part source");
  workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,quickSearch,addToWorkshopChoice,saveScope,workshopAddHelp);
  form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,
-  manufacturerNumber.label,shortTreeDescription.label,manufacturerName.label,workshopDescription.label,vendorField.label,
+  manufacturerNumber.label,shortTreeDescription.label,manufacturerName.label,workshopDescription.label,vendorField.label,ownSupplier.label,
   numberChoice,partNumberField.label,customName.label,vendorLinks,vendorInfo,
   chooser,qty.label,hintUnits,partValue.label,projectDetailsPanel,status,workshopFinishNote,footer);
  dialog.append(form);document.body.append(dialog);
@@ -461,13 +462,14 @@ function open({onCreate,hideDefault=false}){
   workshopFinishNote.classList.toggle("hide",!workshopMode);
   save.textContent=lib?"Add to project":"Create part";
    if(adding)partClassification.input.value="purchased";
-  const purchased=!lib&&isPart&&partClassification.input.value==="purchased";
+  const purchased=!lib&&isPart&&["purchased","custom_purchased"].includes(partClassification.input.value);
   for(const label of [manufacturerNumber.label,manufacturerName.label,workshopDescription.label,shortTreeDescription.label,vendorField.label])
    label.classList.toggle("hide",!purchased&&!lib);
   // Workshop values are visible for reference, but only editable from Workshop itself.
   for(const input of [manufacturerNumber.input,manufacturerName.input,workshopDescription.input,shortTreeDescription.input])
    input.readOnly=lib;
   vendorField.input.disabled=lib;
+  ownSupplier.label.hidden=lib||!purchased||vendorField.input.value!=="Other";
   projectDetailsPanel.classList.toggle("hide",!isPart||workshopMode);
   partValue.label.hidden=!isPart;
   vendorLinks.classList.toggle("hide",!purchased||workshopMode);
@@ -552,12 +554,12 @@ function open({onCreate,hideDefault=false}){
    const autoNumber=autoNumberCheckbox.checked;
    payload={name,quantity:itemKind.input.value==="code"?null:itemKind.input.value==="document"?1:count,specifications:[],itemType:itemKind.input.value==="code"?"document":itemKind.input.value,partType:itemKind.input.value==="code"?"code":partClassification.input.value,
     assignNumber:autoNumber,partNumber:autoNumber?null:noNumberRadio.checked?null:partNumberField.input.value.trim().toUpperCase()||null};
-   if(itemKind.input.value==="part"&&partClassification.input.value==="purchased"){
+   if(itemKind.input.value==="part"&&["purchased","custom_purchased"].includes(partClassification.input.value)){
     payload.manufacturer=manufacturerName.input.value.trim();
     payload.model=manufacturerNumber.input.value.trim(); // Manufacturer MPN; never the project's issued part number.
     payload.description=workshopDescription.input.value.trim();
      payload.featureTreeDescription=shortTreeDescription.input.value.trim();
-    payload.supplier=vendorField.input.value==="Other"?"":vendorField.input.value;
+    payload.supplier=vendorField.input.value==="Other"?ownSupplier.input.value.trim():vendorField.input.value;
    }
   }else if(!(category.input.value==="consumables"&&wireModeCheckbox.checked)){
    const choice=commonSelect.input.value;
@@ -656,6 +658,7 @@ function open({onCreate,hideDefault=false}){
    save.disabled=false;
   }
  });
+ vendorField.input.addEventListener("change",update);
  update();refreshCommon();updateCalc();dialog.showModal();
  Promise.allSettled([
   fetch("/api/commonparts",{cache:"no-store"}).then(r=>r.ok?r.json():Promise.reject(Error("Saved parts unavailable"))),

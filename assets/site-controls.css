@@ -2641,3 +2641,11 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
  outline-offset:3px;
  text-decoration-color:currentColor;
 }
+
+/* Keep supplier names readable in narrow part editors. */
+.bs-supplier-offer{grid-template-columns:minmax(150px,190px) minmax(150px,1fr) minmax(200px,1.5fr) auto}
+.bs-supplier-offer .bs-offer-vendor{padding-inline:10px 28px!important;min-width:150px;appearance:auto}
+.bs-supplier-offer .bs-offer-name{grid-column:1/-1}
+.bs-supplier-offer .bs-offer-name[hidden]{display:none!important}
+@media(max-width:760px){.bs-supplier-offer{grid-template-columns:minmax(150px,1fr) minmax(150px,1fr)}.bs-supplier-offer .bs-offer-url{grid-column:1/-1}}
+@media(max-width:480px){.bs-supplier-offer{grid-template-columns:minmax(0,1fr)}}

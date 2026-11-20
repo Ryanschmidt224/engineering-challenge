@@ -84,16 +84,18 @@ const normalizeSupplierOffers=input=>{
   if(!["digikey","mouser","mcmaster","newark","arrow","amazon","other"].includes(vendor)||
     typeof sku!=="string"||sku.length>100||typeof url!=="string"||url.length>500)return null;
   const code=sku.trim(),productUrl=url.trim();
-  if(!code&&!productUrl)return null;
+  const supplierName=String(item.supplierName??"").trim();
+  if(supplierName.length>120)return null;
+  if(!code&&!productUrl&&!(vendor==="other"&&supplierName))return null;
   if(vendor==="amazon"&&code&&!/^[A-Za-z0-9]{10}$/.test(code))return null;
   if(productUrl){
    let parsed;
    try{parsed=new URL(productUrl)}catch{return null}
    if(parsed.protocol!=="https:"||parsed.username||parsed.password)return null;
    const host=parsed.hostname.toLowerCase();
-   if(!supplierHosts[vendor]?.some(base=>host===base||host.endsWith("."+base)))return null;
+   if(vendor!=="other"&&!supplierHosts[vendor]?.some(base=>host===base||host.endsWith("."+base)))return null;
   }
-  saved.push({vendor,sku:vendor==="amazon"?code.toUpperCase():code,url:productUrl});
+  saved.push({vendor,sku:vendor==="amazon"?code.toUpperCase():code,url:productUrl,...(vendor==="other"&&supplierName?{supplierName}:{})});
  }
  return saved;
 };
@@ -233,10 +235,10 @@ export async function handleComponents(request,env){
   if(supplierOffers===null)return json({error:"Invalid supplier reference. Use a supported vendor, supplier code and HTTPS product URL."},400);
   const amount=quantityData(input);if(!amount)return json({error:"Quantity must be a positive number or blank, with a valid unit"},400);
   const clean=s=>String(s??"").slice(0,300);
-  const kind=input.partType==="code"?"code":input.partType==="custom"?"custom":"purchased";
+  const kind=input.partType==="code"?"code":input.partType==="custom"?"custom":input.partType==="custom_purchased"?"custom_purchased":"purchased";
   const itemType=kind==="code"?"document":input.itemType==="document"?"document":"part";
   if(input.itemType!==undefined&&!["part","document"].includes(input.itemType))return json({error:"Choose Part or Document"},400);
-  if(input.partType!==undefined&&!["purchased","custom","code"].includes(input.partType))return json({error:"Invalid part type"},400);
+  if(input.partType!==undefined&&!["purchased","custom","custom_purchased","code"].includes(input.partType))return json({error:"Invalid part type"},400);
   if(input.description!==undefined&&(typeof input.description!=="string"||input.description.length>2000))return json({error:"Description must be 2000 characters or less"},400);
   const projectDetails=cleanProjectDetails(input.projectDetails);
   if(!projectDetails)return json({error:"Invalid project-specific notes or schematic metadata"},400);
@@ -245,7 +247,7 @@ export async function handleComponents(request,env){
   const state=await readEditable(env,project),items=state.items;
   if(items.length>=300)return json({error:"Component limit reached"},400);
   try{
-   if(input.partNumber||input.assignNumber===true||kind==="custom"&&!record.isTool&&input.assignNumber!==false)record.partNumber=await issueNumber(env,project,"part",record.id,input.partNumber||undefined);
+   if(input.partNumber||input.assignNumber===true||["custom","custom_purchased"].includes(kind)&&!record.isTool&&input.assignNumber!==false)record.partNumber=await issueNumber(env,project,"part",record.id,input.partNumber||undefined);
   }catch(error){return json({error:error.message},error.status||400)}
   record.fullName=clean(input.fullName||generatedFullName(record));
   const source=await linkedWorkshopItem(request,env,record);
@@ -279,7 +281,7 @@ export async function handleComponents(request,env){
    entry.fullName=generatedFullName(entry);
   }
   if(input.partType!==undefined){
-   if(!["purchased","custom","code"].includes(input.partType))return json({error:"Invalid part type"},400);
+   if(!["purchased","custom","custom_purchased","code"].includes(input.partType))return json({error:"Invalid part type"},400);
    const wasCode=entry.partType==="code";entry.partType=input.partType;
    if(entry.partType==="code"){entry.itemType="document";entry.isTool=false;entry.quantity=null}
    else if(wasCode){entry.itemType="part"}
@@ -355,11 +357,11 @@ export async function handleComponents(request,env){
   if(supplierOffers===null)return json({error:"Invalid supplier references"},400);
   if(input.description!==undefined&&(typeof input.description!=="string"||input.description.length>2000))return json({error:"Description must be 2000 characters or less"},400);
   if(input.itemType!==undefined&&!["part","document"].includes(input.itemType))return json({error:"Choose Part or Document"},400);
-  if(input.partType!==undefined&&!["purchased","custom","code"].includes(input.partType))return json({error:"Invalid part type"},400);
+  if(input.partType!==undefined&&!["purchased","custom","custom_purchased","code"].includes(input.partType))return json({error:"Invalid part type"},400);
   const projectDetails=cleanProjectDetails(input.projectDetails,previous.projectDetails||{});
   if(!projectDetails)return json({error:"Invalid project-specific notes or schematic metadata"},400);
   const updated={...previous,projectDetails,description:input.description===undefined?(previous.description||""):input.description.trim(),itemType:input.itemType==="document"?"document":input.itemType==="part"?"part":previous.itemType||"part",name:clean(input.name.trim()),fullName:clean(input.fullName||input.name.trim()),...amount,historicalPrice:price.price,historicalPriceDate:price.date,historicalPriceBasis:price.basis,historicalPackageQuantity:price.packageQuantity,historicalPurchasePrice:price.purchasePrice,
-   partType:input.partType==="code"?"code":input.partType==="custom"?"custom":"purchased"};
+   partType:input.partType==="code"?"code":input.partType==="custom"?"custom":input.partType==="custom_purchased"?"custom_purchased":"purchased"};
   if(updated.partType==="code"){updated.itemType="document";updated.isTool=false;updated.quantity=null}
   if(input.purchaseOverride===true||input.purchaseOverride===false||input.purchaseOverride===null)updated.purchaseOverride=input.purchaseOverride;
   if(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))updated.workshopChoice=input.workshopChoice;
