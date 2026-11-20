@@ -1653,7 +1653,7 @@ function setupAssemblyTrees(){
   const projectOnlyFields={};
   for(const [key,title,multiline,limit] of [
    ["value","Value (e.g. 10 kΩ or 100 nF)",false,120],
-   ["value","Value (optional)",false,120],["notes","Project notes",true,6000],["changes","Project changes / modifications",true,6000],
+   ["notes","Project notes",true,6000],["changes","Project changes / modifications",true,6000],
    ["featureTreeName","Feature tree name (optional override)",false,120],
    ["referenceDesignators","Reference designators",false,500],["footprint","Footprint",false,240],
    ["schematicValue","Schematic value",false,240],["sourceApplication","Source application",false,80],
