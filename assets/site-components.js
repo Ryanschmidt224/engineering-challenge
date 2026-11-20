@@ -76,7 +76,7 @@ function setupComponents(){
      const hint=document.createElement("span");hint.className="bom-part-toggle-label";hint.textContent="Details";
      summary.append(label,meta,hint);item.append(summary);
      const body=document.createElement("div");body.className="bom-part-body";
-     for(const [fieldName,value] of [["Historical price",c.historicalPrice!==null&&c.historicalPrice!==undefined?"$"+Number(c.historicalPrice).toFixed(2)+" USD per unit"+(c.historicalPriceDate?" (recorded "+c.historicalPriceDate+")":""):null],["Manufacturer",c.manufacturer],["Model",c.model],["Supplier",c.supplier],["ASIN",c.asin],["Category",c.category]]){
+     for(const [fieldName,value] of [["Historical price",c.historicalPrice!==null&&c.historicalPrice!==undefined?"$"+Number(c.historicalPrice).toFixed(2)+" USD per unit"+(c.historicalPriceDate?" (recorded "+c.historicalPriceDate+")":""):null],["Manufacturer",c.manufacturer],["Mfg part number",c.model],["Supplier",c.supplier],["ASIN",c.asin],["Category",c.category]]){
       if(!value)continue;
       const line=document.createElement("p"),strong=document.createElement("strong");
       strong.textContent=fieldName+": ";line.append(strong,document.createTextNode(value));body.append(line);

@@ -100,7 +100,7 @@
    isTool:part.isTool?"Yes":null,
    hideFromFeatureTree:part.hideFromFeatureTree?"Yes":null
   };
-  const labels={value:"Value",featureTreeDescription:"Feature tree description",packageSize:"Package size",cost:"Cost",partNumber:"Part number",name:"Part name",itemType:"Item type",partType:"Part type",purchaseStatus:"Status",description:"Description",quantity:"Quantity",historicalPrice:"Historical part price",manufacturer:"Manufacturer",model:"Model",category:"Category",supplier:"Supplier",asin:"ASIN",isTool:"Tool",hideFromFeatureTree:"Hidden from feature tree"};
+  const labels={value:"Value",featureTreeDescription:"Feature tree description",packageSize:"Package size",cost:"Cost",partNumber:"Part number",name:"Part name",itemType:"Item type",partType:"Part type",purchaseStatus:"Status",description:"Description",quantity:"Quantity",historicalPrice:"Historical part price",manufacturer:"Manufacturer",model:"Mfg part number",category:"Category",supplier:"Supplier",asin:"ASIN",isTool:"Tool",hideFromFeatureTree:"Hidden from feature tree"};
   const ordered=["name","value","featureTreeDescription","purchaseStatus","quantity","supplier","partNumber","asin","packageSize","cost"];
   const remaining=[...sectionFields.identity,...sectionFields.additional,...sectionFields.display].filter(key=>!ordered.includes(key));
   return [...ordered,...remaining].map(key=>[labels[key],values[key]]).filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="");

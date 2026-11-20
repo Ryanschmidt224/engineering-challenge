@@ -272,7 +272,7 @@
    }};
    small("Category",item.category);
    small("Manufacturer",item.manufacturer);
-   small("Model",item.model);
+   small("Mfg part number",item.model);
    small("Part number",item.partNumber);
    small("Stock status",stockLabels[item.stockStatus]||"In stock");
    small("Quantity",item.quantity+" "+(item.unit||"pcs"));
@@ -381,7 +381,7 @@
    const specBody=el("tbody");
    const specRows=[
     ["Manufacturer part number",item.partNumber||item.model],["Manufacturer",item.manufacturer],
-    ["Description",item.subtitle||item.name],["Feature tree description",item.featureTreeDescription],["Vendor",item.supplier],["Supplier part number",item.supplierPartNumber],["Model",item.model],
+    ["Description",item.subtitle||item.name],["Feature tree description",item.featureTreeDescription],["Vendor",item.supplier],["Supplier part number",item.supplierPartNumber],["Mfg part number",item.model],
     ["Specifications",item.spec],["Typical use",item.use],["Important considerations",item.caution],
     ["Buying suggestion",item.orderNotes],["Notes",item.notes]
    ];
@@ -532,7 +532,7 @@
    // sections and fields order, keeping Workshop-specific ordering fields.
    const fieldDescriptors={
     name:["Item name","text"],subtitle:["Short description","text"],featureTreeDescription:["Feature tree description (20 characters max)","text"],
-    manufacturer:["Manufacturer","text"],model:["Model","text"],
+    manufacturer:["Manufacturer","text"],model:["Mfg part number","text"],
     partNumber:["Manufacturer part number","text"],supplier:["Supplier","text"],
     supplierPartNumber:["Supplier part number","text"],supplierUrl:["Supplier / ordering URL","url"],asin:["Amazon ASIN","text"],
     price:["Reference price","text"],packageQuantity:["Quantity / package","text"],
@@ -1242,7 +1242,7 @@
       <label>Type<select id="workshop-kind" class="field"><option value="tool">Tool</option><option value="equipment">Equipment</option><option value="component">Component</option><option value="material">Material</option><option value="other">Other</option></select></label>
       <label>Category<input id="workshop-category" class="field" maxlength="80"></label>
       <label>Manufacturer<input id="workshop-manufacturer" class="field" maxlength="100"></label>
-      <label>Model<input id="workshop-model" class="field" maxlength="120"></label>
+      <label>Mfg part number<input id="workshop-model" class="field" maxlength="120"></label>
       <label>Part number<input id="workshop-partnumber" class="field" maxlength="120"></label>
        <label>Feature tree description (20 characters max)<input id="workshop-featuretreedescription" class="field" maxlength="20" placeholder="e.g. Hall sensor"></label>
       <label>Quantity<input id="workshop-quantity" class="field" type="number" min="0" step="any" value="1"></label>
