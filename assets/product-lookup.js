@@ -81,7 +81,9 @@ window.BSProductLookup=(()=>{
  function mountPart(root,{canSearch=()=>true}={}){
   if(root.bsProductLookup)return root.bsProductLookup;
   const field=name=>root.querySelector(".component-"+name);
-  const panel=el("section","component-lookup-panel");
+  const panel=el("details","component-lookup-panel product-ai-disclosure");
+  const summary=el("summary","product-ai-disclosure-heading","Find specs with AI");
+  panel.append(summary);
   const old=root.querySelector(".component-lookup-panel");
   const legacy=field("description")?.closest("label");
   const extract=field("extract");
