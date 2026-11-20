@@ -2778,7 +2778,16 @@ function setupAssemblyTrees(){
     if(count>1)name.firstChild.textContent+=" ("+count+")";
     const status=partProgress.get(node.partId);
     if(status==="complete"||status==="in_progress")el.classList.add("part-progress-"+status);
-    if(partAttention.get(node.partId)){el.classList.add("part-needs-attention");name.title="Needs attention — open part to view the reminder"}
+    const needsAttention=partAttention.get(node.partId);
+    if(needsAttention){el.classList.add("part-needs-attention");name.title="Needs attention — open part to view the reminder"}
+    if(needsAttention||status==="complete"||status==="in_progress"){
+     const marker=document.createElement("span");marker.className="assembly-tree-status-marker";
+     marker.textContent=needsAttention?"⚑":status==="complete"?"✓":"◐";
+     marker.title=needsAttention?"Needs attention":status==="complete"?"Complete":"In progress";
+     marker.setAttribute("role","img");marker.setAttribute("aria-label",marker.title);
+     // Keep status beside the name, before the optional description's block.
+     name.insertBefore(marker,name.querySelector(".assembly-tree-description"));
+    }
    }
    if(isPartNode(node)&&partRoute()===node.partId)el.classList.add("selected");name.onclick=()=>{if(isPartNode(node)){openTreePart(node);return}selected=id;history.pushState(null,"",workspaceHash(id));render();notify();window.scrollTo(0,0)};
    el.append(expand,name);

@@ -1251,10 +1251,10 @@
 .bom-part-workspace .part-attention-note{width:min(100%,800px);min-height:74px;resize:vertical}
 .bom-part-workspace .part-progress-actions{display:flex;align-items:center;gap:12px}
 .bom-part-workspace .part-progress-feedback{color:var(--color-text-muted);font-size:.82rem}
-.assembly-node.part-progress-complete>.assembly-name::after{content:" ✓";color:var(--color-accent);font-weight:750}
-.assembly-node.part-progress-in_progress>.assembly-name::after{content:" ◐";color:var(--color-text-muted)}
+.assembly-tree-status-marker{display:inline-block;margin-left:.4em;font-size:.75em;line-height:1;vertical-align:baseline;color:var(--color-text-muted)}
+.assembly-node.part-progress-complete .assembly-tree-status-marker{color:var(--color-accent);font-weight:650}
 .assembly-node.part-needs-attention>.assembly-name{color:var(--color-danger)}
-.assembly-node.part-needs-attention>.assembly-name::after{content:" ⚑";color:var(--color-danger)}
+.assembly-node.part-needs-attention .assembly-tree-status-marker{color:var(--color-danger)}
 
 
 /* Project-level review queue; subtle highlight signals action without dominating navigation. */
