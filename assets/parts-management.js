@@ -43,7 +43,7 @@
   const scroll=el("div","bs-parts-scroll"),table=el("table","bs-parts-table");
   const thead=el("thead"),headingRow=el("tr"),colgroup=el("colgroup");
   // Compact defaults: part number is intentionally narrow, note stays beside its flag.
-  const widths=[112,330,150,160,380];
+  const widths=[112,330,150,160,140,170,380];
   let nameWidthManuallyResized=false;
   // Size the name column to its visible contents, not to the longest saved string.
   // Longer names remain intact and editable; the input simply scrolls horizontally.
@@ -74,7 +74,7 @@
   table.append(colgroup);
   if(typeof ResizeObserver!=="undefined"){const observer=new ResizeObserver(layoutColumns);observer.observe(scroll)}
   else window.addEventListener("resize",layoutColumns);
-  const columns=[["number","Part number"],["name","Part name"],["partType","Part type"],["status","Status"],["needsAttention","Needs attention"]];
+  const columns=[["number","Part number"],["name","Part name"],["partType","Part type"],["status","Status"],["unitCost","Cost per part"],["packageCost","Cost per package"],["needsAttention","Needs attention"]];
   let order="name",direction=1,parts=[],fetchId=0;
   const expandedGroups=new Set();
   const sidebar=el("div","bs-part-category-nav");
@@ -104,7 +104,7 @@
    if(key!=="open"){
     const handle=el("span","bs-parts-resize");handle.textContent="⋮⋮";handle.title="Drag to resize "+label+" column";handle.setAttribute("role","separator");handle.setAttribute("aria-label","Resize "+label);handle.setAttribute("aria-orientation","vertical");handle.tabIndex=0;
     const index=columns.findIndex(c=>c[0]===key);
-    const size=w=>{if(index===1)nameWidthManuallyResized=true;widths[index]=Math.max(index===0?102:index===1?140:index===4?240:85,Math.round(w));layoutColumns()};
+    const size=w=>{if(index===1)nameWidthManuallyResized=true;widths[index]=Math.max(index===0?102:index===1?140:key==="needsAttention"?240:85,Math.round(w));layoutColumns()};
     handle.addEventListener("pointerdown",e=>{if(e.button!==0)return;e.preventDefault();e.stopPropagation();const x=e.clientX,w=widths[index];handle.setPointerCapture(e.pointerId);handle.classList.add("is-resizing");const move=ev=>size(w+ev.clientX-x);const stop=()=>{handle.classList.remove("is-resizing");handle.removeEventListener("pointermove",move);handle.removeEventListener("pointerup",stop);handle.removeEventListener("pointercancel",stop)};handle.addEventListener("pointermove",move);handle.addEventListener("pointerup",stop);handle.addEventListener("pointercancel",stop)});
     handle.addEventListener("keydown",e=>{if(e.key==="ArrowLeft"||e.key==="ArrowRight"){e.preventDefault();size(widths[index]+(e.key==="ArrowLeft"?-15:15))}});
     th.append(handle);
@@ -128,6 +128,11 @@
    // Search by part number or headline name without overriding the filters.
    const entries=parts.filter(p=>(filter.value==="all"||statusFor(p)===filter.value)&&matchesType(p)&&((p.name||"").toLowerCase().includes(query)||numberFor(p).toLowerCase().includes(query)));
    entries.sort((a,b)=>{
+    if(order==="unitCost"||order==="packageCost"){
+     const av=fields.sourcingFor(a)[order],bv=fields.sourcingFor(b)[order];
+     if(av===null||bv===null)return av===bv?0:av===null?1:-1;
+     return (av-bv)*direction;
+    }
     if(order==="number"){
      const an=numberFor(a),bn=numberFor(b);
      const ai=/\d+$/.test(an)?Number(an.match(/\d+$/)[0]):Infinity,bi=/\d+$/.test(bn)?Number(bn.match(/\d+$/)[0]):Infinity;
@@ -171,6 +176,16 @@
     state.onchange=()=>void change(part,stateKey,state.value,state);
     stateCell.append(state);
     tr.append(stateCell);
+    const sourcing=fields.sourcingFor(part);
+    const dollars=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:4});
+    for(const key of ["unitCost","packageCost"]){
+     const value=sourcing[key],cell=el("td","bs-parts-cost",value===null?"—":dollars.format(value));
+     if(value!==null){
+      cell.title=sourcing.source==="historical"?"Recorded price":"Workshop reference price";
+      if(key==="packageCost"&&sourcing.packageSize)cell.append(el("small","bs-parts-package-size","Package of "+sourcing.packageSize));
+     }
+     tr.append(cell);
+    }
     const attentionCell=el("td","bs-parts-attention"),attentionRow=el("div","bs-parts-attention-inline");
     const attentionLine=el("label","bs-attention-line"),attention=el("input");
     attention.type="checkbox";attention.checked=part.needsAttention===true;attention.disabled=readOnly;

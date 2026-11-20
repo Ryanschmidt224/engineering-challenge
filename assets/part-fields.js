@@ -20,7 +20,7 @@
   return Number.isFinite(amount)?amount:null;
  }
  function sourcingFor(part){
-  const empty={url:"",price:"",packageSize:"",unitCost:null,source:""};
+  const empty={url:"",price:"",packageSize:"",unitCost:null,packageCost:null,source:""};
   if(!isPurchased(part))return empty;
   const specification=name=>(part.specifications||[]).find(spec=>spec.name===name)?.value;
   const workshop=part.workshopSourcing||{};
@@ -38,11 +38,11 @@
   if(historical!==null){
    const recordedPack=part.historicalPriceBasis==="per_package"&&part.historicalPackageQuantity>0?part.historicalPackageQuantity:null;
    const purchase=recordedPack?priceInUsd(part.historicalPurchasePrice)??historical*recordedPack:historical;
-   return {url,unitCost:historical,packageSize:recordedPack||pack,source:"historical",
+   return {url,unitCost:historical,packageCost:recordedPack?purchase:packageCount?historical*packageCount:null,packageSize:recordedPack||pack,source:"historical",
     price:dollars.format(purchase)+(recordedPack?" per package":" per unit")+" · recorded"+(part.historicalPriceDate?" "+part.historicalPriceDate:"")};
   }
   return {url,price:rawPrice?(reference===null?rawPrice:dollars.format(reference)+(pack?" per package":" per unit"))+" · Workshop reference":"",
-   packageSize:pack,unitCost:reference!==null&&(!pack||packageCount)?reference/(packageCount||1):null,source:"workshop"};
+   packageSize:pack,packageCost:pack?reference:null,unitCost:reference!==null&&(!pack||packageCount)?reference/(packageCount||1):null,source:"workshop"};
  }
  function estimateCost(parts){
   let total=0,priced=0,workshop=0;

@@ -16,6 +16,8 @@
  box-sizing:border-box;
 }
 .bs-parts-table th{height:42px}
+.bs-parts-cost{font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.bs-parts-package-size{display:block;color:var(--color-text-muted);font-size:.76rem;margin-top:3px}
 .bs-parts-table tbody td{height:54px}
 .bs-parts-table tbody .field{
  height:40px;
