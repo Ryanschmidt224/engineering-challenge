@@ -1040,10 +1040,8 @@ function setupAssemblyTrees(){
     if(isLink){content.href=value;content.target="_blank";content.rel="noopener noreferrer";content.className="part-order-url"}
     line.append(label,separator,content);detailRows.append(line);
    };
-   appendDetail("Order URL",sourcing.url,true);
-   appendDetail("Cost",sourcing.price);
-   appendDetail("Package size",sourcing.packageSize);
    for(const [title,value] of fields)appendDetail(title,value);
+   appendDetail("Order URL",sourcing.url,true);
    const specs=(part.specifications||[]).filter(spec=>!window.BSPartFields.isPurchased(part)||!window.BSPartFields.sourcingLabels.includes(spec.name));
    if(specs.length){
     const heading=document.createElement("h3");heading.textContent="Specifications";detailRows.append(heading);
@@ -1064,7 +1062,7 @@ function setupAssemblyTrees(){
     notice.textContent="These notes and schematic details apply only to this project; they do not modify the Workshop reference.";
     projectSection.append(title,notice);
     for(const [key,label] of [
-     ["value","Value"],["notes","Project notes"],["changes","Project changes / modifications"],
+     ["notes","Project notes"],["changes","Project changes / modifications"],
      ["featureTreeName","Feature tree name"],
      ["referenceDesignators","Reference designators"],["footprint","Footprint"],
      ["schematicValue","Schematic value"],["sourceApplication","Source application"],
@@ -2733,7 +2731,7 @@ function setupAssemblyTrees(){
    const name=document.createElement("button");name.type="button";name.className="assembly-name";
    const nodeNumber=node?(isPartNode(node)?partNumbers.get(node.partId):node.partNumber):null;
    const treeInfo=isPartNode(node)?partTreeLabels.get(node.partId):null;
-   const firstLine=[treeInfo?.details?.value,treeInfo?.mpn||nodeNumber||node?.name||title].filter(Boolean).join(" · ");
+   const firstLine=treeInfo?.details?.value?window.BSPartFields.displayName({name:node?.name,projectDetails:treeInfo.details}):treeInfo?.mpn||nodeNumber||node?.name||title;
    const treeDetails=treeInfo?.details||{};
    const secondLine=String(treeDescription(treeDetails,treeInfo?.description)||(node?.name!==firstLine?node?.name:"")||(partWorkshopItems.get(node?.partId)?"Description not set":"")||"").trim();
    name.textContent=node?(isDocumentNode(node)?"📄  ":isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+(isPartNode(node)?firstLine:(nodeNumber?nodeNumber+" · ":"")+node.name):"📦  "+title;

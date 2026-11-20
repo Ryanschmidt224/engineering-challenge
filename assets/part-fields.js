@@ -14,7 +14,11 @@
  const statusValue=part=>part[statusField(part)]||"not_started";
  const valueFor=part=>String(part?.projectDetails?.value||"").trim();
  const treeDescriptionFor=part=>String(part?.projectDetails?.featureTreeName||part?.projectDetails?.workshopTreeDescription||part?.description?.slice(0,20)||"").trim();
- const displayName=part=>[valueFor(part),part?.name].filter(Boolean).join(" · ");
+ const displayValue=part=>{
+  const value=valueFor(part);
+  return /resistor/i.test(part?.name||"")&&/^\d+(?:\.\d+)?\s*[kKmM]?$/.test(value)?value+"Ω":value;
+ };
+ const displayName=part=>[part?.name,displayValue(part)].filter(Boolean).join(" - ");
  const sourcingLabels=["Supplier URL","Reference price","Quantity per package"];
  function priceInUsd(value){
   const raw=String(value??"").trim();
@@ -78,7 +82,9 @@
  });
  function detailRows(part){
   const qty=part.quantity==null?"Not specified":String(part.quantity)+(part.quantityUnit?" "+part.quantityUnit:"");
+  const sourcing=sourcingFor(part);
   const values={
+   value:displayValue(part),featureTreeDescription:treeDescriptionFor(part),packageSize:sourcing.packageSize,cost:sourcing.price,
    partNumber:part.partNumber,
    name:displayName(part),
    itemType:labelFor([["part","Part"],["document","Document"],["code","Code"]],itemTypeFor(part)),
@@ -89,13 +95,15 @@
    manufacturer:part.partType==="custom"?null:part.manufacturer,
    model:part.partType==="custom"?null:part.model,
    category:part.category,
-   supplier:part.partType==="custom"?null:part.supplier,
+   supplier:part.partType==="custom"?null:part.supplier||(part.supplierOffers||[]).find(offer=>offer.supplierName)?.supplierName,
    asin:part.partType==="custom"?null:part.asin,
    isTool:part.isTool?"Yes":null,
    hideFromFeatureTree:part.hideFromFeatureTree?"Yes":null
   };
-  const labels={partNumber:"Part number",name:"Part name",itemType:"Item type",partType:"Part type",purchaseStatus:"Status",description:"Description",quantity:"Quantity",historicalPrice:"Historical part price",manufacturer:"Manufacturer",model:"Model",category:"Category",supplier:"Supplier",asin:"ASIN",isTool:"Tool",hideFromFeatureTree:"Hidden from feature tree"};
-  return [...sectionFields.identity,...sectionFields.additional,...sectionFields.display].map(key=>[labels[key],values[key]]).filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="");
+  const labels={value:"Value",featureTreeDescription:"Feature tree description",packageSize:"Package size",cost:"Cost",partNumber:"Part number",name:"Part name",itemType:"Item type",partType:"Part type",purchaseStatus:"Status",description:"Description",quantity:"Quantity",historicalPrice:"Historical part price",manufacturer:"Manufacturer",model:"Model",category:"Category",supplier:"Supplier",asin:"ASIN",isTool:"Tool",hideFromFeatureTree:"Hidden from feature tree"};
+  const ordered=["name","value","featureTreeDescription","purchaseStatus","quantity","supplier","partNumber","asin","packageSize","cost"];
+  const remaining=[...sectionFields.identity,...sectionFields.additional,...sectionFields.display].filter(key=>!ordered.includes(key));
+  return [...ordered,...remaining].map(key=>[labels[key],values[key]]).filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="");
  }
- window.BSPartFields=Object.freeze({progressStatuses,purchaseStatuses,partTypeFor,itemTypeFor,isPurchased,statusesFor,statusField,statusValue,labelFor,sectionFields,detailRows,valueFor,displayName,treeDescriptionFor,sourcingLabels,sourcingFor,estimateCost});
+ window.BSPartFields=Object.freeze({progressStatuses,purchaseStatuses,partTypeFor,itemTypeFor,isPurchased,statusesFor,statusField,statusValue,labelFor,sectionFields,detailRows,valueFor,displayValue,displayName,treeDescriptionFor,sourcingLabels,sourcingFor,estimateCost});
 })();

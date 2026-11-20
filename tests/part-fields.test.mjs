@@ -57,7 +57,7 @@ test("whole package estimate rounds combined quantities and reports incomplete m
 test("expanded details follow shared editor field order and hide empty fields",()=>{
  const part={partNumber:"NR116",name:"Flywheel",itemType:"part",partType:"purchased",description:"Launches dart",quantity:2,purchaseStatus:"not_started",isTool:false,hideFromFeatureTree:false};
  const rows=fields.detailRows(part);
- assert.deepEqual(Array.from(rows,([label])=>label),["Part number","Part name","Item type","Part type","Status","Description","Quantity"]);
+ assert.deepEqual(Array.from(rows,([label])=>label),["Part name","Feature tree description","Status","Quantity","Part number","Item type","Part type","Description"]);
  assert.equal(rows.find(([label])=>label==="Status")[1],"Not started");
  assert.equal(rows.some(([label])=>label==="Manufacturer"),false);
 });
@@ -165,7 +165,7 @@ test("part values distinguish variants in display names and whole-package totals
  const base={name:"¼ W resistor",quantity:1,workshopSourcing:{price:"10",packageQuantity:"100"}};
  const a={...base,projectDetails:{workshopReferenceId:"workshop:resistor",value:"10 kΩ"}};
  const b={...base,projectDetails:{workshopReferenceId:"workshop:resistor",value:"100 kΩ"}};
- assert.equal(fields.displayName(a),"10 kΩ · ¼ W resistor");
+ assert.equal(fields.displayName(a),"¼ W resistor - 10 kΩ");
  assert.equal(fields.estimateCost([a,b]).packageTotal,20);
  assert.equal(fields.estimateCost([a,b]).priceAvailable,2);
  assert.equal(fields.estimateCost([{...a,quantity:null},b]).priceAvailable,2);
