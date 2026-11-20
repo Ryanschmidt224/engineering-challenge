@@ -150,6 +150,7 @@ function open({onCreate,hideDefault=false}){
   }
  };
  manufacturerNumber.input.oninput=renderVendorLinks;
+ const partValue=field("Value (optional)");partValue.input.maxLength=120;partValue.input.placeholder="e.g. 10 kΩ or 100 nF";
  const projectDetailsPanel=el("section","library-project-only");
  projectDetailsPanel.append(el("h3","","Project-specific information"),
   el("p","library-project-only-warning","Changes below apply only to this project. They will not modify the original Workshop part."));
@@ -174,7 +175,7 @@ function open({onCreate,hideDefault=false}){
  }
  projectDetailsPanel.append(kicad);
  const getProjectDetails=()=>({
-  notes:projectNotes.input.value.trim(),changes:projectChanges.input.value.trim(),
+  value:partValue.input.value.trim(),notes:projectNotes.input.value.trim(),changes:projectChanges.input.value.trim(),
   ...Object.fromEntries(Object.entries(projectCadFields).map(([key,input])=>[key,input.value.trim()]))
  });
  const numberChoice=el("fieldset","library-number-choice");
@@ -326,7 +327,7 @@ function open({onCreate,hideDefault=false}){
  form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,
   manufacturerNumber.label,shortTreeDescription.label,manufacturerName.label,workshopDescription.label,vendorField.label,
   numberChoice,partNumberField.label,customName.label,vendorLinks,vendorInfo,
-  chooser,qty.label,hintUnits,projectDetailsPanel,status,workshopFinishNote,footer);
+  chooser,qty.label,hintUnits,partValue.label,projectDetailsPanel,status,workshopFinishNote,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],purchased=[],sharedOverrides={},personalItems=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  let savedWorkshopItem=null;
@@ -468,6 +469,7 @@ function open({onCreate,hideDefault=false}){
    input.readOnly=lib;
   vendorField.input.disabled=lib;
   projectDetailsPanel.classList.toggle("hide",!isPart||workshopMode);
+  partValue.label.hidden=!isPart;
   vendorLinks.classList.toggle("hide",!purchased||workshopMode);
   vendorInfo.classList.toggle("hide",!purchased||workshopMode);
   noNumberRow.classList.toggle("hide",!purchased);

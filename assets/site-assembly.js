@@ -398,11 +398,12 @@ function setupAssemblyTrees(){
    return show;
   }
   function renderEstimatedCost(parts){
-   const {total,priced,materials,packageTotal,packagePriced,missingQuantity,missingPrice}=window.BSPartFields.estimateCost(parts);
+   const {total,priced,materials,packageTotal,packagePriced,missingQuantity,missingPrice,priceAvailable}=window.BSPartFields.estimateCost(parts);
    const dollars=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"});
    summaryCost.textContent="Parts used: "+(priced?dollars.format(total)+" · "+priced+" of "+materials+" materials priced":"No priced quantities yet");
    summaryPackageCost.textContent="Whole packages to purchase: "+(packagePriced?dollars.format(packageTotal)+" · "+packagePriced+" of "+materials+" materials priced":"Package prices and quantities are needed");
    summaryCostMissing.textContent=[
+    priceAvailable+" of "+materials+" materials have prices; "+priced+" also have project quantities",
     missingQuantity?missingQuantity+" materials need a project quantity":"",
     missingPrice?missingPrice+" materials need a usable price":"",
     priced>packagePriced?(priced-packagePriced)+" priced materials need a package size":""
@@ -466,7 +467,7 @@ function setupAssemblyTrees(){
    const list=document.createElement("ul");list.className="project-summary-part-list";
    for(const part of items){
     const row=document.createElement("li"),name=document.createElement(part.id&&/^[0-9a-f-]{36}$/i.test(part.id)&&!part.generatedFrom?"button":"span"),quantity=document.createElement("span");
-    name.className="project-summary-part-name";name.textContent=(part.partNumber?part.partNumber+" · ":"")+part.name;
+    name.className="project-summary-part-name";name.textContent=(part.partNumber?part.partNumber+" · ":"")+window.BSPartFields.displayName(part);
     if(name.tagName==="BUTTON"){
      name.type="button";name.classList.add("project-summary-part-link");
      name.setAttribute("aria-label","Open "+part.name+" part page");
@@ -498,7 +499,7 @@ function setupAssemblyTrees(){
      const list=document.createElement("ul");list.className="project-summary-part-list";
      for(const part of unique.values()){
       const row=document.createElement("li"),name=document.createElement(part.id&&/^[0-9a-f-]{36}$/i.test(part.id)&&!part.generatedFrom?"button":"span"),quantity=document.createElement("span");
-      name.className="project-summary-part-name";name.textContent=(part.partNumber?part.partNumber+" · ":"")+part.name;
+      name.className="project-summary-part-name";name.textContent=(part.partNumber?part.partNumber+" · ":"")+window.BSPartFields.displayName(part);
     if(name.tagName==="BUTTON"){
      name.type="button";name.classList.add("project-summary-part-link");
      name.setAttribute("aria-label","Open "+part.name+" part page");
@@ -1063,7 +1064,7 @@ function setupAssemblyTrees(){
     notice.textContent="These notes and schematic details apply only to this project; they do not modify the Workshop reference.";
     projectSection.append(title,notice);
     for(const [key,label] of [
-     ["notes","Project notes"],["changes","Project changes / modifications"],
+     ["value","Value"],["notes","Project notes"],["changes","Project changes / modifications"],
      ["featureTreeName","Feature tree name"],
      ["referenceDesignators","Reference designators"],["footprint","Footprint"],
      ["schematicValue","Schematic value"],["sourceApplication","Source application"],
@@ -1269,7 +1270,7 @@ function setupAssemblyTrees(){
     if(version!==partLoadVersion||partRoute()!==partId)return;
     const part=partData.components?.find(item=>item.id===partId);
     if(!part)throw Error("Part not found");
-    heading.textContent=(part.partNumber?part.partNumber+" · ":"")+part.name;
+    heading.textContent=(part.partNumber?part.partNumber+" · ":"")+window.BSPartFields.displayName(part);
     currentPartInfo=part;
     if(window.BSPartFields.itemTypeFor(part)==="part"&&!part.generatedFrom)showPartQuantity(partQuantityDisplay(part));
     const hasWorkshopLink=!!workshopLinkId(part);
@@ -1540,7 +1541,7 @@ function setupAssemblyTrees(){
    for(const part of items){
     const row=document.createElement("div");row.className="bom-shop-material-row";
     const name=document.createElement("span");
-    name.className="bom-part-name bom-part-name-link";name.textContent=(part.partNumber?part.partNumber+" · ":"")+part.name;
+    name.className="bom-part-name bom-part-name-link";name.textContent=(part.partNumber?part.partNumber+" · ":"")+window.BSPartFields.displayName(part);
     const quantity=document.createElement("span");quantity.className="bom-shop-qty";
     quantity.textContent=materialQuantity(part);
     row.append(name,quantity);
@@ -1561,7 +1562,7 @@ function setupAssemblyTrees(){
    if(part.generatedFrom)item.classList.add("bom-generated-part");
    const row=document.createElement("div");row.className="bom-part-summary";
    const name=document.createElement("span");
-   name.className="bom-part-name bom-part-name-link";name.textContent=(part.partNumber?part.partNumber+" · ":"")+part.name;
+   name.className="bom-part-name bom-part-name-link";name.textContent=(part.partNumber?part.partNumber+" · ":"")+window.BSPartFields.displayName(part);
    const qty=document.createElement("span");qty.className="bom-part-meta";
    qty.textContent="Qty "+window.BSBomModel.quantityText(part);
    row.append(name,qty);
@@ -1574,7 +1575,7 @@ function setupAssemblyTrees(){
    return item;
   }
   // Group matching displayed names while preserving each underlying saved record.
-  const bomIdentity=part=>[part.name,part.manufacturer,part.model,part.partType,part.sharedPartRef]
+  const bomIdentity=part=>[part.name,window.BSPartFields.valueFor(part),part.manufacturer,part.model,part.partType,part.sharedPartRef]
    .map(value=>String(value||"").trim().replace(/\s+/g," ").toLowerCase()).join("|");
   function appendGroupedBomParts(mount,entries){
    const groups=new Map();
@@ -1706,7 +1707,8 @@ function setupAssemblyTrees(){
   projectOnlyPanel.append(treeDescriptionToggle);
   const projectOnlyFields={};
   for(const [key,title,multiline,limit] of [
-   ["notes","Project notes",true,6000],["changes","Project changes / modifications",true,6000],
+   ["value","Value (e.g. 10 kΩ or 100 nF)",false,120],
+   ["value","Value (optional)",false,120],["notes","Project notes",true,6000],["changes","Project changes / modifications",true,6000],
    ["featureTreeName","Feature tree name (optional override)",false,120],
    ["referenceDesignators","Reference designators",false,500],["footprint","Footprint",false,240],
    ["schematicValue","Schematic value",false,240],["sourceApplication","Source application",false,80],
@@ -2795,7 +2797,7 @@ function setupAssemblyTrees(){
    const name=document.createElement("button");name.type="button";name.className="assembly-name";
    const nodeNumber=node?(isPartNode(node)?partNumbers.get(node.partId):node.partNumber):null;
    const treeInfo=isPartNode(node)?partTreeLabels.get(node.partId):null;
-   const firstLine=treeInfo?.mpn||nodeNumber||node?.name||title;
+   const firstLine=[treeInfo?.details?.value,treeInfo?.mpn||nodeNumber||node?.name||title].filter(Boolean).join(" · ");
    const treeDetails=treeInfo?.details||{};
    const secondLine=String(treeDescription(treeDetails,treeInfo?.description)||(node?.name!==firstLine?node?.name:"")||(partWorkshopItems.get(node?.partId)?"Description not set":"")||"").trim();
    name.textContent=node?(isDocumentNode(node)?"📄  ":isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+(isPartNode(node)?firstLine:(nodeNumber?nodeNumber+" · ":"")+node.name):"📦  "+title;

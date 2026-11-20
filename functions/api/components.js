@@ -100,7 +100,7 @@ const normalizeSupplierOffers=input=>{
 // Project-only annotations and future CAD/BOM mapping hints. These values
 // never write back to a shared/private Workshop reference.
 const projectDetailLimits=Object.freeze({notes:6000,changes:6000,referenceDesignators:500,
- footprint:240,schematicValue:240,sourceApplication:80,sourceFile:500,sourceComponentId:240,workshopReferenceId:200,featureTreeName:120,workshopTreeDescription:20,showTreeDescription:5});
+ value:120,footprint:240,schematicValue:240,sourceApplication:80,sourceFile:500,sourceComponentId:240,workshopReferenceId:200,featureTreeName:120,workshopTreeDescription:20,showTreeDescription:5});
 const cleanProjectDetails=(incoming,previous={})=>{
  if(incoming===undefined)return previous&&typeof previous==="object"?previous:{};
  if(!incoming||typeof incoming!=="object"||Array.isArray(incoming))return null;
@@ -198,6 +198,7 @@ async function reloadWorkshopPart(request,env,project,id){
   quantity:previous.quantity,quantityUnit:previous.quantityUnit,createdAt:previous.createdAt,
   photoRevision:crypto.randomUUID(),purchaseStatus:"not_started",progressStatus:"not_started",progressUpdates:[]
  };
+ if(previous.projectDetails?.value)updated.projectDetails.value=previous.projectDetails.value;
  updated.fullName=generatedFullName(updated);
  state.items[index]=updated;
  syncDerived(state.items,updated);
@@ -262,11 +263,15 @@ export async function handleComponents(request,env){
    if(request.headers.get("origin")!==url.origin)return json({error:"Invalid request origin"},403);
    return reloadWorkshopPart(request,env,project,id);
   }
-  if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"||typeof input.isTool==="boolean"||input.progressStatus!==undefined||input.needsAttention!==undefined||input.attentionNote!==undefined||input.name!==undefined||input.partType!==undefined||input.quantity!==undefined||input.purchaseStatus!==undefined||input.progressUpdate!==undefined||input.progressOperationAdd!==undefined||input.progressOperationEdit!==undefined))return json({error:"Invalid part preference"},400);
+  if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"||typeof input.isTool==="boolean"||input.progressStatus!==undefined||input.needsAttention!==undefined||input.attentionNote!==undefined||input.name!==undefined||input.partType!==undefined||input.quantity!==undefined||input.partValue!==undefined||input.purchaseStatus!==undefined||input.progressUpdate!==undefined||input.progressOperationAdd!==undefined||input.progressOperationEdit!==undefined))return json({error:"Invalid part preference"},400);
   const state=await readEditable(env,project),items=state.items,entry=items.find(item=>item.id===id);
   if(!entry)return json({error:"Part not found"},404);
   const previousWorkshopId=workshopLinkId(entry);
-  if(entry.generatedFrom&&(input.name!==undefined||input.partType!==undefined||input.quantity!==undefined))return json({error:"Generated materials are controlled by their source part"},409);
+  if(input.partValue!==undefined){
+   if(typeof input.partValue!=="string"||input.partValue.length>120)return json({error:"Value must be at most 120 characters"},400);
+   entry.projectDetails={...(entry.projectDetails||{}),value:input.partValue.trim()};
+  }
+  if(entry.generatedFrom&&(input.name!==undefined||input.partType!==undefined||input.quantity!==undefined||input.partValue!==undefined))return json({error:"Generated materials are controlled by their source part"},409);
   if(input.name!==undefined){
    if(typeof input.name!=="string"||!input.name.trim()||input.name.trim().length>180)return json({error:"Part name must be 1–180 characters"},400);
    const old=entry.name;

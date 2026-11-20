@@ -366,7 +366,7 @@ test("Workshop reload replaces project part details and the active photo in one 
  await env.PHOTOS.put(photoKey,new Uint8Array([1,2,3]),{httpMetadata:{contentType:"image/png"}});
  const original={id:partId,partNumber:"101",assemblyId:"motor",quantity:2,quantityUnit:"pcs",name:"Project edit",
   manufacturer:"Old manufacturer",attentionNote:"Check",needsAttention:true,progressStatus:"complete",
-  projectDetails:{workshopReferenceId:workshopId,changes:"Local change",notes:"Local note"},
+  projectDetails:{workshopReferenceId:workshopId,changes:"Local change",notes:"Local note",value:"10 kΩ"},
   specifications:[{name:"Old spec",value:"Old value"}]};
  await env.PHOTOS.put("components/launcher.json",JSON.stringify([original]));
  const expectedSourcing={url:item.supplierUrl,price:item.price,packageQuantity:item.packageQuantity};
@@ -400,7 +400,7 @@ test("Workshop reload replaces project part details and the active photo in one 
  assert.equal(component.quantity,2);
  assert.equal(component.needsAttention,false);
  assert.equal(component.progressStatus,"not_started");
- assert.deepEqual(component.projectDetails,{workshopReferenceId:workshopId,workshopTreeDescription:"Motor switch",notes:"Workshop notes"});
+ assert.deepEqual(component.projectDetails,{workshopReferenceId:workshopId,workshopTreeDescription:"Motor switch",notes:"Workshop notes",value:"10 kΩ"});
  assert.deepEqual(component.specifications,[{name:"Rated voltage",value:"24 V",source:"explicit"}]);
  assert.deepEqual(await readPhoto(view,handlePhotoAnnotations),[1,2,3]);
  assert.deepEqual(await readPhoto(photo,handleComponentPhoto),[1,2,3]);

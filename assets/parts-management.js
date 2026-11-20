@@ -13,7 +13,7 @@
  const typeValues=[["purchased","Off-the-shelf"],["custom","Custom"],["code","Code"]];
  // Keep separate saved records intact. Group repeated names in the interface,
  // with an explicit way to inspect and edit every original record.
- const groupKey=part=>[part.name,partTypeFor(part),part.manufacturer,part.model].map(value=>String(value||"").trim().toLocaleLowerCase().replace(/\s+/g," ")).join("|");
+ const groupKey=part=>[part.name,fields.valueFor(part),partTypeFor(part),part.manufacturer,part.model].map(value=>String(value||"").trim().toLocaleLowerCase().replace(/\s+/g," ")).join("|");
  const groupParts=parts=>{
   const groups=new Map();
   for(const part of parts){
@@ -43,7 +43,7 @@
   const scroll=el("div","bs-parts-scroll"),table=el("table","bs-parts-table");
   const thead=el("thead"),headingRow=el("tr"),colgroup=el("colgroup");
   // Compact defaults: part number is intentionally narrow, note stays beside its flag.
-  const widths=[112,330,150,160,140,170,380];
+  const widths=[112,330,140,125,150,160,140,170,380];
   let nameWidthManuallyResized=false;
   // Size the name column to its visible contents, not to the longest saved string.
   // Longer names remain intact and editable; the input simply scrolls horizontally.
@@ -74,7 +74,7 @@
   table.append(colgroup);
   if(typeof ResizeObserver!=="undefined"){const observer=new ResizeObserver(layoutColumns);observer.observe(scroll)}
   else window.addEventListener("resize",layoutColumns);
-  const columns=[["number","Part number"],["name","Part name"],["partType","Part type"],["status","Status"],["unitCost","Cost per part"],["packageCost","Cost per package"],["needsAttention","Needs attention"]];
+  const columns=[["number","Part number"],["name","Part name"],["partValue","Value"],["quantity","Quantity"],["partType","Part type"],["status","Status"],["unitCost","Cost per part"],["packageCost","Cost per package"],["needsAttention","Needs attention"]];
   let order="name",direction=1,parts=[],fetchId=0;
   const expandedGroups=new Set();
   const sidebar=el("div","bs-part-category-nav");
@@ -117,6 +117,7 @@
   function sortKey(part){
    if(order==="number")return numberFor(part).toLowerCase();
    if(order==="name")return partLabel(part);
+   if(order==="partValue")return fields.valueFor(part);
    if(order==="partType")return partTypeFor(part);
    if(order==="needsAttention")return part.needsAttention?"1":"0";
    return statusFor(part);
@@ -128,6 +129,7 @@
    // Search by part number or headline name without overriding the filters.
    const entries=parts.filter(p=>(filter.value==="all"||statusFor(p)===filter.value)&&matchesType(p)&&((p.name||"").toLowerCase().includes(query)||numberFor(p).toLowerCase().includes(query)));
    entries.sort((a,b)=>{
+    if(order==="quantity"){const av=a.quantity??Infinity,bv=b.quantity??Infinity;return (av-bv)*direction}
     if(order==="unitCost"||order==="packageCost"){
      const av=fields.sourcingFor(a)[order],bv=fields.sourcingFor(b)[order];
      if(av===null||bv===null)return av===bv?0:av===null?1:-1;
@@ -168,6 +170,30 @@
     input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();input.blur()}else if(e.key==="Escape"){input.value=initial;input.blur()}});
     input.addEventListener("blur",()=>{if(input.value.trim()!==part.name)void change(part,"name",input.value.trim(),input);else input.value=part.name});
     nameCell.append(input);tr.append(nameCell);
+    for(const key of ["partValue","quantity"]){
+     const cell=el("td"),field=el("input","field");
+     const isValue=key==="partValue";
+     const initial=isValue?fields.valueFor(part):part.quantity??"";
+     field.value=initial;
+     field.type=isValue?"text":"number";
+     if(isValue)field.maxLength=120;
+     else{field.step="any";field.min="0.000001";field.max="10000000"}
+     field.placeholder=isValue?"e.g. 10 kΩ":"Not set";
+     field.disabled=readOnly||fields.itemTypeFor(part)!=="part";
+     field.setAttribute("aria-label",(isValue?"Value":"Quantity")+" for "+part.name);
+     field.addEventListener("keydown",event=>{
+      if(event.key==="Enter"){event.preventDefault();field.blur()}
+      if(event.key==="Escape"){field.value=initial;field.blur()}
+     });
+     field.addEventListener("blur",()=>{
+      const value=isValue?field.value.trim():field.value===""?null:field.valueAsNumber;
+      if(!isValue&&(!field.validity.valid||(value!==null&&(!Number.isFinite(value)||value<=0)))){
+       feedback.textContent="Enter a positive quantity or leave it blank.";field.value=initial;return;
+      }
+      if(value!==(isValue?fields.valueFor(part):part.quantity??null))void change(part,key,value,field);
+     });
+     cell.append(field);tr.append(cell);
+    }
     const typeCell=el("td"),type=dropdown(typeValues,partTypeFor(part),readOnly);
     type.setAttribute("aria-label","Part type for "+part.name);
     type.onchange=()=>void change(part,"partType",type.value,type);typeCell.append(type);tr.append(typeCell);

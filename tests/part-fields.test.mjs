@@ -160,3 +160,14 @@ test("Parts Management and part pages omit the retired operations editor",()=>{
  assert.doesNotMatch(details,/part-progress-updates|progressOperationAdd|progressOperationEdit/);
  assert.match(details,/part-needs-attention/);
 });
+
+test("part values distinguish variants in display names and whole-package totals",()=>{
+ const base={name:"¼ W resistor",quantity:1,workshopSourcing:{price:"10",packageQuantity:"100"}};
+ const a={...base,projectDetails:{workshopReferenceId:"workshop:resistor",value:"10 kΩ"}};
+ const b={...base,projectDetails:{workshopReferenceId:"workshop:resistor",value:"100 kΩ"}};
+ assert.equal(fields.displayName(a),"10 kΩ · ¼ W resistor");
+ assert.equal(fields.estimateCost([a,b]).packageTotal,20);
+ assert.equal(fields.estimateCost([a,b]).priceAvailable,2);
+ assert.equal(fields.estimateCost([{...a,quantity:null},b]).priceAvailable,2);
+ assert.equal(fields.estimateCost([{...a,quantity:null},b]).priced,1);
+});

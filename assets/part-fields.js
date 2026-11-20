@@ -12,6 +12,8 @@
  const statusesFor=part=>isPurchased(part)?purchaseStatuses:progressStatuses;
  const statusField=part=>isPurchased(part)?"purchaseStatus":"progressStatus";
  const statusValue=part=>part[statusField(part)]||"not_started";
+ const valueFor=part=>String(part?.projectDetails?.value||"").trim();
+ const displayName=part=>[valueFor(part),part?.name].filter(Boolean).join(" · ");
  const sourcingLabels=["Supplier URL","Reference price","Quantity per package"];
  function priceInUsd(value){
   const raw=String(value??"").trim();
@@ -45,11 +47,12 @@
    packageSize:pack,packageCount,packageCost:pack?reference:null,unitCost:reference!==null&&(!pack||packageCount)?reference/(packageCount||1):null,source:"workshop"};
  }
  function estimateCost(parts){
-  let total=0,priced=0,workshop=0,packageTotal=0,packagePriced=0,missingQuantity=0,missingPrice=0;
+  let total=0,priced=0,workshop=0,priceAvailable=0,packageTotal=0,packagePriced=0,missingQuantity=0,missingPrice=0;
   const packages=new Map();
   const materials=parts.filter(part=>!part.isTool&&itemTypeFor(part)==="part");
   for(const part of materials){
    const {unitCost,source,packageCount,packageCost,url}=sourcingFor(part),quantity=Number(part.quantity);
+   if(unitCost!==null)priceAvailable++;
    if(!Number.isFinite(quantity)||quantity<=0){missingQuantity++;continue}
    if(unitCost===null){missingPrice++;continue}
    total+=unitCost*quantity;
@@ -58,13 +61,13 @@
    if(packageCount&&packageCost!==null){
     const identity=part.projectDetails?.workshopReferenceId||part.sharedPartRef||url||
      (part.model?[part.manufacturer,part.model,part.supplier].join("|"):part.id||String(packagePriced));
-    const key=JSON.stringify([identity,packageCount,packageCost,part.quantityUnit||"pcs"]);
+    const key=JSON.stringify([identity,valueFor(part),packageCount,packageCost,part.quantityUnit||"pcs"]);
     const group=packages.get(key)||{quantity:0,packageCount,packageCost};
     group.quantity+=quantity;packages.set(key,group);packagePriced++;
    }
   }
   for(const group of packages.values())packageTotal+=Math.ceil(group.quantity/group.packageCount)*group.packageCost;
-  return {total,priced,workshop,materials:materials.length,packageTotal,packagePriced,missingQuantity,missingPrice};
+  return {total,priced,workshop,priceAvailable,materials:materials.length,packageTotal,packagePriced,missingQuantity,missingPrice};
  }
  const sectionFields=Object.freeze({
   identity:["partNumber","name","itemType","partType","purchaseStatus","description"],
@@ -76,7 +79,7 @@
   const qty=part.quantity==null?"Not specified":String(part.quantity)+(part.quantityUnit?" "+part.quantityUnit:"");
   const values={
    partNumber:part.partNumber,
-   name:part.name,
+   name:displayName(part),
    itemType:labelFor([["part","Part"],["document","Document"],["code","Code"]],itemTypeFor(part)),
    partType:partTypeFor(part)==="code"?null:labelFor([["purchased","Off-the-shelf"],["custom","Custom"]],partTypeFor(part)),
    purchaseStatus:labelFor(statusesFor(part),statusValue(part)),
@@ -93,5 +96,5 @@
   const labels={partNumber:"Part number",name:"Part name",itemType:"Item type",partType:"Part type",purchaseStatus:"Status",description:"Description",quantity:"Quantity",historicalPrice:"Historical part price",manufacturer:"Manufacturer",model:"Model",category:"Category",supplier:"Supplier",asin:"ASIN",isTool:"Tool",hideFromFeatureTree:"Hidden from feature tree"};
   return [...sectionFields.identity,...sectionFields.additional,...sectionFields.display].map(key=>[labels[key],values[key]]).filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="");
  }
- window.BSPartFields=Object.freeze({progressStatuses,purchaseStatuses,partTypeFor,itemTypeFor,isPurchased,statusesFor,statusField,statusValue,labelFor,sectionFields,detailRows,sourcingLabels,sourcingFor,estimateCost});
+ window.BSPartFields=Object.freeze({progressStatuses,purchaseStatuses,partTypeFor,itemTypeFor,isPurchased,statusesFor,statusField,statusValue,labelFor,sectionFields,detailRows,valueFor,displayName,sourcingLabels,sourcingFor,estimateCost});
 })();
