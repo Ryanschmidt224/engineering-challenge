@@ -1,3 +1,4 @@
+import {isProjectRecipeFile} from "../functions/api/recipe-files.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
@@ -7,7 +8,7 @@ import {randomUUID} from "node:crypto";
 const source=readFileSync("functions/api/workspace.js","utf8")
  .replace(/^import .*;\s*$/gm,"").replace(/^export /gm,"");
 const handleWorkspace=runInNewContext(source+"\nhandleWorkspace;",{
- Request,Response,URL,crypto:{randomUUID},isAdmin:async()=>true,
+ isProjectRecipeFile,Request,Response,URL,crypto:{randomUUID},isAdmin:async()=>true,
  projectAllowed:async()=>true,canEditProject:async()=>true,
  console,Date,JSON,Number,String,Array,Object,Map,Set,RegExp
 });
@@ -20,6 +21,7 @@ const req=(method,data)=>new Request("https://example.test"+path,{
 const store=()=>{
  const entries=new Map();
  const env={PHOTOS:{
+  head:async key=>key===photo?{}:null,
   get:async key=>entries.has(key)?{text:async()=>entries.get(key)}:null,
   put:async(key,value)=>{entries.set(key,value);return {}}
  }};

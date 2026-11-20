@@ -1,3 +1,4 @@
+import "../../assets/archive-layout.js";
 import {isAdmin} from "./auth.js";
 import {CORE_PROJECTS,VALID_PROJECT_ID,readCatalog,canEditProject} from "./projects.js";
 
@@ -13,28 +14,7 @@ const MAX_SINGLE=24*1024*1024;
 const json=(value,status=200)=>new Response(JSON.stringify(value),{
  status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff"}
 });
-export const folders=project=>[
- project+"/",
- "assembly-pages/"+project+"/",
- "workspaces/"+project+"/",
- "part-workspaces/"+project+"/",
- "harnesses/"+project+"/",
- "drawings/"+project+"/",
- "component-thumbnails/"+project+"/",
- "part-files/"+project+"/",
- "part-pages/"+project+"/",
- "recipe-files/"+project+"/",
- "unstructured-notes/"+project+"/",
- "part-revisions/"+project+"/",
-  "part-code/"+project+"/"
-];
-export const singles=project=>["trees/"+project+".json","components/"+project+".json","investigations/"+project+".json","project-numbering/"+project+".json",
- "libraries/wires.json","libraries/common-parts.json","libraries/purchased-parts.json"];
-export const isAllowedKey=(project,key)=>
- typeof key==="string"&&key.length>0&&key.length<=1000&&
- !/[\\\x00-\x1f\x7f]/.test(key)&&
- key.split("/").every(segment=>segment!==""&&segment!=="."&&segment!=="..")&&
- (folders(project).some(x=>key.startsWith(x))||singles(project).includes(key));
+export const {folders, singles, isAllowedKey} = globalThis.BSArchiveLayout;
 
 async function listAll(r2,prefix){
  const keys=[],seen=new Set();
@@ -64,6 +44,7 @@ async function allKeys(r2,project,includeShared){
  }
  for(const key of singles(project)){
   if((includeShared||!key.startsWith("libraries/"))&&await r2.head(key))keys.add(key);
+  if(keys.size>MAX_OBJECTS)throw Error("Too many project objects for a single export");
  }
  return [...keys].sort();
 }
@@ -95,10 +76,21 @@ const mimeFor=(key,object)=>{
  if(key.endsWith(".jpg"))return "image/jpeg";
  return "application/octet-stream";
 };
-export async function exportProject(r2,project,{includeShared=true}={}){
+export async function exportProject(r2,project,{includeShared=true,projectRecord}={}){
  const keys=await allKeys(r2,project,includeShared),objects=[];
- if(!keys.length)throw Error("No saved project records found; there is nothing to back up");
  let bytesTotal=0;
+ // The catalog contains all projects. Embed only the selected project.
+ if(projectRecord){
+  if(projectRecord.id!==project)throw Error("Project catalog entry does not match this export");
+  if(keys.length>=MAX_OBJECTS)throw Error("Too many project objects for a single export");
+  const bytes=new TextEncoder().encode(JSON.stringify(projectRecord));
+  if(bytes.length>MAX_SINGLE)throw Error("Project profile exceeds the archive limit");
+  bytesTotal=bytes.length;
+  objects.push({key:globalThis.BSArchiveLayout.profileKey(project),size:bytes.length,
+   sha256:await sha256(bytes),contentType:"application/json",httpMetadata:{contentType:"application/json"},
+   customMetadata:{},data:encodeBytes(bytes)});
+ }
+ if(!keys.length&&!objects.length)throw Error("No saved project records found; there is nothing to back up");
  for(const key of keys){
   const object=await r2.get(key);
   if(!object)throw Error("Object disappeared during export: "+key);
@@ -142,14 +134,15 @@ export async function handleProjectArchive(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project");
  if(!isArchivedProjectId(project))return json({error:"Unknown project"},400);
  const catalog=await readCatalog(env);
- if(!catalog.projects.some(item=>item.id===project))return json({error:"Project not found"},404);
+ const projectRecord=catalog.projects.find(item=>item.id===project);
+ if(!projectRecord)return json({error:"Project not found"},404);
  if(!["GET","POST"].includes(request.method))return json({error:"Method not allowed"},405);
  const admin=await isAdmin(request,env);
  if(!admin&&(request.method!=="GET"||!await canEditProject(request,env,project)))return json({error:"Project owner or administrator access required"},401);
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  try{
   if(request.method==="GET"){
-   const archive=await exportProject(env.PHOTOS,project,{includeShared:admin});
+   const archive=await exportProject(env.PHOTOS,project,{includeShared:admin,projectRecord});
    const filename="building-schmidt-"+project+"-"+new Date().toISOString().slice(0,10)+".bsproject";
    return new Response(JSON.stringify(archive),{headers:{
     "content-type":"application/vnd.buildingschmidt.project+json; charset=utf-8",

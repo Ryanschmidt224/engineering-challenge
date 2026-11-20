@@ -5,11 +5,6 @@ const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:
 const backupPrefix="automatic-backups/";
 const scopeKey=(project,id)=>backupPrefix+project+"/"+id+".bsproject";
 const validId=s=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z-[a-f0-9-]{36}$/.test(s);
-const isProjectRecord=(project,key)=>
- key.startsWith(project+"/")||
- ["assembly-pages/","workspaces/","part-workspaces/","harnesses/","drawings/","component-thumbnails/","part-files/","part-pages/","recipe-files/","part-revisions/","part-code/"].some(prefix=>key.startsWith(prefix+project+"/"))||
- key==="trees/"+project+".json"||key==="components/"+project+".json"||key==="investigations/"+project+".json";
-
 /* Weekly append-only checkpoints inside private R2. These are not offsite
    backups and are not transactionally consistent during concurrent edits.
    Never rotate/delete backups automatically without an explicit policy. */
@@ -17,12 +12,10 @@ export async function backupAllProjects(env,date=new Date()){
  if(!env.PHOTOS)throw Error("R2 backup bucket unavailable");
  const summary=[];
  const {projects}=await readCatalog(env);
- for(const {id:project} of projects){
+ for(const projectRecord of projects){
+  const project=projectRecord.id;
   try{
-   const archive=await exportProject(env.PHOTOS,project);
-   if(!archive.objects.some(entry=>isProjectRecord(project,entry.key))){
-    summary.push({project,status:"empty-project"});continue;
-   }
+   const archive=await exportProject(env.PHOTOS,project,{projectRecord});
    await inspectArchive(archive,project);
    const id=date.toISOString().slice(0,19).replace(/:/g,"-")+"Z-"+crypto.randomUUID();
    const key=scopeKey(project,id);

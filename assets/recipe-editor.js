@@ -45,7 +45,7 @@
  }
  const isRecipeFile=id=>id.startsWith("recipe-files/");
  const attachmentExtension=id=>id.split(".").pop().toLowerCase();
- const isImageAttachment=id=>!isRecipeFile(id)||["jpg","jpeg","png","webp","gif","heic","heif"].includes(attachmentExtension(id));
+ const isImageAttachment=id=>!isRecipeFile(id)||globalThis.BSAttachmentTypes.isImage(attachmentExtension(id));
  const attachmentUrl=id=>isRecipeFile(id)?"/api/recipe-files?id="+encodeURIComponent(id):"/api/photo?id="+encodeURIComponent(id);
  const makeAttachment=(id,name)=>{
   if(isImageAttachment(id))return makePhoto(id,name);
@@ -371,7 +371,7 @@
      const photoList=el("div","recipe-step-photos");
      const input=el("input");
      input.type="file";input.multiple=true;
-     input.accept=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.dwg,.dxf,.sldprt,.sldasm,.step,.stp,.stl,.igs,.iges,.x_t,.x_b,.obj,.3mf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip";
+     input.accept=globalThis.BSAttachmentTypes.accept;
      input.hidden=true;
      let uploadTargetNote=null;
      const selectAttachment=noteIndex=>{

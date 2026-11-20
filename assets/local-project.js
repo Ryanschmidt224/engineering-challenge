@@ -4,18 +4,7 @@
  */
 (function(root){
  "use strict";
- const safeKey=key=>typeof key==="string"&&key.length<=1000&&
-  !/[\\\x00-\x1f\x7f]/.test(key)&&
-  key.split("/").every(segment=>segment!==""&&segment!=="."&&segment!=="..");
- const allowed=(p,key)=>{if(!safeKey(key))return false;
-  const dirs=[p+"/","assembly-pages/"+p+"/","workspaces/"+p+"/","part-workspaces/"+p+"/",
-   "harnesses/"+p+"/","drawings/"+p+"/","component-thumbnails/"+p+"/",
-   "part-files/"+p+"/","part-pages/"+p+"/","recipe-files/"+p+"/","part-code/"+p+"/",
-   "part-revisions/"+p+"/","unstructured-notes/"+p+"/"];
-  const files=["trees/"+p+".json","components/"+p+".json","investigations/"+p+".json","project-numbering/"+p+".json",
-   "libraries/wires.json","libraries/common-parts.json","libraries/purchased-parts.json"];
-  return dirs.some(d=>key.startsWith(d))||files.includes(key);
- };
+ const allowed = root.BSArchiveLayout.isAllowedKey;
  const unpack=encoded=>{
   const binary=atob(encoded),bytes=new Uint8Array(binary.length);
   for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);

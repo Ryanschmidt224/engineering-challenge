@@ -1,3 +1,4 @@
+import "../assets/archive-layout.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
@@ -5,8 +6,8 @@ import {runInNewContext} from "node:vm";
 import {webcrypto} from "node:crypto";
 
 const ctx=extra=>({
- Response,Request,Headers,URL,Date,JSON,Array,Set,Map,Uint8Array,ArrayBuffer,
- TextEncoder,TextDecoder,Number,String,RegExp,Error,console,
+ BSArchiveLayout:globalThis.BSArchiveLayout, TextEncoder, Response,Request,Headers,URL,Date,JSON,Array,Set,Map,Uint8Array,ArrayBuffer,
+ TextDecoder,Number,String,RegExp,Error,console,
  crypto:webcrypto,btoa:text=>Buffer.from(text,"binary").toString("base64"),
  atob:text=>Buffer.from(text,"base64").toString("binary"),
  isAdmin:async()=>true,
@@ -79,7 +80,7 @@ test("archive validates and reopens all BOM, work instruction and binary asset r
  const result=await archive.handleProjectArchive(request("GET","/api/project/archive?project=launcher"),env);
  assert.equal(result.status,200);
  const data=await result.json();
- assert.equal(data.objectCount,Object.keys(sample).length);
+ assert.equal(data.objectCount,Object.keys(sample).length+1);
  const validated=await archive.inspectArchive(data,"launcher");
  assert.equal(validated.ok,true);
  for(const [key,value] of Object.entries(sample)){

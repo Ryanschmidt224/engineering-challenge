@@ -1,3 +1,4 @@
+import "../assets/archive-layout.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
@@ -8,7 +9,7 @@ import {CORE_PROJECTS} from "../functions/api/project-seed.js";
 const source=readFileSync("functions/api/project-archive.js","utf8")
  .replace(/^import .*;\s*$/gm,"").replace(/^export /gm,"");
 const archiveHandler=runInNewContext(source+"\nhandleProjectArchive;",{
- Response,Headers,Request,URL,Date,JSON,Set,Array,Uint8Array,Number,String,RegExp,
+ BSArchiveLayout:globalThis.BSArchiveLayout, TextEncoder, Response,Headers,Request,URL,Date,JSON,Set,Array,Uint8Array,Number,String,RegExp,
  crypto:webcrypto,btoa:input=>Buffer.from(input,"binary").toString("base64"),
  atob:input=>Buffer.from(input,"base64").toString("binary"),
  CORE_PROJECTS,VALID_PROJECT_ID:/^(?:launcher|linear|robot|p[a-f0-9]{32})$/,
@@ -62,7 +63,7 @@ test("exports all project namespaces and global references; validates checksums 
  assert.equal(response.status,200);
  const archived=await response.json();
  assert.equal(archived.schemaVersion,1);
- assert.equal(archived.objectCount,11);
+ assert.equal(archived.objectCount,12);
  for(const [key,{data}] of r2.objects){
   const record=archived.objects.find(entry=>entry.key===key);
   assert.ok(record,"Missing "+key);

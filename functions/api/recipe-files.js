@@ -1,29 +1,14 @@
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
 
-const TYPES={
- jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",
- gif:"image/gif",heic:"image/heic",heif:"image/heif",
- pdf:"application/pdf",dwg:"application/octet-stream",dxf:"application/octet-stream",
- sldprt:"application/octet-stream",sldasm:"application/octet-stream",
- step:"application/octet-stream",stp:"application/octet-stream",stl:"application/octet-stream",
- igs:"application/octet-stream",iges:"application/octet-stream",
- x_t:"application/octet-stream",x_b:"application/octet-stream",
- obj:"application/octet-stream","3mf":"application/octet-stream",
- doc:"application/octet-stream",docx:"application/octet-stream",
- xls:"application/octet-stream",xlsx:"application/octet-stream",
- txt:"text/plain",csv:"text/plain",zip:"application/octet-stream",
- py:"text/plain",js:"text/plain",ts:"text/plain",ino:"text/plain",c:"text/plain",cpp:"text/plain",
- h:"text/plain",hpp:"text/plain",json:"text/plain",md:"text/plain",
- kicad_sch:"application/octet-stream",kicad_pcb:"application/octet-stream",kicad_pro:"application/octet-stream"
-};
-const IMAGE_TYPES=new Set(["jpg","jpeg","png","webp","gif","heic","heif"]);
+import "../../assets/attachment-types.js";
+const {types: TYPES, accepts, isImage: imageExtension} = globalThis.BSAttachmentTypes;
 const MAX_BYTES=20*1024*1024;
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const pattern=/^recipe-files\/(launcher|linear|robot|buck|motorlab|coiltest|p[a-f0-9]{32})\/([a-f0-9-]{36})\.([a-z0-9_]{1,12})$/;
 export function isProjectRecipeFile(id,project){
  const match=typeof id==="string"?id.match(pattern):null;
- return !!match&&match[1]===project&&Object.hasOwn(TYPES,match[3]);
+ return !!match&&match[1]===project&&accepts(match[3]);
 }
 export async function handleRecipeFiles(request,env){
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
@@ -36,7 +21,7 @@ export async function handleRecipeFiles(request,env){
   try{filename=decodeURIComponent(request.headers.get("x-file-name")||"")}catch{return json({error:"Invalid filename"},400)}
   if(!filename||filename.length>180||/[\\/\x00-\x1f]/.test(filename))return json({error:"Invalid filename"},400);
   const extension=filename.split(".").pop().toLowerCase();
-  if(!Object.hasOwn(TYPES,extension))return json({error:"Unsupported file type"},415);
+  if(!accepts(extension))return json({error:"Unsupported file type"},415);
   const size=Number(request.headers.get("content-length"));
   if(size>MAX_BYTES)return json({error:"Maximum file size is 20 MB"},413);
   const bytes=await request.arrayBuffer();
@@ -45,16 +30,16 @@ export async function handleRecipeFiles(request,env){
   // Attachments inherit project visibility; GET checks ownership for private projects.
   await env.PHOTOS.put(id,bytes,{httpMetadata:{contentType:TYPES[extension]},
    customMetadata:{filename}});
-  return json({ok:true,id,name:filename,isImage:IMAGE_TYPES.has(extension)},201);
+  return json({ok:true,id,name:filename,isImage:imageExtension(extension)},201);
  }
  if(request.method==="GET"||request.method==="HEAD"){
   const id=url.searchParams.get("id")||"",match=id.match(pattern);
-  if(!match||!Object.hasOwn(TYPES,match[3]))return json({error:"File not found"},404);
+  if(!match||!accepts(match[3]))return json({error:"File not found"},404);
   if(!await projectAllowed(env,match[1],request))return json({error:"File not found"},404);
   const metadataOnly=request.method==="HEAD";
   const file=await (metadataOnly?env.PHOTOS.head(id):env.PHOTOS.get(id));
   if(!file)return json({error:"File not found"},404);
-  const ext=match[3],isImage=IMAGE_TYPES.has(ext);
+  const ext=match[3],isImage=imageExtension(ext);
   const filename=file.customMetadata?.filename||"attachment."+ext;
   const safeFilename=filename.replace(/[\\/\r\n"\x00-\x1f]/g,"_");
   const headers=new Headers({

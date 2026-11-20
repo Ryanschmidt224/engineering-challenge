@@ -15,7 +15,7 @@
  const retiredLabels={practice:{lesson:"What did you learn?"},revision:{result:"What was the result?"},note:{note:"Notes"}};
  const categoryOf=record=>record.category||(record.partSnapshot?"revision":"failure");
  const sectionTitle="Project History";
- const acceptedAttachments=".jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.pdf,.dwg,.dxf,.sldprt,.sldasm,.step,.stp,.stl,.igs,.iges,.x_t,.x_b,.obj,.3mf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip,.py,.js,.ts,.ino,.c,.cpp,.h,.hpp,.json,.md,.kicad_sch,.kicad_pcb,.kicad_pro";
+ const acceptedAttachments=globalThis.BSAttachmentTypes.accept;
  const photoExt=/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i;
  const fileUrl=id=>"/api/recipe-files?id="+encodeURIComponent(id);
  const recordDate=record=>record.date||[...(record.entries||[])].reverse().find(entry=>entry.date)?.date||record.createdAt?.slice(0,10)||"";

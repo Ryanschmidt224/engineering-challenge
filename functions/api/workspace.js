@@ -1,3 +1,4 @@
+import {isProjectRecipeFile} from "./recipe-files.js";
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});
@@ -15,7 +16,13 @@ const validateResources=input=>{
  return resources;
 };
 // Discrete recipe steps have stable identities so reordering never breaks references.
-const validateRecipe=input=>{
+const isStepAttachment=(id,project)=>{
+ if(typeof id!=="string")return false;
+ if(isProjectRecipeFile(id,project))return true;
+ const [owner,file,...extra]=id.split("/");
+ return owner===project && !extra.length && /^[0-9a-f-]{36}\.(jpg|png|webp|gif|heic|heif)$/.test(file);
+};
+const validateRecipe=(input,project)=>{
  if(input===undefined)return undefined;
  if(!Array.isArray(input)||input.length>150)return null;
  const ids=new Set(),steps=[];
@@ -31,7 +38,7 @@ const validateRecipe=input=>{
   const kind=["action","inspection","measurement","explanation"].includes(step.kind)?step.kind:"action";
   const notes=step.notes??[],photos=step.photos??[];
   if(!Array.isArray(notes)||notes.length>40||notes.some(n=>typeof n!=="string"||n.length>4000)||
-     !Array.isArray(photos)||photos.length>30||photos.some(p=>typeof p!=="string"||! /^(?:(?:launcher|linear|robot|buck|motorlab|coiltest|p[a-f0-9]{32})\/[0-9a-f-]{36}\.(?:jpg|png|webp|gif|heic|heif)|recipe-files\/(?:launcher|linear|robot|buck|motorlab|coiltest|p[a-f0-9]{32})\/[0-9a-f-]{36}\.(?:jpg|jpeg|png|webp|gif|heic|heif|pdf|dwg|dxf|sldprt|sldasm|step|stp|stl|igs|iges|x_t|x_b|obj|3mf|doc|docx|xls|xlsx|txt|csv|zip))$/.test(p)))return null;
+     !Array.isArray(photos)||photos.length>30||photos.some(id=>!isStepAttachment(id,project)))return null;
   const photoNames=step.photoNames??{};
   if(!photoNames||typeof photoNames!=="object"||Array.isArray(photoNames))return null;
   const names={};
@@ -94,7 +101,7 @@ export async function handleWorkspace(request,env){
  const data=await request.json().catch(()=>null);if(!data||typeof data!=="object"||Array.isArray(data))return json({error:"Invalid workspace data"},400);
  const resources=validateResources(data.resources);
  if(resources===null)return json({error:"Invalid linked resources"},400);
- const recipe=validateRecipe(data.recipe);
+ const recipe=validateRecipe(data.recipe,project);
  if(recipe===null)return json({error:"Invalid recipe steps"},400);
  const existing=await env.PHOTOS.get(key);
  const previous=existing?JSON.parse(await existing.text()):{};
@@ -103,6 +110,14 @@ export async function handleWorkspace(request,env){
  if(Object.prototype.hasOwnProperty.call(data,"expectedRevision")&&
     (data.expectedRevision??null)!==(previous.revision??null))
   return json({error:"Instructions were changed elsewhere. Reload before saving.",latestRevision:previous.revision??null},409);
+ // Check new links only so older steps can still be edited when an original file is unavailable.
+ if(recipe){
+  const oldFiles=new Set((previous.recipe||[]).flatMap(step=>step.photos||[]));
+  const newFiles=new Set(recipe.flatMap(step=>step.photos).filter(id=>!oldFiles.has(id)));
+  for(const id of newFiles){
+   if(!await env.PHOTOS.head(id))return json({error:"An attachment is missing. Upload it again before saving."},400);
+  }
+ }
  // Keep recent published edits automatically: no revision numbers or forms to fill out.
  const experiments=data.experiments===undefined?(previous.experiments||[]):data.experiments;
  if(!Array.isArray(experiments)||experiments.length>100||experiments.some(entry=>

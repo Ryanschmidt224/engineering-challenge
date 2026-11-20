@@ -5,7 +5,9 @@ window.BSReadableBackup = (() => {
  })[char]);
  const imageTypes = new Set(["image/jpeg","image/png","image/gif","image/webp","image/avif"]);
  const sections = {
-  trees:"Feature tree", components:"Parts", "assembly-pages":"Assemblies",
+  "project-profile":"Project summary and settings", "assembly-status":"Assembly status",
+  "project-settings":"Project settings", "photo-annotations":"Photo markup",
+  "photo-renders":"Edited photos", "change-proposals":"Change suggestions", trees:"Feature tree", components:"Parts", "assembly-pages":"Assemblies",
   workspaces:"Assembly workspaces", "part-workspaces":"Part workspaces",
   investigations:"Project History", "unstructured-notes":"Unstructured notes",
   "project-numbering":"Part numbering", libraries:"Reference libraries"
@@ -29,7 +31,7 @@ window.BSReadableBackup = (() => {
    const filename = object.customMetadata?.filename || object.customMetadata?.name || path.at(-1) || key;
    const heading = sections[folder] || label(folder);
    const id = files.get(key);
-   if (key.endsWith(".json")) {
+   if (key.endsWith(".json") && folder !== "recipe-files" && folder !== "part-files") {
     const raw = decode(object.data);
     let body;
     try { body = render(JSON.parse(raw)); }

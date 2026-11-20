@@ -4,17 +4,7 @@
  "use strict";
  const MAX_OBJECTS=1500,MAX_TOTAL=72*1024*1024,MAX_SINGLE=24*1024*1024;
  const supported=new Set(["launcher","linear","robot","buck","motorlab","coiltest"]);
- const safeKey=key=>typeof key==="string"&&key.length<=1000&&
-  !/[\\\x00-\x1f\x7f]/.test(key)&&
-  key.split("/").every(segment=>segment!==""&&segment!=="."&&segment!=="..");
- const allowed=(project,key)=>safeKey(key)&&[
-  project+"/","assembly-pages/"+project+"/","workspaces/"+project+"/",
-  "part-workspaces/"+project+"/","harnesses/"+project+"/","drawings/"+project+"/",
-  "component-thumbnails/"+project+"/",
-  "part-files/"+project+"/","part-pages/"+project+"/","recipe-files/"+project+"/","part-code/"+project+"/",
-   "part-revisions/"+project+"/","unstructured-notes/"+project+"/"
- ].some(prefix=>key.startsWith(prefix))||
- ["trees/"+project+".json","components/"+project+".json","investigations/"+project+".json","project-numbering/"+project+".json","libraries/wires.json","libraries/common-parts.json","libraries/purchased-parts.json"].includes(key);
+ const allowed = globalThis.BSArchiveLayout.isAllowedKey;
  async function inspect(file,project){
   if(!supported.has(project)&&!/^p[a-f0-9]{32}$/.test(project))throw Error("Unknown project");
   if(!window.crypto?.subtle)throw Error("A secure browser connection is required for checksum verification");
