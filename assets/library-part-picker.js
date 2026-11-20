@@ -151,7 +151,7 @@ function open({onCreate,hideDefault=false}){
   }
  };
  manufacturerNumber.input.oninput=renderVendorLinks;
- const partValue=field("Value (optional)");partValue.input.maxLength=120;partValue.input.placeholder="e.g. 10 kΩ or 100 nF";
+ const partValue=field("Value (optional)");const valueCaption=el("span","","Value (optional)");valueCaption.append(window.BSDialogs.valueTooltip());partValue.label.replaceChildren(valueCaption,partValue.input);partValue.input.maxLength=120;partValue.input.placeholder="e.g. 10 kΩ or 100 nF";
  const projectDetailsPanel=el("section","library-project-only");
  projectDetailsPanel.append(el("h3","","Project-specific information"),
   el("p","library-project-only-warning","Changes below apply only to this project. They will not modify the original Workshop part."));

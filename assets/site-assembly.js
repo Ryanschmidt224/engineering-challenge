@@ -1661,6 +1661,7 @@ function setupAssemblyTrees(){
   ]){
    const label=document.createElement("label");label.className="part-project-only-field";
    const caption=document.createElement("span");caption.textContent=title;
+   if(key==="value")caption.append(window.BSDialogs.valueTooltip());
    const input=document.createElement(multiline?"textarea":"input");
    input.className="field part-project-"+key;input.maxLength=limit;
    if(multiline)input.rows=3;

@@ -74,6 +74,8 @@
  }
  window.BSDialogs=Object.freeze({
   tooltip,
+  valueTooltip:()=>tooltip("Value symbols and Windows Alt codes",
+   "Windows: hold Alt, type the code on the numeric keypad with Num Lock on, then release Alt. Ω (ohms): Alt+234. µ (micro): Alt+0181. ± (plus/minus): Alt+0177. ° (degrees): Alt+0176. You can also copy these symbols: Ω µ ± °. Examples: 10 kΩ, 100 µF, ±5%."),
   confirm:(message,options={})=>open({...options,message,confirmLabel:options.confirmLabel||"Confirm"}),
   danger:(message,options={})=>open({...options,message,danger:true,confirmLabel:options.confirmLabel||"Delete"}),
   prompt:(message,value="",options={})=>open({...options,message,value,input:true,confirmLabel:options.confirmLabel||"Save"})

@@ -109,6 +109,7 @@
     handle.addEventListener("keydown",e=>{if(e.key==="ArrowLeft"||e.key==="ArrowRight"){e.preventDefault();size(widths[index]+(e.key==="ArrowLeft"?-15:15))}});
     th.append(handle);
    }
+   if(key==="partValue")th.append(window.BSDialogs.valueTooltip());
    headingRow.append(th);
   }
   thead.append(headingRow);
