@@ -1190,7 +1190,8 @@ test("linked Workshop items open, search current fields and return to the origin
 
 test("Reload Workshop data sits after Modify part and refreshes the linked project copy",async({page})=>{
  const id="22222222-2222-4222-8222-222222222222";
- let part={id,name:"Project edit",specifications:[],projectDetails:{workshopReferenceId:"workshop:custom-switch"}};
+ const revision="workshop-copy-v1";
+ let part={id,revision,name:"Project edit",specifications:[],projectDetails:{workshopReferenceId:"workshop:custom-switch"}};
  const updates=[];
  await page.route("**/api/**",async route=>{
   const url=new URL(route.request().url());
@@ -1222,7 +1223,7 @@ test("Reload Workshop data sits after Modify part and refreshes the linked proje
  await confirmation.getByRole("button",{name:"Reload Workshop data"}).click();
  await expect(page.locator("#launcher .part-workspace-title")).toHaveText("Workshop switch");
  await expect(details.getByRole("status")).toHaveText("Workshop data reloaded.");
- expect(updates).toEqual([{id,body:{reloadWorkshop:true}}]);
+ expect(updates).toEqual([{id,body:{reloadWorkshop:true,expectedRevision:revision}}]);
 });
 
 test("photo pencil accepts pasted images and Code and Document items have distinct defaults",async({page})=>{
