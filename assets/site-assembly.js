@@ -1383,61 +1383,6 @@ function setupAssemblyTrees(){
   bomNotice.setAttribute("role","status");
   bomNotice.setAttribute("aria-live","assertive");
   bomPanel.prepend(bomNotice);
-  workspace.addEventListener("click",async event=>{
-   const target=event.target;
-   if(!(target instanceof Element))return;
-   const button=target.closest(".component-extract");
-   if(!button)return;
-   event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
-   const section=workspace.querySelector(".component-section");
-   const notify=message=>{
-    bomNotice.textContent=message;
-    bomNotice.classList.add("visible");
-    const status=section?.querySelector(".component-status");
-    if(status){status.textContent=message;status.style.display="block";status.hidden=false}
-   };
-   notify("Extract clicked — checking the product information.");
-   if(!section){notify("BOM form missing. Refresh the website.");return}
-   const description=section.querySelector(".component-description")?.value.trim();
-   if(!description){notify("Paste a product description or an HTTPS product URL.");return}
-   if(!canEdit()){notify("Sign in using Admin login to extract product specifications.");return}
-   extractedPictureUrl=null;extractedSnapshotId=null;
-   button.disabled=true;notify("Connecting to the extraction API…");
-   try{
-    const controller=new AbortController();
-    const timeout=setTimeout(()=>controller.abort(),25000);
-    let response;
-    try{response=await fetch("/api/components/extract",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({description,project}),signal:controller.signal})}finally{clearTimeout(timeout)}
-    const raw=await response.text();
-    let data;try{data=JSON.parse(raw)}catch{throw Error("Server returned HTTP "+response.status+" instead of valid JSON: "+raw.slice(0,120))}
-    if(!response.ok)throw Error((data.error||"Extraction failed")+" (HTTP "+response.status+")");
-    if(!data.component||typeof data.component!=="object")throw Error("No product data returned");
-    const part=data.component;
-    extractedPictureUrl=typeof data.imageUrl==="string"?data.imageUrl:null;
-    extractedSnapshotId=typeof data.snapshotId==="string"?data.snapshotId:null;
-    for(const fieldName of ["name","manufacturer","model","category","supplier","asin"]){
-     const field=section.querySelector(".component-"+fieldName);if(field)field.value=part[fieldName]||""
-    }
-    const specs=section.querySelector(".component-specs");if(specs){
-     specs.replaceChildren();
-     for(const spec of part.specifications||[]){
-      const row=document.createElement("div");row.className="row component-spec-row";
-      const name=document.createElement("input"),value=document.createElement("input"),source=document.createElement("select"),remove=document.createElement("button");
-      name.className=value.className="field";name.placeholder="Specification";value.placeholder="Value";name.value=spec.name||"";value.value=spec.value||"";
-      for(const optionValue of ["explicit","inferred"]){const option=document.createElement("option");option.value=optionValue;option.textContent=optionValue==="explicit"?"Stated in listing":"Inferred";source.append(option)}
-      source.value=spec.source==="inferred"?"inferred":"explicit";
-      remove.type="button";remove.className="btn";remove.textContent="Remove";remove.onclick=()=>row.remove();
-      row.append(name,value,source,remove);specs.append(row);
-     }
-    }
-    section.querySelector(".component-review")?.classList.remove("hide");
-    notify("Specifications extracted."+(extractedPictureUrl?" Product picture found and will be added when saved.":" No product picture found.")+" Review and save the part.");
-   }catch(error){
-    section.querySelector(".component-review")?.classList.remove("hide");
-    const message="Extraction failed: "+(error.name==="AbortError"?"The request timed out":error.message);
-    notify(message);
-   }finally{button.disabled=false}
-  },true);
   // Display saved parts independently of the legacy editor's <details> DOM.
   let bomDisplayVersion=0;
   // One readable, hierarchical BOM presentation; no competing view modes.
@@ -1717,7 +1662,7 @@ function setupAssemblyTrees(){
    const label=document.createElement("label");label.className="part-project-only-field";
    const caption=document.createElement("span");caption.textContent=title;
    const input=document.createElement(multiline?"textarea":"input");
-   input.className="field";input.maxLength=limit;
+   input.className="field part-project-"+key;input.maxLength=limit;
    if(multiline)input.rows=3;
    label.append(caption,input);
    projectOnlyFields[key]=input;projectOnlyPanel.append(label);
@@ -1728,7 +1673,7 @@ function setupAssemblyTrees(){
   for(const key of ["referenceDesignators","footprint","schematicValue","sourceApplication","sourceFile","sourceComponentId"])
    projectOnlyCad.append(projectOnlyFields[key].parentElement);
   projectOnlyPanel.append(projectOnlyCad);
-  let editingProjectReferenceId="";
+  let editingProjectReferenceId="",editingWorkshopTreeDescription="";
   const readProjectOnly=()=>({
    ...Object.fromEntries(Object.entries(projectOnlyFields).map(([key,input])=>[key,input.value.trim()])),
    workshopReferenceId:editingProjectReferenceId,
@@ -1737,6 +1682,7 @@ function setupAssemblyTrees(){
   const setProjectOnly=details=>{
    for(const [key,input] of Object.entries(projectOnlyFields))input.value=details?.[key]||"";
    editingProjectReferenceId=details?.workshopReferenceId||"";
+   editingWorkshopTreeDescription=details?.workshopTreeDescription||"";
    treeDescriptionCheckbox.checked=details?.showTreeDescription!=="false";
   };
   let autoNumberChosen=false;
@@ -1944,6 +1890,13 @@ function setupAssemblyTrees(){
   }
   function openBomDraft(){
    const root=bomRoot();if(!root){bomReport("BOM editor unavailable. Refresh the page.");return}
+   const aiLookup=window.BSProductLookup.mountPart(root,{canSearch:canEdit});
+   aiLookup.setIdentity({
+    partNumber:bomField("model")?.value.trim()||"",
+    featureTreeDescription:projectOnlyFields.featureTreeName.value.trim().slice(0,20)||
+     editingWorkshopTreeDescription||partDescriptionInput.value.trim().slice(0,20),
+    searchHint:""
+   });
    const review=root.querySelector(".component-review");
    const lookup=root.querySelector(".component-lookup-panel");
    if(review){
@@ -1969,25 +1922,7 @@ function setupAssemblyTrees(){
     const specsHeading=[...review.children].find(el=>el.tagName==="H3"&&!el.classList.contains("part-editor-section-heading"));
     const addSpec=bomRoot()?.querySelector(".component-add-spec");
     const existingActions=review.querySelector(".component-editor-actions");
-    // Move the existing API lookup controls together. Retaining the original
-    // textarea is important: the extraction controller holds a reference to it.
-    let apiPanel=root.querySelector(".component-lookup-panel");
-    if(!apiPanel){
-     apiPanel=document.createElement("div");apiPanel.className="component-lookup-panel part-api-panel";
-     const apiInput=bomField("description");
-     const apiLabel=apiInput?.closest("label");
-     const extract=bomField("extract");
-     const apiFeedback=root.querySelector(".component-extraction-feedback");
-     if(apiLabel){if(apiLabel.firstChild?.nodeType===Node.TEXT_NODE)apiLabel.firstChild.nodeValue="API input";apiPanel.append(apiLabel)}
-     if(extract)apiPanel.append(extract);
-     if(apiFeedback)apiPanel.append(apiFeedback);
-    }
-    const apiInput=bomField("description");
-    if(apiInput){
-     apiInput.rows=1;apiInput.wrap="off";
-     apiInput.placeholder="Paste a product URL or product description";
-     apiInput.setAttribute("aria-label","API product lookup input");
-    }
+    const apiPanel=root.querySelector(".component-lookup-panel");
     const known=new Set([itemTypeRow,partTypeRow,partNumberRow,partDescriptionRow,...identity,...quantities,...sourcing,
       toolRow,visibilityRow,review.querySelector(".part-display-options"),specsHeading,specs,addSpec,existingActions,apiPanel].filter(Boolean));
     const otherFields=[...review.children].filter(el=>!known.has(el)&&!el.classList.contains("part-editor-section-heading"));

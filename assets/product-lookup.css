@@ -1,0 +1,14 @@
+.product-ai-search{display:grid;gap:12px;min-width:0;width:100%;box-sizing:border-box;padding:16px;border:1px solid var(--color-border);border-radius:9px;background:var(--color-surface)}
+.product-ai-search .product-ai-field{display:grid;gap:6px;font-weight:600;font-size:.88rem}
+.product-ai-search .field{width:100%;min-width:0;box-sizing:border-box;margin:0}
+.product-ai-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+.product-ai-actions .btn{margin:0}
+.product-ai-actions .muted{font-size:.85rem}
+.product-ai-status,.product-ai-cost{margin:0;font-size:.87rem}
+.product-ai-status:empty,.product-ai-results:empty{display:none}
+.product-ai-cost[hidden]{display:none}
+.product-ai-results{min-width:0;overflow-wrap:anywhere}
+.product-ai-source{display:block;margin:5px 0}
+
+.component-lookup-panel:has(>.product-ai-search){padding:0;border:0;background:transparent}
+.component-lookup-panel>[hidden]{display:none!important}

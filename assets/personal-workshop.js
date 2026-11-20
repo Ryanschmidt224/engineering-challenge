@@ -10,11 +10,7 @@
   if(!res.ok)throw Object.assign(Error(data.error||"Request failed"),{lookupUsage:data.lookupUsage});return data;
  };
 
- const lookupCostMessage=usage=>{
-  if(!Number.isFinite(usage?.estimatedUsd))return "";
-  const cost=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:4}).format(usage.estimatedUsd);
-  return "Estimated API cost "+cost+" · "+usage.searches+" web "+(usage.searches===1?"search":"searches");
- };
+ const lookupCostMessage=window.BSProductLookup.costMessage;
  const missingSpecsMessage=specs=>specs?.length?"Could not verify: "+specs.join(", ")+".":"";
 
  // All Workshop confirmations now use the site's shared white dialog.
@@ -519,20 +515,18 @@
    heading.append(el("h3",isNew?"Create new catalog item":"Edit "+item.name),el("p","Public Workshop catalog · any signed-in member may edit shared items","muted"));
    form.append(heading);
    // AI lookup fills a draft; only the existing Save action publishes an item.
-   const lookupActions=el("div",undefined,"workshop-identity-priority-field");
-   const lookupRow=el("div",undefined,"workshop-ai-lookup-row");
-   const lookupResults=el("div",undefined,"workshop-ai-lookup-results");
-   const lookupMessage=el("p",undefined,"workshop-ai-lookup-status");lookupMessage.setAttribute("role","status");
-   const lookupButton=itemButton("Find with AI",()=>{},"btn primary");
-   const lookupHintLabel=el("label");
-   const lookupHint=el("input",undefined,"field");
-   lookupHint.type="text";lookupHint.maxLength=500;
-   lookupHint.placeholder="Manufacturer, supplier, product link, or datasheet link";
-   lookupHintLabel.append(el("span","Help AI find the item (optional)"),lookupHint);
-   lookupRow.append(lookupButton,el("span","Either part number or description can be used on its own.","muted"));
-   const lookupCost=el("p",undefined,"muted");
-   lookupCost.hidden=true;
-   lookupActions.append(lookupHintLabel,lookupRow,lookupMessage,lookupCost,lookupResults);
+   const aiLookup=window.BSProductLookup.create({
+    getQuery:()=>({
+     partNumber:controls.partNumber.value.trim(),featureTreeDescription:controls.featureTreeDescription.value.trim(),
+     supplierPartNumber:controls.supplierPartNumber.value.trim(),supplier:controls.supplier.value.trim()
+    }),
+    onStart:()=>{pendingSuggestion=null;viewSuggested.hidden=true;closeReview()},
+    onResult:response=>{pendingSuggestion=response;showReview()}
+   });
+   const lookupActions=aiLookup.element;
+   lookupActions.classList.add("workshop-identity-priority-field");
+   const lookupResults=aiLookup.results,lookupMessage=aiLookup.message;
+   const lookupHint=aiLookup.hint;
    const grid=el("div",undefined,"workshop-item-edit-grid");
    // Reuse the New Part editor's canonical identity/additional/specification
    // sections and fields order, keeping Workshop-specific ordering fields.
@@ -895,58 +889,9 @@
    };
    viewSuggested.onclick=showReview;
    const clearSuggestion=()=>{pendingSuggestion=null;viewSuggested.hidden=true;closeReview()};
-   lookupHint.addEventListener("keydown",event=>{
-    if(event.key==="Enter"&&!event.isComposing){event.preventDefault();lookupButton.click()}
-   });
    for(const field of [controls.partNumber,controls.featureTreeDescription,controls.supplierPartNumber,controls.supplier,lookupHint]){
     field.addEventListener("input",clearSuggestion);
    }
-   lookupButton.onclick=async()=>{
-    const partNumber=controls.partNumber.value.trim();
-    const featureTreeDescription=controls.featureTreeDescription.value.trim();
-    const searchHint=lookupHint.value.trim();
-    const supplierPartNumber=controls.supplierPartNumber.value.trim();
-    const supplier=controls.supplier.value.trim();
-    if(!partNumber&&!supplierPartNumber&&!featureTreeDescription){
-     lookupMessage.textContent="Enter a part number or feature tree description.";
-     controls.partNumber.focus();return;
-    }
-    lookupButton.disabled=true;lookupButton.textContent="Searching…";
-    pendingSuggestion=null;viewSuggested.hidden=true;closeReview();
-    lookupMessage.textContent="Looking up "+[partNumber,supplierPartNumber,featureTreeDescription].filter(Boolean).join(" · ")+"… Review suggestions before applying them.";
-    lookupMessage.scrollIntoView({block:"nearest"});
-    lookupResults.replaceChildren();
-    lookupCost.hidden=true;
-    try{
-     const controller=new AbortController();
-     const timeout=setTimeout(()=>controller.abort(),60000);
-     let response;
-     try{
-      const res=await fetch("/api/workshop-lookup",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({partNumber,featureTreeDescription,...(searchHint&&{searchHint}),...(supplierPartNumber&&{supplierPartNumber}),...(supplier&&{supplier})}),signal:controller.signal});
-      const data=await res.json().catch(()=>({}));
-      lookupCost.textContent=lookupCostMessage(data.lookupUsage);
-      lookupCost.hidden=!lookupCost.textContent;
-      if(!res.ok){
-       if(/^https:\/\/www\.mcmaster\.com\/\d{5}[a-z]\d{1,4}\/$/i.test(data.supplierPage||"")){
-        const link=el("a","Open the McMaster listing");
-        link.href=data.supplierPage;link.target="_blank";link.rel="noopener noreferrer";
-        lookupResults.append(link);
-       }
-       throw Error(data.error||"Lookup returned HTTP "+res.status);
-      }
-      response=data;
-     }finally{clearTimeout(timeout)}
-     if(partNumber!==controls.partNumber.value.trim()||featureTreeDescription!==controls.featureTreeDescription.value.trim()||searchHint!==lookupHint.value.trim()||
-      supplierPartNumber!==controls.supplierPartNumber.value.trim()||supplier!==controls.supplier.value.trim()){
-      lookupMessage.textContent="Search fields changed. Run the lookup again.";return;
-     }
-     pendingSuggestion=response;
-     lookupMessage.textContent="AI suggestions ready for review.";
-     showReview();
-    }catch(error){lookupMessage.textContent=error.name==="AbortError"?"Lookup timed out. Try again; no fields were changed.":error.message||"Lookup failed.";
-     lookupMessage.scrollIntoView({block:"nearest"});}
-    finally{lookupButton.disabled=false;lookupButton.textContent="Find with AI"}
-   };
    const uploadRow=el("div",undefined,"workshop-item-photo-upload");
    const picker=el("input");picker.type="file";picker.accept="image/jpeg,image/png,image/webp";
    picker.multiple=true;picker.setAttribute("aria-label","Choose item photos");picker.hidden=true;

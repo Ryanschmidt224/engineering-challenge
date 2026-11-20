@@ -336,41 +336,7 @@ function setupComponents(){
  }
  // Product lookup is optional; the editable fields are always immediately available.
  review.classList.remove("hide");
- const lookupHint=document.createElement("p");
- lookupHint.className="component-lookup-help small muted";
- lookupHint.textContent="Paste a product link or description, then click Look up product details to suggest manufacturer, model and specifications. Review the suggestions before saving. You can also enter all fields directly.";
- const lookupPanel=document.createElement("section");lookupPanel.className="component-lookup-panel";
- const lookupLabel=description.closest("label");
- if(lookupLabel){lookupLabel.before(lookupPanel);lookupPanel.append(lookupLabel,lookupHint,extract,feedback)}
- description.rows=3;
- extract.textContent="Look up product details";
- extract.hidden=false;extract.type="button";
- extract.onclick=async event=>{
-  event.preventDefault();
-  extractStatus("");
-  const value=description.value.trim();
-  if(!value){extractStatus("Paste a product description or public HTTPS product URL first.");return}
-  if(!canEditComponent()){extractStatus("Sign in to an account with permission to edit this project.");return}
-  extract.disabled=true;
-  extractStatus("Looking up product details…");
-  try{
-   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
-   let response;
-   try{response=await fetch("/api/components/extract",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({description:value}),signal:controller.signal})}finally{clearTimeout(timeout)}
-   const raw=await response.text();let data;
-   try{data=JSON.parse(raw)}catch{throw Error("The server returned non-JSON data (HTTP "+response.status+"): "+raw.slice(0,120))}
-   if(!response.ok)throw Error((data.error||"Extraction request failed")+" (HTTP "+response.status+")");
-   const component=data.component;
-   if(!component||typeof component!=="object")throw Error("The service returned no product information.");
-   for(const name of ["name","manufacturer","model","category","supplier","asin"]){const el=field(name);if(el)el.value=component[name]||""}
-   if(field("full-name"))field("full-name").value=component.fullName||component.name||"";
-   // A successful product lookup creates a fresh recorded-date reference.
-   if(recordedDate)recordedDate.value=todayLocal();
-   specs.replaceChildren();for(const spec of component.specifications||[])specRow(spec.name,spec.value,spec.source);
-   review.classList.remove("hide");extractStatus("Product details suggested. Review the fields and specifications before saving.");
-  }catch(e){review.classList.remove("hide");extractStatus("Product lookup failed: "+(e.name==="AbortError"?"The service did not respond within 20 seconds":e.message)+". You can enter this part manually.")}
-  finally{extract.disabled=false}
- };
+ window.BSProductLookup.mountPart(root,{canSearch:canEditComponent});
  field("add-spec").onclick=()=>specRow();
  field("save").onclick=async()=>{
   const priceInput=field("historical-price")?.value.trim()||"";
