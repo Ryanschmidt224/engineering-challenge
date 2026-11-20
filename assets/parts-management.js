@@ -265,16 +265,12 @@
    control.disabled=true;
    const previous={...part};
    try{
-    const res=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{
-     method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(changes)
-    });
-    const data=await res.json();if(!res.ok)throw Error(data.error||"Update failed");
+    const data=await window.BSEditConflicts.save("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),
+     {original:previous,changes,active:()=>control.isConnected});
     Object.assign(part,data.component);onChanged?.(data.component);
     render();feedback.textContent="Saved "+part.name+".";
    }catch(error){
-    if(control.type==="checkbox")control.checked=!!previous.needsAttention;else if(control.value!==undefined)control.value=Object.hasOwn(changes,"treeDescription")?fields.treeDescriptionFor(previous):Object.hasOwn(changes,"partValue")?fields.valueFor(previous):previous[Object.keys(changes)[0]]??"";
     feedback.textContent="Not saved: "+error.message;
-    if(/another tab|Reload/.test(error.message))void refresh();
    }finally{control.disabled=!canEdit()}
   }
   async function refresh(){

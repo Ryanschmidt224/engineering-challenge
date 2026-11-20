@@ -42,6 +42,8 @@
   --color-warning: #956913;
   --color-danger-strong: #a83d3d;
   --color-danger-alert: #ae4141;
+  --color-danger-hover: #88212a;
+  --color-danger-focus: #ecb6bc;
   --color-danger-action: #a52d35;
 
   --color-media-backdrop: #13201b;

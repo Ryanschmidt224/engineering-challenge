@@ -302,6 +302,7 @@ function setupAssemblyTrees(){
   const summaryText=overview.querySelector(".project-summary-text");
   const summaryFields={shortSummary:shortSummaryLabel.querySelector("input"),summary:summaryInput};
   const summaryBaseline={shortSummary:"",summary:""};
+  let summaryRevision=null;
   const summaryEntries=Object.entries(summaryFields);
   const hasSummaryChanges=()=>summaryEntries.some(([key,field])=>field.value!==summaryBaseline[key]);
   const showSummaryActions=()=>{summaryActions.hidden=!canEdit()||!hasSummaryChanges()};
@@ -317,17 +318,16 @@ function setupAssemblyTrees(){
    const changes=Object.fromEntries(Object.entries(draft).filter(([key,value])=>value!==summaryBaseline[key]));
    summarySave.disabled=summaryCancel.disabled=true;summaryMessage.textContent="Saving…";
    try{
-    const response=await fetch("/api/projects",{method:"PATCH",credentials:"same-origin",
-     headers:{"content-type":"application/json"},body:JSON.stringify({id:project,...changes})});
-    const data=await response.json();
-    if(!response.ok)throw Error(data.error||"Unable to save project summary");
+    const data=await window.BSEditConflicts.save("/api/projects",{original:{...summaryBaseline},changes,
+     extra:{id:project},revision:summaryRevision});
     const saved=data.projects?.find(item=>item.id===project);
+    summaryRevision=saved?.summaryRevision??null;
     for(const [key,field] of summaryEntries){
      const value=saved?.[key]??changes[key]?.trim()??summaryBaseline[key];
      summaryBaseline[key]=value;
      if(field.value===draft[key])field.value=value;
     }
-    window.BSProjectManager?.updateProjectSummary(project,summaryBaseline);
+    window.BSProjectManager?.updateProjectSummary(project,{...summaryBaseline,summaryRevision});
     renderSummaryOverview();
     summaryMessage.textContent="Summary saved.";
    }catch(error){summaryMessage.textContent=error.message}
@@ -341,9 +341,9 @@ function setupAssemblyTrees(){
    shortSummaryLabel.hidden=!canEdit();
    summaryText.textContent=values.summary||"No summary yet.";summaryText.hidden=canEdit();
    summaryInput.hidden=!canEdit();
-   for(const [key,field] of summaryEntries){
-    if(field.value===summaryBaseline[key])field.value=values[key];
-    summaryBaseline[key]=values[key];
+   if(!hasSummaryChanges()&&!summarySave.disabled){
+    for(const [key,field] of summaryEntries){field.value=values[key];summaryBaseline[key]=values[key]}
+    summaryRevision=record?.summaryRevision??null;
    }
    showSummaryActions();
    const tags=overview.querySelector(".project-summary-tags");
@@ -384,14 +384,13 @@ function setupAssemblyTrees(){
     const version=revision;
     input.disabled=true;feedback.textContent="Saving…";
     try{
-     const saved=await saveQuantity(record.id,quantity);
+     const saved=await saveQuantity(record.id,quantity,record);
      if(version!==revision)return;
      show(saved);
      feedback.textContent="Saved.";
     }catch(error){
      if(version!==revision)return;
      input.disabled=!canEdit();
-     input.value=record.quantity??"";
      feedback.textContent=error.message;
     }
    };
@@ -957,16 +956,14 @@ function setupAssemblyTrees(){
   });
   const partQuantityDisplay=part=>{
    const rolledUp=rolledUpPart(part);
-   return {id:part.id,quantity:part.quantity??null,total:rolledUp.quantity!==part.quantity
+   return {id:part.id,revision:part.revision??null,quantity:part.quantity??null,total:rolledUp.quantity!==part.quantity
     ?window.BSBomModel.quantityText(rolledUp)+" in project":part.quantityUnit||"pcs"};
   };
   const showPartQuantity=createQuantityField(progressPanel.parentElement,{
-   saveQuantity:async(id,quantity)=>{
-    const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id),{
-     method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({quantity})
-    });
-    const data=await response.json();
-    if(!response.ok)throw Error(data.error||"Quantity could not be saved");
+   saveQuantity:async(id,quantity,record)=>{
+    const data=await window.BSEditConflicts.save("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id),
+     {original:record,changes:{quantity},revision:currentPartInfo?.id===id&&currentPartInfo.quantity===record.quantity
+      ?currentPartInfo.revision??null:record.revision,active:()=>currentPartInfo?.id===id});
     syncPartNodes([data.component]);
     if(currentPartInfo?.id===id){
      currentPartInfo=data.component;
@@ -979,11 +976,12 @@ function setupAssemblyTrees(){
   const resetPartAttention=installAttentionExpander(progressPanel);
   const resetAssemblyAttention=installAttentionExpander(assemblyProgressPanel);
   let assemblyStatusId=null,assemblyStatusVersion=0,assemblyStatusQueue=Promise.resolve();
+  let assemblyStatusRecord=null;
   const assemblyStatusUrl=id=>"/api/tree?project="+encodeURIComponent(project)+"&statusAssembly="+encodeURIComponent(id);
   async function loadAssemblyStatus(){
    const id=selected;
    if(assemblyStatusId===id&&id!==null)return;
-   assemblyStatusId=id;resetAssemblyAttention();
+   assemblyStatusId=id;assemblyStatusRecord=null;resetAssemblyAttention();
    const version=++assemblyStatusVersion;
    assemblyProgressPanel.hidden=true;assemblyProgressFeedback.textContent="";
    if(id===null)return;
@@ -993,6 +991,7 @@ function setupAssemblyTrees(){
     const data=await response.json();
     if(!response.ok)throw Error(data.error||"Unable to load status");
     if(version!==assemblyStatusVersion||selected!==id)return;
+    assemblyStatusRecord={...data.status,revision:data.revision??null};
     assemblyProgressSelect.value=data.status.progressStatus;
     assemblyAttention.checked=data.status.needsAttention;
     assemblyAttentionNote.value=data.status.attentionNote;
@@ -1003,18 +1002,26 @@ function setupAssemblyTrees(){
     assemblyProgressPanel.hidden=false;
    }catch(error){if(version===assemblyStatusVersion){assemblyProgressPanel.hidden=false;assemblyProgressSelect.disabled=true;assemblyAttention.disabled=true;assemblyAttentionNote.readOnly=true;assemblyProgressFeedback.textContent=error.message;assemblyStatusId=null}}
   }
-  function saveAssemblyStatus(){
+  function saveAssemblyStatus(event){
    const id=assemblyStatusId,version=assemblyStatusVersion;
-   if(!id||!canEdit())return;
+   const record=assemblyStatusRecord;
+   if(!id||!record||!canEdit())return;
    const body={progressStatus:assemblyProgressSelect.value,needsAttention:assemblyAttention.checked,attentionNote:assemblyAttentionNote.value};
    assemblyAttentionField.hidden=!assemblyAttention.checked;
    if(!assemblyAttention.checked)resetAssemblyAttention();
    assemblyProgressFeedback.textContent="Saving…";
+   const field=event.target===assemblyProgressSelect?"progressStatus":event.target===assemblyAttention?"needsAttention":"attentionNote";
    assemblyStatusQueue=assemblyStatusQueue.catch(()=>{}).then(async()=>{
-    const response=await fetch(assemblyStatusUrl(id),{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
-    const data=await response.json();
-    if(!response.ok)throw Error(data.error||"Unable to save status");
-    if(assemblyStatusVersion===version&&assemblyStatusId===id)window.BSTransient?.show(assemblyProgressFeedback,"Saved.");
+    const active=()=>assemblyStatusVersion===version&&assemblyStatusId===id;
+    const data=await window.BSEditConflicts.save(assemblyStatusUrl(id),{original:{...record},changes:{[field]:body[field]},active});
+    Object.assign(record,data.status,{revision:data.revision??null});
+    if(active()){
+     if(assemblyProgressSelect.value===body.progressStatus)assemblyProgressSelect.value=data.status.progressStatus;
+     if(assemblyAttention.checked===body.needsAttention)assemblyAttention.checked=data.status.needsAttention;
+     if(assemblyAttentionNote.value===body.attentionNote)assemblyAttentionNote.value=data.status.attentionNote;
+     assemblyAttentionField.hidden=!assemblyAttention.checked;
+     window.BSTransient?.show(assemblyProgressFeedback,"Saved.");
+    }
    }).catch(error=>{if(assemblyStatusVersion===version&&assemblyStatusId===id)assemblyProgressFeedback.textContent=error.message});
   }
   assemblyProgressSelect.addEventListener("change",saveAssemblyStatus);
@@ -1049,11 +1056,9 @@ function setupAssemblyTrees(){
    const feedback=progressPanel.querySelector(".part-progress-feedback");
    feedback.textContent="Saving…";
    partStatusSavePromise=(async()=>{
-    const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id),{
-     method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(changes)
-    });
-    const data=await response.json();
-    if(!response.ok)throw Error(data.error||"Status could not be saved");
+    const data=await window.BSEditConflicts.save("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id),
+     {original:currentPartInfo,changes,active:()=>currentPartInfo?.id===id});
+    partQuantities.set(id,data.component);
     partProgress.set(id,data.component.progressStatus);partAttention.set(id,data.component.needsAttention===true);
     if(currentPartInfo?.id===id){
      currentPartInfo=data.component;
@@ -1259,7 +1264,7 @@ function setupAssemblyTrees(){
     reloadWorkshopStatus.textContent="Reloading Workshop data…";
     const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{
      method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},
-     body:JSON.stringify({reloadWorkshop:true})
+     body:JSON.stringify({reloadWorkshop:true,expectedRevision:part.revision??null})
     });
     const data=await response.json();
     if(!response.ok)throw Error(data.error||"Unable to reload Workshop data.");
@@ -1444,7 +1449,7 @@ function setupAssemblyTrees(){
   let bomDisplayVersion=0;
   // One readable, hierarchical BOM presentation; no competing view modes.
   let editingPart=null;
-  let editingPartAssembly=null;
+  let editingPartAssembly=null,editingPartOriginal=null;
   const partPhotoUrl=id=>"/api/components/photo?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id);
   const defaultPartPicture=part=>part?.partType==="code"?"/assets/default-code-photo.webp":
    part?.itemType==="document"?"/assets/default-document-photo.webp":"";
@@ -1498,7 +1503,7 @@ function setupAssemblyTrees(){
     const choose=async item=>{
      const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{
       method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},
-      body:JSON.stringify({workshopChoice:item.id})
+      body:JSON.stringify({workshopChoice:item.id,expectedRevision:part.revision??null})
      });
      const data=await response.json().catch(()=>({}));
      if(!response.ok)throw Error(data.error||"Could not save Workshop selection");
@@ -1521,7 +1526,7 @@ function setupAssemblyTrees(){
     try{
      const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{
       method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},
-      body:JSON.stringify({purchaseOverride:part.assumedOnHand?true:false})
+      body:JSON.stringify({purchaseOverride:part.assumedOnHand?true:false,expectedRevision:part.revision??null})
      });
      const data=await response.json().catch(()=>({}));
      if(!response.ok)throw Error(data.error||"Could not update material preference");
@@ -1887,7 +1892,7 @@ function setupAssemblyTrees(){
   function clearBomDraft(){
    dismissBomEditor();
    extractedPictureUrl=null;
-   editingPart=null;editingPartAssembly=null;
+   editingPart=null;editingPartAssembly=null;editingPartOriginal=null;
    projectEditNotice.hidden=true;
    itemTypeSelect.value="part";partTypeSelect.value="purchased";visibilityCheckbox.checked=false;toolCheckbox.checked=false;partDescriptionInput.value="";setProjectOnly({});partNumberInput.value="";autoNumberChosen=false;partNumberInput.readOnly=false;nextNumberButton.disabled=false;partNumberHelp.textContent="A number is assigned only when the part is saved.";updatePartTypeFields();
    for(const name of ["name","manufacturer","model","supplier","asin","description","historical-price","historical-price-date"]){const el=bomField(name);if(el)el.value=""}
@@ -1902,7 +1907,7 @@ function setupAssemblyTrees(){
   }
   function editBomPart(part,originId){
    if(savingBom)return;
-   clearBomDraft();editingPart=part.id;editingPartAssembly=originId;
+   clearBomDraft();editingPart=part.id;editingPartAssembly=originId;editingPartOriginal=structuredClone(part);
    projectEditNotice.hidden=!workshopLinkId(part);
    itemTypeSelect.value=part.partType==="code"?"code":part.itemType==="document"?"document":"part";
    partTypeSelect.value=["custom","custom_purchased","code"].includes(part.partType)?part.partType:"purchased";visibilityCheckbox.checked=part.hideFromFeatureTree===true;toolCheckbox.checked=part.isTool===true;
@@ -2076,10 +2081,14 @@ function setupAssemblyTrees(){
     const wasEdit=!!editingPart;
     const imageToImport=extractedPictureUrl,snapshotToAttach=extractedSnapshotId;
     const address="/api/components?project="+encodeURIComponent(project)+(editingPart?"&id="+encodeURIComponent(editingPart):"");
-    const response=await fetch(address,{method:wasEdit?"PUT":"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(component)});
-    const raw=await response.text();let result;
-    try{result=JSON.parse(raw)}catch{throw Error("Unexpected save response (HTTP "+response.status+")")}
-    if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
+    let result;
+    if(wasEdit){
+     result=await window.BSEditConflicts.save(address,{method:"PUT",original:editingPartOriginal,changes:component,active:()=>partEditDialog.open});
+    }else{
+     const response=await fetch(address,{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(component)});
+     result=await response.json();
+     if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
+    }
     let photoMessage="";
     if(snapshotToAttach&&result.component?.id){
      try{
@@ -2575,7 +2584,7 @@ function setupAssemblyTrees(){
      const response=await fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"});
      const data=await response.json();if(!response.ok)throw Error(data.error||"Could not load part");
      const part=data.components?.find(item=>item.id===node.partId);if(!part)throw Error("Linked BOM part not found");
-     const update=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({...part,assemblyId:newParent})});
+     const update=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({...part,expectedRevision:part.revision??null,assemblyId:newParent})});
      const result=await update.json();if(!update.ok)throw Error(result.error||"Unable to update BOM parent");
     }catch(error){warning=" Tree moved, but BOM parent could not be updated: "+error.message}
     openTreePart({...node,parentId:newParent});status.textContent="Part moved."+warning;
@@ -2628,21 +2637,14 @@ function setupAssemblyTrees(){
     root.querySelector(".assembly-rename").click();
     return;
    }
-   const value=await window.BSDialogs.prompt("Enter a new name",node.name,{title:"Rename part",label:"Part name"});
-   if(!value?.trim()||value.trim()===node.name)return;
-   const response=await fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"});
-   const data=await response.json();
-   if(!response.ok)throw Error(data.error||"Could not load part");
-   const part=(data.components||[]).find(item=>item.id===node.partId);
-   if(!part)throw Error("Linked part no longer exists.");
-   if(part.generatedFrom)throw Error("Calculated parts must be renamed through their source.");
-   const updated=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{
-    method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},
-    body:JSON.stringify({...part,name:value.trim()})
-   });
-   const result=await updated.json();
-   if(!updated.ok)throw Error(result.error||"Unable to rename part");
-   await save(nodes.map(item=>item.id===node.id?{...item,name:value.trim()}:item));
+   const part=partQuantities.get(node.partId);
+   if(!part||part.generatedFrom)throw Error("Open the source part to rename it.");
+   const value=await window.BSDialogs.prompt("Enter a new name",part.name,{title:"Rename part",label:"Part name"});
+   if(!value?.trim()||value.trim()===part.name)return;
+   const result=await window.BSEditConflicts.save("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),
+    {original:part,changes:{name:value.trim()}});
+   partQuantities.set(part.id,result.component);
+   await save(nodes.map(item=>item.id===node.id?{...item,name:result.component.name}:item));
   };
   const deleteTreeItem=async node=>{
    if(!node)return;
@@ -2705,12 +2707,12 @@ function setupAssemblyTrees(){
    sectionLabel("Edit");
    addItem("Rename",()=>node?renameTreeItem(node):editProjectName.click());
    if(isPart)addItem(isToolNode(node)?"Mark as build component":"Mark as tool",async()=>{
-    const res=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({isTool:!isToolNode(node)})});
-    const data=await res.json();if(!res.ok)throw Error(data.error||"Could not update tool classification");partTools.set(node.partId,data.component.isTool===true);render();
+    const res=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({isTool:!isToolNode(node),expectedRevision:partQuantities.get(node.partId)?.revision??null})});
+    const data=await res.json();if(!res.ok)throw Error(data.error||"Could not update tool classification");syncPartNodes([data.component]);
    });
    if(isPart)addItem(isHiddenPart(node)?"Unhide on feature tree":"Hide on feature tree",async()=>{
-    const res=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({hideFromFeatureTree:!isHiddenPart(node)})});
-    const data=await res.json();if(!res.ok)throw Error(data.error||"Could not change visibility");partVisibility.set(node.partId,data.component.hideFromFeatureTree===true);render();
+    const res=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({hideFromFeatureTree:!isHiddenPart(node),expectedRevision:partQuantities.get(node.partId)?.revision??null})});
+    const data=await res.json();if(!res.ok)throw Error(data.error||"Could not change visibility");syncPartNodes([data.component]);
    });
    if(node)addItem("Delete",()=>deleteTreeItem(node));
    if(node){

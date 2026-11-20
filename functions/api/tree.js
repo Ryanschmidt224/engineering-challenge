@@ -34,16 +34,23 @@ export async function handleTree(request,env){
   const defaults={progressStatus:"not_started",needsAttention:false,attentionNote:""};
   if(request.method==="GET"){
    const obj=await env.PHOTOS.get(key);
-   return reply({status:obj?{...defaults,...JSON.parse(await obj.text())}:defaults});
+   return reply({status:obj?{...defaults,...JSON.parse(await obj.text())}:defaults,revision:obj?.etag??null});
   }
-  if(request.method!=="PUT")return reply({error:"Method not allowed"},405);
+  if(!["PATCH","PUT"].includes(request.method))return reply({error:"Method not allowed"},405);
   if(!await canEditProject(request,env,project))return reply({error:"Admin login required"},401);
   if(request.headers.get("origin")!==new URL(request.url).origin)return reply({error:"Invalid origin"},403);
   const body=await request.json().catch(()=>null);
-  if(!body||!["not_started","in_progress","complete"].includes(body.progressStatus)||typeof body.needsAttention!=="boolean"||typeof body.attentionNote!=="string"||body.attentionNote.length>2000)return reply({error:"Invalid status"},400);
-  const status={progressStatus:body.progressStatus,needsAttention:body.needsAttention,attentionNote:body.attentionNote.trim()};
-  await env.PHOTOS.put(key,JSON.stringify(status));
-  return reply({status});
+  if(!body||Array.isArray(body)||typeof body!=="object")return reply({error:"Invalid status"},400);
+  const existing=await env.PHOTOS.get(key);
+  const fields=request.method==="PATCH"?{...defaults,...(existing?JSON.parse(await existing.text()):{}),...body}:body;
+  if(!["not_started","in_progress","complete"].includes(fields.progressStatus)||typeof fields.needsAttention!=="boolean"||typeof fields.attentionNote!=="string"||fields.attentionNote.length>2000)return reply({error:"Invalid status"},400);
+  const status={progressStatus:fields.progressStatus,needsAttention:fields.needsAttention,attentionNote:fields.attentionNote.trim()};
+  const changed=async object=>reply({error:"Assembly status changed since you opened it.",
+   current:object?{...defaults,...JSON.parse(await object.text())}:defaults,revision:object?.etag??null},409);
+  if((body.expectedRevision??null)!==(existing?.etag??null))return changed(existing);
+  const written=await env.PHOTOS.put(key,JSON.stringify(status),{onlyIf:existing?{etagMatches:existing.etag}:{etagDoesNotMatch:"*"}});
+  if(written===null)return changed(await env.PHOTOS.get(key));
+  return reply({status,revision:written?.etag??null});
  }
  const assemblyId=new URL(request.url).searchParams.get("assembly");
  if(assemblyId!==null){

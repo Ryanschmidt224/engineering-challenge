@@ -123,7 +123,7 @@ test("one-click purchase override works on calculated consumables and survives s
  assert.equal(items.find(x=>x.generatedKind==="ferrule").quantity,5);
  assert.equal(items.find(x=>x.generatedKind==="ferrule").assumedOnHand,false);
  assert.equal(items.find(x=>x.generatedKind==="wire").quantity,60);
- assert.equal((await components(request("PATCH",componentsUrl+"&id="+ferrule.id,{purchaseOverride:false}),env)).status,200);
+ assert.equal((await components(request("PATCH",componentsUrl+"&id="+ferrule.id,{purchaseOverride:false,expectedRevision:items.find(x=>x.id===ferrule.id).revision}),env)).status,200);
  items=(await (await components(request("GET",componentsUrl),env)).json()).components;
  assert.equal(items.find(x=>x.generatedKind==="ferrule").assumedOnHand,true);
 });
@@ -245,11 +245,11 @@ test("historical purchase price supports per-part and per-package without losing
  assert.equal(changed.historicalPrice,4.50);
  assert.equal(changed.historicalPackageQuantity,null);
  const invalid=await components(request("PUT",componentsUrl+"&id="+record.id,{
-  ...changed,historicalPurchasePrice:20,historicalPriceBasis:"per_package",
+  ...changed,expectedRevision:changed.revision,historicalPurchasePrice:20,historicalPriceBasis:"per_package",
   historicalPackageQuantity:0,historicalPriceDate:"2026-11-08"}),env);
  assert.equal(invalid.status,400);
  const optional=await components(request("PUT",componentsUrl+"&id="+record.id,{
-  ...changed,historicalPurchasePrice:null,historicalPriceBasis:"per_package",
+  ...changed,expectedRevision:changed.revision,historicalPurchasePrice:null,historicalPriceBasis:"per_package",
   historicalPackageQuantity:null,historicalPriceDate:null}),env);
  assert.equal(optional.status,200);
  const cleared=(await optional.json()).component;

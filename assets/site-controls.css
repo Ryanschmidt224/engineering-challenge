@@ -2373,11 +2373,11 @@ body>.footer{margin-top:auto}
 
 /* AI-assisted manufacturer-part-number lookup in the Workshop editor. */
 .workshop-ai-lookup{
- border:1px solid var(--color-border,#cbd5d1);
+ border:1px solid var(--color-border);
  border-radius:12px;
  padding:16px;
  margin:12px 0 18px;
- background:var(--color-surface,#fff);
+ background:var(--color-surface);
 }
 .workshop-ai-lookup h3{margin:0 0 7px}
 .workshop-ai-lookup-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -2386,7 +2386,7 @@ body>.footer{margin-top:auto}
 .workshop-ai-lookup-results{display:grid;gap:10px;margin-top:10px}
 .workshop-ai-source-list{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .workshop-ai-image-candidate{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
-.workshop-ai-image-candidate img{display:block;width:auto;max-width:240px;max-height:190px;object-fit:contain;border:1px solid var(--color-border,#cbd5d1);border-radius:8px;background:#fff}
+.workshop-ai-image-candidate img{display:block;width:auto;max-width:240px;max-height:190px;object-fit:contain;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface)}
 
 /* Shared deletion confirmation: white centered in-page modal, not a browser alert. */
 dialog.bs-delete-confirm{
@@ -2398,26 +2398,26 @@ dialog.bs-delete-confirm{
  max-width:calc(100vw - 36px);
  max-height:calc(100dvh - 40px);
  padding:24px;
- border:1px solid #d3dad6;
+ border:1px solid var(--color-border);
  border-radius:14px;
- background:#fff;
- color:#273832;
- box-shadow:0 22px 70px rgba(15,30,24,.25);
+ background:var(--color-surface);
+ color:var(--color-text);
+ box-shadow:0 22px 70px color-mix(in srgb,var(--color-shadow) 25%,transparent);
  overflow:auto;
  z-index:10000;
 }
-dialog.bs-delete-confirm::backdrop{background:rgba(17,28,24,.48)}
+dialog.bs-delete-confirm::backdrop{background:color-mix(in srgb,var(--color-media-backdrop) 48%,transparent)}
 dialog.bs-delete-confirm h2{
  margin:0 0 12px;
  font-size:1.18rem;
  font-weight:700;
- color:#263b34;
+ color:var(--color-text);
 }
 dialog.bs-delete-confirm p{
  margin:0;
  line-height:1.55;
  font-size:.94rem;
- color:#52635c;
+ color:var(--color-text-muted);
  overflow-wrap:anywhere;
 }
 dialog.bs-delete-confirm .bs-delete-confirm-actions{
@@ -2435,13 +2435,13 @@ dialog.bs-delete-confirm .bs-delete-confirm-actions .btn{
  border-radius:8px;
 }
 dialog.bs-delete-confirm .bs-delete-confirm-danger{
- background:#a52a32;
- border:1px solid #a52a32;
- color:#fff;
+ background:var(--color-danger-action);
+ border:1px solid var(--color-danger-action);
+ color:var(--color-on-accent);
 }
-dialog.bs-delete-confirm .bs-delete-confirm-danger:hover{background:#88212a;border-color:#88212a}
+dialog.bs-delete-confirm .bs-delete-confirm-danger:hover{background:var(--color-danger-hover);border-color:var(--color-danger-hover)}
 dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
- outline:3px solid #ecb6bc;outline-offset:2px;
+ outline:3px solid var(--color-danger-focus);outline-offset:2px;
 }
 
 /* Workshop MPN lookup: compact search control and explicit review/apply step. */
@@ -2474,9 +2474,9 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
 #commonparts .workshop-ai-changes-panel{
  margin:10px 0 18px;
  padding:18px;
- background:#fff;
- color:#283c35;
- border:1px solid #cbd7d1;
+ background:var(--color-surface);
+ color:var(--color-text);
+ border:1px solid var(--color-border);
  border-radius:10px;
 }
 #commonparts .workshop-ai-changes-panel h4{margin:0 0 8px;font-size:1rem}
@@ -2490,13 +2490,13 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
 }
 #commonparts .workshop-ai-diff-table th,
 #commonparts .workshop-ai-diff-table td{
- border-bottom:1px solid #d9e2dc;
+ border-bottom:1px solid var(--color-border);
  padding:9px;
  text-align:left;
  vertical-align:top;
  overflow-wrap:anywhere;
 }
-#commonparts .workshop-ai-diff-table thead th{background:#f4f7f5}
+#commonparts .workshop-ai-diff-table thead th{background:var(--color-surface-muted)}
 #commonparts .workshop-ai-changes-actions{
  display:flex;justify-content:flex-start;flex-wrap:wrap;gap:10px;margin-top:18px;
 }
@@ -2513,11 +2513,11 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
 .part-editor-dialog .part-project-edit-notice{
  margin:12px 18px 18px;
  padding:17px 18px;
- border:1px solid #bed2c8;
- border-left:4px solid #35795f;
+ border:1px solid var(--color-border-strong);
+ border-left:4px solid var(--color-accent);
  border-radius:10px;
- background:#fff;
- color:#243a32;
+ background:var(--color-surface);
+ color:var(--color-text);
 }
 .part-editor-dialog .part-project-edit-notice[hidden]{display:none!important}
 .part-editor-dialog .part-project-edit-notice strong{display:block;font-size:1.07rem}
@@ -2539,15 +2539,15 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
  margin:0 0 16px;
  padding:10px 15px;
  font-weight:650;
- background:#fff;
- border:1px solid var(--color-border,#ccd8d1);
+ background:var(--color-surface);
+ border:1px solid var(--color-border);
  border-radius:9px;
- box-shadow:0 2px 8px rgba(16,34,25,.09);
- color:#275b48;
+ box-shadow:0 2px 8px color-mix(in srgb,var(--color-shadow) 9%,transparent);
+ color:var(--color-accent-hover);
 }
 #commonparts .workshop-return-to-project:hover{
- background:var(--color-hover,#edf4f0);
- border-color:#428368;
+ background:var(--color-hover);
+ border-color:var(--color-accent);
 }
 
 /* Page-level action placement: keep controls beside the content they operate on,
@@ -2622,7 +2622,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
  border:0;
  border-radius:3px;
  background:transparent;
- color:var(--color-accent,#2d755b);
+ color:var(--color-accent);
  font:inherit;
  font-weight:600;
  text-align:left;
@@ -2637,7 +2637,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
  text-decoration-color:currentColor;
 }
 .project-summary-part-list .project-summary-part-link:focus-visible{
- outline:2px solid var(--color-accent,#2d755b);
+ outline:2px solid var(--color-accent);
  outline-offset:3px;
  text-decoration-color:currentColor;
 }

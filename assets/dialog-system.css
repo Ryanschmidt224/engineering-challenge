@@ -153,3 +153,8 @@ dialog.part-editor-dialog .workspace-main-bom-editor{
   padding-right:16px!important;
  }
 }
+
+dialog.bs-edit-conflict{width:min(640px,calc(100vw - 32px));max-height:85dvh;overflow:auto}
+.bs-edit-conflict fieldset{min-width:0;margin:1rem 0;border:1px solid var(--color-border);border-radius:8px}
+.bs-edit-conflict legend{font-weight:650}
+.bs-edit-conflict pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere;margin:.2rem 0 .7rem}

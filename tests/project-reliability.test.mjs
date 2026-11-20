@@ -4,6 +4,8 @@ import {readFileSync} from "node:fs";
 import {runInNewContext} from "node:vm";
 import {handleAccounts} from "../functions/api/accounts.js";
 import {onRequest as projects} from "../functions/api/projects.js";
+import {handleComponents} from "../functions/api/components.js";
+import {handleTree} from "../functions/api/tree.js";
 import {handleRecipeFiles} from "../functions/api/recipe-files.js";
 import {handleProposals} from "../functions/api/proposals.js";
 import {handleWorkspace} from "../functions/api/workspace.js";
@@ -265,5 +267,141 @@ test("part and assembly revisions survive 56 edits, approval, stale retries, off
   assert.equal(after.recipe[0].title,"Edit 0");
   assert.equal(after.history.at(-1).recipe[0].standard,"Approved");
   assert.equal((await handleWorkspace(request(path+"&historyPage=invalid"),env)).status,400);
+ }
+});
+
+test("two editors cannot overwrite a newer part, project summary, or assembly status",async()=>{
+ const {env,request,create}=await projectFixture();
+ const project=await create("Concurrent edits");
+ const endpoint="/api/components?project="+project, id=crypto.randomUUID(), other=crypto.randomUUID();
+ await env.PHOTOS.put("components/"+project+".json",JSON.stringify([
+  {id,name:"Controller",quantity:1,specifications:[]},{id:other,name:"LED",specifications:[]}
+ ]));
+ const parts=async()=>(await (await handleComponents(request(endpoint),env)).json()).components;
+ const [tabA,tabB]=await Promise.all([parts(),parts()]);
+ const edit=(part,changes,method="PATCH")=>handleComponents(request(endpoint+"&id="+part.id,method,{expectedRevision:part.revision??null,...changes}),env);
+ assert.equal((await edit(tabA[1],{name:"Indicator"})).status,200);
+ const saved=await edit(tabA[0],{quantity:2});assert.equal(saved.status,200);
+ for(const [method,changes] of [["PUT",{...tabB[0],name:"New name"}],["PATCH",{quantity:6}],["PATCH",{reloadWorkshop:true}]]){
+  const response=await edit(tabB[0],changes,method);
+  assert.equal(response.status,409);
+  const {current,revision}=await response.json();
+  assert.equal(current.quantity,2);assert.equal(revision,current.revision);
+ }
+ assert.equal((await parts())[0].name,"Controller");
+ const fresh=(await parts())[0];
+ assert.equal((await edit(fresh,{name:"New name"})).status,200);
+ assert.equal((await parts())[0].quantity,2);
+
+ const summary=body=>projects({env,request:request("/api/projects","PATCH",{id:project,...body})});
+ const first=await summary({summary:"Owner's new summary",expectedRevision:null});
+ assert.equal(first.status,200);
+ const short=await summary({summary:"Stale draft",expectedRevision:null});
+ assert.equal(short.status,409);
+ const conflict=await short.json();
+ assert.equal(conflict.current.summary,"Owner's new summary");
+ const updated=await summary({shortSummary:"A board",expectedRevision:conflict.revision});
+ assert.equal((await updated.json()).projects.find(p=>p.id===project).summary,conflict.current.summary);
+
+ await env.PHOTOS.put("trees/"+project+".json",JSON.stringify([{id:"pcb",kind:"assembly",name:"Board"}]));
+ const path="/api/tree?project="+project+"&statusAssembly=pcb";
+ const get=async()=>(await (await handleTree(request(path),env)).json());
+ const status=await get();
+ const patch=(changes,revision)=>handleTree(request(path,"PATCH",{...changes,expectedRevision:revision}),env);
+ const concurrent=await Promise.all([patch({progressStatus:"complete"},status.revision),patch({progressStatus:"in_progress"},status.revision)]);
+ assert.deepEqual(concurrent.map(r=>r.status).sort(),[200,409]);
+ const latest=await get();
+ const stale=await patch({attentionNote:"Review joints"},status.revision);
+ assert.equal(stale.status,409);
+ const review=await stale.json();
+ assert.deepEqual(review.current,latest.status);assert.equal(review.revision,latest.revision);
+ const accepted=await patch({attentionNote:"Review joints"},latest.revision);
+ assert.equal(accepted.status,200);
+ assert.deepEqual((await accepted.json()).status,{...latest.status,attentionNote:"Review joints"});
+});
+
+test("simultaneous part and summary saves return the winning record for review",async()=>{
+ const {env,request,create}=await projectFixture();
+ const project=await create("Race review");
+ const id=crypto.randomUUID();
+ await env.PHOTOS.put("components/"+project+".json",JSON.stringify([{id,name:"Board",specifications:[]}]));
+ for(const [field,save] of [
+  ["name",name=>handleComponents(request("/api/components?project="+project+"&id="+id,"PATCH",{name,expectedRevision:null}),env)],
+  ["summary",summary=>projects({env,request:request("/api/projects","PATCH",{id:project,summary,expectedRevision:null})})]
+ ]){
+  const results=await Promise.all([save("Revision A"),save("Revision B")]);
+  assert.deepEqual(results.map(r=>r.status).sort(),[200,409]);
+  const review=await results.find(r=>r.status===409).json();
+  const winner=await results.find(r=>r.status===200).json();
+  const record=winner.component||winner.projects.find(p=>p.id===project);
+  assert.equal(review.current[field],record[field]);
+  assert.equal(review.revision,record.revision??record.summaryRevision);
+ }
+});
+
+test("field review retains independent edits and defaults to the saved value on a conflict",()=>{
+ const window={};
+ runInNewContext(readFileSync(new URL("../assets/edit-conflicts.js",import.meta.url),"utf8"),{window});
+ const original={name:"Board",quantity:1,projectDetails:{value:"1k",notes:"Old"}};
+ const draft={name:"Main board",quantity:1,projectDetails:{value:"2k",notes:"Old"}};
+ const saved={name:"Board",quantity:3,projectDetails:{value:"5k",notes:"Review fit",location:"A"}};
+ const {merged,rows}=window.BSEditConflicts.compare(original,draft,saved);
+ assert.equal(merged.name,"Main board");
+ assert.equal(merged.quantity,3);
+ assert.equal(merged.projectDetails.notes,"Review fit");
+ assert.equal(merged.projectDetails.location,"A");
+ assert.equal(merged.projectDetails.value,"5k");
+ const contested=rows.filter(row=>row.edited);
+ assert.equal(contested.length,1);
+ contested[0].chooseDraft();
+ assert.equal(merged.projectDetails.value,"2k");
+ assert.equal(saved.projectDetails.value,"5k");
+});
+
+test("approval retries recover from an interruption after each write and preserve intervening edits",async()=>{
+ const {env,request,create}=await projectFixture();
+ const project=await create("Approval recovery");
+ const path="/api/proposals?project="+project;
+ const workspace="/api/workspace?project="+project+"&assembly=__root__";
+ const put=env.PHOTOS.put.bind(env.PHOTOS);
+ const initial=await handleWorkspace(request(workspace,"PUT",{recipe:[{id:"s",title:"Inspect",standard:"Original"}]}),env);
+ assert.equal(initial.status,200);
+ for(const boundary of ["claim","workspace","log"]){
+  const suggestedText="Replacement "+boundary;
+  const submitted=await handleProposals(request(path,"POST",{scope:"assembly",targetId:"__root__",stepId:"s",field:"standard",suggestedText}),env);
+  const {proposal}=await submitted.json();
+  const approve=action=>handleProposals(request(path,"PATCH",{id:proposal.id,action}),env);
+  const get=async()=>(await(await handleWorkspace(request(workspace),env)).json()).workspace;
+  const previous=await get();
+  let interrupted=false;
+  env.PHOTOS.put=async(key,value,options)=>{
+   const result=await put(key,value,options);
+   const entry=key.startsWith("change-proposals/")&&JSON.parse(value).find(p=>p.id===proposal.id);
+   if(!interrupted&&(boundary==="claim"&&entry?.approvalBase||boundary==="workspace"&&key.startsWith("workspaces/")||
+      boundary==="log"&&entry?.status==="approved")){
+    interrupted=true;throw Error("Simulated interruption after "+boundary);
+   }
+   return result;
+  };
+  assert.equal((await approve("approve")).status,503);
+  env.PHOTOS.put=put;
+  assert.ok(interrupted);
+  if(boundary==="workspace"){
+   const applied=await get();
+   assert.equal(applied.recipe[0].standard,suggestedText);
+   assert.equal((await handleWorkspace(request(workspace,"PUT",{
+    expectedRevision:applied.revision,recipe:[{...applied.recipe[0],standard:"An edit made after approval"}]
+   }),env)).status,200);
+  }
+  if(boundary==="claim")assert.equal((await approve("reject")).status,409);
+  assert.equal((await approve("approve")).status,200);
+  const after=await get();
+  assert.equal(after.history.length,previous.history.length+(boundary==="workspace"?2:1));
+  assert.equal(after.recipe[0].standard,boundary==="workspace"?"An edit made after approval":suggestedText);
+  assert.equal((await approve("approve")).status,200);
+  assert.equal((await approve("reject")).status,409);
+  assert.equal((await get()).revision,after.revision);
+  const log=await (await handleProposals(request(path),env)).json();
+  assert.equal(log.proposals.find(p=>p.id===proposal.id).status,"approved");
  }
 });

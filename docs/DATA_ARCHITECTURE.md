@@ -108,6 +108,10 @@ A weekly Cloudflare Worker cron (`0 7 * * SUN`, UTC) creates append-only recover
 
 Feature-tree, component-list/BOM, and workspace saves now use R2 conditional writes with ETags where available, so competing writers cannot silently overwrite the same key. Editors that send revision tokens also detect stale loads. Deleting a component preserves a recycle copy of the original part definition and linked picture/workspace/harness bytes before removal.
 
+Part edits and project summaries carry a revision for the individual part or summary. Assembly status edits carry the revision of their status record. Each editor sends its original revision as `expectedRevision`. A stale save returns HTTP 409 with the current values so the user can compare them with the draft and choose what to keep. Existing records receive their first revision on save.
+
+Approving an instruction suggestion takes three conditional writes. The proposal records the intended approval, the workspace saves the instruction and a receipt together, and the proposal records the final decision. A retry checks the receipt before changing the instruction or appending history. Later workspace edits retain these receipts.
+
 **Portable engineering model**
 
 `assets/engineering-core.js` introduces storage-independent, versioned logical project views: part definitions are separate from assembly/BOM occurrences, and recipe steps have permanent IDs. A legacy record maps to a deterministic identity in the new view; it is not destructively rewritten. `assets/local-project.js` hydrates complete archives in memory, exposes local reads/writes, and can re-export all records without Cloudflare. The existing public website still primarily uses legacy R2 handlers; full migration of these handlers to portable adapters remains future work.

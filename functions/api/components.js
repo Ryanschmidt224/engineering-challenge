@@ -17,7 +17,15 @@ const saveEditable=async(env,project,items,previous)=>{
  const saved=await env.PHOTOS.put(key(project),JSON.stringify(items),condition);
  return saved!==null;
 };
+const stalePart=(input,part)=>(input.expectedRevision??null)!==(part.revision??null)
+ ? json({error:"This part changed since you opened it.",current:presentPart(part),revision:part.revision??null},409) : null;
 const conflict=()=>json({error:"The project BOM was changed in another tab. Reload before saving."},409);
+
+async function partWriteConflict(env,project,id,input){
+ const latest=(await read(env,project)).find(part=>part.id===id);
+ if(!latest)return json({error:"This part was removed while you were editing it."},404);
+ return stalePart(input,latest)||json({error:"Another part was saved at the same time. Try saving your draft again."},409);
+}
 
 // Historical price is entered per part or per package (never a live quote).
 // Keep historicalPrice as the derived unit cost for existing BOM calculations.
@@ -129,7 +137,7 @@ function syncDerived(items,source){
  const updateGenerated=(kind,data)=>{
   const index=items.findIndex(x=>x.generatedFrom===source.id&&x.generatedKind===kind);
   if(!data){if(index>=0)items.splice(index,1);return}
-  if(index>=0)items[index]={...items[index],...data};
+  if(index>=0)items[index]={...items[index],...data,revision:crypto.randomUUID()};
   else items.push({id:crypto.randomUUID(),createdAt:new Date().toISOString(),...data});
  };
  const ferrules=["end a","end b"].filter(key=>spec.get(key)?.toLowerCase()==="ferrule").length;
@@ -184,18 +192,19 @@ async function saveWithWorkshopPhoto(env,project,state,part,photo){
  return false;
 }
 
-async function reloadWorkshopPart(request,env,project,id){
+async function reloadWorkshopPart(request,env,project,id,input){
  const state=await readEditable(env,project);
  const index=state.items.findIndex(part=>part.id===id);
  if(index<0)return json({error:"Part not found"},404);
  const previous=state.items[index];
+ const stale=stalePart(input,previous);if(stale)return stale;
  if(previous.generatedFrom||!workshopLinkId(previous))return json({error:"This part has no reloadable Workshop link"},400);
  const source=await linkedWorkshopItem(request,env,previous);
  if(!source?.item?.name)return json({error:"The linked Workshop item is missing or unavailable to your account."},404);
  const photo=source.photoKey?await env.PHOTOS.get(source.photoKey):null;
  if(source.photoKey&&!photo)return json({error:"The Workshop photo could not be loaded. Try again after checking the source item."},409);
  const updated={
-  ...workshopPartDetails(source),
+  ...workshopPartDetails(source),revision:crypto.randomUUID(),
   id:previous.id,partNumber:previous.partNumber,assemblyId:previous.assemblyId,
   quantity:previous.quantity,quantityUnit:previous.quantityUnit,createdAt:previous.createdAt,
   photoRevision:crypto.randomUUID(),purchaseStatus:"not_started",progressStatus:"not_started",progressUpdates:[]
@@ -204,7 +213,7 @@ async function reloadWorkshopPart(request,env,project,id){
  updated.fullName=generatedFullName(updated);
  state.items[index]=updated;
  syncDerived(state.items,updated);
- if(!await saveWithWorkshopPhoto(env,project,state,updated,photo))return conflict();
+ if(!await saveWithWorkshopPhoto(env,project,state,updated,photo))return partWriteConflict(env,project,id,input);
  const oldKey=partPhotoKey(project,previous);
  try{await env.PHOTOS.delete([oldKey,renditionKey(oldKey),annotationKey(oldKey)])}
  catch(error){console.warn("Could not remove superseded project photo",String(error))}
@@ -264,11 +273,12 @@ export async function handleComponents(request,env){
   const id=url.searchParams.get("id"),input=await request.json().catch(()=>null);
   if(id&&input?.reloadWorkshop===true){
    if(request.headers.get("origin")!==url.origin)return json({error:"Invalid request origin"},403);
-   return reloadWorkshopPart(request,env,project,id);
+   return reloadWorkshopPart(request,env,project,id,input);
   }
   if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"||typeof input.isTool==="boolean"||input.progressStatus!==undefined||input.needsAttention!==undefined||input.attentionNote!==undefined||input.name!==undefined||input.partType!==undefined||input.quantity!==undefined||input.partValue!==undefined||input.treeDescription!==undefined||input.purchaseStatus!==undefined||input.progressUpdate!==undefined||input.progressOperationAdd!==undefined||input.progressOperationEdit!==undefined))return json({error:"Invalid part preference"},400);
   const state=await readEditable(env,project),items=state.items,entry=items.find(item=>item.id===id);
   if(!entry)return json({error:"Part not found"},404);
+  const stale=stalePart(input,entry);if(stale)return stale;
   const previousWorkshopId=workshopLinkId(entry);
   if(input.treeDescription!==undefined){
    if(typeof input.treeDescription!=="string"||input.treeDescription.length>120)return json({error:"Feature tree description must be at most 120 characters"},400);
@@ -283,7 +293,8 @@ export async function handleComponents(request,env){
    if(typeof input.name!=="string"||!input.name.trim()||input.name.trim().length>180)return json({error:"Part name must be 1–180 characters"},400);
    const old=entry.name;
    entry.name=input.name.trim();
-   entry.fullName=generatedFullName(entry);
+   entry.revision=crypto.randomUUID();
+  entry.fullName=generatedFullName(entry);
   }
   if(input.partType!==undefined){
    if(!["purchased","custom","custom_purchased","code"].includes(input.partType))return json({error:"Invalid part type"},400);
@@ -335,6 +346,7 @@ export async function handleComponents(request,env){
    Object.assign(entry,amount);
    syncDerived(items,entry);
   }
+  entry.revision=crypto.randomUUID();
   entry.fullName=generatedFullName(entry);
   if(workshopLinkId(entry)!==previousWorkshopId){
    const source=await linkedWorkshopItem(request,env,entry);
@@ -343,7 +355,7 @@ export async function handleComponents(request,env){
   }
   // Parts Management updates the project occurrence. Workshop references
   // are links and are written only by their own Workshop endpoints.
-  if(!await saveEditable(env,project,items,state))return conflict();
+  if(!await saveEditable(env,project,items,state))return partWriteConflict(env,project,id,input);
   return json({component:presentPart(entry)});
  }
  if(request.method==="PUT"){
@@ -354,6 +366,7 @@ export async function handleComponents(request,env){
   if(index<0)return json({error:"Part not found"},404);
   if(items[index].generatedFrom)return json({error:"This material is calculated from its wire. Edit the wire instead."},409);
   const clean=value=>String(value??"").slice(0,300),previous=items[index];
+  const stale=stalePart(input,previous);if(stale)return stale;
   const price=historicalPrice(input);
   if(!price)return json({error:"Historical price must be a nonnegative USD amount (2 decimals) with a valid recorded date"},400);
 
@@ -365,7 +378,7 @@ export async function handleComponents(request,env){
   if(input.partType!==undefined&&!["purchased","custom","custom_purchased","code"].includes(input.partType))return json({error:"Invalid part type"},400);
   const projectDetails=cleanProjectDetails(input.projectDetails,previous.projectDetails||{});
   if(!projectDetails)return json({error:"Invalid project-specific notes or schematic metadata"},400);
-  const updated={...previous,projectDetails,description:input.description===undefined?(previous.description||""):input.description.trim(),itemType:input.itemType==="document"?"document":input.itemType==="part"?"part":previous.itemType||"part",name:clean(input.name.trim()),fullName:clean(input.fullName||input.name.trim()),...amount,historicalPrice:price.price,historicalPriceDate:price.date,historicalPriceBasis:price.basis,historicalPackageQuantity:price.packageQuantity,historicalPurchasePrice:price.purchasePrice,
+  const updated={...previous,revision:crypto.randomUUID(),projectDetails,description:input.description===undefined?(previous.description||""):input.description.trim(),itemType:input.itemType==="document"?"document":input.itemType==="part"?"part":previous.itemType||"part",name:clean(input.name.trim()),fullName:clean(input.fullName||input.name.trim()),...amount,historicalPrice:price.price,historicalPriceDate:price.date,historicalPriceBasis:price.basis,historicalPackageQuantity:price.packageQuantity,historicalPurchasePrice:price.purchasePrice,
    partType:input.partType==="code"?"code":input.partType==="custom"?"custom":input.partType==="custom_purchased"?"custom_purchased":"purchased"};
   if(updated.partType==="code"){updated.itemType="document";updated.isTool=false;updated.quantity=null}
   if(input.purchaseOverride===true||input.purchaseOverride===false||input.purchaseOverride===null)updated.purchaseOverride=input.purchaseOverride;
@@ -398,7 +411,7 @@ export async function handleComponents(request,env){
    else delete updated.workshopSourcing;
   }
   items[index]=updated;syncDerived(items,updated);
-  if(!await saveEditable(env,project,items,state))return conflict();
+  if(!await saveEditable(env,project,items,state))return partWriteConflict(env,project,id,input);
   return json({component:presentPart(updated)});
  }
  if(request.method==="DELETE"){

@@ -99,7 +99,7 @@ test("part progress and attention notes are editable only by the project owner",
  assert.equal(part.attentionNote,"Hole locations need rechecking");
  const forbidden=await handleComponents(request(endpoint,"PATCH",{progressStatus:"complete",needsAttention:false}),env);
  assert.notEqual(forbidden.status,200);
- const final=await handleComponents(request(endpoint,"PATCH",{progressStatus:"complete",needsAttention:false},owner),env);
+ const final=await handleComponents(request(endpoint,"PATCH",{progressStatus:"complete",needsAttention:false,expectedRevision:part.revision},owner),env);
  assert.equal(final.status,200);
  const components=await handleComponents(request("/api/components?project="+project,"GET",undefined,owner),env);
  assert.equal((await components.json()).components[0].progressStatus,"complete");
@@ -234,8 +234,11 @@ test("short summary and hierarchical quantities persist independently of existin
   name:"Quantity test",description:"Existing directory description"
  },owner),env});
  const id=(await created.json()).projects.find(p=>p.name==="Quantity test").id;
- const patch=body=>projectsApi({request:request("/api/projects","PATCH",{id,...body},owner),env});
- assert.equal((await patch({summary:"Keep this long summary."})).status,200);
+ let summaryRevision=null;
+ const patch=body=>projectsApi({request:request("/api/projects","PATCH",{id,...body,expectedRevision:summaryRevision},owner),env});
+ const firstSummary=await read(await patch({summary:"Keep this long summary."}));
+ assert.equal(firstSummary.status,200);
+ summaryRevision=firstSummary.data.projects.find(p=>p.id===id).summaryRevision;
  assert.equal((await patch({shortSummary:"a".repeat(41)})).status,400);
  assert.equal((await patch({shortSummary:"Two\nlines"})).status,400);
  const result=await read(await patch({shortSummary:"a".repeat(40)}));
@@ -260,24 +263,25 @@ test("short summary and hierarchical quantities persist independently of existin
  },owner),env);
  assert.equal(newPart.status,201);
  const original=(await newPart.json()).component;
- const partRequest=quantity=>handleComponents(request(partUrl+"&id="+original.id,"PATCH",{quantity},owner),env);
+ const partRequest=(quantity,expectedRevision=null)=>handleComponents(request(partUrl+"&id="+original.id,"PATCH",{quantity,expectedRevision},owner),env);
  assert.equal((await partRequest(0)).status,400);
  const updated=await read(await partRequest(3.5));
  assert.equal(updated.status,200);
  assert.equal(updated.data.component.quantity,3.5);
  assert.equal(updated.data.component.description,original.description);
  assert.equal(updated.data.component.quantityUnit,"mm");
- assert.equal((await read(await partRequest(null))).data.component.quantity,null);
+ const cleared=(await read(await partRequest(null,updated.data.component.revision))).data.component;
+ assert.equal(cleared.quantity,null);
  const offers=[{vendor:"other",supplierName:"JLCPCB",sku:"",url:"https://jlcpcb.com/"}];
  const custom=await read(await handleComponents(request(partUrl+"&id="+original.id,"PUT",{
-  ...original,partType:"custom_purchased",supplier:"JLCPCB",supplierOffers:offers,
+  ...cleared,expectedRevision:cleared.revision,partType:"custom_purchased",supplier:"JLCPCB",supplierOffers:offers,
   historicalPrice:12.50,historicalPurchasePrice:12.50,historicalPriceDate:"2026-11-19"
  },owner),env));
  assert.equal(custom.status,200);
  assert.equal(custom.data.component.partType,"custom_purchased");
  assert.equal(custom.data.component.historicalPrice,12.50);
  assert.equal(custom.data.component.supplier,"JLCPCB");
- const caption=await read(await handleComponents(request(partUrl+"&id="+original.id,"PATCH",{treeDescription:"PCB assembly"},owner),env));
+ const caption=await read(await handleComponents(request(partUrl+"&id="+original.id,"PATCH",{treeDescription:"PCB assembly",expectedRevision:custom.data.component.revision},owner),env));
  assert.equal(caption.status,200);
  assert.equal(caption.data.component.projectDetails.featureTreeName,"PCB assembly");
  assert.equal(caption.data.component.supplier,"JLCPCB");

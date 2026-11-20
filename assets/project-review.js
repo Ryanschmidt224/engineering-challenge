@@ -113,14 +113,15 @@ window.BSReview=(()=>{
     dialog.close();location.hash=targetHash(project,proposal);
    };
    actions.append(go);
-   for(const [action,label] of [["approve","Approve and apply"],["reject","Reject"]]){
+   for(const [action,label] of [["approve",proposal.approvalBase?"Finish approval":"Approve and apply"],["reject","Reject"]]){
     const button=el("button","btn"+(action==="approve"?" primary":""),label);
     button.onclick=async()=>{
+     const buttons=[...actions.querySelectorAll("button")];buttons.forEach(b=>b.disabled=true);
      try{
       await request("PATCH",api(project),{id:proposal.id,action});
       section.remove();
       await refresh(project);
-     }catch(error){message.textContent=error.message}
+     }catch(error){message.textContent=error.message;buttons.forEach(b=>b.disabled=false)}
     };
     actions.append(button);
    }

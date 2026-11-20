@@ -36,7 +36,18 @@ async function setup(){
  assert.equal(linked.status,200);
  assert.equal(await isAdmin(new Request(base+"/api/auth",{headers:{"cookie":cookie}}),env),true);
  const req=(path,method="GET",body)=>new Request(base+path,{method,headers:{cookie,...(body?{"content-type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
- return {env,req};
+ // This editor carries its last successful per-part revision across sequential saves.
+ const revisions=new Map();
+ async function editPart(path,method,changes){
+  const id=new URL(base+path).searchParams.get("id");
+  const response=await handleComponents(req(path,method,{...changes,expectedRevision:revisions.get(id)??null}),env);
+  if(response.ok){
+   const {component}=await response.clone().json();
+   revisions.set(component.id,component.revision??null);
+  }
+  return response;
+ }
+ return {env,req,editPart};
 }
 test("Code items store immutable versions and reject stale writes",async()=>{
  const {env,req}=await setup(),path="/api/part-code?project=launcher&id="+id;
@@ -54,13 +65,13 @@ test("Code items store immutable versions and reject stale writes",async()=>{
  assert.equal((await handlePartCode(req(path,"PUT",{source:"stale",language:"text",filename:"x.txt",expectedRevision:first}),env)).status,409);
 });
 test("Changing names and types preserves unrelated component data",async()=>{
- const {env,req}=await setup(),path="/api/components?project=launcher&id="+id;
- let res=await handleComponents(req(path,"PATCH",{name:"Controller program",progressStatus:"complete"}),env);
+ const {env,req,editPart}=await setup(),path="/api/components?project=launcher&id="+id;
+ let res=await editPart(path,"PATCH",{name:"Controller program",progressStatus:"complete"});
  assert.equal(res.status,200);let saved=(await res.json()).component;
  assert.equal(saved.name,"Controller program");assert.equal(saved.progressStatus,"complete");
- res=await handleComponents(req(path,"PATCH",{partType:"custom"}),env);
+ res=await editPart(path,"PATCH",{partType:"custom"});
  saved=(await res.json()).component;assert.equal(saved.itemType,"part");
- res=await handleComponents(req(path,"PATCH",{partType:"code"}),env);
+ res=await editPart(path,"PATCH",{partType:"code"});
  saved=(await res.json()).component;assert.equal(saved.itemType,"document");
 });
 test("Project exports include Code current files and revision snapshots",()=>{
@@ -71,7 +82,7 @@ test("Project exports include Code current files and revision snapshots",()=>{
 
 
 test("Assigning the next number to an existing purchased part works and locks issued numbers",async()=>{
- const {env,req}=await setup();
+ const {env,req,editPart}=await setup();
  const path="/api/components?project=launcher&id="+id;
  const payload={
   name:"Motor controller",itemType:"part",partType:"purchased",description:"",
@@ -79,37 +90,37 @@ test("Assigning the next number to an existing purchased part works and locks is
   historicalPurchasePrice:null,historicalPriceBasis:"per_part",historicalPriceDate:null,
   manufacturer:"",model:"",supplier:"",asin:""
  };
- let response=await handleComponents(req(path,"PUT",payload),env);
+ let response=await editPart(path,"PUT",payload);
  assert.equal(response.status,200,await response.text().catch(()=>"<unreadable>"));
  let part=(await (await handleComponents(req("/api/components?project=launcher"),env)).json()).components.find(p=>p.id===id);
  assert.match(part.partNumber,/^NR\d{3,}$/);
  assert.equal(part.fullName,part.partNumber+" - Motor controller");
  const original=part.partNumber;
- response=await handleComponents(req(path,"PUT",{...payload,partNumber:original,assignNumber:false}),env);
+ response=await editPart(path,"PUT",{...payload,partNumber:original,assignNumber:false});
  assert.equal(response.status,200);
- response=await handleComponents(req(path,"PUT",{...payload,partNumber:"NR999",assignNumber:false}),env);
+ response=await editPart(path,"PUT",{...payload,partNumber:"NR999",assignNumber:false});
  assert.equal(response.status,409);
  part=(await (await handleComponents(req("/api/components?project=launcher"),env)).json()).components.find(p=>p.id===id);
  assert.equal(part.partNumber,original);
 });
 
 test("Purchase status is independent from manufacturing progress and attention notes",async()=>{
- const {env,req}=await setup(),path="/api/components?project=launcher&id="+id;
- let response=await handleComponents(req(path,"PATCH",{partType:"purchased",purchaseStatus:"need_to_buy",progressStatus:"complete",needsAttention:true,attentionNote:"Check motor direction"}),env);
+ const {env,req,editPart}=await setup(),path="/api/components?project=launcher&id="+id;
+ let response=await editPart(path,"PATCH",{partType:"purchased",purchaseStatus:"need_to_buy",progressStatus:"complete",needsAttention:true,attentionNote:"Check motor direction"});
  assert.equal(response.status,200);
  let part=(await response.json()).component;
  assert.equal(part.purchaseStatus,"need_to_buy");
  assert.equal(part.progressStatus,"complete");
  assert.equal(part.needsAttention,true);
  assert.equal(part.attentionNote,"Check motor direction");
- response=await handleComponents(req(path,"PATCH",{partType:"custom"}),env);
+ response=await editPart(path,"PATCH",{partType:"custom"});
  assert.equal(response.status,200);
  part=(await response.json()).component;
  assert.equal(part.progressStatus,"complete");
  assert.equal(part.purchaseStatus,"need_to_buy");
- response=await handleComponents(req(path,"PATCH",{purchaseStatus:"invalid"}),env);
+ response=await editPart(path,"PATCH",{purchaseStatus:"invalid"});
  assert.equal(response.status,400);
- response=await handleComponents(req(path,"PATCH",{partType:"purchased",purchaseStatus:"not_started"}),env);
+ response=await editPart(path,"PATCH",{partType:"purchased",purchaseStatus:"not_started"});
  assert.equal(response.status,200);
  part=(await response.json()).component;
  assert.equal(part.purchaseStatus,"not_started");
@@ -127,79 +138,79 @@ test("Missing legacy purchase status displays Not started without modifying the 
 });
 
 test("Progress Status notes append chronologically and survive later status changes",async()=>{
- const {env,req}=await setup(),path="/api/components?project=launcher&id="+id;
- let response=await handleComponents(req(path,"PATCH",{progressStatus:"in_progress"}),env);
+ const {env,req,editPart}=await setup(),path="/api/components?project=launcher&id="+id;
+ let response=await editPart(path,"PATCH",{progressStatus:"in_progress"});
  assert.equal(response.status,200);
- response=await handleComponents(req(path,"PATCH",{progressUpdate:"Material ordered"}),env);
+ response=await editPart(path,"PATCH",{progressUpdate:"Material ordered"});
  assert.equal(response.status,200);
  let first=(await response.json()).component;
  assert.equal(first.progressUpdates.length,1);
  assert.equal(first.progressUpdates[0].text,"Material ordered");
  assert.ok(first.progressUpdates[0].id);
  assert.ok(first.progressUpdates[0].createdAt);
- response=await handleComponents(req(path,"PATCH",{progressUpdate:"Waiting on paint"}),env);
+ response=await editPart(path,"PATCH",{progressUpdate:"Waiting on paint"});
  assert.equal(response.status,200);
  const second=(await response.json()).component;
  assert.deepEqual(second.progressUpdates.map(item=>item.text),["Material ordered","Waiting on paint"]);
  assert.notEqual(second.progressUpdates[0].id,second.progressUpdates[1].id);
- response=await handleComponents(req(path,"PATCH",{progressStatus:"complete"}),env);
+ response=await editPart(path,"PATCH",{progressStatus:"complete"});
  assert.equal(response.status,200);
  const completed=(await response.json()).component;
  assert.equal(completed.progressUpdates.length,2);
- response=await handleComponents(req(path,"PATCH",{progressUpdate:"Should not save"}),env);
+ response=await editPart(path,"PATCH",{progressUpdate:"Should not save"});
  assert.equal(response.status,400);
  const stored=JSON.parse(await (await env.PHOTOS.get("components/launcher.json")).text());
  assert.deepEqual(stored[0].progressUpdates.map(item=>item.text),["Material ordered","Waiting on paint"]);
 });
 
 test("Progress Status notes reject blanks, oversized notes, and non-progress parts",async()=>{
- const {env,req}=await setup(),path="/api/components?project=launcher&id="+id;
- assert.equal((await handleComponents(req(path,"PATCH",{progressUpdate:"not started yet"}),env)).status,400);
- assert.equal((await handleComponents(req(path,"PATCH",{progressStatus:"in_progress",progressUpdate:"  "}),env)).status,400);
- assert.equal((await handleComponents(req(path,"PATCH",{progressStatus:"in_progress",progressUpdate:"x".repeat(501)}),env)).status,400);
- let response=await handleComponents(req(path,"PATCH",{progressStatus:"in_progress",progressUpdate:"   Inspection complete   "}),env);
+ const {env,req,editPart}=await setup(),path="/api/components?project=launcher&id="+id;
+ assert.equal((await editPart(path,"PATCH",{progressUpdate:"not started yet"})).status,400);
+ assert.equal((await editPart(path,"PATCH",{progressStatus:"in_progress",progressUpdate:"  "})).status,400);
+ assert.equal((await editPart(path,"PATCH",{progressStatus:"in_progress",progressUpdate:"x".repeat(501)})).status,400);
+ let response=await editPart(path,"PATCH",{progressStatus:"in_progress",progressUpdate:"   Inspection complete   "});
  assert.equal(response.status,200);
  const part=(await response.json()).component;
  assert.equal(part.progressUpdates[0].text,"Inspection complete");
 });
 
 test("Progress operations can be added as blank editable steps and edited in place",async()=>{
- const {env,req}=await setup(),path="/api/components?project=launcher&id="+id;
- let response=await handleComponents(req(path,"PATCH",{progressStatus:"in_progress",progressOperationAdd:true}),env);
+ const {env,req,editPart}=await setup(),path="/api/components?project=launcher&id="+id;
+ let response=await editPart(path,"PATCH",{progressStatus:"in_progress",progressOperationAdd:true});
  assert.equal(response.status,200);
  const first=(await response.json()).component;
  assert.equal(first.progressUpdates.length,1);
  assert.equal(first.progressUpdates[0].text,"");
  const operationId=first.progressUpdates[0].id;
- response=await handleComponents(req(path,"PATCH",{progressOperationEdit:{id:operationId,text:"Material ordered"}}),env);
+ response=await editPart(path,"PATCH",{progressOperationEdit:{id:operationId,text:"Material ordered"}});
  assert.equal(response.status,200);
  assert.deepEqual((await response.json()).component.progressUpdates.map(item=>item.text),["Material ordered"]);
- response=await handleComponents(req(path,"PATCH",{progressOperationAdd:true}),env);
+ response=await editPart(path,"PATCH",{progressOperationAdd:true});
  assert.equal(response.status,200);
  const second=(await response.json()).component;
  const nextId=second.progressUpdates[1].id;
- response=await handleComponents(req(path,"PATCH",{progressOperationEdit:{id:nextId,text:"Waiting on paint"}}),env);
+ response=await editPart(path,"PATCH",{progressOperationEdit:{id:nextId,text:"Waiting on paint"}});
  assert.equal(response.status,200);
  const result=(await response.json()).component;
  assert.deepEqual(result.progressUpdates.map(item=>item.text),["Material ordered","Waiting on paint"]);
  assert.equal(result.progressUpdates[0].id,operationId);
  assert.equal(result.progressUpdates[1].id,nextId);
- response=await handleComponents(req(path,"PATCH",{progressOperationEdit:{id:operationId,text:"Material received"}}),env);
+ response=await editPart(path,"PATCH",{progressOperationEdit:{id:operationId,text:"Material received"}});
  assert.equal(response.status,200);
  assert.deepEqual((await response.json()).component.progressUpdates.map(item=>item.text),["Material received","Waiting on paint"]);
- response=await handleComponents(req(path,"PATCH",{progressStatus:"complete"}),env);
+ response=await editPart(path,"PATCH",{progressStatus:"complete"});
  assert.equal(response.status,200);
  assert.equal((await response.json()).component.progressUpdates.length,2);
- response=await handleComponents(req(path,"PATCH",{progressOperationEdit:{id:operationId,text:"Change after completion"}}),env);
+ response=await editPart(path,"PATCH",{progressOperationEdit:{id:operationId,text:"Change after completion"}});
  assert.equal(response.status,200);
  assert.deepEqual((await response.json()).component.progressUpdates.map(item=>item.text),["Change after completion","Waiting on paint"]);
- response=await handleComponents(req(path,"PATCH",{progressOperationAdd:true}),env);
+ response=await editPart(path,"PATCH",{progressOperationAdd:true});
  assert.equal(response.status,200);
  assert.equal((await response.json()).component.progressUpdates.length,3);
 });
 
 test("supplier entries preserve distinct distributor order codes and legacy Amazon ASINs",async()=>{
- const {env,req}=await setup();
+ const {env,req,editPart}=await setup();
  const basePath="/api/components?project=launcher";
  const offers=[
   {vendor:"digikey",sku:"KE1102-ND",url:"https://www.digikey.com/en/products/detail/example/123"},
@@ -215,19 +226,19 @@ test("supplier entries preserve distinct distributor order codes and legacy Amaz
  assert.deepEqual(created.supplierOffers,offers);
  assert.equal(created.asin,"B0149K4JTY");
  const id=created.id;
- response=await handleComponents(req(basePath+"&id="+id,"PUT",{
+ response=await editPart(basePath+"&id="+id,"PUT",{
   name:"Solder wire",partType:"purchased",itemType:"part",quantity:1,quantityUnit:"pcs",
   manufacturer:"Kester",model:"",supplier:"",asin:"B0149K4JTY",specifications:[],
   supplierOffers:offers.slice(1)
- }),env);
+ });
  assert.equal(response.status,200);
  const updated=(await response.json()).component;
  assert.equal(updated.supplierOffers.length,2);
  assert.equal(updated.asin,"B0149K4JTY");
- response=await handleComponents(req(basePath+"&id="+id,"PUT",{
+ response=await editPart(basePath+"&id="+id,"PUT",{
   name:"Solder wire",partType:"purchased",itemType:"part",quantity:1,quantityUnit:"pcs",
   specifications:[],supplierOffers:[{vendor:"digikey",sku:"bad",url:"https://amazon.com/dp/B0149K4JTY"}]
- }),env);
+ });
  assert.equal(response.status,400);
  response=await handleComponents(req(basePath,"POST",{
   name:"Invalid link",specifications:[],

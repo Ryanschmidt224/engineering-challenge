@@ -20,6 +20,12 @@ const normalizeTags=value=>{
  return result;
 };
 const safeRecords=value=>Array.isArray(value?.projects)?value.projects.filter(p=>p&&typeof p.id==="string"&&VALID_PROJECT_ID.test(p.id)):[];
+function staleSummary(input,item){
+ const revision=item.summaryRevision??null;
+ if((input.expectedRevision??null)===revision)return null;
+ return json({error:"The project summary changed since you opened it.",revision,
+  current:{shortSummary:item.shortSummary??"",summary:item.summary??item.description??"",summaryRevision:revision}},409);
+}
 export async function readCatalog(env){
  if(!env.PHOTOS)throw Error("Project storage unavailable");
  const object=await env.PHOTOS.get(CATALOG_KEY);
@@ -115,6 +121,11 @@ export async function onRequest({request,env}){
     if(!["locked","approval"].includes(input.editMode))return json({error:"Invalid editing mode"},400);
     changed.editMode=input.editMode;
    }
+   if(input.shortSummary!==undefined||input.summary!==undefined){
+    const stale=staleSummary(input,item);
+    if(stale)return stale;
+    changed.summaryRevision=crypto.randomUUID();
+   }
    if(input.shortSummary!==undefined){
     if(typeof input.shortSummary!=="string"||input.shortSummary.length>40||/[\r\n\u2028\u2029]/.test(input.shortSummary))
      return json({error:"Short project summary must be a single line of at most 40 characters"},400);
@@ -131,7 +142,15 @@ export async function onRequest({request,env}){
  }
  const condition=catalog.etag?{onlyIf:{etagMatches:catalog.etag}}:{onlyIf:{etagDoesNotMatch:"*"}};
  const saved=await env.PHOTOS.put(CATALOG_KEY,JSON.stringify({schemaVersion:1,projects:updated}),condition);
- if(saved===null)return json({error:"Project list changed. Refresh and retry."},409);
+ if(saved===null){
+  if(method==="PATCH"&&(input.shortSummary!==undefined||input.summary!==undefined)){
+   const latest=(await readCatalog(env)).projects.find(p=>p.id===input.id);
+   if(latest&&!latest.archived&&(latest.ownerId===user?.id||latest.builtIn&&admin)){
+    return staleSummary(input,latest)||json({error:"Another project was updated. Try saving your draft again."},409);
+   }
+  }
+  return json({error:"Project list changed. Refresh and retry."},409);
+ }
  const {projects}=await readCatalog(env);
  return json({ok:true,projects:projects.filter(p=>!p.archived&&((p.ownerId===user?.id)||(p.visibility==="public")||p.builtIn))});
 }

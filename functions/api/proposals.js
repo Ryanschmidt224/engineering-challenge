@@ -52,27 +52,59 @@ export async function handleProposals(request,env){
  }
  if(!owner)return json({error:"Only the owner can approve changes"},403);
  if(typeof input.id!=="string"||!UUID.test(input.id)||!["approve","reject"].includes(input.action))return json({error:"Invalid review decision"},400);
- const data=await read(env,project),proposal=data.entries.find(p=>p.id===input.id);
- if(!proposal)return json({error:"Suggestion not found"},404);
- if(proposal.status!=="pending")return json({error:"Suggestion already reviewed"},409);
- if(input.action==="approve"){
-  const key=locationKey(project,proposal.scope,proposal.targetId),object=await env.PHOTOS.get(key);
-  if(!object)return json({error:"Instruction was deleted"},409);
-  const workspace=JSON.parse(await object.text());
-  const step=workspace.recipe?.find(step=>step.id===proposal.stepId);
-  if(!step||String(step[proposal.field]||"")!==proposal.originalText)return json({error:"Instruction changed since proposal. Review and resubmit against latest text."},409);
-  const before={recipe:structuredClone(workspace.recipe||[]),resources:structuredClone(workspace.resources||{}),experiments:structuredClone(workspace.experiments||[])};
-  const snapshot={savedAt:workspace.updatedAt||new Date().toISOString(),revision:workspace.revision??null,...before};
-  Object.assign(workspace,await retainHistory(env.PHOTOS,key,workspace,snapshot));
-  step[proposal.field]=proposal.suggestedText;
-  workspace.revision=crypto.randomUUID();workspace.updatedAt=new Date().toISOString();
-  const applied=await env.PHOTOS.put(key,JSON.stringify(workspace),{onlyIf:{etagMatches:object.etag}});
-  if(!applied)return json({error:"Instruction was edited during approval. Try again."},409);
+ try{return await reviewProposal(env,project,input)}
+ catch(error){
+  console.error("Suggestion review interrupted",error);
+  return json({error:"The review could not finish. Retry the same decision."},503);
  }
- proposal.status=input.action==="approve"?"approved":"rejected";
- proposal.reviewedAt=new Date().toISOString();
- if(!await save(env,project,data.entries,data.etag))return json({error:"Change was applied, but review log could not be updated. Check before retrying."},409);
- return json({proposal});
+}
+
+async function reviewProposal(env,project,input){
+ const desired=input.action==="approve"?"approved":"rejected";
+ for(let attempt=0;attempt<5;attempt++){
+  const data=await read(env,project);
+  const proposal=data.entries.find(p=>p.id===input.id);
+  if(!proposal)return json({error:"Suggestion not found"},404);
+  if(proposal.status!=="pending")return proposal.status===desired?json({proposal}):json({error:"Suggestion already "+proposal.status},409);
+  let decision=desired,reviewedAt=new Date().toISOString();
+  if(desired==="approved"||proposal.approvalBase){
+   const key=locationKey(project,proposal.scope,proposal.targetId);
+   const object=await env.PHOTOS.get(key);
+   const workspace=object?JSON.parse(await object.text()):null;
+   const receipt=workspace?.appliedProposals?.[proposal.id];
+   if(receipt){
+    decision="approved";reviewedAt=receipt;
+   }else if(desired==="approved"){
+    const step=workspace?.recipe?.find(item=>item.id===proposal.stepId);
+    const text=String(step?.[proposal.field]||"");
+    if(!step||(text!==proposal.originalText&&text!==proposal.suggestedText))
+     return json({error:"Instruction changed since proposal. Review the current instruction."},409);
+    // Claim the decision before touching the workspace, so a concurrent rejection cannot win.
+    if(proposal.approvalBase!==object.etag){
+     proposal.approvalBase=object.etag;
+     await save(env,project,data.entries,data.etag);
+     continue;
+    }
+    // A previously interrupted legacy approval can already have the requested text.
+    if(text!==proposal.suggestedText){
+     const snapshot={savedAt:workspace.updatedAt||reviewedAt,revision:workspace.revision??null,
+      recipe:structuredClone(workspace.recipe||[]),resources:workspace.resources||{},experiments:workspace.experiments||[]};
+     Object.assign(workspace,await retainHistory(env.PHOTOS,key,workspace,snapshot));
+     step[proposal.field]=proposal.suggestedText;
+     workspace.revision=crypto.randomUUID();workspace.updatedAt=reviewedAt;
+    }
+    workspace.appliedProposals={...workspace.appliedProposals,[proposal.id]:reviewedAt};
+    const written=await env.PHOTOS.put(key,JSON.stringify(workspace),{onlyIf:{etagMatches:object.etag}});
+    if(!written)continue;
+   }else if(object&&proposal.approvalBase===object.etag){
+    return json({error:"Approval is in progress. Retry approval to finish it."},409);
+   }
+  }
+  proposal.status=decision;proposal.reviewedAt=reviewedAt;delete proposal.approvalBase;
+  if(await save(env,project,data.entries,data.etag))
+   return decision===desired?json({proposal}):json({error:"Suggestion already approved"},409);
+ }
+ return json({error:"Another edit is still in progress. Retry this decision."},409);
 }
 
 export async function onRequest({request,env}){return handleProposals(request,env)}

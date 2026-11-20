@@ -99,7 +99,7 @@ export async function handleWorkspace(request,env){
   }
   const obj=await env.PHOTOS.get(key);
   const saved=obj?JSON.parse(await obj.text()):{};
-  const {instructions,procedures,notes,...workspace}=saved;
+  const {instructions,procedures,notes,appliedProposals,...workspace}=saved;
   return json({workspace:{recipe:[],resources:emptyResources(),...workspace,
    history:Array.isArray(workspace.history)?workspace.history.map(({instructions,procedures,notes,...snapshot})=>snapshot):[]}});
  }
@@ -140,6 +140,7 @@ export async function handleWorkspace(request,env){
  const hasLegacy=["instructions","procedures","notes"].some(field=>Object.hasOwn(previous,field));
  const changed=hasLegacy||JSON.stringify(before)!==JSON.stringify(workspace);
  const snapshot=changed&&existing?{savedAt:previous.updatedAt||new Date().toISOString(),revision:previous.revision??null,...before}:null;
+ if(previous.appliedProposals)workspace.appliedProposals=previous.appliedProposals;
  Object.assign(workspace,await retainHistory(env.PHOTOS,key,previous,snapshot));
  workspace.updatedAt=changed?new Date().toISOString():(previous.updatedAt||new Date().toISOString());
  workspace.revision=changed||!previous.revision?crypto.randomUUID():previous.revision;

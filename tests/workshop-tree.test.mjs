@@ -55,8 +55,17 @@ test("Feature tree uses explicit show/hide controls for Workshop items and docum
  assert.match(source,/filterOption\("Show documents"/);
  for(const old of ["Purchased","Custom","Tools","Documents","Hidden parts"])
   assert.ok(!source.includes('filterOption("'+old+'"'),"Old tree filter remains: "+old);
- assert.match(source,/partWorkshopItems\.get\(node\.partId\)===true/);
- assert.match(source,/return !isHiddenPart\(node\)/);
+ const code=source.slice(source.indexOf("const includeTreeNode="),source.indexOf("const referenceTreeDescription="));
+ const flags={showWorkshopItems:true,showTreeDocuments:true,showHiddenParts:false};
+ const sandbox={...flags,isPartNode:n=>n.kind==="part",isHiddenPart:n=>n.hidden,isDocumentNode:n=>n.document,
+  partWorkshopItems:new Map([["workshop-part",true]])};
+ const visible=runInNewContext(code+";includeTreeNode",sandbox);
+ const part={kind:"part",partId:"workshop-part",document:true,hidden:true};
+ assert.equal(visible(part),false);
+ sandbox.showHiddenParts=true;assert.equal(visible(part),true);
+ sandbox.showWorkshopItems=false;assert.equal(visible(part),false);
+ sandbox.showWorkshopItems=true;sandbox.showTreeDocuments=false;assert.equal(visible(part),false);
+ assert.equal(visible({kind:"assembly"}),true);
 });
 test("Parts Management input backgrounds and column grips are uncluttered",()=>{
  const css=readFileSync("assets/parts-management.css","utf8");
@@ -104,7 +113,9 @@ test("Workshop detail editing is tied to the opened record, with one image-adjac
  const css=readFileSync("assets/workshop.css","utf8");
  const shared=source.slice(source.indexOf("  function showItem("),source.indexOf("  function openItemEditor("));
  assert.doesNotMatch(shared,/Edit shared catalog|Edit My Workshop copy|Edit item in My Workshop/);
- assert.match(shared,/if\(canEditCatalog\(item\)\)\s*mediaWithEdit\.append\(itemButton\("Edit"/);
+ assert.match(shared,/if\(canEditCatalog\(item\)\)\s*mediaButtons\.append\(itemButton\("Edit",\(\)=>openItemEditor\(item\)/);
+ assert.equal((shared.match(/itemButton\("Edit"/g)||[]).length,1);
+ assert.match(shared,/mediaWithEdit\.append\(mediaButtons\)/);
  assert.match(shared,/itemButton\("View in My Workshop",\(\)=>showPersonalItem\(owned\[0\]\.id\)/);
  const personal=source.slice(source.indexOf("  function showPersonalItem("),source.indexOf("  function showItem("));
  assert.equal((personal.match(/itemButton\("Edit"/g)||[]).length,1);

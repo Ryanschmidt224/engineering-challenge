@@ -387,7 +387,7 @@ test("Workshop reload replaces project part details and the active photo in one 
  assert.deepEqual(await readPhoto(view,handlePhotoAnnotations),[1,2,3]);
  await env.PHOTOS.put(partPhotoKey,new Uint8Array([9]),{httpMetadata:{contentType:"image/png"}});
  await env.PHOTOS.put("photo-renders/"+partPhotoKey+".webp",new Uint8Array([8]),{httpMetadata:{contentType:"image/webp"}});
- const reload=()=>handleComponents(request(components+"&id="+partId,"PATCH",{reloadWorkshop:true},session),env);
+ const reload=(expectedRevision=null)=>handleComponents(request(components+"&id="+partId,"PATCH",{reloadWorkshop:true,expectedRevision},session),env);
  assert.deepEqual(await readPhoto(view,handlePhotoAnnotations),[8]);
  const result=await data(await reload());
  assert.equal(result.status,200,JSON.stringify(result.body));
@@ -410,13 +410,13 @@ test("Workshop reload replaces project part details and the active photo in one 
  await env.PHOTOS.delete(photoKey);
  item.name="Unsaved because photo is missing";
  await saveWorkshop();
- assert.equal((await reload()).status,409);
+ assert.equal((await reload(component.revision)).status,409);
  assert.deepEqual(await readPhoto(view,handlePhotoAnnotations),[1,2,3]);
  const peek=await data(await handleComponents(request(components),env));
  assert.equal(peek.body.components.find(p=>p.id===partId).name,"Current switch");
  item.photos=[];
  await saveWorkshop();
- assert.equal((await reload()).status,200);
+ assert.equal((await reload(component.revision)).status,200);
  assert.equal((await handlePhotoAnnotations(request(view),env)).status,404);
  assert.equal((await handleComponentPhoto(request(photo),env)).status,404);
 });
