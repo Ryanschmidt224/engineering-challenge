@@ -43,6 +43,7 @@ export async function linkedWorkshopItem(request,env,part,read=key=>readJSON(env
 }
 
 export const workshopSourcing=item=>({
+ supplierPartNumber:String(item.supplierPartNumber??"").trim().slice(0,160),
  url:String(item.supplierUrl??"").trim().slice(0,1200),
  price:String(item.price??"").trim().slice(0,80),
  packageQuantity:String(item.packageQuantity??"").trim().slice(0,80)

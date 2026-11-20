@@ -369,7 +369,7 @@ test("Workshop reload replaces project part details and the active photo in one 
   projectDetails:{workshopReferenceId:workshopId,changes:"Local change",notes:"Local note",value:"10 kΩ"},
   specifications:[{name:"Old spec",value:"Old value"}]};
  await env.PHOTOS.put("components/launcher.json",JSON.stringify([original]));
- const expectedSourcing={url:item.supplierUrl,price:item.price,packageQuantity:item.packageQuantity};
+ const expectedSourcing={supplierPartNumber:item.supplierPartNumber||"",url:item.supplierUrl,price:item.price,packageQuantity:item.packageQuantity};
  const existing=await data(await handleComponents(request(components),env));
  assert.deepEqual(existing.body.components[0].workshopSourcing,expectedSourcing);
  assert.equal(JSON.parse(await (await env.PHOTOS.get("components/launcher.json")).text())[0].workshopSourcing,undefined);

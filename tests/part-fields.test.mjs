@@ -179,3 +179,13 @@ test("purchased custom parts expose purchase costs and buying status",()=>{
  assert.equal(fields.estimateCost([part]).total,25);
  assert.equal(fields.detailRows(part).find(([label])=>label==="Supplier")[1],"JLCPCB");
 });
+
+test("expanded identity keeps value separate and groups supplier ordering identifiers",()=>{
+ const part={name:"1/4 Watt Resistor",projectDetails:{value:"350"},supplier:"DigiKey",asin:"B07BL2VX1",
+  workshopSourcing:{supplierPartNumber:"ABC-ND"}};
+ const rows=fields.detailRows(part);
+ assert.equal(rows.find(([label])=>label==="Part name")[1],"1/4 Watt Resistor");
+ assert.equal(rows.find(([label])=>label==="Value")[1],"350Ω");
+ assert.deepEqual(Array.from(rows.filter(([label])=>label==="Supplier"),row=>row[1]),["DigiKey · ABC-ND","Amazon · ASIN B07BL2VX1"]);
+ assert.equal(rows.some(([label])=>label==="ASIN"),false);
+});

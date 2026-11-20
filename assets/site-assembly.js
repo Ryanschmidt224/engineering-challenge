@@ -1029,7 +1029,7 @@ function setupAssemblyTrees(){
     if(part.quantity!=null&&Number.isFinite(Number(part.quantity)))
      cost+=" · "+dollars.format(Number(unitCost)*Number(part.quantity))+" total";
    }
-   const summary=[values.get("Part name"),treeDescription(part.projectDetails,part.description),quantity,cost];
+   const summary=[window.BSPartFields.displayName(part),treeDescription(part.projectDetails,part.description),quantity,cost];
    detailSummary.textContent=summary.filter(Boolean).join(" · ");
    const appendDetail=(title,value,isLink=false)=>{
     if(value===null||value===undefined||String(value).trim()==="")return;
@@ -1042,7 +1042,7 @@ function setupAssemblyTrees(){
    };
    for(const [title,value] of fields)appendDetail(title,value);
    appendDetail("Order URL",sourcing.url,true);
-   const specs=(part.specifications||[]).filter(spec=>!window.BSPartFields.isPurchased(part)||!window.BSPartFields.sourcingLabels.includes(spec.name));
+   const specs=(part.specifications||[]).filter(spec=>!window.BSPartFields.isPurchased(part)||!window.BSPartFields.sourcingLabels.includes(spec.name)&&spec.name!=="Supplier part number");
    if(specs.length){
     const heading=document.createElement("h3");heading.textContent="Specifications";detailRows.append(heading);
     for(const spec of specs){

@@ -80,13 +80,32 @@
   display:["isTool","hideFromFeatureTree"],
   specifications:["specifications"]
  });
+ function supplierLines(part){
+  if(part.partType==="custom")return [];
+  const suppliers=new Map();
+  const add=(name,code="",amazon=false)=>{
+   name=String(name||"").trim();code=String(code||"").trim();
+   if(!name&&!code)return;
+   const text=[name||"Supplier",code?(amazon?"ASIN ":"")+code:""].filter(Boolean).join(" · ");
+   suppliers.set(text.toLowerCase(),text);
+  };
+  const code=part.workshopSourcing?.supplierPartNumber||(part.specifications||[]).find(spec=>spec.name==="Supplier part number")?.value||"";
+  const offers=part.supplierOffers||[];
+  const labels={digikey:"DigiKey",mouser:"Mouser",newark:"Newark",arrow:"Arrow",amazon:"Amazon",mcmaster:"McMaster-Carr",other:"Other"};
+  const matching=offers.filter(offer=>(offer.supplierName||labels[offer.vendor]||offer.vendor).toLowerCase()===String(part.supplier||"").toLowerCase());
+  if(part.supplier&&(!matching.length||code))add(part.supplier,/amazon/i.test(part.supplier)?part.asin||code:code,/amazon/i.test(part.supplier));
+  for(const offer of offers)add(offer.supplierName||labels[offer.vendor]||offer.vendor,offer.sku||(offer.vendor==="amazon"?part.asin:""),offer.vendor==="amazon");
+  if(!part.supplier&&!offers.length&&code)add("",code);
+  if(part.asin&&!offers.some(offer=>offer.vendor==="amazon"&&offer.sku===part.asin)&&!/amazon/i.test(part.supplier||""))add("Amazon",part.asin,true);
+  return [...suppliers.values()];
+ }
  function detailRows(part){
   const qty=part.quantity==null?"Not specified":String(part.quantity)+(part.quantityUnit?" "+part.quantityUnit:"");
   const sourcing=sourcingFor(part);
   const values={
    value:displayValue(part),featureTreeDescription:treeDescriptionFor(part),packageSize:sourcing.packageSize,cost:sourcing.price,
    partNumber:part.partNumber,
-   name:displayName(part),
+   name:part.name,
    itemType:labelFor([["part","Part"],["document","Document"],["code","Code"]],itemTypeFor(part)),
    partType:partTypeFor(part)==="code"?null:labelFor([["purchased","Off-the-shelf"],["custom","Custom — made in-house"],["custom_purchased","Custom — purchased"]],partTypeFor(part)),
    purchaseStatus:labelFor(statusesFor(part),statusValue(part)),
@@ -103,7 +122,7 @@
   const labels={value:"Value",featureTreeDescription:"Feature tree description",packageSize:"Package size",cost:"Cost",partNumber:"Part number",name:"Part name",itemType:"Item type",partType:"Part type",purchaseStatus:"Status",description:"Description",quantity:"Quantity",historicalPrice:"Historical part price",manufacturer:"Manufacturer",model:"Mfg part number",category:"Category",supplier:"Supplier",asin:"ASIN",isTool:"Tool",hideFromFeatureTree:"Hidden from feature tree"};
   const ordered=["name","value","featureTreeDescription","purchaseStatus","quantity","supplier","partNumber","asin","packageSize","cost"];
   const remaining=[...sectionFields.identity,...sectionFields.additional,...sectionFields.display].filter(key=>!ordered.includes(key));
-  return [...ordered,...remaining].map(key=>[labels[key],values[key]]).filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="");
+  return [...ordered,...remaining].flatMap(key=>key==="supplier"?supplierLines(part).map(value=>["Supplier",value]):key==="asin"?[]:[[labels[key],values[key]]]).filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="");
  }
  window.BSPartFields=Object.freeze({progressStatuses,purchaseStatuses,partTypeFor,itemTypeFor,isPurchased,statusesFor,statusField,statusValue,labelFor,sectionFields,detailRows,valueFor,displayValue,displayName,treeDescriptionFor,sourcingLabels,sourcingFor,estimateCost});
 })();
