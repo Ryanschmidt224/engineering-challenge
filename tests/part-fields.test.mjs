@@ -44,6 +44,16 @@ test("purchased and custom status options remain separate",()=>{
  assert.equal(fields.statusesFor(custom).some(([key])=>key==="need_to_buy"),false);
 });
 
+test("whole package estimate rounds combined quantities and reports incomplete materials",()=>{
+ const part={quantity:6,projectDetails:{workshopReferenceId:"workshop:resistor"},workshopSourcing:{price:"10",packageQuantity:"10"}};
+ const result=fields.estimateCost([part,{...part,quantity:7},{...part,quantity:null},{quantity:3}]);
+ assert.equal(result.total,13);
+ assert.equal(result.packageTotal,20);
+ assert.equal(result.packagePriced,2);
+ assert.equal(result.missingQuantity,1);
+ assert.equal(result.missingPrice,1);
+});
+
 test("expanded details follow shared editor field order and hide empty fields",()=>{
  const part={partNumber:"NR116",name:"Flywheel",itemType:"part",partType:"purchased",description:"Launches dart",quantity:2,purchaseStatus:"not_started",isTool:false,hideFromFeatureTree:false};
  const rows=fields.detailRows(part);

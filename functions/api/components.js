@@ -214,7 +214,7 @@ export async function handleComponents(request,env){
  if(request.method==="GET"){
   const parts=await read(env,project),lookup=workshopItemLookup(request,env);
   const components=await Promise.all(parts.map(async part=>{
-   if(!part.workshopSourcing&&part.partType!=="custom"&&part.itemType!=="document"&&workshopLinkId(part)){
+   if(part.partType!=="custom"&&part.itemType!=="document"&&workshopLinkId(part)){
     const source=await lookup(part).catch(()=>null);
     if(source)return presentPart({...part,workshopSourcing:workshopSourcing(source.item)});
    }

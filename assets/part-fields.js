@@ -20,15 +20,15 @@
   return Number.isFinite(amount)?amount:null;
  }
  function sourcingFor(part){
-  const empty={url:"",price:"",packageSize:"",unitCost:null,packageCost:null,source:""};
+  const empty={url:"",price:"",packageSize:"",packageCount:null,unitCost:null,packageCost:null,source:""};
   if(!isPurchased(part))return empty;
   const specification=name=>(part.specifications||[]).find(spec=>spec.name===name)?.value;
   const workshop=part.workshopSourcing||{};
   const url=[...(part.supplierOffers||[]).map(offer=>offer.url),specification(sourcingLabels[0]),workshop.url].find(value=>{
    try{const parsed=new URL(value);return parsed.protocol==="https:"&&!parsed.username&&!parsed.password}catch{return false}
   })||"";
-  const rawPrice=specification(sourcingLabels[1])||workshop.price||"";
-  const pack=specification(sourcingLabels[2])||workshop.packageQuantity||"";
+  const rawPrice=workshop.price||specification(sourcingLabels[1])||"";
+  const pack=workshop.packageQuantity||specification(sourcingLabels[2])||"";
   const count=/^(\d+)(?:\s*(?:pcs?\.?|pieces?|units?))?$/i.exec(String(pack).trim());
   const numericCount=count?Number(count[1]):null;
   const packageCount=Number.isSafeInteger(numericCount)&&numericCount>0?numericCount:null;
@@ -38,23 +38,33 @@
   if(historical!==null){
    const recordedPack=part.historicalPriceBasis==="per_package"&&part.historicalPackageQuantity>0?part.historicalPackageQuantity:null;
    const purchase=recordedPack?priceInUsd(part.historicalPurchasePrice)??historical*recordedPack:historical;
-   return {url,unitCost:historical,packageCost:recordedPack?purchase:packageCount?historical*packageCount:null,packageSize:recordedPack||pack,source:"historical",
+   return {url,unitCost:historical,packageCount:recordedPack||packageCount,packageCost:recordedPack?purchase:packageCount?historical*packageCount:null,packageSize:recordedPack||pack,source:"historical",
     price:dollars.format(purchase)+(recordedPack?" per package":" per unit")+" · recorded"+(part.historicalPriceDate?" "+part.historicalPriceDate:"")};
   }
   return {url,price:rawPrice?(reference===null?rawPrice:dollars.format(reference)+(pack?" per package":" per unit"))+" · Workshop reference":"",
-   packageSize:pack,packageCost:pack?reference:null,unitCost:reference!==null&&(!pack||packageCount)?reference/(packageCount||1):null,source:"workshop"};
+   packageSize:pack,packageCount,packageCost:pack?reference:null,unitCost:reference!==null&&(!pack||packageCount)?reference/(packageCount||1):null,source:"workshop"};
  }
  function estimateCost(parts){
-  let total=0,priced=0,workshop=0;
+  let total=0,priced=0,workshop=0,packageTotal=0,packagePriced=0,missingQuantity=0,missingPrice=0;
+  const packages=new Map();
   const materials=parts.filter(part=>!part.isTool&&itemTypeFor(part)==="part");
   for(const part of materials){
-   const {unitCost,source}=sourcingFor(part),quantity=Number(part.quantity);
-   if(unitCost===null||!Number.isFinite(quantity)||quantity<=0)continue;
+   const {unitCost,source,packageCount,packageCost,url}=sourcingFor(part),quantity=Number(part.quantity);
+   if(!Number.isFinite(quantity)||quantity<=0){missingQuantity++;continue}
+   if(unitCost===null){missingPrice++;continue}
    total+=unitCost*quantity;
    priced++;
    if(source==="workshop")workshop++;
+   if(packageCount&&packageCost!==null){
+    const identity=part.projectDetails?.workshopReferenceId||part.sharedPartRef||url||
+     (part.model?[part.manufacturer,part.model,part.supplier].join("|"):part.id||String(packagePriced));
+    const key=JSON.stringify([identity,packageCount,packageCost,part.quantityUnit||"pcs"]);
+    const group=packages.get(key)||{quantity:0,packageCount,packageCost};
+    group.quantity+=quantity;packages.set(key,group);packagePriced++;
+   }
   }
-  return {total,priced,workshop,materials:materials.length};
+  for(const group of packages.values())packageTotal+=Math.ceil(group.quantity/group.packageCount)*group.packageCost;
+  return {total,priced,workshop,materials:materials.length,packageTotal,packagePriced,missingQuantity,missingPrice};
  }
  const sectionFields=Object.freeze({
   identity:["partNumber","name","itemType","partType","purchaseStatus","description"],

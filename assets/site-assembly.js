@@ -287,12 +287,14 @@ function setupAssemblyTrees(){
    <p class="muted project-summary-message" role="status"></p>
   </section>
   <section class="project-overview-card project-descriptor-card"><h2>Descriptors</h2><div class="project-tags project-summary-tags"></div></section>
-  <section class="project-overview-card"><h2>Estimated project cost</h2><p class="project-summary-cost" aria-live="polite">Loading estimate…</p></section>`;
+  <section class="project-overview-card"><h2>Estimated project cost</h2><p class="project-summary-cost" aria-live="polite">Loading estimate…</p><p class="project-summary-package-cost" aria-live="polite"></p><p class="project-summary-cost-missing muted"></p></section>`;
   summary.querySelector(".project-summary-gallery").after(overview);
   const summaryInput=overview.querySelector("textarea");
   const summarySave=overview.querySelector(".project-summary-save");
   const summaryMessage=overview.querySelector(".project-summary-message");
   const summaryCost=overview.querySelector(".project-summary-cost");
+  const summaryPackageCost=overview.querySelector(".project-summary-package-cost");
+  const summaryCostMissing=overview.querySelector(".project-summary-cost-missing");
   const summaryActions=overview.querySelector(".project-summary-edit-actions");
   const summaryCancel=overview.querySelector(".project-summary-cancel");
   const shortSummaryLabel=overview.querySelector(".project-short-summary-label");
@@ -396,11 +398,15 @@ function setupAssemblyTrees(){
    return show;
   }
   function renderEstimatedCost(parts){
-   const {total,priced,workshop,materials}=window.BSPartFields.estimateCost(parts);
-   if(!priced){summaryCost.textContent="A cost estimate needs at least one BOM part with a quantity and either a recorded price or a numeric Workshop reference price.";return}
-   const currency=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(total);
-   summaryCost.textContent=currency+" · "+priced+" of "+materials+" materials priced"+
-    (workshop?" ("+workshop+" from Workshop reference prices)":" from recorded BOM prices");
+   const {total,priced,materials,packageTotal,packagePriced,missingQuantity,missingPrice}=window.BSPartFields.estimateCost(parts);
+   const dollars=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"});
+   summaryCost.textContent="Parts used: "+(priced?dollars.format(total)+" · "+priced+" of "+materials+" materials priced":"No priced quantities yet");
+   summaryPackageCost.textContent="Whole packages to purchase: "+(packagePriced?dollars.format(packageTotal)+" · "+packagePriced+" of "+materials+" materials priced":"Package prices and quantities are needed");
+   summaryCostMissing.textContent=[
+    missingQuantity?missingQuantity+" materials need a project quantity":"",
+    missingPrice?missingPrice+" materials need a usable price":"",
+    priced>packagePriced?(priced-packagePriced)+" priced materials need a package size":""
+   ].filter(Boolean).join(" · ");
   }
   const settingsPage=document.createElement("section");
   settingsPage.className="assembly-parts-page project-settings-page hide";
@@ -558,8 +564,15 @@ function setupAssemblyTrees(){
     bomList.textContent="Could not load project BOM: "+error.message;
     toolList.textContent="Could not load tools.";
     summaryCost.textContent="Cost estimate unavailable.";
+    summaryPackageCost.textContent="";summaryCostMissing.textContent="";
    }
   }
+  const refreshVisibleSummary=()=>{
+   if(isProjectSummary()&&view.classList.contains("active")&&document.visibilityState!=="hidden")void refreshProjectSummary();
+  };
+  window.addEventListener("focus",refreshVisibleSummary);
+  window.addEventListener("bsworkshopupdated",refreshVisibleSummary);
+  document.addEventListener("visibilitychange",refreshVisibleSummary);
   // Reuse the canonical BOM panel on its own screen. The editor alone moves
   // into the workspace when editing; no duplicate BOM data or forms.
   const partsPage=document.createElement("section");partsPage.className="assembly-parts-page hide";
