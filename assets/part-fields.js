@@ -13,6 +13,7 @@
  const statusField=part=>isPurchased(part)?"purchaseStatus":"progressStatus";
  const statusValue=part=>part[statusField(part)]||"not_started";
  const valueFor=part=>String(part?.projectDetails?.value||"").trim();
+ const treeDescriptionFor=part=>String(part?.projectDetails?.featureTreeName||part?.projectDetails?.workshopTreeDescription||part?.description?.slice(0,20)||"").trim();
  const displayName=part=>[valueFor(part),part?.name].filter(Boolean).join(" · ");
  const sourcingLabels=["Supplier URL","Reference price","Quantity per package"];
  function priceInUsd(value){
@@ -96,5 +97,5 @@
   const labels={partNumber:"Part number",name:"Part name",itemType:"Item type",partType:"Part type",purchaseStatus:"Status",description:"Description",quantity:"Quantity",historicalPrice:"Historical part price",manufacturer:"Manufacturer",model:"Model",category:"Category",supplier:"Supplier",asin:"ASIN",isTool:"Tool",hideFromFeatureTree:"Hidden from feature tree"};
   return [...sectionFields.identity,...sectionFields.additional,...sectionFields.display].map(key=>[labels[key],values[key]]).filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="");
  }
- window.BSPartFields=Object.freeze({progressStatuses,purchaseStatuses,partTypeFor,itemTypeFor,isPurchased,statusesFor,statusField,statusValue,labelFor,sectionFields,detailRows,valueFor,displayName,sourcingLabels,sourcingFor,estimateCost});
+ window.BSPartFields=Object.freeze({progressStatuses,purchaseStatuses,partTypeFor,itemTypeFor,isPurchased,statusesFor,statusField,statusValue,labelFor,sectionFields,detailRows,valueFor,displayName,treeDescriptionFor,sourcingLabels,sourcingFor,estimateCost});
 })();

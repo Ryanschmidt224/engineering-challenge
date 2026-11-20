@@ -219,7 +219,7 @@ export async function handleComponents(request,env){
   const components=await Promise.all(parts.map(async part=>{
    if(part.partType!=="custom"&&part.itemType!=="document"&&workshopLinkId(part)){
     const source=await lookup(part).catch(()=>null);
-    if(source)return presentPart({...part,workshopSourcing:workshopSourcing(source.item)});
+    if(source)return presentPart({...part,workshopSourcing:workshopSourcing(source.item),projectDetails:{...(part.projectDetails||{}),workshopTreeDescription:String(source.item.featureTreeDescription||source.item.subtitle||source.item.description||source.item.name||"").trim().slice(0,20)}});
    }
    return presentPart(part);
   }));
@@ -265,15 +265,19 @@ export async function handleComponents(request,env){
    if(request.headers.get("origin")!==url.origin)return json({error:"Invalid request origin"},403);
    return reloadWorkshopPart(request,env,project,id);
   }
-  if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"||typeof input.isTool==="boolean"||input.progressStatus!==undefined||input.needsAttention!==undefined||input.attentionNote!==undefined||input.name!==undefined||input.partType!==undefined||input.quantity!==undefined||input.partValue!==undefined||input.purchaseStatus!==undefined||input.progressUpdate!==undefined||input.progressOperationAdd!==undefined||input.progressOperationEdit!==undefined))return json({error:"Invalid part preference"},400);
+  if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"||typeof input.isTool==="boolean"||input.progressStatus!==undefined||input.needsAttention!==undefined||input.attentionNote!==undefined||input.name!==undefined||input.partType!==undefined||input.quantity!==undefined||input.partValue!==undefined||input.treeDescription!==undefined||input.purchaseStatus!==undefined||input.progressUpdate!==undefined||input.progressOperationAdd!==undefined||input.progressOperationEdit!==undefined))return json({error:"Invalid part preference"},400);
   const state=await readEditable(env,project),items=state.items,entry=items.find(item=>item.id===id);
   if(!entry)return json({error:"Part not found"},404);
   const previousWorkshopId=workshopLinkId(entry);
+  if(input.treeDescription!==undefined){
+   if(typeof input.treeDescription!=="string"||input.treeDescription.length>120)return json({error:"Feature tree description must be at most 120 characters"},400);
+   entry.projectDetails={...(entry.projectDetails||{}),featureTreeName:input.treeDescription.trim()};
+  }
   if(input.partValue!==undefined){
    if(typeof input.partValue!=="string"||input.partValue.length>120)return json({error:"Value must be at most 120 characters"},400);
    entry.projectDetails={...(entry.projectDetails||{}),value:input.partValue.trim()};
   }
-  if(entry.generatedFrom&&(input.name!==undefined||input.partType!==undefined||input.quantity!==undefined||input.partValue!==undefined))return json({error:"Generated materials are controlled by their source part"},409);
+  if(entry.generatedFrom&&(input.name!==undefined||input.partType!==undefined||input.quantity!==undefined||input.partValue!==undefined||input.treeDescription!==undefined))return json({error:"Generated materials are controlled by their source part"},409);
   if(input.name!==undefined){
    if(typeof input.name!=="string"||!input.name.trim()||input.name.trim().length>180)return json({error:"Part name must be 1–180 characters"},400);
    const old=entry.name;

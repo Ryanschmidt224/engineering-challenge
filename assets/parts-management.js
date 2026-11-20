@@ -13,7 +13,7 @@
  const typeValues=[["purchased","Off-the-shelf"],["custom","Custom — made in-house"],["custom_purchased","Custom — purchased"],["code","Code"]];
  // Keep separate saved records intact. Group repeated names in the interface,
  // with an explicit way to inspect and edit every original record.
- const groupKey=part=>[part.name,fields.valueFor(part),partTypeFor(part),part.manufacturer,part.model].map(value=>String(value||"").trim().toLocaleLowerCase().replace(/\s+/g," ")).join("|");
+ const groupKey=part=>[part.name,fields.valueFor(part),fields.treeDescriptionFor(part),partTypeFor(part),part.manufacturer,part.model].map(value=>String(value||"").trim().toLocaleLowerCase().replace(/\s+/g," ")).join("|");
  const groupParts=parts=>{
   const groups=new Map();
   for(const part of parts){
@@ -43,7 +43,7 @@
   const scroll=el("div","bs-parts-scroll"),table=el("table","bs-parts-table");
   const thead=el("thead"),headingRow=el("tr"),colgroup=el("colgroup");
   // Compact defaults: part number is intentionally narrow, note stays beside its flag.
-  const widths=[112,330,140,125,235,160,140,170,380];
+  const widths=[112,330,220,140,125,235,160,140,170,380];
   let nameWidthManuallyResized=false;
   // Size the name column to its visible contents, not to the longest saved string.
   // Longer names remain intact and editable; the input simply scrolls horizontally.
@@ -74,7 +74,7 @@
   table.append(colgroup);
   if(typeof ResizeObserver!=="undefined"){const observer=new ResizeObserver(layoutColumns);observer.observe(scroll)}
   else window.addEventListener("resize",layoutColumns);
-  const columns=[["number","Part number"],["name","Part name"],["partValue","Value"],["quantity","Quantity"],["partType","Part type"],["status","Status"],["unitCost","Cost per part"],["packageCost","Cost per package"],["needsAttention","Needs attention"]];
+  const columns=[["number","Part number"],["name","Part name"],["treeDescription","Feature tree description"],["partValue","Value"],["quantity","Quantity"],["partType","Part type"],["status","Status"],["unitCost","Cost per part"],["packageCost","Cost per package"],["needsAttention","Needs attention"]];
   let order="name",direction=1,parts=[],fetchId=0;
   const expandedGroups=new Set();
   const sidebar=el("div","bs-part-category-nav");
@@ -117,6 +117,7 @@
   function sortKey(part){
    if(order==="number")return numberFor(part).toLowerCase();
    if(order==="name")return partLabel(part);
+   if(order==="treeDescription")return fields.treeDescriptionFor(part);
    if(order==="partValue")return fields.valueFor(part);
    if(order==="partType")return partTypeFor(part);
    if(order==="needsAttention")return part.needsAttention?"1":"0";
@@ -170,6 +171,18 @@
     input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();input.blur()}else if(e.key==="Escape"){input.value=initial;input.blur()}});
     input.addEventListener("blur",()=>{if(input.value.trim()!==part.name)void change(part,"name",input.value.trim(),input);else input.value=part.name});
     nameCell.append(input);tr.append(nameCell);
+    const descriptionCell=el("td"),description=el("input","field");
+    description.value=fields.treeDescriptionFor(part);description.maxLength=120;description.disabled=readOnly;
+    description.title=description.value;description.placeholder="Feature tree description";
+    description.setAttribute("aria-label","Feature tree description for "+part.name);
+    description.addEventListener("keydown",event=>{
+     if(event.key==="Enter"){event.preventDefault();description.blur()}
+     if(event.key==="Escape"){description.value=fields.treeDescriptionFor(part);description.blur()}
+    });
+    description.addEventListener("blur",()=>{
+     if(description.value.trim()!==fields.treeDescriptionFor(part))void change(part,"treeDescription",description.value.trim(),description);
+    });
+    descriptionCell.append(description);tr.append(descriptionCell);
     for(const key of ["partValue","quantity"]){
      const cell=el("td"),field=el("input","field");
      const isValue=key==="partValue";
@@ -258,7 +271,7 @@
     Object.assign(part,data.component);onChanged?.(data.component);
     render();feedback.textContent="Saved "+part.name+".";
    }catch(error){
-    if(control.type==="checkbox")control.checked=!!previous.needsAttention;else if(control.value!==undefined)control.value=previous[Object.keys(changes)[0]]??"";
+    if(control.type==="checkbox")control.checked=!!previous.needsAttention;else if(control.value!==undefined)control.value=Object.hasOwn(changes,"treeDescription")?fields.treeDescriptionFor(previous):Object.hasOwn(changes,"partValue")?fields.valueFor(previous):previous[Object.keys(changes)[0]]??"";
     feedback.textContent="Not saved: "+error.message;
     if(/another tab|Reload/.test(error.message))void refresh();
    }finally{control.disabled=!canEdit()}
