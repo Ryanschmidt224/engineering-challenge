@@ -80,6 +80,24 @@
   display:["isTool","hideFromFeatureTree"],
   specifications:["specifications"]
  });
+ function documentationLinks(part){
+  const links=new Map();
+  const candidates=[
+   ...(Array.isArray(part.workshopDocumentation)?part.workshopDocumentation:[]),
+   ...(part.specifications||[]).filter(spec=>/documentation|datasheet|manual/i.test(spec.name||"")).map(spec=>({label:spec.name,url:spec.value}))
+  ];
+  for(const entry of candidates){
+   const urls=String(entry.url||"").match(/https:\/\/[^\s<>"]+/gi)||[];
+   for(const raw of urls){
+    try{
+     const url=new URL(raw);
+     if(url.protocol!=="https:"||url.username||url.password)continue;
+     if(!links.has(url.href))links.set(url.href,{label:entry.label||"Documentation",url:url.href});
+    }catch{}
+   }
+  }
+  return [...links.values()];
+ }
  function supplierLines(part){
   if(part.partType==="custom")return [];
   const suppliers=new Map();
@@ -124,5 +142,5 @@
   const remaining=[...sectionFields.identity,...sectionFields.additional,...sectionFields.display].filter(key=>!ordered.includes(key));
   return [...ordered,...remaining].flatMap(key=>key==="supplier"?supplierLines(part).map(value=>["Supplier",value]):key==="asin"?[]:[[labels[key],values[key]]]).filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="");
  }
- window.BSPartFields=Object.freeze({progressStatuses,purchaseStatuses,partTypeFor,itemTypeFor,isPurchased,statusesFor,statusField,statusValue,labelFor,sectionFields,detailRows,valueFor,displayValue,displayName,treeDescriptionFor,sourcingLabels,sourcingFor,estimateCost});
+ window.BSPartFields=Object.freeze({progressStatuses,purchaseStatuses,partTypeFor,itemTypeFor,isPurchased,statusesFor,statusField,statusValue,labelFor,sectionFields,detailRows,documentationLinks,valueFor,displayValue,displayName,treeDescriptionFor,sourcingLabels,sourcingFor,estimateCost});
 })();

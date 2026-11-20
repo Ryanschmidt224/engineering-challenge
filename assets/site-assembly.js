@@ -828,6 +828,33 @@ function setupAssemblyTrees(){
   editWorkshopButton.className="btn part-details-edit-workshop";
   editWorkshopButton.textContent="View in Workshop";
   editWorkshopButton.hidden=true;
+  let currentDocumentation=[];
+  const documentationButton=document.createElement("button");
+  documentationButton.type="button";documentationButton.className="btn part-details-edit-workshop part-documentation-button";
+  documentationButton.textContent="Documentation";documentationButton.hidden=true;
+  const documentationDialog=document.createElement("dialog");
+  documentationDialog.className="project-manage-dialog part-documentation-dialog";
+  documentationDialog.setAttribute("aria-label","Part documentation");
+  documentationButton.onclick=event=>{
+   event.preventDefault();event.stopPropagation();
+   const links=currentDocumentation;
+   if(links.length===1){window.open(links[0].url,"_blank","noopener,noreferrer");return}
+   if(!links.length)return;
+   documentationDialog.replaceChildren();
+   const title=document.createElement("h2");title.textContent="Documentation";
+   const list=document.createElement("ul");
+   for(const entry of links){
+    const item=document.createElement("li"),link=document.createElement("a");
+    link.href=entry.url;link.target="_blank";link.rel="noopener noreferrer";
+    link.textContent=entry.label+" · "+new URL(entry.url).hostname;
+    item.append(link);list.append(item);
+   }
+   const close=document.createElement("button");close.type="button";close.className="btn";close.textContent="Close";
+   close.onclick=()=>documentationDialog.close();
+   documentationDialog.append(title,list,close);documentationDialog.showModal();
+  };
+  view.append(documentationDialog);
+
   detailEditButton.hidden=true;
   const reloadWorkshopButton=document.createElement("button");
   reloadWorkshopButton.type="button";
@@ -842,6 +869,7 @@ function setupAssemblyTrees(){
   // Collapsed sections hide both actions through the existing heading styles.
   detailHeading.append(detailEditButton);
   detailHeading.insertBefore(editWorkshopButton,detailEditButton);
+  detailHeading.insertBefore(documentationButton,detailEditButton);
   detailEditButton.textContent="Modify part";
   detailHeading.append(reloadWorkshopButton);
   detailsPanel.querySelector(".part-details-view-actions").replaceWith(reloadWorkshopStatus);
@@ -1017,6 +1045,10 @@ function setupAssemblyTrees(){
   }
   const renderPartDetails=part=>{
    detailRows.replaceChildren();
+   currentDocumentation=window.BSPartFields.documentationLinks({
+    ...part,workshopDocumentation:part.workshopDocumentation??currentDocumentation
+   });
+   documentationButton.hidden=currentDocumentation.length===0;
    const fields=window.BSPartFields.detailRows(part);
    const values=new Map(fields);
    const quantity=part.quantity==null?"":"Qty "+values.get("Quantity");
@@ -1248,7 +1280,9 @@ function setupAssemblyTrees(){
    const partId=partRoute();if(!partId)return;
    const version=++partLoadVersion;
    detailEditButton.hidden=!canEdit();
-   editWorkshopButton.hidden=true;reloadWorkshopButton.hidden=true;reloadWorkshopStatus.hidden=true;
+   editWorkshopButton.hidden=true;documentationButton.hidden=true;currentDocumentation=[];
+   if(documentationDialog.open)documentationDialog.close();
+   reloadWorkshopButton.hidden=true;reloadWorkshopStatus.hidden=true;
    detailEditButton.textContent="Edit part details";
    partWorkspace.classList.remove("hide");workspace.classList.add("hide");main.classList.add("hide");detail.classList.add("hide");
    const heading=partWorkspace.querySelector(".part-workspace-title"),cover=partWorkspace.querySelector(".part-workspace-cover");

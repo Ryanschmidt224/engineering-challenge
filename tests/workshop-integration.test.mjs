@@ -359,7 +359,7 @@ test("Workshop reload replaces project part details and the active photo in one 
  const photo="/api/components/photo?project=launcher&id="+partId;
  const view="/api/photo-annotations?kind=part&project=launcher&id="+partId+"&view=1";
  const item={created:true,name:"Current switch",partNumber:"ABC-10",featureTreeDescription:"Motor switch",
-  supplierUrl:"https://example.test/switch",price:"3.00",packageQuantity:"1",
+  supplierUrl:"https://example.test/switch",documentationUrl:"https://example.test/datasheet.pdf",price:"3.00",packageQuantity:"1",
   kind:"component",category:"electronics",notes:"Workshop notes",specifications:[{label:"Rated voltage",value:"24",unit:"V"}],photos:[{id:photoId}]};
  const saveWorkshop=()=>env.PHOTOS.put(workshopKey,JSON.stringify({[workshopId]:item}));
  await saveWorkshop();
@@ -372,6 +372,7 @@ test("Workshop reload replaces project part details and the active photo in one 
  const expectedSourcing={supplierPartNumber:item.supplierPartNumber||"",url:item.supplierUrl,price:item.price,packageQuantity:item.packageQuantity};
  const existing=await data(await handleComponents(request(components),env));
  assert.deepEqual(existing.body.components[0].workshopSourcing,expectedSourcing);
+ assert.equal(existing.body.components[0].workshopDocumentation[0].url,item.documentationUrl);
  assert.equal(JSON.parse(await (await env.PHOTOS.get("components/launcher.json")).text())[0].workshopSourcing,undefined);
  const rawPath="/api/components/photo?project=launcher&id=";
  const create=await data(await handleComponents(request(components,"POST",{
@@ -401,7 +402,7 @@ test("Workshop reload replaces project part details and the active photo in one 
  assert.equal(component.needsAttention,false);
  assert.equal(component.progressStatus,"not_started");
  assert.deepEqual(component.projectDetails,{workshopReferenceId:workshopId,workshopTreeDescription:"Motor switch",notes:"Workshop notes",value:"10 kΩ"});
- assert.deepEqual(component.specifications,[{name:"Rated voltage",value:"24 V",source:"explicit"}]);
+ assert.deepEqual(component.specifications,[{name:"Rated voltage",value:"24 V",source:"explicit"},{name:"Documentation URL",value:item.documentationUrl,source:"explicit"}]);
  assert.deepEqual(await readPhoto(view,handlePhotoAnnotations),[1,2,3]);
  assert.deepEqual(await readPhoto(photo,handleComponentPhoto),[1,2,3]);
  assert.deepEqual(await readPhoto("/api/workshop-reference?photo="+photoId,req=>workshopReference({request:req,env})),[1,2,3]);

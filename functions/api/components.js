@@ -219,7 +219,11 @@ export async function handleComponents(request,env){
   const components=await Promise.all(parts.map(async part=>{
    if(part.partType!=="custom"&&part.itemType!=="document"&&workshopLinkId(part)){
     const source=await lookup(part).catch(()=>null);
-    if(source)return presentPart({...part,workshopSourcing:workshopSourcing(source.item),projectDetails:{...(part.projectDetails||{}),workshopTreeDescription:String(source.item.featureTreeDescription||source.item.subtitle||source.item.description||source.item.name||"").trim().slice(0,20)}});
+    if(source)return presentPart({...part,workshopSourcing:workshopSourcing(source.item),
+     workshopDocumentation:[
+      {label:"Documentation",url:source.item.documentationUrl||source.item.source||""},
+      ...(Array.isArray(source.item.specRecords)?source.item.specRecords:Array.isArray(source.item.specifications)?source.item.specifications:[]).filter(spec=>/documentation|datasheet|manual/i.test(spec.name||spec.label||"")).map(spec=>({label:spec.name||spec.label,url:spec.value}))
+     ],projectDetails:{...(part.projectDetails||{}),workshopTreeDescription:String(source.item.featureTreeDescription||source.item.subtitle||source.item.description||source.item.name||"").trim().slice(0,20)}});
    }
    return presentPart(part);
   }));

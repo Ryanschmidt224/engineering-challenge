@@ -189,3 +189,18 @@ test("expanded identity keeps value separate and groups supplier ordering identi
  assert.deepEqual(Array.from(rows.filter(([label])=>label==="Supplier"),row=>row[1]),["DigiKey · ABC-ND","Amazon · ASIN B07BL2VX1"]);
  assert.equal(rows.some(([label])=>label==="ASIN"),false);
 });
+
+test("documentation combines Workshop and saved references with safe distinct links",()=>{
+ const links=fields.documentationLinks({
+  workshopDocumentation:[{label:"Datasheet",url:"https://example.test/data.pdf"}],
+  specifications:[
+   {name:"Documentation URL",value:"https://example.test/data.pdf"},
+   {name:"Manual",value:"https://example.test/manual.pdf"},
+   {name:"Datasheet",value:"javascript:alert(1)"},
+   {name:"Supplier URL",value:"https://example.test/buy"},
+   {name:"Manual",value:"https://user:secret@example.test/private.pdf"}
+  ]
+ });
+ assert.deepEqual(Array.from(links,link=>link.url),["https://example.test/data.pdf","https://example.test/manual.pdf"]);
+ assert.equal(fields.documentationLinks({}).length,0);
+});
