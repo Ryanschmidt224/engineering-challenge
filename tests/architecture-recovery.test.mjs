@@ -1,3 +1,4 @@
+import {workshopDependencies} from "../functions/api/archive-workshop.js";
 import "../assets/archive-layout.js";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -6,7 +7,7 @@ import {runInNewContext} from "node:vm";
 import {webcrypto} from "node:crypto";
 
 const ctx=extra=>({
- BSArchiveLayout:globalThis.BSArchiveLayout, TextEncoder, Response,Request,Headers,URL,Date,JSON,Array,Set,Map,Uint8Array,ArrayBuffer,
+ workshopDependencies, BSArchiveLayout:globalThis.BSArchiveLayout, TextEncoder, Response,Request,Headers,URL,Date,JSON,Array,Set,Map,Uint8Array,ArrayBuffer,
  TextDecoder,Number,String,RegExp,Error,console,
  crypto:webcrypto,btoa:text=>Buffer.from(text,"binary").toString("base64"),
  atob:text=>Buffer.from(text,"base64").toString("binary"),

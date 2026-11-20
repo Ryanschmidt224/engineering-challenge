@@ -1,4 +1,5 @@
 import "../../assets/archive-layout.js";
+import {workshopDependencies} from "./archive-workshop.js";
 import {isAdmin} from "./auth.js";
 import {CORE_PROJECTS,VALID_PROJECT_ID,readCatalog,canEditProject} from "./projects.js";
 
@@ -79,16 +80,18 @@ const mimeFor=(key,object)=>{
 export async function exportProject(r2,project,{includeShared=true,projectRecord}={}){
  const keys=await allKeys(r2,project,includeShared),objects=[];
  let bytesTotal=0;
+ const workshop=workshopDependencies(r2,project,projectRecord?.ownerId);
+ const roomFor=(bytes,slots)=>bytesTotal+bytes<=MAX_BYTES&&objects.length+slots<=MAX_OBJECTS;
+ async function append(key,bytes,contentType,customMetadata={},httpMetadata={contentType}){
+  if(bytes.length>MAX_SINGLE)throw Error("An object exceeds the archive limit: "+key);
+  if(!roomFor(bytes.length,1))throw Error("Project exceeds the current single-download archive limit");
+  bytesTotal+=bytes.length;
+  objects.push({key,size:bytes.length,sha256:await sha256(bytes),contentType,httpMetadata,customMetadata,data:encodeBytes(bytes)});
+ }
  // The catalog contains all projects. Embed only the selected project.
  if(projectRecord){
   if(projectRecord.id!==project)throw Error("Project catalog entry does not match this export");
-  if(keys.length>=MAX_OBJECTS)throw Error("Too many project objects for a single export");
-  const bytes=new TextEncoder().encode(JSON.stringify(projectRecord));
-  if(bytes.length>MAX_SINGLE)throw Error("Project profile exceeds the archive limit");
-  bytesTotal=bytes.length;
-  objects.push({key:globalThis.BSArchiveLayout.profileKey(project),size:bytes.length,
-   sha256:await sha256(bytes),contentType:"application/json",httpMetadata:{contentType:"application/json"},
-   customMetadata:{},data:encodeBytes(bytes)});
+  await append(globalThis.BSArchiveLayout.profileKey(project),new TextEncoder().encode(JSON.stringify(projectRecord)),"application/json");
  }
  if(!keys.length&&!objects.length)throw Error("No saved project records found; there is nothing to back up");
  for(const key of keys){
@@ -97,12 +100,10 @@ export async function exportProject(r2,project,{includeShared=true,projectRecord
   if(object.size>MAX_SINGLE)throw Error("An object exceeds the archive limit: "+key);
   const bytes=new Uint8Array(await object.arrayBuffer());
   if(bytes.length!==object.size)throw Error("Object length changed during export: "+key);
-  bytesTotal+=bytes.length;
-  if(bytesTotal>MAX_BYTES)throw Error("Project exceeds the current single-download archive limit");
-  objects.push({key,size:bytes.length,sha256:await sha256(bytes),
-   contentType:mimeFor(key,object),
-   httpMetadata:object.httpMetadata||{},customMetadata:object.customMetadata||{},data:encodeBytes(bytes)});
+  await append(key,bytes,mimeFor(key,object),object.customMetadata||{},object.httpMetadata||{});
+  workshop.collect(key,bytes);
  }
+ await workshop.finish(append,roomFor);
  return {format:ARCHIVE_FORMAT,schemaVersion:ARCHIVE_VERSION,projectId:project,
   exportedAt:new Date().toISOString(),storage:"cloudflare-r2",objectCount:objects.length,
   totalBytes:bytesTotal,objects};

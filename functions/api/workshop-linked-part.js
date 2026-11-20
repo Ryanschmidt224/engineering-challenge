@@ -10,14 +10,14 @@ async function readJSON(env,key){
  return object?JSON.parse(await object.text()):null;
 }
 
-export function workshopItemLookup(request,env){
+export function workshopItemLookup(request,env,resolveUser=()=>accountUser(request,env)){
  const records=new Map();
  let user;
  const cachedRead=key=>{
   if(!records.has(key))records.set(key,readJSON(env,key));
   return records.get(key);
  };
- return part=>linkedWorkshopItem(request,env,part,cachedRead,()=>user??=accountUser(request,env));
+ return part=>linkedWorkshopItem(request,env,part,cachedRead,()=>user??=resolveUser());
 }
 
 export async function linkedWorkshopItem(request,env,part,read=key=>readJSON(env,key),getUser=()=>accountUser(request,env)){
@@ -40,6 +40,27 @@ export async function linkedWorkshopItem(request,env,part,read=key=>readJSON(env
  const photoId=item.photos?.[0]?.id;
  const photoKey=uuid.test(photoId||"")?"workshop-reference-photos/"+photoId:null;
  return {id,item,photoKey};
+}
+
+export function workshopDocumentation(item){
+ const specs = [...(item.specRecords || []), ...(item.specifications || [])];
+ const links = new Map();
+ const candidates = [
+  {label:"Documentation", url:item.documentationUrl || item.source},
+  ...(item.workshopDocumentation || []),
+  ...specs.filter(spec=>/documentation|datasheet|manual/i.test(spec.name || spec.label || ""))
+   .map(spec=>({label:spec.name || spec.label, url:spec.value}))
+ ];
+ for(const entry of candidates){
+  for(const raw of String(entry.url || "").match(/https:\/\/[^\s<>"]+/gi) || []){
+   try{
+    const url=new URL(raw);
+    if(!url.username && !url.password && !links.has(url.href))
+     links.set(url.href,{label:entry.label || "Documentation",url:url.href});
+   }catch{}
+  }
+ }
+ return [...links.values()];
 }
 
 export const workshopSourcing=item=>({

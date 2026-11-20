@@ -1,17 +1,18 @@
+import {retainHistory,historyKey} from "../functions/api/workspace-history.js";
 // Run with npm test. Cloudflare R2 and admin auth are mocked in memory.
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {runInNewContext} from "node:vm";
 import {randomUUID} from "node:crypto";
-import {linkedWorkshopItem,partPhotoKey,workshopItemLookup,workshopLinkId,workshopSourcing} from "../functions/api/workshop-linked-part.js";
+import {linkedWorkshopItem,partPhotoKey,workshopItemLookup,workshopLinkId,workshopDocumentation,workshopSourcing} from "../functions/api/workshop-linked-part.js";
 
 function handler(path,name){
  const source=readFileSync(path,"utf8").replace(/^import .*;\s*$/gm,"").replace(/^export /gm,"");
  return runInNewContext(source+"\n"+name+";",{
-  Response,Request,URL,crypto:{randomUUID},isAdmin:async()=>true,
+  Response,Request,URL,crypto:{randomUUID},retainHistory,historyKey,isAdmin:async()=>true,
   projectAllowed:async()=>true,canEditProject:async()=>true,
-  linkedWorkshopItem,partPhotoKey,workshopItemLookup,workshopLinkId,workshopSourcing,console,Date,JSON,Number,String,Array,Map,Set,RegExp
+  linkedWorkshopItem,partPhotoKey,workshopItemLookup,workshopLinkId,workshopDocumentation,workshopSourcing,console,Date,JSON,Number,String,Array,Map,Set,RegExp
  });
 }
 function storage(){

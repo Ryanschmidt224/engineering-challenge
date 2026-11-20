@@ -726,7 +726,7 @@ function setupAssemblyTrees(){
 
   // Optional progressive disclosure: the textarea remains the simplest authoring tool.
   // Steps, test logs and history never require separate forms or mandatory fields.
-  function installInstructionExtras(panel,prefix,onRestoreResources,onRestoreRecipe){
+  function installInstructionExtras(panel,prefix,onRestoreResources,onRestoreRecipe,ownerId){
    const article=panel.querySelector(".recipe-instructions");
    const logDetails=document.createElement("details");logDetails.className="instruction-log";
    const logSummary=document.createElement("summary");logSummary.textContent="Experiments & decisions";
@@ -749,10 +749,28 @@ function setupAssemblyTrees(){
    const historySummary=document.createElement("summary");historySummary.textContent="Recent changes";
    const historyList=document.createElement("div");historyList.className="instruction-history-list";
    historyDetails.append(historySummary,historyList);panel.querySelector(prefix==="part"?".part-workspace-save":".workspace-save").after(historyDetails);
-   function setData(data){
-    experiments=Array.isArray(data?.experiments)?data.experiments.map(x=>({...x})):[];
-    renderLogs();historyList.replaceChildren();
-    const history=Array.isArray(data?.history)?[...data.history].reverse():[];
+   const olderButton=document.createElement("button");
+   olderButton.type="button";olderButton.className="instruction-history-restore";olderButton.textContent="Load older changes";
+   historyDetails.append(olderButton);
+   let olderHistory=null,loadedOwner=null,generation=0;
+   olderButton.onclick=async()=>{
+    const token=generation;
+    if(!olderHistory||loadedOwner!==ownerId())return;
+    const params=new URLSearchParams({project,[prefix==="part"?"part":"assembly"]:loadedOwner,historyPage:olderHistory});
+    olderButton.disabled=true;
+    try{
+     const response=await fetch("/api/workspace?"+params,{cache:"no-store"});
+     if(!response.ok)throw Error("Unable to load older changes");
+     const page=await response.json();
+     if(token!==generation||loadedOwner!==ownerId())return;
+     appendHistory(page.history);
+     olderHistory=page.olderHistory;olderButton.hidden=!olderHistory;
+     olderButton.textContent="Load older changes";
+    }catch{if(token===generation)olderButton.textContent="Retry loading older changes"}
+    finally{if(token===generation)olderButton.disabled=false}
+   };
+   function appendHistory(entries){
+    const history=[...(entries||[])].reverse();
     for(const snapshot of history){
      const item=document.createElement("div");item.className="instruction-history-item";
      const label=document.createElement("span");
@@ -761,6 +779,7 @@ function setupAssemblyTrees(){
      if(canEdit()){
       const restore=document.createElement("button");restore.type="button";restore.className="instruction-history-restore";restore.textContent="Load this version";
       restore.onclick=()=>{
+       if(loadedOwner!==ownerId())return;
        experiments=Array.isArray(snapshot.experiments)?snapshot.experiments.map(x=>({...x})):[];
        renderLogs();onRestoreResources?.(snapshot.resources);onRestoreRecipe?.(snapshot);
        panel.querySelector(prefix==="part"?".part-workspace-status":".workspace-status").textContent="Previous version loaded. Click Save to keep it.";
@@ -769,7 +788,13 @@ function setupAssemblyTrees(){
      }
      historyList.append(item);
     }
-    historyDetails.classList.toggle("hide",history.length===0);
+   }
+   function setData(data){
+    generation++;loadedOwner=ownerId();olderHistory=data?.olderHistory;
+    olderButton.disabled=false;olderButton.hidden=!olderHistory;olderButton.textContent="Load older changes";
+    experiments=Array.isArray(data?.experiments)?data.experiments.map(x=>({...x})):[];
+    renderLogs();historyList.replaceChildren();appendHistory(data?.history);
+    historyDetails.classList.toggle("hide",!data?.history?.length&&!olderHistory);
    }
    return {setData,getExperiments:()=>experiments};
   }
@@ -799,7 +824,7 @@ function setupAssemblyTrees(){
     tools.classList.toggle("is-empty",count===0);
    }});
    const extras=installInstructionExtras(panel,scope==="part"?"part":"workspace",
-    data=>resources?.setData(data,canEdit()),data=>recipe?.setData(data));
+    data=>resources?.setData(data,canEdit()),data=>recipe?.setData(data),ownerId);
    return {recipe,history,resources,extras};
   }
   const {recipe:assemblyRecipe,history:assemblyInvestigationPanel,resources:assemblyResourcePicker,extras:assemblyExtras}=

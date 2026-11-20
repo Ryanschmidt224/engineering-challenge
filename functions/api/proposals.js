@@ -1,3 +1,4 @@
+import {retainHistory} from "./workspace-history.js";
 // Suggested instruction changes require owner approval and optimistic revision checks.
 import {accountUser} from "./accounts.js";
 import {projectAllowed,projectDetails} from "./projects.js";
@@ -61,10 +62,10 @@ export async function handleProposals(request,env){
   const step=workspace.recipe?.find(step=>step.id===proposal.stepId);
   if(!step||String(step[proposal.field]||"")!==proposal.originalText)return json({error:"Instruction changed since proposal. Review and resubmit against latest text."},409);
   const before={recipe:structuredClone(workspace.recipe||[]),resources:structuredClone(workspace.resources||{}),experiments:structuredClone(workspace.experiments||[])};
-  const history=Array.isArray(workspace.history)?workspace.history.slice(-19):[];
-  history.push({savedAt:workspace.updatedAt||new Date().toISOString(),revision:workspace.revision??null,...before});
+  const snapshot={savedAt:workspace.updatedAt||new Date().toISOString(),revision:workspace.revision??null,...before};
+  Object.assign(workspace,await retainHistory(env.PHOTOS,key,workspace,snapshot));
   step[proposal.field]=proposal.suggestedText;
-  workspace.history=history;workspace.revision=crypto.randomUUID();workspace.updatedAt=new Date().toISOString();
+  workspace.revision=crypto.randomUUID();workspace.updatedAt=new Date().toISOString();
   const applied=await env.PHOTOS.put(key,JSON.stringify(workspace),{onlyIf:{etagMatches:object.etag}});
   if(!applied)return json({error:"Instruction was edited during approval. Try again."},409);
  }

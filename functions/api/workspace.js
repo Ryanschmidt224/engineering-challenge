@@ -1,3 +1,4 @@
+import {historyKey,retainHistory} from "./workspace-history.js";
 import {isProjectRecipeFile} from "./recipe-files.js";
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
@@ -90,6 +91,12 @@ export async function handleWorkspace(request,env){
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  const key=part?"part-workspaces/"+project+"/"+part+".json":"workspaces/"+project+"/"+assembly+".json";
  if(request.method==="GET"){
+  if(u.searchParams.has("historyPage")){
+   const cursor=u.searchParams.get("historyPage");
+   if(!/^[0-9a-f]{64}$/.test(cursor))return json({error:"Invalid history page"},400);
+   const page=await env.PHOTOS.get(historyKey(key,cursor));
+   return page?json(JSON.parse(await page.text())):json({error:"History page unavailable"},404);
+  }
   const obj=await env.PHOTOS.get(key);
   const saved=obj?JSON.parse(await obj.text()):{};
   const {instructions,procedures,notes,...workspace}=saved;
@@ -132,12 +139,9 @@ export async function handleWorkspace(request,env){
  const before={recipe:previous.recipe||[],resources:previous.resources||emptyResources(),experiments:previous.experiments||[]};
  const hasLegacy=["instructions","procedures","notes"].some(field=>Object.hasOwn(previous,field));
  const changed=hasLegacy||JSON.stringify(before)!==JSON.stringify(workspace);
- const history=Array.isArray(previous.history)?previous.history.slice(-19)
-  .map(({instructions,procedures,notes,...snapshot})=>snapshot):[];
- if(changed&&existing){
-  history.push({savedAt:previous.updatedAt||new Date().toISOString(),revision:previous.revision??null,...before});
- }
- workspace.history=history;workspace.updatedAt=changed?new Date().toISOString():(previous.updatedAt||new Date().toISOString());
+ const snapshot=changed&&existing?{savedAt:previous.updatedAt||new Date().toISOString(),revision:previous.revision??null,...before}:null;
+ Object.assign(workspace,await retainHistory(env.PHOTOS,key,previous,snapshot));
+ workspace.updatedAt=changed?new Date().toISOString():(previous.updatedAt||new Date().toISOString());
  workspace.revision=changed||!previous.revision?crypto.randomUUID():previous.revision;
  // R2 evaluates conditional PUTs atomically. A stale browser tab cannot
  // overwrite a newer revision even when writes race after the initial GET.

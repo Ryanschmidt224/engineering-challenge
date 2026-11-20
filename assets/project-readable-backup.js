@@ -5,6 +5,7 @@ window.BSReadableBackup = (() => {
  })[char]);
  const imageTypes = new Set(["image/jpeg","image/png","image/gif","image/webp","image/avif"]);
  const sections = {
+  "workshop-dependencies":"Linked Workshop prices and documents", "workspace-history":"Earlier work instruction revisions",
   "project-profile":"Project summary and settings", "assembly-status":"Assembly status",
   "project-settings":"Project settings", "photo-annotations":"Photo markup",
   "photo-renders":"Edited photos", "change-proposals":"Change suggestions", trees:"Feature tree", components:"Parts", "assembly-pages":"Assemblies",
@@ -19,10 +20,46 @@ window.BSReadableBackup = (() => {
   function render(value) {
    if (value === null || value === undefined) return "—";
    if (typeof value === "string" && files.has(value)) return '<a href="#'+files.get(value)+'">'+escape(value)+'</a>';
+   if (typeof value === "string" && /^https:\/\/[^\s]+$/i.test(value)) {
+    try {
+     const url = new URL(value);
+     if (!url.username && !url.password) return '<a href="'+escape(url.href)+'" rel="noreferrer">'+escape(value)+'</a>';
+    } catch {}
+   }
    if (Array.isArray(value)) return value.length ? "<ol>"+value.map(item=>"<li>"+render(item)+"</li>").join("")+"</ol>" : "—";
    if (typeof value === "object") return "<dl>"+Object.entries(value).map(([key,item])=>
     "<dt>"+escape(label(key))+"</dt><dd>"+render(item)+"</dd>").join("")+"</dl>";
    return escape(value);
+  }
+  function renderWorkshop(index) {
+   const fileLink = (ref, text) => files.has(ref.offlineFile)
+    ? '<a href="#'+files.get(ref.offlineFile)+'">'+escape(text)+'</a>'
+    : escape(ref.offlineStatus || "Offline copy unavailable");
+   const sourceLink = ref => {
+    try {
+     const url = new URL(ref.url);
+     if (url.protocol === "https:" && !url.username && !url.password)
+      return ' · <a href="'+escape(url.href)+'" rel="noreferrer">Publisher link</a>';
+    } catch {}
+    return "";
+   };
+   return index.items.map(item=>{
+    const purchase = item.sourcing || {};
+    const details = {
+     "Reference price":purchase.price, "Quantity per package":purchase.packageQuantity,
+     Supplier:item.supplier, "Supplier part number":purchase.supplierPartNumber,
+     "Ordering URL":purchase.url, Manufacturer:item.manufacturer, "Mfg part number":item.manufacturerPartNumber,
+     Description:item.description, "Feature tree description":item.featureTreeDescription,
+     Specification:item.specification, Specifications:item.specifications?.length ? item.specifications : null,
+     "Workshop reference":item.reference, "Used by":item.usedBy
+    };
+    const info = Object.fromEntries(Object.entries(details).filter(([,value])=>value!==null && value!==undefined && value!==""));
+    const media = [
+     ...item.documents.map(doc=>'<li>'+escape(doc.label)+' · '+fileLink(doc,"Offline PDF")+sourceLink(doc)+'</li>'),
+     ...item.photos.map(photo=>'<li>'+fileLink(photo,photo.label)+'</li>')
+    ];
+    return '<h3>'+escape(item.name)+'</h3><p>'+escape(item.source)+'</p>'+render(info)+(media.length?'<ul>'+media.join("")+'</ul>':'');
+   }).join("") + (index.unreadableProjectRecords?.length ? '<p>Workshop references could not be read from these saved records.</p>'+render(index.unreadableProjectRecords) : "");
   }
   const records = [], attachments = [];
   for (const object of archive.objects) {
@@ -34,7 +71,10 @@ window.BSReadableBackup = (() => {
    if (key.endsWith(".json") && folder !== "recipe-files" && folder !== "part-files") {
     const raw = decode(object.data);
     let body;
-    try { body = render(JSON.parse(raw)); }
+    try {
+     const value = JSON.parse(raw);
+     body = folder === "workshop-dependencies" && value?.version === 1 ? renderWorkshop(value) : render(value);
+    }
     catch { body = "<pre>"+escape(raw)+"</pre>"; }
     records.push('<section id="'+id+'"><h2>'+escape(heading)+'</h2><p class="path">'+escape(key)+'</p>'+body+'</section>');
    } else {

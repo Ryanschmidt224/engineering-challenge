@@ -1,3 +1,4 @@
+import {retainHistory,historyKey} from "../functions/api/workspace-history.js";
 import {isProjectRecipeFile} from "../functions/api/recipe-files.js";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -8,7 +9,7 @@ import {randomUUID} from "node:crypto";
 const source=readFileSync("functions/api/workspace.js","utf8")
  .replace(/^import .*;\s*$/gm,"").replace(/^export /gm,"");
 const handleWorkspace=runInNewContext(source+"\nhandleWorkspace;",{
- isProjectRecipeFile,Request,Response,URL,crypto:{randomUUID},isAdmin:async()=>true,
+ isProjectRecipeFile,Request,Response,URL,crypto:{randomUUID},retainHistory,historyKey,isAdmin:async()=>true,
  projectAllowed:async()=>true,canEditProject:async()=>true,
  console,Date,JSON,Number,String,Array,Object,Map,Set,RegExp
 });

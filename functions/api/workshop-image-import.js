@@ -3,7 +3,7 @@
 import {accountUser} from "./accounts.js";
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json","cache-control":"no-store","x-content-type-options":"nosniff"}});
 const accepted=["digikey.com","mouser.com","onsemi.com","nexperia.com","ti.com","st.com","st.com.cn","infineon.com","vishay.com","analog.com","microchip.com","sparkfun.com","adafruit.com","pololu.com","arduino.cc","rs-online.com","farnell.com","newark.com","arrow.com","jameco.com","mcmaster.com"];
-const hostAllowed=host=>accepted.some(domain=>host===domain||host.endsWith("."+domain));
+export const workshopHostAllowed=host=>accepted.some(domain=>host===domain||host.endsWith("."+domain));
 export async function onRequest({request,env}){
  if(request.method!=="POST")return json({error:"Method not allowed"},405);
  if(!env.PHOTOS)return json({error:"Workshop storage unavailable"},503);
@@ -14,7 +14,7 @@ export async function onRequest({request,env}){
  const body=await request.json().catch(()=>null);
  let image;
  try{image=new URL(body?.url)}catch{return json({error:"Invalid image URL"},400)}
- if(image.protocol!=="https:"||image.username||image.password||!hostAllowed(image.hostname))
+ if(image.protocol!=="https:"||image.username||image.password||!workshopHostAllowed(image.hostname))
   return json({error:"This picture host is not approved for direct import. Upload the photo manually instead."},400);
  try{
   const response=await fetch(image.href,{redirect:"manual",headers:{"accept":"image/jpeg,image/png,image/webp"}});

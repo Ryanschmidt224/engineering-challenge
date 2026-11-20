@@ -112,6 +112,12 @@ Feature-tree, component-list/BOM, and workspace saves now use R2 conditional wri
 
 `assets/engineering-core.js` introduces storage-independent, versioned logical project views: part definitions are separate from assembly/BOM occurrences, and recipe steps have permanent IDs. A legacy record maps to a deterministic identity in the new view; it is not destructively rewritten. `assets/local-project.js` hydrates complete archives in memory, exposes local reads/writes, and can re-export all records without Cloudflare. The existing public website still primarily uses legacy R2 handlers; full migration of these handlers to portable adapters remains future work.
 
+### Workshop references and instruction revisions in backups
+
+Each project export collects Workshop links from its BOM and saved workspaces. The versioned index at `workshop-dependencies/<project>/index.json` captures the linked items’ current descriptions, specifications, supplier information, prices, and package quantities. Private references resolve against the project owner's inventory. Each document or photo entry identifies its offline file or explains why the file is unavailable. Document links keep their original URL. Publisher PDFs up to 8 MiB can be embedded from supported hosts. A failed publisher download still permits a project backup.
+
+Part and assembly workspaces keep up to 20 recent instruction snapshots inline. An `olderHistory` cursor leads to earlier pages in `workspace-history/<project>/<collection>/<record>/<cursor>.json`. Each page is identified by its content hash. Direct saves and approved suggestions use the same history writer. Existing archives and workspaces without a cursor remain readable. Recoverable history starts with the revisions still present when the project adopts this format.
+
 ### Important operational and safety limitations
 
 - **No live production overwrite is offered.** Production recovery is limited to isolated cloud staging or atomic restore into a *new local folder*. A live Cloudflare project cannot be replaced transactionally across several R2 keys with the current APIs. Safely promoting staged data into production requires coordinated reads/writes or pointer-based version switching and separate testing. Do not advertise live rollback until that exists.

@@ -1,3 +1,4 @@
+import {workshopDependencies} from "../functions/api/archive-workshop.js";
 import "../assets/archive-layout.js";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -9,7 +10,7 @@ import {CORE_PROJECTS} from "../functions/api/project-seed.js";
 const source=readFileSync("functions/api/project-archive.js","utf8")
  .replace(/^import .*;\s*$/gm,"").replace(/^export /gm,"");
 const archiveHandler=runInNewContext(source+"\nhandleProjectArchive;",{
- BSArchiveLayout:globalThis.BSArchiveLayout, TextEncoder, Response,Headers,Request,URL,Date,JSON,Set,Array,Uint8Array,Number,String,RegExp,
+ workshopDependencies, BSArchiveLayout:globalThis.BSArchiveLayout, TextEncoder, Response,Headers,Request,URL,Date,JSON,Set,Array,Uint8Array,Number,String,RegExp,
  crypto:webcrypto,btoa:input=>Buffer.from(input,"binary").toString("base64"),
  atob:input=>Buffer.from(input,"base64").toString("binary"),
  CORE_PROJECTS,VALID_PROJECT_ID:/^(?:launcher|linear|robot|p[a-f0-9]{32})$/,

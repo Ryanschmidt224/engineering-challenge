@@ -1,7 +1,7 @@
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
 import {issueNumber} from "./numbering.js";
-import {getPartPhoto,linkedWorkshopItem,partPhotoKey,workshopItemLookup,workshopLinkId,workshopPartDetails,workshopSourcing} from "./workshop-linked-part.js";
+import {getPartPhoto,linkedWorkshopItem,partPhotoKey,workshopItemLookup,workshopLinkId,workshopDocumentation,workshopPartDetails,workshopSourcing} from "./workshop-linked-part.js";
 import {annotationKey,renditionKey} from "./photo-annotations.js";
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const authorized=async(request,env)=>{const u=new URL(request.url),project=u.searchParams.get("project");return project?canEditProject(request,env,project):isAdmin(request,env)};
@@ -220,10 +220,7 @@ export async function handleComponents(request,env){
    if(part.partType!=="custom"&&part.itemType!=="document"&&workshopLinkId(part)){
     const source=await lookup(part).catch(()=>null);
     if(source)return presentPart({...part,workshopSourcing:workshopSourcing(source.item),
-     workshopDocumentation:[
-      {label:"Documentation",url:source.item.documentationUrl||source.item.source||""},
-      ...(Array.isArray(source.item.specRecords)?source.item.specRecords:Array.isArray(source.item.specifications)?source.item.specifications:[]).filter(spec=>/documentation|datasheet|manual/i.test(spec.name||spec.label||"")).map(spec=>({label:spec.name||spec.label,url:spec.value}))
-     ],projectDetails:{...(part.projectDetails||{}),workshopTreeDescription:String(source.item.featureTreeDescription||source.item.subtitle||source.item.description||source.item.name||"").trim().slice(0,20)}});
+     workshopDocumentation:workshopDocumentation(source.item),projectDetails:{...(part.projectDetails||{}),workshopTreeDescription:String(source.item.featureTreeDescription||source.item.subtitle||source.item.description||source.item.name||"").trim().slice(0,20)}});
    }
    return presentPart(part);
   }));
