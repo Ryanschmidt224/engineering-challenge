@@ -138,6 +138,20 @@ export async function handleAssemblyArchive(request,env){
    if(!uuid(id))return json({error:"Invalid archive ID"},400);
    const {value}=await read(bucket,manifestKey(project,id),null);
    if(!value)return json({error:"Archive not found"},404);
+   if(url.searchParams.has("asset")){
+    const index=Number(url.searchParams.get("asset"));
+    if(!Number.isSafeInteger(index)||index<0||index>=(value.assets||[]).length)
+     return json({error:"Archived attachment not found"},404);
+    const item=value.assets[index],copy=await bucket.get(item.archive);
+    if(!copy)return json({error:"Archived attachment is missing"},404);
+    const type=copy.httpMetadata?.contentType||"application/octet-stream";
+    const image=/^image\\/(?:jpeg|png|webp|gif|heic|heif)$/.test(type);
+    return new Response(copy.body,{headers:{
+     "content-type":image?type:"application/octet-stream",
+     "content-disposition":image?"inline":"attachment; filename*=UTF-8''"+encodeURIComponent(item.original.split("/").pop()||"archive-file"),
+     "cache-control":"private, no-store","x-content-type-options":"nosniff"
+    }});
+   }
    return json({archive:value});
   }
   if(parent!==null&&parent!=="__root__"&&!idOK(parent))return json({error:"Invalid parent"},400);
