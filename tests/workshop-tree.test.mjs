@@ -55,7 +55,7 @@ test("Feature tree uses explicit show/hide controls for Workshop items and docum
  assert.match(source,/filterOption\("Show documents"/);
  for(const old of ["Purchased","Custom","Tools","Documents","Hidden parts"])
   assert.ok(!source.includes('filterOption("'+old+'"'),"Old tree filter remains: "+old);
- const code=source.slice(source.indexOf("const includeTreeNode="),source.indexOf("const referenceTreeDescription="));
+ const code=source.slice(source.indexOf("const includeTreeNode="),source.indexOf("const loadWorkshopCaptions="));
  const flags={showWorkshopItems:true,showTreeDocuments:true,showHiddenParts:false};
  const sandbox={...flags,isPartNode:n=>n.kind==="part",isHiddenPart:n=>n.hidden,isDocumentNode:n=>n.document,
   partWorkshopItems:new Map([["workshop-part",true]])};
