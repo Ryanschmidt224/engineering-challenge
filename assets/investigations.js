@@ -292,12 +292,18 @@
    const heading=make("div","investigation-heading-label");
 
    const actions=make("div","investigation-heading-actions");
-   actions.append(title,window.BSDialogs.tooltip("About Project History","Record practice, tests, revisions, failures, and notes."));
-   if(admin())actions.append(btn("+ Add entry",event=>{
-    event.preventDefault();event.stopPropagation();disclosure.open=true;
-    newRecord(context,target);
-   },"btn investigation-add"));
-   actions.insertBefore(make("span","workspace-record-count","("+count+(count===1?" record)":" records)")),actions.querySelector(".investigation-add"));
+   actions.append(title,window.BSDialogs.tooltip("About Project History","Record practice, tests, revisions, failures, and notes."),
+    make("span","workspace-record-count","("+count+(count===1?" record)":" records)"));
+   // Keep the creation action separate from the disclosure heading, so the
+   // entire Project History heading remains a clean expand/collapse target.
+   if(admin()){
+    const addRow=make("div","investigation-create-row");
+    addRow.append(btn("+ Add entry",event=>{
+     event.preventDefault();event.stopPropagation();disclosure.open=true;
+     newRecord(context,target);
+    },"btn investigation-add investigation-create-button"));
+    target.append(addRow);
+   }
    heading.append(actions);
    summary.append(heading);
    disclosure.append(summary);
