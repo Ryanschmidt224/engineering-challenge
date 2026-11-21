@@ -1162,8 +1162,10 @@ function setupAssemblyTrees(){
    const purchased=["purchased","custom_purchased"].includes(part.partType);
    if(purchased){
     const candidates=(part.implementations||[]).filter(item=>!item.retiredAt&&["purchased","custom_purchased"].includes(item.partType));
-    const alternatives=document.createElement("section");alternatives.className="part-alternatives-panel";
-    const title=document.createElement("h3");title.textContent="Purchased part alternatives";alternatives.append(title);
+    const alternatives=document.createElement("details");alternatives.className="part-alternatives-panel";
+    const title=document.createElement("summary");
+    title.textContent="Alternative purchased parts"+(candidates.length>1?" ("+(candidates.length-1)+")":"");
+    alternatives.append(title);
     const help=document.createElement("p");help.className="muted part-alternatives-intro";
     help.textContent="Choose another purchased part for this container. The container's name and history stay the same.";
     alternatives.append(help);
