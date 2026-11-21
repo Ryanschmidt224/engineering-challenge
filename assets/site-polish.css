@@ -3112,3 +3112,110 @@
 .investigation-card:has(.investigation-photo-note) .investigation-note-photo-gallery{
  margin-top:0;
 }
+
+
+/* Selected Work Instruction controls stay in the left navigation.
+   Display only Edit normally; show the four actions after Edit. */
+.recipe-compact .recipe-step-nav-row.has-nav-actions{
+ position:relative;
+ display:flex!important;
+ align-items:center!important;
+ flex-wrap:wrap!important;
+ min-height:58px;
+}
+.recipe-compact .recipe-step-nav-row.has-nav-actions:not(.is-editing) > .recipe-step-nav-item{
+ width:100%;
+ padding-right:82px!important;
+}
+.recipe-compact .recipe-step-nav-row.has-nav-actions:not(.is-editing) > .recipe-step-nav-actions{
+ position:absolute!important;
+ right:8px!important;
+ top:50%!important;
+ bottom:auto!important;
+ transform:translateY(-50%)!important;
+ display:flex!important;
+ justify-content:flex-end;
+ gap:6px;
+}
+.recipe-compact .recipe-step-nav-row.is-editing > .recipe-step-nav-item,
+.recipe-compact .recipe-step-nav-row.is-editing:has(.recipe-delete-step) > .recipe-step-nav-item{
+ width:100%;
+ padding:9px 12px!important;
+}
+.recipe-compact .recipe-step-nav-row.is-editing > .recipe-step-nav-actions{
+ position:static!important;
+ transform:none!important;
+ display:flex!important;
+ flex-wrap:wrap;
+ justify-content:flex-start;
+ align-items:center;
+ width:100%;
+ max-width:100%;
+ gap:6px;
+ padding:0 9px 9px;
+ margin:0;
+}
+.recipe-compact .recipe-step-nav-row.is-editing > .recipe-step-nav-actions > .btn{
+ min-height:34px;
+ font-size:.8rem;
+ padding:5px 9px;
+}
+.recipe-compact .recipe-step-nav-row.is-editing > .recipe-step-nav-actions > .recipe-delete-step{
+ color:var(--color-danger-action,#a3222c);
+}
+/* The title and its main description should read as one compact form. */
+:is(.recipe-step-investigations,.investigations-panel) .investigation-add-controls{
+ margin-top:0!important;
+ padding-top:0!important;
+ border-top:0!important;
+ gap:5px!important;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-add-controls > .investigation-field-label{
+ margin:0!important;
+ min-height:0;
+ align-items:center;
+ gap:8px;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-add-controls > .investigation-description-label{
+ margin:2px 0 7px!important;
+ gap:4px!important;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-add-controls > .investigation-entry-field{
+ padding:5px 0!important;
+}
+/* Show selected, not-yet-saved images at thumbnail size. */
+.investigation-note-pending-photos{
+ display:flex;
+ flex-wrap:wrap;
+ align-items:flex-start;
+ gap:10px;
+}
+.investigation-note-pending-photo{
+ display:flex;
+ flex-direction:column;
+ align-items:stretch;
+ width:150px;
+ max-width:100%;
+ padding:7px;
+ gap:6px;
+ border:1px solid var(--color-border);
+ border-radius:9px;
+ background:var(--color-surface);
+}
+.investigation-note-pending-thumbnail{
+ display:block;
+ width:100%;
+ height:110px;
+ object-fit:contain;
+ border-radius:7px;
+ background:var(--color-media-backdrop);
+}
+.investigation-note-pending-info{
+ display:flex;
+ flex-wrap:wrap;
+ align-items:center;
+ gap:5px;
+ overflow-wrap:anywhere;
+ font-size:.75rem;
+}
+.investigation-note-pending-info .btn{margin-left:auto}
