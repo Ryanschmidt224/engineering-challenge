@@ -4422,3 +4422,54 @@
  font-size:.8rem;
  line-height:1.45;
 }
+
+
+/* Project Summary guidance and compact, collapsed-by-default intent panel. */
+.project-summary-page .project-summary-overview>.project-overview-card:first-child>h2{
+ display:inline-flex;
+ align-items:center;
+}
+.project-summary-page .project-summary-overview>.project-overview-card:first-child>.bs-help-button{
+ align-self:flex-start;
+ margin:-28px 0 8px 142px;
+}
+.project-summary-page .project-intent-milestones .project-milestone-expand{
+ display:inline-flex;
+ align-items:center;
+ gap:9px;
+ width:100%;
+ padding:0;
+ margin:0;
+ border:0;
+ background:transparent;
+ color:var(--color-text);
+ text-align:left;
+ font:inherit;
+ font-size:1.05rem;
+ font-weight:650;
+ cursor:pointer;
+}
+.project-summary-page .project-intent-milestones .project-milestone-expand:focus-visible{
+ outline:2px solid var(--color-accent);
+ outline-offset:4px;
+ border-radius:4px;
+}
+.project-summary-page .project-intent-milestones .project-milestone-chevron{
+ display:inline-block;
+ flex:none;
+ width:8px;
+ height:8px;
+ border-right:2px solid currentColor;
+ border-bottom:2px solid currentColor;
+ transform:rotate(-45deg);
+ transition:transform .15s ease;
+}
+.project-summary-page .project-intent-milestones .project-milestone-expand[aria-expanded="true"] .project-milestone-chevron{
+ transform:rotate(45deg);
+}
+.project-summary-page .project-intent-milestones .project-milestone-content{
+ display:grid;
+ gap:8px;
+}
+.project-summary-page .project-intent-milestones .project-milestone-content[hidden]{display:none!important}
+.project-summary-page .project-intent-milestones .project-milestone-heading{margin:0}
