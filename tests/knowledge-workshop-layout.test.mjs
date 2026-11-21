@@ -17,14 +17,14 @@ test("Knowledge Base combines searchable explanations and interactive calculator
  assert.match(site,/knowledgeTypeFilter/);
  assert.match(resources,/const target=kind==="calculators"\?"learn":"commonparts"/);
 });
-test("The Workshop uses the five common categories and keeps expected supplies out of BOMs",()=>{
+test("The Workshop shows an eight-group electrical taxonomy and preserves supply BOM defaults",()=>{
  const resources=file("assets/resources.js"),picker=file("assets/library-part-picker.js");
- for(const name of ["Tools & Equipment","Consumables & Supplies","Electronics & Components","Hardware & Materials","Safety & Measurement"]){
+ for(const name of ["Tools & Equipment","Electrical & Electronics","Power","Controllers","Sensors","Switching & Control","Basic Components","Wiring & Connections","Motors & Actuators","Displays & Indicators","Consumables & Supplies","Hardware & Materials","Safety & Measurement"])
   assert.ok(resources.includes(name),"Missing category "+name);
-  assert.ok(picker.includes(name),"Picker not aligned with "+name);
- }
+ assert.match(picker,/BSResources\.workshopCategories/);
  assert.match(resources,/id:"workshop:solder"/);
- assert.match(resources,/const bomDefault=\["consumables","tools","safety"\]\.includes\(category\)\?"exclude":"include"/);
+ assert.match(resources,/const bomDefault=item\.kind==="tool"/);
+ assert.match(resources,/workshop:wire22/);
  assert.match(resources,/availabilityAssumption/);
  assert.match(resources,/focusWorkshopItem/);
 });
