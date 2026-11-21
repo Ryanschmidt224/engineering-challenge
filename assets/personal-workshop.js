@@ -733,6 +733,9 @@
      row.querySelector(".workshop-generic-remove").hidden=!form.classList.contains("is-editing");
     }
     addGenericTemplate.hidden=!form.classList.contains("is-editing");
+    // Suggestions in generic mode belong to the project template, not to
+    // fixed Workshop specifications.
+    specActions.firstElementChild.hidden=generic;
    };
    updateIdentityPanels();
    const specStatus=el("p","","muted");
