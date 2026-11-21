@@ -894,6 +894,9 @@ test("New Part ends Workshop edits after identity and confirms public/private sa
  await expect(add).toBeVisible();
  await add.check();
  await expect(modal.locator(".library-workshop-scope")).toBeVisible();
+ await expect(modal.locator(".library-workshop-scope-option small")).toHaveCount(0);
+ await expect(modal.locator(".library-workshop-scope-tip")).toHaveCount(2);
+ await expect(modal.locator(".library-workshop-scope-option").first().locator(".library-workshop-scope-tip")).toHaveAttribute("title", /Only your account/);
  const privateRadio=modal.locator('input[name="workshop-destination"][value="private"]');
  const publicRadio=modal.locator('input[name="workshop-destination"][value="public"]');
  await expect(privateRadio).toBeChecked();
