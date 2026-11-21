@@ -2380,3 +2380,28 @@
  outline:2px solid var(--color-focus);
  outline-offset:1px;
 }
+
+
+/* The Project Archive is secondary navigation, not another framed card.
+   Keep its disclosure text and its archived record cards, but remove the
+   outer frame and background from the archive section itself. */
+.recipe-compact .recipe-step-detail > .recipe-step-investigations > .investigation-collapse{
+ border:0!important;
+ border-radius:0!important;
+ padding:0!important;
+ margin:0!important;
+ min-height:0;
+ background:transparent!important;
+ box-shadow:none!important;
+ overflow:visible!important;
+}
+.recipe-compact .recipe-step-detail > .recipe-step-investigations > .investigation-collapse > .investigation-collapse-heading{
+ width:auto!important;
+ max-width:100%;
+ min-height:0!important;
+ padding:4px 0!important;
+ margin:0!important;
+ border:0!important;
+ background:transparent!important;
+ box-shadow:none!important;
+}
