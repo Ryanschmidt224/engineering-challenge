@@ -2249,16 +2249,20 @@ function setupAssemblyTrees(){
     if(legacyFullName)legacyFullName.hidden=true;
     if(legacyCategory)legacyCategory.hidden=true;
     const identity=[field("name")];
-    if(identity[0]?.firstChild?.nodeType===Node.TEXT_NODE)identity[0].firstChild.nodeValue="Container ";
-    if(identity[0]&&!identity[0].querySelector(".part-container-name-hint")){
-     const nameHint=document.createElement("span");nameHint.className="part-container-name-hint";
-     nameHint.textContent="(name)";
-     const target=bomField("name");identity[0].insertBefore(nameHint,target||null);
+    // Keep the name, muted qualifier and tooltip together in the label
+    // column; separate sibling nodes would otherwise disrupt the 2-column grid.
+    if(identity[0]&&!identity[0].querySelector(".part-container-caption")){
+     const caption=document.createElement("span");caption.className="part-container-caption";
+     const title=document.createElement("span");title.textContent="Container";
+     const nameHint=document.createElement("span");nameHint.className="part-container-name-hint";nameHint.textContent="(name)";
      const help=document.createElement("span");help.className="library-function-tip";
      help.textContent="ⓘ";help.tabIndex=0;
      help.title="A container is an item in the project hierarchy that holds its purpose, part details, work instructions, tests, revisions, and history. Its name identifies it in the project tree (maximum 20 characters).";
      help.setAttribute("role","img");help.setAttribute("aria-label",help.title);
-     identity[0].insertBefore(help,target||null);
+     caption.append(title,nameHint,help);
+     const oldLabel=[...identity[0].childNodes].find(node=>node.nodeType===Node.TEXT_NODE);
+     if(oldLabel)oldLabel.replaceWith(caption);
+     else identity[0].prepend(caption);
     }
     const containerNameInput=bomField("name");
     if(containerNameInput){containerNameInput.maxLength=20;containerNameInput.placeholder="Short name in project tree (20 characters)"}
