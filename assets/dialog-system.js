@@ -53,6 +53,92 @@
   dialog.showModal();
   (field||cancel).focus();
  });
+ // Site-wide help popup. Native title tooltips cannot be styled, so move
+ // their message into one viewport-aware, shared tooltip surface on demand.
+ // Delegation includes newly created project/workshop controls.
+ const globalTooltip=document.createElement("div");
+ globalTooltip.className="bs-global-tooltip";
+ globalTooltip.id="bs-global-tooltip";
+ globalTooltip.setAttribute("role","tooltip");
+ globalTooltip.hidden=true;
+ document.body.append(globalTooltip);
+ let activeTooltip=null;
+ const tooltipTarget=node=>{
+  const el=node instanceof Element?node.closest("[data-bs-tooltip],[title]"):null;
+  // This control already includes an interactive, built-in popover.
+  if(!el||el.closest(".bs-action-input-help"))return null;
+  return el;
+ };
+ const dismissTooltip=()=>{
+  if(activeTooltip){
+   const previous=activeTooltip.getAttribute("aria-describedby")||"";
+   const restored=previous.split(/\\s+/).filter(id=>id!==globalTooltip.id).join(" ");
+   if(restored)activeTooltip.setAttribute("aria-describedby",restored);
+   else activeTooltip.removeAttribute("aria-describedby");
+  }
+  activeTooltip=null;globalTooltip.hidden=true;
+ };
+ const positionTooltip=target=>{
+  const bounds=target.getBoundingClientRect();
+  const margin=12,gap=9;
+  const w=globalTooltip.offsetWidth,h=globalTooltip.offsetHeight;
+  const x=Math.max(margin,Math.min(window.innerWidth-w-margin,bounds.left+bounds.width/2-w/2));
+  let top=bounds.bottom+gap;
+  if(top+h>window.innerHeight-margin&&bounds.top-h-gap>=margin)top=bounds.top-h-gap;
+  else top=Math.max(margin,Math.min(top,window.innerHeight-h-margin));
+  globalTooltip.style.left=x+"px";
+  globalTooltip.style.top=top+"px";
+ };
+ const showTooltip=target=>{
+  if(!target)return;
+  const text=(target.getAttribute("data-bs-tooltip")||target.getAttribute("title")||"").trim();
+  if(!text)return;
+  if(target.hasAttribute("title")){
+   target.dataset.bsTooltip=text;
+   target.removeAttribute("title");
+   if(!target.hasAttribute("aria-label")&&!target.textContent.trim()&&!target.querySelector("img[alt]"))
+    target.setAttribute("aria-label",text);
+  }
+  if(activeTooltip===target)return;
+  dismissTooltip();
+  activeTooltip=target;globalTooltip.textContent=text;
+  globalTooltip.hidden=false;
+  const ids=target.getAttribute("aria-describedby")||"";
+  target.setAttribute("aria-describedby",[ids,globalTooltip.id].filter(Boolean).join(" "));
+  positionTooltip(target);
+ };
+ document.addEventListener("pointerover",event=>{
+  if(event.pointerType==="touch")return;
+  const target=tooltipTarget(event.target);
+  if(target)showTooltip(target);
+ },true);
+ document.addEventListener("pointerout",event=>{
+  if(!activeTooltip||!activeTooltip.contains(event.target))return;
+  if(event.relatedTarget instanceof Node&&activeTooltip.contains(event.relatedTarget))return;
+  dismissTooltip();
+ },true);
+ document.addEventListener("focusin",event=>{
+  const target=tooltipTarget(event.target);
+  if(target)showTooltip(target);
+  else dismissTooltip();
+ },true);
+ document.addEventListener("focusout",event=>{
+  if(activeTooltip===event.target)dismissTooltip();
+ },true);
+ document.addEventListener("keydown",event=>{
+  if(event.key==="Escape")dismissTooltip();
+ },true);
+ document.addEventListener("click",event=>{
+  const target=tooltipTarget(event.target);
+  if(!target)return;
+  // Help icons are keyboard focusable and tappable; do not intercept the
+  // underlying radio, checkbox or page-navigation interaction.
+  if(target.matches(".library-function-tip,.library-auto-number-tip,.library-workshop-scope-tip,.library-workshop-search-tip"))
+   activeTooltip===target?dismissTooltip():showTooltip(target);
+ },true);
+ window.addEventListener("scroll",dismissTooltip,true);
+ window.addEventListener("resize",dismissTooltip);
+
  let tooltipId=0;
  function tooltip(label,message){
   const wrapper=document.createElement("span");wrapper.className="bs-section-tooltip";
