@@ -2430,3 +2430,19 @@
  margin:0!important;
  z-index:1;
 }
+
+
+/* Expand-all double chevrons: larger icon, visually adjacent to step title.
+   Keep a 32px hit target without adding a background or border. */
+.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-summary .recipe-expand-hierarchy{
+ margin-left:0!important;
+ margin-right:0!important;
+ min-width:32px;
+ min-height:32px;
+ padding:4px!important;
+}
+.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-summary .recipe-expand-hierarchy svg{
+ width:22px;
+ height:22px;
+ flex:0 0 22px;
+}
