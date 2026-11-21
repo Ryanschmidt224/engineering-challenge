@@ -717,9 +717,18 @@
    genericTemplateSection.append(genericTemplateRows,addGenericTemplate);
    const currentTemplates=Array.isArray(item.genericFields)?item.genericFields:[];
    if(currentTemplates.length)for(const field of currentTemplates)addGenericField(field);
-   else if(window.BSResources.workshopIdentityKind(item)==="generic"){
-    for(const [label,unit] of window.BSResources.genericSpecificationTemplate(item))addGenericField({label,unit});
-   }
+   const suggestGenericFields=()=>{
+    if(!identityRadios.generic.checked||genericTemplateRows.children.length)return;
+    const template=window.BSResources.genericSpecificationTemplate({
+     name:controls.name.value||item.name,
+     typeName:controls.typeName.value,
+     featureTreeDescription:controls.featureTreeDescription.value
+    });
+    const fixed=new Set([...specRows.children].filter(row=>row.querySelector('[data-spec="value"]')?.value.trim())
+     .map(row=>row.querySelector('[data-spec="label"]')?.value.trim().toLowerCase()));
+    for(const [label,unit] of template)if(!fixed.has(label.toLowerCase()))addGenericField({label,unit});
+   };
+   if(window.BSResources.workshopIdentityKind(item)==="generic")suggestGenericFields();
    const updateIdentityPanels=()=>{
     const generic=identityRadios.generic.checked;
     genericTemplateSection.hidden=!generic;
@@ -787,9 +796,9 @@
      specRows.replaceChildren();
     }
     approvedIdentity="generic";
-    if(!genericTemplateRows.children.length)for(const [label,unit] of window.BSResources.genericSpecificationTemplate({
-     name:controls.name.value,typeName:controls.typeName.value,featureTreeDescription:controls.featureTreeDescription.value
-    }))addGenericField({label,unit});
+    // Clear suggested-but-empty manufacturer specification rows too.
+    specRows.replaceChildren();
+    suggestGenericFields();
     updateIdentityPanels();
    };
    identityRadios.generic.addEventListener("change",()=>{void confirmGenericSwitch()});
@@ -797,6 +806,9 @@
     approvedIdentity="specific";
     updateIdentityPanels();
    });
+   for(const control of [controls.name,controls.typeName,controls.featureTreeDescription]){
+    control.addEventListener("change",suggestGenericFields);
+   }
    controls.name.addEventListener("change",refreshSuggestions);
    category.addEventListener("change",refreshSuggestions);
    controls.typeName.addEventListener("change",refreshSuggestions);
