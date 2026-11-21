@@ -2312,3 +2312,48 @@
 .recipe-compact .recipe-expand-hierarchy svg{
  flex:0 0 16px;
 }
+
+
+/* The left instruction list owns step selection and the primary Edit control.
+   Keep the draggable title as a separate button to avoid nesting buttons. */
+.recipe-compact .recipe-step-nav-row{
+ display:flex;
+ align-items:center;
+ min-width:0;
+ width:100%;
+ box-sizing:border-box;
+ border-radius:10px;
+}
+.recipe-compact .recipe-step-nav-row.is-active{
+ min-height:var(--recipe-active-heading-height,74px);
+ background:var(--color-accent-soft);
+}
+.recipe-compact .recipe-step-nav-row > .recipe-step-nav-item{
+ flex:1 1 auto;
+ width:auto;
+ min-width:0;
+ border:0!important;
+ min-height:48px;
+ height:auto;
+ background:transparent!important;
+ box-shadow:none;
+}
+.recipe-compact .recipe-step-nav-row > .recipe-step-nav-item.is-active{
+ min-height:0;
+ height:auto;
+ padding:12px 10px 12px 14px;
+}
+.recipe-compact .recipe-step-nav-row > .recipe-step-edit-toggle{
+ flex:0 0 auto;
+ margin:0 10px 0 4px;
+ padding:6px 11px;
+ min-height:36px;
+ border-radius:8px;
+ white-space:nowrap;
+}
+.recipe-compact .recipe-step-nav-row > .recipe-step-nav-item.recipe-step-drop-before{
+ box-shadow:inset 0 3px 0 var(--color-accent)!important;
+}
+.recipe-compact .recipe-step-nav-row > .recipe-step-nav-item.recipe-step-drop-after{
+ box-shadow:inset 0 -3px 0 var(--color-accent)!important;
+}
