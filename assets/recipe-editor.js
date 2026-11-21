@@ -377,7 +377,8 @@
      const selectAttachment=noteIndex=>{
       uploadTargetNote=noteIndex;input.click();
      };
-     const addPhoto=button("+ Add photo / document",()=>selectAttachment(null),"btn recipe-small-action");
+     const addPhoto=button("+ Add photos / documents",()=>selectAttachment(null),"btn recipe-small-action");
+     addPhoto.title="Select multiple images or files at once. Each step can contain up to 30 attachments.";
      function editablePhoto(id,noteIndex=null){
       const item=el("div","recipe-step-photo");
       const photoName=step.photoNames[id]||"";
@@ -414,7 +415,7 @@
        for(const id of step.photos){
         if(step.photoNoteIds[id]===step.noteIds[index])noteAttachments.append(editablePhoto(id,index));
        }
-       const addAfterNote=button("+ Add photo / document",()=>selectAttachment(index),"btn recipe-small-action recipe-add-note-photo");
+       const addAfterNote=button("+ Add photos / documents",()=>selectAttachment(index),"btn recipe-small-action recipe-add-note-photo");
        addAfterNote.setAttribute("aria-label","Add photo after note "+(index+1));
        const removeNote=button("Remove note",()=>{
         const deletedId=step.noteIds[index];
