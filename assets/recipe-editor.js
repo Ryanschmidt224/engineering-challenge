@@ -409,8 +409,20 @@
     const syncHierarchyLabel=()=>{
      const sections=[...detailPane.querySelectorAll("details")];
      const fullyOpen=sections.length>0&&sections.every(section=>section.open);
-     hierarchy.textContent=fullyOpen?"Collapse all":"Expand all";
-     hierarchy.setAttribute("aria-label",(fullyOpen?"Collapse":"Expand")+" all sections in this step");
+     const label=fullyOpen?"Collapse all":"Expand all";
+     const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+     svg.setAttribute("viewBox","0 0 24 24");
+     svg.setAttribute("width","16");svg.setAttribute("height","16");
+     svg.setAttribute("fill","none");svg.setAttribute("stroke","currentColor");
+     svg.setAttribute("stroke-width","2");svg.setAttribute("stroke-linecap","round");
+     svg.setAttribute("stroke-linejoin","round");svg.setAttribute("aria-hidden","true");
+     for(const d of fullyOpen?["m7 14 5-5 5 5","m7 20 5-5 5 5"]:["m7 4 5 5 5-5","m7 10 5 5 5-5"]){
+      const path=document.createElementNS("http://www.w3.org/2000/svg","path");
+      path.setAttribute("d",d);svg.append(path);
+     }
+     hierarchy.replaceChildren(svg,document.createTextNode(label));
+     hierarchy.setAttribute("aria-label",label+" sections in this step");
+     hierarchy.title=label+" nested sections";
     };
     summary.append(hierarchy);
     if(admin()){
