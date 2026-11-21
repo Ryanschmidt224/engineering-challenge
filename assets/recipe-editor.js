@@ -299,7 +299,10 @@
     const navButton=button((i+1)+". "+(step.title||"Untitled step"),async()=>{
      if(expanded===step.id||saving||pendingUploads)return;
      try{await savePending()}catch(error){feedback.textContent=error.message||"Save failed; still on this step.";return}
-     expanded=step.id;editing.clear();if(isDraft)editing.add(step.id);closeKnowledgeMenu();render();options.onStepChange?.(step.id);
+     expanded=step.id;collapsedSteps.delete(step.id);
+     editing.clear();if(isDraft)editing.add(step.id);
+     options.onStepSelected?.(step.id);
+     closeKnowledgeMenu();render();options.onStepChange?.(step.id);
     },"recipe-step-nav-item"+(isCurrent?" is-active":""));
     navButton.setAttribute("aria-current",isCurrent?"step":"false");
     navButton.setAttribute("aria-label","Step "+(i+1)+": "+(step.title||"Untitled step"));
@@ -619,6 +622,7 @@
    const desired=sessionStorage.getItem(resumeKey);
    if(desired&&steps.some(step=>step.id===desired)){expanded=desired;sessionStorage.removeItem(resumeKey)}
    if(!keepDraft)collapsedSteps.clear();
+   if(expanded)options.onStepSelected?.(expanded);
    editing.clear();feedback.textContent="";
    if(resumeDraft){expanded=draft.id;editing.add(draft.id)}
    setLoading(false);
