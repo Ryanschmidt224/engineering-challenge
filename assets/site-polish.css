@@ -2080,3 +2080,27 @@
   margin-left:0;
  }
 }
+
+
+/* A selected step displays its own collapsed heading and the independent
+   active-entry/archive headings beneath it. They must not be nested under
+   the step's native <details> element. */
+.recipe-compact .recipe-step-detail{
+ display:flex;
+ flex-direction:column;
+ align-items:stretch;
+}
+.recipe-compact .recipe-step-detail > .recipe-one-step{
+ flex:0 0 auto;
+ width:100%;
+}
+.recipe-compact .recipe-step-detail > .recipe-step-investigations{
+ flex:0 0 auto;
+ width:100%;
+ margin-top:10px;
+ padding:0 8px 8px;
+ box-sizing:border-box;
+}
+.recipe-compact .recipe-step-detail > .recipe-one-step:not([open]) > .recipe-one-step-summary{
+ border-radius:9px!important;
+}
