@@ -3,6 +3,7 @@
  */
 import {projectAllowed,canEditProject} from "./projects.js";
 import {getPartPhoto,partPhotoKey} from "./workshop-linked-part.js";
+import {resolveFunctionalPart} from "./functional-part-model.js";
 const json=(x,status=200)=>new Response(JSON.stringify(x),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"private, no-store"}});
 const projectPattern="(?:launcher|linear|robot|buck|motorlab|coiltest|p[a-f0-9]{32})";
 const galleryPattern=new RegExp("^("+projectPattern+")/[0-9a-f-]{36}\\.(?:jpg|png|webp|gif|heic|heif)$","i");
@@ -44,7 +45,7 @@ export async function handlePhotoAnnotations(request,env){
  if(key.startsWith("component-thumbnails/")){
   const object=await env.PHOTOS.get("components/"+project+".json");
   const id=new URL(request.url).searchParams.get("id");
-  part=object&&JSON.parse(await object.text()).find(item=>item.id===id);
+  part=object&&resolveFunctionalPart(JSON.parse(await object.text()).find(item=>item.id===id));
   if(part)key=partPhotoKey(project,part);
  }
  const originalPhoto=()=>part?getPartPhoto(request,env,project,part,key):env.PHOTOS.get(key);
