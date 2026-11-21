@@ -280,6 +280,29 @@
      options.renderInvestigations(step,area,editing.has(step.id),null,order=>{
       step.tileOrder=order;changed();saveHint();
      });
+     // The main instruction heading controls all active entry disclosures.
+     // Keep each entry's own chevron intact for individual expansion.
+     const entryCards=[...area.querySelectorAll(".investigation-active-content .investigation-card")];
+     if(entryCards.length){
+      const expandAll=el("button","recipe-expand-all");
+      expandAll.type="button";
+      expandAll.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 7 6 6 6-6"/><path d="m6 13 6 6 6-6"/></svg>';
+      const updateExpandAll=()=>{
+       const allOpen=entryCards.every(card=>card.open);
+       expandAll.classList.toggle("is-expanded",allOpen);
+       expandAll.setAttribute("aria-expanded",String(allOpen));
+       expandAll.setAttribute("aria-label",allOpen?"Collapse all entries":"Expand all entries");
+       expandAll.title=allOpen?"Collapse all entries":"Expand all entries";
+      };
+      expandAll.onclick=()=>{
+       const expand=!entryCards.every(card=>card.open);
+       for(const card of entryCards)card.open=expand;
+       updateExpandAll();
+      };
+      for(const card of entryCards)card.addEventListener("toggle",updateExpandAll);
+      header.prepend(expandAll);
+      updateExpandAll();
+     }
     }else if(isDraft)detailPane.append(el("p","muted","Save this Work Instruction to start adding entries."));
    }
    if(archived.length)stepList.append(archive);
