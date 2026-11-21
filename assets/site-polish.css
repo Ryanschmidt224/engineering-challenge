@@ -2639,3 +2639,104 @@
  padding:0;
  margin:0;
 }
+
+
+/* Archived Work Instruction steps reuse the existing left-hand navigation.
+   Only the archive list is new; the step, attachments and records stay in
+   their original workspace storage and are read-only until restored. */
+.recipe-compact .recipe-archived-steps{
+ margin-top:14px;
+ padding-top:10px;
+ border-top:1px solid var(--color-border);
+ width:100%;
+ min-width:0;
+}
+.recipe-compact .recipe-archive-steps-heading{
+ cursor:pointer;
+ color:var(--color-text-muted);
+ font-size:.86rem;
+ font-weight:650;
+ padding:10px 12px;
+ border-radius:8px;
+ list-style:none;
+}
+.recipe-compact .recipe-archive-steps-heading::-webkit-details-marker{display:none}
+.recipe-compact .recipe-archive-steps-heading::before{
+ content:"";
+ display:inline-block;
+ vertical-align:middle;
+ box-sizing:border-box;
+ width:9px;
+ height:9px;
+ margin-right:10px;
+ border-top:2px solid currentColor;
+ border-right:2px solid currentColor;
+ transform:rotate(45deg);
+}
+.recipe-compact .recipe-archived-steps[open] > .recipe-archive-steps-heading::before{
+ transform:rotate(135deg);
+}
+.recipe-compact .recipe-archived-step-list{
+ display:flex;
+ flex-direction:column;
+ gap:5px;
+ padding:2px 0 0;
+}
+.recipe-compact .recipe-archived-step-list .recipe-step-nav-item{
+ color:var(--color-text-muted);
+}
+.recipe-compact .recipe-step-archive-metadata{
+ margin-top:12px;
+ padding-top:12px;
+ border-top:1px solid var(--color-border);
+ color:var(--color-text-muted);
+ font-size:.85rem;
+}
+.recipe-compact .recipe-step-archive-metadata p{margin:6px 0 0}
+.recipe-compact .recipe-step-nav-row.is-active > .recipe-step-nav-item{
+ padding-right:295px!important;
+}
+.recipe-compact .recipe-step-nav-actions > .recipe-archive-step{
+ border:1px solid var(--color-border);
+ color:var(--color-text);
+ background:var(--color-surface);
+}
+.recipe-compact .recipe-step-nav-actions > .recipe-archive-step:hover{
+ background:var(--color-hover);
+}
+.recipe-compact .recipe-step-nav-actions > .recipe-restore-step{
+ border:1px solid var(--color-border);
+ color:var(--color-text);
+ background:var(--color-surface);
+}
+.recipe-step-archive-dialog{
+ width:min(500px,calc(100vw - 32px));
+ max-height:90vh;
+ box-sizing:border-box;
+ padding:20px;
+ border-radius:12px;
+}
+.recipe-step-archive-dialog .recipe-archive-note-label{
+ display:flex;
+ flex-direction:column;
+ gap:8px;
+ margin-top:14px;
+}
+.recipe-step-archive-dialog .recipe-archive-note{width:100%;box-sizing:border-box}
+.recipe-step-archive-dialog .recipe-archive-dialog-actions{
+ display:flex;
+ gap:10px;
+ margin-top:16px;
+}
+@media(max-width:760px){
+ .recipe-compact .recipe-step-nav-row.is-active > .recipe-step-nav-item{
+  padding-right:12px!important;
+  padding-bottom:52px!important;
+ }
+ .recipe-compact .recipe-step-nav-row.is-active > .recipe-step-nav-actions{
+  top:auto;
+  bottom:6px;
+  transform:none;
+  right:8px;
+ }
+}
