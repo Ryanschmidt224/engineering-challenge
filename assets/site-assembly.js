@@ -2167,13 +2167,12 @@ function setupAssemblyTrees(){
   }
   function openBomDraft(){
    const root=bomRoot();if(!root){bomReport("BOM editor unavailable. Refresh the page.");return}
-   const aiLookup=window.BSProductLookup.mountPart(root,{canSearch:canEdit});
-   aiLookup.setIdentity({
-    partNumber:bomField("model")?.value.trim()||"",
-    featureTreeDescription:projectOnlyFields.featureTreeName.value.trim().slice(0,100)||
-     editingWorkshopTreeDescription||partDescriptionInput.value.trim().slice(0,20),
-    searchHint:""
+   const aiLookup=window.BSProductLookup.mountPart(root,{
+    canSearch:canEdit,
+    getPartName:()=>partImplementationNameInput.hidden||partImplementationNameRow.hidden
+     ?bomField("name")?.value.trim()||"":partImplementationNameInput.value.trim()
    });
+   aiLookup.setIdentity();
    const review=root.querySelector(".component-review");
    const lookup=root.querySelector(".component-lookup-panel");
    if(review){
@@ -2243,26 +2242,44 @@ function setupAssemblyTrees(){
     group("container","Container",controls.itemType,controls.name,controls.partNumber,
      partDescriptionRow);
     const implementationGroup=group("implementation","Part details",partTypeRow,
-     toolRow,partImplementationNameRow,...ordered(fields.additional),quantities[1]);
+     toolRow,partImplementationNameRow,controls.manufacturer,controls.model,
+     ...ordered(fields.additional.filter(key=>!["manufacturer","model"].includes(key))),
+     quantities[1]);
+    // Do not construct an additional generic details section. Reuse its
+    // existing controls under Part details without inventing another category.
+    for(const entry of otherFields)implementationGroup.append(entry);
     const displayGroup=review.querySelector(".part-display-options")||document.createElement("div");
     displayGroup.className="part-display-options";
     displayGroup.append(...ordered(fields.display.filter(key=>key!=="isTool")));
     group("display","Display options",displayGroup);
-    if(otherFields.length)group("additional","Additional details",...otherFields);
     if(supplierEditor)implementationGroup.append(supplierEditor.element);
     if(apiPanel)implementationGroup.append(apiPanel);
-    const specificationPanel=group("specifications","Specifications",specs,projectOnlyPanel);
+    const specsDisclosure=review.querySelector(".part-editor-specs-disclosure")||document.createElement("details");
+    specsDisclosure.className="part-editor-specs-disclosure";
+    const specsSummary=document.createElement("summary");
+    specsSummary.textContent="Specifications";
+    const specsBody=document.createElement("div");specsBody.className="part-editor-specs-body";
+    specsDisclosure.replaceChildren(specsSummary,specsBody);
+    if(specs)specsBody.append(specs);
     projectOnlyPanel.hidden=!(editingPart&&editingPartOriginal&&workshopLinkId(editingPartOriginal));
     functionalTreeDescriptionField.hidden=true;
-    if(specsHeading&&specsHeading!==specificationPanel.querySelector("h3"))specsHeading.remove();
+    if(!projectOnlyPanel.hidden)specsBody.append(projectOnlyPanel);
+    implementationGroup.append(specsDisclosure);
+    specsDisclosure.open=Boolean(specs?.children.length||!projectOnlyPanel.hidden);
+    if(specsHeading)specsHeading.remove();
+    // Remove old section shells from previous render cycles.
+    for(const section of review.querySelectorAll('[data-part-editor-group="additional"],[data-part-editor-group="specifications"]'))section.remove();
     let actions=review.querySelector(".component-editor-actions");
     if(!actions){
      actions=document.createElement("div");actions.className="component-editor-actions";
      const right=document.createElement("div");right.className="component-editor-primary-actions";
-     actions.append(root.querySelector(".component-add-spec"),right);
-     review.append(actions);
+     actions.append(right);review.append(actions);
     }
-    review.append(actions); // Keep add-spec, Save and Cancel together at the bottom.
+    if(addSpec){
+     specsBody.append(addSpec);
+     addSpec.addEventListener("click",()=>{specsDisclosure.open=true},{once:true});
+    }
+    review.append(actions); // Only Save and Cancel remain in the primary footer.
     const buttons=actions.querySelector(".component-editor-primary-actions");
     buttons.append(root.querySelector(".component-save"),bomEditorCancel);
    }
