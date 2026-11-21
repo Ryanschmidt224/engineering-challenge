@@ -143,6 +143,11 @@ function open({onCreate,hideDefault=false}){
  workshopDescription.input.placeholder="Describe what this part is and how it will be used";
  const ownSupplier=field("Supplier name");ownSupplier.input.maxLength=120;ownSupplier.input.placeholder="e.g. JLCPCB";
  const vendorField=field("Preferred supplier","select");
+ const supplierCaption=el("span","library-function-caption","Preferred supplier");
+ const supplierHelp=el("span","library-function-tip","ⓘ");supplierHelp.tabIndex=0;
+ supplierHelp.title="Supplier search links use the MPN. Verify the manufacturer, package, specifications, stock, and price before ordering.";
+ supplierHelp.setAttribute("role","img");supplierHelp.setAttribute("aria-label",supplierHelp.title);
+ supplierCaption.append(supplierHelp);vendorField.label.replaceChildren(supplierCaption,vendorField.input);
  for(const [id,label] of [["DigiKey","DigiKey"],["Mouser","Mouser"],["Newark","Newark"],["Arrow","Arrow"],["Other","Other / not yet selected"]])option(vendorField.input,id,label);
  const vendorLinks=el("div","library-vendor-links muted");
  const vendorInfo=el("p","muted library-vendor-info","Vendor links search by manufacturer part number. Confirm manufacturer, package, specifications, stock and price before ordering.");
@@ -256,7 +261,13 @@ function open({onCreate,hideDefault=false}){
   return {target,choice,other,hint,value:()=>choice.input.value==="other"?other.input.value.trim():choice.input.value};
  };
  const endA=terminationField("A"),endB=terminationField("B");
- const qty=field("Quantity (optional)");qty.input.type="number";qty.input.min="0.000001";qty.input.max="10000000";qty.input.step="any";qty.input.placeholder="Leave blank if unknown";qty.input.value="";
+ const qty=field("Quantity (optional)");
+ const quantityCaption=el("span","library-function-caption","Quantity (optional)");
+ const quantityHelp=el("span","library-function-tip","ⓘ");quantityHelp.tabIndex=0;
+ quantityHelp.title="Leave blank if the required quantity is not known yet, such as with consumables.";
+ quantityHelp.setAttribute("role","img");quantityHelp.setAttribute("aria-label",quantityHelp.title);
+ quantityCaption.append(quantityHelp);qty.label.replaceChildren(quantityCaption,qty.input);
+ qty.input.type="number";qty.input.min="0.000001";qty.input.max="10000000";qty.input.step="any";qty.input.placeholder="Leave blank if unknown";qty.input.value="";
  const hintUnits=el("p","muted library-picker-hint","Optional: leave quantity blank for consumables such as solder when usage is not yet known.");
  const results=el("p","library-picker-hint muted","Choose the wire size and construction here. A matching saved wire material is reused automatically when the part is created.");
  const calc=el("section","wire-gauge-helper");
