@@ -2854,3 +2854,70 @@
 .recipe-compact .recipe-step-note:first-child textarea{
  min-height:90px;
 }
+
+
+/* One nested entry level under a Work Instruction record.
+   The child belongs visually to the parent and can be collapsed on its own. */
+.recipe-compact .investigation-nested-section{
+ margin-top:16px;
+ padding:12px 0 0 18px;
+ border-left:3px solid var(--color-border);
+ display:flex;
+ flex-direction:column;
+ gap:10px;
+ min-width:0;
+}
+.recipe-compact .investigation-nested-section > .investigation-nested-card{
+ margin:0;
+ width:100%;
+ box-sizing:border-box;
+ border:1px solid var(--color-border);
+ border-radius:10px;
+ overflow:hidden;
+}
+.recipe-compact .investigation-nested-section > .investigation-add-nested{
+ align-self:flex-start;
+ border:1px solid var(--color-border);
+ border-radius:8px;
+ background:var(--color-surface);
+ min-height:36px;
+ padding:7px 12px;
+ font-size:.84rem;
+ font-weight:650;
+ color:var(--color-text);
+ cursor:pointer;
+}
+.recipe-compact .investigation-nested-section > .investigation-add-nested:hover{
+ background:var(--color-hover);
+}
+.recipe-compact .investigation-nested-section > .investigation-new-record{
+ width:100%;
+ box-sizing:border-box;
+ margin:0;
+ padding:14px;
+ border:1px solid var(--color-border);
+ border-radius:10px;
+ background:var(--color-surface);
+}
+.recipe-compact .investigation-nested-archive{
+ margin:6px 0;
+ padding:6px 0;
+ color:var(--color-text-muted);
+ font-size:.85rem;
+}
+.recipe-compact .investigation-nested-archive > summary{
+ cursor:pointer;
+ padding:8px 0;
+}
+.recipe-compact .investigation-nested-archive-content{
+ display:flex;
+ flex-direction:column;
+ gap:10px;
+ padding:8px 0;
+}
+@media(max-width:600px){
+ .recipe-compact .investigation-nested-section{
+  padding-left:10px;
+  margin-top:12px;
+ }
+}
