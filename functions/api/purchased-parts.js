@@ -1,4 +1,5 @@
 import {isAdmin} from "./auth.js";
+import {resolveFunctionalPart} from "./functional-part-model.js";
 const PROJECTS=new Set(["launcher","linear","robot","buck","motorlab","coiltest"]);
 const KEY="libraries/purchased-parts.json";
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
@@ -8,7 +9,7 @@ const identity=part=>{
  if(asin)return "asin:"+asin;
  const manufacturer=short(part.manufacturer,100).toLowerCase(),model=short(part.model,100).toLowerCase();
  if(manufacturer&&model)return "model:"+manufacturer+":"+model;
- return "name:"+short(part.name,180).toLowerCase()+"|"+manufacturer+"|"+model;
+ return "name:"+short(part.implementationName||part.name,180).toLowerCase()+"|"+manufacturer+"|"+model;
 };
 export async function handlePurchasedParts(request,env){
  if(!["GET","POST"].includes(request.method))return json({error:"Method not allowed"},405);
@@ -23,13 +24,15 @@ export async function handlePurchasedParts(request,env){
  if(!PROJECTS.has(project)||typeof partId!=="string"||!/^[0-9a-f-]{36}$/i.test(partId))return json({error:"Select a saved project part"},400);
  const source=await env.PHOTOS.get("components/"+project+".json");
  const components=source?JSON.parse(await source.text()):[];
- const part=components.find(p=>p.id===partId);
+ const part=resolveFunctionalPart(components.find(p=>p.id===partId));
  if(!part||part.generatedFrom)return json({error:"Part not found or is calculated material"},404);
+ if(part.implementationResolved===false||part.partType==="custom"||part.itemType==="document")
+  return json({error:"Select an orderable implementation before adding it to purchased parts"},409);
  const key=identity(part),reference={project,partId};
  let record=records.find(r=>r.identity===key);
  if(!record){
   if(records.length>=1200)return json({error:"Purchased-part library full"},400);
-  record={id:crypto.randomUUID(),identity:key,name:short(part.name,180),manufacturer:short(part.manufacturer,100),model:short(part.model,100),
+  record={id:crypto.randomUUID(),identity:key,name:short(part.implementationName||part.name,180),manufacturer:short(part.manufacturer,100),model:short(part.model,100),
    supplier:short(part.supplier,140),asin:short(part.asin,30),category:short(part.category,100),
    specifications:Array.isArray(part.specifications)?part.specifications.slice(0,35).map(v=>({name:short(v.name,120),value:short(v.value,300),source:v.source==="inferred"?"inferred":"explicit"})):[],
    historicalPrice:part.historicalPrice??null,recordedAt:new Date().toISOString(),sources:[]};
