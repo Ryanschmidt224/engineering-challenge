@@ -2249,7 +2249,17 @@ function setupAssemblyTrees(){
     if(legacyFullName)legacyFullName.hidden=true;
     if(legacyCategory)legacyCategory.hidden=true;
     const identity=[field("name")];
-    if(identity[0]?.firstChild?.nodeType===Node.TEXT_NODE)identity[0].firstChild.nodeValue="Container";
+    if(identity[0]?.firstChild?.nodeType===Node.TEXT_NODE)identity[0].firstChild.nodeValue="Container ";
+    if(identity[0]&&!identity[0].querySelector(".part-container-name-hint")){
+     const nameHint=document.createElement("span");nameHint.className="part-container-name-hint";
+     nameHint.textContent="(name)";
+     const target=bomField("name");identity[0].insertBefore(nameHint,target||null);
+     const help=document.createElement("span");help.className="library-function-tip";
+     help.textContent="ⓘ";help.tabIndex=0;
+     help.title="A container is an item in the project hierarchy that holds its purpose, part details, work instructions, tests, revisions, and history. Its name identifies it in the project tree (maximum 20 characters).";
+     help.setAttribute("role","img");help.setAttribute("aria-label",help.title);
+     identity[0].insertBefore(help,target||null);
+    }
     const containerNameInput=bomField("name");
     if(containerNameInput){containerNameInput.maxLength=20;containerNameInput.placeholder="Short name in project tree (20 characters)"}
     const quantities=[field("quantity"),field("quantity-unit")];
