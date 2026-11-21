@@ -69,7 +69,7 @@ export async function handleProjectMilestones(request,env){
   record={id:crypto.randomUUID(),createdAt:at,objective,successCriteria,plan};
   next={...saved,originalIntent:record};
  }else if(input.action==="addMilestone"){
-  if(!saved.originalIntent)return json({error:"Record an original project intent before adding milestones."},409);
+  // Original intent is optional; milestones must remain usable for projects started earlier.
   if(saved.milestones.length>=250)return json({error:"Maximum 250 significant milestones per project"},413);
   const what=textValue(input.whatHappened,3000),significance=textValue(input.significance,2000);
   if(!what||!significance)return json({error:"Describe what happened and why it is significant to the project."},400);
