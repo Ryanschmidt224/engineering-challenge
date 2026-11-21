@@ -664,3 +664,67 @@
  #commonparts .bs-catalog-category-parent{display:inline-flex}
  #commonparts .bs-catalog-category-child{padding-left:12px}
 }
+
+
+/* Workshop has exactly one browse hierarchy: the left-hand categories.
+   The right pane is a direct, compact list of part numbers/items. */
+#commonparts .workshop-direct-parts{
+ display:flex;
+ flex-direction:column;
+ border-top:1px solid var(--color-border);
+}
+#commonparts .workshop-direct-part{
+ display:flex;
+ align-items:center;
+ gap:14px;
+ padding:9px 8px;
+ border-bottom:1px solid var(--color-border);
+ min-width:0;
+}
+#commonparts .workshop-direct-part:hover{background:var(--color-hover)}
+#commonparts .workshop-direct-part-photo{
+ flex:none;
+ padding:0;
+ background:transparent;
+ border:0;
+ cursor:pointer;
+}
+#commonparts .workshop-direct-part-photo .workshop-catalog-thumb{
+ width:56px;
+ height:56px;
+}
+#commonparts .workshop-direct-part-photo .workshop-catalog-thumb svg{
+ width:46px;
+ height:46px;
+}
+#commonparts .workshop-direct-part-details{
+ display:flex;
+ flex:1;
+ flex-direction:column;
+ align-items:flex-start;
+ gap:3px;
+ min-width:0;
+}
+#commonparts .workshop-direct-part-number{
+ border:0;
+ background:transparent;
+ padding:0;
+ color:var(--color-accent);
+ font:inherit;
+ font-weight:700;
+ font-size:.94rem;
+ text-align:left;
+ overflow-wrap:anywhere;
+ cursor:pointer;
+}
+#commonparts .workshop-direct-part-number:hover{text-decoration:underline}
+#commonparts .workshop-direct-part-name{font-size:.87rem;overflow-wrap:anywhere}
+#commonparts .workshop-direct-part-details small{font-size:.77rem}
+#commonparts .workshop-direct-part-add{
+ flex:none;
+ font-size:.78rem;
+}
+@media(max-width:600px){
+ #commonparts .workshop-direct-part{gap:9px}
+ #commonparts .workshop-direct-part-add{font-size:.73rem;padding:5px 7px}
+}
