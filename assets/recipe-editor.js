@@ -365,7 +365,7 @@
       steps=next;changed();saveHint();render();
      });
     }
-    const navRow=el("div","recipe-step-nav-row"+(isCurrent?" is-active":""));
+    const navRow=el("div","recipe-step-nav-row"+(isCurrent?" is-active":"")+(isCurrent&&editing.has(step.id)?" is-editing":""));
     navRow.append(navButton);(archived?archiveList:stepList).append(navRow);
     if(!isCurrent)continue;
     const card=el("details","recipe-one-step bs-content-card");
@@ -486,7 +486,8 @@
     }else if(admin()){
      // Step controls live together in the highlighted navigation row. Keep
      // them separate from the draggable/selectable step title.
-     const edit=button(editing.has(step.id)?"Save":"Edit",saveStep,"btn recipe-step-edit-toggle");
+     const edit=button("Edit",saveStep,"btn recipe-step-edit-toggle");
+     edit.hidden=editing.has(step.id);
      const navActions=el("div","recipe-step-nav-actions");
      navActions.append(edit);
      if(editing.has(step.id)){
@@ -549,6 +550,7 @@
       },"btn recipe-delete-step");
       navActions.append(deleteStep);
      }
+     navActions.hidden=editing.has(step.id);
      navRow.append(navActions);
     }
     // Let the header/chevron toggle its native <details>. Controls inside
@@ -621,7 +623,8 @@
       step.notes.forEach((value,index)=>{
        const line=el("div","recipe-step-note");
        line.dataset.noteIndex=String(index);
-       const field=editField(value,"Write a note",v=>step.notes[index]=v,3);
+       const field=editField(value,index===0?"Description":"Note",v=>step.notes[index]=v,3);
+       field.setAttribute("aria-label",index===0?"Description":"Note "+(index+1));
        field.maxLength=4000;
        const noteAttachments=el("div","recipe-note-attachments");
        for(const id of step.photos){
@@ -698,6 +701,14 @@
       },{className:"recipe-cancel-step"});
       actions.append(bottomSave,cancel);
      }
+     // Work Instructions use the same action row as their supporting
+     // records; left navigation only selects a step or opens Edit mode.
+     if(!isDraft)actions.append(window.BSEntryEditor.action("Archive",event=>{
+      event.preventDefault();navRow.querySelector(".recipe-archive-step")?.click();
+     }));
+     actions.append(window.BSEntryEditor.action("Delete",event=>{
+      event.preventDefault();navRow.querySelector(".recipe-delete-step")?.click();
+     },{kind:"danger",className:"recipe-delete-entry"}));
      body.append(actions);
     }else{
      const displayed=el("div","recipe-reader-text");
@@ -749,7 +760,7 @@
   const add=button("+ Add entry",()=>{
    if(!admin()||loading||saving||pendingUploads)return;
    if(!draft){
-    draft={id:newId(),title:"",standard:"",detail:"",kind:"action",notes:[],noteIds:[],photos:[],photoNames:{},photoNoteIds:{},photoAfterNote:{}};
+    draft={id:newId(),title:"",standard:"",detail:"",kind:"action",notes:[""],noteIds:[newId()],photos:[],photoNames:{},photoNoteIds:{},photoAfterNote:{}};
     steps.push(draft);
    }
    expanded=draft.id;expandedStepBodies.add(draft.id);editSnapshots.clear();editing.clear();editing.add(draft.id);render();
