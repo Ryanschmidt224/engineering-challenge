@@ -494,7 +494,7 @@ function open({onCreate,hideDefault=false}){
      row.input.dataset.specName=label;
      row.input.dataset.specUnit=unit;
      row.input.value=String(existing?.value||"");
-     if(label==="Power rating"&&!row.input.value&&/\b(?:1\\/4|¼)\s*(?:w|watt)\b/i.test(item.name||""))row.input.value="0.25";
+     if(label==="Power rating"&&!row.input.value&&/\b(?:1\/4|¼)\s*(?:w|watt)\b/i.test(item.name||""))row.input.value="0.25";
      genericProjectInputs.append(row.label);
     }
     for(const spec of sourceSpecs){
@@ -722,20 +722,31 @@ function open({onCreate,hideDefault=false}){
    const generic=window.BSResources.workshopIdentityKind(p)==="generic";
    const genericName=generic?window.BSResources.genericContainerName(p):p.name;
    const genericSpecs=generic?[...genericProjectInputs.querySelectorAll("input[data-spec-name]")].map(input=>({
-    name:input.dataset.specName,value:input.value.trim(),unit:input.dataset.specUnit||""
+    name:input.dataset.specName,
+    value:input.value.trim()+(input.value.trim()&&input.dataset.specUnit?" "+input.dataset.specUnit:"")
    })).filter(spec=>spec.name&&spec.value):[];
+   const configuredNames=new Set(genericSpecs.map(spec=>spec.name.toLowerCase()));
+   const sourceSpecs=(Array.isArray(p.specifications)?p.specifications:[])
+    .map(spec=>({
+     name:String(spec.name||spec.label||"").trim(),
+     value:String(spec.value||"").trim()+(spec.value&&spec.unit?" "+spec.unit:"")
+    }))
+    .filter(spec=>spec.name&&spec.value&&(!generic||!configuredNames.has(spec.name.toLowerCase())));
+   const mergedSpecs=[...sourceSpecs,...genericSpecs].slice(0,38);
    payload=isStandard?{
     name:genericName,quantity:count,category:commonGroup(p),manufacturer:p.manufacturer||"",
     model:p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",
     isTool:commonGroup(p)==="tools",
-    specifications:[{name:"Workshop reference",value:p.id},{name:"Tool specification",value:String(p.detail||p.spec||"Workshop reference").slice(0,300)}]
+    specifications:generic
+     ?[{name:"Workshop reference",value:p.id},...mergedSpecs]
+     :[{name:"Workshop reference",value:p.id},{name:"Tool specification",value:String(p.detail||p.spec||"Workshop reference").slice(0,300)}]
    }:(isPublic||isMine)?{
     name:genericName,quantity:count,category:commonGroup(p),manufacturer:p.manufacturer||"",
     model:p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",isTool:commonGroup(p)==="tools",
     specifications:[
      {name:isPublic?"Public Workshop reference":"My Workshop reference",value:p.id},
-     ...(Array.isArray(p.specifications)?p.specifications:
-       [{name:"Specifications",value:String(p.spec||"Reference specifications not supplied").slice(0,300)}])
+     ...(mergedSpecs.length?mergedSpecs:
+      generic?[]:[{name:"Specifications",value:String(p.spec||"Reference specifications not supplied").slice(0,300)}])
     ].filter(spec=>spec.name&&spec.value).slice(0,40)
    }:isPurchased?{
     name:p.name,quantity:count,sharedPartRef:"purchased:"+p.id,manufacturer:p.manufacturer||"",
