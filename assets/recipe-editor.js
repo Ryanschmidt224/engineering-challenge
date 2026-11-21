@@ -217,7 +217,8 @@
    menu.style.left=x+"px";menu.style.top=y+"px";
   };
   content.addEventListener("contextmenu",event=>{
-   if(event.target.closest("input,textarea,select,button,img"))return;
+   // Paste targets need the browser native context menu, not knowledge lookup.
+   if(event.target.closest(".bs-photo-paste,.recipe-photo-frame,.recipe-step-photos,.recipe-note-attachments,input,textarea,select,button,img"))return;
    const card=event.target.closest(".recipe-one-step");
    if(!card)return;
    const step=steps.find(item=>item.id===card.dataset.stepId);
@@ -305,13 +306,66 @@
     },"recipe-step-nav-item"+(isCurrent?" is-active":""));
     navButton.setAttribute("aria-current",isCurrent?"step":"false");
     navButton.setAttribute("aria-label","Step "+(i+1)+": "+(step.title||"Untitled step"));
+    // Reordering is independent of selecting/opening a step. Restrict drag
+    // payloads to this list so photo/file drops are never treated as steps.
+    if(admin()&&!isDraft){
+     navButton.draggable=true;
+     navButton.title="Drag to reorder work instructions";
+     navButton.addEventListener("dragstart",event=>{
+      if(saving||pendingUploads){event.preventDefault();return}
+      event.dataTransfer.setData("application/x-bs-recipe-step",step.id);
+      event.dataTransfer.setData("text/plain",step.id);
+      event.dataTransfer.effectAllowed="move";
+      navButton.classList.add("recipe-step-dragging");
+     });
+     navButton.addEventListener("dragend",()=>{
+      stepList.querySelectorAll(".recipe-step-dragging,.recipe-step-drop-before,.recipe-step-drop-after").forEach(el=>el.classList.remove("recipe-step-dragging","recipe-step-drop-before","recipe-step-drop-after"));
+     });
+     navButton.addEventListener("dragover",event=>{
+      if(!event.dataTransfer.types.includes("application/x-bs-recipe-step"))return;
+      event.preventDefault();event.dataTransfer.dropEffect="move";
+      const after=event.clientY>=navButton.getBoundingClientRect().top+navButton.offsetHeight/2;
+      navButton.classList.toggle("recipe-step-drop-before",!after);
+      navButton.classList.toggle("recipe-step-drop-after",after);
+     });
+     navButton.addEventListener("dragleave",()=>navButton.classList.remove("recipe-step-drop-before","recipe-step-drop-after"));
+     navButton.addEventListener("drop",event=>{
+      if(!event.dataTransfer.types.includes("application/x-bs-recipe-step"))return;
+      event.preventDefault();event.stopPropagation();
+      const draggedId=event.dataTransfer.getData("application/x-bs-recipe-step");
+      const from=steps.findIndex(item=>item.id===draggedId);
+      const target=steps.findIndex(item=>item.id===step.id);
+      if(from<0||target<0||from===target||steps[from]===draft)return;
+      const after=event.clientY>=navButton.getBoundingClientRect().top+navButton.offsetHeight/2;
+      const next=[...steps],item=next.splice(from,1)[0];
+      const targetIndex=next.findIndex(entry=>entry.id===step.id);
+      next.splice(targetIndex+(after?1:0),0,item);
+      if(next.every((entry,index)=>entry===steps[index])){render();return}
+      steps=next;changed();saveHint();render();
+     });
+    }
     stepList.append(navButton);
     if(!isCurrent)continue;
     const card=el("details","recipe-one-step");
     card.dataset.stepId=step.id;card.open=true;
     const summary=el("summary","recipe-one-step-summary");
-    const name=el("span","recipe-one-step-title",(i+1)+". "+(step.title||"Untitled step"));
-    summary.append(name);
+    const titlePrefix=el("span","recipe-one-step-number",(i+1)+".");
+    const name=el("span","recipe-one-step-title",step.title||"Untitled step");
+    summary.append(titlePrefix);
+    if(admin()&&editing.has(step.id)){
+     const nameInput=editField(step.title,"Describe the action",value=>{
+      step.title=value;
+      const label=value||"Untitled step";
+      name.textContent=label;
+      navButton.textContent=(i+1)+". "+label;
+      navButton.setAttribute("aria-label","Step "+(i+1)+": "+label);
+     });
+     nameInput.classList.add("recipe-step-name","recipe-step-title-input");
+     nameInput.maxLength=180;nameInput.setAttribute("aria-label","Step name");
+     nameInput.addEventListener("click",event=>event.stopPropagation());
+     nameInput.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();nameInput.blur()}});
+     summary.append(nameInput);
+    }else summary.append(name);
     if(step.kind!=="action")summary.append(el("small","recipe-kind-caption",kinds.find(k=>k[0]===step.kind)?.[1]||step.kind));
     const saveStep=async event=>{
      event.preventDefault();event.stopPropagation();
@@ -324,7 +378,7 @@
      if(pendingUploads){feedback.textContent="Wait for photo uploads to finish before saving.";return}
      if(!step.title.trim()){
       feedback.textContent="Enter a step name before saving.";
-      card.querySelector(".recipe-one-field input")?.focus();
+      card.querySelector(".recipe-step-name")?.focus();
       return;
      }
      const edit=card.querySelector(".recipe-step-edit-toggle");
@@ -354,16 +408,6 @@
     card.append(summary);
     const body=el("div","recipe-one-step-body");
     if(admin()&&editing.has(step.id)){
-     const title=el("label","recipe-one-field","Step name");
-     const nameInput=editField(step.title,"Describe the action",value=>{
-      step.title=value;
-      const label=value||"Untitled step";
-      name.textContent=navButton.textContent=(i+1)+". "+label;
-      navButton.setAttribute("aria-label","Step "+(i+1)+": "+label);
-     });
-     nameInput.classList.add("recipe-step-name");
-     nameInput.maxLength=180;title.append(nameInput);body.append(title);
-
      // Photos remain in the existing step.photos list. photoAfterNote keeps
      // optional placement beside a particular note without changing photo IDs.
      const additions=el("div","recipe-step-additions");
