@@ -993,6 +993,21 @@ test("Failed Workshop publication remains in New Part dialog and does not create
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Cancel"}).click();
 });
 
+test("Edit Part uses Container naming and framed implementation groups",async({page})=>{
+ await page.goto("/");
+ const source=await page.evaluate(async()=>{
+  const response=await fetch("/assets/site-assembly.js",{cache:"no-store"});
+  return response.text();
+ });
+ expect(source).toContain('group("container","Container"');
+ expect(source).toContain('group("implementation","Selected implementation"');
+ expect(source).toContain('group("specifications","Specifications"');
+ expect(source).toContain('document.createTextNode("Part number")');
+ expect(source).toContain('firstChild.nodeValue="Container "');
+ expect(source).not.toContain('firstChild.nodeValue="Functional part name"');
+ expect(source).not.toContain('document.createTextNode("Functional part number")');
+});
+
 test("Missing Workshop search offers Create new part radio and preserved manufacturer number",async({page})=>{
  await page.route("**/api/**",async route=>{
   const url=new URL(route.request().url());let data={};
