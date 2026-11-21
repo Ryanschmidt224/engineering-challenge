@@ -1857,7 +1857,7 @@
  padding:20px;background:var(--color-surface);color:var(--color-text);
  border:1px solid var(--color-border);border-radius:12px;
 }
-.investigation-archive-dialog::backdrop{background:#0008}
+.investigation-archive-dialog::backdrop{background:color-mix(in srgb,var(--color-shadow-base) 53.33%,transparent)}
 .investigation-archive-dialog h3{margin:0 0 8px}
 .investigation-archive-dialog .investigation-archive-note-label,
 .investigation-description-label{
@@ -2616,8 +2616,8 @@
 }
 .recipe-compact :is(.recipe-edit-controls,.investigation-edit-actions) > .investigation-delete{
  margin-left:12px;
- color:var(--color-danger-action, #a3222c);
- border-color:color-mix(in srgb,var(--color-danger-action, #a3222c) 28%,var(--color-border));
+ color:var(--color-danger-action);
+ border-color:color-mix(in srgb,var(--color-danger-action) 28%,var(--color-border));
  background:var(--color-surface);
 }
 .recipe-compact :is(.recipe-edit-controls,.investigation-edit-actions) > .investigation-archive-button{
@@ -2806,8 +2806,8 @@
  box-shadow:none!important;
 }
 .recipe-compact .bs-entry-action-danger{
- color:var(--color-danger-action, #a3222c)!important;
- border:1px solid color-mix(in srgb,var(--color-danger-action, #a3222c) 28%,var(--color-border))!important;
+ color:var(--color-danger-action)!important;
+ border:1px solid color-mix(in srgb,var(--color-danger-action) 28%,var(--color-border))!important;
  background:var(--color-surface)!important;
 }
 .recipe-compact .bs-entry-title-input{
@@ -2844,12 +2844,12 @@
  padding-right:12px!important;
 }
 .recipe-compact .recipe-step-detail > .recipe-one-step .recipe-edit-controls > .recipe-delete-entry{
- color:var(--color-danger-action, #a3222c)!important;
- border-color:color-mix(in srgb,var(--color-danger-action, #a3222c) 28%,var(--color-border))!important;
+ color:var(--color-danger-action)!important;
+ border-color:color-mix(in srgb,var(--color-danger-action) 28%,var(--color-border))!important;
  background:var(--color-surface)!important;
 }
 .recipe-compact .recipe-step-detail > .recipe-one-step .recipe-edit-controls > .recipe-delete-entry:hover{
- background:color-mix(in srgb,var(--color-danger-action, #a3222c) 7%,var(--color-surface))!important;
+ background:color-mix(in srgb,var(--color-danger-action) 7%,var(--color-surface))!important;
 }
 .recipe-compact .recipe-step-note:first-child textarea{
  min-height:90px;
@@ -2935,7 +2935,7 @@
  padding-right:115px!important;
 }
 .recipe-compact .recipe-step-nav-row.is-editing > .recipe-step-nav-actions > .recipe-delete-step{
- border-color:color-mix(in srgb,var(--color-danger-action, #a3222c) 28%,var(--color-border));
+ border-color:color-mix(in srgb,var(--color-danger-action) 28%,var(--color-border));
 }
 .recipe-compact .recipe-restore-section{
  display:inline-flex;
@@ -3077,8 +3077,8 @@
  color:white;
 }
 .recipe-compact .recipe-step-detail > .recipe-container-heading > .recipe-delete-step{
- color:var(--color-danger-action,#a3222c);
- border-color:color-mix(in srgb,var(--color-danger-action,#a3222c) 27%,var(--color-border));
+ color:var(--color-danger-action);
+ border-color:color-mix(in srgb,var(--color-danger-action) 27%,var(--color-border));
 }
 .recipe-compact .recipe-step-detail > .recipe-step-investigations > .investigation-active-area{
  min-height:0;
@@ -3161,7 +3161,7 @@
  padding:5px 9px;
 }
 .recipe-compact .recipe-step-nav-row.is-editing > .recipe-step-nav-actions > .recipe-delete-step{
- color:var(--color-danger-action,#a3222c);
+ color:var(--color-danger-action);
 }
 /* The title and its main description should read as one compact form. */
 :is(.recipe-step-investigations,.investigations-panel) .investigation-add-controls{
@@ -3637,7 +3637,7 @@
  background:var(--color-surface);
  color:var(--color-text);
 }
-.assembly-archive-dialog::backdrop{background:rgba(0,0,0,.42)}
+.assembly-archive-dialog::backdrop{background:color-mix(in srgb,var(--color-shadow-base) 42%,transparent)}
 .assembly-archive-dialog h3{margin:0 0 8px}
 .assembly-archive-dialog ul{padding-left:24px}
 .assembly-archive-json{
@@ -3759,16 +3759,16 @@
 }
 .assembly-archived-row .assembly-archive-delete,
 .assembly-archive-actions .assembly-archive-delete{
- color:var(--color-danger,#a32626);
- border-color:var(--color-danger-border,#e1b2b2);
+ color:var(--color-danger);
+ border-color:var(--color-danger-border);
  background:var(--color-surface);
 }
 .assembly-archived-row .assembly-archive-delete:hover,
 .assembly-archive-actions .assembly-archive-delete:hover{
- background:var(--color-danger-soft,#fff1f1);
+ background:var(--color-danger-soft);
 }
 .assembly-archive-delete-feedback{
- color:var(--color-danger,#a32626);
+ color:var(--color-danger);
  font-size:.84rem;
 }
 @media(max-width:460px){
