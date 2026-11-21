@@ -6,21 +6,8 @@ window.BSProductLookup=(()=>{
   const cost=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:4}).format(usage.estimatedUsd);
   return "Estimated API cost "+cost+" · "+usage.searches+" web "+(usage.searches===1?"search":"searches");
  };
- function create({identity=false,getQuery,onStart,onResult,canSearch=()=>true}={}){
-  const element=el("section","product-ai-search");
-  const inputs={};
-  const field=(key,label,max,placeholder)=>{
-   const wrapper=el("label","product-ai-field"),input=el("input","field");
-   input.type="text";input.maxLength=max;input.placeholder=placeholder||"";
-   wrapper.append(el("span","",label),input);element.append(wrapper);inputs[key]=input;return input;
-  };
-  if(identity){
-   field("partNumber","Manufacturer part number",160);
-   field("featureTreeDescription","Feature tree description",20);
-  }
-  // Reusable action/input/tooltip control. Other site features can use the
-  // same layout without coupling their action to Workshop lookup behavior.
-  const actionInput=({label,placeholder,maxLength,description})=>{
+ // Reusable button/input/tooltip control for AI search and other site actions.
+ const actionInput=({label,placeholder,maxLength,description})=>{
    const row=el("div","bs-action-input-row");
    const button=el("button","btn primary",label);button.type="button";
    const input=el("input","field bs-action-input");input.type="text";
@@ -38,6 +25,18 @@ window.BSProductLookup=(()=>{
    help.append(helpButton,tip);row.append(button,input,help);
    return {row,button,input,helpButton};
   };
+ function create({identity=false,getQuery,onStart,onResult,canSearch=()=>true}={}){
+  const element=el("section","product-ai-search");
+  const inputs={};
+  const field=(key,label,max,placeholder)=>{
+   const wrapper=el("label","product-ai-field"),input=el("input","field");
+   input.type="text";input.maxLength=max;input.placeholder=placeholder||"";
+   wrapper.append(el("span","",label),input);element.append(wrapper);inputs[key]=input;return input;
+  };
+  if(identity){
+   field("partNumber","Manufacturer part number",160);
+   field("featureTreeDescription","Feature tree description",20);
+  }
   const control=actionInput({
    label:"Find with AI",
    placeholder:"Manufacturer, supplier, product link, or datasheet link (optional)",
@@ -153,5 +152,5 @@ window.BSProductLookup=(()=>{
   root.bsProductLookup=lookup;
   return lookup;
  }
- return {create,mountPart,costMessage};
+ return {create,mountPart,costMessage,actionInput};
 })();
