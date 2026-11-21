@@ -735,14 +735,14 @@ function open({onCreate,hideDefault=false}){
    const mergedSpecs=[...sourceSpecs,...genericSpecs].slice(0,38);
    payload=isStandard?{
     name:genericName,quantity:count,category:commonGroup(p),manufacturer:p.manufacturer||"",
-    model:p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",
+    model:generic?"":p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",
     isTool:commonGroup(p)==="tools",
     specifications:generic
      ?[{name:"Workshop reference",value:p.id},...mergedSpecs]
      :[{name:"Workshop reference",value:p.id},{name:"Tool specification",value:String(p.detail||p.spec||"Workshop reference").slice(0,300)}]
    }:(isPublic||isMine)?{
     name:genericName,quantity:count,category:commonGroup(p),manufacturer:p.manufacturer||"",
-    model:p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",isTool:commonGroup(p)==="tools",
+    model:generic?"":p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",isTool:commonGroup(p)==="tools",
     specifications:[
      {name:isPublic?"Public Workshop reference":"My Workshop reference",value:p.id},
      ...(mergedSpecs.length?mergedSpecs:
@@ -750,7 +750,7 @@ function open({onCreate,hideDefault=false}){
     ].filter(spec=>spec.name&&spec.value).slice(0,40)
    }:isPurchased?{
     name:p.name,quantity:count,sharedPartRef:"purchased:"+p.id,manufacturer:p.manufacturer||"",
-    model:p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",asin:p.asin||"",category:commonGroup(p),
+    model:generic?"":p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",asin:p.asin||"",category:commonGroup(p),
     isTool:commonGroup(p)==="tools",specifications:Array.isArray(p.specifications)?p.specifications:[]
    }:{
     name:p.name,quantity:count,sharedPartRef:"common:"+p.id,manufacturer:p.manufacturer||"",model:p.partNumber||"",
