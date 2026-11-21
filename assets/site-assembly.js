@@ -1201,6 +1201,19 @@ function setupAssemblyTrees(){
     dropdown.value=part.selectedImplementationId||"";
     dropdown.onchange=()=>void run(dropdown,"select",{implementation:{id:dropdown.value||null}});
     chooser.append(caption,dropdown);selection.append(chooser);
+    if(part.selectedImplementationId){
+     const retire=document.createElement("button");retire.type="button";retire.className="btn part-implementation-retire";
+     retire.textContent="Retire selected implementation";
+     retire.title="Keep this design and its files in history, but stop using it for the active BOM.";
+     retire.onclick=async()=>{
+      if(!await window.BSDialogs.danger(
+       "Retire this implementation? The functional part and past design history remain; an alternative must be selected before ordering or fabricating.",
+       {title:"Retire selected implementation?"}
+      ))return;
+      void run(retire,"retire",{implementation:{id:part.selectedImplementationId}});
+     };
+     selection.append(retire);
+    }
     const addButton=document.createElement("button");addButton.type="button";addButton.className="btn part-implementation-add";
     addButton.textContent="Add implementation";selection.append(addButton);
     const newForm=document.createElement("div");newForm.className="part-implementation-new";newForm.hidden=true;
@@ -1231,6 +1244,27 @@ function setupAssemblyTrees(){
     back.onclick=()=>{newForm.hidden=true;addButton.hidden=false};
     addButton.onclick=()=>{newForm.hidden=false;addButton.hidden=true;name.focus()};
     selection.append(newForm);
+   }
+   const retired=(part.implementations||[]).filter(candidate=>candidate.retiredAt);
+   const history=part.implementationHistory||[];
+   if(retired.length||history.length){
+    const past=document.createElement("details");past.className="part-implementation-history";
+    const summary=document.createElement("summary");summary.textContent="Implementation history";past.append(summary);
+    const list=document.createElement("ul");
+    for(const candidate of retired){
+     const li=document.createElement("li");
+     li.textContent="Retired: "+candidate.name+(candidate.model?" · "+candidate.model:"");
+     list.append(li);
+    }
+    for(const change of [...history].reverse().slice(0,20)){
+     const li=document.createElement("li");
+     const destination=(part.implementations||[]).find(candidate=>candidate.id===change.to);
+     const stamp=new Date(change.at);
+     li.textContent=(Number.isNaN(stamp.valueOf())?"":stamp.toLocaleDateString()+" · ")+
+      (destination?"Selected "+destination.name:"Implementation unselected");
+     list.append(li);
+    }
+    past.append(list);selection.append(past);
    }
    panel.append(selection,feedback);
    return panel;
