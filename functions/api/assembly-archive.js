@@ -104,7 +104,7 @@ export async function archiveAssets(bucket,project,archiveId,subtree,records,par
  }
  return copied;
 }
-export // A snapshot of the path at the exact moment an item leaves the active tree.
+// A snapshot of the path at the exact moment an item leaves the active tree.
 // Node IDs are stable, but names and parentage are not; never re-derive this
 // for new archives from the future/current tree.
 export function archiveOriginPath(tree,nodeId,project,projectName,parts=[]){
@@ -140,7 +140,7 @@ function archivedLocation(manifest,tree,projectName){
  return {originPath:[project,{id:manifest.parentId,kind:"unknown",name:"Unknown former parent"},last],
   originPathSource:"legacy-missing-parent"};
 }
-function relatedRecords(records,subtree){
+export function relatedRecords(records,subtree){
  const assemblies=new Set(subtree.filter(n=>n.kind!=="part").map(n=>n.id));
  const parts=new Set(subtree.filter(n=>n.kind==="part").map(n=>n.partId));
  return records.filter(r=>(r.ownerType==="part"&&parts.has(r.ownerId))||(r.ownerType==="assembly"&&assemblies.has(r.ownerId)));
