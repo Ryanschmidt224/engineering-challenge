@@ -3686,3 +3686,84 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
   grid-column:1;
  }
 }
+
+
+/* Container and purchased alternatives: compact, optional secondary controls. */
+.part-container-overview .part-functional-heading{
+ display:flex;
+ align-items:center;
+ gap:10px;
+ flex-wrap:wrap;
+}
+.part-container-overview .part-functional-heading h3{
+ font-size:.92rem;
+ font-weight:650;
+ margin:0;
+}
+.part-container-overview .part-functional-heading .btn{
+ padding:4px 9px;
+ min-height:28px;
+ font-size:.77rem;
+}
+.part-container-overview .part-functional-purpose{
+ margin:4px 0 0;
+ font-size:.86rem;
+ line-height:1.5;
+}
+.part-container-overview .part-alternatives-panel{
+ margin-top:12px;
+ padding:8px 0 0;
+ border:0;
+ border-top:1px solid var(--color-border);
+ background:transparent;
+ box-shadow:none;
+}
+.part-container-overview .part-alternatives-panel>summary{
+ padding:3px 0;
+ font-size:.84rem;
+ font-weight:600;
+ color:var(--color-text);
+ cursor:pointer;
+}
+.part-container-overview .part-alternatives-panel .part-alternatives-intro{
+ margin:6px 0 10px;
+ font-size:.79rem;
+ line-height:1.4;
+}
+.part-container-overview .part-alternatives-panel .part-functional-field,
+.part-container-overview .part-alternatives-panel .part-alternative-new>.part-functional-field{
+ display:grid;
+ grid-template-columns:168px minmax(0,1fr);
+ gap:10px;
+ align-items:center;
+ margin:7px 0;
+ font-size:.84rem;
+ font-weight:500;
+}
+.part-container-overview .part-alternatives-panel .field{
+ width:100%;
+ min-width:0;
+ min-height:35px;
+ margin:0;
+ font-size:.84rem;
+ font-weight:400;
+}
+.part-container-overview .part-alternative-new{
+ margin-top:9px;
+ padding:10px 0;
+ border:0;
+ background:transparent;
+}
+.part-container-overview .part-alternatives-add{
+ min-height:31px;
+ padding:5px 10px;
+ margin-top:3px;
+ font-size:.8rem;
+}
+@media(max-width:560px){
+ .part-container-overview .part-alternatives-panel .part-functional-field,
+ .part-container-overview .part-alternatives-panel .part-alternative-new>.part-functional-field{
+  grid-template-columns:minmax(0,1fr);
+  gap:4px;
+ }
+}
