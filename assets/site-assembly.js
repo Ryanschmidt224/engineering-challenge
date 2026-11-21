@@ -1939,9 +1939,9 @@ function setupAssemblyTrees(){
   visibilityHelp.setAttribute("aria-label",visibilityHelp.title);visibilityRow.append(visibilityHelp);visibilityRow.title=visibilityHelp.title;
   const partNumberRow=document.createElement("label");partNumberRow.className="part-number-field";
   const partNumberInput=document.createElement("input");partNumberInput.className="field part-number-input";partNumberInput.placeholder="Enter a number or choose the next available";partNumberInput.maxLength=30;
-  partNumberRow.append(document.createTextNode("Functional part number"),partNumberInput);
+  partNumberRow.append(document.createTextNode("Part number"),partNumberInput);
   const partDescriptionRow=document.createElement("label");partDescriptionRow.className="part-description-field";
-  const partDescriptionInput=document.createElement("textarea");partDescriptionInput.className="field part-description-input";partDescriptionInput.rows=2;partDescriptionInput.maxLength=2000;partDescriptionInput.placeholder="What must this part accomplish? Keep the function independent of the chosen component.";
+  const partDescriptionInput=document.createElement("textarea");partDescriptionInput.className="field part-description-input";partDescriptionInput.rows=2;partDescriptionInput.maxLength=2000;partDescriptionInput.placeholder="What does this container need to accomplish?";
   partDescriptionRow.append(document.createTextNode("Purpose (optional)"),partDescriptionInput);
   const functionalField=(label,limit,rows=2)=>{
    const wrap=document.createElement("label");wrap.className="part-functional-edit-field";
@@ -1949,7 +1949,7 @@ function setupAssemblyTrees(){
    const field=document.createElement("textarea");field.className="field";field.maxLength=limit;field.rows=rows;
    wrap.append(caption,field);return {row:wrap,field};
   };
-  const functionalRequirementsField=functionalField("Required specifications / constraints (optional)",6000,3);
+  const functionalRequirementsField=functionalField("Requirements / constraints (optional)",6000,3);
   const functionalAcceptanceField=functionalField("Acceptance criteria (optional)",6000,2);
   const partImplementationNameRow=document.createElement("label");partImplementationNameRow.className="part-functional-edit-field";
   const partImplementationNameCaption=document.createElement("span");partImplementationNameCaption.textContent="Implementation name";
@@ -1976,7 +1976,7 @@ function setupAssemblyTrees(){
   for(const [key,title,multiline,limit] of [
    ["value","Value (e.g. 10 kΩ or 100 nF)",false,120],
    ["notes","Project notes",true,6000],["changes","Project changes / modifications",true,6000],
-   ["featureTreeName","Feature tree description (project-owned)",false,180],
+   ["featureTreeName","Legacy tree label",false,180],
    ["referenceDesignators","Reference designators",false,500],["footprint","Footprint",false,240],
    ["schematicValue","Schematic value",false,240],["sourceApplication","Source application",false,80],
    ["sourceFile","Source schematic file",false,500],["sourceComponentId","Source component ID",false,240]
@@ -1997,6 +1997,7 @@ function setupAssemblyTrees(){
    projectOnlyCad.append(projectOnlyFields[key].parentElement);
   projectOnlyPanel.append(projectOnlyCad);
   const functionalTreeDescriptionField=projectOnlyFields.featureTreeName.parentElement;
+  functionalTreeDescriptionField.hidden=true;
   projectOnlyFields.featureTreeName.placeholder="e.g., LED Switching Transistor";
   const descriptionHelp=document.createElement("small");descriptionHelp.className="muted part-feature-tree-help";
   descriptionHelp.textContent="This project's purpose label. Changing the selected Workshop or custom component does not change it.";
@@ -2248,7 +2249,9 @@ function setupAssemblyTrees(){
     if(legacyFullName)legacyFullName.hidden=true;
     if(legacyCategory)legacyCategory.hidden=true;
     const identity=[field("name")];
-    if(identity[0]?.firstChild?.nodeType===Node.TEXT_NODE)identity[0].firstChild.nodeValue="Functional part name";
+    if(identity[0]?.firstChild?.nodeType===Node.TEXT_NODE)identity[0].firstChild.nodeValue="Container";
+    const containerNameInput=bomField("name");
+    if(containerNameInput){containerNameInput.maxLength=20;containerNameInput.placeholder="Short name in project tree (20 characters)"}
     const quantities=[field("quantity"),field("quantity-unit")];
     const sourcing=[field("manufacturer"),field("model"),field("supplier"),field("asin"),
      review.querySelector(".historical-price-fields")||bomRoot()?.querySelector(".historical-price-fields")];
@@ -2269,23 +2272,31 @@ function setupAssemblyTrees(){
      supplier:sourcing[2],asin:sourcing[3],historicalPrice:sourcing[4],
      isTool:toolRow,hideFromFeatureTree:visibilityRow};
     const ordered=keys=>keys.map(key=>controls[key]).filter(Boolean);
-    move(sectionHeading("function","Functional part"),
-     controls.partNumber,functionalTreeDescriptionField,
-     ...ordered(fields.identity.filter(key=>!["partType","partNumber"].includes(key))),
-     functionalRequirementsField.row,functionalAcceptanceField.row,apiPanel);
-    move(sectionHeading("implementation","Selected implementation"),
-     partImplementationUnselectedRow,partImplementationNameRow,partTypeRow,
-     ...ordered(fields.additional),quantities[1]);
-    if(supplierEditor)move(supplierEditor.element);
+    // Group the persistent project container separately from the physical
+    // implementation. Existing controls and handlers are moved, not cloned.
+    const group=(key,title,...entries)=>{
+     let section=review.querySelector('[data-part-editor-group="'+key+'"]');
+     if(!section){section=document.createElement("section");section.className="part-editor-group";section.dataset.partEditorGroup=key}
+     section.replaceChildren(sectionHeading(key,title));
+     for(const entry of entries)if(entry)section.append(entry);
+     review.append(section);
+     return section;
+    };
+    group("container","Container",controls.itemType,controls.name,controls.partNumber,
+     partDescriptionRow,functionalRequirementsField.row,functionalAcceptanceField.row);
+    group("implementation","Selected implementation",partImplementationUnselectedRow,
+     partTypeRow,partImplementationNameRow,...ordered(fields.additional),quantities[1]);
     const displayGroup=review.querySelector(".part-display-options")||document.createElement("div");
     displayGroup.className="part-display-options";
     displayGroup.append(...ordered(fields.display));
-    move(sectionHeading("display","Display options"),displayGroup);
-    move(...otherFields);
-    // Extra project-only fields appear only while editing a part that
-    // originated in a Workshop; never in New Part or unrelated part edits.
+    group("display","Display options",displayGroup);
+    if(otherFields.length)group("additional","Additional details",...otherFields);
+    const specificationPanel=group("specifications","Specifications",specs,projectOnlyPanel);
+    if(supplierEditor)specificationPanel.append(supplierEditor.element);
+    if(apiPanel)specificationPanel.append(apiPanel);
     projectOnlyPanel.hidden=!(editingPart&&editingPartOriginal&&workshopLinkId(editingPartOriginal));
-    move(specsHeading||sectionHeading("specifications","Specifications"),specs,projectOnlyPanel);
+    functionalTreeDescriptionField.hidden=true;
+    if(specsHeading&&specsHeading!==specificationPanel.querySelector("h3"))specsHeading.remove();
     let actions=review.querySelector(".component-editor-actions");
     if(!actions){
      actions=document.createElement("div");actions.className="component-editor-actions";
@@ -2350,7 +2361,7 @@ function setupAssemblyTrees(){
    component.acceptanceCriteria=functionalAcceptanceField.field.value.trim();
    component.implementationName=partImplementationNameInput.value.trim()||bomField("model")?.value.trim()||component.name;
    component.implementationUnselected=!editingPart&&partImplementationUnselected.checked;
-   component.projectDetails=readProjectOnly();
+   component.projectDetails={...readProjectOnly(),featureTreeName:""};
    if(!["purchased","custom_purchased"].includes(component.partType))Object.assign(component,{manufacturer:"",model:"",supplier:"",asin:"",historicalPurchasePrice:null,historicalPriceDate:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
    component.specifications=[...(bomRoot()?.querySelectorAll(".component-spec-row")||[])].map(row=>({
     name:row.children[0]?.value.trim()||"",value:row.children[1]?.value.trim()||"",source:row.children[2]?.value==="inferred"?"inferred":"explicit"
