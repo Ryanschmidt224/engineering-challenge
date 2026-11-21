@@ -947,3 +947,94 @@
 
 /* Hide purchasable-product identity fields in generic Workshop view/edit. */
 #commonparts .workshop-part-editor-section .workshop-item-edit-grid>label.hide{display:none!important}
+
+
+/* Workshop item details: consistent one-field-per-row alignment in both View
+   and Edit. Override older auto-fit and identity span rules without changing DOM. */
+#commonparts .workshop-item-edit-form>.workshop-item-edit-grid:has(>.workshop-part-editor-section){
+ display:grid;
+ grid-template-columns:minmax(0,1fr);
+ gap:12px;
+}
+#commonparts .workshop-part-editor-section>.workshop-item-edit-grid,
+#commonparts .workshop-part-editor-section .workshop-item-classification{
+ display:grid;
+ grid-template-columns:minmax(0,1fr);
+ gap:7px;
+}
+#commonparts .workshop-part-editor-section .workshop-item-edit-grid>label,
+#commonparts .workshop-part-editor-section .workshop-item-classification>label,
+#commonparts .workshop-part-editor-section[data-part-editor-section="identity"] .workshop-identity-priority-field:is(label){
+ display:grid;
+ grid-column:1/-1;
+ grid-template-columns:minmax(155px,205px) minmax(0,1fr);
+ align-items:center;
+ gap:8px 14px;
+ width:100%;
+ max-width:none;
+ min-width:0;
+ margin:0;
+}
+#commonparts .workshop-part-editor-section .workshop-item-edit-grid>label>.field,
+#commonparts .workshop-part-editor-section .workshop-item-classification>label>.field{
+ grid-column:2;
+ min-width:0;
+ width:100%;
+ max-width:none;
+}
+#commonparts .workshop-part-editor-section .workshop-item-edit-grid>.workshop-identity-priority-field:not(label){
+ grid-column:1/-1;
+ width:100%;
+ max-width:none;
+}
+#commonparts .workshop-part-editor-section .workshop-item-edit-grid>label.hide{
+ display:none!important;
+}
+#commonparts .workshop-part-editor-section .workshop-item-edit-grid>label:has(textarea){
+ align-items:start;
+}
+/* Component field templates stay one row per property, using the same two
+   primary columns as the rest of the Workshop editor. */
+#commonparts .workshop-generic-template-rows{display:grid;grid-template-columns:minmax(0,1fr);gap:7px}
+#commonparts .workshop-generic-template-row{
+ display:grid;
+ grid-template-columns:minmax(155px,205px) minmax(0,1fr) auto;
+ gap:8px 14px;
+ align-items:center;
+ min-width:0;
+}
+#commonparts .workshop-generic-template-row>.field:nth-child(2){grid-column:2}
+#commonparts .workshop-part-editor-section .workshop-structured-spec-row{
+ display:grid;
+ grid-template-columns:minmax(155px,205px) minmax(90px,1fr) minmax(65px,100px) minmax(95px,1fr) auto;
+ gap:8px;
+ width:100%;
+ max-width:none;
+ min-width:0;
+}
+/* Read-only mode should show the identical arrangement, without unnecessary
+   Remove-button space occupying a separate row. */
+#commonparts .workshop-item-edit-form.is-readonly .workshop-structured-spec-row>.btn,
+#commonparts .workshop-item-edit-form.is-readonly .workshop-generic-template-row>.btn{
+ display:none!important;
+}
+@media(max-width:720px){
+ #commonparts .workshop-part-editor-section .workshop-item-edit-grid>label,
+ #commonparts .workshop-part-editor-section .workshop-item-classification>label,
+ #commonparts .workshop-part-editor-section[data-part-editor-section="identity"] .workshop-identity-priority-field:is(label){
+  grid-template-columns:minmax(0,1fr);
+  gap:4px;
+ }
+ #commonparts .workshop-part-editor-section .workshop-item-edit-grid>label>.field,
+ #commonparts .workshop-part-editor-section .workshop-item-classification>label>.field{grid-column:1}
+ #commonparts .workshop-generic-template-row{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;
+  gap:6px;
+ }
+ #commonparts .workshop-part-editor-section .workshop-structured-spec-row{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+ }
+ #commonparts .workshop-part-editor-section .workshop-structured-spec-row>.btn{
+  grid-column:1/-1;
+ }
+}
