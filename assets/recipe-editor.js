@@ -420,7 +420,7 @@
       const path=document.createElementNS("http://www.w3.org/2000/svg","path");
       path.setAttribute("d",d);svg.append(path);
      }
-     hierarchy.replaceChildren(svg,document.createTextNode(label));
+     hierarchy.replaceChildren(svg);
      hierarchy.setAttribute("aria-label",label+" sections in this step");
      hierarchy.title=label+" nested sections";
     };
