@@ -101,56 +101,125 @@ window.BSProductLookup=(()=>{
   };
   return {element,inputs,hint,button,message,cost,results,setIdentity,reset};
  }
- function mountPart(root,{canSearch=()=>true}={}){
+ function mountPart(root,{canSearch=()=>true,getPartName=()=>""}={}){
   if(root.bsProductLookup)return root.bsProductLookup;
   const field=name=>root.querySelector(".component-"+name);
-  const panel=el("details","component-lookup-panel product-ai-disclosure");
-  const summary=el("summary","product-ai-disclosure-heading","Find specs with AI");
-  panel.append(summary);
+  const panel=el("section","component-lookup-panel product-ai-inline");
+  const button=el("button","btn product-ai-find","Find part specs with AI");button.type="button";
+  button.title="Search using the Part name, Manufacturer, and Mfg part number above.";
+  const message=el("p","product-ai-status");message.setAttribute("role","status");
+  const cost=el("p","product-ai-cost muted");cost.hidden=true;
+  const results=el("div","product-ai-results");
+  panel.append(button,message,cost,results);
   const old=root.querySelector(".component-lookup-panel");
-  const legacy=field("description")?.closest("label");
-  const extract=field("extract");
+  const legacy=field("description")?.closest("label"),extract=field("extract");
   if(old)old.replaceWith(panel);else if(legacy)legacy.before(panel);else root.prepend(panel);
   if(legacy){legacy.hidden=true;panel.append(legacy)}
   if(extract){extract.hidden=true;panel.append(extract)}
-  const lookup=create({identity:true,canSearch,
-   getQuery:()=>({
-    partNumber:lookup.inputs.partNumber.value.trim(),
-    featureTreeDescription:lookup.inputs.featureTreeDescription.value.trim(),
-    supplier:field("supplier")?.value.trim()||""
-   }),
-   onResult:data=>{
-   const draft=data.draft||{};
-   const values={name:draft.name,"full-name":draft.name,manufacturer:draft.manufacturer,model:draft.partNumber||"",category:draft.category,supplier:draft.supplier};
-   for(const [key,value] of Object.entries(values))if(value&&field(key))field(key).value=value;
-   const treeDescription=root.querySelector(".part-project-featureTreeName");
-   if(treeDescription&&draft.featureTreeDescription)treeDescription.value=draft.featureTreeDescription;
-   const description=root.querySelector(".part-description-input");
-   if(description&&draft.subtitle)description.value=draft.subtitle;
-   const specs=field("specs");
-   if(specs){
-    specs.replaceChildren();
-    const entries=(data.research?.specs||[]).map(spec=>({name:spec.name,value:[spec.value,spec.unit,spec.conditions&&"("+spec.conditions+")"].filter(Boolean).join(" ")}));
-    for(const [name,value] of [["Supplier part number",draft.supplierPartNumber],["Supplier URL",draft.supplierUrl],["Documentation URL",draft.documentationUrl],["Specifications",draft.spec],["Notes",draft.notes]])if(value)entries.push({name,value});
-    for(const spec of entries.slice(0,35)){
-     const row=el("div","row component-spec-row"),name=el("input","field"),value=el("input","field"),source=el("select","field component-spec-source"),remove=el("button","btn","Remove");
-     name.placeholder="Specification";name.value=spec.name;value.placeholder="Value";value.value=spec.value;
-     const option=el("option","","From product listing");option.value="explicit";source.append(option);
-     remove.type="button";remove.onclick=()=>row.remove();row.append(name,value,source,remove);specs.append(row);
+  let generation=0,controller=null;
+  const identity=()=>({partName:String(getPartName()||"").trim(),
+   manufacturer:field("manufacturer")?.value.trim()||"",
+   partNumber:field("model")?.value.trim()||""});
+  const reset=()=>{
+   ++generation;controller?.abort();controller=null;
+   button.disabled=false;button.textContent="Find part specs with AI";
+   message.textContent="";cost.hidden=true;results.replaceChildren();
+  };
+  const addSource=url=>{
+   try{if(new URL(url).protocol!=="https:")return}catch{return}
+   const link=el("a","product-ai-source",url);link.href=url;
+   link.target="_blank";link.rel="noopener noreferrer";results.append(link);
+  };
+  button.onclick=async()=>{
+   if(!canSearch()){message.textContent="Sign in to edit this part before searching.";return}
+   const query=identity();
+   if(!query.partName&&!query.partNumber){
+    message.textContent="Enter a Part name or Mfg part number first.";return
+   }
+   const stamp=++generation;
+   controller?.abort();controller=new AbortController();
+   const activeController=controller;
+   button.disabled=true;button.textContent="Searching…";
+   results.replaceChildren();cost.hidden=true;
+   message.textContent="Searching for "+[query.partName,query.manufacturer,query.partNumber].filter(Boolean).join(" · ")+"…";
+   const timer=setTimeout(()=>activeController.abort(),60000);
+   try{
+    const response=await fetch("/api/workshop-lookup",{method:"POST",
+     credentials:"same-origin",cache:"no-store",headers:{"content-type":"application/json"},
+     body:JSON.stringify(query),signal:activeController.signal});
+    const data=await response.json().catch(()=>({}));
+    if(stamp!==generation)return;
+    cost.textContent=costMessage(data.lookupUsage);cost.hidden=!cost.textContent;
+    if(!response.ok)throw Error(data.error||"AI lookup failed");
+    if(JSON.stringify(identity())!==JSON.stringify(query)){
+     message.textContent="Part identity changed. Search again before applying specifications.";return
     }
+    const draft=data.draft||{};
+    const rows=(data.research?.specs||[]).map(item=>({
+     name:String(item.name||"").trim(),
+     value:[item.value,item.unit,item.conditions&&"("+item.conditions+")"].filter(Boolean).join(" ").trim()
+    })).filter(item=>item.name&&item.value);
+    for(const [name,value] of [["Documentation URL",draft.documentationUrl],["Specifications",draft.spec]]){
+     if(value&&!rows.some(row=>row.name.toLowerCase()===name.toLowerCase()))rows.push({name,value});
+    }
+    const heading=el("h3","product-ai-review-title","Review suggested specifications");
+    const match=el("p","muted product-ai-review-match",
+     "Found: "+[draft.name,draft.manufacturer,draft.partNumber].filter(Boolean).join(" · "));
+    results.append(heading,match);
+    const mismatch=Boolean(query.partNumber&&draft.partNumber&&
+     query.partNumber.toLowerCase()!==draft.partNumber.toLowerCase()||
+     query.manufacturer&&draft.manufacturer&&
+     query.manufacturer.toLowerCase()!==draft.manufacturer.toLowerCase());
+    message.textContent=mismatch
+     ?"The returned part identity differs from your search. Verify sources before applying."
+     :"Review the specifications below. Nothing has been changed yet.";
+    const items=el("div","product-ai-review-list"),selected=[];
+    for(const spec of rows.slice(0,35)){
+     const label=el("label","product-ai-review-option");
+     const check=el("input");check.type="checkbox";check.checked=!mismatch;
+     const detail=el("span");detail.append(el("strong","",spec.name),document.createTextNode(" — "+spec.value));
+     label.append(check,detail);items.append(label);selected.push({check,spec});
+    }
+    results.append(items);
+    if(rows.length){
+     const apply=el("button","btn primary product-ai-apply","Apply selected specs");
+     apply.type="button";apply.onclick=()=>{
+      if(JSON.stringify(identity())!==JSON.stringify(query)){
+       message.textContent="Part identity changed. Search again before applying.";return
+      }
+      const specs=field("specs");
+      if(!specs){message.textContent="Specification fields unavailable.";return}
+      const existing=new Set([...specs.querySelectorAll(".component-spec-row")]
+       .map(row=>String(row.children[0]?.value||"").trim().toLowerCase()).filter(Boolean));
+      let added=0;
+      for(const {check,spec} of selected){
+       if(!check.checked||existing.has(spec.name.toLowerCase()))continue;
+       const row=el("div","row component-spec-row");
+       const key=el("input","field"),value=el("input","field");
+       const source=el("select","field component-spec-source"),remove=el("button","btn","Remove");
+       key.value=spec.name;key.placeholder="Specification";
+       value.value=spec.value;value.placeholder="Value";
+       const explicit=el("option","","From product listing");explicit.value="explicit";source.append(explicit);
+       const inferred=el("option","","Estimated / inferred");inferred.value="inferred";source.append(inferred);
+       remove.type="button";remove.onclick=()=>row.remove();
+       row.append(key,value,source,remove);specs.append(row);
+       existing.add(spec.name.toLowerCase());added++;
+      }
+      message.textContent=added+" specification"+(added===1?"":"s")+" added to the editor. Review and Save the part.";
+     };
+     results.append(apply);
+    }else results.append(el("p","muted","No verifiable specifications returned."));
+    if(data.missingSpecs?.length)results.append(el("p","muted","Could not verify: "+data.missingSpecs.join(", ")));
+    for(const url of data.sources||[])addSource(url);
+   }catch(error){
+    if(stamp===generation)message.textContent=error.name==="AbortError"?"Lookup timed out. Try again.":error.message||"Lookup failed.";
+   }finally{
+    clearTimeout(timer);
+    if(stamp===generation){button.disabled=false;button.textContent="Find part specs with AI"}
    }
-   if(data.moveSupplierNumber)lookup.inputs.partNumber.value="";
-   root.querySelector(".component-review")?.classList.remove("hide");
-   lookup.message.textContent="Suggestions loaded into the part fields. Review them, then Save.";
-   if(data.missingSpecs?.length)lookup.results.append(el("p","muted","Could not verify: "+data.missingSpecs.join(", ")+"."));
-   for(const url of data.sources||[]){
-    try{if(new URL(url).protocol!=="https:")continue}catch{continue}
-    const link=el("a","product-ai-source",url);link.href=url;link.target="_blank";link.rel="noopener noreferrer";lookup.results.append(link);
-   }
-  }});
-  panel.append(lookup.element);
-  root.bsProductLookup=lookup;
-  return lookup;
+  };
+  root.bsProductLookup={element:panel,button,message,cost,results,setIdentity:reset,reset};
+  return root.bsProductLookup;
  }
  return {create,mountPart,costMessage,actionInput};
 })();
