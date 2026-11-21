@@ -171,7 +171,10 @@
    if(notePhotos){
     const gallery=make("div","investigation-note-photo-gallery");
     const pendingList=make("div","investigation-note-pending-photos");
+    let previewUrls=[];
     const draw=()=>{
+     for(const url of previewUrls)URL.revokeObjectURL(url);
+     previewUrls=[];
      gallery.replaceChildren();pendingList.replaceChildren();
      for(const id of notePhotos.existing){
       const tile=make("div","investigation-note-photo-tile");
@@ -182,9 +185,17 @@
       gallery.append(tile);
      }
      for(const file of notePhotos.pending){
-      const row=make("span","investigation-note-pending-photo");
-      row.append(make("span","",file.name),btn("Remove",()=>{notePhotos.pending.splice(notePhotos.pending.indexOf(file),1);draw()},"btn investigation-note-photo-remove"));
-      pendingList.append(row);
+      const row=make("div","investigation-note-pending-photo");
+      if(photoExt.test(file.name)){
+       const image=make("img","investigation-note-pending-thumbnail");
+       const url=URL.createObjectURL(file);previewUrls.push(url);
+       image.src=url;image.alt=file.name;
+       image.loading="lazy";row.append(image);
+      }
+      const info=make("div","investigation-note-pending-info");
+      info.append(make("span","",file.name),
+       btn("Remove",()=>{notePhotos.pending.splice(notePhotos.pending.indexOf(file),1);draw()},"btn investigation-note-photo-remove"));
+      row.append(info);pendingList.append(row);
      }
     };
     const uploader=window.BSPhotoEditor.uploadPanel({
