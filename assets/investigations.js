@@ -461,6 +461,7 @@
 
    const renderCard=(record,destination,{historical=false,inherited=false}={})=>{
     const card=make("details","investigation-card bs-content-card");
+    if(categoryOf(record)==="photos")card.classList.add("investigation-photos-entry");
     if(record.parentRecordId)card.classList.add("investigation-nested-card");
     card.dataset.recordId=record.id;
     if(compact&&!historical&&!inherited&&!record.parentRecordId)card.dataset.workTile="record:"+record.id;
