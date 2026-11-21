@@ -146,12 +146,12 @@ function open({onCreate,hideDefault=false}){
  manufacturerName.input.placeholder="e.g. onsemi (select actual manufacturer)";
  manufacturerName.input.maxLength=160;
  const workshopDescription=field("Full description","textarea");
- const shortTreeDescription=field("Function");
+ const shortTreeDescription=field("Container");
  const functionHelp=el("span","library-function-tip","ⓘ");functionHelp.tabIndex=0;
- functionHelp.title="Maximum 20 characters. This is the part name shown in the project feature tree.";
+ functionHelp.title="A container is an item in the project hierarchy that organizes a part or assembly and its related information, including work instructions, tests, revisions, and history. Give it a short name to identify it in the project tree (maximum 20 characters).";
  functionHelp.setAttribute("role","img");functionHelp.setAttribute("aria-label",functionHelp.title);
- const functionCaption=el("span","library-function-caption","Function");
- functionCaption.append(functionHelp);
+ const functionCaption=el("span","library-function-caption","Container");
+ functionCaption.append(el("span","library-container-name-hint","(name)"),functionHelp);
  shortTreeDescription.label.replaceChildren(functionCaption,shortTreeDescription.input);
  shortTreeDescription.input.maxLength=20;shortTreeDescription.input.placeholder="e.g. Motor switch";
  workshopDescription.input.rows=2;workshopDescription.input.maxLength=2000;
@@ -589,7 +589,7 @@ function open({onCreate,hideDefault=false}){
    const adding=addToWorkshopCheckbox.checked&&itemKind.input.value==="part";
    const name=itemKind.input.value==="part"?shortTreeDescription.input.value.trim():customName.input.value.trim();
    if(!name||name.length>100){
-    status.textContent=itemKind.input.value==="part"?"Enter a Function (maximum 20 characters).":"Enter a name (up to 100 characters).";
+    status.textContent=itemKind.input.value==="part"?"Enter a container name (maximum 20 characters).":"Enter a name (up to 100 characters).";
     (itemKind.input.value==="part"?shortTreeDescription.input:customName.input).focus();return;
    }
    const autoNumber=autoNumberCheckbox.checked;
