@@ -1236,3 +1236,12 @@
 }
 .library-part-dialog .library-project-only[hidden],
 .part-project-only-editor[hidden]{display:none!important}
+
+
+/* Generic Workshop sources expose only project-owned, optional specifications. */
+.library-generic-spec-fields{display:grid;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--color-border)}
+.library-generic-spec-fields h4{margin:0;font-size:.9rem}
+.library-generic-spec-fields>.muted{margin:0;font-size:.8rem;line-height:1.4}
+.library-generic-spec-inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:9px 14px}
+.library-generic-spec-inputs>.library-field{display:flex;flex-direction:column;gap:5px;min-width:0;font-size:.82rem}
+.library-generic-spec-inputs>.library-field>.field{width:100%;min-width:0;margin:0}
