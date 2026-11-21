@@ -584,7 +584,7 @@
       uploadTargetNote=noteIndex;
       uploader.open(Number.isInteger(noteIndex)?"Add files after note "+(noteIndex+1):"Add photos / documents");
      };
-     const addPhoto=button("Add photos / documents",()=>selectAttachment(null),"btn bs-attachment-add recipe-small-action");
+     const addPhoto=window.BSEntryEditor.attachmentButton(()=>selectAttachment(null),{className:"recipe-small-action"});
      addPhoto.title="Open the photo and document upload area.";
      function editablePhoto(id,noteIndex=null){
       const item=el("div","recipe-step-photo");
@@ -626,7 +626,7 @@
        for(const id of step.photos){
         if(step.photoNoteIds[id]===step.noteIds[index])noteAttachments.append(editablePhoto(id,index));
        }
-       const addAfterNote=button("Add photos / documents",()=>selectAttachment(index),"btn bs-attachment-add recipe-small-action recipe-add-note-photo");
+       const addAfterNote=window.BSEntryEditor.attachmentButton(()=>selectAttachment(index),{className:"recipe-small-action recipe-add-note-photo"});
        addAfterNote.setAttribute("aria-label","Add photo after note "+(index+1));
        const removeNote=button("Delete note",()=>{
         const deletedId=step.noteIds[index];
@@ -673,19 +673,20 @@
      additions.append(addPhoto);
      body.append(noteList,addNote,photoList,additions,uploader.panel);
      showNotes();showPhotos();
-     const actions=el("div","recipe-edit-controls bs-editor-actions");
+     const actions=window.BSEntryEditor.actionRow();
+     actions.classList.add("recipe-edit-controls","bs-editor-actions");
 
-     const bottomSave=button("Save",saveStep,"btn primary recipe-save-step-bottom");
+     const bottomSave=window.BSEntryEditor.action("Save",saveStep,{kind:"primary",className:"recipe-save-step-bottom"});
      if(isDraft){
-      actions.append(bottomSave,button("Cancel",()=>{
+      actions.append(bottomSave,window.BSEntryEditor.action("Cancel",()=>{
        if(saving||pendingUploads)return;
        steps=steps.filter(item=>item!==step);draft=null;
        editing.delete(step.id);expanded=steps[i-1]?.id||steps[0]?.id||null;
        feedback.textContent=dirty?"Unsaved step changes.":"";
        render();add.focus();
-      },"btn"));
+      }));
      }else{
-      const cancel=button("Cancel",()=>{
+      const cancel=window.BSEntryEditor.action("Cancel",()=>{
        if(saving||pendingUploads)return;
        const snapshot=editSnapshots.get(step.id);
        if(snapshot)Object.assign(step,normalize(snapshot));
@@ -693,7 +694,7 @@
        clearTimeout(saveTimer);dirty=false;
        feedback.textContent="Changes canceled.";
        render();
-      },"btn recipe-cancel-step");
+      },{className:"recipe-cancel-step"});
       actions.append(bottomSave,cancel);
      }
      body.append(actions);
