@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {collectSubtree,relatedRecords,archiveAssets} from "../functions/api/assembly-archive.js";
+import {collectSubtree,relatedRecords,archiveAssets,archiveOriginPath} from "../functions/api/assembly-archive.js";
 
 const tree=[
  {id:"a",kind:"assembly",parentId:null,name:"Top"},
@@ -62,4 +62,23 @@ test("archive copies assembly instructions, note photos and photo markup",async(
   assert.ok(names.includes(name),name+" was not preserved");
  }
  assert.equal(copy.length,names.length);
+});
+
+test("original location records the full assembly path and original part number",()=>{
+ const parts=[{id:"11111111-1111-1111-1111-111111111111",partNumber:"100"}];
+ const path=archiveOriginPath(tree,"c","launcher","Nerf Robot",parts);
+ assert.deepEqual(path.map(entry=>entry.name),["Nerf Robot","Top","Nested","Sensor"]);
+ assert.equal(path.at(-1).partNumber,"100");
+ assert.equal(path[0].kind,"project");
+});
+test("original path is a snapshot, unaffected by subsequent renames or moves",()=>{
+ const copy=tree.map(item=>({...item}));
+ const path=archiveOriginPath(copy,"c","launcher","Nerf Robot");
+ copy.find(item=>item.id==="b").name="Renamed assembly";
+ copy.find(item=>item.id==="c").parentId="a";
+ assert.deepEqual(path.map(entry=>entry.name),["Nerf Robot","Top","Nested","Sensor"]);
+});
+test("cannot archive with an incomplete or circular original path",()=>{
+ assert.throws(()=>archiveOriginPath([{id:"child",parentId:"missing",kind:"part",name:"Component"}],"child","launcher","Project"),/Missing parent/);
+ assert.throws(()=>archiveOriginPath([{id:"a",parentId:"b",name:"One"},{id:"b",parentId:"a",name:"Two"}],"a","launcher","Project"),/Circular/);
 });
