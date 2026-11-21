@@ -3841,3 +3841,14 @@
  .part-functional-panel{padding:12px}
  .part-functional-edit,.part-implementation-new{padding:10px}
 }
+
+/* BOM resolves the selected physical solution, without altering the feature tree. */
+.bom-part-name .bom-implementation-label{
+ display:block;margin-top:3px;font-size:.75rem;font-weight:450;line-height:1.3;
+ color:var(--color-text-muted);
+}
+.bom-unresolved-part .bom-implementation-label{font-style:italic}
+.bom-implementation-totals{
+ font-size:.82rem;line-height:1.5;color:var(--color-text-muted);
+ margin:9px 0 7px;
+}
