@@ -3767,3 +3767,89 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
   gap:4px;
  }
 }
+
+
+/* Unified Part details: name, manufacturer and MPN appear before AI search.
+   The AI results and optional specs live within the same section. */
+.part-editor-dialog .component-review>.part-editor-group .product-ai-inline{
+ display:grid;
+ gap:8px;
+ width:100%;
+ min-width:0;
+ margin:5px 0 1px;
+ padding:0;
+ border:0;
+ background:transparent;
+ box-shadow:none;
+}
+.part-editor-dialog .component-review .product-ai-inline>.product-ai-find{
+ justify-self:start;
+ width:auto;
+ min-height:34px;
+ padding:6px 12px;
+ border:1px solid var(--color-border);
+ border-radius:8px;
+ background:var(--color-surface);
+ color:var(--color-text);
+ font-size:.84rem;
+ font-weight:600;
+ cursor:pointer;
+}
+.part-editor-dialog .component-review .product-ai-inline>.product-ai-find:hover{
+ border-color:var(--color-accent);
+}
+.part-editor-dialog .component-review .product-ai-inline>.product-ai-find:disabled{
+ opacity:.65;
+ cursor:progress;
+}
+.part-editor-dialog .component-review .part-editor-specs-disclosure{
+ min-width:0;
+ margin:3px 0 0;
+ border:0;
+ border-top:1px solid var(--color-border);
+ background:transparent;
+}
+.part-editor-dialog .component-review .part-editor-specs-disclosure>summary{
+ cursor:pointer;
+ padding:9px 0 5px;
+ color:var(--color-text);
+ font-size:.84rem;
+ font-weight:600;
+}
+.part-editor-dialog .component-review .part-editor-specs-body{
+ display:grid;
+ gap:9px;
+ padding:3px 0 9px;
+}
+.part-editor-dialog .component-review .part-editor-specs-body .component-add-spec{
+ justify-self:start;
+ min-height:31px;
+ padding:5px 10px;
+}
+.part-editor-dialog .component-review .product-ai-review-list{
+ display:grid;
+ gap:6px;
+ margin:7px 0;
+}
+.part-editor-dialog .component-review .product-ai-review-option{
+ display:flex;
+ gap:9px;
+ align-items:flex-start;
+ padding:5px 0;
+ font-size:.82rem;
+ line-height:1.45;
+}
+.part-editor-dialog .component-review .product-ai-review-option input{
+ width:16px;
+ height:16px;
+ margin:2px 0 0;
+ flex:none;
+}
+.part-editor-dialog .component-review .product-ai-review-title{
+ margin:8px 0 3px;
+ font-size:.9rem;
+}
+.part-editor-dialog .component-review .product-ai-review-match{
+ margin:0;
+ font-size:.78rem;
+}
