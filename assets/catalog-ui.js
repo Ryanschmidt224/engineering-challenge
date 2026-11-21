@@ -23,33 +23,64 @@
  function categories(mount,options={}){
   if(!mount)return null;
   let selected=options.selected||"all",values=[];
+  const expanded=new Set();
   const render=()=>{
    mount.replaceChildren();
    const title=el("h2","bs-catalog-sidebar-heading",options.heading||"Browse by category");
    mount.append(title);
    const nav=el("nav","bs-catalog-category-list");nav.setAttribute("aria-label",options.heading||"Categories");
-   for(const entry of values){
-    const button=el("button","bs-catalog-category"+(selected===entry.value?" is-active":""),entry.label);
+   const childrenOf=parent=>values.filter(item=>item.parent===parent);
+   const appendEntry=(entry,child=false)=>{
+    const children=childrenOf(entry.value);
+    const row=children.length?el("div","bs-catalog-category-parent"):null;
+    if(row){row.dataset.catalogFolder=entry.value;row.classList.toggle("is-expanded",expanded.has(entry.value))}
+    const button=el("button","bs-catalog-category"+(selected===entry.value?" is-active":"")+(child?" bs-catalog-category-child":""),entry.label);
     button.type="button";button.dataset.catalogCategory=entry.value;
     button.setAttribute("aria-pressed",String(selected===entry.value));
     if(entry.count!==undefined)button.append(el("span","bs-catalog-category-count",String(entry.count)));
     button.onclick=()=>{
      selected=entry.value;
+     if(children.length)expanded.add(entry.value);
      render();
      options.onChange?.(selected);
     };
-    nav.append(button);
-   }
+    if(row){
+     const toggle=el("button","bs-catalog-folder-toggle");
+     toggle.type="button";
+     toggle.setAttribute("aria-label",(expanded.has(entry.value)?"Collapse ":"Expand ")+entry.label);
+     toggle.setAttribute("aria-expanded",String(expanded.has(entry.value)));
+     const chevron=el("span","bs-catalog-folder-chevron");
+     chevron.setAttribute("aria-hidden","true");
+     toggle.append(chevron);
+     toggle.onclick=()=>{
+      if(expanded.has(entry.value))expanded.delete(entry.value);
+      else expanded.add(entry.value);
+      render();
+     };
+     row.append(toggle,button);nav.append(row);
+     if(expanded.has(entry.value))for(const nested of children)appendEntry(nested,true);
+    }else nav.append(button);
+   };
+   for(const entry of values.filter(item=>!item.parent))appendEntry(entry);
    mount.append(nav);
   };
   return {
    setItems(items){
     values=items.map(x=>typeof x==="string"?{value:x,label:x}:x);
     if(!values.some(x=>x.value===selected))selected="all";
+    for(const entry of values)if(entry.parent)expanded.add(entry.parent);
     render();
    },
    get value(){return selected},
-   select(value){if(values.some(x=>x.value===value)){selected=value;render();options.onChange?.(selected)}}
+   select(value){
+    if(values.some(x=>x.value===value)){
+     selected=value;
+     const entry=values.find(x=>x.value===value);
+     if(entry?.parent)expanded.add(entry.parent);
+     render();
+     options.onChange?.(selected);
+    }
+   }
   };
  }
  window.BSCatalogUI=Object.freeze({build,categories});
