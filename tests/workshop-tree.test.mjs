@@ -61,8 +61,11 @@ test("Generic Workshop resistors and LEDs keep stable containers with project-sp
  assert.equal(workshopIdentityKind(led),"generic");
  assert.equal(genericContainerName(resistor),"Resistor");
  assert.equal(genericContainerName(led),"LED");
- for(const label of ["Resistance","Power rating","Tolerance"])
+ for(const label of ["Resistance","Tolerance"])
   assert.ok(genericSpecificationTemplate(resistor).some(([name])=>name===label),label);
+ assert.ok(resistor.specifications.some(spec=>spec.label==="Power rating"&&spec.value==="0.25"));
+ assert.ok(!genericSpecificationTemplate(resistor).some(([name])=>name==="Power rating"),
+  "Fixed Workshop measurements must not be duplicated as project inputs");
  for(const label of ["Size","Color","Shape"])
   assert.ok(genericSpecificationTemplate(led).some(([name])=>name===label),label);
  assert.equal(workshopIdentityKind({partNumber:"RC0603FR-07350RL"}),"specific");
@@ -75,6 +78,12 @@ test("Generic Workshop resistors and LEDs keep stable containers with project-sp
  assert.match(editor,/Generic component/);
  assert.match(editor,/Specific product/);
  assert.match(editor,/details\.productIdentity=/);
+ assert.match(editor,/getGenericFields/);
+ assert.match(editor,/confirmGenericSwitch/);
+ assert.match(editor,/Erase data and switch/);
+ const api=readFileSync("functions/api/workshop-reference.js","utf8");
+ assert.match(api,/patch\.genericFields=genericFields/);
+ assert.match(picker,/fixedLabels/);
 });
 test("Edit Part inputs use paired descriptor/value layout with mobile fallback",()=>{
  const css=readFileSync("assets/site-workspaces.css","utf8");
