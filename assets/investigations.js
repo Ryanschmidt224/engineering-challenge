@@ -354,13 +354,13 @@
    if(!creating&&!isArchived(record)){
     actions.append(window.BSEntryEditor.action("Archive",()=>archiveRecord(record),{className:"investigation-archive-button"}));
    }
-   if(!creating)actions.append(btn("Delete",async()=>{
+   if(!creating)actions.append(window.BSEntryEditor.action("Delete",async()=>{
     const deleteBtn=actions.querySelector(".investigation-delete");
     if(!await window.BSDialogs.danger('Delete "'+record.title+'"? This removes the record from the project.',{title:"Delete record?"}))return;
     deleteBtn.disabled=true;saveBtn.disabled=true;
     try{await save({action:"deleteRecord",id:record.id});reportHere("Record deleted.")}
     catch(error){reportHere(error.message);deleteBtn.disabled=false;saveBtn.disabled=false}
-   },"btn investigation-delete"));
+   },{kind:"danger",className:"investigation-delete"}));
    controls.append(actions);
    container.append(controls);
   }
