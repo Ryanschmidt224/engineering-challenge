@@ -1874,12 +1874,14 @@ function setupAssemblyTrees(){
   const supplierEditor=window.BSPartSuppliers?.createEditor();
   // Explicit type, shared by the overview and main editor. Older records default
   // to Purchased to preserve their existing manufacturer/supplier fields.
-  const toolRow=document.createElement("label");toolRow.className="part-visibility-field";
+  const toolRow=document.createElement("label");toolRow.className="part-visibility-field part-tool-field";
   const toolCheckbox=document.createElement("input");toolCheckbox.type="checkbox";
-  toolRow.append(toolCheckbox,document.createTextNode(" Is a tool?"));
+  const toolCaption=document.createElement("span");toolCaption.className="part-tool-caption";toolCaption.textContent="Is a tool?";
+  const toolControl=document.createElement("span");toolControl.className="part-tool-control";
   const toolHelp=document.createElement("span");toolHelp.className="part-option-help";toolHelp.textContent="ⓘ";toolHelp.tabIndex=0;
   toolHelp.title="Tools are used to complete work, but aren't consumed or assembled into the finished product. They appear in the Tools needed list, not the build BOM.";
-  toolHelp.setAttribute("aria-label",toolHelp.title);toolRow.append(toolHelp);toolRow.title=toolHelp.title;
+  toolHelp.setAttribute("aria-label",toolHelp.title);
+  toolControl.append(toolCheckbox,toolHelp);toolRow.append(toolCaption,toolControl);
   const visibilityRow=document.createElement("label");visibilityRow.className="part-visibility-field";
   const visibilityCheckbox=document.createElement("input");visibilityCheckbox.type="checkbox";
   visibilityRow.append(visibilityCheckbox,document.createTextNode(" Hide from feature tree?"));
