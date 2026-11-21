@@ -190,8 +190,10 @@ export async function handleAssemblyArchive(request,env){
   // workspace or part file may still be referenced by an active occurrence.
   const id=url.searchParams.get("id");
   if(!uuid(id))return json({error:"Invalid archived part ID"},400);
+  const origin=request.headers?.get?.("origin");
+  if(origin&&origin!==url.origin)return json({error:"Cross-origin deletion not permitted"},403);
   const key=manifestKey(project,id),saved=await read(bucket,key,null),archive=saved.value;
-  if(!archive)return json({error:"Archived part not found"},404);
+  if(!archive||archive.project!==project)return json({error:"Archived part not found"},404);
   if(archive.kind!=="part")return json({error:"Only archived parts can be deleted here"},409);
   if(archive.state==="restoring")
    return json({error:"This part is currently being restored. Reload before deleting."},409);
