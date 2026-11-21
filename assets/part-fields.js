@@ -19,6 +19,16 @@
   return /resistor/i.test(part?.name||"")&&/^\d+(?:\.\d+)?\s*[kKmM]?$/.test(value)?value+"Ω":value;
  };
  const displayName=part=>[part?.name,displayValue(part)].filter(Boolean).join(" - ");
+ // The project number belongs to the functional part, not the selected solution.
+ // Accept older names already prefixed with the same number without duplicating it.
+ const numberedName=part=>{
+  const label=displayName(part),number=String(part?.partNumber||"").trim();
+  if(!number)return label;
+  const remainder=label.slice(number.length);
+  const alreadyNumbered=label.slice(0,number.length).toUpperCase()===number.toUpperCase()&&
+   /^(?:\\s*(?:[-–—·:]\\s*|$))/.test(remainder);
+  return alreadyNumbered?label:number+" · "+label;
+ };
  const sourcingLabels=["Supplier URL","Reference price","Quantity per package"];
  function priceInUsd(value){
   const raw=String(value??"").trim();
@@ -142,5 +152,5 @@
   const remaining=[...sectionFields.identity,...sectionFields.additional,...sectionFields.display].filter(key=>!ordered.includes(key));
   return [...ordered,...remaining].flatMap(key=>key==="supplier"?supplierLines(part).map(value=>["Supplier",value]):key==="asin"?[]:[[labels[key],values[key]]]).filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="");
  }
- window.BSPartFields=Object.freeze({progressStatuses,purchaseStatuses,partTypeFor,itemTypeFor,isPurchased,statusesFor,statusField,statusValue,labelFor,sectionFields,detailRows,documentationLinks,valueFor,displayValue,displayName,treeDescriptionFor,sourcingLabels,sourcingFor,estimateCost});
+ window.BSPartFields=Object.freeze({progressStatuses,purchaseStatuses,partTypeFor,itemTypeFor,isPurchased,statusesFor,statusField,statusValue,labelFor,sectionFields,detailRows,documentationLinks,valueFor,displayValue,displayName,numberedName,treeDescriptionFor,sourcingLabels,sourcingFor,estimateCost});
 })();
