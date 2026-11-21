@@ -1003,9 +1003,18 @@ test("Edit Part uses Container naming and framed implementation groups",async({p
  expect(source).toContain('group("implementation","Selected implementation"');
  expect(source).toContain('group("specifications","Specifications"');
  expect(source).toContain('document.createTextNode("Part number")');
- expect(source).toContain('firstChild.nodeValue="Container "');
+ expect(source).toContain('className="part-container-caption"');
+ expect(source).toContain('textContent="Container"');
  expect(source).not.toContain('firstChild.nodeValue="Functional part name"');
  expect(source).not.toContain('document.createTextNode("Functional part number")');
+ const editorStyles=await page.evaluate(async()=>{
+  const response=await fetch("/assets/site-controls.css",{cache:"no-store"});
+  return response.text();
+ });
+ expect(editorStyles).toContain("--edit-part-label-width:168px");
+ expect(editorStyles).toContain("grid-template-columns:var(--edit-part-label-width) minmax(0,1fr)");
+ expect(editorStyles).toContain(".part-editor-group>label>.field");
+ expect(editorStyles).toContain("@media(max-width:520px)");
 });
 
 test("Missing Workshop search offers Create new part radio and preserved manufacturer number",async({page})=>{
