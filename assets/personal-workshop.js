@@ -737,7 +737,6 @@
     // fixed Workshop specifications.
     specActions.firstElementChild.hidden=generic;
    };
-   updateIdentityPanels();
    const specStatus=el("p","","muted");
    specStatus.setAttribute("role","status");
    specStatus.hidden=true;
@@ -759,6 +758,7 @@
     },"btn"));
    structuredSection.append(specActions,specStatus,specRows);
    for(const spec of item.specifications||[])addSpec(spec);
+   updateIdentityPanels();
    // Existing saved specifications take precedence over suggested empty fields.
    // When reclassifying, only discard unsaved blank template rows.
    const refreshSuggestions=()=>{
