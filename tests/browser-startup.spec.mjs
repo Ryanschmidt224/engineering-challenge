@@ -152,8 +152,9 @@ test("new custom part retains explicit project numbering without confusing it wi
  const partDetailsOrder=await page.locator(".library-part-dialog .library-identity-section > .library-field").allTextContents();
  expect(partDetailsOrder[0]).toContain("Part type");
  await expect(page.locator(".library-part-dialog .library-auto-number-tip")).toHaveAttribute("title", /next available part number as defined in the part settings page/);
- await expect(page.locator(".library-part-dialog .library-function-tip")).toHaveAttribute("title", /Maximum 20 characters/);
- await expect(page.locator(".library-part-dialog .library-field",{hasText:"Function"}).locator("input")).toHaveAttribute("maxlength","20");
+ await expect(page.locator(".library-part-dialog .library-function-tip")).toHaveAttribute("title", /project hierarchy/);
+ await expect(page.locator(".library-part-dialog .library-field",{hasText:"Container"}).locator("input")).toHaveAttribute("maxlength","20");
+ await expect(page.locator(".library-part-dialog .library-container-name-hint")).toHaveText("(name)");
  await expect(page.locator(".library-part-dialog .library-project-only")).toBeHidden();
  await expect(page.locator(".library-part-dialog .library-auto-number-help")).toHaveCount(0);
  expect(selection.numberVisible).toBe(true);
@@ -906,7 +907,7 @@ test("New Part ends Workshop edits after identity and confirms public/private sa
  await modal.getByLabel("Public Workshop category").selectOption("electronics");
  await expect(modal.locator(".library-field",{hasText:"Part type"}).first()).toBeHidden();
  await modal.locator(".library-field",{hasText:"Mfg part # (MPN)"}).locator("input").fill("PSU-24V");
- await modal.locator(".library-field",{hasText:"Function"}).locator("input").fill("DC supply");
+ await modal.locator(".library-field",{hasText:"Container"}).locator("input").fill("DC supply");
  await expect(modal.locator(".library-project-only")).toBeHidden();
  await expect(modal.locator(".library-number-choice")).toBeHidden();
  await expect(modal.locator(".library-field",{hasText:"Quantity (optional)"})).toBeHidden();
@@ -930,7 +931,7 @@ test("New Part ends Workshop edits after identity and confirms public/private sa
  await open();
  modal=page.locator(".library-part-dialog");
  await modal.locator(".library-workshop-add input").check();
- await modal.locator(".library-field",{hasText:"Function"}).locator("input").fill("1/4 W resistor");
+ await modal.locator(".library-field",{hasText:"Container"}).locator("input").fill("1/4 W resistor");
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
  await expect(modal).toHaveCount(0);
  payload=await page.evaluate(()=>window.__createdTestPart);
@@ -976,7 +977,7 @@ test("Failed Workshop publication remains in New Part dialog and does not create
  await modal.locator(".library-workshop-add input").check();
  await modal.locator('input[name="workshop-destination"][value="public"]').check();
  await modal.locator(".library-field",{hasText:"Mfg part # (MPN)"}).locator("input").fill("2N7000");
- await modal.locator(".library-field",{hasText:"Function"}).locator("input").fill("2N7000 MOSFET");
+ await modal.locator(".library-field",{hasText:"Container"}).locator("input").fill("2N7000 MOSFET");
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
  await expect(modal).toBeVisible();
  await expect(modal.locator(".library-dialog-status")).toContainText("Sign in to contribute to the public Workshop");
@@ -1013,11 +1014,11 @@ test("Missing Workshop search offers Create new part radio and preserved manufac
  await expect(dialog.locator(".library-workshop-search-tip")).toHaveAttribute("title", /choose Create new part above/);
  await expect(dialog.locator(".library-workshop-quick-create")).toHaveCount(0);
  await dialog.locator('input[name="new-part-source"][value="new"]').check();
- await dialog.locator(".library-field",{hasText:"Function"}).locator("input").fill("2N7000");
+ await dialog.locator(".library-field",{hasText:"Container"}).locator("input").fill("2N7000");
  await dialog.locator(".library-field",{hasText:"Mfg part # (MPN)"}).locator("input").fill("2N7000");
  await dialog.locator(".library-workshop-add input").check();
  await expect(dialog.locator('input[name="new-part-source"][value="new"]')).toBeChecked();
- await expect(dialog.locator(".library-field",{hasText:"Function"}).locator("input")).toHaveValue("2N7000");
+ await expect(dialog.locator(".library-field",{hasText:"Container"}).locator("input")).toHaveValue("2N7000");
  await expect(dialog.locator(".library-field",{hasText:"Mfg part # (MPN)"}).locator("input")).toHaveValue("2N7000");
  await expect(dialog.locator('input[name="new-part-number-mode"][value="auto"]')).toBeChecked();
  await expect(dialog.locator('input[name="new-part-number-mode"]')).toHaveCount(2);
