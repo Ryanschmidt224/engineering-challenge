@@ -94,7 +94,7 @@
  const workshopCategories=[
   ["tools","Tools & Equipment",[]],
   ["electronics","Electrical & Electronics",[]],
-  ...electricalGroups.map(([key,label])=>[key,label,[]]),
+  ...electricalGroups.map(([key,label])=>[key,label,key==="electrical-wiring"?["workshop:wire22","workshop:wire18","workshop:wire16","workshop:silicone","workshop:ferrule22","workshop:ferrule18","workshop:heatshrink","workshop:sealshrink"]:[]]),
   ["consumables","Consumables & Supplies",["workshop:solder"]],
   ["hardware","Hardware & Materials",[]],
   ["safety","Safety & Measurement",[]]
@@ -148,7 +148,7 @@
   const category=categoryForReference(item.id);
   // Stocking/BOM semantics are kept separate from the display taxonomy.
   const availabilityAssumption=item.tier==="core"?"Expected":"Optional";
-  const bomDefault=item.kind==="tool"||["consumables","tools","safety"].includes(category)?"exclude":"include";
+  const bomDefault=item.kind==="tool"||["consumables","tools","safety"].includes(category)||["workshop:wire22","workshop:wire18","workshop:wire16","workshop:silicone","workshop:heatshrink","workshop:sealshrink"].includes(item.id)?"exclude":"include";
   return {...item,...(essentialsGuidance[item.id]||{}),illustration:essentialsIllustrations[item.id]||"",category,availabilityAssumption,bomDefault};
  };
  const workshopReferences=workshopSupplies.map(itemMetadata);
