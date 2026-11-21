@@ -19,6 +19,7 @@ import {handlePartFiles} from "./functions/api/part-files.js";
 import {handlePartPages} from "./functions/api/part-pages.js";
 import {handleWorkspace} from "./functions/api/workspace.js";
 import {handleInvestigations} from "./functions/api/investigations.js";
+import {handleAssemblyArchive} from "./functions/api/assembly-archive.js";
 import {handleRecipeFiles} from "./functions/api/recipe-files.js";
 import {handleProjectArchive} from "./functions/api/project-archive.js";
 import {handleArchiveStaging} from "./functions/api/archive-staging.js";
@@ -69,6 +70,7 @@ export default {
       if(path==="/api/workspace")return handleWorkspace(request,env);
       if(path==="/api/unstructured-notes")return unstructuredNotesApi({request,env,ctx});
       if(path==="/api/investigations")return handleInvestigations(request,env);
+      if(path==="/api/assembly-archive")return handleAssemblyArchive(request,env);
       if(path==="/api/recipe-files")return handleRecipeFiles(request,env);
       if(path==="/api/photo-annotations")return handlePhotoAnnotations(request,env);
       if(path==="/api/part-code")return handlePartCode(request,env);
