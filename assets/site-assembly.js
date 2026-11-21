@@ -37,14 +37,6 @@ function setupAssemblyTrees(){
    if(partWorkshopItems.get(node.partId)===true&&!showWorkshopItems)return false;
    return true;
   };
-  const referenceTreeDescription=details=>{
-   const reference=workshopReferences.get(details?.workshopReferenceId||"");
-   return String(reference?.featureTreeDescription||reference?.subtitle||reference?.description||reference?.name||"").trim().slice(0,20);
-  };
-  // Only project-owned text names the function in the feature tree.
-  // A Workshop caption is an attribute of the chosen physical item, never
-  // a fallback identity for the project requirement.
-  const treeDescription=details=>String(details?.featureTreeName||"").trim();
   // Refresh the shared/personal Workshop captions without changing project BOM records.
   const loadWorkshopCaptions=async()=>{
    const [shared,personal]=await Promise.allSettled([
