@@ -94,7 +94,7 @@ function open({onCreate,hideDefault=false}){
  quickSearchHelp.title="Search shared and personal Workshop items by name, manufacturer, or manufacturer part number (MPN). If there is no match, choose Create new part above.";
  quickSearchHelp.dataset.bsHelpTitle="Search Workshop";
  quickSearchHelp.dataset.bsExamples=JSON.stringify(["By name: 2N7000 MOSFET","By manufacturer part number: 2N7000","By manufacturer: onsemi"]);
- quickSearchHelp.setAttribute("role","img");
+ 
  quickSearchHelp.setAttribute("aria-label",quickSearchHelp.title);
  quickSearchTitle.append(quickSearchHelp);
  quickSearchLabel.append(quickSearchTitle);
@@ -113,7 +113,7 @@ function open({onCreate,hideDefault=false}){
  addHelp.title="Optional. Save a newly created purchased part to your private Workshop or the shared Public Workshop. Custom parts cannot be added to the Workshop.";
  addHelp.dataset.bsHelpTitle="Save to Workshop";
  addHelp.dataset.bsExamples=JSON.stringify(["Private Workshop: save an item for your own future projects.","Public Workshop: share a common purchased part for other builders."]);
- addHelp.setAttribute("role","img");addHelp.setAttribute("aria-label",addHelp.title);
+ addHelp.setAttribute("aria-label",addHelp.title);
  addText.append(addHelp);
  addToWorkshopChoice.append(addToWorkshopCheckbox,addText);
  const saveScope=el("fieldset","library-workshop-scope hide");
@@ -170,7 +170,7 @@ function open({onCreate,hideDefault=false}){
  supplierHelp.title="Supplier search links use the MPN. Verify the manufacturer, package, specifications, stock, and price before ordering.";
  supplierHelp.dataset.bsHelpTitle="Preferred supplier";
  supplierHelp.dataset.bsExamples=JSON.stringify(["MPN 2N7000, supplier DigiKey.","Check package and manufacturer before ordering."]);
- supplierHelp.setAttribute("role","img");supplierHelp.setAttribute("aria-label",supplierHelp.title);
+ supplierHelp.setAttribute("aria-label",supplierHelp.title);
  supplierCaption.append(supplierHelp);vendorField.label.replaceChildren(supplierCaption,vendorField.input);
  for(const [id,label] of [["DigiKey","DigiKey"],["Mouser","Mouser"],["Newark","Newark"],["Arrow","Arrow"],["Other","Other / not yet selected"]])option(vendorField.input,id,label);
  const vendorLinks=el("div","library-vendor-links muted");
@@ -221,7 +221,7 @@ function open({onCreate,hideDefault=false}){
  const autoNumberText=el("span","","Auto assign part number");
  const autoNumberHelp=el("button","library-auto-number-tip","ⓘ");autoNumberHelp.type="button";
  autoNumberHelp.tabIndex=0;
- autoNumberHelp.setAttribute("role","img");
+ 
  autoNumberHelp.setAttribute("aria-label","Part number will be assigned according to the next available part number as defined in the part settings page.");
  autoNumberHelp.title="Part number will be assigned according to the next available part number as defined in the part settings page.";
  autoNumberHelp.dataset.bsHelpTitle="Automatic part number";
@@ -299,7 +299,7 @@ function open({onCreate,hideDefault=false}){
  quantityHelp.title="Leave blank if the required quantity is not known yet, such as with consumables.";
  quantityHelp.dataset.bsHelpTitle="Quantity";
  quantityHelp.dataset.bsExamples=JSON.stringify(["A mechanical assembly may require 4 identical bearings.","Leave blank when a consumable's quantity is not yet known."]);
- quantityHelp.setAttribute("role","img");quantityHelp.setAttribute("aria-label",quantityHelp.title);
+ quantityHelp.setAttribute("aria-label",quantityHelp.title);
  quantityCaption.append(quantityHelp);qty.label.replaceChildren(quantityCaption,qty.input);
  qty.input.type="number";qty.input.min="0.000001";qty.input.max="10000000";qty.input.step="any";qty.input.placeholder="Leave blank if unknown";qty.input.value="";
  const hintUnits=el("p","muted library-picker-hint","Optional: leave quantity blank for consumables such as solder when usage is not yet known.");
