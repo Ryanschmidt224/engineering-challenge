@@ -277,7 +277,7 @@
     if(!isDraft&&typeof options.renderInvestigations==="function"){
      const area=el("div","recipe-step-investigations");
      detailPane.append(area);
-     options.renderInvestigations(step,area,false,null,order=>{
+     options.renderInvestigations(step,area,editing.has(step.id),null,order=>{
       step.tileOrder=order;changed();saveHint();
      });
     }else if(isDraft)detailPane.append(el("p","muted","Save this Work Instruction to start adding entries."));
