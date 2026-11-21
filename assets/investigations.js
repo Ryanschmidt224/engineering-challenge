@@ -287,7 +287,7 @@
    let saveBtn;
    const persist=async(deferRender=false)=>{
     const fields=inputs.filter(item=>item.type==="resolution"?!!fixed.value:!!(item.field.value.trim()||item.selected.length||item.existingFiles.length));
-    if(!titleInput.value.trim()){titleInput.focus();throw Error("Enter a title for every entry before saving.")}
+    if(categoryOf(record)!=="note"&&!titleInput.value.trim()){titleInput.focus();throw Error("Enter a title before saving.")}
     if(!date.value){date.focus();throw Error("Choose a date for every entry before saving.")}
     const notesToSave=notes.filter(note=>note.name.value.trim()||note.field.value.trim()||note.selected.length||note.existingFiles.length);
     for(const note of notesToSave){
@@ -360,7 +360,7 @@
    }
    if(!creating)actions.append(window.BSEntryEditor.action("Delete",async()=>{
     const deleteBtn=actions.querySelector(".investigation-delete");
-    if(!await window.BSDialogs.danger('Delete "'+record.title+'"? This removes the record from the project.',{title:"Delete record?"}))return;
+    if(!await window.BSDialogs.danger('Delete "'+(record.title?.trim()||categories[categoryOf(record)]?.label||"Entry")+'"? This removes the record from the project.',{title:"Delete record?"}))return;
     deleteBtn.disabled=true;saveBtn.disabled=true;
     try{await save({action:"deleteRecord",id:record.id});reportHere("Record deleted.")}
     catch(error){reportHere(error.message);deleteBtn.disabled=false;saveBtn.disabled=false}
@@ -457,8 +457,12 @@
     card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
     const title=make("summary","investigation-summary bs-content-card-heading");
     const heading=make("span","investigation-title-actions");
-    heading.append(make("strong","",record.title));
-    title.append(heading,make("span","small muted",categories[categoryOf(record)]?.label||"Entry"));
+    const displayTitle=record.title?.trim();
+    if(displayTitle)heading.append(make("strong","",displayTitle));
+    title.append(heading);
+    // An untitled Notes entry is identified by its type, without repeating
+    // a placeholder heading such as "Untitled".
+    title.append(make("span","small muted",categories[categoryOf(record)]?.label||"Entry"));
     // Record dates are secondary metadata: show them at the end of expanded
     // content instead of crowding the common header/chevron layout.
     card.append(title);
