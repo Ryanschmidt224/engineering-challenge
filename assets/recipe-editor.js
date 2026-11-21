@@ -738,11 +738,15 @@
       const before=normalize(step),wasDraft=step===draft;
       step.standard="";step.detail="";step.notes=[];step.noteIds=[];
       step.photos=[];step.photoNames={};step.photoNoteIds={};step.photoAfterNote={};
-      step.mainRemoved=true;
       if(wasDraft){
-       feedback.textContent="Section removed. Save the step to keep its nested entries.";
+       // A draft has no saved step to fall back to. Clear its content while
+       // keeping the editor and Save/Cancel visible.
+       step.mainRemoved=false;
+       step.notes=[""];step.noteIds=[newId()];
+       feedback.textContent="Section cleared. Save or cancel this new step.";
        render();return;
       }
+      step.mainRemoved=true;
       saving=true;
       try{
        if(savePromise)await savePromise;
