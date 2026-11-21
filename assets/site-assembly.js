@@ -2767,7 +2767,7 @@ function setupAssemblyTrees(){
     for(const item of result.items){
      const row=document.createElement("div");row.className="assembly-archived-row";
      const name=document.createElement("span");
-     name.textContent=(item.partNumber?item.partNumber+" · ":"")+item.name+" · "+(item.kind==="part"?"Part":"Subassembly");
+     name.textContent=(item.partNumber?item.partNumber+" · ":"")+item.name+" · "+(item.kind==="part"?"Part":"Subassembly")+(item.restoredAt?" · Restored":"");
      const view=document.createElement("button");view.type="button";view.className="btn";view.textContent="View";
      view.onclick=()=>void viewAssemblyArchive(item.id);
      row.append(name,view);archiveList.append(row);
@@ -2791,6 +2791,37 @@ function setupAssemblyTrees(){
       (node.kind==="part"?" (part)":" (subassembly)");list.append(li);
     }
     dialog.append(list);
+    const media=(archive.assets||[]).map((asset,index)=>({...asset,index})).filter(asset=>
+     !asset.original.startsWith("photo-annotations/")&&!asset.original.startsWith("photo-renders/"));
+    const images=media.filter(asset=>/\\.(jpg|jpeg|png|webp|gif|heic|heif)$/i.test(asset.original)||
+     asset.original.startsWith("component-thumbnails/"));
+    const documents=media.filter(asset=>!images.includes(asset));
+    if(images.length){
+     const photos=document.createElement("details");photos.className="assembly-archive-media";photos.open=images.length<=12;
+     const title=document.createElement("summary");title.textContent="Saved photos ("+images.length+")";photos.append(title);
+     const gallery=document.createElement("div");gallery.className="assembly-archive-gallery";
+     for(const asset of images){
+      const figure=document.createElement("figure");figure.className="assembly-archive-image";
+      const image=document.createElement("img");image.loading="lazy";
+      image.src=archiveURL+"&id="+encodeURIComponent(id)+"&asset="+asset.index;
+      image.alt=asset.original.split("/").pop()||"Archived photo";figure.append(image);
+      const caption=document.createElement("figcaption");caption.textContent=asset.original.split("/").pop();
+      figure.append(caption);gallery.append(figure);
+     }
+     photos.append(gallery);dialog.append(photos);
+    }
+    if(documents.length){
+     const docs=document.createElement("details");docs.className="assembly-archive-media";
+     const title=document.createElement("summary");title.textContent="Saved documents and data files ("+documents.length+")";docs.append(title);
+     const files=document.createElement("ul");
+     for(const asset of documents){
+      const li=document.createElement("li"),link=document.createElement("a");
+      link.href=archiveURL+"&id="+encodeURIComponent(id)+"&asset="+asset.index;
+      link.textContent=asset.original.split("/").pop()||asset.original;
+      link.download="";li.append(link);files.append(li);
+     }
+     docs.append(files);dialog.append(docs);
+    }
     const data=document.createElement("details"),label=document.createElement("summary");
     label.textContent="View saved record details";const pre=document.createElement("pre");
     pre.className="assembly-archive-json";pre.textContent=JSON.stringify({
