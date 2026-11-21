@@ -1275,6 +1275,22 @@ function setupAssemblyTrees(){
    return panel;
   };
   const renderPartDetails=part=>{
+   // The header is visible even when Part Details is collapsed: permanent
+   // project purpose above, selected physical solution directly below.
+   const nameHeading=partWorkspace.querySelector(".part-workspace-title");
+   if(nameHeading){
+    nameHeading.textContent=window.BSPartFields.numberedFunctionalName(part);
+    let selected=partWorkspace.querySelector(".part-workspace-selected-component");
+    if(!selected){
+     selected=document.createElement("div");
+     selected.className="part-workspace-selected-component";
+     nameHeading.after(selected);
+    }
+    const implementation=window.BSPartFields.implementationLabelFor(part);
+    const purposeLabel=window.BSPartFields.treeDescriptionFor(part)||part.name||"";
+    selected.textContent=implementation;
+    selected.hidden=!implementation||implementation===purposeLabel;
+   }
    detailRows.replaceChildren();
    const functionalPanel=renderFunctionalPartPanel(part);
    if(functionalPanel)detailRows.append(functionalPanel);
@@ -1294,7 +1310,7 @@ function setupAssemblyTrees(){
     if(part.quantity!=null&&Number.isFinite(Number(part.quantity)))
      cost+=" · "+dollars.format(Number(unitCost)*Number(part.quantity))+" total";
    }
-   const summary=[window.BSPartFields.implementationLabelFor(part),part.description,quantity,cost];
+   const summary=[part.description,quantity,cost];
    detailSummary.textContent=summary.filter(Boolean).join(" · ");
    const makeDetailLine=(title,value,isLink=false)=>{
     const line=document.createElement("details");line.className="part-details-view-row part-detail-item";
