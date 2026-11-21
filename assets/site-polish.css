@@ -3246,3 +3246,24 @@
   row-gap:4px!important;
  }
 }
+
+
+/* Photos entries show saved images as thumbnails as well as new selections. */
+.investigation-photos-entry .investigation-note-photo-gallery{
+ display:flex;
+ align-items:flex-start;
+ flex-wrap:wrap;
+ gap:10px;
+}
+.investigation-photos-entry .investigation-note-photo,
+.investigation-photos-entry .investigation-note-photo-tile{
+ width:160px;
+ max-width:100%;
+}
+.investigation-photos-entry .investigation-note-photo{
+ height:125px;
+ object-fit:contain;
+}
+.investigation-photos-entry .investigation-note-photo-tile .investigation-note-photo{
+ width:100%;
+}
