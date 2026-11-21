@@ -282,9 +282,9 @@ function setupAssemblyTrees(){
    <textarea class="field" aria-label="Project summary" rows="5" maxlength="5000" placeholder="Describe your project"></textarea>
    <div class="project-summary-edit-actions" hidden><button type="button" class="btn primary project-summary-save">Save</button><button type="button" class="btn project-summary-cancel">Cancel</button></div>
    <p class="muted project-summary-message" role="status"></p>
+   <div class="project-tags project-summary-tags"></div>
   </section>
-  <section class="project-overview-card project-descriptor-card"><h2>Descriptors</h2><div class="project-tags project-summary-tags"></div></section>
-  <section class="project-overview-card"><h2>Estimated project cost</h2><p class="project-summary-cost" aria-live="polite">Loading estimate…</p><p class="project-summary-package-cost" aria-live="polite"></p><p class="project-summary-cost-missing muted"></p></section>`;
+  <section class="project-overview-card project-cost-card"><div class="project-cost-heading"><h2>Estimated project cost</h2><p class="project-summary-cost-missing muted"></p></div><p class="project-summary-cost" aria-live="polite">Loading estimate…</p><p class="project-summary-package-cost" aria-live="polite"></p></section>`;
   summary.querySelector(".project-summary-gallery").after(overview);
   const projectMilestones=window.BSProjectMilestones?.mount({project,summary,canEdit});
   const summaryInput=overview.querySelector("textarea");
