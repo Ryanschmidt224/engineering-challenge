@@ -1788,3 +1788,35 @@
  width:100%;
  box-sizing:border-box;
 }
+
+
+/* Project History creation belongs above the history disclosure, as an
+   independent normal button instead of a text action in the heading. */
+.investigations-panel > .investigation-create-row,
+.recipe-step-investigations > .investigation-create-row{
+ display:flex;
+ align-items:center;
+ justify-content:flex-start;
+ margin:0 0 8px;
+ padding:0;
+}
+.investigations-panel .investigation-create-button,
+.recipe-step-investigations .investigation-create-button{
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ flex:0 0 auto;
+ min-height:34px;
+ padding:7px 12px;
+ font-size:.84rem;
+ font-weight:650;
+ border:1px solid var(--color-border);
+ border-radius:8px;
+ color:var(--color-text);
+ background:var(--color-surface);
+ cursor:pointer;
+}
+.investigations-panel .investigation-create-button:hover,
+.recipe-step-investigations .investigation-create-button:hover{
+ background:var(--color-hover);
+}
