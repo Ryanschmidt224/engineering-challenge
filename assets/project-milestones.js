@@ -156,7 +156,15 @@
      sourceArea.append(label,unlink);form.append(sourceArea);
     }
    }
-   for(const item of controls)form.append(item.wrap);
+   for(const item of controls){
+    if(mode==="intent"){
+     item.input.spellcheck=true;
+     item.input.setAttribute("spellcheck","true");
+    }
+    form.append(item.wrap);
+   }
+   if(mode==="intent")form.append(el("p","muted project-milestone-spelling-hint",
+    "Check spelling and wording before saving. Your browser may underline misspelled words; right-click them for suggestions."));
    const message=el("p","project-milestone-form-feedback muted");message.setAttribute("role","status");form.append(message);
    const footer=el("div","project-milestone-editor-actions");
    const save=button(mode==="intent"?"Save original intent":"Save milestone",async()=>{
@@ -166,6 +174,17 @@
     }
     if(mode==="milestone"&&(!values[0]||!values[1])){
      message.textContent="Describe both what happened and why it is significant.";return
+    }
+    if(mode==="intent"){
+     const confirmed=await window.BSDialogs.confirm(
+      "Once saved, your original project intent cannot be changed or deleted. Review the spelling and wording of all three fields before confirming. You can cancel to continue editing.",
+      {title:"Save original project intent?",confirmLabel:"Confirm and save"}
+     );
+     if(!confirmed)return;
+     // Recheck the draft because the confirmation is asynchronous.
+     if(controls.some((item,i)=>item.input.value.trim()!==values[i])){
+      message.textContent="The draft changed. Review it and click Save again.";return;
+     }
     }
     save.disabled=true;message.textContent="Saving…";
     const draft=mode==="intent"?{action:"createIntent",objective:values[0],successCriteria:values[1],plan:values[2]}:
