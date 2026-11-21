@@ -373,14 +373,15 @@
     const summary=el("summary","recipe-one-step-summary bs-content-card-heading");
     const name=el("span","recipe-one-step-title",step.title||"Untitled step");
     if(admin()&&!archived&&editing.has(step.id)){
-     const nameInput=editField(step.title,"Describe the action",value=>{
+     const nameInput=window.BSEntryEditor.titleInput(step.title,value=>{
       step.title=value;
       const label=value||"Untitled step";
       name.textContent=label;
       navButton.textContent=label;
       navButton.setAttribute("aria-label","Step "+(i+1)+": "+label);
-     });
-     nameInput.classList.add("recipe-step-name","recipe-step-title-input");
+      changed();saveHint();
+     },{placeholder:"Describe the action"});
+     nameInput.classList.add("recipe-input","recipe-step-name","recipe-step-title-input");
      nameInput.maxLength=180;nameInput.setAttribute("aria-label","Step name");
      nameInput.addEventListener("click",event=>event.stopPropagation());
      nameInput.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();nameInput.blur()}});
