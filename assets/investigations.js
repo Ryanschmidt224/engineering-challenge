@@ -428,7 +428,7 @@
    const activeHeader=make("div","investigation-active-heading");
    // The step editor has its own Edit mode. Other workspace sections have no
    // separate editing toggle, so retain their Add entry button.
-   const canCreate=allowEntryEditing;
+   const canCreate=allowEntryEditing&&(!compact||Boolean(stepSlot?.editing));
    if(canCreate)activeHeader.append(btn("+ Add entry",event=>{
     event.preventDefault();newRecord(context,target);
    },"btn investigation-add investigation-create-button"));
