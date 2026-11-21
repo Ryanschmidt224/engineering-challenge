@@ -27,9 +27,15 @@
  function attachmentButton(open,{label="Add photos / documents",className=""}={}){
   return action(label,open,{className:"bs-attachment-add"+(className?" "+className:"")});
  }
- function titleInput(value,onChange,{placeholder="Title",maxLength=180}={}){
+ function titleInput(value,onChange,{placeholder="Title",maxLength=180,selectOnFocus=true}={}){
   const field=make("input","field bs-entry-title-input");
   field.type="text";field.value=value||"";field.maxLength=maxLength;field.placeholder=placeholder;
+  if(selectOnFocus){
+   let firstFocus=false;
+   field.addEventListener("focus",()=>{firstFocus=true;field.select()});
+   field.addEventListener("click",()=>{if(firstFocus){field.select();firstFocus=false}});
+   field.addEventListener("blur",()=>{firstFocus=false});
+  }
   field.addEventListener("input",()=>onChange?.(field.value));
   return field;
  }
