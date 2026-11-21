@@ -50,10 +50,14 @@ async function archiveAssets(bucket,project,archiveId,subtree,records,parts){
  const partIds=[...new Set(subtree.filter(n=>n.kind==="part").map(n=>n.partId))];
  for(const id of sourceIds)for(const k of ["workspaces/"+project+"/"+id+".json","assembly-status/"+project+"/"+id+".json"])keys.add(k);
  for(const id of partIds){
-  for(const k of ["part-workspaces/"+project+"/"+id+".json","harnesses/"+project+"/"+id+".json"])keys.add(k);
+  for(const k of ["part-workspaces/"+project+"/"+id+".json","harnesses/"+project+"/"+id+".json","component-thumbnails/"+project+"/"+id])keys.add(k);
+  for(const obj of await listAll(bucket,"component-thumbnails/"+project+"/"+id+"/",200))keys.add(obj.key);
   for(const p of ["part-files/"+project+"/"+id+"/","part-pages/"+project+"/"+id+"/","drawings/"+project+"/part/"+id+"/"])for(const obj of await listAll(bucket,p,200))keys.add(obj.key);
  }
- for(const id of sourceIds)for(const obj of await listAll(bucket,"drawings/"+project+"/assembly/"+id+"/",200))keys.add(obj.key);
+ for(const id of sourceIds){
+  for(const obj of await listAll(bucket,"drawings/"+project+"/assembly/"+id+"/",200))keys.add(obj.key);
+  for(const obj of await listAll(bucket,"assembly-pages/"+project+"/"+id+"/",200))keys.add(obj.key);
+ }
  referencedProjectKeys({subtree,records,parts},project,keys);
  const copied=[];
  for(const original of keys){
@@ -74,12 +78,17 @@ function relatedRecords(records,subtree){
 }
 async function listArchives(bucket,project,parentId){
  const all=await listAll(bucket,"assembly-archives/"+project+"/",2000),result=[];
+ const tree=await read(bucket,treeKey(project),[]);
+ const activeIds=new Set(tree.value.map(node=>node.id));
  for(const item of all){
   if(!item.key.endsWith("/manifest.json"))continue;
   const object=await bucket.get(item.key);
   if(!object)continue;
   const manifest=JSON.parse(await object.text());
   if(parentId!==null&&manifest.parentId!==parentId)continue;
+  // Prepared manifests remain as recovery artifacts after failed transactions.
+  // They are not visible as archives while the source node is still active.
+  if(activeIds.has(manifest.nodeId)&&!manifest.restoredAt)continue;
   result.push({id:manifest.id,nodeId:manifest.nodeId,parentId:manifest.parentId,name:manifest.name,kind:manifest.kind,
    partNumber:manifest.partNumber||"",archivedAt:manifest.archivedAt,restoredAt:manifest.restoredAt||null,
    nodeCount:manifest.nodes.length,partCount:manifest.parts.length,reason:manifest.reason||""});
@@ -162,6 +171,11 @@ export async function handleAssemblyArchive(request,env){
  if(conflicts.length)return json({error:"Some archived node IDs are in use"},409);
  const componentState=await read(bucket,partKey(project),[]);
  const incoming=archive.parts.filter(p=>!componentState.value.some(existing=>existing.id===p.id));
+ const existingAssemblyNumbers=new Set(current.filter(n=>n.kind!=="part").map(n=>n.partNumber).filter(Boolean));
+ const existingPartNumbers=new Set(componentState.value.map(p=>p.partNumber).filter(Boolean));
+ if(archive.nodes.some(n=>n.kind!=="part"&&n.partNumber&&existingAssemblyNumbers.has(n.partNumber))||
+    incoming.some(p=>p.partNumber&&existingPartNumbers.has(p.partNumber)))
+  return json({error:"An archived part number is already in use. Resolve the conflict before restoring."},409);
  const nextParts=[...componentState.value,...incoming];
  const restoredNodes=archive.nodes.map(n=>({...n,dependsOn:(n.dependsOn||[]).filter(dep=>current.some(active=>active.id===dep)||archive.nodes.some(child=>child.id===dep))}));
  const nextTree=[...current,...restoredNodes];
