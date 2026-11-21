@@ -474,7 +474,7 @@ function open({onCreate,hideDefault=false}){
    ["Manufacturer part number",item.partNumber||item.model||""],
    ["Manufacturer",item.manufacturer||""],
    ["Description",item.subtitle||item.description||item.detail||item.name],
-    ["Feature tree description",item.featureTreeDescription||""],
+    ["Container (name) category",item.featureTreeDescription||""],
    ["Vendor",item.supplier||"Not specified"]
   ]){
    const row=el("div","library-workshop-reference-row");
