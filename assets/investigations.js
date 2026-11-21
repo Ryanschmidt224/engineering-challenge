@@ -256,7 +256,16 @@
      hint:"You can choose multiple files or paste an image."
     });
     const attachments=make("div","investigation-field-attachments");
-    attachments.append(window.BSEntryEditor.attachmentButton(()=>uploader.open(),{className:"investigation-attachment-add"}),fileChoice,uploader.panel);
+    const attachmentButton=window.BSEntryEditor.attachmentButton(()=>{
+     const expanded=uploader.panel.hidden;
+     if(expanded)uploader.open();else uploader.close();
+     attachments.classList.toggle("is-upload-expanded",expanded);
+     attachmentButton.setAttribute("aria-expanded",String(expanded));
+    },{className:"investigation-attachment-add"});
+    attachmentButton.setAttribute("aria-expanded","false");
+    // Match the Photos entry: one anchored toggle, without a second title or Close control.
+    uploader.panel.querySelector(".bs-upload-heading")?.remove();
+    attachments.append(attachmentButton,fileChoice,uploader.panel);
     const existingFiles=[...(stored?.files||[])];
     const existingList=make("div","investigation-existing-files");
     function drawFiles(){
