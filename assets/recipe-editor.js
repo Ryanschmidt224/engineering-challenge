@@ -413,43 +413,19 @@
      const additions=el("div","recipe-step-additions");
      const noteList=el("div","recipe-step-notes");
      const photoList=el("div","recipe-step-photos");
-     const input=el("input");
-     input.type="file";input.multiple=true;
-     input.accept=globalThis.BSAttachmentTypes.accept;
-     input.hidden=true;
      let uploadTargetNote=null;
-     const uploadPanel=el("section","recipe-photo-upload-panel");
-     uploadPanel.hidden=true;
-     const uploadHeader=el("div","recipe-photo-upload-header");
-     const uploadTitle=el("strong","","Add photos / documents");
-     const closeUpload=button("Close",()=>{uploadPanel.hidden=true},"btn recipe-small-action");
-     uploadHeader.append(uploadTitle,closeUpload);
-     const uploadHelp=el("p","muted","Drag and drop files here, or right-click in the box and choose Paste. You can also select files from your device.");
-     const paste=window.BSPhotoMarkup.pasteTarget(async files=>{
-      const target=uploadTargetNote;
-      for(const file of files)await upload(file,target);
+     const uploader=window.BSPhotoEditor.uploadPanel({
+      accept:globalThis.BSAttachmentTypes.accept,
+      title:"Add photos / documents",
+      hint:"Select multiple files. Up to 30 attachments per step, 20 MB each.",
+      onFiles:async files=>{
+       const target=uploadTargetNote;
+       for(const file of files)await upload(file,target);
+      }
      });
-     paste.classList.add("recipe-photo-upload-zone");
-     paste.textContent="Drop photos or documents here, or right-click to paste an image (Ctrl+V).";
-     const chooseFiles=button("Choose files",()=>input.click(),"btn primary recipe-photo-choose-files");
-     const uploadFooter=el("p","muted","Select multiple files at once. Up to 30 attachments per step, 20 MB per file.");
-     uploadPanel.append(uploadHeader,uploadHelp,paste,chooseFiles,uploadFooter);
-     // Keep paste scoped to this visible panel rather than the entire step.
-     paste.addEventListener("dragover",event=>{
-      if(event.dataTransfer?.types?.includes("Files")){event.preventDefault();event.stopPropagation();paste.classList.add("is-dragover")}
-     });
-     paste.addEventListener("dragleave",()=>paste.classList.remove("is-dragover"));
-     paste.addEventListener("drop",event=>{
-      if(!event.dataTransfer?.files?.length)return;
-      event.preventDefault();event.stopImmediatePropagation();paste.classList.remove("is-dragover");
-      const target=uploadTargetNote;
-      void (async()=>{for(const file of [...event.dataTransfer.files])await upload(file,target)})();
-     },true);
      const selectAttachment=noteIndex=>{
       uploadTargetNote=noteIndex;
-      uploadTitle.textContent=Number.isInteger(noteIndex)?"Add files after note "+(noteIndex+1):"Add photos / documents";
-      uploadPanel.hidden=false;
-      paste.focus();
+      uploader.open(Number.isInteger(noteIndex)?"Add files after note "+(noteIndex+1):"Add photos / documents");
      };
      const addPhoto=button("+ Add photos / documents",()=>selectAttachment(null),"btn recipe-small-action");
      addPhoto.title="Open the photo and document upload area.";
@@ -532,16 +508,11 @@
        if(currentPosition>=0){step.photoNoteIds[data.id]=targetNoteId;step.photoAfterNote[data.id]=currentPosition}
        changed();showNotes();showPhotos();saveHint();
       }catch(error){feedback.textContent=error.message||"Attachment upload failed"}
-      finally{pendingUploads--;addPhoto.disabled=pendingUploads>0;input.value=""}
-     };
-     input.onchange=async()=>{
-      const target=uploadTargetNote;
-      for(const file of [...(input.files||[])])await upload(file,target);
-      uploadTargetNote=null;
+      finally{pendingUploads--;addPhoto.disabled=pendingUploads>0}
      };
      const addNote=button("+ Add entry",()=>{step.notes.push("");step.noteIds.push(newId());changed();saveHint();showNotes();noteList.lastElementChild?.querySelector("textarea")?.focus()},"btn recipe-small-action recipe-add-entry");
-     additions.append(addNote,addPhoto,input);
-     body.append(noteList,photoList,additions,uploadPanel);
+     additions.append(addNote,addPhoto);
+     body.append(noteList,photoList,additions,uploader.panel);
      showNotes();showPhotos();
      const actions=el("div","recipe-edit-controls");
      const up=button("↑",()=>move(i,-1));up.disabled=i===0;up.title="Move up";
