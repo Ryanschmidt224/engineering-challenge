@@ -804,6 +804,7 @@ function setupAssemblyTrees(){
     admin:canEdit,project,
     renderInvestigations:(step,target,editing)=>investigations?.showStep(target,step,scope,ownerId(),editing),
     onStepSelected:stepId=>investigations?.resetStepDisclosures(stepId,scope,ownerId()),
+    saveStepEdits:stepId=>investigations?.saveStepEdits(stepId),
     onSave:async()=>{await saveInProgress();return save()}
    });
    const resourcesPanel=panel.querySelector(".workspace-resources,.part-linked-resources");
