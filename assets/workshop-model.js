@@ -31,14 +31,7 @@
   };
   const categoryOfPersonal=item=>{
    const linked=matchingReference(item);
-   if(linked)return categoryFor(linked);
-   const raw=String(item.category||"").toLowerCase(),kind=String(item.kind||"");
-   if(/safety|protect/.test(raw))return "safety";
-   if(/consumable|wire|cable|solder|shrink|suppl/.test(raw))return "consumables";
-   if(/electronic|power|component|controller|sensor/.test(raw))return "electronics";
-   if(/hardware|fastener|material|stock/.test(raw))return "hardware";
-   if(/tool|equipment|measure|instrument/.test(raw))return "tools";
-   return kind==="tool"||kind==="equipment"?"tools":kind==="component"?"electronics":"hardware";
+   return categoryFor(linked||item);
   };
   const ownedFor=ref=>getItems().filter(item=>item.catalogId===ref.id||
    (!item.catalogId&&normalizeName(item.name)===normalizeName(ref.name)));
