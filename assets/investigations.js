@@ -414,10 +414,14 @@
     if(disclosure.open)openSections.add(sectionKey);else openSections.delete(sectionKey);
    });
    const content=make("div","investigation-collapse-content");
-   disclosure.append(content);target.append(disclosure);
-   // For Work Instructions, creation follows the whole hierarchy,
-   // including Project Archive, rather than sitting between cards.
-   if(canCreate&&compact)target.append(activeHeader);
+   // The creation control has its own light card, below active entries but
+   // above the plain-text Project Archive disclosure.
+   disclosure.append(content);
+   if(canCreate&&compact){
+    activeHeader.classList.add("investigation-create-card");
+    target.append(activeHeader);
+   }
+   target.append(disclosure);
 
    const renderCard=(record,destination,{historical=false,inherited=false}={})=>{
     const card=make("details","investigation-card bs-content-card");
