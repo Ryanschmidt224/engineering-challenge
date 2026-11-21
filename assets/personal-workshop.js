@@ -1253,7 +1253,7 @@
       <button type="button" id="workshop-add-personal-spec" class="btn">+ Add specification</button>
      </section>
      <label>Notes<textarea id="workshop-notes" class="field" maxlength="1500"></textarea></label>
-     <div class="workshop-row"><label>Photo of equipment<input id="workshop-photo" type="file" accept="image/jpeg,image/png,image/webp"></label><button id="workshop-photo-upload" type="button" class="btn">Import photo and identify</button><img id="workshop-photo-preview" class="workshop-photo-thumb" hidden alt="Equipment photo"></div>
+     <div class="workshop-row"><button id="workshop-photo-upload" type="button" class="btn">+ Add equipment photo</button><img id="workshop-photo-preview" class="workshop-photo-thumb" hidden alt="Equipment photo"></div>
      <div id="workshop-private-photo-paste"></div>
      <p class="muted">AI identification is a draft. Check the model and specifications yourself before saving.</p>
      <div class="workshop-row"><button id="workshop-save" type="button" class="btn primary">Save item</button><button id="workshop-cancel" type="button" class="btn">Cancel</button></div>
@@ -1328,10 +1328,13 @@
    $("#workshop-new",personal).onclick=()=>fill({});
    $("#workshop-save",personal).onclick=save;
    $("#workshop-cancel",personal).onclick=()=>$("#workshop-editor",personal).open=false;
-   $("#workshop-photo-upload",personal).onclick=()=>uploadPhoto();
-   $("#workshop-private-photo-paste",personal).replaceWith(window.BSPhotoMarkup.pasteTarget(
-    files=>uploadPhoto(files[0]),{onEmpty:()=>setStatus("Copy an image or choose a photo file.")}
-   ));
+   const equipmentUploader=window.BSPhotoEditor.uploadPanel({
+    title:"Add equipment photo",multiple:false,accept:"image/jpeg,image/png,image/webp",
+    hint:"JPG, PNG or WebP. The image will be checked for equipment identification.",
+    onFiles:files=>uploadPhoto(files[0])
+   });
+   $("#workshop-photo-upload",personal).onclick=()=>equipmentUploader.open();
+   $("#workshop-private-photo-paste",personal).replaceWith(equipmentUploader.panel);
    $("#workshop-compare",personal).onclick=compare;
   }
   const fields={name:"name",kind:"kind",category:"category",manufacturer:"manufacturer",model:"model",partNumber:"partnumber",featureTreeDescription:"featuretreedescription",quantity:"quantity",unit:"unit",stockStatus:"stockstatus",notes:"notes"};
@@ -1411,7 +1414,7 @@
    }catch(e){setStatus(e.message)}
   }
   async function uploadPhoto(fileOverride=null){
-   const input=$("#workshop-photo",personal),file=fileOverride||input.files?.[0];if(!file){setStatus("Select a photo first.");return}
+   const file=fileOverride;if(!file){setStatus("Select a photo first.");return}
    const body=new FormData();body.append("photo",file);
    setStatus("Uploading and checking photo...");
    try{
