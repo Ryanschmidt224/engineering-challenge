@@ -16,19 +16,21 @@
    button.textContent=name;button.onclick=()=>fn?.();return button;
   };
   const markup=make("Markup / annotate",onMarkup,"bs-photo-markup");
-  const add=make("Add",onAdd,"bs-photo-add");
+  let uploader=null;
+  const add=make("Add",()=>{if(uploader)uploader.open();else onAdd?.()},"bs-photo-add");
   const remove=make("Delete",onDelete,"bs-photo-delete");
   more.append(markup,add,remove);bar.append(edit,more);shell.append(bar);
-  const paste=onPaste?window.BSPhotoMarkup.pasteTarget(files=>onPaste(files[0]),{
-   onEmpty:()=>{status.textContent="Copy an image or choose a photo file."}
-  }):null;
-  if(paste)shell.append(paste);
+  if(onPaste){
+   uploader=uploadPanel({title:"Add photos",accept:"image/*,.heic,.heif",multiple:false,
+    onFiles:files=>{if(files[0])return onPaste(files[0])}});
+   shell.append(uploader.panel);
+  }
   const status=document.createElement("p");status.className="bs-photo-status";status.setAttribute("role","status");
   status.setAttribute("aria-live","polite");shell.append(status);
   let enabled=true,present=false;
   const sync=()=>{
    edit.hidden=!enabled;more.hidden=!enabled||edit.getAttribute("aria-expanded")!=="true";
-   if(paste)paste.hidden=more.hidden;
+   if(uploader&&more.hidden)uploader.close();
    markup.disabled=!present;remove.disabled=!present;
   };
   edit.onclick=()=>{
