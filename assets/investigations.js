@@ -293,7 +293,7 @@
 
    const actions=make("div","investigation-heading-actions");
    actions.append(title,window.BSDialogs.tooltip("About Project History","Record practice, tests, revisions, failures, and notes."),
-    make("span","workspace-record-count","("+count+(count===1?" record)":" records)"));
+    make("span","workspace-record-count","("+count+(count===1?" record)":" records)")));
    // Keep the creation action separate from the disclosure heading, so the
    // entire Project History heading remains a clean expand/collapse target.
    if(admin()){
