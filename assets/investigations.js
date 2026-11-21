@@ -275,115 +275,133 @@
    controls.append(actions);
    container.append(controls);
   }
+  // Active records stay in the section where they were created. Old records
+  // without an archive flag remain active; previous part snapshots are history.
+  const isArchived=record=>Boolean(record.archivedAt||record.partSnapshot);
+  const archiveDate=record=>(record.archivedAt||record.partSnapshot?.archivedAt||"").slice(0,10);
+  function archiveRecord(record){
+   const dialog=make("dialog","investigation-archive-dialog");
+   dialog.setAttribute("aria-label","Archive "+record.title);
+   dialog.append(make("h3","","Archive entry"),make("p","muted","Move this entry from its current section into Project History."));
+   dialog.append(make("p","investigation-archive-today","Archive date: "+new Date().toLocaleDateString()));
+   const label=make("label","investigation-archive-note-label","Why was it archived? (optional)");
+   const note=make("textarea","field");note.rows=3;note.maxLength=2500;note.placeholder="Reason for archiving (optional)";
+   label.append(note);
+   const actions=make("div","investigation-edit-actions");
+   const message=make("p","investigation-feedback muted");message.setAttribute("role","status");
+   const confirm=btn("Archive",async()=>{
+    confirm.disabled=true;confirm.textContent="Archiving…";
+    try{await save({action:"archiveRecord",id:record.id,note:note.value});dialog.close()}
+    catch(error){message.textContent=error.message;confirm.disabled=false;confirm.textContent="Archive"}
+   },"btn primary");
+   actions.append(confirm,btn("Cancel",()=>dialog.close()));
+   dialog.append(label,actions,message);
+   document.body.append(dialog);dialog.addEventListener("close",()=>dialog.remove(),{once:true});
+   dialog.showModal();note.focus();
+  }
   function render(target,context,compact=false){
    if(!target)return;
    const sectionKey=context.ownerType+":"+context.ownerId+":"+(context.stepId||"");
    const existing=target.querySelector(".investigation-collapse");
    if(existing){if(existing.open)openSections.add(sectionKey);else openSections.delete(sectionKey)}
-   target.replaceChildren();
+   const activeHost=target.activeEntriesHost||make("section","investigation-active-area");
+   activeHost.classList.add("investigation-active-area");
+   activeHost.replaceChildren();target.replaceChildren();
+   if(!target.activeEntriesHost)target.append(activeHost);
    activeContext={...context,target};
+   const own=records.filter(record=>owns(record,context));
+   const activeOwn=own.filter(record=>!isArchived(record));
+   const archivedOwn=own.filter(isArchived);
+   const archivedRelated=records.filter(record=>within(record,context)&&!owns(record,context)&&isArchived(record));
+   const activeHeader=make("div","investigation-active-heading");
+   activeHeader.append(make(compact?"h4":"h2","","Entries"));
+   if(admin())activeHeader.append(btn("+ Add entry",event=>{
+    event.preventDefault();newRecord(context,target);
+   },"btn investigation-add investigation-create-button"));
+   activeHost.append(activeHeader);
+   const activeContent=make("div","investigation-active-content");
+   activeHost.append(activeContent);
+
    const disclosure=make("details","investigation-collapse");
    disclosure.open=openSections.has(sectionKey);
-   const own=records.filter(item=>owns(item,context));
-   const rolled=records.filter(item=>within(item,context)&&!owns(item,context));
-   const count=own.length+rolled.length;
-   disclosure.classList.toggle("is-empty",count===0);
+   disclosure.classList.toggle("is-empty",archivedOwn.length+archivedRelated.length===0);
    const summary=make("summary","investigation-collapse-heading");
-   const title=make(compact?"h4":"h2","",sectionTitle);
-
    const heading=make("div","investigation-heading-label");
-
    const actions=make("div","investigation-heading-actions");
-   actions.append(title,window.BSDialogs.tooltip("About Project History","Record practice, tests, revisions, failures, and notes."),
-    make("span","workspace-record-count","("+count+(count===1?" record)":" records)")));
-   // Keep the creation action separate from the disclosure heading, so the
-   // entire Project History heading remains a clean expand/collapse target.
-   if(admin()){
-    const addRow=make("div","investigation-create-row");
-    addRow.append(btn("+ Add entry",event=>{
-     event.preventDefault();event.stopPropagation();disclosure.open=true;
-     newRecord(context,target);
-    },"btn investigation-add investigation-create-button"));
-    target.append(addRow);
-   }
-   heading.append(actions);
-   summary.append(heading);
-   disclosure.append(summary);
+   const archiveCount=archivedOwn.length+archivedRelated.length;
+   actions.append(make(compact?"h4":"h2","",sectionTitle),
+    window.BSDialogs.tooltip("About Project History","Entries archived from this section and its child parts and assemblies."),
+    make("span","workspace-record-count","("+archiveCount+(archiveCount===1?" record)":" records)")));
+   heading.append(actions);summary.append(heading);disclosure.append(summary);
    disclosure.addEventListener("toggle",()=>{
     if(disclosure.open)openSections.add(sectionKey);else openSections.delete(sectionKey);
    });
    const content=make("div","investigation-collapse-content");
-   const header=make("div","investigation-heading");
-   if(admin()){
-    if(context.ownerType==="part"&&!context.stepId&&typeof getPart==="function"&&getPart()?.id===context.ownerId&&
-     typeof onReplacePart==="function")header.append(btn("Replace part / save revision",()=>replacePart(context,target),"btn investigation-add"));
-   }
-   disclosure.append(content);
-   target.append(disclosure);
-   const renderRecord=(record,inherited=false)=>{
+   disclosure.append(content);target.append(disclosure);
+
+   const renderCard=(record,destination,{historical=false,inherited=false}={})=>{
     const card=make("details","investigation-card");
     card.dataset.recordId=record.id;
-    const openKey=context.ownerType+":"+context.ownerId+":"+(context.stepId||"")+":"+record.id;
+    const openKey=context.ownerType+":"+context.ownerId+":"+(context.stepId||"")+":"+(historical?"history:":"")+record.id;
     card.open=openCards.has(openKey);
     card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
-    const summary=make("summary","investigation-summary");
+    const title=make("summary","investigation-summary");
     const heading=make("span","investigation-title-actions");
     heading.append(make("strong","",record.title));
-    summary.append(heading,make("span","small muted",categories[categoryOf(record)].label));
-    summary.append(dateLabelFor(record));
-    card.append(summary);
+    title.append(heading,make("span","small muted",categories[categoryOf(record)]?.label||"Entry"));
+    if(historical){
+     const stamp=archiveDate(record);
+     if(stamp){const date=make("time","investigation-record-date","Archived "+stamp);date.dateTime=stamp;title.append(date)}
+    }else title.append(dateLabelFor(record));
+    card.append(title);
     const body=make("div","investigation-body");
     if(inherited){
-     const source=record.scope==="step"?"Step":record.ownerType==="part"?"Part":"Assembly";
+     const source=record.scope==="step"?"Work instruction":record.ownerType==="part"?"Part":"Assembly";
      body.append(make("p","investigation-origin","From "+source+" · "+record.title));
     }
     let editing=false;
     const edit=btn("Edit",event=>{
      event.preventDefault();event.stopPropagation();card.open=true;editing=true;draw();
     },"btn investigation-rename");
-    if(admin()){heading.append(edit);edit.addEventListener("click",event=>{event.preventDefault();event.stopPropagation()})}
+    if(admin()&&!historical&&!inherited){
+     heading.append(edit);
+     edit.addEventListener("click",event=>{event.preventDefault();event.stopPropagation()});
+     heading.append(btn("Archive",event=>{
+      event.preventDefault();event.stopPropagation();archiveRecord(record);
+     },"btn investigation-archive-button"));
+    }
     const draw=()=>{
      body.replaceChildren();
      if(record.partSnapshot)showSnapshot(record.partSnapshot,body);
+     if(historical){
+      const stamp=archiveDate(record);
+      if(stamp)body.append(make("p","investigation-archive-meta","Archived on "+stamp));
+      if(record.archiveNote?.trim())body.append(make("p","investigation-archive-reason","Reason: "+record.archiveNote));
+     }
      edit.hidden=editing;
      attach(record,body,target,editing,()=>{editing=false;draw()});
      if(card.open)showAttachmentNames(body);
     };
     card.addEventListener("toggle",()=>{if(card.open)showAttachmentNames(body)});
-    draw();card.append(body);content.append(card);
+    draw();card.append(body);destination.append(card);
    };
-   own.forEach(item=>renderRecord(item));
-   if(header.childElementCount)content.append(header);
-   if(rolled.length){
+
+   activeOwn.forEach(record=>renderCard(record,activeContent));
+   if(!activeOwn.length)activeContent.append(make("p","muted investigation-empty","No active entries."));
+   if(admin()&&context.ownerType==="part"&&!context.stepId&&getPart?.()?.id===context.ownerId&&typeof onReplacePart==="function"){
+    activeContent.append(btn("Replace part / save revision",()=>replacePart(context,target),"btn investigation-add"));
+   }
+   activeContent.append(make("p","investigation-feedback muted"));
+
+   archivedOwn.forEach(record=>renderCard(record,content,{historical:true}));
+   if(archivedRelated.length){
     const group=make("details","investigation-rollup");
-    const summary=make("summary","", "Related records in child parts, assemblies and steps ("+rolled.length+")");
-    group.append(summary);
+    group.append(make("summary","","Archived records in child parts, assemblies and steps ("+archivedRelated.length+")"));
     const inner=make("div","investigation-rollup-body");
-    for(const record of rolled){
-     const wrapper=make("div","investigation-inherited");
-     const card=make("details","investigation-card");
-     const openKey=context.ownerType+":"+context.ownerId+":related:"+record.id;
-     card.open=openCards.has(openKey);
-     card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
-     const title=make("summary","investigation-summary");
-     title.append(make("strong","",record.title),make("span","small muted",categories[categoryOf(record)].label),dateLabelFor(record));
-     card.append(title);
-     const body=make("div","investigation-body");
-     const sourceName=record.ownerType==="part"?
-      (getPartList().find(item=>item.id===record.ownerId)?.name||"Part"):
-      record.ownerId==="__root__"?"Project":(getTree().find(item=>item.id===record.ownerId)?.name||"Assembly");
-     const origin=make("a","investigation-origin",sourceName+(record.scope==="step"?" · Work instruction":""));
-     origin.href="#"+project+(record.ownerType==="part"?"/part/":"/workspace/")+encodeURIComponent(record.ownerId);
-     body.append(origin);
-     attach(record,body,target);
-     card.addEventListener("toggle",()=>{if(card.open)showAttachmentNames(body)});
-     if(card.open)showAttachmentNames(body);
-     card.append(body);wrapper.append(card);inner.append(wrapper);
-    }
+    archivedRelated.forEach(record=>renderCard(record,inner,{historical:true,inherited:true}));
     group.append(inner);content.append(group);
    }
-   if(!own.length&&!rolled.length)content.append(make("p","muted investigation-empty","No records yet."));
-   content.append(make("p","investigation-feedback muted"));
+   if(!archiveCount)content.append(make("p","muted investigation-empty","No archived records yet."));
   }
 
   function showSnapshot(snapshot,target){
@@ -453,9 +471,9 @@
    field.focus();
   }
   function newRecord(context,target){
-   const content=target.querySelector(".investigation-collapse-content");
+   const content=target.activeEntriesHost?.querySelector(".investigation-active-content")||target.querySelector(".investigation-active-content");
    if(!content)return;
-   const existing=target.querySelector(".investigation-new-record");
+   const existing=content.querySelector(".investigation-new-record");
    if(existing){existing.querySelector("select")?.focus();return;}
    const form=make("div","investigation-create investigation-new-record");
    const label=make("label","investigation-record-title","Entry type");
