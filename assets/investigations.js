@@ -133,7 +133,7 @@
    if(!editing){if(categoryOf(record)==="note"&&record.description?.trim())container.append(make("p","investigation-note-description",record.description));if(entryList.childElementCount)container.append(entryList);return;}
    if(!admin())return;
    const descriptionInput=categoryOf(record)==="note"?make("textarea","field investigation-description-input"):null;
-   if(descriptionInput){descriptionInput.rows=3;descriptionInput.maxLength=5000;descriptionInput.value=record.description||"";descriptionInput.placeholder="Description (optional)";const label=make("label","investigation-description-label","Description");label.append(descriptionInput);container.append(label)}
+   if(descriptionInput){descriptionInput.rows=3;descriptionInput.maxLength=5000;descriptionInput.value=record.description||"";descriptionInput.placeholder="Description (optional)"}
    const latest=new Map();for(const entry of record.entries||[])latest.set(entry.type,entry);
 
    const controls=make("div","investigation-add-controls");
@@ -145,6 +145,7 @@
    const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
    date.value=record.date||[...(record.entries||[])].reverse().find(entry=>entry.date)?.date||date.value;
    dateLabel.append(date);controls.append(dateLabel);
+   if(descriptionInput){const descriptionLabel=make("label","investigation-description-label","Description");descriptionLabel.append(descriptionInput);controls.append(descriptionLabel)}
    function fieldRow(type,label,stored=latest.get(type),parent=controls){
     const wrap=make("div","investigation-entry-field");
     const caption=make("label","investigation-field-label");
