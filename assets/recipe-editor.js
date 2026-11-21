@@ -24,7 +24,7 @@
   }
   const photoAfterNote={};
   for(const [id,noteId] of Object.entries(photoNoteIds))photoAfterNote[id]=noteIds.indexOf(noteId);
-  return {id:x.id,title:x.title||"",standard:x.standard||"",detail:x.detail||"",kind:x.kind||"action",notes,noteIds,photos,photoNames,photoNoteIds,photoAfterNote,archivedAt:x.archivedAt||"",archiveNote:x.archiveNote||""};
+  return {id:x.id,title:x.title||"",standard:x.standard||"",detail:x.detail||"",kind:x.kind||"action",notes,noteIds,photos,photoNames,photoNoteIds,photoAfterNote,archivedAt:x.archivedAt||"",archiveNote:x.archiveNote||"",mainRemoved:Boolean(x.mainRemoved)};
  };
  const kinds=[["note","Notes"],["action","Action"],["inspection","Inspection"],["measurement","Measurement"],["explanation","Explanation"]];
 
@@ -570,7 +570,8 @@
       },"btn recipe-delete-step");
       navActions.append(deleteStep);
      }
-     navActions.hidden=editing.has(step.id);
+     navActions.hidden=false;
+     if(editing.has(step.id))navActions.classList.add("recipe-step-delete-only");
      navRow.append(navActions);
     }
     // Let the header/chevron toggle its native <details>. Controls inside
@@ -724,11 +725,39 @@
      }
      // Work Instructions use the same action row as their supporting
      // records; left navigation only selects a step or opens Edit mode.
-     if(!isDraft)actions.append(window.BSEntryEditor.action("Archive",event=>{
+     if(!isDraft)actions.append(window.BSEntryEditor.action("Archive step",event=>{
       event.preventDefault();navRow.querySelector(".recipe-archive-step")?.click();
      }));
-     actions.append(window.BSEntryEditor.action("Delete",event=>{
-      event.preventDefault();navRow.querySelector(".recipe-delete-step")?.click();
+     actions.append(window.BSEntryEditor.action("Delete section",async event=>{
+      event.preventDefault();event.stopPropagation();
+      if(saving||pendingUploads)return;
+      if(!await window.BSDialogs.danger(
+       "Delete only this step's description, notes and attachments? The Work Instruction step and its nested entries will remain.",{
+        title:"Delete section?",confirmLabel:"Delete section"
+       }))return;
+      const before=normalize(step),wasDraft=step===draft;
+      step.standard="";step.detail="";step.notes=[];step.noteIds=[];
+      step.photos=[];step.photoNames={};step.photoNoteIds={};step.photoAfterNote={};
+      step.mainRemoved=true;
+      if(wasDraft){
+       feedback.textContent="Section removed. Save the step to keep its nested entries.";
+       render();return;
+      }
+      saving=true;
+      try{
+       if(savePromise)await savePromise;
+       if(typeof options.onSave!=="function")throw Error("Saving is unavailable.");
+       await options.saveStepEdits?.(step.id);
+       await options.onSave();
+       clearTimeout(saveTimer);dirty=false;
+       editSnapshots.delete(step.id);editing.delete(step.id);
+       window.BSTransient?.show(feedback,"Section deleted; step and nested entries retained.");
+       render();
+      }catch(error){
+       Object.assign(step,before);
+       feedback.textContent=error.message||"Unable to delete section.";
+       render();
+      }finally{saving=false}
      },{kind:"danger",className:"recipe-delete-entry"}));
      body.append(actions);
     }else{
@@ -763,7 +792,17 @@
      body.append(archivedInfo);
     }
     if(typeof options.decorateStep==="function")options.decorateStep(step,body);
-    card.append(body);detailPane.append(card);
+    card.append(body);
+    if(!step.mainRemoved)detailPane.append(card);
+    else if(!archived&&admin()&&editing.has(step.id)){
+     const restoreSection=button("+ Add section",()=>{
+      step.mainRemoved=false;
+      step.notes=[""];step.noteIds=[newId()];
+      changed();saveHint();render();
+      content.querySelector(".recipe-step-note textarea")?.focus();
+     },"btn recipe-restore-section");
+     detailPane.append(restoreSection);
+    }
     if(!isDraft&&typeof options.renderInvestigations==="function"){
      // Keep these outside the main step <details>, otherwise a collapsed
      // instruction also hides its nested entry / Project Archive headers.
@@ -781,7 +820,7 @@
   const add=button("+ Add entry",()=>{
    if(!admin()||loading||saving||pendingUploads)return;
    if(!draft){
-    draft={id:newId(),title:"",standard:"",detail:"",kind:"note",notes:[""],noteIds:[newId()],photos:[],photoNames:{},photoNoteIds:{},photoAfterNote:{}};
+    draft={id:newId(),title:"",standard:"",detail:"",mainRemoved:false,kind:"note",notes:[""],noteIds:[newId()],photos:[],photoNames:{},photoNoteIds:{},photoAfterNote:{}};
     steps.push(draft);
    }
    expanded=draft.id;expandedStepBodies.add(draft.id);editSnapshots.clear();editing.clear();editing.add(draft.id);render();
