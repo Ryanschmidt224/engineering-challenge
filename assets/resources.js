@@ -18,6 +18,8 @@
  // Static defaults are reference specifications, not inventory records or purchase claims.
  // Only equipment useful for common low-voltage DIY builds goes into the starter list.
  const workshopSupplies=[
+  {id:"workshop:resistor-quarter",kind:"component",tier:"optional",productIdentity:"generic",name:"¼ W resistor",featureTreeDescription:"Resistor",subtitle:"Generic through-hole resistor; set resistance and tolerance in the project",spec:"0.25 W nominal power rating; select resistance, tolerance and physical style for the application.",specifications:[{label:"Power rating",name:"Power rating",value:"0.25",unit:"W"}],use:"Current limiting, biasing, pull-ups and voltage dividers.",caution:"Check resistance, power dissipation, tolerance, voltage and operating conditions before selecting a physical part."},
+  {id:"workshop:led-generic",kind:"component",tier:"optional",productIdentity:"generic",name:"LED",featureTreeDescription:"LED",subtitle:"Generic light-emitting diode; choose color, size and shape in the project",spec:"Set size, color, shape, forward voltage and current for the chosen LED.",use:"Status indicators and visual feedback.",caution:"Use a suitable current-limiting circuit and verify forward current and polarity."},
   {id:"workshop:wire22",kind:"material",tier:"core",name:"22 AWG signal hook-up wire",subtitle:"Preferred signal / control wire",spec:"Stranded, tinned copper; PVC insulation / jacket; UL AWM Style 1015, 105°C, 600 V or an equivalent listed wire; red, black and one contrasting signal color.",use:"Switches, sensors, low-current electronics and stationary control wiring.",caution:"Use only when current, voltage drop, terminal range and movement permit. Ratings are for the specific approved product and installation.",source:"https://www.alphawire.com/products/wire/hook-up-wire/premium/3071"},
   {id:"workshop:wire18",kind:"material",tier:"core",name:"18 AWG power hook-up wire",subtitle:"Preferred low-voltage power wire",spec:"Stranded copper (tinned preferred); PVC insulation / jacket; UL AWM Style 1015, 105°C, 600 V or equivalent rated wire; red and black.",use:"Short DC power leads and small equipment where the electrical and connector ratings allow.",caution:"18 AWG is a preferred stocking size, not an automatic current rating. Check load, run length, protection and installation.",source:"https://www.alphawire.com/"},
   {id:"workshop:wire16",kind:"material",tier:"conditional",name:"16 AWG power wire",subtitle:"Stock when loads exceed the preferred 18 AWG",spec:"Stranded copper, identified insulation type, voltage and temperature rating; PVC 105°C / 600 V UL 1015 is a useful fixed-installation example.",use:"Higher-current or longer low-voltage DC runs when calculated and verified.",caution:"Size and protection require engineering review. Don't infer an installation ampacity from the insulation voltage alone.",source:"https://www.alphawire.com/"},
@@ -142,7 +144,8 @@
   "workshop:wire16":"electrical-wiring","workshop:silicone":"electrical-wiring",
   "workshop:ferrule22":"electrical-wiring","workshop:ferrule18":"electrical-wiring",
   "workshop:heatshrink":"electrical-wiring","workshop:sealshrink":"electrical-wiring",
-  "workshop:solder":"consumables-assembly"
+  "workshop:solder":"consumables-assembly",
+  "workshop:resistor-quarter":"electrical-basic","workshop:led-generic":"electrical-basic"
  })[id]||"hardware";
  const legacyCategory=category=>{
   const old=String(category||"").trim().toLowerCase();
@@ -231,7 +234,7 @@
   {id:"safety",label:"Workshop Safety",description:"Eye protection and ventilation",items:["workshop:safety"]}
  ];
  const workshopGroupFor=id=>workshopGroups.find(group=>group.items.includes(id))||null;
- const catalog={tools:workshopReferences.filter(x=>x.kind==="tool").map(x=>({id:x.id,name:x.name,subtitle:"Workshop standard",detail:x.spec+" "+x.use,caution:x.caution,category:x.category,availabilityAssumption:x.availabilityAssumption,bomDefault:x.bomDefault})),calculators,parts:[...baseParts,...workshopReferences.filter(x=>x.kind!=="tool").map(x=>({id:x.id,name:x.name,subtitle:x.subtitle,detail:x.spec+" "+x.use,caution:x.caution,category:x.category,availabilityAssumption:x.availabilityAssumption,bomDefault:x.bomDefault}))]};
+ const catalog={tools:workshopReferences.filter(x=>x.kind==="tool").map(x=>({id:x.id,name:x.name,subtitle:"Workshop standard",detail:x.spec+" "+x.use,caution:x.caution,category:x.category,availabilityAssumption:x.availabilityAssumption,bomDefault:x.bomDefault,productIdentity:x.productIdentity,featureTreeDescription:x.featureTreeDescription,specifications:x.specifications})),calculators,parts:[...baseParts,...workshopReferences.filter(x=>x.kind!=="tool").map(x=>({id:x.id,name:x.name,subtitle:x.subtitle,detail:x.spec+" "+x.use,caution:x.caution,category:x.category,availabilityAssumption:x.availabilityAssumption,bomDefault:x.bomDefault,productIdentity:x.productIdentity,featureTreeDescription:x.featureTreeDescription,specifications:x.specifications}))]};
  let wires=[],commonRecords=[],purchasedRecords=[],listeners=new Set(),admin=false;
  const byId=(kind,id)=>catalog[kind]?.find(item=>item.id===id);
  const wireName=w=>[w.name,w.awg?w.awg+" AWG":"",w.color,w.partNumber].filter(Boolean).join(" · ");
