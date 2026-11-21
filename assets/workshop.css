@@ -461,3 +461,154 @@
  background:var(--color-media-backdrop);
 }
 #workshop-photo-preview.workshop-photo-thumb[hidden]{display:none}
+
+
+/* Workshop editor alignment — match the compact label-left/value-right Part editor.
+   Scope these styles to editing forms, not catalog cards or browse filters. */
+#commonparts .workshop-item-edit-form{
+ padding:15px 17px;
+ border-radius:10px;
+}
+#commonparts .workshop-item-editor-heading{
+ margin-bottom:11px;
+ align-items:baseline;
+}
+#commonparts .workshop-item-edit-grid:has(>.workshop-part-editor-section){
+ display:grid;
+ gap:10px;
+}
+#commonparts .workshop-part-editor-section{
+ margin:0;
+ padding:11px 13px 13px;
+ border:1px solid var(--color-border);
+ border-radius:10px;
+ background:var(--color-surface);
+}
+#commonparts .workshop-part-editor-section>.part-editor-section-heading{
+ margin:0 0 8px;
+ padding:0;
+ border:0;
+ font-size:.91rem;
+ font-weight:650;
+}
+#commonparts .workshop-part-editor-section .workshop-item-edit-grid{
+ display:grid;
+ grid-template-columns:minmax(0,1fr);
+ gap:7px;
+}
+#commonparts .workshop-part-editor-section .workshop-item-edit-grid>label,
+#commonparts .workshop-item-classification>label{
+ display:grid;
+ grid-template-columns:190px minmax(0,1fr);
+ align-items:center;
+ gap:4px 12px;
+ min-height:36px;
+ min-width:0;
+ margin:0;
+ font-size:.85rem;
+ font-weight:500;
+}
+#commonparts .workshop-part-editor-section .workshop-item-edit-grid>label.workshop-edit-wide,
+#commonparts .workshop-part-editor-section[data-part-editor-section="identity"] .workshop-identity-priority-field{
+ grid-column:auto;
+ max-width:none;
+}
+#commonparts .workshop-part-editor-section .workshop-item-edit-grid>label>.field,
+#commonparts .workshop-item-classification>label>.field{
+ display:block;
+ grid-column:2;
+ width:100%;
+ max-width:none;
+ min-width:0;
+ min-height:36px;
+ margin:0;
+ padding:7px 11px;
+ border-radius:8px;
+ font-size:.86rem;
+ font-weight:400;
+ box-sizing:border-box;
+}
+#commonparts .workshop-part-editor-section textarea.field{
+ min-height:62px;
+ max-height:190px;
+ resize:vertical;
+}
+#commonparts .workshop-item-classification{
+ display:grid;
+ grid-template-columns:minmax(0,1fr);
+ gap:7px;
+ margin:10px 0;
+ padding:11px 13px;
+ border-radius:10px;
+ background:var(--color-surface);
+}
+#commonparts .workshop-part-editor-section .product-ai-search{
+ grid-column:1/-1;
+ width:100%;
+ max-width:none;
+ padding:7px 0 2px;
+ margin:0;
+}
+#commonparts .workshop-item-edit-form h4{margin:13px 0 8px}
+#commonparts .workshop-item-editor-actions{margin-top:12px;gap:8px}
+#commonparts .workshop-item-editor-mount:not(:empty){margin-top:14px;margin-bottom:20px}
+
+/* Personal Workshop: the same alignment without changing inventory semantics. */
+#commonparts #workshop-editor{
+ margin:12px 0;
+ padding:12px 14px;
+ border:1px solid var(--color-border);
+ border-radius:10px;
+ background:var(--color-surface);
+}
+#commonparts #workshop-editor>summary{
+ font-weight:650;
+ cursor:pointer;
+ padding:3px 0 10px;
+}
+#commonparts #workshop-editor .workshop-form-grid{
+ display:grid;
+ grid-template-columns:minmax(0,1fr);
+ gap:7px;
+}
+#commonparts #workshop-editor .workshop-form-grid>label,
+#commonparts #workshop-editor>label{
+ display:grid;
+ grid-template-columns:190px minmax(0,1fr);
+ align-items:center;
+ gap:4px 12px;
+ min-height:36px;
+ margin:0;
+ font-size:.85rem;
+ font-weight:500;
+}
+#commonparts #workshop-editor .workshop-form-grid>label>.field,
+#commonparts #workshop-editor>label>.field{
+ grid-column:2;
+ width:100%;
+ min-width:0;
+ max-width:none;
+ min-height:36px;
+ margin:0;
+ padding:7px 11px;
+ border-radius:8px;
+ box-sizing:border-box;
+ font-size:.86rem;
+ font-weight:400;
+}
+#commonparts #workshop-editor>label{margin-top:8px}
+#commonparts #workshop-editor>label textarea.field{min-height:62px;resize:vertical}
+#commonparts #workshop-editor .workshop-structured-specs{margin:12px 0;padding:11px 13px}
+#commonparts #workshop-editor .workshop-structured-specs h3{margin:0 0 5px}
+@media(max-width:620px){
+ #commonparts .workshop-part-editor-section .workshop-item-edit-grid>label,
+ #commonparts .workshop-item-classification>label,
+ #commonparts #workshop-editor .workshop-form-grid>label,
+ #commonparts #workshop-editor>label{grid-template-columns:minmax(0,1fr);gap:4px}
+ #commonparts .workshop-part-editor-section .workshop-item-edit-grid>label>.field,
+ #commonparts .workshop-item-classification>label>.field,
+ #commonparts #workshop-editor .workshop-form-grid>label>.field,
+ #commonparts #workshop-editor>label>.field{grid-column:1}
+ #commonparts .workshop-item-edit-form{padding:12px}
+ #commonparts .workshop-part-editor-section{padding:10px}
+}
