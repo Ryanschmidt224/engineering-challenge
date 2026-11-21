@@ -68,15 +68,15 @@ test("unknown quantities stay blank and ferrules are not invented",async()=>{
 
 test("experiment records and recipe revision history are retained",async()=>{
  const {env}=storage(),url="/api/workspace?project=launcher&assembly=__root__";
- const firstStep={id:"w1",title:"Connect wire",standard:"Attach power lead.",detail:"",kind:"action"};
- const secondStep={...firstStep,standard:"Attach power lead, then check continuity."};
+ const firstStep={id:"w1",title:"Connect wire",tileOrder:[]};
+ const secondStep={...firstStep,title:"Connect wire and test continuity"};
  assert.equal((await workspace(request("PUT",url,{recipe:[firstStep],experiments:[]}),env)).status,200);
  assert.equal((await workspace(request("PUT",url,{recipe:[secondStep],
   experiments:[{id:"test-1",createdAt:"2026-11-07T00:00:00Z",text:"Continuity confirmed"}]}),env)).status,200);
  const loaded=await (await workspace(request("GET",url),env)).json();
  assert.equal(loaded.workspace.experiments.length,1);
  assert.equal(loaded.workspace.history.length,1);
- assert.equal(loaded.workspace.history[0].recipe[0].standard,"Attach power lead.");
+ assert.equal(loaded.workspace.history[0].recipe[0].title,"Connect wire");
 });
 
 test("standard shop supplies are assumed available while special wire is purchased",async()=>{
@@ -200,13 +200,13 @@ test("obsolete freeform instructions are pruned on next save",async()=>{
  assert.ok(stored.history.every(item=>!Object.hasOwn(item,"instructions")&&!Object.hasOwn(item,"notes")));
 });
 
-test("recipe validation rejects duplicate step IDs and oversized instructions",async()=>{
+test("Work Instruction validation rejects duplicate IDs and oversized titles",async()=>{
  const {env}=storage();
  const url="/api/workspace?project=launcher&assembly=__root__";
- const step={id:"test-step",title:"Verify polarity",standard:"Check with meter",detail:"",kind:"inspection"};
+ const step={id:"test-step",title:"Verify polarity",tileOrder:[]};
  const fields={};
  assert.equal((await workspace(request("PUT",url,{...fields,recipe:[step,{...step}]}),env)).status,400);
- assert.equal((await workspace(request("PUT",url,{...fields,recipe:[{...step,detail:"x".repeat(8001)}]}),env)).status,400);
+ assert.equal((await workspace(request("PUT",url,{...fields,recipe:[{...step,title:"x".repeat(181)}]}),env)).status,400);
  assert.equal((await workspace(request("PUT",url,{...fields,recipe:[step]}),env)).status,200);
 });
 
