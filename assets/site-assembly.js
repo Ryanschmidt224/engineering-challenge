@@ -1159,9 +1159,9 @@ function setupAssemblyTrees(){
     try{await change(action,data)}catch(error){feedback.textContent=error.message;button.disabled=false}
    };
    save.onclick=()=>void run(save,"requirements",{purpose:purposeInput.value});
-   const purchased=["purchased","custom_purchased"].includes(part.partType);
+   const purchased=part.partType==="purchased";
    if(purchased){
-    const candidates=(part.implementations||[]).filter(item=>!item.retiredAt&&["purchased","custom_purchased"].includes(item.partType));
+    const candidates=(part.implementations||[]).filter(item=>!item.retiredAt&&item.partType==="purchased");
     const alternatives=document.createElement("details");alternatives.className="part-alternatives-panel";
     const title=document.createElement("summary");
     title.textContent="Alternative purchased parts"+(candidates.length>1?" ("+(candidates.length-1)+")":"");
