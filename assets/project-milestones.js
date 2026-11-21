@@ -60,6 +60,8 @@
    item.append(el("strong","",label),el("p","",value));host.append(item);
   }
   function render(){
+   // Don't add an empty public-facing section to every existing project.
+   panel.hidden=!canEdit()&&!originalIntent&&!milestones.length;
    createIntent.hidden=!canEdit()||!!originalIntent;
    addMilestone.hidden=!canEdit();
    intentHost.replaceChildren();
