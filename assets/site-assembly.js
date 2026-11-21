@@ -1112,8 +1112,130 @@ function setupAssemblyTrees(){
     if(currentPartInfo?.id===id&&version!==partStatusChangeVersion)schedulePartStatusSave(true);
    }
   }
+  // Functional identity and selected implementation share the existing part
+  // details screen. Keep the feature tree and work-instruction navigation intact.
+  const renderFunctionalPartPanel=part=>{
+   if(part.itemType==="document"||part.generatedFrom)return null;
+   const panel=document.createElement("section");panel.className="part-functional-panel";
+   const header=document.createElement("div");header.className="part-functional-heading";
+   const heading=document.createElement("h3");heading.textContent="Function & requirements";
+   header.append(heading);
+   const feedback=document.createElement("span");feedback.className="part-functional-feedback";feedback.setAttribute("role","status");
+   const editable=canEdit();
+   const edit=document.createElement("button");edit.type="button";edit.className="btn";edit.textContent="Edit";
+   edit.hidden=!editable;header.append(edit);
+   panel.append(header);
+   const purpose=document.createElement("p");purpose.className="part-functional-purpose";
+   purpose.textContent=part.description||"Purpose not described yet.";
+   panel.append(purpose);
+   if(part.functionalRequirements){
+    const line=document.createElement("p");line.className="part-functional-requirements";
+    line.textContent="Requirements: "+part.functionalRequirements;panel.append(line);
+   }
+   if(part.acceptanceCriteria){
+    const line=document.createElement("p");line.className="part-functional-acceptance";
+    line.textContent="Acceptance criteria: "+part.acceptanceCriteria;panel.append(line);
+   }
+   const form=document.createElement("div");form.className="part-functional-edit";form.hidden=true;
+   const input=(label,value,limit,rows=2)=>{
+    const wrap=document.createElement("label");wrap.className="part-functional-field";
+    const caption=document.createElement("span");caption.textContent=label;
+    const field=document.createElement("textarea");field.className="field";field.value=value||"";field.maxLength=limit;field.rows=rows;
+    wrap.append(caption,field);form.append(wrap);return field;
+   };
+   const purposeInput=input("Purpose",part.description,2000);
+   const requirementsInput=input("Required specifications / constraints",part.functionalRequirements,6000,3);
+   const acceptanceInput=input("Acceptance criteria",part.acceptanceCriteria,6000,2);
+   const formActions=document.createElement("div");formActions.className="part-functional-actions";
+   const save=document.createElement("button");save.type="button";save.className="btn primary";save.textContent="Save";
+   const cancel=document.createElement("button");cancel.type="button";cancel.className="btn";cancel.textContent="Cancel";
+   cancel.onclick=()=>{form.hidden=true;edit.hidden=!editable};
+   formActions.append(save,cancel);form.append(formActions);panel.append(form);
+   edit.onclick=()=>{form.hidden=false;edit.hidden=true};
+   async function change(action,data){
+    if(!currentPartInfo||currentPartInfo.id!==part.id)throw Error("Part changed; reload before saving");
+    const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{
+     method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},
+     body:JSON.stringify({functionalAction:action,expectedRevision:currentPartInfo.revision??null,...data})
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(result.error||"Could not update functional part");
+    if(currentPartInfo?.id===part.id){
+     currentPartInfo=result.component;
+     syncPartNodes([result.component]);
+     renderPartDetails(result.component);
+     refreshBom();
+    }
+   }
+   const run=async(button,action,data)=>{
+    button.disabled=true;feedback.textContent="Saving…";
+    try{await change(action,data)}catch(error){feedback.textContent=error.message;button.disabled=false}
+   };
+   save.onclick=()=>void run(save,"requirements",{
+    purpose:purposeInput.value,requirements:requirementsInput.value,
+    acceptanceCriteria:acceptanceInput.value
+   });
+   const selection=document.createElement("section");selection.className="part-implementation-panel";
+   const implHeading=document.createElement("h3");implHeading.textContent="Selected implementation";selection.append(implHeading);
+   const desc=document.createElement("p");desc.className="part-implementation-summary";
+   desc.textContent=part.implementationResolved
+    ?(part.implementationName||part.model||"Implementation")+
+      (part.model&&part.model!==part.implementationName?" · Mfg part number: "+part.model:"")+
+      (part.manufacturer?" · "+part.manufacturer:"")
+    :"No implementation selected yet. This functional part is not ready for purchasing or fabrication.";
+   selection.append(desc);
+   const candidates=(part.implementations||[]).filter(candidate=>!candidate.retiredAt);
+   if(editable){
+    const chooser=document.createElement("label");chooser.className="part-functional-field";
+    const caption=document.createElement("span");caption.textContent="Use implementation";
+    const dropdown=document.createElement("select");dropdown.className="field";
+    const none=document.createElement("option");none.value="";none.textContent="Not selected";dropdown.append(none);
+    for(const candidate of candidates){
+     const option=document.createElement("option");option.value=candidate.id;
+     option.textContent=candidate.name+(candidate.model?" · "+candidate.model:"");
+     dropdown.append(option);
+    }
+    dropdown.value=part.selectedImplementationId||"";
+    dropdown.onchange=()=>void run(dropdown,"select",{implementation:{id:dropdown.value||null}});
+    chooser.append(caption,dropdown);selection.append(chooser);
+    const addButton=document.createElement("button");addButton.type="button";addButton.className="btn part-implementation-add";
+    addButton.textContent="Add implementation";selection.append(addButton);
+    const newForm=document.createElement("div");newForm.className="part-implementation-new";newForm.hidden=true;
+    const shortField=(label,value="")=>{
+     const wrap=document.createElement("label");wrap.className="part-functional-field";
+     const span=document.createElement("span");span.textContent=label;
+     const field=document.createElement("input");field.className="field";field.maxLength=180;field.value=value;
+     wrap.append(span,field);newForm.append(wrap);return field;
+    };
+    const name=shortField("Implementation name");
+    const typeLabel=document.createElement("label");typeLabel.className="part-functional-field";
+    typeLabel.textContent="Type";
+    const type=document.createElement("select");type.className="field";
+    for(const [value,label] of [["purchased","Purchased"],["custom","Custom — made in-house"],["custom_purchased","Custom — purchased"]]){
+     const option=document.createElement("option");option.value=value;option.textContent=label;type.append(option);
+    }
+    typeLabel.append(type);newForm.append(typeLabel);
+    const model=shortField("Manufacturer part number (optional)");
+    const manufacturer=shortField("Manufacturer (optional)");
+    const controls=document.createElement("div");controls.className="part-functional-actions";
+    const commit=document.createElement("button");commit.type="button";commit.className="btn primary";commit.textContent="Add and select";
+    const back=document.createElement("button");back.type="button";back.className="btn";back.textContent="Cancel";
+    controls.append(commit,back);newForm.append(controls);
+    commit.onclick=()=>{
+     if(!name.value.trim()){feedback.textContent="Enter an implementation name.";name.focus();return}
+     void run(commit,"add",{implementation:{name:name.value,partType:type.value,model:model.value,manufacturer:manufacturer.value}});
+    };
+    back.onclick=()=>{newForm.hidden=true;addButton.hidden=false};
+    addButton.onclick=()=>{newForm.hidden=false;addButton.hidden=true;name.focus()};
+    selection.append(newForm);
+   }
+   panel.append(selection,feedback);
+   return panel;
+  };
   const renderPartDetails=part=>{
    detailRows.replaceChildren();
+   const functionalPanel=renderFunctionalPartPanel(part);
+   if(functionalPanel)detailRows.append(functionalPanel);
    currentDocumentation=window.BSPartFields.documentationLinks({
     ...part,workshopDocumentation:part.workshopDocumentation??currentDocumentation
    });
