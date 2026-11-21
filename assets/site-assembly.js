@@ -2167,7 +2167,10 @@ function setupAssemblyTrees(){
    // optional values were left blank when the part was first imported.
    // Empty fields are never saved and all edits remain project-only.
    if(specs&&workshopLinkId(part)&&!String(part.model||"").trim()){
-    const templates=window.BSResources?.genericSpecificationTemplate?.(part)||[];
+    const templates=window.BSResources?.genericSpecificationTemplate?.({
+     name:part.projectDetails?.workshopTreeDescription||part.name,
+     featureTreeDescription:part.name
+    })||[];
     const existing=new Set((part.specifications||[]).map(spec=>String(spec.name||"").toLowerCase()));
     for(const [label,unit] of templates){
      if(existing.has(label.toLowerCase()))continue;
