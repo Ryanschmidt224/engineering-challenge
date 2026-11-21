@@ -19,25 +19,20 @@ window.BSReview=(()=>{
   const result=await request("GET","/api/workspace?project="+encodeURIComponent(project.id)+"&assembly="+encodeURIComponent(targetId));
   const steps=result.workspace?.recipe||[];
   dialog.replaceChildren();
-  const form=el("div","project-manage-form");form.append(el("h2","","Suggest an instruction correction"));
-  const stepLabel=el("label","","Step"),stepSelect=el("select","field");
+  const form=el("div","project-manage-form");form.append(el("h2","","Suggest a Work Instruction name change"));
+  const stepLabel=el("label","","Work Instruction"),stepSelect=el("select","field");
   steps.forEach(step=>{const option=el("option","",step.title||"Untitled step");option.value=step.id;stepSelect.append(option)});
   stepLabel.append(stepSelect);form.append(stepLabel);
-  const fieldLabel=el("label","","Field"),fieldSelect=el("select","field");
-  for(const [field,label] of [["standard","Instruction"],["detail","Details"]]){
-   const option=el("option","",label);option.value=field;fieldSelect.append(option);
-  }
-  fieldLabel.append(fieldSelect);form.append(fieldLabel);
   const original=el("p","muted");
-  const display=()=>{const step=steps.find(step=>step.id===stepSelect.value);original.textContent="Current: "+String(step?.[fieldSelect.value]||"")};
-  stepSelect.onchange=display;fieldSelect.onchange=display;display();form.append(original);
-  const label=el("label","","Proposed replacement"),textarea=el("textarea","field");
-  textarea.rows=5;label.append(textarea);form.append(label);
+  const display=()=>{const step=steps.find(step=>step.id===stepSelect.value);original.textContent="Current name: "+String(step?.title||"")};
+  stepSelect.onchange=display;display();form.append(original);
+  const label=el("label","","Proposed name"),textarea=el("input","field");
+  textarea.maxLength=180;label.append(textarea);form.append(label);
   const message=el("p","project-manage-message");form.append(message);
   const buttons=el("div","row"),send=el("button","btn primary","Submit suggestion"),close=el("button","btn","Close");
   if(!steps.length){send.disabled=true;message.textContent="This assembly does not have instruction steps yet."}
   send.onclick=async()=>{try{
-   await request("POST",api(project),{scope,targetId,stepId:stepSelect.value,field:fieldSelect.value,suggestedText:textarea.value});
+   await request("POST",api(project),{scope,targetId,stepId:stepSelect.value,field:"title",suggestedText:textarea.value});
    dialog.close();
    // Suggestions are visible to the project owner in the summary queue.
   }catch(error){message.textContent=error.message}};
@@ -104,7 +99,7 @@ window.BSReview=(()=>{
   if(!pending.length)form.append(el("p","muted","No suggested changes are awaiting review."));
   for(const proposal of pending){
    const section=el("section","project-proposal-review");
-   section.append(el("strong","",targetLabel(proposal)+" · "+(proposal.field==="standard"?"Instruction change":"Details change")));
+   section.append(el("strong","",targetLabel(proposal)+" · "+(proposal.field==="title"?"Work Instruction name":"Legacy instruction suggestion")));
    section.append(el("p","muted","Original: "+proposal.originalText));
    section.append(el("p","","Suggested: "+proposal.suggestedText));
    const message=el("p","project-manage-message"),actions=el("div","row");
