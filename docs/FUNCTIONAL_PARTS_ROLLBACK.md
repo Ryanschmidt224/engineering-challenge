@@ -43,6 +43,33 @@ Persistence boundary: `functions/api/components.js`, using
 `resolveFunctionalPart` for existing consumers and `encodeFunctionalPart`
 for canonical storage (schema version 2).
 
+## Project purpose versus physical part presentation
+
+Do **not** require a global Functional Type taxonomy. A project's description
+of a component's purpose is intentionally freeform. A part's
+`projectDetails.featureTreeName` is the optional, project-owned feature-tree
+description; it must not be inferred from Workshop product categories, linked
+Workshop captions, a manufacturer part number, or overwritten on Workshop reload.
+Up to 180 characters are stored; keep display compact without truncating saved
+text.
+
+User-visible hierarchy for active parts:
+
+1. Project part number + feature-tree description, or existing part name when
+   no project description has been entered.
+2. Actual selected physical implementation name (or manufacturer part number
+   when a descriptive name is unavailable); show `No component selected` if
+   the implementation is unresolved.
+
+This behavior must be identical for purchased parts and custom designs.
+Changing the selected implementation never rewrites the project-owned
+description or number. The chosen physical implementation remains in the
+Workshop/design layer; the engineering BOM resolves it without double-counting.
+
+Keep existing layout, status controls, feature-tree drag/drop, Work Instructions,
+Workshop links, and archive functionality. The project purpose field should be
+easy to find in New Part / Edit Part, not hidden behind advanced specifications.
+
 ## Part numbers
 
 - Project part numbers identify **functional requirements**, never particular
