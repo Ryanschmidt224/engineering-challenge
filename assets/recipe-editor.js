@@ -541,12 +541,32 @@
         title:"Delete step?",confirmLabel:"Delete"
        }))return;
        if(saving||pendingUploads)return;
-       steps.splice(steps.indexOf(step),1);
-       editing.delete(step.id);editSnapshots.delete(step.id);
-       expandedStepBodies.delete(step.id);
-       if(step===draft)draft=null;
-       expanded=steps[Math.min(i,steps.length-1)]?.id||null;
-       changed();saveHint();render();
+       const oldIndex=steps.indexOf(step);
+       if(oldIndex<0)return;
+       if(step===draft){
+        steps.splice(oldIndex,1);draft=null;
+        editing.delete(step.id);editSnapshots.delete(step.id);
+        expandedStepBodies.delete(step.id);
+        expanded=steps.find(item=>!item.archivedAt)?.id||null;
+        render();return;
+       }
+       saving=true;
+       steps.splice(oldIndex,1);
+       try{
+        if(savePromise)await savePromise;
+        if(typeof options.onSave!=="function")throw Error("Saving is unavailable.");
+        await options.onSave();
+        clearTimeout(saveTimer);dirty=false;
+        editing.delete(step.id);editSnapshots.delete(step.id);
+        expandedStepBodies.delete(step.id);
+        expanded=steps.find(item=>!item.archivedAt)?.id||null;
+        window.BSTransient?.show(feedback,"Step deleted.");
+        render();
+       }catch(error){
+        steps.splice(oldIndex,0,step);
+        feedback.textContent=error.message||"Step deletion failed. Nothing was removed.";
+        render();
+       }finally{saving=false}
       },"btn recipe-delete-step");
       navActions.append(deleteStep);
      }
@@ -624,6 +644,7 @@
        const line=el("div","recipe-step-note");
        line.dataset.noteIndex=String(index);
        const field=editField(value,index===0?"Description":"Note",v=>step.notes[index]=v,3);
+       if(index===0&&step.kind==="note")line.append(el("label","recipe-step-description-label","Description"));
        field.setAttribute("aria-label",index===0?"Description":"Note "+(index+1));
        field.maxLength=4000;
        const noteAttachments=el("div","recipe-note-attachments");
