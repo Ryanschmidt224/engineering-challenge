@@ -60,5 +60,11 @@ test("DigiKey cart handoff includes only explicit codes and buyable quantities, 
  assert.equal(result.lines[0].qty,5);
  assert.equal(result.skipped.length,2);
  assert.match(source("assets/bom-purchasing.js"),/classic\/ordering\/fastadd\.aspx/);
- assert.match(source("assets/site-assembly.js"),/BSBomPurchasing\?\.render\(purchasingMount,purchasedParts\)/);
+ assert.match(source("assets/site-assembly.js"),/BSBomPurchasing\\?\\.render\\(purchaseMount,relevantParts\\)/);
+ const gated=linesFor([
+  {name:"Not specified",implementationResolved:false,supplierOffers:[{vendor:"digikey",sku:"WRONG-ND"}],quantity:1},
+  {name:"Fabricate",partType:"custom",implementationResolved:true,supplierOffers:[{vendor:"digikey",sku:"WRONG-ND"}],quantity:1}
+ ]);
+ assert.equal(gated.lines.length,0);
+ assert.match(gated.skipped.join(" "),/no implementation selected/);
 });
