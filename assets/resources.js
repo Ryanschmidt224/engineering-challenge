@@ -142,10 +142,10 @@
   const name=[item?.name,item?.typeName,item?.featureTreeDescription,item?.subtitle].filter(Boolean).join(" ").toLowerCase();
   const kind=String(item?.kind||"").toLowerCase();
   if(["tools-measurement","tools-making","consumables-assembly","consumables-general","hardware-fasteners","hardware-materials"].includes(category))return category;
-  if(/\\b(multimeter|oscilloscope|logic analyzer|caliper|micrometer|measurement probe|test instrument|frequency counter)\\b/.test(name))return "tools-measurement";
+  if(/\b(multimeter|oscilloscope|logic analyzer|caliper|micrometer|measurement probe|test instrument|frequency counter)\b/.test(name))return "tools-measurement";
   if(kind==="tool"||kind==="equipment"&&/soldering station|heat gun|stripper|crimping tool|drill|lathe|mill|printer|welder|cutter/.test(name))return "tools-making";
   if(/\b(safety|protective glasses|ventilation)\b/.test(name))return "safety";
-  if(/\b(screw|bolt|washer|nut|fastener|aluminum stock|plastic stock|sheet metal)\b/.test(name))return "hardware-fasteners";
+  if(/\b(screw|bolt|washer|nut|fastener|bracket|hinge|bearing|bushing)\b/.test(name))return "hardware-fasteners";
   if(/\b(solder|flux|thermal paste|adhesive|glue|tape)\b/.test(name)&&!/(controller|driver)/.test(name))return "consumables-assembly";
   if(/\b(wire|cable|ferrule|terminal|connector|jumper|heat.?shrink|breadboard|header|socket|crimp|adapter cable)\b/.test(name))return "electrical-wiring";
   if(/\b(display|lcd|oled|screen|indicator|buzzer|led strip|seven.segment)\b/.test(name))return "electrical-displays";
@@ -156,8 +156,8 @@
   if(/\b(power supply|regulator|converter|buck|boost|battery|charger|power module|transformer|psu)\b/.test(name))return "electrical-power";
   if(/\b(resistor|capacitor|diode|led|integrated circuit|\bic\b|inductor|potentiometer|crystal|rectifier|fuse)\b/.test(name))return "electrical-basic";
   if(["electronics","component","electrical","power"].some(t=>category.includes(t))||kind==="component")return "electrical-basic";
-  if(/\\b(wood|steel|aluminum|plastic|sheet|bar stock|tube|filament)\\b/.test(name))return "hardware-materials";
-  if(/\\b(cleaner|lubricant|oil|rag|wipe|sandpaper|abrasive|coolant)\\b/.test(name))return "consumables-general";
+  if(/\b(wood|steel|aluminum|plastic|sheet|bar stock|tube|filament)\b/.test(name))return "hardware-materials";
+  if(/\b(cleaner|lubricant|oil|rag|wipe|sandpaper|abrasive|coolant)\b/.test(name))return "consumables-general";
   const broad=legacyCategory(category);
   return {tools:"tools-making",consumables:"consumables-general",hardware:"hardware-materials"}[broad]||broad;
  };
