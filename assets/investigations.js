@@ -100,15 +100,15 @@
     records=Array.isArray(d.records)?d.records:[];revision=d.revision??null;renderAll();
    }catch(error){report(error.message)}
   }
-  async function save(change){
+  async function save(change,{deferRender=false}={}){
    if(!admin())throw Error("Sign in as administrator to save.");
    const r=await fetch(api,{method:"POST",credentials:"same-origin",
     headers:{"content-type":"application/json"},body:JSON.stringify({...change,expectedRevision:revision})});
    const d=await r.json();if(!r.ok)throw Error(d.error||"Save failed");
-   records=d.records;revision=d.revision;renderAll();
+   records=d.records;revision=d.revision;if(!deferRender)renderAll();
    return d;
   }
-  function attach(record,container,target,editing=false,onDone=()=>{},creating=false){
+  function attach(record,container,target,editing=false,onDone=()=>{},creating=false,registerSave=null){
    const reportHere=message=>report(message,target);
    const category=categories[categoryOf(record)];
    const entryList=make("div","investigation-entries");
@@ -277,7 +277,8 @@
     for(const note of record.notes||[])addNote(note);
     add.disabled=notes.length>=30;
    }
-   const saveBtn=btn("Save",async()=>{
+   let saveBtn;
+   const persist=async(deferRender=false)=>{
     const fields=inputs.filter(item=>item.type==="resolution"?!!fixed.value:!!(item.field.value.trim()||item.selected.length||item.existingFiles.length));
     if(!titleInput.value.trim()){titleInput.focus();return}
     if(!date.value){reportHere("Choose a date.");date.focus();return}
@@ -316,7 +317,7 @@
      }
      const details={title:titleInput.value.trim(),date:date.value,entries,notes:savedNotes,
       ...(descriptionInput?{description:descriptionInput.value,photos}:{})};
-     const result=await save(creating?{...record,...details,action:"create"}:{...details,action:"editRecord",id:record.id});
+     const result=await save(creating?{...record,...details,action:"create"}:{...details,action:"editRecord",id:record.id},{deferRender});
      if(creating){
       const card=[...target.querySelectorAll(".investigation-card[data-record-id]")].find(item=>item.dataset.recordId===result.createdId);
       if(card){
@@ -324,9 +325,12 @@
        openCards.add(record.ownerType+":"+record.ownerId+":"+(record.stepId||"")+":"+result.createdId);
       }
      }
-     onDone();reportHere("Record saved.");
-    }catch(error){reportHere(error.message);saveBtn.disabled=false}
-   },"btn primary");
+     if(!deferRender){onDone();reportHere("Record saved.")}
+     return result;
+    }catch(error){reportHere(error.message);saveBtn.disabled=false;throw error}
+   };
+   saveBtn=btn("Save",()=>{void persist(false).catch(()=>{})},"btn primary");
+   if(registerSave)registerSave(()=>persist(true));
    const actions=make("div","investigation-edit-actions");
    actions.append(saveBtn,btn("Cancel",onDone));
    if(!creating)actions.append(btn("Delete",async()=>{
@@ -375,6 +379,8 @@
    activeContext={...context,target};
    const own=records.filter(record=>owns(record,context));
    const activeOwn=own.filter(record=>!isArchived(record));
+   const stepSlot=compact?stepSlots.get(context.stepId):null;
+   if(stepSlot)stepSlot.pendingEdits=[];
    const archivedOwn=own.filter(isArchived);
    const archivedRelated=records.filter(record=>within(record,context)&&!owns(record,context)&&isArchived(record));
    // A step has one edit-mode switch: its Work Instruction header.
@@ -387,9 +393,9 @@
    if(canCreate)activeHeader.append(btn("+ Add entry",event=>{
     event.preventDefault();newRecord(context,target);
    },"btn investigation-add investigation-create-button"));
-   if(canCreate)activeHost.append(activeHeader);
    const activeContent=make("div","investigation-active-content");
    activeHost.append(activeContent);
+   if(canCreate)activeHost.append(activeHeader);
 
    const disclosure=make("details","investigation-collapse");
    disclosure.open=openSections.has(sectionKey);
@@ -412,7 +418,7 @@
     const card=make("details","investigation-card bs-content-card");
     card.dataset.recordId=record.id;
     const openKey=context.ownerType+":"+context.ownerId+":"+(context.stepId||"")+":"+(historical?"history:":"")+record.id;
-    card.open=openCards.has(openKey);
+    card.open=(compact&&allowEntryEditing&&!historical&&!inherited)||openCards.has(openKey);
     card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
     const title=make("summary","investigation-summary bs-content-card-heading");
     const heading=make("span","investigation-title-actions");
@@ -428,7 +434,7 @@
      const source=record.scope==="step"?"Work instruction":record.ownerType==="part"?"Part":"Assembly";
      body.append(make("p","investigation-origin","From "+source+" · "+record.title));
     }
-    let editing=false;
+    let editing=compact&&allowEntryEditing&&!historical&&!inherited;
     const edit=btn("Edit",event=>{
      event.preventDefault();event.stopPropagation();card.open=true;editing=true;draw();
     },"btn investigation-rename");
@@ -460,9 +466,10 @@
       if(stamp)body.append(make("p","investigation-archive-meta","Archived on "+stamp));
       if(record.archiveNote?.trim())body.append(make("p","investigation-archive-reason","Reason: "+record.archiveNote));
      }
-     edit.hidden=editing;
+     edit.hidden=editing||compact;
      archive.hidden=!editing;
-     attach(record,body,target,editing,()=>{editing=false;draw()});
+     attach(record,body,target,editing,()=>{editing=false;draw()},false,
+      editing&&stepSlot&&!historical&&!inherited?commit=>stepSlot.pendingEdits.push(commit):null);
      if(card.open)showAttachmentNames(body);
     };
     card.addEventListener("toggle",()=>{if(card.open)showAttachmentNames(body)});
@@ -606,12 +613,22 @@
     slot.target.querySelectorAll("details.investigation-card,details.investigation-rollup,details.investigation-collapse").forEach(item=>{item.open=false});
    }
   }
+  async function saveStepEdits(stepId){
+   const slot=stepSlots.get(stepId);
+   if(!slot?.editing)return;
+   if(slot.target.querySelector(".investigation-new-record"))
+    throw Error("Save or cancel the new entry before saving this step.");
+   // Keep the forms mounted during the sequence: each API write updates the
+   // revision token, but only re-render once all existing entries are saved.
+   for(const commit of slot.pendingEdits||[])await commit();
+   if(slot.pendingEdits?.length)renderAll();
+  }
   function showStep(target,step,ownerType,ownerId,editing=false){
    if(!target||!step?.id||!ownerId)return;
    const context=makeContext(ownerType,ownerId,step.id);
    stepSlots.set(step.id,{target,context,editing});render(target,context,true);
   }
-  return {showAssembly,showPart,showStep,resetStepDisclosures,load};
+  return {showAssembly,showPart,showStep,saveStepEdits,resetStepDisclosures,load};
  }
  window.BSInvestigations={mount};
 })();
