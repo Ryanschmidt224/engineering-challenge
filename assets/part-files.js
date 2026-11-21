@@ -39,7 +39,7 @@
      row.append(download);list.append(row);
     }
     pagesList.replaceChildren();
-    const pageResponse=await fetch("/api/part-pages?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(id),{cache:"no-store",credentials:"same-origin"});
+    const pageResponse=await fetch("/api/part-pages?"+new URLSearchParams({project,id,...(implementation?{implementation}:{})}),{cache:"no-store",credentials:"same-origin"});
     const savedPages=await pageResponse.json();if(!pageResponse.ok)throw Error(savedPages.error||"Could not list saved web pages");
     if(version!==token)return;
     if(!savedPages.pages?.length)pagesList.append(node("p","muted","No product pages archived for this part."));
@@ -47,7 +47,7 @@
      const row=node("div","part-file-item");
      row.append(node("span","",page.url||"Archived product page"));
      const link=node("a","btn","Download saved HTML");
-     link.href="/api/part-pages?"+new URLSearchParams({project,id,file:page.id}).toString();
+     link.href="/api/part-pages?"+new URLSearchParams({project,id,file:page.id,...(implementation?{implementation}:{})}).toString();
      link.download="product-page-"+page.id+".html";
      row.append(link);pagesList.append(row);
     }
