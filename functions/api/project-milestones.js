@@ -23,10 +23,11 @@ async function resolveSource(bucket,project,source){
   const records=object?JSON.parse(await object.text()).records||[]:[];
   const record=records.find(item=>item.id===source.id);
   if(!record)throw Error("The original test, revision or failure no longer exists. Remove the source link to save your reflection.");
-  if(!["test","revision","failure"].includes(record.category))
+  const category=record.category||(record.partSnapshot?"revision":"failure");
+  if(!["test","revision","failure"].includes(category))
    throw Error("Only tests, revisions and failures can be linked to milestones");
-  return {kind:"investigation",id:record.id,title:String(record.title||record.category||"Record").slice(0,180),
-   category:record.category,ownerType:record.ownerType,ownerId:record.ownerId,stepId:record.stepId||""};
+  return {kind:"investigation",id:record.id,title:String(record.title||category||"Record").slice(0,180),
+   category,ownerType:record.ownerType,ownerId:record.ownerId,stepId:record.stepId||""};
  }
  if(source.kind==="archive"){
   const object=await bucket.get("assembly-archives/"+project+"/manifests/"+source.id+".json");
@@ -66,7 +67,9 @@ export async function handleProjectMilestones(request,env){
   const objective=textValue(input.objective,2000),successCriteria=textValue(input.successCriteria,2000),plan=textValue(input.plan,3000);
   if([objective,successCriteria,plan].some(v=>v===null)||![objective,successCriteria,plan].some(Boolean))
    return json({error:"Enter at least one original intention, success criterion or initial plan."},400);
-  record={id:crypto.randomUUID(),createdAt:at,objective,successCriteria,plan};
+  record={id:crypto.randomUUID(),createdAt:at,objective,successCriteria,plan,
+   // A goal documented after selected milestones must not masquerade as preregistration.
+   preExistingMilestones:saved.milestones.length};
   next={...saved,originalIntent:record};
  }else if(input.action==="addMilestone"){
   // Original intent is optional; milestones must remain usable for projects started earlier.
