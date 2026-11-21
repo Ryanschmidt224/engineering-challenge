@@ -4388,3 +4388,30 @@
  .project-summary-page .project-cost-heading .project-summary-cost-missing{flex-basis:100%}
  .project-summary-page .project-intent-milestones{padding:13px 14px}
 }
+
+
+/* One owner for spacing between Project Summary frames.
+   The outer page spaces its direct sections; the overview spaces its two cards.
+   Neither card nor the milestone panel adds outer vertical margins. */
+.project-summary-page{
+ --project-summary-frame-gap:16px;
+ gap:var(--project-summary-frame-gap);
+}
+.project-summary-page>.project-summary-overview{
+ display:grid;
+ gap:var(--project-summary-frame-gap);
+ margin:0;
+}
+.project-summary-page>.project-intent-milestones{
+ margin:0;
+}
+.project-summary-page>.project-summary-lists{
+ margin:0;
+ row-gap:var(--project-summary-frame-gap);
+}
+.project-summary-page>.project-summary-tracker{
+ margin:0;
+}
+.project-summary-page>.project-summary-overview>.project-overview-card{
+ margin:0;
+}
