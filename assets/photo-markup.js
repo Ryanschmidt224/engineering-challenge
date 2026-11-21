@@ -259,7 +259,7 @@
     if(w>.01&&h>.01)next.crop=[x,y,w,h];
    }else if(drag.mark){
     drag.mark.points.push(b);next.marks.push(drag.mark);
-   }else next.marks.push({tool,a:drag.a,b,color:strokeColor,size:.004});
+   }else next.marks.push({tool,a:drag.a,b,color:strokeColor,size:tool==="arrow"?.0015+arrowSize*.001:.004});
    drag=null;state=start;commit(next);
   });
   canvas.addEventListener("pointercancel",()=>{if(drag){state=drag.original;drag=null;activate();draw()}});
