@@ -240,7 +240,7 @@
   const expandedStepBodies=new Set();
   function render(){
    content.replaceChildren();
-   const total=savedSteps().length;
+   const total=savedSteps().filter(step=>!step.archivedAt).length;
    count.textContent="("+total+(total===1?" record)":" records)");
    // One step at a time: the list is navigation, the right pane is the selected step.
    if(steps.length&&!steps.some(step=>step.id===expanded))expanded=steps[0].id;
@@ -721,6 +721,12 @@
       body.append(displayed);
       // The context menu provides knowledge lookup without a redundant button.
      }
+    }
+    if(archived){
+     const archivedInfo=el("div","recipe-step-archive-metadata");
+     archivedInfo.append(el("small","","Archived "+new Date(step.archivedAt).toLocaleDateString()));
+     if(step.archiveNote.trim())archivedInfo.append(el("p","",step.archiveNote));
+     body.append(archivedInfo);
     }
     if(typeof options.decorateStep==="function")options.decorateStep(step,body);
     card.append(body);detailPane.append(card);
