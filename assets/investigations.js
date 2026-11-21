@@ -131,7 +131,20 @@
     if(links.childElementCount)item.append(links);
     entryList.append(item);
    }
-   if(!editing){if(categoryOf(record)==="note"&&record.description?.trim())container.append(make("p","investigation-note-description",record.description));if(entryList.childElementCount)container.append(entryList);return;}
+   if(!editing){
+    if(categoryOf(record)==="note"){
+     if(record.description?.trim())container.append(make("p","investigation-note-description",record.description));
+     const gallery=make("div","investigation-note-photo-gallery");
+     for(const id of record.photos||[]){
+      const image=make("img","investigation-note-photo");image.src=fileUrl(id);
+      image.alt="Note photo";image.loading="lazy";
+      gallery.append(image);
+     }
+     if(gallery.childElementCount)container.append(gallery);
+    }
+    if(entryList.childElementCount)container.append(entryList);
+    return;
+   }
    if(!admin())return;
    const descriptionInput=categoryOf(record)==="note"?make("textarea","field investigation-description-input"):null;
    if(descriptionInput){descriptionInput.rows=3;descriptionInput.maxLength=5000;descriptionInput.value=record.description||"";descriptionInput.placeholder="Description (optional)"}
@@ -147,6 +160,42 @@
    date.value=record.date||[...(record.entries||[])].reverse().find(entry=>entry.date)?.date||date.value;
    dateLabel.append(date);controls.append(dateLabel);
    if(descriptionInput){const descriptionLabel=make("label","investigation-description-label","Description");descriptionLabel.append(descriptionInput);controls.append(descriptionLabel)}
+
+   const notePhotos=categoryOf(record)==="note"?{existing:[...(record.photos||[])],pending:[]}:null;
+   if(notePhotos){
+    const gallery=make("div","investigation-note-photo-gallery");
+    const pendingList=make("div","investigation-note-pending-photos");
+    const draw=()=>{
+     gallery.replaceChildren();pendingList.replaceChildren();
+     for(const id of notePhotos.existing){
+      const tile=make("div","investigation-note-photo-tile");
+      const photo=make("img","investigation-note-photo");photo.src=fileUrl(id);photo.alt="Attached note photo";
+      tile.append(photo,btn("Remove",()=>{notePhotos.existing.splice(notePhotos.existing.indexOf(id),1);draw()},"btn investigation-note-photo-remove"));
+      gallery.append(tile);
+     }
+     for(const file of notePhotos.pending){
+      const row=make("span","investigation-note-pending-photo");
+      row.append(make("span","",file.name),btn("Remove",()=>{notePhotos.pending.splice(notePhotos.pending.indexOf(file),1);draw()},"btn investigation-note-photo-remove"));
+      pendingList.append(row);
+     }
+    };
+    const uploader=window.BSPhotoEditor.uploadPanel({
+     title:"Add photos",accept:"image/*,.heic,.heif",
+     hint:"Up to 12 photos per note, 20 MB each.",
+     onFiles:files=>{
+      for(const file of files){
+       if(!/\\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file.name)){reportHere("Select an image file.");continue}
+       if(file.size>20*1024*1024){reportHere("Each photo must be 20 MB or smaller.");continue}
+       if(notePhotos.existing.length+notePhotos.pending.length>=12){reportHere("A Note can contain up to 12 photos.");break}
+       notePhotos.pending.push(file);
+      }
+      draw();
+     }
+    });
+    const section=make("div","investigation-note-photos");
+    section.append(btn("+ Add photos",()=>uploader.open(),"btn investigation-note-photo-add"),gallery,pendingList,uploader.panel);
+    controls.append(section);draw();
+   }
    function fieldRow(type,label,stored=latest.get(type),parent=controls){
     const wrap=make("div","investigation-entry-field");
     const caption=make("label","investigation-field-label");
@@ -223,9 +272,11 @@
     addNote();add.disabled=notes.length>=30;
    },"btn investigation-add-note");
    const noteSection=make("div","investigation-note-section");
-   noteSection.append(noteList,add);controls.append(noteSection);
-   for(const note of record.notes||[])addNote(note);
-   add.disabled=notes.length>=30;
+   if(!notePhotos){
+    noteSection.append(noteList,add);controls.append(noteSection);
+    for(const note of record.notes||[])addNote(note);
+    add.disabled=notes.length>=30;
+   }
    const saveBtn=btn("Save",async()=>{
     const fields=inputs.filter(item=>item.type==="resolution"?!!fixed.value:!!(item.field.value.trim()||item.selected.length||item.existingFiles.length));
     if(!titleInput.value.trim()){titleInput.focus();return}
@@ -237,7 +288,7 @@
     }
     saveBtn.disabled=true;
     try{
-     const entries=[],savedNotes=[];
+     const entries=[],savedNotes=notePhotos?[...(record.notes||[])]:[];
      for(const {type,field,selected,existingFiles,stored,name} of [...fields,...notesToSave]){
       if(selected.length+existingFiles.length>12)throw Error("Attach no more than 12 files to each field.");
       const files=[...existingFiles];
@@ -253,7 +304,18 @@
       if(name)savedNotes.push({...entry,descriptor:name.value.trim()});
       else entries.push({...entry,...(type==="resolution"?{resolution:fixed.value}:{})});
      }
-     const details={title:titleInput.value.trim(),date:date.value,entries,notes:savedNotes,...(descriptionInput?{description:descriptionInput.value}:{})};
+     let photos;
+     if(notePhotos){
+      photos=[...notePhotos.existing];
+      for(const file of notePhotos.pending){
+       const up=await fetch("/api/recipe-files?project="+encodeURIComponent(project),{method:"POST",
+        credentials:"same-origin",headers:{"content-type":"application/octet-stream","x-file-name":encodeURIComponent(file.name)},body:file});
+       const data=await up.json();if(!up.ok||!data.id)throw Error(data.error||"Photo upload failed");
+       photos.push(data.id);
+      }
+     }
+     const details={title:titleInput.value.trim(),date:date.value,entries,notes:savedNotes,
+      ...(descriptionInput?{description:descriptionInput.value,photos}:{})};
      const result=await save(creating?{...record,...details,action:"create"}:{...details,action:"editRecord",id:record.id});
      if(creating){
       const card=[...target.querySelectorAll(".investigation-card[data-record-id]")].find(item=>item.dataset.recordId===result.createdId);
