@@ -145,9 +145,9 @@ test("new custom part retains explicit project numbering without confusing it wi
  expect(selection.exists).toBe(true);
  expect(selection.checked).toBe(true);
  expect(selection.manualAvailable).toBe(true);
- expect(selection.numberingText).toContain("Assign next available project number");
+ expect(selection.numberingText).toContain("Auto assign part number");
  expect(selection.nameBeforeNumber).toBe(true); // Project part number appears before Part name.
- await expect(page.locator(".library-part-dialog .library-auto-number-inline-note")).toHaveText("Assigned when part is saved");
+ await expect(page.locator(".library-part-dialog .library-auto-number-tip")).toHaveAttribute("title", /next unused project part number/);
  await expect(page.locator(".library-part-dialog .library-auto-number-help")).toHaveCount(0);
  expect(selection.numberVisible).toBe(true);
  const itemType=page.locator(".library-part-dialog .library-field",{hasText:"Item type"}).locator("select");
