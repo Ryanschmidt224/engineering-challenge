@@ -906,8 +906,10 @@
    const save=itemButton(isNew?"Create catalog item":"Save changes",()=>form.requestSubmit(),"btn primary");
    const cancel=itemButton("Cancel",()=>isNew?closeItem():showItem(item.id,false),"btn");
    actions.append(save,cancel);form.append(actions,status);
+   let editingEnabled=!viewOnly;
    form.addEventListener("submit",async event=>{
     event.preventDefault();
+    if(!editingEnabled)return;
     const details={photos,specifications:storedSpecs()};
     for(const field of saveableFields)if(controls[field])details[field]=controls[field].value;
     details.kind=kind.value;details.category=category.value;
@@ -931,6 +933,7 @@
    // View and Edit share this exact DOM. Editing merely unlocks the controls;
    // Save or Cancel returns to the read-only view without moving sections.
    const setEditing=editing=>{
+    editingEnabled=editing;
     form.classList.toggle("is-readonly",!editing);
     form.classList.toggle("is-editing",editing);
     for(const control of form.querySelectorAll("input,textarea,select")){
