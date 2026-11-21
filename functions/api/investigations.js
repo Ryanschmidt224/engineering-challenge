@@ -76,6 +76,17 @@ export async function handleInvestigations(request,env){
   if(data.category!==undefined&&(typeof data.category!=="string"||data.category==="practice"||!Object.hasOwn(categoryFields,data.category)||!validDate(data.date)||!validEntries(data.entries,categoryFields[data.category],project)))
    return json({error:"Invalid record category or fields"},400);
   if(records.length>=300)return json({error:"Project investigation limit reached"},413);
+  // One child-entry level under a direct Work Instruction entry. Keep these
+  // in the existing record store, identified by a parent record ID.
+  const parentRecordId=data.parentRecordId||"";
+  if(parentRecordId){
+   const parent=records.find(item=>item.id===parentRecordId);
+   if(!parent||parent.parentRecordId||parent.scope!=="step"||
+      parent.scope!==scope||parent.ownerType!==ownerType||
+      parent.ownerId!==ownerId||parent.stepId!==stepId||
+      parent.lifecycle==="archived"||parent.archivedAt)
+    return json({error:"Cannot add a nested entry to this parent."},400);
+  }
   // Verify the owner still exists rather than accepting orphan investigations.
   if(ownerType==="part"){
    const partsFile=await env.PHOTOS.get("components/"+project+".json");
@@ -86,7 +97,7 @@ export async function handleInvestigations(request,env){
    const tree=treeFile?JSON.parse(await treeFile.text()):[];
    if(!Array.isArray(tree)||!tree.some(node=>node.id===ownerId))return json({error:"Assembly no longer exists"},404);
   }
-  record={id:crypto.randomUUID(),scope,ownerType,ownerId,stepId,title:data.title.trim(),
+    record={id:crypto.randomUUID(),scope,ownerType,ownerId,stepId,parentRecordId,title:data.title.trim(),
    status:"investigating",lifecycle:"active",entries:[],description:data.category==="note"?(data.description||"").trim():"",photos:data.category==="note"?(data.photos||[]):[],createdAt:new Date().toISOString()};
   if(data.category!==undefined)Object.assign(record,{category:data.category,date:data.date,
    entries:data.entries.map(normalizedEntry),status:entryStatus(data.entries),...normalizeNotes(data.notes)});
@@ -100,7 +111,8 @@ export async function handleInvestigations(request,env){
   if(!validText(note,2500))return json({error:"Archive note is too long"},400);
   // Server-generated timestamp prevents user clocks from changing archive order.
   const archivedAt=new Date().toISOString();
-  changed=records.map(item=>item.id===record.id?{...item,lifecycle:"archived",archivedAt,archiveNote:note.trim()}:item);
+  changed=records.map(item=>(item.id===record.id||item.parentRecordId===record.id)
+   ?{...item,lifecycle:"archived",archivedAt,archiveNote:item.id===record.id?note.trim():"Archived with parent entry."}:item);
  }else if(data.action==="archivePart"){
   const partId=data.partId;
   if(!uuid.test(partId)||!validDate(data.date)||!validText(data.reason,2500)||!data.reason.trim())
@@ -143,7 +155,7 @@ export async function handleInvestigations(request,env){
  }else if(data.action==="deleteRecord"){
   record=records.find(item=>item.id===data.id);
   if(!record)return json({error:"Investigation not found"},404);
-  changed=records.filter(item=>item.id!==record.id);
+  changed=records.filter(item=>item.id!==record.id&&item.parentRecordId!==record.id);
  }else if(data.action==="editRecord"){
   record=records.find(item=>item.id===data.id);
   if(!record)return json({error:"Investigation not found"},404);
