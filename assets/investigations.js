@@ -407,7 +407,7 @@
    const archivedRelated=records.filter(record=>within(record,context)&&!owns(record,context)&&isArchived(record)&&!record.parentRecordId);
    // A step has one edit-mode switch: its Work Instruction header.
    // Other workspace pages have no parent editor and retain their own controls.
-   const allowEntryEditing=admin()&&(!compact||Boolean(stepSlots.get(context.stepId)?.editing));
+   const allowEntryEditing=admin()&&(!compact||!stepSlot?.step?.archivedAt);
    const activeHeader=make("div","investigation-active-heading");
    // The step editor has its own Edit mode. Other workspace sections have no
    // separate editing toggle, so retain their Add entry button.
@@ -449,7 +449,7 @@
     card.dataset.recordId=record.id;
     if(compact&&!historical&&!inherited&&!record.parentRecordId)card.dataset.workTile="record:"+record.id;
     const openKey=context.ownerType+":"+context.ownerId+":"+(context.stepId||"")+":"+(historical?"history:":"")+record.id;
-    card.open=(compact&&allowEntryEditing&&!historical&&!inherited)||openCards.has(openKey);
+    card.open=openCards.has(openKey);
     card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
     const title=make("summary","investigation-summary bs-content-card-heading");
     const heading=make("span","investigation-title-actions");
@@ -465,7 +465,7 @@
      const source=record.scope==="step"?"Work instruction":record.ownerType==="part"?"Part":"Assembly";
      body.append(make("p","investigation-origin","From "+source+" · "+record.title));
     }
-    let editing=compact&&allowEntryEditing&&!historical&&!inherited;
+    let editing=false;
     const edit=btn("Edit",event=>{
      event.preventDefault();event.stopPropagation();card.open=true;editing=true;draw();
     },"btn investigation-rename");
@@ -486,7 +486,7 @@
       },"btn investigation-history-delete");
       removeHistory.title="Delete this archived history entry";
       editActions.append(removeHistory);
-     }else if(!compact)editActions.append(edit);
+     }else editActions.append(edit);
      title.append(editActions);
     }
     const draw=()=>{
@@ -494,10 +494,10 @@
      if(record.partSnapshot)showSnapshot(record.partSnapshot,body);
      if(historical&&record.archiveNote?.trim())
       body.append(make("p","investigation-archive-reason","Reason: "+record.archiveNote));
-     edit.hidden=editing||compact;
+     edit.hidden=editing||historical;
      archive.hidden=true;
      attach(record,body,target,editing,()=>{editing=false;draw()},false,
-      editing&&stepSlot&&!historical&&!inherited?commit=>stepSlot.pendingEdits.push(commit):null);
+      null);
      if(!editing){
       const stamp=historical?archiveDate(record):recordDate(record);
       if(stamp){
@@ -611,7 +611,7 @@
    activeContent.append(make("p","investigation-feedback muted"));
    // The step-level Add entry button lives beneath Project Archive. Avoid
    // displaying a blank active-entry wrapper when there are no cards yet.
-   activeHost.hidden=!activeOwn.length&&!stepSlot?.mainTile&&!activeContent.querySelector("button")&&!(canCreate&&!compact);
+   activeHost.hidden=!activeOwn.length&&!stepSlot?.mainTile&&!activeContent.querySelector("button")&&!canCreate;
 
    archivedOwn.forEach(record=>renderCard(record,content,{historical:true}));
    if(archivedRelated.length){
