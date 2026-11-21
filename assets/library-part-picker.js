@@ -380,6 +380,10 @@ function open({onCreate,hideDefault=false}){
  const commonGroup=p=>{
   const category=String(p.category||"").toLowerCase();
   if(["tools","consumables","electronics","hardware","safety"].includes(category))return category;
+  if(category.startsWith("electrical-"))return "electronics";
+  if(category.startsWith("tools-"))return "tools";
+  if(category.startsWith("consumables-"))return "consumables";
+  if(category.startsWith("hardware-"))return "hardware";
   if(["wire","wire and cable"].includes(category))return "consumables";
   if(["power","buck-converters"].includes(category))return "electronics";
   if(["fasteners","screws"].includes(category))return "hardware";
@@ -559,7 +563,7 @@ function open({onCreate,hideDefault=false}){
   const cat=category.input.value,subtype=powerType.input.value;
   const saved=commons.filter(p=>commonGroup(p)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(p)===subtype));
   const recorded=purchased.filter(p=>commonGroup(p)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(p)===subtype));
-  const standards=workshopStandardRows().filter(item=>item.category===cat);
+  const standards=workshopStandardRows().filter(item=>commonGroup(item)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(item)===subtype));
   const published=publishedRows().filter(item=>commonGroup(item)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(item)===subtype));
   const personal=personalItems.filter(item=>commonGroup(item)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(item)===subtype));
   const filtered=[...saved.map(item=>({...item,origin:"saved"})),
