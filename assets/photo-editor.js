@@ -58,5 +58,40 @@
   else if(contentHtml!==undefined){const body=document.createElement("div");body.innerHTML=contentHtml;while(body.firstChild)modal.append(body.firstChild)}
   parent.append(modal);modal.addEventListener("click",e=>{if(e.target===modal)modal.close()});return modal;
  }
- window.BSPhotoEditor=Object.freeze({actionBar,dialog});
+
+ // One reusable, on-demand upload surface for images and optional documents.
+ // The caller supplies upload/storage logic; this component owns only UI and input events.
+ function uploadPanel({onFiles,accept="image/*,.heic,.heif",multiple=true,title="Add photos",hint=""}={}){
+  if(typeof onFiles!=="function")throw Error("Photo upload requires an onFiles callback");
+  const panel=document.createElement("section");panel.className="bs-upload-panel";panel.hidden=true;
+  const heading=document.createElement("div");heading.className="bs-upload-heading";
+  const name=document.createElement("strong");name.textContent=title;
+  const close=document.createElement("button");close.type="button";close.className="btn bs-upload-close";close.textContent="Close";
+  close.onclick=()=>{panel.hidden=true};
+  heading.append(name,close);
+  const text=document.createElement("p");text.className="bs-upload-hint";
+  text.textContent="Drop files in the box, right-click and Paste an image, or choose files from your device.";
+  const fileInput=document.createElement("input");fileInput.type="file";fileInput.accept=accept;fileInput.multiple=multiple;fileInput.hidden=true;
+  const choose=document.createElement("button");choose.type="button";choose.className="btn primary bs-upload-choose";choose.textContent=multiple?"Choose files":"Choose file";
+  choose.onclick=()=>fileInput.click();
+  const drop=window.BSPhotoMarkup.pasteTarget(files=>onFiles(files));
+  drop.classList.add("bs-upload-drop");
+  drop.textContent="Drag and drop files here or right-click to paste an image (Ctrl+V)";
+  // Capture drops before pasteTarget, which only accepts images; document
+  // uploaders also need PDF/CAD files to reach their normal validation.
+  drop.addEventListener("drop",event=>{
+   if(!event.dataTransfer?.files?.length)return;
+   event.preventDefault();event.stopImmediatePropagation();drop.classList.remove("is-dragover");
+   void onFiles([...event.dataTransfer.files].slice(0,multiple?undefined:1));
+  },true);
+  fileInput.onchange=()=>{
+   const files=[...(fileInput.files||[])];fileInput.value="";
+   if(files.length)void onFiles(files);
+  };
+  panel.append(heading,text,drop,choose,fileInput);
+  if(hint){const note=document.createElement("p");note.className="bs-upload-hint";note.textContent=hint;panel.append(note)}
+  return {panel,open(nextTitle){name.textContent=nextTitle||title;panel.hidden=false;drop.focus()},close(){panel.hidden=true},choose,drop,fileInput};
+ }
+
+ window.BSPhotoEditor=Object.freeze({actionBar,dialog,uploadPanel});
 })();
