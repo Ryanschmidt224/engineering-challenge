@@ -91,13 +91,26 @@
   ["electrical-motors","Motors & Actuators"],
   ["electrical-displays","Displays & Indicators"]
  ];
+ // Keep non-electrical categories broad: two choices per large family,
+ // with safety remaining a single category rather than adding empty folders.
+ const otherWorkshopGroups=[
+  ["tools-measurement","Measurement & Testing","tools"],
+  ["tools-making","Making & Assembly","tools"],
+  ["consumables-assembly","Assembly Supplies","consumables"],
+  ["consumables-general","General Supplies","consumables"],
+  ["hardware-fasteners","Fasteners & Hardware","hardware"],
+  ["hardware-materials","Raw Materials","hardware"]
+ ];
  const workshopCategories=[
   ["tools","Tools & Equipment",[]],
+  ...otherWorkshopGroups.filter(([, ,parent])=>parent==="tools").map(([id,label])=>[id,label,[]]),
   ["electronics","Electrical & Electronics",[]],
   ...electricalGroups.map(([key,label])=>[key,label,key==="electrical-wiring"?["workshop:wire22","workshop:wire18","workshop:wire16","workshop:silicone","workshop:ferrule22","workshop:ferrule18","workshop:heatshrink","workshop:sealshrink"]:[]]),
-  ["consumables","Consumables & Supplies",["workshop:solder"]],
+  ["consumables","Consumables & Supplies",[]],
+  ...otherWorkshopGroups.filter(([, ,parent])=>parent==="consumables").map(([id,label])=>[id,label,id==="consumables-assembly"?["workshop:solder"]:[]]),
   ["hardware","Hardware & Materials",[]],
-  ["safety","Safety & Measurement",[]]
+  ...otherWorkshopGroups.filter(([, ,parent])=>parent==="hardware").map(([id,label])=>[id,label,[]]),
+  ["safety","Safety & Protection",[]]
  ];
  const categoryNames=Object.fromEntries(workshopCategories.map(([id,name])=>[id,name]));
  const explicitCategories=new Set(workshopCategories.map(([id])=>id));
@@ -106,7 +119,7 @@
   "workshop:wire16":"electrical-wiring","workshop:silicone":"electrical-wiring",
   "workshop:ferrule22":"electrical-wiring","workshop:ferrule18":"electrical-wiring",
   "workshop:heatshrink":"electrical-wiring","workshop:sealshrink":"electrical-wiring",
-  "workshop:solder":"consumables"
+  "workshop:solder":"consumables-assembly"
  })[id]||"hardware";
  const legacyCategory=category=>{
   const old=String(category||"").trim().toLowerCase();
@@ -128,10 +141,12 @@
   if(category.startsWith("electrical-")&&explicitCategories.has(category))return category;
   const name=[item?.name,item?.typeName,item?.featureTreeDescription,item?.subtitle].filter(Boolean).join(" ").toLowerCase();
   const kind=String(item?.kind||"").toLowerCase();
-  if(kind==="tool"||kind==="equipment"&&/oscilloscope|multimeter|soldering station|bench.*supply|heat gun|stripper|crimping tool|power supply tester/.test(name))return "tools";
+  if(["tools-measurement","tools-making","consumables-assembly","consumables-general","hardware-fasteners","hardware-materials"].includes(category))return category;
+  if(/\\b(multimeter|oscilloscope|logic analyzer|caliper|micrometer|measurement probe|test instrument|frequency counter)\\b/.test(name))return "tools-measurement";
+  if(kind==="tool"||kind==="equipment"&&/soldering station|heat gun|stripper|crimping tool|drill|lathe|mill|printer|welder|cutter/.test(name))return "tools-making";
   if(/\b(safety|protective glasses|ventilation)\b/.test(name))return "safety";
-  if(/\b(screw|bolt|washer|nut|fastener|aluminum stock|plastic stock|sheet metal)\b/.test(name))return "hardware";
-  if(/\b(solder|flux|thermal paste)\b/.test(name)&&!/(controller|driver)/.test(name))return "consumables";
+  if(/\b(screw|bolt|washer|nut|fastener|aluminum stock|plastic stock|sheet metal)\b/.test(name))return "hardware-fasteners";
+  if(/\b(solder|flux|thermal paste|adhesive|glue|tape)\b/.test(name)&&!/(controller|driver)/.test(name))return "consumables-assembly";
   if(/\b(wire|cable|ferrule|terminal|connector|jumper|heat.?shrink|breadboard|header|socket|crimp|adapter cable)\b/.test(name))return "electrical-wiring";
   if(/\b(display|lcd|oled|screen|indicator|buzzer|led strip|seven.segment)\b/.test(name))return "electrical-displays";
   if(/\b(sensor|hall.effect|encoder|thermistor|thermocouple|proximity|imu|accelerometer|ultrasonic|tof)\b/.test(name))return "electrical-sensors";
@@ -141,7 +156,10 @@
   if(/\b(power supply|regulator|converter|buck|boost|battery|charger|power module|transformer|psu)\b/.test(name))return "electrical-power";
   if(/\b(resistor|capacitor|diode|led|integrated circuit|\bic\b|inductor|potentiometer|crystal|rectifier|fuse)\b/.test(name))return "electrical-basic";
   if(["electronics","component","electrical","power"].some(t=>category.includes(t))||kind==="component")return "electrical-basic";
-  return legacyCategory(category);
+  if(/\\b(wood|steel|aluminum|plastic|sheet|bar stock|tube|filament)\\b/.test(name))return "hardware-materials";
+  if(/\\b(cleaner|lubricant|oil|rag|wipe|sandpaper|abrasive|coolant)\\b/.test(name))return "consumables-general";
+  const broad=legacyCategory(category);
+  return {tools:"tools-making",consumables:"consumables-general",hardware:"hardware-materials"}[broad]||broad;
  };
  const workshopCategoryName=category=>categoryNames[legacyCategory(category)];
  const itemMetadata=item=>{
@@ -658,7 +676,7 @@
    }
   }
  }
- window.BSResources={catalog,workshopCategories,electricalGroups,electricalCategoryFor,workshopReferences,workshopLinkId,workshopGroups,workshopGroupFor,legacyCategory,all,mount,reloadWires,reloadCommonParts,reloadPurchased,init,normalize,setAdmin,focusWorkshopItem};
+ window.BSResources={catalog,workshopCategories,electricalGroups,otherWorkshopGroups,electricalCategoryFor,workshopReferences,workshopLinkId,workshopGroups,workshopGroupFor,legacyCategory,all,mount,reloadWires,reloadCommonParts,reloadPurchased,init,normalize,setAdmin,focusWorkshopItem};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
  else init();
 })();
