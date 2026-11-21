@@ -118,13 +118,17 @@
     revision=result.revision??null;
     originalIntent=result.originalIntent||null;
     milestones=Array.isArray(result.milestones)?result.milestones:[];
-    setFeedback("");render();
-   }catch(error){if(token===loadId)setFeedback(error.message)}
+    setFeedback("");render();return true;
+   }catch(error){if(token===loadId)setFeedback(error.message);return false}
   }
-  function openEditor(mode,offeredSource=null){
+  async function openEditor(mode,offeredSource=null){
    if(!canEdit())return;
    const existing=document.querySelector("dialog.project-milestone-dialog[open]");
    if(existing){existing.focus();return}
+   // A source action can be invoked without ever opening Project Summary.
+   // Read the latest revision first so its first Save works immediately.
+   if(!await refresh())return;
+   if(mode==="intent"&&originalIntent){setFeedback("Original intent is already recorded.");return}
    const dialog=el("dialog","project-milestone-dialog");
    const form=el("form","project-milestone-editor");form.method="dialog";
    const heading=el("h2","",mode==="intent"?"Record original project intent":"Add Project Milestone");
@@ -169,6 +173,7 @@
     try{
      const data=await fetchJSON(project,{method:"POST",headers:{"content-type":"application/json"},
       body:JSON.stringify({...draft,expectedRevision:revision})});
+     ++loadId; // Cancel older GET responses that could hide this successful append.
      revision=data.revision;
      if(mode==="intent")originalIntent=data.record;
      else milestones.push(data.record);
