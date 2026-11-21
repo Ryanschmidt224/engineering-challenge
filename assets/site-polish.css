@@ -2776,3 +2776,58 @@
  outline:2px solid var(--color-focus);
  outline-offset:2px;
 }
+
+
+/* One editor-control system for steps, notes, measurements, revisions and
+   failures. Form bodies remain tailored to their actual data fields. */
+.recipe-compact .bs-entry-editor-actions,
+.recipe-compact .recipe-edit-controls,
+.recipe-compact .investigation-edit-actions{
+ display:flex!important;
+ align-items:center!important;
+ justify-content:flex-start!important;
+ flex-wrap:wrap;
+ gap:10px!important;
+ width:100%;
+ margin-top:16px;
+ padding:0!important;
+ border:0!important;
+ background:transparent!important;
+}
+.recipe-compact :is(.bs-entry-editor-actions,.recipe-edit-controls,.investigation-edit-actions) > .bs-entry-action{
+ box-sizing:border-box;
+ min-height:40px!important;
+ min-width:78px;
+ padding:8px 14px!important;
+ border-radius:9px!important;
+ font-size:.87rem!important;
+ font-weight:650!important;
+ line-height:1.2;
+ box-shadow:none!important;
+}
+.recipe-compact .bs-entry-action-danger{
+ color:var(--color-danger-action, #a3222c)!important;
+ border:1px solid color-mix(in srgb,var(--color-danger-action, #a3222c) 28%,var(--color-border))!important;
+ background:var(--color-surface)!important;
+}
+.recipe-compact .bs-entry-title-input{
+ min-width:0;
+ width:100%;
+ box-sizing:border-box;
+ font:inherit;
+}
+.recipe-compact .bs-attachment-add{
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ min-height:40px!important;
+ padding:8px 14px!important;
+ border:1px solid var(--color-border)!important;
+ border-radius:9px!important;
+ background:var(--color-surface)!important;
+ color:var(--color-text)!important;
+ box-shadow:none!important;
+ font-size:.86rem!important;
+ font-weight:650!important;
+ white-space:normal;
+}
