@@ -2453,6 +2453,14 @@ function setupAssemblyTrees(){
    const zone=tile.querySelector(".assembly-photo-zone");
    const caption=tile.querySelector(".assembly-photo-caption");
    const pick=tile.querySelector(".assembly-photo-pick");
+   const uploader=window.BSPhotoEditor.uploadPanel({
+    title:"Add photos",multiple:false,accept:"image/*,.heic,.heif",
+    hint:"Maximum 10 MB per photo.",onFiles:files=>upload(files[0])
+   });
+   zone.after(uploader.panel);
+   const captionField=caption.closest(".assembly-photo-caption-label");
+   if(captionField)uploader.panel.append(captionField);
+   zone.hidden=true;zone.style.display="none";
    let busy=false;
    const report=message=>{statusElement.textContent=message};
    const currentId=()=>getAssemblyId();
@@ -2466,7 +2474,7 @@ function setupAssemblyTrees(){
      if(id!==currentId())return;
      const photos=(data.photos||[]).filter(p=>id==="project-summary"?(p.assembly==="project-summary"||!p.assembly):id?p.assembly===id:!p.assembly);
      const name=id?nodes.find(n=>n.id===id)?.name||title:title;
-     gallery.replaceChildren(makeAssemblyPhotoStage(photos,name,()=>input.click(),async p=>{
+     gallery.replaceChildren(makeAssemblyPhotoStage(photos,name,()=>uploader.open(),async p=>{
       if(!p||!await window.BSDialogs.danger("Delete this photo?",{title:"Delete photo?"}))return;
       try{
        const r=await fetch("/api/photos?id="+encodeURIComponent(p.id),{method:"DELETE",credentials:"same-origin"});
@@ -2496,7 +2504,7 @@ function setupAssemblyTrees(){
     }catch(e){report(e.message||"Upload failed.");return false}
     finally{busy=false;zone.removeAttribute("aria-busy")}
    }
-   pick.onclick=event=>{event.stopPropagation();input.click()};
+   pick.onclick=event=>{event.stopPropagation();uploader.open()};
    input.onchange=()=>upload(input.files?.[0]);
    // The visible photo dialog is the drop target; keep legacy zone support.
    zone.ondragover=e=>{if(!e.dataTransfer?.types?.includes("Files"))return;e.preventDefault();zone.classList.add("drag-over")};
