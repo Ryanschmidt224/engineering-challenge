@@ -160,6 +160,7 @@
   dismissTooltip();
   const explanation=(target.dataset.bsTooltip||target.getAttribute("title")||target.getAttribute("aria-label")||"").trim();
   const examples=examplesFor(target);
+  const topic=target.dataset.bsHelpTopic||"";
   const heading=(target.dataset.bsHelpTitle||"Field help").trim();
   const dialog=document.createElement("dialog");dialog.className="bs-dialog bs-help-detail-dialog";
   dialog.setAttribute("aria-label",heading);
@@ -169,7 +170,36 @@
   close.setAttribute("aria-label","Close examples");close.textContent="×";
   header.append(title,close);dialog.append(header);
   const description=document.createElement("p");description.textContent=explanation;dialog.append(description);
-  if(examples.length){
+  if(topic==="container"){
+   // All project items have a stable container. What changes is the
+   // implementation linked to it, or whether an implementation exists yet.
+   const scenarios=[
+    {name:"Custom part — made in-house",container:"Motor Mount",implementation:"A machined aluminum bracket designed for this project",contents:"CAD files, drawings, machining instructions, measurements, and revisions"},
+    {name:"Purchased part",container:"Motor Driver",implementation:"An off-the-shelf motor driver with a manufacturer part number",contents:"Supplier details, wiring instructions, tests, and replacement history"},
+    {name:"Part from Workshop",container:"Measure Voltage",implementation:"A multimeter selected from your private or shared Workshop",contents:"A project-specific use and instructions; the original Workshop item stays unchanged"},
+    {name:"Custom part — purchased",container:"Enclosure",implementation:"A custom enclosure made to your drawing by an outside supplier",contents:"Design files, fabrication requirements, order details, tests, and revisions"},
+    {name:"Assembly or subsystem",container:"Power System",implementation:"Nested containers for the power supply, protection, and connectors",contents:"A hierarchy of child containers, each with its own details and work history"},
+    {name:"No implementation selected yet",container:"Detect Position",implementation:"Not chosen — a sensor or software method can be selected later",contents:"The purpose, notes, experiments, and history remain with the container"},
+    {name:"Document or software work",container:"Control Logic",implementation:"Code, a document, or another nonphysical solution",contents:"Instructions, source references, testing notes, and revisions"}
+   ];
+   const intro=document.createElement("p");intro.className="bs-help-detail-intro";
+   intro.textContent="Every container is a named place in the project hierarchy. It holds information about what needs to be done, while its implementation describes how you currently accomplish it.";
+   dialog.append(intro);
+   const list=document.createElement("div");list.className="bs-help-scenarios";
+   for(const item of scenarios){
+    const section=document.createElement("section");section.className="bs-help-scenario";
+    const h=document.createElement("h3");h.textContent=item.name;section.append(h);
+    for(const [label,value] of [["Container",item.container],["Implementation",item.implementation],["Contains",item.contents]]){
+     const row=document.createElement("div");row.className="bs-help-scenario-row";
+     const key=document.createElement("strong");key.textContent=label;
+     const detail=document.createElement("span");detail.textContent=value;
+     row.append(key,detail);section.append(row);
+    }
+    list.append(section);
+   }
+   dialog.classList.add("bs-help-container-guide");
+   dialog.append(list);
+  }else if(examples.length){
    const exampleTitle=document.createElement("h3");exampleTitle.textContent="Examples";dialog.append(exampleTitle);
    const list=document.createElement("ul");list.className="bs-help-examples";
    for(const example of examples){const li=document.createElement("li");li.textContent=example;list.append(li)}
