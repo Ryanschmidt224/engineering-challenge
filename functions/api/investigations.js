@@ -68,7 +68,7 @@ export async function handleInvestigations(request,env){
  if(data.action==="create"){
   const scope=data.scope,ownerType=data.ownerType,ownerId=data.ownerId,stepId=data.stepId||"";
   if(!scopes.has(scope)||!validText(data.title,180)||
-    (!data.title.trim()&&data.category!=="note")||
+    (!data.title.trim()&&!["note","photos"].includes(data.category))||
     !["assembly","part"].includes(ownerType)||!validText(ownerId,80)||
     (ownerType==="part"?!uuid.test(ownerId):ownerId!=="__root__"&&!idPattern.test(ownerId))||
     (scope==="step"?!idPattern.test(stepId):!!stepId)||
@@ -170,7 +170,7 @@ export async function handleInvestigations(request,env){
    return json({error:"Invalid notes, description, or photos"},400);
   const allFields=categoryFields[record.category]||legacyFields;
   const fields=data.notes===undefined?allFields:allFields.filter(type=>type!==retiredField[record.category||"failure"]);
-  if(!validText(data.title,180)||(!data.title.trim()&&record.category!=="note")||!validEntries(data.entries,fields,project))return json({error:"Invalid record details"},400);
+  if(!validText(data.title,180)||(!data.title.trim()&&!["note","photos"].includes(record.category))||!validEntries(data.entries,fields,project))return json({error:"Invalid record details"},400);
   const status=entryStatus(data.entries);
   // Retain older entry types and earlier updates; replace only the latest editable entry per field.
   const previous=record.entries||[];
