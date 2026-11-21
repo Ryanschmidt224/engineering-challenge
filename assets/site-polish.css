@@ -3030,3 +3030,72 @@
 .recipe-compact .investigation-active-content > .bs-tile-drop-after{
  box-shadow:0 4px 0 var(--color-accent)!important;
 }
+
+
+/* Container-only Work Instructions: the selected item names and organizes
+   entry records; it no longer doubles as a special first content tile. */
+.recipe-compact .recipe-step-detail > .recipe-container-heading{
+ display:flex;
+ flex-wrap:wrap;
+ align-items:center;
+ gap:8px;
+ min-height:58px;
+ box-sizing:border-box;
+ padding:10px 12px;
+ margin:0;
+ border:1px solid var(--color-border);
+ border-radius:12px;
+ background:var(--color-accent-soft);
+ color:var(--color-text);
+}
+.recipe-compact .recipe-step-detail > .recipe-container-heading > strong{
+ font-size:1.05rem;
+ font-weight:700;
+ flex:1 1 200px;
+ min-width:0;
+}
+.recipe-compact .recipe-step-detail > .recipe-container-heading > .recipe-step-name{
+ flex:1 1 240px;
+ min-width:160px;
+ width:auto;
+ max-width:550px;
+ box-sizing:border-box;
+}
+.recipe-compact .recipe-step-detail > .recipe-container-heading > .btn{
+ flex:0 0 auto;
+ min-height:35px;
+ padding:7px 11px;
+ border:1px solid var(--color-border);
+ border-radius:9px;
+ background:var(--color-surface);
+ font-size:.83rem;
+ font-weight:600;
+}
+.recipe-compact .recipe-step-detail > .recipe-container-heading > .btn.primary{
+ background:var(--color-accent);
+ border-color:var(--color-accent);
+ color:white;
+}
+.recipe-compact .recipe-step-detail > .recipe-container-heading > .recipe-delete-step{
+ color:var(--color-danger-action,#a3222c);
+ border-color:color-mix(in srgb,var(--color-danger-action,#a3222c) 27%,var(--color-border));
+}
+.recipe-compact .recipe-step-detail > .recipe-step-investigations > .investigation-active-area{
+ min-height:0;
+}
+.recipe-compact .recipe-step-detail > .recipe-step-investigations .investigation-active-content > .investigation-card{
+ width:100%;
+ box-sizing:border-box;
+}
+/* With no draft tile, entry creation starts only after the container is
+   named and saved. Avoid a large blank placeholder panel. */
+.recipe-compact .recipe-step-detail > .muted{
+ margin:4px 6px;
+ font-size:.88rem;
+}
+@media(max-width:650px){
+ .recipe-compact .recipe-step-detail > .recipe-container-heading > strong,
+ .recipe-compact .recipe-step-detail > .recipe-container-heading > .recipe-step-name{
+  flex-basis:100%;
+ }
+}
