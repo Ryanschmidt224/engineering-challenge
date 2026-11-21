@@ -298,7 +298,10 @@
     const step=steps[i],isCurrent=expanded===step.id,isDraft=step===draft;
     const navButton=button(step.title||"Untitled step",async()=>{
      if(expanded===step.id||saving||pendingUploads)return;
-     try{await savePending()}catch(error){feedback.textContent=error.message||"Save failed; still on this step.";return}
+     try{
+      if(editing.has(expanded))await options.saveStepEdits?.(expanded);
+      await savePending();
+     }catch(error){feedback.textContent=error.message||"Save failed; still on this step.";return}
      expanded=step.id;expandedStepBodies.delete(step.id);
      editing.clear();if(isDraft)editing.add(step.id);
      options.onStepSelected?.(step.id);
@@ -386,6 +389,7 @@
      if(bottomSave){bottomSave.disabled=true;bottomSave.textContent="Saving…"}
      try{
       if(savePromise)await savePromise;
+      if(!isDraft)await options.saveStepEdits?.(step.id);
       if(isDraft)draft=null;
       if(typeof options.onSave!=="function")throw Error("Save is unavailable.");
       await options.onSave();
