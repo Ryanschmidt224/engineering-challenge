@@ -494,7 +494,7 @@
    const mount=el("section",undefined,"workshop-item-editor-mount");
    itemPage.append(mount);
    openItemEditor({category:["all","mine"].includes(selectedWorkshopCategory)?"tools":selectedWorkshopCategory,
-    kind:"equipment",familyId:selectedFamily||"measurement",photos:[]});
+    kind:"equipment",photos:[]});
   }
   $(".workshop-catalog-create",catalog).onclick=createCatalogItem;
   $(".workshop-personal-create",catalog).onclick=()=>{
@@ -594,20 +594,11 @@
     ["material","Material"],["other","Other"]],item.kind||"equipment");
    const category=addSelect("Website category",workshopCategories.map(([id,label])=>[id,label]),
     categoryFor(item)==="other"?"tools":categoryFor(item));
-   const familyOptions=families().map(group=>[group.id,group.label]);
-   familyOptions.push(["new-family","Create a new product family…"]);
-   const family=addSelect("Product family",familyOptions,item.familyId||familyFor(item)?.id||selectedFamily||familyOptions[0]?.[0]);
-   const newFamily=el("label");
-   newFamily.append(el("span","New family name"));
-   const familyName=el("input");familyName.className="field";
-   familyName.maxLength=120;familyName.placeholder="e.g. Motors & Drives";
-   newFamily.append(familyName);classification.append(newFamily);
-   const updateFamily=()=>{
-    newFamily.hidden=family.value!=="new-family";
-    familyName.required=family.value==="new-family";
-   };
-   family.onchange=updateFamily;
-   updateFamily();
+   // The left Workshop category tree is the only classification hierarchy.
+   // Preserve historical family metadata silently for existing records.
+   const family={value:item.familyId||""};
+   const familyName={value:item.familyName||""};
+   const updateFamily=()=>{};
 
    form.append(grid);
    // Workshop specifications: family templates are optional suggestions, never
@@ -725,8 +716,6 @@
     addSuggestedSpecs();
    };
    category.addEventListener("change",refreshSuggestions);
-   family.addEventListener("change",refreshSuggestions);
-   familyName.addEventListener("input",refreshSuggestions);
    controls.typeName.addEventListener("change",refreshSuggestions);
    controls.featureTreeDescription.addEventListener("change",refreshSuggestions);
    refreshSuggestions();
@@ -770,16 +759,9 @@
      }
      if(draft.kind)kind.value=draft.kind;
      if(draft.category)category.value=draft.category;
-     const suggestedFamily=String(draft.familyName||"").trim();
-     const familyMatch=families().find(entry=>entry.label.toLowerCase()===suggestedFamily.toLowerCase());
-     if(familyMatch){family.value=familyMatch.id;familyName.value=""}
-     else if(suggestedFamily){family.value="new-family";familyName.value=suggestedFamily}
-     updateFamily();
      refreshSuggestions();
      const categoryTitle=workshopCategories.find(([id])=>id===category.value)?.[1]||category.value;
-     const proposedFamily=family.value==="new-family"?familyName.value:families().find(x=>x.id===family.value)?.label;
-     lookupResults.append(el("p","Suggested classification: "+categoryTitle+
-      (proposedFamily?" → "+proposedFamily:"")+". Change it before saving if needed.","muted"));
+     lookupResults.append(el("p","Suggested Workshop category: "+categoryTitle+". Review it before saving.","muted"));
      lookupResults.append(el("p",response.note||"Review these AI-generated details carefully.","muted"));
      const research=response.research||{};
      if(research.specs?.length){
@@ -861,10 +843,6 @@
     if(pendingSuggestion.moveSupplierNumber&&!draft.partNumber)changes.push(["Manufacturer part number",controls.partNumber.value.trim(),"—"]);
     if(draft.kind&&draft.kind!==kind.value)changes.push(["Item type",kind.value,draft.kind]);
     if(draft.category&&draft.category!==category.value)changes.push(["Website category",category.value,draft.category]);
-    if(draft.familyName){
-     const current=family.value==="new-family"?familyName.value:family.selectedOptions[0]?.textContent||family.value;
-     if(current.toLowerCase()!==draft.familyName.toLowerCase())changes.push(["Product family",current,draft.familyName]);
-    }
     if(changes.length){
      const table=el("table",undefined,"workshop-ai-diff-table");
      const head=el("tr");for(const name of ["Field","Current","Suggested"])head.append(el("th",name));
@@ -955,17 +933,10 @@
     const details={photos,specifications:storedSpecs()};
     for(const field of saveableFields)if(controls[field])details[field]=controls[field].value;
     details.kind=kind.value;details.category=category.value;
-    if(family.value==="new-family"){
-     const label=familyName.value.trim();
-     if(!label){status.textContent="Enter the new family name.";return}
-     const slug=label.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,85);
-     if(slug.length<2){status.textContent="Enter a longer family name.";return}
-     details.familyId="custom-"+slug;
-     details.familyName=label;
-    }else{
-     details.familyId=family.value;
-     details.familyName=families().find(group=>group.id===family.value)?.label||"";
-    }
+    // Legacy family metadata is retained for existing items, not edited or
+    // required for new items. The category tree owns classification.
+    details.familyId=item.familyId||"";
+    details.familyName=item.familyName||"";
     if(!details.name?.trim()){status.textContent="Enter an item name.";return}
     status.textContent=isNew?"Creating item…":"Saving…";save.disabled=true;
     try{
