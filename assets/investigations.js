@@ -140,8 +140,11 @@
      const gallery=make("div","investigation-note-photo-gallery");
      for(const id of record.photos||[]){
       if(photoExt.test(id)){
+       const tile=make("figure","investigation-named-photo");
        const image=make("img","investigation-note-photo");image.src=fileUrl(id);
-       image.alt="Note photo";image.loading="lazy";gallery.append(image);
+       image.alt=record.photoNames?.[id]||"Note photo";image.loading="lazy";tile.append(image);
+       if(record.photoNames?.[id])tile.append(make("figcaption","investigation-photo-name",record.photoNames[id]));
+       gallery.append(tile);
       }else gallery.append(attachmentLink(id));
      }
      if(gallery.childElementCount)container.append(gallery);
@@ -168,7 +171,7 @@
    dateLabel.append(date);
    if(descriptionInput){const descriptionLabel=make("label","investigation-description-label",photoEntry?"Note":"Description");descriptionLabel.append(descriptionInput);controls.append(descriptionLabel)}
 
-   const notePhotos=noteLike?{existing:[...(record.photos||[])],pending:[]}:null;
+   const notePhotos=noteLike?{existing:[...(record.photos||[])],pending:[],names:{...(record.photoNames||{})},pendingNames:new Map()}:null;
    if(notePhotos){
     const gallery=make("div","investigation-note-photo-gallery");
     const pendingList=make("div","investigation-note-pending-photos");
@@ -181,8 +184,11 @@
       const tile=make("div","investigation-note-photo-tile");
       if(photoExt.test(id)){
        const photo=make("img","investigation-note-photo");photo.src=fileUrl(id);photo.alt="Attached note photo";tile.append(photo);
+       const name=make("input","field investigation-photo-name-input");name.type="text";name.maxLength=120;
+       name.placeholder="Photo name (optional)";name.setAttribute("aria-label","Photo name");name.value=notePhotos.names[id]||"";
+       name.addEventListener("input",()=>{notePhotos.names[id]=name.value});tile.append(name);
       }else tile.append(attachmentLink(id));
-      tile.append(btn("Delete",()=>{notePhotos.existing.splice(notePhotos.existing.indexOf(id),1);draw()},"btn investigation-note-photo-remove"));
+      tile.append(btn("Delete",()=>{notePhotos.existing.splice(notePhotos.existing.indexOf(id),1);delete notePhotos.names[id];draw()},"btn investigation-note-photo-remove"));
       gallery.append(tile);
      }
      for(const file of notePhotos.pending){
@@ -194,8 +200,12 @@
        image.loading="lazy";row.append(image);
       }
       const info=make("div","investigation-note-pending-info");
-      info.append(make("span","",file.name),
-       btn("Remove",()=>{notePhotos.pending.splice(notePhotos.pending.indexOf(file),1);draw()},"btn investigation-note-photo-remove"));
+      const name=make("input","field investigation-photo-name-input");name.type="text";name.maxLength=120;
+      name.placeholder="Photo name (optional)";name.setAttribute("aria-label","Photo name for "+file.name);
+      name.value=notePhotos.pendingNames.get(file)||"";
+      name.addEventListener("input",()=>notePhotos.pendingNames.set(file,name.value));
+      info.append(name,
+       btn("Remove",()=>{notePhotos.pending.splice(notePhotos.pending.indexOf(file),1);notePhotos.pendingNames.delete(file);draw()},"btn investigation-note-photo-remove"));
       row.append(info);pendingList.append(row);
      }
     };
@@ -335,18 +345,22 @@
       if(name)savedNotes.push({...entry,descriptor:name.value.trim()});
       else entries.push({...entry,...(type==="resolution"?{resolution:fixed.value}:{})});
      }
-     let photos;
+     let photos,photoNames;
      if(notePhotos){
       photos=[...notePhotos.existing];
+      photoNames={};
+      for(const id of photos){const value=(notePhotos.names[id]||"").trim();if(value)photoNames[id]=value;}
       for(const file of notePhotos.pending){
        const up=await fetch("/api/recipe-files?project="+encodeURIComponent(project),{method:"POST",
         credentials:"same-origin",headers:{"content-type":"application/octet-stream","x-file-name":encodeURIComponent(file.name)},body:file});
        const data=await up.json();if(!up.ok||!data.id)throw Error(data.error||"Photo upload failed");
        photos.push(data.id);
+       const photoName=(notePhotos.pendingNames.get(file)||"").trim();
+       if(photoName)photoNames[data.id]=photoName;
       }
      }
      const details={title:titleInput.value.trim(),date:date.value,entries,notes:savedNotes,
-      ...(descriptionInput?{description:descriptionInput.value,photos}:{})};
+      ...(descriptionInput?{description:descriptionInput.value,photos,photoNames}:{})};
      const result=await save(creating?{...record,...details,action:"create"}:{...details,action:"editRecord",id:record.id},{deferRender});
      if(creating){
       const card=[...target.querySelectorAll(".investigation-card[data-record-id]")].find(item=>item.dataset.recordId===result.createdId);
