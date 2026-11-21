@@ -346,9 +346,9 @@
     }
     stepList.append(navButton);
     if(!isCurrent)continue;
-    const card=el("details","recipe-one-step");
+    const card=el("details","recipe-one-step bs-content-card");
     card.dataset.stepId=step.id;card.open=true;
-    const summary=el("summary","recipe-one-step-summary");
+    const summary=el("summary","recipe-one-step-summary bs-content-card-heading");
     const titlePrefix=el("span","recipe-one-step-number",(i+1)+".");
     const name=el("span","recipe-one-step-title",step.title||"Untitled step");
     summary.append(titlePrefix);
@@ -406,7 +406,7 @@
     // Step selection happens in the navigation list; keep the detail panel open.
     summary.addEventListener("click",event=>{if(!event.target.closest("button"))event.preventDefault()});
     card.append(summary);
-    const body=el("div","recipe-one-step-body");
+    const body=el("div","recipe-one-step-body bs-content-card-body");
     if(admin()&&editing.has(step.id)){
      // Photos remain in the existing step.photos list. photoAfterNote keeps
      // optional placement beside a particular note without changing photo IDs.
