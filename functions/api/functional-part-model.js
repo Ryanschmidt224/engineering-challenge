@@ -52,6 +52,7 @@ export function resolveFunctionalPart(record){
   resolvedImplementationId:active?.id||null,
   implementationName:active?.name||"",
   implementationRevision:active?.revision||null,
+  implementationHistory:selection.history||[],
   implementationResolved:!!active,
   partSchemaVersion:2
  };
@@ -72,7 +73,7 @@ export function encodeFunctionalPart(part){
   if(part.implementationName!==undefined)active.name=String(part.implementationName).trim().slice(0,180)||active.name;
   active.revision=part.implementationRevision??active.revision??null;
  }
- const functional={
+ const functional={...part.functional,
   purpose:String(part.description??part.functional?.purpose??"").trim().slice(0,2000),
   requirements:String(part.functionalRequirements??part.functional?.requirements??"").trim().slice(0,6000),
   acceptanceCriteria:String(part.acceptanceCriteria??part.functional?.acceptanceCriteria??"").trim().slice(0,6000)
@@ -80,19 +81,20 @@ export function encodeFunctionalPart(part){
  const projectDetails={...(part.projectDetails||{})};
  for(const key of PROJECT_SOLUTION_FIELDS)delete projectDetails[key];
  const stored={...part,partSchemaVersion:2,functional,
-  selection:{selectedId:selection.selectedId||null,candidates},projectDetails};
+  selection:{selectedId:selection.selectedId||null,candidates,history:[...(selection.history||[])]},projectDetails};
  for(const key of [...SOLUTION_FIELDS,"description","functionalRequirements","acceptanceCriteria",
   "implementations","implementationName","implementationRevision","implementationResolved",
-  "selectedImplementationId","resolvedImplementationId","workshopSourcing","workshopDocumentation"])delete stored[key];
+  "selectedImplementationId","resolvedImplementationId","implementationHistory","workshopSourcing","workshopDocumentation"])delete stored[key];
  return stored;
 }
 export function changeImplementation(part,action,payload,now=new Date().toISOString()){
  const resolved=resolveFunctionalPart(part);
- const selection={selectedId:resolved.selection.selectedId,
+ const selection={selectedId:resolved.selection.selectedId,history:[...(resolved.selection.history||[])],
   candidates:resolved.selection.candidates.map(item=>({...item}))};
  // Flush edits to the previously displayed implementation before changing pointers.
  const flushed=encodeFunctionalPart({...resolved,selection});
  const next={...flushed,selection:flushed.selection};
+ const previousId=next.selection.selectedId;
  if(action==="add"){
   if(next.selection.candidates.length>=24)throw Error("Maximum of 24 implementations per functional part");
   if(!payload||typeof payload.name!=="string"||!payload.name.trim()||payload.name.length>180)
@@ -110,13 +112,21 @@ export function changeImplementation(part,action,payload,now=new Date().toISOStr
   if(id!==null&&!next.selection.candidates.some(candidate=>candidate.id===id))
    throw Error("Implementation not found");
   next.selection.selectedId=id;
- }else if(action==="remove"){
+ }else if(action==="retire"){
   const id=payload?.id;
-  const index=next.selection.candidates.findIndex(candidate=>candidate.id===id);
-  if(index<0)throw Error("Implementation not found");
-  next.selection.candidates.splice(index,1);
+  const candidate=next.selection.candidates.find(candidate=>candidate.id===id);
+  if(!candidate)throw Error("Implementation not found");
+  candidate.retiredAt=now;
   if(next.selection.selectedId===id)next.selection.selectedId=null;
  }else throw Error("Invalid implementation operation");
+ if(action==="select"&&next.selection.selectedId&&
+    next.selection.candidates.find(candidate=>candidate.id===next.selection.selectedId)?.retiredAt)
+  throw Error("Retired implementation cannot be selected");
+ if(previousId!==next.selection.selectedId){
+  next.selection.history.push({at:now,from:previousId||null,to:next.selection.selectedId||null,
+   reason:String(payload?.reason||"").slice(0,1000)});
+  if(next.selection.history.length>300)next.selection.history=next.selection.history.slice(-300);
+ }
  return resolveFunctionalPart(next);
 }
 export function implementationForBOM(part){
