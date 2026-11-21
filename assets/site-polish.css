@@ -2625,3 +2625,17 @@
  border:1px solid var(--color-border);
  color:var(--color-text);
 }
+
+
+/* Workspace saves now run automatically. Keep legacy internal buttons hidden,
+   even when the shared .btn rule assigns a display value. */
+.assembly-workspace-page .workspace-save[hidden],
+.bom-part-workspace .part-workspace-save[hidden]{
+ display:none!important;
+}
+.workspace-actions:has(> .workspace-save[hidden]):not(:has(.workspace-status:not(:empty))),
+.workspace-actions:has(> .part-workspace-save[hidden]):not(:has(.part-workspace-status:not(:empty))){
+ min-height:0;
+ padding:0;
+ margin:0;
+}
