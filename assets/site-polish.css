@@ -2173,3 +2173,38 @@
 /* Empty active-entry containers are omitted in read mode. */
 .investigation-active-area[hidden],
 .investigations-active-panel[hidden]{display:none!important}
+
+
+/* Single-frame entries: the active-area element only lays out its child cards.
+   Each entry already owns a complete border and green header, like the main
+   Work Instruction. Avoid the duplicate outer box visible around records. */
+.recipe-compact .recipe-step-detail > .recipe-step-investigations > .investigation-active-area{
+ border:0!important;
+ border-radius:0!important;
+ padding:0!important;
+ margin:0!important;
+ min-height:0;
+ overflow:visible;
+ background:transparent!important;
+ box-shadow:none!important;
+}
+.recipe-compact .recipe-step-detail .investigation-active-content{
+ display:flex;
+ flex-direction:column;
+ align-items:stretch;
+ gap:12px;
+}
+.recipe-compact .recipe-step-detail .investigation-active-content > .investigation-card{
+ margin:0!important;
+ border:1px solid var(--color-border)!important;
+ border-radius:12px!important;
+ overflow:hidden;
+ background:var(--color-surface)!important;
+}
+.recipe-compact .recipe-step-detail .investigation-active-heading{
+ margin:0 0 8px;
+ padding:0;
+}
+.recipe-compact .recipe-step-detail .investigation-active-heading:empty{
+ display:none;
+}
