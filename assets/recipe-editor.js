@@ -24,7 +24,7 @@
   }
   const photoAfterNote={};
   for(const [id,noteId] of Object.entries(photoNoteIds))photoAfterNote[id]=noteIds.indexOf(noteId);
-  return {id:x.id,title:x.title||"",standard:x.standard||"",detail:x.detail||"",kind:x.kind||"action",notes,noteIds,photos,photoNames,photoNoteIds,photoAfterNote,archivedAt:x.archivedAt||"",archiveNote:x.archiveNote||"",mainRemoved:Boolean(x.mainRemoved)};
+  return {id:x.id,title:x.title||"",standard:x.standard||"",detail:x.detail||"",kind:x.kind||"action",notes,noteIds,photos,photoNames,photoNoteIds,photoAfterNote,archivedAt:x.archivedAt||"",archiveNote:x.archiveNote||"",mainRemoved:Boolean(x.mainRemoved),tileOrder:Array.isArray(x.tileOrder)?x.tileOrder.filter(id=>typeof id==="string").slice(0,300):[]};
  };
  const kinds=[["note","Notes"],["action","Action"],["inspection","Inspection"],["measurement","Measurement"],["explanation","Explanation"]];
 
@@ -797,7 +797,9 @@
     }
     if(typeof options.decorateStep==="function")options.decorateStep(step,body);
     card.append(body);
-    if(!step.mainRemoved)detailPane.append(card);
+    // Existing cards are rendered in the same ordered tile list as records.
+    // Drafts remain local until saved and have no record list yet.
+    if(!step.mainRemoved&&(isDraft||typeof options.renderInvestigations!=="function"))detailPane.append(card);
     else if(!archived&&admin()&&editing.has(step.id)){
      const restoreSection=button("+ Add section",()=>{
       step.mainRemoved=false;
@@ -812,7 +814,11 @@
      // instruction also hides its nested entry / Project Archive headers.
      const investigationArea=el("div","recipe-step-investigations");
      detailPane.append(investigationArea);
-     options.renderInvestigations(step,investigationArea,editing.has(step.id));
+     options.renderInvestigations(step,investigationArea,editing.has(step.id),
+      step.mainRemoved?null:card,order=>{
+       step.tileOrder=order;
+       changed();saveHint();
+      });
     }
     syncHierarchyLabel();
    }
@@ -824,7 +830,7 @@
   const add=button("+ Add entry",()=>{
    if(!admin()||loading||saving||pendingUploads)return;
    if(!draft){
-    draft={id:newId(),title:"",standard:"",detail:"",mainRemoved:false,kind:"note",notes:[""],noteIds:[newId()],photos:[],photoNames:{},photoNoteIds:{},photoAfterNote:{}};
+    draft={id:newId(),title:"",standard:"",detail:"",mainRemoved:false,tileOrder:[],kind:"note",notes:[""],noteIds:[newId()],photos:[],photoNames:{},photoNoteIds:{},photoAfterNote:{}};
     steps.push(draft);
    }
    expanded=draft.id;expandedStepBodies.add(draft.id);editSnapshots.clear();editing.clear();editing.add(draft.id);render();
