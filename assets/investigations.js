@@ -162,9 +162,9 @@
    const date=make("input","field");date.type="date";
    const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
    date.value=record.date||[...(record.entries||[])].reverse().find(entry=>entry.date)?.date||date.value;
+   // Date is recorded on the server. Never ask the author to choose a date.
+   // Retain this internal value only for legacy entry fields that require it.
    dateLabel.append(date);
-   // Notes are dated automatically on creation; no user date selection.
-   if(categoryOf(record)!=="note")controls.append(dateLabel);
    if(descriptionInput){const descriptionLabel=make("label","investigation-description-label",photoEntry?"Note":"Description");descriptionLabel.append(descriptionInput);controls.append(descriptionLabel)}
 
    const notePhotos=noteLike?{existing:[...(record.photos||[])],pending:[]}:null;
@@ -301,7 +301,6 @@
    const persist=async(deferRender=false)=>{
     const fields=inputs.filter(item=>item.type==="resolution"?!!fixed.value:!!(item.field.value.trim()||item.selected.length||item.existingFiles.length));
     if(categoryOf(record)!=="note"&&!titleInput.value.trim()){titleInput.focus();throw Error("Enter a title before saving.")}
-    if(categoryOf(record)!=="note"&&!date.value){date.focus();throw Error("Choose a date before saving.")}
     const notesToSave=notes.filter(note=>note.name.value.trim()||note.field.value.trim()||note.selected.length||note.existingFiles.length);
     for(const note of notesToSave){
      if(!note.name.value.trim()){note.name.focus();throw Error("Enter a descriptor for the note.")}
@@ -520,11 +519,17 @@
      attach(record,body,target,editing,()=>{editing=false;draw()},false,
       null);
      if(!editing){
-      const stamp=historical?archiveDate(record):recordDate(record);
-      if(stamp){
-       const date=make("time","investigation-record-date investigation-record-footer-date",
-        (historical?"Archived ":"")+stamp);
-       date.dateTime=stamp;body.append(date);
+      // Show a single, unobtrusive timestamp at the very end of the tile.
+      const savedAt=historical?record.archivedAt||record.partSnapshot?.archivedAt:
+       record.createdAt||record.date;
+      if(savedAt){
+       const parsed=new Date(savedAt.length===10?savedAt+"T12:00:00":savedAt);
+       const stamp=Number.isNaN(parsed.getTime())?savedAt:
+        parsed.toLocaleString(undefined,{year:"numeric",month:"short",day:"numeric",
+         hour:savedAt.length===10?undefined:"numeric",minute:savedAt.length===10?undefined:"2-digit"});
+       const timestamp=make("time","investigation-record-date investigation-record-footer-date",
+        (historical?"Archived ":"Created ")+stamp);
+       timestamp.dateTime=savedAt;body.append(timestamp);
       }
      }
      // Nested records sit below their parent entry and may use any existing
