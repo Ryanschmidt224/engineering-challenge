@@ -449,7 +449,7 @@
       const deleteStep=button("Delete step",async event=>{
        event.preventDefault();event.stopPropagation();
        if(saving||pendingUploads)return;
-       if(!await window.BSDialogs.danger("Delete this work instruction step? This cannot be undone.",{
+       if(!await window.BSDialogs.danger("Delete this work instruction step? Its attached notes and records may no longer be accessible. This cannot be undone.",{
         title:"Delete step?",confirmLabel:"Delete"
        }))return;
        if(saving||pendingUploads)return;
