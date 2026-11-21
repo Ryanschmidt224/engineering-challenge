@@ -431,31 +431,48 @@
     }
     itemPage.append(gallery);
    }
-   const related=standards().filter(x=>x.id!==id&&familyFor(x)?.id===familyFor(item)?.id&&typeFor(x).id===typeFor(item).id);
    const editorMount=el("section",undefined,"workshop-item-editor-mount");
    editorMount.setAttribute("aria-label","Workshop item editor");
    itemPage.append(editorMount);
    detailUI=openItemEditor(item,{viewOnly:true});
-   const relatedSection=el("section",undefined,"workshop-item-related");
-   relatedSection.append(el("h3","Other selections in "+(familyFor(item)?.label||categoryLabelFor(item))));
-   const grid=el("div",undefined,"workshop-item-related-grid");
-   for(const other of related){
-    const tile=itemButton("",()=>showItem(other.id),"workshop-item-related-choice");
-    if(other.photos?.length){
-     const img=el("img",undefined,"workshop-reference-related-photo");
-     img.src="/api/workshop-reference?photo="+encodeURIComponent(other.photos[0].id);
-     img.alt=other.name;tile.append(img);
-    }else tile.append(catalogThumb(other));
-    tile.append(el("strong",other.name));
-    if(other.subtitle)tile.append(el("small",other.subtitle));
-    grid.append(tile);
+   // The generic-to-specific link affects discovery only. Every product owns
+   // its own values; no parent fields are copied or updated automatically.
+   const relationship=el("section",undefined,"workshop-related-products");
+   const isGeneric=window.BSResources.workshopIdentityKind(item)==="generic";
+   if(isGeneric){
+    relationship.append(el("h3","Specific products for this component"));
+    const alternatives=standards().filter(other=>other.id!==item.id&&other.genericParentId===item.id&&window.BSResources.workshopIdentityKind(other)==="specific")
+     .sort((a,b)=>a.name.localeCompare(b.name));
+    const choices=el("div",undefined,"workshop-related-products-list");
+    for(const other of alternatives){
+     const product=itemButton("",()=>showItem(other.id),"workshop-related-product");
+     product.append(el("strong",other.name));
+     const label=[other.manufacturer,other.partNumber||other.model,other.supplier].filter(Boolean).join(" · ");
+     if(label)product.append(el("small",label,"muted"));
+     const owned=ownedFor(other);
+     if(owned.length)product.append(el("small",ownershipLabel(owned),"muted"));
+     choices.append(product);
+    }
+    if(!alternatives.length)choices.append(el("p","No specific products linked yet. You can still use this generic component in a project.","muted"));
+    relationship.append(choices);
+    if(canCreateReferences){
+     relationship.append(itemButton("+ Add specific product",()=>createCatalogItem({
+      productIdentity:"specific",genericParentId:item.id,kind:item.kind,
+      category:categoryFor(item),featureTreeDescription:item.featureTreeDescription||""
+     }),"btn workshop-add-specific"));
+    }
+   }else if(item.genericParentId){
+    const generic=standards().find(candidate=>candidate.id===item.genericParentId&&window.BSResources.workshopIdentityKind(candidate)==="generic");
+    if(generic){
+     relationship.append(el("h3","Generic component"));
+     relationship.append(itemButton(generic.name,()=>showItem(generic.id),"workshop-related-product"));
+    }
    }
-   if(!related.length)grid.append(el("p","No other references in this category yet.","muted"));
-   relatedSection.append(grid);itemPage.append(relatedSection);
+   if(relationship.childElementCount)itemPage.append(relationship);
    itemPage.scrollIntoView({block:"start"});
   }
 
-  function createCatalogItem(){
+  function createCatalogItem(prefill={}){
    if(!canCreateReferences)return;
    selectedType="";openedItem="";
    shared.hidden=true;personal.hidden=true;sidebar.hidden=true;
@@ -471,9 +488,9 @@
    const mount=el("section",undefined,"workshop-item-editor-mount");
    itemPage.append(mount);
    openItemEditor({category:["all","mine"].includes(selectedWorkshopCategory)?"tools":selectedWorkshopCategory,
-    kind:"equipment",photos:[]});
+    kind:"equipment",photos:[],...prefill});
   }
-  $(".workshop-catalog-create",catalog).onclick=createCatalogItem;
+  $(".workshop-catalog-create",catalog).onclick=()=>createCatalogItem();
   $(".workshop-personal-create",catalog).onclick=()=>{
    nav?.select("mine");
    if($("#workshop-editor",personal)){
