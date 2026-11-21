@@ -401,8 +401,8 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  // Add / origin / save / cancel controls form one coherent footer.
  const actions=editor.locator(".component-editor-actions");
  await expect(actions).toBeVisible();
- await editor.locator(".part-editor-specs-disclosure > summary").click();
- await editor.locator(".part-editor-specs-body .component-add-spec").click();
+ await editor.locator(".part-editor-group .component-add-spec").click();
+ await expect(editor.locator(".part-editor-specs-disclosure")).toBeVisible();
  const source=editor.locator(".component-spec-row .component-spec-source").first();
  await expect(source).toBeVisible();
  await expect(source.locator('option[value="explicit"]')).toContainText("From product listing");
