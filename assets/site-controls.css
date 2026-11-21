@@ -2692,3 +2692,94 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
  }
  .library-part-dialog .library-field > .field{width:100%}
 }
+
+
+/* Compact form rhythm, initially scoped to New Part.
+   Keep all fields and progressive-disclosure behavior unchanged. */
+.library-part-dialog .library-part-form{
+ gap:9px;
+ padding:16px 18px;
+}
+.library-part-dialog .library-part-form>h2{
+ font-size:1.38rem;
+ line-height:1.25;
+}
+.library-part-dialog .library-part-form>.muted{
+ font-size:.82rem;
+ line-height:1.35;
+ margin:0 0 2px;
+}
+.library-part-dialog .library-field{
+ grid-template-columns:minmax(0,185px) minmax(0,1fr);
+ column-gap:12px;
+ row-gap:4px;
+ font-size:.85rem;
+}
+.library-part-dialog .library-field>.field{
+ min-height:35px;
+ padding-block:6px;
+}
+.library-part-dialog .library-field:has(> textarea){
+ gap:5px;
+}
+.library-part-dialog .library-field>textarea.field{
+ min-height:62px;
+ resize:vertical;
+}
+.library-part-dialog .library-workshop-choice-group{
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:6px 9px;
+ padding:8px;
+}
+.library-part-dialog .library-workshop-choice-group>legend{
+ padding:0 5px;
+}
+.library-part-dialog .library-workshop-first{
+ padding:8px 10px;
+ grid-template-columns:18px minmax(0,1fr);
+ column-gap:8px;
+ row-gap:1px;
+}
+.library-part-dialog .library-workshop-first>input{
+ width:16px;
+ height:16px;
+}
+.library-part-dialog .library-workshop-choice-description{
+ font-size:.73rem;
+}
+.library-part-dialog .library-workshop-add{
+ grid-column:1/-1;
+ margin-top:0;
+}
+.library-part-dialog .library-workshop-quick-search,
+.library-part-dialog .library-workshop-scope,
+.library-part-dialog .library-workshop-add-help{
+ grid-column:1/-1;
+}
+.library-part-dialog .library-number-choice{
+ gap:7px;
+ padding:8px 11px;
+}
+.library-part-dialog .library-auto-number{
+ gap:7px;
+}
+.library-part-dialog .library-picker-section,
+.library-part-dialog .library-wire-section,
+.library-part-dialog .library-components{
+ gap:8px;
+}
+.library-part-dialog .library-dialog-actions{
+ margin-top:3px;
+}
+@media(max-width:620px){
+ .library-part-dialog .library-workshop-choice-group{
+  grid-template-columns:minmax(0,1fr);
+ }
+ .library-part-dialog .library-field{
+  gap:4px;
+ }
+ .library-part-dialog .library-part-form{
+  padding:13px;
+  gap:9px;
+ }
+}
