@@ -67,7 +67,7 @@ confirmation that live Cloudflare storage was verified.
   It must not overwrite another active use.
 - Part/assembly number collisions block restoration rather than reassigning
   identifiers silently.
-- The archive viewer is read-only, with saved photos and downloadable files.
+- The archive viewer is read-only, with saved photos and downloadable files. Access is limited to project editors because archives can contain restricted CAD and part files.
 - Previously archived children remain reachable from an archived parent.
 - Older project data is not silently rewritten or destroyed by deploying
   this feature. Data is archived only when an authorized user selects Archive.
