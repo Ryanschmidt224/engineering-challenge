@@ -551,14 +551,15 @@ test("functional part number survives selection between purchased and custom imp
   {action:"claim-admin",adminPassword:env.admin_password},session),env));
  assert.equal(claimed.status,200);
  const added=await data(await handleComponents(request("/api/components?project=launcher","POST",{
-  name:"LED Switch",partNumber:"104",partType:"purchased",itemType:"part",
+  name:"LED Switch",assignNumber:true,partType:"purchased",itemType:"part",
   description:"Switch a low-current LED from 5 V logic",functionalRequirements:"5 V GPIO",
   acceptanceCriteria:"LED switches off when GPIO is low",manufacturer:"onsemi",
   model:"2N7000",specifications:[],quantity:1
  },session),env));
  assert.equal(added.status,201,JSON.stringify(added.body));
  const original=added.body.component;
- assert.equal(original.partNumber,"104");
+ assert.match(original.partNumber,/^[A-Za-z0-9-]+$/);
+ const functionalNumber=original.partNumber;
  assert.equal(original.name,"LED Switch");
  assert.equal(original.model,"2N7000");
  assert.equal(original.implementationResolved,true);
@@ -566,7 +567,7 @@ test("functional part number survives selection between purchased and custom imp
   "PATCH",{functionalAction:"add",implementation:{name:"Custom LED driver",partType:"custom"},
    expectedRevision:original.revision??null},session),env));
  assert.equal(changed.status,200,JSON.stringify(changed.body));
- assert.equal(changed.body.component.partNumber,"104");
+ assert.equal(changed.body.component.partNumber,functionalNumber);
  assert.equal(changed.body.component.name,"LED Switch");
  assert.equal(changed.body.component.model,"");
  assert.equal(changed.body.component.partType,"custom");
@@ -575,12 +576,12 @@ test("functional part number survives selection between purchased and custom imp
   "PATCH",{functionalAction:"select",implementation:{id:original.selectedImplementationId},
    expectedRevision:changed.body.component.revision??null},session),env));
  assert.equal(back.status,200,JSON.stringify(back.body));
- assert.equal(back.body.component.partNumber,"104");
+ assert.equal(back.body.component.partNumber,functionalNumber);
  assert.equal(back.body.component.name,"LED Switch");
  assert.equal(back.body.component.model,"2N7000");
  const saved=JSON.parse(await (await env.PHOTOS.get("components/launcher.json")).text());
  assert.equal(saved.length,1);
- assert.equal(saved[0].partNumber,"104");
+ assert.equal(saved[0].partNumber,functionalNumber);
  assert.equal(Object.hasOwn(saved[0],"manufacturer"),false);
  assert.equal(Object.hasOwn(saved[0],"model"),false);
  assert.equal(saved[0].selection.candidates.length,2);
