@@ -83,7 +83,7 @@ export async function handleInvestigations(request,env){
    if(!Array.isArray(tree)||!tree.some(node=>node.id===ownerId))return json({error:"Assembly no longer exists"},404);
   }
   record={id:crypto.randomUUID(),scope,ownerType,ownerId,stepId,title:data.title.trim(),
-   status:"investigating",entries:[],description:data.category==="note"?(data.description||"").trim():"",createdAt:new Date().toISOString()};
+   status:"investigating",lifecycle:"active",entries:[],description:data.category==="note"?(data.description||"").trim():"",createdAt:new Date().toISOString()};
   if(data.category!==undefined)Object.assign(record,{category:data.category,date:data.date,
    entries:data.entries.map(normalizedEntry),status:entryStatus(data.entries),...normalizeNotes(data.notes)});
   createdId=record.id;
@@ -96,7 +96,7 @@ export async function handleInvestigations(request,env){
   if(!validText(note,2500))return json({error:"Archive note is too long"},400);
   // Server-generated timestamp prevents user clocks from changing archive order.
   const archivedAt=new Date().toISOString();
-  changed=records.map(item=>item.id===record.id?{...item,archivedAt,archiveNote:note.trim()}:item);
+  changed=records.map(item=>item.id===record.id?{...item,lifecycle:"archived",archivedAt,archiveNote:note.trim()}:item);
  }else if(data.action==="archivePart"){
   const partId=data.partId;
   if(!uuid.test(partId)||!validDate(data.date)||!validText(data.reason,2500)||!data.reason.trim())
@@ -124,7 +124,7 @@ export async function handleInvestigations(request,env){
   if(JSON.stringify(snapshot).length>250000)return json({error:"Part history is too large to snapshot"},413);
   record={id:revisionId,scope:"part",ownerType:"part",ownerId:partId,stepId:"",
    title:"Revision: "+trim(part.name||"Previous part",160),status:"resolved",
-   date:data.date,partSnapshot:snapshot,archivedAt:new Date().toISOString(),archiveNote:data.reason.trim(),entries:[{id:crypto.randomUUID(),type:"revision",text:data.reason.trim(),
+   date:data.date,lifecycle:"archived",partSnapshot:snapshot,archivedAt:new Date().toISOString(),archiveNote:data.reason.trim(),entries:[{id:crypto.randomUUID(),type:"revision",text:data.reason.trim(),
     date:data.date,files:[],fileName:"",createdAt:new Date().toISOString()}],createdAt:new Date().toISOString()};
   changed=[...records,record];
  }else if(data.action==="rename"){
