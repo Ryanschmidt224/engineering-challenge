@@ -119,7 +119,7 @@
     const stamp=entry.date||entry.createdAt?.slice(0,10)||"";
     const labelRow=make("div","investigation-entry-heading");
     labelRow.append(make("strong","",label));
-    if(stamp)labelRow.append(make("time","investigation-entry-date",stamp));
+    // Field-level dates are redundant; show one entry timestamp at bottom.
     item.append(labelRow);if(entry.text)item.append(make("p","",entry.text));
     const links=make("div","investigation-file-links");
     for(const file of entry.files||[]){
@@ -518,20 +518,6 @@
      archive.hidden=true;
      attach(record,body,target,editing,()=>{editing=false;draw()},false,
       null);
-     if(!editing){
-      // Show a single, unobtrusive timestamp at the very end of the tile.
-      const savedAt=historical?record.archivedAt||record.partSnapshot?.archivedAt:
-       record.createdAt||record.date;
-      if(savedAt){
-       const parsed=new Date(savedAt.length===10?savedAt+"T12:00:00":savedAt);
-       const stamp=Number.isNaN(parsed.getTime())?savedAt:
-        parsed.toLocaleString(undefined,{year:"numeric",month:"short",day:"numeric",
-         hour:savedAt.length===10?undefined:"numeric",minute:savedAt.length===10?undefined:"2-digit"});
-       const timestamp=make("time","investigation-record-date investigation-record-footer-date",
-        (historical?"Archived ":"Created ")+stamp);
-       timestamp.dateTime=savedAt;body.append(timestamp);
-      }
-     }
      // Nested records sit below their parent entry and may use any existing
      // type (Notes, Tests/Measurements, Revisions, Failures).
      if(!isChild&&!inherited){
@@ -556,6 +542,20 @@
        childSection.append(addNested);
       }
       if(childSection.childElementCount)body.append(childSection);
+     }
+     if(!editing){
+      // Show a single, unobtrusive timestamp at the very end of the tile.
+      const savedAt=historical?record.archivedAt||record.partSnapshot?.archivedAt:
+       record.createdAt||record.date;
+      if(savedAt){
+       const parsed=new Date(savedAt.length===10?savedAt+"T12:00:00":savedAt);
+       const stamp=Number.isNaN(parsed.getTime())?savedAt:
+        parsed.toLocaleString(undefined,{year:"numeric",month:"short",day:"numeric",
+         hour:savedAt.length===10?undefined:"numeric",minute:savedAt.length===10?undefined:"2-digit"});
+       const timestamp=make("time","investigation-record-date investigation-record-footer-date",
+        (historical?"Archived ":"Created ")+stamp);
+       timestamp.dateTime=savedAt;body.append(timestamp);
+      }
      }
      if(card.open)showAttachmentNames(body);
     };
