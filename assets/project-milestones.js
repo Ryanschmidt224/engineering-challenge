@@ -41,17 +41,31 @@
   let revision=null,originalIntent=null,milestones=[],loadId=0;
   const panel=el("section","project-overview-card project-intent-milestones");
   const header=el("div","project-milestone-heading");
-  header.append(el("h2","","Project Intent & Milestones"));
+  const expand=button("Project Intent & Milestones",()=>{
+   const isOpen=expand.getAttribute("aria-expanded")==="true";
+   expand.setAttribute("aria-expanded",String(!isOpen));
+   content.hidden=isOpen;
+  },"project-milestone-expand");
+  expand.setAttribute("aria-expanded","false");
+  expand.setAttribute("aria-controls","project-milestone-content-"+project);
+  const chevron=el("span","project-milestone-chevron");
+  chevron.setAttribute("aria-hidden","true");
+  expand.prepend(chevron);
+  header.append(expand);panel.append(header);
+  const content=el("div","project-milestone-content");
+  content.id="project-milestone-content-"+project;
+  content.hidden=true;
   const actions=el("div","project-milestone-actions");
   const createIntent=button("Record original intent",()=>openEditor("intent"),"btn");
   const addMilestone=button("Add milestone",()=>openEditor("milestone"),"btn");
-  actions.append(createIntent,addMilestone);header.append(actions);panel.append(header);
-  panel.append(el("p","muted project-milestone-intro",
+  actions.append(createIntent,addMilestone);content.append(actions);
+  content.append(el("p","muted project-milestone-intro",
    "What did you set out to achieve, and which discoveries or decisions were significant? Nothing is recorded automatically."));
   const feedback=el("p","muted project-milestone-feedback");feedback.setAttribute("role","status");
   const intentHost=el("div","project-milestone-intent");
   const historyHost=el("div","project-milestone-history");
-  panel.append(feedback,intentHost,historyHost);
+  content.append(feedback,intentHost,historyHost);
+  panel.append(content);
   summary.querySelector(".project-summary-overview")?.after(panel);
   function setFeedback(text){feedback.textContent=text||""}
   function addText(host,label,value){
