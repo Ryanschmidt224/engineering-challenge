@@ -111,10 +111,16 @@ function open({onCreate,hideDefault=false}){
  saveScope.append(el("legend","","Where should it be saved?"));
  const privateScope=el("label","library-workshop-scope-option");
  const privateRadio=el("input");privateRadio.type="radio";privateRadio.name="workshop-destination";privateRadio.value="private";privateRadio.checked=true;
- privateScope.append(privateRadio,document.createTextNode("Private Workshop"),el("small","muted","Only your account can see and edit it"));
+ const scopeLabel=(caption,explanation)=>{
+  const name=el("span","library-workshop-scope-name",caption);
+  const help=el("span","library-function-tip library-workshop-scope-tip","ⓘ");
+  help.tabIndex=0;help.title=explanation;help.setAttribute("role","img");help.setAttribute("aria-label",explanation);
+  name.append(help);return name;
+ };
+ privateScope.append(privateRadio,scopeLabel("Private Workshop","Only your account can see and edit this Workshop item."));
  const publicScope=el("label","library-workshop-scope-option");
  const publicRadio=el("input");publicRadio.type="radio";publicRadio.name="workshop-destination";publicRadio.value="public";
- publicScope.append(publicRadio,document.createTextNode("Public Workshop"),el("small","muted","Visible to everyone; any signed-in user can contribute"));
+ publicScope.append(publicRadio,scopeLabel("Public Workshop","Visible to everyone. Signed-in users can contribute to shared Workshop items."));
  saveScope.append(privateScope,publicScope);
  const publicCategory=field("Public Workshop category","select");
  for(const [id,label] of [["tools","Tools & Equipment"],["consumables","Consumables & Supplies"],["electronics","Electronics & Components"],["hardware","Hardware & Materials"],["safety","Safety & Measurement"]])option(publicCategory.input,id,label);
