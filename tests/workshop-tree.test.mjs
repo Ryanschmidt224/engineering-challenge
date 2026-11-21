@@ -85,6 +85,21 @@ test("Generic Workshop resistors and LEDs keep stable containers with project-sp
  assert.match(api,/patch\.genericFields=genericFields/);
  assert.match(picker,/fixedLabels/);
 });
+test("Workshop defaults suggest editable project-only container names",()=>{
+ const sandbox={window:{},document:{readyState:"loading",addEventListener(){}}};
+ runInNewContext(readFileSync("assets/resources.js","utf8"),sandbox);
+ const {genericContainerName}=sandbox.window.BSResources;
+ assert.equal(genericContainerName({name:"¼ W resistor",featureTreeDescription:"Current limiter"}),"Current limiter");
+ assert.equal(genericContainerName({name:"¼ W resistor"}),"Resistor");
+ assert.equal(genericContainerName({name:"LED"}),"LED");
+ const picker=readFileSync("assets/library-part-picker.js","utf8");
+ assert.match(picker,/projectContainerName\.input\.maxLength=20/);
+ assert.match(picker,/const genericName=projectContainerName\.input\.value\.trim\(\)/);
+ assert.match(picker,/payload\.projectDetails\.featureTreeName=projectContainerName\.input\.value\.trim/);
+ assert.match(picker,/selectedReference\(\)\.featureTreeDescription/);
+ const sharedEditor=readFileSync("assets/personal-workshop.js","utf8");
+ assert.match(sharedEditor,/Default container name \(20 characters max\)/);
+});
 test("Edit Part inputs use paired descriptor/value layout with mobile fallback",()=>{
  const css=readFileSync("assets/site-workspaces.css","utf8");
  assert.match(css,/\.component-review>label\s*\{\s*display:grid/);
