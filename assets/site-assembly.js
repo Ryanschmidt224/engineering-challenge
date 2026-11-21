@@ -2262,7 +2262,7 @@ function setupAssemblyTrees(){
     const apiPanel=root.querySelector(".component-lookup-panel");
     const known=new Set([itemTypeRow,partTypeRow,partNumberRow,functionalTreeDescriptionField,partDescriptionRow,functionalRequirementsField.row,functionalAcceptanceField.row,partImplementationNameRow,partImplementationUnselectedRow,...identity,...quantities,...sourcing,
       toolRow,visibilityRow,review.querySelector(".part-display-options"),specsHeading,specs,addSpec,existingActions,apiPanel].filter(Boolean));
-    const otherFields=[...review.children].filter(el=>!known.has(el)&&!el.classList.contains("part-editor-section-heading"));
+    const otherFields=[...review.children].filter(el=>!known.has(el)&&!el.classList.contains("part-editor-section-heading")&&!el.classList.contains("part-editor-group"));
     const move=(...elements)=>{for(const el of elements)if(el)review.append(el)};
     // Use one canonical field order for the editor and expanded part details.
     const fields=window.BSPartFields.sectionFields;
