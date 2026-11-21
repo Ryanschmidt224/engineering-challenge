@@ -213,7 +213,7 @@ function setupAssemblyTrees(){
   }
   // Project and subassembly workspaces remain independent of the BOM screen.
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
-  workspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div class="workspace-title-group"><h1 class="workspace-title"></h1><button type="button" class="btn workspace-back">Open BOM</button></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save" title="Save workspace instructions, helpful tools, and restored versions">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
+  workspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div class="workspace-title-group"><h1 class="workspace-title"></h1><button type="button" class="btn workspace-back">Open BOM</button></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save" hidden aria-hidden="true" tabindex="-1">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
   detail.after(workspace);
   // Assembly photo management lives in the workspace, not the read-only overview.
   const workspacePhotoEditor=document.createElement("article");
@@ -686,7 +686,7 @@ function setupAssemblyTrees(){
   });
   // Each saved BOM part has its own independent instructions document.
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
-  partWorkspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1></div></div><section class="workspace-panels"><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save">Save</button><span class="part-workspace-status" role="status"></span></div></section>';
+  partWorkspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1></div></div><section class="workspace-panels"><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save" hidden aria-hidden="true" tabindex="-1">Save workspace</button><span class="part-workspace-status" role="status"></span></div></section>';
   workspace.after(partWorkspace);
   const archiveActions=document.createElement("div");archiveActions.className="workspace-archive-actions";
   const archiveStatus=document.createElement("span");archiveStatus.className="muted workspace-archive-status";
@@ -739,7 +739,7 @@ function setupAssemblyTrees(){
      const timestamp=document.createElement("small");timestamp.textContent=new Date(entry.createdAt).toLocaleDateString();
      const text=document.createElement("p");text.textContent=entry.text;
      row.append(timestamp,text);
-     if(canEdit()){const remove=document.createElement("button");remove.type="button";remove.className="btn";remove.textContent="Remove";remove.onclick=()=>{experiments=experiments.filter(x=>x.id!==entry.id);renderLogs()};row.append(remove)}
+     if(canEdit()){const remove=document.createElement("button");remove.type="button";remove.className="btn";remove.textContent="Delete";remove.onclick=()=>{experiments=experiments.filter(x=>x.id!==entry.id);renderLogs();scheduleWorkspaceAutosave(prefix==="part"?"part":"assembly")};row.append(remove)}
      logEntries.append(row);
     }
     logDetails.classList.toggle("hide",experiments.length===0);
@@ -781,7 +781,8 @@ function setupAssemblyTrees(){
        if(loadedOwner!==ownerId())return;
        experiments=Array.isArray(snapshot.experiments)?snapshot.experiments.map(x=>({...x})):[];
        renderLogs();onRestoreResources?.(snapshot.resources);onRestoreRecipe?.(snapshot);
-       panel.querySelector(prefix==="part"?".part-workspace-status":".workspace-status").textContent="Previous version loaded. Click Save to keep it.";
+       panel.querySelector(prefix==="part"?".part-workspace-status":".workspace-status").textContent="Previous version loaded. Saving…";
+       scheduleWorkspaceAutosave(prefix==="part"?"part":"assembly");
       };
       item.append(restore);
      }
@@ -798,6 +799,32 @@ function setupAssemblyTrees(){
    return {setData,getExperiments:()=>experiments};
   }
   let investigations=null,investigationParts=[];
+  const workspaceAutosaveTimers={assembly:null,part:null};
+  // Workspace data (linked tools and resources) is saved after it changes,
+  // while Work Instruction forms retain their explicit Save/Cancel workflow.
+  const scheduleWorkspaceAutosave=scope=>{
+   if(!canEdit())return;
+   clearTimeout(workspaceAutosaveTimers[scope]);
+   workspaceAutosaveTimers[scope]=setTimeout(async()=>{
+    workspaceAutosaveTimers[scope]=null;
+    try{
+     if(scope==="part"){
+      if(partSaveFlight)await partSaveFlight;
+      await savePartWorkspace();
+     }else{
+      if(assemblySaveFlight)await assemblySaveFlight;
+      await saveAssemblyWorkspace();
+     }
+    }catch(error){
+     const status=scope==="part"?partStatus:workspaceStatus;
+     status.textContent="Autosave failed: "+(error.message||"Please retry your change.");
+    }
+   },650);
+  };
+  window.addEventListener("beforeunload",event=>{
+   if(!workspaceAutosaveTimers.assembly&&!workspaceAutosaveTimers.part)return;
+   event.preventDefault();event.returnValue="";
+  });
   function mountWorkspaceSections(panel,{scope,ownerId,save,saveInProgress}){
    const instructions=panel.querySelector(".recipe-instructions");
    const recipe=window.BSRecipes?.mount(instructions,{
@@ -826,7 +853,7 @@ function setupAssemblyTrees(){
    instructions.after(tools);
    const divider=document.createElement("hr");divider.className="workspace-history-divider";
    panel.querySelector(".workspace-panels").after(activeRecords,divider,history);
-   const resources=window.BSResources?.mount(resourcesPanel,{addTo:toolsActions,onCount:count=>{
+   const resources=window.BSResources?.mount(resourcesPanel,{addTo:toolsActions,onChange:()=>scheduleWorkspaceAutosave(scope),onCount:count=>{
     toolsCount.textContent="("+count+(count===1?" record)":" records)");
     tools.classList.toggle("is-empty",count===0);
    }});
