@@ -172,7 +172,7 @@ function open({onCreate,hideDefault=false}){
  supplierHelp.dataset.bsExamples=JSON.stringify(["MPN 2N7000, supplier DigiKey.","Check package and manufacturer before ordering."]);
  supplierHelp.setAttribute("aria-label",supplierHelp.title);
  supplierCaption.append(supplierHelp);vendorField.label.replaceChildren(supplierCaption,vendorField.input);
- for(const [id,label] of [["DigiKey","DigiKey"],["Mouser","Mouser"],["Newark","Newark"],["Arrow","Arrow"],["Other","Other / not yet selected"]])option(vendorField.input,id,label);
+ for(const [id,label] of [["DigiKey","DigiKey"],["Mouser","Mouser"],["Newark","Newark"],["Arrow","Arrow"],["Amazon","Amazon"],["Other","Other / not yet selected"]])option(vendorField.input,id,label);
  const vendorLinks=el("div","library-vendor-links muted");
  const vendorInfo=el("p","muted library-vendor-info","Vendor links search by manufacturer part number. Confirm manufacturer, package, specifications, stock and price before ordering.");
  const renderVendorLinks=()=>{
