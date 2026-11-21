@@ -4425,14 +4425,14 @@
 
 
 /* Project Summary guidance and compact, collapsed-by-default intent panel. */
-.project-summary-page .project-summary-overview>.project-overview-card:first-child>h2{
- display:inline-flex;
+.project-summary-page .project-summary-title-row{
+ display:flex;
  align-items:center;
+ gap:8px;
+ margin-bottom:8px;
 }
-.project-summary-page .project-summary-overview>.project-overview-card:first-child>.bs-help-button{
- align-self:flex-start;
- margin:-28px 0 8px 142px;
-}
+.project-summary-page .project-summary-title-row h2{margin:0}
+.project-summary-page .project-summary-title-row .bs-help-button{flex:none;margin:0}
 .project-summary-page .project-intent-milestones .project-milestone-expand{
  display:inline-flex;
  align-items:center;
