@@ -1721,3 +1721,7 @@
  line-height:1.5;
 }
 .bom-part-workspace .part-detail-item-content a{white-space:normal;overflow-wrap:anywhere}
+
+.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-summary .recipe-kind-caption{
+ margin-left:0;
+}
