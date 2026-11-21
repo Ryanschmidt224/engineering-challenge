@@ -1021,7 +1021,9 @@ test("Edit Part separates Container, Part details and purchased alternatives",as
  });
  expect(source).toContain('group("container","Container",controls.itemType,controls.name,controls.partNumber,');
  expect(source).toContain('partDescriptionRow);');
- expect(source).not.toContain('partDescriptionRow,functionalRequirementsField.row,functionalAcceptanceField.row);');
+ expect(source).not.toContain('functionalRequirementsField');
+ expect(source).not.toContain('functionalAcceptanceField');
+ expect(source).not.toContain('partImplementationUnselectedRow');
  expect(source).toContain('group("implementation","Part details"');
  expect(source).toContain('const purchased=part.partType==="purchased"');
  expect(source).toContain('item.partType==="purchased"');
