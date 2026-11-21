@@ -1,74 +1,96 @@
-# Functional Parts Architecture — Rollback Gate
+# Functional Parts — Architecture, Rollback and Release Notes
 
-Checkpoint created November 20, 2026 (America/Phoenix).
+## State
 
-## Code rollback (already secured)
+The functional-part redesign has been committed to `main`. The user explicitly
+accepted that existing project data is disposable while the architecture is
+being rebuilt; the old project format must **not** constrain the new schema.
+The current visual layout, feature tree, Workshop, and existing Work Instruction
+controls should remain familiar.
+
+## Recovering the pre-redesign website code
 
 - Repository: `Ryanschmidt224/engineering-challenge`
-- Known-good commit: `b1d628794e8944dc7eef0e726f71f98db18f36ec`
-- Frozen reference branch: `backup-before-functional-parts-2026-11-20`
-- Isolated development branch: `feature/functional-parts`
-- Production branch: `main`; do **not** merge experimental schema changes until checks below pass.
+- Exact pre-change commit: `b1d628794e8944dc7eef0e726f71f98db18f36ec`
+- Reference branch: `backup-before-functional-parts-2026-11-20`
+- Development branch: `feature/functional-parts`
+- Live source branch: `main`
 
-A branch snapshot protects source code only. Re-deploying this commit does **not**
-restore R2 objects or reverse an incompatible data migration.
+To roll back code, redeploy the exact checkpoint commit (or reset `main` to
+the snapshot via a reviewed Git ref update). Do not delete the reference
+branch. Restoring a previous commit does **not** reverse Cloudflare R2 writes.
+Code rollback and data rollback are different operations.
 
-## Project data backup — must complete before migration
+No full, verified project-data backup was created as part of this change.
+This was an explicit tradeoff. Pre-change project records can be reset or
+re-created if incompatible; never claim they were restored. The site still
+has optional project export utilities for anyone who wants data preservation.
 
-The existing website offers a downloadable `.bsproject` export in each
-project workspace under **Project backups → Create project backup**.
+## Canonical data model
 
-For every project, including private projects:
+Each project part is a **functional part** with a stable `id`,
+`partNumber`, `name`, quantity, placement, purpose, required specifications
+and acceptance criteria. Its `selection` contains zero or more physical
+implementation candidates and at most one `selectedId`.
 
-1. Export and download the `.bsproject` file.
-2. Save an independent copy outside Cloudflare R2 (e.g., local disk +
-   independent cloud storage).
-3. Validate it using the project's archive validation code (including
-   object counts, SHA-256 hashes, and original project ID).
-4. Record the backed-up projects, export times, object counts, checksums
-   and any failures below.
+Implementation data includes manufacturing type (purchased, custom made in-house
+or custom purchased), manufacturer, MPN, supplier offers, historical prices,
+Workshop reference, detailed specifications, photos, CAD and drawings. None
+of those properties should be redundantly persisted on the functional parent.
 
-The weekly `automatic-backups/` R2 snapshots are append-only but **not
-offsite** and have not been verified for this checkpoint.
+Core implementation: `functions/api/functional-part-model.js`.
+Persistence boundary: `functions/api/components.js`, using
+`resolveFunctionalPart` for existing consumers and `encodeFunctionalPart`
+for canonical storage (schema version 2).
 
-Current archive exports are limited to at most 1,500 objects / 72 MiB
-(total uncompressed data) / 24 MiB per object; if an export fails, stop
-the migration and address the backup failure before proceeding.
+## Part numbers
 
-### Inventory (not yet completed)
+- Project part numbers identify **functional requirements**, never particular
+  manufacturer or design variants.
+- Project numbering prefixes remain configurable; assembly sequences 1–99 and
+  parts starting at 100 retain their established allocation rules.
+- User-visible labels combine number and name only for display; the database
+  stores them separately.
+- The selected implementation has its own manufacturer part number or drawing
+  and revision, not a second conflicting project part number.
+- Example: `NR104 · LED Switch` selects `2N7000`; switching to a custom
+  LED-driver PCB does not change `NR104`.
 
-| Project | Export checked | Offline copy | Restore dry run |
-|---|---|---|---|
-| Every active public/built-in project | Pending | Pending | Pending |
-| Every personal/private project | Pending | Pending | Pending |
+## BOM and engineering records
 
-## Restoration limitations
+The engineering BOM includes functional requirements. The physical purchasing
+plan resolves only selected purchased implementations; custom implementations
+belong to fabrication, and unselected requirements remain clearly unresolved.
+Never count the functional parent and its selected implementation as two items.
 
-The existing `/api/project/archive` POST **validates an import**;
-it does not overwrite live records. The existing
-`/api/project/staging` only stages a recovery copy in an isolated
-R2 prefix and verifies checksums. The current code does not provide a
-single-click live-project restore.
+Implementation-specific CAD, drawings, saved supplier pages and other files are
+scoped to the selected physical implementation. Functional Work Instructions
+and investigation records can retain historical implementation provenance.
 
-Implement and test an authorized, guarded **full project restore**
-on a test copy *before* the functional-parts migration. It should
-suspend edits, validate a matching project ID, preserve a rescue
-snapshot of the post-migration state, restore a consistent set of R2
-keys, reconcile stale objects, verify counts/checksums, and only then
-release the write lock.
+The visual feature-tree controls and selection behavior remain the same.
+Styling is centralized through Studio Green theme tokens.
 
-## Deployment / migration gate
+## Verification before treating this as production-stable
 
-- [x] Preserve exact pre-change code.
-- [x] Create separate development branch.
-- [ ] Obtain and verify current per-project data exports.
-- [ ] Store at least one independent offsite copy.
-- [ ] Test restoring an export onto a disposable project.
-- [ ] Add explicit schema versioning and reversible migration for
-      functional-part and implementation data.
-- [ ] Verify Workshop links, BOM quantities, notes, photos,
-      instructions, archives and custom parts after migration.
-- [ ] Deploy new architecture only after all gates pass.
+- Automated model tests: part identity survives changing implementation,
+  supplier details are isolated, unselected parts do not appear in purchasing,
+  retired alternatives retain history, and generated materials are not
+  converted to functional parents.
+- API regression: create an automatically numbered part, switch purchased →
+  custom → purchased, and verify number, requirement and physical details.
+- Frontend regression: check functional number/name display in feature tree,
+  part headings and BOM; ensure an existing MPN does not override the functional
+  label.
+- Browser and live Cloudflare/R2 testing should still be performed.
+- GitHub Actions failures must be diagnosed rather than ignored.
 
-**Do not claim the current live R2 project data was backed up merely
-because this code checkpoint exists.**
+## Known tradeoffs
+
+- Existing project data may be incompatible with the new schema. This is
+  acceptable under the user's explicit instruction.
+- Legacy records are read through a compatibility resolver; preserving every
+  obsolete field is not a design goal.
+- Requirement-level instructions stay separate from implementation-specific
+  engineering assets. Future variants may need a more explicit test applicability
+  and approval mechanism.
+- Project backups and one-click live R2 restoration remain separate work.
