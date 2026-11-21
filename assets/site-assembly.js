@@ -2255,10 +2255,12 @@ function setupAssemblyTrees(){
      const caption=document.createElement("span");caption.className="part-container-caption";
      const title=document.createElement("span");title.textContent="Container";
      const nameHint=document.createElement("span");nameHint.className="part-container-name-hint";nameHint.textContent="(name)";
-     const help=document.createElement("span");help.className="library-function-tip";
-     help.textContent="ⓘ";help.tabIndex=0;
+     const help=document.createElement("button");help.type="button";help.className="library-function-tip bs-help-button";
+     help.textContent="ⓘ";
      help.title="A container is an item in the project hierarchy that holds its purpose, part details, work instructions, tests, revisions, and history. Its name identifies it in the project tree (maximum 20 characters).";
-     help.setAttribute("role","img");help.setAttribute("aria-label",help.title);
+     help.dataset.bsHelpTitle="How containers work";
+     help.dataset.bsHelpTopic="container";
+     help.setAttribute("aria-label","Container help — double-click for examples");
      caption.append(title,nameHint,help);
      const oldLabel=[...identity[0].childNodes].find(node=>node.nodeType===Node.TEXT_NODE);
      if(oldLabel)oldLabel.replaceWith(caption);
