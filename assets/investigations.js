@@ -61,7 +61,7 @@
   }
   const openSections=new Set();
   const api="/api/investigations?project="+encodeURIComponent(project);
-  const feedback=target=>(target||activeContext?.target)?.querySelector(".investigation-feedback");
+  const feedback=target=>{const area=target||activeContext?.target;return area?.activeEntriesHost?.querySelector(".investigation-feedback")||area?.querySelector(".investigation-feedback")};
   const report=(message,target)=>{const p=feedback(target);if(p)p.textContent=message};
   const makeContext=(ownerType,ownerId,stepId="",title="")=>({scope:stepId?"step":ownerType,ownerType,ownerId,stepId,title});
   const parentOf=id=>getTree().find(node=>node.id===id)?.parentId??null;
@@ -467,7 +467,7 @@
     }catch(error){report(error.message,target);saveBtn.disabled=false}
    },"btn primary");
    form.append(field,date,saveBtn,btn("Cancel",()=>form.remove(),"btn"));
-   target.querySelector(".investigation-heading")?.after(form);
+   (target.activeEntriesHost?.querySelector(".investigation-active-content")||target.querySelector(".investigation-active-content"))?.append(form);
    field.focus();
   }
   function newRecord(context,target){
