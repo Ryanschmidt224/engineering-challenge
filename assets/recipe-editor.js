@@ -308,7 +308,7 @@
     navButton.setAttribute("aria-label","Step "+(i+1)+": "+(step.title||"Untitled step"));
     // Reordering is independent of selecting/opening a step. Restrict drag
     // payloads to this list so photo/file drops are never treated as steps.
-    if(admin()&&!isDraft){
+    if(admin()&&!draft){
      navButton.draggable=true;
      navButton.title="Drag to reorder work instructions";
      navButton.addEventListener("dragstart",event=>{
