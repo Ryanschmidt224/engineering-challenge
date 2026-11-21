@@ -422,6 +422,13 @@ function open({onCreate,hideDefault=false}){
  referencePreview.append(el("h3","","Selected Workshop item"));
  const referenceRows=el("div","library-workshop-reference-rows");referenceRows.hidden=true;
  referencePreview.append(referenceRows);
+ const projectContainerName=field("Project container name");
+ projectContainerName.input.maxLength=20;
+ projectContainerName.input.placeholder="e.g. Resistor, LED, Position sensor";
+ projectContainerName.input.setAttribute("aria-label","Project container name");
+ const nameHint=el("p","muted library-container-suggestion-help",
+  "Suggested by the Workshop. You can rename this container for your project; the Workshop item will not change.");
+ referencePreview.append(projectContainerName.label,nameHint);
  const genericProjectFields=el("div","library-generic-spec-fields hide");
  genericProjectFields.append(el("h4","","Configure this component for your project"),
   el("p","These values apply only to this project, not to the Workshop source.","muted"));
@@ -478,7 +485,14 @@ function open({onCreate,hideDefault=false}){
    manufacturerNumber.input.value=generic?"":item?.partNumber||item?.model||"";
    manufacturerName.input.value=item?.manufacturer||"";
    workshopDescription.input.value=item?.subtitle||item?.description||item?.detail||item?.name||"";
-   shortTreeDescription.input.value=generic?window.BSResources.genericContainerName(item):item?.featureTreeDescription||"";
+   const proposed=window.BSResources.genericContainerName(item||{});
+   shortTreeDescription.input.value=proposed;
+   const selectionKey=item?item.origin+":"+item.id:"";
+   // Preserve the project-only rename when the selected Workshop item has
+   // not changed (e.g. a category filter rerenders the options).
+   if(selectionKey!==genericReferenceKey)projectContainerName.input.value=proposed;
+   projectContainerName.label.classList.toggle("hide",!item);
+   nameHint.classList.toggle("hide",!item);
    const supplier=item?.supplier||"";
    vendorField.input.value=[...vendorField.input.options].some(option=>option.value===supplier)?supplier:"Other";
   }
@@ -511,7 +525,7 @@ function open({onCreate,hideDefault=false}){
    ["Manufacturer part number",generic?"":item.partNumber||item.model||""],
    ["Manufacturer",item.manufacturer||""],
    ["Description",item.subtitle||item.description||item.detail||item.name],
-   ["Container name",generic?window.BSResources.genericContainerName(item):item.featureTreeDescription||""],
+   ["Workshop default container name",window.BSResources.genericContainerName(item)],
    ["Vendor",item.supplier||""]
   ]){
    if(!value)continue;
@@ -716,7 +730,8 @@ function open({onCreate,hideDefault=false}){
     commons.find(item=>item.id===choice.slice(6));
    if(!p){status.textContent="Select a Workshop item.";return}
    const generic=window.BSResources.workshopIdentityKind(p)==="generic";
-   const genericName=generic?window.BSResources.genericContainerName(p):p.name;
+   const genericName=projectContainerName.input.value.trim()||window.BSResources.genericContainerName(p);
+   if(genericName.length>20){status.textContent="Container name must be 20 characters or fewer.";projectContainerName.input.focus();return}
    const genericSpecs=generic?[...genericProjectInputs.querySelectorAll("input[data-spec-name]")].map(input=>({
     name:input.dataset.specName,
     value:input.value.trim()+(input.value.trim()&&input.dataset.specUnit?" "+input.dataset.specUnit:"")
@@ -768,7 +783,12 @@ function open({onCreate,hideDefault=false}){
   if(itemKind.input.value==="part"){
    payload.projectDetails={...getProjectDetails(),...(!workshopCheckbox.checked?{featureTreeName:shortTreeDescription.input.value.trim()}:{})};
    if(addToWorkshopCheckbox.checked)payload.projectDetails.workshopTreeDescription=shortTreeDescription.input.value.trim();
-   if(workshopCheckbox.checked&&selectedReference())payload.projectDetails.workshopTreeDescription=String(selectedReference().featureTreeDescription||"").slice(0,20);
+   if(workshopCheckbox.checked&&selectedReference()){
+    // The source default remains identifiable, but the project container
+    // owns its own name and can change without editing the Workshop.
+    payload.projectDetails.workshopTreeDescription=String(selectedReference().featureTreeDescription||"").slice(0,20);
+    payload.projectDetails.featureTreeName=projectContainerName.input.value.trim().slice(0,20);
+   }
    const reference=workshopCheckbox.checked?selectedReference():null;
    if(reference?.origin==="mine")payload.projectDetails.workshopReferenceId="my:"+reference.id;
    if(reference?.origin==="public"||reference?.origin==="standard")payload.projectDetails.workshopReferenceId=reference.id;
