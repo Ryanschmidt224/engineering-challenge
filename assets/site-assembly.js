@@ -68,7 +68,9 @@ function setupAssemblyTrees(){
     partProgress.set(part.id,part.progressStatus||"not_started");
     partAttention.set(part.id,part.needsAttention===true);
     partQuantities.set(part.id,part);
-    partTreeLabels.set(part.id,{mpn:part.model||"",description:part.description||"",details:part.projectDetails||{},defaultPicture:defaultPartPicture(part)});
+    partTreeLabels.set(part.id,{mpn:part.model||"",description:part.description||"",
+     implementationName:part.implementationName||"",implementationResolved:part.implementationResolved,
+     details:part.projectDetails||{},defaultPicture:defaultPartPicture(part)});
     for(const linked of nodes.filter(n=>isPartNode(n)&&n.partId===part.id))if(linked.name!==part.name){linked.name=part.name;changed=true}
     if(!known.has(part.id)){
      const parentId=nodes.some(n=>n.id===part.assemblyId&&!isPartNode(n))?part.assemblyId:null;
@@ -466,7 +468,7 @@ function setupAssemblyTrees(){
    const list=document.createElement("ul");list.className="project-summary-part-list";
    for(const part of items){
     const row=document.createElement("li"),name=document.createElement(part.id&&/^[0-9a-f-]{36}$/i.test(part.id)&&!part.generatedFrom?"button":"span"),quantity=document.createElement("span");
-    name.className="project-summary-part-name";name.textContent=(part.partNumber?part.partNumber+" · ":"")+window.BSPartFields.displayName(part);
+    name.className="project-summary-part-name";name.textContent=window.BSPartFields.numberedName(part);
     if(name.tagName==="BUTTON"){
      name.type="button";name.classList.add("project-summary-part-link");
      name.setAttribute("aria-label","Open "+part.name+" part page");
@@ -498,7 +500,7 @@ function setupAssemblyTrees(){
      const list=document.createElement("ul");list.className="project-summary-part-list";
      for(const part of unique.values()){
       const row=document.createElement("li"),name=document.createElement(part.id&&/^[0-9a-f-]{36}$/i.test(part.id)&&!part.generatedFrom?"button":"span"),quantity=document.createElement("span");
-      name.className="project-summary-part-name";name.textContent=(part.partNumber?part.partNumber+" · ":"")+window.BSPartFields.displayName(part);
+      name.className="project-summary-part-name";name.textContent=window.BSPartFields.numberedName(part);
     if(name.tagName==="BUTTON"){
      name.type="button";name.classList.add("project-summary-part-link");
      name.setAttribute("aria-label","Open "+part.name+" part page");
@@ -1529,7 +1531,7 @@ function setupAssemblyTrees(){
     if(version!==partLoadVersion||partRoute()!==partId)return;
     const part=partData.components?.find(item=>item.id===partId);
     if(!part)throw Error("Part not found");
-    heading.textContent=(part.partNumber?part.partNumber+" · ":"")+window.BSPartFields.displayName(part);
+    heading.textContent=window.BSPartFields.numberedName(part);
     currentPartInfo=part;
     if(window.BSPartFields.itemTypeFor(part)==="part"&&!part.generatedFrom)showPartQuantity(partQuantityDisplay(part));
     const hasWorkshopLink=!!workshopLinkId(part);
@@ -1745,7 +1747,7 @@ function setupAssemblyTrees(){
    for(const part of items){
     const row=document.createElement("div");row.className="bom-shop-material-row";
     const name=document.createElement("span");
-    name.className="bom-part-name bom-part-name-link";name.textContent=(part.partNumber?part.partNumber+" · ":"")+window.BSPartFields.displayName(part);
+    name.className="bom-part-name bom-part-name-link";name.textContent=window.BSPartFields.numberedName(part);
     const quantity=document.createElement("span");quantity.className="bom-shop-qty";
     quantity.textContent=materialQuantity(part);
     row.append(name,quantity);
@@ -1766,7 +1768,7 @@ function setupAssemblyTrees(){
    if(part.generatedFrom)item.classList.add("bom-generated-part");
    const row=document.createElement("div");row.className="bom-part-summary";
    const name=document.createElement("span");
-   name.className="bom-part-name bom-part-name-link";name.textContent=(part.partNumber?part.partNumber+" · ":"")+window.BSPartFields.displayName(part);
+   name.className="bom-part-name bom-part-name-link";name.textContent=window.BSPartFields.numberedName(part);
    if(part.itemType!=="document"&&!part.generatedFrom&&!part.isTool){
     const solution=document.createElement("small");solution.className="bom-implementation-label";
     solution.textContent=part.implementationResolved===false?"Implementation not selected":
@@ -3275,10 +3277,14 @@ function setupAssemblyTrees(){
    const name=document.createElement("button");name.type="button";name.className="assembly-name";
    const nodeNumber=node?(isPartNode(node)?partNumbers.get(node.partId):node.partNumber):null;
    const treeInfo=isPartNode(node)?partTreeLabels.get(node.partId):null;
-   const firstLine=treeInfo?.details?.value?window.BSPartFields.displayName({name:node?.name,projectDetails:treeInfo.details}):treeInfo?.mpn||nodeNumber||node?.name||title;
    const treeDetails=treeInfo?.details||{};
-   const secondLine=String(treeDescription(treeDetails,treeInfo?.description)||(node?.name!==firstLine?node?.name:"")||(partWorkshopItems.get(node?.partId)?"Description not set":"")||"").trim();
-   name.textContent=node?(isDocumentNode(node)?"📄  ":isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+(isPartNode(node)?firstLine:(nodeNumber?nodeNumber+" · ":"")+node.name):"📦  "+title;
+   const firstLine=isPartNode(node)?window.BSPartFields.numberedName({
+    name:node.name,partNumber:nodeNumber,projectDetails:treeDetails
+   }):nodeNumber?nodeNumber+" · "+node.name:node?.name||title;
+   const selectedImplementation=treeInfo?.implementationResolved===false?"Implementation not selected":
+    treeInfo?.implementationName||treeInfo?.mpn||"";
+   const secondLine=String(treeDescription(treeDetails,treeInfo?.description)||selectedImplementation||"").trim();
+   name.textContent=node?(isDocumentNode(node)?"📄  ":isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+(isPartNode(node)?firstLine:firstLine):"📦  "+title;
    if(isPartNode(node)&&showTreeDescriptions&&treeDetails.showTreeDescription!=="false"&&secondLine&&secondLine!==firstLine){
     const detail=document.createElement("small");detail.className="assembly-tree-description";detail.textContent=secondLine;name.append(detail);
    }
