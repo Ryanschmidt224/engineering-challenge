@@ -3967,3 +3967,74 @@
 @media(max-width:760px){
  .recipe-compact .recipe-step-browser .recipe-step-list{padding:5px}
 }
+
+
+/* Split Work Instructions: contain each pane and separate the resize handle.
+   Prevent long titles, nav controls, and entry headings from crossing columns. */
+.recipe-compact .recipe-step-browser{
+ grid-template-columns:minmax(0,var(--recipe-nav-width,31%)) 12px minmax(0,1fr);
+ width:100%;
+ max-width:100%;
+ min-width:0;
+ box-sizing:border-box;
+ overflow:hidden;
+}
+.recipe-compact .recipe-step-browser > .recipe-step-list,
+.recipe-compact .recipe-step-browser > .recipe-step-detail{
+ min-width:0;
+ max-width:100%;
+ box-sizing:border-box;
+}
+.recipe-compact .recipe-step-browser > .recipe-step-list{
+ padding:5px 8px 5px 5px;
+ overflow-x:hidden;
+}
+.recipe-compact .recipe-step-browser > .recipe-step-resizer{
+ min-width:12px;
+ width:12px;
+ box-sizing:border-box;
+ z-index:1;
+}
+.recipe-compact .recipe-step-browser > .recipe-step-detail{
+ padding:7px 8px;
+ overflow-x:hidden;
+}
+.recipe-compact .recipe-step-nav-row.has-nav-actions:not(.is-editing){
+ max-width:100%;
+ min-width:0;
+}
+.recipe-compact .recipe-step-nav-row.has-nav-actions:not(.is-editing) > .recipe-step-nav-item{
+ min-width:0;
+ max-width:100%;
+ overflow:hidden;
+ overflow-wrap:anywhere;
+}
+.recipe-compact .recipe-step-detail > .recipe-container-heading{
+ width:100%;
+ max-width:100%;
+ min-width:0;
+ box-sizing:border-box;
+}
+.recipe-compact .recipe-step-detail > .recipe-container-heading > strong,
+.recipe-compact .recipe-step-detail > .recipe-container-heading > .recipe-step-name{
+ min-width:0;
+ overflow-wrap:anywhere;
+}
+.recipe-compact .recipe-step-detail .investigation-active-content,
+.recipe-compact .recipe-step-detail .investigation-card,
+.recipe-compact .recipe-step-detail .investigation-summary{
+ min-width:0;
+ max-width:100%;
+ box-sizing:border-box;
+}
+.recipe-compact .recipe-step-detail .investigation-summary .investigation-title-actions{
+ min-width:0;
+ flex:1 1 auto;
+ overflow-wrap:anywhere;
+}
+@media(max-width:760px){
+ .recipe-compact .recipe-step-browser{grid-template-columns:minmax(0,1fr);overflow:visible}
+ .recipe-compact .recipe-step-browser > .recipe-step-list{padding:5px;border-right:1px solid var(--color-border)}
+ .recipe-compact .recipe-step-browser > .recipe-step-detail{padding:7px}
+ .recipe-compact .recipe-step-browser > .recipe-step-resizer{display:none}
+}
