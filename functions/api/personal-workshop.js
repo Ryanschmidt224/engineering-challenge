@@ -3,6 +3,7 @@ import {accountUser} from "./accounts.js";
 import {isAdmin} from "./auth.js";
 import {normalizeSpecifications} from "./workshop-specifications.js";
 import {projectAllowed} from "./projects.js";
+import {resolveFunctionalPart} from "./functional-part-model.js";
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff"}});
 const inventoryKey=id=>"user-workshop/"+id+"/inventory.json";
 const clean=(v,n=160)=>String(v??"").trim().slice(0,n);
@@ -52,7 +53,7 @@ export async function onRequest({request,env}){
   const project=url.searchParams.get("project");
   if(!await projectAllowed(env,project,request))return json({error:"Project unavailable"},403);
   const source=await env.PHOTOS.get("components/"+project+".json");
-  const bom=source?JSON.parse(await source.text()):[];
+  const bom=(source?JSON.parse(await source.text()):[]).map(resolveFunctionalPart);
   return json({project,comparison:match(bom,(await read(env,user)).items)});
  }
  if(request.method==="GET")return json({items:(await read(env,user)).items,canDelete:await isAdmin(request,env)});
