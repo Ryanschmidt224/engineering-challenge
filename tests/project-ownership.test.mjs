@@ -53,23 +53,23 @@ test("ownership hides private projects, preserves archives, and gates writes",as
  assert.equal(published.status,200);
  assert.equal(await projectAllowed(env,id,outsiderRequest),true);
  assert.equal(await canEditProject(outsiderRequest,env,id),false);
- const recipe=[{id:"step1",title:"Solder contacts",standard:"Use 260 C",detail:"",notes:[],photos:[]}];
+ const recipe=[{id:"step1",title:"Solder contacts",tileOrder:[]}];
  await env.PHOTOS.put("workspaces/"+id+"/__root__.json",JSON.stringify({recipe,resources:{tools:[],parts:[],calculators:[]},revision:"r1",history:[]}));
  const proposed=await handleProposals(request("/api/proposals?project="+id,"POST",{
-  scope:"assembly",targetId:"__root__",stepId:"step1",field:"standard",suggestedText:"Use temperature specified by solder manufacturer"
+  scope:"assembly",targetId:"__root__",stepId:"step1",field:"title",suggestedText:"Solder contacts at the manufacturer specified temperature"
  },other),env);
  assert.equal(proposed.status,201);
  const proposalId=(await proposed.json()).proposal.id;
  const unapproved=JSON.parse(await (await env.PHOTOS.get("workspaces/"+id+"/__root__.json")).text());
- assert.equal(unapproved.recipe[0].standard,"Use 260 C");
+ assert.equal(unapproved.recipe[0].title,"Solder contacts");
  assert.equal((await handleProposals(request("/api/proposals?project="+id,"PATCH",{id:proposalId,action:"approve"},other),env)).status,403);
  assert.equal((await handleProposals(request("/api/proposals?project="+id,"PATCH",{id:proposalId,action:"approve"},owner),env)).status,200);
  const after=JSON.parse(await (await env.PHOTOS.get("workspaces/"+id+"/__root__.json")).text());
- assert.equal(after.recipe[0].standard,"Use temperature specified by solder manufacturer");
- assert.equal(after.history.at(-1).recipe[0].standard,"Use 260 C");
+ assert.equal(after.recipe[0].title,"Solder contacts at the manufacturer specified temperature");
+ assert.equal(after.history.at(-1).recipe[0].title,"Solder contacts");
  assert.equal((await projectsApi({request:request("/api/projects","PATCH",{id,editMode:"locked"},owner),env})).status,200);
  assert.equal((await handleProposals(request("/api/proposals?project="+id,"POST",{
-  scope:"assembly",targetId:"__root__",stepId:"step1",field:"standard",suggestedText:"Change again"
+  scope:"assembly",targetId:"__root__",stepId:"step1",field:"title",suggestedText:"Change again"
  },other),env)).status,403);
  assert.equal((await projectsApi({request:request("/api/projects","DELETE",{id,confirmName:"incorrect"},owner),env})).status,400);
  assert.equal((await projectsApi({request:request("/api/projects","DELETE",{id,confirmName:"Private stepper design"},owner),env})).status,200);
