@@ -496,7 +496,19 @@
      if(step.detail.trim())displayed.append(el("p","recipe-reader-note",step.detail));
      const appendReadAttachment=photo=>{
       const item=el("figure","recipe-reader-photo");
-      item.append(makeAttachment(photo,step.photoNames?.[photo]||""));
+      const attachment=makeAttachment(photo,step.photoNames?.[photo]||"");
+      item.append(attachment);
+      // Expose the existing annotation editor in the normal reading view.
+      if(admin()&&isImageAttachment(photo)){
+       const editPhoto=button("✎ Edit photo",()=>window.BSPhotoMarkup.open({
+        kind:isRecipeFile(photo)?"recipe":"gallery",id:photo,
+        onSave:()=>{
+         attachment.src=(isRecipeFile(photo)?window.BSPhotoMarkup.displayUrl("recipe",photo):window.BSPhotoMarkup.displayUrl("gallery",photo))+"&v="+Date.now();
+        }
+       }),"btn recipe-reader-photo-edit");
+       editPhoto.setAttribute("aria-label","Edit annotations on "+(step.photoNames?.[photo]||"step photo"));
+       item.append(editPhoto);
+      }
       if(step.photoNames?.[photo])item.append(el("figcaption","",step.photoNames[photo]));
       displayed.append(item);
      };
