@@ -2282,6 +2282,9 @@ function setupAssemblyTrees(){
     displayGroup.append(...ordered(fields.display));
     move(sectionHeading("display","Display options"),displayGroup);
     move(...otherFields);
+    // Extra project-only fields appear only while editing a part that
+    // originated in a Workshop; never in New Part or unrelated part edits.
+    projectOnlyPanel.hidden=!(editingPart&&editingPartOriginal&&workshopLinkId(editingPartOriginal));
     move(specsHeading||sectionHeading("specifications","Specifications"),specs,projectOnlyPanel);
     let actions=review.querySelector(".component-editor-actions");
     if(!actions){
