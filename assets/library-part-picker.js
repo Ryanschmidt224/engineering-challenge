@@ -222,6 +222,15 @@ function open({onCreate,hideDefault=false}){
  numberChoice.append(autoNumberRow,manualNumberRow);
 
  const chooser=el("fieldset","library-picker-section hide");
+ const lookupMode=el("div","library-lookup-mode");
+ const lookupCaption=el("span","library-lookup-mode-caption","Find items by");
+ const nameLookup=el("label","library-lookup-mode-option");
+ const nameLookupRadio=el("input");nameLookupRadio.type="radio";nameLookupRadio.name="workshop-lookup-mode";nameLookupRadio.value="name";nameLookupRadio.checked=true;
+ nameLookup.append(nameLookupRadio,document.createTextNode("Name"));
+ const categoryLookup=el("label","library-lookup-mode-option");
+ const categoryLookupRadio=el("input");categoryLookupRadio.type="radio";categoryLookupRadio.name="workshop-lookup-mode";categoryLookupRadio.value="category";
+ categoryLookup.append(categoryLookupRadio,document.createTextNode("Category"));
+ lookupMode.append(lookupCaption,nameLookup,categoryLookup);
  const category=field("Part category","select");
  for(const [id,label] of [["tools","Tools & Equipment"],["consumables","Consumables & Supplies"],["electronics","Electronics & Components"],["hardware","Hardware & Materials"],["safety","Safety & Measurement"]])option(category.input,id,label);
  const workflow=el("div","wire-workflow-choice");
@@ -337,9 +346,8 @@ function open({onCreate,hideDefault=false}){
   if(/\b(?:sensor|switch|encoder|hall|proximity|thermistor|photodiode|ultrasonic|limit)\b/.test(words))return "sensors";
   return "other";
  };
- const commonSearch=field("Search saved parts");commonSearch.input.placeholder="Search name, manufacturer, model";
  const commonSelect=field("Select part","select");
- compSection.append(powerType.label,commonSearch.label,commonSelect.label);
+ compSection.append(powerType.label,commonSelect.label);
  const status=el("p","library-dialog-status");status.setAttribute("role","status");
  const workshopFinishNote=el("p","muted library-workshop-finish-note",
   "Add further details, notes, and changes on the part page after saving.");
@@ -352,11 +360,10 @@ function open({onCreate,hideDefault=false}){
  manualFields.append(wireType.label,gauge.label,construction.label,wireAdvanced,length.label,endA.target.label,endA.choice.label,endA.other.label,endB.target.label,endB.choice.label,endB.other.label,results);
  wireSection.append(workflow,workflowHint,manualFields,wizardFields);
  const referencePreview=el("section","library-workshop-reference-preview hide");
- referencePreview.append(el("h3","","Selected Workshop item"),
-   el("p","muted library-workshop-readonly-note","Reference details are read-only here. Add project-specific details on the Part page afterward."));
+ referencePreview.append(el("h3","","Selected Workshop item"));
  const referenceRows=el("div","library-workshop-reference-rows");referenceRows.hidden=true;
  referencePreview.append(referenceRows);
- chooser.append(el("legend","","Choose a Workshop item"),quickSearch,category.label,wireModeChoice,wireSection,compSection,referencePreview);
+ chooser.append(el("legend","","Choose a Workshop item"),lookupMode,quickSearch,category.label,wireModeChoice,wireSection,compSection,referencePreview);
  const workshopChoices=el("fieldset","library-workshop-choice-group");
  const workshopLegend=el("legend","","Part source");
  // Keep the five groups visually independent without adding duplicate titles.
@@ -397,7 +404,7 @@ function open({onCreate,hideDefault=false}){
  const showReference=()=>{
   const item=selectedReference();
   const usingWorkshop=workshopCheckbox.checked;
-  referencePreview.classList.toggle("hide",!usingWorkshop);
+  referencePreview.classList.toggle("hide",!usingWorkshop||!item);
   referenceRows.replaceChildren();
   if(usingWorkshop){
    manufacturerNumber.input.value=item?.partNumber||item?.model||"";
@@ -441,7 +448,6 @@ function open({onCreate,hideDefault=false}){
    choice.onclick=()=>{
     category.input.value=commonGroup(item);
     powerType.input.value="all";
-    commonSearch.input.value="";
     refreshCommon();
     commonSelect.input.value=item.origin+":"+item.id;
     status.textContent="Selected "+item.name+". Review the part details before saving.";
@@ -453,18 +459,17 @@ function open({onCreate,hideDefault=false}){
  };
  quickQuery.addEventListener("input",renderQuickSearch);
  const refreshCommon=()=>{
-  const q=commonSearch.input.value.toLowerCase().trim(),cat=category.input.value,subtype=powerType.input.value;
+  const cat=category.input.value,subtype=powerType.input.value;
   const saved=commons.filter(p=>commonGroup(p)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(p)===subtype));
   const recorded=purchased.filter(p=>commonGroup(p)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(p)===subtype));
   const standards=workshopStandardRows().filter(item=>item.category===cat);
   const published=publishedRows().filter(item=>commonGroup(item)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(item)===subtype));
   const personal=personalItems.filter(item=>commonGroup(item)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(item)===subtype));
-  const matches=item=>[item.name,item.manufacturer,item.partNumber,item.supplierPartNumber,item.specifications,item.detail,item.spec,item.model].filter(Boolean).join(" ").toLowerCase().includes(q);
   const filtered=[...saved.map(item=>({...item,origin:"saved"})),
    ...recorded.map(item=>({...item,origin:"purchased"})),
    ...standards.map(item=>({...item,origin:"standard"})),
    ...published.map(item=>({...item,origin:"public"})),
-   ...personal.map(item=>({...item,origin:"mine"}))].filter(matches);
+   ...personal.map(item=>({...item,origin:"mine"}))];
   const previous=commonSelect.input.value;
   commonSelect.input.replaceChildren();
   option(commonSelect.input,"",filtered.length?"Select a Workshop item":"No Workshop items match");
@@ -522,10 +527,11 @@ function open({onCreate,hideDefault=false}){
   saveScope.classList.toggle("hide",!adding);
   publicCategory.label.classList.toggle("hide",!adding||!publicRadio.checked);
   workshopAddHelp.hidden=!adding||!publicRadio.checked;
-  const wire=category.input.value==="consumables"&&wireModeCheckbox.checked;
+  const browseCategory=categoryLookupRadio.checked;
+  const wire=browseCategory&&category.input.value==="consumables"&&wireModeCheckbox.checked;
   if(lib&&!wire)refreshCommon();
-  wireModeChoice.classList.toggle("hide",!lib||category.input.value!=="consumables");
-  powerType.label.classList.toggle("hide",!lib||category.input.value!=="electronics");
+  wireModeChoice.classList.toggle("hide",!lib||!browseCategory||category.input.value!=="consumables");
+  powerType.label.classList.toggle("hide",!lib||!browseCategory||category.input.value!=="electronics");
   customName.label.classList.toggle("hide",isPart);
   genericWorkshopHelp.hidden=!adding;
 
@@ -541,10 +547,12 @@ function open({onCreate,hideDefault=false}){
   partNumberField.input.required=!workshopMode&&manualNumberCheckbox.checked;
   // Hidden numeric and project-only fields should not participate in native
   // form validation when the user is only selecting/creating a Workshop part.
-  quickSearch.classList.toggle("hide",!lib);
   chooser.classList.toggle("hide",!lib);
+  quickSearch.classList.toggle("hide",!lib||browseCategory);
+  category.label.classList.toggle("hide",!lib||!browseCategory);
   wireSection.classList.toggle("hide",!lib||!wire);
-  compSection.classList.toggle("hide",!lib||wire);
+  compSection.classList.toggle("hide",!lib||!browseCategory||wire);
+  referencePreview.classList.toggle("hide",!lib||!selectedReference());
   const crimp=wireType.input.value==="crimped";
   length.label.classList.toggle("hide",!crimp);
   for(const end of [endA,endB]){
@@ -578,7 +586,8 @@ function open({onCreate,hideDefault=false}){
  addToWorkshopCheckbox.onchange=update;
  privateRadio.onchange=update;publicRadio.onchange=update;
  itemKind.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;
- category.input.onchange=()=>{powerType.input.value="all";wireModeCheckbox.checked=false;update()};wireModeCheckbox.onchange=update;wireType.input.onchange=update;powerType.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;commonSelect.input.onchange=showReference;
+ nameLookupRadio.onchange=update;categoryLookupRadio.onchange=update;
+ category.input.onchange=()=>{powerType.input.value="all";wireModeCheckbox.checked=false;update()};wireModeCheckbox.onchange=update;wireType.input.onchange=update;powerType.input.onchange=refreshCommon;commonSelect.input.onchange=showReference;
  form.addEventListener("submit",async e=>{
   e.preventDefault();
   if(!form.reportValidity())return;
