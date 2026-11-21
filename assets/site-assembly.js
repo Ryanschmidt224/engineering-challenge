@@ -1898,12 +1898,6 @@ function setupAssemblyTrees(){
   const partDescriptionRow=document.createElement("label");partDescriptionRow.className="part-description-field";
   const partDescriptionInput=document.createElement("textarea");partDescriptionInput.className="field part-description-input";partDescriptionInput.rows=2;partDescriptionInput.maxLength=2000;partDescriptionInput.placeholder="What does this container need to accomplish?";
   partDescriptionRow.append(document.createTextNode("Purpose (optional)"),partDescriptionInput);
-  const functionalField=(label,limit,rows=2)=>{
-   const wrap=document.createElement("label");wrap.className="part-functional-edit-field";
-   const caption=document.createElement("span");caption.textContent=label;
-   const field=document.createElement("textarea");field.className="field";field.maxLength=limit;field.rows=rows;
-   wrap.append(caption,field);return {row:wrap,field};
-  };
   const partImplementationNameRow=document.createElement("label");partImplementationNameRow.className="part-functional-edit-field";
   const partImplementationNameCaption=document.createElement("span");partImplementationNameCaption.textContent="Part name";
   const partImplementationNameInput=document.createElement("input");partImplementationNameInput.className="field";partImplementationNameInput.maxLength=180;
