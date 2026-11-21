@@ -159,7 +159,11 @@
    const widthKey="bs-recipe-list-width-"+(options.project||"default");
    let savedWidth=31;try{savedWidth=Number(localStorage.getItem(widthKey))||31}catch{}
    const setWidth=value=>{
-    const safe=Math.max(16,Math.min(70,Number(value)||31));
+    // Keep enough room for the active instruction and its entry controls.
+    // Previously saved 70% splits could squeeze the right pane into overlapping UI.
+    const width=browser.getBoundingClientRect().width;
+    const maxBySpace=width>0?100*(width-320)/width:55;
+    const safe=Math.max(16,Math.min(55,maxBySpace,Number(value)||31));
     browser.style.setProperty("--recipe-nav-width",safe+"%");
     return safe;
    };
