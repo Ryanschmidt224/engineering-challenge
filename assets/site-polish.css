@@ -3747,3 +3747,31 @@
  background:var(--color-surface-muted);
  font-size:.9rem;
 }
+
+/* Archived parts: keep destructive archive actions separate from viewing. */
+.assembly-archive-row-actions{
+ display:inline-flex;
+ gap:8px;
+ align-items:center;
+ flex:0 0 auto;
+ flex-wrap:wrap;
+ justify-content:flex-end;
+}
+.assembly-archived-row .assembly-archive-delete,
+.assembly-archive-actions .assembly-archive-delete{
+ color:var(--color-danger,#a32626);
+ border-color:var(--color-danger-border,#e1b2b2);
+ background:var(--color-surface);
+}
+.assembly-archived-row .assembly-archive-delete:hover,
+.assembly-archive-actions .assembly-archive-delete:hover{
+ background:var(--color-danger-soft,#fff1f1);
+}
+.assembly-archive-delete-feedback{
+ color:var(--color-danger,#a32626);
+ font-size:.84rem;
+}
+@media(max-width:460px){
+ .assembly-archived-row{align-items:flex-start}
+ .assembly-archive-row-actions{flex-direction:column}
+}
