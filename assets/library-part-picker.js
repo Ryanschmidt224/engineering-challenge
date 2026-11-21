@@ -101,8 +101,12 @@ function open({onCreate,hideDefault=false}){
  const addToWorkshopCheckbox=el("input");addToWorkshopCheckbox.type="checkbox";
  const addText=el("span","library-workshop-choice-copy");
  addText.append(document.createTextNode("Add this part to a Workshop"));
- const addHelp=el("small","muted library-workshop-choice-description","Optional, for purchased parts only");
- addToWorkshopChoice.append(addToWorkshopCheckbox,addText,addHelp);
+ const addHelp=el("span","library-function-tip library-workshop-add-tip","ⓘ");
+ addHelp.tabIndex=0;
+ addHelp.title="Optional. Save a newly created purchased part to your private Workshop or the shared Public Workshop. Custom parts cannot be added to the Workshop.";
+ addHelp.setAttribute("role","img");addHelp.setAttribute("aria-label",addHelp.title);
+ addText.append(addHelp);
+ addToWorkshopChoice.append(addToWorkshopCheckbox,addText);
  const saveScope=el("fieldset","library-workshop-scope hide");
  saveScope.append(el("legend","","Where should it be saved?"));
  const privateScope=el("label","library-workshop-scope-option");
