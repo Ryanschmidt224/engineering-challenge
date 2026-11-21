@@ -752,7 +752,7 @@
    }
    expanded=draft.id;expandedStepBodies.add(draft.id);editSnapshots.clear();editing.clear();editing.add(draft.id);render();
    content.querySelector(".recipe-step-name")?.focus();
-  },"btn recipe-add-step");
+  },"btn recipe-add-step bs-section-add-entry");
   headingActions.append(add);
   function setLoading(value){
    loading=value;
