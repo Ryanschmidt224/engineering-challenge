@@ -88,15 +88,20 @@ function open({onCreate,hideDefault=false}){
  newPartChoice.append(newPartRadio,newText,el("small","muted library-workshop-choice-description","Make a new part for this project"));
  const quickSearch=el("div","library-workshop-quick-search hide");
  const quickSearchLabel=el("label","library-workshop-search-label");
- quickSearchLabel.append(el("span","","Search all Workshop items"));
+ const quickSearchTitle=el("span","library-workshop-search-title","Search all Workshop items");
+ const quickSearchHelp=el("span","library-function-tip library-workshop-search-tip","ⓘ");
+ quickSearchHelp.tabIndex=0;
+ quickSearchHelp.title="Search shared and personal Workshop items by name, manufacturer, or manufacturer part number (MPN). If there is no match, choose Create new part above.";
+ quickSearchHelp.setAttribute("role","img");
+ quickSearchHelp.setAttribute("aria-label",quickSearchHelp.title);
+ quickSearchTitle.append(quickSearchHelp);
+ quickSearchLabel.append(quickSearchTitle);
  const quickQuery=el("input","field");quickQuery.type="search";
  quickQuery.placeholder="Search name or MPN, e.g. 2N7000";quickQuery.autocomplete="off";
  quickQuery.setAttribute("aria-label","Search all Workshop items");
  quickSearchLabel.append(quickQuery);
  const quickResults=el("div","library-workshop-quick-results");
- const quickCreate=el("button","btn library-workshop-quick-create","Not listed? Create a purchased part");
- quickCreate.type="button";
- quickSearch.append(quickSearchLabel,quickResults,quickCreate);
+ quickSearch.append(quickSearchLabel,quickResults);
  const addToWorkshopChoice=el("label","library-workshop-first library-workshop-add");
  const addToWorkshopCheckbox=el("input");addToWorkshopCheckbox.type="checkbox";
  const addText=el("span","library-workshop-choice-copy");
@@ -424,7 +429,7 @@ function open({onCreate,hideDefault=false}){
  const renderQuickSearch=()=>{
   quickResults.replaceChildren();
   const query=quickQuery.value.trim().toLowerCase();
-  if(!query){quickResults.append(el("p","muted","Search the shared and personal Workshop before creating a new part."));return}
+  if(!query)return;
   const found=allSearchable().filter(item=>
    [item.name,item.partNumber,item.supplierPartNumber,item.model,item.manufacturer,item.spec,item.detail]
     .filter(Boolean).join(" ").toLowerCase().includes(query)).slice(0,15);
@@ -447,17 +452,6 @@ function open({onCreate,hideDefault=false}){
   if(!found.length)quickResults.append(el("p","muted","No matching Workshop items."));
  };
  quickQuery.addEventListener("input",renderQuickSearch);
- quickCreate.onclick=()=>{
-  const query=quickQuery.value.trim();
-  newPartRadio.checked=true;
-  if(query){shortTreeDescription.input.value=query.slice(0,20);manufacturerNumber.input.value=query}
-  partClassification.input.value="purchased";
-  addToWorkshopCheckbox.checked=true;
-  publicCategory.input.value="electronics";
-  update();renderVendorLinks();
-  manufacturerNumber.input.focus();
-  status.textContent="New purchased part. Confirm its manufacturer, part number and supplier, then choose a Workshop.";
- };
  const refreshCommon=()=>{
   const q=commonSearch.input.value.toLowerCase().trim(),cat=category.input.value,subtype=powerType.input.value;
   const saved=commons.filter(p=>commonGroup(p)===cat&&(cat!=="electronics"||subtype==="all"||powerGroup(p)===subtype));
