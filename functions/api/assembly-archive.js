@@ -145,7 +145,7 @@ export async function handleAssemblyArchive(request,env){
     const item=value.assets[index],copy=await bucket.get(item.archive);
     if(!copy)return json({error:"Archived attachment is missing"},404);
     const type=copy.httpMetadata?.contentType||"application/octet-stream";
-    const image=/^image\\/(?:jpeg|png|webp|gif|heic|heif)$/.test(type);
+    const image=/^image\/(?:jpeg|png|webp|gif|heic|heif)$/.test(type);
     return new Response(copy.body,{headers:{
      "content-type":image?type:"application/octet-stream",
      "content-disposition":image?"inline":"attachment; filename*=UTF-8''"+encodeURIComponent(item.original.split("/").pop()||"archive-file"),
