@@ -44,7 +44,7 @@ function referencedProjectKeys(value,project,out){
  const source=JSON.stringify(value);
  for(const match of source.matchAll(pattern))out.add(match[0].replace(/[,}\\]]+$/,""));
 }
-async function archiveAssets(bucket,project,archiveId,subtree,records,parts){
+export async function archiveAssets(bucket,project,archiveId,subtree,records,parts){
  const keys=new Set();
  const sourceIds=subtree.filter(n=>n.kind!=="part").map(n=>n.id);
  const partIds=[...new Set(subtree.filter(n=>n.kind==="part").map(n=>n.partId))];
