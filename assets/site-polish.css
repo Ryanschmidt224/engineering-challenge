@@ -2405,3 +2405,28 @@
  background:transparent!important;
  box-shadow:none!important;
 }
+
+
+/* Keep the selected step's Edit/Save action inside the same highlighted
+   navigation row. Absolute positioning avoids line wrapping caused by older
+   full-width nav-button rules while preserving a separate drag target. */
+.recipe-compact .recipe-step-nav-row{
+ position:relative;
+ display:flex!important;
+ flex-wrap:nowrap!important;
+ align-items:center;
+}
+.recipe-compact .recipe-step-nav-row.is-active > .recipe-step-nav-item{
+ box-sizing:border-box;
+ width:100%;
+ flex:1 1 100%;
+ padding-right:95px!important;
+}
+.recipe-compact .recipe-step-nav-row > .recipe-step-edit-toggle{
+ position:absolute;
+ top:50%;
+ right:10px;
+ transform:translateY(-50%);
+ margin:0!important;
+ z-index:1;
+}
