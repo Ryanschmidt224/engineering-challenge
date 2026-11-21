@@ -4264,3 +4264,45 @@
 .assembly-workspace-page .workspace-archive-history .investigation-active-content>.investigation-feedback:empty{
  display:none;
 }
+
+
+/* Every Part Details value uses the same compact label-left/value-right
+   grid, including long notes and links. No per-field disclosure chrome. */
+.bom-part-workspace .part-details-view-row.part-detail-item.part-detail-inline{
+ display:grid!important;
+ grid-template-columns:minmax(145px,205px) minmax(0,1fr);
+ align-items:start;
+ column-gap:16px;
+ row-gap:3px;
+ padding:9px 4px;
+ margin:0;
+ border-bottom:1px solid var(--color-border);
+ background:transparent;
+}
+.bom-part-workspace .part-details-view-row.part-detail-item.part-detail-inline>strong{
+ display:block;
+ min-width:0;
+ font-size:.84rem;
+ font-weight:600;
+ line-height:1.4;
+}
+.bom-part-workspace .part-details-view-row.part-detail-item.part-detail-inline>.part-detail-item-content{
+ display:block;
+ min-width:0;
+ margin:0;
+ padding:0!important;
+ font-size:.85rem;
+ line-height:1.5;
+ overflow-wrap:anywhere;
+ white-space:pre-wrap;
+}
+.bom-part-workspace .part-details-view-row.part-detail-item.part-detail-inline>.part-detail-item-content a{
+ white-space:normal;
+ overflow-wrap:anywhere;
+}
+@media(max-width:620px){
+ .bom-part-workspace .part-details-view-row.part-detail-item.part-detail-inline{
+  grid-template-columns:minmax(0,1fr);
+  gap:3px;
+ }
+}
