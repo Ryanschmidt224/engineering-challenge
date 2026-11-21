@@ -886,6 +886,8 @@ test("New Part ends Workshop edits after identity and confirms public/private sa
  const add=modal.locator(".library-workshop-add input");
  await expect(create).toBeChecked();
  await expect(modal.locator(".library-workshop-choice-copy strong")).toContainText(["Use from","Create new"]);
+ await expect(modal.locator(".library-workshop-add .library-workshop-add-tip")).toHaveAttribute("title", /Optional.*purchased part/);
+ await expect(modal.locator(".library-workshop-add .library-workshop-choice-description")).toHaveCount(0);
  await from.check();
  await expect(modal.locator(".library-workshop-add")).toBeHidden();
  await create.check();
