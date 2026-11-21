@@ -441,7 +441,7 @@
      paste.addEventListener("dragleave",()=>paste.classList.remove("is-dragover"));
      paste.addEventListener("drop",event=>{
       if(!event.dataTransfer?.files?.length)return;
-      event.preventDefault();event.stopPropagation();paste.classList.remove("is-dragover");
+      event.preventDefault();event.stopImmediatePropagation();paste.classList.remove("is-dragover");
       const target=uploadTargetNote;
       void (async()=>{for(const file of [...event.dataTransfer.files])await upload(file,target)})();
      },true);
