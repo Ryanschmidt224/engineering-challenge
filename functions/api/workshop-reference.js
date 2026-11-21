@@ -91,8 +91,8 @@ export async function onRequest({request,env}){
    return json({error:"Invalid Workshop category"},400);
   if(patch.familyId&&!/^[a-z0-9-]{2,100}$/.test(patch.familyId))
    return json({error:"Invalid product family"},400);
-  if(creating&&(!patch.name||!patch.familyId||!patch.category))
-   return json({error:"Item name, category and product family are required"},400);
+  if(creating&&(!patch.name||!patch.category))
+   return json({error:"Item name and category are required"},400);
   if(!validUrl(patch.supplierUrl)||!validUrl(patch.documentationUrl))return json({error:"Use HTTPS URLs for supplier and documentation links"},400);
   if(patch.asin&&!/^[A-Za-z0-9]{10}$/.test(patch.asin))return json({error:"Amazon ASIN must contain 10 letters or numbers"},400);
   const rawPhotos=body?.details?.photos||[];
