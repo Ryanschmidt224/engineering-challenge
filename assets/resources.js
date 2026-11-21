@@ -127,14 +127,18 @@
   if(/\b(mosfet|transistor)\b/.test(name))return [["Type",""],["Voltage rating","V"],["Current rating","A"],["Package",""]];
   return [];
  };
+ // Workshop items provide a *suggestion* for a project container, never
+ // the project's permanent name. Respect user-authored defaults first.
  const genericContainerName=item=>{
-  const name=String(item?.name||item?.featureTreeDescription||"Component").trim();
+  const explicit=String(item?.featureTreeDescription||"").trim();
+  if(explicit)return explicit;
+  const name=String(item?.name||"Component").trim();
   if(/\b(resistor)\b/i.test(name))return "Resistor";
   if(/\b(led|light.emitting.diode)\b/i.test(name))return "LED";
   if(/\b(capacitor)\b/i.test(name))return "Capacitor";
   if(/\b(diode)\b/i.test(name))return "Diode";
   if(/\b(mosfet)\b/i.test(name))return "MOSFET";
-  return String(item?.featureTreeDescription||name).trim();
+  return name.slice(0,20);
  };
  const workshopIdentityKind=item=>item?.productIdentity==="generic"||item?.productIdentity==="specific"
   ?item.productIdentity:(item?.partNumber||item?.model?"specific":"generic");
