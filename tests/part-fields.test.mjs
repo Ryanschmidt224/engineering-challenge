@@ -204,3 +204,21 @@ test("documentation combines Workshop and saved references with safe distinct li
  assert.deepEqual(Array.from(links,link=>link.url),["https://example.test/data.pdf","https://example.test/manual.pdf"]);
  assert.equal(fields.documentationLinks({}).length,0);
 });
+
+test("functional part number is stable and displayed once, separate from the manufacturer model",()=>{
+ const part={partNumber:"104",name:"LED Switching Transistor",model:"2N7000",projectDetails:{}};
+ assert.equal(fields.numberedName(part),"104 · LED Switching Transistor");
+ assert.equal(fields.numberedName({...part,name:"104 — LED Switching Transistor"}),"104 — LED Switching Transistor");
+ assert.equal(fields.numberedName({...part,name:"104 - LED Switching Transistor"}),"104 - LED Switching Transistor");
+ assert.equal(fields.numberedName({...part,name:"104 · LED Switching Transistor"}),"104 · LED Switching Transistor");
+ assert.equal(fields.numberedName({...part,name:"1040 Switching Transistor"}),"104 · 1040 Switching Transistor");
+ assert.equal(fields.numberedName({...part,partNumber:""}),"LED Switching Transistor");
+ assert.equal(fields.numberedName({...part,projectDetails:{value:"5 V GPIO"}}),"104 · LED Switching Transistor - 5 V GPIO");
+});
+test("UI keeps functional number in the feature tree and BOM independent of MPN",()=>{
+ const source=readFileSync(new URL("../assets/site-assembly.js",import.meta.url),"utf8");
+ assert.match(source,/const firstLine=isPartNode\(node\)\?window\.BSPartFields\.numberedName/);
+ assert.match(source,/name\.textContent=window\.BSPartFields\.numberedName\(part\)/);
+ assert.match(source,/heading\.textContent=window\.BSPartFields\.numberedName\(part\)/);
+ assert.match(source,/Functional part number/);
+});
