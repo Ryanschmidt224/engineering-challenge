@@ -20,6 +20,8 @@ const resolutionChoices=new Set(["yes","no","maybe"]);
 const safeEntry=(entry,project)=>entry&&entryTypes.has(entry.type)&&(entry.type!=="resolution"||resolutionChoices.has(entry.resolution))&&validText(entry.text,5000)&&(entry.text.trim()||(Array.isArray(entry.files)&&entry.files.length>0)||entry.type==="resolution")&&
  validDate(entry.date)&&Array.isArray(entry.files||[])&&(entry.files||[]).length<=12&&
  (entry.files||[]).every(file=>isProjectRecipeFile(file,project))&&validText(entry.fileName||"",120);
+const validNotePhotos=(photos,project)=>Array.isArray(photos)&&photos.length<=12&&
+ photos.every(id=>isProjectRecipeFile(id,project)&&/\\.(jpe?g|png|webp|gif|heic|heif)$/i.test(id));
 const normalizedEntry=(entry)=>({id:crypto.randomUUID(),type:entry.type,text:entry.text.trim(),date:entry.date,
  files:[...new Set(entry.files||[])],fileName:trim(entry.fileName,120),...(entry.type==="resolution"?{resolution:entry.resolution}:{}),createdAt:new Date().toISOString()});
 const validEntries=(entries,fields,project)=>Array.isArray(entries)&&entries.length<=fields.length&&
@@ -68,7 +70,9 @@ export async function handleInvestigations(request,env){
     (scope==="step"?!idPattern.test(stepId):!!stepId)||
     (scope==="part"&&ownerType!=="part")||(scope==="assembly"&&ownerType!=="assembly"))
     return json({error:"Invalid investigation details"},400);
-  if(!validNotes(data.notes,project)||!validText(data.description??"",5000))return json({error:"Invalid notes or description"},400);
+  if(!validNotes(data.notes,project)||!validText(data.description??"",5000)||
+   (data.photos!==undefined&&!validNotePhotos(data.photos,project)))
+   return json({error:"Invalid notes, description, or photos"},400);
   if(data.category!==undefined&&(typeof data.category!=="string"||data.category==="practice"||!Object.hasOwn(categoryFields,data.category)||!validDate(data.date)||!validEntries(data.entries,categoryFields[data.category],project)))
    return json({error:"Invalid record category or fields"},400);
   if(records.length>=300)return json({error:"Project investigation limit reached"},413);
@@ -83,7 +87,7 @@ export async function handleInvestigations(request,env){
    if(!Array.isArray(tree)||!tree.some(node=>node.id===ownerId))return json({error:"Assembly no longer exists"},404);
   }
   record={id:crypto.randomUUID(),scope,ownerType,ownerId,stepId,title:data.title.trim(),
-   status:"investigating",lifecycle:"active",entries:[],description:data.category==="note"?(data.description||"").trim():"",createdAt:new Date().toISOString()};
+   status:"investigating",lifecycle:"active",entries:[],description:data.category==="note"?(data.description||"").trim():"",photos:data.category==="note"?(data.photos||[]):[],createdAt:new Date().toISOString()};
   if(data.category!==undefined)Object.assign(record,{category:data.category,date:data.date,
    entries:data.entries.map(normalizedEntry),status:entryStatus(data.entries),...normalizeNotes(data.notes)});
   createdId=record.id;
@@ -143,7 +147,9 @@ export async function handleInvestigations(request,env){
  }else if(data.action==="editRecord"){
   record=records.find(item=>item.id===data.id);
   if(!record)return json({error:"Investigation not found"},404);
-  if(!validNotes(data.notes,project)||!validText(data.description??"",5000))return json({error:"Invalid notes or description"},400);
+  if(!validNotes(data.notes,project)||!validText(data.description??"",5000)||
+   (data.photos!==undefined&&!validNotePhotos(data.photos,project)))
+   return json({error:"Invalid notes, description, or photos"},400);
   const allFields=categoryFields[record.category]||legacyFields;
   const fields=data.notes===undefined?allFields:allFields.filter(type=>type!==retiredField[record.category||"failure"]);
   if(!validText(data.title,180)||!data.title.trim()||!validDate(data.date)||!validEntries(data.entries,fields,project))return json({error:"Invalid record details"},400);
@@ -155,7 +161,7 @@ export async function handleInvestigations(request,env){
   const retained=previous.filter((entry,index)=>latest.get(entry.type)!==index);
   const entries=[...retained,...data.entries.map(normalizedEntry)];
   if(entries.length>100)return json({error:"Too many entries in investigation"},413);
-  changed=records.map(item=>item.id===record.id?{...item,title:data.title.trim(),date:data.date,status,entries,...normalizeNotes(data.notes),...(record.category==="note"?{description:(data.description??record.description??"").trim()}:{})}:item);
+  changed=records.map(item=>item.id===record.id?{...item,title:data.title.trim(),date:data.date,status,entries,...normalizeNotes(data.notes),...(record.category==="note"?{description:(data.description??record.description??"").trim(),photos:data.photos??record.photos??[]}:{})}:item);
  }else if(data.action==="appendBatch"){
   record=records.find(item=>item.id===data.id);
   if(!record)return json({error:"Investigation not found"},404);
