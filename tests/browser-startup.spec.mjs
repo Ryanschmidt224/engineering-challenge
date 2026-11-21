@@ -983,7 +983,7 @@ test("Failed Workshop publication remains in New Part dialog and does not create
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Cancel"}).click();
 });
 
-test("Searching Workshop for missing 2N7000 opens a purchased part with separate manufacturer number",async({page})=>{
+test("Missing Workshop search offers Create new part radio and preserved manufacturer number",async({page})=>{
  await page.route("**/api/**",async route=>{
   const url=new URL(route.request().url());let data={};
   if(["/api/commonparts","/api/purchased-parts"].includes(url.pathname))data={parts:[]};
@@ -1007,7 +1007,13 @@ test("Searching Workshop for missing 2N7000 opens a purchased part with separate
  await dialog.locator('input[name="new-part-source"][value="from"]').check();
  await dialog.getByLabel("Search all Workshop items").fill("2N7000");
  await expect(dialog.locator(".library-workshop-quick-results")).toContainText("No matching Workshop items");
- await dialog.getByRole("button",{name:"Not listed? Create a purchased part"}).click();
+ await expect(dialog.locator(".library-workshop-quick-results")).toContainText("No matching Workshop items");
+ await expect(dialog.locator(".library-workshop-search-tip")).toHaveAttribute("title", /choose Create new part above/);
+ await expect(dialog.locator(".library-workshop-quick-create")).toHaveCount(0);
+ await dialog.locator('input[name="new-part-source"][value="new"]').check();
+ await dialog.locator(".library-field",{hasText:"Function"}).locator("input").fill("2N7000");
+ await dialog.locator(".library-field",{hasText:"Mfg part # (MPN)"}).locator("input").fill("2N7000");
+ await dialog.locator(".library-workshop-add input").check();
  await expect(dialog.locator('input[name="new-part-source"][value="new"]')).toBeChecked();
  await expect(dialog.locator(".library-field",{hasText:"Function"}).locator("input")).toHaveValue("2N7000");
  await expect(dialog.locator(".library-field",{hasText:"Mfg part # (MPN)"}).locator("input")).toHaveValue("2N7000");
