@@ -285,6 +285,12 @@ function setupAssemblyTrees(){
    <div class="project-tags project-summary-tags"></div>
   </section>
   <section class="project-overview-card project-cost-card"><div class="project-cost-heading"><h2>Estimated project cost</h2><p class="project-summary-cost-missing muted"></p></div><p class="project-summary-cost" aria-live="polite">Loading estimate…</p><p class="project-summary-package-cost" aria-live="polite"></p></section>`;
+  const projectSummaryHeading=overview.querySelector(".project-overview-card h2");
+  const projectSummaryHelp=window.BSDialogs?.helpButton(
+   "Project summary",
+   "Use this field to summarize the completed project: what you built, the results, and what you learned. Project Intent & Milestones is for documenting your original goals and significant progress."
+  );
+  if(projectSummaryHelp)projectSummaryHeading.after(projectSummaryHelp);
   summary.querySelector(".project-summary-gallery").after(overview);
   const projectMilestones=window.BSProjectMilestones?.mount({project,summary,canEdit});
   const summaryInput=overview.querySelector("textarea");
