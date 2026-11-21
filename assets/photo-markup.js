@@ -26,7 +26,7 @@
   footer.append(undo,redo,reset,save);
   frame.append(canvas);dialog.append(header,toolbar,frame,status,footer);document.body.append(dialog);dialog.showModal();
   dialog.addEventListener("close",()=>{finishText(false);dialog.remove()});
-  let image=null,state={crop:null,marks:[]},history=[],future=[],tool="pen",drag=null,strokeColor="#e63838",textEditor=null;
+  let image=null,state={crop:null,marks:[]},history=[],future=[],tool="pen",drag=null,strokeColor="#e63838",fontSize=18,arrowSize=4,textEditor=null;
   let generation=0,savedGeneration=0,saveTimer=null,saveInFlight=null;
   const scheduleSave=()=>{generation++;clearTimeout(saveTimer);saveTimer=setTimeout(()=>void persist(false),950);status.textContent="Unsaved changes…"};
   dialog.addEventListener("cancel",e=>{if(textEditor)finishText();if(generation!==savedGeneration){e.preventDefault();void persist(true)}});
@@ -35,7 +35,21 @@
   for(const [key,label] of [["pen","Pen"],["highlight","Highlight"],["arrow","Arrow"],["circle","Circle"],["text","Text"],["move","Move text"],["crop","Crop"]]){
    const choice=button(label,()=>{finishText();tool=key;activate()});choice.dataset.tool=key;toolbar.append(choice);
   }
-  toolbar.append(color);activate();
+  const sizeControl=(label,min,max,value,onChange)=>{
+   const wrap=el("label","bs-markup-size-control");
+   const caption=el("span","",label);
+   const input=el("input");input.type="number";input.min=String(min);input.max=String(max);input.step="1";input.value=String(value);input.setAttribute("aria-label",label);
+   input.onchange=()=>{
+    const next=Math.round(Number(input.value));
+    const safe=Number.isFinite(next)?Math.max(min,Math.min(max,next)):value;
+    input.value=String(safe);onChange(safe);
+   };
+   wrap.append(caption,input);return wrap;
+  };
+  toolbar.append(color,
+   sizeControl("Font size (px)",8,72,fontSize,value=>fontSize=value),
+   sizeControl("Arrow size",1,12,arrowSize,value=>arrowSize=value));
+  activate();
   function activate(){for(const b of toolbar.querySelectorAll("[data-tool]"))b.setAttribute("aria-pressed",String(b.dataset.tool===tool));canvas.style.cursor=tool==="move"?"grab":"crosshair"}
   function commit(next){history.push(snapshot(state));future=[];state=snapshot(next);draw();sync();scheduleSave()}
   function stepBack(){if(!history.length)return;future.push(snapshot(state));state=history.pop();draw();sync();scheduleSave()}
@@ -65,13 +79,14 @@
    const input=el("textarea","bs-markup-inline-text");
    input.rows=1;input.maxLength=120;input.spellcheck=false;
    input.placeholder="Type here…";input.setAttribute("aria-label","Text on photo");input.title="Enter to place · Shift+Enter for new line · Esc to cancel";
-   const fontPixels=18;
+   const fontPixels=fontSize;
    const scale=imageRect.width/canvas.width;
    const size=Math.min(1,(fontPixels/scale)/(Math.min(canvas.width,canvas.height)*6));
    input.style.left=(imageRect.left-frameRect.left+frame.scrollLeft+left)+"px";
    input.style.top=(imageRect.top-frameRect.top+frame.scrollTop+top)+"px";
    input.style.width=width+"px";
    input.style.color=strokeColor;
+   input.style.fontSize=fontPixels+"px";
    const anchor=[(left+6)/imageRect.width,(top+4)/imageRect.height];
    textEditor={input,anchor,color:strokeColor,size,wrapW:(width-12)/imageRect.width};
    input.addEventListener("input",()=>{
@@ -221,7 +236,7 @@
    }else if(drag.mark){
     if(drag.mark.points.length<1200)drag.mark.points.push(b);
     next.marks.push(snapshot(drag.mark));
-   }else next.marks.push({tool,a:drag.a,b,color:strokeColor,size:.004});
+   }else next.marks.push({tool,a:drag.a,b,color:strokeColor,size:tool==="arrow"?.0015+arrowSize*.001: .004});
    state=next;draw();
   });
   canvas.addEventListener("pointerup",e=>{
