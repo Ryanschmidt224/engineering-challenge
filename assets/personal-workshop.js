@@ -584,10 +584,29 @@
     identityRadios[value]=radio;
     label.append(radio,document.createTextNode(title));identityKind.append(label);
    }
+   const parentLabel=el("label",undefined,"workshop-generic-parent-field");
+   parentLabel.append(el("span","Generic component (optional)"));
+   const parentSelect=el("select",undefined,"field");
+   const populateParents=()=>{
+    const current=parentSelect.value||item.genericParentId||"";
+    parentSelect.replaceChildren();
+    const empty=el("option","No linked generic component");empty.value="";parentSelect.append(empty);
+    const candidates=standards().filter(candidate=>candidate.id!==item.id&&window.BSResources.workshopIdentityKind(candidate)==="generic")
+     .sort((a,b)=>a.name.localeCompare(b.name));
+    for(const candidate of candidates){
+     const opt=el("option",candidate.name);opt.value=candidate.id;parentSelect.append(opt);
+    }
+    parentSelect.value=[...parentSelect.options].some(option=>option.value===current)?current:"";
+   };
+   populateParents();
+   parentLabel.append(parentSelect);
+   const parentNote=el("p","Links this product to its generic component for browsing and selection. It does not copy, inherit, or synchronize specifications.","muted");
+   parentLabel.append(parentNote);
    const identityHelp=el("p","Generic components are configured for each project; specific products may have a manufacturer part number.","muted");
    identityKind.append(identityHelp);
    grid.querySelector('[data-part-editor-section="identity"]')
     .querySelector(".part-editor-section-heading").after(identityKind);
+   identityKind.after(parentLabel);
    // The left Workshop category tree is the only classification hierarchy.
    // Preserve historical family metadata silently for existing records.
    const family={value:item.familyId||""};
@@ -732,6 +751,7 @@
    const updateIdentityPanels=()=>{
     const generic=identityRadios.generic.checked;
     genericTemplateSection.hidden=!generic;
+    parentLabel.hidden=generic;
     // Generic items can retain fixed Workshop specifications (e.g. ¼ W);
     // only the configurable fields are left blank for project use.
     structuredSection.querySelector("h3").textContent=generic?"Data retained in Workshop":"Specifications for this product";
@@ -796,6 +816,7 @@
      specRows.replaceChildren();
     }
     approvedIdentity="generic";
+    parentSelect.value="";
     // Clear suggested-but-empty manufacturer specification rows too.
     specRows.replaceChildren();
     suggestGenericFields();
@@ -1031,6 +1052,7 @@
     for(const field of saveableFields)if(controls[field])details[field]=controls[field].value;
     details.kind=kind.value;details.category=category.value;
     details.productIdentity=identityRadios.generic.checked?"generic":"specific";
+    details.genericParentId=identityRadios.specific.checked?parentSelect.value:"";
     // Legacy family metadata is retained for existing items, not edited or
     // required for new items. The category tree owns classification.
     details.familyId=item.familyId||"";
