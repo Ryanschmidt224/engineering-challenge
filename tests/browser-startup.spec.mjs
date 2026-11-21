@@ -160,6 +160,16 @@ test("new custom part retains explicit project numbering without confusing it wi
  await expect(sharedTip).toContainText("part settings page");
  await page.locator(".library-part-dialog .library-function-tip").first().hover();
  await expect(sharedTip).toContainText("project hierarchy");
+ // Double-click the information button for a full set of Container examples.
+ await page.locator(".library-part-dialog .library-function-tip").first().dblclick();
+ const guide=page.locator(".bs-help-container-guide");
+ await expect(guide).toBeVisible();
+ await expect(guide).toContainText("Custom part — made in-house");
+ await expect(guide).toContainText("Purchased part");
+ await expect(guide).toContainText("Part from Workshop");
+ await expect(guide).toContainText("No implementation selected yet");
+ await guide.getByRole("button",{name:"Close examples"}).click();
+ await expect(guide).toHaveCount(0);
  await expect(page.locator(".library-part-dialog .library-field",{hasText:"Container"}).locator("input")).toHaveAttribute("maxlength","20");
  await expect(page.locator(".library-part-dialog .library-container-name-hint")).toHaveText("(name)");
  await expect(page.locator(".library-part-dialog .library-project-only")).toBeHidden();
