@@ -6,7 +6,7 @@ import {normalizeSpecifications} from "./workshop-specifications.js";
 const indexKey="workshop-reference-overrides/v1.json";
 const photoKey=id=>"workshop-reference-photos/"+id;
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json","cache-control":"no-store","x-content-type-options":"nosniff"}});
-const fields={productIdentity:12,name:180,subtitle:240,featureTreeDescription:20,spec:5000,use:3000,caution:3000,manufacturer:160,model:160,partNumber:160,supplier:160,supplierPartNumber:160,supplierUrl:1200,asin:20,price:80,packageQuantity:80,orderNotes:2000,documentationUrl:1200,notes:5000,category:40,kind:20,familyId:100,familyName:120,typeName:120};
+const fields={genericParentId:110,productIdentity:12,name:180,subtitle:240,featureTreeDescription:20,spec:5000,use:3000,caution:3000,manufacturer:160,model:160,partNumber:160,supplier:160,supplierPartNumber:160,supplierUrl:1200,asin:20,price:80,packageQuantity:80,orderNotes:2000,documentationUrl:1200,notes:5000,category:40,kind:20,familyId:100,familyName:120,typeName:120};
 const validId=id=>/^workshop:[a-z0-9-]{2,100}$/.test(String(id||""));
 const validUrl=url=>!url||/^https:\/\//i.test(url);
 async function read(env){
@@ -90,6 +90,10 @@ export async function onRequest({request,env}){
   if(patch.category&&!["tools","consumables","electronics","hardware","safety","electrical-power","electrical-controllers","electrical-sensors","electrical-switching","electrical-basic","electrical-wiring","electrical-motors","electrical-displays","tools-measurement","tools-making","consumables-assembly","consumables-general","hardware-fasteners","hardware-materials"].includes(patch.category))
    return json({error:"Invalid Workshop category"},400);
   if(patch.productIdentity&&!["generic","specific"].includes(patch.productIdentity))return json({error:"Invalid product identity"},400);
+  if(patch.genericParentId&&(!validId(patch.genericParentId)||patch.genericParentId===body.id))
+   return json({error:"Invalid generic parent link"},400);
+  if(patch.genericParentId&&patch.productIdentity!=="specific")
+   return json({error:"Only specific products can link to a generic component"},400);
   if(patch.familyId&&!/^[a-z0-9-]{2,100}$/.test(patch.familyId))
    return json({error:"Invalid product family"},400);
   if(creating&&(!patch.name||!patch.category))
