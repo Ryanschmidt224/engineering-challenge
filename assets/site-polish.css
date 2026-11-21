@@ -4415,3 +4415,10 @@
 .project-summary-page>.project-summary-overview>.project-overview-card{
  margin:0;
 }
+
+/* Original intent: concise spelling reminder before the irreversible save. */
+.project-milestone-spelling-hint{
+ margin:0;
+ font-size:.8rem;
+ line-height:1.45;
+}
