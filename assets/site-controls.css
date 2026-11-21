@@ -3243,3 +3243,59 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
   margin-left:12px;
  }
 }
+
+
+/* Workshop lookup: label and search input share one aligned row.
+   Search results are the only content shown beneath the input. */
+.library-part-dialog .library-workshop-quick-search{
+ display:grid;
+ grid-template-columns:minmax(0,1fr);
+ gap:6px;
+ padding:9px 12px;
+ min-width:0;
+}
+.library-part-dialog .library-workshop-quick-search .library-workshop-search-label{
+ display:grid;
+ grid-template-columns:var(--new-part-label-width,150px) minmax(0,1fr);
+ gap:10px;
+ align-items:center;
+ min-width:0;
+ font-size:.86rem;
+ font-weight:500;
+ line-height:1.3;
+}
+.library-part-dialog .library-workshop-search-title{
+ display:inline-flex;
+ align-items:center;
+ gap:6px;
+ min-width:0;
+ font-weight:500;
+}
+.library-part-dialog .library-workshop-search-tip{
+ font-size:.83rem;
+ font-weight:400;
+ flex:none;
+}
+.library-part-dialog .library-workshop-search-label > input.field{
+ grid-column:2;
+ width:100%;
+ min-width:0;
+ min-height:36px;
+ padding:7px 11px;
+ font-size:.86rem;
+ font-weight:400;
+ border-radius:8px;
+}
+.library-part-dialog .library-workshop-quick-results:empty{display:none}
+.library-part-dialog .library-workshop-quick-results{
+ margin-top:3px;
+}
+@media(max-width:620px){
+ .library-part-dialog .library-workshop-quick-search .library-workshop-search-label{
+  grid-template-columns:minmax(0,1fr);
+  gap:4px;
+ }
+ .library-part-dialog .library-workshop-search-label > input.field{
+  grid-column:1;
+ }
+}
