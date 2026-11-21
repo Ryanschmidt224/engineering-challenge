@@ -1038,3 +1038,58 @@
   grid-column:1/-1;
  }
 }
+
+/* Strict Workshop detail form layout. A single outer column and a single
+   label/value row per field, regardless of screen width or earlier auto-fit
+   rules. This applies equally to View and Edit. */
+#commonparts .workshop-item-edit-form .workshop-item-edit-grid:has(>.workshop-part-editor-section),
+#commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid,
+#commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-classification{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr)!important;
+ grid-auto-flow:row!important;
+ gap:8px!important;
+ width:100%;
+ min-width:0;
+}
+#commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label:not(.hide),
+#commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-classification>label:not(.hide){
+ display:grid!important;
+ grid-column:1/-1!important;
+ grid-template-columns:205px minmax(0,1fr)!important;
+ align-items:center;
+ width:100%!important;
+ max-width:none!important;
+ gap:12px!important;
+ box-sizing:border-box;
+}
+#commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label>.field,
+#commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-classification>label>.field{
+ grid-column:2!important;
+ width:100%!important;
+ max-width:none!important;
+ min-width:0;
+}
+#commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>.workshop-identity-priority-field:not(label){
+ grid-column:1/-1!important;
+ width:100%;
+ max-width:none;
+}
+/* Treat templates as a list, not as cards tiled across the editor. */
+#commonparts .workshop-item-edit-form .workshop-generic-template-rows,
+#commonparts .workshop-item-edit-form .workshop-structured-spec-rows{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr)!important;
+ grid-auto-flow:row!important;
+ width:100%;
+}
+@media(max-width:720px){
+ #commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label:not(.hide),
+ #commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-classification>label:not(.hide){
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+ #commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label>.field,
+ #commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-classification>label>.field{
+  grid-column:1!important;
+ }
+}
