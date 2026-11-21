@@ -21,7 +21,7 @@ const safeEntry=(entry,project)=>entry&&entryTypes.has(entry.type)&&(entry.type!
  validDate(entry.date)&&Array.isArray(entry.files||[])&&(entry.files||[]).length<=12&&
  (entry.files||[]).every(file=>isProjectRecipeFile(file,project))&&validText(entry.fileName||"",120);
 const validNotePhotos=(photos,project)=>Array.isArray(photos)&&photos.length<=12&&
- photos.every(id=>isProjectRecipeFile(id,project)&&/\.(jpe?g|png|webp|gif|heic|heif)$/i.test(id));
+ photos.every(id=>isProjectRecipeFile(id,project));
 const normalizedEntry=(entry)=>({id:crypto.randomUUID(),type:entry.type,text:entry.text.trim(),date:entry.date,
  files:[...new Set(entry.files||[])],fileName:trim(entry.fileName,120),...(entry.type==="resolution"?{resolution:entry.resolution}:{}),createdAt:new Date().toISOString()});
 const validEntries=(entries,fields,project)=>Array.isArray(entries)&&entries.length<=fields.length&&
