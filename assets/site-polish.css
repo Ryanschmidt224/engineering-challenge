@@ -2831,3 +2831,26 @@
  font-weight:650!important;
  white-space:normal;
 }
+
+
+/* The left column selects a step. Once editing begins, all Save / Cancel /
+   Archive / Delete actions live together on the step itself, just like
+   nested Notes/Tests/Revisions/Failures. */
+.recipe-compact .recipe-step-nav-row .recipe-step-nav-actions[hidden],
+.recipe-compact .recipe-step-nav-row .recipe-step-edit-toggle[hidden]{
+ display:none!important;
+}
+.recipe-compact .recipe-step-nav-row.is-editing > .recipe-step-nav-item{
+ padding-right:12px!important;
+}
+.recipe-compact .recipe-step-detail > .recipe-one-step .recipe-edit-controls > .recipe-delete-entry{
+ color:var(--color-danger-action, #a3222c)!important;
+ border-color:color-mix(in srgb,var(--color-danger-action, #a3222c) 28%,var(--color-border))!important;
+ background:var(--color-surface)!important;
+}
+.recipe-compact .recipe-step-detail > .recipe-one-step .recipe-edit-controls > .recipe-delete-entry:hover{
+ background:color-mix(in srgb,var(--color-danger-action, #a3222c) 7%,var(--color-surface))!important;
+}
+.recipe-compact .recipe-step-note:first-child textarea{
+ min-height:90px;
+}
