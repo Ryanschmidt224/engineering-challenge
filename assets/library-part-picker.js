@@ -488,25 +488,14 @@ function open({onCreate,hideDefault=false}){
    genericReferenceKey=key;genericProjectInputs.replaceChildren();
    if(generic){
     const sourceSpecs=Array.isArray(item.specifications)?item.specifications:[];
-    const defaults=new Map(sourceSpecs.map(spec=>[String(spec.name||spec.label||"").trim().toLowerCase(),spec]));
+    const fixedLabels=new Set(sourceSpecs.filter(spec=>String(spec.value||"").trim()).map(spec=>String(spec.name||spec.label||"").trim().toLowerCase()));
     const suggested=window.BSResources.genericSpecificationTemplate(item);
-    const names=new Set();
     for(const [label,unit] of suggested){
-     names.add(label.toLowerCase());
-     const existing=defaults.get(label.toLowerCase());
+     if(fixedLabels.has(label.toLowerCase()))continue;
      const row=field(label+(unit?" ("+unit+")":""));
      row.input.dataset.specName=label;
      row.input.dataset.specUnit=unit;
-     row.input.value=String(existing?.value||"");
-     if(label==="Power rating"&&!row.input.value&&/\b(?:1\/4|¼)\s*(?:w|watt)\b/i.test(item.name||""))row.input.value="0.25";
      genericProjectInputs.append(row.label);
-    }
-    for(const spec of sourceSpecs){
-     const label=String(spec.name||spec.label||"").trim();
-     if(!label||names.has(label.toLowerCase())||!spec.value)continue;
-     const row=field(label+(spec.unit?" ("+spec.unit+")":""));
-     row.input.dataset.specName=label;row.input.dataset.specUnit=spec.unit||"";
-     row.input.value=spec.value;genericProjectInputs.append(row.label);
     }
     if(!genericProjectInputs.children.length){
      genericProjectInputs.append(el("p","No standard fields for this component yet. Edit its specifications on the project part page.","muted"));
@@ -516,6 +505,9 @@ function open({onCreate,hideDefault=false}){
   referenceRows.hidden=false;
   for(const [label,value] of [
    ["Product type",generic?"Generic component":"Specific product"],
+   ...((generic&&Array.isArray(item.specifications))?item.specifications
+    .filter(spec=>spec.value&&String(spec.name||spec.label||"").trim())
+    .map(spec=>[String(spec.name||spec.label)+" (Workshop)",String(spec.value)+(spec.unit?" "+spec.unit:"")]):[]),
    ["Manufacturer part number",generic?"":item.partNumber||item.model||""],
    ["Manufacturer",item.manufacturer||""],
    ["Description",item.subtitle||item.description||item.detail||item.name],
