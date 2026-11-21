@@ -935,17 +935,18 @@
     form.classList.toggle("is-editing",editing);
     for(const control of form.querySelectorAll("input,textarea,select")){
      if(control.matches('input[type="hidden"]'))continue;
-     control.disabled=!editing;
+     if(control.matches("select"))control.disabled=!editing;
+     else control.readOnly=!editing;
     }
     for(const control of form.querySelectorAll("button"))control.disabled=!editing;
     actions.hidden=!editing;
     uploadRow.hidden=!editing;
-    uploader.panel.hidden=!editing;
+    if(!editing)uploader.panel.hidden=true;
     uploadPreviews.hidden=!editing;
     uploadStatus.hidden=!editing;
     specActions.hidden=!editing;
     lookupActions.hidden=!editing;
-    viewSuggested.hidden=!editing;
+    if(!editing)viewSuggested.hidden=true;
     for(const btn of gallery.querySelectorAll("button"))btn.hidden=!editing;
     if(!editing)reviewPanel.hidden=true;
     if(editing&&viewOnly){
