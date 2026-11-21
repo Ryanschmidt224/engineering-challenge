@@ -1672,3 +1672,52 @@
  #home .compact-project-directory .project-directory-search .field{min-width:0}
  #home .compact-project-directory .project-filter-menu>.bs-project-tag-filter{width:min(300px,calc(100vw - 55px))}
 }
+
+
+/* Keep the Work Instructions step's Edit/Save button alongside its title. */
+.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-summary{
+ justify-content:flex-start;
+ gap:10px;
+}
+.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-summary .recipe-step-edit-toggle{
+ margin-left:0!important;
+ margin-right:0;
+ flex:0 0 auto;
+}
+
+/* Each populated Part Details field has its own closed-by-default chevron. */
+.bom-part-workspace .part-details-view-row.part-detail-item{
+ display:block;
+ padding:0;
+ border-bottom:1px solid color-mix(in srgb,var(--color-accent) 27%,transparent);
+}
+.bom-part-workspace .part-detail-item-toggle{
+ display:flex;
+ align-items:center;
+ gap:10px;
+ cursor:pointer;
+ list-style:none;
+ padding:11px 4px;
+}
+.bom-part-workspace .part-detail-item-toggle::-webkit-details-marker{display:none}
+.bom-part-workspace .part-detail-item-toggle::before{
+ content:"▸";
+ flex:0 0 14px;
+ color:var(--color-text-muted);
+ transition:transform .15s ease;
+}
+.bom-part-workspace .part-detail-item[open]>.part-detail-item-toggle::before{
+ transform:rotate(90deg);
+}
+.bom-part-workspace .part-detail-item-toggle:focus-visible{
+ outline:2px solid var(--color-focus);
+ outline-offset:-2px;
+ border-radius:6px;
+}
+.bom-part-workspace .part-detail-item-content{
+ padding:0 12px 12px 28px;
+ overflow-wrap:anywhere;
+ white-space:pre-wrap;
+ line-height:1.5;
+}
+.bom-part-workspace .part-detail-item-content a{white-space:normal;overflow-wrap:anywhere}
