@@ -2371,7 +2371,7 @@ function setupAssemblyTrees(){
    component.acceptanceCriteria=functionalAcceptanceField.field.value.trim();
    component.implementationName=partImplementationNameInput.value.trim()||bomField("model")?.value.trim()||component.name;
    component.implementationUnselected=!editingPart&&partImplementationUnselected.checked;
-   component.projectDetails={...readProjectOnly(),featureTreeName:""};
+   component.projectDetails=readProjectOnly(); // Preserve existing data until explicit approval to discard.
    if(!["purchased","custom_purchased"].includes(component.partType))Object.assign(component,{manufacturer:"",model:"",supplier:"",asin:"",historicalPurchasePrice:null,historicalPriceDate:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
    component.specifications=[...(bomRoot()?.querySelectorAll(".component-spec-row")||[])].map(row=>({
     name:row.children[0]?.value.trim()||"",value:row.children[1]?.value.trim()||"",source:row.children[2]?.value==="inferred"?"inferred":"explicit"
