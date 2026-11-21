@@ -367,7 +367,7 @@
     const saveStep=async event=>{
      event.preventDefault();event.stopPropagation();
      if(!editing.has(step.id)){
-      editing.add(step.id);expanded=step.id;render();
+      editing.add(step.id);expanded=step.id;collapsedSteps.delete(step.id);render();
       content.querySelector(".recipe-step-name")?.focus();
       return;
      }
@@ -597,7 +597,7 @@
     draft={id:newId(),title:"",standard:"",detail:"",kind:"action",notes:[],noteIds:[],photos:[],photoNames:{},photoNoteIds:{},photoAfterNote:{}};
     steps.push(draft);
    }
-   expanded=draft.id;editing.clear();editing.add(draft.id);render();
+   expanded=draft.id;collapsedSteps.delete(draft.id);editing.clear();editing.add(draft.id);render();
    content.querySelector(".recipe-step-name")?.focus();
   },"btn recipe-add-step");
   headingActions.append(add);
