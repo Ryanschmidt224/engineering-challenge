@@ -133,7 +133,7 @@
   if(/\b(capacitor)\b/i.test(name))return "Capacitor";
   if(/\b(diode)\b/i.test(name))return "Diode";
   if(/\b(mosfet)\b/i.test(name))return "MOSFET";
-  return String(item?.featureTreeDescription||name).slice(0,20);
+  return String(item?.featureTreeDescription||name).trim();
  };
  const workshopIdentityKind=item=>item?.productIdentity==="generic"||item?.productIdentity==="specific"
   ?item.productIdentity:(item?.partNumber||item?.model?"specific":"generic");
