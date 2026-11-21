@@ -284,7 +284,7 @@ function setupAssemblyTrees(){
    <p class="muted project-summary-message" role="status"></p>
    <div class="project-tags project-summary-tags"></div>
   </section>
-  <section class="project-overview-card project-cost-card"><div class="project-cost-heading"><h2>Estimated project cost</h2><p class="project-summary-cost-missing muted"></p></div><p class="project-summary-cost" aria-live="polite">Loading estimate…</p><p class="project-summary-package-cost" aria-live="polite"></p></section>`;
+  <section class="project-overview-card project-cost-card"><div class="project-cost-heading"><h2>Estimated project cost</h2><p class="project-summary-cost-missing muted"></p></div><p class="project-summary-cost"><span class="project-cost-line-label"><strong>Part Cost (individual)</strong></span><span class="project-cost-line-value" aria-live="polite">Loading estimate…</span></p><p class="project-summary-package-cost"><span class="project-cost-line-label"><strong>Part Cost (bulk)</strong></span><span class="project-cost-line-value" aria-live="polite"></span></p></section>`;
   const projectSummaryHeading=overview.querySelector(".project-overview-card h2");
   const projectSummaryHelp=window.BSDialogs?.helpButton(
    "Project summary",
@@ -296,8 +296,15 @@ function setupAssemblyTrees(){
   const summaryInput=overview.querySelector("textarea");
   const summarySave=overview.querySelector(".project-summary-save");
   const summaryMessage=overview.querySelector(".project-summary-message");
-  const summaryCost=overview.querySelector(".project-summary-cost");
-  const summaryPackageCost=overview.querySelector(".project-summary-package-cost");
+  const summaryCost=overview.querySelector(".project-summary-cost .project-cost-line-value");
+  const summaryPackageCost=overview.querySelector(".project-summary-package-cost .project-cost-line-value");
+  for(const [selector,label,description] of [
+   [".project-summary-cost .project-cost-line-label","Part Cost (individual)","Estimates the cost of the individual parts and quantities used in the project, even when a supplier sells them only in larger packs."],
+   [".project-summary-package-cost .project-cost-line-label","Part Cost (bulk)","Small components are often sold in bulk or minimum package quantities. This estimates the cost of purchasing the full packages needed for the project, which can be higher than the value of the individual parts used."]
+  ]){
+   const help=window.BSDialogs?.helpButton(label,description);
+   if(help)overview.querySelector(selector)?.append(help);
+  }
   const summaryCostMissing=overview.querySelector(".project-summary-cost-missing");
   const summaryActions=overview.querySelector(".project-summary-edit-actions");
   const summaryCancel=overview.querySelector(".project-summary-cancel");
@@ -403,8 +410,8 @@ function setupAssemblyTrees(){
   function renderEstimatedCost(parts){
    const {total,priced,materials,packageTotal,packagePriced,missingQuantity,missingPrice,priceAvailable}=window.BSPartFields.estimateCost(parts);
    const dollars=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"});
-   summaryCost.textContent="Parts used: "+(priced?dollars.format(total)+" · "+priced+" of "+materials+" materials priced":"No priced quantities yet");
-   summaryPackageCost.textContent="Whole packages to purchase: "+(packagePriced?dollars.format(packageTotal)+" · "+packagePriced+" of "+materials+" materials priced":"Package prices and quantities are needed");
+   summaryCost.textContent=priced?dollars.format(total)+" · "+priced+" of "+materials+" materials priced":"No priced quantities yet";
+   summaryPackageCost.textContent=packagePriced?dollars.format(packageTotal)+" · "+packagePriced+" of "+materials+" materials priced":"Package prices and quantities are needed";
    summaryCostMissing.textContent=[
     priceAvailable+" of "+materials+" materials have prices; "+priced+" also have project quantities",
     missingQuantity?missingQuantity+" materials need a project quantity":"",
