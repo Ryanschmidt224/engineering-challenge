@@ -3906,3 +3906,64 @@
 .assembly-archive-milestone-option{margin-left:8px}
 .investigation-milestone-button{margin:6px 0 8px;font-size:.8rem;align-self:flex-start}
 @media(max-width:560px){.project-milestone-editor{padding:16px}.project-milestone-heading{flex-direction:column}.project-milestone-actions{width:100%}}
+
+
+/* Work Instructions: aligned, compact headers and entry tiles.
+   The 42px row applies to view mode only; editing may grow to fit controls. */
+.recipe-compact .recipe-step-browser .recipe-step-list{
+ padding:0 6px 6px;
+ gap:3px;
+}
+.recipe-compact .recipe-step-nav-row.has-nav-actions:not(.is-editing){
+ min-height:42px;
+ height:42px;
+}
+.recipe-compact .recipe-step-nav-row.has-nav-actions:not(.is-editing) > .recipe-step-nav-item{
+ display:flex;
+ align-items:center;
+ min-height:42px;
+ height:42px;
+ padding:6px 78px 6px 10px!important;
+ font-size:.86rem;
+ line-height:1.2;
+}
+.recipe-compact .recipe-step-nav-row.has-nav-actions:not(.is-editing) > .recipe-step-nav-actions .btn{
+ min-height:30px;
+ padding:4px 8px;
+}
+.recipe-compact .recipe-step-detail > .recipe-container-heading{
+ min-height:42px;
+ padding:5px 10px;
+ border-radius:9px;
+ gap:7px;
+}
+.recipe-compact .recipe-step-detail > .recipe-container-heading > strong{
+ font-size:.9rem;
+ line-height:1.25;
+}
+.recipe-compact .recipe-step-detail > .recipe-container-heading > .recipe-expand-all{
+ height:29px;
+ min-height:0;
+ width:27px;
+ flex-basis:27px;
+}
+.recipe-compact .recipe-step-investigations .investigation-active-content > .investigation-card{
+ margin:4px 0!important;
+ border-radius:8px!important;
+}
+.recipe-compact .recipe-step-investigations .investigation-active-content > .investigation-card > summary.investigation-summary{
+ min-height:42px!important;
+ padding:5px 10px!important;
+ gap:7px!important;
+ border-radius:7px;
+ box-sizing:border-box;
+}
+.recipe-compact .recipe-step-investigations .investigation-active-content > .investigation-card > summary.investigation-summary .bs-tile-grip{
+ height:28px;
+ width:23px;
+ flex-basis:23px;
+ padding:3px;
+}
+@media(max-width:760px){
+ .recipe-compact .recipe-step-browser .recipe-step-list{padding:5px}
+}
