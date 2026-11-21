@@ -123,6 +123,8 @@ export function changeImplementation(part,action,payload,now=new Date().toISOStr
     next.selection.candidates.find(candidate=>candidate.id===next.selection.selectedId)?.retiredAt)
   throw Error("Retired implementation cannot be selected");
  if(previousId!==next.selection.selectedId){
+  // A purchase decision is valid only for the solution it was made for.
+  next.purchaseStatus="not_started";
   next.selection.history.push({at:now,from:previousId||null,to:next.selection.selectedId||null,
    reason:String(payload?.reason||"").slice(0,1000)});
   if(next.selection.history.length>300)next.selection.history=next.selection.history.slice(-300);
