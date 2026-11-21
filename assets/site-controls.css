@@ -2811,3 +2811,187 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
 .library-part-dialog .library-project-only.hide{
  display:none!important;
 }
+
+
+/* New Part form visual system (2026-11-21).
+   Single rhythm: unboxed choices, restrained typography, compact label/input grid.
+   Scoped to this dialog; no shared widget rules or data handling are altered. */
+.library-part-dialog{
+ --new-part-label-width:150px;
+ --new-part-row-gap:8px;
+}
+.library-part-dialog .library-part-form{
+ gap:var(--new-part-row-gap);
+ padding:17px 19px 18px;
+}
+.library-part-dialog .library-part-form>h2{
+ margin:0;
+ font-size:1.42rem;
+ font-weight:700;
+ line-height:1.22;
+}
+.library-part-dialog .library-part-form>.muted{
+ margin:0 0 5px;
+ font-size:.82rem;
+ line-height:1.35;
+}
+.library-part-dialog .library-part-form>.library-field,
+.library-part-dialog .library-part-form>.library-field:has(>textarea){
+ display:grid;
+ grid-template-columns:var(--new-part-label-width) minmax(0,1fr);
+ align-items:center;
+ gap:10px;
+ margin:0;
+ font-size:.86rem;
+ font-weight:500;
+ line-height:1.3;
+}
+.library-part-dialog .library-part-form>.library-field>span:first-child,
+.library-part-dialog .library-part-form>.library-field>.library-function-caption{
+ grid-column:1;
+}
+.library-part-dialog .library-part-form>.library-field>.field{
+ grid-column:2;
+ grid-row:1;
+ width:100%;
+ min-width:0;
+ min-height:36px;
+ padding:7px 11px;
+ font-size:.86rem;
+ font-weight:400;
+ line-height:1.35;
+ border-radius:8px;
+}
+.library-part-dialog .library-part-form>.library-field>textarea.field{
+ min-height:68px;
+ padding:10px 11px;
+ resize:vertical;
+}
+.library-part-dialog .library-part-form>.library-field>small{
+ grid-column:2;
+ font-weight:400;
+}
+/* Fieldsets are section labels, not oversized cards. */
+.library-part-dialog .library-workshop-choice-group,
+.library-part-dialog .library-number-choice{
+ display:grid;
+ grid-template-columns:minmax(0,1fr);
+ gap:3px;
+ min-width:0;
+ margin:3px 0 0;
+ padding:3px 0 0;
+ border:0;
+ border-radius:0;
+ background:transparent;
+ box-shadow:none;
+}
+.library-part-dialog .library-workshop-choice-group>legend,
+.library-part-dialog .library-number-choice>legend{
+ margin:0 0 4px;
+ padding:0;
+ font-size:.85rem;
+ font-weight:600;
+ color:var(--color-text);
+}
+.library-part-dialog .library-workshop-first{
+ display:grid;
+ grid-template-columns:18px minmax(0,1fr);
+ grid-template-rows:auto auto;
+ gap:0 9px;
+ align-items:center;
+ width:100%;
+ margin:0;
+ padding:5px 6px;
+ border:0;
+ border-radius:6px;
+ background:transparent;
+ box-shadow:none;
+ font-size:.86rem;
+ font-weight:400;
+ line-height:1.25;
+ cursor:pointer;
+}
+.library-part-dialog .library-workshop-first:hover,
+.library-part-dialog .library-workshop-first:has(input:checked){
+ border:0;
+ background:var(--color-hover);
+}
+.library-part-dialog .library-workshop-first:has(input:checked) .library-workshop-choice-copy{
+ font-weight:550;
+}
+.library-part-dialog .library-workshop-first>input{
+ grid-column:1;
+ grid-row:1 / span 2;
+ width:16px;
+ height:16px;
+ margin:0;
+}
+.library-part-dialog .library-workshop-choice-copy{
+ grid-column:2;
+ grid-row:1;
+ font-size:.86rem;
+ line-height:1.3;
+ font-weight:400;
+}
+.library-part-dialog .library-workshop-choice-copy strong{
+ font-weight:550;
+}
+.library-part-dialog .library-workshop-choice-description{
+ grid-column:2;
+ grid-row:2;
+ font-size:.74rem;
+ line-height:1.3;
+ font-weight:400;
+ color:var(--color-text-muted);
+}
+.library-part-dialog .library-workshop-add{
+ margin:0;
+ padding:5px 6px;
+}
+.library-part-dialog .library-workshop-add .library-workshop-choice-copy{
+ font-weight:500;
+}
+.library-part-dialog .library-number-choice label{
+ display:flex;
+ align-items:center;
+ gap:8px;
+ min-height:29px;
+ padding:3px 6px;
+ font-size:.86rem;
+ font-weight:500;
+ line-height:1.3;
+}
+.library-part-dialog .library-number-choice input{
+ margin:0;
+}
+.library-part-dialog .library-auto-number-tip,
+.library-part-dialog .library-function-tip{
+ font-weight:400;
+}
+.library-part-dialog .library-vendor-info,
+.library-part-dialog .library-picker-hint,
+.library-part-dialog .library-part-form>p.muted:not(:first-of-type){
+ font-size:.76rem;
+ line-height:1.3;
+ margin:0;
+}
+.library-part-dialog .library-dialog-actions{
+ padding-top:7px;
+ margin-top:3px;
+ border-top:1px solid var(--color-border);
+}
+@media(max-width:620px){
+ .library-part-dialog .library-part-form>.library-field,
+ .library-part-dialog .library-part-form>.library-field:has(>textarea){
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:4px;
+ }
+ .library-part-dialog .library-part-form>.library-field>.field{
+  width:100%;
+ }
+ .library-part-dialog .library-part-form{
+  padding:13px;
+ }
+}
