@@ -344,7 +344,8 @@
       steps=next;changed();saveHint();render();
      });
     }
-    stepList.append(navButton);
+    const navRow=el("div","recipe-step-nav-row"+(isCurrent?" is-active":""));
+    navRow.append(navButton);stepList.append(navRow);
     if(!isCurrent)continue;
     const card=el("details","recipe-one-step bs-content-card");
     card.dataset.stepId=step.id;card.open=expandedStepBodies.has(step.id)||editing.has(step.id);
@@ -379,7 +380,7 @@
       card.querySelector(".recipe-step-name")?.focus();
       return;
      }
-     const edit=card.querySelector(".recipe-step-edit-toggle");
+     const edit=navRow.querySelector(".recipe-step-edit-toggle");
      const bottomSave=card.querySelector(".recipe-save-step-bottom");
      saving=true;if(edit){edit.disabled=true;edit.textContent="Saving…"}
      if(bottomSave){bottomSave.disabled=true;bottomSave.textContent="Saving…"}
@@ -426,8 +427,10 @@
     };
     summary.append(hierarchy);
     if(admin()){
+     // Edit belongs to the selected step in the left navigation, not the
+     // right-side content header. Keep it separate from the draggable title.
      const edit=button(editing.has(step.id)?"Save":"Edit",saveStep,"btn recipe-step-edit-toggle");
-     summary.append(edit);
+     navRow.append(edit);
     }
     // Let the header/chevron toggle its native <details>. Controls inside
     // the header must never toggle the step while the user is editing.
