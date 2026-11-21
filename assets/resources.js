@@ -112,6 +112,29 @@
   ...otherWorkshopGroups.filter(([, ,parent])=>parent==="hardware").map(([id,label])=>[id,label,[]]),
   ["safety","Safety & Protection",[]]
  ];
+ // Generic Workshop items are configurable types, not manufacturer SKUs.
+ // Templates describe optional project-specific specifications.
+ const genericSpecificationTemplate=item=>{
+  const name=[item?.name,item?.typeName,item?.featureTreeDescription,item?.subtitle].filter(Boolean).join(" ").toLowerCase();
+  if(/\b(resistor|resistance)\b/.test(name))return [["Resistance","Ω"],["Power rating","W"],["Tolerance","%"],["Package / style",""]];
+  if(/\b(led|light.emitting.diode)\b/.test(name))return [["Size","mm"],["Color",""],["Shape",""],["Forward voltage","V"],["Forward current","mA"],["Package / mounting",""]];
+  if(/\b(capacitor|capacitance)\b/.test(name))return [["Capacitance","F"],["Voltage rating","V"],["Tolerance","%"],["Package / style",""]];
+  if(/\b(diode)\b/.test(name))return [["Type",""],["Reverse voltage","V"],["Forward current","A"],["Package",""]];
+  if(/\b(switch|push.?button)\b/.test(name))return [["Configuration",""],["Contact rating","A"],["Actuation",""],["Mounting",""]];
+  if(/\b(mosfet|transistor)\b/.test(name))return [["Type",""],["Voltage rating","V"],["Current rating","A"],["Package",""]];
+  return [];
+ };
+ const genericContainerName=item=>{
+  const name=String(item?.name||item?.featureTreeDescription||"Component").trim();
+  if(/\b(resistor)\b/i.test(name))return "Resistor";
+  if(/\b(led|light.emitting.diode)\b/i.test(name))return "LED";
+  if(/\b(capacitor)\b/i.test(name))return "Capacitor";
+  if(/\b(diode)\b/i.test(name))return "Diode";
+  if(/\b(mosfet)\b/i.test(name))return "MOSFET";
+  return String(item?.featureTreeDescription||name).slice(0,20);
+ };
+ const workshopIdentityKind=item=>item?.productIdentity==="generic"||item?.productIdentity==="specific"
+  ?item.productIdentity:(item?.partNumber||item?.model?"specific":"generic");
  const categoryNames=Object.fromEntries(workshopCategories.map(([id,name])=>[id,name]));
  const explicitCategories=new Set(workshopCategories.map(([id])=>id));
  const categoryForReference=id=>({
@@ -676,7 +699,7 @@
    }
   }
  }
- window.BSResources={catalog,workshopCategories,electricalGroups,otherWorkshopGroups,electricalCategoryFor,workshopReferences,workshopLinkId,workshopGroups,workshopGroupFor,legacyCategory,all,mount,reloadWires,reloadCommonParts,reloadPurchased,init,normalize,setAdmin,focusWorkshopItem};
+ window.BSResources={catalog,workshopCategories,electricalGroups,otherWorkshopGroups,genericSpecificationTemplate,genericContainerName,workshopIdentityKind,electricalCategoryFor,workshopReferences,workshopLinkId,workshopGroups,workshopGroupFor,legacyCategory,all,mount,reloadWires,reloadCommonParts,reloadPurchased,init,normalize,setAdmin,focusWorkshopItem};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
  else init();
 })();
