@@ -234,38 +234,45 @@
      });
     }
     if(!isCurrent)continue;
+    const inEdit=isDraft||editing.has(step.id);
     const header=el("div","recipe-container-heading");
-    if(isDraft||editing.has(step.id)){
+    if(inEdit){
      const title=window.BSEntryEditor.titleInput(step.title,value=>{
       step.title=value;select.textContent=value||"New Work Instruction";
       changed();saveHint();
      },{placeholder:"Work Instruction name"});
      title.classList.add("recipe-step-name");title.maxLength=180;
      header.append(title);
-     const saveButton=button("Save",async()=>{await persistContainer(step,{draftSave:isDraft})},"btn primary");
-     const cancel=button("Cancel",()=>{
-      if(isDraft){steps.splice(steps.indexOf(step),1);draft=null;expanded=steps.find(s=>!s.archivedAt)?.id||null}
-      else{const snap=editSnapshots.get(step.id);if(snap)Object.assign(step,snap)}
-      editing.delete(step.id);editSnapshots.delete(step.id);dirty=false;
-      render();
-     },"btn");
-     header.append(saveButton,cancel);
-    }else{
-     header.append(el("strong","",step.title));
-     if(admin()&&!isArchived)header.append(button("Edit name",()=>{
+    }else header.append(el("strong","",step.title));
+    // Only the selected step owns these controls. In normal view Edit is
+    // the sole action; Save/Cancel/Archive/Delete appear only while editing.
+    if(admin()){
+     const navActions=el("div","recipe-step-nav-actions");
+     if(inEdit){
+      const saveButton=button("Save",async()=>{await persistContainer(step,{draftSave:isDraft})},"btn primary");
+      const cancel=button("Cancel",()=>{
+       if(isDraft){steps.splice(steps.indexOf(step),1);draft=null;expanded=steps.find(s=>!s.archivedAt)?.id||null}
+       else{const snap=editSnapshots.get(step.id);if(snap)Object.assign(step,snap)}
+       editing.delete(step.id);editSnapshots.delete(step.id);dirty=false;
+       render();
+      },"btn");
+      navActions.append(saveButton,cancel);
+      if(!isDraft&&!isArchived)navActions.append(button("Archive",()=>archiveContainer(step),"btn"));
+      navActions.append(button("Delete",()=>deleteContainer(step),"btn recipe-delete-step"));
+     }else if(isArchived){
+      navActions.append(button("Restore",async()=>{
+       const at=step.archivedAt,note=step.archiveNote;
+       step.archivedAt="";step.archiveNote="";
+       try{await options.onSave();render()}catch(error){step.archivedAt=at;step.archiveNote=note;feedback.textContent=error.message}
+      },"btn"));
+     }else navActions.append(button("Edit",()=>{
       editSnapshots.set(step.id,normalize(step));editing.add(step.id);render();
       detailPane.querySelector(".recipe-step-name")?.focus();
-     },"btn"));
+     },"btn recipe-step-edit-toggle"));
+     row.classList.add("has-nav-actions");
+     if(inEdit)row.classList.add("is-editing");
+     row.append(navActions);
     }
-    if(admin()&&!isDraft){
-     if(isArchived)header.append(button("Restore",async()=>{
-      const at=step.archivedAt,note=step.archiveNote;
-      step.archivedAt="";step.archiveNote="";
-      try{await options.onSave();render()}catch(error){step.archivedAt=at;step.archiveNote=note;feedback.textContent=error.message}
-     },"btn"));
-     else header.append(button("Archive",()=>archiveContainer(step),"btn"));
-    }
-    if(admin())header.append(button("Delete Work Instruction",()=>deleteContainer(step),"btn recipe-delete-step"));
     detailPane.append(header);
     if(!isDraft&&typeof options.renderInvestigations==="function"){
      const area=el("div","recipe-step-investigations");
