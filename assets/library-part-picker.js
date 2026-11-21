@@ -364,9 +364,9 @@ function open({onCreate,hideDefault=false}){
  itemTypeSection.append(itemKind.label);
  const detailsSection=el("fieldset","library-form-section library-identity-section");
  detailsSection.append(el("legend","","Part details"),
-  shortTreeDescription.label,manufacturerNumber.label,manufacturerName.label,
-  vendorField.label,ownSupplier.label,workshopDescription.label,
-  partClassification.label,customName.label,vendorLinks,vendorInfo);
+  partClassification.label,shortTreeDescription.label,manufacturerNumber.label,
+  manufacturerName.label,vendorField.label,ownSupplier.label,
+  workshopDescription.label,customName.label,vendorLinks,vendorInfo);
  const quantitySection=el("section","library-form-section library-quantity-section");
  quantitySection.append(qty.label,hintUnits);
  // The optional Workshop publication control is subordinate to the selected source.
