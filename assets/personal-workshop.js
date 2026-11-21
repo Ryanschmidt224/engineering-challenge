@@ -572,6 +572,21 @@
     ["material","Material"],["other","Other"]],item.kind||"equipment");
    const category=addSelect("Website category",workshopCategories.map(([id,label])=>[id,label]),
     categoryFor(item)==="other"?"tools":categoryFor(item));
+   // Generic parts describe a configurable type; specific parts identify a
+   // manufacturer's purchasable product. Existing MPN records infer specific.
+   const identityKind=el("fieldset",undefined,"workshop-product-identity-kind");
+   identityKind.append(el("legend","", "Product identity"));
+   const identityRadios={};
+   for(const [value,title] of [["generic","Generic component"],["specific","Specific product"]]){
+    const label=el("label");
+    const radio=el("input");radio.type="radio";radio.name="workshop-product-identity";radio.value=value;
+    radio.checked=window.BSResources.workshopIdentityKind(item)===value;
+    identityRadios[value]=radio;
+    label.append(radio,document.createTextNode(title));identityKind.append(label);
+   }
+   const identityHelp=el("p","Generic components are configured for each project; specific products may have a manufacturer part number.","muted");
+   identityKind.append(identityHelp);
+   grid.querySelector('[data-part-editor-section="identity"]').prepend(identityKind);
    // The left Workshop category tree is the only classification hierarchy.
    // Preserve historical family metadata silently for existing records.
    const family={value:item.familyId||""};
@@ -609,6 +624,15 @@
     general:[["material","Material",""],["dimensions","Dimensions",""],["weight","Weight","g"]]
    };
    const suggestedTemplate=()=>{
+    if(identityRadios.generic.checked){
+     const named=window.BSResources.genericSpecificationTemplate({
+      name:controls.name.value||item.name,
+      featureTreeDescription:controls.featureTreeDescription.value,
+      typeName:controls.typeName.value
+     });
+     if(named.length)return named.map(([label,unit])=>
+      [label.toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,""),label,unit]);
+    }
     const description=[family.value,families().find(f=>f.id===family.value)?.label,
      familyName.value,controls.typeName?.value,controls.name?.value,controls.subtitle?.value,controls.featureTreeDescription?.value].filter(Boolean).join(" ").toLowerCase();
     if(/\bend[\s-]*mills?\b/.test(description))return specTemplates.endMill;
@@ -693,6 +717,9 @@
     }
     addSuggestedSpecs();
    };
+   identityRadios.generic.addEventListener("change",refreshSuggestions);
+   identityRadios.specific.addEventListener("change",refreshSuggestions);
+   controls.name.addEventListener("change",refreshSuggestions);
    category.addEventListener("change",refreshSuggestions);
    controls.typeName.addEventListener("change",refreshSuggestions);
    controls.featureTreeDescription.addEventListener("change",refreshSuggestions);
@@ -913,6 +940,7 @@
     const details={photos,specifications:storedSpecs()};
     for(const field of saveableFields)if(controls[field])details[field]=controls[field].value;
     details.kind=kind.value;details.category=category.value;
+    details.productIdentity=identityRadios.generic.checked?"generic":"specific";
     // Legacy family metadata is retained for existing items, not edited or
     // required for new items. The category tree owns classification.
     details.familyId=item.familyId||"";
@@ -938,7 +966,7 @@
     form.classList.toggle("is-editing",editing);
     for(const control of form.querySelectorAll("input,textarea,select")){
      if(control.matches('input[type="hidden"]'))continue;
-     if(control.matches("select"))control.disabled=!editing;
+     if(control.matches('input[type="radio"],input[type="checkbox"],select'))control.disabled=!editing;
      else control.readOnly=!editing;
     }
     for(const control of form.querySelectorAll("button"))control.disabled=!editing;
