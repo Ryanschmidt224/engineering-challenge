@@ -221,7 +221,7 @@ function open({onCreate,hideDefault=false}){
  manualNumberRow.append(manualNumberCheckbox,document.createTextNode(" User assign part number"));
  numberChoice.append(autoNumberRow,manualNumberRow);
 
- const chooser=el("div","library-picker-section hide");
+ const chooser=el("fieldset","library-picker-section hide");
  const category=field("Part category","select");
  for(const [id,label] of [["tools","Tools & Equipment"],["consumables","Consumables & Supplies"],["electronics","Electronics & Components"],["hardware","Hardware & Materials"],["safety","Safety & Measurement"]])option(category.input,id,label);
  const workflow=el("div","wire-workflow-choice");
@@ -356,7 +356,7 @@ function open({onCreate,hideDefault=false}){
    el("p","muted library-workshop-readonly-note","Reference details are read-only here. Add project-specific details on the Part page afterward."));
  const referenceRows=el("div","library-workshop-reference-rows");referenceRows.hidden=true;
  referencePreview.append(referenceRows);
- chooser.append(category.label,wireModeChoice,wireSection,compSection,referencePreview);
+ chooser.append(el("legend","","Choose a Workshop item"),quickSearch,category.label,wireModeChoice,wireSection,compSection,referencePreview);
  const workshopChoices=el("fieldset","library-workshop-choice-group");
  const workshopLegend=el("legend","","Part source");
  // Keep the five groups visually independent without adding duplicate titles.
@@ -370,7 +370,7 @@ function open({onCreate,hideDefault=false}){
  const quantitySection=el("section","library-form-section library-quantity-section");
  quantitySection.append(qty.label,hintUnits);
  // The optional Workshop publication control is subordinate to the selected source.
- workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,quickSearch,
+ workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,
   addToWorkshopChoice,saveScope,workshopAddHelp);
  // Manual numbering belongs inside the Part number section, immediately after
  // the two choices; both choices and input preserve their existing event handlers.
