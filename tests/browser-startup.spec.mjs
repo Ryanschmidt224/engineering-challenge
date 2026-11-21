@@ -1032,7 +1032,9 @@ test("Edit Part separates Container, Part details and purchased alternatives",as
  expect(source).toContain('group("implementation","Part details"');
  expect(source).toContain('toolRow,partImplementationNameRow');
  expect(source).toContain('fields.display.filter(key=>key!=="isTool")');
- expect(source).toContain('document.createTextNode(" Is a tool?")');
+ expect(source).toContain('toolCaption.textContent="Is a tool?"');
+ expect(source).toContain('toolControl.append(toolCheckbox,toolHelp)');
+ expect(source).toContain('className="part-visibility-field part-tool-field"');
  expect(source).toContain('const purchased=part.partType==="purchased"');
  expect(source).toContain('item.partType==="purchased"');
  expect(source).toContain('Alternative purchased parts');
