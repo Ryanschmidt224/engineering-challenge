@@ -771,14 +771,14 @@
     addSuggestedSpecs();
    };
    let approvedIdentity=window.BSResources.workshopIdentityKind(item);
-   const specificOnlyFields=["partNumber","model","manufacturer","supplier","supplierPartNumber","supplierUrl","asin","price","packageQuantity"];
+   const specificOnlyFields=["partNumber","model","manufacturer","supplier","supplierPartNumber","supplierUrl","asin","price","packageQuantity","spec","documentationUrl","orderNotes"];
    const confirmGenericSwitch=async()=>{
     if(!identityRadios.generic.checked)return;
     if(approvedIdentity==="generic"){updateIdentityPanels();return}
     const hasSpecificData=specificOnlyFields.some(field=>String(controls[field]?.value||"").trim())||
      [...specRows.children].some(row=>String(row.querySelector('[data-spec="value"]')?.value||"").trim());
     if(hasSpecificData){
-     const message="Changing to Generic will erase manufacturer and ordering details, and the existing saved specification values in this draft. It will keep the component name and description. Continue?";
+     const message="Switching to Generic will erase existing manufacturer, supplier, ordering and product-specific specification data in this draft. The item name, description and general notes will remain. Cancel to keep the current data.";
      const confirmed=window.BSDialogs?.confirm
       ?await window.BSDialogs.confirm(message,{title:"Convert to generic component?",confirmLabel:"Erase data and switch"})
       :window.confirm(message);
