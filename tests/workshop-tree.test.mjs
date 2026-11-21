@@ -50,6 +50,32 @@ test("Electrical Workshop classification covers existing references and all eigh
  assert.equal(workshopReferences.find(item=>item.id==="workshop:wire22").bomDefault,"exclude");
  assert.equal(workshopReferences.find(item=>item.id==="workshop:heatshrink").bomDefault,"exclude");
 });
+test("Generic Workshop resistors and LEDs keep stable containers with project-specific fields",()=>{
+ const sandbox={window:{},document:{readyState:"loading",addEventListener(){}}};
+ runInNewContext(readFileSync("assets/resources.js","utf8"),sandbox);
+ const {genericSpecificationTemplate,genericContainerName,workshopIdentityKind,workshopReferences}=sandbox.window.BSResources;
+ const resistor=workshopReferences.find(item=>item.id==="workshop:resistor-quarter");
+ const led=workshopReferences.find(item=>item.id==="workshop:led-generic");
+ assert.ok(resistor&&led,"Generic starter components must be available");
+ assert.equal(workshopIdentityKind(resistor),"generic");
+ assert.equal(workshopIdentityKind(led),"generic");
+ assert.equal(genericContainerName(resistor),"Resistor");
+ assert.equal(genericContainerName(led),"LED");
+ for(const label of ["Resistance","Power rating","Tolerance"])
+  assert.ok(genericSpecificationTemplate(resistor).some(([name])=>name===label),label);
+ for(const label of ["Size","Color","Shape"])
+  assert.ok(genericSpecificationTemplate(led).some(([name])=>name===label),label);
+ assert.equal(workshopIdentityKind({partNumber:"RC0603FR-07350RL"}),"specific");
+ const picker=readFileSync("assets/library-part-picker.js","utf8");
+ assert.match(picker,/genericProjectInputs/);
+ assert.match(picker,/genericSpecs/);
+ assert.match(picker,/genericContainerName/);
+ assert.match(picker,/\.\.\.genericSpecs/);
+ const editor=readFileSync("assets/personal-workshop.js","utf8");
+ assert.match(editor,/Generic component/);
+ assert.match(editor,/Specific product/);
+ assert.match(editor,/details\.productIdentity=/);
+});
 test("Edit Part inputs use paired descriptor/value layout with mobile fallback",()=>{
  const css=readFileSync("assets/site-workspaces.css","utf8");
  assert.match(css,/\.component-review>label\s*\{\s*display:grid/);
