@@ -422,6 +422,9 @@ function open({onCreate,hideDefault=false}){
  referencePreview.append(el("h3","","Selected Workshop item"));
  const referenceRows=el("div","library-workshop-reference-rows");referenceRows.hidden=true;
  referencePreview.append(referenceRows);
+ const specificChoice=field("Choose product","select");
+ specificChoice.label.classList.add("library-specific-choice");
+ referencePreview.append(specificChoice.label);
  const projectContainerName=field("Project container name");
  projectContainerName.input.maxLength=20;
  projectContainerName.input.placeholder="e.g. Resistor, LED, Position sensor";
@@ -478,6 +481,17 @@ function open({onCreate,hideDefault=false}){
   const item=selectedReference();
   const usingWorkshop=workshopCheckbox.checked;
   const generic=!!item&&window.BSResources.workshopIdentityKind(item)==="generic";
+  const specificProducts=generic?allSearchable().filter(choice=>
+   choice.id!==item.id&&choice.genericParentId===item.id&&
+   window.BSResources.workshopIdentityKind(choice)==="specific"&&
+   ["public","standard"].includes(choice.origin)):[];
+  specificChoice.label.classList.toggle("hide",!usingWorkshop||!generic||!specificProducts.length);
+  specificChoice.input.replaceChildren();
+  option(specificChoice.input,"","Use generic component — configure for project");
+  for(const choice of specificProducts){
+   const identity=[choice.manufacturer,choice.partNumber||choice.model,choice.supplier].filter(Boolean).join(" · ");
+   option(specificChoice.input,choice.origin+":"+choice.id,choice.name+(identity?" · "+identity:""));
+  }
   referencePreview.classList.toggle("hide",!usingWorkshop||!item);
   genericProjectFields.classList.toggle("hide",!usingWorkshop||!generic);
   referenceRows.replaceChildren();
@@ -533,6 +547,19 @@ function open({onCreate,hideDefault=false}){
    row.append(el("strong","",label),el("span","",value));referenceRows.append(row);
   }
  };
+ specificChoice.input.addEventListener("change",()=>{
+  const value=specificChoice.input.value;
+  if(!value)return;
+  const chosen=allSearchable().find(item=>item.origin+":"+item.id===value);
+  if(!chosen)return;
+  category.input.value=commonGroup(chosen);
+  powerType.input.value="all";
+  refreshCommon();
+  // Select the exact specific record, never merge it with the generic parent.
+  commonSelect.input.value=value;
+  showReference();
+  status.textContent="Selected specific product "+chosen.name+". Review its details before adding.";
+ });
  const allSearchable=()=>[
   ...commons.map(item=>({...item,origin:"saved"})),
   ...purchased.map(item=>({...item,origin:"purchased"})),
