@@ -6,13 +6,14 @@ import {readFileSync} from "node:fs";
 import {runInNewContext} from "node:vm";
 import {randomUUID} from "node:crypto";
 import {linkedWorkshopItem,partPhotoKey,workshopItemLookup,workshopLinkId,workshopDocumentation,workshopSourcing} from "../functions/api/workshop-linked-part.js";
+import {resolveFunctionalPart,encodeFunctionalPart,changeImplementation} from "../functions/api/functional-part-model.js";
 
 function handler(path,name){
  const source=readFileSync(path,"utf8").replace(/^import .*;\s*$/gm,"").replace(/^export /gm,"");
  return runInNewContext(source+"\n"+name+";",{
   Response,Request,URL,crypto:{randomUUID},retainHistory,historyKey,isAdmin:async()=>true,
   projectAllowed:async()=>true,canEditProject:async()=>true,
-  linkedWorkshopItem,partPhotoKey,workshopItemLookup,workshopLinkId,workshopDocumentation,workshopSourcing,console,Date,JSON,Number,String,Array,Map,Set,RegExp
+  linkedWorkshopItem,partPhotoKey,workshopItemLookup,workshopLinkId,workshopDocumentation,workshopSourcing,resolveFunctionalPart,encodeFunctionalPart,changeImplementation,console,Date,JSON,Number,String,Array,Map,Set,RegExp
  });
 }
 function storage(){
