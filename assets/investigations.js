@@ -344,12 +344,12 @@
    disclosure.append(content);target.append(disclosure);
 
    const renderCard=(record,destination,{historical=false,inherited=false}={})=>{
-    const card=make("details","investigation-card");
+    const card=make("details","investigation-card bs-content-card");
     card.dataset.recordId=record.id;
     const openKey=context.ownerType+":"+context.ownerId+":"+(context.stepId||"")+":"+(historical?"history:":"")+record.id;
     card.open=openCards.has(openKey);
     card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
-    const title=make("summary","investigation-summary");
+    const title=make("summary","investigation-summary bs-content-card-heading");
     const heading=make("span","investigation-title-actions");
     heading.append(make("strong","",record.title));
     title.append(heading,make("span","small muted",categories[categoryOf(record)]?.label||"Entry"));
@@ -358,7 +358,7 @@
      if(stamp){const date=make("time","investigation-record-date","Archived "+stamp);date.dateTime=stamp;title.append(date)}else title.append(dateLabelFor(record));
     }else title.append(dateLabelFor(record));
     card.append(title);
-    const body=make("div","investigation-body");
+    const body=make("div","investigation-body bs-content-card-body");
     if(inherited){
      const source=record.scope==="step"?"Work instruction":record.ownerType==="part"?"Part":"Assembly";
      body.append(make("p","investigation-origin","From "+source+" · "+record.title));
