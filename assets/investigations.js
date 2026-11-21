@@ -587,6 +587,24 @@
       }
       if(childSection.childElementCount)body.append(childSection);
      }
+     if(!editing&&!inherited&&admin()&&["test","revision","failure"].includes(categoryOf(record))){
+      // Never publish automatically. Prefill a draft and let the author
+      // explain why this particular result belongs in the project narrative.
+      const milestone=btn("Add to Project Milestones",event=>{
+       event.preventDefault();event.stopPropagation();
+       const preferred=categoryOf(record)==="test"?["result","attempt"]:
+        categoryOf(record)==="revision"?["revision","result"]:["observation","resolution"];
+       const details=(record.entries||[]).filter(entry=>preferred.includes(entry.type)&&entry.text?.trim());
+       const text=details.length?details[details.length-1].text.trim():record.title||"";
+       window.BSProjectMilestones?.offer(project,{
+        kind:"investigation",id:record.id,
+        title:(categories[categoryOf(record)]?.label||"Entry")+(record.title?" · "+record.title:""),
+        prefill:text
+       });
+      },"btn investigation-milestone-button");
+      milestone.title="Draft a deliberate milestone; no record is added unless you save it.";
+      body.append(milestone);
+     }
      if(!editing){
       // Show a single, unobtrusive timestamp at the very end of the tile.
       const savedAt=historical?record.archivedAt||record.partSnapshot?.archivedAt:
