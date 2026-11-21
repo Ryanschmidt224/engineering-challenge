@@ -1882,7 +1882,7 @@ function setupAssemblyTrees(){
   // to Purchased to preserve their existing manufacturer/supplier fields.
   const toolRow=document.createElement("label");toolRow.className="part-visibility-field";
   const toolCheckbox=document.createElement("input");toolCheckbox.type="checkbox";
-  toolRow.append(toolCheckbox,document.createTextNode(" Tool?"));
+  toolRow.append(toolCheckbox,document.createTextNode(" Is a tool?"));
   const toolHelp=document.createElement("span");toolHelp.className="part-option-help";toolHelp.textContent="ⓘ";toolHelp.tabIndex=0;
   toolHelp.title="Tools are used to complete work, but aren't consumed or assembled into the finished product. They appear in the Tools needed list, not the build BOM.";
   toolHelp.setAttribute("aria-label",toolHelp.title);toolRow.append(toolHelp);toolRow.title=toolHelp.title;
@@ -2243,10 +2243,10 @@ function setupAssemblyTrees(){
     group("container","Container",controls.itemType,controls.name,controls.partNumber,
      partDescriptionRow);
     const implementationGroup=group("implementation","Part details",partTypeRow,
-     partImplementationNameRow,...ordered(fields.additional),quantities[1]);
+     toolRow,partImplementationNameRow,...ordered(fields.additional),quantities[1]);
     const displayGroup=review.querySelector(".part-display-options")||document.createElement("div");
     displayGroup.className="part-display-options";
-    displayGroup.append(...ordered(fields.display));
+    displayGroup.append(...ordered(fields.display.filter(key=>key!=="isTool")));
     group("display","Display options",displayGroup);
     if(otherFields.length)group("additional","Additional details",...otherFields);
     if(supplierEditor)implementationGroup.append(supplierEditor.element);
