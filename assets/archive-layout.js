@@ -5,7 +5,7 @@ globalThis.BSArchiveLayout = (() => {
   "component-thumbnails", "part-files", "part-pages", "recipe-files",
   "unstructured-notes", "part-revisions", "part-code", "assembly-status", "workspace-history", "assembly-archives"
  ];
- const records = ["trees", "components", "investigations", "project-numbering", "project-settings", "change-proposals"];
+ const records = ["trees", "components", "investigations", "project-numbering", "project-settings", "change-proposals", "project-milestones"];
  const legacyLibraries = ["libraries/wires.json", "libraries/common-parts.json", "libraries/purchased-parts.json"];
  const profileKey = project => "project-profile/" + project + ".json";
 
