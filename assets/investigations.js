@@ -316,11 +316,13 @@
    const archivedOwn=own.filter(isArchived);
    const archivedRelated=records.filter(record=>within(record,context)&&!owns(record,context)&&isArchived(record));
    const activeHeader=make("div","investigation-active-heading");
-   activeHeader.append(make(compact?"h4":"h2","","Entries"));
-   if(admin())activeHeader.append(btn("+ Add entry",event=>{
+   // The step editor has its own Edit mode. Other workspace sections have no
+   // separate editing toggle, so retain their Add entry button.
+   const canCreate=admin()&&(!compact||Boolean(stepSlots.get(context.stepId)?.editing));
+   if(canCreate)activeHeader.append(btn("+ Add entry",event=>{
     event.preventDefault();newRecord(context,target);
    },"btn investigation-add investigation-create-button"));
-   activeHost.append(activeHeader);
+   if(canCreate)activeHost.append(activeHeader);
    const activeContent=make("div","investigation-active-content");
    activeHost.append(activeContent);
 
@@ -365,12 +367,13 @@
     const edit=btn("Edit",event=>{
      event.preventDefault();event.stopPropagation();card.open=true;editing=true;draw();
     },"btn investigation-rename");
+    const editActions=make("span","investigation-title-controls");
+    const archive=btn("Archive",event=>{
+     event.preventDefault();event.stopPropagation();archiveRecord(record);
+    },"btn investigation-archive-button");
     if(admin()&&!historical&&!inherited){
-     heading.append(edit);
-     edit.addEventListener("click",event=>{event.preventDefault();event.stopPropagation()});
-     heading.append(btn("Archive",event=>{
-      event.preventDefault();event.stopPropagation();archiveRecord(record);
-     },"btn investigation-archive-button"));
+     editActions.append(edit,archive);
+     title.append(editActions);
     }
     const draw=()=>{
      body.replaceChildren();
@@ -381,6 +384,7 @@
       if(record.archiveNote?.trim())body.append(make("p","investigation-archive-reason","Reason: "+record.archiveNote));
      }
      edit.hidden=editing;
+     archive.hidden=!editing;
      attach(record,body,target,editing,()=>{editing=false;draw()});
      if(card.open)showAttachmentNames(body);
     };
@@ -510,10 +514,10 @@
    partSlot={target,context:makeContext("part",id)};
    assemblySlot=null;stepSlots.clear();renderAll();void load();
   }
-  function showStep(target,step,ownerType,ownerId){
+  function showStep(target,step,ownerType,ownerId,editing=false){
    if(!target||!step?.id||!ownerId)return;
    const context=makeContext(ownerType,ownerId,step.id);
-   stepSlots.set(step.id,{target,context});render(target,context,true);
+   stepSlots.set(step.id,{target,context,editing});render(target,context,true);
   }
   return {showAssembly,showPart,showStep,load};
  }
