@@ -1,4 +1,5 @@
 import {workshopDocumentation, workshopItemLookup, workshopLinkId, workshopSourcing} from "./workshop-linked-part.js";
+import {resolveFunctionalPart} from "./functional-part-model.js";
 import {workshopHostAllowed} from "./workshop-image-import.js";
 
 const encoder = new TextEncoder();
@@ -71,7 +72,7 @@ export function workshopDependencies(bucket, project, ownerId) {
   try {
    const record = JSON.parse(decoder.decode(bytes));
    if (components) {
-    for (const part of record) remember(part, part.id);
+    for (const part of record) remember(resolveFunctionalPart(part), part.id);
    } else {
     for (const version of [record, ...(record.history || [])]) {
      for (const id of [...(version.resources?.parts || []), ...(version.resources?.tools || [])])
