@@ -1093,14 +1093,20 @@ function setupAssemblyTrees(){
    }
    const summary=[window.BSPartFields.displayName(part),treeDescription(part.projectDetails,part.description),quantity,cost];
    detailSummary.textContent=summary.filter(Boolean).join(" · ");
-   const appendDetail=(title,value,isLink=false)=>{
-    if(value===null||value===undefined||String(value).trim()==="")return;
-    const line=document.createElement("div");line.className="part-details-view-row";
+   const makeDetailLine=(title,value,isLink=false)=>{
+    const line=document.createElement("details");line.className="part-details-view-row part-detail-item";
+    const heading=document.createElement("summary");heading.className="part-detail-item-toggle";
     const label=document.createElement("strong");label.textContent=title;
-    const separator=document.createElement("span");separator.textContent=" - ";
+    heading.append(label);
+    const body=document.createElement("div");body.className="part-detail-item-content";
     const content=document.createElement(isLink?"a":"span");content.textContent=String(value);
     if(isLink){content.href=value;content.target="_blank";content.rel="noopener noreferrer";content.className="part-order-url"}
-    line.append(label,separator,content);detailRows.append(line);
+    body.append(content);line.append(heading,body);
+    return line;
+   };
+   const appendDetail=(title,value,isLink=false)=>{
+    if(value===null||value===undefined||String(value).trim()==="")return;
+    detailRows.append(makeDetailLine(title,value,isLink));
    };
    for(const [title,value] of fields)appendDetail(title,value);
    appendDetail("Order URL",sourcing.url,true);
@@ -1108,11 +1114,7 @@ function setupAssemblyTrees(){
    if(specs.length){
     const heading=document.createElement("h3");heading.textContent="Specifications";detailRows.append(heading);
     for(const spec of specs){
-     const line=document.createElement("div");line.className="part-details-view-row";
-     const label=document.createElement("strong");label.textContent=spec.name||"Specification";
-     const separator=document.createElement("span");separator.textContent=" - ";
-     const value=document.createElement("span");value.textContent=(spec.value||"")+(spec.source==="inferred"?" (inferred)":"");
-     line.append(label,separator,value);detailRows.append(line);
+     detailRows.append(makeDetailLine(spec.name||"Specification",(spec.value||"")+(spec.source==="inferred"?" (inferred)":"")));
     }
    }
    const annotations=part.projectDetails||{};
@@ -1131,10 +1133,7 @@ function setupAssemblyTrees(){
      ["sourceFile","Source schematic file"],["sourceComponentId","Source component ID"]
     ]){
      if(!annotations[key])continue;
-     const row=document.createElement("div");row.className="part-details-view-row";
-     const name=document.createElement("strong");name.textContent=label;
-     const value=document.createElement("span");value.textContent=annotations[key];
-     row.append(name,document.createTextNode(" - "),value);projectSection.append(row);
+     projectSection.append(makeDetailLine(label,annotations[key]));
     }
     detailRows.append(projectSection);
    }
