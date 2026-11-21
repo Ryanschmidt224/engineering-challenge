@@ -1755,3 +1755,36 @@
 .recipe-compact .recipe-step-nav-item.recipe-step-dragging{opacity:.45;cursor:grabbing}
 .recipe-compact .recipe-step-nav-item.recipe-step-drop-before{box-shadow:inset 0 3px 0 var(--color-accent)}
 .recipe-compact .recipe-step-nav-item.recipe-step-drop-after{box-shadow:inset 0 -3px 0 var(--color-accent)}
+
+
+/* Project History: one compact heading line, positioned after the workspace divider. */
+.investigations-panel .investigation-heading-label,
+.investigations-panel .investigation-heading-actions{
+ display:flex;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:9px;
+}
+.investigations-panel .investigation-heading-actions .workspace-record-count{
+ display:inline;
+ width:auto;
+ margin:0;
+ white-space:nowrap;
+ font-size:.83rem;
+}
+.investigations-panel .investigation-heading-actions h2{
+ margin:0;
+ white-space:nowrap;
+}
+.assembly-workspace-page > .workspace-history-divider{
+ display:block;
+ border:0;
+ border-top:1px solid var(--color-border);
+ margin:22px 0 18px;
+ width:100%;
+}
+.assembly-workspace-page > .investigations-panel{
+ margin:0 0 14px;
+ width:100%;
+ box-sizing:border-box;
+}
