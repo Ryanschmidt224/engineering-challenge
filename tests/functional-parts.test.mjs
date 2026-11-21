@@ -103,3 +103,17 @@ test("purchasing status belongs to the selected implementation",()=>{
  const retired=changeImplementation({...old,purchaseStatus:"already_have"},"retire",{id:newCandidate.selectedImplementationId});
  assert.equal(retired.purchaseStatus,"already_have");
 });
+
+test("project-owned function description does not follow the selected purchased or custom design",()=>{
+ const source={...original(),name:"2N7000 N-channel MOSFET",
+  projectDetails:{...original().projectDetails,featureTreeName:"LED Switching Transistor"}};
+ const first=resolveFunctionalPart(encodeFunctionalPart(source));
+ const custom=changeImplementation(first,"add",{name:"Custom LED Driver PCB",partType:"custom"});
+ assert.equal(custom.projectDetails.featureTreeName,"LED Switching Transistor");
+ assert.equal(custom.implementationName,"Custom LED Driver PCB");
+ const restored=changeImplementation(custom,"select",{id:first.selectedImplementationId});
+ assert.equal(restored.projectDetails.featureTreeName,"LED Switching Transistor");
+ assert.equal(restored.model,"2N7000");
+ const stored=encodeFunctionalPart(restored);
+ assert.equal(stored.projectDetails.featureTreeName,"LED Switching Transistor");
+});
