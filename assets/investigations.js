@@ -130,8 +130,10 @@
     if(links.childElementCount)item.append(links);
     entryList.append(item);
    }
-   if(!editing){if(entryList.childElementCount)container.append(entryList);return;}
+   if(!editing){if(categoryOf(record)==="note"&&record.description?.trim())container.append(make("p","investigation-note-description",record.description));if(entryList.childElementCount)container.append(entryList);return;}
    if(!admin())return;
+   const descriptionInput=categoryOf(record)==="note"?make("textarea","field investigation-description-input"):null;
+   if(descriptionInput){descriptionInput.rows=3;descriptionInput.maxLength=5000;descriptionInput.value=record.description||"";descriptionInput.placeholder="Description (optional)";const label=make("label","investigation-description-label","Description");label.append(descriptionInput);container.append(label)}
    const latest=new Map();for(const entry of record.entries||[])latest.set(entry.type,entry);
 
    const controls=make("div","investigation-add-controls");
@@ -249,7 +251,7 @@
       if(name)savedNotes.push({...entry,descriptor:name.value.trim()});
       else entries.push({...entry,...(type==="resolution"?{resolution:fixed.value}:{})});
      }
-     const details={title:titleInput.value.trim(),date:date.value,entries,notes:savedNotes};
+     const details={title:titleInput.value.trim(),date:date.value,entries,notes:savedNotes,...(descriptionInput?{description:descriptionInput.value}:{})};
      const result=await save(creating?{...record,...details,action:"create"}:{...details,action:"editRecord",id:record.id});
      if(creating){
       const card=[...target.querySelectorAll(".investigation-card[data-record-id]")].find(item=>item.dataset.recordId===result.createdId);
