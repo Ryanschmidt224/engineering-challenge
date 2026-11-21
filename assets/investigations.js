@@ -213,7 +213,17 @@
      }
     });
     const section=make("div","investigation-note-photos");
-    section.append(window.BSEntryEditor.attachmentButton(()=>uploader.open(),{label:photoEntry?"Add photos":"Add photos / documents",className:"investigation-note-photo-add"}),gallery,pendingList,uploader.panel);
+    const photoButton=window.BSEntryEditor.attachmentButton(()=>{
+     const expanded=uploader.panel.hidden;
+     if(expanded)uploader.open();else uploader.close();
+     section.classList.toggle("is-upload-expanded",expanded);
+     photoButton.setAttribute("aria-expanded",String(expanded));
+    },{label:photoEntry?"Add photos":"Add photos / documents",className:"investigation-note-photo-add"});
+    photoButton.setAttribute("aria-expanded","false");
+    // The existing button is the upload panel's header and its collapse control.
+    // Do not render a second title or Close button inside this entry.
+    uploader.panel.querySelector(".bs-upload-heading")?.remove();
+    section.append(photoButton,uploader.panel,gallery,pendingList);
     controls.append(section);draw();
    }
    function fieldRow(type,label,stored=latest.get(type),parent=controls){
