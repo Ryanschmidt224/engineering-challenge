@@ -7,6 +7,7 @@
  const legacyType={attempt:"Attempt / change",theory:"Hypothesis",lesson:"How was it fixed?",revision:"Revision / design change",result:"Result"};
  const categories={
   note:{label:"Notes",fields:[]},
+  photos:{label:"Photos",fields:[]},
   test:{label:"Tests/Measurements",fields:[["theory","What did you want to verify?"],["attempt","How did you test it?"] ,["result","What happened?"]]},
   revision:{label:"Revisions",fields:[["revision","What changed?"],["theory","Why did you change it?"]]},
   failure:{label:"Failures",fields:[...types.slice(0,2),["resolution","Did you fix it?"]]},
@@ -131,9 +132,11 @@
     if(links.childElementCount)item.append(links);
     entryList.append(item);
    }
+   const photoEntry=categoryOf(record)==="photos";
+   const noteLike=categoryOf(record)==="note"||photoEntry;
    if(!editing){
-    if(categoryOf(record)==="note"){
-     if(record.description?.trim())container.append(make("p","investigation-note-description",record.description));
+    if(noteLike){
+     if(record.description?.trim())container.append(make("p",photoEntry?"investigation-photo-note":"investigation-note-description",record.description));
      const gallery=make("div","investigation-note-photo-gallery");
      for(const id of record.photos||[]){
       if(photoExt.test(id)){
@@ -147,8 +150,8 @@
     return;
    }
    if(!admin())return;
-   const descriptionInput=categoryOf(record)==="note"?make("textarea","field investigation-description-input"):null;
-   if(descriptionInput){descriptionInput.rows=3;descriptionInput.maxLength=5000;descriptionInput.value=record.description||"";descriptionInput.placeholder="Description (optional)"}
+   const descriptionInput=noteLike?make("textarea","field investigation-description-input"):null;
+   if(descriptionInput){descriptionInput.rows=3;descriptionInput.maxLength=5000;descriptionInput.value=record.description||"";descriptionInput.placeholder=photoEntry?"Note (optional)":"Description (optional)"}
    const latest=new Map();for(const entry of record.entries||[])latest.set(entry.type,entry);
 
    const controls=make("div","investigation-add-controls");
@@ -160,9 +163,9 @@
    const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
    date.value=record.date||[...(record.entries||[])].reverse().find(entry=>entry.date)?.date||date.value;
    dateLabel.append(date);controls.append(dateLabel);
-   if(descriptionInput){const descriptionLabel=make("label","investigation-description-label","Description");descriptionLabel.append(descriptionInput);controls.append(descriptionLabel)}
+   if(descriptionInput){const descriptionLabel=make("label","investigation-description-label",photoEntry?"Note":"Description");descriptionLabel.append(descriptionInput);controls.append(descriptionLabel)}
 
-   const notePhotos=categoryOf(record)==="note"?{existing:[...(record.photos||[])],pending:[]}:null;
+   const notePhotos=noteLike?{existing:[...(record.photos||[])],pending:[]}:null;
    if(notePhotos){
     const gallery=make("div","investigation-note-photo-gallery");
     const pendingList=make("div","investigation-note-pending-photos");
@@ -183,20 +186,21 @@
      }
     };
     const uploader=window.BSPhotoEditor.uploadPanel({
-     title:"Add photos / documents",accept:acceptedAttachments,
-     hint:"Choose photos or documents. Up to 12 files per note, 20 MB each.",
+     title:photoEntry?"Add photos":"Add photos / documents",accept:photoEntry?"image/*,.heic,.heif":acceptedAttachments,
+     hint:photoEntry?"Choose or paste up to 12 images, 20 MB each.":"Choose photos or documents. Up to 12 files per note, 20 MB each.",
      onFiles:files=>{
       for(const file of files){
        if(!file.name){reportHere("Select a named file.");continue}
-       if(file.size>20*1024*1024){reportHere("Each photo must be 20 MB or smaller.");continue}
-       if(notePhotos.existing.length+notePhotos.pending.length>=12){reportHere("A Note can contain up to 12 attachments.");break}
+       if(photoEntry&&!photoExt.test(file.name)){reportHere("Photos entries accept images only.");continue}
+       if(file.size>20*1024*1024){reportHere("Each file must be 20 MB or smaller.");continue}
+       if(notePhotos.existing.length+notePhotos.pending.length>=12){reportHere("An entry can contain up to 12 photos or attachments.");break}
        notePhotos.pending.push(file);
       }
       draw();
      }
     });
     const section=make("div","investigation-note-photos");
-    section.append(window.BSEntryEditor.attachmentButton(()=>uploader.open(),{className:"investigation-note-photo-add"}),gallery,pendingList,uploader.panel);
+    section.append(window.BSEntryEditor.attachmentButton(()=>uploader.open(),{label:photoEntry?"Add photos":"Add photos / documents",className:"investigation-note-photo-add"}),gallery,pendingList,uploader.panel);
     controls.append(section);draw();
    }
    function fieldRow(type,label,stored=latest.get(type),parent=controls){
