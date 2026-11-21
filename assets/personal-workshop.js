@@ -328,9 +328,10 @@
     section.append(el("h3",title),el("p",value));
     itemSide.append(section);
    };
-   sideRow("Manufacturer part number",item.partNumber||item.model);
+   const genericItem=window.BSResources.workshopIdentityKind(item)==="generic";
+   if(!genericItem)sideRow("Manufacturer part number",item.partNumber||item.model);
    sideRow("Supplier part number",item.supplierPartNumber);
-   sideRow("Manufacturer",item.manufacturer);
+   if(!genericItem)sideRow("Manufacturer",item.manufacturer);
    sideRow("Description",item.subtitle||item.name);
    sideRow("Default container name",item.featureTreeDescription);
    sideRow("Vendor",item.supplier);
@@ -769,6 +770,12 @@
     const generic=identityRadios.generic.checked;
     genericTemplateSection.hidden=!generic;
     parentLabel.hidden=generic;
+    // Manufacturer identity belongs to specific purchasable products, never
+    // to a generic component type. Retain the model fields for compatibility,
+    // but show them only when Specific product is selected.
+    for(const key of ["manufacturer","partNumber","model"]){
+     controls[key]?.closest("label")?.classList.toggle("hide",generic);
+    }
     // Generic items can retain fixed Workshop specifications (e.g. ¼ W);
     // only the configurable fields are left blank for project use.
     structuredSection.querySelector("h3").textContent=generic?"Data retained in Workshop":"Specifications for this product";
