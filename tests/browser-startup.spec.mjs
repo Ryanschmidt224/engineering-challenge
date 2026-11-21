@@ -149,7 +149,9 @@ test("new custom part retains explicit project numbering without confusing it wi
  expect(selection.numberingText).toContain("Auto assign part number");
  expect(selection.numberAfterSource).toBe(true); // Part number is framed immediately after Part source.
  await expect(page.locator(".library-part-dialog .library-identity-section")).toBeVisible();
- await expect(page.locator(".library-part-dialog .library-auto-number-tip")).toHaveAttribute("title", /next unused project part number/);
+ const partDetailsOrder=await page.locator(".library-part-dialog .library-identity-section > .library-field").allTextContents();
+ expect(partDetailsOrder[0]).toContain("Part type");
+ await expect(page.locator(".library-part-dialog .library-auto-number-tip")).toHaveAttribute("title", /next available part number as defined in the part settings page/);
  await expect(page.locator(".library-part-dialog .library-function-tip")).toHaveAttribute("title", /Maximum 20 characters/);
  await expect(page.locator(".library-part-dialog .library-field",{hasText:"Function"}).locator("input")).toHaveAttribute("maxlength","20");
  await expect(page.locator(".library-part-dialog .library-project-only")).toBeHidden();
