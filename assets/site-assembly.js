@@ -802,7 +802,7 @@ function setupAssemblyTrees(){
    const instructions=panel.querySelector(".recipe-instructions");
    const recipe=window.BSRecipes?.mount(instructions,{
     admin:canEdit,project,
-    renderInvestigations:(step,target)=>investigations?.showStep(target,step,scope,ownerId()),
+    renderInvestigations:(step,target,editing)=>investigations?.showStep(target,step,scope,ownerId(),editing),
     onSave:async()=>{await saveInProgress();return save()}
    });
    const resourcesPanel=panel.querySelector(".workspace-resources,.part-linked-resources");
