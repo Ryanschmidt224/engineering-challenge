@@ -88,6 +88,15 @@ export async function handleInvestigations(request,env){
    entries:data.entries.map(normalizedEntry),status:entryStatus(data.entries),...normalizeNotes(data.notes)});
   createdId=record.id;
   changed=[...records,record];
+ }else if(data.action==="archiveRecord"){
+  record=records.find(item=>item.id===data.id);
+  if(!record)return json({error:"Record not found"},404);
+  if(record.archivedAt||record.partSnapshot)return json({error:"Record is already archived"},409);
+  const note=data.note??"";
+  if(!validText(note,2500))return json({error:"Archive note is too long"},400);
+  // Server-generated timestamp prevents user clocks from changing archive order.
+  const archivedAt=new Date().toISOString();
+  changed=records.map(item=>item.id===record.id?{...item,archivedAt,archiveNote:note.trim()}:item);
  }else if(data.action==="archivePart"){
   const partId=data.partId;
   if(!uuid.test(partId)||!validDate(data.date)||!validText(data.reason,2500)||!data.reason.trim())
@@ -115,7 +124,7 @@ export async function handleInvestigations(request,env){
   if(JSON.stringify(snapshot).length>250000)return json({error:"Part history is too large to snapshot"},413);
   record={id:revisionId,scope:"part",ownerType:"part",ownerId:partId,stepId:"",
    title:"Revision: "+trim(part.name||"Previous part",160),status:"resolved",
-   date:data.date,partSnapshot:snapshot,entries:[{id:crypto.randomUUID(),type:"revision",text:data.reason.trim(),
+   date:data.date,partSnapshot:snapshot,archivedAt:new Date().toISOString(),archiveNote:data.reason.trim(),entries:[{id:crypto.randomUUID(),type:"revision",text:data.reason.trim(),
     date:data.date,files:[],fileName:"",createdAt:new Date().toISOString()}],createdAt:new Date().toISOString()};
   changed=[...records,record];
  }else if(data.action==="rename"){
