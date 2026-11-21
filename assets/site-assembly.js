@@ -2752,6 +2752,8 @@ function setupAssemblyTrees(){
    return data;
   };
   async function refreshAssemblyArchives(parentId){
+   archivePanel.hidden=!canEdit();
+   if(archivePanel.hidden)return;
    const serial=++archiveRequestSerial;
    archiveList.textContent="Loading archived items…";
    try{
