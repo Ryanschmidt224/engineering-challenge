@@ -231,7 +231,7 @@
   document.addEventListener("keydown",event=>{if(event.key==="Escape")closeKnowledgeMenu()});
   document.addEventListener("scroll",closeKnowledgeMenu,true);
   // A step can collapse independently of the nested entry/archive disclosures.
-  const collapsedSteps=new Set();
+  const expandedStepBodies=new Set();
   function render(){
    content.replaceChildren();
    const total=savedSteps().length;
@@ -299,7 +299,7 @@
     const navButton=button((i+1)+". "+(step.title||"Untitled step"),async()=>{
      if(expanded===step.id||saving||pendingUploads)return;
      try{await savePending()}catch(error){feedback.textContent=error.message||"Save failed; still on this step.";return}
-     expanded=step.id;collapsedSteps.delete(step.id);
+     expanded=step.id;expandedStepBodies.delete(step.id);
      editing.clear();if(isDraft)editing.add(step.id);
      options.onStepSelected?.(step.id);
      closeKnowledgeMenu();render();options.onStepChange?.(step.id);
@@ -347,7 +347,7 @@
     stepList.append(navButton);
     if(!isCurrent)continue;
     const card=el("details","recipe-one-step bs-content-card");
-    card.dataset.stepId=step.id;card.open=!collapsedSteps.has(step.id);
+    card.dataset.stepId=step.id;card.open=expandedStepBodies.has(step.id)||editing.has(step.id);
     const summary=el("summary","recipe-one-step-summary bs-content-card-heading");
     const titlePrefix=el("span","recipe-one-step-number",(i+1)+".");
     const name=el("span","recipe-one-step-title",step.title||"Untitled step");
@@ -370,7 +370,7 @@
     const saveStep=async event=>{
      event.preventDefault();event.stopPropagation();
      if(!editing.has(step.id)){
-      editing.add(step.id);expanded=step.id;collapsedSteps.delete(step.id);render();
+      editing.add(step.id);expanded=step.id;expandedStepBodies.add(step.id);render();
       content.querySelector(".recipe-step-name")?.focus();
       return;
      }
@@ -399,20 +399,18 @@
       if(bottomSave){bottomSave.disabled=false;bottomSave.textContent="Save"}
      }finally{saving=false}
     };
-    // One action opens or closes the whole selected step, including its
-    // nested notes, records and Project Archive. This changes display only.
+    // The step's own content and the nested entries are sibling disclosures.
+    // This keeps every header visible even if the step's photos are collapsed.
     const hierarchy=button("Expand all",event=>{
      event.preventDefault();event.stopPropagation();
-     const nested=[...card.querySelectorAll("details")];
-     const fullyOpen=card.open&&nested.every(section=>section.open);
-     const open=!fullyOpen;
-     for(const section of nested)section.open=open;
-     card.open=open;
+     const sections=[...detailPane.querySelectorAll("details")];
+     const fullyOpen=sections.every(section=>section.open);
+     for(const section of sections)section.open=!fullyOpen;
      syncHierarchyLabel();
     },"btn recipe-expand-hierarchy");
     const syncHierarchyLabel=()=>{
-     const nested=[...card.querySelectorAll("details")];
-     const fullyOpen=card.open&&nested.every(section=>section.open);
+     const sections=[...detailPane.querySelectorAll("details")];
+     const fullyOpen=sections.length>0&&sections.every(section=>section.open);
      hierarchy.textContent=fullyOpen?"Collapse all":"Expand all";
      hierarchy.setAttribute("aria-label",(fullyOpen?"Collapse":"Expand")+" all sections in this step");
     };
@@ -428,8 +426,8 @@
     });
     card.addEventListener("toggle",event=>{
      if(event.target===card){
-      if(card.open)collapsedSteps.delete(step.id);
-      else collapsedSteps.add(step.id);
+      if(card.open)expandedStepBodies.add(step.id);
+      else expandedStepBodies.delete(step.id);
      }
      syncHierarchyLabel();
     },true);
@@ -584,13 +582,16 @@
       // The context menu provides knowledge lookup without a redundant button.
      }
     }
+    if(typeof options.decorateStep==="function")options.decorateStep(step,body);
+    card.append(body);detailPane.append(card);
     if(!isDraft&&typeof options.renderInvestigations==="function"){
+     // Keep these outside the main step <details>, otherwise a collapsed
+     // instruction also hides its nested entry / Project Archive headers.
      const investigationArea=el("div","recipe-step-investigations");
-     body.append(investigationArea);
+     detailPane.append(investigationArea);
      options.renderInvestigations(step,investigationArea,editing.has(step.id));
     }
-    if(typeof options.decorateStep==="function")options.decorateStep(step,body);
-    card.append(body);detailPane.append(card);syncHierarchyLabel();
+    syncHierarchyLabel();
    }
    add.hidden=!admin();
   }
@@ -600,7 +601,7 @@
     draft={id:newId(),title:"",standard:"",detail:"",kind:"action",notes:[],noteIds:[],photos:[],photoNames:{},photoNoteIds:{},photoAfterNote:{}};
     steps.push(draft);
    }
-   expanded=draft.id;collapsedSteps.delete(draft.id);editing.clear();editing.add(draft.id);render();
+   expanded=draft.id;expandedStepBodies.add(draft.id);editing.clear();editing.add(draft.id);render();
    content.querySelector(".recipe-step-name")?.focus();
   },"btn recipe-add-step");
   headingActions.append(add);
@@ -621,7 +622,7 @@
    const resumeKey="bs-resume-step:"+location.hash;
    const desired=sessionStorage.getItem(resumeKey);
    if(desired&&steps.some(step=>step.id===desired)){expanded=desired;sessionStorage.removeItem(resumeKey)}
-   if(!keepDraft)collapsedSteps.clear();
+   expandedStepBodies.clear();
    if(expanded)options.onStepSelected?.(expanded);
    editing.clear();feedback.textContent="";
    if(resumeDraft){expanded=draft.id;editing.add(draft.id)}
