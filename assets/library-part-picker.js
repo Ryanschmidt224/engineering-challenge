@@ -183,7 +183,13 @@ function open({onCreate,hideDefault=false}){
  const numberLegend=el("legend","","Part number");numberChoice.append(numberLegend);
  const autoNumberRow=el("label","library-auto-number");
  const autoNumberCheckbox=el("input");autoNumberCheckbox.type="radio";autoNumberCheckbox.name="new-part-number-mode";autoNumberCheckbox.value="auto";autoNumberCheckbox.checked=true;
- autoNumberRow.append(autoNumberCheckbox,document.createTextNode(" Assign next available project number"),el("span","muted library-auto-number-inline-note","Assigned when part is saved"));
+ const autoNumberText=el("span","","Auto assign part number");
+ const autoNumberHelp=el("span","library-auto-number-tip","ⓘ");
+ autoNumberHelp.tabIndex=0;
+ autoNumberHelp.setAttribute("role","img");
+ autoNumberHelp.setAttribute("aria-label","Automatically assigns the next unused project part number when the part is saved. The number follows this project's numbering settings and cannot be reused.");
+ autoNumberHelp.title="Automatically assigns the next unused project part number when the part is saved. The number follows this project's numbering settings and cannot be reused.";
+ autoNumberRow.append(autoNumberCheckbox,autoNumberText,autoNumberHelp);
  const manualNumberRow=el("label","library-auto-number");
  const manualNumberCheckbox=el("input");manualNumberCheckbox.type="radio";manualNumberCheckbox.name="new-part-number-mode";manualNumberCheckbox.value="manual";
  manualNumberRow.append(manualNumberCheckbox,document.createTextNode(" Enter a part number"));
@@ -470,7 +476,7 @@ function open({onCreate,hideDefault=false}){
    input.readOnly=lib;
   vendorField.input.disabled=lib;
   ownSupplier.label.hidden=lib||!purchased||vendorField.input.value!=="Other";
-  projectDetailsPanel.classList.toggle("hide",!isPart||workshopMode);
+  // Project-only annotations belong to Edit Part for Workshop-linked items.\n  projectDetailsPanel.classList.add("hide");
   partValue.label.hidden=!isPart;
   vendorLinks.classList.toggle("hide",!purchased||workshopMode);
   vendorInfo.classList.toggle("hide",!purchased||workshopMode);
