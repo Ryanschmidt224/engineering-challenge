@@ -181,6 +181,11 @@ export async function handleAssemblyArchive(request,env){
  if(conflicts.length)return json({error:"Some archived node IDs are in use"},409);
  const componentState=await read(bucket,partKey(project),[]);
  const incoming=archive.parts.filter(p=>!componentState.value.some(existing=>existing.id===p.id));
+ const changedShared=archive.parts.find(p=>{
+  const active=componentState.value.find(existing=>existing.id===p.id);
+  return active&&JSON.stringify(active)!==JSON.stringify(p);
+ });
+ if(changedShared)return json({error:"A shared archived part has been modified since archiving. Restore it as a new part instead of overwriting an active part."},409);
  const existingAssemblyNumbers=new Set(current.filter(n=>n.kind!=="part").map(n=>n.partNumber).filter(Boolean));
  const existingPartNumbers=new Set(componentState.value.map(p=>p.partNumber).filter(Boolean));
  if(archive.nodes.some(n=>n.kind!=="part"&&n.partNumber&&existingAssemblyNumbers.has(n.partNumber))||
@@ -189,6 +194,20 @@ export async function handleAssemblyArchive(request,env){
  const nextParts=[...componentState.value,...incoming];
  const restoredNodes=archive.nodes.map(n=>({...n,dependsOn:(n.dependsOn||[]).filter(dep=>current.some(active=>active.id===dep)||archive.nodes.some(child=>child.id===dep))}));
  const nextTree=[...current,...restoredNodes];
+ // Restore all missing file bytes before the tree becomes visible again.
+ // If a backup copy is absent, fail without touching the active BOM/tree.
+ const missing=[],toRestore=[];
+ for(const asset of archive.assets||[]){
+  if(await bucket.head(asset.original))continue;
+  const copy=await bucket.get(asset.archive);
+  if(!copy){missing.push(asset.original);continue}
+  toRestore.push({key:asset.original,copy});
+ }
+ if(missing.length)return json({error:"An archived file is missing from both active storage and the snapshot",missing},409);
+ for(const entry of toRestore)
+  await bucket.put(entry.key,await entry.copy.arrayBuffer(),{
+   httpMetadata:entry.copy.httpMetadata,customMetadata:entry.copy.customMetadata
+  });
  let partsWritten=null;
  if(incoming.length){
   partsWritten=await bucket.put(partKey(project),JSON.stringify(nextParts),conditional(componentState.object));
@@ -199,15 +218,7 @@ export async function handleAssemblyArchive(request,env){
   if(partsWritten)await bucket.put(partKey(project),JSON.stringify(componentState.value),{onlyIf:{etagMatches:partsWritten.etag}});
   return json({error:"Feature tree changed. Reload and retry."},409);
  }
- // Existing immutable media keys remain in place on archive; restore missing
- // files from the independent archive copies when necessary.
- const missing=[];
- for(const asset of archive.assets||[]){
-  if(await bucket.head(asset.original))continue;
-  const copy=await bucket.get(asset.archive);
-  if(!copy){missing.push(asset.original);continue}
-  await bucket.put(asset.original,await copy.arrayBuffer(),{httpMetadata:copy.httpMetadata,customMetadata:copy.customMetadata});
- }
+ // Copies have already been verified and restored before tree activation.
  // Merge only missing investigation records; never overwrite newer ones.
  const investigationState=await read(bucket,investigationKey(project),{records:[],revision:null});
  const missingRecords=(archive.investigations||[]).filter(r=>!(investigationState.value.records||[]).some(existing=>existing.id===r.id));
