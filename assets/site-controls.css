@@ -3432,3 +3432,55 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
   grid-column:1;
  }
 }
+
+
+/* Edit Part: project Container versus its selected physical implementation.
+   Sections follow the same framed spacing used by New Part. */
+.part-editor-dialog .workspace-main-bom-editor .component-review>.part-editor-group{
+ display:grid;
+ grid-template-columns:minmax(0,1fr);
+ gap:11px;
+ min-width:0;
+ margin:0 0 14px;
+ padding:17px 19px;
+ border:1px solid var(--color-border);
+ border-radius:12px;
+ background:var(--color-surface);
+}
+.part-editor-dialog .component-review>.part-editor-group>.part-editor-section-heading{
+ margin:0 0 3px;
+ padding:0 0 9px;
+ border:0;
+ border-bottom:1px solid var(--color-border);
+ font-size:1rem;
+ font-weight:700;
+ color:var(--color-text);
+}
+.part-editor-dialog .component-review>.part-editor-group>label{
+ width:100%;
+ min-width:0;
+ margin:0;
+ box-sizing:border-box;
+}
+.part-editor-dialog .component-review>.part-editor-group>label>.field{
+ width:100%;
+ max-width:none;
+ min-width:0;
+}
+.part-editor-dialog .component-review>.part-editor-group .part-number-field>.part-number-input{
+ width:100%;
+ max-width:none;
+}
+.part-editor-dialog .component-review>.part-editor-group [hidden],
+.part-editor-dialog .component-review>.part-editor-group[hidden]{
+ display:none!important;
+}
+.part-editor-dialog .component-review>.part-editor-group .part-project-only-editor[hidden]{
+ display:none!important;
+}
+@media(max-width:700px){
+ .part-editor-dialog .workspace-main-bom-editor .component-review>.part-editor-group{
+  padding:12px;
+  gap:9px;
+ }
+}
