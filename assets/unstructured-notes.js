@@ -104,9 +104,8 @@
    const description=el("textarea","field");description.rows=6;description.maxLength=12000;
    description.placeholder="Write anything useful here…";description.value=working.description;detail.append(description);
    const photos=el("div","bs-unstructured-edit-photos");
-   const photoInput=el("input");photoInput.type="file";photoInput.accept="image/*,.heic,.heif";
-   photoInput.multiple=true;photoInput.hidden=true;
-   const pick=button("+ Add photo",()=>photoInput.click(),"btn");
+   let uploader;
+   const pick=button("+ Add photos",()=>uploader.open(),"btn");
    const photoStatus=el("span","small muted");photoStatus.setAttribute("role","status");
    let uploading=0;
    const drawPhotos=()=>{
@@ -143,14 +142,16 @@
      finally{uploading--;submit.disabled=uploading>0}
     }
    };
-   photoInput.onchange=()=>{const files=[...photoInput.files];photoInput.value="";void uploadPhotos(files)};
+   uploader=window.BSPhotoEditor.uploadPanel({
+    title:"Add photos",accept:"image/*,.heic,.heif",
+    hint:"Up to 12 photos per note, maximum 10 MB per photo.",
+    onFiles:uploadPhotos
+   });
    const actions=el("div","bs-unstructured-editor-actions");
    const submit=button("Save note",()=>editor.requestSubmit(),"btn primary");
    const cancel=button("Cancel",()=>{editing=null;render()},"btn");
    actions.append(submit,cancel);
-   editor.append(title,detail,photos,pick,photoInput,window.BSPhotoMarkup.pasteTarget(uploadPhotos,{
-    onEmpty:()=>{photoStatus.textContent="Copy an image or choose a photo file."}
-   }),photoStatus,actions);
+   editor.append(title,detail,photos,pick,uploader.panel,photoStatus,actions);
    editor.onsubmit=async e=>{
     e.preventDefault();if(uploading)return;
     if(!name.value.trim()){name.focus();photoStatus.textContent="Enter a note header.";return}
