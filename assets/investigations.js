@@ -526,12 +526,25 @@
    partSlot={target,context:makeContext("part",id)};
    assemblySlot=null;stepSlots.clear();renderAll();void load();
   }
+  function resetStepDisclosures(stepId,ownerType,ownerId){
+   if(!stepId||!ownerType||!ownerId)return;
+   const prefix=ownerType+":"+ownerId+":"+stepId;
+   openSections.delete(prefix);
+   for(const key of [...openCards]){
+    if(key.startsWith(prefix+":"))openCards.delete(key);
+   }
+   // An individual entry can be reopened without reopening the archive.
+   const slot=stepSlots.get(stepId);
+   if(slot?.target?.isConnected){
+    slot.target.querySelectorAll("details.investigation-card,details.investigation-rollup,details.investigation-collapse").forEach(item=>{item.open=false});
+   }
+  }
   function showStep(target,step,ownerType,ownerId,editing=false){
    if(!target||!step?.id||!ownerId)return;
    const context=makeContext(ownerType,ownerId,step.id);
    stepSlots.set(step.id,{target,context,editing});render(target,context,true);
   }
-  return {showAssembly,showPart,showStep,load};
+  return {showAssembly,showPart,showStep,resetStepDisclosures,load};
  }
  window.BSInvestigations={mount};
 })();
