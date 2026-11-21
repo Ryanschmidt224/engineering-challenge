@@ -397,7 +397,7 @@
    },"btn investigation-add investigation-create-button"));
    const activeContent=make("div","investigation-active-content");
    activeHost.append(activeContent);
-   if(canCreate)activeHost.append(activeHeader);
+   if(canCreate&&!compact)activeHost.append(activeHeader);
 
    const disclosure=make("details","investigation-collapse");
    disclosure.open=openSections.has(sectionKey);
@@ -415,6 +415,9 @@
    });
    const content=make("div","investigation-collapse-content");
    disclosure.append(content);target.append(disclosure);
+   // For Work Instructions, creation follows the whole hierarchy,
+   // including Project Archive, rather than sitting between cards.
+   if(canCreate&&compact)target.append(activeHeader);
 
    const renderCard=(record,destination,{historical=false,inherited=false}={})=>{
     const card=make("details","investigation-card bs-content-card");
