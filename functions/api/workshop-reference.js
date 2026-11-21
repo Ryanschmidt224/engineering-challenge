@@ -116,6 +116,23 @@ export async function onRequest({request,env}){
   const specifications=normalizeSpecifications(body.details.specifications);
   if(specifications===null)return json({error:"Invalid Workshop specifications (up to 60 editable fields)"},400);
   patch.specifications=specifications;
+  // Names and units are templates. Values are supplied by each project, never
+  // written to the shared Workshop record through this field.
+  const rawGenericFields=body.details.genericFields??[];
+  if(!Array.isArray(rawGenericFields)||rawGenericFields.length>40)return json({error:"Generic component fields must be a list of up to 40 fields"},400);
+  const seenGeneric=new Set();
+  const genericFields=[];
+  for(const entry of rawGenericFields){
+   if(!entry||typeof entry!=="object"||Array.isArray(entry)||typeof entry.label!=="string"||
+      (entry.unit!==undefined&&typeof entry.unit!=="string"))
+    return json({error:"Invalid generic component field"},400);
+   const label=entry.label.trim().slice(0,100),unit=String(entry.unit||"").trim().slice(0,32);
+   if(!label)continue;
+   const key=label.toLowerCase();
+   if(seenGeneric.has(key))continue;
+   seenGeneric.add(key);genericFields.push({label,unit});
+  }
+  patch.genericFields=genericFields;
   const id=creating?"workshop:custom-"+crypto.randomUUID():body.id;
   // Preserve compatibility with seed references while marking new records as
   // first-class catalog items. Never trust the client to set the created flag.
