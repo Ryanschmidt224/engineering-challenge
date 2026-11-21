@@ -25,7 +25,7 @@ async function listAll(bucket,key,max=700){
 }
 const ownerKey=(project,node)=>node.kind==="part"?"part-workspaces/"+project+"/"+node.partId+".json":"workspaces/"+project+"/"+node.id+".json";
 const nodeIds=nodes=>new Set(nodes.map(n=>n.id));
-function collectSubtree(nodes,nodeId){
+export function collectSubtree(nodes,nodeId){
  const result=[],queue=[nodeId],seen=new Set();
  while(queue.length){
   const id=queue.shift();
@@ -81,7 +81,7 @@ async function archiveAssets(bucket,project,archiveId,subtree,records,parts){
  }
  return copied;
 }
-function relatedRecords(records,subtree){
+export function relatedRecords(records,subtree){
  const assemblies=new Set(subtree.filter(n=>n.kind!=="part").map(n=>n.id));
  const parts=new Set(subtree.filter(n=>n.kind==="part").map(n=>n.partId));
  return records.filter(r=>(r.ownerType==="part"&&parts.has(r.ownerId))||(r.ownerType==="assembly"&&assemblies.has(r.ownerId)));
