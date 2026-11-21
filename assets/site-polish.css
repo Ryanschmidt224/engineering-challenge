@@ -4254,3 +4254,13 @@
 .assembly-workspace-page .bs-unstructured-notes .bs-unstructured-list{
  margin-top:8px;
 }
+
+
+/* Even empty sections remain expandable so the user can add the first entry. */
+.assembly-workspace-page .workspace-resource-disclosure.is-empty:not([open])>summary::before,
+.assembly-workspace-page .workspace-archive-history:not([open])>summary::before{
+ visibility:visible;
+}
+.assembly-workspace-page .workspace-archive-history .investigation-active-content>.investigation-feedback:empty{
+ display:none;
+}
