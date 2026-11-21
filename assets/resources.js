@@ -166,7 +166,7 @@
   const category=categoryForReference(item.id);
   // Stocking/BOM semantics are kept separate from the display taxonomy.
   const availabilityAssumption=item.tier==="core"?"Expected":"Optional";
-  const bomDefault=item.kind==="tool"||["consumables","tools","safety"].includes(category)||["workshop:wire22","workshop:wire18","workshop:wire16","workshop:silicone","workshop:heatshrink","workshop:sealshrink"].includes(item.id)?"exclude":"include";
+  const bomDefault=item.kind==="tool"||["consumables","consumables-assembly","consumables-general","tools","tools-measurement","tools-making","safety"].includes(category)||["workshop:wire22","workshop:wire18","workshop:wire16","workshop:silicone","workshop:heatshrink","workshop:sealshrink"].includes(item.id)?"exclude":"include";
   return {...item,...(essentialsGuidance[item.id]||{}),illustration:essentialsIllustrations[item.id]||"",category,availabilityAssumption,bomDefault};
  };
  const workshopReferences=workshopSupplies.map(itemMetadata);
