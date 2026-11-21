@@ -559,9 +559,8 @@
     for(const tile of getTiles()){
      const header=tile.querySelector(":scope > summary");
      if(!header)continue;
-     const grip=btn("","", "bs-tile-grip");
-     grip.onclick=null;
-     grip.type="button";grip.draggable=true;
+     const grip=make("button","bs-tile-grip");
+     grip.type="button";grip.draggable=admin();
      grip.title="Drag to reorder tiles. Alt+Up/Down also moves this tile.";
      grip.setAttribute("aria-label","Move this tile up or down");
      grip.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" width="17" height="17" fill="currentColor"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>';
