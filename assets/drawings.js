@@ -100,6 +100,7 @@
     for(const file of selected){
      if(current.project!==location.project||current.type!==location.type||current.id!==location.id||current.implementation!==location.implementation)throw Error("The selected implementation changed. Reopen the drawings section.");
      const params=new URLSearchParams({project:location.project,type:location.type,id:location.id});
+     if(location.implementation)params.set("implementation",location.implementation);
      if(replacement)params.set("file",replacement);
      const res=await fetch("/api/drawings?"+params.toString(),{
       method:"POST",credentials:"same-origin",
@@ -110,7 +111,7 @@
      if(!res.ok)throw Error(file.name+": "+(data.error||"Upload failed (HTTP "+res.status+")"));
      completed++;
     }
-    await load(location.project,location.type,location.id);
+    await load(location.project,location.type,location.id,location.implementation);
     status.textContent=(replacement?"Drawing replaced.":completed+" PDF drawing"+(completed===1?"":"s")+" saved.")+" Use View PDF to open a drawing.";
    }catch(e){status.textContent=e.message}
    finally{busy=false;add.disabled=false}
