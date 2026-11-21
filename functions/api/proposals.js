@@ -34,8 +34,8 @@ export async function handleProposals(request,env){
   if(settings.editMode==="locked")return json({error:"Project is locked against suggestions"},403);
   const scope=input.scope,targetId=input.targetId,stepId=input.stepId,field=input.field,suggested=input.suggestedText;
   if(!["assembly","part"].includes(scope)||!(targetId==="__root__"&&scope==="assembly"||UUID.test(targetId))||
-     typeof stepId!=="string"||stepId.length>80||!["standard","detail"].includes(field)||
-     typeof suggested!=="string"||!suggested.trim()||suggested.length>8000)return json({error:"Choose an instruction step and provide revised text"},400);
+     typeof stepId!=="string"||stepId.length>80||field!=="title"||
+     typeof suggested!=="string"||!suggested.trim()||suggested.length>180)return json({error:"Choose a Work Instruction and a replacement name (180 characters maximum)"},400);
   const object=await env.PHOTOS.get(locationKey(project,scope,targetId));
   if(!object)return json({error:"Instruction not found"},404);
   const workspace=JSON.parse(await object.text());
@@ -65,6 +65,7 @@ async function reviewProposal(env,project,input){
   const data=await read(env,project);
   const proposal=data.entries.find(p=>p.id===input.id);
   if(!proposal)return json({error:"Suggestion not found"},404);
+  if(proposal.field!=="title"&&input.action==="approve")return json({error:"This suggestion uses a retired instruction field. Submit a new Work Instruction name suggestion."},409);
   if(proposal.status!=="pending")return proposal.status===desired?json({proposal}):json({error:"Suggestion already "+proposal.status},409);
   let decision=desired,reviewedAt=new Date().toISOString();
   if(desired==="approved"||proposal.approvalBase){
