@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {collectSubtree,relatedRecords,archiveAssets,archiveOriginPath} from "../functions/api/assembly-archive.js";
+import {collectSubtree,relatedRecords,archiveAssets,archiveOriginPath,purgeArchivedCopies} from "../functions/api/assembly-archive.js";
 
 const tree=[
  {id:"a",kind:"assembly",parentId:null,name:"Top"},
@@ -81,4 +81,52 @@ test("original path is a snapshot, unaffected by subsequent renames or moves",()
 test("cannot archive with an incomplete or circular original path",()=>{
  assert.throws(()=>archiveOriginPath([{id:"child",parentId:"missing",kind:"part",name:"Component"}],"child","launcher","Project"),/Missing parent/);
  assert.throws(()=>archiveOriginPath([{id:"a",parentId:"b",name:"One"},{id:"b",parentId:"a",name:"Two"}],"a","launcher","Project"),/Circular/);
+});
+
+test("deleting an archived part removes only its snapshot copies, not active data",async()=>{
+ const id="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+ const other="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
+ const archivePrefix="assembly-archives/launcher/"+id+"/";
+ const items=new Map([
+  [archivePrefix+"objects/photo.png","photo snapshot"],
+  [archivePrefix+"objects/workspace.json","workspace snapshot"],
+  ["assembly-archives/launcher/manifests/"+id+".json","manifest"],
+  ["assembly-archives/launcher/"+other+"/objects/photo.png","unrelated archive"],
+  ["components/launcher.json","active BOM"],
+  ["launcher/shared-photo.png","active image"]
+ ]);
+ const bucket={
+  list:async({prefix})=>({objects:[...items.keys()].filter(key=>key.startsWith(prefix)).map(key=>({key})),truncated:false}),
+  delete:async key=>{items.delete(key)}
+ };
+ const deleted=await purgeArchivedCopies(bucket,"launcher",id);
+ assert.equal(deleted,2);
+ assert.equal(items.has(archivePrefix+"objects/photo.png"),false);
+ assert.equal(items.has("components/launcher.json"),true);
+ assert.equal(items.has("launcher/shared-photo.png"),true);
+ assert.equal(items.has("assembly-archives/launcher/"+other+"/objects/photo.png"),true);
+ // Manifest deletion is the final API step, never mixed with copy cleanup.
+ assert.equal(items.has("assembly-archives/launcher/manifests/"+id+".json"),true);
+});
+test("interrupted archive copy deletion is safe to retry",async()=>{
+ const id="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+ const prefix="assembly-archives/launcher/"+id+"/";
+ const items=new Map([[prefix+"objects/a","a"],[prefix+"objects/b","b"]]);
+ let failOnce=true;
+ const bucket={
+  list:async({prefix:query})=>({objects:[...items.keys()].filter(key=>key.startsWith(query)).map(key=>({key})),truncated:false}),
+  delete:async key=>{
+   if(key.endsWith("/b")&&failOnce){failOnce=false;throw Error("Simulated storage outage")}
+   items.delete(key);
+  }
+ };
+ await assert.rejects(purgeArchivedCopies(bucket,"launcher",id),/Simulated/);
+ assert.equal(await purgeArchivedCopies(bucket,"launcher",id),1);
+ assert.equal(items.size,0);
+});
+test("purging archive rejects invalid IDs before listing or deleting anything",async()=>{
+ let called=false;
+ const bucket={list:async()=>{called=true;return {objects:[],truncated:false}},delete:async()=>{called=true}};
+ await assert.rejects(purgeArchivedCopies(bucket,"launcher","../../components"),/Invalid archive/);
+ assert.equal(called,false);
 });
