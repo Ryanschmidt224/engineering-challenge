@@ -5,14 +5,14 @@ const SOLUTION_FIELDS=[
  "partType","manufacturer","model","supplier","asin","supplierOffers","category",
  "specifications","sharedPartRef","workshopChoice","historicalPrice",
  "historicalPriceDate","historicalPriceBasis","historicalPackageQuantity",
- "historicalPurchasePrice"
+ "historicalPurchasePrice","photoRevision"
 ];
 const PROJECT_SOLUTION_FIELDS=["workshopReferenceId","workshopTreeDescription"];
 const emptySolution=()=>({
  partType:"purchased",manufacturer:"",model:"",supplier:"",asin:"",supplierOffers:[],
  category:"",specifications:[],sharedPartRef:null,workshopChoice:null,
  historicalPrice:null,historicalPriceDate:null,historicalPriceBasis:"per_part",
- historicalPackageQuantity:null,historicalPurchasePrice:null,
+ historicalPackageQuantity:null,historicalPurchasePrice:null,photoRevision:null,
  workshopReferenceId:"",workshopTreeDescription:""
 });
 const implementationFields=(part)=>{
@@ -104,7 +104,7 @@ export function changeImplementation(part,action,payload,now=new Date().toISOStr
   const candidate={...emptySolution(),id,name:payload.name.trim(),partType:type,
    model:String(payload.model||"").trim().slice(0,300),
    manufacturer:String(payload.manufacturer||"").trim().slice(0,300),
-   createdAt:now,revision:crypto.randomUUID(),selectionReason:String(payload.reason||"").slice(0,1000)};
+   createdAt:now,revision:crypto.randomUUID(),photoRevision:crypto.randomUUID(),selectionReason:String(payload.reason||"").slice(0,1000)};
   next.selection.candidates.push(candidate);
   next.selection.selectedId=id;
  }else if(action==="select"){
