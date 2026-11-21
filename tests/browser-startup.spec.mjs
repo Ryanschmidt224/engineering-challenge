@@ -431,16 +431,24 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await sidebar.locator(".assembly-name",{hasText:"Motor and Motor Control"}).click();
  await expect(workspace).toBeVisible();
  // Linked resources show one action until a user creates a reference.
+ const toolsDisclosure=workspace.locator(".workspace-resource-disclosure");
  const resources=workspace.locator(".workspace-resources");
  await expect(resources.locator(".linked-resource-group")).toHaveCount(0);
- await expect(resources.locator(".linked-resource-add")).toBeVisible();
- await resources.locator(".linked-resource-add").click();
+ await expect(toolsDisclosure.locator(".workspace-tool-controls .linked-resource-add")).toBeHidden();
+ await toolsDisclosure.locator("summary").click();
+ await expect(workspace.locator(".workspace-archive-history > summary")).toContainText("Archives and Revision History");
+ await expect(workspace.locator(".workspace-archive-history")).not.toHaveAttribute("open","");
+ await workspace.locator(".workspace-archive-history > summary").click();
+ await expect(workspace.locator(".workspace-archive-history")).toHaveAttribute("open","");
+ await expect(workspace.locator(".workspace-archive-history > .investigations-panel")).toBeVisible();
+ await expect(toolsDisclosure.locator(".workspace-tool-controls .linked-resource-add")).toBeVisible();
+ await toolsDisclosure.locator(".workspace-tool-controls .linked-resource-add").click();
  await expect(resources.locator(".linked-resource-chooser")).toBeVisible();
  await resources.locator(".linked-resource-chooser select[aria-label='Resource type']").selectOption("calculators");
  await resources.locator(".linked-resource-chooser button",{hasText:"Add selected resource"}).click();
  await expect(resources.locator(".linked-resource-group")).toHaveCount(1);
  await expect(resources.locator(".linked-resource-group h3")).toContainText("Calculators");
- await expect(resources.locator(".linked-resource-add")).toBeVisible();
+ await expect(toolsDisclosure.locator(".workspace-tool-controls .linked-resource-add")).toBeVisible();
  const frame=page.locator("#launcher .assembly-layout > .assembly-content");
  const radius=await frame.evaluate(el=>parseFloat(getComputedStyle(el).borderTopLeftRadius));
  expect(radius).toBeGreaterThanOrEqual(8);
@@ -1139,6 +1147,8 @@ test("project navigation orders summary below tree and page notes can be created
  await expect(sidebar.locator(".assembly-project-settings-entry")).toBeHidden();
  const panel=page.locator("#launcher .project-summary-page .bs-unstructured-notes");
  await expect(panel).toBeVisible();
+ await expect(panel.getByRole("button",{name:"+ Add entry"})).toBeHidden();
+ await panel.locator("summary.bs-unstructured-notes-heading").click();
  await panel.getByRole("button",{name:"+ Add entry"}).click();
  await panel.getByPlaceholder("Enter a note title").fill("Loose thoughts");
  await panel.getByPlaceholder("Write anything useful here…").fill("Test mounting orientation");
