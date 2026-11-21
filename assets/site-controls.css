@@ -2649,3 +2649,46 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
 .bs-supplier-offer .bs-offer-name[hidden]{display:none!important}
 @media(max-width:760px){.bs-supplier-offer{grid-template-columns:minmax(150px,1fr) minmax(150px,1fr)}.bs-supplier-offer .bs-offer-url{grid-column:1/-1}}
 @media(max-width:480px){.bs-supplier-offer{grid-template-columns:minmax(0,1fr)}}
+
+
+/* New Part only: trial the compact label/input rows before site-wide rollout. */
+.library-part-dialog .library-field{
+ display:grid;
+ grid-template-columns:minmax(0, 220px) minmax(0, 1fr);
+ align-items:center;
+ column-gap:14px;
+ row-gap:5px;
+}
+.library-part-dialog .library-field > .field{
+ grid-column:2;
+ min-width:0;
+ width:100%;
+}
+.library-part-dialog .library-field > small{
+ grid-column:2;
+ font-weight:400;
+}
+/* Long notes are more legible with the label above the text area. */
+.library-part-dialog .library-field:has(> textarea){
+ display:flex;
+ flex-direction:column;
+ align-items:stretch;
+}
+.library-part-dialog .library-field:has(> textarea) > .field{
+ width:100%;
+}
+/* The wire sizing calculator already uses a two-column group of compact fields. */
+.library-part-dialog .wire-gauge-grid .library-field{
+ display:flex;
+ flex-direction:column;
+ align-items:stretch;
+}
+/* On narrow screens, return to stacked fields rather than squeezing the input. */
+@media(max-width:620px){
+ .library-part-dialog .library-field{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+ }
+ .library-part-dialog .library-field > .field{width:100%}
+}
