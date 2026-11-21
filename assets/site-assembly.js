@@ -817,11 +817,13 @@ function setupAssemblyTrees(){
    const toolsLabel=document.createElement("div");toolsLabel.append(toolsActions,toolsCount);
    toolsSummary.append(toolsLabel);tools.append(toolsSummary,resourcesPanel);
    const history=document.createElement("article");history.className="investigations-panel";
-   // History belongs below the main workspace section divider, not inside
-   // the Work Instructions / Helpful tools group.
+   // Active records live with the workspace; only archived records appear
+   // below the divider in Project History.
+   const activeRecords=document.createElement("section");activeRecords.className="investigations-active-panel";
+   history.activeEntriesHost=activeRecords;
    instructions.after(tools);
    const divider=document.createElement("hr");divider.className="workspace-history-divider";
-   panel.querySelector(".workspace-panels").after(divider,history);
+   panel.querySelector(".workspace-panels").after(activeRecords,divider,history);
    const resources=window.BSResources?.mount(resourcesPanel,{addTo:toolsActions,onCount:count=>{
     toolsCount.textContent="("+count+(count===1?" record)":" records)");
     tools.classList.toggle("is-empty",count===0);
