@@ -2999,6 +2999,6 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
 
 /* Help moved beside the relevant label; no duplicate persistent hint lines. */
 .library-part-dialog .library-vendor-info,
-.library-part-dialog .library-picker-hint:not(.wire-workflow-hint):not(.wire-gauge-result){
+.library-part-dialog .library-part-form > .library-picker-hint{
  display:none!important;
 }
