@@ -860,3 +860,19 @@
 #commonparts .workshop-item-edit-form [hidden]{
  display:none!important;
 }
+
+
+/* Generic/specific part identity is one choice in the existing Workshop editor. */
+#commonparts .workshop-product-identity-kind{
+ display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;
+ margin:0 0 12px;padding:10px 12px;
+ border:1px solid var(--color-border);border-radius:8px;min-width:0;
+}
+#commonparts .workshop-product-identity-kind legend{font-size:.85rem;font-weight:650;padding:0 5px}
+#commonparts .workshop-product-identity-kind label{
+ display:inline-flex;flex-direction:row;align-items:center;
+ gap:7px;font-size:.84rem;font-weight:500;
+}
+#commonparts .workshop-product-identity-kind input[type="radio"]{width:auto;margin:0}
+#commonparts .workshop-product-identity-kind p{flex-basis:100%;margin:0;font-size:.79rem}
+#commonparts .workshop-item-edit-form.is-readonly .workshop-product-identity-kind input:disabled{opacity:1}
