@@ -220,7 +220,7 @@ test("part and assembly revisions survive 56 edits, approval, stale retries, off
  };
  for(const [scope,target] of [["assembly","__root__"],["part",part]]){
   const path = "/api/workspace?project="+project+"&"+scope+"="+target;
-  const write = (title,revision) => handleWorkspace(request(path,"PUT",{expectedRevision:revision,recipe:[{id:"s",title,standard:"Original"}]}),env);
+  const write = (title,revision) => handleWorkspace(request(path,"PUT",{expectedRevision:revision,recipe:[{id:"s",title}]}),env);
   let revision=null;
   for(let i=0;i<56;i++){
    const saved=await write("Edit "+i,revision);
@@ -232,13 +232,13 @@ test("part and assembly revisions survive 56 edits, approval, stale retries, off
   assert.equal((await write("Stale edit",null)).status,409);
   const proposalPath="/api/proposals?project="+project;
   const proposed=await handleProposals(request(proposalPath,"POST",{
-   scope,targetId:target,stepId:"s",field:"standard",suggestedText:"Approved"
+   scope,targetId:target,stepId:"s",field:"title",suggestedText:"Approved"
   }),env);
   assert.equal(proposed.status,201);
   const {proposal}=await proposed.json();
   assert.equal((await handleProposals(request(proposalPath,"PATCH",{id:proposal.id,action:"approve"}),env)).status,200);
   const {workspace}=await get(path);
-  assert.equal(workspace.recipe[0].standard,"Approved");
+  assert.equal(workspace.recipe[0].title,"Approved");
   assert.ok(workspace.history.length<=20);
   let cursor=workspace.olderHistory;
   const newestFirst=workspace.history.toReversed(),pages=[];
@@ -265,7 +265,7 @@ test("part and assembly revisions survive 56 edits, approval, stale retries, off
   assert.equal(restored.status,200);
   const after=(await get(path)).workspace;
   assert.equal(after.recipe[0].title,"Edit 0");
-  assert.equal(after.history.at(-1).recipe[0].standard,"Approved");
+  assert.equal(after.history.at(-1).recipe[0].title,"Approved");
   assert.equal((await handleWorkspace(request(path+"&historyPage=invalid"),env)).status,400);
  }
 });
@@ -364,11 +364,11 @@ test("approval retries recover from an interruption after each write and preserv
  const path="/api/proposals?project="+project;
  const workspace="/api/workspace?project="+project+"&assembly=__root__";
  const put=env.PHOTOS.put.bind(env.PHOTOS);
- const initial=await handleWorkspace(request(workspace,"PUT",{recipe:[{id:"s",title:"Inspect",standard:"Original"}]}),env);
+ const initial=await handleWorkspace(request(workspace,"PUT",{recipe:[{id:"s",title:"Inspect"}]}),env);
  assert.equal(initial.status,200);
  for(const boundary of ["claim","workspace","log"]){
   const suggestedText="Replacement "+boundary;
-  const submitted=await handleProposals(request(path,"POST",{scope:"assembly",targetId:"__root__",stepId:"s",field:"standard",suggestedText}),env);
+  const submitted=await handleProposals(request(path,"POST",{scope:"assembly",targetId:"__root__",stepId:"s",field:"title",suggestedText}),env);
   const {proposal}=await submitted.json();
   const approve=action=>handleProposals(request(path,"PATCH",{id:proposal.id,action}),env);
   const get=async()=>(await(await handleWorkspace(request(workspace),env)).json()).workspace;
@@ -388,16 +388,16 @@ test("approval retries recover from an interruption after each write and preserv
   assert.ok(interrupted);
   if(boundary==="workspace"){
    const applied=await get();
-   assert.equal(applied.recipe[0].standard,suggestedText);
+   assert.equal(applied.recipe[0].title,suggestedText);
    assert.equal((await handleWorkspace(request(workspace,"PUT",{
-    expectedRevision:applied.revision,recipe:[{...applied.recipe[0],standard:"An edit made after approval"}]
+    expectedRevision:applied.revision,recipe:[{...applied.recipe[0],title:"An edit made after approval"}]
    }),env)).status,200);
   }
   if(boundary==="claim")assert.equal((await approve("reject")).status,409);
   assert.equal((await approve("approve")).status,200);
   const after=await get();
   assert.equal(after.history.length,previous.history.length+(boundary==="workspace"?2:1));
-  assert.equal(after.recipe[0].standard,boundary==="workspace"?"An edit made after approval":suggestedText);
+  assert.equal(after.recipe[0].title,boundary==="workspace"?"An edit made after approval":suggestedText);
   assert.equal((await approve("approve")).status,200);
   assert.equal((await approve("reject")).status,409);
   assert.equal((await get()).revision,after.revision);
