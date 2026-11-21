@@ -2791,6 +2791,24 @@ function setupAssemblyTrees(){
       (node.kind==="part"?" (part)":" (subassembly)");list.append(li);
     }
     dialog.append(list);
+    // An assembly can contain children that were archived before the assembly
+    // itself. Keep that earlier history discoverable within the parent archive.
+    if(archive.kind!=="part"){
+     const children=await archiveFetch(archiveURL+"&parent="+encodeURIComponent(archive.nodeId)).catch(()=>({items:[]}));
+     if(children.items.length){
+      const section=document.createElement("details");section.className="assembly-archive-media";
+      const heading=document.createElement("summary");heading.textContent="Previously archived children ("+children.items.length+")";
+      section.append(heading);
+      for(const child of children.items){
+       const row=document.createElement("div");row.className="assembly-archived-row";
+       const label=document.createElement("span");label.textContent=child.name;
+       const open=document.createElement("button");open.type="button";open.className="btn";open.textContent="View";
+       open.onclick=()=>void viewAssemblyArchive(child.id);
+       row.append(label,open);section.append(row);
+      }
+      dialog.append(section);
+     }
+    }
     const media=(archive.assets||[]).map((asset,index)=>({...asset,index})).filter(asset=>
      !asset.original.startsWith("photo-annotations/")&&!asset.original.startsWith("photo-renders/"));
     const images=media.filter(asset=>/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i.test(asset.original)||
