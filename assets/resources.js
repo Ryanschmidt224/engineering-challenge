@@ -78,33 +78,77 @@
  // Legacy IDs remain unchanged so existing project links and saved history continue to work.
  // Classification is independent of stocking assumptions and BOM behavior.
  // Stable IDs retain links from existing projects and instructions.
+
+ // Two-level electrical taxonomy. Keys are stable browse identifiers; legacy
+ // records are classified at display time without rewriting stored part IDs.
+ const electricalGroups=[
+  ["electrical-power","Power"],
+  ["electrical-controllers","Controllers"],
+  ["electrical-sensors","Sensors"],
+  ["electrical-switching","Switching & Control"],
+  ["electrical-basic","Basic Components"],
+  ["electrical-wiring","Wiring & Connections"],
+  ["electrical-motors","Motors & Actuators"],
+  ["electrical-displays","Displays & Indicators"]
+ ];
  const workshopCategories=[
   ["tools","Tools & Equipment",[]],
-  ["consumables","Consumables & Supplies",["workshop:wire22","workshop:wire18","workshop:wire16","workshop:silicone","workshop:heatshrink","workshop:sealshrink","workshop:solder"]],
-  ["electronics","Electronics & Components",[]],
-  ["hardware","Hardware & Materials",["workshop:ferrule22","workshop:ferrule18"]],
+  ["electronics","Electrical & Electronics",[]],
+  ...electricalGroups.map(([key,label])=>[key,label,[]]),
+  ["consumables","Consumables & Supplies",["workshop:solder"]],
+  ["hardware","Hardware & Materials",[]],
   ["safety","Safety & Measurement",[]]
  ];
  const categoryNames=Object.fromEntries(workshopCategories.map(([id,name])=>[id,name]));
- const categoryForReference=id=>workshopCategories.find(([, ,ids])=>ids.includes(id))?.[0]||"hardware";
+ const explicitCategories=new Set(workshopCategories.map(([id])=>id));
+ const categoryForReference=id=>({
+  "workshop:wire22":"electrical-wiring","workshop:wire18":"electrical-wiring",
+  "workshop:wire16":"electrical-wiring","workshop:silicone":"electrical-wiring",
+  "workshop:ferrule22":"electrical-wiring","workshop:ferrule18":"electrical-wiring",
+  "workshop:heatshrink":"electrical-wiring","workshop:sealshrink":"electrical-wiring",
+  "workshop:solder":"consumables"
+ })[id]||"hardware";
  const legacyCategory=category=>{
   const old=String(category||"").trim().toLowerCase();
   const known={
-   wire:"consumables",power:"electronics",fasteners:"hardware",tool:"tools",other:"hardware",
-   screws:"hardware","buck-converters":"electronics","wire & cable":"consumables",
-   "crimped wire":"consumables","wire termination":"hardware","wire and cable":"consumables",
-   "power and electronics":"electronics","tools":"tools","tools & equipment":"tools",
-   "consumables & supplies":"consumables","electronics & components":"electronics",
-   "hardware & materials":"hardware","safety & measurement":"safety"
+   wire:"electrical-wiring",power:"electrical-power",fasteners:"hardware",tool:"tools",other:"hardware",
+   screws:"hardware","buck-converters":"electrical-power","wire & cable":"electrical-wiring",
+   "crimped wire":"electrical-wiring","wire termination":"electrical-wiring",
+   "wire and cable":"electrical-wiring","power and electronics":"electronics",
+   "tools & equipment":"tools","consumables & supplies":"consumables",
+   "electronics & components":"electronics","hardware & materials":"hardware",
+   "safety & measurement":"safety"
   };
-  return categoryNames[old]?old:known[old]||"hardware";
+  return explicitCategories.has(old)?old:known[old]||"hardware";
+ };
+ // Classify older public and personal Workshop records without changing their IDs.
+ // Explicit selections in the new taxonomy take precedence over name inference.
+ const electricalCategoryFor=item=>{
+  const category=String(item?.category||"").trim().toLowerCase();
+  if(category.startsWith("electrical-")&&explicitCategories.has(category))return category;
+  const name=[item?.name,item?.typeName,item?.featureTreeDescription,item?.subtitle].filter(Boolean).join(" ").toLowerCase();
+  const kind=String(item?.kind||"").toLowerCase();
+  if(kind==="tool"||kind==="equipment"&&/oscilloscope|multimeter|soldering station|bench.*supply|heat gun|stripper|crimping tool|power supply tester/.test(name))return "tools";
+  if(/\b(safety|protective glasses|ventilation)\b/.test(name))return "safety";
+  if(/\b(screw|bolt|washer|nut|fastener|aluminum stock|plastic stock|sheet metal)\b/.test(name))return "hardware";
+  if(/\b(solder|flux|thermal paste)\b/.test(name)&&!/(controller|driver)/.test(name))return "consumables";
+  if(/\b(wire|cable|ferrule|terminal|connector|jumper|heat.?shrink|breadboard|header|socket|crimp|adapter cable)\b/.test(name))return "electrical-wiring";
+  if(/\b(servo|stepper|bldc|brushless motor|dc motor|actuator|solenoid|linear motor)\b/.test(name))return "electrical-motors";
+  if(/\b(display|lcd|oled|screen|indicator|buzzer|led strip|seven.segment)\b/.test(name))return "electrical-displays";
+  if(/\b(sensor|hall.effect|encoder|thermistor|thermocouple|proximity|imu|accelerometer|ultrasonic|tof)\b/.test(name))return "electrical-sensors";
+  if(/\b(mosfet|relay|contactor|switch|push.?button|transistor|motor driver|stepper driver|esc|h.bridge|optocoupler)\b/.test(name))return "electrical-switching";
+  if(/\b(microcontroller|arduino|raspberry pi|esp32|esp8266|attiny|plc|development board|controller board|teensy)\b/.test(name))return "electrical-controllers";
+  if(/\b(power supply|regulator|converter|buck|boost|battery|charger|power module|transformer|psu)\b/.test(name))return "electrical-power";
+  if(/\b(resistor|capacitor|diode|led|integrated circuit|\bic\b|inductor|potentiometer|crystal|rectifier|fuse)\b/.test(name))return "electrical-basic";
+  if(["electronics","component","electrical","power"].some(t=>category.includes(t))||kind==="component")return "electrical-basic";
+  return legacyCategory(category);
  };
  const workshopCategoryName=category=>categoryNames[legacyCategory(category)];
  const itemMetadata=item=>{
   const category=categoryForReference(item.id);
-  // "Expected" is guidance, never a claim that an individual owns an item.
+  // Stocking/BOM semantics are kept separate from the display taxonomy.
   const availabilityAssumption=item.tier==="core"?"Expected":"Optional";
-  const bomDefault=["consumables","tools","safety"].includes(category)?"exclude":"include";
+  const bomDefault=item.kind==="tool"||["consumables","tools","safety"].includes(category)?"exclude":"include";
   return {...item,...(essentialsGuidance[item.id]||{}),illustration:essentialsIllustrations[item.id]||"",category,availabilityAssumption,bomDefault};
  };
  const workshopReferences=workshopSupplies.map(itemMetadata);
@@ -614,7 +658,7 @@
    }
   }
  }
- window.BSResources={catalog,workshopCategories,workshopReferences,workshopLinkId,workshopGroups,workshopGroupFor,legacyCategory,all,mount,reloadWires,reloadCommonParts,reloadPurchased,init,normalize,setAdmin,focusWorkshopItem};
+ window.BSResources={catalog,workshopCategories,electricalGroups,electricalCategoryFor,workshopReferences,workshopLinkId,workshopGroups,workshopGroupFor,legacyCategory,all,mount,reloadWires,reloadCommonParts,reloadPurchased,init,normalize,setAdmin,focusWorkshopItem};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
  else init();
 })();
