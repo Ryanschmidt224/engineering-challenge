@@ -498,7 +498,7 @@
       uploadTargetNote=noteIndex;
       uploader.open(Number.isInteger(noteIndex)?"Add files after note "+(noteIndex+1):"Add photos / documents");
      };
-     const addPhoto=button("Add photos / documents",()=>selectAttachment(null),"btn recipe-small-action");
+     const addPhoto=button("Add photos / documents",()=>selectAttachment(null),"btn bs-attachment-add recipe-small-action");
      addPhoto.title="Open the photo and document upload area.";
      function editablePhoto(id,noteIndex=null){
       const item=el("div","recipe-step-photo");
@@ -540,7 +540,7 @@
        for(const id of step.photos){
         if(step.photoNoteIds[id]===step.noteIds[index])noteAttachments.append(editablePhoto(id,index));
        }
-       const addAfterNote=button("Add photos / documents",()=>selectAttachment(index),"btn recipe-small-action recipe-add-note-photo");
+       const addAfterNote=button("Add photos / documents",()=>selectAttachment(index),"btn bs-attachment-add recipe-small-action recipe-add-note-photo");
        addAfterNote.setAttribute("aria-label","Add photo after note "+(index+1));
        const removeNote=button("Delete note",()=>{
         const deletedId=step.noteIds[index];
@@ -587,7 +587,7 @@
      additions.append(addPhoto);
      body.append(noteList,addNote,photoList,additions,uploader.panel);
      showNotes();showPhotos();
-     const actions=el("div","recipe-edit-controls");
+     const actions=el("div","recipe-edit-controls bs-editor-actions");
 
      const bottomSave=button("Save",saveStep,"btn primary recipe-save-step-bottom");
      if(isDraft){
