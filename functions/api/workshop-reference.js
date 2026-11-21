@@ -87,7 +87,7 @@ export async function onRequest({request,env}){
   }
   if(patch.kind&&!["tool","equipment","component","material","other"].includes(patch.kind))
    return json({error:"Invalid item type"},400);
-  if(patch.category&&!["tools","consumables","electronics","hardware","safety","electrical-power","electrical-controllers","electrical-sensors","electrical-switching","electrical-basic","electrical-wiring","electrical-motors","electrical-displays"].includes(patch.category))
+  if(patch.category&&!["tools","consumables","electronics","hardware","safety","electrical-power","electrical-controllers","electrical-sensors","electrical-switching","electrical-basic","electrical-wiring","electrical-motors","electrical-displays","tools-measurement","tools-making","consumables-assembly","consumables-general","hardware-fasteners","hardware-materials"].includes(patch.category))
    return json({error:"Invalid Workshop category"},400);
   if(patch.familyId&&!/^[a-z0-9-]{2,100}$/.test(patch.familyId))
    return json({error:"Invalid product family"},400);
