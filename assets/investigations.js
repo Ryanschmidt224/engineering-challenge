@@ -6,11 +6,12 @@
  const types=[["observation","What happened?"],["theory","What do you think caused it?"],["note","Additional notes"]]; 
  const legacyType={attempt:"Attempt / change",theory:"Hypothesis",lesson:"How was it fixed?",revision:"Revision / design change",result:"Result"};
  const categories={
-  practice:{label:"Practice",fields:[["attempt","What did you practice?"]]},
-  test:{label:"Tests",fields:[["theory","What did you want to verify?"],["attempt","How did you test it?"],["result","What happened?"]]},
-  revision:{label:"Revision",fields:[["revision","What changed?"],["theory","Why did you change it?"]]},
+  note:{label:"Notes",fields:[]},
+  test:{label:"Tests/Measurements",fields:[["theory","What did you want to verify?"],["attempt","How did you test it?"] ,["result","What happened?"]]},
+  revision:{label:"Revisions",fields:[["revision","What changed?"],["theory","Why did you change it?"]]},
   failure:{label:"Failures",fields:[...types.slice(0,2),["resolution","Did you fix it?"]]},
-  note:{label:"Notes",fields:[]}
+  // Keep this legacy definition so previously saved Practice records remain readable/editable.
+  practice:{label:"Practice (legacy)",fields:[["attempt","What did you practice?"]]}
  };
  const retiredLabels={practice:{lesson:"What did you learn?"},revision:{result:"What was the result?"},note:{note:"Notes"}};
  const categoryOf=record=>record.category||(record.partSnapshot?"revision":"failure");
@@ -481,7 +482,7 @@
    const select=make("select","field");
    const prompt=make("option","","Choose an entry type");prompt.value="";prompt.disabled=true;prompt.selected=true;
    select.append(prompt);
-   for(const [value,category] of Object.entries(categories)){
+   for(const [value,category] of Object.entries(categories).filter(([value])=>value!=="practice")){
     const option=make("option","",category.label);option.value=value;select.append(option);
    }
    const fields=make("div","investigation-new-fields");fields.hidden=true;
