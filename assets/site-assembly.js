@@ -2825,7 +2825,7 @@ function setupAssemblyTrees(){
    const parent=node.parentId??null;
    const result=await archiveFetch(archiveURL,{method:"POST",headers:{"content-type":"application/json"},
     body:JSON.stringify({action:"archive",nodeId:node.id,expectedRevision:treeSavedRevision})});
-   if(selected===node.id||!nodes.some(n=>n.id===selected&&result.nodes.some(active=>active.id===n.id))){
+   if(selected!==null&&!result.nodes.some(active=>active.id===selected)){
     selected=parent;
     history.replaceState(null,"",workspaceHash(selected));
    }
