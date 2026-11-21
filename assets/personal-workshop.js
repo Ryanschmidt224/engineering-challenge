@@ -759,6 +759,9 @@
    // Existing saved specifications take precedence over suggested empty fields.
    // When reclassifying, only discard unsaved blank template rows.
    const refreshSuggestions=()=>{
+    // Generic placeholders belong in the project-input template, not the
+    // Workshop's fixed specifications. Never auto-populate fixed rows.
+    if(identityRadios.generic.checked)return;
     for(const row of [...specRows.children]){
      if(row.dataset.propertyId&&row.querySelector('[data-spec="value"]')?.value.trim()==="")row.remove();
     }
