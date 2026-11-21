@@ -174,22 +174,22 @@
    // All project items have a stable container. What changes is the
    // implementation linked to it, or whether an implementation exists yet.
    const scenarios=[
-    {name:"Custom part — made in-house",container:"Motor Mount",implementation:"A machined aluminum bracket designed for this project",contents:"CAD files, drawings, machining instructions, measurements, and revisions"},
-    {name:"Purchased part",container:"Motor Driver",implementation:"An off-the-shelf motor driver with a manufacturer part number",contents:"Supplier details, wiring instructions, tests, and replacement history"},
-    {name:"Part from Workshop",container:"Measure Voltage",implementation:"A multimeter selected from your private or shared Workshop",contents:"A project-specific use and instructions; the original Workshop item stays unchanged"},
-    {name:"Custom part — purchased",container:"Enclosure",implementation:"A custom enclosure made to your drawing by an outside supplier",contents:"Design files, fabrication requirements, order details, tests, and revisions"},
-    {name:"Assembly or subsystem",container:"Power System",implementation:"Nested containers for the power supply, protection, and connectors",contents:"A hierarchy of child containers, each with its own details and work history"},
-    {name:"No implementation selected yet",container:"Detect Position",implementation:"Not chosen — a sensor or software method can be selected later",contents:"The purpose, notes, experiments, and history remain with the container"},
-    {name:"Document or software work",container:"Control Logic",implementation:"Code, a document, or another nonphysical solution",contents:"Instructions, source references, testing notes, and revisions"}
+    {name:"Custom part — made in-house",container:"Motor Mount",part:"A custom motor bracket",contents:"Rev A: 3D-printed prototype; Rev B: stamped steel. Both are revisions of the same part"},
+    {name:"Purchased part",container:"Motor Driver",part:"A manufacturer's motor driver, identified by its MPN",contents:"Suppliers, wiring notes and tests; other commercial drivers can be listed as alternatives"},
+    {name:"Part from Workshop",container:"Measure Voltage",part:"A multimeter selected from your Workshop",contents:"The container has its own project notes and work instructions. Workshop source data stays unchanged"},
+    {name:"Custom part — purchased",container:"Enclosure",part:"A custom enclosure made by a supplier",contents:"Drawings, revisions, supplier and inspections; manufacturing changes are tracked as revisions"},
+    {name:"Assembly or subsystem",container:"Power System",part:"Child containers for the regulator, protection and connectors",contents:"Each child has its own parts, instructions and revisions"},
+    {name:"Part not chosen yet",container:"Detect Position",part:"No part selected yet",contents:"Keep project notes and history until a sensor or another solution is chosen"},
+    {name:"Document or software work",container:"Control Logic",part:"Code or technical documentation",contents:"Instructions, source files, testing notes and revisions"}
    ];
    const intro=document.createElement("p");intro.className="bs-help-detail-intro";
-   intro.textContent="Every container is a named place in the project hierarchy. It holds information about what needs to be done, while its implementation describes how you currently accomplish it.";
+   intro.textContent="A container is a permanent place in the project hierarchy. Custom part design changes belong in Revisions. Purchased parts can have alternative supplier or manufacturer parts.";
    dialog.append(intro);
    const list=document.createElement("div");list.className="bs-help-scenarios";
    for(const item of scenarios){
     const section=document.createElement("section");section.className="bs-help-scenario";
     const h=document.createElement("h3");h.textContent=item.name;section.append(h);
-    for(const [label,value] of [["Container",item.container],["Implementation",item.implementation],["Contains",item.contents]]){
+    for(const [label,value] of [["Container",item.container],["Part",item.part],["Records",item.contents]]){
      const row=document.createElement("div");row.className="bs-help-scenario-row";
      const key=document.createElement("strong");key.textContent=label;
      const detail=document.createElement("span");detail.textContent=value;
