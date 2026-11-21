@@ -145,6 +145,7 @@ test("new custom part retains explicit project numbering without confusing it wi
  expect(selection.exists).toBe(true);
  expect(selection.checked).toBe(true);
  expect(selection.manualAvailable).toBe(true);
+ await expect(page.locator(".library-part-dialog .library-auto-number")).toContainText(["Auto assign part number","User assign part number"]);
  expect(selection.numberingText).toContain("Auto assign part number");
  expect(selection.functionBeforeNumber).toBe(true); // Function is the first identity field.
  await expect(page.locator(".library-part-dialog .library-auto-number-tip")).toHaveAttribute("title", /next unused project part number/);
@@ -1004,7 +1005,8 @@ test("Searching Workshop for missing 2N7000 opens a purchased part with separate
  await expect(dialog.locator('input[name="new-part-source"][value="new"]')).toBeChecked();
  await expect(dialog.locator(".library-field",{hasText:"Function"}).locator("input")).toHaveValue("2N7000");
  await expect(dialog.locator(".library-field",{hasText:"Mfg part # (MPN)"}).locator("input")).toHaveValue("2N7000");
- await expect(dialog.locator('input[name="new-part-number-mode"][value="none"]')).toBeChecked();
+ await expect(dialog.locator('input[name="new-part-number-mode"][value="auto"]')).toBeChecked();
+ await expect(dialog.locator('input[name="new-part-number-mode"]')).toHaveCount(2);
  await expect(dialog.locator(".library-vendor-links")).toContainText("DigiKey search");
  await dialog.getByRole("textbox",{name:"Manufacturer",exact:true}).fill("onsemi");
  await dialog.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
@@ -1014,7 +1016,7 @@ test("Searching Workshop for missing 2N7000 opens a purchased part with separate
  expect(saved.model).toBe("2N7000");
  expect(saved.manufacturer).toBe("onsemi");
  expect(saved.partNumber).toBeNull();
- expect(saved.assignNumber).toBe(false);
+ expect(saved.assignNumber).toBe(true);
  expect(saved.addToWorkshop).toBeUndefined();
  expect(saved.projectDetails.workshopReferenceId).toBe("my:33333333-3333-4333-8333-333333333333");
 });
