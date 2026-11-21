@@ -27,3 +27,57 @@
 .product-ai-disclosure:not([open])>.product-ai-search{display:none}
 .product-ai-disclosure>.product-ai-disclosure-heading:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px;border-radius:7px}
 :is(#launcher,.personal-project-view,#linear,#robot) .workspace-main-bom-editor .product-ai-disclosure.component-lookup-panel{padding:0}
+
+
+/* Shared action + optional context input + contextual help affordance. */
+.bs-action-input-row{
+ display:flex;
+ align-items:center;
+ flex-wrap:nowrap;
+ gap:10px;
+ min-width:0;
+}
+.bs-action-input-row > .btn{flex:none;white-space:nowrap;margin:0}
+.bs-action-input-row > .bs-action-input{flex:1 1 auto;width:auto;min-width:90px;max-width:none}
+.bs-action-input-help{position:relative;flex:none;display:inline-flex;align-items:center}
+.bs-action-input-help-button{
+ display:inline-grid;
+ place-items:center;
+ width:26px;height:26px;
+ padding:0;
+ border:1px solid var(--color-border);
+ border-radius:50%;
+ background:var(--color-surface);
+ color:var(--color-text-muted);
+ font-size:.8rem;font-weight:700;
+ cursor:help;
+}
+.bs-action-input-help-button:focus-visible{
+ outline:2px solid var(--color-accent);outline-offset:2px;
+}
+.bs-action-input-tooltip{
+ display:none;
+ position:absolute;
+ z-index:50;
+ right:0;
+ bottom:calc(100% + 8px);
+ width:max-content;
+ max-width:min(310px,calc(100vw - 48px));
+ padding:9px 11px;
+ border:1px solid var(--color-border);
+ border-radius:8px;
+ background:var(--color-surface);
+ box-shadow:0 5px 20px color-mix(in srgb,var(--color-shadow-base) 22%,transparent);
+ color:var(--color-text);
+ font-weight:400;
+ font-size:.81rem;
+ line-height:1.45;
+ white-space:normal;
+}
+.bs-action-input-help:hover .bs-action-input-tooltip,
+.bs-action-input-help:focus-within .bs-action-input-tooltip,
+.bs-action-input-help.is-open .bs-action-input-tooltip{display:block}
+@media(max-width:520px){
+ .bs-action-input-row{flex-wrap:wrap}
+ .bs-action-input-row > .bs-action-input{flex:1 1 calc(100% - 170px)}
+}
