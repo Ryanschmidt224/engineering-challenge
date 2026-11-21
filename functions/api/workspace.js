@@ -37,7 +37,7 @@ const validateRecipe=input=>{
   ids.add(id);
   const archivedAt=step.archivedAt??"",archiveNote=step.archiveNote??"";
   if(typeof archivedAt!=="string"||
-     (archivedAt&&!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$/.test(archivedAt))||
+     (archivedAt&&!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(archivedAt))||
      typeof archiveNote!=="string"||archiveNote.length>2500)return null;
   const tileOrder=step.tileOrder??[];
   if(!Array.isArray(tileOrder)||tileOrder.length>300||
