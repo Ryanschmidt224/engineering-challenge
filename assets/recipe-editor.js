@@ -296,7 +296,7 @@
    }
    for(let i=0;i<steps.length;i++){
     const step=steps[i],isCurrent=expanded===step.id,isDraft=step===draft;
-    const navButton=button((i+1)+". "+(step.title||"Untitled step"),async()=>{
+    const navButton=button(step.title||"Untitled step",async()=>{
      if(expanded===step.id||saving||pendingUploads)return;
      try{await savePending()}catch(error){feedback.textContent=error.message||"Save failed; still on this step.";return}
      expanded=step.id;expandedStepBodies.delete(step.id);
@@ -349,15 +349,13 @@
     const card=el("details","recipe-one-step bs-content-card");
     card.dataset.stepId=step.id;card.open=expandedStepBodies.has(step.id)||editing.has(step.id);
     const summary=el("summary","recipe-one-step-summary bs-content-card-heading");
-    const titlePrefix=el("span","recipe-one-step-number",(i+1)+".");
     const name=el("span","recipe-one-step-title",step.title||"Untitled step");
-    summary.append(titlePrefix);
     if(admin()&&editing.has(step.id)){
      const nameInput=editField(step.title,"Describe the action",value=>{
       step.title=value;
       const label=value||"Untitled step";
       name.textContent=label;
-      navButton.textContent=(i+1)+". "+label;
+      navButton.textContent=label;
       navButton.setAttribute("aria-label","Step "+(i+1)+": "+label);
      });
      nameInput.classList.add("recipe-step-name","recipe-step-title-input");
