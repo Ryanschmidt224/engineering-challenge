@@ -2163,6 +2163,30 @@ function setupAssemblyTrees(){
     remove.type="button";remove.className="btn component-spec-remove";remove.textContent="×";remove.title="Remove specification";remove.setAttribute("aria-label","Remove specification");remove.onclick=()=>row.remove();
     row.append(a,b,c,remove);specs.append(row);
    }}
+   // Generic Workshop items keep their standard fields available even if
+   // optional values were left blank when the part was first imported.
+   // Empty fields are never saved and all edits remain project-only.
+   if(specs&&workshopLinkId(part)&&!String(part.model||"").trim()){
+    const templates=window.BSResources?.genericSpecificationTemplate?.(part)||[];
+    const existing=new Set((part.specifications||[]).map(spec=>String(spec.name||"").toLowerCase()));
+    for(const [label,unit] of templates){
+     if(existing.has(label.toLowerCase()))continue;
+     const row=document.createElement("div");row.className="row component-spec-row";
+     const name=document.createElement("input"),value=document.createElement("input"),source=document.createElement("select"),remove=document.createElement("button");
+     name.className=value.className="field";name.value=label;name.placeholder="Specification";
+     value.placeholder=unit?"Value ("+unit+")":"Value";
+     source.className="field component-spec-source";source.setAttribute("aria-label","Specification source");
+     for(const mode of ["explicit","inferred"]){
+      const option=document.createElement("option");option.value=mode;
+      option.textContent=mode==="explicit"?"✓ From product listing":"◇ Estimated / inferred";
+      source.append(option);
+     }
+     remove.type="button";remove.className="btn component-spec-remove";remove.textContent="×";
+     remove.title="Remove specification";remove.setAttribute("aria-label","Remove specification");
+     remove.onclick=()=>row.remove();
+     row.append(name,value,source,remove);specs.append(row);
+    }
+   }
    // Ensure the workspace is visible before opening the modal. In particular,
    // editing from a part detail route must not open a dialog under a hidden page.
    if(!workspaceRoute()){
