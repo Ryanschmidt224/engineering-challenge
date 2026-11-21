@@ -57,27 +57,8 @@
       else expanded.add(entry.value);
       render();
      };
-     row.append(toggle,button);
-     if(options.stackedGroups){
-      const section=el("section","bs-catalog-stacked-group");
-      section.append(row);
-      if(expanded.has(entry.value)){
-       const choices=el("div","bs-catalog-stacked-children");
-       for(const nested of children){
-        const choice=el("button","bs-catalog-category bs-catalog-category-child"+(selected===nested.value?" is-active":""),nested.label);
-        choice.type="button";
-        choice.dataset.catalogCategory=nested.value;
-        choice.setAttribute("aria-pressed",String(selected===nested.value));
-        choice.onclick=()=>{selected=nested.value;render();options.onChange?.(selected)};
-        choices.append(choice);
-       }
-       section.append(choices);
-      }
-      nav.append(section);
-     }else{
-      nav.append(row);
-      if(expanded.has(entry.value))for(const nested of children)appendEntry(nested,true);
-     }
+     row.append(toggle,button);nav.append(row);
+     if(expanded.has(entry.value))for(const nested of children)appendEntry(nested,true);
     }else nav.append(button);
    };
    for(const entry of values.filter(item=>!item.parent))appendEntry(entry);
@@ -87,7 +68,7 @@
    setItems(items){
     values=items.map(x=>typeof x==="string"?{value:x,label:x}:x);
     if(!values.some(x=>x.value===selected))selected="all";
-    if(!options.stackedGroups)for(const entry of values)if(entry.parent)expanded.add(entry.parent);
+    for(const entry of values)if(entry.parent)expanded.add(entry.parent);
     render();
    },
    get value(){return selected},
