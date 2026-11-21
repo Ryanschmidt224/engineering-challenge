@@ -6,7 +6,7 @@ import {runInNewContext} from "node:vm";
 test("Workshop reference categories are centralized and preserve stable item IDs",()=>{
  const source=readFileSync("assets/resources.js","utf8");
  const tree=source.slice(source.indexOf("const workshopCategories=["),source.indexOf("const legacyCategory="));
- for(const name of ["Tools & Equipment","Consumables & Supplies","Electrical & Electronics","Hardware & Materials","Safety & Measurement"])
+ for(const name of ["Tools & Equipment","Consumables & Supplies","Electrical & Electronics","Hardware & Materials","Safety & Protection"])
   assert.ok(tree.includes(name),name+" is required");
  for(const name of ["workshop:solder","workshop:wire22","workshop:wire18","workshop:ferrule22","workshop:heatshrink"])
   assert.ok(source.includes('id:"'+name+'"'),name+" must remain a shared essential");
@@ -35,7 +35,12 @@ test("Electrical Workshop classification covers existing references and all eigh
   ["22 AWG wire","material","electrical-wiring"],
   ["NEMA 17 stepper motor","component","electrical-motors"],
   ["OLED display","component","electrical-displays"],
-  ["Digital multimeter","tool","tools"]
+  ["Digital multimeter","tool","tools-measurement"],
+  ["Soldering iron","tool","tools-making"],
+  ["Wood screw","material","hardware-fasteners"],
+  ["Aluminum bar stock","material","hardware-materials"],
+  ["Electronics solder","material","consumables-assembly"],
+  ["Machine coolant","material","consumables-general"]
  ];
  for(const [name,kind,expected] of examples)
   assert.equal(electricalCategoryFor({name,kind}),expected,name);
@@ -67,7 +72,7 @@ test("New Part Workshop picker uses shared electrical categories",()=>{
  assert.match(picker,/saveCreatedPartToWorkshop/);
  assert.match(picker,/publicCategory\.input\.value/);
  assert.match(picker,/BSResources\.workshopCategories/);
- for(const id of ["tools","consumables","electronics","hardware","safety","electrical-power","electrical-controllers","electrical-sensors","electrical-switching","electrical-basic","electrical-wiring","electrical-motors","electrical-displays"])
+ for(const id of ["tools","consumables","electronics","hardware","safety","tools-measurement","tools-making","consumables-assembly","consumables-general","hardware-fasteners","hardware-materials","electrical-power","electrical-controllers","electrical-sensors","electrical-switching","electrical-basic","electrical-wiring","electrical-motors","electrical-displays"])
   assert.ok(readFileSync("functions/api/workshop-reference.js","utf8").includes('"'+id+'"'),"Missing "+id+" category in public Workshop API");
  assert.match(picker,/commonGroup\(p\)/);
  assert.match(picker,/wireModeCheckbox/);
@@ -158,7 +163,7 @@ test("Only nine core supplies are seeded, with reference images and buying guida
   "workshop:sealshrink","workshop:silicone","workshop:solder",
   "workshop:wire16","workshop:wire18","workshop:wire22"
  ].sort());
- assert.equal(workshopCategories.length,13);
+ assert.equal(workshopCategories.length,19);
  assert.ok(workshopCategories.some(([id])=>id==="electrical-sensors"));
  assert.equal(workshopReferences.find(item=>item.id==="workshop:wire22").category,"electrical-wiring");
  assert.ok(workshopGroups.some(group=>group.id==="measurement"),"Empty family remains available for new items");
