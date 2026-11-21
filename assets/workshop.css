@@ -944,3 +944,6 @@
 #commonparts .workshop-related-product:hover{background:var(--color-hover)}
 #commonparts .workshop-related-product>small{font-size:.78rem}
 #commonparts .workshop-add-specific{margin-top:6px}
+
+/* Hide purchasable-product identity fields in generic Workshop view/edit. */
+#commonparts .workshop-part-editor-section .workshop-item-edit-grid>label.hide{display:none!important}
