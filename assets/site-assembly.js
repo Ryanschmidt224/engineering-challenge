@@ -1970,7 +1970,7 @@ function setupAssemblyTrees(){
   projectOnlyPanel.append(onlyTitle);
   const treeDescriptionToggle=document.createElement("label");treeDescriptionToggle.className="part-project-only-field";
   const treeDescriptionCheckbox=document.createElement("input");treeDescriptionCheckbox.type="checkbox";treeDescriptionCheckbox.checked=true;
-  treeDescriptionToggle.append(treeDescriptionCheckbox,document.createTextNode(" Show selected component beneath feature tree description"));
+  treeDescriptionToggle.append(treeDescriptionCheckbox,document.createTextNode(" Show implementation name in project tree"));
   projectOnlyPanel.append(treeDescriptionToggle);
   const projectOnlyFields={};
   for(const [key,title,multiline,limit] of [
@@ -2294,16 +2294,16 @@ function setupAssemblyTrees(){
     };
     group("container","Container",controls.itemType,controls.name,controls.partNumber,
      partDescriptionRow,functionalRequirementsField.row,functionalAcceptanceField.row);
-    group("implementation","Selected implementation",partImplementationUnselectedRow,
+    const implementationGroup=group("implementation","Selected implementation",partImplementationUnselectedRow,
      partTypeRow,partImplementationNameRow,...ordered(fields.additional),quantities[1]);
     const displayGroup=review.querySelector(".part-display-options")||document.createElement("div");
     displayGroup.className="part-display-options";
     displayGroup.append(...ordered(fields.display));
     group("display","Display options",displayGroup);
     if(otherFields.length)group("additional","Additional details",...otherFields);
+    if(supplierEditor)implementationGroup.append(supplierEditor.element);
+    if(apiPanel)implementationGroup.append(apiPanel);
     const specificationPanel=group("specifications","Specifications",specs,projectOnlyPanel);
-    if(supplierEditor)specificationPanel.append(supplierEditor.element);
-    if(apiPanel)specificationPanel.append(apiPanel);
     projectOnlyPanel.hidden=!(editingPart&&editingPartOriginal&&workshopLinkId(editingPartOriginal));
     functionalTreeDescriptionField.hidden=true;
     if(specsHeading&&specsHeading!==specificationPanel.querySelector("h3"))specsHeading.remove();
