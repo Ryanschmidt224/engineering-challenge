@@ -3267,3 +3267,26 @@
 .investigation-photos-entry .investigation-note-photo-tile .investigation-note-photo{
  width:100%;
 }
+
+/* Work-instruction photo uploader expands from its original Add photos control. */
+.investigation-note-photos.is-upload-expanded{
+ background:var(--color-surface-muted);
+ border:1px solid var(--color-border);
+ border-radius:12px;
+ gap:0;
+}
+.investigation-note-photos.is-upload-expanded>.investigation-note-photo-add{
+ position:relative;
+ z-index:1;
+ margin:-1px 0 0 -1px;
+}
+.investigation-note-photos.is-upload-expanded>.bs-upload-panel{
+ margin:0;
+ padding:16px;
+ border:0;
+ border-radius:0 0 12px 12px;
+ background:transparent;
+}
+@media(max-width:550px){
+ .investigation-note-photos.is-upload-expanded>.bs-upload-panel{padding:12px}
+}
