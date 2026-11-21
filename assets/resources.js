@@ -130,7 +130,7 @@
    "wire and cable":"electrical-wiring","power and electronics":"electronics",
    "tools & equipment":"tools","consumables & supplies":"consumables",
    "electronics & components":"electronics","hardware & materials":"hardware",
-   "safety & measurement":"safety"
+   "safety & measurement":"safety","safety & protection":"safety"
   };
   return explicitCategories.has(old)?old:known[old]||"hardware";
  };
