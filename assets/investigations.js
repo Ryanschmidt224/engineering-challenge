@@ -509,6 +509,7 @@
      // type (Notes, Tests/Measurements, Revisions, Failures).
      if(!isChild&&!inherited){
       const childSection=make("section","investigation-nested-section");
+      childSection.dataset.parentRecordId=record.id;
       for(const child of children.filter(item=>!isArchived(item)))
        renderCard(child,childSection,{nested:true});
       const archivedChildren=children.filter(isArchived);
@@ -623,12 +624,16 @@
    (target.activeEntriesHost?.querySelector(".investigation-active-content")||target.querySelector(".investigation-active-content"))?.append(form);
    field.focus();
   }
-  function newRecord(context,target){
-   const content=target.activeEntriesHost?.querySelector(".investigation-active-content")||target.querySelector(".investigation-active-content");
+  function newRecord(context,target,parentRecordId=""){
+   const activeContent=target.activeEntriesHost?.querySelector(".investigation-active-content")||target.querySelector(".investigation-active-content");
+   const content=parentRecordId
+    ?[...target.querySelectorAll(".investigation-nested-section")].find(section=>section.dataset.parentRecordId===parentRecordId)
+    :activeContent;
    if(!content)return;
-   const activeHost=target.activeEntriesHost||content.closest(".investigation-active-area");
-   if(activeHost)activeHost.hidden=false;
-   const existing=content.querySelector(".investigation-new-record");
+   const activeHost=target.activeEntriesHost||activeContent?.closest(".investigation-active-area");
+   if(!parentRecordId&&activeHost)activeHost.hidden=false;
+   // One unfinished form per destination, to avoid duplicate draft entries.
+   const existing=[...content.children].find(child=>child.classList.contains("investigation-new-record"));
    if(existing){existing.querySelector("select")?.focus();return;}
    const form=make("div","investigation-create investigation-new-record");
    const label=make("label","investigation-record-title","Entry type");
@@ -642,14 +647,16 @@
    label.append(select);
    const cancel=btn("Cancel",()=>{
     form.remove();
-    if(context.stepId&&activeHost&&!content.querySelector(".investigation-card"))activeHost.hidden=true;
+    if(!parentRecordId&&context.stepId&&activeHost&&!content.querySelector(".investigation-card"))activeHost.hidden=true;
    });
    form.append(label,cancel,fields);
-   content.prepend(form);
+   content.append(form);
+   // A new record opens after its existing siblings, not above them.
+   requestAnimationFrame(()=>form.scrollIntoView({block:"nearest",behavior:"smooth"}));
    select.onchange=()=>{
     fields.replaceChildren();
     fields.hidden=false;cancel.hidden=true;
-    attach({...context,category:select.value,title:"",entries:[]},fields,target,true,()=>form.remove(),true);
+    attach({...context,parentRecordId,category:select.value,title:"",entries:[]},fields,target,true,()=>form.remove(),true);
    };
    select.focus();
   }
