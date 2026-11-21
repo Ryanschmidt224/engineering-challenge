@@ -121,7 +121,7 @@ async function listArchives(bucket,project,parentId){
   if(parentId!==null&&manifest.parentId!==parentId)continue;
   // Prepared manifests remain as recovery artifacts after failed transactions.
   // They are not visible as archives while the source node is still active.
-  if(activeIds.has(manifest.nodeId)&&!manifest.restoredAt)continue;
+  if(activeIds.has(manifest.nodeId)&&manifest.state==="prepared"&&!manifest.restoredAt)continue;
   result.push({id:manifest.id,nodeId:manifest.nodeId,parentId:manifest.parentId,name:manifest.name,kind:manifest.kind,
    partNumber:manifest.partNumber||"",archivedAt:manifest.archivedAt,restoredAt:manifest.restoredAt||null,
    nodeCount:manifest.nodes.length,partCount:manifest.parts.length,reason:manifest.reason||""});
@@ -192,17 +192,20 @@ export async function handleAssemblyArchive(request,env){
   try{
    archived.assets=await archiveAssets(bucket,project,id,subtree,entries,allParts);
    await bucket.put(manifestKey(project,id),JSON.stringify(archived));
-   // Save components first: on tree conflict the previous component data is restored
-   // conditionally. The archive itself remains as the recovery record.
-   let partsWritten=null;
-   if(removedIds.size){
-    partsWritten=await bucket.put(partKey(project),JSON.stringify(remainingParts),conditional(componentState.object));
-    if(partsWritten===null)return json({error:"Components changed during archiving. Refresh and retry.",archiveId:id},409);
-   }
+   // Write the tree first. Never remove a part definition while the active
+   // feature tree still references it. Roll back the tree on a BOM conflict.
    const treeWritten=await bucket.put(treeKey(project),JSON.stringify(remaining),conditional(tree.object));
-   if(treeWritten===null){
-    if(partsWritten)await bucket.put(partKey(project),JSON.stringify(componentState.value),{onlyIf:{etagMatches:partsWritten.etag}});
-    return json({error:"Feature tree changed during archiving. No tree items were removed.",archiveId:id},409);
+   if(treeWritten===null)
+    return json({error:"Feature tree changed during archiving. No active records were removed.",archiveId:id},409);
+   if(removedIds.size){
+    const partsWritten=await bucket.put(partKey(project),JSON.stringify(remainingParts),conditional(componentState.object));
+    if(partsWritten===null){
+     const rolledBack=await bucket.put(treeKey(project),JSON.stringify(current),{onlyIf:{etagMatches:treeWritten.etag}});
+     return json({error:rolledBack
+      ?"Components changed during archiving. The tree was restored; reload and retry."
+      :"Components changed during archiving. The archive is preserved, but the tree needs reconciliation.",
+      archiveId:id},409);
+    }
    }
    archived.state="archived";
    try{await bucket.put(manifestKey(project,id),JSON.stringify(archived));}
@@ -215,7 +218,16 @@ export async function handleAssemblyArchive(request,env){
  const stored=await read(bucket,manifestKey(project,body.id),null),archive=stored.value;
  if(!archive||archive.project!==project)return json({error:"Archive not found"},404);
  if(archive.restoredAt)return json({error:"Archive was already restored"},409);
- if(current.some(n=>n.id===archive.nodeId))return json({error:"Item is still active or its ID conflicts with another item"},409);
+ if(current.some(n=>n.id===archive.nodeId)){
+  const complete=archive.nodes.every(node=>current.some(active=>active.id===node.id&&active.kind===node.kind&&active.partId===node.partId));
+  if(!complete)return json({error:"An active feature-tree item conflicts with the archived IDs"},409);
+  // A previous restore may have completed its tree writes before its final
+  // archive-state update. Allow a safe retry to finalize that state.
+  archive.restoredAt=new Date().toISOString();archive.state="restored";
+  const finished=await bucket.put(manifestKey(project,body.id),JSON.stringify(archive),conditional(stored.object));
+  if(finished===null)return json({error:"Archive status changed elsewhere. Reload and retry."},409);
+  return json({ok:true,alreadyRestored:true,revision:tree.object?.etag??null,nodes:current,restoredPartIds:[],missing:[]});
+ }
  const parent=archive.parentId==="__root__"?null:archive.parentId;
  if(parent&&!current.some(n=>n.id===parent&&n.kind!=="part"))return json({error:"Original parent no longer exists"},409);
  const conflicts=archive.nodes.filter(n=>current.some(item=>item.id===n.id));
