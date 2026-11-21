@@ -411,6 +411,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(kind).toHaveValue("purchased");
  await expect(editor.locator(".component-manufacturer")).toBeVisible();
  await kind.selectOption("custom");
+ await expect(editor.locator(".part-functional-edit-field",{hasText:"Part name"})).toBeHidden();
  await expect(editor.locator(".component-manufacturer")).toBeHidden();
  await expect(editor.locator(".component-supplier")).toBeHidden();
  await expect(editor.locator(".component-asin")).toBeHidden();
@@ -418,6 +419,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(editor.locator(".component-category")).toBeHidden();
  await expect(editor.locator(".component-name")).toBeVisible();
  await kind.selectOption("purchased");
+ await expect(editor.locator(".part-functional-edit-field",{hasText:"Part name"})).toBeVisible();
  await expect(editor.locator(".component-manufacturer")).toBeVisible();
  // The old component list must not be duplicated inside the editing form.
  await expect(editor.locator(".component-list")).toBeHidden();
