@@ -1914,7 +1914,7 @@ function setupAssemblyTrees(){
   visibilityHelp.title="Hides this part from the feature tree while keeping the part, BOM entry, details and history. The part remains available in Parts Management and the BOM.";
   visibilityHelp.setAttribute("aria-label",visibilityHelp.title);visibilityRow.append(visibilityHelp);visibilityRow.title=visibilityHelp.title;
   const partNumberRow=document.createElement("label");partNumberRow.className="part-number-field";
-  const partNumberInput=document.createElement("input");partNumberInput.className="field part-number-input";partNumberInput.placeholder="Automatic for custom parts; optional for purchased";partNumberInput.maxLength=30;
+  const partNumberInput=document.createElement("input");partNumberInput.className="field part-number-input";partNumberInput.placeholder="Enter a number or choose the next available";partNumberInput.maxLength=30;
   partNumberRow.append(document.createTextNode("Functional part number"),partNumberInput);
   const partDescriptionRow=document.createElement("label");partDescriptionRow.className="part-description-field";
   const partDescriptionInput=document.createElement("textarea");partDescriptionInput.className="field part-description-input";partDescriptionInput.rows=2;partDescriptionInput.maxLength=2000;partDescriptionInput.placeholder="What must this part accomplish? Keep the function independent of the chosen component.";
@@ -2219,7 +2219,7 @@ function setupAssemblyTrees(){
     if(legacyFullName)legacyFullName.hidden=true;
     if(legacyCategory)legacyCategory.hidden=true;
     const identity=[field("name")];
-    if(identity[0]?.firstChild?.nodeType===Node.TEXT_NODE)identity[0].firstChild.nodeValue="Part name";
+    if(identity[0]?.firstChild?.nodeType===Node.TEXT_NODE)identity[0].firstChild.nodeValue="Functional part name";
     const quantities=[field("quantity"),field("quantity-unit")];
     const sourcing=[field("manufacturer"),field("model"),field("supplier"),field("asin"),
      review.querySelector(".historical-price-fields")||bomRoot()?.querySelector(".historical-price-fields")];
@@ -2904,7 +2904,7 @@ function setupAssemblyTrees(){
    }
    const part=partQuantities.get(node.partId);
    if(!part||part.generatedFrom)throw Error("Open the source part to rename it.");
-   const value=await window.BSDialogs.prompt("Enter a new name",part.name,{title:"Rename part",label:"Part name"});
+   const value=await window.BSDialogs.prompt("Enter a new name",part.name,{title:"Rename functional part",label:"Functional part name"});
    if(!value?.trim()||value.trim()===part.name)return;
    const result=await window.BSEditConflicts.save("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),
     {original:part,changes:{name:value.trim()}});
