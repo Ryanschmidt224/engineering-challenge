@@ -2259,7 +2259,9 @@ function setupAssemblyTrees(){
     functionalTreeDescriptionField.hidden=true;
     if(!projectOnlyPanel.hidden)specsBody.append(projectOnlyPanel);
     implementationGroup.append(specsDisclosure);
-    specsDisclosure.open=Boolean(specs?.children.length||!projectOnlyPanel.hidden);
+    const hasSpecs=Boolean(specs?.children.length||!projectOnlyPanel.hidden);
+    specsDisclosure.hidden=!hasSpecs;
+    specsDisclosure.open=false;
     if(specsHeading)specsHeading.remove();
     // Remove old section shells from previous render cycles.
     for(const section of review.querySelectorAll('[data-part-editor-group="additional"],[data-part-editor-group="specifications"]'))section.remove();
@@ -2270,8 +2272,15 @@ function setupAssemblyTrees(){
      actions.append(right);review.append(actions);
     }
     if(addSpec){
-     specsBody.append(addSpec);
-     addSpec.addEventListener("click",()=>{specsDisclosure.open=true},{once:true});
+     addSpec.textContent="+ Add specification";
+     implementationGroup.insertBefore(addSpec,specsDisclosure);
+     if(!addSpec.bsShowInlineSpecs){
+      addSpec.bsShowInlineSpecs=true;
+      addSpec.addEventListener("click",()=>{
+       const section=review.querySelector(".part-editor-specs-disclosure");
+       if(section){section.hidden=false;section.open=true}
+      });
+     }
     }
     review.append(actions); // Only Save and Cancel remain in the primary footer.
     const buttons=actions.querySelector(".component-editor-primary-actions");
