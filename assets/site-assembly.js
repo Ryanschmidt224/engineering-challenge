@@ -2793,7 +2793,7 @@ function setupAssemblyTrees(){
     dialog.append(list);
     const media=(archive.assets||[]).map((asset,index)=>({...asset,index})).filter(asset=>
      !asset.original.startsWith("photo-annotations/")&&!asset.original.startsWith("photo-renders/"));
-    const images=media.filter(asset=>/\\.(jpg|jpeg|png|webp|gif|heic|heif)$/i.test(asset.original)||
+    const images=media.filter(asset=>/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i.test(asset.original)||
      asset.original.startsWith("component-thumbnails/"));
     const documents=media.filter(asset=>!images.includes(asset));
     if(images.length){
