@@ -1029,189 +1029,81 @@
   });
   window.addEventListener("hashchange",syncItemRoute);
 
+  // The left sidebar is the only product hierarchy. Show actual parts
+  // immediately—never insert an extra product-family or product-type screen.
   const renderCatalog=()=>{
-   const query=results.value.trim().toLowerCase(),sort=$(".workshop-catalog-sort",catalog).value;
+   const query=results.value.trim().toLowerCase();
+   const sort=$(".workshop-catalog-sort",catalog).value;
    const list=$(".workshop-catalog-list",catalog);
    list.replaceChildren();
+   const group=window.BSResources.otherWorkshopGroups||[];
    const inCategory=category=>selectedWorkshopCategory==="all"||category===selectedWorkshopCategory||
     selectedWorkshopCategory==="electronics"&&category.startsWith("electrical-")||
-    window.BSResources.otherWorkshopGroups.some(([key,,parent])=>parent===selectedWorkshopCategory&&key===category);
-   const allowed=item=>inCategory(categoryFor(item));
-   const byCategory=standards().filter(allowed);
-   const personalAllowed=items.filter(item=>inCategory(categoryOfPersonal(item)));
-   const matched=byCategory.filter(item=>(!selectedFamily||familyFor(item)?.id===selectedFamily)&&
-    [item.name,item.partNumber,item.supplierPartNumber,item.subtitle,item.spec,item.use,item.kind,item.category,categoryLabelFor(item),familyFor(item)?.label]
-     .join(" ").toLowerCase().includes(query));
-   const personalMatched=personalAllowed.filter(item=>(!selectedFamily||
-    (selectedFamily==="personal-other"?!familyOfPersonal(item):familyOfPersonal(item)===selectedFamily))&&
-    [item.name,item.manufacturer,item.model,item.partNumber,item.category,item.kind,item.notes,
-     ...(item.specifications||[]).flatMap(spec=>[spec.name,spec.value])].join(" ").toLowerCase().includes(query));
-   const personalOnly=personalMatched.filter(item=>!matchingReference(item)||
-    !matched.some(ref=>ref.id===matchingReference(item)?.id));
-   const familyGrid=families().map(group=>({...group,
-    visible:byCategory.filter(item=>group.items.includes(item.id)),
-    owned:personalAllowed.filter(item=>familyOfPersonal(item)===group.id)}))
-    .filter(group=>group.visible.length||group.owned.length);
-   const count=$(".workshop-catalog-count",catalog);
+    group.some(([key,,parent])=>parent===selectedWorkshopCategory&&key===category);
+   const matches=(item,personal=false)=>{
+    const terms=[item.name,item.partNumber,item.model,item.manufacturer,item.supplierPartNumber,
+     item.subtitle,item.featureTreeDescription,item.spec,item.use,item.kind,item.category,
+     ...(personal?(item.specifications||[]).flatMap(spec=>[spec.name,spec.value]):[])];
+    return terms.join(" ").toLowerCase().includes(query);
+   };
+   const shared=standards().filter(item=>inCategory(categoryFor(item))&&matches(item));
+   const owned=items.filter(item=>inCategory(categoryOfPersonal(item))&&matches(item,true));
+   const personalOnly=owned.filter(item=>!matchingReference(item)||
+    !shared.some(ref=>ref.id===matchingReference(item)?.id));
+   const compare=(a,b)=>{
+    if(sort==="type"){
+     const difference=String(a.kind||"").localeCompare(String(b.kind||""));
+     if(difference)return difference;
+    }else if(sort==="level"){
+     const difference=String(a.tier||"").localeCompare(String(b.tier||""));
+     if(difference)return difference;
+    }
+    return String(a.partNumber||a.model||a.name||"").localeCompare(String(b.partNumber||b.model||b.name||""),undefined,{numeric:true});
+   };
+   shared.sort(compare);
+   personalOnly.sort(compare);
    const title=$(".workshop-catalog-bar h3",catalog);
-   if(!selectedFamily&&!query){
-    title.textContent="Browse product families";
-    const ungrouped=personalAllowed.filter(item=>!familyOfPersonal(item));
-   count.textContent=familyGrid.length+" product families · "+byCategory.length+" shared references · "+personalAllowed.length+" personal items";
-    const grid=el("div",undefined,"workshop-family-grid");
-    for(const group of familyGrid){
-     const tile=el("button",undefined,"workshop-family-tile");tile.type="button";
-     const sample=group.visible[0]||group.owned[0];
-     tile.append(group.owned[0]?.photoId&&!group.visible.length?personalThumb(group.owned[0]):catalogThumb(sample));
-     const text=el("span",undefined,"workshop-family-text");
-     text.append(el("strong",group.label),el("small",group.description,"muted"),
-      el("span",group.visible.length+" references"+(group.owned.length?" · "+group.owned.length+" in My Workshop":""),"workshop-family-count"));
-     tile.append(text);
-     tile.onclick=()=>{selectedFamily=group.id;selectedType="";renderCatalog();catalog.scrollIntoView({block:"start"})};
-     grid.append(tile);
-    }
-    if(ungrouped.length){
-     const tile=itemButton("",()=>{selectedFamily="personal-other";renderCatalog()},"workshop-family-tile");
-     const title=el("span",undefined,"workshop-family-text");
-     title.append(el("strong","Other items in My Workshop"),el("small","Uncategorized personal inventory","muted"),
-      el("span",ungrouped.length+" items","workshop-family-count"));
-     tile.append(catalogThumb({name:"Workshop equipment",kind:"equipment"}),title);grid.append(tile);
-    }
-    list.append(grid);
+   title.textContent=selectedWorkshopCategory==="all"?"Workshop parts":
+    workshopCategories.find(([id])=>id===selectedWorkshopCategory)?.[1]||"Workshop parts";
+   const count=$(".workshop-catalog-count",catalog);
+   count.textContent=shared.length+" catalog parts"+(personalOnly.length?" · "+personalOnly.length+" personal parts":"");
+   if(!shared.length&&!personalOnly.length){
+    list.append(el("p",query?"No matching parts. Try another search.":"No parts in this category yet.","muted"));
     return;
    }
-   const family=families().find(group=>group.id===selectedFamily);
-   title.textContent=family?.label||(selectedFamily==="personal-other"?"Other items in My Workshop":"Search Workshop");
-   if(selectedFamily){
-    const back=el("button","← All product families","workshop-family-back");back.type="button";
-    back.onclick=()=>{selectedFamily="";selectedType="";renderCatalog()};
-    list.append(back);
-    if(family)list.append(el("p",family.description,"workshop-family-description"));
-   }else if(query){
-    const clear=el("button","Show product families","workshop-family-back");clear.type="button";
-    clear.onclick=()=>{results.value="";renderCatalog()};
-    list.append(clear);
-   }
-
-   // No search term: show product-type thumbnails first. The final click opens
-   // the actual parts in this product type, including personal equipment.
-   if(selectedFamily&&!selectedType&&!query){
-    const grouped=new Map();
-    for(const item of matched){
-     const type=typeFor(item);
-     if(!grouped.has(type.id))grouped.set(type.id,{...type,shared:[],mine:[]});
-     grouped.get(type.id).shared.push(item);
+   const rows=el("div",undefined,"workshop-direct-parts");
+   const createRow=(item,personal)=>{
+    const row=el("article",undefined,"workshop-direct-part");
+    const open=()=>personal?showPersonalItem(item.id):showItem(item.id);
+    const photo=itemButton("",open,"workshop-direct-part-photo");
+    photo.setAttribute("aria-label","Open "+item.name);
+    photo.append(personal?personalThumb(item):catalogThumb(item));
+    const body=el("div",undefined,"workshop-direct-part-details");
+    const mpn=String(item.partNumber||item.model||"").trim();
+    // Name remains the fallback for generic supplies that have no MPN.
+    body.append(itemButton(mpn||item.name,open,"workshop-direct-part-number"));
+    if(mpn&&item.name!==mpn)body.append(el("span",item.name,"workshop-direct-part-name"));
+    if(item.manufacturer)body.append(el("small",item.manufacturer,"muted"));
+    if(personal){
+     body.append(el("small","My Workshop · "+(stockLabels[item.stockStatus]||"In stock"),"muted"));
+    }else if(ownedFor(item).length){
+     body.append(el("small",ownershipLabel(ownedFor(item)),"muted"));
     }
-    for(const item of personalMatched){
-     const linked=matchingReference(item);
-     const type=typeFor(linked||item);
-     if(!grouped.has(type.id))grouped.set(type.id,{...type,shared:[],mine:[]});
-     grouped.get(type.id).mine.push(item);
+    row.append(photo,body);
+    if(!personal){
+     row.append(itemButton(ownedFor(item).length?"Edit My Workshop":"Add to My Workshop",
+      ()=>editPersonalReference(item),"btn workshop-direct-part-add"));
+    }else{
+     row.append(itemButton("Edit",()=>{
+      nav?.select("mine");fill(item);
+      $("#workshop-editor",personal)?.scrollIntoView({block:"start"});
+     },"btn workshop-direct-part-add"));
     }
-    const grid=el("div",undefined,"workshop-type-grid");
-    for(const group of [...grouped.values()].sort((a,b)=>a.label.localeCompare(b.label))){
-     const sample=group.shared[0]||group.mine[0];
-     const tile=itemButton("",()=>{selectedType=group.id;renderCatalog();catalog.scrollIntoView({block:"start"})},"workshop-type-tile");
-     tile.append(sample.photoId?personalThumb(sample):catalogThumb(sample));
-     const content=el("span",undefined,"workshop-type-text");
-     content.append(el("strong",group.label),el("small",group.shared.length+" reference"+(group.shared.length===1?"":"s")+
-      (group.mine.length?" · "+group.mine.length+" in My Workshop":""),"muted"));
-     tile.append(content);grid.append(tile);
-    }
-    count.textContent=grouped.size+" product types";
-    title.textContent=(family?.label||"Workshop")+" · Select a product type";
-    list.append(grid);
-    return;
-   }
-   if(selectedType){
-    const type=typeRules.find(rule=>rule[0]===selectedType);
-    const selectedItem=matched.find(item=>typeFor(item).id===selectedType)||
-     personalMatched.find(item=>typeFor(matchingReference(item)||item).id===selectedType);
-    title.textContent=type?.[1]||(selectedItem?typeFor(selectedItem).label:"Other products");
-    const back=itemButton("← All "+(family?.label||"product")+" types",()=>{selectedType="";renderCatalog()},"workshop-family-back");
-    list.append(back);
-   }
-   const shownShared=selectedType?matched.filter(item=>typeFor(item).id===selectedType):matched;
-   // Display each owned model at the final product-type level, even when it
-   // references the generic shared type, such as "Digital multimeter".
-   const shownPersonal=selectedType?personalMatched.filter(item=>typeFor(matchingReference(item)||item).id===selectedType):personalOnly;
-   if(selectedFamily&&!query){
-    count.textContent=shownShared.length+" catalog parts · "+shownPersonal.length+" personal parts";
-    const products=el("div",undefined,"workshop-product-grid");
-    const tileFor=(item,isPersonal)=>{
-     const tile=el("article",undefined,"workshop-product-tile");
-     const open=()=>isPersonal?showPersonalItem(item.id):showItem(item.id);
-     const image=itemButton("",open,"workshop-product-image");
-     image.setAttribute("aria-label","View "+item.name);
-     image.append(isPersonal?personalThumb(item):catalogThumb(item));
-     tile.append(image,itemButton(item.name,open,"workshop-product-name"));
-     if(item.manufacturer||item.model)tile.append(el("small",[item.manufacturer,item.model].filter(Boolean).join(" · "),"muted"));
-     if(isPersonal)tile.append(el("span","My Workshop · "+(stockLabels[item.stockStatus]||"In stock"),"workshop-owned-label"));
-     else if(ownedFor(item).length)tile.append(el("span",ownershipLabel(ownedFor(item)),"workshop-owned-label"));
-     if(isPersonal||canEditCatalog(item))
-      tile.append(itemButton("Edit",()=>isPersonal?
-        (showPersonalItem(item.id),closeItem(),nav?.select("mine"),fill(item),$("#workshop-editor",personal)?.scrollIntoView({block:"start"})):
-        (showItem(item.id),openItemEditor(standards().find(r=>r.id===item.id))),
-       "btn workshop-product-edit"));
-     return tile;
-    };
-    for(const item of shownShared)products.append(tileFor(item,false));
-    for(const item of shownPersonal)products.append(tileFor(item,true));
-    if(!products.children.length)products.append(el("p","No parts in this type yet.","muted"));
-    list.append(products);
-    return;
-   }
-   matched.sort((a,b)=>{
-    const col=sort==="type"?String(a.kind||"").localeCompare(String(b.kind||"")):
-     sort==="level"?String(a.tier||"").localeCompare(String(b.tier||"")):0;
-    return col||a.name.localeCompare(b.name,undefined,{numeric:true});
-   });
-   count.textContent=matched.length+" shared references · "+personalOnly.length+" personal items";
-   if(!matched.length&&!personalOnly.length){list.append(el("p","No matching items. Change the search or product family.","muted"));return}
-   const heading=el("div",undefined,"workshop-catalog-columns");
-   for(const t of ["Image","Item / description","Category","Recommended use",""])heading.append(el("span",t));
-   list.append(heading);
-   for(const item of matched){
-    const row=el("article",undefined,"workshop-catalog-entry");
-    if(ownedFor(item).length)row.classList.add("is-owned");
-    const summary=el("div",undefined,"workshop-catalog-line");
-    const name=el("button",undefined,"workshop-catalog-name");
-    name.type="button";name.textContent=item.name;name.setAttribute("aria-expanded","false");
-    const main=el("div",undefined,"workshop-catalog-main-item");
-    main.append(name);
-    if(item.subtitle)main.append(el("small",item.subtitle,"muted"));
-    if(ownedFor(item).length)main.append(el("span",ownershipLabel(ownedFor(item)),"workshop-owned-label"));
-    const thumbButton=itemButton("",()=>showItem(item.id),"workshop-catalog-thumb-action");
-    thumbButton.setAttribute("aria-label","Open "+item.name);
-    thumbButton.append(catalogThumb(item));
-    summary.append(thumbButton,main,el("span",categoryLabelFor(item),"workshop-catalog-category"),
-     el("span",item.use||friendlyTier(item),"workshop-catalog-use"));
-    const add=el("button",ownedFor(item).length?"Edit My Workshop item":"+ My Workshop","btn workshop-catalog-add");
-    add.type="button";add.title="Create a private inventory item based on this reference";
-    add.onclick=()=>editPersonalReference(item);
-    main.append(add);
-    name.onclick=()=>showItem(item.id);
-    row.append(summary);list.append(row);
-   }
-   for(const item of personalOnly){
-    const row=el("article",undefined,"workshop-catalog-entry workshop-personal-entry");
-    const summary=el("div",undefined,"workshop-catalog-line");
-    const main=el("div",undefined,"workshop-catalog-main-item");
-    main.append(itemButton(item.name,()=>showPersonalItem(item.id),"workshop-catalog-name"));
-    main.append(el("span","My Workshop · "+(stockLabels[item.stockStatus]||"In stock")+
-     " · "+item.quantity+" "+(item.unit||"pcs"),"workshop-owned-label"));
-    if(item.manufacturer||item.model)main.append(el("small",[item.manufacturer,item.model].filter(Boolean).join(" · "),"muted"));
-    const photo=itemButton("",()=>showPersonalItem(item.id),"workshop-catalog-thumb-action");
-    photo.setAttribute("aria-label","Open personal Workshop item "+item.name);
-    photo.append(personalThumb(item));
-    summary.append(photo,main,el("span",item.category||"My Workshop","workshop-catalog-category"),
-     el("span",item.notes||"Personal inventory item","workshop-catalog-use"));
-    main.append(itemButton("Edit",()=>{
-     nav?.select("mine");fill(item);
-     $("#workshop-editor",personal)?.scrollIntoView({block:"start"});
-    },"btn workshop-product-edit"));
-    row.append(summary);list.append(row);
-   }
+    return row;
+   };
+   for(const item of shared)rows.append(createRow(item,false));
+   for(const item of personalOnly)rows.append(createRow(item,true));
+   list.append(rows);
   };
   results.addEventListener("input",renderCatalog);
   $(".workshop-catalog-sort",catalog).addEventListener("change",renderCatalog);
