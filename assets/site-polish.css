@@ -4038,3 +4038,219 @@
  .recipe-compact .recipe-step-browser > .recipe-step-detail{padding:7px}
  .recipe-compact .recipe-step-browser > .recipe-step-resizer{display:none}
 }
+
+
+/* Project records: one compact Archives and Revision History disclosure.
+   Revision actions and archived entries share the same open/close control. */
+.assembly-workspace-page .workspace-archive-history{
+ margin:0 0 12px;
+ padding:0;
+ border:1px solid var(--color-border);
+ border-radius:10px;
+ background:var(--color-surface);
+ min-width:0;
+ overflow:visible;
+}
+.assembly-workspace-page .workspace-archive-history>summary{
+ display:flex;
+ align-items:center;
+ gap:9px;
+ min-height:42px;
+ padding:9px 16px 9px 27px;
+ list-style:none;
+ cursor:pointer;
+}
+.assembly-workspace-page .workspace-archive-history>summary::before{
+ left:12px;
+ top:calc(50% - 4px);
+}
+.assembly-workspace-page .workspace-archive-history>summary::-webkit-details-marker{display:none}
+.assembly-workspace-page .workspace-archive-history>summary h2{
+ margin:0;
+ min-height:0;
+ font-size:.91rem;
+ font-weight:650;
+ line-height:1.35;
+}
+.assembly-workspace-page .workspace-archive-history>summary .workspace-record-count{
+ display:inline;
+ margin:0;
+ font-size:.76rem;
+}
+.assembly-workspace-page .workspace-archive-history[open]>summary{
+ border-bottom:1px solid var(--color-border);
+}
+.assembly-workspace-page .workspace-archive-history>.investigations-active-panel{
+ padding:10px 15px 0;
+ margin:0;
+ border:0;
+ background:transparent;
+}
+.assembly-workspace-page .workspace-archive-history>.investigations-panel{
+ padding:0 15px 12px!important;
+ margin:0!important;
+ border:0!important;
+ border-radius:0;
+ box-shadow:none;
+ background:transparent;
+}
+.assembly-workspace-page .workspace-archive-history .investigation-archive-records{
+ margin:0;
+ padding:0;
+ border:0;
+}
+.assembly-workspace-page .workspace-archive-history .investigation-collapse-content{
+ padding:4px 0 0;
+}
+.assembly-workspace-page .workspace-archive-history .investigation-active-area{
+ padding:0;
+ border:0;
+ background:transparent;
+}
+.assembly-workspace-page .workspace-archive-history .investigation-active-heading{
+ margin:5px 0 10px;
+ padding:0;
+ border:0;
+ background:transparent;
+}
+.assembly-workspace-page .workspace-archive-history .investigation-create-card{
+ margin:4px 0 10px;
+ padding:0;
+ border:0;
+ background:transparent;
+ box-shadow:none;
+}
+.assembly-workspace-page .workspace-archive-history .investigation-add{
+ min-height:31px;
+ padding:5px 10px!important;
+ border:1px solid var(--color-border)!important;
+ border-radius:8px;
+ background:var(--color-surface)!important;
+ color:var(--color-text)!important;
+ box-shadow:none;
+ font-size:.8rem;
+ font-weight:550;
+ text-decoration:none;
+}
+.assembly-workspace-page .workspace-archive-history .investigation-add:hover{
+ border-color:var(--color-accent)!important;
+ text-decoration:none;
+}
+/* Helpful tools: title, info and count on one line. Add entry is a
+   conventional framed button that appears only inside the open section. */
+.assembly-workspace-page .workspace-resource-disclosure>summary{
+ min-height:42px;
+ padding-top:8px;
+ padding-bottom:8px;
+}
+.assembly-workspace-page .workspace-resource-disclosure .workspace-tool-actions{
+ display:flex;
+ align-items:center;
+ flex-wrap:wrap;
+ min-height:0;
+ gap:7px;
+}
+.assembly-workspace-page .workspace-resource-disclosure .workspace-tool-actions>h2{
+ min-height:0;
+ font-size:.91rem;
+}
+.assembly-workspace-page .workspace-resource-disclosure .workspace-tool-actions>.workspace-record-count{
+ display:inline;
+ margin:0 0 0 1px;
+ font-size:.76rem;
+}
+.assembly-workspace-page .workspace-resource-disclosure .workspace-tool-controls{
+ padding:10px 15px 0;
+}
+.assembly-workspace-page .workspace-resource-disclosure .workspace-tool-controls .linked-resource-add{
+ min-height:31px;
+ padding:5px 10px;
+ border:1px solid var(--color-border);
+ border-radius:8px;
+ background:var(--color-surface);
+ color:var(--color-text);
+ font-size:.8rem;
+ font-weight:550;
+ box-shadow:none;
+ cursor:pointer;
+}
+.assembly-workspace-page .workspace-resource-disclosure .workspace-tool-controls .linked-resource-add:hover{
+ border-color:var(--color-accent);
+ text-decoration:none;
+}
+.assembly-workspace-page .workspace-resource-disclosure>.workspace-resources{
+ padding:5px 15px 12px;
+ margin:0;
+}
+/* Notes: a single summary line when collapsed, with its framed add button
+   and all saved notes available only in the expanded body. */
+.assembly-workspace-page .bs-unstructured-notes{
+ margin:0 0 12px!important;
+ padding:0!important;
+ border:1px solid var(--color-border);
+ border-radius:10px;
+ background:var(--color-surface);
+}
+.assembly-workspace-page .bs-unstructured-notes>.bs-unstructured-notes-heading{
+ position:relative;
+ display:flex;
+ align-items:center;
+ justify-content:flex-start;
+ flex-wrap:wrap;
+ gap:9px;
+ min-height:42px;
+ padding:9px 16px 9px 27px;
+ list-style:none;
+ cursor:pointer;
+}
+.assembly-workspace-page .bs-unstructured-notes>.bs-unstructured-notes-heading::-webkit-details-marker{display:none}
+.assembly-workspace-page .bs-unstructured-notes>.bs-unstructured-notes-heading::before{
+ content:"";
+ position:absolute;
+ left:12px;top:calc(50% - 4px);
+ width:6px;height:6px;
+ border-block-start:1.5px solid var(--color-text-muted);
+ border-inline-end:1.5px solid var(--color-text-muted);
+ transform:rotate(45deg);
+}
+.assembly-workspace-page .bs-unstructured-notes[open]>.bs-unstructured-notes-heading::before{
+ transform:rotate(135deg);
+}
+.assembly-workspace-page .bs-unstructured-notes[open]>.bs-unstructured-notes-heading{
+ border-bottom:1px solid var(--color-border);
+}
+.assembly-workspace-page .bs-unstructured-notes>.bs-unstructured-notes-heading h2{
+ margin:0;
+ font-size:.91rem;
+ font-weight:650;
+ line-height:1.35;
+}
+.assembly-workspace-page .bs-unstructured-notes>.bs-unstructured-notes-heading>.workspace-record-count{
+ display:inline;
+ margin:0;
+ font-size:.76rem;
+}
+.assembly-workspace-page .bs-unstructured-notes>.bs-unstructured-content{
+ padding:10px 15px 12px;
+}
+.assembly-workspace-page .bs-unstructured-notes .bs-unstructured-add{
+ display:inline-flex;
+ align-items:center;
+ min-height:31px;
+ padding:5px 10px;
+ border:1px solid var(--color-border);
+ border-radius:8px;
+ background:var(--color-surface);
+ color:var(--color-text);
+ font-size:.8rem;
+ font-weight:550;
+ box-shadow:none;
+ cursor:pointer;
+}
+.assembly-workspace-page .bs-unstructured-notes .bs-unstructured-add:hover{
+ border-color:var(--color-accent);
+ text-decoration:none;
+}
+.assembly-workspace-page .bs-unstructured-notes .bs-unstructured-list{
+ margin-top:8px;
+}
