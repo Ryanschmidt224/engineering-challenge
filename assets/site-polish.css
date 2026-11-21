@@ -4306,3 +4306,85 @@
   gap:3px;
  }
 }
+
+
+/* Project Summary: condensed, consistent cards and an inline cost explanation. */
+.project-summary-overview{gap:10px;margin:12px 0}
+.project-summary-page .project-summary-overview>.project-overview-card{padding:14px 20px}
+.project-summary-page .project-summary-overview>.project-overview-card:first-child{
+ display:flex;
+ flex-direction:column;
+ align-items:stretch;
+}
+.project-summary-page .project-summary-overview .project-summary-tags{
+ display:flex;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:6px;
+ margin:9px 0 0;
+ padding:8px 0 0;
+ border-top:1px solid var(--color-border);
+}
+.project-summary-page .project-summary-overview .project-summary-tags:empty{display:none}
+.project-summary-page .project-cost-heading{
+ display:flex;
+ align-items:baseline;
+ flex-wrap:wrap;
+ column-gap:14px;
+ row-gap:3px;
+ margin-bottom:8px;
+}
+.project-summary-page .project-cost-heading h2{margin:0}
+.project-summary-page .project-cost-heading .project-summary-cost-missing{
+ flex:1 1 260px;
+ margin:0;
+ font-size:.78rem;
+ line-height:1.35;
+}
+.project-summary-page .project-cost-card>.project-summary-cost,
+.project-summary-page .project-cost-card>.project-summary-package-cost{
+ margin:3px 0;
+ line-height:1.45;
+}
+.project-summary-page .project-intent-milestones{
+ margin:10px 0 12px;
+ padding:14px 20px;
+ gap:8px;
+}
+.project-summary-page .project-milestone-heading{
+ align-items:center;
+ gap:8px 12px;
+}
+.project-summary-page .project-milestone-heading h2{
+ margin:0;
+ font-size:1.05rem;
+ line-height:1.3;
+}
+.project-summary-page .project-milestone-actions{gap:6px}
+.project-summary-page .project-milestone-actions>.btn{
+ min-height:32px;
+ padding:5px 10px;
+ font-size:.82rem;
+}
+.project-summary-page .project-milestone-intro{
+ font-size:.8rem;
+ line-height:1.4;
+}
+.project-summary-page .project-milestone-original,
+.project-summary-page .project-milestone-record{
+ padding:10px 12px;
+ gap:7px;
+ border-radius:8px;
+}
+.project-summary-page .project-milestone-intent,
+.project-summary-page .project-milestone-history,
+.project-summary-page .project-milestone-list{gap:7px}
+.project-summary-page .project-milestone-field-view{gap:2px}
+.project-summary-page .project-milestone-field-view p{line-height:1.4}
+.project-summary-page .project-milestone-original h3,
+.project-summary-page .project-milestone-history h3{font-size:.91rem}
+@media(max-width:600px){
+ .project-summary-page .project-cost-heading{align-items:flex-start}
+ .project-summary-page .project-cost-heading .project-summary-cost-missing{flex-basis:100%}
+ .project-summary-page .project-intent-milestones{padding:13px 14px}
+}
