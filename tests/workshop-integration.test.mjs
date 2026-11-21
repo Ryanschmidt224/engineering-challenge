@@ -393,15 +393,19 @@ test("Workshop reload replaces project part details and the active photo in one 
  assert.equal(result.status,200,JSON.stringify(result.body));
  const {component}=result.body;
  assert.deepEqual(component.workshopSourcing,expectedSourcing);
- assert.equal(component.name,"Current switch");
+ assert.equal(component.name,"Project edit");
+ assert.equal(component.implementationName,"Current switch");
  assert.equal(component.model,"ABC-10");
  assert.equal(component.manufacturer,"");
  assert.equal(component.partNumber,"101");
  assert.equal(component.assemblyId,"motor");
  assert.equal(component.quantity,2);
- assert.equal(component.needsAttention,false);
+ assert.equal(component.needsAttention,true); // Functional attention belongs to the stable part.
  assert.equal(component.progressStatus,"not_started");
- assert.deepEqual(component.projectDetails,{workshopReferenceId:workshopId,workshopTreeDescription:"Motor switch",notes:"Workshop notes",value:"10 kΩ"});
+ assert.equal(component.projectDetails.workshopReferenceId,workshopId);
+ assert.equal(component.projectDetails.workshopTreeDescription,"Motor switch");
+ assert.equal(component.projectDetails.value,"10 kΩ");
+ assert.equal(component.projectDetails.changes,"Local change");
  assert.deepEqual(component.specifications,[{name:"Rated voltage",value:"24 V",source:"explicit"},{name:"Documentation URL",value:item.documentationUrl,source:"explicit"}]);
  assert.deepEqual(await readPhoto(view,handlePhotoAnnotations),[1,2,3]);
  assert.deepEqual(await readPhoto(photo,handleComponentPhoto),[1,2,3]);
@@ -413,7 +417,7 @@ test("Workshop reload replaces project part details and the active photo in one 
  assert.equal((await reload(component.revision)).status,409);
  assert.deepEqual(await readPhoto(view,handlePhotoAnnotations),[1,2,3]);
  const peek=await data(await handleComponents(request(components),env));
- assert.equal(peek.body.components.find(p=>p.id===partId).name,"Current switch");
+ assert.equal(peek.body.components.find(p=>p.id===partId).name,"Project edit");
  item.photos=[];
  await saveWorkshop();
  assert.equal((await reload(component.revision)).status,200);
