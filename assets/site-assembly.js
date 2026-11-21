@@ -41,7 +41,10 @@ function setupAssemblyTrees(){
    const reference=workshopReferences.get(details?.workshopReferenceId||"");
    return String(reference?.featureTreeDescription||reference?.subtitle||reference?.description||reference?.name||"").trim().slice(0,20);
   };
-  const treeDescription=(details,description)=>String(details?.featureTreeName||referenceTreeDescription(details)||details?.workshopTreeDescription||description?.slice(0,20)||"").trim();
+  // Only project-owned text names the function in the feature tree.
+  // A Workshop caption is an attribute of the chosen physical item, never
+  // a fallback identity for the project requirement.
+  const treeDescription=details=>String(details?.featureTreeName||"").trim();
   // Refresh the shared/personal Workshop captions without changing project BOM records.
   const loadWorkshopCaptions=async()=>{
    const [shared,personal]=await Promise.allSettled([
@@ -468,7 +471,7 @@ function setupAssemblyTrees(){
    const list=document.createElement("ul");list.className="project-summary-part-list";
    for(const part of items){
     const row=document.createElement("li"),name=document.createElement(part.id&&/^[0-9a-f-]{36}$/i.test(part.id)&&!part.generatedFrom?"button":"span"),quantity=document.createElement("span");
-    name.className="project-summary-part-name";name.textContent=window.BSPartFields.numberedName(part);
+    name.className="project-summary-part-name";name.textContent=window.BSPartFields.numberedFunctionalName(part);
     if(name.tagName==="BUTTON"){
      name.type="button";name.classList.add("project-summary-part-link");
      name.setAttribute("aria-label","Open "+part.name+" part page");
@@ -500,7 +503,7 @@ function setupAssemblyTrees(){
      const list=document.createElement("ul");list.className="project-summary-part-list";
      for(const part of unique.values()){
       const row=document.createElement("li"),name=document.createElement(part.id&&/^[0-9a-f-]{36}$/i.test(part.id)&&!part.generatedFrom?"button":"span"),quantity=document.createElement("span");
-      name.className="project-summary-part-name";name.textContent=window.BSPartFields.numberedName(part);
+      name.className="project-summary-part-name";name.textContent=window.BSPartFields.numberedFunctionalName(part);
     if(name.tagName==="BUTTON"){
      name.type="button";name.classList.add("project-summary-part-link");
      name.setAttribute("aria-label","Open "+part.name+" part page");
@@ -1291,7 +1294,7 @@ function setupAssemblyTrees(){
     if(part.quantity!=null&&Number.isFinite(Number(part.quantity)))
      cost+=" · "+dollars.format(Number(unitCost)*Number(part.quantity))+" total";
    }
-   const summary=[window.BSPartFields.displayName(part),treeDescription(part.projectDetails,part.description),quantity,cost];
+   const summary=[window.BSPartFields.implementationLabelFor(part),part.description,quantity,cost];
    detailSummary.textContent=summary.filter(Boolean).join(" · ");
    const makeDetailLine=(title,value,isLink=false)=>{
     const line=document.createElement("details");line.className="part-details-view-row part-detail-item";
@@ -1327,7 +1330,7 @@ function setupAssemblyTrees(){
     projectSection.append(title,notice);
     for(const [key,label] of [
      ["notes","Project notes"],["changes","Project changes / modifications"],
-     ["featureTreeName","Feature tree name"],
+     ["featureTreeName","Feature tree description"],
      ["referenceDesignators","Reference designators"],["footprint","Footprint"],
      ["schematicValue","Schematic value"],["sourceApplication","Source application"],
      ["sourceFile","Source schematic file"],["sourceComponentId","Source component ID"]
@@ -1531,7 +1534,7 @@ function setupAssemblyTrees(){
     if(version!==partLoadVersion||partRoute()!==partId)return;
     const part=partData.components?.find(item=>item.id===partId);
     if(!part)throw Error("Part not found");
-    heading.textContent=window.BSPartFields.numberedName(part);
+    heading.textContent=window.BSPartFields.numberedFunctionalName(part);
     currentPartInfo=part;
     if(window.BSPartFields.itemTypeFor(part)==="part"&&!part.generatedFrom)showPartQuantity(partQuantityDisplay(part));
     const hasWorkshopLink=!!workshopLinkId(part);
@@ -1747,7 +1750,7 @@ function setupAssemblyTrees(){
    for(const part of items){
     const row=document.createElement("div");row.className="bom-shop-material-row";
     const name=document.createElement("span");
-    name.className="bom-part-name bom-part-name-link";name.textContent=window.BSPartFields.numberedName(part);
+    name.className="bom-part-name bom-part-name-link";name.textContent=window.BSPartFields.numberedFunctionalName(part);
     const quantity=document.createElement("span");quantity.className="bom-shop-qty";
     quantity.textContent=materialQuantity(part);
     row.append(name,quantity);
@@ -1768,7 +1771,7 @@ function setupAssemblyTrees(){
    if(part.generatedFrom)item.classList.add("bom-generated-part");
    const row=document.createElement("div");row.className="bom-part-summary";
    const name=document.createElement("span");
-   name.className="bom-part-name bom-part-name-link";name.textContent=window.BSPartFields.numberedName(part);
+   name.className="bom-part-name bom-part-name-link";name.textContent=window.BSPartFields.numberedFunctionalName(part);
    if(part.itemType!=="document"&&!part.generatedFrom&&!part.isTool){
     const solution=document.createElement("small");solution.className="bom-implementation-label";
     solution.textContent=part.implementationResolved===false?"Implementation not selected":
@@ -3278,14 +3281,16 @@ function setupAssemblyTrees(){
    const nodeNumber=node?(isPartNode(node)?partNumbers.get(node.partId):node.partNumber):null;
    const treeInfo=isPartNode(node)?partTreeLabels.get(node.partId):null;
    const treeDetails=treeInfo?.details||{};
-   const firstLine=isPartNode(node)?window.BSPartFields.numberedName({
-    name:node.name,partNumber:nodeNumber,projectDetails:treeDetails
+   const firstLine=isPartNode(node)?window.BSPartFields.numberedFunctionalName({
+    name:node.name,partNumber:nodeNumber,projectDetails:treeDetails,itemType:"part"
    }):nodeNumber?nodeNumber+" · "+node.name:node?.name||title;
-   const selectedImplementation=treeInfo?.implementationResolved===false?"Implementation not selected":
-    treeInfo?.implementationName||treeInfo?.mpn||"";
-   const secondLine=String(treeDescription(treeDetails,treeInfo?.description)||selectedImplementation||"").trim();
+   const secondLine=isPartNode(node)?window.BSPartFields.implementationLabelFor({
+    name:node.name,itemType:"part",implementationResolved:treeInfo?.implementationResolved,
+    implementationName:treeInfo?.implementationName,model:treeInfo?.mpn
+   }):"";
    name.textContent=node?(isDocumentNode(node)?"📄  ":isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+firstLine:"📦  "+title;
-   if(isPartNode(node)&&showTreeDescriptions&&treeDetails.showTreeDescription!=="false"&&secondLine&&secondLine!==firstLine){
+   if(isPartNode(node)&&showTreeDescriptions&&treeDetails.showTreeDescription!=="false"&&secondLine&&
+      secondLine!==firstLine&&secondLine!==String(treeDetails.featureTreeName||node.name).trim()){
     const detail=document.createElement("small");detail.className="assembly-tree-description";detail.textContent=secondLine;name.append(detail);
    }
    if(isPartNode(node)){
