@@ -2161,3 +2161,11 @@
   padding:10px 12px!important;
  }
 }
+
+
+/* Work Instructions: remove the redundant separator above Save / Remove.
+   The instruction card already provides the section boundary. */
+.recipe-compact .recipe-step-detail .recipe-edit-controls{
+ border-top:0!important;
+ padding-top:0!important;
+}
