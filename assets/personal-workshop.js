@@ -56,7 +56,7 @@
    onChange:key=>{selectedWorkshopCategory=key;selectedFamily="";selectedType="";applyWorkshopCategory();queueMicrotask(()=>root.querySelector(".workshop-catalog-sort")?.dispatchEvent(new Event("change")))}
   });
   nav?.setItems([{value:"all",label:"All workshop items"},
-   ...workshopCategories.map(([id,name])=>({value:id,label:name})),
+   ...workshopCategories.map(([id,name])=>({value:id,label:id.startsWith("electrical-")?"  ↳ "+name:name})),
    {value:"mine",label:"My Workshop"}]);
   root.addEventListener("bsworkshopupdated",applyWorkshopCategory);
   window.addEventListener("bsworkshopfocus",event=>{
@@ -108,8 +108,7 @@
   results.placeholder="Search wire, ferrules, oscilloscope, MOSFET…";
   results.after(catalog);
   function categoryFor(item){
-   const found=workshopCategories.find(([, ,ids])=>ids?.includes(item.id));
-   return found?.[0]||item.category||"other";
+   return window.BSResources.electricalCategoryFor(item);
   }
   const categoryLabelFor=item=>workshopCategories.find(([key])=>key===categoryFor(item))?.[1]||"Other";
   const friendlyTier=item=>item.tier==="core"?"Beginner / essential":"Additional / specialized";
@@ -489,7 +488,7 @@
    itemPage.append(heading);
    const mount=el("section",undefined,"workshop-item-editor-mount");
    itemPage.append(mount);
-   openItemEditor({category:selectedWorkshopCategory==="all"?"tools":selectedWorkshopCategory,
+   openItemEditor({category:["all","mine"].includes(selectedWorkshopCategory)?"tools":selectedWorkshopCategory,
     kind:"equipment",familyId:selectedFamily||"measurement",photos:[]});
   }
   $(".workshop-catalog-create",catalog).onclick=createCatalogItem;
@@ -1029,9 +1028,9 @@
    const query=results.value.trim().toLowerCase(),sort=$(".workshop-catalog-sort",catalog).value;
    const list=$(".workshop-catalog-list",catalog);
    list.replaceChildren();
-   const allowed=item=>selectedWorkshopCategory==="all"||categoryFor(item)===selectedWorkshopCategory;
+   const allowed=item=>selectedWorkshopCategory==="all"||categoryFor(item)===selectedWorkshopCategory||selectedWorkshopCategory==="electronics"&&categoryFor(item).startsWith("electrical-");
    const byCategory=standards().filter(allowed);
-   const personalAllowed=items.filter(item=>selectedWorkshopCategory==="all"||categoryOfPersonal(item)===selectedWorkshopCategory);
+   const personalAllowed=items.filter(item=>selectedWorkshopCategory==="all"||categoryOfPersonal(item)===selectedWorkshopCategory||selectedWorkshopCategory==="electronics"&&categoryOfPersonal(item).startsWith("electrical-"));
    const matched=byCategory.filter(item=>(!selectedFamily||familyFor(item)?.id===selectedFamily)&&
     [item.name,item.partNumber,item.supplierPartNumber,item.subtitle,item.spec,item.use,item.kind,item.category,categoryLabelFor(item),familyFor(item)?.label]
      .join(" ").toLowerCase().includes(query));
