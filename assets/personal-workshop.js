@@ -547,12 +547,18 @@
    };
    const sectionFields=window.BSPartFields?.sectionFields;
    const sections=[
-    // Identify a purchased item by MPN and manufacturer first.
-    ["identity","Product identity",["partNumber","featureTreeDescription","manufacturer","subtitle","supplier"]],
-    ["additional","Additional product information",[
-     "name","typeName","model","supplierPartNumber","supplierUrl","asin","price","packageQuantity","documentationUrl"
+    ["identity","Product identity",[
+     "partNumber","featureTreeDescription","manufacturer","name","subtitle","model"
     ]],
-    ["specifications","Specifications and reference notes",["spec","use","caution","orderNotes","notes"]]
+    ["ordering","Ordering",[
+     "supplier","supplierPartNumber","supplierUrl","asin","price","packageQuantity"
+    ]],
+    ["characteristics","Part characteristics",[
+     "typeName","spec"
+    ]],
+    ["notes","Extra notes",[
+     "use","caution","orderNotes","documentationUrl","notes"
+    ]]
    ];
    const controls={};
    for(const [key,title,fields] of sections){
@@ -724,11 +730,13 @@
    controls.typeName.addEventListener("change",refreshSuggestions);
    controls.featureTreeDescription.addEventListener("change",refreshSuggestions);
    refreshSuggestions();
-   // Keep the product classification and its suggested ratings together,
-   // ahead of the legacy free-text specifications section.
-   grid.querySelector('[data-part-editor-section="specifications"]').before(classification,structuredSection);
+   // Classification and specification values are part characteristics—not
+   // separate browsing levels or independent editor categories.
+   const characteristics=grid.querySelector('[data-part-editor-section="characteristics"]');
+   characteristics.append(classification,structuredSection);
    const photoTitle=el("h4","Photos");
-   form.append(photoTitle);
+   const notesSection=grid.querySelector('[data-part-editor-section="notes"]');
+   notesSection.append(photoTitle);
    const photos=(item.photos||[]).map(p=>({...p}));
    const gallery=el("div",undefined,"workshop-item-edit-photos");
    const redrawPhotos=()=>{
@@ -744,7 +752,7 @@
      gallery.append(card);
     }
    };
-   redrawPhotos();form.append(gallery);
+   redrawPhotos();notesSection.append(gallery);
    // Lookup populates the existing editable fields, not an alternate AI record.
    const identitySection=grid.querySelector('[data-part-editor-section="identity"]');
    const identityHeading=identitySection.querySelector(".part-editor-section-heading");
