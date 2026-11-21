@@ -846,17 +846,24 @@ function setupAssemblyTrees(){
    const toolsActions=document.createElement("div");toolsActions.className="workspace-tool-actions";
    toolsActions.append(toolsHeading,window.BSDialogs.tooltip("About Helpful tools","Link calculators, tools, and Workshop references for this work."));
    const toolsCount=document.createElement("span");toolsCount.className="workspace-record-count";
-   const toolsLabel=document.createElement("div");toolsLabel.append(toolsActions,toolsCount);
-   toolsSummary.append(toolsLabel);tools.append(toolsSummary,resourcesPanel);
+   toolsActions.append(toolsCount);
+   toolsSummary.append(toolsActions);
+   const toolsControls=document.createElement("div");toolsControls.className="workspace-tool-controls";
+   tools.append(toolsSummary,toolsControls,resourcesPanel);
    const history=document.createElement("article");history.className="investigations-panel";
-   // Active records live with the workspace; only archived records appear
-   // below the divider in Project History.
    const activeRecords=document.createElement("section");activeRecords.className="investigations-active-panel";
    history.activeEntriesHost=activeRecords;
+   const archiveHistory=document.createElement("details");
+   archiveHistory.className="workspace-archive-history workspace-primary-disclosure";
+   const archiveSummary=document.createElement("summary");
+   const archiveTitle=document.createElement("h2");archiveTitle.textContent="Archives and Revision History";
+   const archiveCount=document.createElement("span");archiveCount.className="workspace-record-count workspace-archive-count";
+   archiveSummary.append(archiveTitle,archiveCount);
+   archiveHistory.append(archiveSummary,activeRecords,history);
+   history.archiveHistoryDisclosure=archiveHistory;
    instructions.after(tools);
-   const divider=document.createElement("hr");divider.className="workspace-history-divider";
-   panel.querySelector(".workspace-panels").after(activeRecords,divider,history);
-   const resources=window.BSResources?.mount(resourcesPanel,{addTo:toolsActions,onChange:()=>scheduleWorkspaceAutosave(scope),onCount:count=>{
+   panel.querySelector(".workspace-panels").after(archiveHistory);
+   const resources=window.BSResources?.mount(resourcesPanel,{addTo:toolsControls,onChange:()=>scheduleWorkspaceAutosave(scope),onCount:count=>{
     toolsCount.textContent="("+count+(count===1?" record)":" records)");
     tools.classList.toggle("is-empty",count===0);
    }});
