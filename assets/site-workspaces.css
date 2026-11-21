@@ -1196,3 +1196,29 @@
  line-height:1.45;
 }
 .library-workshop-finish-note.hide{display:none!important}
+
+
+/* Part Details: compact read-only label/value rows, no disclosure arrows. */
+.bom-part-workspace .part-detail-inline{
+ display:grid;
+ grid-template-columns:minmax(145px,220px) minmax(0,1fr);
+ align-items:start;
+ gap:8px 16px;
+}
+.bom-part-workspace .part-detail-inline > strong{min-width:0}
+.bom-part-workspace .part-detail-inline > .part-detail-item-content{
+ display:block;
+ padding:0;
+ margin:0;
+ min-width:0;
+ overflow-wrap:anywhere;
+}
+.bom-part-workspace .part-detail-inline > .part-detail-item-content > span{
+ white-space:pre-wrap;
+}
+@media(max-width:620px){
+ .bom-part-workspace .part-detail-inline{
+  grid-template-columns:minmax(0,1fr);
+  gap:3px;
+ }
+}
