@@ -1072,25 +1072,25 @@
     return;
    }
    const rows=el("div",undefined,"workshop-direct-parts");
-   const createRow=(item,personal)=>{
+   const createRow=(item,isPersonal)=>{
     const row=el("article",undefined,"workshop-direct-part");
-    const open=()=>personal?showPersonalItem(item.id):showItem(item.id);
+    const open=()=>isPersonal?showPersonalItem(item.id):showItem(item.id);
     const photo=itemButton("",open,"workshop-direct-part-photo");
     photo.setAttribute("aria-label","Open "+item.name);
-    photo.append(personal?personalThumb(item):catalogThumb(item));
+    photo.append(isPersonal?personalThumb(item):catalogThumb(item));
     const body=el("div",undefined,"workshop-direct-part-details");
     const mpn=String(item.partNumber||item.model||"").trim();
     // Name remains the fallback for generic supplies that have no MPN.
     body.append(itemButton(mpn||item.name,open,"workshop-direct-part-number"));
     if(mpn&&item.name!==mpn)body.append(el("span",item.name,"workshop-direct-part-name"));
     if(item.manufacturer)body.append(el("small",item.manufacturer,"muted"));
-    if(personal){
+    if(isPersonal){
      body.append(el("small","My Workshop · "+(stockLabels[item.stockStatus]||"In stock"),"muted"));
     }else if(ownedFor(item).length){
      body.append(el("small",ownershipLabel(ownedFor(item)),"muted"));
     }
     row.append(photo,body);
-    if(!personal){
+    if(!isPersonal){
      row.append(itemButton(ownedFor(item).length?"Edit My Workshop":"Add to My Workshop",
       ()=>editPersonalReference(item),"btn workshop-direct-part-add"));
     }else{
