@@ -217,8 +217,40 @@ test("functional part number is stable and displayed once, separate from the man
 });
 test("UI keeps functional number in the feature tree and BOM independent of MPN",()=>{
  const source=readFileSync(new URL("../assets/site-assembly.js",import.meta.url),"utf8");
- assert.match(source,/const firstLine=isPartNode\(node\)\?window\.BSPartFields\.numberedName/);
- assert.match(source,/name\.textContent=window\.BSPartFields\.numberedName\(part\)/);
- assert.match(source,/heading\.textContent=window\.BSPartFields\.numberedName\(part\)/);
+ assert.match(source,/const firstLine=isPartNode\(node\)\?window\.BSPartFields\.numberedFunctionalName/);
+ assert.match(source,/name\.textContent=window\.BSPartFields\.numberedFunctionalName\(part\)/);
+ assert.match(source,/heading\.textContent=window\.BSPartFields\.numberedFunctionalName\(part\)/);
  assert.match(source,/Functional part number/);
+});
+
+test("project-owned feature description is primary and selected physical item is secondary",()=>{
+ const part={partNumber:"104",name:"2N7000 N-channel MOSFET",partType:"purchased",
+  model:"2N7000",implementationResolved:true,implementationName:"2N7000 N-channel MOSFET",
+  projectDetails:{featureTreeName:"LED Switching Transistor",workshopTreeDescription:"Workshop caption"}};
+ assert.equal(fields.treeDescriptionFor(part),"LED Switching Transistor");
+ assert.equal(fields.numberedFunctionalName(part),"104 · LED Switching Transistor");
+ assert.equal(fields.implementationLabelFor(part),"2N7000 N-channel MOSFET");
+ const swapped={...part,model:"AO3400A",implementationName:"AO3400A MOSFET",
+  projectDetails:{...part.projectDetails,workshopTreeDescription:"Other Workshop label"}};
+ assert.equal(fields.numberedFunctionalName(swapped),"104 · LED Switching Transistor");
+ assert.equal(fields.implementationLabelFor(swapped),"AO3400A MOSFET");
+ assert.equal(fields.numberedFunctionalName({...part,projectDetails:{}}),"104 · 2N7000 N-channel MOSFET");
+ assert.equal(fields.treeDescriptionFor({...part,projectDetails:{workshopTreeDescription:"Workshop only"}}),"");
+});
+test("custom implementations and unselected components use the same project purpose label",()=>{
+ const core={partNumber:"105",name:"Shaft Coupler",projectDetails:{featureTreeName:"Motor Shaft Coupling"},itemType:"part"};
+ assert.equal(fields.numberedFunctionalName(core),"105 · Motor Shaft Coupling");
+ assert.equal(fields.implementationLabelFor({...core,partType:"custom",implementationName:"Rigid Coupling · Rev B",implementationResolved:true}),"Rigid Coupling · Rev B");
+ assert.equal(fields.implementationLabelFor({...core,implementationResolved:false}),"No component selected");
+ assert.equal(fields.numberedFunctionalName({...core,itemType:"document"}),"105 · Shaft Coupler");
+});
+test("feature tree reads the project caption independently of Workshop metadata",()=>{
+ const site=readFileSync(new URL("../assets/site-assembly.js",import.meta.url),"utf8");
+ const backend=readFileSync(new URL("../functions/api/components.js",import.meta.url),"utf8");
+ assert.match(site,/numberedFunctionalName\(\{/);
+ assert.match(site,/implementationLabelFor\(\{/);
+ assert.match(site,/Feature tree description \(project-owned\)/);
+ assert.match(site,/const functionalTreeDescriptionField=/);
+ assert.match(backend,/featureTreeName:180/);
+ assert.match(backend,/featureTreeName:previous\.projectDetails\?\.featureTreeName\|\|""/);
 });
