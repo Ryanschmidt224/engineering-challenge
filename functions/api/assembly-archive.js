@@ -48,11 +48,11 @@ async function archiveAssets(bucket,project,archiveId,subtree,records,parts){
  const keys=new Set();
  const sourceIds=subtree.filter(n=>n.kind!=="part").map(n=>n.id);
  const partIds=[...new Set(subtree.filter(n=>n.kind==="part").map(n=>n.partId))];
- for(const id of sourceIds)for(const k of ["workspaces/"+project+"/"+id+".json","assembly-status/"+project+"/"+id+".json"])keys.add(k);
+ for(const id of sourceIds)for(const k of ["workspaces/"+project+"/"+id+".json","assembly-status/"+project+"/"+id+".json","unstructured-notes/"+project+"/workspace/"+id+".json"])keys.add(k);
  for(const id of partIds){
-  for(const k of ["part-workspaces/"+project+"/"+id+".json","harnesses/"+project+"/"+id+".json","component-thumbnails/"+project+"/"+id])keys.add(k);
+  for(const k of ["part-workspaces/"+project+"/"+id+".json","harnesses/"+project+"/"+id+".json","component-thumbnails/"+project+"/"+id,"unstructured-notes/"+project+"/part/"+id+".json"])keys.add(k);
   for(const obj of await listAll(bucket,"component-thumbnails/"+project+"/"+id+"/",200))keys.add(obj.key);
-  for(const p of ["part-files/"+project+"/"+id+"/","part-pages/"+project+"/"+id+"/","drawings/"+project+"/part/"+id+"/"])for(const obj of await listAll(bucket,p,200))keys.add(obj.key);
+  for(const p of ["part-files/"+project+"/"+id+"/","part-pages/"+project+"/"+id+"/","part-code/"+project+"/"+id+"/","drawings/"+project+"/part/"+id+"/"])for(const obj of await listAll(bucket,p,200))keys.add(obj.key);
  }
  for(const id of sourceIds){
   keys.add("assembly-pages/"+project+"/"+id+".json");
@@ -69,6 +69,25 @@ async function archiveAssets(bucket,project,archiveId,subtree,records,parts){
   }
  }
  referencedProjectKeys({subtree,records,parts},project,keys);
+ // Linked notes, part code and workspace records may refer to more image or
+ // document IDs. Follow those references without modifying the source files.
+ for(const key of [...keys]){
+  if(!key.endsWith(".json"))continue;
+  const record=await bucket.get(key);
+  if(!record)continue;
+  try{referencedProjectKeys(JSON.parse(await record.text()),project,keys)}
+  catch{ /* Preserve the original object even if an old record is unparseable. */ }
+ }
+ // Photos are sometimes referenced directly as project/UUID.ext IDs, rather
+ // than being nested beneath a photo-files prefix.
+ const directPhotos=new RegExp("^"+project+"/[a-f0-9-]{36}\\.(jpg|jpeg|png|webp|gif|heic|heif)$","i");
+ const jsonValues=JSON.stringify({subtree,records,parts});
+ for(const photo of gallery)if(directPhotos.test(photo.key)&&jsonValues.includes(photo.key))keys.add(photo.key);
+ // Keep the original photo markup and generated rendering with each image.
+ for(const key of [...keys])if(/\\.(?:jpg|jpeg|png|webp|gif|heic|heif)$/i.test(key)||key.startsWith("component-thumbnails/")){
+  keys.add("photo-annotations/"+key+".json");
+  keys.add("photo-renders/"+key+".webp");
+ }
  const copied=[];
  for(const original of keys){
   if(original.startsWith("assembly-archives/")||original.length>600)continue;
