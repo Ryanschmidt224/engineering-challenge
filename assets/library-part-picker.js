@@ -125,18 +125,22 @@ function open({onCreate,hideDefault=false}){
  const partClassification=field("Part type","select");option(partClassification.input,"purchased","Off-the-shelf");option(partClassification.input,"custom","Custom — made in-house");option(partClassification.input,"custom_purchased","Custom — purchased");
  const partNumberField=field("Project BOM number (not manufacturer's number)");
  partNumberField.input.placeholder="Project-specific number, e.g. 100";partNumberField.input.maxLength=30;
- const manufacturerNumber=field("Manufacturer part number (MPN)");
+ const manufacturerNumber=field("Mfg part # (MPN)");
  manufacturerNumber.input.placeholder="Optional, e.g. 2N7000";manufacturerNumber.input.maxLength=160;
  const manufacturerName=field("Manufacturer");
  manufacturerName.input.placeholder="e.g. onsemi (select actual manufacturer)";
  manufacturerName.input.maxLength=160;
- const workshopDescription=field("Description","textarea");
- const shortTreeDescription=field("Feature tree description (20 characters max)");
+ const workshopDescription=field("Full description","textarea");
+ const shortTreeDescription=field("Function");
+ const functionHelp=el("span","library-function-tip","ⓘ");functionHelp.tabIndex=0;
+ functionHelp.title="Maximum 20 characters. This is the part name shown in the project feature tree.";
+ functionHelp.setAttribute("role","img");functionHelp.setAttribute("aria-label",functionHelp.title);
+ shortTreeDescription.label.insertBefore(functionHelp,shortTreeDescription.input);
  shortTreeDescription.input.maxLength=20;shortTreeDescription.input.placeholder="e.g. Motor switch";
  workshopDescription.input.rows=2;workshopDescription.input.maxLength=2000;
- workshopDescription.input.placeholder="Short description of the product itself";
+ workshopDescription.input.placeholder="Describe what this part is and how it will be used";
  const ownSupplier=field("Supplier name");ownSupplier.input.maxLength=120;ownSupplier.input.placeholder="e.g. JLCPCB";
- const vendorField=field("Suggested vendor","select");
+ const vendorField=field("Preferred supplier","select");
  for(const [id,label] of [["DigiKey","DigiKey"],["Mouser","Mouser"],["Newark","Newark"],["Arrow","Arrow"],["Other","Other / not yet selected"]])option(vendorField.input,id,label);
  const vendorLinks=el("div","library-vendor-links muted");
  const vendorInfo=el("p","muted library-vendor-info","Vendor links search by manufacturer part number. Confirm manufacturer, package, specifications, stock and price before ordering.");
@@ -331,9 +335,9 @@ function open({onCreate,hideDefault=false}){
  const workshopChoices=el("fieldset","library-workshop-choice-group");
  const workshopLegend=el("legend","","Part source");
  workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,quickSearch,addToWorkshopChoice,saveScope,workshopAddHelp);
- form.append(heading,subtitle,itemKind.label,workshopChoices,partClassification.label,
-  manufacturerNumber.label,shortTreeDescription.label,manufacturerName.label,workshopDescription.label,vendorField.label,ownSupplier.label,
-  numberChoice,partNumberField.label,customName.label,vendorLinks,vendorInfo,
+ form.append(heading,subtitle,itemKind.label,workshopChoices,
+  shortTreeDescription.label,manufacturerNumber.label,manufacturerName.label,vendorField.label,ownSupplier.label,workshopDescription.label,
+  partClassification.label,numberChoice,partNumberField.label,customName.label,vendorLinks,vendorInfo,
   chooser,qty.label,hintUnits,partValue.label,projectDetailsPanel,status,workshopFinishNote,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],purchased=[],sharedOverrides={},personalItems=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
@@ -463,6 +467,7 @@ function open({onCreate,hideDefault=false}){
   const lib=isPart&&workshopCheckbox.checked;
   const adding=isPart&&!lib&&addToWorkshopCheckbox.checked;
   const workshopMode=lib||adding;
+  const newPart=isPart&&!lib;
   // The Workshop selection/creation flow is deliberately short. More
   // project-specific choices can be made in the full Part Editor after creation.
   workshopFinishNote.classList.toggle("hide",!workshopMode);
@@ -470,12 +475,13 @@ function open({onCreate,hideDefault=false}){
    if(adding)partClassification.input.value="purchased";
   const purchased=!lib&&isPart&&["purchased","custom_purchased"].includes(partClassification.input.value);
   for(const label of [manufacturerNumber.label,manufacturerName.label,workshopDescription.label,shortTreeDescription.label,vendorField.label])
-   label.classList.toggle("hide",!purchased&&!lib);
+   label.classList.toggle("hide",!newPart);
   // Workshop values are visible for reference, but only editable from Workshop itself.
   for(const input of [manufacturerNumber.input,manufacturerName.input,workshopDescription.input,shortTreeDescription.input])
    input.readOnly=lib;
   vendorField.input.disabled=lib;
-  ownSupplier.label.hidden=lib||!purchased||vendorField.input.value!=="Other";
+  ownSupplier.label.hidden=!newPart||vendorField.input.value!=="Other";
+  shortTreeDescription.input.required=newPart;
   // Project-only annotations belong to Edit Part for Workshop-linked items.\n  projectDetailsPanel.classList.add("hide");
   partValue.label.hidden=!isPart;
   vendorLinks.classList.toggle("hide",!purchased||workshopMode);
@@ -485,7 +491,8 @@ function open({onCreate,hideDefault=false}){
   if(adding&&autoNumberCheckbox.checked)noNumberRadio.checked=true;
   if(savedWorkshopItem&&!adding)savedWorkshopItem=null;
   workshopChoices.classList.toggle("hide",!isPart);
-  addToWorkshopChoice.classList.toggle("hide",!isPart||lib);
+  addToWorkshopChoice.classList.toggle("hide",!newPart);
+  if(!newPart)addToWorkshopCheckbox.checked=false;
   saveScope.classList.toggle("hide",!adding);
   publicCategory.label.classList.toggle("hide",!adding||!publicRadio.checked);
   workshopAddHelp.hidden=!adding||!publicRadio.checked;
@@ -493,7 +500,7 @@ function open({onCreate,hideDefault=false}){
   if(lib&&!wire)refreshCommon();
   wireModeChoice.classList.toggle("hide",!lib||category.input.value!=="consumables");
   powerType.label.classList.toggle("hide",!lib||category.input.value!=="electronics");
-  customName.label.classList.toggle("hide",lib);
+  customName.label.classList.toggle("hide",isPart);
   genericWorkshopHelp.hidden=!adding;
 
   const documentMode=!lib&&itemKind.input.value!=="part";
@@ -552,15 +559,15 @@ function open({onCreate,hideDefault=false}){
   if(count!==null&&(!Number.isFinite(count)||count<=0||count>10000000)){status.textContent="Quantity must be positive, or left blank.";return}
   if(itemKind.input.value!=="part"||!workshopCheckbox.checked){
    const adding=addToWorkshopCheckbox.checked&&itemKind.input.value==="part";
-   const name=customName.input.value.trim()||(adding?manufacturerNumber.input.value.trim().slice(0,100):"");
+   const name=itemKind.input.value==="part"?shortTreeDescription.input.value.trim():customName.input.value.trim();
    if(!name||name.length>100){
-    status.textContent=adding?"Enter a part name (up to 100 characters) or a manufacturer part number.":"Enter a part name (up to 100 characters).";
-    customName.input.focus();return;
+    status.textContent=itemKind.input.value==="part"?"Enter a Function (maximum 20 characters).":"Enter a name (up to 100 characters).";
+    (itemKind.input.value==="part"?shortTreeDescription.input:customName.input).focus();return;
    }
    const autoNumber=autoNumberCheckbox.checked;
    payload={name,quantity:itemKind.input.value==="code"?null:itemKind.input.value==="document"?1:count,specifications:[],itemType:itemKind.input.value==="code"?"document":itemKind.input.value,partType:itemKind.input.value==="code"?"code":partClassification.input.value,
     assignNumber:autoNumber,partNumber:autoNumber?null:noNumberRadio.checked?null:partNumberField.input.value.trim().toUpperCase()||null};
-   if(itemKind.input.value==="part"&&["purchased","custom_purchased"].includes(partClassification.input.value)){
+   if(itemKind.input.value==="part"){
     payload.manufacturer=manufacturerName.input.value.trim();
     payload.model=manufacturerNumber.input.value.trim(); // Manufacturer MPN; never the project's issued part number.
     payload.description=workshopDescription.input.value.trim();
@@ -612,7 +619,7 @@ function open({onCreate,hideDefault=false}){
    payload.wireInfo={gauge:g,construction:str,insulation:insulation.input.value,crimp,mm,endA:endA.value(),endB:endB.value(),wireId:null};
   }
   if(itemKind.input.value==="part"){
-   payload.projectDetails=getProjectDetails();
+   payload.projectDetails={...getProjectDetails(),...(!workshopCheckbox.checked?{featureTreeName:shortTreeDescription.input.value.trim()}:{})};
    if(addToWorkshopCheckbox.checked)payload.projectDetails.workshopTreeDescription=shortTreeDescription.input.value.trim();
    if(workshopCheckbox.checked&&selectedReference())payload.projectDetails.workshopTreeDescription=String(selectedReference().featureTreeDescription||"").slice(0,20);
    const reference=workshopCheckbox.checked?selectedReference():null;
