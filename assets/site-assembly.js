@@ -1906,7 +1906,7 @@ function setupAssemblyTrees(){
   partImplementationNameRow.append(partImplementationNameCaption,partImplementationNameInput);
   const partImplementationUnselectedRow=document.createElement("label");partImplementationUnselectedRow.className="part-functional-unselected";
   const partImplementationUnselected=document.createElement("input");partImplementationUnselected.type="checkbox";
-  partImplementationUnselectedRow.append(partImplementationUnselected,document.createTextNode(" Implementation not chosen yet"));
+  partImplementationUnselectedRow.append(partImplementationUnselected,document.createTextNode(" Part not chosen yet"));
   partImplementationUnselected.onchange=()=>{
    partImplementationNameRow.hidden=partImplementationUnselected.checked;
   };
@@ -1918,7 +1918,7 @@ function setupAssemblyTrees(){
   projectOnlyPanel.append(onlyTitle);
   const treeDescriptionToggle=document.createElement("label");treeDescriptionToggle.className="part-project-only-field";
   const treeDescriptionCheckbox=document.createElement("input");treeDescriptionCheckbox.type="checkbox";treeDescriptionCheckbox.checked=true;
-  treeDescriptionToggle.append(treeDescriptionCheckbox,document.createTextNode(" Show implementation name in project tree"));
+  treeDescriptionToggle.append(treeDescriptionCheckbox,document.createTextNode(" Show part name below container in project tree"));
   projectOnlyPanel.append(treeDescriptionToggle);
   const projectOnlyFields={};
   for(const [key,title,multiline,limit] of [
