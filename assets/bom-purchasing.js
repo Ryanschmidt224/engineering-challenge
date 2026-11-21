@@ -8,7 +8,7 @@
   for(const part of parts||[]){
    if(part.generatedFrom||part.itemType==="document"||part.isTool||part.assumedOnHand||part.purchaseStatus==="already_have"||part.purchaseStatus==="ignore")continue;
    if(part.implementationResolved===false){
-    skipped.push((part.name||"Unnamed part")+" (no implementation selected)");continue;
+    skipped.push((part.name||"Unnamed part")+" (no part selected)");continue;
    }
    if(part.partType==="custom")continue; // Fabricated, never an orderable supplier item.
    const offer=(part.supplierOffers||[]).find(offer=>offer.vendor==="digikey"&&offer.sku?.trim());
