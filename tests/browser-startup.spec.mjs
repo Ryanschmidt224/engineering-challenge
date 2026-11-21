@@ -138,8 +138,8 @@ test("new custom part retains explicit project numbering without confusing it wi
   return {exists:!!dialog,numberingText:dialog.querySelector(".library-auto-number")?.textContent,
    checked:dialog.querySelector('input[name="new-part-number-mode"][value="auto"]')?.checked,
    manualAvailable:!!dialog.querySelector('input[name="new-part-number-mode"][value="manual"]'),
-   functionBeforeNumber:[...dialog.querySelectorAll(".library-part-form > *")].findIndex(e=>e.classList.contains("library-number-choice"))>
-    [...dialog.querySelectorAll(".library-part-form > *")].findIndex(e=>e.classList.contains("library-field")&&e.textContent?.startsWith("Function")),
+   numberAfterSource:[...dialog.querySelectorAll(".library-part-form > *")].findIndex(e=>e.classList.contains("library-number-choice"))===
+    [...dialog.querySelectorAll(".library-part-form > *")].findIndex(e=>e.classList.contains("library-workshop-choice-group"))+1,
    numberVisible:!dialog.querySelector(".library-number-choice").classList.contains("hide")};
  });
  expect(selection.exists).toBe(true);
@@ -147,7 +147,8 @@ test("new custom part retains explicit project numbering without confusing it wi
  expect(selection.manualAvailable).toBe(true);
  await expect(page.locator(".library-part-dialog .library-auto-number")).toContainText(["Auto assign part number","User assign part number"]);
  expect(selection.numberingText).toContain("Auto assign part number");
- expect(selection.functionBeforeNumber).toBe(true); // Function is the first identity field.
+ expect(selection.numberAfterSource).toBe(true); // Part number is framed immediately after Part source.
+ await expect(page.locator(".library-part-dialog .library-identity-section")).toBeVisible();
  await expect(page.locator(".library-part-dialog .library-auto-number-tip")).toHaveAttribute("title", /next unused project part number/);
  await expect(page.locator(".library-part-dialog .library-function-tip")).toHaveAttribute("title", /Maximum 20 characters/);
  await expect(page.locator(".library-part-dialog .library-field",{hasText:"Function"}).locator("input")).toHaveAttribute("maxlength","20");
