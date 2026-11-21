@@ -894,10 +894,23 @@
    }
    const uploadRow=el("div",undefined,"workshop-item-photo-upload");
    const uploadStatus=el("p","","muted");
+   const uploadPreviews=el("div",undefined,"workshop-pending-photo-thumbnails");
+   let previewUrls=[];
+   const showPendingPreviews=files=>{
+    previewUrls.forEach(url=>URL.revokeObjectURL(url));
+    previewUrls=[];uploadPreviews.replaceChildren();
+    for(const file of files){
+     if(!["image/jpeg","image/png","image/webp"].includes(file.type))continue;
+     const img=el("img");img.className="workshop-pending-photo-thumbnail";
+     const url=URL.createObjectURL(file);previewUrls.push(url);
+     img.src=url;img.alt=file.name||"New Workshop photo";uploadPreviews.append(img);
+    }
+   };
    const uploadFiles=async files=>{
     const images=[...files].filter(file=>["image/jpeg","image/png","image/webp"].includes(file.type));
     if(!images.length){uploadStatus.textContent="Paste or select a JPEG, PNG, or WebP image.";return}
     if(photos.length+images.length>12){uploadStatus.textContent="Up to 12 photos per item.";return}
+    showPendingPreviews(images);
     upload.disabled=true;uploadStatus.textContent="Uploading image…";
     try{
      for(const file of images){
@@ -907,7 +920,7 @@
       if(!res.ok)throw Error(data.error||"Photo upload failed");
       photos.push(data.photo);
      }
-     redrawPhotos();uploadStatus.textContent="Photo added to draft. Save the item to publish it.";
+     redrawPhotos();showPendingPreviews([]);uploadStatus.textContent="Photo added to draft. Save the item to publish it.";
     }catch(error){uploadStatus.textContent=error.message}
     finally{upload.disabled=false}
    };
@@ -918,7 +931,7 @@
    const upload=itemButton("Add photos",()=>uploader.open(),"btn");
    upload.type="button";
    uploadRow.append(upload);
-   form.append(uploadRow,uploader.panel,uploadStatus);
+   form.append(uploadRow,uploader.panel,uploadPreviews,uploadStatus);
    const status=el("p","","workshop-item-editor-status");
    status.setAttribute("role","status");
    const actions=el("div",undefined,"workshop-item-editor-actions");
@@ -1415,19 +1428,27 @@
   }
   async function uploadPhoto(fileOverride=null){
    const file=fileOverride;if(!file){setStatus("Select a photo first.");return}
+   const preview=$("#workshop-photo-preview",personal);
+   const originalSrc=preview.getAttribute("src"),originalHidden=preview.hidden;
+   const localUrl=URL.createObjectURL(file);
+   preview.src=localUrl;preview.hidden=false;
    const body=new FormData();body.append("photo",file);
    setStatus("Uploading and checking photo...");
    try{
     const res=await fetch("/api/workshop-photo",{method:"POST",body,credentials:"same-origin"});
     const data=await res.json();if(!res.ok)throw Error(data.error||"Upload failed");
     photoId=data.photoId;
-    const preview=$("#workshop-photo-preview",personal);preview.src="/api/workshop-photo?id="+encodeURIComponent(photoId);preview.hidden=false;
+    preview.src="/api/workshop-photo?id="+encodeURIComponent(photoId);preview.hidden=false;
     if(data.suggestion){for(const [key,id] of Object.entries(fields)){
      if(typeof data.suggestion[key]==="string"&&data.suggestion[key].trim())$("#workshop-"+id,personal).value=data.suggestion[key];
     }}
     if(Array.isArray(data.suggestion?.specifications))$("#workshop-specifications",personal).value=data.suggestion.specifications.map(x=>x.name+": "+x.value).join("\n");
     setStatus(data.recognitionError||"Identification proposed. Review every detail, then save.");
-   }catch(e){setStatus(e.message)}
+   }catch(e){
+    if(originalSrc)preview.src=originalSrc;else preview.removeAttribute("src");
+    preview.hidden=originalHidden;
+    setStatus(e.message);
+   }finally{URL.revokeObjectURL(localUrl)}
   }
   async function loadProjects(){
    try{const projects=(await req("/api/projects")).projects||[],select=$("#workshop-project",personal);
