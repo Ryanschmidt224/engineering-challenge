@@ -1910,3 +1910,69 @@
 .investigation-history-delete:hover{
  background:color-mix(in srgb,var(--color-danger-action) 7%,var(--color-surface));
 }
+
+
+/* One shared card language for instructions and their active/archived records.
+   The controls are intentionally distinct: the selected instruction stays
+   open, while individual records can be expanded or collapsed. */
+.recipe-compact .recipe-step-detail .bs-content-card,
+:is(.investigations-panel,.recipe-step-investigations) .bs-content-card{
+ box-sizing:border-box;
+ min-width:0;
+ border-radius:10px;
+}
+.recipe-compact .recipe-step-detail .bs-content-card > .bs-content-card-heading,
+:is(.investigations-panel,.recipe-step-investigations) .bs-content-card > .bs-content-card-heading{
+ box-sizing:border-box;
+ display:flex;
+ align-items:center;
+ gap:10px;
+ min-height:var(--recipe-active-heading-height,74px);
+ padding:12px 16px;
+ color:var(--color-text);
+ background:var(--color-accent-soft)!important;
+ border:0!important;
+ border-radius:9px!important;
+ box-shadow:none!important;
+ font-size:1rem;
+ font-weight:650;
+}
+.recipe-compact .recipe-step-detail .bs-content-card > .bs-content-card-heading > .recipe-step-edit-toggle,
+:is(.investigations-panel,.recipe-step-investigations) .bs-content-card > .bs-content-card-heading > .investigation-title-controls{
+ margin-left:auto!important;
+ flex:0 0 auto;
+}
+:is(.investigations-panel,.recipe-step-investigations) .bs-content-card > .bs-content-card-heading > .investigation-title-controls .btn{
+ min-height:38px;
+ padding:6px 12px;
+ font-size:.83rem;
+ border-radius:8px;
+}
+.recipe-compact .recipe-step-detail .bs-content-card > .bs-content-card-body,
+:is(.investigations-panel,.recipe-step-investigations) .bs-content-card > .bs-content-card-body{
+ box-sizing:border-box;
+ color:var(--color-text);
+ line-height:1.5;
+}
+:is(.investigations-panel,.recipe-step-investigations) .bs-content-card > .bs-content-card-heading .investigation-title-actions{
+ flex:0 1 auto;
+ min-width:0;
+}
+:is(.investigations-panel,.recipe-step-investigations) .bs-content-card > .bs-content-card-heading .investigation-record-date{
+ margin-left:0;
+}
+:is(.investigations-panel,.recipe-step-investigations) .bs-content-card[open] > .bs-content-card-heading{
+ border-bottom-left-radius:0!important;
+ border-bottom-right-radius:0!important;
+}
+:is(.investigations-panel,.recipe-step-investigations) .bs-content-card[open] > .bs-content-card-body{
+ border-top:1px solid var(--color-border)!important;
+}
+@media(max-width:600px){
+ .recipe-compact .recipe-step-detail .bs-content-card > .bs-content-card-heading,
+ :is(.investigations-panel,.recipe-step-investigations) .bs-content-card > .bs-content-card-heading{
+  min-height:64px;
+  padding:10px 12px;
+  flex-wrap:wrap;
+ }
+}
