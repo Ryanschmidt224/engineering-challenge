@@ -153,7 +153,7 @@
 
    const controls=make("div","investigation-add-controls");
    const nameRow=make("label","investigation-field-label");
-   const titleInput=make("input","field");titleInput.value=record.title;titleInput.maxLength=180;
+   const titleInput=window.BSEntryEditor.titleInput(record.title,null,{placeholder:"Title"});
    nameRow.append(make("span","investigation-field-descriptor","Title"),titleInput);controls.append(nameRow);
    const dateLabel=make("label","investigation-date-field","Date");
    const date=make("input","field");date.type="date";
@@ -196,7 +196,7 @@
      }
     });
     const section=make("div","investigation-note-photos");
-    section.append(btn("Add photos / documents",()=>uploader.open(),"btn bs-attachment-add investigation-note-photo-add"),gallery,pendingList,uploader.panel);
+    section.append(window.BSEntryEditor.attachmentButton(()=>uploader.open(),{className:"investigation-note-photo-add"}),gallery,pendingList,uploader.panel);
     controls.append(section);draw();
    }
    function fieldRow(type,label,stored=latest.get(type),parent=controls){
@@ -218,7 +218,7 @@
      hint:"You can choose multiple files or paste an image."
     });
     const attachments=make("div","investigation-field-attachments");
-    attachments.append(btn("Add photos / documents",()=>uploader.open(),"btn bs-attachment-add investigation-attachment-add"),fileChoice,uploader.panel);
+    attachments.append(window.BSEntryEditor.attachmentButton(()=>uploader.open(),{className:"investigation-attachment-add"}),fileChoice,uploader.panel);
     const existingFiles=[...(stored?.files||[])];
     const existingList=make("div","investigation-existing-files");
     function drawFiles(){
@@ -332,26 +332,27 @@
      return result;
     }catch(error){reportHere(error.message);saveBtn.disabled=false;throw error}
    };
-   saveBtn=btn("Save",()=>{void persist(false).catch(()=>{})},"btn primary");
+   saveBtn=window.BSEntryEditor.action("Save",()=>{void persist(false).catch(()=>{})},{kind:"primary"});
    if(registerSave)registerSave(()=>persist(true));
-   const actions=make("div","investigation-edit-actions");
+   const actions=window.BSEntryEditor.actionRow();
+   actions.classList.add("investigation-edit-actions");
    // Use the same Save/Cancel action labels throughout. A record nested
    // under an edited Work Instruction delegates both to the parent editor,
    // so there are no competing independent save transactions.
    if(registerSave){
     actions.append(
-     btn("Save",()=>{
+     window.BSEntryEditor.action("Save",()=>{
       const step=target.closest(".recipe-step-detail");
       step?.parentElement?.querySelector(".recipe-step-nav-row.is-active .recipe-step-edit-toggle")?.click();
-     },"btn primary"),
-     btn("Cancel",()=>{
+     },{kind:"primary"}),
+     window.BSEntryEditor.action("Cancel",()=>{
       const step=target.closest(".recipe-step-detail");
       step?.querySelector(".recipe-cancel-step")?.click();
-     },"btn")
+     })
     );
-   }else actions.append(saveBtn,btn("Cancel",onDone));
+   }else actions.append(saveBtn,window.BSEntryEditor.action("Cancel",onDone));
    if(!creating&&!isArchived(record)){
-    actions.append(btn("Archive",()=>archiveRecord(record),"btn investigation-archive-button"));
+    actions.append(window.BSEntryEditor.action("Archive",()=>archiveRecord(record),{className:"investigation-archive-button"}));
    }
    if(!creating)actions.append(btn("Delete",async()=>{
     const deleteBtn=actions.querySelector(".investigation-delete");
