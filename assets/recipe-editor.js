@@ -561,7 +561,7 @@
     if(!isDraft&&typeof options.renderInvestigations==="function"){
      const investigationArea=el("div","recipe-step-investigations");
      body.append(investigationArea);
-     options.renderInvestigations(step,investigationArea);
+     options.renderInvestigations(step,investigationArea,editing.has(step.id));
     }
     if(typeof options.decorateStep==="function")options.decorateStep(step,body);
     card.append(body);detailPane.append(card);
