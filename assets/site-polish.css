@@ -1820,3 +1820,59 @@
 .recipe-step-investigations .investigation-create-button:hover{
  background:var(--color-hover);
 }
+
+
+/* Active records stay at their creation scope. Project History only lists
+   deliberately archived entries, preserving existing record IDs and owners. */
+.assembly-workspace-page > .investigations-active-panel,
+.recipe-step-investigations .investigation-active-area{
+ width:100%;box-sizing:border-box;
+ margin:12px 0 10px;padding:12px 16px;
+ border:1px solid var(--color-border);border-radius:10px;
+ background:var(--color-surface);
+}
+.investigation-active-heading{
+ display:flex;align-items:center;justify-content:flex-start;gap:12px;
+ flex-wrap:wrap;margin:0 0 8px;
+}
+.investigation-active-heading h2,
+.investigation-active-heading h4{
+ margin:0;font-size:1.02rem;color:var(--color-text);
+}
+.investigation-active-content>.investigation-empty{margin:8px 0;font-size:.85rem}
+.investigation-active-heading .investigation-create-button{
+ display:inline-flex;align-items:center;min-height:33px;
+ padding:6px 12px;border:1px solid var(--color-border);
+ border-radius:8px;background:var(--color-surface);
+ font-size:.84rem;font-weight:650;color:var(--color-text);
+ cursor:pointer;
+}
+.investigation-archive-button{
+ border:1px solid var(--color-border);
+ border-radius:7px;background:var(--color-surface);
+ padding:5px 10px;font-size:.81rem;font-weight:600;
+}
+.investigation-archive-dialog{
+ width:min(470px,calc(100vw - 32px));max-height:85vh;overflow:auto;
+ padding:20px;background:var(--color-surface);color:var(--color-text);
+ border:1px solid var(--color-border);border-radius:12px;
+}
+.investigation-archive-dialog::backdrop{background:#0008}
+.investigation-archive-dialog h3{margin:0 0 8px}
+.investigation-archive-dialog .investigation-archive-note-label,
+.investigation-description-label{
+ display:flex;flex-direction:column;gap:7px;
+ font-size:.86rem;font-weight:600;margin:10px 0;
+}
+.investigation-archive-dialog textarea,
+.investigation-description-label textarea{
+ width:100%;box-sizing:border-box;min-height:88px;resize:vertical;
+}
+.investigation-archive-meta,.investigation-archive-reason,.investigation-note-description{
+ white-space:pre-wrap;overflow-wrap:anywhere;
+ line-height:1.5;margin:8px 0;color:var(--color-text);
+}
+.recipe-step-investigations .investigation-active-area{
+ padding:8px 0;margin:0 0 8px;border:0;background:transparent;
+}
+.recipe-step-investigations .investigation-active-heading h4{font-size:.9rem}
