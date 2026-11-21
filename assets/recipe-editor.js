@@ -243,7 +243,7 @@
      },{placeholder:"Work Instruction name"});
      title.classList.add("recipe-step-name");title.maxLength=180;
      header.append(title);
-    }else header.append(el("strong","",step.title));
+    }else header.append(el("strong","recipe-entries-heading","Entries"));
     // Only the selected step owns these controls. In normal view Edit is
     // the sole action; Save/Cancel/Archive/Delete appear only while editing.
     if(admin()){
