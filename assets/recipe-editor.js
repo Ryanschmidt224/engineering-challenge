@@ -489,6 +489,49 @@
      const navActions=el("div","recipe-step-nav-actions");
      navActions.append(edit);
      if(editing.has(step.id)){
+      if(!isDraft){
+       const archiveStep=button("Archive step",event=>{
+        event.preventDefault();event.stopPropagation();
+        if(saving||pendingUploads)return;
+        const dialog=el("dialog","recipe-step-archive-dialog investigation-archive-dialog");
+        dialog.setAttribute("aria-label","Archive "+step.title);
+        dialog.append(el("h3","","Archive step"));
+        dialog.append(el("p","muted","Move this step out of the active instruction list. It can be restored from Archived steps."));
+        const noteLabel=el("label","recipe-archive-note-label","Why was it archived? (optional)");
+        const note=el("textarea","field recipe-archive-note");
+        note.rows=3;note.maxLength=2500;note.placeholder="Reason for archiving (optional)";
+        noteLabel.append(note);dialog.append(noteLabel);
+        const controls=el("div","recipe-archive-dialog-actions");
+        const confirm=button("Archive step",async()=>{
+         if(saving||pendingUploads)return;
+         if(!step.title.trim()){feedback.textContent="Give the step a name before archiving.";dialog.close();return}
+         saving=true;confirm.disabled=true;
+         const originalAt=step.archivedAt,originalNote=step.archiveNote;
+         try{
+          if(savePromise)await savePromise;
+          await options.saveStepEdits?.(step.id);
+          step.archivedAt=new Date().toISOString();step.archiveNote=note.value.trim();
+          await options.onSave();
+          clearTimeout(saveTimer);dirty=false;
+          editSnapshots.delete(step.id);editing.delete(step.id);expandedStepBodies.delete(step.id);
+          archivedStepsExpanded=true;
+          expanded=steps.find(item=>!item.archivedAt)?.id||null;
+          dialog.close();window.BSTransient?.show(feedback,"Step archived.");
+          render();
+         }catch(error){
+          step.archivedAt=originalAt;step.archiveNote=originalNote;
+          feedback.textContent=error.message||"Unable to archive step.";
+          confirm.disabled=false;
+         }finally{saving=false}
+        },"btn primary");
+        controls.append(confirm,button("Cancel",()=>dialog.close()));
+        dialog.append(controls);
+        document.body.append(dialog);
+        dialog.addEventListener("close",()=>dialog.remove(),{once:true});
+        dialog.showModal();note.focus();
+       },"btn recipe-archive-step");
+       navActions.append(archiveStep);
+      }
       const deleteStep=button("Delete step",async event=>{
        event.preventDefault();event.stopPropagation();
        if(saving||pendingUploads)return;
