@@ -152,6 +152,8 @@ export async function handleAssemblyArchive(request,env){
   const original=current.find(n=>n.id===body.nodeId);
   if(!original)return json({error:"Node no longer exists"},404);
   const subtree=collectSubtree(current,original.id),ids=nodeIds(subtree);
+  const affectedDependents=current.filter(n=>!ids.has(n.id)&&(n.dependsOn||[]).some(dep=>ids.has(dep)))
+   .map(n=>({id:n.id,dependsOn:n.dependsOn.filter(dep=>ids.has(dep))}));
   const remaining=current.filter(n=>!ids.has(n.id)).map(n=>({...n,dependsOn:(n.dependsOn||[]).filter(dep=>!ids.has(dep))}));
   const partIds=new Set(subtree.filter(n=>n.kind==="part").map(n=>n.partId));
   const removedIds=new Set([...partIds].filter(id=>!remaining.some(n=>n.kind==="part"&&n.partId===id)));
@@ -166,7 +168,7 @@ export async function handleAssemblyArchive(request,env){
    kind:original.kind||"assembly",name:original.name,partNumber:original.partNumber||"",
    archivedAt:at,reason:String(body.reason||"").slice(0,2500),restoredAt:null,
    nodes:clone(subtree),parts:clone(allParts),removedPartIds:[...removedIds],
-   investigations:clone(entries),assets:[],state:"prepared"};
+   investigations:clone(entries),affectedDependents,assets:[],state:"prepared"};
   try{
    archived.assets=await archiveAssets(bucket,project,id,subtree,entries,allParts);
    await bucket.put(manifestKey(project,id),JSON.stringify(archived));
@@ -212,7 +214,11 @@ export async function handleAssemblyArchive(request,env){
   return json({error:"An archived part number is already in use. Resolve the conflict before restoring."},409);
  const nextParts=[...componentState.value,...incoming];
  const restoredNodes=archive.nodes.map(n=>({...n,dependsOn:(n.dependsOn||[]).filter(dep=>current.some(active=>active.id===dep)||archive.nodes.some(child=>child.id===dep))}));
- const nextTree=[...current,...restoredNodes];
+ const dependencyMap=new Map((archive.affectedDependents||[]).map(item=>[item.id,item.dependsOn]));
+ const nextTree=[
+  ...current.map(n=>({...n,dependsOn:[...new Set([...(n.dependsOn||[]),...(dependencyMap.get(n.id)||[])])]})),
+  ...restoredNodes
+ ];
  // Restore all missing file bytes before the tree becomes visible again.
  // If a backup copy is absent, fail without touching the active BOM/tree.
  const missing=[],toRestore=[];
