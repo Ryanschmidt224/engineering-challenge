@@ -64,7 +64,7 @@ test("initial project intent is immutable and milestones append only after delib
  assert.equal(saved.data.originalIntent.successCriteria,"10 consecutive shots at 50 feet");
  assert.equal(saved.data.milestones.length,1);
  assert.equal(saved.data.milestones[0].significance,"Motor speed is insufficient to reach the original goal");
- const stored=JSON.parse((await env.PHOTOS.get("project-milestones/"+id+".json")).text());
+ const stored=JSON.parse(await (await env.PHOTOS.get("project-milestones/"+id+".json")).text());
  assert.equal(stored.originalIntent.id,created.data.record.id);
  assert.equal(stored.milestones[0].id,recorded.data.record.id);
  for(const method of ["PATCH","PUT","DELETE"]){
@@ -102,7 +102,7 @@ test("concurrent editors cannot silently overwrite a saved milestone",async()=>{
 
 test("cross-project access, unauthorized editing and cross-site writes are rejected",async()=>{
  const {call,env,id,request,url}=await fixture();
- assert.equal((await call("POST",milestone(null),"")).status,403);
+ assert.equal((await call("POST",milestone(null),"")).status,404);
  assert.equal((await call("POST",milestone(null),undefined,"https://another.site")).status,403);
  const unrelated=await handleProjectMilestones(request("/api/project-milestones?project=p00000000000000000000000000000000"),env);
  assert.equal(unrelated.status,404);
