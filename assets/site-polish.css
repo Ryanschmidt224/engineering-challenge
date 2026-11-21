@@ -2244,3 +2244,71 @@
   margin-left:auto!important;
  }
 }
+
+
+/* Notes: photo attachments belong directly to the note, not an additional
+   nested entry. Use the shared uploader and the same card image sizing. */
+.investigation-note-photos{
+ display:flex;
+ flex-direction:column;
+ align-items:flex-start;
+ gap:10px;
+ width:100%;
+ min-width:0;
+ margin:10px 0;
+}
+.investigation-note-photo-gallery{
+ display:flex;
+ flex-wrap:wrap;
+ align-items:flex-start;
+ gap:12px;
+ width:100%;
+}
+.investigation-note-photo,
+.investigation-note-photo-tile{
+ width:260px;
+ max-width:100%;
+ box-sizing:border-box;
+ border:1px solid var(--color-border);
+ border-radius:9px;
+}
+.investigation-note-photo{
+ display:block;
+ height:210px;
+ object-fit:contain;
+ background:var(--color-media-backdrop);
+}
+.investigation-note-photo-tile{
+ overflow:hidden;
+}
+.investigation-note-photo-tile .investigation-note-photo{
+ width:100%;
+ border:0;
+ border-radius:0;
+}
+.investigation-note-photo-remove{
+ margin:6px;
+ font-size:.8rem;
+}
+.investigation-note-pending-photos{
+ display:flex;
+ flex-wrap:wrap;
+ gap:8px;
+}
+.investigation-note-pending-photo{
+ display:inline-flex;
+ align-items:center;
+ gap:6px;
+ padding:5px 8px;
+ border:1px solid var(--color-border);
+ border-radius:7px;
+}
+.recipe-compact .recipe-expand-hierarchy{
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ gap:5px;
+}
+.recipe-compact .recipe-expand-hierarchy svg{
+ flex:0 0 16px;
+}
