@@ -3853,3 +3853,52 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
  margin:0;
  font-size:.78rem;
 }
+
+
+/* Tool classification follows the same label/value grid as Part name and MPN. */
+.part-editor-dialog .workspace-main-bom-editor .component-review>.part-editor-group>label.part-tool-field{
+ display:grid!important;
+ grid-template-columns:var(--edit-part-label-width) minmax(0,1fr)!important;
+ align-items:center!important;
+ column-gap:12px!important;
+ row-gap:4px!important;
+ min-height:36px;
+ width:100%;
+ margin:0!important;
+ padding:0!important;
+ font-size:.86rem;
+}
+.part-editor-dialog .part-tool-field>.part-tool-caption{
+ grid-column:1;
+ font-weight:500;
+}
+.part-editor-dialog .part-tool-field>.part-tool-control{
+ grid-column:2;
+ display:inline-flex;
+ align-items:center;
+ justify-self:start;
+ gap:9px;
+ min-height:32px;
+}
+.part-editor-dialog .part-tool-control>input[type="checkbox"]{
+ display:block;
+ width:17px;
+ height:17px;
+ min-width:17px;
+ margin:0;
+ padding:0;
+ accent-color:var(--color-accent);
+ cursor:pointer;
+}
+.part-editor-dialog .part-tool-control>.part-option-help{
+ margin:0;
+ color:var(--color-text-muted);
+ font-weight:400;
+}
+@media(max-width:520px){
+ .part-editor-dialog .workspace-main-bom-editor .component-review>.part-editor-group>label.part-tool-field{
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+ .part-editor-dialog .part-tool-field>.part-tool-caption,
+ .part-editor-dialog .part-tool-field>.part-tool-control{grid-column:1}
+}
