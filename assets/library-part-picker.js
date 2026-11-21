@@ -203,11 +203,8 @@ function open({onCreate,hideDefault=false}){
  autoNumberRow.append(autoNumberCheckbox,autoNumberText,autoNumberHelp);
  const manualNumberRow=el("label","library-auto-number");
  const manualNumberCheckbox=el("input");manualNumberCheckbox.type="radio";manualNumberCheckbox.name="new-part-number-mode";manualNumberCheckbox.value="manual";
- manualNumberRow.append(manualNumberCheckbox,document.createTextNode(" Enter a part number"));
- const noNumberRow=el("label","library-auto-number");
- const noNumberRadio=el("input");noNumberRadio.type="radio";noNumberRadio.name="new-part-number-mode";noNumberRadio.value="none";
- noNumberRow.append(noNumberRadio,document.createTextNode(" No project BOM number (purchased part)"));
- numberChoice.append(autoNumberRow,manualNumberRow,noNumberRow);
+ manualNumberRow.append(manualNumberCheckbox,document.createTextNode(" User assign part number"));
+ numberChoice.append(autoNumberRow,manualNumberRow);
 
  const chooser=el("div","library-picker-section hide");
  const category=field("Part category","select");
@@ -500,10 +497,7 @@ function open({onCreate,hideDefault=false}){
   partValue.label.hidden=true; // Project-specific values belong in Edit Part for Workshop-linked items.
   vendorLinks.classList.toggle("hide",!purchased||workshopMode);
   vendorInfo.classList.toggle("hide",!purchased||workshopMode);
-  noNumberRow.classList.toggle("hide",!purchased);
-  if(!purchased&&noNumberRadio.checked)autoNumberCheckbox.checked=true;
-  if(adding&&autoNumberCheckbox.checked)noNumberRadio.checked=true;
-  if(savedWorkshopItem&&!adding)savedWorkshopItem=null;
+   if(savedWorkshopItem&&!adding)savedWorkshopItem=null;
   workshopChoices.classList.toggle("hide",!isPart);
   addToWorkshopChoice.classList.toggle("hide",!newPart);
   if(!newPart)addToWorkshopCheckbox.checked=false;
@@ -563,7 +557,7 @@ function open({onCreate,hideDefault=false}){
  newPartRadio.onchange=update;
  addToWorkshopCheckbox.onchange=update;
  privateRadio.onchange=update;publicRadio.onchange=update;
- itemKind.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;noNumberRadio.onchange=update;
+ itemKind.input.onchange=update;partClassification.input.onchange=update;autoNumberCheckbox.onchange=update;manualNumberCheckbox.onchange=update;
  category.input.onchange=()=>{powerType.input.value="all";wireModeCheckbox.checked=false;update()};wireModeCheckbox.onchange=update;wireType.input.onchange=update;powerType.input.onchange=refreshCommon;commonSearch.input.oninput=refreshCommon;commonSelect.input.onchange=showReference;
  form.addEventListener("submit",async e=>{
   e.preventDefault();
@@ -580,7 +574,7 @@ function open({onCreate,hideDefault=false}){
    }
    const autoNumber=autoNumberCheckbox.checked;
    payload={name,quantity:itemKind.input.value==="code"?null:itemKind.input.value==="document"?1:count,specifications:[],itemType:itemKind.input.value==="code"?"document":itemKind.input.value,partType:itemKind.input.value==="code"?"code":partClassification.input.value,
-    assignNumber:autoNumber,partNumber:autoNumber?null:noNumberRadio.checked?null:partNumberField.input.value.trim().toUpperCase()||null};
+    assignNumber:autoNumber,partNumber:autoNumber?null:partNumberField.input.value.trim().toUpperCase()||null};
    if(itemKind.input.value==="part"){
     payload.manufacturer=manufacturerName.input.value.trim();
     payload.model=manufacturerNumber.input.value.trim(); // Manufacturer MPN; never the project's issued part number.
