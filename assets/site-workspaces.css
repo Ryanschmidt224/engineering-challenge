@@ -1245,3 +1245,31 @@
 .library-generic-spec-inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:9px 14px}
 .library-generic-spec-inputs>.library-field{display:flex;flex-direction:column;gap:5px;min-width:0;font-size:.82rem}
 .library-generic-spec-inputs>.library-field>.field{width:100%;min-width:0;margin:0}
+
+
+/* A Workshop default suggests a project container name but never owns it. */
+.library-workshop-reference-preview>.library-field{
+ display:grid;
+ grid-template-columns:minmax(150px,205px) minmax(0,1fr);
+ align-items:center;
+ gap:10px;
+ margin:12px 0 4px;
+ font-size:.84rem;
+ font-weight:650;
+}
+.library-workshop-reference-preview>.library-field>.field{
+ width:100%;
+ min-width:0;
+ font-weight:400;
+}
+.library-container-suggestion-help{
+ margin:0 0 12px;
+ font-size:.8rem;
+ line-height:1.4;
+}
+@media(max-width:620px){
+ .library-workshop-reference-preview>.library-field{
+  grid-template-columns:minmax(0,1fr);
+  gap:5px;
+ }
+}
