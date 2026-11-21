@@ -65,11 +65,13 @@
    intentHost.replaceChildren();
    if(originalIntent){
     const card=el("section","project-milestone-original");
-    card.append(el("h3","","Original intent"));
+    card.append(el("h3","",originalIntent.preExistingMilestones?"First recorded intent":"Original intent"));
     addText(card,"What am I trying to accomplish?",originalIntent.objective);
     addText(card,"What would success look like?",originalIntent.successCriteria);
     addText(card,"What was my initial plan?",originalIntent.plan);
-    card.append(el("p","muted project-milestone-date","Recorded "+time(originalIntent.createdAt)+" · Original record is preserved"));
+    card.append(el("p","muted project-milestone-date","Recorded "+time(originalIntent.createdAt)+
+     " · Original record is preserved"+(originalIntent.preExistingMilestones?
+      " · Documented after "+originalIntent.preExistingMilestones+" prior milestone(s)":"")));
     intentHost.append(card);
    }else{
     intentHost.append(el("p","muted","No original intent recorded. This is optional; milestones can still be added."));
@@ -92,11 +94,13 @@
      // may no longer have an active route, so retain its source identifier.
      if(record.source.kind==="investigation"){
       const owner=record.source.ownerType==="part"?"part/"+encodeURIComponent(record.source.ownerId):
-       record.source.ownerId==="__root__"?"":"workspace/"+encodeURIComponent(record.source.ownerId);
+       "workspace/"+encodeURIComponent(record.source.ownerId||"__root__");
       const link=el("a","","View source area");
       link.href="#"+project+(owner?"/"+owner:"");
       source.append(document.createTextNode(" · "),link);
      }
+     if(record.source.kind==="archive"&&record.source.originPath?.length)
+      source.append(document.createTextNode(" · "+record.source.originPath.join(" / ")));
      item.append(source);
     }
     item.append(el("p","muted project-milestone-date","Recorded "+time(record.createdAt)));
