@@ -832,3 +832,31 @@
   grid-column:1;
  }
 }
+
+
+/* A component uses the same four-row form in view and edit modes.
+   Read-only inputs remain selectable and retain their dimensions; editing
+   unlocks them in place rather than replacing the page. */
+#commonparts .workshop-item-edit-form.is-readonly input[readonly],
+#commonparts .workshop-item-edit-form.is-readonly textarea[readonly],
+#commonparts .workshop-item-edit-form.is-readonly select:disabled{
+ opacity:1;
+ color:var(--color-text);
+ background:var(--color-surface);
+ border-color:var(--color-border);
+ -webkit-text-fill-color:var(--color-text);
+ cursor:default;
+}
+#commonparts .workshop-item-edit-form.is-readonly textarea[readonly]{
+ resize:none;
+}
+#commonparts .workshop-item-edit-form.is-readonly .workshop-structured-spec-row>.btn,
+#commonparts .workshop-item-edit-form.is-readonly .workshop-ai-changes-actions,
+#commonparts .workshop-item-edit-form.is-readonly .workshop-item-editor-actions,
+#commonparts .workshop-item-edit-form.is-readonly .workshop-item-photo-upload,
+#commonparts .workshop-item-edit-form.is-readonly .workshop-structured-spec-actions{
+ display:none!important;
+}
+#commonparts .workshop-item-edit-form [hidden]{
+ display:none!important;
+}
