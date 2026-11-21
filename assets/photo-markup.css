@@ -407,3 +407,48 @@
 .assembly-workspace-page>.workspace-heading>.bs-photo-control .bs-photo-more:not([hidden]){
  margin-top:6px;flex-wrap:wrap!important;white-space:normal;
 }
+
+
+/* Project summary: keep photo edit controls outside the image and the
+   summary text. The compact pencil overlays the picture only while closed. */
+.project-summary-gallery>.bs-photo-control .bs-photo-actions{
+ position:relative;
+ inset:auto;
+ bottom:auto;
+ left:auto;
+ right:auto;
+ z-index:auto;
+ box-sizing:border-box;
+ width:100%;
+ max-width:100%;
+ margin:8px 0 0;
+ padding:0;
+ display:flex;
+ align-items:center;
+ justify-content:flex-start;
+ flex-wrap:wrap;
+ gap:8px;
+}
+.project-summary-gallery>.bs-photo-control .bs-photo-more:not([hidden]){
+ display:flex;
+ align-items:center;
+ gap:8px;
+ flex-wrap:wrap;
+ min-width:0;
+}
+.project-summary-gallery>.bs-photo-control .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="true"]){
+ padding:9px;
+ border:1px solid var(--color-border);
+ border-radius:10px;
+ background:var(--color-surface);
+}
+.project-summary-gallery>.bs-photo-control .bs-photo-status:not(:empty){
+ position:static;
+ margin:6px 0 0;
+ text-align:left;
+}
+@media(max-width:600px){
+ .project-summary-gallery>.bs-photo-control .bs-photo-actions .btn{
+  min-height:36px;
+ }
+}
