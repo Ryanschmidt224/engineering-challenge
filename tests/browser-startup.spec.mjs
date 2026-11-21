@@ -1003,7 +1003,7 @@ test("Failed Workshop publication remains in New Part dialog and does not create
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Cancel"}).click();
 });
 
-test("Edit Part uses Container naming and framed implementation groups",async({page})=>{
+test("Edit Part separates Container, Part details and purchased alternatives",async({page})=>{
  await page.goto("/");
  const source=await page.evaluate(async()=>{
   const response=await fetch("/assets/site-assembly.js",{cache:"no-store"});
@@ -1012,7 +1012,13 @@ test("Edit Part uses Container naming and framed implementation groups",async({p
  expect(source).toContain('group("container","Container",controls.itemType,controls.name,controls.partNumber,');
  expect(source).toContain('partDescriptionRow);');
  expect(source).not.toContain('partDescriptionRow,functionalRequirementsField.row,functionalAcceptanceField.row);');
- expect(source).toContain('group("implementation","Selected implementation"');
+ expect(source).toContain('group("implementation","Part details"');
+ expect(source).toContain('part.partType');
+ expect(source).toContain('Alternative purchased parts');
+ expect(source).toContain('part.implementations||[]');
+ expect(source).not.toContain('retire.textContent="Retire selected implementation"');
+ expect(source).not.toContain('addButton.textContent="Add implementation"');
+ expect(source).not.toContain('heading.textContent="Function & requirements"');
  expect(source).toContain('group("specifications","Specifications"');
  expect(source).toContain('document.createTextNode("Part number")');
  expect(source).toContain('className="part-container-caption"');
