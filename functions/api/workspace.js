@@ -73,7 +73,13 @@ const validateRecipe=(input,project)=>{
   }
   const photoAfterNote={};
   for(const [photoId,noteId] of Object.entries(photoNoteIds))photoAfterNote[photoId]=noteIds.indexOf(noteId);
-  steps.push({id,title:title.trim(),standard,detail,kind,notes,noteIds,photos,photoNames:names,photoNoteIds,photoAfterNote});
+  // Archive status belongs to the step rather than a separate datastore.
+  // Keep the stable ID so all linked records retain their references.
+  const archivedAt=step.archivedAt??"";
+  const archiveNote=step.archiveNote??"";
+  if(typeof archivedAt!=="string"||(archivedAt&&!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$/.test(archivedAt))||
+     typeof archiveNote!=="string"||archiveNote.length>2500)return null;
+  steps.push({id,title:title.trim(),standard,detail,kind,notes,noteIds,photos,photoNames:names,photoNoteIds,photoAfterNote,archivedAt,archiveNote});
  }
  return steps;
 };
