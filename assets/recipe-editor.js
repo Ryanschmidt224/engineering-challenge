@@ -510,7 +510,7 @@
       }catch(error){feedback.textContent=error.message||"Attachment upload failed"}
       finally{pendingUploads--;addPhoto.disabled=pendingUploads>0}
      };
-     const addNote=button("+ Add entry",()=>{step.notes.push("");step.noteIds.push(newId());changed();saveHint();showNotes();noteList.lastElementChild?.querySelector("textarea")?.focus()},"btn recipe-small-action recipe-add-entry");
+     const addNote=button("+ Add note",()=>{step.notes.push("");step.noteIds.push(newId());changed();saveHint();showNotes();noteList.lastElementChild?.querySelector("textarea")?.focus()},"btn recipe-small-action recipe-add-entry");
      additions.append(addNote,addPhoto);
      body.append(noteList,photoList,additions,uploader.panel);
      showNotes();showPhotos();
