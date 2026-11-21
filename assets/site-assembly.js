@@ -2306,7 +2306,7 @@ function setupAssemblyTrees(){
     let photoMessage="";
     if(snapshotToAttach&&result.component?.id){
      try{
-      const snapshotResponse=await fetch("/api/part-pages?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(result.component.id),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({snapshotId:snapshotToAttach})});
+      const snapshotResponse=await fetch("/api/part-pages?"+new URLSearchParams({project,id:result.component.id,...(result.component.selectedImplementationId?{implementation:result.component.selectedImplementationId}:{})}),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({snapshotId:snapshotToAttach})});
       const snapshotData=await snapshotResponse.json();if(!snapshotResponse.ok)throw Error(snapshotData.error||"Could not attach saved product page");
       photoMessage+=" Product webpage archived with part details.";
      }catch(error){photoMessage+=" Warning: product webpage was not attached: "+error.message}
