@@ -47,7 +47,7 @@ function referencedProjectKeys(value,project,out){
 export async function archiveAssets(bucket,project,archiveId,subtree,records,parts){
  const keys=new Set();
  const sourceIds=subtree.filter(n=>n.kind!=="part").map(n=>n.id);
- const partIds=[...new Set(subtree.filter(n=>n.kind==="part").map(n=>n.partId))];
+ const partIds=[...new Set([...subtree.filter(n=>n.kind==="part").map(n=>n.partId),...parts.map(p=>p.id)])];
  for(const id of sourceIds)for(const k of ["workspaces/"+project+"/"+id+".json","assembly-status/"+project+"/"+id+".json","unstructured-notes/"+project+"/workspace/"+id+".json"])keys.add(k);
  for(const id of partIds){
   for(const k of ["part-workspaces/"+project+"/"+id+".json","harnesses/"+project+"/"+id+".json","component-thumbnails/"+project+"/"+id,"unstructured-notes/"+project+"/part/"+id+".json"])keys.add(k);
@@ -174,10 +174,21 @@ export async function handleAssemblyArchive(request,env){
    .map(n=>({id:n.id,dependsOn:n.dependsOn.filter(dep=>ids.has(dep))}));
   const remaining=current.filter(n=>!ids.has(n.id)).map(n=>({...n,dependsOn:(n.dependsOn||[]).filter(dep=>!ids.has(dep))}));
   const partIds=new Set(subtree.filter(n=>n.kind==="part").map(n=>n.partId));
-  const removedIds=new Set([...partIds].filter(id=>!remaining.some(n=>n.kind==="part"&&n.partId===id)));
   const componentState=await read(bucket,partKey(project),[]);
-  const ownedParts=componentState.value.filter(p=>removedIds.has(p.id));
-  const allParts=componentState.value.filter(p=>partIds.has(p.id));
+  const removedIds=new Set([...partIds].filter(id=>!remaining.some(n=>n.kind==="part"&&n.partId===id)));
+  // Wire/material derived components are owned by their source part even
+  // when they do not have their own feature-tree node.
+  let changed=true;
+  while(changed){
+   changed=false;
+   for(const item of componentState.value){
+    if(item.generatedFrom&&removedIds.has(item.generatedFrom)&&!removedIds.has(item.id)&&
+       !remaining.some(n=>n.kind==="part"&&n.partId===item.id)){
+     removedIds.add(item.id);changed=true;
+    }
+   }
+  }
+  const allParts=componentState.value.filter(p=>partIds.has(p.id)||removedIds.has(p.id));
   if([...partIds].some(id=>!allParts.some(p=>p.id===id)))
    return json({error:"One or more linked parts are missing their saved definitions. Repair the BOM before archiving."},409);
   const remainingParts=componentState.value.filter(p=>!removedIds.has(p.id));
