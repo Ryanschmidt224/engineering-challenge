@@ -55,8 +55,18 @@ async function archiveAssets(bucket,project,archiveId,subtree,records,parts){
   for(const p of ["part-files/"+project+"/"+id+"/","part-pages/"+project+"/"+id+"/","drawings/"+project+"/part/"+id+"/"])for(const obj of await listAll(bucket,p,200))keys.add(obj.key);
  }
  for(const id of sourceIds){
+  keys.add("assembly-pages/"+project+"/"+id+".json");
   for(const obj of await listAll(bucket,"drawings/"+project+"/assembly/"+id+"/",200))keys.add(obj.key);
-  for(const obj of await listAll(bucket,"assembly-pages/"+project+"/"+id+"/",200))keys.add(obj.key);
+ }
+ // Assembly gallery images are stored at the project root, identified by
+ // metadata rather than by a path scoped to the assembly ID.
+ const gallery=await listAll(bucket,project+"/",800);
+ const assemblyIds=new Set(sourceIds);
+ for(const item of gallery){
+  if(!item.key.slice(project.length+1).includes("/")){
+   const metadata=await bucket.head(item.key);
+   if(assemblyIds.has(metadata?.customMetadata?.assemblyId))keys.add(item.key);
+  }
  }
  referencedProjectKeys({subtree,records,parts},project,keys);
  const copied=[];
