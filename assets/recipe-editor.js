@@ -387,7 +387,9 @@
       nameInput.classList.add("recipe-step-photo-name");
       nameInput.setAttribute("aria-label","Attachment name");nameInput.maxLength=120;
       const frame=el("div","recipe-photo-frame");
-      frame.append(picture,nameInput);
+      const photoStage=el("div","recipe-photo-image-stage");
+      photoStage.append(picture);
+      frame.append(photoStage,nameInput);
       const remove=button("Remove attachment",()=>{
        step.photos=step.photos.filter(photo=>photo!==id);
        delete step.photoNames[id];delete step.photoAfterNote[id];delete step.photoNoteIds[id];
@@ -400,6 +402,8 @@
         onDelete:async()=>{if(await window.BSDialogs.danger("Remove this photo from the step? The original image will remain in storage.",{title:"Remove step photo?",confirmLabel:"Remove"}))remove.click()}
        });
        actions.setPhotoPresent(true);
+       // The pencil belongs on the image, not in the expandable action row.
+       photoStage.append(actions.edit);
        item.append(actions.shell);
       }else item.append(frame,remove);
       return item;
