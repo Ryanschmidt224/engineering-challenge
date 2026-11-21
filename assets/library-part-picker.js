@@ -135,7 +135,9 @@ function open({onCreate,hideDefault=false}){
  const functionHelp=el("span","library-function-tip","ⓘ");functionHelp.tabIndex=0;
  functionHelp.title="Maximum 20 characters. This is the part name shown in the project feature tree.";
  functionHelp.setAttribute("role","img");functionHelp.setAttribute("aria-label",functionHelp.title);
- shortTreeDescription.label.insertBefore(functionHelp,shortTreeDescription.input);
+ const functionCaption=el("span","library-function-caption","Function");
+ functionCaption.append(functionHelp);
+ shortTreeDescription.label.replaceChildren(functionCaption,shortTreeDescription.input);
  shortTreeDescription.input.maxLength=20;shortTreeDescription.input.placeholder="e.g. Motor switch";
  workshopDescription.input.rows=2;workshopDescription.input.maxLength=2000;
  workshopDescription.input.placeholder="Describe what this part is and how it will be used";
@@ -334,8 +336,8 @@ function open({onCreate,hideDefault=false}){
  chooser.append(category.label,wireModeChoice,wireSection,compSection,referencePreview);
  const workshopChoices=el("fieldset","library-workshop-choice-group");
  const workshopLegend=el("legend","","Part source");
- workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,quickSearch,addToWorkshopChoice,saveScope,workshopAddHelp);
- form.append(heading,subtitle,itemKind.label,workshopChoices,
+ workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,quickSearch);
+ form.append(heading,subtitle,itemKind.label,workshopChoices,addToWorkshopChoice,saveScope,workshopAddHelp,
   shortTreeDescription.label,manufacturerNumber.label,manufacturerName.label,vendorField.label,ownSupplier.label,workshopDescription.label,
   partClassification.label,numberChoice,partNumberField.label,customName.label,vendorLinks,vendorInfo,
   chooser,qty.label,hintUnits,partValue.label,projectDetailsPanel,status,workshopFinishNote,footer);
@@ -482,8 +484,9 @@ function open({onCreate,hideDefault=false}){
   vendorField.input.disabled=lib;
   ownSupplier.label.hidden=!newPart||vendorField.input.value!=="Other";
   shortTreeDescription.input.required=newPart;
-  // Project-only annotations belong to Edit Part for Workshop-linked items.\n  projectDetailsPanel.classList.add("hide");
-  partValue.label.hidden=!isPart;
+  // Project-only annotations belong to Edit Part for Workshop-linked items.
+  projectDetailsPanel.classList.add("hide");
+  partValue.label.hidden=true; // Project-specific values belong in Edit Part for Workshop-linked items.
   vendorLinks.classList.toggle("hide",!purchased||workshopMode);
   vendorInfo.classList.toggle("hide",!purchased||workshopMode);
   noNumberRow.classList.toggle("hide",!purchased);
