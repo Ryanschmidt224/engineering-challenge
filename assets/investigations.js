@@ -371,8 +371,20 @@
     const archive=btn("Archive",event=>{
      event.preventDefault();event.stopPropagation();archiveRecord(record);
     },"btn investigation-archive-button");
-    if(admin()&&!historical&&!inherited){
-     editActions.append(edit,archive);
+    if(admin()&&!inherited){
+     if(historical){
+      const removeHistory=btn("Delete",async event=>{
+       event.preventDefault();event.stopPropagation();
+       if(!await window.BSDialogs.danger('Delete archived entry "'+record.title+'"? This permanently removes the record from Project History.',{
+        title:"Delete history entry?",confirmLabel:"Delete"
+       }))return;
+       removeHistory.disabled=true;
+       try{await save({action:"deleteRecord",id:record.id})}
+       catch(error){removeHistory.disabled=false;report(error.message,target)}
+      },"btn investigation-history-delete");
+      removeHistory.title="Delete this archived history entry";
+      editActions.append(removeHistory);
+     }else editActions.append(edit,archive);
      title.append(editActions);
     }
     const draw=()=>{
