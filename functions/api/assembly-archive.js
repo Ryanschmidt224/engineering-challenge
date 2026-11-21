@@ -162,7 +162,7 @@ async function listArchives(bucket,project,parentId){
   if(activeIds.has(manifest.nodeId)&&manifest.state==="prepared"&&!manifest.restoredAt)continue;
   result.push({id:manifest.id,nodeId:manifest.nodeId,parentId:manifest.parentId,name:manifest.name,kind:manifest.kind,
    partNumber:manifest.partNumber||"",archivedAt:manifest.archivedAt,restoredAt:manifest.restoredAt||null,
-   nodeCount:manifest.nodes.length,partCount:manifest.parts.length,reason:manifest.reason||"",
+   nodeCount:manifest.nodes.length,partCount:manifest.parts.length,reason:manifest.reason||"",state:manifest.state||"archived",
    ...archivedLocation(manifest,tree.value,projectName)});
  }
  return result.sort((a,b)=>b.archivedAt.localeCompare(a.archivedAt));
@@ -174,6 +174,36 @@ export async function handleAssemblyArchive(request,env){
  // Existing CAD and saved-part APIs restrict reading to project editors.
  // An archive must not expose those same proprietary files publicly.
  if(!await canEditProject(request,env,project))return json({error:"Project editor access required for archived data"},403);
+ if(request.method==="DELETE"){
+  // Purge archived parts only. Never delete source keys: an original photo,
+  // workspace or part file may still be referenced by an active occurrence.
+  const id=url.searchParams.get("id");
+  if(!uuid(id))return json({error:"Invalid archived part ID"},400);
+  const key=manifestKey(project,id),saved=await read(bucket,key,null),archive=saved.value;
+  if(!archive)return json({error:"Archived part not found"},404);
+  if(archive.kind!=="part")return json({error:"Only archived parts can be deleted here"},409);
+  if(archive.state==="restoring")
+   return json({error:"This part is currently being restored. Reload before deleting."},409);
+  const active=await read(bucket,treeKey(project),[]);
+  if(archive.state!=="deleting"&&!archive.restoredAt&&
+     (archive.state==="prepared"||active.value.some(node=>node.id===archive.nodeId)))
+   return json({error:"This archive is not finalized. It may be needed to recover an active part."},409);
+  // Claim the manifest before deleting blobs. A failed purge leaves a visible
+  // deleting record, so the same request can safely be retried.
+  const deleting={...archive,state:"deleting",deleteRequestedAt:archive.deleteRequestedAt||new Date().toISOString()};
+  const locked=await bucket.put(key,JSON.stringify(deleting),conditional(saved.object));
+  if(locked===null)return json({error:"Archive changed while deleting. Reload and retry."},409);
+  try{
+   const storedObjects=await listAll(bucket,prefix(project,id),700);
+   for(const object of storedObjects)await bucket.delete(object.key);
+   await bucket.delete(key);
+   if(await bucket.head(key))return json({error:"The archive record could not be removed. Retry deletion."},503);
+   return json({ok:true,id,deletedCopies:storedObjects.length});
+  }catch(error){
+   console.error("Archive purge failed",project,id,error);
+   return json({error:"Archive deletion was interrupted. The record remains for a safe retry."},503);
+  }
+ }
  if(request.method==="GET"){
   const id=url.searchParams.get("id"),parent=url.searchParams.get("parent");
   if(id){
@@ -274,6 +304,7 @@ export async function handleAssemblyArchive(request,env){
  if(!uuid(body.id))return json({error:"Invalid archive ID"},400);
  const stored=await read(bucket,manifestKey(project,body.id),null),archive=stored.value;
  if(!archive||archive.project!==project)return json({error:"Archive not found"},404);
+ if(archive.state==="deleting")return json({error:"This archive is being deleted and cannot be restored"},409);
  if(archive.restoredAt)return json({error:"Archive was already restored"},409);
  if(current.some(n=>n.id===archive.nodeId)){
   const complete=archive.nodes.every(node=>current.some(active=>active.id===node.id&&active.kind===node.kind&&active.partId===node.partId));
