@@ -101,6 +101,12 @@
   }
   if(activeTooltip===target)return;
   dismissTooltip();
+  // A modal dialog lives in the browser's top layer. A tooltip under body
+  // cannot paint above it, even with an arbitrarily high z-index.
+  // Mount the same shared tooltip inside the active modal when needed.
+  const modal=target.closest("dialog[open]");
+  const host=modal&&modal.matches(":modal")?modal:document.body;
+  if(globalTooltip.parentNode!==host)host.append(globalTooltip);
   activeTooltip=target;globalTooltip.textContent=text;
   globalTooltip.hidden=false;
   const ids=target.getAttribute("aria-describedby")||"";
