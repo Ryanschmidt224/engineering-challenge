@@ -2774,7 +2774,7 @@ function setupAssemblyTrees(){
   };
   async function deleteArchivedPart(item,dialog=null){
    if(!canEdit()||item.kind!=="part")return;
-   const message="Permanently delete archived part \""+item.name+"\"?\\n\\n"+
+   const message="Permanently delete archived part \""+item.name+"\"?\n\n"+
     "This deletes its archived history and saved archive copies. It cannot be restored afterward. "+
     "Active parts, shared photos, and active project files will not be deleted.";
    if(!await window.BSDialogs.danger(message,{title:"Permanently delete archived part?",confirmLabel:"Delete"}))return;
