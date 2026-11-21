@@ -333,7 +333,7 @@
    sideRow("Supplier part number",item.supplierPartNumber);
    sideRow("Manufacturer",item.manufacturer);
    sideRow("Description",item.subtitle||item.name);
-   sideRow("Feature tree description",item.featureTreeDescription);
+   sideRow("Container (name) category",item.featureTreeDescription);
    sideRow("Vendor",item.supplier);
    sideRow("Specification",item.spec);
    sideRow("Typical use",item.use);
@@ -386,7 +386,7 @@
    const specBody=el("tbody");
    const specRows=[
     ["Manufacturer part number",item.partNumber||item.model],["Manufacturer",item.manufacturer],
-    ["Description",item.subtitle||item.name],["Feature tree description",item.featureTreeDescription],["Vendor",item.supplier],["Supplier part number",item.supplierPartNumber],["Mfg part number",item.model],
+    ["Description",item.subtitle||item.name],["Container (name) category",item.featureTreeDescription],["Vendor",item.supplier],["Supplier part number",item.supplierPartNumber],["Mfg part number",item.model],
     ["Specifications",item.spec],["Typical use",item.use],["Important considerations",item.caution],
     ["Buying suggestion",item.orderNotes],["Notes",item.notes]
    ];
@@ -536,7 +536,7 @@
    // Reuse the New Part editor's canonical identity/additional/specification
    // sections and fields order, keeping Workshop-specific ordering fields.
    const fieldDescriptors={
-    name:["Item name","text"],subtitle:["Short description","text"],featureTreeDescription:["Feature tree description (20 characters max)","text"],
+    name:["Item name","text"],subtitle:["Short description","text"],featureTreeDescription:["Container (name) category (20 characters max)","text"],
     manufacturer:["Manufacturer","text"],model:["Mfg part number","text"],
     partNumber:["Manufacturer part number","text"],supplier:["Supplier","text"],
     supplierPartNumber:["Supplier part number","text"],supplierUrl:["Supplier / ordering URL","url"],asin:["Amazon ASIN","text"],
@@ -1261,7 +1261,7 @@
       <label>Manufacturer<input id="workshop-manufacturer" class="field" maxlength="100"></label>
       <label>Mfg part number<input id="workshop-model" class="field" maxlength="120"></label>
       <label>Part number<input id="workshop-partnumber" class="field" maxlength="120"></label>
-       <label>Feature tree description (20 characters max)<input id="workshop-featuretreedescription" class="field" maxlength="20" placeholder="e.g. Hall sensor"></label>
+       <label>Container (name) category (20 characters max)<input id="workshop-featuretreedescription" class="field" maxlength="20" placeholder="e.g. Hall sensor"></label>
       <label>Quantity<input id="workshop-quantity" class="field" type="number" min="0" step="any" value="1"></label>
       <label>Unit<input id="workshop-unit" class="field" maxlength="32" value="pcs"></label>
       <label>Availability<select id="workshop-stockstatus" class="field"><option value="in_stock">In stock</option><option value="in_use_reusable">In use (reusable)</option><option value="committed">Committed</option></select></label>
@@ -1286,7 +1286,7 @@
    $("#workshop-add-personal-spec",personal).onclick=()=>addPersonalSpec();
    const mineLookup=el("section",undefined,"workshop-ai-lookup");
    mineLookup.append(el("h3","Fill product details with AI"),
-    el("p","Search using the manufacturer's part number and feature tree description below. Either field can be used on its own.","muted"));
+    el("p","Search using the manufacturer's part number and container (name) category below. Either field can be used on its own.","muted"));
    const mineFind=itemButton("Fill details with AI",()=>{},"btn primary");
    const minePartNumber=$("#workshop-partnumber",personal);
    const mineDescription=$("#workshop-featuretreedescription",personal);
@@ -1298,7 +1298,7 @@
     const itemId=editingId;
     const partNumber=minePartNumber.value.trim();
     const featureTreeDescription=mineDescription.value.trim();
-    if(!partNumber&&!featureTreeDescription){mineMessage.textContent="Enter a manufacturer part number or feature tree description.";return}
+    if(!partNumber&&!featureTreeDescription){mineMessage.textContent="Enter a manufacturer part number or container (name) category.";return}
     mineFind.disabled=true;mineMessage.textContent="Searching product information…";
     mineResults.replaceChildren();
     try{
