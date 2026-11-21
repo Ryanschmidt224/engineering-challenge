@@ -132,7 +132,7 @@ function open({onCreate,hideDefault=false}){
  publicScope.append(publicRadio,scopeLabel("Public Workshop","Visible to everyone. Signed-in users can contribute to shared Workshop items."));
  saveScope.append(privateScope,publicScope);
  const publicCategory=field("Public Workshop category","select");
- for(const [id,label] of [["tools","Tools & Equipment"],["consumables","Consumables & Supplies"],["electronics","Electronics & Components"],["hardware","Hardware & Materials"],["safety","Safety & Measurement"]])option(publicCategory.input,id,label);
+ for(const [id,label] of window.BSResources.workshopCategories.map(([id,label])=>[id,id.startsWith("electrical-")?"  ↳ "+label:label]))option(publicCategory.input,id,label);
  publicCategory.input.value="electronics";
  saveScope.append(publicCategory.label);
  const workshopAddHelp=el("p","muted library-workshop-add-help","Public Workshop items are shared and may be edited by any signed-in member. Changes to existing items are checked for conflicts.");
