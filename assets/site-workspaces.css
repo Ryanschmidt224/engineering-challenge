@@ -1222,3 +1222,17 @@
   gap:3px;
  }
 }
+
+
+/* Number assignment help is contextual, not permanent instructional text. */
+.library-part-dialog .library-auto-number-tip{
+ display:inline-flex;align-items:center;justify-content:center;
+ width:18px;height:18px;flex:none;
+ color:var(--color-text-muted);font-size:.92rem;
+ cursor:help;border-radius:50%;
+}
+.library-part-dialog .library-auto-number-tip:focus-visible{
+ outline:2px solid var(--color-accent);outline-offset:2px;
+}
+.library-part-dialog .library-project-only[hidden],
+.part-project-only-editor[hidden]{display:none!important}
