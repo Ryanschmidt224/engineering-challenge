@@ -907,7 +907,8 @@ test("New Part ends Workshop edits after identity and confirms public/private sa
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
  await expect(modal).toHaveCount(0);
  let payload=await page.evaluate(()=>window.__createdTestPart);
- expect(payload.name).toBe("Purchased DC supply");
+ expect(payload.name).toBe("DC supply");
+ expect(payload.projectDetails.featureTreeName).toBe("DC supply");
  expect(payload.partType).toBe("purchased");
  expect(payload.itemType).toBe("part");
  expect(payload.addToWorkshop).toBeUndefined();
