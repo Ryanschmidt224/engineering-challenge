@@ -335,9 +335,24 @@
    saveBtn=btn("Save",()=>{void persist(false).catch(()=>{})},"btn primary");
    if(registerSave)registerSave(()=>persist(true));
    const actions=make("div","investigation-edit-actions");
-   // A Work Instruction uses the parent Save for every active entry.
-   // Other pages retain per-entry Save and Cancel controls.
-   if(!registerSave)actions.append(saveBtn,btn("Cancel",onDone));
+   // Use the same Save/Cancel action labels throughout. A record nested
+   // under an edited Work Instruction delegates both to the parent editor,
+   // so there are no competing independent save transactions.
+   if(registerSave){
+    actions.append(
+     btn("Save",()=>{
+      const step=target.closest(".recipe-step-detail");
+      step?.parentElement?.querySelector(".recipe-step-nav-row.is-active .recipe-step-edit-toggle")?.click();
+     },"btn primary"),
+     btn("Cancel",()=>{
+      const step=target.closest(".recipe-step-detail");
+      step?.querySelector(".recipe-cancel-step")?.click();
+     },"btn")
+    );
+   }else actions.append(saveBtn,btn("Cancel",onDone));
+   if(!creating&&record.lifecycle==="active"){
+    actions.append(btn("Archive",()=>archiveRecord(record),"btn investigation-archive-button"));
+   }
    if(!creating)actions.append(btn("Delete",async()=>{
     const deleteBtn=actions.querySelector(".investigation-delete");
     if(!await window.BSDialogs.danger('Delete "'+record.title+'"? This removes the record from the project.',{title:"Delete record?"}))return;
@@ -465,7 +480,7 @@
       },"btn investigation-history-delete");
       removeHistory.title="Delete this archived history entry";
       editActions.append(removeHistory);
-     }else editActions.append(edit,archive);
+     }else if(!compact)editActions.append(edit);
      title.append(editActions);
     }
     const draw=()=>{
@@ -474,7 +489,7 @@
      if(historical&&record.archiveNote?.trim())
       body.append(make("p","investigation-archive-reason","Reason: "+record.archiveNote));
      edit.hidden=editing||compact;
-     archive.hidden=!editing;
+     archive.hidden=true;
      attach(record,body,target,editing,()=>{editing=false;draw()},false,
       editing&&stepSlot&&!historical&&!inherited?commit=>stepSlot.pendingEdits.push(commit):null);
      if(!editing){
