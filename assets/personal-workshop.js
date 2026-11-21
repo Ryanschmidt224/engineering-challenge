@@ -586,7 +586,8 @@
    }
    const identityHelp=el("p","Generic components are configured for each project; specific products may have a manufacturer part number.","muted");
    identityKind.append(identityHelp);
-   grid.querySelector('[data-part-editor-section="identity"]').prepend(identityKind);
+   grid.querySelector('[data-part-editor-section="identity"]')
+    .querySelector(".part-editor-section-heading").after(identityKind);
    // The left Workshop category tree is the only classification hierarchy.
    // Preserve historical family metadata silently for existing records.
    const family={value:item.familyId||""};
