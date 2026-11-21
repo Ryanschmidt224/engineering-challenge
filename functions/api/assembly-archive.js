@@ -164,6 +164,8 @@ export async function handleAssemblyArchive(request,env){
   const componentState=await read(bucket,partKey(project),[]);
   const ownedParts=componentState.value.filter(p=>removedIds.has(p.id));
   const allParts=componentState.value.filter(p=>partIds.has(p.id));
+  if([...partIds].some(id=>!allParts.some(p=>p.id===id)))
+   return json({error:"One or more linked parts are missing their saved definitions. Repair the BOM before archiving."},409);
   const remainingParts=componentState.value.filter(p=>!removedIds.has(p.id));
   const investigationState=await read(bucket,investigationKey(project),{records:[]});
   const entries=relatedRecords(investigationState.value.records||[],subtree);
