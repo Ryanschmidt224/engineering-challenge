@@ -53,6 +53,7 @@
   };
   const nav=window.BSCatalogUI?.categories(sidebar,{
    heading:"Browse Workshop",
+   stackedGroups:true,
    onChange:key=>{selectedWorkshopCategory=key;selectedFamily="";selectedType="";applyWorkshopCategory();queueMicrotask(()=>root.querySelector(".workshop-catalog-sort")?.dispatchEvent(new Event("change")))}
   });
   nav?.setItems([{value:"all",label:"All workshop items"},
