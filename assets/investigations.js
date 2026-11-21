@@ -447,6 +447,7 @@
     const card=make("details","investigation-card bs-content-card");
     if(record.parentRecordId)card.classList.add("investigation-nested-card");
     card.dataset.recordId=record.id;
+    if(compact&&!historical&&!inherited&&!record.parentRecordId)card.dataset.workTile="record:"+record.id;
     const openKey=context.ownerType+":"+context.ownerId+":"+(context.stepId||"")+":"+(historical?"history:":"")+record.id;
     card.open=(compact&&allowEntryEditing&&!historical&&!inherited)||openCards.has(openKey);
     card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
@@ -536,7 +537,72 @@
     draw();card.append(body);destination.append(card);
    };
 
+   if(compact&&stepSlot?.mainTile){
+    stepSlot.mainTile.dataset.workTile="main";
+    activeContent.append(stepSlot.mainTile);
+   }
    activeOwn.forEach(record=>renderCard(record,activeContent));
+   if(compact&&stepSlot){
+    const getTiles=()=>[...activeContent.children].filter(node=>node.dataset.workTile);
+    const savedOrder=Array.isArray(stepSlot.step?.tileOrder)?stepSlot.step.tileOrder:[];
+    const rank=key=>{const position=savedOrder.indexOf(key);return position<0?100000:position};
+    const initial=getTiles().map((node,index)=>({node,index}));
+    initial.sort((a,b)=>rank(a.node.dataset.workTile)-rank(b.node.dataset.workTile)||a.index-b.index);
+    for(const {node} of initial)activeContent.append(node);
+    const updateOrder=()=>stepSlot.onReorder?.(getTiles().map(node=>node.dataset.workTile));
+    const moveTile=(tile,other,after)=>{
+     if(!tile||!other||tile===other)return;
+     activeContent.insertBefore(tile,after?other.nextSibling:other);
+     updateOrder();
+    };
+    const resetDrag=()=>getTiles().forEach(tile=>tile.classList.remove("bs-tile-dragging","bs-tile-drop-before","bs-tile-drop-after"));
+    for(const tile of getTiles()){
+     const header=tile.querySelector(":scope > summary");
+     if(!header)continue;
+     const grip=btn("","", "bs-tile-grip");
+     grip.onclick=null;
+     grip.type="button";grip.draggable=true;
+     grip.title="Drag to reorder tiles. Alt+Up/Down also moves this tile.";
+     grip.setAttribute("aria-label","Move this tile up or down");
+     grip.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" width="17" height="17" fill="currentColor"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>';
+     grip.addEventListener("click",event=>{event.preventDefault();event.stopPropagation()});
+     grip.addEventListener("keydown",event=>{
+      if(!event.altKey||!["ArrowUp","ArrowDown"].includes(event.key))return;
+      event.preventDefault();event.stopPropagation();
+      const tiles=getTiles(),index=tiles.indexOf(tile);
+      const other=tiles[index+(event.key==="ArrowUp"?-1:1)];
+      if(other)moveTile(tile,other,event.key==="ArrowDown");
+      grip.focus();
+     });
+     grip.addEventListener("dragstart",event=>{
+      if(!admin()||!event.dataTransfer){event.preventDefault();return}
+      event.stopPropagation();
+      event.dataTransfer.setData("application/x-bs-work-tile",tile.dataset.workTile);
+      event.dataTransfer.effectAllowed="move";
+      tile.classList.add("bs-tile-dragging");
+     });
+     grip.addEventListener("dragend",resetDrag);
+     tile.addEventListener("dragover",event=>{
+      if(!event.dataTransfer?.types.includes("application/x-bs-work-tile"))return;
+      event.preventDefault();event.stopPropagation();event.dataTransfer.dropEffect="move";
+      const after=event.clientY>tile.getBoundingClientRect().top+tile.offsetHeight/2;
+      tile.classList.toggle("bs-tile-drop-before",!after);
+      tile.classList.toggle("bs-tile-drop-after",after);
+     });
+     tile.addEventListener("dragleave",event=>{
+      if(!tile.contains(event.relatedTarget))tile.classList.remove("bs-tile-drop-before","bs-tile-drop-after");
+     });
+     tile.addEventListener("drop",event=>{
+      if(!event.dataTransfer?.types.includes("application/x-bs-work-tile"))return;
+      event.preventDefault();event.stopPropagation();
+      const id=event.dataTransfer.getData("application/x-bs-work-tile");
+      const source=getTiles().find(item=>item.dataset.workTile===id);
+      const after=event.clientY>tile.getBoundingClientRect().top+tile.offsetHeight/2;
+      resetDrag();moveTile(source,tile,after);
+     });
+     header.prepend(grip);
+    }
+   }
    // An empty active section adds no value in read mode. The chevrons
    // on actual entries and Project Archive already communicate structure.
    if(admin()&&context.ownerType==="part"&&!context.stepId&&getPart?.()?.id===context.ownerId&&typeof onReplacePart==="function"){
@@ -545,7 +611,7 @@
    activeContent.append(make("p","investigation-feedback muted"));
    // The step-level Add entry button lives beneath Project Archive. Avoid
    // displaying a blank active-entry wrapper when there are no cards yet.
-   activeHost.hidden=!activeOwn.length&&!activeContent.querySelector("button")&&!(canCreate&&!compact);
+   activeHost.hidden=!activeOwn.length&&!stepSlot?.mainTile&&!activeContent.querySelector("button")&&!(canCreate&&!compact);
 
    archivedOwn.forEach(record=>renderCard(record,content,{historical:true}));
    if(archivedRelated.length){
@@ -696,10 +762,10 @@
    for(const commit of slot.pendingEdits||[])await commit();
    if(slot.pendingEdits?.length)renderAll();
   }
-  function showStep(target,step,ownerType,ownerId,editing=false){
+  function showStep(target,step,ownerType,ownerId,editing=false,mainTile=null,onReorder=null){
    if(!target||!step?.id||!ownerId)return;
    const context=makeContext(ownerType,ownerId,step.id);
-   stepSlots.set(step.id,{target,context,editing});render(target,context,true);
+   stepSlots.set(step.id,{target,context,editing,mainTile,onReorder,step});render(target,context,true);
   }
   return {showAssembly,showPart,showStep,saveStepEdits,resetStepDisclosures,load};
  }
