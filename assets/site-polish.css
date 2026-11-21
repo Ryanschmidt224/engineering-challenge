@@ -2357,3 +2357,26 @@
 .recipe-compact .recipe-step-nav-row > .recipe-step-nav-item.recipe-step-drop-after{
  box-shadow:inset 0 -3px 0 var(--color-accent)!important;
 }
+
+
+/* Expand/collapse all is a compact icon, not a filled button.
+   Retain a sufficiently large click target and keyboard-focus indicator. */
+.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-summary .recipe-expand-hierarchy{
+ background:transparent!important;
+ border:0!important;
+ box-shadow:none!important;
+ border-radius:6px;
+ padding:8px!important;
+ min-height:36px;
+ min-width:36px;
+ margin-left:6px!important;
+ color:var(--color-text-muted);
+}
+.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-summary .recipe-expand-hierarchy:hover{
+ background:transparent!important;
+ color:var(--color-text);
+}
+.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-summary .recipe-expand-hierarchy:focus-visible{
+ outline:2px solid var(--color-focus);
+ outline-offset:1px;
+}
