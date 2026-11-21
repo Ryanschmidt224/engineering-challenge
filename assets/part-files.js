@@ -19,10 +19,11 @@
   let location=null,token=0;
   const url=file=>{
    const params=new URLSearchParams({project:location.project,id:location.id});
+   if(location.implementation)params.set("implementation",location.implementation);
    if(file)params.set("file",file);return "/api/part-files?"+params.toString();
   };
-  async function load(project,id){
-   location={project,id};const version=++token;list.replaceChildren(node("p","muted","Loading saved files…"));
+  async function load(project,id,implementation=null){
+   location={project,id,implementation};const version=++token;list.replaceChildren(node("p","muted","Loading saved files…"));
    controls.classList.toggle("hide",!isAdmin());status.textContent="";
    if(!isAdmin()){list.replaceChildren(node("p","muted","Sign in as administrator to view private engineering files."));return}
    try{
@@ -60,11 +61,11 @@
    try{
     for(const file of files){
      if(!extensions.test(file.name)||file.size===0||file.size>20*1024*1024)throw Error("Unsupported format or size above 20 MB: "+file.name);
-     if(location.project!==from.project||location.id!==from.id)throw Error("Part changed during upload");
+     if(location.project!==from.project||location.id!==from.id||location.implementation!==from.implementation)throw Error("Selected implementation changed during upload");
      const result=await fetch(url(),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/octet-stream","x-file-name":encodeURIComponent(file.name)},body:file});
      const data=await result.json();if(!result.ok)throw Error(data.error||"File upload failed");
     }
-    await load(from.project,from.id);status.textContent="Engineering files saved.";
+    await load(from.project,from.id,from.implementation);status.textContent="Engineering files saved.";
    }catch(error){status.textContent=error.message}finally{upload.disabled=false}
   };
   return {load};
