@@ -2568,3 +2568,60 @@
 .recipe-compact .recipe-step-detail > .recipe-step-investigations > .investigation-create-card .investigation-create-button{
  margin:0;
 }
+
+
+/* Unified attachment and editing controls for work instructions and records.
+   Keep component behavior independent while sharing visual size and hierarchy. */
+.recipe-compact :is(.recipe-one-step-body,.recipe-step-investigations) .bs-attachment-add{
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ min-height:40px;
+ padding:8px 14px!important;
+ border:1px solid var(--color-border)!important;
+ border-radius:9px!important;
+ background:var(--color-surface)!important;
+ box-shadow:none!important;
+ font-size:.86rem!important;
+ font-weight:650!important;
+ line-height:1.2;
+ color:var(--color-text)!important;
+ cursor:pointer;
+}
+.recipe-compact :is(.recipe-one-step-body,.recipe-step-investigations) .bs-attachment-add:hover{
+ background:var(--color-hover)!important;
+}
+.recipe-compact :is(.recipe-edit-controls,.investigation-edit-actions){
+ display:flex;
+ flex-wrap:wrap;
+ justify-content:flex-start;
+ align-items:center;
+ gap:9px;
+ width:100%;
+}
+.recipe-compact :is(.recipe-edit-controls,.investigation-edit-actions) > .btn{
+ box-sizing:border-box;
+ min-height:40px;
+ min-width:78px;
+ padding:8px 14px!important;
+ border-radius:9px!important;
+ font-size:.87rem!important;
+ font-weight:650!important;
+ line-height:1.2;
+}
+.recipe-compact :is(.recipe-edit-controls,.investigation-edit-actions) > .btn.primary{
+ color:var(--color-on-accent);
+ background:var(--color-accent);
+ border-color:var(--color-accent);
+}
+.recipe-compact :is(.recipe-edit-controls,.investigation-edit-actions) > .investigation-delete{
+ margin-left:12px;
+ color:var(--color-danger-action, #a3222c);
+ border-color:color-mix(in srgb,var(--color-danger-action, #a3222c) 28%,var(--color-border));
+ background:var(--color-surface);
+}
+.recipe-compact :is(.recipe-edit-controls,.investigation-edit-actions) > .investigation-archive-button{
+ background:var(--color-surface);
+ border:1px solid var(--color-border);
+ color:var(--color-text);
+}
