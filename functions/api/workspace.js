@@ -23,68 +23,27 @@ const isStepAttachment=(id,project)=>{
  const [owner,file,...extra]=id.split("/");
  return owner===project && !extra.length && /^[0-9a-f-]{36}\.(jpg|png|webp|gif|heic|heif)$/.test(file);
 };
-const validateRecipe=(input,project)=>{
+// Work Instructions store only an ordered list of named containers. Their
+// Notes, Tests, Revisions and Failures are in the investigations record store.
+const validateRecipe=input=>{
  if(input===undefined)return undefined;
  if(!Array.isArray(input)||input.length>150)return null;
  const ids=new Set(),steps=[];
  for(const step of input){
   if(!step||typeof step!=="object"||Array.isArray(step))return null;
-  const id=String(step.id||"");
-  if(!/^[a-zA-Z0-9_-]{1,80}$/.test(id)||ids.has(id))return null;
+  const {id,title}=step;
+  if(typeof id!=="string"||!/^[a-zA-Z0-9_-]{1,80}$/.test(id)||ids.has(id)||
+     typeof title!=="string"||!title.trim()||title.length>180)return null;
   ids.add(id);
-  const title=step.title,standard=step.standard,detail=step.detail??"";
-  if(typeof title!=="string"||!title.trim()||title.length>180||
-    typeof standard!=="string"||standard.length>4000||
-    typeof detail!=="string"||detail.length>8000)return null;
-  const kind=["note","action","inspection","measurement","explanation"].includes(step.kind)?step.kind:"note";
-  const notes=step.notes??[],photos=step.photos??[];
-  if(!Array.isArray(notes)||notes.length>40||notes.some(n=>typeof n!=="string"||n.length>4000)||
-     !Array.isArray(photos)||photos.length>30||photos.some(id=>!isStepAttachment(id,project)))return null;
-  const photoNames=step.photoNames??{};
-  if(!photoNames||typeof photoNames!=="object"||Array.isArray(photoNames))return null;
-  const names={};
-  for(const [photoId,name] of Object.entries(photoNames)){
-   if(!photos.includes(photoId)||typeof name!=="string"||name.length>120)return null;
-   names[photoId]=name;
-  }
-  // Stable IDs are optional for pre-migration steps, and generated on save.
-  const suppliedNoteIds=step.noteIds;
-  if(suppliedNoteIds!==undefined&&(!Array.isArray(suppliedNoteIds)||suppliedNoteIds.length!==notes.length))return null;
-  const noteIds=suppliedNoteIds??notes.map(()=>crypto.randomUUID());
-  if(noteIds.some(id=>typeof id!=="string"||! /^[a-zA-Z0-9_-]{1,80}$/.test(id))||
-     new Set(noteIds).size!==noteIds.length)return null;
-  // Accept old integer positions, but persist permanent ID-based associations.
-  const placements=step.photoAfterNote??{};
-  if(!placements||typeof placements!=="object"||Array.isArray(placements))return null;
-  const oldPositions={};
-  for(const [photoId,index] of Object.entries(placements)){
-   if(!photos.includes(photoId)||!Number.isInteger(index)||index<0||index>=notes.length)return null;
-   oldPositions[photoId]=index;
-  }
-  const stored=step.photoNoteIds??{};
-  if(!stored||typeof stored!=="object"||Array.isArray(stored))return null;
-  const photoNoteIds={};
-  for(const [photoId,noteId] of Object.entries(stored)){
-   if(!photos.includes(photoId)||typeof noteId!=="string"||!noteIds.includes(noteId))return null;
-   photoNoteIds[photoId]=noteId;
-  }
-  for(const [photoId,index] of Object.entries(oldPositions)){
-   if(photoNoteIds[photoId]===undefined)photoNoteIds[photoId]=noteIds[index];
-  }
-  const photoAfterNote={};
-  for(const [photoId,noteId] of Object.entries(photoNoteIds))photoAfterNote[photoId]=noteIds.indexOf(noteId);
-  // Archive status belongs to the step rather than a separate datastore.
-  // Keep the stable ID so all linked records retain their references.
-  const archivedAt=step.archivedAt??"";
-  const archiveNote=step.archiveNote??"";
-  if(typeof archivedAt!=="string"||(archivedAt&&!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(archivedAt))||
+  const archivedAt=step.archivedAt??"",archiveNote=step.archiveNote??"";
+  if(typeof archivedAt!=="string"||
+     (archivedAt&&!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$/.test(archivedAt))||
      typeof archiveNote!=="string"||archiveNote.length>2500)return null;
   const tileOrder=step.tileOrder??[];
-  if(!Array.isArray(tileOrder)||tileOrder.length>301||
-     tileOrder.some(value=>typeof value!=="string"||
-      (value!=="main"&&!/^record:[a-f0-9-]{36}$/i.test(value)))||
+  if(!Array.isArray(tileOrder)||tileOrder.length>300||
+     tileOrder.some(item=>typeof item!=="string"||!/^record:[a-f0-9-]{36}$/i.test(item))||
      new Set(tileOrder).size!==tileOrder.length)return null;
-  steps.push({id,title:title.trim(),standard,detail,kind,notes,noteIds,photos,photoNames:names,photoNoteIds,photoAfterNote,archivedAt,archiveNote,mainRemoved:step.mainRemoved===true,tileOrder});
+  steps.push({id,title:title.trim(),archivedAt,archiveNote,tileOrder});
  }
  return steps;
 };
