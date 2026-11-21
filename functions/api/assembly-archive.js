@@ -7,7 +7,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 const read=async(bucket,key,fallback)=>{const object=await bucket.get(key);return {object,value:object?JSON.parse(await object.text()):fallback}};
 const conditional=object=>object?.etag?{onlyIf:{etagMatches:object.etag}}:{onlyIf:{etagDoesNotMatch:"*"}};
 const prefix=(project,id)=>"assembly-archives/"+project+"/"+id+"/";
-const manifestKey=(project,id)=>prefix(project,id)+"manifest.json";
+const manifestKey=(project,id)=>"assembly-archives/"+project+"/manifests/"+id+".json";
 const stableKey=(project,id,original)=>prefix(project,id)+"objects/"+encodeURIComponent(original);
 const treeKey=project=>"trees/"+project+".json";
 const partKey=project=>"components/"+project+".json";
@@ -87,11 +87,11 @@ function relatedRecords(records,subtree){
  return records.filter(r=>(r.ownerType==="part"&&parts.has(r.ownerId))||(r.ownerType==="assembly"&&assemblies.has(r.ownerId)));
 }
 async function listArchives(bucket,project,parentId){
- const all=await listAll(bucket,"assembly-archives/"+project+"/",2000),result=[];
+ const all=await listAll(bucket,"assembly-archives/"+project+"/manifests/",2000),result=[];
  const tree=await read(bucket,treeKey(project),[]);
  const activeIds=new Set(tree.value.map(node=>node.id));
  for(const item of all){
-  if(!item.key.endsWith("/manifest.json"))continue;
+  if(!item.key.endsWith(".json"))continue;
   const object=await bucket.get(item.key);
   if(!object)continue;
   const manifest=JSON.parse(await object.text());
