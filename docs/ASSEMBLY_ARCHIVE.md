@@ -105,3 +105,27 @@ parent archive list and read-only detail view. Future tree moves or renames neve
 change that saved path. Pre-existing archives that do not have `originPath` use
 a clearly labeled current-parent reconstruction, or explicitly identify the
 former parent as unavailable; these reconstructions are not historical proof.
+
+## Permanently deleting an archived part
+
+Project editors can select **Delete** on a part's archive list row or within
+its read-only archive viewer. The action requires an explicit warning and
+confirmation. Deletion is limited to archived **parts**, not whole archived
+subassemblies.
+
+`DELETE /api/assembly-archive?project=<project>&id=<archive-id>`:
+
+1. Verifies editor permissions, the archive ID, and the archived part type.
+2. Rejects unfinalized snapshots that may still be needed for recovery.
+3. Marks the manifest as `deleting` with a conditional write.
+4. Deletes *only* private copies below the archive's unique R2 object prefix.
+5. Removes the manifest last; an interrupted delete remains visible for retry.
+
+This permanently removes that archived snapshot and the ability to restore it.
+It **does not delete active parts, shared file objects, or original R2 file
+paths**, which might be referenced elsewhere. Existing separately exported
+project backups are not rewritten. A restored part remains active if its
+historical archive is deleted.
+
+Regression tests cover correct archive-key scoping, retained active assets,
+invalid ID rejection, and retry following an interrupted purge.
