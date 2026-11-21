@@ -1164,6 +1164,9 @@ function setupAssemblyTrees(){
      currentPartInfo=result.component;
      syncPartNodes([result.component]);
      renderPartDetails(result.component);
+     void partDrawingPanel?.load(project,"part",part.id,result.component.selectedImplementationId||null);
+     void partFilesPanel?.load(project,part.id,result.component.selectedImplementationId||null);
+     void showPartPicture(part.id,true);
      refreshBom();
     }
    }
@@ -1508,8 +1511,8 @@ function setupAssemblyTrees(){
     investigationParts=partData.components||[];
     investigations?.showPart(partInvestigationPanel,partId);
     renderPartDetails(part);
-    void partDrawingPanel?.load(project,"part",partId);
-    void partFilesPanel?.load(project,partId);
+    void partDrawingPanel?.load(project,"part",partId,part.selectedImplementationId||null);
+    void partFilesPanel?.load(project,partId,part.selectedImplementationId||null);
     void showHarnessPreview(partId,version);
     if(partBackAssembly===null)partBackAssembly=part.assemblyId??null;
     partResourcePicker?.setData(data.workspace?.resources,canEdit());
