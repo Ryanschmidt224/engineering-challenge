@@ -1730,6 +1730,14 @@ function setupAssemblyTrees(){
    const row=document.createElement("div");row.className="bom-part-summary";
    const name=document.createElement("span");
    name.className="bom-part-name bom-part-name-link";name.textContent=(part.partNumber?part.partNumber+" · ":"")+window.BSPartFields.displayName(part);
+   if(part.itemType!=="document"&&!part.generatedFrom&&!part.isTool){
+    const solution=document.createElement("small");solution.className="bom-implementation-label";
+    solution.textContent=part.implementationResolved===false?"Implementation not selected":
+     part.partType==="custom"?"Fabricate: "+(part.implementationName||"Custom design"):
+     "Selected: "+(part.implementationName||part.model||"Purchased component");
+    name.append(solution);
+    if(part.implementationResolved===false)item.classList.add("bom-unresolved-part");
+   }
    const qty=document.createElement("span");qty.className="bom-part-meta";
    qty.textContent="Qty "+window.BSBomModel.quantityText(part);
    row.append(name,qty);
@@ -1829,9 +1837,19 @@ function setupAssemblyTrees(){
     if(!stack.childElementCount){const empty=document.createElement("p");empty.className="bom-empty";empty.textContent=shopItems.length?"No purchased components in this assembly. Standard materials appear below.":"No parts yet. Use + New part to add one.";stack.append(empty)}
     container.append(stack);
     const shopSection=shopMaterialsPanel(shopItems);if(shopSection)container.append(shopSection);
-    const purchasedParts=visibleParts.filter(part=>treeIds.has(part.assemblyId??null)||
+    const relevantParts=visibleParts.filter(part=>treeIds.has(part.assemblyId??null)||
      nodes.some(node=>isPartNode(node)&&node.partId===part.id&&treeIds.has(node.parentId)));
-    window.BSBomPurchasing?.render(purchasingMount,purchasedParts);
+    const buildPlan=window.BSBomModel.splitPhysicalPlan(relevantParts);
+    if(buildPlan.unselected.length||buildPlan.fabricate.length){
+     const summary=document.createElement("p");summary.className="bom-implementation-totals";
+     summary.textContent=[
+      buildPlan.unselected.length?buildPlan.unselected.length+" functional part(s) need a selected implementation":"",
+      buildPlan.fabricate.length?buildPlan.fabricate.length+" custom part(s) to fabricate":""
+     ].filter(Boolean).join(" · ");
+     purchasingMount.append(summary);
+    }
+    const purchaseMount=document.createElement("div");purchasingMount.append(purchaseMount);
+    window.BSBomPurchasing?.render(purchaseMount,relevantParts);
    }catch(error){
     if(version!==bomDisplayVersion)return;
     container.replaceChildren();purchasingMount.replaceChildren();
