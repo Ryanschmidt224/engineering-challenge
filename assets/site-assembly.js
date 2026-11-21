@@ -1741,9 +1741,9 @@ function setupAssemblyTrees(){
    name.className="bom-part-name bom-part-name-link";name.textContent=window.BSPartFields.numberedFunctionalName(part);
    if(part.itemType!=="document"&&!part.generatedFrom&&!part.isTool){
     const solution=document.createElement("small");solution.className="bom-implementation-label";
-    solution.textContent=part.implementationResolved===false?"Implementation not selected":
-     part.partType==="custom"?"Fabricate: "+(part.implementationName||"Custom design"):
-     "Selected: "+(part.implementationName||part.model||"Purchased component");
+    solution.textContent=part.implementationResolved===false?"Part not selected":
+     part.partType==="custom"?"Custom part: "+(part.implementationName||part.name):
+     "Purchased part: "+(part.implementationName||part.model||part.name);
     name.append(solution);
     if(part.implementationResolved===false)item.classList.add("bom-unresolved-part");
    }
@@ -1852,7 +1852,7 @@ function setupAssemblyTrees(){
     if(buildPlan.unselected.length||buildPlan.fabricate.length){
      const summary=document.createElement("p");summary.className="bom-implementation-totals";
      summary.textContent=[
-      buildPlan.unselected.length?buildPlan.unselected.length+" functional part(s) need a selected implementation":"",
+      buildPlan.unselected.length?buildPlan.unselected.length+" container(s) need a part selected":"",
       buildPlan.fabricate.length?buildPlan.fabricate.length+" custom part(s) to fabricate":""
      ].filter(Boolean).join(" · ");
      purchasingMount.append(summary);
@@ -1900,7 +1900,7 @@ function setupAssemblyTrees(){
   const partImplementationNameRow=document.createElement("label");partImplementationNameRow.className="part-functional-edit-field";
   const partImplementationNameCaption=document.createElement("span");partImplementationNameCaption.textContent="Part name";
   const partImplementationNameInput=document.createElement("input");partImplementationNameInput.className="field";partImplementationNameInput.maxLength=180;
-  partImplementationNameInput.placeholder="e.g., 2N7000 or Custom Coupler Rev B";
+  partImplementationNameInput.placeholder="e.g., 2N7000 MOSFET or Motor Bracket";
   partImplementationNameRow.append(partImplementationNameCaption,partImplementationNameInput);
   const partImplementationUnselectedRow=document.createElement("label");partImplementationUnselectedRow.className="part-functional-unselected";
   const partImplementationUnselected=document.createElement("input");partImplementationUnselected.type="checkbox";
@@ -2129,7 +2129,7 @@ function setupAssemblyTrees(){
    partImplementationNameInput.value=part.implementationName||part.model||part.name||"";
    partImplementationUnselected.checked=!part.implementationResolved;
    partImplementationUnselectedRow.hidden=true;
-   partImplementationNameRow.hidden=!part.implementationResolved;
+   partImplementationNameRow.hidden=false;
    setProjectOnly(part.projectDetails||{});
    partNumberInput.value=part.partNumber||"";autoNumberChosen=false;partNumberInput.readOnly=!!part.partNumber;
    nextNumberButton.disabled=!!part.partNumber;
@@ -2322,7 +2322,7 @@ function setupAssemblyTrees(){
    component.functionalRequirements=functionalRequirementsField.field.value.trim();
    component.acceptanceCriteria=functionalAcceptanceField.field.value.trim();
    component.implementationName=partImplementationNameInput.value.trim()||bomField("model")?.value.trim()||component.name;
-   component.implementationUnselected=!editingPart&&partImplementationUnselected.checked;
+   component.implementationUnselected=false;
    component.projectDetails=readProjectOnly(); // Preserve existing data until explicit approval to discard.
    if(!["purchased","custom_purchased"].includes(component.partType))Object.assign(component,{manufacturer:"",model:"",supplier:"",asin:"",historicalPurchasePrice:null,historicalPriceDate:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
    component.specifications=[...(bomRoot()?.querySelectorAll(".component-spec-row")||[])].map(row=>({
