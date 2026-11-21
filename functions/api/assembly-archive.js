@@ -104,7 +104,43 @@ export async function archiveAssets(bucket,project,archiveId,subtree,records,par
  }
  return copied;
 }
-export function relatedRecords(records,subtree){
+export // A snapshot of the path at the exact moment an item leaves the active tree.
+// Node IDs are stable, but names and parentage are not; never re-derive this
+// for new archives from the future/current tree.
+export function archiveOriginPath(tree,nodeId,project,projectName,parts=[]){
+ const chain=[],seen=new Set(),index=new Map(tree.map(node=>[node.id,node]));
+ let item=index.get(nodeId);
+ if(!item)throw Error("Archive source node does not exist");
+ while(item){
+  if(seen.has(item.id))throw Error("Circular original assembly path");
+  seen.add(item.id);
+  const component=item.kind==="part"?parts.find(part=>part.id===item.partId):null;
+  chain.unshift({id:item.id,kind:item.kind||"assembly",name:item.name,
+   partNumber:item.partNumber||component?.partNumber||""});
+  if(item.parentId===null||item.parentId===undefined)break;
+  item=index.get(item.parentId);
+  if(!item)throw Error("Missing parent while capturing original assembly location");
+ }
+ return [{id:project,kind:"project",name:projectName||project},...chain];
+}
+function archivedLocation(manifest,tree,projectName){
+ if(Array.isArray(manifest.originPath)&&manifest.originPath.length)
+  return {originPath:manifest.originPath,originPathSource:"snapshot"};
+ const project={id:manifest.project,kind:"project",name:projectName||manifest.project};
+ const last={id:manifest.nodeId,kind:manifest.kind,name:manifest.name,partNumber:manifest.partNumber||""};
+ if(manifest.parentId==="__root__"||manifest.parentId===null)
+  return {originPath:[project,last],originPathSource:"legacy-root"};
+ const parent=tree.find(node=>node.id===manifest.parentId);
+ if(parent){
+  try{
+   const current=archiveOriginPath(tree,parent.id,manifest.project,projectName);
+   return {originPath:[...current,last],originPathSource:"legacy-current-parent"};
+  }catch{}
+ }
+ return {originPath:[project,{id:manifest.parentId,kind:"unknown",name:"Unknown former parent"},last],
+  originPathSource:"legacy-missing-parent"};
+}
+function relatedRecords(records,subtree){
  const assemblies=new Set(subtree.filter(n=>n.kind!=="part").map(n=>n.id));
  const parts=new Set(subtree.filter(n=>n.kind==="part").map(n=>n.partId));
  return records.filter(r=>(r.ownerType==="part"&&parts.has(r.ownerId))||(r.ownerType==="assembly"&&assemblies.has(r.ownerId)));
@@ -112,6 +148,8 @@ export function relatedRecords(records,subtree){
 async function listArchives(bucket,project,parentId){
  const all=await listAll(bucket,"assembly-archives/"+project+"/manifests/",2000),result=[];
  const tree=await read(bucket,treeKey(project),[]);
+ const settings=await read(bucket,"project-settings/"+project+".json",{});
+ const projectName=settings.value?.title||project;
  const activeIds=new Set(tree.value.map(node=>node.id));
  for(const item of all){
   if(!item.key.endsWith(".json"))continue;
@@ -124,7 +162,8 @@ async function listArchives(bucket,project,parentId){
   if(activeIds.has(manifest.nodeId)&&manifest.state==="prepared"&&!manifest.restoredAt)continue;
   result.push({id:manifest.id,nodeId:manifest.nodeId,parentId:manifest.parentId,name:manifest.name,kind:manifest.kind,
    partNumber:manifest.partNumber||"",archivedAt:manifest.archivedAt,restoredAt:manifest.restoredAt||null,
-   nodeCount:manifest.nodes.length,partCount:manifest.parts.length,reason:manifest.reason||""});
+   nodeCount:manifest.nodes.length,partCount:manifest.parts.length,reason:manifest.reason||"",
+   ...archivedLocation(manifest,tree.value,projectName)});
  }
  return result.sort((a,b)=>b.archivedAt.localeCompare(a.archivedAt));
 }
@@ -155,7 +194,9 @@ export async function handleAssemblyArchive(request,env){
      "cache-control":"private, no-store","x-content-type-options":"nosniff"
     }});
    }
-   return json({archive:value});
+   const tree=await read(bucket,treeKey(project),[]);
+   const settings=await read(bucket,"project-settings/"+project+".json",{});
+   return json({archive:{...value,...archivedLocation(value,tree.value,settings.value?.title||project)}});
   }
   if(parent!==null&&parent!=="__root__"&&!idOK(parent))return json({error:"Invalid parent"},400);
   return json({items:await listArchives(bucket,project,parent)});
@@ -196,10 +237,13 @@ export async function handleAssemblyArchive(request,env){
   const remainingParts=componentState.value.filter(p=>!removedIds.has(p.id));
   const investigationState=await read(bucket,investigationKey(project),{records:[]});
   const entries=relatedRecords(investigationState.value.records||[],subtree);
+  const settings=await read(bucket,"project-settings/"+project+".json",{});
+  const originPath=archiveOriginPath(current,original.id,project,settings.value?.title||project,allParts);
   const id=crypto.randomUUID(),at=new Date().toISOString();
   const archived={schemaVersion:1,id,project,nodeId:original.id,parentId:original.parentId??"__root__",
    kind:original.kind||"assembly",name:original.name,partNumber:original.partNumber||"",
    archivedAt:at,reason:String(body.reason||"").slice(0,2500),restoredAt:null,
+   originPath,originPathSource:"snapshot",
    nodes:clone(subtree),parts:clone(allParts),removedPartIds:[...removedIds],
    investigations:clone(entries),affectedDependents,assets:[],state:"prepared"};
   try{
