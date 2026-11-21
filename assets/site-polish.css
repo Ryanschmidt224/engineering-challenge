@@ -3590,3 +3590,70 @@
   padding:8px 10px!important;
  }
 }
+
+/* Nested feature-tree history: discreet, read-only parent archive. */
+.assembly-workspace-page .assembly-archived-items{
+ min-width:0;
+ margin:10px 0 0;
+ border:1px solid var(--color-border);
+ border-radius:10px;
+ background:var(--color-surface);
+}
+.assembly-archived-disclosure > summary{
+ display:flex;
+ align-items:center;
+ min-height:40px;
+ padding:10px 14px;
+ font-weight:650;
+ font-size:.89rem;
+ color:var(--color-text);
+ cursor:pointer;
+}
+.assembly-archived-list{
+ padding:0 14px 12px;
+}
+.assembly-archived-list > .muted{
+ font-size:.82rem;
+ margin:0;
+}
+.assembly-archived-row{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:12px;
+ padding:8px 0;
+ border-top:1px solid var(--color-border);
+ font-size:.86rem;
+}
+.assembly-archived-row > span{min-width:0;overflow-wrap:anywhere}
+.assembly-archived-row .btn{flex:0 0 auto;font-size:.8rem;padding:5px 10px}
+.assembly-archive-dialog{
+ width:min(780px,calc(100vw - 24px));
+ max-height:85vh;
+ overflow:auto;
+ padding:22px;
+ border:1px solid var(--color-border);
+ border-radius:12px;
+ background:var(--color-surface);
+ color:var(--color-text);
+}
+.assembly-archive-dialog::backdrop{background:rgba(0,0,0,.42)}
+.assembly-archive-dialog h3{margin:0 0 8px}
+.assembly-archive-dialog ul{padding-left:24px}
+.assembly-archive-json{
+ white-space:pre-wrap;
+ overflow-wrap:anywhere;
+ max-height:300px;
+ overflow:auto;
+ font-size:.72rem;
+ background:var(--color-surface-muted);
+ padding:12px;
+ border-radius:8px;
+}
+.assembly-archive-actions{
+ display:flex;
+ justify-content:flex-start;
+ flex-wrap:wrap;
+ gap:8px;
+ margin-top:18px;
+}
