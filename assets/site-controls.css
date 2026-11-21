@@ -3484,3 +3484,24 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible{
   gap:9px;
  }
 }
+
+
+/* Container field wording follows the New Part form. */
+.part-editor-dialog .part-container-name-hint{
+ color:var(--color-text-muted);
+ font-size:.84em;
+ font-weight:400;
+ margin:0 6px;
+}
+.part-editor-dialog .part-editor-group .library-function-tip{
+ display:inline-flex;
+ align-items:center;
+ font-size:.84em;
+ color:var(--color-text-muted);
+ cursor:help;
+}
+.part-editor-dialog .part-editor-group .library-function-tip:focus-visible{
+ outline:2px solid var(--color-accent);
+ outline-offset:2px;
+ border-radius:3px;
+}
