@@ -1976,3 +1976,58 @@
   flex-wrap:wrap;
  }
 }
+
+
+/* Work Instructions: use the same attachment dimensions in edit and read
+   modes. Keep the pencil inside the media, not over the caption. */
+.recipe-compact{
+ --recipe-attachment-width:260px;
+ --recipe-attachment-image-height:210px;
+}
+.recipe-compact .recipe-step-photos{
+ grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),var(--recipe-attachment-width)));
+}
+.recipe-compact .recipe-step-photo,
+.recipe-compact .recipe-step-photo > .bs-photo-control{
+ width:var(--recipe-attachment-width);
+ max-width:100%;
+ min-width:0;
+ box-sizing:border-box;
+}
+.recipe-compact .recipe-step-photo .recipe-photo-frame{
+ width:100%;
+ max-width:100%;
+ box-sizing:border-box;
+}
+.recipe-compact .recipe-step-photo .recipe-photo-image-stage{
+ width:100%;
+ height:var(--recipe-attachment-image-height);
+ max-height:var(--recipe-attachment-image-height);
+ overflow:hidden;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ background:var(--color-media-backdrop);
+}
+.recipe-compact .recipe-step-photo .recipe-photo-image-stage .recipe-step-photo-image{
+ display:block;
+ width:100%;
+ height:100%;
+ max-height:none;
+ object-fit:contain;
+ margin:0;
+ border:0;
+ border-radius:0;
+}
+.recipe-compact .recipe-step-photo .recipe-photo-frame .recipe-step-photo-name{
+ min-height:42px;
+ padding:9px 11px;
+ box-sizing:border-box;
+}
+.recipe-compact .recipe-reader-photo{
+ width:min(var(--recipe-attachment-width),100%);
+}
+.recipe-compact .recipe-reader-photo .recipe-step-photo-image{
+ height:var(--recipe-attachment-image-height);
+ max-height:var(--recipe-attachment-image-height);
+}
