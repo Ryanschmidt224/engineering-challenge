@@ -2751,6 +2751,27 @@ function setupAssemblyTrees(){
    if(!response.ok)throw Error(data.error||"Archive request failed");
    return data;
   };
+  const archiveLocationLabel=item=>{
+   const path=Array.isArray(item.originPath)?item.originPath:[];
+   const text=path.length?path.map(segment=>(segment.partNumber?segment.partNumber+" · ":"")+segment.name).join(" / ")
+    :"Original location not recorded";
+   if(item.originPathSource==="legacy-current-parent")
+    return {text,note:"Parent path reconstructed from its current location; original names may have changed."};
+   if(item.originPathSource==="legacy-missing-parent")
+    return {text,note:"Original parent was not recorded by the older archive format."};
+   if(item.originPathSource==="legacy-root")
+    return {text,note:"This archive predates original-location snapshots."};
+   return {text,note:""};
+  };
+  const appendArchiveLocation=(target,item)=>{
+   const origin=archiveLocationLabel(item);
+   const line=document.createElement("div");line.className="assembly-archive-origin";
+   const label=document.createElement("strong");label.textContent="Original location: ";
+   const path=document.createElement("span");path.textContent=origin.text;
+   line.append(label,path);
+   if(origin.note){const caveat=document.createElement("small");caveat.textContent=origin.note;line.append(caveat)}
+   target.append(line);
+  };
   async function refreshAssemblyArchives(parentId){
    archivePanel.hidden=!canEdit();
    if(archivePanel.hidden)return;
@@ -2768,11 +2789,17 @@ function setupAssemblyTrees(){
     }
     for(const item of result.items){
      const row=document.createElement("div");row.className="assembly-archived-row";
-     const name=document.createElement("span");
+     const info=document.createElement("div");info.className="assembly-archive-row-info";
+     const name=document.createElement("strong");
      name.textContent=(item.partNumber?item.partNumber+" · ":"")+item.name+" · "+(item.kind==="part"?"Part":"Subassembly")+(item.restoredAt?" · Restored":"");
+     info.append(name);
+     appendArchiveLocation(info,item);
+     const meta=document.createElement("small");meta.className="assembly-archive-meta";
+     meta.textContent="Archived "+new Date(item.archivedAt).toLocaleDateString();
+     info.append(meta);
      const view=document.createElement("button");view.type="button";view.className="btn";view.textContent="View";
      view.onclick=()=>void viewAssemblyArchive(item.id);
-     row.append(name,view);archiveList.append(row);
+     row.append(info,view);archiveList.append(row);
     }
    }catch(error){if(serial===archiveRequestSerial)archiveList.textContent=error.message}
   }
@@ -2785,7 +2812,9 @@ function setupAssemblyTrees(){
     summary.textContent="Archived "+new Date(archive.archivedAt).toLocaleString()+
       " · "+archive.nodes.length+" tree item(s) · "+archive.parts.length+" part definition(s) · "+
       archive.investigations.length+" history record(s) · "+archive.assets.length+" saved files";
-    dialog.append(header,summary);
+    dialog.append(header);
+    appendArchiveLocation(dialog,archive);
+    dialog.append(summary);
     if(archive.reason){const p=document.createElement("p");p.textContent="Reason: "+archive.reason;dialog.append(p)}
     const list=document.createElement("ul");
     for(const node of archive.nodes){
@@ -2803,10 +2832,12 @@ function setupAssemblyTrees(){
       section.append(heading);
       for(const child of children.items){
        const row=document.createElement("div");row.className="assembly-archived-row";
-       const label=document.createElement("span");label.textContent=child.name;
+       const info=document.createElement("div");info.className="assembly-archive-row-info";
+       const label=document.createElement("strong");label.textContent=child.name;info.append(label);
+       appendArchiveLocation(info,child);
        const open=document.createElement("button");open.type="button";open.className="btn";open.textContent="View";
        open.onclick=()=>void viewAssemblyArchive(child.id);
-       row.append(label,open);section.append(row);
+       row.append(info,open);section.append(row);
       }
       dialog.append(section);
      }
