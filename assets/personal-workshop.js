@@ -381,31 +381,6 @@
    }
    const info=el("div",undefined,"workshop-item-hero-info");
    info.append(el("h3","Workshop item details"));
-   const specs=el("table",undefined,"workshop-spec-table");
-   const specBody=el("tbody");
-   const specRows=[
-    ["Manufacturer part number",item.partNumber||item.model],["Manufacturer",item.manufacturer],
-    ["Description",item.subtitle||item.name],["Feature tree description",item.featureTreeDescription],["Vendor",item.supplier],["Supplier part number",item.supplierPartNumber],["Mfg part number",item.model],
-    ["Specifications",item.spec],["Typical use",item.use],["Important considerations",item.caution],
-    ["Buying suggestion",item.orderNotes],["Notes",item.notes]
-   ];
-   for(const [label,value] of specRows){
-    if(!value)continue;
-    const tr=el("tr"),th=el("th",label),td=el("td",value);
-    th.scope="row";tr.append(th,td);specBody.append(tr);
-   }
-   if(!specBody.children.length){
-    const tr=el("tr"),td=el("td","Reference specifications have not been provided.");
-    td.colSpan=2;tr.append(td);specBody.append(tr);
-   }
-   if(Array.isArray(item.specifications)&&item.specifications.length){
-    for(const entry of item.specifications){
-     if(!entry.label||!entry.value)continue;
-     const tr=el("tr"),th=el("th",entry.label),td=el("td",[entry.value,entry.unit].filter(Boolean).join(" ")+(entry.conditions?" · "+entry.conditions:""));
-     th.scope="row";tr.append(th,td);specBody.append(tr);
-    }
-   }
-   specs.append(specBody);info.append(specs);
    const owned=ownedFor(item);
    if(owned.length){
     info.append(el("p",ownershipLabel(owned),"workshop-owned-note"));
@@ -415,8 +390,9 @@
    const mediaWithEdit=el("div",undefined,"workshop-item-media-actions");
    mediaWithEdit.append(big);
    const mediaButtons=el("div",undefined,"workshop-item-media-buttons");
+   let detailUI=null;
    if(canEditCatalog(item))
-    mediaButtons.append(itemButton("Edit",()=>openItemEditor(item),"btn workshop-under-image-edit"));
+    mediaButtons.append(itemButton("Edit",()=>detailUI?.setEditing(true),"btn workshop-under-image-edit"));
    if(canDeleteReferences&&item.created)
     mediaButtons.append(itemButton("Delete",async()=>{
      if(!await confirmDelete("Delete Workshop item?","Permanently delete \""+item.name+"\" from the public Workshop? This cannot be undone."))return;
@@ -459,6 +435,7 @@
    const editorMount=el("section",undefined,"workshop-item-editor-mount");
    editorMount.setAttribute("aria-label","Workshop item editor");
    itemPage.append(editorMount);
+   detailUI=openItemEditor(item,{viewOnly:true});
    const relatedSection=el("section",undefined,"workshop-item-related");
    relatedSection.append(el("h3","Other selections in "+(familyFor(item)?.label||categoryLabelFor(item))));
    const grid=el("div",undefined,"workshop-item-related-grid");
@@ -508,15 +485,16 @@
     document.getElementById("accountMenuButton")?.click();
    }
   };
-  function openItemEditor(item){
+  function openItemEditor(item,{viewOnly=false}={}){
    const isNew=!item.id;
-   if(isNew?!canCreateReferences:!canEditCatalog(item))return;
+   if(!viewOnly&&(isNew?!canCreateReferences:!canEditCatalog(item)))return;
    const mount=$(".workshop-item-editor-mount",itemPage);
    if(!mount)return;
    mount.replaceChildren();
    const form=el("form",undefined,"workshop-item-edit-form");
    const heading=el("div",undefined,"workshop-item-editor-heading");
-   heading.append(el("h3",isNew?"Create new catalog item":"Edit "+item.name),el("p","Public Workshop catalog · any signed-in member may edit shared items","muted"));
+   heading.append(el("h3",isNew?"Create new catalog item":"Component details"),
+    el("p","Public Workshop catalog · any signed-in member may edit shared items","muted"));
    form.append(heading);
    // AI lookup fills a draft; only the existing Save action publishes an item.
    const aiLookup=window.BSProductLookup.create({
@@ -718,7 +696,7 @@
    category.addEventListener("change",refreshSuggestions);
    controls.typeName.addEventListener("change",refreshSuggestions);
    controls.featureTreeDescription.addEventListener("change",refreshSuggestions);
-   refreshSuggestions();
+   if(!viewOnly)refreshSuggestions();
    // Classification and specification values are part characteristics—not
    // separate browsing levels or independent editor categories.
    const characteristics=grid.querySelector('[data-part-editor-section="characteristics"]');
@@ -926,7 +904,7 @@
    status.setAttribute("role","status");
    const actions=el("div",undefined,"workshop-item-editor-actions");
    const save=itemButton(isNew?"Create catalog item":"Save changes",()=>form.requestSubmit(),"btn primary");
-   const cancel=itemButton("Cancel",()=>isNew?closeItem():mount.replaceChildren(),"btn");
+   const cancel=itemButton("Cancel",()=>isNew?closeItem():showItem(item.id,false),"btn");
    actions.append(save,cancel);form.append(actions,status);
    form.addEventListener("submit",async event=>{
     event.preventDefault();
@@ -950,7 +928,34 @@
     }catch(error){status.textContent=error.message;save.disabled=false}
    });
    mount.append(form);
-   form.scrollIntoView({block:"start"});
+   // View and Edit share this exact DOM. Editing merely unlocks the controls;
+   // Save or Cancel returns to the read-only view without moving sections.
+   const setEditing=editing=>{
+    form.classList.toggle("is-readonly",!editing);
+    form.classList.toggle("is-editing",editing);
+    for(const control of form.querySelectorAll("input,textarea,select")){
+     if(control.matches('input[type="hidden"]'))continue;
+     control.disabled=!editing;
+    }
+    for(const control of form.querySelectorAll("button"))control.disabled=!editing;
+    actions.hidden=!editing;
+    uploadRow.hidden=!editing;
+    uploader.panel.hidden=!editing;
+    uploadPreviews.hidden=!editing;
+    uploadStatus.hidden=!editing;
+    specActions.hidden=!editing;
+    lookupActions.hidden=!editing;
+    viewSuggested.hidden=!editing;
+    for(const btn of gallery.querySelectorAll("button"))btn.hidden=!editing;
+    if(!editing)reviewPanel.hidden=true;
+    if(editing&&viewOnly){
+     // Explicitly requested templates may be added while editing, not in view.
+     form.querySelector("input:not([disabled])")?.focus();
+    }
+   };
+   if(viewOnly)setEditing(false);
+   else{setEditing(true);form.scrollIntoView({block:"start"})}
+   return {setEditing,form};
   }
   // Linked items may not yet be in memory when arriving from a project.
   // Resolve the exact record before showing the item view. Never silently
