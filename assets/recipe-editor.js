@@ -1,9 +1,9 @@
-/* Discrete, progressively disclosed recipe steps. Existing API/schema unchanged. */
+/* Work Instructions are named containers for regular typed entry records. */
 (function(){
  "use strict";
  const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node};
  const button=(label,fn,cls="btn")=>{const node=el("button",cls,label);node.type="button";node.onclick=fn;return node};
- // Keep existing text and photo arrays, with stable note IDs for attachments.
+ // Stable IDs keep linked entry records associated with their container.
  const newId=()=>crypto?.randomUUID?.()||"note_"+Date.now()+"_"+Math.random().toString(36).slice(2);
  // A Work Instruction is only a named container. All content lives in
  // independently editable Notes / Tests / Revisions / Failures records.
@@ -14,47 +14,6 @@
   archiveNote:x.archiveNote||"",
   tileOrder:Array.isArray(x.tileOrder)?x.tileOrder.filter(id=>typeof id==="string"&&id.startsWith("record:")).slice(0,300):[]
  });
- const kinds=[["note","Notes"],["action","Action"],["inspection","Inspection"],["measurement","Measurement"],["explanation","Explanation"]];
-
- // Viewer is shared by author and reader; closing it never changes step data.
- function openPhoto(id,name){
-  const overlay=el("div","recipe-photo-viewer");
-  overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-label",name||"Step photo");
-  const close=button("×",()=>dismiss(),"recipe-photo-viewer-close");
-  close.setAttribute("aria-label","Close photo");close.title="Close (Esc)";
-  const picture=el("img","recipe-photo-viewer-image");
-  picture.src=isRecipeFile(id)?window.BSPhotoMarkup.displayUrl("recipe",id):window.BSPhotoMarkup.displayUrl("gallery",id);picture.alt=name||"Step photo";
-  const caption=el("div","recipe-photo-viewer-caption",name||"");
-  const onKey=event=>{if(event.key==="Escape")dismiss()};
-  const dismiss=()=>{document.removeEventListener("keydown",onKey);overlay.remove()};
-  overlay.addEventListener("click",event=>{if(event.target===overlay)dismiss()});
-  overlay.append(close,picture,caption);
-  document.body.append(overlay);document.addEventListener("keydown",onKey);close.focus();
- }
- const isRecipeFile=id=>id.startsWith("recipe-files/");
- const attachmentExtension=id=>id.split(".").pop().toLowerCase();
- const isImageAttachment=id=>!isRecipeFile(id)||globalThis.BSAttachmentTypes.isImage(attachmentExtension(id));
- const attachmentUrl=id=>isRecipeFile(id)?"/api/recipe-files?id="+encodeURIComponent(id):"/api/photo?id="+encodeURIComponent(id);
- const makeAttachment=(id,name)=>{
-  if(isImageAttachment(id))return makePhoto(id,name);
-  const link=el("a","recipe-document-link");
-  link.href=attachmentUrl(id);link.target="_blank";link.rel="noopener noreferrer";
-  // Preserve the original filename from the server; PDFs open in the browser.
-  const icon=el("span","recipe-document-icon",attachmentExtension(id).toUpperCase());
-  const action=el("span","recipe-document-open",attachmentExtension(id)==="pdf"?"Open PDF":"Download document");
-  link.append(icon,action);
-  return link;
- };
- const makePhoto=(id,name)=>{
-  const picture=el("img","recipe-step-photo-image");
-  picture.src=isRecipeFile(id)?window.BSPhotoMarkup.displayUrl("recipe",id):window.BSPhotoMarkup.displayUrl("gallery",id);
-  picture.alt=name||"Step photo";picture.loading="lazy";
-  picture.title="Double-click for full-screen view";
-  picture.tabIndex=0;picture.setAttribute("role","button");
-  picture.addEventListener("dblclick",()=>openPhoto(id,name));
-  picture.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();openPhoto(id,name)}});
-  return picture;
- };
  function mount(article,options={}){
   if(!article)return null;
   const panel=el("section","recipe-editor recipe-compact"),content=el("div","recipe-content"),feedback=el("p","recipe-feedback muted");
@@ -67,12 +26,11 @@
    heading.before(headingRow);headingActions.append(heading);headingRow.append(headingActions,count);headingRow.after(panel);
   }else article.prepend(headingActions,panel);
   const admin=()=>!!options.admin?.();
-  let steps=[],expanded=null,dirty=false,level="standard",pendingUploads=0,saving=false,draft=null,scope=null,loading=true;
+  let steps=[],expanded=null,dirty=false,pendingUploads=0,saving=false,draft=null,scope=null,loading=true;
   const editing=new Set();
   const editSnapshots=new Map();
   let archivedStepsExpanded=false;
   window.addEventListener("beforeunload",event=>{if(!dirty&&!pendingUploads&&!saving&&!draft)return;event.preventDefault();event.returnValue="";});
-  try{const saved=localStorage.getItem("bs-recipe-detail");if(["brief","standard","detailed"].includes(saved))level=saved}catch{}
   let changeVersion=0,saveTimer=null,savePromise=null,allowReplay=false;
   async function savePending(){
    clearTimeout(saveTimer);
@@ -116,116 +74,6 @@
     allowReplay=true;try{target.click()}finally{allowReplay=false}
    }catch(error){feedback.textContent=error.message||"Save failed; navigation cancelled."}
   },true);
-  const editField=(value,placeholder,onValue,rows=0)=>{
-   const field=el(rows?"textarea":"input","field recipe-input");
-   if(rows)field.rows=rows;else field.type="text";
-   field.value=value;field.placeholder=placeholder;
-   // On the first click or keyboard focus, select the old value so typing
-   // replaces it. Later clicks within the focused field allow caret edits.
-   let firstFocus=false;
-   field.addEventListener("focus",()=>{firstFocus=true;field.select()});
-   field.addEventListener("click",()=>{if(firstFocus){field.select();firstFocus=false}});
-   field.addEventListener("blur",()=>{firstFocus=false});
-   field.oninput=()=>{onValue(field.value);changed();saveHint()};
-   return field;
-  };
-  const selectedText=area=>{
-   const selection=window.getSelection?.();
-   if(!selection||selection.isCollapsed)return "";
-   const text=String(selection).trim();
-   if(!text||text.length>220||!area.contains(selection.getRangeAt(0).commonAncestorContainer))return "";
-   return text;
-  };
-
-  // Contextual knowledge lookup from work-instruction prose, including step names.
-  let knowledgeMenu=null;
-  const closeKnowledgeMenu=()=>{
-   if(knowledgeMenu){knowledgeMenu.remove();knowledgeMenu=null}
-  };
-  const termAtPoint=event=>{
-   const selection=window.getSelection?.();
-   if(selection&&!selection.isCollapsed){
-    const text=String(selection).trim();
-    if(text.length<=220&&event.target.closest(".recipe-one-step")?.contains(selection.anchorNode)&&
-       event.target.closest(".recipe-one-step")?.contains(selection.focusNode))return text;
-   }
-   const range=document.caretRangeFromPoint?.(event.clientX,event.clientY)||
-    document.caretPositionFromPoint?.(event.clientX,event.clientY);
-   const node=range?.startContainer||range?.offsetNode;
-   const offset=range?.startOffset??range?.offset;
-   if(!node||node.nodeType!==Node.TEXT_NODE||!event.target.contains(node))return "";
-   const value=node.textContent||"";
-   const isWord=ch=>/[\p{L}\p{N}×._-]/u.test(ch);
-   let start=Math.min(offset,value.length),end=start;
-   if(start>0&&!isWord(value[start]||"")&&isWord(value[start-1]))start--;
-   if(!isWord(value[start]||""))return "";
-   end=start;
-   while(start>0&&isWord(value[start-1]))start--;
-   while(end<value.length&&isWord(value[end]))end++;
-   return value.slice(start,end).trim().slice(0,220);
-  };
-  const searchKnowledge=term=>{
-   const q=term.toLowerCase().trim().replace(/\s+/g," ");
-   if(!q)return [];
-   const words=q.split(/\s+/).filter(w=>w.length>2);
-   const workshop=(window.BSResources?.catalog?.parts||[])
-    .concat(window.BSResources?.catalog?.tools||[])
-    .filter(item=>item.id?.startsWith("workshop:"))
-    .map(item=>{
-     const title=item.name.toLowerCase(),detail=(item.subtitle||"").toLowerCase();
-     const score=title===q?120:title.startsWith(q+" ")||title.includes(" "+q+" ")?95:
-      title.includes(q)?75:words.length&&words.every(w=>title.includes(w))?60:detail.includes(q)?25:0;
-     return {id:item.id,title:item.name,type:"Workshop",score};
-    }).filter(item=>item.score>0);
-   const articles=(window.BSKnowledgeArticles?.search(term)||[])
-    .map(item=>({id:item.id,title:item.title,type:"Knowledge article",score:item.score}));
-   return [...workshop,...articles].sort((a,b)=>b.score-a.score).slice(0,8);
-  };
-  const openKnowledgeResult=result=>{
-   closeKnowledgeMenu();
-   if(result.type==="Workshop"){
-    location.hash="commonparts";
-    // Wait for navigation to mount the Workshop feature tree before focusing.
-    setTimeout(()=>window.BSResources?.focusWorkshopItem(result.id),50);
-   }else window.BSKnowledgeArticles?.open(result.id);
-  };
-  const showKnowledgeMenu=(event,term,step)=>{
-   closeKnowledgeMenu();
-   const results=searchKnowledge(term);
-   const menu=el("div","recipe-knowledge-context-menu");
-   menu.setAttribute("role","menu");menu.setAttribute("aria-label","Knowledge base matches");
-   menu.append(el("div","recipe-knowledge-context-heading",'Search knowledge base: "'+term+'"'));
-   for(const result of results){
-    const item=button(result.title,()=>openKnowledgeResult(result),"recipe-knowledge-context-result");
-    item.setAttribute("role","menuitem");
-    item.append(el("small","",result.type));menu.append(item);
-   }
-   if(!results.length)menu.append(el("p","recipe-knowledge-empty","No matching articles yet."));
-   const explain=button("Please explain this",()=>{
-    closeKnowledgeMenu();
-    window.BSExplainText?.(term,{stepId:step.id,stepTitle:step.title});
-   },"recipe-knowledge-context-explain");
-   menu.append(explain);document.body.append(menu);knowledgeMenu=menu;
-   const x=Math.max(8,Math.min(event.clientX,window.innerWidth-menu.offsetWidth-8));
-   const y=Math.max(8,Math.min(event.clientY,window.innerHeight-menu.offsetHeight-8));
-   menu.style.left=x+"px";menu.style.top=y+"px";
-  };
-  content.addEventListener("contextmenu",event=>{
-   // Paste targets need the browser native context menu, not knowledge lookup.
-   if(event.target.closest(".bs-photo-paste,.recipe-photo-frame,.recipe-step-photos,.recipe-note-attachments,input,textarea,select,button,img"))return;
-   const card=event.target.closest(".recipe-one-step");
-   if(!card)return;
-   const step=steps.find(item=>item.id===card.dataset.stepId);
-   if(!step)return;
-   const term=termAtPoint(event);
-   if(!term)return;
-   event.preventDefault();showKnowledgeMenu(event,term,step);
-  });
-  document.addEventListener("click",event=>{if(knowledgeMenu&&!knowledgeMenu.contains(event.target))closeKnowledgeMenu()});
-  document.addEventListener("keydown",event=>{if(event.key==="Escape")closeKnowledgeMenu()});
-  document.addEventListener("scroll",closeKnowledgeMenu,true);
-  // A step can collapse independently of the nested entry/archive disclosures.
-  const expandedStepBodies=new Set();
   async function persistContainer(step,{draftSave=false}={}){
    if(!step.title.trim())throw Error("Enter a Work Instruction name.");
    if(saving)return;
@@ -436,7 +284,7 @@
     draft={id:newId(),title:"",archivedAt:"",archiveNote:"",tileOrder:[]};
     steps.push(draft);
    }
-   expanded=draft.id;expandedStepBodies.add(draft.id);editSnapshots.clear();editing.clear();editing.add(draft.id);render();
+   expanded=draft.id;editSnapshots.clear();editing.clear();editing.add(draft.id);render();
    content.querySelector(".recipe-step-name")?.focus();
   },"btn recipe-add-step bs-section-add-entry");
   headingActions.append(add);
@@ -458,7 +306,6 @@
    const resumeKey="bs-resume-step:"+location.hash;
    const desired=sessionStorage.getItem(resumeKey);
    if(desired&&steps.some(step=>step.id===desired&&!step.archivedAt)){expanded=desired;sessionStorage.removeItem(resumeKey)}
-   expandedStepBodies.clear();
    if(expanded)options.onStepSelected?.(expanded);
    editSnapshots.clear();editing.clear();feedback.textContent="";
    if(resumeDraft){expanded=draft.id;editing.add(draft.id)}
