@@ -782,7 +782,7 @@ function setupAssemblyTrees(){
        experiments=Array.isArray(snapshot.experiments)?snapshot.experiments.map(x=>({...x})):[];
        renderLogs();onRestoreResources?.(snapshot.resources);onRestoreRecipe?.(snapshot);
        panel.querySelector(prefix==="part"?".part-workspace-status":".workspace-status").textContent="Previous version loaded. Saving…";
-       scheduleWorkspaceAutosave(prefix==="part"?"part":"assembly");
+       scheduleWorkspaceAutosave(prefix==="part"?"part":"assembly",true);
       };
       item.append(restore);
      }
@@ -800,20 +800,24 @@ function setupAssemblyTrees(){
   }
   let investigations=null,investigationParts=[];
   const workspaceAutosaveTimers={assembly:null,part:null};
+  const workspaceAutosaveRecipe={assembly:false,part:false};
   // Workspace data (linked tools and resources) is saved after it changes,
   // while Work Instruction forms retain their explicit Save/Cancel workflow.
-  const scheduleWorkspaceAutosave=scope=>{
+  const scheduleWorkspaceAutosave=(scope,includeRecipe=false)=>{
    if(!canEdit())return;
+   workspaceAutosaveRecipe[scope] ||= includeRecipe;
    clearTimeout(workspaceAutosaveTimers[scope]);
    workspaceAutosaveTimers[scope]=setTimeout(async()=>{
     workspaceAutosaveTimers[scope]=null;
+    const saveRecipe=workspaceAutosaveRecipe[scope];
+    workspaceAutosaveRecipe[scope]=false;
     try{
      if(scope==="part"){
       if(partSaveFlight)await partSaveFlight;
-      await savePartWorkspace();
+      await savePartWorkspace({resourcesOnly:!saveRecipe});
      }else{
       if(assemblySaveFlight)await assemblySaveFlight;
-      await saveAssemblyWorkspace();
+      await saveAssemblyWorkspace({resourcesOnly:!saveRecipe});
      }
     }catch(error){
      const status=scope==="part"?partStatus:workspaceStatus;
@@ -1427,7 +1431,7 @@ function setupAssemblyTrees(){
    }
   }
   let partSaveFlight=null;
-  function savePartWorkspace(){
+  function savePartWorkspace({resourcesOnly=false}={}){
    if(partSaveFlight)return partSaveFlight;
    const work=(async()=>{
     const id=partRoute();
@@ -1437,7 +1441,7 @@ function setupAssemblyTrees(){
     const data={
      resources:partResourcePicker?.getData(),
      experiments:partExtras.getExperiments(),
-     recipe:partRecipe?.getData()||[],
+     ...(resourcesOnly?{}:{recipe:partRecipe?.getData()||[]}),
      expectedRevision:partSavedRevision
     };
     const button=partWorkspace.querySelector(".part-workspace-save");
@@ -1453,7 +1457,7 @@ function setupAssemblyTrees(){
      const result=await response.json();
      if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
      partSavedRevision=result.revision??partSavedRevision;
-     partRecipe?.markSaved();
+     if(!resourcesOnly)partRecipe?.markSaved();
      window.BSTransient?.show(partStatus,"Part instructions saved.");
     }catch(error){
      partStatus.textContent=error.name==="AbortError"?"Save timed out. Try again.":error.message;
@@ -2303,7 +2307,7 @@ function setupAssemblyTrees(){
    }catch(e){workspaceStatus.textContent=e.message}
   }
   let assemblySaveFlight=null;
-  function saveAssemblyWorkspace(){
+  function saveAssemblyWorkspace({resourcesOnly=false}={}){
    if(assemblySaveFlight)return assemblySaveFlight;
    const work=(async()=>{
     if(!canEdit())throw Error("Use Admin login to save.");
@@ -2312,7 +2316,7 @@ function setupAssemblyTrees(){
     const data={
      resources:assemblyResourcePicker?.getData(),
      experiments:assemblyExtras.getExperiments(),
-     recipe:assemblyRecipe?.getData()||[],
+     ...(resourcesOnly?{}:{recipe:assemblyRecipe?.getData()||[]}),
      expectedRevision:workspaceSavedRevision
     };
     button.disabled=true;workspaceStatus.textContent="Saving…";
@@ -2326,7 +2330,7 @@ function setupAssemblyTrees(){
      const result=await response.json();
      if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
      workspaceSavedRevision=result.revision??workspaceSavedRevision;
-     assemblyRecipe?.markSaved();
+     if(!resourcesOnly)assemblyRecipe?.markSaved();
      window.BSTransient?.show(workspaceStatus,"Saved.");
     }catch(error){
      workspaceStatus.textContent=error.name==="AbortError"?"Save timed out. Try again.":error.message;
