@@ -689,6 +689,52 @@
     }
     return {suggestedRows,added,atLimit};
    };
+   // Workshop-owned measurements are fixed. Generic field definitions are
+   // separate placeholders for the next builder (name + unit, no values).
+   const genericTemplateSection=el("section",undefined,"workshop-generic-template");
+   genericTemplateSection.append(el("h4","Fields the project user fills in"));
+   genericTemplateSection.append(el("p","Only field names and units are stored here. Each project supplies its own values; those values never update this Workshop item.","muted"));
+   const genericTemplateRows=el("div",undefined,"workshop-generic-template-rows");
+   const getGenericFields=()=>[...genericTemplateRows.children].map(row=>({
+    label:row.querySelector('[data-generic="label"]')?.value.trim()||"",
+    unit:row.querySelector('[data-generic="unit"]')?.value.trim()||""
+   })).filter(row=>row.label);
+   const addGenericField=(entry={})=>{
+    if(genericTemplateRows.children.length>=40)return null;
+    const row=el("div",undefined,"workshop-generic-template-row");
+    const label=el("input"),unit=el("input");
+    label.className=unit.className="field";
+    label.dataset.generic="label";unit.dataset.generic="unit";
+    label.placeholder="Field name (e.g. Color)";unit.placeholder="Unit (optional)";
+    label.maxLength=100;unit.maxLength=32;
+    label.value=entry.label||"";unit.value=entry.unit||"";
+    const remove=itemButton("Remove",()=>row.remove(),"btn");
+    remove.classList.add("workshop-generic-remove");
+    row.append(label,unit,remove);genericTemplateRows.append(row);
+    return row;
+   };
+   const addGenericTemplate=itemButton("+ Add field",()=>addGenericField()?.querySelector("input")?.focus(),"btn workshop-generic-add");
+   genericTemplateSection.append(genericTemplateRows,addGenericTemplate);
+   const currentTemplates=Array.isArray(item.genericFields)?item.genericFields:[];
+   if(currentTemplates.length)for(const field of currentTemplates)addGenericField(field);
+   else if(window.BSResources.workshopIdentityKind(item)==="generic"){
+    for(const [label,unit] of window.BSResources.genericSpecificationTemplate(item))addGenericField({label,unit});
+   }
+   const updateIdentityPanels=()=>{
+    const generic=identityRadios.generic.checked;
+    genericTemplateSection.hidden=!generic;
+    // Generic items can retain fixed Workshop specifications (e.g. ¼ W);
+    // only the configurable fields are left blank for project use.
+    structuredSection.querySelector("h3").textContent=generic?"Data retained in Workshop":"Specifications for this product";
+    structuredSection.querySelector(".muted").textContent=generic
+     ?"Enter only specifications that are fixed for every use of this Workshop item. For example, the resistor power rating."
+     :"Product specifications are saved with this manufacturer product.";
+    for(const row of genericTemplateRows.children){
+     row.querySelector(".workshop-generic-remove").hidden=!form.classList.contains("is-editing");
+    }
+    addGenericTemplate.hidden=!form.classList.contains("is-editing");
+   };
+   updateIdentityPanels();
    const specStatus=el("p","","muted");
    specStatus.setAttribute("role","status");
    specStatus.hidden=true;
@@ -718,8 +764,33 @@
     }
     addSuggestedSpecs();
    };
-   identityRadios.generic.addEventListener("change",refreshSuggestions);
-   identityRadios.specific.addEventListener("change",refreshSuggestions);
+   let approvedIdentity=window.BSResources.workshopIdentityKind(item);
+   const specificOnlyFields=["partNumber","model","manufacturer","supplier","supplierPartNumber","supplierUrl","asin","price","packageQuantity"];
+   const confirmGenericSwitch=async()=>{
+    if(!identityRadios.generic.checked)return;
+    if(approvedIdentity==="generic"){updateIdentityPanels();return}
+    const hasSpecificData=specificOnlyFields.some(field=>String(controls[field]?.value||"").trim())||
+     [...specRows.children].some(row=>String(row.querySelector('[data-spec="value"]')?.value||"").trim());
+    if(hasSpecificData){
+     const message="Changing to Generic will erase manufacturer and ordering details, and the existing saved specification values in this draft. It will keep the component name and description. Continue?";
+     const confirmed=window.BSDialogs?.confirm
+      ?await window.BSDialogs.confirm(message,{title:"Convert to generic component?",confirmLabel:"Erase data and switch"})
+      :window.confirm(message);
+     if(!confirmed){identityRadios.specific.checked=true;updateIdentityPanels();return}
+     for(const field of specificOnlyFields)if(controls[field])controls[field].value="";
+     specRows.replaceChildren();
+    }
+    approvedIdentity="generic";
+    if(!genericTemplateRows.children.length)for(const [label,unit] of window.BSResources.genericSpecificationTemplate({
+     name:controls.name.value,typeName:controls.typeName.value,featureTreeDescription:controls.featureTreeDescription.value
+    }))addGenericField({label,unit});
+    updateIdentityPanels();
+   };
+   identityRadios.generic.addEventListener("change",()=>{void confirmGenericSwitch()});
+   identityRadios.specific.addEventListener("change",()=>{
+    approvedIdentity="specific";
+    updateIdentityPanels();
+   });
    controls.name.addEventListener("change",refreshSuggestions);
    category.addEventListener("change",refreshSuggestions);
    controls.typeName.addEventListener("change",refreshSuggestions);
@@ -728,7 +799,7 @@
    // Classification and specification values are part characteristics—not
    // separate browsing levels or independent editor categories.
    const characteristics=grid.querySelector('[data-part-editor-section="characteristics"]');
-   characteristics.append(classification,structuredSection);
+   characteristics.append(classification,structuredSection,genericTemplateSection);
    const photoTitle=el("h4","Photos");
    const notesSection=grid.querySelector('[data-part-editor-section="notes"]');
    notesSection.append(photoTitle);
@@ -938,7 +1009,7 @@
    form.addEventListener("submit",async event=>{
     event.preventDefault();
     if(!editingEnabled)return;
-    const details={photos,specifications:storedSpecs()};
+    const details={photos,specifications:storedSpecs(),genericFields:identityRadios.generic.checked?getGenericFields():[]};
     for(const field of saveableFields)if(controls[field])details[field]=controls[field].value;
     details.kind=kind.value;details.category=category.value;
     details.productIdentity=identityRadios.generic.checked?"generic":"specific";
@@ -981,7 +1052,9 @@
     if(!editing)viewSuggested.hidden=true;
     for(const btn of gallery.querySelectorAll("button"))btn.hidden=!editing;
     if(!editing)reviewPanel.hidden=true;
-    if(editing)refreshSuggestions();
+    for(const button of genericTemplateSection.querySelectorAll("button"))button.disabled=!editing;
+    updateIdentityPanels();
+    if(editing&&!identityRadios.generic.checked)refreshSuggestions();
     if(editing&&viewOnly){
      // Explicitly requested templates may be added while editing, not in view.
      form.querySelector("input:not([disabled])")?.focus();
