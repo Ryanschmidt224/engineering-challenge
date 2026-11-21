@@ -2297,7 +2297,7 @@ function setupAssemblyTrees(){
      return section;
     };
     group("container","Container",controls.itemType,controls.name,controls.partNumber,
-     partDescriptionRow,functionalRequirementsField.row,functionalAcceptanceField.row);
+     partDescriptionRow);
     const implementationGroup=group("implementation","Selected implementation",partImplementationUnselectedRow,
      partTypeRow,partImplementationNameRow,...ordered(fields.additional),quantities[1]);
     const displayGroup=review.querySelector(".part-display-options")||document.createElement("div");
