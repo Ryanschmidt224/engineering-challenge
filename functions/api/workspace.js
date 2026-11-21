@@ -36,7 +36,7 @@ const validateRecipe=(input,project)=>{
   if(typeof title!=="string"||!title.trim()||title.length>180||
     typeof standard!=="string"||standard.length>4000||
     typeof detail!=="string"||detail.length>8000)return null;
-  const kind=["action","inspection","measurement","explanation"].includes(step.kind)?step.kind:"action";
+  const kind=["note","action","inspection","measurement","explanation"].includes(step.kind)?step.kind:"note";
   const notes=step.notes??[],photos=step.photos??[];
   if(!Array.isArray(notes)||notes.length>40||notes.some(n=>typeof n!=="string"||n.length>4000)||
      !Array.isArray(photos)||photos.length>30||photos.some(id=>!isStepAttachment(id,project)))return null;
