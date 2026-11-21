@@ -999,7 +999,9 @@ test("Edit Part uses Container naming and framed implementation groups",async({p
   const response=await fetch("/assets/site-assembly.js",{cache:"no-store"});
   return response.text();
  });
- expect(source).toContain('group("container","Container"');
+ expect(source).toContain('group("container","Container",controls.itemType,controls.name,controls.partNumber,');
+ expect(source).toContain('partDescriptionRow);');
+ expect(source).not.toContain('partDescriptionRow,functionalRequirementsField.row,functionalAcceptanceField.row);');
  expect(source).toContain('group("implementation","Selected implementation"');
  expect(source).toContain('group("specifications","Specifications"');
  expect(source).toContain('document.createTextNode("Part number")');
