@@ -2011,6 +2011,11 @@ function setupAssemblyTrees(){
    else if(partTypeSelect.value==="code")partTypeSelect.value="purchased";
    const custom=["custom","code"].includes(partTypeSelect.value);
    const documentMode=itemTypeSelect.value!=="part";
+   // A custom part uses the container's name. The two identities only
+   // differ for off-the-shelf purchased components.
+   const customPart=!documentMode&&["custom","custom_purchased"].includes(partTypeSelect.value);
+   partImplementationNameRow.hidden=customPart||documentMode;
+   if(customPart)partImplementationNameInput.value=bomField("name")?.value.trim()||"";
    partTypeRow.hidden=codeMode;
    toolRow.hidden=documentMode;
    const qtyControl=bomEditorMount.querySelector(".component-quantity");if(qtyControl?.closest("label"))qtyControl.closest("label").hidden=documentMode;
@@ -2330,7 +2335,8 @@ function setupAssemblyTrees(){
    component.description=partDescriptionInput.value.trim();
    component.functionalRequirements=functionalRequirementsField.field.value.trim();
    component.acceptanceCriteria=functionalAcceptanceField.field.value.trim();
-   component.implementationName=partImplementationNameInput.value.trim()||bomField("model")?.value.trim()||component.name;
+   component.implementationName=["custom","custom_purchased"].includes(component.partType)
+    ?component.name:(partImplementationNameInput.value.trim()||bomField("model")?.value.trim()||component.name);
    component.implementationUnselected=false;
    component.projectDetails=readProjectOnly(); // Preserve existing data until explicit approval to discard.
    if(!["purchased","custom_purchased"].includes(component.partType))Object.assign(component,{manufacturer:"",model:"",supplier:"",asin:"",historicalPurchasePrice:null,historicalPriceDate:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
