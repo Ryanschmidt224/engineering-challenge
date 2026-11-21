@@ -315,10 +315,13 @@
    const activeOwn=own.filter(record=>!isArchived(record));
    const archivedOwn=own.filter(isArchived);
    const archivedRelated=records.filter(record=>within(record,context)&&!owns(record,context)&&isArchived(record));
+   // A step has one edit-mode switch: its Work Instruction header.
+   // Other workspace pages have no parent editor and retain their own controls.
+   const allowEntryEditing=admin()&&(!compact||Boolean(stepSlots.get(context.stepId)?.editing));
    const activeHeader=make("div","investigation-active-heading");
    // The step editor has its own Edit mode. Other workspace sections have no
    // separate editing toggle, so retain their Add entry button.
-   const canCreate=admin()&&(!compact||Boolean(stepSlots.get(context.stepId)?.editing));
+   const canCreate=allowEntryEditing;
    if(canCreate)activeHeader.append(btn("+ Add entry",event=>{
     event.preventDefault();newRecord(context,target);
    },"btn investigation-add investigation-create-button"));
@@ -371,7 +374,7 @@
     const archive=btn("Archive",event=>{
      event.preventDefault();event.stopPropagation();archiveRecord(record);
     },"btn investigation-archive-button");
-    if(admin()&&!inherited){
+    if(allowEntryEditing&&!inherited){
      if(historical){
       const removeHistory=btn("Delete",async event=>{
        event.preventDefault();event.stopPropagation();
