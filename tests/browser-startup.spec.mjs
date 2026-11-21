@@ -1025,6 +1025,9 @@ test("Edit Part separates Container, Part details and purchased alternatives",as
  expect(source).not.toContain('functionalAcceptanceField');
  expect(source).not.toContain('partImplementationUnselectedRow');
  expect(source).toContain('group("implementation","Part details"');
+ expect(source).toContain('toolRow,partImplementationNameRow');
+ expect(source).toContain('fields.display.filter(key=>key!=="isTool")');
+ expect(source).toContain('document.createTextNode(" Is a tool?")');
  expect(source).toContain('const purchased=part.partType==="purchased"');
  expect(source).toContain('item.partType==="purchased"');
  expect(source).toContain('Alternative purchased parts');
