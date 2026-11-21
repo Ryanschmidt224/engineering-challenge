@@ -405,11 +405,13 @@
    };
 
    activeOwn.forEach(record=>renderCard(record,activeContent));
-   if(!activeOwn.length)activeContent.append(make("p","muted investigation-empty","No active entries."));
+   // An empty active section adds no value in read mode. The chevrons
+   // on actual entries and Project Archive already communicate structure.
    if(admin()&&context.ownerType==="part"&&!context.stepId&&getPart?.()?.id===context.ownerId&&typeof onReplacePart==="function"){
     activeContent.append(btn("Replace part / save revision",()=>replacePart(context,target),"btn investigation-add"));
    }
    activeContent.append(make("p","investigation-feedback muted"));
+   activeHost.hidden=!activeOwn.length&&!canCreate&&!activeContent.querySelector("button");
 
    archivedOwn.forEach(record=>renderCard(record,content,{historical:true}));
    if(archivedRelated.length){
