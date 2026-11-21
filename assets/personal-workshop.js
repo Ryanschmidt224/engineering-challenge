@@ -893,8 +893,6 @@
     field.addEventListener("input",clearSuggestion);
    }
    const uploadRow=el("div",undefined,"workshop-item-photo-upload");
-   const picker=el("input");picker.type="file";picker.accept="image/jpeg,image/png,image/webp";
-   picker.multiple=true;picker.setAttribute("aria-label","Choose item photos");picker.hidden=true;
    const uploadStatus=el("p","","muted");
    const uploadFiles=async files=>{
     const images=[...files].filter(file=>["image/jpeg","image/png","image/webp"].includes(file.type));
@@ -909,20 +907,18 @@
       if(!res.ok)throw Error(data.error||"Photo upload failed");
       photos.push(data.photo);
      }
-     picker.value="";redrawPhotos();uploadStatus.textContent="Photo added to draft. Save the item to publish it.";
+     redrawPhotos();uploadStatus.textContent="Photo added to draft. Save the item to publish it.";
     }catch(error){uploadStatus.textContent=error.message}
     finally{upload.disabled=false}
    };
-   const upload=itemButton("Add photos",()=>picker.click(),"btn");
+   const uploader=window.BSPhotoEditor.uploadPanel({
+    title:"Add photos",accept:"image/jpeg,image/png,image/webp",onFiles:uploadFiles,
+    hint:"Select JPEG, PNG, or WebP photos. Up to 12 photos per item."
+   });
+   const upload=itemButton("Add photos",()=>uploader.open(),"btn");
    upload.type="button";
-   picker.addEventListener("change",()=>{
-    if(picker.files?.length)void uploadFiles(picker.files);
-   });
-   const pasteZone=window.BSPhotoMarkup.pasteTarget(uploadFiles,{
-    onEmpty:()=>{uploadStatus.textContent="Copy an image or choose a photo file."}
-   });
-   uploadRow.append(picker,upload);
-   form.append(uploadRow,pasteZone,uploadStatus);
+   uploadRow.append(upload);
+   form.append(uploadRow,uploader.panel,uploadStatus);
    const status=el("p","","workshop-item-editor-status");
    status.setAttribute("role","status");
    const actions=el("div",undefined,"workshop-item-editor-actions");
