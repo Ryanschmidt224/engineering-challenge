@@ -24,7 +24,7 @@
   }
   const photoAfterNote={};
   for(const [id,noteId] of Object.entries(photoNoteIds))photoAfterNote[id]=noteIds.indexOf(noteId);
-  return {id:x.id,title:x.title||"",standard:x.standard||"",detail:x.detail||"",kind:x.kind||"action",notes,noteIds,photos,photoNames,photoNoteIds,photoAfterNote};
+  return {id:x.id,title:x.title||"",standard:x.standard||"",detail:x.detail||"",kind:x.kind||"action",notes,noteIds,photos,photoNames,photoNoteIds,photoAfterNote,archivedAt:x.archivedAt||"",archiveNote:x.archiveNote||""};
  };
  const kinds=[["action","Action"],["inspection","Inspection"],["measurement","Measurement"],["explanation","Explanation"]];
 
@@ -82,6 +82,7 @@
   let steps=[],expanded=null,dirty=false,level="standard",pendingUploads=0,saving=false,draft=null,scope=null,loading=true;
   const editing=new Set();
   const editSnapshots=new Map();
+  let archivedStepsExpanded=false;
   window.addEventListener("beforeunload",event=>{if(!dirty&&!pendingUploads&&!saving&&!draft)return;event.preventDefault();event.returnValue="";});
   try{const saved=localStorage.getItem("bs-recipe-detail");if(["brief","standard","detailed"].includes(saved))level=saved}catch{}
   let changeVersion=0,saveTimer=null,savePromise=null,allowReplay=false;
@@ -299,6 +300,17 @@
     }
     detailPane.append(preferences);
    }
+   // Archived steps are still part of the same data model and retain all
+   // photos, notes and linked record IDs. Their list stays collapsed by default.
+   const archivedSteps=steps.filter(step=>step.archivedAt);
+   const archiveSection=el("details","recipe-archived-steps");
+   archiveSection.open=archivedStepsExpanded;
+   archiveSection.addEventListener("toggle",()=>{
+    archivedStepsExpanded=archiveSection.open;
+   });
+   archiveSection.append(el("summary","recipe-archive-steps-heading","Archived steps ("+archivedSteps.length+")"));
+   const archiveList=el("div","recipe-archived-step-list");
+   archiveSection.append(archiveList);
    for(let i=0;i<steps.length;i++){
     const step=steps[i],isCurrent=expanded===step.id,isDraft=step===draft;
     const navButton=button(step.title||"Untitled step",async()=>{
@@ -313,10 +325,11 @@
      closeKnowledgeMenu();render();options.onStepChange?.(step.id);
     },"recipe-step-nav-item"+(isCurrent?" is-active":""));
     navButton.setAttribute("aria-current",isCurrent?"step":"false");
+    const archived=Boolean(step.archivedAt);
     navButton.setAttribute("aria-label","Step "+(i+1)+": "+(step.title||"Untitled step"));
     // Reordering is independent of selecting/opening a step. Restrict drag
     // payloads to this list so photo/file drops are never treated as steps.
-    if(admin()&&!draft){
+    if(admin()&&!draft&&!archived){
      navButton.draggable=true;
      navButton.title="Drag to reorder work instructions";
      navButton.addEventListener("dragstart",event=>{
@@ -353,13 +366,13 @@
      });
     }
     const navRow=el("div","recipe-step-nav-row"+(isCurrent?" is-active":""));
-    navRow.append(navButton);stepList.append(navRow);
+    navRow.append(navButton);(archived?archiveList:stepList).append(navRow);
     if(!isCurrent)continue;
     const card=el("details","recipe-one-step bs-content-card");
-    card.dataset.stepId=step.id;card.open=expandedStepBodies.has(step.id)||editing.has(step.id);
+    card.dataset.stepId=step.id;card.open=expandedStepBodies.has(step.id)||(!archived&&editing.has(step.id));
     const summary=el("summary","recipe-one-step-summary bs-content-card-heading");
     const name=el("span","recipe-one-step-title",step.title||"Untitled step");
-    if(admin()&&editing.has(step.id)){
+    if(admin()&&!archived&&editing.has(step.id)){
      const nameInput=editField(step.title,"Describe the action",value=>{
       step.title=value;
       const label=value||"Untitled step";
@@ -373,9 +386,14 @@
      nameInput.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();nameInput.blur()}});
      summary.append(nameInput);
     }else summary.append(name);
+    if(archived){
+     const meta=el("small","recipe-archived-step-meta","Archived "+new Date(step.archivedAt).toLocaleDateString());
+     summary.append(meta);
+    }
     if(step.kind!=="action")summary.append(el("small","recipe-kind-caption",kinds.find(k=>k[0]===step.kind)?.[1]||step.kind));
     const saveStep=async event=>{
      event.preventDefault();event.stopPropagation();
+     if(archived)return;
      if(!editing.has(step.id)){
       if(!isDraft){
        try{await savePending()}catch(error){feedback.textContent=error.message||"Unable to begin editing.";return}
@@ -439,7 +457,32 @@
      hierarchy.title=label+" nested sections";
     };
     summary.append(hierarchy);
-    if(admin()){
+    if(archived){
+     const actions=el("div","recipe-step-nav-actions");
+     if(admin()){
+      const restore=button("Restore",async event=>{
+       event.preventDefault();event.stopPropagation();
+       if(saving||pendingUploads)return;
+       const wasArchived=step.archivedAt,wasNote=step.archiveNote;
+       step.archivedAt="";step.archiveNote="";
+       saving=true;restore.disabled=true;
+       try{
+        if(savePromise)await savePromise;
+        await options.onSave();
+        dirty=false;
+        archivedStepsExpanded=true;
+        window.BSTransient?.show(feedback,"Step restored.");
+        render();
+       }catch(error){
+        step.archivedAt=wasArchived;step.archiveNote=wasNote;
+        feedback.textContent=error.message||"Unable to restore step.";
+        restore.disabled=false;
+       }finally{saving=false}
+      },"btn recipe-restore-step");
+      actions.append(restore);
+     }
+     navRow.append(actions);
+    }else if(admin()){
      // Step controls live together in the highlighted navigation row. Keep
      // them separate from the draggable/selectable step title.
      const edit=button(editing.has(step.id)?"Save":"Edit",saveStep,"btn recipe-step-edit-toggle");
@@ -478,7 +521,7 @@
     },true);
     card.append(summary);
     const body=el("div","recipe-one-step-body bs-content-card-body");
-    if(admin()&&editing.has(step.id)){
+    if(admin()&&!archived&&editing.has(step.id)){
      // Photos remain in the existing step.photos list. photoAfterNote keeps
      // optional placement beside a particular note without changing photo IDs.
      const additions=el("div","recipe-step-additions");
@@ -647,6 +690,9 @@
     }
     syncHierarchyLabel();
    }
+   if(archivedSteps.length){
+    stepList.append(archiveSection);
+   }
    add.hidden=!admin();
   }
   const add=button("+ Add entry",()=>{
@@ -655,7 +701,7 @@
     draft={id:newId(),title:"",standard:"",detail:"",kind:"action",notes:[],noteIds:[],photos:[],photoNames:{},photoNoteIds:{},photoAfterNote:{}};
     steps.push(draft);
    }
-   expanded=draft.id;expandedStepBodies.add(draft.id);editing.clear();editing.add(draft.id);render();
+   expanded=draft.id;expandedStepBodies.add(draft.id);editSnapshots.clear();editing.clear();editing.add(draft.id);render();
    content.querySelector(".recipe-step-name")?.focus();
   },"btn recipe-add-step");
   headingActions.append(add);
@@ -672,10 +718,11 @@
    if(!keepDraft)draft=null;
    steps=Array.isArray(data?.recipe)?data.recipe.map(normalize):[];
    if(draft)steps.push(draft);
-   clearTimeout(saveTimer);dirty=false;expanded=steps[0]?.id||null;
+   clearTimeout(saveTimer);dirty=false;expanded=steps.find(step=>!step.archivedAt)?.id||null;
+   archivedStepsExpanded=false;
    const resumeKey="bs-resume-step:"+location.hash;
    const desired=sessionStorage.getItem(resumeKey);
-   if(desired&&steps.some(step=>step.id===desired)){expanded=desired;sessionStorage.removeItem(resumeKey)}
+   if(desired&&steps.some(step=>step.id===desired&&!step.archivedAt)){expanded=desired;sessionStorage.removeItem(resumeKey)}
    expandedStepBodies.clear();
    if(expanded)options.onStepSelected?.(expanded);
    editSnapshots.clear();editing.clear();feedback.textContent="";
