@@ -6,7 +6,7 @@ import {runInNewContext} from "node:vm";
 test("Workshop reference categories are centralized and preserve stable item IDs",()=>{
  const source=readFileSync("assets/resources.js","utf8");
  const tree=source.slice(source.indexOf("const workshopCategories=["),source.indexOf("const legacyCategory="));
- for(const name of ["Tools & Equipment","Consumables & Supplies","Electronics & Components","Hardware & Materials","Safety & Measurement"])
+ for(const name of ["Tools & Equipment","Consumables & Supplies","Electrical & Electronics","Hardware & Materials","Safety & Measurement"])
   assert.ok(tree.includes(name),name+" is required");
  for(const name of ["workshop:solder","workshop:wire22","workshop:wire18","workshop:ferrule22","workshop:heatshrink"])
   assert.ok(source.includes('id:"'+name+'"'),name+" must remain a shared essential");
@@ -14,7 +14,7 @@ test("Workshop reference categories are centralized and preserve stable item IDs
  assert.match(source,/const workshopComponents=\[\];/);
  assert.match(source,/const workshopPower=\[\];/);
  assert.match(tree,/\["tools","Tools & Equipment",\[/);
- assert.match(tree,/\["electronics","Electronics & Components",\[\]\]/);
+ assert.match(tree,/\["electronics","Electrical & Electronics",\[\]\]/);
  assert.match(tree,/\["tools","Tools & Equipment",\[\]\]/);
  assert.match(source,/const workshopReferences=workshopSupplies\.map\(itemMetadata\)/);
  assert.match(source,/branch\("purchased"/);
@@ -28,7 +28,7 @@ test("Edit Part inputs use paired descriptor/value layout with mobile fallback",
  assert.match(css,/@media\(max-width:620px\)/);
 });
 
-test("New Part Workshop picker uses the same five categories",()=>{
+test("New Part Workshop picker uses shared electrical categories",()=>{
  const picker=readFileSync("assets/library-part-picker.js","utf8");
  const api=readFileSync("functions/api/commonparts.js","utf8");
  assert.match(picker,/el\("strong","","Use from"\)/);
@@ -42,10 +42,9 @@ test("New Part Workshop picker uses the same five categories",()=>{
  assert.match(picker,/name="workshop-destination"/);
  assert.match(picker,/saveCreatedPartToWorkshop/);
  assert.match(picker,/publicCategory\.input\.value/);
- for(const [id,label] of [["tools","Tools & Equipment"],["consumables","Consumables & Supplies"],["electronics","Electronics & Components"],["hardware","Hardware & Materials"],["safety","Safety & Measurement"]]){
-  assert.ok(picker.includes('["'+id+'","'+label+'"]'),"Missing "+label+" in picker");
-  assert.ok(api.includes('"'+id+'"'),"Missing "+id+" category in API");
- }
+ assert.match(picker,/BSResources\.workshopCategories/);
+ for(const id of ["tools","consumables","electronics","hardware","safety","electrical-power","electrical-controllers","electrical-sensors","electrical-switching","electrical-basic","electrical-wiring","electrical-motors","electrical-displays"])
+  assert.ok(readFileSync("functions/api/workshop-reference.js","utf8").includes('"'+id+'"'),"Missing "+id+" category in public Workshop API");
  assert.match(picker,/commonGroup\(p\)/);
  assert.match(picker,/wireModeCheckbox/);
 });
@@ -135,7 +134,9 @@ test("Only nine core supplies are seeded, with reference images and buying guida
   "workshop:sealshrink","workshop:silicone","workshop:solder",
   "workshop:wire16","workshop:wire18","workshop:wire22"
  ].sort());
- assert.equal(workshopCategories.length,5);
+ assert.equal(workshopCategories.length,13);
+ assert.ok(workshopCategories.some(([id])=>id==="electrical-sensors"));
+ assert.equal(workshopReferences.find(item=>item.id==="workshop:wire22").category,"electrical-wiring");
  assert.ok(workshopGroups.some(group=>group.id==="measurement"),"Empty family remains available for new items");
  for(const item of workshopReferences){
   assert.equal(item.kind,"material");
