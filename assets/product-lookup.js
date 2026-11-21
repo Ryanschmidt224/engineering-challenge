@@ -35,13 +35,13 @@ window.BSProductLookup=(()=>{
   };
   if(identity){
    field("partNumber","Manufacturer part number",160);
-   field("featureTreeDescription","Feature tree description",20);
+   field("featureTreeDescription","Default container name",20);
   }
   const control=actionInput({
    label:"Find with AI",
    placeholder:"Manufacturer, supplier, product link, or datasheet link (optional)",
    maxLength:500,
-   description:"Optional: provide a manufacturer, supplier, product link, or datasheet link to help AI find the item. Either a manufacturer part number or a feature tree description can be used on its own."
+   description:"Optional: provide a manufacturer, supplier, product link, or datasheet link to help AI find the item. Either a manufacturer part number or a default container name can be used on its own."
   });
   const {row,button}=control;
   const hint=control.input;inputs.searchHint=hint;
@@ -69,7 +69,7 @@ window.BSProductLookup=(()=>{
    if(!canSearch()){message.textContent="Sign in to an account with permission to edit this item.";return}
    const submitted=query();
    if(!submitted.partNumber&&!submitted.supplierPartNumber&&!submitted.featureTreeDescription){
-    message.textContent="Enter a part number or feature tree description.";
+    message.textContent="Enter a part number or default container name.";
     inputs.partNumber?.focus();return;
    }
    const stamp=++generation;
