@@ -506,8 +506,10 @@
       finally{pendingUploads--;addPhoto.disabled=pendingUploads>0}
      };
      const addNote=button("+ Add note",()=>{step.notes.push("");step.noteIds.push(newId());changed();saveHint();showNotes();noteList.lastElementChild?.querySelector("textarea")?.focus()},"btn recipe-small-action recipe-add-entry");
-     additions.append(addNote,addPhoto);
-     body.append(noteList,photoList,additions,uploader.panel);
+     // Notes are rendered ahead of photos, so place their creation action
+     // immediately after the notes rather than below the photo gallery.
+     additions.append(addPhoto);
+     body.append(noteList,addNote,photoList,additions,uploader.panel);
      showNotes();showPhotos();
      const actions=el("div","recipe-edit-controls");
      const remove=button("Remove",async()=>{if(!await window.BSDialogs.danger("Remove this step?",{title:"Remove instruction step?",confirmLabel:"Remove"}))return;steps.splice(i,1);editing.delete(step.id);expanded=null;changed();saveHint();render()});
