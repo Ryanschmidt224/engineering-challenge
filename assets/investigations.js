@@ -184,7 +184,7 @@
      hint:"Up to 12 photos per note, 20 MB each.",
      onFiles:files=>{
       for(const file of files){
-       if(!/\\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file.name)){reportHere("Select an image file.");continue}
+       if(!/\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file.name)){reportHere("Select an image file.");continue}
        if(file.size>20*1024*1024){reportHere("Each photo must be 20 MB or smaller.");continue}
        if(notePhotos.existing.length+notePhotos.pending.length>=12){reportHere("A Note can contain up to 12 photos.");break}
        notePhotos.pending.push(file);
