@@ -133,10 +133,10 @@
   if(/\b(screw|bolt|washer|nut|fastener|aluminum stock|plastic stock|sheet metal)\b/.test(name))return "hardware";
   if(/\b(solder|flux|thermal paste)\b/.test(name)&&!/(controller|driver)/.test(name))return "consumables";
   if(/\b(wire|cable|ferrule|terminal|connector|jumper|heat.?shrink|breadboard|header|socket|crimp|adapter cable)\b/.test(name))return "electrical-wiring";
-  if(/\b(servo|stepper|bldc|brushless motor|dc motor|actuator|solenoid|linear motor)\b/.test(name))return "electrical-motors";
   if(/\b(display|lcd|oled|screen|indicator|buzzer|led strip|seven.segment)\b/.test(name))return "electrical-displays";
   if(/\b(sensor|hall.effect|encoder|thermistor|thermocouple|proximity|imu|accelerometer|ultrasonic|tof)\b/.test(name))return "electrical-sensors";
   if(/\b(mosfet|relay|contactor|switch|push.?button|transistor|motor driver|stepper driver|esc|h.bridge|optocoupler)\b/.test(name))return "electrical-switching";
+  if(/\b(servo|stepper|bldc|brushless motor|dc motor|actuator|solenoid|linear motor)\b/.test(name))return "electrical-motors";
   if(/\b(microcontroller|arduino|raspberry pi|esp32|esp8266|attiny|plc|development board|controller board|teensy)\b/.test(name))return "electrical-controllers";
   if(/\b(power supply|regulator|converter|buck|boost|battery|charger|power module|transformer|psu)\b/.test(name))return "electrical-power";
   if(/\b(resistor|capacitor|diode|led|integrated circuit|\bic\b|inductor|potentiometer|crystal|rectifier|fuse)\b/.test(name))return "electrical-basic";
