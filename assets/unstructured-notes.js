@@ -7,15 +7,17 @@
  const button=(label,onClick,cls="btn")=>{const b=el("button",cls,label);b.type="button";b.onclick=onClick;return b};
  const id=()=>crypto.randomUUID();
  function mount(parent,{project,scope,canEdit}){
-  const panel=el("section","bs-unstructured-notes");
+  const panel=el("details","bs-unstructured-notes");
   panel.setAttribute("aria-label","Unstructured Notes");
-  const bar=el("div","bs-unstructured-notes-heading");
+  const bar=el("summary","bs-unstructured-notes-heading");
   bar.append(el("h2","","Unstructured Notes"));
   const add=button("+ Add entry",()=>edit(null),"btn bs-unstructured-add");
   const count=el("span","workspace-record-count");
   const status=el("p","muted bs-unstructured-status");status.setAttribute("role","status");
   const list=el("div","bs-unstructured-list");
-  bar.append(add);panel.append(bar,count,status,list);parent.append(panel);
+  const content=el("div","bs-unstructured-content");
+  bar.append(count);content.append(add,status,list);
+  panel.append(bar,content);parent.append(panel);
   let pageId="root",records=[],revision=null,editable=false,version=0,editing=null;
   const endpoint=()=>"/api/unstructured-notes?project="+encodeURIComponent(project)+
    "&scope="+encodeURIComponent(scope)+"&id="+encodeURIComponent(pageId);
