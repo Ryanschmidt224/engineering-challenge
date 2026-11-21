@@ -26,7 +26,7 @@
   if(!number)return label;
   const remainder=label.slice(number.length);
   const alreadyNumbered=label.slice(0,number.length).toUpperCase()===number.toUpperCase()&&
-   /^(?:\\s*(?:[-–—·:]\\s*|$))/.test(remainder);
+   /^(?:\s*(?:[-–—·:]\s*|$))/.test(remainder);
   return alreadyNumbered?label:number+" · "+label;
  };
  const sourcingLabels=["Supplier URL","Reference price","Quantity per package"];
