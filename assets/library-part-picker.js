@@ -174,7 +174,49 @@ function open({onCreate,hideDefault=false}){
  supplierCaption.append(supplierHelp);vendorField.label.replaceChildren(supplierCaption,vendorField.input);
  for(const [id,label] of [["DigiKey","DigiKey"],["Mouser","Mouser"],["Newark","Newark"],["Arrow","Arrow"],["Amazon","Amazon"],["Other","Other / not yet selected"]])option(vendorField.input,id,label);
  const vendorLinks=el("div","library-vendor-links muted");
- const vendorInfo=el("p","muted library-vendor-info","Vendor links search by manufacturer part number. Confirm manufacturer, package, specifications, stock and price before ordering.");
+
+ const catalogSearch=el("details","library-catalog-search");
+ catalogSearch.append(el("summary","","Search supplier catalogs"),vendorLinks);
+ const aiSearch=el("section","product-ai-search");
+ const aiButton=el("button","btn primary","Find with AI");aiButton.type="button";
+ const aiMessage=el("p","product-ai-status");aiMessage.setAttribute("role","status");
+ const aiResults=el("div","product-ai-results");
+ aiSearch.append(aiButton,aiMessage,aiResults);
+ aiButton.onclick=async()=>{
+  const partNumber=manufacturerNumber.input.value.trim();
+  const manufacturer=manufacturerName.input.value.trim();
+  const partName=shortTreeDescription.input.value.trim();
+  if(!partNumber&&!partName){aiMessage.textContent="Enter a container name or Mfg part # to search.";return}
+  const original={partNumber,manufacturer,partName};
+  aiButton.disabled=true;aiMessage.textContent="Searching part specifications…";aiResults.replaceChildren();
+  try{
+   const response=await fetch("/api/workshop-lookup",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(original)});
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok)throw Error(data.error||"AI search failed");
+   if(partNumber!==manufacturerNumber.input.value.trim()||manufacturer!==manufacturerName.input.value.trim()||partName!==shortTreeDescription.input.value.trim())throw Error("Part identity changed. Search again.");
+   const draft=data.draft||{};
+   const suggestions=[["Manufacturer",draft.manufacturer,manufacturerName.input],["Mfg part #",draft.partNumber,manufacturerNumber.input],["Full description",draft.description||draft.subtitle||draft.spec,workshopDescription.input]].filter(row=>String(row[1]||"").trim());
+   aiMessage.textContent="Review suggested details. Nothing changes until you apply them.";
+   for(const [label,value,input] of suggestions){
+    const line=el("label","product-ai-review-option");
+    const check=el("input");check.type="checkbox";check.checked=!input.value.trim();
+    line.append(check,el("span","",label+": "+String(value).slice(0,1200)));aiResults.append(line);
+    line.dataset.aiSuggestion="";
+    line._applySuggestion=()=>{if(check.checked){input.value=String(value);input.dispatchEvent(new Event("input",{bubbles:true}))}};
+   }
+   if(suggestions.length){
+    const apply=el("button","btn primary","Apply selected suggestions");apply.type="button";
+    apply.onclick=()=>{for(const line of aiResults.querySelectorAll("[data-ai-suggestion]"))line._applySuggestion();aiMessage.textContent="Suggestions applied. Review before creating the part."};
+    aiResults.append(apply);
+   }else aiResults.append(el("p","muted","No suggested fields were returned."));
+   for(const url of (data.sources||[]).slice(0,6)){
+    try{if(new URL(url).protocol!=="https:")continue}catch{continue}
+    const link=el("a","product-ai-source","Source: "+url);link.href=url;link.target="_blank";link.rel="noopener noreferrer";aiResults.append(link);
+   }
+  }catch(error){aiMessage.textContent=error.message||"AI search failed."}
+  finally{aiButton.disabled=false}
+ };
+ const vendorInfo=el("p","muted library-vendor-info","Supplier catalog searches are optional and do not verify an exact match.");
  const renderVendorLinks=()=>{
   vendorLinks.replaceChildren();
   const part=manufacturerNumber.input.value.trim();if(!part)return;
@@ -386,7 +428,7 @@ function open({onCreate,hideDefault=false}){
  detailsSection.append(el("legend","","Part details"),
   partClassification.label,shortTreeDescription.label,manufacturerNumber.label,
   manufacturerName.label,vendorField.label,ownSupplier.label,
-  workshopDescription.label,customName.label,vendorLinks,vendorInfo);
+  workshopDescription.label,customName.label,aiSearch,catalogSearch,vendorInfo);
  const quantitySection=el("section","library-form-section library-quantity-section");
  quantitySection.append(qty.label,hintUnits);
  // The optional Workshop publication control is subordinate to the selected source.
@@ -531,7 +573,8 @@ function open({onCreate,hideDefault=false}){
   // Project-only annotations belong to Edit Part for Workshop-linked items.
   projectDetailsPanel.classList.add("hide");
   partValue.label.hidden=true; // Project-specific values belong in Edit Part for Workshop-linked items.
-  vendorLinks.classList.toggle("hide",!purchased||workshopMode);
+  aiSearch.classList.toggle("hide",!purchased||workshopMode);
+  catalogSearch.classList.toggle("hide",!purchased||workshopMode);
   vendorInfo.classList.toggle("hide",!purchased||workshopMode);
    if(savedWorkshopItem&&!adding)savedWorkshopItem=null;
   workshopChoices.classList.toggle("hide",!isPart);
