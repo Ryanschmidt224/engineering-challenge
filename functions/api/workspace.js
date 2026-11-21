@@ -87,14 +87,9 @@ export async function handleWorkspace(request,env){
  if(Object.prototype.hasOwnProperty.call(data,"expectedRevision")&&
     (data.expectedRevision??null)!==(previous.revision??null))
   return json({error:"Instructions were changed elsewhere. Reload before saving.",latestRevision:previous.revision??null},409);
- // Check new links only so older steps can still be edited when an original file is unavailable.
- if(recipe){
-  const oldFiles=new Set((previous.recipe||[]).flatMap(step=>step.photos||[]));
-  const newFiles=new Set(recipe.flatMap(step=>step.photos).filter(id=>!oldFiles.has(id)));
-  for(const id of newFiles){
-   if(!await env.PHOTOS.head(id))return json({error:"An attachment is missing. Upload it again before saving."},400);
-  }
- }
+ // Work Instructions now contain only names and ordering metadata.
+ // Attachments belong to independently validated investigation entries.
+ // Never check recipe[].photos here: container records have no photos.
  // Keep recent published edits automatically: no revision numbers or forms to fill out.
  const experiments=data.experiments===undefined?(previous.experiments||[]):data.experiments;
  if(!Array.isArray(experiments)||experiments.length>100||experiments.some(entry=>
