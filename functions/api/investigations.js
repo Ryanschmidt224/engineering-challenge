@@ -78,7 +78,7 @@ export async function handleInvestigations(request,env){
    (data.photos!==undefined&&!(data.category==="photos"?
      validPhotoEntry(data.photos,project):validNotePhotos(data.photos,project))))
    return json({error:"Invalid notes, description, or photos"},400);
-  if(data.category!==undefined&&(typeof data.category!=="string"||data.category==="practice"||!Object.hasOwn(categoryFields,data.category)||(data.category!=="note"&&!validDate(data.date))||!validEntries(data.entries,categoryFields[data.category],project)))
+  if(data.category!==undefined&&(typeof data.category!=="string"||data.category==="practice"||!Object.hasOwn(categoryFields,data.category)||false||!validEntries(data.entries,categoryFields[data.category],project)))
    return json({error:"Invalid record category or fields"},400);
   if(records.length>=300)return json({error:"Project investigation limit reached"},413);
   // One child-entry level under a direct Work Instruction entry. Keep these
@@ -104,7 +104,7 @@ export async function handleInvestigations(request,env){
   }
     record={id:crypto.randomUUID(),scope,ownerType,ownerId,stepId,parentRecordId,title:data.title.trim(),
    status:"investigating",lifecycle:"active",entries:[],  description:["note","photos"].includes(data.category)?(data.description||"").trim():"",photos:["note","photos"].includes(data.category)?(data.photos||[]):[],createdAt:new Date().toISOString()};
-  if(data.category!==undefined)Object.assign(record,{category:data.category,date:data.category==="note"?new Date().toISOString().slice(0,10):data.date,
+  if(data.category!==undefined)Object.assign(record,{category:data.category,date:new Date().toISOString().slice(0,10),
    entries:data.entries.map(normalizedEntry),status:entryStatus(data.entries),...normalizeNotes(data.notes)});
   createdId=record.id;
   changed=[...records,record];
@@ -170,7 +170,7 @@ export async function handleInvestigations(request,env){
    return json({error:"Invalid notes, description, or photos"},400);
   const allFields=categoryFields[record.category]||legacyFields;
   const fields=data.notes===undefined?allFields:allFields.filter(type=>type!==retiredField[record.category||"failure"]);
-  if(!validText(data.title,180)||(!data.title.trim()&&record.category!=="note")||(record.category!=="note"&&!validDate(data.date))||!validEntries(data.entries,fields,project))return json({error:"Invalid record details"},400);
+  if(!validText(data.title,180)||(!data.title.trim()&&record.category!=="note")||false||!validEntries(data.entries,fields,project))return json({error:"Invalid record details"},400);
   const status=entryStatus(data.entries);
   // Retain older entry types and earlier updates; replace only the latest editable entry per field.
   const previous=record.entries||[];
@@ -179,7 +179,7 @@ export async function handleInvestigations(request,env){
   const retained=previous.filter((entry,index)=>latest.get(entry.type)!==index);
   const entries=[...retained,...data.entries.map(normalizedEntry)];
   if(entries.length>100)return json({error:"Too many entries in investigation"},413);
-  changed=records.map(item=>item.id===record.id?{...item,title:data.title.trim(),date:record.category==="note"?(record.date||record.createdAt?.slice(0,10)||new Date().toISOString().slice(0,10)):data.date,status,entries,...normalizeNotes(data.notes),...(["note","photos"].includes(record.category)?{description:(data.description??record.description??"").trim(),photos:data.photos??record.photos??[]}:{})}:item);
+  changed=records.map(item=>item.id===record.id?{...item,title:data.title.trim(),date:record.date||record.createdAt?.slice(0,10)||new Date().toISOString().slice(0,10),status,entries,...normalizeNotes(data.notes),...(["note","photos"].includes(record.category)?{description:(data.description??record.description??"").trim(),photos:data.photos??record.photos??[]}:{})}:item);
  }else if(data.action==="appendBatch"){
   record=records.find(item=>item.id===data.id);
   if(!record)return json({error:"Investigation not found"},404);
