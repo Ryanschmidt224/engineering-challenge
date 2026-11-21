@@ -418,6 +418,13 @@ function open({onCreate,hideDefault=false}){
  referencePreview.append(el("h3","","Selected Workshop item"));
  const referenceRows=el("div","library-workshop-reference-rows");referenceRows.hidden=true;
  referencePreview.append(referenceRows);
+ const genericProjectFields=el("div","library-generic-spec-fields hide");
+ genericProjectFields.append(el("h4","","Configure this component for your project"),
+  el("p","These values apply only to this project, not to the Workshop source.","muted"));
+ const genericProjectInputs=el("div","library-generic-spec-inputs");
+ genericProjectFields.append(genericProjectInputs);
+ referencePreview.append(genericProjectFields);
+ let genericReferenceKey="";
  chooser.append(el("legend","","Choose a Workshop item"),lookupMode,quickSearch,category.label,wireModeChoice,wireSection,compSection,referencePreview);
  const workshopChoices=el("fieldset","library-workshop-choice-group");
  const workshopLegend=el("legend","","Part source");
@@ -459,26 +466,61 @@ function open({onCreate,hideDefault=false}){
  const showReference=()=>{
   const item=selectedReference();
   const usingWorkshop=workshopCheckbox.checked;
+  const generic=!!item&&window.BSResources.workshopIdentityKind(item)==="generic";
   referencePreview.classList.toggle("hide",!usingWorkshop||!item);
+  genericProjectFields.classList.toggle("hide",!usingWorkshop||!generic);
   referenceRows.replaceChildren();
   if(usingWorkshop){
-   manufacturerNumber.input.value=item?.partNumber||item?.model||"";
+   manufacturerNumber.input.value=generic?"":item?.partNumber||item?.model||"";
    manufacturerName.input.value=item?.manufacturer||"";
    workshopDescription.input.value=item?.subtitle||item?.description||item?.detail||item?.name||"";
-   shortTreeDescription.input.value=item?.featureTreeDescription||"";
+   shortTreeDescription.input.value=generic?window.BSResources.genericContainerName(item):item?.featureTreeDescription||"";
    const supplier=item?.supplier||"";
    vendorField.input.value=[...vendorField.input.options].some(option=>option.value===supplier)?supplier:"Other";
   }
-  if(!item)return;
+  if(!item){genericReferenceKey="";genericProjectInputs.replaceChildren();return}
+  const key=item.origin+":"+item.id;
+  if(key!==genericReferenceKey){
+   genericReferenceKey=key;genericProjectInputs.replaceChildren();
+   if(generic){
+    const sourceSpecs=Array.isArray(item.specifications)?item.specifications:[];
+    const defaults=new Map(sourceSpecs.map(spec=>[String(spec.name||spec.label||"").trim().toLowerCase(),spec]));
+    const suggested=window.BSResources.genericSpecificationTemplate(item);
+    const names=new Set();
+    for(const [label,unit] of suggested){
+     names.add(label.toLowerCase());
+     const existing=defaults.get(label.toLowerCase());
+     const row=field(label+(unit?" ("+unit+")":""));
+     row.input.dataset.specName=label;
+     row.input.dataset.specUnit=unit;
+     row.input.value=String(existing?.value||"");
+     if(label==="Power rating"&&!row.input.value&&/\b(?:1\\/4|¼)\s*(?:w|watt)\b/i.test(item.name||""))row.input.value="0.25";
+     genericProjectInputs.append(row.label);
+    }
+    for(const spec of sourceSpecs){
+     const label=String(spec.name||spec.label||"").trim();
+     if(!label||names.has(label.toLowerCase())||!spec.value)continue;
+     const row=field(label+(spec.unit?" ("+spec.unit+")":""));
+     row.input.dataset.specName=label;row.input.dataset.specUnit=spec.unit||"";
+     row.input.value=spec.value;genericProjectInputs.append(row.label);
+    }
+    if(!genericProjectInputs.children.length){
+     genericProjectInputs.append(el("p","No standard fields for this component yet. Edit its specifications on the project part page.","muted"));
+    }
+   }
+  }
+  referenceRows.hidden=false;
   for(const [label,value] of [
-   ["Manufacturer part number",item.partNumber||item.model||""],
+   ["Product type",generic?"Generic component":"Specific product"],
+   ["Manufacturer part number",generic?"":item.partNumber||item.model||""],
    ["Manufacturer",item.manufacturer||""],
    ["Description",item.subtitle||item.description||item.detail||item.name],
-    ["Feature tree description",item.featureTreeDescription||""],
-   ["Vendor",item.supplier||"Not specified"]
+   ["Container name",generic?window.BSResources.genericContainerName(item):item.featureTreeDescription||""],
+   ["Vendor",item.supplier||""]
   ]){
+   if(!value)continue;
    const row=el("div","library-workshop-reference-row");
-   row.append(el("strong","",label),el("span","",value||"Not specified"));referenceRows.append(row);
+   row.append(el("strong","",label),el("span","",value));referenceRows.append(row);
   }
  };
  const allSearchable=()=>[
@@ -677,13 +719,18 @@ function open({onCreate,hideDefault=false}){
     isMine?personalItems.find(item=>item.id===choice.slice(5)):
     commons.find(item=>item.id===choice.slice(6));
    if(!p){status.textContent="Select a Workshop item.";return}
+   const generic=window.BSResources.workshopIdentityKind(p)==="generic";
+   const genericName=generic?window.BSResources.genericContainerName(p):p.name;
+   const genericSpecs=generic?[...genericProjectInputs.querySelectorAll("input[data-spec-name]")].map(input=>({
+    name:input.dataset.specName,value:input.value.trim(),unit:input.dataset.specUnit||""
+   })).filter(spec=>spec.name&&spec.value):[];
    payload=isStandard?{
-    name:p.name,quantity:count,category:commonGroup(p),manufacturer:p.manufacturer||"",
+    name:genericName,quantity:count,category:commonGroup(p),manufacturer:p.manufacturer||"",
     model:p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",
     isTool:commonGroup(p)==="tools",
     specifications:[{name:"Workshop reference",value:p.id},{name:"Tool specification",value:String(p.detail||p.spec||"Workshop reference").slice(0,300)}]
    }:(isPublic||isMine)?{
-    name:p.name,quantity:count,category:commonGroup(p),manufacturer:p.manufacturer||"",
+    name:genericName,quantity:count,category:commonGroup(p),manufacturer:p.manufacturer||"",
     model:p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",isTool:commonGroup(p)==="tools",
     specifications:[
      {name:isPublic?"Public Workshop reference":"My Workshop reference",value:p.id},
