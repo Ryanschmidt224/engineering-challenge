@@ -162,7 +162,9 @@
    const date=make("input","field");date.type="date";
    const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
    date.value=record.date||[...(record.entries||[])].reverse().find(entry=>entry.date)?.date||date.value;
-   dateLabel.append(date);controls.append(dateLabel);
+   dateLabel.append(date);
+   // Notes are dated automatically on creation; no user date selection.
+   if(categoryOf(record)!=="note")controls.append(dateLabel);
    if(descriptionInput){const descriptionLabel=make("label","investigation-description-label",photoEntry?"Note":"Description");descriptionLabel.append(descriptionInput);controls.append(descriptionLabel)}
 
    const notePhotos=noteLike?{existing:[...(record.photos||[])],pending:[]}:null;
@@ -288,7 +290,7 @@
    const persist=async(deferRender=false)=>{
     const fields=inputs.filter(item=>item.type==="resolution"?!!fixed.value:!!(item.field.value.trim()||item.selected.length||item.existingFiles.length));
     if(categoryOf(record)!=="note"&&!titleInput.value.trim()){titleInput.focus();throw Error("Enter a title before saving.")}
-    if(!date.value){date.focus();throw Error("Choose a date for every entry before saving.")}
+    if(categoryOf(record)!=="note"&&!date.value){date.focus();throw Error("Choose a date before saving.")}
     const notesToSave=notes.filter(note=>note.name.value.trim()||note.field.value.trim()||note.selected.length||note.existingFiles.length);
     for(const note of notesToSave){
      if(!note.name.value.trim()){note.name.focus();throw Error("Enter a descriptor for the note.")}
