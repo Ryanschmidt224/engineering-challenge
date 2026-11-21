@@ -418,7 +418,7 @@ function open({onCreate,hideDefault=false}){
  quickCreate.onclick=()=>{
   const query=quickQuery.value.trim();
   newPartRadio.checked=true;
-  if(query){customName.input.value=query;manufacturerNumber.input.value=query}
+  if(query){shortTreeDescription.input.value=query.slice(0,20);manufacturerNumber.input.value=query}
   partClassification.input.value="purchased";
   addToWorkshopCheckbox.checked=true;
   publicCategory.input.value="electronics";
