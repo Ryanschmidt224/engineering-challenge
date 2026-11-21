@@ -273,7 +273,7 @@ function setupAssemblyTrees(){
   detail.after(summary);
   const overview=document.createElement("section");overview.className="project-summary-overview";
   overview.innerHTML=`<section class="project-overview-card">
-   <h2>Project summary</h2>
+   <div class="project-summary-title-row"><h2>Project summary</h2></div>
    <p class="project-short-summary-text" hidden></p>
    <p class="project-summary-text"></p>
    <label class="project-short-summary-label">Short summary (40 characters max)
@@ -290,7 +290,7 @@ function setupAssemblyTrees(){
    "Project summary",
    "Use this field to summarize the completed project: what you built, the results, and what you learned. Project Intent & Milestones is for documenting your original goals and significant progress."
   );
-  if(projectSummaryHelp)projectSummaryHeading.after(projectSummaryHelp);
+  if(projectSummaryHelp)projectSummaryHeading.parentElement.append(projectSummaryHelp);
   summary.querySelector(".project-summary-gallery").after(overview);
   const projectMilestones=window.BSProjectMilestones?.mount({project,summary,canEdit});
   const summaryInput=overview.querySelector("textarea");
