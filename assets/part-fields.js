@@ -13,7 +13,8 @@
  const statusField=part=>isPurchased(part)?"purchaseStatus":"progressStatus";
  const statusValue=part=>part[statusField(part)]||"not_started";
  const valueFor=part=>String(part?.projectDetails?.value||"").trim();
- const treeDescriptionFor=part=>String(part?.projectDetails?.featureTreeName||part?.projectDetails?.workshopTreeDescription||part?.description?.slice(0,20)||"").trim();
+ // Project-owned purpose label: never infer it from Workshop classification or an MPN.
+ const treeDescriptionFor=part=>String(part?.projectDetails?.featureTreeName||"").trim();
  const displayValue=part=>{
   const value=valueFor(part);
   return /resistor/i.test(part?.name||"")&&/^\d+(?:\.\d+)?\s*[kKmM]?$/.test(value)?value+"Ω":value;
@@ -28,6 +29,19 @@
   const alreadyNumbered=label.slice(0,number.length).toUpperCase()===number.toUpperCase()&&
    /^(?:\s*(?:[-–—·:]\s*|$))/.test(remainder);
   return alreadyNumbered?label:number+" · "+label;
+ };
+ // Keep part numbers attached to the permanent project requirement, while the
+ // physical component remains a separate, independently replaceable selection.
+ const numberedFunctionalName=part=>{
+  if(!part)return "";
+  if(itemTypeFor(part)!=="part"||part.generatedFrom)return numberedName(part);
+  const name=treeDescriptionFor(part)||String(part.name||"").trim();
+  return numberedName({...part,name,projectDetails:{value:""}});
+ };
+ const implementationLabelFor=part=>{
+  if(!part||itemTypeFor(part)!=="part"||part.generatedFrom)return "";
+  if(part.implementationResolved===false)return "No component selected";
+  return String(part.implementationName||part.model||part.name||"").trim();
  };
  const sourcingLabels=["Supplier URL","Reference price","Quantity per package"];
  function priceInUsd(value){
@@ -152,5 +166,5 @@
   const remaining=[...sectionFields.identity,...sectionFields.additional,...sectionFields.display].filter(key=>!ordered.includes(key));
   return [...ordered,...remaining].flatMap(key=>key==="supplier"?supplierLines(part).map(value=>["Supplier",value]):key==="asin"?[]:[[labels[key],values[key]]]).filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="");
  }
- window.BSPartFields=Object.freeze({progressStatuses,purchaseStatuses,partTypeFor,itemTypeFor,isPurchased,statusesFor,statusField,statusValue,labelFor,sectionFields,detailRows,documentationLinks,valueFor,displayValue,displayName,numberedName,treeDescriptionFor,sourcingLabels,sourcingFor,estimateCost});
+ window.BSPartFields=Object.freeze({progressStatuses,purchaseStatuses,partTypeFor,itemTypeFor,isPurchased,statusesFor,statusField,statusValue,labelFor,sectionFields,detailRows,documentationLinks,valueFor,displayValue,displayName,numberedName,numberedFunctionalName,implementationLabelFor,treeDescriptionFor,sourcingLabels,sourcingFor,estimateCost});
 })();
