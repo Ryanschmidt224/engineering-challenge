@@ -380,8 +380,12 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(editor.locator(".component-quantity")).toHaveValue("3");
  // Product lookup is optional; direct fields stay visible without a manual-mode button.
  await expect(editor.locator(".component-manual")).toHaveCount(0);
- await expect(editor.locator(".component-extract")).toHaveText("Look up product details");
- await expect(editor.locator(".component-lookup-help")).toContainText("Paste a product link");
+ await expect(editor.locator(".product-ai-find")).toHaveText("Find part specs with AI");
+ await expect(editor.locator(".component-extract")).toBeHidden();
+ await expect(editor.locator(".product-ai-inline .product-ai-field")).toHaveCount(0);
+ await expect(editor.locator('[data-part-editor-group="additional"]')).toHaveCount(0);
+ await expect(editor.locator('[data-part-editor-group="specifications"]')).toHaveCount(0);
+ await expect(editor.locator(".part-editor-specs-disclosure")).toHaveCount(1);
  await expect(editor.locator(".component-name")).toBeVisible();
  const basis=editor.locator(".component-historical-price-basis");
  const pack=editor.locator(".component-historical-package-quantity");
@@ -397,7 +401,8 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  // Add / origin / save / cancel controls form one coherent footer.
  const actions=editor.locator(".component-editor-actions");
  await expect(actions).toBeVisible();
- await actions.locator(".component-add-spec").click();
+ await editor.locator(".part-editor-specs-disclosure > summary").click();
+ await editor.locator(".part-editor-specs-body .component-add-spec").click();
  const source=editor.locator(".component-spec-row .component-spec-source").first();
  await expect(source).toBeVisible();
  await expect(source.locator('option[value="explicit"]')).toContainText("From product listing");
@@ -1035,7 +1040,9 @@ test("Edit Part separates Container, Part details and purchased alternatives",as
  expect(source).not.toContain('retire.textContent="Retire selected implementation"');
  expect(source).not.toContain('addButton.textContent="Add implementation"');
  expect(source).not.toContain('heading.textContent="Function & requirements"');
- expect(source).toContain('group("specifications","Specifications"');
+ expect(source).toContain('className="part-editor-specs-disclosure"');
+ expect(source).not.toContain('group("additional","Additional details"');
+ expect(source).not.toContain('group("specifications","Specifications"');
  expect(source).toContain('document.createTextNode("Part number")');
  expect(source).toContain('className="part-container-caption"');
  expect(source).toContain('textContent="Container"');
