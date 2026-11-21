@@ -117,7 +117,7 @@ const normalizeSupplierOffers=input=>{
 // Project-only annotations and future CAD/BOM mapping hints. These values
 // never write back to a shared/private Workshop reference.
 const projectDetailLimits=Object.freeze({notes:6000,changes:6000,referenceDesignators:500,
- value:120,footprint:240,schematicValue:240,sourceApplication:80,sourceFile:500,sourceComponentId:240,workshopReferenceId:200,featureTreeName:120,workshopTreeDescription:20,showTreeDescription:5});
+ value:120,footprint:240,schematicValue:240,sourceApplication:80,sourceFile:500,sourceComponentId:240,workshopReferenceId:200,featureTreeName:180,workshopTreeDescription:20,showTreeDescription:5});
 const cleanProjectDetails=(incoming,previous={})=>{
  if(incoming===undefined)return previous&&typeof previous==="object"?previous:{};
  if(!incoming||typeof incoming!=="object"||Array.isArray(incoming))return null;
@@ -217,7 +217,9 @@ async function reloadWorkshopPart(request,env,project,id,input){
   functionalRequirements:previous.functionalRequirements,acceptanceCriteria:previous.acceptanceCriteria,
   selection:previous.selection,resolvedImplementationId:previous.resolvedImplementationId,
   implementationName:String(source.item?.name||previous.implementationName||"").slice(0,180),
-  projectDetails:{...(previous.projectDetails||{}),...(detailsFromWorkshop.projectDetails||{})},
+  projectDetails:{...(previous.projectDetails||{}),...(detailsFromWorkshop.projectDetails||{}),
+   // The function label belongs to the project, never the Workshop source.
+   featureTreeName:previous.projectDetails?.featureTreeName||""},
   revision:crypto.randomUUID(),
   id:previous.id,partNumber:previous.partNumber,assemblyId:previous.assemblyId,
   quantity:previous.quantity,quantityUnit:previous.quantityUnit,createdAt:previous.createdAt,
