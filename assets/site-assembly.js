@@ -817,7 +817,11 @@ function setupAssemblyTrees(){
    const toolsLabel=document.createElement("div");toolsLabel.append(toolsActions,toolsCount);
    toolsSummary.append(toolsLabel);tools.append(toolsSummary,resourcesPanel);
    const history=document.createElement("article");history.className="investigations-panel";
-   instructions.after(tools,history);
+   // History belongs below the main workspace section divider, not inside
+   // the Work Instructions / Helpful tools group.
+   instructions.after(tools);
+   const divider=document.createElement("hr");divider.className="workspace-history-divider";
+   panel.querySelector(".workspace-panels").after(divider,history);
    const resources=window.BSResources?.mount(resourcesPanel,{addTo:toolsActions,onCount:count=>{
     toolsCount.textContent="("+count+(count===1?" record)":" records)");
     tools.classList.toggle("is-empty",count===0);
