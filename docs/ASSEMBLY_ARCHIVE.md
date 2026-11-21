@@ -16,8 +16,10 @@ of a part that remains active.
 Each snapshot uses a generated archive ID:
 
 - `assembly-archives/<project>/manifests/<archive-id>.json` — indexed, versioned
-  manifest, original parent ID, subtree nodes, component definitions, relevant
-  investigation records, external dependency links, timestamps and file map.
+  manifest, original parent ID, **immutable full original-location breadcrumb**
+  (project name and every ancestor assembly with IDs/part numbers), subtree nodes,
+  component definitions, relevant investigation records, external dependency
+  links, timestamps and file map.
 - `assembly-archives/<project>/<archive-id>/objects/<encoded-original-key>` —
   immutable copies of related workspace JSON, photos, drawings, part files,
   saved product pages, code, notes, thumbnails and photo markup.
@@ -94,3 +96,12 @@ confirmation that live Cloudflare storage was verified.
 - Test the complete workflow in the deployed UI, including partial failures,
   multiple sessions and very large archives. In-source mocks are not proof of
   successful production deployment.
+
+## Original location context
+
+At archive time, the manifest records `originPath` from the project root through every
+parent subassembly to the archived part or subassembly. It is displayed in the
+parent archive list and read-only detail view. Future tree moves or renames never
+change that saved path. Pre-existing archives that do not have `originPath` use
+a clearly labeled current-parent reconstruction, or explicitly identify the
+former parent as unavailable; these reconstructions are not historical proof.
