@@ -344,11 +344,25 @@ function open({onCreate,hideDefault=false}){
  chooser.append(category.label,wireModeChoice,wireSection,compSection,referencePreview);
  const workshopChoices=el("fieldset","library-workshop-choice-group");
  const workshopLegend=el("legend","","Part source");
- workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,quickSearch);
- form.append(heading,subtitle,itemKind.label,workshopChoices,addToWorkshopChoice,saveScope,workshopAddHelp,
-  shortTreeDescription.label,manufacturerNumber.label,manufacturerName.label,vendorField.label,ownSupplier.label,workshopDescription.label,
-  partClassification.label,numberChoice,partNumberField.label,customName.label,vendorLinks,vendorInfo,
-  chooser,qty.label,hintUnits,partValue.label,projectDetailsPanel,status,workshopFinishNote,footer);
+ // Keep the five groups visually independent without adding duplicate titles.
+ const itemTypeSection=el("section","library-form-section library-item-type-section");
+ itemTypeSection.append(itemKind.label);
+ const detailsSection=el("fieldset","library-form-section library-identity-section");
+ detailsSection.append(el("legend","","Part details"),
+  shortTreeDescription.label,manufacturerNumber.label,manufacturerName.label,
+  vendorField.label,ownSupplier.label,workshopDescription.label,
+  partClassification.label,customName.label,vendorLinks,vendorInfo);
+ const quantitySection=el("section","library-form-section library-quantity-section");
+ quantitySection.append(qty.label,hintUnits);
+ // The optional Workshop publication control is subordinate to the selected source.
+ workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,quickSearch,
+  addToWorkshopChoice,saveScope,workshopAddHelp);
+ // Manual numbering belongs inside the Part number section, immediately after
+ // the two choices; both choices and input preserve their existing event handlers.
+ numberChoice.append(partNumberField.label);
+ form.append(heading,subtitle,itemTypeSection,workshopChoices,numberChoice,
+  detailsSection,chooser,quantitySection,partValue.label,projectDetailsPanel,
+  status,workshopFinishNote,footer);
  dialog.append(form);document.body.append(dialog);
  let commons=[],purchased=[],sharedOverrides={},personalItems=[],selectedRecommendation=null,finished=false,wireWorkflow=null;
  let savedWorkshopItem=null;
@@ -514,6 +528,8 @@ function open({onCreate,hideDefault=false}){
   const documentMode=!lib&&itemKind.input.value!=="part";
   partClassification.label.classList.toggle("hide",lib||documentMode||adding);
   qty.label.classList.toggle("hide",documentMode||workshopMode);
+  quantitySection.classList.toggle("hide",documentMode||workshopMode);
+  detailsSection.classList.toggle("hide",lib);
   hintUnits.classList.toggle("hide",documentMode||workshopMode);
   if(documentMode&&itemKind.input.value==="document")qty.input.value="1";
   numberChoice.classList.toggle("hide",workshopMode);
