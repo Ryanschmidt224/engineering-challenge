@@ -149,8 +149,6 @@
     const descriptor=make("span","investigation-field-descriptor",label);
     const field=make("textarea","field");field.rows=2;field.maxLength=5000;
     field.value=stored?.text||"";caption.append(descriptor,field);
-    const fileInput=make("input");fileInput.type="file";fileInput.multiple=true;fileInput.hidden=true;
-    fileInput.accept=acceptedAttachments;
     const selected=[];
     const fileChoice=make("span","investigation-file-label");
     function queue(files){
@@ -159,10 +157,12 @@
       selected.splice(index,1);queue([]);
      },"investigation-attachment-link")));
     }
-    fileInput.onchange=()=>{queue(fileInput.files);fileInput.value=""};
+    const uploader=window.BSPhotoEditor.uploadPanel({
+     title:"Add attachments",accept:acceptedAttachments,onFiles:queue,
+     hint:"You can choose multiple files or paste an image."
+    });
     const attachments=make("div","investigation-field-attachments");
-    attachments.append(btn("+ Add attachments",()=>fileInput.click(),"investigation-attachment-link"),fileInput,fileChoice,
-     window.BSPhotoMarkup.pasteTarget(queue));
+    attachments.append(btn("+ Add attachments",()=>uploader.open(),"investigation-attachment-link"),fileChoice,uploader.panel);
     const existingFiles=[...(stored?.files||[])];
     const existingList=make("div","investigation-existing-files");
     function drawFiles(){
