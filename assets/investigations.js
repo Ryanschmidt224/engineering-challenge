@@ -429,10 +429,8 @@
     const heading=make("span","investigation-title-actions");
     heading.append(make("strong","",record.title));
     title.append(heading,make("span","small muted",categories[categoryOf(record)]?.label||"Entry"));
-    if(historical){
-     const stamp=archiveDate(record);
-     if(stamp){const date=make("time","investigation-record-date","Archived "+stamp);date.dateTime=stamp;title.append(date)}else title.append(dateLabelFor(record));
-    }else title.append(dateLabelFor(record));
+    // Record dates are secondary metadata: show them at the end of expanded
+    // content instead of crowding the common header/chevron layout.
     card.append(title);
     const body=make("div","investigation-body bs-content-card-body");
     if(inherited){
@@ -466,15 +464,20 @@
     const draw=()=>{
      body.replaceChildren();
      if(record.partSnapshot)showSnapshot(record.partSnapshot,body);
-     if(historical){
-      const stamp=archiveDate(record);
-      if(stamp)body.append(make("p","investigation-archive-meta","Archived on "+stamp));
-      if(record.archiveNote?.trim())body.append(make("p","investigation-archive-reason","Reason: "+record.archiveNote));
-     }
+     if(historical&&record.archiveNote?.trim())
+      body.append(make("p","investigation-archive-reason","Reason: "+record.archiveNote));
      edit.hidden=editing||compact;
      archive.hidden=!editing;
      attach(record,body,target,editing,()=>{editing=false;draw()},false,
       editing&&stepSlot&&!historical&&!inherited?commit=>stepSlot.pendingEdits.push(commit):null);
+     if(!editing){
+      const stamp=historical?archiveDate(record):recordDate(record);
+      if(stamp){
+       const date=make("time","investigation-record-date investigation-record-footer-date",
+        (historical?"Archived ":"")+stamp);
+       date.dateTime=stamp;body.append(date);
+      }
+     }
      if(card.open)showAttachmentNames(body);
     };
     card.addEventListener("toggle",()=>{if(card.open)showAttachmentNames(body)});
