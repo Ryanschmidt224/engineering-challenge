@@ -415,3 +415,49 @@
 }
 #commonparts .workshop-item-pricing dt{font-weight:600}
 #commonparts .workshop-item-pricing dd{margin:0;overflow-wrap:anywhere}
+
+
+/* Preview images as soon as they are selected, before Workshop upload/save.
+   Existing saved Workshop photos remain visible in the same thumbnail row. */
+#commonparts .workshop-pending-photo-thumbnails{
+ display:flex;
+ flex-wrap:wrap;
+ align-items:flex-start;
+ gap:10px;
+ margin:8px 0;
+}
+#commonparts .workshop-pending-photo-thumbnail{
+ display:block;
+ box-sizing:border-box;
+ width:150px;
+ height:110px;
+ object-fit:contain;
+ border:1px solid var(--color-border);
+ border-radius:9px;
+ padding:5px;
+ background:var(--color-media-backdrop);
+}
+#commonparts .workshop-item-edit-photos{
+ align-items:flex-start;
+ gap:10px;
+}
+#commonparts .workshop-item-edit-photo{
+ width:160px;
+ border-radius:9px;
+}
+#commonparts .workshop-item-edit-photo img{
+ width:100%;
+ height:115px;
+ object-fit:contain;
+ border-radius:7px;
+}
+#workshop-photo-preview.workshop-photo-thumb{
+ display:inline-block;
+ width:150px;
+ height:110px;
+ object-fit:contain;
+ border-radius:9px;
+ border:1px solid var(--color-border);
+ background:var(--color-media-backdrop);
+}
+#workshop-photo-preview.workshop-photo-thumb[hidden]{display:none}
