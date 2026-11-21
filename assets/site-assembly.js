@@ -2438,7 +2438,7 @@ function setupAssemblyTrees(){
     if(bomView==="pictures")renderTiles();
     return;
    }
-   if(inWorkspace){showNotes("workspace",selected??"root");void loadAssemblyStatus();workspace.querySelector(".workspace-title").textContent=selected===null?title:((nodes.find(n=>n.id===selected)?.partNumber||"")+(nodes.find(n=>n.id===selected)?.partNumber?" · ":"")+(nodes.find(n=>n.id===selected)?.name||"Assembly"));if(photoDialog.open)photoDialog.close();workspacePhotoBar.setEnabled(canEdit());workspacePhotoBar.collapse();loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
+   if(inWorkspace){void refreshAssemblyArchives(selected??"__root__");showNotes("workspace",selected??"root");void loadAssemblyStatus();workspace.querySelector(".workspace-title").textContent=selected===null?title:((nodes.find(n=>n.id===selected)?.partNumber||"")+(nodes.find(n=>n.id===selected)?.partNumber?" · ":"")+(nodes.find(n=>n.id===selected)?.name||"Assembly"));if(photoDialog.open)photoDialog.close();workspacePhotoBar.setEnabled(canEdit());workspacePhotoBar.collapse();loadWorkspaceCover();loadWorkspace();investigations?.showAssembly(assemblyInvestigationPanel,selected??"__root__");void fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.components){investigationParts=d.components;investigations?.load()}}).catch(()=>{});if(bom){const details=bom.querySelector("details");if(details)details.open=true;bom.dispatchEvent(new Event("assemblychange"));}return;}
    if(!isAssembly){await loadDescription(null,main,main.querySelector(".root-photo-status"));await renderRootPhotos();return;}
    const node=nodes.find(n=>n.id===selected);if(!node)return;
    const assemblyId=selected;
@@ -2730,6 +2730,109 @@ function setupAssemblyTrees(){
     status.textContent="Part was archived and removed from the BOM, but its tree link could not be saved: "+error.message+". Refresh the page to reconcile.";
    }
   };
+  // Intentional, parent-scoped history. The API snapshots a complete subtree
+  // before removing active tree/BOM references. Revisions remain a separate tool.
+  const archivePanel=document.createElement("section");
+  archivePanel.className="assembly-archived-items";
+  const archiveDetails=document.createElement("details");
+  archiveDetails.className="assembly-archived-disclosure";
+  const archiveHeading=document.createElement("summary");
+  archiveHeading.textContent="Archived items (0)";
+  const archiveList=document.createElement("div");
+  archiveList.className="assembly-archived-list";
+  archiveDetails.append(archiveHeading,archiveList);
+  archivePanel.append(archiveDetails);
+  workspace.querySelector(".workspace-panels").append(archivePanel);
+  let archiveRequestSerial=0;
+  const archiveURL="/api/assembly-archive?project="+encodeURIComponent(project);
+  const archiveFetch=async(url,init)=>{
+   const response=await fetch(url,{credentials:"same-origin",cache:"no-store",...init});
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok)throw Error(data.error||"Archive request failed");
+   return data;
+  };
+  async function refreshAssemblyArchives(parentId){
+   const serial=++archiveRequestSerial;
+   archiveList.textContent="Loading archived items…";
+   try{
+    const result=await archiveFetch(archiveURL+"&parent="+encodeURIComponent(parentId));
+    if(serial!==archiveRequestSerial)return;
+    archiveHeading.textContent="Archived items ("+result.items.length+")";
+    archiveList.replaceChildren();
+    if(!result.items.length){
+     const empty=document.createElement("p");empty.className="muted";
+     empty.textContent="No archived parts or subassemblies.";
+     archiveList.append(empty);return;
+    }
+    for(const item of result.items){
+     const row=document.createElement("div");row.className="assembly-archived-row";
+     const name=document.createElement("span");
+     name.textContent=(item.partNumber?item.partNumber+" · ":"")+item.name+" · "+(item.kind==="part"?"Part":"Subassembly");
+     const view=document.createElement("button");view.type="button";view.className="btn";view.textContent="View";
+     view.onclick=()=>void viewAssemblyArchive(item.id);
+     row.append(name,view);archiveList.append(row);
+    }
+   }catch(error){if(serial===archiveRequestSerial)archiveList.textContent=error.message}
+  }
+  async function viewAssemblyArchive(id){
+   try{
+    const {archive}=await archiveFetch(archiveURL+"&id="+encodeURIComponent(id));
+    const dialog=document.createElement("dialog");dialog.className="assembly-archive-dialog";
+    const header=document.createElement("h3");header.textContent=archive.name+" — Archived";
+    const summary=document.createElement("p");
+    summary.textContent="Archived "+new Date(archive.archivedAt).toLocaleString()+
+      " · "+archive.nodes.length+" tree item(s) · "+archive.parts.length+" part definition(s) · "+
+      archive.investigations.length+" history record(s) · "+archive.assets.length+" saved files";
+    dialog.append(header,summary);
+    if(archive.reason){const p=document.createElement("p");p.textContent="Reason: "+archive.reason;dialog.append(p)}
+    const list=document.createElement("ul");
+    for(const node of archive.nodes){
+     const li=document.createElement("li");li.textContent=(node.partNumber?node.partNumber+" · ":"")+node.name+
+      (node.kind==="part"?" (part)":" (subassembly)");list.append(li);
+    }
+    dialog.append(list);
+    const data=document.createElement("details"),label=document.createElement("summary");
+    label.textContent="View saved record details";const pre=document.createElement("pre");
+    pre.className="assembly-archive-json";pre.textContent=JSON.stringify({
+     nodes:archive.nodes,parts:archive.parts,investigations:archive.investigations,assets:archive.assets
+    },null,2);
+    data.append(label,pre);dialog.append(data);
+    const actions=document.createElement("div");actions.className="assembly-archive-actions";
+    const close=document.createElement("button");close.type="button";close.className="btn";close.textContent="Close";close.onclick=()=>dialog.close();
+    actions.append(close);
+    if(canEdit()&&!archive.restoredAt){
+     const restore=document.createElement("button");restore.type="button";restore.className="btn primary";restore.textContent="Restore";
+     restore.onclick=async()=>{
+      restore.disabled=true;
+      try{
+       await archiveFetch(archiveURL,{method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify({action:"restore",id,expectedRevision:treeSavedRevision})});
+       dialog.close();await load();
+      }catch(error){status.textContent=error.message;restore.disabled=false}
+     };
+     actions.append(restore);
+    }
+    dialog.append(actions);document.body.append(dialog);
+    dialog.addEventListener("close",()=>dialog.remove(),{once:true});dialog.showModal();
+   }catch(error){status.textContent=error.message}
+  }
+  const archiveTreeItem=async node=>{
+   if(!node||!canEdit())return;
+   const descendantCount=nodes.filter(n=>n.parentId===node.id).length;
+   const message="Archive \""+node.name+"\"?\\n\\nThis removes it from the active feature tree and BOM, preserves its saved information under the parent assembly, and allows restoration."+
+    (descendantCount?"\\nIts nested items will be archived too.":"");
+   if(!await window.BSDialogs.danger(message,{title:"Archive "+(isPartNode(node)?"part":"subassembly")+"?",confirmLabel:"Archive"}))return;
+   const parent=node.parentId??null;
+   const result=await archiveFetch(archiveURL,{method:"POST",headers:{"content-type":"application/json"},
+    body:JSON.stringify({action:"archive",nodeId:node.id,expectedRevision:treeSavedRevision})});
+   if(selected===node.id||!nodes.some(n=>n.id===selected&&result.nodes.some(active=>active.id===n.id))){
+    selected=parent;
+    history.replaceState(null,"",workspaceHash(selected));
+   }
+   status.textContent=node.name+" archived. You can restore it from its parent assembly.";
+   await load();
+   await refreshAssemblyArchives(parent??"__root__");
+  };
   const openTreeMenu=(node,x,y,trigger)=>{
    if(!canEdit())return;
    closeTreeMenu();
@@ -2767,6 +2870,7 @@ function setupAssemblyTrees(){
     const res=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({hideFromFeatureTree:!isHiddenPart(node),expectedRevision:partQuantities.get(node.partId)?.revision??null})});
     const data=await res.json();if(!res.ok)throw Error(data.error||"Could not change visibility");syncPartNodes([data.component]);
    });
+   if(node)addItem("Archive",()=>archiveTreeItem(node));
    if(node)addItem("Delete",()=>deleteTreeItem(node));
    if(node){
     const moveSeparator=document.createElement("div");
