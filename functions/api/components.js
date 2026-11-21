@@ -76,7 +76,13 @@ const recommendedWorkshopIds=new Set([
  "workshop:heatshrink","workshop:sealshrink","workshop:solder"
 ]);
 const isToolPart=part=>typeof part.isTool==="boolean"?part.isTool:/\btools?\b/i.test(String(part.category||""))||/\bsolder\s+sucker\b/i.test(String(part.name||""));
-const generatedFullName=part=>{const name=String(part.name||"").trim(),number=String(part.partNumber||"").trim();return number&&(name.toUpperCase()===number.toUpperCase()||name.toUpperCase().startsWith(number.toUpperCase()+" - "))?name:number?number+" - "+name:name};
+const generatedFullName=part=>{
+ const name=String(part.name||"").trim(),number=String(part.partNumber||"").trim();
+ if(!number)return name;
+ const alreadyNumbered=name.slice(0,number.length).toUpperCase()===number.toUpperCase()&&
+  /^(?:\s*(?:[-–—·:]\s*|$))/.test(name.slice(number.length));
+ return alreadyNumbered?name:number+" - "+name;
+};
 const purchaseStatuses=new Set(["not_started","already_have","need_to_buy","ignore"]);
 // Supplier offers are optional purchasing references, independent of part number.
 const supplierHosts={
