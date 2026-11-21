@@ -62,6 +62,7 @@ test("initial project intent is immutable and milestones append only after delib
  assert.equal(recorded.data.record.sequence,1);
  const saved=await reply(await call("GET"));
  assert.equal(saved.data.originalIntent.successCriteria,"10 consecutive shots at 50 feet");
+ assert.equal(saved.data.originalIntent.preExistingMilestones,0);
  assert.equal(saved.data.milestones.length,1);
  assert.equal(saved.data.milestones[0].significance,"Motor speed is insufficient to reach the original goal");
  const stored=JSON.parse(await (await env.PHOTOS.get("project-milestones/"+id+".json")).text());
@@ -88,6 +89,7 @@ test("significance is required; no activity is automatically recorded; intent is
  const after=await reply(await call("GET"));
  assert.equal(after.data.milestones.length,1);
  assert.equal(after.data.originalIntent.objective,"");
+ assert.equal(after.data.originalIntent.preExistingMilestones,1);
 });
 
 test("concurrent editors cannot silently overwrite a saved milestone",async()=>{
