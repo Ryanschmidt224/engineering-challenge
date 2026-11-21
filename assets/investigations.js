@@ -156,8 +156,9 @@
 
    const controls=make("div","investigation-add-controls");
    const nameRow=make("label","investigation-field-label");
-   const titleInput=window.BSEntryEditor.titleInput(record.title,null,{placeholder:"Title"});
-   nameRow.append(make("span","investigation-field-descriptor","Title"),titleInput);controls.append(nameRow);
+   const titleOptional=noteLike;
+   const titleInput=window.BSEntryEditor.titleInput(record.title,null,{placeholder:titleOptional?"Title (optional)":"Title"});
+   nameRow.append(make("span","investigation-field-descriptor",titleOptional?"Title (optional)":"Title"),titleInput);controls.append(nameRow);
    const dateLabel=make("label","investigation-date-field","Date");
    const date=make("input","field");date.type="date";
    const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
@@ -310,7 +311,7 @@
    let saveBtn;
    const persist=async(deferRender=false)=>{
     const fields=inputs.filter(item=>item.type==="resolution"?!!fixed.value:!!(item.field.value.trim()||item.selected.length||item.existingFiles.length));
-    if(categoryOf(record)!=="note"&&!titleInput.value.trim()){titleInput.focus();throw Error("Enter a title before saving.")}
+    if(!noteLike&&!titleInput.value.trim()){titleInput.focus();throw Error("Enter a title before saving.")}
     const notesToSave=notes.filter(note=>note.name.value.trim()||note.field.value.trim()||note.selected.length||note.existingFiles.length);
     for(const note of notesToSave){
      if(!note.name.value.trim()){note.name.focus();throw Error("Enter a descriptor for the note.")}
