@@ -3445,3 +3445,39 @@
  flex-direction:column;
  gap:6px;
 }
+
+/* Match the Photos tile's anchored expand/collapse uploader for every entry field. */
+:is(.recipe-step-investigations,.investigations-panel) .investigation-field-attachments{
+ align-items:flex-start;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-field-attachments.is-upload-expanded{
+ border:1px solid var(--color-border);
+ border-radius:12px;
+ background:var(--color-surface-muted);
+ gap:0;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-field-attachments.is-upload-expanded > .investigation-attachment-add{
+ margin:-1px 0 0 -1px;
+ position:relative;
+ z-index:1;
+ border-radius:12px;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-field-attachments > .bs-upload-panel{
+ flex:1 0 100%;
+ min-width:0;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-field-attachments.is-upload-expanded > .bs-upload-panel{
+ margin:0;
+ padding:16px;
+ border:0;
+ border-radius:0 0 12px 12px;
+ background:transparent;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-field-attachments.is-upload-expanded > .investigation-file-label{
+ margin:auto 8px;
+}
+@media(max-width:550px){
+ :is(.recipe-step-investigations,.investigations-panel) .investigation-field-attachments.is-upload-expanded > .bs-upload-panel{
+  padding:12px;
+ }
+}
