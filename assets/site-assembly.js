@@ -2772,6 +2772,25 @@ function setupAssemblyTrees(){
    if(origin.note){const caveat=document.createElement("small");caveat.textContent=origin.note;line.append(caveat)}
    target.append(line);
   };
+  async function deleteArchivedPart(item,dialog=null){
+   if(!canEdit()||item.kind!=="part")return;
+   const message="Permanently delete archived part \""+item.name+"\"?\\n\\n"+
+    "This deletes its archived history and saved archive copies. It cannot be restored afterward. "+
+    "Active parts, shared photos, and active project files will not be deleted.";
+   if(!await window.BSDialogs.danger(message,{title:"Permanently delete archived part?",confirmLabel:"Delete"}))return;
+   try{
+    await archiveFetch(archiveURL+"&id="+encodeURIComponent(item.id),{method:"DELETE"});
+    for(const opened of document.querySelectorAll("dialog.assembly-archive-dialog"))opened.close();
+    await refreshAssemblyArchives(selected??"__root__");
+    status.textContent="Archived part \""+item.name+"\" permanently deleted.";
+   }catch(error){
+    if(dialog?.open){
+     let feedback=dialog.querySelector(".assembly-archive-delete-feedback");
+     if(!feedback){feedback=document.createElement("p");feedback.className="assembly-archive-delete-feedback";feedback.setAttribute("role","alert");dialog.append(feedback)}
+     feedback.textContent=error.message;
+    }else status.textContent=error.message;
+   }
+  };
   async function refreshAssemblyArchives(parentId){
    archivePanel.hidden=!canEdit();
    if(archivePanel.hidden)return;
@@ -2792,6 +2811,7 @@ function setupAssemblyTrees(){
      const info=document.createElement("div");info.className="assembly-archive-row-info";
      const name=document.createElement("strong");
      name.textContent=(item.partNumber?item.partNumber+" · ":"")+item.name+" · "+(item.kind==="part"?"Part":"Subassembly")+(item.restoredAt?" · Restored":"");
+     if(item.state==="deleting")name.textContent+=" · Delete incomplete";
      info.append(name);
      appendArchiveLocation(info,item);
      const meta=document.createElement("small");meta.className="assembly-archive-meta";
@@ -2799,7 +2819,15 @@ function setupAssemblyTrees(){
      info.append(meta);
      const view=document.createElement("button");view.type="button";view.className="btn";view.textContent="View";
      view.onclick=()=>void viewAssemblyArchive(item.id);
-     row.append(info,view);archiveList.append(row);
+     const controls=document.createElement("div");controls.className="assembly-archive-row-actions";
+     controls.append(view);
+     if(item.kind==="part"){
+      const remove=document.createElement("button");remove.type="button";
+      remove.className="btn assembly-archive-delete";remove.textContent="Delete";
+      remove.onclick=()=>void deleteArchivedPart(item);
+      controls.append(remove);
+     }
+     row.append(info,controls);archiveList.append(row);
     }
    }catch(error){if(serial===archiveRequestSerial)archiveList.textContent=error.message}
   }
@@ -2882,7 +2910,7 @@ function setupAssemblyTrees(){
     const actions=document.createElement("div");actions.className="assembly-archive-actions";
     const close=document.createElement("button");close.type="button";close.className="btn";close.textContent="Close";close.onclick=()=>dialog.close();
     actions.append(close);
-    if(canEdit()&&!archive.restoredAt){
+    if(canEdit()&&!archive.restoredAt&&archive.state!=="deleting"){
      const restore=document.createElement("button");restore.type="button";restore.className="btn primary";restore.textContent="Restore";
      restore.onclick=async()=>{
       restore.disabled=true;
@@ -2893,6 +2921,12 @@ function setupAssemblyTrees(){
       }catch(error){status.textContent=error.message;restore.disabled=false}
      };
      actions.append(restore);
+    }
+    if(canEdit()&&archive.kind==="part"){
+     const remove=document.createElement("button");remove.type="button";
+     remove.className="btn assembly-archive-delete";remove.textContent="Delete";
+     remove.onclick=()=>void deleteArchivedPart(archive,dialog);
+     actions.append(remove);
     }
     dialog.append(actions);document.body.append(dialog);
     dialog.addEventListener("close",()=>dialog.remove(),{once:true});dialog.showModal();
