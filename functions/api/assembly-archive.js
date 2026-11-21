@@ -84,7 +84,7 @@ async function archiveAssets(bucket,project,archiveId,subtree,records,parts){
  const jsonValues=JSON.stringify({subtree,records,parts});
  for(const photo of gallery)if(directPhotos.test(photo.key)&&jsonValues.includes(photo.key))keys.add(photo.key);
  // Keep the original photo markup and generated rendering with each image.
- for(const key of [...keys])if(/\\.(?:jpg|jpeg|png|webp|gif|heic|heif)$/i.test(key)||key.startsWith("component-thumbnails/")){
+ for(const key of [...keys])if(/\.(?:jpg|jpeg|png|webp|gif|heic|heif)$/i.test(key)||key.startsWith("component-thumbnails/")){
   keys.add("photo-annotations/"+key+".json");
   keys.add("photo-renders/"+key+".webp");
  }
