@@ -2446,3 +2446,55 @@
  height:22px;
  flex:0 0 22px;
 }
+
+
+/* Match the single disclosure chevrons in step, entry and archive headers.
+   Make their direction, weight and title spacing consistent at each level. */
+.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-summary::before,
+.recipe-compact .recipe-step-investigations .investigation-card > .investigation-summary::before,
+.recipe-compact .recipe-step-investigations .investigation-collapse > .investigation-collapse-heading::before{
+ display:inline-block!important;
+ box-sizing:border-box;
+ width:10px!important;
+ height:10px!important;
+ flex:0 0 10px!important;
+ border-top:2px solid currentColor!important;
+ border-right:2px solid currentColor!important;
+ border-bottom:0!important;
+ border-left:0!important;
+ color:var(--color-text-muted);
+ margin:0 4px 0 0!important;
+ position:static!important;
+ inset:auto!important;
+ vertical-align:middle;
+ transform:rotate(45deg);
+ transform-origin:center;
+ visibility:visible!important;
+}
+.recipe-compact .recipe-step-detail > .recipe-one-step[open] > .recipe-one-step-summary::before,
+.recipe-compact .recipe-step-investigations .investigation-card[open] > .investigation-summary::before,
+.recipe-compact .recipe-step-investigations .investigation-collapse[open] > .investigation-collapse-heading::before{
+ transform:rotate(135deg);
+}
+.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-summary,
+.recipe-compact .recipe-step-investigations .investigation-card > .investigation-summary{
+ column-gap:9px!important;
+}
+.recipe-compact .recipe-step-nav-row.is-active{
+ min-height:var(--recipe-active-heading-height,74px);
+ align-items:center!important;
+}
+.recipe-compact .recipe-step-nav-row.is-active > .recipe-step-edit-toggle{
+ top:50%!important;
+ right:10px!important;
+ transform:translateY(-50%)!important;
+}
+.recipe-compact .recipe-step-investigations .investigation-record-footer-date{
+ display:block;
+ margin-top:14px;
+ padding-top:3px;
+ color:var(--color-text-muted);
+ font-size:.78rem;
+ font-weight:400;
+ text-align:right;
+}
