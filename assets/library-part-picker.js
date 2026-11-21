@@ -213,8 +213,8 @@ function open({onCreate,hideDefault=false}){
  const autoNumberHelp=el("span","library-auto-number-tip","ⓘ");
  autoNumberHelp.tabIndex=0;
  autoNumberHelp.setAttribute("role","img");
- autoNumberHelp.setAttribute("aria-label","Automatically assigns the next unused project part number when the part is saved. The number follows this project's numbering settings and cannot be reused.");
- autoNumberHelp.title="Automatically assigns the next unused project part number when the part is saved. The number follows this project's numbering settings and cannot be reused.";
+ autoNumberHelp.setAttribute("aria-label","Part number will be assigned according to the next available part number as defined in the part settings page.");
+ autoNumberHelp.title="Part number will be assigned according to the next available part number as defined in the part settings page.";
  autoNumberRow.append(autoNumberCheckbox,autoNumberText,autoNumberHelp);
  const manualNumberRow=el("label","library-auto-number");
  const manualNumberCheckbox=el("input");manualNumberCheckbox.type="radio";manualNumberCheckbox.name="new-part-number-mode";manualNumberCheckbox.value="manual";
