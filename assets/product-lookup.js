@@ -205,7 +205,7 @@ window.BSProductLookup=(()=>{
        row.append(key,value,source,remove);specs.append(row);
        existing.add(spec.name.toLowerCase());added++;
       }
-      if(added)specs.closest(".part-editor-specs-disclosure")?.setAttribute("open","");
+      if(added){const disclosure=specs.closest(".part-editor-specs-disclosure");if(disclosure){disclosure.hidden=false;disclosure.open=true}}
       message.textContent=added+" specification"+(added===1?"":"s")+" added to the editor. Review and Save the part.";
      };
      results.append(apply);
