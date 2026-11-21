@@ -79,7 +79,12 @@ const validateRecipe=(input,project)=>{
   const archiveNote=step.archiveNote??"";
   if(typeof archivedAt!=="string"||(archivedAt&&!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(archivedAt))||
      typeof archiveNote!=="string"||archiveNote.length>2500)return null;
-  steps.push({id,title:title.trim(),standard,detail,kind,notes,noteIds,photos,photoNames:names,photoNoteIds,photoAfterNote,archivedAt,archiveNote,mainRemoved:step.mainRemoved===true});
+  const tileOrder=step.tileOrder??[];
+  if(!Array.isArray(tileOrder)||tileOrder.length>301||
+     tileOrder.some(value=>typeof value!=="string"||
+      (value!=="main"&&!/^record:[a-f0-9-]{36}$/i.test(value)))||
+     new Set(tileOrder).size!==tileOrder.length)return null;
+  steps.push({id,title:title.trim(),standard,detail,kind,notes,noteIds,photos,photoNames:names,photoNoteIds,photoAfterNote,archivedAt,archiveNote,mainRemoved:step.mainRemoved===true,tileOrder});
  }
  return steps;
 };
