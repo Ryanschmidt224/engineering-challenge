@@ -833,7 +833,7 @@ function setupAssemblyTrees(){
    const instructions=panel.querySelector(".recipe-instructions");
    const recipe=window.BSRecipes?.mount(instructions,{
     admin:canEdit,project,
-    renderInvestigations:(step,target,editing)=>investigations?.showStep(target,step,scope,ownerId(),editing),
+    renderInvestigations:(step,target,editing,mainTile,onReorder)=>investigations?.showStep(target,step,scope,ownerId(),editing,mainTile,onReorder),
     onStepSelected:stepId=>investigations?.resetStepDisclosures(stepId,scope,ownerId()),
     saveStepEdits:stepId=>investigations?.saveStepEdits(stepId),
     onSave:async()=>{await saveInProgress();return save()}
