@@ -71,17 +71,21 @@ async function archiveAssets(bucket,project,archiveId,subtree,records,parts){
  referencedProjectKeys({subtree,records,parts},project,keys);
  // Linked notes, part code and workspace records may refer to more image or
  // document IDs. Follow those references without modifying the source files.
+ const linkedRecords=[];
  for(const key of [...keys]){
   if(!key.endsWith(".json"))continue;
   const record=await bucket.get(key);
   if(!record)continue;
-  try{referencedProjectKeys(JSON.parse(await record.text()),project,keys)}
-  catch{ /* Preserve the original object even if an old record is unparseable. */ }
+  try{
+   const parsed=JSON.parse(await record.text());
+   linkedRecords.push(parsed);
+   referencedProjectKeys(parsed,project,keys);
+  }catch{ /* Preserve the original object even if an old record is unparseable. */ }
  }
  // Photos are sometimes referenced directly as project/UUID.ext IDs, rather
  // than being nested beneath a photo-files prefix.
  const directPhotos=new RegExp("^"+project+"/[a-f0-9-]{36}\\.(jpg|jpeg|png|webp|gif|heic|heif)$","i");
- const jsonValues=JSON.stringify({subtree,records,parts});
+ const jsonValues=JSON.stringify({subtree,records,parts,linkedRecords});
  for(const photo of gallery)if(directPhotos.test(photo.key)&&jsonValues.includes(photo.key))keys.add(photo.key);
  // Keep the original photo markup and generated rendering with each image.
  for(const key of [...keys])if(/\.(?:jpg|jpeg|png|webp|gif|heic|heif)$/i.test(key)||key.startsWith("component-thumbnails/")){
