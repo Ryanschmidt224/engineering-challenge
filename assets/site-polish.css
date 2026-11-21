@@ -4473,3 +4473,32 @@
 }
 .project-summary-page .project-intent-milestones .project-milestone-content[hidden]{display:none!important}
 .project-summary-page .project-intent-milestones .project-milestone-heading{margin:0}
+
+/* Estimated project cost: paired, compact label and value with help icons. */
+.project-summary-page .project-cost-card>.project-summary-cost,
+.project-summary-page .project-cost-card>.project-summary-package-cost{
+ display:grid;
+ grid-template-columns:minmax(195px,220px) minmax(0,1fr);
+ align-items:baseline;
+ gap:8px 12px;
+}
+.project-summary-page .project-cost-line-label{
+ display:inline-flex;
+ align-items:center;
+ gap:6px;
+ font-size:.86rem;
+}
+.project-summary-page .project-cost-line-label .bs-help-button{
+ flex:none;
+}
+.project-summary-page .project-cost-line-value{
+ min-width:0;
+ font-size:.86rem;
+}
+@media(max-width:580px){
+ .project-summary-page .project-cost-card>.project-summary-cost,
+ .project-summary-page .project-cost-card>.project-summary-package-cost{
+  grid-template-columns:minmax(0,1fr);
+  gap:2px;
+ }
+}
