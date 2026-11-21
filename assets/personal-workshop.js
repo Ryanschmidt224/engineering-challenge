@@ -56,7 +56,12 @@
    onChange:key=>{selectedWorkshopCategory=key;selectedFamily="";selectedType="";applyWorkshopCategory();queueMicrotask(()=>root.querySelector(".workshop-catalog-sort")?.dispatchEvent(new Event("change")))}
   });
   nav?.setItems([{value:"all",label:"All workshop items"},
-   ...workshopCategories.map(([id,name])=>({value:id,label:name,...(id.startsWith("electrical-")?{parent:"electronics"}:{})})),
+   ...workshopCategories.map(([id,name])=>({
+    value:id,label:name,
+    ...(id.startsWith("electrical-")?{parent:"electronics"}:
+      window.BSResources.otherWorkshopGroups.find(([key])=>key===id)?
+       {parent:window.BSResources.otherWorkshopGroups.find(([key])=>key===id)[2]}:{})
+   })),
    {value:"mine",label:"My Workshop"}]);
   root.addEventListener("bsworkshopupdated",applyWorkshopCategory);
   window.addEventListener("bsworkshopfocus",event=>{
@@ -1028,9 +1033,12 @@
    const query=results.value.trim().toLowerCase(),sort=$(".workshop-catalog-sort",catalog).value;
    const list=$(".workshop-catalog-list",catalog);
    list.replaceChildren();
-   const allowed=item=>selectedWorkshopCategory==="all"||categoryFor(item)===selectedWorkshopCategory||selectedWorkshopCategory==="electronics"&&categoryFor(item).startsWith("electrical-");
+   const inCategory=category=>selectedWorkshopCategory==="all"||category===selectedWorkshopCategory||
+    selectedWorkshopCategory==="electronics"&&category.startsWith("electrical-")||
+    window.BSResources.otherWorkshopGroups.some(([key,,parent])=>parent===selectedWorkshopCategory&&key===category);
+   const allowed=item=>inCategory(categoryFor(item));
    const byCategory=standards().filter(allowed);
-   const personalAllowed=items.filter(item=>selectedWorkshopCategory==="all"||categoryOfPersonal(item)===selectedWorkshopCategory||selectedWorkshopCategory==="electronics"&&categoryOfPersonal(item).startsWith("electrical-"));
+   const personalAllowed=items.filter(item=>inCategory(categoryOfPersonal(item)));
    const matched=byCategory.filter(item=>(!selectedFamily||familyFor(item)?.id===selectedFamily)&&
     [item.name,item.partNumber,item.supplierPartNumber,item.subtitle,item.spec,item.use,item.kind,item.category,categoryLabelFor(item),familyFor(item)?.label]
      .join(" ").toLowerCase().includes(query));
