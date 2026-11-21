@@ -431,10 +431,29 @@
     };
     summary.append(hierarchy);
     if(admin()){
-     // Edit belongs to the selected step in the left navigation, not the
-     // right-side content header. Keep it separate from the draggable title.
+     // Step controls live together in the highlighted navigation row. Keep
+     // them separate from the draggable/selectable step title.
      const edit=button(editing.has(step.id)?"Save":"Edit",saveStep,"btn recipe-step-edit-toggle");
-     navRow.append(edit);
+     const navActions=el("div","recipe-step-nav-actions");
+     navActions.append(edit);
+     if(editing.has(step.id)){
+      const deleteStep=button("Delete step",async event=>{
+       event.preventDefault();event.stopPropagation();
+       if(saving||pendingUploads)return;
+       if(!await window.BSDialogs.danger("Delete this work instruction step? This cannot be undone.",{
+        title:"Delete step?",confirmLabel:"Delete"
+       }))return;
+       if(saving||pendingUploads)return;
+       steps.splice(steps.indexOf(step),1);
+       editing.delete(step.id);
+       expandedStepBodies.delete(step.id);
+       if(step===draft)draft=null;
+       expanded=steps[Math.min(i,steps.length-1)]?.id||null;
+       changed();saveHint();render();
+      },"btn recipe-delete-step");
+      navActions.append(deleteStep);
+     }
+     navRow.append(navActions);
     }
     // Let the header/chevron toggle its native <details>. Controls inside
     // the header must never toggle the step while the user is editing.
@@ -470,7 +489,7 @@
       uploadTargetNote=noteIndex;
       uploader.open(Number.isInteger(noteIndex)?"Add files after note "+(noteIndex+1):"Add photos / documents");
      };
-     const addPhoto=button("+ Add photos / documents",()=>selectAttachment(null),"btn recipe-small-action");
+     const addPhoto=button("Add photos / documents",()=>selectAttachment(null),"btn recipe-small-action");
      addPhoto.title="Open the photo and document upload area.";
      function editablePhoto(id,noteIndex=null){
       const item=el("div","recipe-step-photo");
@@ -483,7 +502,7 @@
       const photoStage=el("div","recipe-photo-image-stage");
       photoStage.append(picture);
       frame.append(photoStage,nameInput);
-      const remove=button("Remove attachment",()=>{
+      const remove=button("Delete attachment",()=>{
        step.photos=step.photos.filter(photo=>photo!==id);
        delete step.photoNames[id];delete step.photoAfterNote[id];delete step.photoNoteIds[id];
        changed();saveHint();showNotes();showPhotos();
@@ -512,9 +531,9 @@
        for(const id of step.photos){
         if(step.photoNoteIds[id]===step.noteIds[index])noteAttachments.append(editablePhoto(id,index));
        }
-       const addAfterNote=button("+ Add photos / documents",()=>selectAttachment(index),"btn recipe-small-action recipe-add-note-photo");
+       const addAfterNote=button("Add photos / documents",()=>selectAttachment(index),"btn recipe-small-action recipe-add-note-photo");
        addAfterNote.setAttribute("aria-label","Add photo after note "+(index+1));
-       const removeNote=button("Remove note",()=>{
+       const removeNote=button("Delete note",()=>{
         const deletedId=step.noteIds[index];
         step.notes.splice(index,1);step.noteIds.splice(index,1);
         // Unlink attachments from deleted notes, but never delete their files.
@@ -560,7 +579,7 @@
      body.append(noteList,addNote,photoList,additions,uploader.panel);
      showNotes();showPhotos();
      const actions=el("div","recipe-edit-controls");
-     const remove=button("Remove",async()=>{if(!await window.BSDialogs.danger("Remove this step?",{title:"Remove instruction step?",confirmLabel:"Remove"}))return;steps.splice(i,1);editing.delete(step.id);expanded=null;changed();saveHint();render()});
+
      const bottomSave=button("Save",saveStep,"btn primary recipe-save-step-bottom");
      if(isDraft){
       actions.append(bottomSave,button("Cancel",()=>{
@@ -571,7 +590,7 @@
        render();add.focus();
       },"btn"));
      }else{
-      actions.append(bottomSave,remove);
+      actions.append(bottomSave);
      }
      body.append(actions);
     }else{
