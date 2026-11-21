@@ -230,11 +230,6 @@
   document.addEventListener("click",event=>{if(knowledgeMenu&&!knowledgeMenu.contains(event.target))closeKnowledgeMenu()});
   document.addEventListener("keydown",event=>{if(event.key==="Escape")closeKnowledgeMenu()});
   document.addEventListener("scroll",closeKnowledgeMenu,true);
-  const move=(index,offset)=>{
-   const destination=index+offset;if(destination<0||destination>=steps.length)return;
-   [steps[index],steps[destination]]=[steps[destination],steps[index]];
-   expanded=steps[destination].id;changed();saveHint();render();
-  };
   function render(){
    content.replaceChildren();
    const total=savedSteps().length;
@@ -515,8 +510,6 @@
      body.append(noteList,photoList,additions,uploader.panel);
      showNotes();showPhotos();
      const actions=el("div","recipe-edit-controls");
-     const up=button("↑",()=>move(i,-1));up.disabled=i===0;up.title="Move up";
-     const down=button("↓",()=>move(i,1));down.disabled=i===steps.length-1;down.title="Move down";
      const remove=button("Remove",async()=>{if(!await window.BSDialogs.danger("Remove this step?",{title:"Remove instruction step?",confirmLabel:"Remove"}))return;steps.splice(i,1);editing.delete(step.id);expanded=null;changed();saveHint();render()});
      const bottomSave=button("Save",saveStep,"btn primary recipe-save-step-bottom");
      if(isDraft){
@@ -528,9 +521,7 @@
        render();add.focus();
       },"btn"));
      }else{
-      // Keep the draft at the end while existing steps are reordered.
-      if(steps[i+1]&&steps[i+1]===draft)down.disabled=true;
-      actions.append(bottomSave,up,down,remove);
+      actions.append(bottomSave,remove);
      }
      body.append(actions);
     }else{
