@@ -55,7 +55,7 @@ test("whole package estimate rounds combined quantities and reports incomplete m
 });
 
 test("expanded details follow shared editor field order and hide empty fields",()=>{
- const part={partNumber:"NR116",name:"Flywheel",itemType:"part",partType:"purchased",description:"Launches dart",quantity:2,purchaseStatus:"not_started",isTool:false,hideFromFeatureTree:false};
+ const part={partNumber:"NR116",name:"Flywheel",itemType:"part",partType:"purchased",description:"Launches dart",quantity:2,purchaseStatus:"not_started",isTool:false,hideFromFeatureTree:false,projectDetails:{featureTreeName:"Dart Launcher Flywheel"}};
  const rows=fields.detailRows(part);
  assert.deepEqual(Array.from(rows,([label])=>label),["Part name","Feature tree description","Status","Quantity","Part number","Item type","Part type","Description"]);
  assert.equal(rows.find(([label])=>label==="Status")[1],"Not started");
