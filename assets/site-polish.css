@@ -3873,6 +3873,7 @@
 
 /* Deliberately curated Project Intent & Milestones. No automatic history feed. */
 .project-intent-milestones{display:flex;flex-direction:column;gap:12px;margin:16px 0}
+.project-intent-milestones[hidden]{display:none}
 .project-milestone-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .project-milestone-heading h2{margin:0}
 .project-milestone-actions,.project-milestone-editor-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
