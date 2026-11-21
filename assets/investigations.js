@@ -559,6 +559,7 @@
     for(const tile of getTiles()){
      const header=tile.querySelector(":scope > summary");
      if(!header)continue;
+     if(!admin())continue;
      const grip=make("button","bs-tile-grip");
      grip.type="button";grip.draggable=admin();
      grip.title="Drag to reorder tiles. Alt+Up/Down also moves this tile.";
