@@ -981,6 +981,7 @@
     if(!editing)viewSuggested.hidden=true;
     for(const btn of gallery.querySelectorAll("button"))btn.hidden=!editing;
     if(!editing)reviewPanel.hidden=true;
+    if(editing)refreshSuggestions();
     if(editing&&viewOnly){
      // Explicitly requested templates may be added while editing, not in view.
      form.querySelector("input:not([disabled])")?.focus();
