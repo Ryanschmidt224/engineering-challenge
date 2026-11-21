@@ -145,6 +145,63 @@
  window.addEventListener("scroll",dismissTooltip,true);
  window.addEventListener("resize",dismissTooltip);
 
+ // Reusable help detail: hover remains concise; double-click opens examples.
+ // Pages can supply examples through data-bs-examples (JSON string array).
+ const helpSelector=".library-function-tip,.library-auto-number-tip,.part-option-help,.bs-help-button";
+ const helpTarget=node=>node instanceof Element?node.closest(helpSelector):null;
+ const examplesFor=target=>{
+  try{
+   const data=JSON.parse(target.getAttribute("data-bs-examples")||"[]");
+   return Array.isArray(data)?data.filter(item=>typeof item==="string"&&item.trim()).slice(0,8):[];
+  }catch{return []}
+ };
+ const showHelpDetail=target=>{
+  if(!target)return;
+  dismissTooltip();
+  const explanation=(target.dataset.bsTooltip||target.getAttribute("title")||target.getAttribute("aria-label")||"").trim();
+  const examples=examplesFor(target);
+  const heading=(target.dataset.bsHelpTitle||"Field help").trim();
+  const dialog=document.createElement("dialog");dialog.className="bs-dialog bs-help-detail-dialog";
+  dialog.setAttribute("aria-label",heading);
+  const header=document.createElement("div");header.className="bs-help-detail-header";
+  const title=document.createElement("h2");title.textContent=heading;
+  const close=document.createElement("button");close.type="button";close.className="bs-help-detail-close";
+  close.setAttribute("aria-label","Close examples");close.textContent="×";
+  header.append(title,close);dialog.append(header);
+  const description=document.createElement("p");description.textContent=explanation;dialog.append(description);
+  if(examples.length){
+   const exampleTitle=document.createElement("h3");exampleTitle.textContent="Examples";dialog.append(exampleTitle);
+   const list=document.createElement("ul");list.className="bs-help-examples";
+   for(const example of examples){const li=document.createElement("li");li.textContent=example;list.append(li)}
+   dialog.append(list);
+  }
+  const finish=()=>{if(dialog.open)dialog.close();dialog.remove();if(target.isConnected)target.focus?.({preventScroll:true})};
+  close.addEventListener("click",finish);
+  dialog.addEventListener("cancel",event=>{event.preventDefault();finish()});
+  dialog.addEventListener("click",event=>{if(event.target===dialog)finish()});
+  document.body.append(dialog);
+  dialog.showModal();close.focus();
+ };
+ document.addEventListener("dblclick",event=>{
+  const target=helpTarget(event.target);
+  if(!target)return;
+  event.preventDefault();event.stopPropagation();showHelpDetail(target);
+ },true);
+ document.addEventListener("keydown",event=>{
+  const target=helpTarget(event.target);
+  if(!target||!["Enter"," "].includes(event.key))return;
+  event.preventDefault();showHelpDetail(target);
+ },true);
+ const helpButton=(label,message,examples=[])=>{
+  const button=document.createElement("button");button.type="button";
+  button.className="bs-help-button";button.textContent="ⓘ";
+  button.dataset.bsTooltip=message;button.dataset.bsHelpTitle=label;
+  button.dataset.bsExamples=JSON.stringify(examples);
+  button.setAttribute("aria-label",label+": "+message);
+  button.title=message;
+  return button;
+ };
+
  let tooltipId=0;
  function tooltip(label,message){
   const wrapper=document.createElement("span");wrapper.className="bs-section-tooltip";
@@ -166,6 +223,7 @@
  }
  window.BSDialogs=Object.freeze({
   tooltip,
+  helpButton,
   valueTooltip:()=>tooltip("Value symbols and Windows Alt codes",
    "Windows: hold Alt, type the code on the numeric keypad with Num Lock on, then release Alt. Ω (ohms): Alt+234. µ (micro): Alt+0181. ± (plus/minus): Alt+0177. ° (degrees): Alt+0176. You can also copy these symbols: Ω µ ± °. Examples: 10 kΩ, 100 µF, ±5%."),
   confirm:(message,options={})=>open({...options,message,confirmLabel:options.confirmLabel||"Confirm"}),
