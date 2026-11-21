@@ -418,11 +418,41 @@
      input.accept=globalThis.BSAttachmentTypes.accept;
      input.hidden=true;
      let uploadTargetNote=null;
+     const uploadPanel=el("section","recipe-photo-upload-panel");
+     uploadPanel.hidden=true;
+     const uploadHeader=el("div","recipe-photo-upload-header");
+     const uploadTitle=el("strong","","Add photos / documents");
+     const closeUpload=button("Close",()=>{uploadPanel.hidden=true},"btn recipe-small-action");
+     uploadHeader.append(uploadTitle,closeUpload);
+     const uploadHelp=el("p","muted","Drag and drop files here, or right-click in the box and choose Paste. You can also select files from your device.");
+     const paste=window.BSPhotoMarkup.pasteTarget(async files=>{
+      const target=uploadTargetNote;
+      for(const file of files)await upload(file,target);
+     });
+     paste.classList.add("recipe-photo-upload-zone");
+     paste.textContent="Drop photos or documents here, or right-click to paste an image (Ctrl+V).";
+     const chooseFiles=button("Choose files",()=>input.click(),"btn primary recipe-photo-choose-files");
+     const uploadFooter=el("p","muted","Select multiple files at once. Up to 30 attachments per step, 20 MB per file.");
+     uploadPanel.append(uploadHeader,uploadHelp,paste,chooseFiles,uploadFooter);
+     // Keep paste scoped to this visible panel rather than the entire step.
+     paste.addEventListener("dragover",event=>{
+      if(event.dataTransfer?.types?.includes("Files")){event.preventDefault();event.stopPropagation();paste.classList.add("is-dragover")}
+     });
+     paste.addEventListener("dragleave",()=>paste.classList.remove("is-dragover"));
+     paste.addEventListener("drop",event=>{
+      if(!event.dataTransfer?.files?.length)return;
+      event.preventDefault();event.stopPropagation();paste.classList.remove("is-dragover");
+      const target=uploadTargetNote;
+      void (async()=>{for(const file of [...event.dataTransfer.files])await upload(file,target)})();
+     },true);
      const selectAttachment=noteIndex=>{
-      uploadTargetNote=noteIndex;input.click();
+      uploadTargetNote=noteIndex;
+      uploadTitle.textContent=Number.isInteger(noteIndex)?"Add files after note "+(noteIndex+1):"Add photos / documents";
+      uploadPanel.hidden=false;
+      paste.focus();
      };
      const addPhoto=button("+ Add photos / documents",()=>selectAttachment(null),"btn recipe-small-action");
-     addPhoto.title="Select multiple images or files at once. Each step can contain up to 30 attachments.";
+     addPhoto.title="Open the photo and document upload area.";
      function editablePhoto(id,noteIndex=null){
       const item=el("div","recipe-step-photo");
       const photoName=step.photoNames[id]||"";
@@ -511,14 +541,8 @@
      };
      const addNote=button("+ Add entry",()=>{step.notes.push("");step.noteIds.push(newId());changed();saveHint();showNotes();noteList.lastElementChild?.querySelector("textarea")?.focus()},"btn recipe-small-action recipe-add-entry");
      additions.append(addNote,addPhoto,input);
-     const paste=window.BSPhotoMarkup.pasteTarget(async files=>{for(const file of files)await upload(file,null)});
-     body.append(noteList,photoList,additions,paste);
+     body.append(noteList,photoList,additions,uploadPanel);
      showNotes();showPhotos();
-     body.addEventListener("dragover",event=>{if(event.dataTransfer?.types?.includes("Files"))event.preventDefault()});
-     body.addEventListener("drop",event=>{const files=[...(event.dataTransfer?.files||[])];if(files.length){event.preventDefault();const line=event.target.closest(".recipe-step-note");const index=line?Number(line.dataset.noteIndex):null;(async()=>{for(const file of files)await upload(file,index)})()}});
-     window.BSPhotoMarkup.pasteOn(body,(file,event)=>{
-      const line=event.target.closest(".recipe-step-note");void upload(file,line?Number(line.dataset.noteIndex):null);
-     });
      const actions=el("div","recipe-edit-controls");
      const up=button("↑",()=>move(i,-1));up.disabled=i===0;up.title="Move up";
      const down=button("↓",()=>move(i,1));down.disabled=i===steps.length-1;down.title="Move down";
