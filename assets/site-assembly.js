@@ -1949,13 +1949,13 @@ function setupAssemblyTrees(){
   projectOnlyPanel.append(onlyTitle);
   const treeDescriptionToggle=document.createElement("label");treeDescriptionToggle.className="part-project-only-field";
   const treeDescriptionCheckbox=document.createElement("input");treeDescriptionCheckbox.type="checkbox";treeDescriptionCheckbox.checked=true;
-  treeDescriptionToggle.append(treeDescriptionCheckbox,document.createTextNode(" Show description in feature tree"));
+  treeDescriptionToggle.append(treeDescriptionCheckbox,document.createTextNode(" Show selected component beneath feature tree description"));
   projectOnlyPanel.append(treeDescriptionToggle);
   const projectOnlyFields={};
   for(const [key,title,multiline,limit] of [
    ["value","Value (e.g. 10 kΩ or 100 nF)",false,120],
    ["notes","Project notes",true,6000],["changes","Project changes / modifications",true,6000],
-   ["featureTreeName","Feature tree name (optional override)",false,120],
+   ["featureTreeName","Feature tree description (project-owned)",false,180],
    ["referenceDesignators","Reference designators",false,500],["footprint","Footprint",false,240],
    ["schematicValue","Schematic value",false,240],["sourceApplication","Source application",false,80],
    ["sourceFile","Source schematic file",false,500],["sourceComponentId","Source component ID",false,240]
@@ -1975,6 +1975,11 @@ function setupAssemblyTrees(){
   for(const key of ["referenceDesignators","footprint","schematicValue","sourceApplication","sourceFile","sourceComponentId"])
    projectOnlyCad.append(projectOnlyFields[key].parentElement);
   projectOnlyPanel.append(projectOnlyCad);
+  const functionalTreeDescriptionField=projectOnlyFields.featureTreeName.parentElement;
+  projectOnlyFields.featureTreeName.placeholder="e.g., LED Switching Transistor";
+  const descriptionHelp=document.createElement("small");descriptionHelp.className="muted part-feature-tree-help";
+  descriptionHelp.textContent="This project's purpose label. Changing the selected Workshop or custom component does not change it.";
+  functionalTreeDescriptionField.append(descriptionHelp);
   let editingProjectReferenceId="",editingWorkshopTreeDescription="";
   const readProjectOnly=()=>({
    ...Object.fromEntries(Object.entries(projectOnlyFields).map(([key,input])=>[key,input.value.trim()])),
@@ -2201,7 +2206,7 @@ function setupAssemblyTrees(){
    const aiLookup=window.BSProductLookup.mountPart(root,{canSearch:canEdit});
    aiLookup.setIdentity({
     partNumber:bomField("model")?.value.trim()||"",
-    featureTreeDescription:projectOnlyFields.featureTreeName.value.trim().slice(0,20)||
+    featureTreeDescription:projectOnlyFields.featureTreeName.value.trim().slice(0,100)||
      editingWorkshopTreeDescription||partDescriptionInput.value.trim().slice(0,20),
     searchHint:""
    });
@@ -2244,7 +2249,8 @@ function setupAssemblyTrees(){
      isTool:toolRow,hideFromFeatureTree:visibilityRow};
     const ordered=keys=>keys.map(key=>controls[key]).filter(Boolean);
     move(sectionHeading("function","Functional part"),
-     ...ordered(fields.identity.filter(key=>key!=="partType")),
+     controls.partNumber,functionalTreeDescriptionField,
+     ...ordered(fields.identity.filter(key=>!["partType","partNumber"].includes(key))),
      functionalRequirementsField.row,functionalAcceptanceField.row,apiPanel);
     move(sectionHeading("implementation","Selected implementation"),
      partImplementationUnselectedRow,partImplementationNameRow,partTypeRow,
@@ -3231,7 +3237,7 @@ function setupAssemblyTrees(){
   };
   const workshopFilter=filterOption("Show Workshop items",value=>{showWorkshopItems=value});
   const documentsFilter=filterOption("Show documents",value=>{showTreeDocuments=value});
-  const descriptionsFilter=filterOption("Show descriptions",value=>{showTreeDescriptions=value});
+  const descriptionsFilter=filterOption("Show selected components",value=>{showTreeDescriptions=value});
   const hiddenPartsFilter=filterOption("Show hidden parts",value=>{showHiddenParts=value});
   workshopFilter.checked=showWorkshopItems;
   documentsFilter.checked=showTreeDocuments;
