@@ -639,7 +639,7 @@
     if(/regulator|converter|power supply|buck/.test(description))return specTemplates.power;
     if(/screw|bolt|fastener|nut\b/.test(description))return specTemplates.fastener;
     if(/bearing|bushing/.test(description))return specTemplates.bearing;
-    return category.value==="electronics"?specTemplates.electrical:specTemplates.general;
+    return (category.value==="electronics"||category.value.startsWith("electrical-"))?specTemplates.electrical:specTemplates.general;
    };
    const structuredSection=el("section",undefined,"workshop-structured-specs");
    structuredSection.append(el("h3","Specifications for this product"));
