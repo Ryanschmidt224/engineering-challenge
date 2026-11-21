@@ -26,7 +26,7 @@
   for(const [id,noteId] of Object.entries(photoNoteIds))photoAfterNote[id]=noteIds.indexOf(noteId);
   return {id:x.id,title:x.title||"",standard:x.standard||"",detail:x.detail||"",kind:x.kind||"action",notes,noteIds,photos,photoNames,photoNoteIds,photoAfterNote,archivedAt:x.archivedAt||"",archiveNote:x.archiveNote||""};
  };
- const kinds=[["action","Action"],["inspection","Inspection"],["measurement","Measurement"],["explanation","Explanation"]];
+ const kinds=[["note","Notes"],["action","Action"],["inspection","Inspection"],["measurement","Measurement"],["explanation","Explanation"]];
 
  // Viewer is shared by author and reader; closing it never changes step data.
  function openPhoto(id,name){
@@ -760,7 +760,7 @@
   const add=button("+ Add entry",()=>{
    if(!admin()||loading||saving||pendingUploads)return;
    if(!draft){
-    draft={id:newId(),title:"",standard:"",detail:"",kind:"action",notes:[""],noteIds:[newId()],photos:[],photoNames:{},photoNoteIds:{},photoAfterNote:{}};
+    draft={id:newId(),title:"",standard:"",detail:"",kind:"note",notes:[""],noteIds:[newId()],photos:[],photoNames:{},photoNoteIds:{},photoAfterNote:{}};
     steps.push(draft);
    }
    expanded=draft.id;expandedStepBodies.add(draft.id);editSnapshots.clear();editing.clear();editing.add(draft.id);render();
