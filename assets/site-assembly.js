@@ -1307,14 +1307,25 @@ function setupAssemblyTrees(){
    const summary=[part.description,quantity,cost];
    detailSummary.textContent=summary.filter(Boolean).join(" · ");
    const makeDetailLine=(title,value,isLink=false)=>{
-    const line=document.createElement("details");line.className="part-details-view-row part-detail-item";
-    const heading=document.createElement("summary");heading.className="part-detail-item-toggle";
+    const text=String(value);
+    // Single-value details are visible immediately: only genuinely long
+    // descriptive text needs its own disclosure control.
+    const longText=/^(Description|Project notes|Project changes \/ modifications)$/i.test(title)&&text.length>180;
+    const line=document.createElement(longText?"details":"div");
+    line.className="part-details-view-row part-detail-item"+(longText?" part-detail-long":" part-detail-inline");
     const label=document.createElement("strong");label.textContent=title;
-    heading.append(label);
-    const body=document.createElement("div");body.className="part-detail-item-content";
-    const content=document.createElement(isLink?"a":"span");content.textContent=String(value);
+    const content=document.createElement(isLink?"a":"span");
+    content.textContent=text;
     if(isLink){content.href=value;content.target="_blank";content.rel="noopener noreferrer";content.className="part-order-url"}
-    body.append(content);line.append(heading,body);
+    if(longText){
+     const heading=document.createElement("summary");heading.className="part-detail-item-toggle";
+     heading.append(label);
+     const body=document.createElement("div");body.className="part-detail-item-content";
+     body.append(content);line.append(heading,body);
+    }else{
+     const body=document.createElement("div");body.className="part-detail-item-content";
+     body.append(content);line.append(label,body);
+    }
     return line;
    };
    const appendDetail=(title,value,isLink=false)=>{
