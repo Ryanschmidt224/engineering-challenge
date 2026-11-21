@@ -286,6 +286,7 @@ function setupAssemblyTrees(){
   <section class="project-overview-card project-descriptor-card"><h2>Descriptors</h2><div class="project-tags project-summary-tags"></div></section>
   <section class="project-overview-card"><h2>Estimated project cost</h2><p class="project-summary-cost" aria-live="polite">Loading estimate…</p><p class="project-summary-package-cost" aria-live="polite"></p><p class="project-summary-cost-missing muted"></p></section>`;
   summary.querySelector(".project-summary-gallery").after(overview);
+  const projectMilestones=window.BSProjectMilestones?.mount({project,summary,canEdit});
   const summaryInput=overview.querySelector("textarea");
   const summarySave=overview.querySelector(".project-summary-save");
   const summaryMessage=overview.querySelector(".project-summary-message");
@@ -536,6 +537,7 @@ function setupAssemblyTrees(){
    summary.querySelector(".project-summary-title").textContent=title;
    summaryPhotoBar.setEnabled(canEdit());
    renderSummaryOverview();
+   void projectMilestones?.refresh();
    const bomList=summary.querySelector(".project-summary-bom-items"),toolList=summary.querySelector(".project-summary-tool-items");
    try{
     const [photosResponse,partsResponse]=await Promise.all([
@@ -3177,6 +3179,19 @@ function setupAssemblyTrees(){
    status.textContent=node.name+" archived. You can restore it from its parent assembly.";
    await load();
    await refreshAssemblyArchives(parent??"__root__");
+   // A successful archive presents an optional invitation, not an automatic
+   // milestone and not another required step in the archive operation.
+   root.querySelector(".assembly-archive-milestone-option")?.remove();
+   const milestoneButton=document.createElement("button");
+   milestoneButton.type="button";milestoneButton.className="btn assembly-archive-milestone-option";
+   milestoneButton.textContent="Add to Project Milestones";
+   milestoneButton.onclick=()=>{
+    window.BSProjectMilestones?.offer(project,{
+     kind:"archive",id:result.id,title:node.name,
+     prefill:"Archived "+(isPartNode(node)?"part":"subassembly")+": "+node.name
+    });
+   };
+   status.after(milestoneButton);
   };
   const openTreeMenu=(node,x,y,trigger)=>{
    if(!canEdit())return;
