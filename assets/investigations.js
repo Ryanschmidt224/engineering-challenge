@@ -520,7 +520,7 @@
        for(const child of archivedChildren)renderCard(child,archiveContent,{historical:true,nested:true});
        archiveChildren.append(archiveContent);childSection.append(archiveChildren);
       }
-      if(canCreate&&!historical){
+      if(canCreate&&context.stepId&&!historical){
        const addNested=btn("+ Add nested entry",event=>{
         event.preventDefault();event.stopPropagation();
         card.open=true;
