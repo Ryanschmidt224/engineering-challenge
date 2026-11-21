@@ -315,6 +315,7 @@ export async function handleComponents(request,env){
    }catch(error){return json({error:String(error.message||error)},400)}
    updated.revision=crypto.randomUUID();
    state.items[index]=updated;
+   if(input.functionalAction!=="requirements")syncDerived(state.items,updated);
    if(!await saveEditable(env,project,state.items,state))return partWriteConflict(env,project,id,input);
    return json({component:presentPart(updated)});
   }
