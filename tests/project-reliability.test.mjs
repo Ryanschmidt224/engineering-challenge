@@ -82,11 +82,16 @@ test("owner can save KiCad and code steps and recover only the selected project 
  const step = {id: "layout", title: "Check layout", tileOrder: []};
  assert.equal((await handleWorkspace(request(path, "PUT", {recipe:[step]}), env)).status, 200);
  const entryPath="/api/investigations?project="+project;
- const note=async photos=>handleInvestigations(request(entryPath,"POST",{
-  action:"create",scope:"step",ownerType:"assembly",ownerId:"__root__",stepId:"layout",
-  category:"note",title:"Board files",description:"KiCad and code attachments",
-  entries:[],notes:[],photos
- }),env);
+ let expectedRevision=null;
+ const note=async photos=>{
+  const response=await handleInvestigations(request(entryPath,"POST",{
+   action:"create",scope:"step",ownerType:"assembly",ownerId:"__root__",stepId:"layout",
+   category:"note",title:"Board files",description:"KiCad and code attachments",
+   entries:[],notes:[],photos,expectedRevision
+  }),env);
+  if(response.ok)expectedRevision=(await response.clone().json()).revision;
+  return response;
+ };
  const saved=await note(files);
  assert.equal(saved.status,200,await saved.text());
  const investigations=await (await handleInvestigations(request(entryPath),env)).json();
