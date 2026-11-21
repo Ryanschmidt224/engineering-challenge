@@ -1860,8 +1860,27 @@ function setupAssemblyTrees(){
   const partNumberInput=document.createElement("input");partNumberInput.className="field part-number-input";partNumberInput.placeholder="Automatic for custom parts; optional for purchased";partNumberInput.maxLength=30;
   partNumberRow.append(document.createTextNode("Part number"),partNumberInput);
   const partDescriptionRow=document.createElement("label");partDescriptionRow.className="part-description-field";
-  const partDescriptionInput=document.createElement("textarea");partDescriptionInput.className="field part-description-input";partDescriptionInput.rows=2;partDescriptionInput.maxLength=2000;partDescriptionInput.placeholder="What is this part and what does it do?";
-  partDescriptionRow.append(document.createTextNode("Description"),partDescriptionInput);
+  const partDescriptionInput=document.createElement("textarea");partDescriptionInput.className="field part-description-input";partDescriptionInput.rows=2;partDescriptionInput.maxLength=2000;partDescriptionInput.placeholder="What must this part accomplish? Keep the function independent of the chosen component.";
+  partDescriptionRow.append(document.createTextNode("Purpose (optional)"),partDescriptionInput);
+  const functionalField=(label,limit,rows=2)=>{
+   const wrap=document.createElement("label");wrap.className="part-functional-edit-field";
+   const caption=document.createElement("span");caption.textContent=label;
+   const field=document.createElement("textarea");field.className="field";field.maxLength=limit;field.rows=rows;
+   wrap.append(caption,field);return {row:wrap,field};
+  };
+  const functionalRequirementsField=functionalField("Required specifications / constraints (optional)",6000,3);
+  const functionalAcceptanceField=functionalField("Acceptance criteria (optional)",6000,2);
+  const partImplementationNameRow=document.createElement("label");partImplementationNameRow.className="part-functional-edit-field";
+  const partImplementationNameCaption=document.createElement("span");partImplementationNameCaption.textContent="Implementation name";
+  const partImplementationNameInput=document.createElement("input");partImplementationNameInput.className="field";partImplementationNameInput.maxLength=180;
+  partImplementationNameInput.placeholder="e.g., 2N7000 or Custom Coupler Rev B";
+  partImplementationNameRow.append(partImplementationNameCaption,partImplementationNameInput);
+  const partImplementationUnselectedRow=document.createElement("label");partImplementationUnselectedRow.className="part-functional-unselected";
+  const partImplementationUnselected=document.createElement("input");partImplementationUnselected.type="checkbox";
+  partImplementationUnselectedRow.append(partImplementationUnselected,document.createTextNode(" Implementation not chosen yet"));
+  partImplementationUnselected.onchange=()=>{
+   partImplementationNameRow.hidden=partImplementationUnselected.checked;
+  };
   // Same project-only fields used in the New Part picker; editing these never
   // sends a PUT to /api/workshop-reference or /api/personal-workshop.
   const projectOnlyPanel=document.createElement("section");
@@ -2054,7 +2073,7 @@ function setupAssemblyTrees(){
    extractedPictureUrl=null;
    editingPart=null;editingPartAssembly=null;editingPartOriginal=null;
    projectEditNotice.hidden=true;
-   itemTypeSelect.value="part";partTypeSelect.value="purchased";visibilityCheckbox.checked=false;toolCheckbox.checked=false;partDescriptionInput.value="";setProjectOnly({});partNumberInput.value="";autoNumberChosen=false;partNumberInput.readOnly=false;nextNumberButton.disabled=false;partNumberHelp.textContent="A number is assigned only when the part is saved.";updatePartTypeFields();
+   itemTypeSelect.value="part";partTypeSelect.value="purchased";visibilityCheckbox.checked=false;toolCheckbox.checked=false;partDescriptionInput.value="";functionalRequirementsField.field.value="";functionalAcceptanceField.field.value="";partImplementationNameInput.value="";partImplementationUnselected.checked=false;partImplementationNameRow.hidden=false;partImplementationUnselectedRow.hidden=false;setProjectOnly({});partNumberInput.value="";autoNumberChosen=false;partNumberInput.readOnly=false;nextNumberButton.disabled=false;partNumberHelp.textContent="A number is assigned only when the part is saved.";updatePartTypeFields();
    for(const name of ["name","manufacturer","model","supplier","asin","description","historical-price","historical-price-date"]){const el=bomField(name);if(el)el.value=""}
    supplierEditor?.setOffers([]);
    const priceBasis=bomField("historical-price-basis"),packageQty=bomField("historical-package-quantity");
@@ -2072,6 +2091,12 @@ function setupAssemblyTrees(){
    itemTypeSelect.value=part.partType==="code"?"code":part.itemType==="document"?"document":"part";
    partTypeSelect.value=["custom","custom_purchased","code"].includes(part.partType)?part.partType:"purchased";visibilityCheckbox.checked=part.hideFromFeatureTree===true;toolCheckbox.checked=part.isTool===true;
    partDescriptionInput.value=part.description||"";
+   functionalRequirementsField.field.value=part.functionalRequirements||"";
+   functionalAcceptanceField.field.value=part.acceptanceCriteria||"";
+   partImplementationNameInput.value=part.implementationName||part.model||part.name||"";
+   partImplementationUnselected.checked=!part.implementationResolved;
+   partImplementationUnselectedRow.hidden=true;
+   partImplementationNameRow.hidden=!part.implementationResolved;
    setProjectOnly(part.projectDetails||{});
    partNumberInput.value=part.partNumber||"";autoNumberChosen=false;partNumberInput.readOnly=!!part.partNumber;
    nextNumberButton.disabled=!!part.partNumber;
@@ -2146,7 +2171,7 @@ function setupAssemblyTrees(){
     const addSpec=bomRoot()?.querySelector(".component-add-spec");
     const existingActions=review.querySelector(".component-editor-actions");
     const apiPanel=root.querySelector(".component-lookup-panel");
-    const known=new Set([itemTypeRow,partTypeRow,partNumberRow,partDescriptionRow,...identity,...quantities,...sourcing,
+    const known=new Set([itemTypeRow,partTypeRow,partNumberRow,partDescriptionRow,functionalRequirementsField.row,functionalAcceptanceField.row,partImplementationNameRow,partImplementationUnselectedRow,...identity,...quantities,...sourcing,
       toolRow,visibilityRow,review.querySelector(".part-display-options"),specsHeading,specs,addSpec,existingActions,apiPanel].filter(Boolean));
     const otherFields=[...review.children].filter(el=>!known.has(el)&&!el.classList.contains("part-editor-section-heading"));
     const move=(...elements)=>{for(const el of elements)if(el)review.append(el)};
@@ -2158,8 +2183,12 @@ function setupAssemblyTrees(){
      supplier:sourcing[2],asin:sourcing[3],historicalPrice:sourcing[4],
      isTool:toolRow,hideFromFeatureTree:visibilityRow};
     const ordered=keys=>keys.map(key=>controls[key]).filter(Boolean);
-    move(...ordered(fields.identity),apiPanel);
-    move(sectionHeading("additional","Additional details"),...ordered(fields.additional),quantities[1]);
+    move(sectionHeading("function","Functional part"),
+     ...ordered(fields.identity.filter(key=>key!=="partType")),
+     functionalRequirementsField.row,functionalAcceptanceField.row,apiPanel);
+    move(sectionHeading("implementation","Selected implementation"),
+     partImplementationUnselectedRow,partImplementationNameRow,partTypeRow,
+     ...ordered(fields.additional),quantities[1]);
     if(supplierEditor)move(supplierEditor.element);
     const displayGroup=review.querySelector(".part-display-options")||document.createElement("div");
     displayGroup.className="part-display-options";
@@ -2227,6 +2256,10 @@ function setupAssemblyTrees(){
    component.category=bomField("category")?.value.trim()||"";
    // The API automatically generates the display/file label: part number + name.
    component.description=partDescriptionInput.value.trim();
+   component.functionalRequirements=functionalRequirementsField.field.value.trim();
+   component.acceptanceCriteria=functionalAcceptanceField.field.value.trim();
+   component.implementationName=partImplementationNameInput.value.trim()||bomField("model")?.value.trim()||component.name;
+   component.implementationUnselected=!editingPart&&partImplementationUnselected.checked;
    component.projectDetails=readProjectOnly();
    if(!["purchased","custom_purchased"].includes(component.partType))Object.assign(component,{manufacturer:"",model:"",supplier:"",asin:"",historicalPurchasePrice:null,historicalPriceDate:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
    component.specifications=[...(bomRoot()?.querySelectorAll(".component-spec-row")||[])].map(row=>({
