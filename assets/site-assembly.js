@@ -2591,8 +2591,8 @@ function setupAssemblyTrees(){
    ["summary",summary],["workspace",workspace],["bom",bomScreen],
    ["part",partWorkspace],["parts",partsPage]
   ].map(([scope,mount])=>[scope,window.BSUnstructuredNotes.mount(mount,{project,scope,canEdit})]));
-  assemblyInvestigationPanel.after(notePanels.workspace.element);
-  partInvestigationPanel.after(notePanels.part.element);
+  assemblyInvestigationPanel.archiveHistoryDisclosure.after(notePanels.workspace.element);
+  partInvestigationPanel.archiveHistoryDisclosure.after(notePanels.part.element);
   // Both versions of Recent changes were originally inserted directly
   // beside the workspace Save button. Move each to the bottom instead,
   // after notes, archives, and backups, without replacing its handlers.
