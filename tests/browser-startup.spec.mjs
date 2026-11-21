@@ -1008,8 +1008,10 @@ test("Missing Workshop search offers Create new part radio and preserved manufac
  });
  const dialog=page.locator(".library-part-dialog");
  await dialog.locator('input[name="new-part-source"][value="from"]').check();
+ await expect(dialog.locator("fieldset.library-picker-section > legend")).toHaveText("Choose a Workshop item");
+ await expect(dialog.locator("fieldset.library-picker-section > .library-workshop-quick-search")).toHaveCount(1);
+ await expect(dialog.locator(".library-workshop-choice-group > .library-workshop-quick-search")).toHaveCount(0);
  await dialog.getByLabel("Search all Workshop items").fill("2N7000");
- await expect(dialog.locator(".library-workshop-quick-results")).toContainText("No matching Workshop items");
  await expect(dialog.locator(".library-workshop-quick-results")).toContainText("No matching Workshop items");
  await expect(dialog.locator(".library-workshop-search-tip")).toHaveAttribute("title", /choose Create new part above/);
  await expect(dialog.locator(".library-workshop-quick-create")).toHaveCount(0);
