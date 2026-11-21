@@ -1,4 +1,5 @@
 import {getPartPhoto} from "./workshop-linked-part.js";
+import {resolveFunctionalPart} from "./functional-part-model.js";
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isProjectRecipeFile} from "./recipe-files.js";
 const uuid=/^[a-f0-9-]{36}$/i;
@@ -97,16 +98,22 @@ export async function handleInvestigations(request,env){
     return json({error:"Cannot add a nested entry to this parent."},400);
   }
   // Verify the owner still exists rather than accepting orphan investigations.
+  let ownerImplementation=null;
   if(ownerType==="part"){
    const partsFile=await env.PHOTOS.get("components/"+project+".json");
    const parts=partsFile?JSON.parse(await partsFile.text()):[];
-   if(!Array.isArray(parts)||!parts.some(part=>part.id===ownerId))return json({error:"Part no longer exists"},404);
+   const part=Array.isArray(parts)?parts.find(item=>item.id===ownerId):null;
+   if(!part)return json({error:"Part no longer exists"},404);
+   const selected=resolveFunctionalPart(part);
+   ownerImplementation={id:selected?.selectedImplementationId||null,
+    name:selected?.implementationResolved?selected.implementationName||selected.model||"":""};
   }else if(ownerId!=="__root__"){
    const treeFile=await env.PHOTOS.get("trees/"+project+".json");
    const tree=treeFile?JSON.parse(await treeFile.text()):[];
    if(!Array.isArray(tree)||!tree.some(node=>node.id===ownerId))return json({error:"Assembly no longer exists"},404);
   }
     record={id:crypto.randomUUID(),scope,ownerType,ownerId,stepId,parentRecordId,title:data.title.trim(),
+   implementationId:ownerImplementation?.id||null,implementationName:ownerImplementation?.name||"",
    status:"investigating",lifecycle:"active",entries:[],  description:["note","photos"].includes(data.category)?(data.description||"").trim():"",photos:["note","photos"].includes(data.category)?(data.photos||[]):[],
    photoNames:["note","photos"].includes(data.category)?(data.photoNames||{}):{},createdAt:new Date().toISOString()};
   if(data.category!==undefined)Object.assign(record,{category:data.category,date:new Date().toISOString().slice(0,10),
@@ -135,7 +142,7 @@ export async function handleInvestigations(request,env){
   const workspaceObject=await env.PHOTOS.get("part-workspaces/"+project+"/"+partId+".json");
   const workspace=workspaceObject?JSON.parse(await workspaceObject.text()):{};
   const revisionId=crypto.randomUUID();
-  const thumbnail=await getPartPhoto(request,env,project,part);
+  const thumbnail=await getPartPhoto(request,env,project,resolveFunctionalPart(part));
   let archivedThumbnail=null;
   if(thumbnail){
    archivedThumbnail="part-revisions/"+project+"/"+partId+"/"+revisionId+"/thumbnail";
