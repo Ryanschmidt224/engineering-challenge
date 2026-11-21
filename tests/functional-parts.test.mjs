@@ -89,3 +89,17 @@ test("document and auto-generated consumables are not converted into functional 
   assert.deepEqual(resolveFunctionalPart(part),part);
  }
 });
+
+test("purchasing status belongs to the selected implementation",()=>{
+ const originalPart={...original(),purchaseStatus:"already_have"};
+ const first=resolveFunctionalPart(encodeFunctionalPart(originalPart));
+ const newCandidate=changeImplementation(first,"add",{name:"Alternative MOSFET",partType:"purchased"});
+ assert.equal(newCandidate.purchaseStatus,"not_started");
+ const ordered={...newCandidate,purchaseStatus:"need_to_buy"};
+ const same=changeImplementation(ordered,"select",{id:ordered.selectedImplementationId});
+ assert.equal(same.purchaseStatus,"need_to_buy");
+ const old=changeImplementation(same,"select",{id:first.selectedImplementationId});
+ assert.equal(old.purchaseStatus,"not_started");
+ const retired=changeImplementation({...old,purchaseStatus:"already_have"},"retire",{id:newCandidate.selectedImplementationId});
+ assert.equal(retired.purchaseStatus,"already_have");
+});
