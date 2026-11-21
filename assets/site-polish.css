@@ -3219,3 +3219,30 @@
  font-size:.75rem;
 }
 .investigation-note-pending-info .btn{margin-left:auto}
+
+
+/* Compact title + description editing: labels and input areas align rather
+   than leaving a broad empty column and a separate tall Description row. */
+:is(.recipe-step-investigations,.investigations-panel) .investigation-add-controls > .investigation-field-label{
+ grid-template-columns:95px minmax(0,1fr)!important;
+ column-gap:10px!important;
+ align-items:center!important;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-add-controls > .investigation-description-label{
+ display:grid!important;
+ grid-template-columns:95px minmax(0,1fr)!important;
+ gap:10px!important;
+ align-items:start!important;
+ margin:1px 0 6px!important;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-description-label > textarea{
+ width:100%;
+ min-height:88px;
+ margin:0!important;
+}
+@media(max-width:550px){
+ :is(.recipe-step-investigations,.investigations-panel) .investigation-add-controls > :is(.investigation-field-label,.investigation-description-label){
+  grid-template-columns:1fr!important;
+  row-gap:4px!important;
+ }
+}
