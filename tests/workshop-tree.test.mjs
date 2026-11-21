@@ -21,6 +21,30 @@ test("Workshop reference categories are centralized and preserve stable item IDs
  assert.match(source,/branch\("saved"/);
  assert.match(source,/ancestor\.tagName==="DETAILS"/);
 });
+
+test("Electrical Workshop classification covers existing references and all eight groups",()=>{
+ const sandbox={window:{},document:{readyState:"loading",addEventListener(){}}};
+ runInNewContext(readFileSync("assets/resources.js","utf8"),sandbox);
+ const {electricalCategoryFor,workshopReferences,workshopCategories}=sandbox.window.BSResources;
+ const examples=[
+  ["24 V DC converter","component","electrical-power"],
+  ["Arduino Uno R3","component","electrical-controllers"],
+  ["A3144 Hall sensor","component","electrical-sensors"],
+  ["DM542 stepper driver","component","electrical-switching"],
+  ["10 kΩ resistor","component","electrical-basic"],
+  ["22 AWG wire","material","electrical-wiring"],
+  ["NEMA 17 stepper motor","component","electrical-motors"],
+  ["OLED display","component","electrical-displays"],
+  ["Digital multimeter","tool","tools"]
+ ];
+ for(const [name,kind,expected] of examples)
+  assert.equal(electricalCategoryFor({name,kind}),expected,name);
+ assert.equal(electricalCategoryFor({name:"Generic custom item",category:"electrical-sensors"}),"electrical-sensors");
+ for(const item of workshopReferences)
+  assert.ok(workshopCategories.some(([id])=>id===item.category),"Unknown category for "+item.id);
+ assert.equal(workshopReferences.find(item=>item.id==="workshop:wire22").bomDefault,"exclude");
+ assert.equal(workshopReferences.find(item=>item.id==="workshop:heatshrink").bomDefault,"exclude");
+});
 test("Edit Part inputs use paired descriptor/value layout with mobile fallback",()=>{
  const css=readFileSync("assets/site-workspaces.css","utf8");
  assert.match(css,/\.component-review>label\s*\{\s*display:grid/);
