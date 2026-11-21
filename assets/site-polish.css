@@ -3323,3 +3323,84 @@
   flex-wrap:wrap!important;
  }
 }
+
+/* Consistent record-entry field styling: entry type, title, note and photo uploader. */
+:is(.recipe-step-investigations,.investigations-panel) .investigation-new-record{
+ --entry-label-width:140px;
+ --entry-field-gap:16px;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-new-record > .investigation-record-title{
+ display:grid!important;
+ grid-template-columns:var(--entry-label-width) minmax(0,1fr)!important;
+ gap:var(--entry-field-gap)!important;
+ align-items:center!important;
+ flex:1 1 100%!important;
+ width:100%;
+ max-width:none;
+ min-width:0;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-new-record .investigation-add-controls > :is(.investigation-field-label,.investigation-description-label){
+ display:grid!important;
+ grid-template-columns:var(--entry-label-width) minmax(0,1fr)!important;
+ gap:var(--entry-field-gap)!important;
+ align-items:start!important;
+ width:100%;
+ margin:0 0 8px!important;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-new-record :is(.investigation-record-title,.investigation-field-label,.investigation-description-label){
+ font-size:.88rem;
+ font-weight:650;
+ line-height:1.4;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-new-record .investigation-field-descriptor{
+ padding-top:13px!important;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-new-record .investigation-description-label{
+ padding-top:12px;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-new-record :is(select.field,.investigation-field-label > input,.investigation-description-label > textarea){
+ box-sizing:border-box!important;
+ width:100%!important;
+ min-width:0!important;
+ margin:0!important;
+ border:1px solid var(--color-border)!important;
+ border-radius:12px!important;
+ background:var(--color-surface-muted)!important;
+ color:var(--color-text);
+ box-shadow:none;
+ font-size:1rem;
+ font-weight:400;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-new-record :is(select.field,.investigation-field-label > input){
+ height:50px!important;
+ min-height:50px!important;
+ padding:10px 16px!important;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-new-record .investigation-description-label > textarea{
+ min-height:100px!important;
+ padding:14px 16px!important;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-new-record .investigation-note-photos{
+ margin:10px 0;
+ border-radius:12px;
+}
+:is(.recipe-step-investigations,.investigations-panel) .investigation-new-record .investigation-note-photo-add{
+ border-radius:12px;
+}
+@media(max-width:650px){
+ :is(.recipe-step-investigations,.investigations-panel) .investigation-new-record{
+  --entry-label-width:110px;
+  --entry-field-gap:10px;
+ }
+}
+@media(max-width:480px){
+ :is(.recipe-step-investigations,.investigations-panel) .investigation-new-record > .investigation-record-title,
+ :is(.recipe-step-investigations,.investigations-panel) .investigation-new-record .investigation-add-controls > :is(.investigation-field-label,.investigation-description-label){
+  grid-template-columns:minmax(0,1fr)!important;
+  row-gap:5px!important;
+ }
+ :is(.recipe-step-investigations,.investigations-panel) .investigation-new-record .investigation-field-descriptor,
+ :is(.recipe-step-investigations,.investigations-panel) .investigation-new-record .investigation-description-label{
+  padding-top:0!important;
+ }
+}
