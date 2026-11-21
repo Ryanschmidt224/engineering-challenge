@@ -63,6 +63,25 @@
   };
  }
 
+ // Functional engineering BOM resolves to one physical implementation at
+ // most. An unselected requirement must never appear as a purchase-ready item.
+ function resolution(part){
+  if(part?.itemType==="document"||part?.generatedFrom||part?.isTool)return "not-applicable";
+  if(part?.implementationResolved===false)return "unselected";
+  if(part?.partType==="custom")return "fabricate";
+  return "purchase";
+ }
+ function splitPhysicalPlan(parts){
+  const result={purchase:[],fabricate:[],unselected:[]};
+  for(const part of parts||[]){
+   const kind=resolution(part);
+   if(kind==="purchase")result.purchase.push(part);
+   if(kind==="fabricate")result.fabricate.push(part);
+   if(kind==="unselected")result.unselected.push(part);
+  }
+  return result;
+ }
+
  function quantityText(part){
   return part.quantity===null||part.quantity===undefined
    ?"Not specified"
@@ -74,5 +93,5 @@
   return nodes.find(node=>node.id===part.assemblyId)?.name||"Project";
  }
 
- return Object.freeze({isPartNode,assemblyIds,assemblyQuantity,quantityMultiplier,projectQuantity,selectWorkspaceParts,quantityText,assemblyText});
+ return Object.freeze({isPartNode,assemblyIds,assemblyQuantity,quantityMultiplier,projectQuantity,selectWorkspaceParts,resolution,splitPhysicalPlan,quantityText,assemblyText});
 });

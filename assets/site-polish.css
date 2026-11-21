@@ -3775,3 +3775,80 @@
  .assembly-archived-row{align-items:flex-start}
  .assembly-archive-row-actions{flex-direction:column}
 }
+
+/* Functional part / chosen implementation. Reuses the existing field, button,
+   and rounded panel vocabulary without changing the surrounding layout. */
+.part-functional-panel{
+ display:flex;flex-direction:column;gap:11px;
+ padding:15px 16px;margin:4px 0 14px;
+ border:1px solid var(--color-border);border-radius:12px;
+ background:var(--color-surface);
+}
+.part-functional-heading{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.part-functional-heading h3,.part-implementation-panel h3{
+ margin:0;font-size:.97rem;font-weight:650;
+}
+.part-functional-heading .btn,.part-implementation-add{
+ min-height:31px;padding:5px 11px;
+}
+.part-functional-purpose,.part-functional-requirements,.part-functional-acceptance,
+.part-implementation-summary{
+ margin:0;line-height:1.5;font-size:.87rem;
+ overflow-wrap:anywhere;white-space:pre-line;
+}
+.part-functional-requirements,.part-functional-acceptance{color:var(--color-text-muted)}
+.part-implementation-panel{
+ display:flex;flex-direction:column;align-items:stretch;gap:9px;
+ border-top:1px solid var(--color-border);padding-top:12px;
+}
+.part-implementation-summary{font-weight:500}
+.part-functional-edit,.part-implementation-new{
+ display:flex;flex-direction:column;gap:10px;
+ padding:12px;background:var(--color-surface-muted);
+ border:1px solid var(--color-border);border-radius:10px;
+}
+.part-functional-field,.part-functional-edit-field{
+ display:flex;flex-direction:column;align-items:stretch;gap:5px;
+ font-size:.86rem;font-weight:550;
+}
+.part-functional-field > :is(input,textarea,select),
+.part-functional-edit-field > :is(input,textarea){
+ box-sizing:border-box;width:100%;max-width:100%;
+ border:1px solid var(--color-border);
+ border-radius:9px;padding:10px 12px;
+ font-weight:400;background:var(--color-surface);
+}
+.part-functional-field textarea,.part-functional-edit-field textarea{resize:vertical}
+.part-functional-actions{
+ display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-start;
+}
+.part-functional-feedback{
+ font-size:.8rem;color:var(--color-text-muted);
+}
+.part-functional-feedback:empty{display:none}
+.part-functional-unselected{
+ display:flex;gap:8px;align-items:center;margin:4px 0 9px;
+ font-size:.86rem;font-weight:500;
+}
+.part-functional-unselected input{margin:0}
+.part-editor-section-heading[data-part-editor-section="function"],
+.part-editor-section-heading[data-part-editor-section="implementation"]{
+ margin-top:15px;
+}
+@media(max-width:560px){
+ .part-functional-panel{padding:12px}
+ .part-functional-edit,.part-implementation-new{padding:10px}
+}
+
+/* BOM resolves the selected physical solution, without altering the feature tree. */
+.bom-part-name .bom-implementation-label{
+ display:block;margin-top:3px;font-size:.75rem;font-weight:450;line-height:1.3;
+ color:var(--color-text-muted);
+}
+.bom-unresolved-part .bom-implementation-label{font-style:italic}
+.bom-implementation-totals{
+ font-size:.82rem;line-height:1.5;color:var(--color-text-muted);
+ margin:9px 0 7px;
+}

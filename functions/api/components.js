@@ -3,18 +3,19 @@ import {isAdmin} from "./auth.js";
 import {issueNumber} from "./numbering.js";
 import {getPartPhoto,linkedWorkshopItem,partPhotoKey,workshopItemLookup,workshopLinkId,workshopDocumentation,workshopPartDetails,workshopSourcing} from "./workshop-linked-part.js";
 import {annotationKey,renditionKey} from "./photo-annotations.js";
+import {resolveFunctionalPart,encodeFunctionalPart,changeImplementation} from "./functional-part-model.js";
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const authorized=async(request,env)=>{const u=new URL(request.url),project=u.searchParams.get("project");return project?canEditProject(request,env,project):isAdmin(request,env)};
 const key=project=>"components/"+project+".json";
-const read=async(env,project)=>{const obj=await env.PHOTOS.get(key(project));return obj?JSON.parse(await obj.text()):[]};
+const read=async(env,project)=>{const obj=await env.PHOTOS.get(key(project));return (obj?JSON.parse(await obj.text()):[]).map(resolveFunctionalPart)};
 const readEditable=async(env,project)=>{
  const obj=await env.PHOTOS.get(key(project));
- return {items:obj?JSON.parse(await obj.text()):[],etag:obj?.etag||null,exists:!!obj};
+ return {items:(obj?JSON.parse(await obj.text()):[]).map(resolveFunctionalPart),etag:obj?.etag||null,exists:!!obj};
 };
 const saveEditable=async(env,project,items,previous)=>{
  const condition=previous.etag?{onlyIf:{etagMatches:previous.etag}}:
   !previous.exists?{onlyIf:{etagDoesNotMatch:"*"}}:undefined;
- const saved=await env.PHOTOS.put(key(project),JSON.stringify(items),condition);
+ const saved=await env.PHOTOS.put(key(project),JSON.stringify(items.map(encodeFunctionalPart)),condition);
  return saved!==null;
 };
 const stalePart=(input,part)=>(input.expectedRevision??null)!==(part.revision??null)
@@ -125,7 +126,7 @@ const cleanProjectDetails=(incoming,previous={})=>{
 };
 const progressUpdatesFor=part=>Array.isArray(part.progressUpdates)?part.progressUpdates.filter(note=>note&&typeof note.text==="string").map(note=>({id:String(note.id||""),text:note.text,createdAt:String(note.createdAt||"")})):[];
 const validProgressUpdate=value=>typeof value==="string"&&!!value.trim()&&value.trim().length<=500;
-const presentPart=part=>({...part,progressUpdates:progressUpdatesFor(part),purchaseStatus:purchaseStatuses.has(part.purchaseStatus)?part.purchaseStatus:"not_started",fullName:part.fullName||generatedFullName(part),itemType:part.itemType==="document"?"document":"part",progressStatus:["not_started","in_progress","complete"].includes(part.progressStatus)?part.progressStatus:"not_started",needsAttention:part.needsAttention===true,attentionNote:part.attentionNote||"",isTool:isToolPart(part),hideFromFeatureTree:part.hideFromFeatureTree===true||(part.hideFromFeatureTree===undefined&&part.bomOnly===true),assumedOnHand:part.purchaseOverride===true?false:part.purchaseOverride===false?true:standardShopMaterial(part)});
+const presentPart=part=>({...resolveFunctionalPart(encodeFunctionalPart(part)),...(part.workshopSourcing?{workshopSourcing:part.workshopSourcing}:{}),...(part.workshopDocumentation?{workshopDocumentation:part.workshopDocumentation}:{}),progressUpdates:progressUpdatesFor(part),purchaseStatus:purchaseStatuses.has(part.purchaseStatus)?part.purchaseStatus:"not_started",fullName:part.fullName||generatedFullName(part),itemType:part.itemType==="document"?"document":"part",progressStatus:["not_started","in_progress","complete"].includes(part.progressStatus)?part.progressStatus:"not_started",needsAttention:part.needsAttention===true,attentionNote:part.attentionNote||"",isTool:isToolPart(part),hideFromFeatureTree:part.hideFromFeatureTree===true||(part.hideFromFeatureTree===undefined&&part.bomOnly===true),assumedOnHand:part.purchaseOverride===true?false:part.purchaseOverride===false?true:standardShopMaterial(part)});
 // Derived consumables remain tied to their source part. Never require the
 // learner to enter ferrule counts or create a second independent BOM item.
 function syncDerived(items,source){
@@ -203,8 +204,15 @@ async function reloadWorkshopPart(request,env,project,id,input){
  if(!source?.item?.name)return json({error:"The linked Workshop item is missing or unavailable to your account."},404);
  const photo=source.photoKey?await env.PHOTOS.get(source.photoKey):null;
  if(source.photoKey&&!photo)return json({error:"The Workshop photo could not be loaded. Try again after checking the source item."},409);
+ const detailsFromWorkshop=workshopPartDetails(source);
  const updated={
-  ...workshopPartDetails(source),revision:crypto.randomUUID(),
+  ...previous,...detailsFromWorkshop,
+  name:previous.name,description:previous.description,
+  functionalRequirements:previous.functionalRequirements,acceptanceCriteria:previous.acceptanceCriteria,
+  selection:previous.selection,resolvedImplementationId:previous.resolvedImplementationId,
+  implementationName:String(source.item?.name||previous.implementationName||"").slice(0,180),
+  projectDetails:{...(previous.projectDetails||{}),...(detailsFromWorkshop.projectDetails||{})},
+  revision:crypto.randomUUID(),
   id:previous.id,partNumber:previous.partNumber,assemblyId:previous.assemblyId,
   quantity:previous.quantity,quantityUnit:previous.quantityUnit,createdAt:previous.createdAt,
   photoRevision:crypto.randomUUID(),purchaseStatus:"not_started",progressStatus:"not_started",progressUpdates:[]
@@ -252,7 +260,15 @@ export async function handleComponents(request,env){
   if(input.description!==undefined&&(typeof input.description!=="string"||input.description.length>2000))return json({error:"Description must be 2000 characters or less"},400);
   const projectDetails=cleanProjectDetails(input.projectDetails);
   if(!projectDetails)return json({error:"Invalid project-specific notes or schematic metadata"},400);
-  const record={description:String(input.description||"").trim(),projectDetails,itemType,partType:kind,assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,hideFromFeatureTree:input.hideFromFeatureTree===true,isTool:itemType==="document"?false:input.isTool===true,purchaseStatus:"not_started",progressStatus:"not_started",progressUpdates:[],needsAttention:false,attentionNote:"",purchaseOverride:input.purchaseOverride===true||input.purchaseOverride===false?input.purchaseOverride:null,workshopChoice:recommendedWorkshopIds.has(input.workshopChoice)?input.workshopChoice:null,sharedPartRef:cleanPartRef(input.sharedPartRef),id:crypto.randomUUID(),name:clean(input.name),fullName:clean(input.fullName||input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),supplierOffers:supplierOffers||[],category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,historicalPriceBasis:price.basis,historicalPackageQuantity:price.packageQuantity,historicalPurchasePrice:price.purchasePrice,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString()};
+  for(const [field,max] of [["implementationName",180],["functionalRequirements",6000],["acceptanceCriteria",6000]]){
+   if(input[field]!==undefined&&(typeof input[field]!=="string"||input[field].length>max))
+    return json({error:"Invalid "+field},400);
+  }
+  const record={description:String(input.description||"").trim(),projectDetails,itemType,partType:kind,assemblyId:typeof input.assemblyId==="string"?input.assemblyId.slice(0,80):null,...amount,hideFromFeatureTree:input.hideFromFeatureTree===true,isTool:itemType==="document"?false:input.isTool===true,purchaseStatus:"not_started",progressStatus:"not_started",progressUpdates:[],needsAttention:false,attentionNote:"",purchaseOverride:input.purchaseOverride===true||input.purchaseOverride===false?input.purchaseOverride:null,workshopChoice:recommendedWorkshopIds.has(input.workshopChoice)?input.workshopChoice:null,sharedPartRef:cleanPartRef(input.sharedPartRef),id:crypto.randomUUID(),name:clean(input.name),fullName:clean(input.fullName||input.name),manufacturer:clean(input.manufacturer),model:clean(input.model),supplier:clean(input.supplier),asin:clean(input.asin),supplierOffers:supplierOffers||[],category:clean(input.category),historicalPrice:price.price,historicalPriceDate:price.date,historicalPriceBasis:price.basis,historicalPackageQuantity:price.packageQuantity,historicalPurchasePrice:price.purchasePrice,specifications:input.specifications.map(s=>({name:clean(s.name),value:clean(s.value),source:s.source==="inferred"?"inferred":"explicit"})).filter(s=>s.name&&s.value),createdAt:new Date().toISOString(),
+   implementationName:String(input.implementationName||input.model||input.name).trim().slice(0,180),
+   functionalRequirements:String(input.functionalRequirements||"").trim(),
+   acceptanceCriteria:String(input.acceptanceCriteria||"").trim()};
+  if(input.implementationUnselected===true&&record.itemType==="part")record.selection={selectedId:null,candidates:[]};
   if(kind==="custom")Object.assign(record,{manufacturer:"",model:"",supplier:"",asin:"",historicalPrice:null,historicalPriceDate:null,historicalPurchasePrice:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
   const state=await readEditable(env,project),items=state.items;
   if(items.length>=300)return json({error:"Component limit reached"},400);
@@ -274,6 +290,34 @@ export async function handleComponents(request,env){
   if(id&&input?.reloadWorkshop===true){
    if(request.headers.get("origin")!==url.origin)return json({error:"Invalid request origin"},403);
    return reloadWorkshopPart(request,env,project,id,input);
+  }
+  if(id&&input?.functionalAction){
+   const state=await readEditable(env,project),index=state.items.findIndex(row=>row.id===id);
+   if(index<0)return json({error:"Functional part not found"},404);
+   const original=state.items[index],stale=stalePart(input,original);
+   if(stale)return stale;
+   if(original.itemType==="document"||original.generatedFrom)return json({error:"Only project parts support implementation selection"},409);
+   let updated;
+   try{
+    if(input.functionalAction==="requirements"){
+     for(const [key,max] of [["purpose",2000],["requirements",6000],["acceptanceCriteria",6000]]){
+      if(input[key]!==undefined&&(typeof input[key]!=="string"||input[key].length>max))
+       return json({error:"Invalid "+key},400);
+     }
+     updated={...original,
+      description:input.purpose===undefined?original.description:input.purpose.trim(),
+      functionalRequirements:input.requirements===undefined?original.functionalRequirements:input.requirements.trim(),
+      acceptanceCriteria:input.acceptanceCriteria===undefined?original.acceptanceCriteria:input.acceptanceCriteria.trim()};
+    }else{
+     updated=changeImplementation(original,input.functionalAction,input.implementation);
+     if(input.functionalAction==="select"||input.functionalAction==="remove")updated.purchaseStatus="not_started";
+    }
+   }catch(error){return json({error:String(error.message||error)},400)}
+   updated.revision=crypto.randomUUID();
+   state.items[index]=updated;
+   if(input.functionalAction!=="requirements")syncDerived(state.items,updated);
+   if(!await saveEditable(env,project,state.items,state))return partWriteConflict(env,project,id,input);
+   return json({component:presentPart(updated)});
   }
   if(!id||!input||!((input.purchaseOverride===null||typeof input.purchaseOverride==="boolean")||(input.workshopChoice===null||recommendedWorkshopIds.has(input.workshopChoice))||typeof input.hideFromFeatureTree==="boolean"||typeof input.isTool==="boolean"||input.progressStatus!==undefined||input.needsAttention!==undefined||input.attentionNote!==undefined||input.name!==undefined||input.partType!==undefined||input.quantity!==undefined||input.partValue!==undefined||input.treeDescription!==undefined||input.purchaseStatus!==undefined||input.progressUpdate!==undefined||input.progressOperationAdd!==undefined||input.progressOperationEdit!==undefined))return json({error:"Invalid part preference"},400);
   const state=await readEditable(env,project),items=state.items,entry=items.find(item=>item.id===id);
@@ -378,6 +422,10 @@ export async function handleComponents(request,env){
   if(input.partType!==undefined&&!["purchased","custom","custom_purchased","code"].includes(input.partType))return json({error:"Invalid part type"},400);
   const projectDetails=cleanProjectDetails(input.projectDetails,previous.projectDetails||{});
   if(!projectDetails)return json({error:"Invalid project-specific notes or schematic metadata"},400);
+  for(const [field,max] of [["implementationName",180],["functionalRequirements",6000],["acceptanceCriteria",6000]]){
+   if(input[field]!==undefined&&(typeof input[field]!=="string"||input[field].length>max))
+    return json({error:"Invalid "+field},400);
+  }
   const updated={...previous,revision:crypto.randomUUID(),projectDetails,description:input.description===undefined?(previous.description||""):input.description.trim(),itemType:input.itemType==="document"?"document":input.itemType==="part"?"part":previous.itemType||"part",name:clean(input.name.trim()),fullName:clean(input.fullName||input.name.trim()),...amount,historicalPrice:price.price,historicalPriceDate:price.date,historicalPriceBasis:price.basis,historicalPackageQuantity:price.packageQuantity,historicalPurchasePrice:price.purchasePrice,
    partType:input.partType==="code"?"code":input.partType==="custom"?"custom":input.partType==="custom_purchased"?"custom_purchased":"purchased"};
   if(updated.partType==="code"){updated.itemType="document";updated.isTool=false;updated.quantity=null}
@@ -396,6 +444,9 @@ export async function handleComponents(request,env){
   if(input.category!==undefined)updated.category=clean(input.category);
   if(updated.partType==="custom")Object.assign(updated,{manufacturer:"",model:"",supplier:"",asin:"",historicalPrice:null,historicalPriceDate:null,historicalPurchasePrice:null,historicalPriceBasis:"per_part",historicalPackageQuantity:null});
   updated.specifications=input.specifications.map(spec=>({name:clean(spec.name),value:clean(spec.value),source:spec.source==="inferred"?"inferred":"explicit"})).filter(spec=>spec.name&&spec.value);
+  updated.implementationName=String(input.implementationName??previous.implementationName??input.model??input.name).trim().slice(0,180);
+  if(input.functionalRequirements!==undefined)updated.functionalRequirements=input.functionalRequirements.trim();
+  if(input.acceptanceCriteria!==undefined)updated.acceptanceCriteria=input.acceptanceCriteria.trim();
   // Keep the original shared part reference unless a new valid reference is supplied.
   if(Object.prototype.hasOwnProperty.call(input,"sharedPartRef"))updated.sharedPartRef=cleanPartRef(input.sharedPartRef);
   if(input.partNumber&&previous.partNumber&&input.partNumber!==previous.partNumber)return json({error:"Issued part numbers cannot be changed. Use the same number or contact the project owner."},409);

@@ -28,6 +28,7 @@
   const address=(file=null,download=false)=>{
    if(!current)return "";
    const params=new URLSearchParams({project:current.project,type:current.type,id:current.id});
+   if(current.implementation)params.set("implementation",current.implementation);
    if(file)params.set("file",file);
    if(download)params.set("download","1");
    return "/api/drawings?"+params.toString();
@@ -42,9 +43,9 @@
    if(file.size<=0||file.size>MAX_BYTES)return "PDF drawings must be between 1 byte and 20 MB each.";
    return null;
   };
-  async function load(project,type,id){
+  async function load(project,type,id,implementation=null){
    const version=++requestVersion;
-   current={project,type,id};setAccess();
+   current={project,type,id,implementation};setAccess();
    list.replaceChildren(text("p","muted","Loading drawings…"));status.textContent="";
    try{
     const res=await fetch(address(),{cache:"no-store"});
@@ -73,7 +74,7 @@
         const response=await fetch(address(drawing.id),{method:"DELETE",credentials:"same-origin"});
         const result=await response.json().catch(()=>({}));
         if(!response.ok)throw Error(result.error||"Delete failed");
-        await load(current.project,current.type,current.id);
+        await load(current.project,current.type,current.id,current.implementation);
         status.textContent="Drawing deleted.";
        }catch(e){status.textContent=e.message;remove.disabled=false}
       };
@@ -97,8 +98,9 @@
    try{
     let completed=0;
     for(const file of selected){
-     if(current.project!==location.project||current.type!==location.type||current.id!==location.id)throw Error("The selected assembly or part changed. Reopen the drawings section.");
+     if(current.project!==location.project||current.type!==location.type||current.id!==location.id||current.implementation!==location.implementation)throw Error("The selected implementation changed. Reopen the drawings section.");
      const params=new URLSearchParams({project:location.project,type:location.type,id:location.id});
+     if(location.implementation)params.set("implementation",location.implementation);
      if(replacement)params.set("file",replacement);
      const res=await fetch("/api/drawings?"+params.toString(),{
       method:"POST",credentials:"same-origin",
@@ -109,7 +111,7 @@
      if(!res.ok)throw Error(file.name+": "+(data.error||"Upload failed (HTTP "+res.status+")"));
      completed++;
     }
-    await load(location.project,location.type,location.id);
+    await load(location.project,location.type,location.id,location.implementation);
     status.textContent=(replacement?"Drawing replaced.":completed+" PDF drawing"+(completed===1?"":"s")+" saved.")+" Use View PDF to open a drawing.";
    }catch(e){status.textContent=e.message}
    finally{busy=false;add.disabled=false}

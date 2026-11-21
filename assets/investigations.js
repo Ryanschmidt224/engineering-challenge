@@ -520,6 +520,15 @@
      const source=record.scope==="step"?"Work instruction":record.ownerType==="part"?"Part":"Assembly";
      body.append(make("p","investigation-origin","From "+source+" · "+record.title));
     }
+    if(record.ownerType==="part"&&Object.hasOwn(record,"implementationId")){
+     const latest=(getPartList?.()||[]).find(part=>part.id===record.ownerId)||
+      (getPart?.()?.id===record.ownerId?getPart():null);
+     const changed=latest&&latest.selectedImplementationId!==record.implementationId;
+     const context=make("p","investigation-implementation-context",
+      "Recorded with: "+(record.implementationName||"No implementation selected")+
+      (changed?" · Different implementation selected now":""));
+     body.append(context);
+    }
     let editing=false;
     const edit=btn("Edit",event=>{
      event.preventDefault();event.stopPropagation();card.open=true;editing=true;draw();

@@ -9,8 +9,8 @@ const sanitizeName=value=>{
  const cleaned=String(value||"drawing.pdf").replace(/[\\/\x00-\x1f\x7f]/g,"_").trim().slice(0,140);
  return (cleaned||"drawing.pdf").replace(/\.pdf$/i,"")+".pdf";
 };
-const prefix=(project,type,id)=>"drawings/"+project+"/"+type+"/"+id+"/";
-const keyFor=(project,type,id,file)=>prefix(project,type,id)+file+".pdf";
+const prefix=(project,type,id,implementation=null)=>"drawings/"+project+"/"+type+"/"+id+"/"+(implementation?"implementations/"+implementation+"/":"");
+const keyFor=(project,type,id,file,implementation=null)=>prefix(project,type,id,implementation)+file+".pdf";
 const downloadHeaders=(name,download)=>{
  const fileName=sanitizeName(name);
  const headers=new Headers({
@@ -44,8 +44,25 @@ export async function handleDrawings(request,env){
  if(!await validOwner(env,project,type,id))return json({error:"Assembly or part not found"},404);
  const file=url.searchParams.get("file");
  if(file!==null&&!validUuid(file))return json({error:"Invalid drawing ID"},400);
- const location=prefix(project,type,id);
- const objectKey=file===null?null:keyFor(project,type,id,file);
+ const requested=url.searchParams.get("implementation");
+ if(requested!==null&&!/^(?:implementation-)?[a-f0-9-]{36}$/i.test(requested))
+  return json({error:"Invalid implementation"},400);
+ let implementation=null;
+ if(type==="part"){
+  const saved=await env.PHOTOS.get("components/"+project+".json");
+  const parts=saved?JSON.parse(await saved.text()):[];
+  const part=parts.find(item=>item.id===id);
+  if(part?.selection){
+   implementation=part.selection.selectedId||null;
+   if(!implementation){
+    if(request.method==="GET"&&file===null)return json({drawings:[],truncated:false,needsImplementation:true});
+    return json({error:"Select a physical implementation before attaching drawings"},409);
+   }
+   if(requested!==implementation)return json({error:"Selected implementation changed. Reload the part."},409);
+  }else if(requested!==null)return json({error:"Implementation does not belong to this part"},409);
+ }else if(requested!==null)return json({error:"Assembly drawings do not have implementation IDs"},400);
+ const location=prefix(project,type,id,implementation);
+ const objectKey=file===null?null:keyFor(project,type,id,file,implementation);
  if(request.method==="GET"){
   if(file!==null){
    const object=await env.PHOTOS.get(objectKey);
@@ -95,7 +112,7 @@ export async function handleDrawings(request,env){
  let suppliedName="drawing.pdf";
  try{suppliedName=decodeURIComponent(request.headers.get("x-drawing-name")||"drawing.pdf")}catch{return json({error:"Invalid drawing filename"},400)}
  const newId=file||crypto.randomUUID(),filename=sanitizeName(suppliedName);
- await env.PHOTOS.put(keyFor(project,type,id,newId),bytes,{
+ await env.PHOTOS.put(keyFor(project,type,id,newId,implementation),bytes,{
   httpMetadata:{contentType:"application/pdf"},
   customMetadata:{filename}
  });

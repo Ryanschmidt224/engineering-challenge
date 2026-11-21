@@ -10,8 +10,20 @@ export async function handlePartPages(request,env){
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  const item=await env.PHOTOS.get("components/"+project+".json");
  const parts=item?JSON.parse(await item.text()):[];
- if(!parts.some(p=>p.id===partId))return json({error:"Part not found"},404);
- const prefix="part-pages/"+project+"/"+partId+"/";
+ const part=parts.find(p=>p.id===partId);
+ if(!part)return json({error:"Part not found"},404);
+ const requested=u.searchParams.get("implementation");
+ if(requested!==null&&!/^(?:implementation-)?[a-f0-9-]{36}$/i.test(requested))
+  return json({error:"Invalid implementation"},400);
+ const selected=part.selection?.selectedId??null;
+ if(part.selection){
+  if(!selected){
+   if(request.method==="GET"&&file===null)return json({pages:[],needsImplementation:true});
+   return json({error:"Select an implementation before saving a product page"},409);
+  }
+  if(requested!==selected)return json({error:"Selected implementation changed. Reload this part."},409);
+ }else if(requested!==null)return json({error:"Implementation does not belong to this part"},409);
+ const prefix="part-pages/"+project+"/"+partId+"/"+(selected?"implementations/"+selected+"/":"");
  if(request.method==="GET"){
   if(file!==null){
    const obj=await env.PHOTOS.get(prefix+file+".html");
