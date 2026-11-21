@@ -503,3 +503,28 @@
 .recipe-compact .recipe-step-photo>.bs-photo-control .bs-photo-status{
  text-align:left;
 }
+
+
+/* Text and arrow sizing options in the shared photo markup toolbar. */
+.bs-markup-toolbar .bs-markup-size-control{
+ display:inline-flex;
+ align-items:center;
+ gap:6px;
+ padding:4px 7px;
+ border:1px solid var(--color-border);
+ border-radius:8px;
+ font-size:.8rem;
+ font-weight:600;
+ white-space:nowrap;
+}
+.bs-markup-toolbar .bs-markup-size-control input{
+ width:56px;
+ min-height:29px;
+ box-sizing:border-box;
+ padding:4px 5px;
+ border:1px solid var(--color-border);
+ border-radius:5px;
+ background:var(--color-surface);
+ color:var(--color-text);
+ font:inherit;
+}
