@@ -81,6 +81,7 @@
   const admin=()=>!!options.admin?.();
   let steps=[],expanded=null,dirty=false,level="standard",pendingUploads=0,saving=false,draft=null,scope=null,loading=true;
   const editing=new Set();
+  const editSnapshots=new Map();
   window.addEventListener("beforeunload",event=>{if(!dirty&&!pendingUploads&&!saving&&!draft)return;event.preventDefault();event.returnValue="";});
   try{const saved=localStorage.getItem("bs-recipe-detail");if(["brief","standard","detailed"].includes(saved))level=saved}catch{}
   let changeVersion=0,saveTimer=null,savePromise=null,allowReplay=false;
@@ -108,7 +109,11 @@
    saveTimer=setTimeout(()=>{void savePending().catch(()=>{})},1100);
   }
   const savedSteps=()=>steps.filter(step=>step!==draft);
-  const changed=()=>{if(draft?.id===expanded)return;dirty=true;changeVersion++;options.onChange?.();scheduleSave()};
+  const changed=()=>{if(draft?.id===expanded)return;dirty=true;changeVersion++;options.onChange?.();
+   // The active Edit session is committed by Save. Do not autosave its draft
+   // into the project before the user has a chance to press Cancel.
+   if(!editing.has(expanded))scheduleSave();
+  };
   const saveHint=()=>{feedback.textContent="Unsaved step changes."};
   // Capture navigation before the page replaces its editor or changes the workspace endpoint.
   // Replay the original click only after the save has succeeded.
@@ -303,7 +308,7 @@
       await savePending();
      }catch(error){feedback.textContent=error.message||"Save failed; still on this step.";return}
      expanded=step.id;expandedStepBodies.delete(step.id);
-     editing.clear();if(isDraft)editing.add(step.id);
+     editSnapshots.clear();editing.clear();if(isDraft)editing.add(step.id);
      options.onStepSelected?.(step.id);
      closeKnowledgeMenu();render();options.onStepChange?.(step.id);
     },"recipe-step-nav-item"+(isCurrent?" is-active":""));
@@ -372,6 +377,10 @@
     const saveStep=async event=>{
      event.preventDefault();event.stopPropagation();
      if(!editing.has(step.id)){
+      if(!isDraft){
+       try{await savePending()}catch(error){feedback.textContent=error.message||"Unable to begin editing.";return}
+       editSnapshots.set(step.id,normalize(step));
+      }
       editing.add(step.id);expanded=step.id;expandedStepBodies.add(step.id);render();
       content.querySelector(".recipe-step-name")?.focus();
       return;
@@ -394,7 +403,7 @@
       if(typeof options.onSave!=="function")throw Error("Save is unavailable.");
       await options.onSave();
       dirty=false;window.BSTransient?.show(feedback,"Step saved.");
-      editing.delete(step.id);expanded=step.id;render();
+      editSnapshots.delete(step.id);editing.delete(step.id);expanded=step.id;render();
      }catch(error){
       if(isDraft)draft=step;
       feedback.textContent=error.message||"Could not save step.";
@@ -445,7 +454,7 @@
        }))return;
        if(saving||pendingUploads)return;
        steps.splice(steps.indexOf(step),1);
-       editing.delete(step.id);
+       editing.delete(step.id);editSnapshots.delete(step.id);
        expandedStepBodies.delete(step.id);
        if(step===draft)draft=null;
        expanded=steps[Math.min(i,steps.length-1)]?.id||null;
@@ -590,7 +599,16 @@
        render();add.focus();
       },"btn"));
      }else{
-      actions.append(bottomSave);
+      const cancel=button("Cancel",()=>{
+       if(saving||pendingUploads)return;
+       const snapshot=editSnapshots.get(step.id);
+       if(snapshot)Object.assign(step,normalize(snapshot));
+       editSnapshots.delete(step.id);editing.delete(step.id);
+       clearTimeout(saveTimer);dirty=false;
+       feedback.textContent="Changes canceled.";
+       render();
+      },"btn recipe-cancel-step");
+      actions.append(bottomSave,cancel);
      }
      body.append(actions);
     }else{
@@ -660,7 +678,7 @@
    if(desired&&steps.some(step=>step.id===desired)){expanded=desired;sessionStorage.removeItem(resumeKey)}
    expandedStepBodies.clear();
    if(expanded)options.onStepSelected?.(expanded);
-   editing.clear();feedback.textContent="";
+   editSnapshots.clear();editing.clear();feedback.textContent="";
    if(resumeDraft){expanded=draft.id;editing.add(draft.id)}
    setLoading(false);
    render();
