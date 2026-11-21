@@ -153,6 +153,13 @@ test("new custom part retains explicit project numbering without confusing it wi
  expect(partDetailsOrder[0]).toContain("Part type");
  await expect(page.locator(".library-part-dialog .library-auto-number-tip")).toHaveAttribute("title", /next available part number as defined in the part settings page/);
  await expect(page.locator(".library-part-dialog .library-function-tip")).toHaveAttribute("title", /project hierarchy/);
+ // Tooltip must be visible in the modal top layer, not behind the dialog.
+ await page.locator(".library-part-dialog .library-auto-number-tip").hover();
+ const sharedTip=page.locator(".library-part-dialog > .bs-global-tooltip");
+ await expect(sharedTip).toBeVisible();
+ await expect(sharedTip).toContainText("part settings page");
+ await page.locator(".library-part-dialog .library-function-tip").first().hover();
+ await expect(sharedTip).toContainText("project hierarchy");
  await expect(page.locator(".library-part-dialog .library-field",{hasText:"Container"}).locator("input")).toHaveAttribute("maxlength","20");
  await expect(page.locator(".library-part-dialog .library-container-name-hint")).toHaveText("(name)");
  await expect(page.locator(".library-part-dialog .library-project-only")).toBeHidden();
