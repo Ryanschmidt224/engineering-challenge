@@ -56,7 +56,7 @@
    onChange:key=>{selectedWorkshopCategory=key;selectedFamily="";selectedType="";applyWorkshopCategory();queueMicrotask(()=>root.querySelector(".workshop-catalog-sort")?.dispatchEvent(new Event("change")))}
   });
   nav?.setItems([{value:"all",label:"All workshop items"},
-   ...workshopCategories.map(([id,name])=>({value:id,label:id.startsWith("electrical-")?"  ↳ "+name:name})),
+   ...workshopCategories.map(([id,name])=>({value:id,label:name,...(id.startsWith("electrical-")?{parent:"electronics"}:{})})),
    {value:"mine",label:"My Workshop"}]);
   root.addEventListener("bsworkshopupdated",applyWorkshopCategory);
   window.addEventListener("bsworkshopfocus",event=>{
