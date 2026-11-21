@@ -78,7 +78,7 @@ export async function handleInvestigations(request,env){
    (data.photos!==undefined&&!(data.category==="photos"?
      validPhotoEntry(data.photos,project):validNotePhotos(data.photos,project))))
    return json({error:"Invalid notes, description, or photos"},400);
-  if(data.category!==undefined&&(typeof data.category!=="string"||data.category==="practice"||!Object.hasOwn(categoryFields,data.category)||false||!validEntries(data.entries,categoryFields[data.category],project)))
+  if(data.category!==undefined&&(typeof data.category!=="string"||data.category==="practice"||!Object.hasOwn(categoryFields,data.category)||!validEntries(data.entries,categoryFields[data.category],project)))
    return json({error:"Invalid record category or fields"},400);
   if(records.length>=300)return json({error:"Project investigation limit reached"},413);
   // One child-entry level under a direct Work Instruction entry. Keep these
@@ -170,7 +170,7 @@ export async function handleInvestigations(request,env){
    return json({error:"Invalid notes, description, or photos"},400);
   const allFields=categoryFields[record.category]||legacyFields;
   const fields=data.notes===undefined?allFields:allFields.filter(type=>type!==retiredField[record.category||"failure"]);
-  if(!validText(data.title,180)||(!data.title.trim()&&record.category!=="note")||false||!validEntries(data.entries,fields,project))return json({error:"Invalid record details"},400);
+  if(!validText(data.title,180)||(!data.title.trim()&&record.category!=="note")||!validEntries(data.entries,fields,project))return json({error:"Invalid record details"},400);
   const status=entryStatus(data.entries);
   // Retain older entry types and earlier updates; replace only the latest editable entry per field.
   const previous=record.entries||[];
