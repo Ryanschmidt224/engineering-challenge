@@ -136,9 +136,10 @@
      if(record.description?.trim())container.append(make("p","investigation-note-description",record.description));
      const gallery=make("div","investigation-note-photo-gallery");
      for(const id of record.photos||[]){
-      const image=make("img","investigation-note-photo");image.src=fileUrl(id);
-      image.alt="Note photo";image.loading="lazy";
-      gallery.append(image);
+      if(photoExt.test(id)){
+       const image=make("img","investigation-note-photo");image.src=fileUrl(id);
+       image.alt="Note photo";image.loading="lazy";gallery.append(image);
+      }else gallery.append(attachmentLink(id));
      }
      if(gallery.childElementCount)container.append(gallery);
     }
@@ -169,8 +170,10 @@
      gallery.replaceChildren();pendingList.replaceChildren();
      for(const id of notePhotos.existing){
       const tile=make("div","investigation-note-photo-tile");
-      const photo=make("img","investigation-note-photo");photo.src=fileUrl(id);photo.alt="Attached note photo";
-      tile.append(photo,btn("Remove",()=>{notePhotos.existing.splice(notePhotos.existing.indexOf(id),1);draw()},"btn investigation-note-photo-remove"));
+      if(photoExt.test(id)){
+       const photo=make("img","investigation-note-photo");photo.src=fileUrl(id);photo.alt="Attached note photo";tile.append(photo);
+      }else tile.append(attachmentLink(id));
+      tile.append(btn("Delete",()=>{notePhotos.existing.splice(notePhotos.existing.indexOf(id),1);draw()},"btn investigation-note-photo-remove"));
       gallery.append(tile);
      }
      for(const file of notePhotos.pending){
@@ -180,20 +183,20 @@
      }
     };
     const uploader=window.BSPhotoEditor.uploadPanel({
-     title:"Add photos",accept:"image/*,.heic,.heif",
-     hint:"Up to 12 photos per note, 20 MB each.",
+     title:"Add photos / documents",accept:acceptedAttachments,
+     hint:"Choose photos or documents. Up to 12 files per note, 20 MB each.",
      onFiles:files=>{
       for(const file of files){
-       if(!/\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file.name)){reportHere("Select an image file.");continue}
+       if(!file.name){reportHere("Select a named file.");continue}
        if(file.size>20*1024*1024){reportHere("Each photo must be 20 MB or smaller.");continue}
-       if(notePhotos.existing.length+notePhotos.pending.length>=12){reportHere("A Note can contain up to 12 photos.");break}
+       if(notePhotos.existing.length+notePhotos.pending.length>=12){reportHere("A Note can contain up to 12 attachments.");break}
        notePhotos.pending.push(file);
       }
       draw();
      }
     });
     const section=make("div","investigation-note-photos");
-    section.append(btn("+ Add photos",()=>uploader.open(),"btn investigation-note-photo-add"),gallery,pendingList,uploader.panel);
+    section.append(btn("Add photos / documents",()=>uploader.open(),"btn bs-attachment-add investigation-note-photo-add"),gallery,pendingList,uploader.panel);
     controls.append(section);draw();
    }
    function fieldRow(type,label,stored=latest.get(type),parent=controls){
@@ -215,7 +218,7 @@
      hint:"You can choose multiple files or paste an image."
     });
     const attachments=make("div","investigation-field-attachments");
-    attachments.append(btn("+ Add attachments",()=>uploader.open(),"investigation-attachment-link"),fileChoice,uploader.panel);
+    attachments.append(btn("Add photos / documents",()=>uploader.open(),"btn bs-attachment-add investigation-attachment-add"),fileChoice,uploader.panel);
     const existingFiles=[...(stored?.files||[])];
     const existingList=make("div","investigation-existing-files");
     function drawFiles(){
