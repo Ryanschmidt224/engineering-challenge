@@ -167,6 +167,17 @@ async function listArchives(bucket,project,parentId){
  }
  return result.sort((a,b)=>b.archivedAt.localeCompare(a.archivedAt));
 }
+// Delete exclusively the private copies belonging to this archive ID.
+// Never touch the original R2 file paths or any neighboring archive.
+export async function purgeArchivedCopies(bucket,project,id){
+ if(!VALID_PROJECT_ID.test(project)||!uuid(id))throw Error("Invalid archive identifier");
+ const scope=prefix(project,id),objects=await listAll(bucket,scope,700);
+ for(const object of objects){
+  if(!object.key.startsWith(scope))throw Error("Archive copy outside deletion scope");
+  await bucket.delete(object.key);
+ }
+ return objects.length;
+}
 export async function handleAssemblyArchive(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project"),bucket=env.PHOTOS;
  if(!VALID_PROJECT_ID.test(project||"")||!await projectAllowed(env,project,request))return json({error:"Project unavailable"},404);
@@ -194,11 +205,10 @@ export async function handleAssemblyArchive(request,env){
   const locked=await bucket.put(key,JSON.stringify(deleting),conditional(saved.object));
   if(locked===null)return json({error:"Archive changed while deleting. Reload and retry."},409);
   try{
-   const storedObjects=await listAll(bucket,prefix(project,id),700);
-   for(const object of storedObjects)await bucket.delete(object.key);
+   const deletedCopies=await purgeArchivedCopies(bucket,project,id);
    await bucket.delete(key);
    if(await bucket.head(key))return json({error:"The archive record could not be removed. Retry deletion."},503);
-   return json({ok:true,id,deletedCopies:storedObjects.length});
+   return json({ok:true,id,deletedCopies});
   }catch(error){
    console.error("Archive purge failed",project,id,error);
    return json({error:"Archive deletion was interrupted. The record remains for a safe retry."},503);
