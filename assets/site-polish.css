@@ -2031,3 +2031,52 @@
  height:var(--recipe-attachment-image-height);
  max-height:var(--recipe-attachment-image-height);
 }
+
+
+/* Main Work Instruction disclosure and its nested hierarchy control.
+   The step heading uses the same chevron language as Project Archive. */
+.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-summary{
+ cursor:pointer;
+}
+.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-summary::before{
+ content:""!important;
+ display:inline-block!important;
+ width:7px;
+ height:7px;
+ border-top:2px solid currentColor;
+ border-right:2px solid currentColor;
+ transform:rotate(45deg);
+ transform-origin:center;
+ flex:0 0 7px;
+ margin-right:5px;
+ color:var(--color-text-muted);
+ transition:transform .15s ease;
+}
+.recipe-compact .recipe-step-detail > .recipe-one-step[open] > .recipe-one-step-summary::before{
+ transform:rotate(135deg);
+}
+.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-summary:focus-visible{
+ outline:2px solid var(--color-focus);
+ outline-offset:-2px;
+}
+.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-summary .recipe-expand-hierarchy{
+ margin-left:auto;
+ flex:0 0 auto;
+ padding:6px 10px;
+ min-height:34px;
+ border:1px solid var(--color-border);
+ border-radius:8px;
+ background:var(--color-surface);
+ color:var(--color-text);
+ font-size:.81rem;
+ font-weight:600;
+ white-space:nowrap;
+}
+.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-summary .recipe-expand-hierarchy:hover{
+ background:var(--color-hover);
+}
+@media(max-width:600px){
+ .recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-summary .recipe-expand-hierarchy{
+  margin-left:0;
+ }
+}
