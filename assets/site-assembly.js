@@ -2842,7 +2842,7 @@ function setupAssemblyTrees(){
     el.append(more);
    }
    if(node&&canEdit()){
-    el.draggable=true;el.title="Drag to reorder or drop into another assembly";
+    el.draggable=true;el.title="Drag onto a sibling to reorder. Drop onto another assembly to move inside it; hold Alt to nest under a sibling.";
     el.ondragstart=event=>{event.dataTransfer.setData("text/plain",node.id);event.dataTransfer.effectAllowed="move";el.classList.add("assembly-dragging")};
     el.ondragend=()=>el.classList.remove("assembly-dragging");
     el.ondragover=event=>{const dragged=Array.from(event.dataTransfer.types).includes("text/plain");if(!dragged)return;event.preventDefault();el.classList.add("assembly-drop-target");event.dataTransfer.dropEffect="move"};
@@ -2852,12 +2852,16 @@ function setupAssemblyTrees(){
      const sourceId=event.dataTransfer.getData("text/plain"),source=nodes.find(n=>n.id===sourceId);
      if(!source||source.id===node.id)return;
      try{
-      // Dropping on a sibling's upper/lower edge reorders it; dropping in the middle nests it.
-      const rect=el.getBoundingClientRect(),fraction=(event.clientY-rect.top)/rect.height;
-      if(source.parentId===node.parentId&&(fraction<.25||fraction>.75)){
+      // A drop onto a sibling always reorders. Previously only the top/bottom
+      // quarter reordered, so ordinary center drops tried to nest parts instead.
+      // Hold Alt while dropping onto an assembly to deliberately nest it.
+      const rect=el.getBoundingClientRect(),after=event.clientY>=rect.top+rect.height/2;
+      if(source.parentId===node.parentId&&!event.altKey){
        const next=[...nodes],from=next.findIndex(n=>n.id===source.id);
        const item=next.splice(from,1)[0];let to=next.findIndex(n=>n.id===node.id);
-       if(fraction>.75)to++;next.splice(to,0,item);await save(next);status.textContent="Subassembly reordered.";
+       if(after)to++;next.splice(to,0,item);
+       if(next.every((entry,i)=>entry.id===nodes[i].id))return;
+       await save(next);status.textContent="Feature tree reordered.";
       }else await reparent(source.id,node.id);
      }catch(e){status.textContent=e.message}
     };
