@@ -153,9 +153,10 @@ function open({onCreate,hideDefault=false}){
  const shortTreeDescription=field("Container");
  const functionHelp=el("button","library-function-tip","ⓘ");functionHelp.type="button";functionHelp.tabIndex=0;
  functionHelp.title="A container is an item in the project hierarchy that organizes a part or assembly and its related information, including work instructions, tests, revisions, and history. Give it a short name to identify it in the project tree (maximum 20 characters).";
- functionHelp.dataset.bsHelpTitle="Container name";
+ functionHelp.dataset.bsHelpTitle="How containers work";
+ functionHelp.dataset.bsHelpTopic="container";
  functionHelp.dataset.bsExamples=JSON.stringify(["Motor Mount: a container for the selected bracket, work instructions, and test history.","Supply 5V: a container for the voltage regulator and all related documentation."]);
- functionHelp.setAttribute("role","img");functionHelp.setAttribute("aria-label",functionHelp.title);
+ functionHelp.setAttribute("aria-label","Container help — double-click for examples");
  const functionCaption=el("span","library-function-caption","Container");
  functionCaption.append(el("span","library-container-name-hint","(name)"),functionHelp);
  shortTreeDescription.label.replaceChildren(functionCaption,shortTreeDescription.input);
