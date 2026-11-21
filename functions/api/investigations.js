@@ -69,7 +69,7 @@ export async function handleInvestigations(request,env){
     (scope==="part"&&ownerType!=="part")||(scope==="assembly"&&ownerType!=="assembly"))
     return json({error:"Invalid investigation details"},400);
   if(!validNotes(data.notes,project)||!validText(data.description??"",5000))return json({error:"Invalid notes or description"},400);
-  if(data.category!==undefined&&(typeof data.category!=="string"||!Object.hasOwn(categoryFields,data.category)||!validDate(data.date)||!validEntries(data.entries,categoryFields[data.category],project)))
+  if(data.category!==undefined&&(typeof data.category!=="string"||data.category==="practice"||!Object.hasOwn(categoryFields,data.category)||!validDate(data.date)||!validEntries(data.entries,categoryFields[data.category],project)))
    return json({error:"Invalid record category or fields"},400);
   if(records.length>=300)return json({error:"Project investigation limit reached"},413);
   // Verify the owner still exists rather than accepting orphan investigations.
