@@ -468,7 +468,7 @@
      relationship.append(itemButton(generic.name,()=>showItem(generic.id),"workshop-related-product"));
     }
    }
-   if(relationship.childElementCount)itemPage.append(relationship);
+   if(relationship.childElementCount)itemPage.insertBefore(relationship,editorMount);
    itemPage.scrollIntoView({block:"start"});
   }
 
