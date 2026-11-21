@@ -230,6 +230,8 @@
   document.addEventListener("click",event=>{if(knowledgeMenu&&!knowledgeMenu.contains(event.target))closeKnowledgeMenu()});
   document.addEventListener("keydown",event=>{if(event.key==="Escape")closeKnowledgeMenu()});
   document.addEventListener("scroll",closeKnowledgeMenu,true);
+  // A step can collapse independently of the nested entry/archive disclosures.
+  const collapsedSteps=new Set();
   function render(){
    content.replaceChildren();
    const total=savedSteps().length;
@@ -342,7 +344,7 @@
     stepList.append(navButton);
     if(!isCurrent)continue;
     const card=el("details","recipe-one-step bs-content-card");
-    card.dataset.stepId=step.id;card.open=true;
+    card.dataset.stepId=step.id;card.open=!collapsedSteps.has(step.id);
     const summary=el("summary","recipe-one-step-summary bs-content-card-heading");
     const titlePrefix=el("span","recipe-one-step-number",(i+1)+".");
     const name=el("span","recipe-one-step-title",step.title||"Untitled step");
@@ -394,12 +396,40 @@
       if(bottomSave){bottomSave.disabled=false;bottomSave.textContent="Save"}
      }finally{saving=false}
     };
+    // One action opens or closes the whole selected step, including its
+    // nested notes, records and Project Archive. This changes display only.
+    const hierarchy=button("Expand all",event=>{
+     event.preventDefault();event.stopPropagation();
+     const nested=[...card.querySelectorAll("details")];
+     const fullyOpen=card.open&&nested.every(section=>section.open);
+     const open=!fullyOpen;
+     for(const section of nested)section.open=open;
+     card.open=open;
+     syncHierarchyLabel();
+    },"btn recipe-expand-hierarchy");
+    const syncHierarchyLabel=()=>{
+     const nested=[...card.querySelectorAll("details")];
+     const fullyOpen=card.open&&nested.every(section=>section.open);
+     hierarchy.textContent=fullyOpen?"Collapse all":"Expand all";
+     hierarchy.setAttribute("aria-label",(fullyOpen?"Collapse":"Expand")+" all sections in this step");
+    };
+    summary.append(hierarchy);
     if(admin()){
      const edit=button(editing.has(step.id)?"Save":"Edit",saveStep,"btn recipe-step-edit-toggle");
      summary.append(edit);
     }
-    // Step selection happens in the navigation list; keep the detail panel open.
-    summary.addEventListener("click",event=>{if(!event.target.closest("button"))event.preventDefault()});
+    // Let the header/chevron toggle its native <details>. Controls inside
+    // the header must never toggle the step while the user is editing.
+    summary.addEventListener("click",event=>{
+     if(event.target.closest("button,input,textarea,select"))event.preventDefault();
+    });
+    card.addEventListener("toggle",event=>{
+     if(event.target===card){
+      if(card.open)collapsedSteps.delete(step.id);
+      else collapsedSteps.add(step.id);
+     }
+     syncHierarchyLabel();
+    },true);
     card.append(summary);
     const body=el("div","recipe-one-step-body bs-content-card-body");
     if(admin()&&editing.has(step.id)){
@@ -557,7 +587,7 @@
      options.renderInvestigations(step,investigationArea,editing.has(step.id));
     }
     if(typeof options.decorateStep==="function")options.decorateStep(step,body);
-    card.append(body);detailPane.append(card);
+    card.append(body);detailPane.append(card);syncHierarchyLabel();
    }
    add.hidden=!admin();
   }
@@ -588,6 +618,7 @@
    const resumeKey="bs-resume-step:"+location.hash;
    const desired=sessionStorage.getItem(resumeKey);
    if(desired&&steps.some(step=>step.id===desired)){expanded=desired;sessionStorage.removeItem(resumeKey)}
+   if(!keepDraft)collapsedSteps.clear();
    editing.clear();feedback.textContent="";
    if(resumeDraft){expanded=draft.id;editing.add(draft.id)}
    setLoading(false);
