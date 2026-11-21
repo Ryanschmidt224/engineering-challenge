@@ -332,7 +332,7 @@
    sideRow("Supplier part number",item.supplierPartNumber);
    sideRow("Manufacturer",item.manufacturer);
    sideRow("Description",item.subtitle||item.name);
-   sideRow("Feature tree description",item.featureTreeDescription);
+   sideRow("Default container name",item.featureTreeDescription);
    sideRow("Vendor",item.supplier);
    sideRow("Specification",item.spec);
    sideRow("Typical use",item.use);
@@ -513,7 +513,7 @@
    // Reuse the New Part editor's canonical identity/additional/specification
    // sections and fields order, keeping Workshop-specific ordering fields.
    const fieldDescriptors={
-    name:["Item name","text"],subtitle:["Short description","text"],featureTreeDescription:["Feature tree description (20 characters max)","text"],
+    name:["Item name","text"],subtitle:["Short description","text"],featureTreeDescription:["Default container name (20 characters max)","text"],
     manufacturer:["Manufacturer","text"],model:["Mfg part number","text"],
     partNumber:["Manufacturer part number","text"],supplier:["Supplier","text"],
     supplierPartNumber:["Supplier part number","text"],supplierUrl:["Supplier / ordering URL","url"],asin:["Amazon ASIN","text"],
@@ -553,7 +553,7 @@
      if(type==="textarea")control.rows=3;else control.type=type;
      control.className="field";control.value=item[name]||"";
      if(name==="partNumber")control.placeholder="Optional for generic items";
-      if(name==="featureTreeDescription"){control.maxLength=20;control.placeholder="e.g. Motor switch";}
+      if(name==="featureTreeDescription"){control.maxLength=20;control.placeholder="e.g. Resistor, LED, Motor";}
      label.append(control);fieldsGrid.append(label);controls[name]=control;
      if(name==="featureTreeDescription")fieldsGrid.append(lookupActions);
     }
@@ -1261,7 +1261,7 @@
       <label>Manufacturer<input id="workshop-manufacturer" class="field" maxlength="100"></label>
       <label>Mfg part number<input id="workshop-model" class="field" maxlength="120"></label>
       <label>Part number<input id="workshop-partnumber" class="field" maxlength="120"></label>
-       <label>Feature tree description (20 characters max)<input id="workshop-featuretreedescription" class="field" maxlength="20" placeholder="e.g. Hall sensor"></label>
+       <label>Default container name (20 characters max)<input id="workshop-featuretreedescription" class="field" maxlength="20" placeholder="e.g. Hall sensor"></label>
       <label>Quantity<input id="workshop-quantity" class="field" type="number" min="0" step="any" value="1"></label>
       <label>Unit<input id="workshop-unit" class="field" maxlength="32" value="pcs"></label>
       <label>Availability<select id="workshop-stockstatus" class="field"><option value="in_stock">In stock</option><option value="in_use_reusable">In use (reusable)</option><option value="committed">Committed</option></select></label>
@@ -1286,7 +1286,7 @@
    $("#workshop-add-personal-spec",personal).onclick=()=>addPersonalSpec();
    const mineLookup=el("section",undefined,"workshop-ai-lookup");
    mineLookup.append(el("h3","Fill product details with AI"),
-    el("p","Search using the manufacturer's part number and feature tree description below. Either field can be used on its own.","muted"));
+    el("p","Search using the manufacturer's part number and default container name below. Either field can be used on its own.","muted"));
    const mineFind=itemButton("Fill details with AI",()=>{},"btn primary");
    const minePartNumber=$("#workshop-partnumber",personal);
    const mineDescription=$("#workshop-featuretreedescription",personal);
@@ -1298,7 +1298,7 @@
     const itemId=editingId;
     const partNumber=minePartNumber.value.trim();
     const featureTreeDescription=mineDescription.value.trim();
-    if(!partNumber&&!featureTreeDescription){mineMessage.textContent="Enter a manufacturer part number or feature tree description.";return}
+    if(!partNumber&&!featureTreeDescription){mineMessage.textContent="Enter a manufacturer part number or default container name.";return}
     mineFind.disabled=true;mineMessage.textContent="Searching product information…";
     mineResults.replaceChildren();
     try{
