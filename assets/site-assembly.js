@@ -1262,33 +1262,24 @@ function setupAssemblyTrees(){
    const summary=[part.description,quantity,cost];
    detailSummary.textContent=summary.filter(Boolean).join(" · ");
    const makeDetailLine=(title,value,isLink=false)=>{
-    const text=String(value);
-    // Single-value details are visible immediately: only genuinely long
-    // descriptive text needs its own disclosure control.
-    const longText=/^(Description|Project notes|Project changes \/ modifications)$/i.test(title)&&text.length>180;
-    const line=document.createElement(longText?"details":"div");
-    line.className="part-details-view-row part-detail-item"+(longText?" part-detail-long":" part-detail-inline");
+    const line=document.createElement("div");
+    line.className="part-details-view-row part-detail-item part-detail-inline";
     const label=document.createElement("strong");label.textContent=title;
+    const body=document.createElement("div");body.className="part-detail-item-content";
     const content=document.createElement(isLink?"a":"span");
-    content.textContent=text;
-    if(isLink){content.href=value;content.target="_blank";content.rel="noopener noreferrer";content.className="part-order-url"}
-    if(longText){
-     const heading=document.createElement("summary");heading.className="part-detail-item-toggle";
-     heading.append(label);
-     const body=document.createElement("div");body.className="part-detail-item-content";
-     body.append(content);line.append(heading,body);
-    }else{
-     const body=document.createElement("div");body.className="part-detail-item-content";
-     body.append(content);line.append(label,body);
+    content.textContent=isLink?"Open order website":String(value);
+    if(isLink){
+     content.href=value;content.target="_blank";content.rel="noopener noreferrer";
+     content.className="part-order-url";
+     content.title=String(value);
     }
-    return line;
+    body.append(content);line.append(label,body);return line;
    };
    const appendDetail=(title,value,isLink=false)=>{
     if(value===null||value===undefined||String(value).trim()==="")return;
     detailRows.append(makeDetailLine(title,value,isLink));
    };
    for(const [title,value] of fields)appendDetail(title,value);
-   appendDetail("Order URL",sourcing.url,true);
    const specs=(part.specifications||[]).filter(spec=>!window.BSPartFields.isPurchased(part)||!window.BSPartFields.sourcingLabels.includes(spec.name)&&spec.name!=="Supplier part number");
    if(specs.length){
     const heading=document.createElement("h3");heading.textContent="Specifications";detailRows.append(heading);
@@ -1317,6 +1308,9 @@ function setupAssemblyTrees(){
     detailRows.append(projectSection);
    }
    window.BSPartSuppliers?.renderLinks(detailRows,part);
+   // Ordering is an action, not part of the technical specifications.
+   // Keep it at the end of the Part details page.
+   appendDetail("Part order website",sourcing.url,true);
    detailsPanel.classList.remove("hide");
   };
 
