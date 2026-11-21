@@ -277,7 +277,7 @@
   }
   // Active records stay in the section where they were created. Old records
   // without an archive flag remain active; previous part snapshots are history.
-  const isArchived=record=>Boolean(record.archivedAt||record.partSnapshot);
+  const isArchived=record=>record.lifecycle!=="active"||Boolean(record.archivedAt||record.partSnapshot);
   const archiveDate=record=>(record.archivedAt||record.partSnapshot?.archivedAt||"").slice(0,10);
   function archiveRecord(record){
    const dialog=make("dialog","investigation-archive-dialog");
@@ -351,7 +351,7 @@
     title.append(heading,make("span","small muted",categories[categoryOf(record)]?.label||"Entry"));
     if(historical){
      const stamp=archiveDate(record);
-     if(stamp){const date=make("time","investigation-record-date","Archived "+stamp);date.dateTime=stamp;title.append(date)}
+     if(stamp){const date=make("time","investigation-record-date","Archived "+stamp);date.dateTime=stamp;title.append(date)}else title.append(dateLabelFor(record));
     }else title.append(dateLabelFor(record));
     card.append(title);
     const body=make("div","investigation-body");
