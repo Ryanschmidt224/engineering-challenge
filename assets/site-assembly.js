@@ -2236,7 +2236,7 @@ function setupAssemblyTrees(){
     group("container","Container",controls.itemType,controls.name,controls.partNumber,
      partDescriptionRow);
     const implementationGroup=group("implementation","Part details",partTypeRow,
-     toolRow,partImplementationNameRow,controls.manufacturer,controls.model,
+     toolRow,partImplementationNameRow,controls.manufacturer,controls.model,apiPanel,
      ...ordered(fields.additional.filter(key=>!["manufacturer","model"].includes(key))),
      quantities[1]);
     // Do not construct an additional generic details section. Reuse its
@@ -2247,7 +2247,6 @@ function setupAssemblyTrees(){
     displayGroup.append(...ordered(fields.display.filter(key=>key!=="isTool")));
     group("display","Display options",displayGroup);
     if(supplierEditor)implementationGroup.append(supplierEditor.element);
-    if(apiPanel)implementationGroup.append(apiPanel);
     const specsDisclosure=review.querySelector(".part-editor-specs-disclosure")||document.createElement("details");
     specsDisclosure.className="part-editor-specs-disclosure";
     const specsSummary=document.createElement("summary");
