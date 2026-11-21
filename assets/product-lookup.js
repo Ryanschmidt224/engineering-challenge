@@ -18,10 +18,34 @@ window.BSProductLookup=(()=>{
    field("partNumber","Manufacturer part number",160);
    field("featureTreeDescription","Feature tree description",20);
   }
-  const hint=field("searchHint","Help AI find the item (optional)",500,"Manufacturer, supplier, product link, or datasheet link");
-  const row=el("div","product-ai-actions"),button=el("button","btn primary","Find with AI");
-  button.type="button";
-  row.append(button,el("span","muted","Either part number or description can be used on its own."));
+  // Reusable action/input/tooltip control. Other site features can use the
+  // same layout without coupling their action to Workshop lookup behavior.
+  const actionInput=({label,placeholder,maxLength,description})=>{
+   const row=el("div","bs-action-input-row");
+   const button=el("button","btn primary",label);button.type="button";
+   const input=el("input","field bs-action-input");input.type="text";
+   input.maxLength=maxLength;input.placeholder=placeholder;
+   input.setAttribute("aria-label","Optional information for "+label);
+   const help=el("span","bs-action-input-help");
+   const helpButton=el("button","bs-action-input-help-button","?");
+   helpButton.type="button";helpButton.setAttribute("aria-label",description);
+   helpButton.title=description;helpButton.setAttribute("aria-expanded","false");
+   const tip=el("span","bs-action-input-tooltip",description);
+   tip.setAttribute("role","tooltip");
+   const toggle=()=>{const open=help.classList.toggle("is-open");helpButton.setAttribute("aria-expanded",String(open))};
+   helpButton.onclick=toggle;
+   helpButton.addEventListener("blur",()=>{help.classList.remove("is-open");helpButton.setAttribute("aria-expanded","false")});
+   help.append(helpButton,tip);row.append(button,input,help);
+   return {row,button,input,helpButton};
+  };
+  const control=actionInput({
+   label:"Find with AI",
+   placeholder:"Manufacturer, supplier, product link, or datasheet link (optional)",
+   maxLength:500,
+   description:"Optional: provide a manufacturer, supplier, product link, or datasheet link to help AI find the item. Either a manufacturer part number or a feature tree description can be used on its own."
+  });
+  const {row,button}=control;
+  const hint=control.input;inputs.searchHint=hint;
   const message=el("p","product-ai-status");message.setAttribute("role","status");
   const cost=el("p","product-ai-cost muted");cost.hidden=true;
   const results=el("div","product-ai-results");
