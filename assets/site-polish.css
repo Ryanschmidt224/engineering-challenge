@@ -2498,3 +2498,53 @@
  font-weight:400;
  text-align:right;
 }
+
+
+/* Keep step-level Save/Edit and Delete step aligned inside the selected
+   left-hand row. The title remains its own drag-and-drop target. */
+.recipe-compact .recipe-step-nav-row{
+ position:relative;
+ display:flex!important;
+ align-items:center!important;
+ flex-wrap:nowrap!important;
+}
+.recipe-compact .recipe-step-nav-row.is-active > .recipe-step-nav-item{
+ padding-right:205px!important;
+}
+.recipe-compact .recipe-step-nav-row > .recipe-step-nav-actions{
+ position:absolute;
+ top:50%;
+ right:10px;
+ transform:translateY(-50%);
+ display:inline-flex;
+ align-items:center;
+ justify-content:flex-end;
+ gap:6px;
+ max-width:calc(100% - 24px);
+ margin:0;
+}
+.recipe-compact .recipe-step-nav-actions > .btn{
+ flex:0 0 auto;
+ min-height:36px;
+ padding:6px 11px;
+ border-radius:8px;
+ font-size:.82rem;
+ white-space:nowrap;
+}
+.recipe-compact .recipe-step-nav-actions > .recipe-delete-step{
+ border:1px solid var(--color-border);
+ background:var(--color-surface);
+ color:var(--color-text);
+}
+.recipe-compact .recipe-step-nav-actions > .recipe-delete-step:hover{
+ border-color:var(--color-danger-action, var(--color-border));
+}
+@media(max-width:480px){
+ .recipe-compact .recipe-step-nav-row.is-active > .recipe-step-nav-item{
+  padding-right:175px!important;
+ }
+ .recipe-compact .recipe-step-nav-actions > .btn{
+  padding:5px 7px;
+  font-size:.74rem;
+ }
+}
