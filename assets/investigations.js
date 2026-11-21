@@ -15,7 +15,7 @@
  };
  const retiredLabels={practice:{lesson:"What did you learn?"},revision:{result:"What was the result?"},note:{note:"Notes"}};
  const categoryOf=record=>record.category||(record.partSnapshot?"revision":"failure");
- const sectionTitle="Project History";
+ const sectionTitle="Project Archive";
  const acceptedAttachments=globalThis.BSAttachmentTypes.accept;
  const photoExt=/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i;
  const fileUrl=id=>"/api/recipe-files?id="+encodeURIComponent(id);
@@ -284,7 +284,7 @@
   function archiveRecord(record){
    const dialog=make("dialog","investigation-archive-dialog");
    dialog.setAttribute("aria-label","Archive "+record.title);
-   dialog.append(make("h3","","Archive entry"),make("p","muted","Move this entry from its current section into Project History."));
+   dialog.append(make("h3","","Archive entry"),make("p","muted","Move this entry from its current section into Project Archive."));
    dialog.append(make("p","investigation-archive-today","Archive date: "+new Date().toLocaleDateString()));
    const label=make("label","investigation-archive-note-label","Why was it archived? (optional)");
    const note=make("textarea","field");note.rows=3;note.maxLength=2500;note.placeholder="Reason for archiving (optional)";
@@ -334,7 +334,7 @@
    const actions=make("div","investigation-heading-actions");
    const archiveCount=archivedOwn.length+archivedRelated.length;
    actions.append(make(compact?"h4":"h2","",sectionTitle),
-    window.BSDialogs.tooltip("About Project History","Entries archived from this section and its child parts and assemblies."),
+    window.BSDialogs.tooltip("About Project Archive","Entries archived from this section and its child parts and assemblies."),
     make("span","workspace-record-count","("+archiveCount+(archiveCount===1?" record)":" records)")));
    heading.append(actions);summary.append(heading);disclosure.append(summary);
    disclosure.addEventListener("toggle",()=>{
@@ -375,7 +375,7 @@
      if(historical){
       const removeHistory=btn("Delete",async event=>{
        event.preventDefault();event.stopPropagation();
-       if(!await window.BSDialogs.danger('Delete archived entry "'+record.title+'"? This permanently removes the record from Project History.',{
+       if(!await window.BSDialogs.danger('Delete archived entry "'+record.title+'"? This permanently removes the record from Project Archive.',{
         title:"Delete history entry?",confirmLabel:"Delete"
        }))return;
        removeHistory.disabled=true;
