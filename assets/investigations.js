@@ -399,11 +399,12 @@
    if(!target.activeEntriesHost)target.append(activeHost);
    activeContext={...context,target};
    const own=records.filter(record=>owns(record,context));
-   const activeOwn=own.filter(record=>!isArchived(record));
+   const topLevel=record=>!record.parentRecordId||!own.some(item=>item.id===record.parentRecordId);
+   const activeOwn=own.filter(record=>!isArchived(record)&&topLevel(record));
    const stepSlot=compact?stepSlots.get(context.stepId):null;
    if(stepSlot)stepSlot.pendingEdits=[];
-   const archivedOwn=own.filter(isArchived);
-   const archivedRelated=records.filter(record=>within(record,context)&&!owns(record,context)&&isArchived(record));
+   const archivedOwn=own.filter(record=>isArchived(record)&&topLevel(record));
+   const archivedRelated=records.filter(record=>within(record,context)&&!owns(record,context)&&isArchived(record)&&!record.parentRecordId);
    // A step has one edit-mode switch: its Work Instruction header.
    // Other workspace pages have no parent editor and retain their own controls.
    const allowEntryEditing=admin()&&(!compact||Boolean(stepSlots.get(context.stepId)?.editing));
@@ -444,6 +445,7 @@
 
    const renderCard=(record,destination,{historical=false,inherited=false}={})=>{
     const card=make("details","investigation-card bs-content-card");
+    if(record.parentRecordId)card.classList.add("investigation-nested-card");
     card.dataset.recordId=record.id;
     const openKey=context.ownerType+":"+context.ownerId+":"+(context.stepId||"")+":"+(historical?"history:":"")+record.id;
     card.open=(compact&&allowEntryEditing&&!historical&&!inherited)||openCards.has(openKey);
@@ -456,6 +458,8 @@
     // content instead of crowding the common header/chevron layout.
     card.append(title);
     const body=make("div","investigation-body bs-content-card-body");
+    const children=own.filter(child=>child.parentRecordId===record.id);
+    const isChild=Boolean(record.parentRecordId);
     if(inherited){
      const source=record.scope==="step"?"Work instruction":record.ownerType==="part"?"Part":"Assembly";
      body.append(make("p","investigation-origin","From "+source+" · "+record.title));
@@ -500,6 +504,30 @@
         (historical?"Archived ":"")+stamp);
        date.dateTime=stamp;body.append(date);
       }
+     }
+     // Nested records sit below their parent entry and may use any existing
+     // type (Notes, Tests/Measurements, Revisions, Failures).
+     if(!isChild&&!inherited){
+      const childSection=make("section","investigation-nested-section");
+      for(const child of children.filter(item=>!isArchived(item)))
+       renderCard(child,childSection,{nested:true});
+      const archivedChildren=children.filter(isArchived);
+      if(archivedChildren.length){
+       const archiveChildren=make("details","investigation-nested-archive");
+       archiveChildren.append(make("summary","","Archived nested entries ("+archivedChildren.length+")"));
+       const archiveContent=make("div","investigation-nested-archive-content");
+       for(const child of archivedChildren)renderCard(child,archiveContent,{historical:true,nested:true});
+       archiveChildren.append(archiveContent);childSection.append(archiveChildren);
+      }
+      if(canCreate&&!historical){
+       const addNested=btn("+ Add nested entry",event=>{
+        event.preventDefault();event.stopPropagation();
+        card.open=true;
+        newRecord(context,target,record.id);
+       },"btn investigation-add-nested");
+       childSection.append(addNested);
+      }
+      if(childSection.childElementCount)body.append(childSection);
      }
      if(card.open)showAttachmentNames(body);
     };
