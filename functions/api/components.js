@@ -310,7 +310,9 @@ export async function handleComponents(request,env){
       acceptanceCriteria:input.acceptanceCriteria===undefined?original.acceptanceCriteria:input.acceptanceCriteria.trim()};
     }else{
      updated=changeImplementation(original,input.functionalAction,input.implementation);
-     if(input.functionalAction==="select"||input.functionalAction==="remove")updated.purchaseStatus="not_started";
+     // Purchasing approval belongs to a chosen physical solution, not the functional requirement.
+     // Adding, switching or retiring that solution invalidates the previous purchasing state.
+     if(["add","select","retire"].includes(input.functionalAction))updated.purchaseStatus="not_started";
     }
    }catch(error){return json({error:String(error.message||error)},400)}
    updated.revision=crypto.randomUUID();
