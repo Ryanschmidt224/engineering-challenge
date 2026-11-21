@@ -9,6 +9,7 @@ import {handleTree} from "../functions/api/tree.js";
 import {handleRecipeFiles} from "../functions/api/recipe-files.js";
 import {handleProposals} from "../functions/api/proposals.js";
 import {handleWorkspace} from "../functions/api/workspace.js";
+import {handleInvestigations} from "../functions/api/investigations.js";
 import {handleProjectArchive, inspectArchive} from "../functions/api/project-archive.js";
 import {backupAllProjects} from "../functions/api/automatic-backups.js";
 import "../assets/local-project.js";
@@ -76,13 +77,22 @@ test("owner can save KiCad and code steps and recover only the selected project 
   files.push(id);
   payloads.set(id, body);
  }
- const step = {id: "layout", title: "Check layout", standard: "", photos: files};
- const save = recipe => handleWorkspace(request(path, "PUT", {recipe}), env);
- assert.equal((await save([step])).status, 200);
- assert.deepEqual((await (await handleWorkspace(request(path), env)).json()).workspace.recipe[0].photos, files);
- for (const bad of [files[0].replace(project, other), files[0].replace("kicad_pcb", "exe"), "recipe-files/" + project + "/" + crypto.randomUUID() + ".pdf"]) {
-  assert.equal((await save([{...step, photos: [bad]}])).status, 400);
- }
+ // Work Instructions are named containers. Attached engineering files belong
+ // to independently stored typed entries, not to recipe[].photos.
+ const step = {id: "layout", title: "Check layout", tileOrder: []};
+ assert.equal((await handleWorkspace(request(path, "PUT", {recipe:[step]}), env)).status, 200);
+ const entryPath="/api/investigations?project="+project;
+ const note=async photos=>handleInvestigations(request(entryPath,"POST",{
+  action:"create",scope:"step",ownerType:"assembly",ownerId:"__root__",stepId:"layout",
+  category:"note",title:"Board files",description:"KiCad and code attachments",
+  entries:[],notes:[],photos
+ }),env);
+ const saved=await note(files);
+ assert.equal(saved.status,200,await saved.text());
+ const investigations=await (await handleInvestigations(request(entryPath),env)).json();
+ assert.deepEqual(investigations.records.find(record=>record.title==="Board files").photos,files);
+ for(const bad of [files[0].replace(project,other),files[0].replace("kicad_pcb","exe")])
+  assert.equal((await note([bad])).status,400);
 
  const records = [
   ["project-settings/" + project + ".json", '{"title":"Bench project"}'],
