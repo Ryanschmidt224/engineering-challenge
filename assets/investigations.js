@@ -441,7 +441,7 @@
   function render(target,context,compact=false){
    if(!target)return;
    const sectionKey=context.ownerType+":"+context.ownerId+":"+(context.stepId||"");
-   const existing=target.querySelector(".investigation-collapse");
+   const existing=compact?target.querySelector(".investigation-collapse"):null;
    if(existing){if(existing.open)openSections.add(sectionKey);else openSections.delete(sectionKey)}
    const activeHost=target.activeEntriesHost||make("section","investigation-active-area");
    activeHost.classList.add("investigation-active-area");
@@ -469,23 +469,29 @@
    activeHost.append(activeContent);
    if(canCreate&&!compact)activeHost.append(activeHeader);
 
-   const disclosure=make("details","investigation-collapse");
-   disclosure.open=openSections.has(sectionKey);
-   disclosure.classList.toggle("is-empty",archivedOwn.length+archivedRelated.length===0);
-   const summary=make("summary","investigation-collapse-heading");
-   const heading=make("div","investigation-heading-label");
-   const actions=make("div","investigation-heading-actions");
    const archiveCount=archivedOwn.length+archivedRelated.length;
-   actions.append(make(compact?"h4":"h2","",sectionTitle),
-    window.BSDialogs.tooltip("About Project Archive","Entries archived from this section and its child parts and assemblies."),
-    make("span","workspace-record-count","("+archiveCount+(archiveCount===1?" record)":" records)")));
-   heading.append(actions);summary.append(heading);disclosure.append(summary);
-   disclosure.addEventListener("toggle",()=>{
-    if(disclosure.open)openSections.add(sectionKey);else openSections.delete(sectionKey);
-   });
+   const archiveShell=target.archiveHistoryDisclosure;
+   const disclosure=compact?make("details","investigation-collapse"):make("section","investigation-archive-records");
+   if(compact){
+    disclosure.open=openSections.has(sectionKey);
+    disclosure.classList.toggle("is-empty",archiveCount===0);
+    const summary=make("summary","investigation-collapse-heading");
+    const actions=make("div","investigation-heading-actions");
+    actions.append(make("h4","",sectionTitle),
+     window.BSDialogs.tooltip("About Project Archive","Entries archived from this Work Instruction."),
+     make("span","workspace-record-count","("+archiveCount+(archiveCount===1?" record)":" records)")));
+    summary.append(actions);disclosure.append(summary);
+    disclosure.addEventListener("toggle",()=>{
+     if(disclosure.open)openSections.add(sectionKey);else openSections.delete(sectionKey);
+    });
+   }else if(archiveShell){
+    const count=archiveShell.querySelector(".workspace-archive-count");
+    const total=activeOwn.length+archiveCount;
+    if(count)count.textContent="("+total+(total===1?" record)":" records)");
+   }
    const content=make("div","investigation-collapse-content");
-   // The creation control has its own light card, below active entries but
-   // above the plain-text Project Archive disclosure.
+   // Full workspaces have one shared Archives and Revision History
+   // disclosure. Step-level archive disclosures remain independent.
    disclosure.append(content);
    if(canCreate&&compact){
     activeHeader.classList.add("investigation-create-card");
@@ -709,7 +715,8 @@
     archivedRelated.forEach(record=>renderCard(record,inner,{historical:true,inherited:true}));
     group.append(inner);content.append(group);
    }
-   if(!archiveCount)content.append(make("p","muted investigation-empty","No archived records yet."));
+   if(!archiveCount&&compact)content.append(make("p","muted investigation-empty","No archived records yet."));
+   if(!compact&&!archiveCount)disclosure.hidden=true;
   }
 
   function showSnapshot(snapshot,target){
