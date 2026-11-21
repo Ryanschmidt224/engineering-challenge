@@ -280,12 +280,12 @@
    let saveBtn;
    const persist=async(deferRender=false)=>{
     const fields=inputs.filter(item=>item.type==="resolution"?!!fixed.value:!!(item.field.value.trim()||item.selected.length||item.existingFiles.length));
-    if(!titleInput.value.trim()){titleInput.focus();return}
-    if(!date.value){reportHere("Choose a date.");date.focus();return}
+    if(!titleInput.value.trim()){titleInput.focus();throw Error("Enter a title for every entry before saving.")}
+    if(!date.value){date.focus();throw Error("Choose a date for every entry before saving.")}
     const notesToSave=notes.filter(note=>note.name.value.trim()||note.field.value.trim()||note.selected.length||note.existingFiles.length);
     for(const note of notesToSave){
-     if(!note.name.value.trim()){reportHere("Enter a descriptor for the note.");note.name.focus();return}
-     if(!note.field.value.trim()){reportHere("Enter a description for the note.");note.field.focus();return}
+     if(!note.name.value.trim()){note.name.focus();throw Error("Enter a descriptor for the note.")}
+     if(!note.field.value.trim()){note.field.focus();throw Error("Enter a description for the note.")}
     }
     saveBtn.disabled=true;
     try{
@@ -332,7 +332,9 @@
    saveBtn=btn("Save",()=>{void persist(false).catch(()=>{})},"btn primary");
    if(registerSave)registerSave(()=>persist(true));
    const actions=make("div","investigation-edit-actions");
-   actions.append(saveBtn,btn("Cancel",onDone));
+   // A Work Instruction uses the parent Save for every active entry.
+   // Other pages retain per-entry Save and Cancel controls.
+   if(!registerSave)actions.append(saveBtn,btn("Cancel",onDone));
    if(!creating)actions.append(btn("Delete",async()=>{
     const deleteBtn=actions.querySelector(".investigation-delete");
     if(!await window.BSDialogs.danger('Delete "'+record.title+'"? This removes the record from the project.',{title:"Delete record?"}))return;
