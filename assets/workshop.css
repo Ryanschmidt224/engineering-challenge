@@ -728,3 +728,90 @@
  #commonparts .workshop-direct-part{gap:9px}
  #commonparts .workshop-direct-part-add{font-size:.73rem;padding:5px 7px}
 }
+
+
+/* Four horizontal Workshop editor sections: all existing fields remain editable.
+   Wrap to two columns on medium screens and one on narrow screens. */
+#commonparts .workshop-item-edit-form>.workshop-item-edit-grid:has(>.workshop-part-editor-section){
+ display:grid;
+ grid-template-columns:repeat(4,minmax(0,1fr));
+ align-items:start;
+ gap:12px;
+}
+#commonparts .workshop-part-editor-section{
+ min-width:0;
+ margin:0;
+ padding:12px;
+ border:1px solid var(--color-border);
+ border-radius:9px;
+ background:var(--color-surface);
+}
+#commonparts .workshop-part-editor-section>.part-editor-section-heading{
+ margin:0 0 12px;
+ min-height:25px;
+ font-size:.96rem;
+}
+#commonparts .workshop-part-editor-section>.workshop-item-edit-grid{
+ display:grid;
+ grid-template-columns:minmax(0,1fr);
+ gap:9px;
+}
+#commonparts .workshop-part-editor-section .workshop-item-edit-grid>label,
+#commonparts .workshop-part-editor-section .workshop-item-classification>label{
+ display:flex;
+ flex-direction:column;
+ align-items:stretch;
+ gap:5px;
+ min-width:0;
+}
+#commonparts .workshop-part-editor-section .workshop-item-edit-grid>label>.field,
+#commonparts .workshop-part-editor-section .workshop-item-classification>label>.field{
+ grid-column:auto;
+ width:100%;
+ min-width:0;
+}
+#commonparts .workshop-part-editor-section .workshop-item-classification{
+ display:grid;
+ grid-template-columns:minmax(0,1fr);
+ gap:8px;
+ margin:12px 0 0;
+ padding:10px 0 0;
+ border:0;
+ border-top:1px solid var(--color-border);
+ border-radius:0;
+ background:transparent;
+}
+#commonparts .workshop-part-editor-section .workshop-structured-specs{
+ margin:12px 0 0;
+ padding:10px 0 0;
+ border:0;
+ border-top:1px solid var(--color-border);
+ border-radius:0;
+}
+#commonparts .workshop-part-editor-section .workshop-structured-spec-row{
+ grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+}
+#commonparts .workshop-part-editor-section .workshop-structured-spec-row>.btn{
+ grid-column:1/-1;
+ justify-self:start;
+}
+#commonparts .workshop-part-editor-section[data-part-editor-section="notes"]>h4{
+ margin:16px 0 8px;
+ font-size:.88rem;
+}
+#commonparts .workshop-part-editor-section .workshop-item-edit-photos{
+ gap:8px;
+}
+#commonparts .workshop-part-editor-section .workshop-item-edit-photo{
+ width:min(100%,180px);
+}
+@media(max-width:1380px){
+ #commonparts .workshop-item-edit-form>.workshop-item-edit-grid:has(>.workshop-part-editor-section){
+  grid-template-columns:repeat(2,minmax(0,1fr));
+ }
+}
+@media(max-width:760px){
+ #commonparts .workshop-item-edit-form>.workshop-item-edit-grid:has(>.workshop-part-editor-section){
+  grid-template-columns:minmax(0,1fr);
+ }
+}
