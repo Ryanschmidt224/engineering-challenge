@@ -132,6 +132,9 @@ export async function handleAssemblyArchive(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project"),bucket=env.PHOTOS;
  if(!VALID_PROJECT_ID.test(project||"")||!await projectAllowed(env,project,request))return json({error:"Project unavailable"},404);
  if(!bucket)return json({error:"Storage unavailable"},503);
+ // Existing CAD and saved-part APIs restrict reading to project editors.
+ // An archive must not expose those same proprietary files publicly.
+ if(!await canEditProject(request,env,project))return json({error:"Project editor access required for archived data"},403);
  if(request.method==="GET"){
   const id=url.searchParams.get("id"),parent=url.searchParams.get("parent");
   if(id){
@@ -158,7 +161,6 @@ export async function handleAssemblyArchive(request,env){
   return json({items:await listArchives(bucket,project,parent)});
  }
  if(request.method!=="POST")return json({error:"Method not allowed"},405);
- if(!await canEditProject(request,env,project))return json({error:"Edit permission required"},403);
  const body=await request.json().catch(()=>null);
  if(!body||!["archive","restore"].includes(body.action))return json({error:"Invalid archive action"},400);
  const tree=await read(bucket,treeKey(project),[]);
