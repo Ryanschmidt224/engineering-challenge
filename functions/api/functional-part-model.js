@@ -41,7 +41,7 @@ export function resolveFunctionalPart(record){
  for(const key of PROJECT_SOLUTION_FIELDS)delete details[key];
  if(active)for(const key of PROJECT_SOLUTION_FIELDS)details[key]=active[key]||"";
  const flattened={...emptySolution(),...(active||{})};
- for(const key of ["id","name","createdAt","revision"])delete flattened[key];
+ for(const key of ["id","name","createdAt","revision",...PROJECT_SOLUTION_FIELDS])delete flattened[key];
  const result={
   ...record,...flattened,description:record.functional?.purpose??record.description??"",
   functionalRequirements:record.functional?.requirements??record.functionalRequirements??"",
@@ -82,7 +82,7 @@ export function encodeFunctionalPart(part){
  for(const key of PROJECT_SOLUTION_FIELDS)delete projectDetails[key];
  const stored={...part,partSchemaVersion:2,functional,
   selection:{selectedId:selection.selectedId||null,candidates,history:[...(selection.history||[])]},projectDetails};
- for(const key of [...SOLUTION_FIELDS,"description","functionalRequirements","acceptanceCriteria",
+ for(const key of [...SOLUTION_FIELDS,...PROJECT_SOLUTION_FIELDS,"description","functionalRequirements","acceptanceCriteria",
   "implementations","implementationName","implementationRevision","implementationResolved",
   "selectedImplementationId","resolvedImplementationId","implementationHistory","workshopSourcing","workshopDocumentation"])delete stored[key];
  return stored;
