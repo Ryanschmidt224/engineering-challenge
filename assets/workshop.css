@@ -612,3 +612,55 @@
  #commonparts .workshop-item-edit-form{padding:12px}
  #commonparts .workshop-part-editor-section{padding:10px}
 }
+
+
+/* Workshop category folders: the same compact right/down chevron behavior as
+   the feature tree; only folders get a toggle, leaf categories remain buttons. */
+#commonparts .bs-catalog-category-parent{
+ display:flex;
+ align-items:center;
+ min-width:0;
+ gap:0;
+}
+#commonparts .bs-catalog-category-parent>.bs-catalog-category{
+ flex:1;
+ width:auto;
+ min-width:0;
+}
+#commonparts .bs-catalog-folder-toggle{
+ display:grid;
+ place-items:center;
+ flex:none;
+ width:25px;
+ height:34px;
+ padding:0;
+ border:0;
+ border-radius:6px;
+ background:transparent;
+ color:var(--color-text-muted);
+ cursor:pointer;
+}
+#commonparts .bs-catalog-folder-toggle:hover{background:var(--color-hover)}
+#commonparts .bs-catalog-folder-toggle:focus-visible{
+ outline:2px solid var(--color-accent);
+ outline-offset:-2px;
+}
+#commonparts .bs-catalog-folder-chevron{
+ display:block;
+ width:8px;
+ height:8px;
+ border-right:2px solid currentColor;
+ border-bottom:2px solid currentColor;
+ transform:rotate(-45deg);
+ transition:transform .15s ease;
+}
+#commonparts .bs-catalog-category-parent.is-expanded .bs-catalog-folder-chevron{
+ transform:rotate(45deg);
+}
+#commonparts .bs-catalog-category-child{
+ padding-left:37px;
+}
+@media(max-width:800px){
+ #commonparts .bs-catalog-category-parent{display:inline-flex}
+ #commonparts .bs-catalog-category-child{padding-left:12px}
+}
