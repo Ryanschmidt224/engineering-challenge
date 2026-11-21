@@ -22,6 +22,9 @@ const safeEntry=(entry,project)=>entry&&entryTypes.has(entry.type)&&(entry.type!
  (entry.files||[]).every(file=>isProjectRecipeFile(file,project))&&validText(entry.fileName||"",120);
 const validNotePhotos=(photos,project)=>Array.isArray(photos)&&photos.length<=12&&
  photos.every(id=>isProjectRecipeFile(id,project));
+const validPhotoNames=(names,photos)=>names===undefined||(names&&typeof names==="object"&&!Array.isArray(names)&&
+ Object.entries(names).length<=12&&Object.entries(names).every(([id,name])=>
+  photos.includes(id)&&validText(name,120)));
 const imageAttachment=/\.(?:jpg|jpeg|png|webp|gif|heic|heif)$/i;
 const validPhotoEntry=(photos,project)=>validNotePhotos(photos,project)&&
  photos.every(id=>imageAttachment.test(id));
@@ -76,7 +79,8 @@ export async function handleInvestigations(request,env){
     return json({error:"Invalid investigation details"},400);
   if(!validNotes(data.notes,project)||!validText(data.description??"",5000)||
    (data.photos!==undefined&&!(data.category==="photos"?
-     validPhotoEntry(data.photos,project):validNotePhotos(data.photos,project))))
+     validPhotoEntry(data.photos,project):validNotePhotos(data.photos,project)))||
+   !validPhotoNames(data.photoNames,data.photos||[]))
    return json({error:"Invalid notes, description, or photos"},400);
   if(data.category!==undefined&&(typeof data.category!=="string"||data.category==="practice"||!Object.hasOwn(categoryFields,data.category)||!validEntries(data.entries,categoryFields[data.category],project)))
    return json({error:"Invalid record category or fields"},400);
@@ -103,7 +107,8 @@ export async function handleInvestigations(request,env){
    if(!Array.isArray(tree)||!tree.some(node=>node.id===ownerId))return json({error:"Assembly no longer exists"},404);
   }
     record={id:crypto.randomUUID(),scope,ownerType,ownerId,stepId,parentRecordId,title:data.title.trim(),
-   status:"investigating",lifecycle:"active",entries:[],  description:["note","photos"].includes(data.category)?(data.description||"").trim():"",photos:["note","photos"].includes(data.category)?(data.photos||[]):[],createdAt:new Date().toISOString()};
+   status:"investigating",lifecycle:"active",entries:[],  description:["note","photos"].includes(data.category)?(data.description||"").trim():"",photos:["note","photos"].includes(data.category)?(data.photos||[]):[],
+   photoNames:["note","photos"].includes(data.category)?(data.photoNames||{}):{},createdAt:new Date().toISOString()};
   if(data.category!==undefined)Object.assign(record,{category:data.category,date:new Date().toISOString().slice(0,10),
    entries:data.entries.map(normalizedEntry),status:entryStatus(data.entries),...normalizeNotes(data.notes)});
   createdId=record.id;
@@ -166,7 +171,8 @@ export async function handleInvestigations(request,env){
   if(!record)return json({error:"Investigation not found"},404);
   if(!validNotes(data.notes,project)||!validText(data.description??"",5000)||
    (data.photos!==undefined&&!(record.category==="photos"?
-    validPhotoEntry(data.photos,project):validNotePhotos(data.photos,project))))
+    validPhotoEntry(data.photos,project):validNotePhotos(data.photos,project)))||
+   !validPhotoNames(data.photoNames,data.photos??record.photos??[]))
    return json({error:"Invalid notes, description, or photos"},400);
   const allFields=categoryFields[record.category]||legacyFields;
   const fields=data.notes===undefined?allFields:allFields.filter(type=>type!==retiredField[record.category||"failure"]);
@@ -179,7 +185,7 @@ export async function handleInvestigations(request,env){
   const retained=previous.filter((entry,index)=>latest.get(entry.type)!==index);
   const entries=[...retained,...data.entries.map(normalizedEntry)];
   if(entries.length>100)return json({error:"Too many entries in investigation"},413);
-  changed=records.map(item=>item.id===record.id?{...item,title:data.title.trim(),date:record.date||record.createdAt?.slice(0,10)||new Date().toISOString().slice(0,10),status,entries,...normalizeNotes(data.notes),...(["note","photos"].includes(record.category)?{description:(data.description??record.description??"").trim(),photos:data.photos??record.photos??[]}:{})}:item);
+  changed=records.map(item=>item.id===record.id?{...item,title:data.title.trim(),date:record.date||record.createdAt?.slice(0,10)||new Date().toISOString().slice(0,10),status,entries,...normalizeNotes(data.notes),...(["note","photos"].includes(record.category)?{description:(data.description??record.description??"").trim(),photos:data.photos??record.photos??[],photoNames:data.photoNames??record.photoNames??{}}:{})}:item);
  }else if(data.action==="appendBatch"){
   record=records.find(item=>item.id===data.id);
   if(!record)return json({error:"Investigation not found"},404);
