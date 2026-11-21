@@ -3074,7 +3074,7 @@
 .recipe-compact .recipe-step-detail > .recipe-container-heading > .btn.primary{
  background:var(--color-accent);
  border-color:var(--color-accent);
- color:white;
+ color:var(--color-on-accent);
 }
 .recipe-compact .recipe-step-detail > .recipe-container-heading > .recipe-delete-step{
  color:var(--color-danger-action);
