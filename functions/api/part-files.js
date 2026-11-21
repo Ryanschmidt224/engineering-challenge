@@ -4,6 +4,7 @@ const EXTENSIONS=new Set(["x_t","x_b","stl","step","stp","iges","igs","sldprt","
 const json=(x,status=200)=>new Response(JSON.stringify(x),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const MAX_BYTES=20*1024*1024;
 const uuid=s=>typeof s==="string"&&/^[a-f0-9-]{36}$/i.test(s);
+const implementationId=s=>typeof s==="string"&&/^(?:implementation-)?[a-f0-9-]{36}$/i.test(s);
 export async function handlePartFiles(request,env){
  const u=new URL(request.url),project=u.searchParams.get("project"),partId=u.searchParams.get("id"),file=u.searchParams.get("file");
  if(!await projectAllowed(env,project,request)||!uuid(partId)||file!==null&&!uuid(file))return json({error:"Invalid part file location"},400);
@@ -13,8 +14,20 @@ export async function handlePartFiles(request,env){
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  const component=await env.PHOTOS.get("components/"+project+".json");
  const parts=component?JSON.parse(await component.text()):[];
- if(!parts.some(p=>p.id===partId))return json({error:"Part not found"},404);
- const prefix="part-files/"+project+"/"+partId+"/";
+ const part=parts.find(p=>p.id===partId);
+ if(!part)return json({error:"Part not found"},404);
+ const requested=u.searchParams.get("implementation");
+ if(requested!==null&&!implementationId(requested))return json({error:"Invalid implementation"},400);
+ const selected=part.selection?.selectedId??null;
+ if(part.selection){
+  if(!selected){
+   if(request.method==="GET"&&file===null)return json({files:[],needsImplementation:true});
+   return json({error:"Select an implementation before attaching engineering files"},409);
+  }
+  if(requested!==selected)return json({error:"Implementation selection changed. Reload the part to continue."},409);
+ }
+ else if(requested!==null)return json({error:"Implementation does not belong to this part"},409);
+ const prefix="part-files/"+project+"/"+partId+"/"+(selected?"implementations/"+selected+"/":"");
  if(request.method==="GET"){
   if(file!==null){
    const listing=await env.PHOTOS.list({prefix:prefix+file+".",limit:30,include:["customMetadata"]});
