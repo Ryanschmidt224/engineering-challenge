@@ -350,7 +350,7 @@
      },"btn")
     );
    }else actions.append(saveBtn,btn("Cancel",onDone));
-   if(!creating&&record.lifecycle==="active"){
+   if(!creating&&!isArchived(record)){
     actions.append(btn("Archive",()=>archiveRecord(record),"btn investigation-archive-button"));
    }
    if(!creating)actions.append(btn("Delete",async()=>{
