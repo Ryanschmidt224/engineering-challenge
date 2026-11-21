@@ -100,6 +100,24 @@ test("Workshop defaults suggest editable project-only container names",()=>{
  const sharedEditor=readFileSync("assets/personal-workshop.js","utf8");
  assert.match(sharedEditor,/Default container name \(20 characters max\)/);
 });
+test("Specific Workshop products link to generic items without inheriting specifications",()=>{
+ const api=readFileSync("functions/api/workshop-reference.js","utf8");
+ const workshop=readFileSync("assets/personal-workshop.js","utf8");
+ const picker=readFileSync("assets/library-part-picker.js","utf8");
+ assert.match(api,/genericParentId:110/);
+ assert.match(api,/Only specific products can link to a generic component/);
+ assert.match(api,/patch\.genericParentId===body\.id/);
+ assert.match(workshop,/genericParentId=identityRadios\.specific\.checked\?parentSelect\.value:""/);
+ assert.match(workshop,/other\.genericParentId===item\.id/);
+ assert.match(workshop,/\+ Add specific product/);
+ assert.match(workshop,/genericParentId:item\.id/);
+ assert.match(workshop,/Links this product to its generic component for browsing and selection/);
+ assert.match(picker,/specificChoice\.input\.addEventListener\("change"/);
+ assert.match(picker,/choice\.genericParentId===item\.id/);
+ assert.match(picker,/Use generic component — configure for project/);
+ // A link is for discovery, not a copy or inheritance operation.
+ assert.doesNotMatch(workshop,/\.\.\.item\.specifications[^\n]*genericParentId/);
+});
 test("Edit Part inputs use paired descriptor/value layout with mobile fallback",()=>{
  const css=readFileSync("assets/site-workspaces.css","utf8");
  assert.match(css,/\.component-review>label\s*\{\s*display:grid/);
