@@ -1915,7 +1915,7 @@ function setupAssemblyTrees(){
   visibilityHelp.setAttribute("aria-label",visibilityHelp.title);visibilityRow.append(visibilityHelp);visibilityRow.title=visibilityHelp.title;
   const partNumberRow=document.createElement("label");partNumberRow.className="part-number-field";
   const partNumberInput=document.createElement("input");partNumberInput.className="field part-number-input";partNumberInput.placeholder="Automatic for custom parts; optional for purchased";partNumberInput.maxLength=30;
-  partNumberRow.append(document.createTextNode("Part number"),partNumberInput);
+  partNumberRow.append(document.createTextNode("Functional part number"),partNumberInput);
   const partDescriptionRow=document.createElement("label");partDescriptionRow.className="part-description-field";
   const partDescriptionInput=document.createElement("textarea");partDescriptionInput.className="field part-description-input";partDescriptionInput.rows=2;partDescriptionInput.maxLength=2000;partDescriptionInput.placeholder="What must this part accomplish? Keep the function independent of the chosen component.";
   partDescriptionRow.append(document.createTextNode("Purpose (optional)"),partDescriptionInput);
@@ -3284,7 +3284,7 @@ function setupAssemblyTrees(){
    const selectedImplementation=treeInfo?.implementationResolved===false?"Implementation not selected":
     treeInfo?.implementationName||treeInfo?.mpn||"";
    const secondLine=String(treeDescription(treeDetails,treeInfo?.description)||selectedImplementation||"").trim();
-   name.textContent=node?(isDocumentNode(node)?"📄  ":isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+(isPartNode(node)?firstLine:firstLine):"📦  "+title;
+   name.textContent=node?(isDocumentNode(node)?"📄  ":isToolNode(node)?"🛠  ":isPartNode(node)?"🔩  ":"📦  ")+firstLine:"📦  "+title;
    if(isPartNode(node)&&showTreeDescriptions&&treeDetails.showTreeDescription!=="false"&&secondLine&&secondLine!==firstLine){
     const detail=document.createElement("small");detail.className="assembly-tree-description";detail.textContent=secondLine;name.append(detail);
    }
