@@ -2169,3 +2169,7 @@
  border-top:0!important;
  padding-top:0!important;
 }
+
+/* Empty active-entry containers are omitted in read mode. */
+.investigation-active-area[hidden],
+.investigations-active-panel[hidden]{display:none!important}
