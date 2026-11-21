@@ -491,7 +491,9 @@
     activeContent.append(btn("Replace part / save revision",()=>replacePart(context,target),"btn investigation-add"));
    }
    activeContent.append(make("p","investigation-feedback muted"));
-   activeHost.hidden=!activeOwn.length&&!canCreate&&!activeContent.querySelector("button");
+   // The step-level Add entry button lives beneath Project Archive. Avoid
+   // displaying a blank active-entry wrapper when there are no cards yet.
+   activeHost.hidden=!activeOwn.length&&!activeContent.querySelector("button")&&!(canCreate&&!compact);
 
    archivedOwn.forEach(record=>renderCard(record,content,{historical:true}));
    if(archivedRelated.length){
@@ -573,6 +575,8 @@
   function newRecord(context,target){
    const content=target.activeEntriesHost?.querySelector(".investigation-active-content")||target.querySelector(".investigation-active-content");
    if(!content)return;
+   const activeHost=target.activeEntriesHost||content.closest(".investigation-active-area");
+   if(activeHost)activeHost.hidden=false;
    const existing=content.querySelector(".investigation-new-record");
    if(existing){existing.querySelector("select")?.focus();return;}
    const form=make("div","investigation-create investigation-new-record");
@@ -585,7 +589,10 @@
    }
    const fields=make("div","investigation-new-fields");fields.hidden=true;
    label.append(select);
-   const cancel=btn("Cancel",()=>form.remove());
+   const cancel=btn("Cancel",()=>{
+    form.remove();
+    if(context.stepId&&activeHost&&!content.querySelector(".investigation-card"))activeHost.hidden=true;
+   });
    form.append(label,cancel,fields);
    content.prepend(form);
    select.onchange=()=>{
