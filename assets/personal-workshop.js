@@ -1070,8 +1070,17 @@
      }
      editor.hiddenFields.clear();
      for(const field of section.hiddenFields||[])if(field!=="name")editor.hiddenFields.add(field);
+     const existingRows=[...editor.customRows.children].map(row=>({
+      id:row.dataset.id,
+      label:row.querySelector('[data-table-label]').value,
+      value:row.querySelector('[data-table-value]').value
+     }));
+     const existingById=new Map(existingRows.map(row=>[row.id,row]));
+     const incomingRows=section.rows||[];
+     const importedIds=new Set(incomingRows.map(row=>row.id));
      editor.customRows.replaceChildren();
-     for(const row of section.rows||[])editor.addCustomRow({...row,value:""});
+     for(const row of incomingRows)editor.addCustomRow({...row,value:existingById.get(row.id)?.value||""});
+     for(const row of existingRows)if(!importedIds.has(row.id))editor.addCustomRow(row);
      editor.updateFieldVisibility();
      editor.customRows.classList.toggle("workshop-table-editing",editor.active);
     }
