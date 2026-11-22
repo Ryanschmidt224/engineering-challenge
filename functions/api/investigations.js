@@ -1,3 +1,4 @@
+import {upgradePracticeRecords} from "./record-upgrades.js";
 import {getFamilyProjectPart} from "./workshop-db.js";
 import {getPartPhoto} from "./workshop-linked-part.js";
 import {resolveFunctionalPart} from "./functional-part-model.js";
@@ -15,7 +16,7 @@ const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value
 const entryTypes=new Set(["observation","attempt","lesson","theory","revision","result","note","resolution"]);
 const legacyFields=["observation","theory","resolution","note"];
 const categoryFields={
- practice:["attempt","lesson"],test:["theory","attempt","result"],
+ test:["theory","attempt","result"],
  revision:["revision","theory","result"],failure:legacyFields,note:["note"],photos:[]
 };
 const resolutionChoices=new Set(["yes","no","maybe"]);
@@ -35,7 +36,7 @@ const normalizedEntry=(entry)=>({id:crypto.randomUUID(),type:entry.type,text:ent
 const validEntries=(entries,fields,project)=>Array.isArray(entries)&&entries.length<=fields.length&&
  entries.every(item=>safeEntry(item,project)&&fields.includes(item.type))&&new Set(entries.map(item=>item.type)).size===entries.length;
 // These fields remain in older records after their fixed inputs are retired.
-const retiredField={practice:"lesson",revision:"result",failure:"note",note:"note"};
+const retiredField={revision:"result",failure:"note",note:"note"};
 const validNotes=(notes,project)=>notes===undefined||(Array.isArray(notes)&&notes.length<=30&&notes.every(note=>
  note?.type==="note"&&validText(note.descriptor,180)&&note.descriptor.trim()&&safeEntry(note,project)&&note.text.trim()));
 const normalizeNotes=notes=>notes===undefined?{}:{notes:notes.map(note=>({
@@ -59,8 +60,14 @@ export async function handleInvestigations(request,env){
   return new Response(image.body,{headers:{"content-type":image.httpMetadata?.contentType||"image/jpeg",
    "cache-control":"public, max-age=3600","x-content-type-options":"nosniff"}});
  }
- const key="investigations/"+project+".json",object=await env.PHOTOS.get(key);
- const saved=object?JSON.parse(await object.text()):{records:[],revision:null};
+ const key="investigations/"+project+".json";
+ let object=await env.PHOTOS.get(key);
+ const original=object?await object.text():null;
+ let saved=original?JSON.parse(original):{records:[],revision:null};
+ if(object&&["GET","POST"].includes(request.method)){
+  try{({object,saved}=await upgradePracticeRecords(env,project,object,saved,original));}
+  catch{return json({error:"Old records could not be upgraded safely. Retry before editing.",code:"RECORD_UPGRADE_RETRY"},503);}
+ }
  if(request.method==="GET")return json({records:Array.isArray(saved.records)?saved.records:[],revision:saved.revision??null});
  if(request.method!=="POST")return json({error:"Method not allowed"},405);
  if(!await canEditProject(request,env,project))return json({error:"Administrator login required"},401);
@@ -84,7 +91,7 @@ export async function handleInvestigations(request,env){
      validPhotoEntry(data.photos,project):validNotePhotos(data.photos,project)))||
    !validPhotoNames(data.photoNames,data.photos||[]))
    return json({error:"Invalid notes, description, or photos"},400);
-  if(data.category!==undefined&&(typeof data.category!=="string"||data.category==="practice"||!Object.hasOwn(categoryFields,data.category)||!validEntries(data.entries,categoryFields[data.category],project)))
+  if(data.category!==undefined&&(typeof data.category!=="string"||!Object.hasOwn(categoryFields,data.category)||!validEntries(data.entries,categoryFields[data.category],project)))
    return json({error:"Invalid record category or fields"},400);
   if(records.length>=300)return json({error:"Project investigation limit reached"},413);
   // One child-entry level under a direct Work Instruction entry. Keep these
