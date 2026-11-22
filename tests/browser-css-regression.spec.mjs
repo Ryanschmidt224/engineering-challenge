@@ -79,11 +79,19 @@ for(const width of [1440,390])for(const project of projects)for(const kind of ["
      await writeFile(testInfo.outputPath((index?"candidate-":"baseline-")+state+".png"),image);
     }
     // The owner approves standard sizes over exact preservation of legacy pixels.
-    const metrics=await workspaces[1].locator(".recipe-disclosure-toggle,.workspace-resource-disclosure>summary,.workspace-archive-history>summary,.bs-unstructured-notes-heading,.part-details-collapse>summary").evaluateAll(elements=>elements.filter(element=>element.getClientRects().length).map(element=>{const heading=element.querySelector("h2,h4"),count=element.querySelector(".workspace-record-count"),box=element.getBoundingClientRect();return {title:heading?.textContent||"",font:heading?getComputedStyle(heading).fontSize:null,count:count?getComputedStyle(count).fontSize:null,height:box.height,clipped:element.scrollHeight>element.clientHeight+1};}));
+    const metrics=await workspaces[1].locator(".recipe-disclosure-toggle,.workspace-resource-disclosure>summary,.workspace-archive-history>summary,.bs-unstructured-notes-heading,.part-details-collapse>summary").evaluateAll(elements=>elements.filter(element=>element.getClientRects().length).map(element=>{
+     const heading=element.querySelector("h2,h4"),count=element.querySelector(".workspace-record-count"),box=element.getBoundingClientRect();
+     // Hidden, absolutely positioned tooltips may enlarge scrollHeight without
+     // clipping the actual title. Check the visible text boxes themselves.
+     const clipped=[heading,count].filter(Boolean).some(text=>{const r=text.getBoundingClientRect();return text.scrollHeight>text.clientHeight+1||text.scrollWidth>text.clientWidth+1||r.top<box.top-1||r.bottom>box.bottom+1||r.left<box.left-1||r.right>box.right+1;});
+     return {title:heading?.textContent||"",font:heading?getComputedStyle(heading).fontSize:null,count:count?getComputedStyle(count).fontSize:null,height:box.height,clipped};
+    }));
     expect(metrics.length).toBeGreaterThanOrEqual(4);
-    for(const metric of metrics){expect(metric.font,metric.title).toBe("16px");if(metric.count)expect(metric.count,metric.title).toBe("14px");expect(metric.height,metric.title).toBeGreaterThanOrEqual(48);expect(metric.clipped,metric.title+" clips its contents").toBe(false);}
-    expect(await pages[1].evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),"Page overflows horizontally").toBe(true);
-    if(state==="editor"){const bounds=await pages[1].getByRole("dialog",{name:"Part editor",exact:true}).boundingBox();expect(bounds.x).toBeGreaterThanOrEqual(0);expect(bounds.x+bounds.width).toBeLessThanOrEqual(width+1);}
+    const issues=[];
+    for(const metric of metrics){if(metric.font!=="16px")issues.push(metric.title+": title "+metric.font);if(metric.count&&metric.count!=="14px")issues.push(metric.title+": count "+metric.count);if(metric.height<48)issues.push(metric.title+": header "+metric.height);if(metric.clipped)issues.push(metric.title+": visible text is clipped");}
+    if(!await pages[1].evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1))issues.push("Page overflows horizontally");
+    if(state==="editor"){const bounds=await pages[1].getByRole("dialog",{name:"Part editor",exact:true}).boundingBox();if(bounds.x<0||bounds.x+bounds.width>width+1)issues.push("Part editor overflows horizontally");}
+    expect(issues).toEqual([]);
    }
    expect(errors).toEqual([]);
   }finally{for(const context of contexts)await context.close();}
