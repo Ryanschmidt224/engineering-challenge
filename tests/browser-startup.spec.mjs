@@ -27,7 +27,7 @@ test("owner sign-in remains available without public registration controls",asyn
  await expect(account).toBeVisible();
  await expect(account).toContainText("Public registration is closed");
  await expect(account.getByLabel("Email",{exact:true})).toBeVisible();
- await expect(account.locator("input[type=password]")).toBeVisible();
+ await expect(account.locator('input[name="password"]')).toBeVisible();
  await expect(account.getByRole("button",{name:"Sign in",exact:true})).toBeVisible();
  await expect(account.locator(".project-register,.project-switch-login")).toHaveCount(0);
 });

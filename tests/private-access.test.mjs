@@ -67,6 +67,9 @@ test("owner reads are allowed, mutation origins are checked, and unknown APIs st
     assert.equal(response.status, 403);
     assert.equal((await response.json()).code, "INVALID_ORIGIN");
   }
+  const withoutOrigin = request("/api/tree?project=launcher", {method: "PUT", cookie});
+  withoutOrigin.headers.delete("origin");
+  assert.equal((await worker.fetch(withoutOrigin, env, {})).status, 403);
   const unknown = await worker.fetch(request("/api/unknown-route", {cookie}), env, {});
   assert.equal(unknown.status, 404);
   assert.match(unknown.headers.get("content-type"), /application\/json/);
