@@ -48,6 +48,9 @@ async function fixtures(page,originalCSS){
 }
 async function openWorkspace(page,project,kind){
  await page.goto("/#"+project+"/"+(kind==="part"?"part/"+partId:"workspace/__root__"));
+ // Apply the same motion-only test override to both visual references. Native
+ // focus/summary navigation otherwise races the site's smooth scroll animation.
+ await page.addStyleTag({content:"html { scroll-behavior: auto !important; }"});
  const workspace=page.locator("#"+project+" .assembly-workspace-page"+(kind==="part"?".bom-part-workspace":":not(.bom-part-workspace)"));
  await expect(workspace).toBeVisible();await expect(workspace.locator(".recipe-disclosure-toggle")).toContainText("1 record");
  await expect(workspace.locator(".bs-unstructured-notes-heading")).toContainText("0 records");
@@ -74,8 +77,9 @@ for(const width of [1440,390])for(const project of projects)for(const kind of ["
     if(state==="expanded")for(const workspace of workspaces)await expand(workspace);
     if(state==="editor")for(let index=0;index<pages.length;index++){await workspaces[index].getByRole("button",{name:"Edit part details",exact:true}).click();await expect(pages[index].getByRole("dialog",{name:"Part editor",exact:true})).toBeVisible();}
     for(let index=0;index<pages.length;index++){
-     await pages[index].evaluate(()=>window.scrollTo({top:0,left:0,behavior:"instant"}));
-     expect(await pages[index].evaluate(()=>window.scrollY)).toBe(0);
+     await expect.poll(async()=>pages[index].evaluate(()=>{
+      window.scrollTo({top:0,left:0,behavior:"instant"});return window.scrollY;
+     })).toBe(0);
      const image=await pages[index].screenshot({fullPage:true,animations:"disabled",caret:"hide"});
      await writeFile(testInfo.outputPath((index?"candidate-":"baseline-")+state+".png"),image);
     }
