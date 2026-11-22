@@ -30,6 +30,7 @@ for (const width of [1440, 390]) test("selectable Knowledge and Workshop cards s
   await createTileFromFamily(page, "A long engineering lesson title that needs the full list width");
   const card = page.locator("#tile-list > button").first();
   await expectStackedCard(card);
+  await page.keyboard.press("Tab");
   await card.focus();
   await expect(card).toBeFocused();
   await expect(card).toHaveCSS("outline-style", "solid");
