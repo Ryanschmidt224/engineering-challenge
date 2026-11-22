@@ -1,12 +1,12 @@
 {
   "frozen": {
-    "assets/site-polish.css": "d3942d6373cee3dd36ee5d311a5d853ff9dff8ff5beb7a1adbe125d51bbcf1bc",
-    "assets/site-controls.css": "19eae0bfe2ee6bac0395f85bbd7b79a5899ec5bbbef189f386b6cdfdec0fa636",
-    "assets/site-workspaces.css": "310e355ca20bdd9d6b6f39c346b028e24a85eec89e80f4e0f72d9df986e4f027"
+    "assets/site-polish.css": "39b1b59f37dfeac3d3b66e9436667b5f5d67fcbd71876fbe8b7894a21aa5ffa6",
+    "assets/site-controls.css": "d84a2f3604d2d17dbb92a0172a538f42daae14b83f8a25767c94e0a901d357ad",
+    "assets/site-workspaces.css": "b609a7ef475f83b4a87e519ae8355531ba2f65d86003c8a12ed99c8344fa483a"
   },
   "limits": {
     "assets/site.css": {
-      "important": 55,
+      "important": 54,
       "projectIds": 0
     },
     "assets/parts-management.css": {
@@ -14,24 +14,24 @@
       "projectIds": 0
     },
     "assets/site-workspaces.css": {
-      "important": 9,
-      "projectIds": 70
+      "important": 8,
+      "projectIds": 0
     },
     "assets/product-lookup.css": {
       "important": 1,
-      "projectIds": 3
+      "projectIds": 0
     },
     "assets/site-polish.css": {
-      "important": 339,
-      "projectIds": 42
+      "important": 309,
+      "projectIds": 0
     },
     "assets/photo-markup.css": {
       "important": 53,
       "projectIds": 0
     },
     "assets/site-controls.css": {
-      "important": 153,
-      "projectIds": 351
+      "important": 137,
+      "projectIds": 0
     },
     "assets/theme.css": {
       "important": 0,
@@ -54,7 +54,7 @@
       "projectIds": 0
     },
     "assets/unstructured-notes.css": {
-      "important": 6,
+      "important": 5,
       "projectIds": 0
     }
   }

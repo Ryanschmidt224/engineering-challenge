@@ -3,19 +3,18 @@
 /* Workspace finishing touches: clear gutter beside the resizable sidebar and
    a quiet active state only on the header of the expanded BOM item. */
 @media (min-width: 1100px) {
-  :is(#launcher, .personal-project-view)
-    .assembly-layout:has(> .assembly-sidebar.bom-sidebar-active) {
+  .project-view .assembly-layout:has(> .assembly-sidebar.bom-sidebar-active) {
     column-gap: var(--space-4);
   }
 }
 /* Use the same muted selected-row shade as the feature tree, not a new accent. */
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-sidebar
   .workspace-bom
   .workspace-saved-parts
   .bom-part[open]
   > .bom-part-summary,
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-sidebar
   .workspace-bom
   .workspace-saved-parts
@@ -24,13 +23,13 @@
   background: var(--color-sidebar);
   border-radius: var(--radius-small);
 }
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-sidebar
   .workspace-bom
   .workspace-saved-parts
   .bom-part[open]
   > .bom-part-summary:hover,
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-sidebar
   .workspace-bom
   .workspace-saved-parts
@@ -119,15 +118,14 @@
  * The workspace has an extra 9px splitter column, so 7px gaps on either
  * side produce the same ~22px sidebar/content clearance as overview pages. */
 @media (min-width: 1100px) {
-  :is(#launcher, .personal-project-view) .assembly-layout,
-  #linear .assembly-layout,
-  #robot .assembly-layout {
+  .project-view .assembly-layout,
+  .project-view .assembly-layout,
+  .project-view .assembly-layout {
     column-gap: var(--space-5);
   }
-  :is(#launcher, .personal-project-view)
-    .assembly-layout:has(> .assembly-sidebar.bom-sidebar-active),
-  #linear .assembly-layout:has(> .assembly-sidebar.bom-sidebar-active),
-  #robot .assembly-layout:has(> .assembly-sidebar.bom-sidebar-active) {
+  .project-view .assembly-layout:has(> .assembly-sidebar.bom-sidebar-active),
+  .project-view .assembly-layout:has(> .assembly-sidebar.bom-sidebar-active),
+  .project-view .assembly-layout:has(> .assembly-sidebar.bom-sidebar-active) {
     column-gap: var(--space-2);
   }
 }
@@ -212,7 +210,7 @@
 }
 
 /* BOM editor uses the main workspace instead of the narrow sidebar. */
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-panels
   > .workspace-main-bom-editor {
@@ -224,14 +222,14 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
 }
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-panels
   > article:not(.workspace-main-bom-editor) {
   display: none !important;
 }
 
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   .workspace-bom-mount {
@@ -240,11 +238,11 @@
   margin: 0;
   padding: 0;
 }
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   .component-section,
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   .component-admin {
@@ -253,7 +251,7 @@
   max-width: none;
   margin: 0;
 }
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   .component-admin {
@@ -261,7 +259,7 @@
   border: 0;
   background: transparent;
 }
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   .workspace-bom-editor-header {
@@ -274,7 +272,7 @@
   padding-bottom: 16px;
   border-bottom: 1px solid var(--color-border);
 }
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   .workspace-bom-editor-title {
@@ -282,28 +280,28 @@
   font-size: var(--text-lead);
   color: var(--color-text);
 }
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   .field,
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   input,
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   textarea {
   max-width: 100%;
 }
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   .component-review {
   max-width: 100%;
 }
 @media (max-width: 800px) {
-  :is(#launcher, .personal-project-view)
+  .project-view
     .assembly-workspace-page.is-editing-bom-part
     .workspace-panels
     > .workspace-main-bom-editor {
@@ -313,36 +311,36 @@
 
 /* Main-pane part editing shows ONLY the editable form.
  * The saved BOM remains in the persistent sidebar (never duplicated here). */
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   .component-section
   > details
   > .component-list,
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   .component-section
   > details
   > summary,
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   .component-section
   .bom-visible-parts,
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   .component-admin
   > summary {
   display: none !important;
 }
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   .component-section
   > details,
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   .component-admin {
@@ -352,7 +350,7 @@
   padding: 0 !important;
   margin: 0 !important;
 }
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
   .component-review {
@@ -360,9 +358,7 @@
 }
 
 /* Part classification: only show data relevant to the selected kind. */
-:is(#launcher, .personal-project-view)
-  .workspace-main-bom-editor
-  .part-type-field {
+.project-view .workspace-main-bom-editor .part-type-field {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -371,19 +367,12 @@
   font-weight: var(--font-semibold);
   color: var(--color-text);
 }
-:is(#launcher, .personal-project-view)
-  .workspace-main-bom-editor
-  .part-type-select {
+.project-view .workspace-main-bom-editor .part-type-select {
   width: 100%;
 }
-:is(#launcher, .personal-project-view)
-  .workspace-main-bom-editor
-  .component-review
-  label[hidden],
-:is(#launcher, .personal-project-view) .workspace-main-bom-editor label[hidden],
-:is(#launcher, .personal-project-view)
-  .workspace-main-bom-editor
-  .component-extract[hidden] {
+.project-view .workspace-main-bom-editor .component-review label[hidden],
+.project-view .workspace-main-bom-editor label[hidden],
+.project-view .workspace-main-bom-editor .component-extract[hidden] {
   display: none !important;
 }
 /* Linked resources: no empty three-column placeholders until items exist. */
@@ -437,16 +426,13 @@
 }
 
 /* Narrow BOM = read-only index. One quiet Edit action per editable part. */
-:is(#launcher, .personal-project-view)
-  .assembly-sidebar
-  .workspace-bom
-  .bom-compact-part {
+.project-view .assembly-sidebar .workspace-bom .bom-compact-part {
   border: 0;
   border-bottom: 1px solid var(--color-border);
   border-radius: 0;
   background: transparent;
 }
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-sidebar
   .workspace-bom
   .bom-compact-part
@@ -457,10 +443,7 @@
   align-items: center;
   padding: 10px 3px;
 }
-:is(#launcher, .personal-project-view)
-  .assembly-sidebar
-  .workspace-bom
-  .bom-part-name-link {
+.project-view .assembly-sidebar .workspace-bom .bom-part-name-link {
   background: transparent;
   border: 0;
   text-align: left;
@@ -473,17 +456,11 @@
   min-width: 0;
   flex: 1 1 0;
 }
-:is(#launcher, .personal-project-view)
-  .assembly-sidebar
-  .workspace-bom
-  .bom-part-name-link:hover {
+.project-view .assembly-sidebar .workspace-bom .bom-part-name-link:hover {
   color: var(--color-text-muted);
   text-decoration: underline;
 }
-:is(#launcher, .personal-project-view)
-  .assembly-sidebar
-  .workspace-bom
-  .bom-part-edit {
+.project-view .assembly-sidebar .workspace-bom .bom-part-edit {
   background: transparent;
   color: var(--color-text-muted);
   border: 1px solid var(--color-border);
@@ -493,22 +470,16 @@
   white-space: nowrap;
   flex: 0 0 auto;
 }
-:is(#launcher, .personal-project-view)
-  .assembly-sidebar
-  .workspace-bom
-  .bom-part-edit:hover {
+.project-view .assembly-sidebar .workspace-bom .bom-part-edit:hover {
   background: var(--color-hover);
   color: var(--color-text);
 }
-:is(#launcher, .personal-project-view)
-  .assembly-sidebar
-  .workspace-bom
-  .bom-shop-material-row {
+.project-view .assembly-sidebar .workspace-bom .bom-shop-material-row {
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-sidebar
   .workspace-bom
   .bom-shop-material-row
@@ -572,20 +543,7 @@
     color-mix(in srgb, var(--color-shadow) 55%, transparent);
   z-index: 8;
 }
-.assembly-main .assembly-photo-stage .assembly-open-workspace,
-.assembly-detail .assembly-photo-stage .assembly-open-workspace {
-  left: 14px;
-  right: auto;
-  bottom: 12px;
-  top: auto;
-  border: 1px solid color-mix(in srgb, var(--color-on-media) 30%, transparent);
-  border-radius: var(--radius-medium);
-  padding: 8px 12px;
-  font-size: var(--text-small);
-  background: color-mix(in srgb, var(--color-media-backdrop) 72%, transparent);
-  box-shadow: none;
-  z-index: 9;
-}
+
 /* Description is no longer part of an overview card. The complete notes,
    procedures and linked resources are accessed via Open workspace. */
 .assembly-main .assembly-unified-body,
@@ -595,28 +553,26 @@
 
 /* Focused part-edit mode: the editor is the entire main workspace.
    The tree and BOM remain navigation in the left sidebar. */
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page.is-editing-bom-part
-  > .workspace-back,
-:is(#launcher, .personal-project-view)
+.project-view .assembly-workspace-page.is-editing-bom-part > .workspace-back,
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   > .workspace-heading {
   display: none !important;
 }
 
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-panels
   > .workspace-main-bom-editor {
   margin-top: 0;
 }
 /* A BOM leaf title is text, not another navigation action. Only Open navigates. */
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-sidebar
   .workspace-bom
   .bom-compact-part
   .bom-part-name-link,
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-sidebar
   .workspace-bom
   .bom-shop-material-row
@@ -625,12 +581,12 @@
   text-decoration: none !important;
   color: var(--color-text);
 }
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-sidebar
   .workspace-bom
   .bom-compact-part
   .bom-part-name-link:hover,
-:is(#launcher, .personal-project-view)
+.project-view
   .assembly-sidebar
   .workspace-bom
   .bom-shop-material-row
@@ -641,14 +597,8 @@
 
 /* Overview cards: photo is the complete tile, with one consistent caption
    at the bottom left. No secondary footers or administrative strips. */
-:is(#launcher, .personal-project-view)
-  .assembly-main
-  .assembly-photo-stage
-  .assembly-photo-name,
-:is(#launcher, .personal-project-view)
-  .assembly-detail
-  .assembly-photo-stage
-  .assembly-photo-name {
+.project-view .assembly-main .assembly-photo-stage .assembly-photo-name,
+.project-view .assembly-detail .assembly-photo-stage .assembly-photo-name {
   left: 16px;
   right: auto;
   bottom: 14px;
@@ -661,22 +611,9 @@
   text-shadow: 0 1px 3px
     color-mix(in srgb, var(--color-shadow) 65%, transparent);
 }
-:is(#launcher, .personal-project-view)
-  .assembly-main
-  .assembly-photo-stage
-  .assembly-open-workspace,
-:is(#launcher, .personal-project-view)
-  .assembly-detail
-  .assembly-photo-stage
-  .assembly-open-workspace {
-  left: auto;
-  right: 14px;
-  bottom: 12px;
-  top: auto;
-  transform: none;
-}
-:is(#launcher, .personal-project-view) .assembly-main .assembly-tile,
-:is(#launcher, .personal-project-view) .assembly-detail .assembly-tile {
+
+.project-view .assembly-main .assembly-tile,
+.project-view .assembly-detail .assembly-tile {
   display: block;
   padding: 0 !important;
   gap: 0;
@@ -685,16 +622,16 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
 }
-:is(#launcher, .personal-project-view) .assembly-main .assembly-tile-cover,
-:is(#launcher, .personal-project-view) .assembly-detail .assembly-tile-cover {
+.project-view .assembly-main .assembly-tile-cover,
+.project-view .assembly-detail .assembly-tile-cover {
   width: 100%;
   margin: 0;
   border: 0;
   border-radius: var(--radius-medium);
   overflow: hidden;
 }
-:is(#launcher, .personal-project-view) .assembly-main .assembly-tile-overlay,
-:is(#launcher, .personal-project-view) .assembly-detail .assembly-tile-overlay {
+.project-view .assembly-main .assembly-tile-overlay,
+.project-view .assembly-detail .assembly-tile-overlay {
   left: 0;
   right: 0;
   bottom: 0;
@@ -718,122 +655,39 @@
     color-mix(in srgb, var(--color-shadow) 55%, transparent);
   pointer-events: none;
 }
-:is(#launcher, .personal-project-view) .assembly-main .assembly-tile-stage,
-:is(#launcher, .personal-project-view) .assembly-detail .assembly-tile-stage,
-:is(#launcher, .personal-project-view) .assembly-main .assembly-tile-deps,
-:is(#launcher, .personal-project-view) .assembly-detail .assembly-tile-deps,
-:is(#launcher, .personal-project-view) .assembly-main .assembly-tile-edit,
-:is(#launcher, .personal-project-view) .assembly-detail .assembly-tile-edit {
-  display: none !important;
-}
-:is(#launcher, .personal-project-view)
-  .assembly-main
-  .assembly-tile-photo-overlay,
-:is(#launcher, .personal-project-view)
-  .assembly-detail
-  .assembly-tile-photo-overlay {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  bottom: auto;
-  left: auto;
-  z-index: 8;
-  width: 30px;
-  height: 30px;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  border: 1px solid color-mix(in srgb, var(--color-on-media) 45%, transparent);
-  border-radius: 50%;
-  color: var(--color-on-media);
-  background: color-mix(in srgb, var(--color-media-backdrop) 78%, transparent);
-  line-height: 1;
-  font-size: var(--text-lead);
-  box-shadow: none;
-}
-:is(#launcher, .personal-project-view)
-  .assembly-main
-  .assembly-tile-photo-overlay:hover,
-:is(#launcher, .personal-project-view)
-  .assembly-detail
-  .assembly-tile-photo-overlay:hover {
-  background: var(--color-media-backdrop);
-}
+
 @media (max-width: 540px) {
-  :is(#launcher, .personal-project-view)
-    .assembly-main
-    .assembly-photo-stage
-    .assembly-photo-name,
-  :is(#launcher, .personal-project-view)
-    .assembly-detail
-    .assembly-photo-stage
-    .assembly-photo-name {
+  .project-view .assembly-main .assembly-photo-stage .assembly-photo-name,
+  .project-view .assembly-detail .assembly-photo-stage .assembly-photo-name {
     max-width: calc(100% - 170px);
     font-size: var(--text-small);
-  }
-  :is(#launcher, .personal-project-view)
-    .assembly-main
-    .assembly-photo-stage
-    .assembly-open-workspace,
-  :is(#launcher, .personal-project-view)
-    .assembly-detail
-    .assembly-photo-stage
-    .assembly-open-workspace {
-    font-size: var(--text-caption);
-    padding: 7px 9px;
   }
 }
 
 /* Part editor refinement: clear lookup workflow, measured field widths,
    compact specification origin controls, and one orderly action footer. */
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-review {
+.project-view .workspace-main-bom-editor .component-review {
   display: grid;
   width: min(100%, 960px);
   max-width: 960px;
   gap: var(--space-4);
   margin: 20px 0 0;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-review
-  > label {
+.project-view .workspace-main-bom-editor .component-review > label {
   margin: 0;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-review
-  label[hidden],
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .historical-price-fields[hidden],
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .historical-package-count[hidden],
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-lookup-help[hidden] {
+.project-view .workspace-main-bom-editor .component-review label[hidden],
+.project-view .workspace-main-bom-editor .historical-price-fields[hidden],
+.project-view .workspace-main-bom-editor .historical-package-count[hidden] {
   display: none !important;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-description {
+.project-view .workspace-main-bom-editor .component-description {
   min-height: 85px;
   max-height: 180px;
   resize: vertical;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-lookup-help {
-  max-width: 820px;
-  line-height: 1.55;
-  margin: 8px 0 12px;
-  color: var(--color-text-muted);
-}
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-extract {
+
+.project-view .workspace-main-bom-editor .component-extract {
   border: 1px solid var(--color-border);
   background: var(--color-surface-muted);
   color: var(--color-text);
@@ -842,25 +696,15 @@
   border-radius: var(--radius-medium);
   margin-bottom: 8px;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-extract:hover {
+.project-view .workspace-main-bom-editor .component-extract:hover {
   background: var(--color-hover);
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-extraction-feedback:empty,
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-status:empty,
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-cancel {
+.project-view .workspace-main-bom-editor .component-extraction-feedback:empty,
+.project-view .workspace-main-bom-editor .component-status:empty,
+.project-view .workspace-main-bom-editor .component-cancel {
   display: none !important;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .historical-price-fields {
+.project-view .workspace-main-bom-editor .historical-price-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
@@ -868,10 +712,7 @@
   border-top: 1px solid var(--color-border);
   padding-top: 16px;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .historical-price-fields
-  > label {
+.project-view .workspace-main-bom-editor .historical-price-fields > label {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -879,22 +720,16 @@
   margin: 0;
   min-width: 0;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .historical-unit-hint {
+.project-view .workspace-main-bom-editor .historical-unit-hint {
   grid-column: 1/-1;
   margin: 0;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-specs {
+.project-view .workspace-main-bom-editor .component-specs {
   width: 100%;
   display: grid;
   gap: var(--space-2);
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-spec-row {
+.project-view .workspace-main-bom-editor .component-spec-row {
   display: grid;
   grid-template-columns:
     minmax(120px, 1fr) minmax(120px, 1fr) minmax(180px, 220px)
@@ -904,26 +739,19 @@
   width: 100%;
   margin: 0;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-spec-row
-  .field {
+.project-view .workspace-main-bom-editor .component-spec-row .field {
   min-width: 0;
   width: 100%;
   margin: 0;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-spec-source {
+.project-view .workspace-main-bom-editor .component-spec-source {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
   color: var(--color-text);
   font-size: var(--text-small);
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-spec-remove {
+.project-view .workspace-main-bom-editor .component-spec-remove {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -936,15 +764,11 @@
   color: var(--color-text-muted);
   font-size: var(--text-title);
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-spec-remove:hover {
+.project-view .workspace-main-bom-editor .component-spec-remove:hover {
   background: var(--color-hover);
   color: var(--color-text);
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-editor-actions {
+.project-view .workspace-main-bom-editor .component-editor-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -954,17 +778,13 @@
   padding-top: 20px;
   border-top: 1px solid var(--color-border);
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-editor-primary-actions {
+.project-view .workspace-main-bom-editor .component-editor-primary-actions {
   display: flex;
   gap: var(--space-3);
   align-items: center;
   margin-left: auto;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-add-spec {
+.project-view .workspace-main-bom-editor .component-add-spec {
   justify-self: auto;
   padding: 9px 14px;
   background: transparent;
@@ -972,7 +792,7 @@
   color: var(--color-text-muted);
   border-radius: var(--radius-medium);
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
+.project-view
   .workspace-main-bom-editor
   .component-editor-primary-actions
   .component-save {
@@ -982,7 +802,7 @@
   padding: 10px 20px;
   font-weight: var(--font-bold);
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
+.project-view
   .workspace-main-bom-editor
   .component-editor-primary-actions
   .workspace-bom-editor-cancel {
@@ -994,24 +814,16 @@
   color: var(--color-text-muted);
 }
 @media (max-width: 700px) {
-  :is(:is(#launcher, .personal-project-view), #linear, #robot)
-    .workspace-main-bom-editor
-    .historical-price-fields {
+  .project-view .workspace-main-bom-editor .historical-price-fields {
     grid-template-columns: 1fr;
   }
-  :is(:is(#launcher, .personal-project-view), #linear, #robot)
-    .workspace-main-bom-editor
-    .component-spec-row {
+  .project-view .workspace-main-bom-editor .component-spec-row {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px;
   }
-  :is(:is(#launcher, .personal-project-view), #linear, #robot)
-    .workspace-main-bom-editor
-    .component-spec-source {
+  .project-view .workspace-main-bom-editor .component-spec-source {
     grid-column: 1 / span 2;
   }
-  :is(:is(#launcher, .personal-project-view), #linear, #robot)
-    .workspace-main-bom-editor
-    .component-spec-remove {
+  .project-view .workspace-main-bom-editor .component-spec-remove {
     grid-column: 3;
     grid-row: 1 / span 2;
     align-self: center;
@@ -1019,18 +831,14 @@
 }
 
 /* Optional product lookup is one understandable tool above the manual fields. */
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .part-type-field {
+.project-view .workspace-main-bom-editor .part-type-field {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   max-width: 390px;
   margin: 20px 0 22px;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-lookup-panel {
+.project-view .workspace-main-bom-editor .component-lookup-panel {
   width: min(100%, 960px);
   padding: 17px 20px;
   margin: 0 0 24px;
@@ -1038,33 +846,25 @@
   border-radius: var(--radius-medium);
   background: var(--color-surface);
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-lookup-panel[hidden] {
+.project-view .workspace-main-bom-editor .component-lookup-panel[hidden] {
   display: none !important;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-lookup-panel
-  > label {
+.project-view .workspace-main-bom-editor .component-lookup-panel > label {
   display: block;
   width: 100%;
   font-weight: var(--font-semibold);
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-main-bom-editor
-  .component-lookup-panel
-  textarea {
+.project-view .workspace-main-bom-editor .component-lookup-panel textarea {
   margin-top: 8px;
   width: 100%;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
+.project-view
   .workspace-main-bom-editor
   .component-lookup-panel
   .component-extract {
   margin: 4px 0 0;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
+.project-view
   .workspace-main-bom-editor
   .component-lookup-panel
   .component-extraction-feedback:not(:empty) {
@@ -1076,82 +876,17 @@
   background: var(--color-surface);
 }
 @media (max-width: 700px) {
-  :is(:is(#launcher, .personal-project-view), #linear, #robot)
-    .workspace-main-bom-editor
-    .component-lookup-panel {
+  .project-view .workspace-main-bom-editor .component-lookup-panel {
     padding: 13px;
   }
 }
 
 /* Compact recipe step authoring: optional notes, photos, and local save control. */
-.recipe-step-additions {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  margin: 12px 0;
-}
-.recipe-step-notes {
-  display: grid;
-  gap: var(--space-3);
-}
 
 /* Named work-instruction photos and keyboard-accessible full-screen viewer. */
-.recipe-step-photo-name-label {
-  display: grid;
-  gap: var(--space-2);
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
-.recipe-step-photo-name-label .recipe-input {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.recipe-photo-viewer {
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
-  background: color-mix(in srgb, var(--color-media-backdrop) 94%, transparent);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: var(--space-3);
-  padding: 55px 22px 24px;
-  box-sizing: border-box;
-}
-.recipe-photo-viewer-image {
-  max-width: 100%;
-  max-height: calc(100vh - 125px);
-  object-fit: contain;
-}
-.recipe-photo-viewer-caption {
-  color: var(--color-on-media);
-  font-size: var(--text-body);
-  text-align: center;
-  max-width: 90vw;
-  overflow-wrap: anywhere;
-}
-.recipe-photo-viewer-close {
-  position: absolute;
-  top: 12px;
-  right: 20px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-media-backdrop);
-  color: var(--color-on-media);
-  cursor: pointer;
-  font-size: var(--text-display);
-  line-height: 1;
-  padding: 4px 13px;
-}
 
 /* Step name opens a read-only view; edit must be explicitly requested. */
 
-.recipe-one-step-title {
-  flex: 1;
-  min-width: 0;
-}
 .recipe-step-edit-toggle {
   margin-left: auto;
   font-size: var(--text-small);
@@ -1160,21 +895,11 @@
 }
 
 /* Feature-tree visibility is a display filter, not a BOM classification. */
-.assembly-hidden-toggle {
-  display: block;
-  margin: 7px 10px 9px auto;
-  padding: 5px 9px;
-  font-size: var(--text-small);
-  max-width: calc(100% - 20px);
-}
-.assembly-hidden-toggle[hidden] {
-  display: none;
-}
+
 .assembly-node.is-hidden-part .assembly-name {
   opacity: 0.56;
 }
-.part-visibility-field,
-.library-visibility-field {
+.part-visibility-field {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -1182,8 +907,7 @@
   font-size: var(--text-body);
   cursor: pointer;
 }
-.part-visibility-field input,
-.library-visibility-field input {
+.part-visibility-field input {
   width: 17px;
   height: 17px;
   flex: none;
@@ -1196,7 +920,7 @@
 .assembly-sidebar .feature-tree-frame {
   width: 100%;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
+.project-view
   .assembly-workspace-page:not(.bom-part-workspace)
   .workspace-panels {
   align-items: stretch;
@@ -1204,7 +928,7 @@
   min-width: 0;
 }
 
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
+.project-view
   .assembly-workspace-page:not(.bom-part-workspace)
   .workspace-panels
   > .workspace-bom {
@@ -1213,52 +937,38 @@
   min-width: 0;
 }
 
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
+.project-view
   .assembly-workspace-page:not(.bom-part-workspace)
   .workspace-panels
   > .workspace-main-bom-editor {
   order: 0;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-bom
-  .workspace-saved-parts {
+.project-view .workspace-bom .workspace-saved-parts {
   width: 100%;
   min-width: 0;
   overflow-x: auto;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-bom
-  .bom-part-stack {
+.project-view .workspace-bom .bom-part-stack {
   min-width: 0;
 }
 
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-bom
-  .bom-subassembly-children {
+.project-view .workspace-bom .bom-subassembly-children {
   padding-left: 12px;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-bom
-  .workspace-bom-heading {
+.project-view .workspace-bom .workspace-bom-heading {
   padding-bottom: 12px;
   border-bottom: 1px solid var(--color-border);
   margin-bottom: 16px;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-bom
-  .workspace-new-part {
+.project-view .workspace-bom .workspace-new-part {
   font-size: var(--text-small);
 }
-.assembly-return-workspace {
-  display: inline-flex;
-  margin: 0 0 16px;
-  font-size: var(--text-small);
-}
+
 .assembly-workspace-page > .workspace-back {
   display: inline-flex;
   margin-bottom: 14px;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
+.project-view
   .assembly-workspace-page.is-editing-bom-part
   .workspace-panels
   > .workspace-main-bom-editor {
@@ -1468,7 +1178,7 @@
 }
 
 /* Workspace header: BOM is a secondary action to the right of the title. */
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
+.project-view
   .assembly-workspace-page:not(.bom-part-workspace)
   > .workspace-heading {
   display: flex;
@@ -1476,14 +1186,14 @@
   gap: var(--space-5);
   min-width: 0;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
+.project-view
   .assembly-workspace-page:not(.bom-part-workspace)
   > .workspace-heading
   > div:nth-child(2) {
   flex: 1 1 auto;
   min-width: 0;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
+.project-view
   .assembly-workspace-page:not(.bom-part-workspace)
   > .workspace-heading
   > .workspace-back {
@@ -1494,12 +1204,12 @@
   white-space: nowrap;
 }
 @media (max-width: 660px) {
-  :is(:is(#launcher, .personal-project-view), #linear, #robot)
+  .project-view
     .assembly-workspace-page:not(.bom-part-workspace)
     > .workspace-heading {
     flex-wrap: wrap;
   }
-  :is(:is(#launcher, .personal-project-view), #linear, #robot)
+  .project-view
     .assembly-workspace-page:not(.bom-part-workspace)
     > .workspace-heading
     > .workspace-back {
@@ -1644,7 +1354,7 @@
 
 /* Keep the record panel and unstructured notes ahead of the workspace actions. */
 
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
+.project-view
   .assembly-workspace-page:not(.bom-part-workspace)
   .workspace-panels
   > .investigations-panel {
@@ -1652,12 +1362,7 @@
 }
 
 /* Private account and personal project management (no public data toggled by CSS). */
-.project-owner-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
+
 .project-account-dialog,
 .project-create-dialog,
 .project-manage-dialog {
@@ -1712,27 +1417,11 @@
   height: auto;
   flex: 1;
 }
-.project-card-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2);
-  margin: 0 16px 14px;
-}
-.project-card-actions .btn {
-  padding: 7px 10px;
-  font-size: var(--text-small);
-  margin: 0;
-}
+
 .project-card[hidden] {
   display: none !important;
 }
 @media (max-width: 600px) {
-  .project-owner-actions {
-    width: 100%;
-  }
-  .project-owner-actions .btn {
-    font-size: var(--text-small);
-  }
 }
 
 /* Project home: summary is separate from the editing workspace and detailed BOM. */
@@ -1760,11 +1449,6 @@
 .project-summary-heading p {
   margin: 0;
   font-size: var(--text-small);
-}
-.project-summary-actions {
-  display: flex;
-  gap: var(--space-3);
-  flex-wrap: wrap;
 }
 
 .project-summary-gallery-heading {
@@ -1882,7 +1566,7 @@
 
 /* Keep primary navigation beside the assembly title, not stranded at the far
    edge of an ultrawide monitor. Settings remains available to project owners. */
-:is(#launcher, #linear, #robot, .personal-project-view)
+.project-view
   .assembly-workspace-page:not(.bom-part-workspace)
   > .workspace-heading {
   display: flex;
@@ -1891,7 +1575,7 @@
   gap: var(--space-4) var(--space-5);
   flex-wrap: wrap;
 }
-:is(#launcher, #linear, #robot, .personal-project-view)
+.project-view
   .assembly-workspace-page:not(.bom-part-workspace)
   > .workspace-heading
   > div:nth-child(2) {
@@ -1899,48 +1583,8 @@
   min-width: 0;
   max-width: min(880px, 65vw);
 }
-:is(#launcher, #linear, #robot, .personal-project-view)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  > .workspace-heading
-  > .workspace-heading-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  flex: 0 0 auto;
-  margin-left: clamp(12px, 2.2vw, 38px);
-}
-:is(#launcher, #linear, #robot, .personal-project-view)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-heading-actions
-  > .workspace-back {
-  margin: 0;
-  padding: 11px 20px;
-  font-size: var(--text-body);
-  white-space: nowrap;
-  min-height: 42px;
-  font-weight: var(--font-semibold);
-}
-:is(#launcher, #linear, #robot, .personal-project-view)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-project-settings {
-  margin: 0;
-  padding: 10px 14px;
-  white-space: nowrap;
-  min-height: 42px;
-}
-.workspace-project-settings[hidden],
-.project-summary-settings[hidden] {
-  display: none !important;
-}
+
 @media (max-width: 780px) {
-  :is(#launcher, #linear, #robot, .personal-project-view)
-    .assembly-workspace-page:not(.bom-part-workspace)
-    > .workspace-heading
-    > .workspace-heading-actions {
-    flex: 1 1 100%;
-    margin-left: 0;
-  }
 }
 /* Make the feature-tree width control discoverable: drag its vertical grip.
    Preserve the existing pointer, keyboard and local-storage resizing logic. */
@@ -2063,9 +1707,7 @@
   flex-wrap: wrap;
   align-items: center;
 }
-.project-summary-settings-actions .project-archive-button {
-  margin-left: auto;
-}
+
 .project-summary-settings-status {
   min-height: 1em;
   color: var(--color-text-muted);
@@ -2073,9 +1715,6 @@
 @media (max-width: 700px) {
   .project-summary-settings-form {
     grid-template-columns: 1fr;
-  }
-  .project-summary-settings-actions .project-archive-button {
-    margin-left: 0;
   }
 }
 
@@ -2139,25 +1778,7 @@
   object-position: left center;
   border-radius: var(--radius-large);
 }
-.project-summary-photo-stage > .project-summary-photo-edit {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  left: auto;
-  width: 36px;
-  height: 36px;
-  transform: none;
-  z-index: 2;
-  font-size: var(--text-lead);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-  padding: 0;
-  display: grid;
-  place-items: center;
-}
-.project-summary-photo-stage > .project-summary-photo-edit[hidden] {
-  display: none !important;
-}
+
 .project-summary-photo-stage > .project-summary-previous {
   left: 18px;
 }
@@ -2252,23 +1873,6 @@
   }
 }
 
-.part-number-existing-option:not([hidden]) {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  margin: 6px 0 0;
-  cursor: pointer;
-}
-.part-number-existing-option[hidden] {
-  display: none !important;
-}
-.part-number-existing-option input {
-  width: 16px;
-  height: 16px;
-  flex: none;
-}
 .part-number-input[readonly] {
   background: var(--color-surface-muted);
   color: var(--color-text-muted);
@@ -2285,36 +1889,7 @@
   border-radius: var(--radius-large);
   background: var(--color-surface);
 }
-.bom-part-workspace .part-progress-heading {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-}
-.bom-part-workspace .part-progress-heading h2 {
-  font-size: var(--text-body);
-  margin: 0;
-}
-.bom-part-workspace .part-progress-badge {
-  font-size: var(--text-small);
-  color: var(--color-text-muted);
-  font-weight: var(--font-semibold);
-}
-.bom-part-workspace .part-progress-panel.is-flagged .part-progress-badge {
-  color: var(--color-danger);
-}
-.bom-part-workspace .part-progress-fields {
-  display: flex;
-  align-items: end;
-  gap: var(--space-5);
-  flex-wrap: wrap;
-}
-.bom-part-workspace .part-progress-fields > label:first-child {
-  display: grid;
-  gap: var(--space-2);
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
+
 .bom-part-workspace .part-progress-select {
   min-width: 170px;
 }
@@ -2333,9 +1908,7 @@
   font-size: var(--text-small);
   font-weight: var(--font-semibold);
 }
-.bom-part-workspace .part-attention-note-field[hidden],
-.bom-part-workspace .part-progress-fields[hidden],
-.bom-part-workspace .part-progress-actions[hidden] {
+.bom-part-workspace .part-attention-note-field[hidden] {
   display: none !important;
 }
 .bom-part-workspace .part-attention-note {
@@ -2343,11 +1916,7 @@
   min-height: 74px;
   resize: vertical;
 }
-.bom-part-workspace .part-progress-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
+
 .bom-part-workspace .part-progress-feedback {
   color: var(--color-text-muted);
   font-size: var(--text-small);
@@ -2358,13 +1927,6 @@
 }
 
 /* Project-level review queue; subtle highlight signals action without dominating navigation. */
-.assembly-project-summary-entry.has-pending-changes {
-  border-color: var(--color-accent);
-  background: var(--color-accent-soft);
-  flex-wrap: wrap;
-  column-gap: var(--space-2);
-  row-gap: var(--space-1);
-}
 
 /* Separate cards for project settings and part-number configuration. */
 .project-summary-owner-settings:not([hidden]) {
@@ -2552,19 +2114,8 @@
   width: 17px;
   height: 17px;
 }
-.library-auto-number-inline-note {
-  display: inline-block;
-  margin-left: 8px;
-  font-size: var(--text-small);
-  font-weight: var(--font-normal);
-  line-height: 1.35;
-  cursor: default;
-  white-space: nowrap;
-}
+
 @media (max-width: 600px) {
-  .library-auto-number-inline-note {
-    white-space: normal;
-  }
 }
 
 /* BOM toolbar sits beside the Bill of materials heading in both views. */
@@ -2771,115 +2322,16 @@
 }
 
 /* Part editor input grid layout is defined below; avoid duplicate vertical-layout overrides. */
-:is(#launcher, #linear, #robot, .personal-project-view)
-  .workspace-main-bom-editor
-  .component-review
-  > .part-api-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: var(--space-2) var(--space-3);
-  box-sizing: border-box;
-  width: min(100%, 960px);
-  max-width: 960px;
-  padding: 8px 0 12px;
-  margin: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-:is(#launcher, #linear, #robot, .personal-project-view)
-  .workspace-main-bom-editor
-  .component-review
-  > .part-api-panel[hidden] {
-  display: none !important;
-}
-:is(#launcher, #linear, #robot, .personal-project-view)
-  .workspace-main-bom-editor
-  .part-api-panel
-  > label {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  min-width: 0;
-  width: auto;
-  margin: 0;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
-:is(#launcher, #linear, #robot, .personal-project-view)
-  .workspace-main-bom-editor
-  .part-api-panel
-  .component-description {
-  display: block;
-  box-sizing: border-box;
-  width: 100%;
-  max-width: none;
-  height: 40px !important;
-  min-height: 40px !important;
-  max-height: 40px !important;
-  line-height: 22px;
-  padding: 8px 11px;
-  margin: 0;
-  resize: none !important;
-  overflow-x: auto;
-  overflow-y: hidden;
-  white-space: pre;
-}
-:is(#launcher, #linear, #robot, .personal-project-view)
-  .workspace-main-bom-editor
-  .part-api-panel
-  > .component-extract {
-  align-self: end;
-  height: 40px;
-  min-height: 40px;
-  margin: 0;
-  white-space: nowrap;
-}
-:is(#launcher, #linear, #robot, .personal-project-view)
-  .workspace-main-bom-editor
-  .part-api-panel
-  > .component-extraction-feedback {
-  grid-column: 1 / -1;
-  margin: 0;
-}
+
 @media (max-width: 620px) {
-  :is(#launcher, #linear, #robot, .personal-project-view)
-    .workspace-main-bom-editor
-    .component-review
-    > .part-api-panel {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  :is(#launcher, #linear, #robot, .personal-project-view)
-    .workspace-main-bom-editor
-    .part-api-panel
-    > .component-extract {
-    justify-self: start;
-  }
 }
 
-.assembly-parts-management-link {
-  display: block;
-  width: 100%;
-  margin: 12px 0 4px !important;
-  border-top: 1px solid var(--color-border) !important;
-  padding-top: 13px !important;
-}
 /* All Part Editor descriptors share a line with their corresponding control.
    This overrides the older vertical classification/description layout. */
-:is(#launcher, #linear, #robot, .personal-project-view)
-  .workspace-main-bom-editor
-  .component-review
-  > label,
-:is(#launcher, #linear, #robot, .personal-project-view)
-  .workspace-main-bom-editor
-  .component-review
-  > .part-number-field,
-:is(#launcher, #linear, #robot, .personal-project-view)
-  .workspace-main-bom-editor
-  .component-review
-  > .part-type-field,
-:is(#launcher, #linear, #robot, .personal-project-view)
+.project-view .workspace-main-bom-editor .component-review > label,
+.project-view .workspace-main-bom-editor .component-review > .part-number-field,
+.project-view .workspace-main-bom-editor .component-review > .part-type-field,
+.project-view
   .workspace-main-bom-editor
   .component-review
   > .part-description-field {
@@ -2892,22 +2344,18 @@
   margin: 0 0 12px !important;
   text-align: left;
 }
-:is(#launcher, #linear, #robot, .personal-project-view)
-  .workspace-main-bom-editor
-  .component-review
-  > label
-  > .field,
-:is(#launcher, #linear, #robot, .personal-project-view)
+.project-view .workspace-main-bom-editor .component-review > label > .field,
+.project-view
   .workspace-main-bom-editor
   .component-review
   > .part-number-field
   > .field,
-:is(#launcher, #linear, #robot, .personal-project-view)
+.project-view
   .workspace-main-bom-editor
   .component-review
   > .part-type-field
   > .field,
-:is(#launcher, #linear, #robot, .personal-project-view)
+.project-view
   .workspace-main-bom-editor
   .component-review
   > .part-description-field
@@ -2917,68 +2365,40 @@
   max-width: none !important;
   margin: 0 !important;
 }
-:is(#launcher, #linear, #robot, .personal-project-view)
+.project-view
   .workspace-main-bom-editor
   .component-review
   > .part-number-field
-  > small,
-:is(#launcher, #linear, #robot, .personal-project-view)
-  .workspace-main-bom-editor
-  .component-review
-  > .part-number-field
-  > .part-number-existing-option {
+  > small {
   grid-column: 2;
 }
-:is(#launcher, #linear, #robot, .personal-project-view)
-  .workspace-main-bom-editor
-  .part-api-panel
-  > label {
-  display: grid !important;
-  grid-template-columns: minmax(150px, 190px) minmax(0, 1fr);
-  align-items: center;
-  gap: var(--space-4);
-}
+
 @media (max-width: 680px) {
-  :is(#launcher, #linear, #robot, .personal-project-view)
-    .workspace-main-bom-editor
-    .component-review
-    > label,
-  :is(#launcher, #linear, #robot, .personal-project-view)
+  .project-view .workspace-main-bom-editor .component-review > label,
+  .project-view
     .workspace-main-bom-editor
     .component-review
     > .part-number-field,
-  :is(#launcher, #linear, #robot, .personal-project-view)
+  .project-view .workspace-main-bom-editor .component-review > .part-type-field,
+  .project-view
     .workspace-main-bom-editor
     .component-review
-    > .part-type-field,
-  :is(#launcher, #linear, #robot, .personal-project-view)
-    .workspace-main-bom-editor
-    .component-review
-    > .part-description-field,
-  :is(#launcher, #linear, #robot, .personal-project-view)
-    .workspace-main-bom-editor
-    .part-api-panel
-    > label {
+    > .part-description-field {
     grid-template-columns: minmax(0, 1fr) !important;
     gap: var(--space-1) !important;
   }
-  :is(#launcher, #linear, #robot, .personal-project-view)
+  .project-view
     .workspace-main-bom-editor
     .component-review
     > .part-number-field
-    > small,
-  :is(#launcher, #linear, #robot, .personal-project-view)
-    .workspace-main-bom-editor
-    .component-review
-    > .part-number-field
-    > .part-number-existing-option {
+    > small {
     grid-column: 1;
   }
 }
 
 /* Optional next-number preview sits beneath the Part number input.
    It does not issue/reserve a number until the part is saved. */
-:is(#launcher, #linear, #robot, .personal-project-view)
+.project-view
   .workspace-main-bom-editor
   .part-number-field
   > .part-number-next {
@@ -2995,14 +2415,14 @@
   border-radius: var(--radius-medium);
   cursor: pointer;
 }
-:is(#launcher, #linear, #robot, .personal-project-view)
+.project-view
   .workspace-main-bom-editor
   .part-number-field
   > .part-number-next:disabled {
   opacity: 0.55;
   cursor: default;
 }
-:is(#launcher, #linear, #robot, .personal-project-view)
+.project-view
   .workspace-main-bom-editor
   .part-number-field
   > .part-number-help {
@@ -3011,9 +2431,7 @@
   font-size: var(--text-small);
   color: var(--color-text-muted);
 }
-:is(#launcher, #linear, #robot, .personal-project-view)
-  .workspace-main-bom-editor
-  .part-visibility-field {
+.project-view .workspace-main-bom-editor .part-visibility-field {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -3029,11 +2447,11 @@
   text-decoration: none;
 }
 @media (max-width: 680px) {
-  :is(#launcher, #linear, #robot, .personal-project-view)
+  .project-view
     .workspace-main-bom-editor
     .part-number-field
     > .part-number-next,
-  :is(#launcher, #linear, #robot, .personal-project-view)
+  .project-view
     .workspace-main-bom-editor
     .part-number-field
     > .part-number-help {
@@ -3366,9 +2784,6 @@
   line-height: 1.5;
   font-size: var(--text-body);
 }
-#home .project-owner-actions {
-  justify-content: flex-end;
-}
 
 #home .project-grid {
   margin-top: 18px;
@@ -3407,10 +2822,6 @@
   #home .project-directory-heading {
     align-items: flex-start;
   }
-  #home .project-owner-actions {
-    width: 100%;
-    justify-content: flex-start;
-  }
 }
 /* Knowledge Base: explanations and interactive calculators share one directory. */
 .knowledge-base-page {
@@ -3429,30 +2840,7 @@
   max-width: 680px;
   line-height: 1.55;
 }
-.knowledge-directory-toolbar {
-  display: flex;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-  align-items: end;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  border-radius: var(--radius-large);
-  padding: 18px;
-  margin: 0 0 18px;
-}
-.knowledge-directory-toolbar label {
-  flex: 1 1 210px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.knowledge-directory-toolbar label:first-child {
-  flex: 2 1 320px;
-}
-.knowledge-directory-toolbar .field {
-  margin: 0;
-  min-height: 43px;
-}
+
 .knowledge-base-page #topicFilters {
   margin: 12px 0 10px;
   gap: var(--space-2);
@@ -3461,69 +2849,24 @@
   padding: 7px 13px;
   font-size: var(--text-small);
 }
-.knowledge-results-count {
-  font-size: var(--text-small);
-  margin: 0 0 22px;
-}
+
 .knowledge-section {
   margin: 0 0 28px;
 }
 .knowledge-section[hidden] {
   display: none !important;
 }
-.knowledge-section-heading {
-  display: flex;
-  gap: var(--space-3);
-  align-items: baseline;
-  flex-wrap: wrap;
-  margin: 0 0 16px;
-}
-.knowledge-section-heading h2 {
-  font-size: var(--text-title);
-  margin: 0;
-  letter-spacing: -0.025em;
-}
-.knowledge-section-heading span {
-  font-size: var(--text-small);
-}
+
 .knowledge-base-page #tileList {
   gap: var(--space-4);
 }
-.knowledge-topic-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  border-radius: var(--radius-large);
-}
-.knowledge-topic-card .project-tags {
-  margin-bottom: 2px;
-}
-.knowledge-topic-card h3 {
-  font-size: var(--text-body);
-  margin: 0;
-  line-height: 1.4;
-}
-.knowledge-topic-card p {
-  line-height: 1.52;
-  margin: 0;
-  font-size: var(--text-body);
-}
-.knowledge-topic-card .btn {
-  align-self: flex-start;
-  margin-top: auto;
-}
+
 .knowledge-base-page #resource-calculators .resource-card {
   border-radius: var(--radius-large);
 }
 @media (max-width: 650px) {
   .knowledge-base-page {
     padding-top: 30px;
-  }
-  .knowledge-directory-toolbar {
-    padding: 14px;
-  }
-  .knowledge-directory-toolbar label {
-    flex: 1 1 100%;
   }
 }
 
@@ -3595,11 +2938,7 @@
 .bs-catalog-main {
   min-width: 0;
 }
-.bs-catalog-main .knowledge-directory-toolbar {
-  margin: 0 0 18px;
-  border-radius: var(--radius-large);
-  padding: 14px 16px;
-}
+
 .bs-catalog-main #home .project-grid {
   margin-top: 12px;
 }
@@ -3666,39 +3005,16 @@
 #home .bs-catalog-layout .project-personal-card .project-link {
   height: auto;
 }
-#home .bs-catalog-layout .project-card-actions {
-  padding-top: 8px;
-  border-top: 1px solid var(--color-border);
-}
-#learn .bs-catalog-main .knowledge-section-heading {
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 9px;
-}
+
 #learn .bs-catalog-main #tileList.grid.two {
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
 }
-#learn .bs-catalog-main .knowledge-topic-card {
-  padding: 14px 18px;
-  border-radius: var(--radius-large);
-  gap: var(--space-2);
-}
-#learn .bs-catalog-main .knowledge-topic-card h3 {
-  font-size: var(--text-body);
-}
-#learn .bs-catalog-main .knowledge-topic-card .btn {
-  padding: 6px 12px;
-  font-size: var(--text-small);
-}
-#learn .bs-catalog-main .knowledge-topic-card .project-tags {
-  margin-bottom: 0;
-}
+
 #learn .bs-catalog-main .resource-grid {
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 }
-#commonparts .bs-catalog-main .workshop-scope {
-  margin: 0 0 16px;
-}
+
 #commonparts .bs-catalog-main .workshop-standard-list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -3707,10 +3023,7 @@
 #commonparts .bs-catalog-main .workshop-tree-branch {
   border-color: var(--color-border);
 }
-#commonparts [data-workshop-branch][hidden],
-#commonparts .workshop-scope[hidden],
-#commonparts .workshop-recommendations[hidden],
-#commonparts .workshop-row[hidden] {
+#commonparts [data-workshop-branch][hidden] {
   display: none !important;
 }
 @media (max-width: 800px) {
@@ -3754,9 +3067,6 @@
   #home .bs-catalog-layout .project-copy {
     padding: 14px 16px;
   }
-  .bs-catalog-main .knowledge-directory-toolbar {
-    padding: 12px;
-  }
 }
 
 /* Wide, usable desktop catalog layout shared by the top-level pages.
@@ -3785,9 +3095,7 @@ body > .footer {
   width: 100%;
   padding-inline: clamp(20px, 2.5vw, 46px);
 }
-#commonparts .resource-page {
-  max-width: none;
-}
+
 :is(#home, #learn, #commonparts) .bs-catalog-layout {
   grid-template-columns: clamp(218px, 17vw, 278px) minmax(0, 1fr);
   gap: clamp(22px, 2vw, 38px);
@@ -3802,15 +3110,7 @@ body > .footer {
   width: 100%;
   max-width: none;
 }
-:is(#home, #learn, #commonparts)
-  .bs-catalog-main
-  > .knowledge-directory-toolbar {
-  gap: var(--space-4);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  padding: 16px 20px;
-  border-radius: var(--radius-large);
-}
+
 #home .project-index {
   padding-top: 30px;
 }
@@ -3825,9 +3125,7 @@ body > .footer {
 #home .project-directory-heading p {
   max-width: 820px;
 }
-#home .project-owner-actions {
-  align-self: center;
-}
+
 #home .bs-catalog-layout .project-grid {
   gap: var(--space-4);
   margin-top: 12px;
@@ -3869,23 +3167,12 @@ body > .footer {
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: var(--space-4);
 }
-#learn .bs-catalog-main .knowledge-topic-card {
-  padding: 20px 24px;
-  min-height: 145px;
-}
+
 #learn .bs-catalog-main #resource-calculators.resource-grid {
   grid-template-columns: repeat(auto-fit, minmax(335px, 1fr));
   gap: var(--space-4);
 }
-#commonparts .resource-heading {
-  margin-bottom: 10px;
-}
-#commonparts .resource-heading h1 {
-  font-size: clamp(2.25rem, 3vw, 3.1rem);
-}
-#commonparts .bs-catalog-main .workshop-scope {
-  max-width: none;
-}
+
 #commonparts .bs-catalog-main .workshop-standard-list {
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: var(--space-3);
@@ -3901,9 +3188,7 @@ body > .footer {
 #commonparts .bs-catalog-main .workshop-tree-branch {
   min-width: 0;
 }
-#commonparts .bs-catalog-main .workshop-recommend-search-label {
-  margin-top: 8px;
-}
+
 .footer {
   padding: 22px 0;
   font-size: var(--text-small);
@@ -4307,9 +3592,6 @@ body > .footer {
   #learn .knowledge-base-page {
     max-width: none;
   }
-  #commonparts .resource-page {
-    max-width: none;
-  }
 }
 @media (min-width: 1500px) {
   :is(#home, #learn, #commonparts) > .wrap.section {
@@ -4335,21 +3617,6 @@ body > .footer {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-large);
   background: var(--color-surface);
-}
-#home .bs-project-search-sidebar {
-  display: grid;
-  gap: var(--space-3);
-  min-width: 0;
-}
-#home .bs-project-search-sidebar > .bs-catalog-sidebar-heading {
-  font-size: var(--text-lead);
-  margin: 0;
-}
-
-#home .bs-project-search-sidebar .project-search {
-  width: 100%;
-  min-width: 0;
-  min-height: 40px;
 }
 
 #home .bs-project-tag-filter-heading {
@@ -4449,144 +3716,12 @@ body > .footer {
 }
 
 /* AI-assisted manufacturer-part-number lookup in the Workshop editor. */
-.workshop-ai-lookup {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  padding: 16px;
-  margin: 12px 0 18px;
-  background: var(--color-surface);
-}
-.workshop-ai-lookup h3 {
-  margin: 0 0 7px;
-}
-.workshop-ai-lookup-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-}
-.workshop-ai-lookup-row input {
-  flex: 1;
-  min-width: 200px;
-}
-.workshop-ai-lookup-status {
-  margin: 9px 0 0;
-}
-.workshop-ai-lookup-results {
-  display: grid;
-  gap: var(--space-3);
-  margin-top: 10px;
-}
-.workshop-ai-source-list {
-  display: flex;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  align-items: center;
-}
-.workshop-ai-image-candidate {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-2);
-}
-.workshop-ai-image-candidate img {
-  display: block;
-  width: auto;
-  max-width: 240px;
-  max-height: 190px;
-  object-fit: contain;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-}
 
 /* Shared deletion confirmation: white centered in-page modal, not a browser alert. */
 
 /* Workshop MPN lookup: compact search control and explicit review/apply step. */
-#commonparts .workshop-ai-lookup-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-  max-width: 760px;
-}
-#commonparts .workshop-ai-lookup-row > input {
-  flex: 1 1 280px;
-  min-width: 160px;
-  width: auto;
-}
-#commonparts .workshop-ai-lookup-row > .btn {
-  flex: 0 0 auto;
-  min-width: 122px;
-  min-height: 40px;
-  padding: 9px 14px;
-  white-space: nowrap;
-}
-#commonparts
-  .workshop-part-editor-section[data-part-editor-section="identity"]
-  > .part-editor-section-heading {
-  display: flex;
-  gap: var(--space-4);
-  align-items: center;
-  flex-wrap: wrap;
-}
-#commonparts .workshop-ai-review-trigger {
-  font-size: var(--text-small);
-  min-height: 35px;
-  padding: 7px 13px;
-}
-#commonparts .workshop-ai-changes-panel {
-  margin: 10px 0 18px;
-  padding: 18px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-}
-#commonparts .workshop-ai-changes-panel h4 {
-  margin: 0 0 8px;
-  font-size: var(--text-body);
-}
-#commonparts .workshop-ai-changes-panel h5 {
-  margin: 16px 0 7px;
-}
-#commonparts .workshop-ai-diff-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 14px;
-  font-size: var(--text-body);
-  table-layout: fixed;
-}
-#commonparts .workshop-ai-diff-table th,
-#commonparts .workshop-ai-diff-table td {
-  border-bottom: 1px solid var(--color-border);
-  padding: 9px;
-  text-align: left;
-  vertical-align: top;
-  overflow-wrap: anywhere;
-}
-#commonparts .workshop-ai-diff-table thead th {
-  background: var(--color-surface-muted);
-}
-#commonparts .workshop-ai-changes-actions {
-  display: flex;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  margin-top: 18px;
-}
-@media (max-width: 550px) {
-  #commonparts .workshop-ai-lookup-row > input {
-    flex-basis: 100%;
-  }
-  #commonparts .workshop-ai-diff-table {
-    font-size: var(--text-small);
-  }
-}
 
-#commonparts .workshop-ai-review-trigger[hidden],
-#commonparts .workshop-ai-changes-panel[hidden] {
-  display: none !important;
+@media (max-width: 550px) {
 }
 
 .part-editor-dialog .part-project-edit-notice {
@@ -4609,29 +3744,6 @@ body > .footer {
   margin: 6px 0 0;
   font-size: var(--text-body);
   line-height: 1.5;
-}
-#commonparts .workshop-return-to-project {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: max-content;
-  max-width: 100%;
-  min-height: 40px;
-  position: sticky;
-  top: 72px;
-  z-index: 12;
-  margin: 0 0 16px;
-  padding: 10px 15px;
-  font-weight: var(--font-semibold);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-shadow) 9%, transparent);
-  color: var(--color-accent-hover);
-}
-#commonparts .workshop-return-to-project:hover {
-  background: var(--color-hover);
-  border-color: var(--color-accent);
 }
 
 /* Page-level action placement: keep controls beside the content they operate on,
@@ -4726,11 +3838,7 @@ body > .footer {
   width: 100%;
 }
 /* The wire sizing calculator already uses a two-column group of compact fields. */
-.library-part-dialog .wire-gauge-grid .library-field {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-}
+
 /* On narrow screens, return to stacked fields rather than squeezing the input. */
 @media (max-width: 620px) {
   .library-part-dialog .library-field {
@@ -4782,18 +3890,11 @@ body > .footer {
   padding: 0 5px;
 }
 
-.library-part-dialog .library-workshop-scope {
-  grid-column: 1/-1;
-}
 .library-part-dialog .library-number-choice {
   gap: var(--space-2);
   padding: 8px 11px;
 }
 .library-part-dialog .library-auto-number {
-  gap: var(--space-2);
-}
-.library-part-dialog .library-wire-section,
-.library-part-dialog .library-components {
   gap: var(--space-2);
 }
 
@@ -4935,7 +4036,6 @@ body > .footer {
 .library-part-dialog .library-function-tip {
   font-weight: var(--font-normal);
 }
-.library-part-dialog .library-vendor-info,
 .library-part-dialog .library-part-form > p.muted:not(:first-of-type) {
   font-size: var(--text-small);
   line-height: 1.3;
@@ -4963,13 +4063,9 @@ body > .footer {
 }
 
 /* Help moved beside the relevant label; no duplicate persistent hint lines. */
-.library-part-dialog .library-vendor-info {
-  display: none !important;
-}
 
 /* Framed New Part sections: Item type, Part source, Part number, Part details,
    and Quantity. A compact label/input grid is shared by all field groups. */
-.library-part-dialog .library-form-section,
 .library-part-dialog .library-workshop-choice-group,
 .library-part-dialog .library-number-choice {
   box-sizing: border-box;
@@ -4992,7 +4088,6 @@ body > .footer {
   grid-template-columns: minmax(0, 1fr);
   row-gap: var(--space-2);
 }
-.library-part-dialog .library-form-section > legend,
 .library-part-dialog .library-workshop-choice-group > legend,
 .library-part-dialog .library-number-choice > legend {
   padding: 0 5px;
@@ -5002,17 +4097,8 @@ body > .footer {
   line-height: 1.3;
   color: var(--color-text);
 }
-.library-part-dialog .library-item-type-section {
-  display: grid;
-  gap: var(--space-1);
-}
-.library-part-dialog
-  :is(
-    .library-item-type-section,
-    .library-identity-section,
-    .library-quantity-section
-  )
-  > .library-field,
+
+.library-part-dialog :is(.library-identity-section) > .library-field,
 .library-part-dialog .library-number-choice > .library-field {
   display: grid;
   grid-template-columns: var(--new-part-label-width, 150px) minmax(0, 1fr);
@@ -5024,14 +4110,7 @@ body > .footer {
   line-height: 1.3;
   min-width: 0;
 }
-.library-part-dialog
-  :is(
-    .library-item-type-section,
-    .library-identity-section,
-    .library-quantity-section
-  )
-  > .library-field
-  > .field,
+.library-part-dialog :is(.library-identity-section) > .library-field > .field,
 .library-part-dialog .library-number-choice > .library-field > .field {
   grid-column: 2;
   min-width: 0;
@@ -5055,11 +4134,7 @@ body > .footer {
 }
 
 .library-part-dialog
-  :is(
-    .library-form-section,
-    .library-workshop-choice-group,
-    .library-number-choice
-  ).hide {
+  :is(.library-workshop-choice-group, .library-number-choice).hide {
   display: none !important;
 }
 .library-part-dialog .library-identity-section > .library-field.hide,
@@ -5069,35 +4144,19 @@ body > .footer {
 .library-part-dialog .library-identity-section > .library-field[hidden] {
   display: none !important;
 }
-.library-part-dialog .library-identity-section .library-vendor-info {
-  display: none !important;
-}
+
 @media (max-width: 620px) {
-  .library-part-dialog
-    :is(
-      .library-item-type-section,
-      .library-identity-section,
-      .library-quantity-section
-    )
-    > .library-field,
+  .library-part-dialog :is(.library-identity-section) > .library-field,
   .library-part-dialog .library-number-choice > .library-field {
     display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: var(--space-1);
   }
-  .library-part-dialog
-    :is(
-      .library-item-type-section,
-      .library-identity-section,
-      .library-quantity-section
-    )
-    > .library-field
-    > .field,
+  .library-part-dialog :is(.library-identity-section) > .library-field > .field,
   .library-part-dialog .library-number-choice > .library-field > .field {
     width: 100%;
   }
-  .library-part-dialog .library-form-section,
   .library-part-dialog .library-workshop-choice-group,
   .library-part-dialog .library-number-choice {
     padding: 10px;
@@ -5109,117 +4168,19 @@ body > .footer {
 
 /* Nested publication option is secondary to the two Part source radio choices. */
 
-.library-part-dialog .library-workshop-add-tip {
-  flex: none;
-  font-size: var(--text-small);
-}
-
 /* Workshop publication options: radio-only presentation with no nested frames.
    The outer Part Source border remains as the single section boundary. */
 
-.library-part-dialog .library-workshop-choice-group > .library-workshop-scope {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-1);
-  margin: 2px 0 0 25px;
-  padding: 0 0 0 7px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  min-width: 0;
-}
-.library-part-dialog .library-workshop-scope > legend {
-  padding: 0;
-  margin: 2px 0 4px;
-  font-weight: var(--font-semibold);
-  font-size: var(--text-small);
-}
-
-.library-part-dialog .library-workshop-scope-name {
-  display: inline-flex;
-  gap: var(--space-2);
-  align-items: center;
-  min-width: 0;
-  font-weight: var(--font-semibold);
-}
-.library-part-dialog .library-workshop-scope-tip {
-  font-size: var(--text-small);
-  font-weight: var(--font-normal);
-}
-
 @media (max-width: 620px) {
-  .library-part-dialog
-    .library-workshop-choice-group
-    > .library-workshop-scope {
-    margin-left: 12px;
-  }
 }
 
 /* Workshop lookup: label and search input share one aligned row.
    Search results are the only content shown beneath the input. */
 
-.library-part-dialog .library-workshop-search-title {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-  font-weight: var(--font-semibold);
-}
-.library-part-dialog .library-workshop-search-tip {
-  font-size: var(--text-small);
-  font-weight: var(--font-normal);
-  flex: none;
-}
-
-.library-part-dialog .library-workshop-quick-results:empty {
-  display: none;
-}
-.library-part-dialog .library-workshop-quick-results {
-  margin-top: 3px;
-}
-
 /* The global Workshop search belongs to the Workshop item selection section,
    not the Part source radio group. Keep one enclosing frame. */
 
 /* Workshop picker: one lookup mode at a time, shared label alignment and spacing. */
-
-.library-part-dialog .library-lookup-mode {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-  padding: 1px 0 4px;
-  font-size: var(--text-small);
-  line-height: 1.3;
-}
-.library-part-dialog .library-lookup-mode-caption {
-  color: var(--color-text);
-  font-weight: var(--font-semibold);
-  margin-right: 4px;
-}
-.library-part-dialog .library-lookup-mode-option {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: 0;
-  cursor: pointer;
-  font-weight: var(--font-normal);
-}
-.library-part-dialog .library-lookup-mode-option input {
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  accent-color: var(--color-accent);
-}
-
-.library-part-dialog .library-workshop-finish-note {
-  margin: 6px 0 2px;
-  padding: 0;
-  border: 0;
-  font-size: var(--text-small);
-  line-height: 1.4;
-}
 
 /* Edit Part: project Container versus its selected physical implementation.
    Sections follow the same framed spacing used by New Part. */
@@ -5615,22 +4576,7 @@ body > .footer {
 }
 
 /* Container and purchased alternatives: compact, optional secondary controls. */
-.part-container-overview .part-functional-heading {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-}
-.part-container-overview .part-functional-heading h3 {
-  font-size: var(--text-body);
-  font-weight: var(--font-semibold);
-  margin: 0;
-}
-.part-container-overview .part-functional-heading .btn {
-  padding: 4px 9px;
-  min-height: 28px;
-  font-size: var(--text-small);
-}
+
 .part-container-overview .part-functional-purpose {
   margin: 4px 0 0;
   font-size: var(--text-small);

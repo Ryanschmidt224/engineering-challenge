@@ -191,3 +191,19 @@ test("private project controls omit publishing, suggestion and feedback UI", asy
   await expect(page.locator(".project-account-dialog")).toBeVisible();
   await expect(page.getByRole("button",{name:"Link administrator access",exact:true})).toHaveCount(0);
 });
+
+test("one project template supports built-in and new project routes without duplicate element IDs", async ({page}) => {
+  const response=await page.request.post("/api/projects", {headers:{origin:"http://127.0.0.1:4173"},data:{name:"Shared template fixture",tags:["CAD"]}});
+  expect(response.ok(),await response.text()).toBe(true);
+  const {projects}=await response.json(),created=projects.find(project=>project.name==="Shared template fixture");
+  await page.goto("/#home");
+  await expect(page.locator(".project-grid > .project-card")).toHaveCount(4);
+  for(const id of ["launcher","linear","robot",created.id]) {
+    await page.goto("/#"+id+"/workspace/__root__");
+    await expect(page).toHaveURL(new RegExp("#"+id+"/workspace/__root__$"));
+    await expect(page.locator("#"+id+".project-view .assembly-workspace-page:not(.bom-part-workspace)")).toBeVisible();
+    await expect(page.locator('[data-assembly-tree="'+id+'"]')).toHaveCount(1);
+  }
+  const duplicateIDs=await page.locator("[id]").evaluateAll(nodes=>nodes.map(node=>node.id).filter((id,index,all)=>all.indexOf(id)!==index));
+  expect(duplicateIDs).toEqual([]);
+});

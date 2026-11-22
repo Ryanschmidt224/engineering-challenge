@@ -64,9 +64,7 @@
 .bs-markup-modal .muted {
   margin: 8px 0;
 }
-.bs-photo-edit {
-  font-size: var(--text-small);
-}
+
 @media (max-width: 600px) {
   .bs-markup-modal {
     padding: 10px;
@@ -558,11 +556,7 @@
 .bom-part-workspace > .workspace-heading .part-progress-panel {
   margin: 2px 0 0 !important;
 }
-.bom-part-workspace > .part-workspace-back {
-  margin: 0 0 12px;
-  padding: 8px 12px;
-  min-height: 36px;
-}
+
 @media (max-width: 600px) {
   .bom-part-workspace > .workspace-heading:has(> .bs-photo-control) {
     grid-template-columns: minmax(0, 1fr);

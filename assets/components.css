@@ -81,19 +81,7 @@ textarea.field {
   padding-top: var(--space-3);
   border-top: 1px solid var(--color-border);
 }
-.disclosure {
-  border-top: 1px solid var(--color-border);
-  margin: var(--space-4) 0;
-  padding-top: var(--space-3);
-}
-.disclosure > summary {
-  min-height: var(--section-height);
-  font-weight: var(--font-semibold);
-}
-.disclosure > summary h2 {
-  display: inline;
-  font-size: var(--text-body);
-}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;

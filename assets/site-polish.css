@@ -3,117 +3,12 @@
 /* Display photo name as a single editable caption immediately below the image. */
 
 /* Work-instruction notes take the full available editing width. */
-.recipe-compact .recipe-step-notes {
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-}
 
 /* Photo and its editable name form one framed object, not two separate boxes. */
 
 /* Contextual knowledge search from right-clicking instruction words. */
-.recipe-knowledge-context-menu {
-  position: fixed;
-  z-index: 100000;
-  width: min(330px, calc(100vw - 16px));
-  max-height: min(440px, calc(100vh - 16px));
-  overflow: auto;
-  box-sizing: border-box;
-  background: var(--color-surface);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  box-shadow: 0 12px 36px
-    color-mix(in srgb, var(--color-shadow) 50%, transparent);
-  padding: 7px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-.recipe-knowledge-context-heading {
-  padding: 9px 10px 11px;
-  font-weight: var(--font-bold);
-  font-size: var(--text-small);
-  overflow-wrap: anywhere;
-  border-bottom: 1px solid var(--color-border);
-}
-.recipe-knowledge-context-result,
-.recipe-knowledge-context-explain {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  gap: var(--space-1);
-  width: 100%;
-  padding: 9px 10px;
-  background: transparent;
-  color: inherit;
-  border: 0;
-  border-radius: var(--radius-medium);
-  font: inherit;
-  cursor: pointer;
-}
-.recipe-knowledge-context-result small {
-  color: var(--color-text-muted);
-  font-size: var(--text-caption);
-}
-.recipe-knowledge-context-result:hover,
-.recipe-knowledge-context-result:focus-visible,
-.recipe-knowledge-context-explain:hover,
-.recipe-knowledge-context-explain:focus-visible {
-  background: var(--color-hover);
-  outline: none;
-}
-.recipe-knowledge-context-explain {
-  border-top: 1px solid var(--color-border);
-  color: var(--color-accent);
-}
-.recipe-knowledge-empty {
-  padding: 4px 10px;
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-}
 
 /* Work-instruction attachments flow horizontally and wrap on narrow screens. */
-
-.recipe-document-link {
-  width: 100%;
-  min-height: 175px;
-  padding: 22px 12px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: var(--space-4);
-  text-align: center;
-  text-decoration: none;
-  color: var(--color-text);
-  background: var(--color-surface);
-}
-.recipe-document-link:hover,
-.recipe-document-link:focus-visible {
-  background: var(--color-hover);
-  outline: 2px solid var(--color-focus);
-  outline-offset: -2px;
-}
-.recipe-document-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 78px;
-  padding: 14px 8px;
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-medium);
-  font-weight: var(--font-bold);
-  letter-spacing: 0.06em;
-  font-size: var(--text-body);
-}
-.recipe-document-open {
-  font-size: var(--text-small);
-  color: var(--color-text-muted);
-}
 
 /* Work instruction notes: clear, high-contrast read-only presentation. */
 
@@ -133,28 +28,7 @@
 
   padding: 12px;
 }
-.investigation-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-.investigation-heading h2,
-.investigation-heading h4 {
-  margin: 0;
-  color: var(--color-text);
-}
-.investigation-heading h2 {
-  font-size: var(--text-title);
-}
-.investigation-heading h4 {
-  font-size: var(--text-body);
-}
-.investigation-add {
-  font-size: var(--text-small);
-}
+
 .investigation-card,
 .investigation-rollup {
   background: var(--color-surface);
@@ -175,15 +49,7 @@
 .investigation-summary strong {
   font-size: var(--text-body);
 }
-.investigation-status-pill {
-  display: inline-block;
-  white-space: nowrap;
-  color: var(--color-accent);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  padding: 3px 10px;
-  font-size: var(--text-caption);
-}
+
 .investigation-body {
   padding: 12px 15px;
   border-top: 1px solid var(--color-border);
@@ -242,10 +108,7 @@
 .investigation-add-controls .btn {
   align-self: flex-start;
 }
-.investigation-status {
-  margin-top: 12px;
-  max-width: 220px;
-}
+
 .investigation-origin {
   color: var(--color-text-muted);
   font-size: var(--text-small);
@@ -289,11 +152,7 @@
   flex-wrap: wrap;
   gap: var(--space-2);
 }
-.investigation-entry-date {
-  font-size: var(--text-small);
-  color: var(--color-text-muted);
-  font-variant-numeric: tabular-nums;
-}
+
 .investigation-entry-field {
   display: flex;
   flex-direction: column;
@@ -377,9 +236,6 @@
   border-left: 3px solid var(--color-accent);
   background: var(--color-surface);
   border-radius: var(--radius-small);
-}
-.investigation-heading .btn {
-  font-size: var(--text-small);
 }
 
 /* Assembly overview: BOM parts are a separate, clearly labeled group of child tiles. */
@@ -575,9 +431,7 @@
 .investigation-collapse-content {
   padding: 14px 16px;
 }
-.investigation-collapse-content .investigation-heading {
-  margin: 0 0 12px;
-}
+
 .investigation-collapse-content .investigation-card:first-of-type {
   margin-top: 0;
 }
@@ -688,26 +542,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
 }
-.workspace-photos-editor .workspace-photo-compact {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-.workspace-photos-editor .workspace-photo-meta {
-  display: flex;
-  align-items: flex-start;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.workspace-photos-editor .workspace-photo-title {
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  color: var(--color-on-media);
-}
-.workspace-photos-editor .workspace-photo-edit-toggle {
-  font-size: var(--text-small);
-  padding: 6px 10px;
-}
+
 .workspace-photos-editor .assembly-unified-photo {
   width: 112px;
   flex: 0 0 112px;
@@ -809,44 +644,7 @@
 }
 
 /* Photo editing is hidden in a dialog launched from the workspace cover thumbnail. */
-.workspace-cover-shell {
-  position: relative;
-  display: inline-flex;
-  align-self: flex-start;
-  flex: 0 0 auto;
-  min-width: 0;
-}
-.workspace-cover-shell .workspace-cover {
-  position: relative;
-}
-.workspace-photo-launch {
-  position: absolute;
-  bottom: 5px;
-  right: 5px;
-  z-index: 3;
-  width: 29px;
-  height: 29px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: color-mix(in srgb, var(--color-media-backdrop) 90%, transparent);
-  color: var(--color-on-media);
-  font-size: var(--text-lead);
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--color-shadow) 40%, transparent);
-}
-.workspace-photo-launch:hover,
-.workspace-photo-launch:focus-visible {
-  background: var(--color-media-backdrop);
-  outline: 2px solid var(--color-focus);
-  outline-offset: 1px;
-}
-.workspace-photo-launch[hidden] {
-  display: none !important;
-}
+
 .workspace-photo-dialog {
   width: min(720px, calc(100vw - 30px));
   max-height: min(92vh, 900px);
@@ -982,18 +780,7 @@
 }
 
 /* Shared part / subassembly photo editor: discreet pencil overlay. */
-.workspace-cover-shell .workspace-photo-launch {
-  background: color-mix(in srgb, var(--color-media-backdrop) 52%, transparent);
-  border-color: color-mix(in srgb, var(--color-on-media) 55%, transparent);
-  color: color-mix(in srgb, var(--color-on-media) 88%, transparent);
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--color-shadow) 22%, transparent);
-}
-.workspace-cover-shell .workspace-photo-launch:hover,
-.workspace-cover-shell .workspace-photo-launch:focus-visible {
-  background: color-mix(in srgb, var(--color-media-backdrop) 88%, transparent);
-  border-color: var(--color-on-media);
-  color: var(--color-on-media);
-}
+
 .bom-part-workspace .part-workspace-cover {
   cursor: default;
 }
@@ -1050,18 +837,7 @@
   background: var(--color-media-backdrop);
   overflow: hidden;
 }
-.assembly-main .assembly-main-tile .root-photo-ui .assembly-photo-stage {
-  height: clamp(280px, 38vw, 430px);
-  width: 100%;
-  border-radius: 0;
-  overflow: hidden;
-}
-.assembly-main .assembly-main-tile .root-photo-ui .assembly-stage-image {
-  width: 100%;
-  height: 100%;
-  max-height: none;
-  object-fit: cover;
-}
+
 .assembly-main .assembly-main-tile .assembly-unified-photo .assembly-photos {
   display: block;
   padding: 0;
@@ -1086,9 +862,6 @@
     width: 100%;
     max-width: 100%;
   }
-  .assembly-main .assembly-main-tile .root-photo-ui .assembly-photo-stage {
-    height: 300px;
-  }
 }
 
 /* Studio Green: explicit surface roles for photo-management interfaces.
@@ -1107,8 +880,7 @@
   background: transparent;
   color: var(--color-text);
 }
-.workspace-photo-dialog .workspace-photos-editor h2,
-.workspace-photo-dialog .workspace-photo-title {
+.workspace-photo-dialog .workspace-photos-editor h2 {
   color: var(--color-text);
 }
 .workspace-photo-dialog .workspace-photos-editor > p.muted {
@@ -1152,14 +924,12 @@
 
 /* Shared workspace treatment: part pages inherit the white, framed
    work-instruction cards already used for subassemblies. */
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .assembly-workspace-page.bom-part-workspace
-  > .workspace-panels {
+.project-view .assembly-workspace-page.bom-part-workspace > .workspace-panels {
   width: 100%;
   max-width: none;
 }
 
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
+.project-view
   .assembly-workspace-page.bom-part-workspace
   .workspace-panels
   > article.hide {
@@ -1168,75 +938,8 @@
 
 /* Photo CTA: on-media text must stay white in a light site theme.
    An opaque accent button remains legible on either light or dark photos. */
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .assembly-main
-  .assembly-photo-stage
-  .assembly-open-workspace,
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .assembly-detail
-  .assembly-photo-stage
-  .assembly-open-workspace {
-  position: absolute;
-  right: 18px;
-  left: auto;
-  bottom: 18px;
-  top: auto;
-  z-index: 12;
-  transform: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 46px;
-  padding: 10px 17px;
-  border: 2px solid var(--color-on-media);
-  border-radius: var(--radius-large);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  font-size: var(--text-body);
-  line-height: 1.3;
-  font-weight: var(--font-bold);
-  text-shadow: none;
-  box-shadow: 0 3px 12px
-    color-mix(in srgb, var(--color-shadow) 30%, transparent);
-  opacity: 1;
-}
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .assembly-main
-  .assembly-photo-stage
-  .assembly-open-workspace:hover,
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .assembly-detail
-  .assembly-photo-stage
-  .assembly-open-workspace:hover {
-  background: var(--color-accent-hover);
-  color: var(--color-on-accent);
-}
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .assembly-main
-  .assembly-photo-stage
-  .assembly-open-workspace:focus-visible,
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .assembly-detail
-  .assembly-photo-stage
-  .assembly-open-workspace:focus-visible {
-  outline: 3px solid var(--color-on-media);
-  outline-offset: 3px;
-}
+
 @media (max-width: 800px) {
-  :is(:is(#launcher, .personal-project-view), #linear, #robot)
-    .assembly-main
-    .assembly-photo-stage
-    .assembly-open-workspace,
-  :is(:is(#launcher, .personal-project-view), #linear, #robot)
-    .assembly-detail
-    .assembly-photo-stage
-    .assembly-open-workspace {
-    right: 12px;
-    bottom: 12px;
-    min-height: 40px;
-    padding: 8px 12px;
-    font-size: var(--text-small);
-  }
 }
 
 /* Work instructions — focused step navigator (Option 2).
@@ -1299,19 +1002,6 @@
   border-radius: var(--radius-large);
   overflow: hidden;
 }
-.recipe-compact .recipe-step-detail > .recipe-one-step {
-  border: 0;
-  border-radius: 0;
-  margin: 0;
-  background: transparent;
-}
-
-.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-body {
-  padding: 18px;
-  width: 100%;
-  align-items: stretch;
-  gap: var(--space-4);
-}
 
 .recipe-compact .recipe-step-detail .recipe-step-investigations {
   width: 100%;
@@ -1328,22 +1018,11 @@
     min-height: 40px;
     padding: 8px 10px;
   }
-
-  .recipe-compact
-    .recipe-step-detail
-    > .recipe-one-step
-    > .recipe-one-step-body {
-    padding: 12px;
-  }
 }
 
 /* Focused instruction reader refinements:
    selection and detail heading share one semantic accent surface;
    reading prose stays typographic, and step revisions are secondary. */
-
-.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-body {
-  gap: var(--space-4);
-}
 
 /* Compact, text-first step revision disclosure; expand only when needed. */
 .recipe-compact .recipe-step-detail .recipe-step-investigations,
@@ -1437,10 +1116,6 @@
 }
 
 /* Per-note photo actions are adjacent to the note they belong to. */
-
-.recipe-compact .recipe-add-note-photo {
-  font-size: var(--text-small);
-}
 
 @media (max-width: 760px) {
   .recipe-compact .recipe-step-browser {
@@ -1545,9 +1220,6 @@
   padding: 9px;
 }
 
-.recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-body {
-  padding: 18px 7px 9px;
-}
 /* Revision, failure and lesson disclosures are text-first rather than tinted cards. */
 .assembly-workspace-page .investigations-panel,
 .assembly-workspace-page .investigations-panel .investigation-collapse,
@@ -1606,169 +1278,10 @@
 }
 
 /* Resume work and readiness checks: compact, integrated with the workspace. */
-.assembly-workspace-page .project-work-panel {
-  padding: 18px 20px !important;
-  margin: 0 0 24px !important;
-  background: var(--color-surface) !important;
-  border: 1px solid var(--color-border) !important;
-  border-radius: var(--radius-large);
-}
-.project-work-tracker {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  min-width: 0;
-}
-.tracker-heading,
-.tracker-tools {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-}
-.tracker-heading h2 {
-  margin: 0 !important;
-  font-size: var(--text-body) !important;
-}
-.tracker-status {
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-}
-.tracker-status:empty {
-  display: none;
-}
-.tracker-resume-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--space-2) var(--space-4);
-  align-items: center;
-  padding: 12px 14px;
-  background: var(--color-accent-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-}
-.tracker-resume-card strong {
-  grid-column: 1;
-}
-.tracker-resume-card p {
-  grid-column: 1;
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-}
-.tracker-resume-card button {
-  grid-column: 2;
-  grid-row: 1/3;
-}
-.tracker-task-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-.tracker-task {
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-  padding: 8px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-}
-.tracker-task > input {
-  flex: 0 0 auto;
-}
-.tracker-task-body {
-  flex: 1;
-  min-width: 0;
-}
-.tracker-task-body strong {
-  font-size: var(--text-body);
-  font-weight: var(--font-semibold);
-  overflow-wrap: anywhere;
-}
-.tracker-task-body p {
-  margin: 2px 0 0;
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-  white-space: pre-wrap;
-}
-.tracker-task.is-done .tracker-task-body {
-  text-decoration: line-through;
-  opacity: 0.65;
-}
-.tracker-link,
-.tracker-remove {
-  padding: 5px 8px;
-  font-size: var(--text-small);
-}
-.tracker-add-form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-  gap: var(--space-2);
-  align-items: start;
-}
-.tracker-add-form .field {
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-}
-.tracker-readiness {
-  border-top: 1px solid var(--color-border);
-  padding-top: 11px;
-}
-.tracker-readiness summary {
-  cursor: pointer;
-  font-weight: var(--font-semibold);
-}
-.tracker-readiness-body {
-  padding-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.tracker-readiness-body > p {
-  margin: 0;
-}
-.tracker-ready-count {
-  font-weight: var(--font-semibold);
-}
-.tracker-ready-item {
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-  border-bottom: 1px solid var(--color-border);
-  padding: 7px 0;
-}
-.tracker-ready-item span {
-  flex: 1;
-  overflow-wrap: anywhere;
-}
-.tracker-ready-item small {
-  color: var(--color-text-muted);
-}
+
 /* Put Open BOM next to the heading instead of leaving a large gap. */
-.assembly-workspace-page:not(.bom-part-workspace) .workspace-heading-actions {
-  margin-left: 8px;
-  align-self: center;
-}
+
 @media (max-width: 720px) {
-  .tracker-add-form {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .tracker-resume-card {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .tracker-resume-card button {
-    grid-column: 1;
-    grid-row: auto;
-    justify-self: start;
-  }
-  .tracker-task {
-    flex-wrap: wrap;
-  }
-  .assembly-workspace-page:not(.bom-part-workspace) .workspace-heading-actions {
-    margin-left: 0;
-  }
 }
 
 /* The Open BOM action replaces the old Workspace subtitle under the title. */
@@ -1788,14 +1301,6 @@
   align-self: flex-start;
   min-height: 35px;
   padding: 6px 13px;
-}
-
-.project-summary-page .project-summary-tracker {
-  margin: 14px 0 26px;
-  padding: 16px 20px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
 }
 
 /* Project BOM: nested, collapsible assembly branches like the feature tree. */
@@ -1872,63 +1377,11 @@
   background: var(--color-surface);
   box-shadow: none;
 }
-.bom-part-workspace .part-progress-disclosure {
-  display: block;
-}
-.bom-part-workspace .part-progress-heading {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: 9px 13px;
-  cursor: pointer;
-  list-style: none;
-}
-.bom-part-workspace .part-progress-heading::-webkit-details-marker {
-  display: none;
-}
-.bom-part-workspace .part-progress-heading::before {
-  content: "▸";
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-}
-.bom-part-workspace
-  .part-progress-disclosure[open]
-  > .part-progress-heading::before {
-  content: "▾";
-}
-.bom-part-workspace .part-progress-heading h2 {
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  margin: 0;
-}
-.bom-part-workspace .part-progress-badge {
-  font-size: var(--text-small);
-  font-weight: var(--font-normal);
-}
-.bom-part-workspace .part-progress-edit-label {
-  font-size: var(--text-caption);
-  color: var(--color-text-muted);
-  margin-left: 10px;
-}
+
 .bom-part-workspace .part-progress-panel.is-flagged {
   border-color: var(--color-border);
 }
-.bom-part-workspace .part-progress-body {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-3);
-  padding: 12px 14px 14px;
-  border-top: 1px solid var(--color-border);
-  min-width: min(340px, 80vw);
-}
-.bom-part-workspace .part-progress-fields {
-  gap: var(--space-4);
-  align-items: center;
-}
-.bom-part-workspace .part-progress-fields > label:first-child {
-  gap: var(--space-1);
-}
+
 .bom-part-workspace .part-attention-toggle {
   padding-bottom: 0;
 }
@@ -1940,16 +1393,11 @@
   width: 100%;
   min-height: 65px;
 }
-.bom-part-workspace .part-progress-actions .btn {
-  padding: 7px 12px;
-}
+
 @media (max-width: 720px) {
   .bom-part-workspace .part-progress-panel {
     margin: 0 0 14px;
     width: 100%;
-  }
-  .bom-part-workspace .part-progress-body {
-    min-width: 0;
   }
 }
 
@@ -2104,7 +1552,6 @@
 
 .workspace-bom,
 .part-linked-resources,
-.recipe-one-step-body,
 .project-summary-page > .project-summary-heading {
   position: relative;
 }
@@ -2112,11 +1559,6 @@
 .workspace-heading,
 .project-summary-heading {
   position: relative;
-}
-
-.workspace-heading > div:has(> .build-confusion-control),
-.project-summary-heading > div:has(> .build-confusion-control) {
-  position: static;
 }
 
 /* Keep status, dropdown and attention control on a single horizontal line. */
@@ -2157,30 +1599,6 @@
   .bom-part-workspace .part-progress-panel:not([hidden]) {
     flex-wrap: wrap !important;
   }
-}
-.assembly-hidden-filter-label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  position: relative;
-}
-.assembly-hidden-filter-help {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 17px;
-  height: 17px;
-  cursor: help;
-  flex: 0 0 17px;
-  font-size: var(--text-small);
-  color: var(--color-text-muted);
-  border-radius: 50%;
-}
-.assembly-hidden-filter-help:hover,
-.assembly-hidden-filter-help:focus-visible {
-  color: var(--color-text);
-  background: var(--color-accent-soft);
-  outline-offset: 2px;
 }
 
 /* Subassembly status matches the compact part status controls. */
@@ -2316,7 +1734,6 @@
   font-size: var(--text-small);
   padding: 5px 9px;
 }
-.investigation-status-row,
 .investigation-record-title {
   display: flex;
   align-items: center;
@@ -2325,12 +1742,7 @@
   font-weight: var(--font-semibold);
   flex-wrap: wrap;
 }
-.investigation-status-row {
-  margin-top: 15px;
-}
-.investigation-status-row .field {
-  width: min(210px, 100%);
-}
+
 .investigation-record-title .field {
   flex: 1;
   min-width: 160px;
@@ -2741,26 +2153,16 @@
   flex-wrap: wrap;
 }
 
-.investigation-heading-actions .investigation-add {
-  font-size: var(--text-small);
-  padding: var(--space-1) var(--space-2);
-  min-height: 30px;
-}
-
 .workspace-record-count {
   display: block;
   color: var(--color-text-muted);
   font-size: var(--text-small);
 }
-:is(#launcher, .personal-project-view, #linear, #robot)
+.project-view
   .assembly-workspace-page
   .workspace-panels
   > article:is(.investigations-panel) {
   margin: 0 0 20px;
-}
-
-.assembly-workspace-page .investigation-heading-label h2 {
-  margin: 0;
 }
 
 .investigation-collapse > summary.investigation-collapse-heading,
@@ -2812,17 +2214,17 @@
   top: calc(12px + (30px - 6px) / 2);
 }
 
-:is(#launcher, .personal-project-view, #linear, #robot)
+.project-view
   .assembly-workspace-page
   .workspace-panels
   > article.investigations-panel {
   padding: 0;
 }
-:is(#launcher, .personal-project-view, #linear, #robot)
+.project-view
   .assembly-workspace-page
   .workspace-panels
   > article
-  :is(.recipe-heading-actions, .investigation-heading-actions)
+  :is(.investigation-heading-actions)
   > h2 {
   margin: 0;
 }
@@ -2843,22 +2245,14 @@
 .workspace-record-count {
   line-height: 18px;
 }
-.investigation-heading-actions .investigation-add,
-.investigation-add-controls .investigation-add-note,
-.recipe-step-additions .recipe-add-entry {
+.investigation-add-controls .investigation-add-note {
   background: transparent;
   border: 0;
   box-shadow: none;
   color: var(--color-accent);
   padding-inline: 0;
 }
-:is(
-  .recipe-add-step,
-  .investigation-add,
-  .bs-unstructured-add,
-  .investigation-add-note,
-  .recipe-add-entry
-):hover {
+:is(.investigation-add-note):hover() {
   text-decoration: underline;
 }
 
@@ -2866,10 +2260,6 @@
   display: none;
 }
 
-.workspace-disclosure-title {
-  font-weight: var(--font-semibold);
-  color: var(--color-text);
-}
 .assembly-project-settings-entry[hidden] {
   display: none !important;
 }
@@ -2898,16 +2288,6 @@
   text-decoration: underline;
 }
 
-.part-details-summary-fields {
-  display: block;
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-.part-details-summary-fields:empty {
-  display: none;
-}
 .part-order-url {
   overflow-wrap: anywhere;
   min-width: 0;
@@ -3162,7 +2542,7 @@
   margin: 0;
   line-height: 1.35;
 }
-#home .compact-project-directory .project-copy p:not(.project-author) {
+#home .compact-project-directory .project-copy p {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -3174,10 +2554,6 @@
 #home .compact-project-directory .project-tags:empty {
   display: none;
 }
-#home .compact-project-directory .project-author {
-  font-size: var(--text-caption);
-  color: var(--color-text-muted);
-}
 
 /* Keep the Work Instructions step's Edit/Save button alongside its title. */
 
@@ -3188,31 +2564,7 @@
   border-bottom: 1px solid
     color-mix(in srgb, var(--color-accent) 27%, transparent);
 }
-.bom-part-workspace .part-detail-item-toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  cursor: pointer;
-  list-style: none;
-  padding: 11px 4px;
-}
-.bom-part-workspace .part-detail-item-toggle::-webkit-details-marker {
-  display: none;
-}
-.bom-part-workspace .part-detail-item-toggle::before {
-  content: "▸";
-  flex: 0 0 14px;
-  color: var(--color-text-muted);
-  transition: transform 0.15s ease;
-}
-.bom-part-workspace .part-detail-item[open] > .part-detail-item-toggle::before {
-  transform: rotate(90deg);
-}
-.bom-part-workspace .part-detail-item-toggle:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: -2px;
-  border-radius: var(--radius-medium);
-}
+
 .bom-part-workspace .part-detail-item-content {
   padding: 0 12px 12px 28px;
   overflow-wrap: anywhere;
@@ -3230,19 +2582,8 @@
 .recipe-compact .recipe-step-nav-item[draggable="true"] {
   cursor: grab;
 }
-.recipe-compact .recipe-step-nav-item.recipe-step-dragging {
-  opacity: 0.45;
-  cursor: grabbing;
-}
-.recipe-compact .recipe-step-nav-item.recipe-step-drop-before {
-  box-shadow: inset 0 3px 0 var(--color-accent);
-}
-.recipe-compact .recipe-step-nav-item.recipe-step-drop-after {
-  box-shadow: inset 0 -3px 0 var(--color-accent);
-}
 
 /* Project History: one compact heading line, positioned after the workspace divider. */
-.investigations-panel .investigation-heading-label,
 .investigations-panel .investigation-heading-actions {
   display: flex;
   align-items: center;
@@ -3260,13 +2601,7 @@
   margin: 0;
   white-space: nowrap;
 }
-.assembly-workspace-page > .workspace-history-divider {
-  display: block;
-  border: 0;
-  border-top: 1px solid var(--color-border);
-  margin: 22px 0 18px;
-  width: 100%;
-}
+
 .assembly-workspace-page > .investigations-panel {
   margin: 0 0 14px;
   width: 100%;
@@ -3275,14 +2610,6 @@
 
 /* Project History creation belongs above the history disclosure, as an
    independent normal button instead of a text action in the heading. */
-.investigations-panel > .investigation-create-row,
-.recipe-step-investigations > .investigation-create-row {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  margin: 0 0 8px;
-  padding: 0;
-}
 
 /* Active records stay at their creation scope. Project History only lists
    deliberately archived entries, preserving existing record IDs and owners. */
@@ -3342,7 +2669,6 @@
   min-height: 88px;
   resize: vertical;
 }
-.investigation-archive-meta,
 .investigation-archive-reason,
 .investigation-note-description {
   white-space: pre-wrap;
@@ -3518,10 +2844,7 @@
   flex-direction: column;
   align-items: stretch;
 }
-.recipe-compact .recipe-step-detail > .recipe-one-step {
-  flex: 0 0 auto;
-  width: 100%;
-}
+
 .recipe-compact .recipe-step-detail > .recipe-step-investigations {
   flex: 0 0 auto;
   width: 100%;
@@ -3536,13 +2859,7 @@
 .recipe-compact .recipe-step-detail {
   gap: var(--space-3);
 }
-.recipe-compact .recipe-step-detail > .recipe-one-step {
-  border: 1px solid var(--color-border) !important;
-  border-radius: var(--radius-large) !important;
-  overflow: hidden;
-  background: var(--color-surface) !important;
-  box-shadow: none;
-}
+
 .recipe-compact .recipe-step-detail > .recipe-step-investigations {
   display: flex;
   flex-direction: column;
@@ -3757,16 +3074,6 @@
   border-radius: var(--radius-medium);
   white-space: nowrap;
 }
-.recipe-compact
-  .recipe-step-nav-row
-  > .recipe-step-nav-item.recipe-step-drop-before {
-  box-shadow: inset 0 3px 0 var(--color-accent) !important;
-}
-.recipe-compact
-  .recipe-step-nav-row
-  > .recipe-step-nav-item.recipe-step-drop-after {
-  box-shadow: inset 0 -3px 0 var(--color-accent) !important;
-}
 
 /* Expand/collapse all is a compact icon, not a filled button.
    Retain a sufficiently large click target and keyboard-focus indicator. */
@@ -3939,28 +3246,10 @@
 
 /* Add entry is a separate, clearly bounded action section, immediately
    before Project Archive. Only shown when step editing is enabled. */
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-step-investigations
-  > .investigation-create-card {
-  display: flex;
-  align-items: center;
-  min-height: 62px;
-  width: 100%;
-  box-sizing: border-box;
-  margin: 0 !important;
-  padding: 12px 16px !important;
-  border: 1px solid var(--color-border) !important;
-  border-radius: var(--radius-large) !important;
-  background: var(--color-surface) !important;
-  box-shadow: none !important;
-}
 
 /* Unified attachment and editing controls for work instructions and records.
    Keep component behavior independent while sharing visual size and hierarchy. */
-.recipe-compact
-  :is(.recipe-one-step-body, .recipe-step-investigations)
-  .bs-attachment-add {
+.recipe-compact :is(.recipe-step-investigations) .bs-attachment-add {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3976,12 +3265,10 @@
   color: var(--color-text) !important;
   cursor: pointer;
 }
-.recipe-compact
-  :is(.recipe-one-step-body, .recipe-step-investigations)
-  .bs-attachment-add:hover {
+.recipe-compact :is(.recipe-step-investigations) .bs-attachment-add:hover() {
   background: var(--color-hover) !important;
 }
-.recipe-compact :is(.recipe-edit-controls, .investigation-edit-actions) {
+.recipe-compact :is(.investigation-edit-actions) {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;
@@ -3989,7 +3276,7 @@
   gap: var(--space-2);
   width: 100%;
 }
-.recipe-compact :is(.recipe-edit-controls, .investigation-edit-actions) > .btn {
+.recipe-compact :is(.investigation-edit-actions) > .btn {
   box-sizing: border-box;
   min-height: 40px;
   min-width: 78px;
@@ -3999,16 +3286,12 @@
   font-weight: var(--font-semibold) !important;
   line-height: 1.2;
 }
-.recipe-compact
-  :is(.recipe-edit-controls, .investigation-edit-actions)
-  > .btn.primary {
+.recipe-compact :is(.investigation-edit-actions) > .btn.primary {
   color: var(--color-on-accent);
   background: var(--color-accent);
   border-color: var(--color-accent);
 }
-.recipe-compact
-  :is(.recipe-edit-controls, .investigation-edit-actions)
-  > .investigation-delete {
+.recipe-compact :is(.investigation-edit-actions) > .investigation-delete {
   margin-left: 12px;
   color: var(--color-danger-action);
   border-color: color-mix(
@@ -4019,7 +3302,7 @@
   background: var(--color-surface);
 }
 .recipe-compact
-  :is(.recipe-edit-controls, .investigation-edit-actions)
+  :is(.investigation-edit-actions)
   > .investigation-archive-button {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -4081,16 +3364,7 @@
 .recipe-compact .recipe-archived-step-list .recipe-step-nav-item {
   color: var(--color-text-muted);
 }
-.recipe-compact .recipe-step-archive-metadata {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-}
-.recipe-compact .recipe-step-archive-metadata p {
-  margin: 6px 0 0;
-}
+
 .recipe-compact .recipe-step-nav-row.is-active > .recipe-step-nav-item {
   padding-right: 95px !important;
 }
@@ -4099,24 +3373,7 @@
   > .recipe-step-nav-item {
   padding-right: 205px !important;
 }
-.recipe-compact
-  .recipe-step-nav-row.is-active:has(.recipe-archive-step)
-  > .recipe-step-nav-item {
-  padding-right: 295px !important;
-}
-.recipe-compact .recipe-step-nav-actions > .recipe-archive-step {
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  background: var(--color-surface);
-}
-.recipe-compact .recipe-step-nav-actions > .recipe-archive-step:hover {
-  background: var(--color-hover);
-}
-.recipe-compact .recipe-step-nav-actions > .recipe-restore-step {
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  background: var(--color-surface);
-}
+
 .recipe-step-archive-dialog {
   width: min(500px, calc(100vw - 32px));
   max-height: 90vh;
@@ -4141,9 +3398,6 @@
 }
 @media (max-width: 1100px) {
   .recipe-compact .recipe-step-nav-row.is-active > .recipe-step-nav-item,
-  .recipe-compact
-    .recipe-step-nav-row.is-active:has(.recipe-archive-step)
-    > .recipe-step-nav-item,
   .recipe-compact
     .recipe-step-nav-row.is-active:has(.recipe-delete-step)
     > .recipe-step-nav-item {
@@ -4177,11 +3431,7 @@
   background: transparent !important;
 }
 .recipe-compact
-  :is(
-    .bs-entry-editor-actions,
-    .recipe-edit-controls,
-    .investigation-edit-actions
-  )
+  :is(.bs-entry-editor-actions, .investigation-edit-actions)
   > .bs-entry-action {
   box-sizing: border-box;
   min-height: 40px !important;
@@ -4307,12 +3557,7 @@
   > .recipe-step-nav-actions {
   display: flex !important;
 }
-.recipe-compact
-  .recipe-step-nav-row.is-editing
-  > .recipe-step-nav-actions
-  > .recipe-archive-step {
-  display: none !important;
-}
+
 .recipe-compact .recipe-step-nav-row.is-editing > .recipe-step-nav-item {
   padding-right: 115px !important;
 }
@@ -4326,45 +3571,20 @@
     var(--color-border)
   );
 }
-.recipe-compact .recipe-restore-section {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  margin: 8px 0 14px;
-  padding: 8px 14px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  font-weight: var(--font-semibold);
-  background: var(--color-surface);
-}
 
 /* Shared ordered tile board. The Work Instruction's own card and its direct
    typed entries are equal siblings, while child entries stay inside parents.
    Archive and creation controls remain below the active tile list. */
-.recipe-compact
-  .recipe-step-detail
-  .investigation-active-content
-  > .recipe-one-step {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  margin: 0 !important;
-  border: 1px solid var(--color-border) !important;
-  border-radius: var(--radius-large) !important;
-  overflow: hidden;
-  background: var(--color-surface) !important;
-  box-shadow: none !important;
-}
 
 .recipe-compact
   .investigation-active-content
-  > :is(.recipe-one-step, .investigation-card)
+  > :is(.investigation-card)
   > summary {
   position: relative;
 }
 .recipe-compact
   .investigation-active-content
-  > :is(.recipe-one-step, .investigation-card)
+  > :is(.investigation-card)
   .bs-tile-grip {
   flex: 0 0 25px;
   display: inline-flex;
@@ -4382,14 +3602,14 @@
 }
 .recipe-compact
   .investigation-active-content
-  > :is(.recipe-one-step, .investigation-card)
-  .bs-tile-grip:active {
+  > :is(.investigation-card)
+  .bs-tile-grip:active() {
   cursor: grabbing;
 }
 .recipe-compact
   .investigation-active-content
-  > :is(.recipe-one-step, .investigation-card)
-  .bs-tile-grip:focus-visible {
+  > :is(.investigation-card)
+  .bs-tile-grip:focus-visible() {
   outline: 2px solid var(--color-focus);
 }
 .recipe-compact .investigation-active-content > .bs-tile-dragging {
@@ -5328,50 +4548,16 @@
   border-radius: var(--radius-large);
   background: var(--color-surface);
 }
-.part-functional-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-.part-functional-heading h3,
-.part-implementation-panel h3 {
-  margin: 0;
-  font-size: var(--text-body);
-  font-weight: var(--font-semibold);
-}
-.part-functional-heading .btn,
-.part-implementation-add {
-  min-height: 31px;
-  padding: 5px 11px;
-}
-.part-functional-purpose,
-.part-functional-requirements,
-.part-functional-acceptance,
-.part-implementation-summary {
+
+.part-functional-purpose {
   margin: 0;
   line-height: 1.5;
   font-size: var(--text-small);
   overflow-wrap: anywhere;
   white-space: pre-line;
 }
-.part-functional-requirements,
-.part-functional-acceptance {
-  color: var(--color-text-muted);
-}
-.part-implementation-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--space-2);
-  border-top: 1px solid var(--color-border);
-  padding-top: 12px;
-}
-.part-implementation-summary {
-  font-weight: var(--font-semibold);
-}
-.part-functional-edit,
-.part-implementation-new {
+
+.part-functional-edit {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -5417,17 +4603,7 @@
 .part-functional-feedback:empty {
   display: none;
 }
-.part-functional-unselected {
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
-  margin: 4px 0 9px;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
-.part-functional-unselected input {
-  margin: 0;
-}
+
 .part-editor-section-heading[data-part-editor-section="function"],
 .part-editor-section-heading[data-part-editor-section="implementation"] {
   margin-top: 15px;
@@ -5436,8 +4612,7 @@
   .part-functional-panel {
     padding: 12px;
   }
-  .part-functional-edit,
-  .part-implementation-new {
+  .part-functional-edit {
     padding: 10px;
   }
 }
@@ -5853,76 +5028,6 @@
   background: transparent;
 }
 
-.assembly-workspace-page .workspace-archive-history .investigation-create-card {
-  margin: 4px 0 10px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-}
-.assembly-workspace-page .workspace-archive-history .investigation-add {
-  min-height: 31px;
-  padding: 5px 10px !important;
-  border: 1px solid var(--color-border) !important;
-  border-radius: var(--radius-medium);
-  background: var(--color-surface) !important;
-  color: var(--color-text) !important;
-  box-shadow: none;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  text-decoration: none;
-}
-.assembly-workspace-page .workspace-archive-history .investigation-add:hover {
-  border-color: var(--color-accent) !important;
-  text-decoration: none;
-}
-
-.assembly-workspace-page
-  .workspace-resource-disclosure
-  .workspace-tool-controls {
-  padding: var(--space-3) var(--space-4) 0;
-}
-.assembly-workspace-page
-  .workspace-resource-disclosure
-  .workspace-tool-controls
-  .linked-resource-add {
-  min-height: 31px;
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  box-shadow: none;
-  cursor: pointer;
-}
-.assembly-workspace-page
-  .workspace-resource-disclosure
-  .workspace-tool-controls
-  .linked-resource-add:hover {
-  border-color: var(--color-accent);
-  text-decoration: none;
-}
-
-.assembly-workspace-page .bs-unstructured-notes .bs-unstructured-add {
-  display: inline-flex;
-  align-items: center;
-  min-height: 31px;
-  padding: 5px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  box-shadow: none;
-  cursor: pointer;
-}
-.assembly-workspace-page .bs-unstructured-notes .bs-unstructured-add:hover {
-  border-color: var(--color-accent);
-  text-decoration: none;
-}
 .assembly-workspace-page .bs-unstructured-notes .bs-unstructured-list {
   margin-top: 8px;
 }
@@ -6065,10 +5170,6 @@
 /* One owner for spacing between Project Summary frames.
    The outer page spaces its direct sections; the overview spaces its two cards.
    Neither card nor the milestone panel adds outer vertical margins. */
-
-.project-summary-page > .project-summary-tracker {
-  margin: 0;
-}
 
 /* Original intent: concise spelling reminder before the irreversible save. */
 .project-milestone-spelling-hint {
@@ -6229,7 +5330,7 @@
 }
 .assembly-workspace-page
   :is(.investigation-collapse > summary.investigation-collapse-heading)
-  :is(h2, .workspace-disclosure-title) {
+  :is(h2) {
   font-family: inherit;
   font-size: var(--workspace-tile-font-size);
   font-weight: var(--workspace-tile-font-weight);
@@ -6245,8 +5346,7 @@
   min-height: var(--workspace-tile-height);
 }
 
-.assembly-workspace-page
-  :is(.workspace-record-count, .part-details-summary-fields) {
+.assembly-workspace-page :is(.workspace-record-count) {
   font-family: inherit;
   font-weight: var(--font-normal);
 }
@@ -6291,7 +5391,7 @@
 }
 .assembly-workspace-page
   :is(.investigation-collapse > summary.investigation-collapse-heading)
-  :is(h2, .workspace-disclosure-title) {
+  :is(h2) {
   font-family: inherit !important;
   font-size: var(--workspace-tile-label-size) !important;
   font-weight: var(--workspace-tile-label-weight) !important;
@@ -6299,13 +5399,12 @@
   margin: 0 !important;
 }
 
-.assembly-workspace-page
-  :is(.workspace-record-count, .part-details-summary-fields) {
+.assembly-workspace-page :is(.workspace-record-count) {
   font-size: var(--text-small) !important;
   font-weight: var(--font-normal) !important;
 }
 
-:is(#launcher, .personal-project-view, #linear, #robot)
+.project-view
   .assembly-workspace-page
   .workspace-panels
   > :is(.investigations-panel) {

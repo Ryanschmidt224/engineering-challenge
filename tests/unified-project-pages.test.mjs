@@ -9,8 +9,10 @@ test("A single Projects page and common workspace controller are used for every 
  const manager=read("assets/project-manager.js");
  const bootstrap=read("assets/site.js");
  const html=read("index.html");
- assert.match(bootstrap,/window\.BSProjectTemplate=document\.getElementById\("linear"\)\?\.cloneNode\(true\)/);
- assert.match(manager,/const template=window\.BSProjectTemplate/);
+ assert.doesNotMatch(bootstrap,/BSProjectTemplate/);
+ assert.ok(manager.includes('document.getElementById("project-workspace-template")?.content.firstElementChild'));
+ assert.equal((html.match(/id="project-workspace-template"/g)||[]).length,1);
+ assert.doesNotMatch(html,/<section id="(?:launcher|linear|robot)"/);
  assert.match(manager,/const ensureProjectPage=project=>/);
  assert.match(manager,/ensureProjectPage\(project\)/);
  assert.match(manager,/setupAssemblyTrees\(\);setupComponents\(\);setupPhotos\(\)/);

@@ -195,3 +195,6 @@ Separate functional batches replace the wire library with Workshop products, rem
 
 
 Practice-to-Notes implementation: existing Practice records become Notes on the next owner read or write, after their raw store has been backed up and verified. Their former practice/learning fields remain readable, labeled and retained when the Note is edited. No new Practice records can be created. Storage contention or backup failure stops the conversion and reports a retryable error.
+
+
+Project shell/CSS implementation: all projects instantiate one workspace template and one project-card renderer. Original launcher/linear/robot IDs remain as stable data and link identifiers. They no longer own separate HTML sections or CSS selectors. Template field IDs and label/ARIA references are made unique per project. The strict class-producer check follows loaded browser code and uses an explicit, narrow dynamic-class allowlist; retired positive and boolean-pseudo branches are removed without discarding live selector alternatives.

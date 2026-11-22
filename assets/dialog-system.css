@@ -11,7 +11,6 @@
 }
 dialog:is(
     .bs-dialog,
-    .bs-delete-confirm,
     .project-account-dialog,
     .project-create-dialog,
     .project-manage-dialog,
@@ -20,12 +19,9 @@ dialog:is(
     .library-part-dialog,
     .part-editor-dialog,
     .workspace-photo-dialog,
-    .my-build-feedback-dialog,
     .workspace-photo-dialog,
-    .project-review-dialog,
-    .bs-markup-modal,
-    .admin-dialog
-  ):modal {
+    .bs-markup-modal
+  ):modal() {
   position: fixed;
   inset: 0;
   margin: auto;
@@ -40,7 +36,6 @@ dialog:is(
 }
 dialog:is(
     .bs-dialog,
-    .bs-delete-confirm,
     .project-account-dialog,
     .project-create-dialog,
     .project-manage-dialog,
@@ -49,16 +44,12 @@ dialog:is(
     .library-part-dialog,
     .part-editor-dialog,
     .workspace-photo-dialog,
-    .my-build-feedback-dialog,
-    .project-review-dialog,
-    .bs-markup-modal,
-    .admin-dialog
-  )::backdrop {
+    .bs-markup-modal
+  )::backdrop() {
   background: var(--bs-dialog-backdrop);
 }
 dialog:is(
     .bs-dialog,
-    .bs-delete-confirm,
     .project-account-dialog,
     .project-create-dialog,
     .project-manage-dialog,
@@ -67,10 +58,7 @@ dialog:is(
     .library-part-dialog,
     .part-editor-dialog,
     .workspace-photo-dialog,
-    .my-build-feedback-dialog,
-    .project-review-dialog,
-    .bs-markup-modal,
-    .admin-dialog
+    .bs-markup-modal
   )
   :is(input.field, textarea.field, select.field) {
   border: 1px solid var(--bs-dialog-border);
@@ -80,7 +68,6 @@ dialog:is(
 }
 dialog:is(
     .bs-dialog,
-    .bs-delete-confirm,
     .project-account-dialog,
     .project-create-dialog,
     .project-manage-dialog,
@@ -89,17 +76,13 @@ dialog:is(
     .library-part-dialog,
     .part-editor-dialog,
     .workspace-photo-dialog,
-    .my-build-feedback-dialog,
-    .project-review-dialog,
-    .bs-markup-modal,
-    .admin-dialog
+    .bs-markup-modal
   )
   :is(h2, h3) {
   color: var(--bs-dialog-fg);
 }
 dialog:is(
     .bs-dialog,
-    .bs-delete-confirm,
     .project-account-dialog,
     .project-create-dialog,
     .project-manage-dialog,
@@ -108,10 +91,7 @@ dialog:is(
     .library-part-dialog,
     .part-editor-dialog,
     .workspace-photo-dialog,
-    .my-build-feedback-dialog,
-    .project-review-dialog,
-    .bs-markup-modal,
-    .admin-dialog
+    .bs-markup-modal
   )
   .btn:not(.primary):not(.bs-dialog-danger) {
   background: #f4f7f5;
@@ -120,7 +100,6 @@ dialog:is(
 }
 dialog:is(
     .bs-dialog,
-    .bs-delete-confirm,
     .project-account-dialog,
     .project-create-dialog,
     .project-manage-dialog,
@@ -129,12 +108,9 @@ dialog:is(
     .library-part-dialog,
     .part-editor-dialog,
     .workspace-photo-dialog,
-    .my-build-feedback-dialog,
-    .project-review-dialog,
-    .bs-markup-modal,
-    .admin-dialog
+    .bs-markup-modal
   )
-  .btn:focus-visible {
+  .btn:focus-visible() {
   outline: 3px solid #a9d6c1;
   outline-offset: 2px;
 }
@@ -229,16 +205,7 @@ dialog.workspace-photo-dialog
   background: #fff;
   color: var(--bs-dialog-fg);
 }
-#modalRoot .modal {
-  background: #fff;
-  color: var(--bs-dialog-fg);
-  border: 1px solid var(--bs-dialog-border);
-  border-radius: var(--bs-dialog-radius);
-  box-shadow: var(--bs-dialog-shadow);
-}
-#modalRoot.modalback {
-  background: var(--bs-dialog-backdrop);
-}
+
 @media (max-width: 550px) {
   dialog.bs-dialog {
     padding: 18px;
