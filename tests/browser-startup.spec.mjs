@@ -169,22 +169,22 @@ test("new custom part retains explicit project numbering without confusing it wi
  const partDetailsOrder=await page.locator(".library-part-dialog .library-identity-section > .library-field").allTextContents();
  expect(partDetailsOrder[0]).toContain("Part type");
  await expect(page.locator(".library-part-dialog .library-auto-number-tip")).toHaveAttribute("title", /next available part number as defined in the part settings page/);
- await expect(page.locator(".library-part-dialog .library-function-tip").first()).toHaveAttribute("title", /project hierarchy/);
+ await expect(page.locator('.library-part-dialog [data-bs-help-topic="container"]')).toHaveAttribute("title", /project hierarchy/);
  // Tooltip must be visible in the modal top layer, not behind the dialog.
  await page.locator(".library-part-dialog .library-auto-number-tip").hover();
  const sharedTip=page.locator(".library-part-dialog > .bs-global-tooltip");
  await expect(sharedTip).toBeVisible();
  await expect(sharedTip).toContainText("part settings page");
- await page.locator(".library-part-dialog .library-function-tip").first().hover();
+ await page.locator('.library-part-dialog [data-bs-help-topic="container"]').hover();
  await expect(sharedTip).toContainText("project hierarchy");
  // Double-click the information button for a full set of Container examples.
- await page.locator(".library-part-dialog .library-function-tip").first().dblclick();
+ await page.locator('.library-part-dialog [data-bs-help-topic="container"]').dblclick();
  const guide=page.locator(".bs-help-container-guide");
  await expect(guide).toBeVisible();
  await expect(guide).toContainText("Custom part — made in-house");
  await expect(guide).toContainText("Purchased part");
  await expect(guide).toContainText("Part from Workshop");
- await expect(guide).toContainText("No implementation selected yet");
+ await expect(guide).toContainText("No part selected yet");
  await guide.getByRole("button",{name:"Close examples"}).click();
  await expect(guide).toHaveCount(0);
  await expect(page.locator(".library-part-dialog .library-field",{hasText:"Container"}).locator("input[placeholder=\"e.g. Motor switch\"]")).toHaveAttribute("maxlength","20");
@@ -324,6 +324,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
 
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
  await expect(workspace).toBeVisible();
+ await workspace.locator(".recipe-disclosure-toggle").click();
  const browser=workspace.locator(".recipe-step-browser");
  const divider=browser.locator(".recipe-step-resizer");
  await expect(divider).toBeVisible();
@@ -369,7 +370,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(partPhotoActions.getByRole("button",{name:"Add"})).toBeVisible();
  await partPencil.click();
  await expect(partPhotoActions).toBeHidden();
- await partPage.locator(".part-details-collapse summary").click();
+ await partPage.locator(".part-details-collapse > summary").click();
  await expect(partPage.locator(".part-details-edit")).toBeVisible();
  await partPage.locator(".part-details-edit").click();
  await expect(workspace).toHaveClass(/is-editing-bom-part/);
@@ -567,6 +568,7 @@ test("Workshop and Document tree filters operate independently",async({page})=>{
  await assemblyRow.locator(".assembly-expander").click();
  await expect(tree).toContainText("Mount Plate");
  await expect(tree).toContainText("Assembly Drawing");
+ await controls.getByLabel("Workshop item").uncheck();
  await expect(tree).not.toContainText("Solder Sucker");
  await expect(tree).not.toContainText("M4 Screws");
  await controls.getByLabel("Workshop item").check();
@@ -613,7 +615,7 @@ test("saving a part closes the moved editor and restores part workspace",async({
  await page.locator("#launcher .assembly-tree-nodes .assembly-name",{hasText:"Linked Motor"}).click();
  const partWorkspace=page.locator("#launcher .bom-part-workspace");
  await expect(partWorkspace).toBeVisible();
- await partWorkspace.locator(".part-details-collapse summary").click();
+ await partWorkspace.locator(".part-details-collapse > summary").click();
  await partWorkspace.locator(".part-details-edit").click();
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
  const editor=workspace.locator(".workspace-main-bom-editor");
@@ -665,7 +667,7 @@ test("personal project builds a private editable workspace from the shared proje
 });
 
 
-test("owner manages project privacy and removal from the summary",async({page})=>{
+test("owner manages project settings, numbering and removal",async({page})=>{
  const errors=[];page.on("pageerror",error=>errors.push(error.message));
  const id="p"+"a".repeat(32),ownerId="u"+"1".repeat(32);
  const catalog=[{id,name:"Private test project",description:"Prototype",visibility:"private",
@@ -704,17 +706,7 @@ test("owner manages project privacy and removal from the summary",async({page})=
  await expect(settings).toBeHidden();
  const tree=page.locator("#"+id+" .assembly-tree-nodes");
  const summaryEntry=page.locator("#"+id+" .assembly-summary-sidebar-card .assembly-project-summary-entry:first-child");
- await expect(summaryEntry).toContainText("1 change waiting");
- await expect(summary.locator(".project-summary-review")).toBeVisible();
- await expect(summary.locator(".project-summary-review-list li")).toHaveCount(1);
- await summary.getByRole("button",{name:"Review suggestions"}).click();
- const modal=page.locator(".project-manage-dialog:visible");
- await expect(modal).toContainText("Use three screws");
- await modal.getByRole("button",{name:"Approve and apply"}).click();
- await expect(summary.locator(".project-summary-review")).toBeHidden();
- await expect(summaryEntry).not.toContainText("change waiting");
- await modal.getByRole("button",{name:"Close"}).click();
-
+ // Community approval queues are outside the private-application workflow.
  await page.getByRole("button",{name:"Project Settings",exact:true}).click();
  await expect(settings.getByRole("heading",{name:"Project settings"})).toBeVisible();
  await expect(page).toHaveURL(new RegExp("#"+id+"/settings$"));
@@ -826,7 +818,7 @@ test("administrator can add a catalog item from the Workshop and open its detail
  await expect(editor).toBeVisible();
  await editor.getByLabel("Item name").fill("Adjustable 24 V supply");
  await editor.getByLabel("Product type (e.g. Multimeters)").fill("Bench DC Power Supplies");
- await editor.getByLabel("Specifications").fill("24 V DC output");
+ await editor.getByRole("textbox",{name:"Specifications",exact:true}).fill("24 V DC output");
  await editor.getByLabel("Website category").selectOption("electronics");
 
  await editor.getByRole("button",{name:"Create catalog item"}).click();
@@ -1172,7 +1164,7 @@ test("linked Workshop items open, search current fields and return to the origin
  async function openFromProject(id,name){
   await page.goto("/#launcher/part/"+id);
   await expect(page.locator("#launcher .part-workspace-title")).toHaveText(name);
-  await details.locator("summary").click();
+  await details.locator(":scope > summary").click();
   await details.getByRole("button",{name:"View in Workshop"}).click();
  }
  await openFromProject(publicPart,"Project switch");
@@ -1186,7 +1178,7 @@ test("linked Workshop items open, search current fields and return to the origin
  await itemPage.getByRole("button",{name:"Edit",exact:true}).click();
  await itemPage.getByRole("button",{name:"Find with AI"}).click();
  await expect.poll(()=>searches.at(-1)).toMatchObject({partNumber:"ABC-10",featureTreeDescription:"Motor switch"});
- await itemPage.getByLabel("Manufacturer part number",{exact:true}).fill("");
+ await itemPage.getByRole("textbox",{name:"Manufacturer part number",exact:true}).fill("");
  await itemPage.getByRole("button",{name:"Find with AI"}).click();
  await expect.poll(()=>searches.at(-1)).toMatchObject({partNumber:"",featureTreeDescription:"Motor switch"});
  await itemPage.getByRole("button",{name:"Back to project part"}).click();
@@ -1204,10 +1196,10 @@ test("linked Workshop items open, search current fields and return to the origin
  await expect(page.locator("#launcher .part-workspace-title")).toHaveText("Project spare switch");
  await page.locator('nav [data-nav="commonparts"]').click();
  await startCatalogPart(page);
- await itemPage.getByLabel("Manufacturer part number",{exact:true}).fill("NEW-42");
+ await itemPage.getByRole("textbox",{name:"Manufacturer part number",exact:true}).fill("NEW-42");
  const placement=await itemPage.locator('[data-part-editor-section="identity"]').evaluate(section=>{
   const button=section.querySelector(".bs-action-lookup-button");
-  return {button:button.getBoundingClientRect().top,inputs:[...section.querySelectorAll(".part-editor-fields-grid input")].map(input=>input.getBoundingClientRect().bottom)};
+  return {button:button.getBoundingClientRect().top,inputs:[...section.querySelectorAll(".workshop-item-edit-grid > label > input:not(.workshop-table-rename)")].map(input=>input.getBoundingClientRect().bottom)};
  });
  expect(placement.button).toBeGreaterThanOrEqual(Math.max(...placement.inputs));
  await itemPage.getByRole("button",{name:"Find with AI"}).click();

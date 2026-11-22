@@ -184,6 +184,9 @@
     const maxBySpace=width>0?100*(width-320)/width:55;
     const safe=Math.max(16,Math.min(55,maxBySpace,Number(value)||31));
     browser.style.setProperty("--recipe-nav-width",safe+"%");
+    divider.setAttribute("aria-valuemin","16");
+    divider.setAttribute("aria-valuemax",String(Math.max(16,Math.min(55,maxBySpace))));
+    divider.setAttribute("aria-valuenow",String(Math.round(safe)));
     return safe;
    };
    setWidth(savedWidth);
