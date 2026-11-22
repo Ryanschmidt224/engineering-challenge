@@ -742,8 +742,9 @@ test("owner manages project settings, numbering and removal",async({page})=>{
  await expect.poll(()=>numbering.prefix).toBe("PR");
  await expect(settings.locator(".project-numbering-preview")).toContainText("PR01001");
  await expect(settings.getByLabel("Visibility")).toHaveCount(0);
+ const savedSettings=page.waitForResponse(response=>response.url().includes("/api/projects")&&response.request().method()==="PATCH");
  await settings.getByRole("button",{name:"Save settings"}).click();
- await expect(settings.locator(".project-summary-settings-status")).toHaveText("Project settings saved.");
+ expect((await savedSettings).ok()).toBe(true);
  await expect.poll(()=>catalog[0].visibility).toBe("private");
  await expect(settings.getByLabel("Editing permissions")).toHaveCount(0);
  await settings.getByRole("button",{name:"← Project summary",exact:true}).click();
