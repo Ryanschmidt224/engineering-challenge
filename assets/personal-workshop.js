@@ -886,6 +886,10 @@
    if(window.BSResources.workshopIdentityKind(item)==="generic")suggestGenericFields();
    const updateIdentityPanels=()=>{
     const generic=identityRadios.generic.checked;
+    // Purchasing details only make sense for a specific product. Hide the
+    // entire section for generic components; keep existing values in the
+    // draft so switching back to Specific product restores them.
+    grid.querySelector('[data-part-editor-section="ordering"]').hidden=generic;
     genericTemplateSection.hidden=!generic;
     parentLabel.hidden=generic;
     // Manufacturer identity belongs to specific purchasable products, never
