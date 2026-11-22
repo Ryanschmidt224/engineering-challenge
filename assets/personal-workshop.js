@@ -126,11 +126,14 @@
   document.body.append(categoryMenu);
   let contextCategory="";
   const closeCategoryMenu=()=>{categoryMenu.hidden=true;contextCategory=""};
+  let categoryDialog=null;
   const chooseCategoryTemplate=async categoryId=>{
    closeCategoryMenu();
+   categoryDialog?.close();
    if(!canCreateReferences)return;
    const categoryName=workshopCategories.find(([id])=>id===categoryId)?.[1]||categoryId;
    const dialog=el("dialog",undefined,"workshop-category-create-dialog");
+   categoryDialog=dialog;
    const title=el("h2","Add part to "+categoryName);
    const description=el("p","Choose a saved master template or start with an empty part.","muted");
    const picker=el("select",undefined,"field");
@@ -148,11 +151,12 @@
    const cancel=itemButton("Cancel",()=>dialog.close(),"btn");
    actions.append(create,cancel);
    dialog.append(title,description,picker,feedback,actions);
-   dialog.addEventListener("close",()=>dialog.remove(),{once:true});
+   dialog.addEventListener("close",()=>{if(categoryDialog===dialog)categoryDialog=null;dialog.remove()},{once:true});
    document.body.append(dialog);dialog.showModal();
    picker.disabled=true;create.disabled=true;feedback.textContent="Loading templates…";
    try{
     const data=await req("/api/workshop-templates");
+    if(!dialog.open||categoryDialog!==dialog)return;
     for(const template of (data.templates||[]).filter(entry=>entry.category===categoryId)){
      const option=el("option",template.name);option.value=template.id;picker.append(option);
     }
@@ -204,6 +208,9 @@
    if(event.key==="Escape"&&!categoryMenu.hidden)closeCategoryMenu();
   });
   window.addEventListener("scroll",closeCategoryMenu,{passive:true});
+  window.addEventListener("hashchange",()=>{
+   if(location.hash!=="#commonparts"){closeCategoryMenu();categoryDialog?.close();templateManager?.close();}
+  });
   function categoryFor(item){
    return window.BSResources.electricalCategoryFor(item);
   }
@@ -1038,34 +1045,12 @@
     }
     addSuggestedSpecs();
    };
-   let approvedIdentity=window.BSResources.workshopIdentityKind(item);
-   const specificOnlyFields=["partNumber","model","manufacturer","supplier","supplierPartNumber","supplierUrl","asin","price","packageQuantity","spec","documentationUrl","orderNotes"];
-   const confirmGenericSwitch=async()=>{
-    if(!identityRadios.generic.checked)return;
-    if(approvedIdentity==="generic"){updateIdentityPanels();return}
-    const hasSpecificData=specificOnlyFields.some(field=>String(controls[field]?.value||"").trim())||
-     [...specRows.children].some(row=>String(row.querySelector('[data-spec="value"]')?.value||"").trim());
-    if(hasSpecificData){
-     const message="Switching to Generic will erase existing manufacturer, supplier, ordering and product-specific specification data in this draft. The item name, description and general notes will remain. Cancel to keep the current data.";
-     const confirmed=window.BSDialogs?.confirm
-      ?await window.BSDialogs.confirm(message,{title:"Convert to generic component?",confirmLabel:"Erase data and switch"})
-      :window.confirm(message);
-     if(!confirmed){identityRadios.specific.checked=true;updateIdentityPanels();return}
-     for(const field of specificOnlyFields)if(controls[field])controls[field].value="";
-     specRows.replaceChildren();
-    }
-    approvedIdentity="generic";
-    parentSelect.value="";
-    // Clear suggested-but-empty manufacturer specification rows too.
-    specRows.replaceChildren();
-    suggestGenericFields();
-    updateIdentityPanels();
-   };
-   identityRadios.generic.addEventListener("change",()=>{void confirmGenericSwitch()});
-   identityRadios.specific.addEventListener("change",()=>{
-    approvedIdentity="specific";
-    updateIdentityPanels();
+   identityRadios.generic.addEventListener("change",()=>{
+    // Classification controls visibility only. Keep product values so an
+    // accidental mode switch, even after Save, can be reversed without loss.
+    suggestGenericFields();updateIdentityPanels();
    });
+   identityRadios.specific.addEventListener("change",updateIdentityPanels);
    for(const control of [controls.name,controls.typeName,controls.featureTreeDescription]){
     control.addEventListener("change",suggestGenericFields);
    }
@@ -1094,15 +1079,9 @@
    templateSearch.setAttribute("aria-label","Search master templates");
    const templateSelect=el("select",undefined,"field");
    templateSelect.setAttribute("aria-label","Select a master template");
-   const templateName=el("input",undefined,"field");
-   templateName.placeholder="New template name (e.g. MOSFET, relay, pushbutton)";
-   templateName.maxLength=90;templateName.setAttribute("aria-label","New master template name");
    const templateActions=el("div",undefined,"workshop-template-actions");
    const applyTemplateButton=itemButton("Use template",()=>void applySelectedTemplate(),"btn");
-   const saveTemplateButton=itemButton("Save as new template",()=>void saveCurrentTemplate(false),"btn");
-   const updateTemplateButton=itemButton("Update selected template",()=>void saveCurrentTemplate(true),"btn");
-   const removeTemplateButton=itemButton("Delete template",()=>void deleteSelectedTemplate(),"btn");
-   for(const button of [applyTemplateButton,saveTemplateButton,updateTemplateButton,removeTemplateButton])button.type="button";
+   applyTemplateButton.type="button";
    templateActions.append(applyTemplateButton);
    const templateStatus=el("p","","muted workshop-template-status");
    templateStatus.setAttribute("role","status");
@@ -1110,6 +1089,7 @@
    templatePanel.append(templateTitle,templateHint,templateControls,templateStatus);
    heading.after(templatePanel);
    let masterTemplates=[],selectedMasterTemplate="";
+   const appliedRowIds=new Set();
    const selectedTemplate=()=>masterTemplates.find(template=>template.id===templateSelect.value);
    const refreshTemplateOptions=()=>{
     const previous=templateSelect.value||selectedMasterTemplate;
@@ -1123,12 +1103,11 @@
     templateSelect.value=[...templateSelect.options].some(option=>option.value===previous)?previous:"";
     selectedMasterTemplate=templateSelect.value;
     applyTemplateButton.disabled=!selectedMasterTemplate;
-    updateTemplateButton.disabled=!selectedMasterTemplate;
-    removeTemplateButton.disabled=!selectedMasterTemplate;
    };
    const fetchMasterTemplates=async()=>{
     try{
      const response=await req("/api/workshop-templates");
+     if(!form.isConnected||itemPage.hidden||location.hash!=="#commonparts")return;
      masterTemplates=response.templates||[];
      refreshTemplateOptions();
      if(item.initialTemplateId){
@@ -1149,16 +1128,25 @@
    category.addEventListener("change",()=>{
     selectedMasterTemplate="";templateSelect.value="";refreshTemplateOptions();
    });
-   const templateSnapshot=()=>({
-    tableLayout:currentTableLayout(),
-    genericFields:getGenericFields(),
-    productSections:productBuilder?.getSections()||[]
-   });
    const applySelectedTemplate=async()=>{
     const template=selectedTemplate();
     if(!template)return;
     // Explicit user action; do not touch identity, ordering values or photos.
     const layout=template.tableLayout?.sections||{};
+    const rowPlans=new Map();
+    for(const [key,editor] of Object.entries(tableEditors)){
+     const existing=[...editor.customRows.children].map(row=>({id:row.dataset.id,
+      label:row.querySelector('[data-table-label]').value,value:row.querySelector('[data-table-value]').value}));
+     const byId=new Map(existing.map(row=>[row.id,row]));
+     const incoming=layout[key]?.rows||[],ids=new Set(incoming.map(row=>row.id));
+     const merged=incoming.map(row=>({...row,value:byId.get(row.id)?.value||""}));
+     merged.push(...existing.filter(row=>!ids.has(row.id)&&(!appliedRowIds.has(row.id)||row.value.trim())));
+     if(merged.length>30){templateStatus.textContent="This layout would exceed 30 custom rows. Your fields are kept; reduce the rows before applying.";return;}
+     rowPlans.set(key,merged);
+    }
+    if(productBuilder?.setSections(template.productSections||[],{preview:true})===false){
+     templateStatus.textContent="This layout would exceed Product Builder limits. Your fields are kept; reduce the fields before applying.";return;
+    }
     for(const [key,editor] of Object.entries(tableEditors)){
      const section=layout[key]||{};
      editor.titleInput.value=section.title||sections.find(entry=>entry[0]===key)[1];
@@ -1171,60 +1159,19 @@
      }
      editor.hiddenFields.clear();
      for(const field of section.hiddenFields||[])if(field!=="name")editor.hiddenFields.add(field);
-     const existingRows=[...editor.customRows.children].map(row=>({
-      id:row.dataset.id,
-      label:row.querySelector('[data-table-label]').value,
-      value:row.querySelector('[data-table-value]').value
-     }));
-     const existingById=new Map(existingRows.map(row=>[row.id,row]));
-     const incomingRows=section.rows||[];
-     const importedIds=new Set(incomingRows.map(row=>row.id));
      editor.customRows.replaceChildren();
-     for(const row of incomingRows)editor.addCustomRow({...row,value:existingById.get(row.id)?.value||""});
-     for(const row of existingRows)if(!importedIds.has(row.id))editor.addCustomRow(row);
+     for(const row of rowPlans.get(key))editor.addCustomRow(row);
      editor.updateFieldVisibility();
      editor.customRows.classList.toggle("workshop-table-editing",editor.active);
     }
+    appliedRowIds.clear();
+    for(const section of Object.values(layout))for(const row of section.rows||[])appliedRowIds.add(row.id);
     productBuilder?.setSections(template.productSections||[]);
     if(identityRadios.generic.checked){
      genericTemplateRows.replaceChildren();
      for(const field of template.genericFields||[])addGenericField(field);
     }
     templateStatus.textContent="Applied "+template.name+" layout. Review changes and save the Workshop item to keep them.";
-   };
-   const saveCurrentTemplate=async updating=>{
-    const existing=selectedTemplate();
-    if(updating&&!existing)return;
-    const name=updating?existing.name:templateName.value.trim();
-    if(!name){templateStatus.textContent="Enter a new template name first.";templateName.focus();return}
-    const snapshot=templateSnapshot();
-    const body={...(updating?{id:existing.id}:{}),name,category:category.value,...snapshot};
-    templateStatus.textContent=updating?"Updating master template…":"Saving master template…";
-    try{
-     const response=await req("/api/workshop-templates",updating?"PUT":"POST",body);
-     const template=response.template;
-     masterTemplates=masterTemplates.filter(entry=>entry.id!==template.id).concat(template);
-     selectedMasterTemplate=template.id;
-     templateSearch.value="";
-     refreshTemplateOptions();
-     templateName.value="";
-     templateStatus.textContent="Saved master template: "+template.name+". Other Workshop items are unchanged.";
-    }catch(error){templateStatus.textContent=error.message}
-   };
-   const deleteSelectedTemplate=async()=>{
-    const template=selectedTemplate();
-    if(!template)return;
-    const confirmed=window.BSDialogs?.confirm
-     ?await window.BSDialogs.confirm("Delete master template '"+template.name+"' from "+category.options[category.selectedIndex].text+"? Existing Workshop items keep their layouts.",{title:"Delete master template?",confirmLabel:"Delete"})
-     :window.confirm("Delete master template '"+template.name+"'?");
-    if(!confirmed)return;
-    try{
-     await req("/api/workshop-templates","DELETE",{id:template.id});
-     masterTemplates=masterTemplates.filter(item=>item.id!==template.id);
-     selectedMasterTemplate="";
-     refreshTemplateOptions();
-     templateStatus.textContent="Template deleted. Existing Workshop item layouts were not changed.";
-    }catch(error){templateStatus.textContent=error.message}
    };
    void fetchMasterTemplates();
    const photoTitle=el("h4","Photos");
@@ -1432,11 +1379,11 @@
    const save=itemButton(isNew?"Create catalog item":"Save changes",()=>form.requestSubmit(),"btn primary");
    const cancel=itemButton("Cancel",()=>isNew?closeItem():showItem(item.id,false),"btn");
    actions.append(save,cancel);form.append(actions,status);
-   let editingEnabled=!viewOnly;
+   let editingEnabled=!viewOnly,savingItem=false;
    form.addEventListener("submit",async event=>{
     event.preventDefault();
-    if(!editingEnabled)return;
-    const details={photos,specifications:storedSpecs(),genericFields:identityRadios.generic.checked?getGenericFields():[],
+    if(!editingEnabled||savingItem)return;
+    const details={photos,specifications:storedSpecs(),genericFields:getGenericFields(),
      productSections:productBuilder?.getSections()||[],tableLayout:currentTableLayout()};
     for(const field of saveableFields)if(controls[field])details[field]=controls[field].value;
     details.kind=kind.value;details.category=category.value;
@@ -1447,7 +1394,7 @@
     details.familyId=item.familyId||"";
     details.familyName=item.familyName||"";
     if(!details.name?.trim()){status.textContent="Enter an item name.";return}
-    status.textContent=isNew?"Creating item…":"Saving…";save.disabled=true;
+    status.textContent=isNew?"Creating item…":"Saving…";savingItem=true;save.disabled=true;
     try{
      const response=await req("/api/workshop-reference",isNew?"POST":"PUT",
       isNew?{details}:{id:item.id,details,expectedRevision:item.revision||null});
@@ -1455,8 +1402,9 @@
      if(isNew)editableReferenceIds.add(response.id);
      selectedFamily=details.familyId;selectedType="";
      renderCatalog();
-     showItem(response.id,isNew);
+     if(form.isConnected&&location.hash==="#commonparts"&&!itemPage.hidden)showItem(response.id,isNew);
     }catch(error){status.textContent=error.message;save.disabled=false}
+    finally{savingItem=false}
    });
    mount.append(form);
    // View and Edit share this exact DOM. Editing merely unlocks the controls;

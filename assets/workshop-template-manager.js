@@ -54,12 +54,12 @@
   const header=el("div","workshop-template-manager-heading");
   const headings=el("div");
   headings.append(el("h3",null,"Template builder"),
-   el("p","Create and edit reusable field layouts by Workshop category. Product values stay with individual parts.","muted"));
+   el("p","muted","Create and edit reusable field layouts by Workshop category. Product values stay with individual parts."));
   header.append(headings,button("Close",()=>setOpen(false),"btn"));
   panel.append(header);
   const top=el("div","workshop-template-manager-controls");
   const categoryLabel=el("label");categoryLabel.append(el("span",null,"Category"));
-  const category=el("select","field");
+  const category=el("select","field");category.setAttribute("aria-label","Category");
   for(const [id,name] of categories){
    if(id==="all"||id==="mine")continue;
    const option=el("option",null,name);option.value=id;category.append(option);
@@ -69,7 +69,7 @@
   const search=field("","Search by template name");
   search.type="search";searchLabel.append(search);
   const selectedLabel=el("label");selectedLabel.append(el("span",null,"Saved layouts"));
-  const select=el("select","field");selectedLabel.append(select);
+  const select=el("select","field");select.setAttribute("aria-label","Saved layouts");selectedLabel.append(select);
   const nameLabel=el("label");nameLabel.append(el("span",null,"Template name"));
   const name=field("","e.g., MOSFET, relay, pushbutton");name.maxLength=90;
   nameLabel.append(name);
@@ -81,7 +81,7 @@
   const builderHost=el("div","workshop-template-manager-builder");
   panel.append(builderHost);
   const actions=el("div","workshop-template-manager-actions");
-  const newButton=button("New template",()=>beginNew(),"btn");
+  const newButton=button("New template",()=>{if(!busy&&discardChanges())beginNew()},"btn");
   const saveButton=button("Save template",()=>void save(),"btn primary");
   const deleteButton=button("Delete template",()=>void remove(),"btn");
   actions.append(newButton,saveButton,deleteButton);
@@ -90,7 +90,7 @@
   if(count)count.before(panel);else catalog.append(panel);
   const generic=el("section","workshop-template-manager-generic");
   generic.append(el("h4",null,"Configured in project"),
-   el("p","Add field definitions a user fills in later. This template never stores project-specific values.","muted"));
+   el("p","muted","Add field definitions a user fills in later. This template never stores project-specific values."));
   const genericRows=el("div","workshop-template-manager-generic-rows");
   const addGeneric=entry=>{
    const row=el("div","workshop-template-manager-pair");
@@ -103,7 +103,17 @@
   };
   generic.append(genericRows,button("+ Add project field",()=>{if(genericRows.children.length<40)addGeneric()},"btn"));
   tables.after(generic);
-  let templates=[],selectedId="",open=false,dirty=false,builder=null;
+  let templates=[],selectedId="",selectedRevision=null,open=false,builder=null,busy=false,loadVersion=0;
+  let baseline="",activeCategory=category.value;
+  const discardChanges=()=>!baseline||JSON.stringify(snapshot())===baseline||window.confirm("Discard unsaved template changes?");
+  const setBusy=value=>{
+   busy=value;panel.setAttribute("aria-busy",String(value));
+   for(const control of panel.querySelectorAll("input,select,button"))control.disabled=value;
+   if(!value){
+    deleteButton.disabled=!selectedId;
+    tableRows.get("identity")?.hidden.get("name")?.setAttribute("disabled","");
+   }
+  };
   const tableRows=new Map();
   const readTables=()=>({sections:Object.fromEntries(sectionSpecs.map(([key])=>{
    const ui=tableRows.get(key);
@@ -123,7 +133,7 @@
    const label=field(entry.label||"","Additional field name");
    label.maxLength=100;label.classList.add("workshop-template-row-label");
    const fixed=el("span","muted","Value filled in on part");
-   row.append(label,fixed,button("Remove",()=>{row.remove();dirty=true},"btn"));
+   row.append(label,fixed,button("Remove",()=>{row.remove()},"btn"));
    host.append(row);
    return label;
   };
@@ -153,7 +163,7 @@
     }
     const rows=el("div","workshop-template-manager-custom-rows");
     for(const record of meta.rows||[])addCustomRow(rows,record);
-    section.append(rows,button("+ Add row",()=>{const input=addCustomRow(rows);input?.focus();dirty=true},"btn"));
+    section.append(rows,button("+ Add row",()=>{const input=addCustomRow(rows);input?.focus()},"btn"));
     tableRows.set(key,{title,labels,hidden,rows});tables.append(section);
    }
   };
@@ -179,81 +189,91 @@
    deleteButton.disabled=!selectedId;
   };
   const openTemplate=template=>{
-   selectedId=template?.id||"";
+   selectedId=template?.id||"";selectedRevision=template?.revision??null;
+   activeCategory=category.value;
    name.value=template?.name||"";
    buildTables(template?.tableLayout);
    genericRows.replaceChildren();
    for(const entry of template?.genericFields||[])addGeneric(entry);
    if(!builder){
-    builder=window.BSWorkshopProductBuilder?.create({item:{productSections:[]},readOnly:false});
+    builder=window.BSWorkshopProductBuilder?.create({item:{productSections:[]},readOnly:false,definitionsOnly:true});
     if(builder)builderHost.append(builder.element);
    }
    builder?.setSections(template?.productSections||[],{preserveExisting:false});
    deleteButton.disabled=!selectedId;
    message.textContent=selectedId?"Editing '"+template.name+"'. Saving updates this master only.":"New blank template — choose fields and save.";
-   dirty=false;
+   baseline=JSON.stringify(snapshot());
   };
   const beginNew=()=>{selectedId="";search.value="";refreshChoices();openTemplate(null);};
   const load=async()=>{
+   const version=++loadVersion;
    try{
     const data=await request();
+    if(version!==loadVersion||!open)return;
     templates=data.templates||[];
     refreshChoices();
-   }catch(error){message.textContent=error.message}
+   }catch(error){if(version===loadVersion&&open)message.textContent=error.message}
   };
   const save=async()=>{
+   if(busy)return;
    if(!isEditable()){message.textContent="Sign in to edit master templates.";return}
    const payload=snapshot();
    if(!payload.name){message.textContent="Enter a template name.";name.focus();return}
    if(!payload.category){message.textContent="Select a category.";return}
-   saveButton.disabled=true;message.textContent="Saving master template…";
+   const editingId=selectedId,revision=selectedRevision;
+   ++loadVersion;setBusy(true);message.textContent="Saving master template…";
    try{
-    const response=await request(selectedId?"PUT":"POST",{
-     ...payload,...(selectedId?{id:selectedId}:{})
+    const response=await request(editingId?"PUT":"POST",{
+     ...payload,...(editingId?{id:editingId,expectedRevision:revision}:{})
     });
     const saved=response.template;
     templates=templates.filter(entry=>entry.id!==saved.id).concat(saved);
-    selectedId=saved.id;search.value="";refreshChoices();
+    selectedId=saved.id;selectedRevision=saved.revision??null;search.value="";refreshChoices();
     message.textContent="Saved '"+saved.name+"'. Existing Workshop parts are unchanged.";
-    dirty=false;
+    baseline=JSON.stringify(snapshot());
    }catch(error){message.textContent=error.message}
-   finally{saveButton.disabled=false}
+   finally{setBusy(false)}
   };
   const remove=async()=>{
    const current=templates.find(entry=>entry.id===selectedId);
-   if(!current||!isEditable())return;
+   if(busy||!current||!isEditable())return;
    if(!window.confirm("Delete master template '"+current.name+"'? Existing Workshop parts keep their layouts."))return;
-   deleteButton.disabled=true;
+   ++loadVersion;setBusy(true);
    try{
-    await request("DELETE",{id:current.id});
+    await request("DELETE",{id:current.id,expectedRevision:selectedRevision});
     templates=templates.filter(entry=>entry.id!==current.id);
     beginNew();message.textContent="Master template deleted. Workshop parts are unchanged.";
    }catch(error){message.textContent=error.message}
-   finally{deleteButton.disabled=!selectedId}
+   finally{setBusy(false)}
   };
   const setOpen=next=>{
+   if(busy)return;
    open=!!next;panel.hidden=!open;
    launch.setAttribute("aria-expanded",String(open));
-   if(!open)return;
+   if(!open){++loadVersion;return;}
    const active=getSelectedCategory();
-   if(active&&[...category.options].some(option=>option.value===active))category.value=active;
+   if(!tableRows.size&&active&&[...category.options].some(option=>option.value===active))category.value=active;
    refreshChoices();if(!tableRows.size)openTemplate(null);
    void load();
    panel.scrollIntoView({block:"nearest"});
   };
   select.addEventListener("change",()=>{
+   if(!discardChanges()){select.value=selectedId;return;}
    const entry=templates.find(record=>record.id===select.value);
    openTemplate(entry||null);
   });
-  category.addEventListener("change",()=>{beginNew();refreshChoices()});
+  category.addEventListener("change",()=>{
+   const next=category.value;category.value=activeCategory;
+   if(!discardChanges())return;category.value=next;beginNew();refreshChoices();
+  });
   search.addEventListener("input",refreshChoices);
-  panel.addEventListener("input",()=>{dirty=true});
-  panel.addEventListener("change",()=>{dirty=true});
   launch.hidden=!isEditable();
   return {setEditable:enabled=>{launch.hidden=!enabled;if(!enabled)setOpen(false)},
    open:requestedCategory=>{
+    if(busy)return;
+    if(requestedCategory&&requestedCategory!==category.value&&!discardChanges())return;
     setOpen(true);
-    if(requestedCategory&&[...category.options].some(option=>option.value===requestedCategory)){
+    if(requestedCategory&&requestedCategory!==category.value&&[...category.options].some(option=>option.value===requestedCategory)){
      category.value=requestedCategory;
      beginNew();
     }

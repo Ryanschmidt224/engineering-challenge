@@ -12,15 +12,16 @@ const btn=(label,fn,cls="btn")=>{const b=el("button",cls,label);b.type="button";
 const safeURL=value=>{
  try{const url=new URL(value,location.origin);return ["https:","http:"].includes(url.protocol)?url.href:""}catch{return ""}
 };
-function create({item={},readOnly=true}={}){
+function create({item={},readOnly=true,definitionsOnly=false}={}){
  const root=el("section","workshop-product-builder");
  const heading=el("div","workshop-builder-heading");
  heading.append(el("h3",null,"Product Builder"),
-  el("p","Create sections and fields for this item. Drag sections or fields to reorder them. Workshop values are shared; project values are filled in by each builder.","muted"));
+  el("p","muted","Create sections and fields for this item. Drag sections or fields to reorder them. Workshop values are shared; project values are filled in by each builder."));
  root.append(heading);
  const list=el("div","workshop-builder-sections");root.append(list);
  const footer=el("div","workshop-builder-actions");root.append(footer);
  let editing=!readOnly;
+ let appliedFieldIds=new Set();
  let sections=(Array.isArray(item.productSections)?item.productSections:[]).map(section=>({
   id:section.id||ID(),title:section.title||"Section",
   fields:(section.fields||[]).map(f=>({id:f.id||ID(),label:f.label||"",type:f.type||"text",
@@ -102,6 +103,8 @@ function create({item={},readOnly=true}={}){
   if(field.scope==="project"){
    const note=el("span","workshop-builder-project-hint","Filled in when added to a project");
    valueWrap.append(note);
+  }else if(definitionsOnly){
+   valueWrap.append(el("span","muted","Value filled in on part"));
   }else{
    const choices=field.options||[];
    let control;
@@ -171,7 +174,7 @@ function create({item={},readOnly=true}={}){
    card.append(head);
    const rows=el("div","workshop-builder-field-list");
    section.fields.forEach(field=>rows.append(fieldRow(section,field)));
-   if(!section.fields.length)rows.append(el("p","No fields in this section yet.","muted"));
+   if(!section.fields.length)rows.append(el("p","muted","No fields in this section yet."));
    card.append(rows);
    if(editing)card.append(btn("+ Add field",()=>{
     if(sections.reduce((n,s)=>n+s.fields.length,0)>=120)return;
@@ -180,7 +183,7 @@ function create({item={},readOnly=true}={}){
    },"btn"));
    list.append(card);
   }
-  if(!sections.length)list.append(el("p","No custom sections yet. Add one to organize this product's information.","muted"));
+  if(!sections.length)list.append(el("p","muted","No custom sections yet. Add one to organize this product's information."));
   footer.replaceChildren();
   if(editing)footer.append(btn("+ Add section",()=>{
    if(sections.length>=16)return;
@@ -197,7 +200,7 @@ function create({item={},readOnly=true}={}){
     value:f.scope==="workshop"?String(f.value||""):"",options:[...f.options]
    }))
   })),
-  setSections:(incoming,{preserveExisting=true}={})=>{
+  setSections:(incoming,{preserveExisting=true,preview=false}={})=>{
    // Layout-only import: keep IDs stable for future editing, never copy source
    // product values. Workshop-specific values can be entered after applying.
    const previousSections=sections;
@@ -208,7 +211,7 @@ function create({item={},readOnly=true}={}){
      const previous=preserveExisting?existingFields.get(field.id):null;
      return {
       id:field.id||ID(),label:field.label||"",type:field.type||"text",
-      scope:field.scope||"workshop",unit:field.unit||"",
+      scope:previous?.value?previous.scope:(field.scope||"workshop"),unit:field.unit||"",
       value:previous?.value||"",options:[...(field.options||[])]
      };
     })
@@ -217,13 +220,20 @@ function create({item={},readOnly=true}={}){
    // deleting their values when applying a shared master template.
    const used=new Set(imported.flatMap(section=>section.fields.map(field=>field.id)));
    if(preserveExisting)for(const section of previousSections){
-    const retained=section.fields.filter(field=>!used.has(field.id));
+    const retained=section.fields.filter(field=>!used.has(field.id)&&
+     (!appliedFieldIds.has(field.id)||String(field.value||"").trim()));
     const match=imported.find(candidate=>candidate.id===section.id);
     if(match)match.fields.push(...retained);
     else if(retained.length||!section.fields.length)imported.push({...section,fields:retained});
    }
+   // Refuse an oversized merge before changing anything; saving must not truncate values.
+   if(imported.length>16||imported.some(section=>section.fields.length>30)||
+      imported.reduce((n,section)=>n+section.fields.length,0)>120)return false;
+   if(preview)return true;
+   appliedFieldIds=new Set((incoming||[]).flatMap(section=>section.fields.map(field=>field.id)));
    sections=imported;
    render();
+   return true;
   },
   setEditing:value=>{editing=!!value;render()}
  };
