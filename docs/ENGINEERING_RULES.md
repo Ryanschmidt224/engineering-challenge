@@ -1,6 +1,6 @@
 # BuildingSchmidt engineering rules
 
-Status: proposed for owner adoption, 2026-11-22. The current CSS batch follows the shared-component direction; the proposed review workflow and new build checks are not represented as already adopted or enforced.
+Status: proposed engineering standards, 2026-11-22. The owner confirmed the review gate for the current CSS batch: leave it ready for Claude review and do not merge or deploy it yet. Remaining proposed checks are not represented as already enforced.
 
 **Goal:** in five years this site is still one clean system, not layers of patches. These rules apply to every change, whoever writes it. They are written so a reviewer can check a change against them instead of against taste.
 

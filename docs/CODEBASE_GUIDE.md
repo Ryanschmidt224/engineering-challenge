@@ -4,56 +4,44 @@ This document is the starting point for a human developer reading or changing th
 
 ## Fast orientation
 
-This is a plain JavaScript / HTML / CSS site deployed on Cloudflare. There is **no bundler**. Browser scripts are loaded in the order specified at the bottom of `index.html`. Cloudflare Pages Functions in `functions/api/` handle requests; `worker.js` handles routing where configured. Project records are stored separately from Git source code. Git commits **do not** back up the data in project storage.
+This is a private single-owner HTML/CSS/JavaScript site hosted on Cloudflare Workers. There is no bundler or desktop/local-server application. `worker.js` dispatches API requests to handlers in `functions/api/`. Projects and attachments use R2; Workshop families/products/uses and Knowledge tiles/links use D1. Git commits do not back up stored application data.
 
 ### What lives where
 
 | Area | File | Responsibility |
 | --- | --- | --- |
 | HTML and load order | `index.html` | Navigation and page scaffolding; includes browser scripts |
+| Shared header | `assets/site-header.js` | ES module; explicit `initSiteHeader()` from each page, one branding/navigation/account structure |
 | Site entrypoint | `assets/site.js` | Main navigation, learning tiles, admin/login, photo setup, controller initialization |
 | Assembly and workspace | `assets/site-assembly.js` | Canonical assembly tree, workspace, BOM, part-detail and photo-storage workflows |
 | Part/component editor | `assets/site-assembly.js` | BOM component editor, review/save flow and component API integration |
 | Shared photo controls | `assets/photo-editor.js` | Pencil launcher and modal dialog shell reused for parts and assemblies |
 | Pure BOM selector | `assets/bom-model.js` | Assembly descendants, visible purchased parts vs shop stock, quantity/assembly display labels; no browser or storage dependencies |
 | Recipes / work instructions | `assets/recipe-editor.js` | Discrete instruction steps, editing, local recipe UI state |
-| Workshop | `assets/resources.js` | Shared reference resources and Workshop category tree |
+| Workshop | `assets/family-workshop.js`, `assets/workshop-ui.js`, `functions/api/workshop-db.js` | D1 families/products/uses and related Knowledge |
+| Legacy resource linking/calculators | `assets/resources.js` | Still used by workspace references and calculators; do not delete before auditing readers |
+| Knowledge | `assets/knowledge.js`, `assets/knowledge-model.js`, `functions/api/knowledge.js` | Plain-text tiles, explicit links and related knowledge |
 | BOM selection | `assets/library-part-picker.js` | Choosing library/Workshop parts |
 | Drawings and part files | `assets/drawings.js`, `assets/part-files.js` | Drawing attachments and files |
 | Shared calculation rules | `assets/engineering-core.js` | Pure domain functions, portable outside browser |
 | Local project and recovery | `assets/local-project.js`, `assets/archive-check.js` | Local project support and archive validation |
-| Site styles | `assets/theme.css` and four ordered `site*.css` files | Palette variables and cascade-preserving UI styles |
+| Shared styles | `assets/theme.css`, `assets/ui-kit.css`, `assets/components.css` | Tokens; site header, controls, sections and cards. Detailed contract: `UI_STANDARDS.md` |
+| Legacy styles | Ordered `site*.css` files | Frozen except reviewed removals; migrate ownership rather than add patches |
 | API controllers | `functions/api/*.js` | Cloudflare-backed data reads, writes, and archive endpoints |
 | Source-level tests | `tests/*.test.mjs` | Behavior checks, API simulations, structural assertions |
 | Data design | `docs/DATA_ARCHITECTURE.md` | Target model and backup/migration constraints; NOT a statement that all targets are implemented |
 
 ## How browser code connects
 
-```text
-index.html
-  ├─ feature services: resources, drawings, library-part-picker,
-  │                   engineering-core, local-project, archive-check,
-  │                   part-files, recipe-editor
-  ├─ bom-model.js          exports BSBomModel (pure BOM selectors)
-  ├─ photo-editor.js       shared photo pencil and modal
-  ├─ site-assembly.js      canonical assembly/workspace/BOM controllers
-  └─ site.js               controller bootstrap, login, navigation, resources
+Workshop and Knowledge use ES module entry points. Every page calls the shared header module's explicit initializer. The main page still loads the existing classic feature controllers before `site.js`; their global lexical dependencies require the current order. `window.BSUI` remains the deliberate shared-kit bridge during migration. New modules must not add globals or execute application initialization implicitly at import.
 
-User interaction
-  └─ assembly/workspace/part editor
-       ├─ calls browser-side helpers and feature modules
-       ├─ GET/POST/other methods to /api/tree, /api/components,
-       │  /api/workspace and related endpoints
-       └─ Cloudflare endpoint reads/writes project data
-```
-
-**Important:** These are ordinary classic browser scripts sharing a global lexical environment, not isolated ES modules. Loading order matters. The extracted controller declarations are evaluated before the app calls them; do not add side effects at file load. Avoid adding more implicit cross-file globals. For a substantial future refactor, pass dependencies explicitly into feature initializers and convert to ES modules with tests.
+The shared header reuses the existing Account button on the main page so its authentication handler survives initialization. Standalone-page Account links open the same existing account UI. No separate sign-in implementation is introduced.
 
 ## Common change paths
 
 ### Change BOM list layout or behavior
 1. Start in `assets/site-assembly.js` and find `renderWorkspaceParts` or the BOM rendering code.
-2. Style the table using the ordered site CSS files; edit `assets/theme.css` for colors.
+2. Use shared components and a feature-owned layout file; delete replaced legacy rules in the same batch. Edit `assets/theme.css` for shared values.
 3. Change filtering/quantity labels in `assets/bom-model.js`, then run `tests/bom-model.test.mjs`.
 4. Confirm both thumbnail and list views, nested assembly quantities, and the standard shop-materials section.
 5. Do not alter quantities or persistent records for a purely visual change.
@@ -71,9 +59,9 @@ User interaction
 - Avoid bringing back obsolete blank instructions fields; steps should reveal optional fields only when needed.
 
 ### Change workshop resources
-- `assets/resources.js` for Workshop categories/reference data.
-- `assets/library-part-picker.js` for selecting items for a BOM.
-- `functions/api/purchased-parts.js` for purchased-part persistence.
+- `assets/family-workshop.js` and `functions/api/workshop-db.js` own the current Workshop.
+- `assets/resources.js` still provides calculators and legacy resource links; it is not the D1 Workshop.
+- Current structural changes require numbered D1 migrations, never edits to applied migrations.
 - A reference link is not automatically a new BOM quantity.
 
 ### Change backups

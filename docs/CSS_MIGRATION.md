@@ -1,4 +1,4 @@
-# CSS migration, November 22, 2026
+# CSS migration status
 
 The owner's screenshots define the intended standard, rather than exact preservation of legacy pixels. Use shared text sizes, controls, chevrons and spacing. Project data and storage contracts stay unchanged.
 
@@ -23,3 +23,11 @@ Do not automatically delete all classes absent from a text search. Dynamic class
 ## Rollback
 
 Revert the code batch and deploy its HTML, scripts and styles together. There is no data migration to reverse. Default collapsed states affect presentation only, never saved project content.
+
+## Review scope and transition exceptions
+
+The owner confirmed that this batch must remain unmerged for Claude review. The new engineering rules are recorded as proposed standards; this confirmation adopts the review gate, not every proposed automated check.
+
+This is an incremental CSS ownership migration, not a completed ES-module rebuild of the main page. The existing site-assembly.js, project-manager.js and dialog-system.js grow slightly to preserve mounted handlers, use the shared header/account bridge and fix tooltip interaction. This is an explicit transition exception to the proposed “legacy JS never grows” rule. New header code is a small ES module with explicit initialization and no added window global. Help text is not yet fully centralized. The feature inventory is not falsely marked Rebuilt.
+
+No new dependency, schema migration, API change, feature removal or application-data deletion is included. Proposed drops in the inventory remain undecided.
