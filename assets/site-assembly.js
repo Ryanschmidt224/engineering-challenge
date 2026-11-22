@@ -730,6 +730,8 @@ function setupAssemblyTrees(){
   backupDetails.className="workspace-backup-details workspace-secondary-disclosure";
   const backupSummary=document.createElement("summary");
   backupSummary.textContent="Project backups";
+  backupSummary.title="Create and download backups of this project for safekeeping or offline use.";
+  backupSummary.setAttribute("aria-description",backupSummary.title);
   backupDetails.append(backupSummary,archiveActions);
   workspace.append(backupDetails);
   const partDrawingPanel=window.BSDrawings?.mount(partWorkspace.querySelector(".part-drawing-panel"),()=>canEdit());
@@ -758,6 +760,8 @@ function setupAssemblyTrees(){
    };
    const historyDetails=document.createElement("details");historyDetails.className="instruction-history workspace-secondary-disclosure";
    const historySummary=document.createElement("summary");historySummary.textContent="Recent changes";
+   historySummary.title="Review previous changes to this workspace and restore earlier saved versions when available.";
+   historySummary.setAttribute("aria-description",historySummary.title);
    const historyList=document.createElement("div");historyList.className="instruction-history-list";
    historyDetails.append(historySummary,historyList);panel.querySelector(prefix==="part"?".part-workspace-save":".workspace-save").after(historyDetails);
    const olderButton=document.createElement("button");
@@ -861,6 +865,8 @@ function setupAssemblyTrees(){
    const toolsCount=document.createElement("span");toolsCount.className="workspace-record-count";
    toolsActions.append(toolsCount);
    toolsSummary.append(toolsActions);
+   toolsSummary.title="Open calculators, tools, and Workshop references linked to this work.";
+   toolsSummary.setAttribute("aria-description",toolsSummary.title);
    const toolsControls=document.createElement("div");toolsControls.className="workspace-tool-controls";
    tools.append(toolsSummary,toolsControls,resourcesPanel);
    const history=document.createElement("article");history.className="investigations-panel";
@@ -872,6 +878,8 @@ function setupAssemblyTrees(){
    const archiveTitle=document.createElement("h2");archiveTitle.textContent="Archives and Revision History";
    const archiveCount=document.createElement("span");archiveCount.className="workspace-record-count workspace-archive-count";
    archiveSummary.append(archiveTitle,archiveCount);
+   archiveSummary.title="Review archived records and revision history associated with this workspace.";
+   archiveSummary.setAttribute("aria-description",archiveSummary.title);
    archiveHistory.append(archiveSummary,activeRecords,history);
    history.archiveHistoryDisclosure=archiveHistory;
    instructions.after(tools);
@@ -903,6 +911,9 @@ function setupAssemblyTrees(){
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
   detailsPanel.innerHTML='<details class="part-details-collapse"><summary class="part-details-view-heading"><div class="part-details-heading-copy"><h2>Part details</h2><span class="part-details-summary-fields"></span></div></summary><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div><div class="part-drawing-panel"></div><div class="part-files-panel"></div></details>';
   const partDetailsCollapse=detailsPanel.querySelector(".part-details-collapse");
+  const partDetailsHeading=detailsPanel.querySelector(".part-details-view-heading");
+  partDetailsHeading.title="Review the part identity, specifications, and other details. Expand to edit or view related files.";
+  partDetailsHeading.setAttribute("aria-description",partDetailsHeading.title);
   // Edit belongs beside the heading, not at the bottom of the expanded details.
   const detailEditButton=detailsPanel.querySelector(".part-details-edit");
   const editWorkshopButton=document.createElement("button");
@@ -3036,6 +3047,8 @@ function setupAssemblyTrees(){
   archiveDetails.className="assembly-archived-disclosure";
   const archiveHeading=document.createElement("summary");
   archiveHeading.textContent="Archived items (0)";
+  archiveHeading.title="View items removed from this assembly and restore archived items when available.";
+  archiveHeading.setAttribute("aria-description",archiveHeading.title);
   const archiveList=document.createElement("div");
   archiveList.className="assembly-archived-list";
   archiveDetails.append(archiveHeading,archiveList);
