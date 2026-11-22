@@ -7,11 +7,17 @@ import {DatabaseSync} from "node:sqlite";
 import {pathToFileURL} from "node:url";
 import {allSchemaStatements,latestSchemaVersion} from "../functions/api/workshop-migrations.js";
 import {validateFamilyFields,validateFamilyValues,isWebUrl} from "../assets/family-model.js";
+import {validateTile,validateLink} from "../assets/knowledge-model.js";
 
 const names=["categories","families","fields","products","uses","attachments"];
-const jsonColumns=new Set(["choices","supplier_links","field_values","project_state"]);
-export function restoreCatalog(catalog,db) {
+const jsonColumns=new Set(["choices","supplier_links","field_values","project_state","sources"]);
+// Export format 2 adds Knowledge. Format 1 files (no Knowledge) still restore.
+const knowledgeNames=["knowledge_tiles","knowledge_links"];
+export const supportedVersions=[1,2];
+export function restoreCatalog(catalog,db,version=2) {
  if(!catalog||names.some(name=>!Array.isArray(catalog[name])))throw Error("Incomplete catalog");
+ if(version>=2&&knowledgeNames.some(name=>!Array.isArray(catalog[name])))throw Error("Incomplete catalog: Knowledge is missing");
+ if(version<2&&knowledgeNames.some(name=>name in catalog))throw Error("Unexpected Knowledge records in a format 1 backup");
  if(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'workshop_%'").get())throw Error("Restore requires an empty destination database");
  db.exec("PRAGMA foreign_keys=ON; BEGIN");
  try {
@@ -33,6 +39,14 @@ export function restoreCatalog(catalog,db) {
    for(const record of [...catalog.products,...catalog.uses].filter(record=>record.family_id===family.id))validateFamilyValues(fields,record.field_values);
   }
   for(const file of catalog.attachments)if(file.url&&!isWebUrl(file.url))throw Error("Unsafe attachment link");
+  if(version>=2)for(const name of knowledgeNames){
+   const columns=new Set(db.prepare("PRAGMA table_info("+name+")").all().map(row=>row.name));
+   for(const row of catalog[name]){
+    if(name==="knowledge_tiles")validateTile(row);else validateLink(row);
+    const keys=Object.keys(row);if(keys.some(key=>!columns.has(key)))throw Error("Unknown Knowledge column");
+    db.prepare(`INSERT INTO ${name} (${keys.join(",")}) VALUES (${keys.map(()=>"?")})`).run(...keys.map(key=>jsonColumns.has(key)?JSON.stringify(row[key]):row[key]));
+   }
+  }
   if(db.prepare("PRAGMA foreign_key_check").all().length)throw Error("Broken catalog references");
   db.prepare("INSERT INTO workshop_meta(key,value) VALUES('schema',?),('seed','1')").run(String(latestSchemaVersion));
   db.exec("COMMIT");
@@ -48,8 +62,8 @@ export async function verifyWorkshopBackup(lines,{onChunk=async()=>{}}={}) {
   if(!raw.trim())continue;
   if(complete)throw Error("Unexpected records after backup trailer");
   const line=JSON.parse(raw);
-  if(!header){if(line.type!=="header"||line.format!=="buildingschmidt-workshop"||line.version!==1)throw Error("Unsupported backup header");header=true;continue;}
-  if(!catalog){if(line.type!=="catalog")throw Error("Missing catalog");catalog=line.data;const db=new DatabaseSync(":memory:");try{restoreCatalog(catalog,db);}finally{db.close();}continue;}
+  if(!header){if(line.type!=="header"||line.format!=="buildingschmidt-workshop"||!supportedVersions.includes(line.version))throw Error("Unsupported backup header");header=line.version;continue;}
+  if(!catalog){if(line.type!=="catalog")throw Error("Missing catalog");catalog=line.data;const db=new DatabaseSync(":memory:");try{restoreCatalog(catalog,db,header);}finally{db.close();}continue;}
   if(line.type==="file"){
    if(current||files.has(line.key)||!/^workshop-v2\/files\/[a-f0-9-]{36}$/i.test(line.key)||!Number.isInteger(line.size)||line.size<1||line.size>10*1024*1024||! /^[a-f0-9]{64}$/.test(line.sha256))throw Error("Invalid or duplicate backup file");
    current={...line,offset:0,hash:createHash("sha256")};continue;
@@ -74,5 +88,5 @@ export async function verifyWorkshopBackup(lines,{onChunk=async()=>{}}={}) {
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
  if(process.argv.length!==3){console.error("Usage: node scripts/workshop-backup.mjs downloaded-workshop.ndjson");process.exitCode=1;}
- else try{const result=await verifyWorkshopBackup(createInterface({input:createReadStream(process.argv[2]),crlfDelay:Infinity}));console.log(JSON.stringify({verified:true,files:result.fileCount,bytes:result.totalBytes,records:Object.fromEntries(names.map(name=>[name,result.catalog[name].length]))}));}catch(error){console.error("Backup verification failed: "+error.message);process.exitCode=1;}
+ else try{const result=await verifyWorkshopBackup(createInterface({input:createReadStream(process.argv[2]),crlfDelay:Infinity}));console.log(JSON.stringify({verified:true,files:result.fileCount,bytes:result.totalBytes,records:Object.fromEntries([...names,...knowledgeNames].filter(name=>Array.isArray(result.catalog[name])).map(name=>[name,result.catalog[name].length]))}));}catch(error){console.error("Backup verification failed: "+error.message);process.exitCode=1;}
 }

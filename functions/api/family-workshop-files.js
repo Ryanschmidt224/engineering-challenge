@@ -2,6 +2,7 @@ import {isAdmin} from "./auth.js";
 import {initializeWorkshop,workshopSnapshot} from "./workshop-db.js";
 import {validId} from "../../assets/family-model.js";
 import {encodeBytes,sha256} from "./project-archive.js";
+import {knowledgeSnapshot} from "./knowledge.js";
 
 const prefix="workshop-v2/files/",maxBytes=10*1024*1024;
 const json=(data,status=200)=>Response.json(data,{status,headers:{"cache-control":"private, no-store","x-content-type-options":"nosniff"}});
@@ -60,7 +61,9 @@ export async function handleFamilyWorkshopFile(request,env){
 export async function handleWorkshopExport(request,env){
  const denied=await access(request,env);if(denied)return denied;
  if(request.method!=="GET")return json({error:"Method not allowed"},405);
- const catalog=await workshopSnapshot(env.WORKSHOP_DB),objects=[];let cursor;
+ // Version 2 adds Knowledge tiles and links to the catalog. Never omit stored data.
+ const knowledge=await knowledgeSnapshot(env.WORKSHOP_DB);
+ const catalog={...await workshopSnapshot(env.WORKSHOP_DB),knowledge_tiles:knowledge.tiles,knowledge_links:knowledge.links},objects=[];let cursor;
  do{
   const page=await env.PHOTOS.list({prefix,cursor,limit:500});objects.push(...page.objects);
   if(objects.length>10000)return json({error:"Use an operator-level export for more than 10,000 files"},413);
@@ -71,7 +74,7 @@ export async function handleWorkshopExport(request,env){
  if(catalog.attachments.some(file=>file.r2_key&&!objectKeys.has(file.r2_key)))return json({error:"An attachment's bytes are missing. Repair it before creating a backup."},409);
  const encoder=new TextEncoder();let totalBytes=0;
  const lines=(async function*(){
-  yield {type:"header",format:"buildingschmidt-workshop",version:1,createdAt:new Date().toISOString()};
+  yield {type:"header",format:"buildingschmidt-workshop",version:2,createdAt:new Date().toISOString()};
   yield {type:"catalog",data:catalog};
   for(const entry of objects){
    const object=await env.PHOTOS.get(entry.key);if(!object)throw Error("A file disappeared during export");
