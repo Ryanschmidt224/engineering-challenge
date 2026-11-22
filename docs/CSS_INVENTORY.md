@@ -53,7 +53,7 @@ Header ownership remains distributed, with shared values now supplied by theme t
 
 `browser-css-regression.spec.mjs` captures old and new renderings using CSS from fixed deployed source `1ed47284dcea58bdadb4f86b4065e3746fa2995d`. Identical fixtures cover three built-in projects and a personal project, part/assembly workspaces, 1440px/390px widths, collapsed/expanded states and the part-edit dialog. Both image sets are retained in CI as evidence of intentional differences.
 
-Acceptance checks require readable standard title/count sizes, headings at least 48px tall, no clipped header contents, no horizontal page overflow, working disclosures/edit dialogs and no browser errors. Existing project/Workshop workflows and Node checks remain required. Source assertions tolerate formatting and refer to the shared radius token. CI checks pinned formatting plus the existing specificity/freeze guardrails.
+Acceptance checks require readable standard title/count sizes, headings at least 48px tall, no clipped header contents, no horizontal page overflow, working disclosures/edit dialogs and no browser errors. Keyboard-focused Helpful tools help must stay within the viewport and dismiss with Escape. Hidden section tooltips use `display: none` so they cannot widen phone pages. Existing project/Workshop workflows and Node checks remain required. Source assertions tolerate formatting and refer to the shared radius token. CI checks pinned formatting plus the existing specificity/freeze guardrails.
 
 The underlying header rules still occur in several files; consolidating ownership is a later bounded batch. Do not claim that all override files or `!important` rules have been removed. This batch establishes common values while retaining existing application behavior.
 

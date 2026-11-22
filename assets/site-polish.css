@@ -3703,6 +3703,7 @@
   cursor: help;
 }
 .bs-section-tooltip-content {
+  display: none;
   position: absolute;
   z-index: 5;
   top: calc(100% + 3px);
@@ -3721,6 +3722,7 @@
 }
 .bs-section-tooltip:not(.tooltip-dismissed):is(:hover, :focus-within)
   > .bs-section-tooltip-content {
+  display: block;
   visibility: visible;
 }
 
