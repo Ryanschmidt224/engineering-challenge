@@ -567,6 +567,7 @@
       title:editor?.titleInput.value.trim()||meta.title||sections.find(s=>s[0]===key)[1],
       labels:Object.fromEntries(Object.entries(editor?.labelInputs||{}).map(([name,input])=>
        [name,input.value.trim()]).filter(([,value])=>value)),
+      hiddenFields:[...(editor?.hiddenFields||[])],
       rows:[...(editor?.customRows.children||[])].map(row=>({
        id:row.dataset.id,
        label:row.querySelector('[data-table-label]').value.trim(),
@@ -593,6 +594,17 @@
     const titleLabel=el("label",undefined,"workshop-table-title-editor");
     titleLabel.append(el("span","Section title"),titleInput);tableControls.append(titleLabel);
     const labelInputs={};
+    const hiddenFields=new Set(meta.hiddenFields||[]);
+    const fieldRows={};
+    const updateFieldVisibility=()=>{
+     for(const [name,row] of Object.entries(fieldRows)){
+      const concealed=hiddenFields.has(name);
+      row.hidden=concealed&&!tableEditors[key]?.active;
+      row.classList.toggle("workshop-table-removed",concealed);
+      const remove=row.querySelector(".workshop-table-remove-standard");
+      if(remove){remove.hidden=!tableEditors[key]?.active;remove.textContent=concealed?"Restore":"Remove";}
+     }
+    };
     const customRows=el("div",undefined,"workshop-table-custom-rows");
     const addCustomRow=(record={})=>{
      if(customRows.children.length>=30)return;
@@ -604,8 +616,10 @@
      const value=el("input",undefined,"field");
      value.dataset.tableValue="";value.placeholder="Value (optional)";value.maxLength=1000;
      value.value=record.value||"";
-     const remove=itemButton("Remove",()=>row.remove(),"btn");
+     const remove=itemButton("Remove",()=>row.remove(),"btn workshop-table-remove-custom");
      remove.type="button";row.append(label,value,remove);customRows.append(row);
+     remove.hidden=!tableEditors[key]?.active;
+     row.classList.toggle("workshop-table-editing",!!tableEditors[key]?.active);
      return label;
     };
     for(const record of meta.rows||[])addCustomRow(record);
@@ -615,7 +629,9 @@
     finishTable.type="button";
     const rowActions=el("div",undefined,"workshop-table-actions");
     rowActions.append(addRow,finishTable);
-    tableEditors[key]={section,headingText,editTable,tableControls,titleInput,labelInputs,customRows,addCustomRow,active:false};
+    tableEditors[key]={section,headingText,editTable,tableControls,titleInput,labelInputs,
+     customRows,addCustomRow,hiddenFields,fieldRows,updateFieldVisibility,active:false};
+    // Keep Add row in sight instead of after a long page of existing fields.
     tableControls.append(rowActions);
     for(const name of [...new Set(fields)]){
      const [labelText,type]=fieldDescriptors[name];
@@ -635,13 +651,24 @@
      control.placeholder=name==="name"?"Required":"Optional";
      if(name==="name")control.required=true;
      if(name==="featureTreeDescription")control.maxLength=20;
-     label.append(control,rename);fieldsGrid.append(label);controls[name]=control;
+     const removeField=itemButton("Remove",()=>{
+      if(name==="name")return; // Item name is required by the Workshop API.
+      if(hiddenFields.has(name))hiddenFields.delete(name);else hiddenFields.add(name);
+      updateFieldVisibility();
+     },"btn workshop-table-remove-standard");
+     removeField.type="button";removeField.hidden=true;
+     if(name==="name")removeField.disabled=true;
+     label.append(control,rename,removeField);
+     label.dataset.workshopField=name;
+     fieldRows[name]=label;
+     fieldsGrid.append(label);controls[name]=control;
 
     }
     // Shared AI action comes after all Product Identity fields, not between
     // the default container name and the item name.
     if(key==="identity")fieldsGrid.append(lookupActions);
-    section.append(fieldsGrid,tableControls,customRows);grid.append(section);
+    section.append(tableControls,fieldsGrid,customRows);grid.append(section);
+    updateFieldVisibility();
    }
    let tableEditingAllowed=!viewOnly;
    const toggleTableEdit=(key,force)=>{
@@ -660,6 +687,7 @@
     editor.titleInput.value=editor.titleInput.value||editor.headingText.textContent;
     if(!active)editor.headingText.textContent=editor.titleInput.value.trim()||sections.find(section=>section[0]===key)[1];
     editor.customRows.classList.toggle("workshop-table-editing",active);
+    editor.updateFieldVisibility();
     for(const row of editor.customRows.children){
      row.querySelector('[data-table-label]').readOnly=!active;
      row.querySelector('[data-table-value]').readOnly=!tableEditingAllowed;
@@ -1200,6 +1228,7 @@
      editor.editTable.hidden=!editing;
      editor.editTable.textContent="Edit table";
      editor.customRows.classList.remove("workshop-table-editing");
+     editor.updateFieldVisibility();
      editor.headingText.textContent=editor.titleInput.value.trim()||sections.find(section=>section[0]===key)[1];
      for(const [name,rename] of Object.entries(editor.labelInputs)){
       rename.hidden=true;
@@ -1216,6 +1245,12 @@
      else control.readOnly=!editing;
     }
     for(const control of form.querySelectorAll("button"))control.disabled=!editing;
+    for(const editor of Object.values(tableEditors)){
+     for(const row of editor.customRows.children){
+      row.querySelector("button").hidden=!editing||!editor.active;
+     }
+     editor.updateFieldVisibility();
+    }
     actions.hidden=!editing;
     uploadRow.hidden=!editing;
     if(!editing)uploader.panel.hidden=true;
