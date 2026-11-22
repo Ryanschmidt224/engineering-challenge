@@ -4547,3 +4547,103 @@
  display:flex;
  align-items:center;
 }
+
+
+/* Work Instructions: same disclosure/header geometry as other workspace tiles.
+   Count stays immediately beside title. Add entry belongs inside open body. */
+.assembly-workspace-page .workspace-panels>article.recipe-instructions{
+ padding-top:0!important;
+ padding-left:0!important;
+ padding-right:0!important;
+ padding-bottom:0!important;
+ overflow:hidden;
+}
+.assembly-workspace-page .recipe-instructions>.recipe-heading-row{
+ display:flex;
+ align-items:center;
+ min-height:48px;
+ margin:0;
+ padding:0;
+}
+.assembly-workspace-page .recipe-instructions .recipe-disclosure-toggle{
+ display:flex;
+ align-items:center;
+ gap:9px;
+ width:100%;
+ min-width:0;
+ min-height:48px;
+ padding:9px 16px 9px 27px;
+ margin:0;
+ border:0;
+ border-radius:0;
+ background:transparent;
+ color:var(--color-text);
+ text-align:left;
+ cursor:pointer;
+ font:inherit;
+ box-shadow:none;
+}
+.assembly-workspace-page .recipe-instructions .recipe-disclosure-toggle::before{
+ content:"";
+ position:absolute;
+ width:6px;height:6px;
+ border-block-start:1.5px solid currentColor;
+ border-inline-end:1.5px solid currentColor;
+ left:11px;top:50%;
+ transform:translateY(-50%) rotate(45deg);
+}
+.assembly-workspace-page .recipe-instructions .recipe-disclosure-toggle{
+ position:relative;
+}
+.assembly-workspace-page .recipe-instructions .recipe-disclosure-toggle[aria-expanded="true"]::before{
+ transform:translateY(-50%) rotate(135deg);
+}
+.assembly-workspace-page .recipe-instructions .recipe-disclosure-toggle>h2{
+ flex:none;
+ min-height:0;
+ margin:0!important;
+ font-size:1.05rem;
+ line-height:1.3;
+ font-weight:650;
+}
+.assembly-workspace-page .recipe-instructions .recipe-disclosure-toggle>.workspace-record-count{
+ display:inline;
+ margin:0;
+ line-height:1.3;
+ color:var(--color-text-muted);
+ font-size:.78rem;
+ font-weight:400;
+}
+.assembly-workspace-page .recipe-instructions>.recipe-editor{
+ padding:12px 16px 16px;
+ border-top:1px solid var(--color-border);
+}
+.assembly-workspace-page .recipe-instructions>.recipe-editor[hidden]{
+ display:none!important;
+}
+.assembly-workspace-page .recipe-instructions .recipe-body-actions{
+ display:flex;
+ justify-content:flex-start;
+ align-items:center;
+ margin:0 0 10px;
+}
+.assembly-workspace-page .recipe-instructions .recipe-body-actions>.recipe-add-step{
+ display:inline-flex!important;
+ align-items:center;
+ width:auto;
+ min-height:31px!important;
+ margin:0!important;
+ padding:5px 10px!important;
+ border:1px solid var(--color-border)!important;
+ border-radius:8px;
+ background:var(--color-surface)!important;
+ color:var(--color-text)!important;
+ font-size:.8rem!important;
+ font-weight:550!important;
+ box-shadow:none!important;
+ text-decoration:none!important;
+}
+.assembly-workspace-page .recipe-instructions .recipe-body-actions>.recipe-add-step:hover{
+ border-color:var(--color-accent)!important;
+}
+.assembly-workspace-page .recipe-instructions .recipe-body-actions>.recipe-add-step[hidden]{display:none!important}
