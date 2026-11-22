@@ -54,3 +54,10 @@ test("Workshop product values and project requirements remain distinct in matchi
  const snapshot=await (await page.request.get("/api/workshop")).json();expect(snapshot.products[0].field_values["f-resistor-resistance"]).toBe(12000);expect(snapshot.uses[0].field_values["f-resistor-resistance"]).toBe(10000);
  await page.screenshot({path:testInfo.outputPath("workshop-project-values.png"),fullPage:true});
 });
+
+test("document information keeps project captions and technical fields without container controls",async({page})=>{
+ const {component}=await post(page,"/api/components?project=launcher",{name:"Board drawing",itemType:"document",description:"Assembly drawing",specifications:[{name:"Revision",value:"B"}],projectDetails:{featureTreeName:"Assembly view",notes:"Print before assembly"}});
+ const section=await openPart(page,component.id),reference=section.locator('[data-information="reference"]'),project=section.locator('[data-information="project"]');
+ await expect(reference).toContainText("Assembly drawing");await expect(reference).toContainText("Revision");await expect(project).toContainText("Assembly view");await expect(project).toContainText("Print before assembly");
+ await expect(project.getByRole("button",{name:"Edit purpose",exact:true})).toHaveCount(0);
+});

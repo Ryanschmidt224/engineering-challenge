@@ -32,10 +32,10 @@ export function renderPartInformation(target, {part, fields, ui, dialogs, suppli
     append(reference, "Family", part.familyName);
     append(reference, "Selected product", part.productId ? part.implementationName : "No product selected");
   }
-  const projectLabels = new Set(["Status", "Quantity", "Part number", "Value", "Hidden from feature tree"]);
+  const projectLabels = new Set(["Status", "Quantity", "Part number", "Value", "Hidden from feature tree", "Feature tree description"]);
   const rows = fields.detailRows(part);
   for (const [title, value] of rows) {
-    if (title === "Feature tree description" || functional && title === "Description") continue;
+    if (functional && ["Feature tree description", "Description"].includes(title)) continue;
     if (part.familyUse && title === "Part name") continue;
     append(projectLabels.has(title) ? project : reference, title, functional && title === "Part name" ? part.implementationName || value : value);
   }
@@ -59,12 +59,12 @@ export function renderPartInformation(target, {part, fields, ui, dialogs, suppli
     reference.body.append(ui.fieldRow("Part order website", link).root);
   }
   suppliers?.renderLinks(reference.body, part);
-  if (functional && !part.familyUse && editable) addFunctionalControls(project.body, {part, ui, onChange});
+  if (functional && !part.familyUse) addFunctionalControls(project.body, {part, ui, onChange, editable});
   if (part.familyUse) project.body.append(knowledge(part));
   target.append(reference.root, project.root);
 }
 
-function addFunctionalControls(target, {part, ui, onChange}) {
+function addFunctionalControls(target, {part, ui, onChange, editable}) {
   const feedback = make("p", "ui-information-feedback");
   feedback.setAttribute("role", "status");
   const run = async (button, action, data) => {
@@ -78,12 +78,13 @@ function addFunctionalControls(target, {part, ui, onChange}) {
   purposeInput.setAttribute("aria-label", "Purpose");
   form.append(ui.fieldRow("Purpose", purposeInput).root);
   const edit = ui.button("Edit purpose", () => { form.hidden = false; edit.hidden = true; purposeInput.focus(); }, {small: true});
+  edit.hidden = !editable;
   const save = ui.button("Save", () => void run(save, "requirements", {purpose: purposeInput.value}), {variant: "primary", small: true});
   const cancel = ui.button("Cancel", () => { form.hidden = true; edit.hidden = false; }, {small: true});
   ui.sectionActions(form, {primary: save, secondary: [cancel]});
   target.append(edit, form);
   const candidates = (part.implementations || []).filter(item => !item.retiredAt && item.partType === "purchased");
-  if (part.partType === "purchased") {
+  if (part.partType === "purchased" && (editable || candidates.length > 1)) {
     const alternatives = ui.section({title: "Alternative purchased parts", role: "part-alternatives"});
     alternatives.body.append(make("p", "ui-information-note", "Choose another purchased part for this container. Its name and history stay the same."));
     if (candidates.length > 1) {
@@ -92,7 +93,7 @@ function addFunctionalControls(target, {part, ui, onChange}) {
         const option = make("option", "", candidate.name + (candidate.model ? " · " + candidate.model : ""));
         option.value = candidate.id; select.append(option);
       }
-      select.value = part.selectedImplementationId || "";
+      select.value = part.selectedImplementationId || ""; select.disabled = !editable;
       select.onchange = () => void run(select, "select", {implementation: {id: select.value}});
       alternatives.body.append(ui.fieldRow("Use part", select).root);
     }
@@ -107,6 +108,7 @@ function addFunctionalControls(target, {part, ui, onChange}) {
       void run(commit, "add", {implementation: {name: name.value, partType: "purchased", model: model.value, manufacturer: manufacturer.value}});
     }, {variant: "primary", small: true});
     const add = ui.button("Add alternative part", () => { newForm.hidden = false; add.hidden = true; name.focus(); }, {small: true});
+    add.hidden = !editable;
     const back = ui.button("Cancel", () => { newForm.hidden = true; add.hidden = false; }, {small: true});
     ui.sectionActions(newForm, {primary: commit, secondary: [back]});
     alternatives.body.append(add, newForm); target.append(alternatives.root);
