@@ -1,6 +1,6 @@
 import {workshopDocumentation, workshopItemLookup, workshopLinkId, workshopSourcing} from "./workshop-linked-part.js";
 import {resolveFunctionalPart} from "./functional-part-model.js";
-import {workshopHostAllowed} from "./workshop-image-import.js";
+import {workshopHostAllowed} from "./reference-hosts.js";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();

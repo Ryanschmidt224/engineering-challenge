@@ -3,11 +3,11 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 
-test("one shared catalog component is loaded before all three main page controllers",()=>{
+test("Projects and Knowledge use the shared catalog; Workshop owns its separate page",()=>{
  const html=read("index.html");
  const catalog=html.indexOf("/assets/catalog-ui.js"),manager=html.indexOf("/assets/project-manager.js");
- const workshop=html.indexOf("/assets/personal-workshop.js"),site=html.indexOf("/assets/site.js");
- assert.ok(catalog>0&&catalog<manager&&catalog<workshop&&catalog<site);
+ const site=html.indexOf("/assets/site.js");
+ assert.ok(catalog>0&&catalog<manager&&catalog<site);
  const module=read("assets/catalog-ui.js");
  assert.match(module,/window\.BSCatalogUI=Object\.freeze\(\{build,categories\}\)/);
  assert.match(module,/aria-pressed/);
@@ -17,15 +17,15 @@ test("one shared catalog component is loaded before all three main page controll
 test("Projects use tag discovery while Knowledge, Workshop and Parts Management retain catalog sidebars",()=>{
  const projects=read("assets/project-manager.js");
  const knowledge=read("assets/site.js");
- const workshop=read("assets/personal-workshop.js");
+ const workshop=read("workshop.html");
  const parts=read("assets/parts-management.js");
  assert.doesNotMatch(projects,/BSCatalogUI\?\.build\(root,catalogSidebar/);
  assert.match(projects,/bs-project-tag-filter/);
  assert.match(projects,/activeTags/);
  assert.match(knowledge,/BSCatalogUI\?\.build\(knowledgeRoot,knowledgeNavMount/);
  assert.match(knowledge,/BSCatalogUI\?\.categories\(knowledgeNavMount/);
- assert.match(workshop,/BSCatalogUI\?\.build\(root,sidebar,allPanels/);
- assert.match(workshop,/BSCatalogUI\?\.categories\(sidebar/);
+ assert.match(workshop,/aria-label="Workshop categories"/);
+ assert.match(workshop,/aria-label="Families"/);
  assert.match(parts,/BSCatalogUI\?\.build\(target,sidebar/);
  assert.match(parts,/BSCatalogUI\?\.categories\(sidebar/);
  assert.match(parts,/value:"document",label:"Documents"/);

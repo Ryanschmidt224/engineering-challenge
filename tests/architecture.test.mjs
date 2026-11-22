@@ -25,11 +25,13 @@ test("Worker imports resolve to real files and have no duplicate API dispatch pa
 });
 
 test("Workshop and Knowledge Base data live outside the main page controllers",()=>{
- const workshop=source("assets/personal-workshop.js");
+ const workshop=source("assets/family-workshop.js");
  const site=source("assets/site.js");
  const html=source("index.html");
  assert.equal(workshop.includes('const styles=\x60'),false,"Workshop styles should not be injected by JavaScript");
- assert.ok(html.includes("/assets/workshop.css"),"Load dedicated Workshop stylesheet");
+ assert.ok(source("workshop.html").includes("assets/family-workshop.css"),"Load dedicated Workshop layout stylesheet");
+ assert.ok(source("workshop.html").includes("assets/components.css"));
+ for(const retired of ["personal-workshop.js","workshop-template-manager.js","workshop-product-builder.js"])assert.equal(html.includes(retired),false);
  assert.ok(html.indexOf("/assets/knowledge-seed.js")<html.indexOf("/assets/site.js"),"Knowledge seed must load before controller");
  assert.ok(site.includes("window.BSKnowledgeSeed"),"Site should consume Knowledge data module");
  assert.ok(existsSync(resolve(root,"functions/api/project-seed.js")),"Project defaults must be a separate module");

@@ -14,18 +14,13 @@
 <link rel="stylesheet" href="/assets/parts-management.css?v=parts-cost-20261119">
 
 <link rel="stylesheet" href="/assets/product-lookup.css?v=compact-ai-bottom-20261121">
-<link rel="stylesheet" href="/assets/workshop.css?v=category-rightclick-20261121">
 <link rel="stylesheet" href="/assets/dialog-system.css?v=examples-guide-20261121">
 <link rel="stylesheet" href="/assets/photo-viewer.css?v=fullscreen-20261115a">
 </head>
 <body>
 <header class="top"><div class="wrap topin"><a href="#home" class="brand" data-nav="home">BUILDING <span>SCHMIDT</span></a><nav aria-label="Main navigation"><button data-nav="home">Projects</button><button data-nav="learn">Knowledge Base</button><button data-nav="commonparts">The Workshop</button></nav><button class="btn" id="accountMenuButton" type="button">Sign in</button></div></header>
 <main>
-<section id="commonparts" class="view"><div class="wrap section resource-page"><div class="resource-heading"><span class="eyebrow">Engineering tools and materials</span><h1>The Workshop</h1><p class="muted">Browse tools, materials, previously purchased parts, and saved components.</p></div><section class="workshop-purchased hide" aria-label="Previously purchased components">
-<div class="row space"><div><h2>Purchased parts</h2><p class="muted">Your private, searchable history of parts you recorded as purchased. Availability is not assumed.</p></div></div>
-<input type="search" class="field workshop-purchased-search" placeholder="Search buck converters, manufacturers, part numbers…" aria-label="Search purchased parts">
-<div class="workshop-purchased-results" aria-live="polite"></div>
-<p class="workshop-purchased-status muted" role="status"></p></section><section class="workshop-essentials" aria-label="Expected workshop supplies"><div class="workshop-essentials-heading"><h2>Workshop library</h2><p class="muted">Open a category to find the items you need. Recommendations do not imply that you own them.</p></div><div id="workshop-essentials-list"></div></section><details class="workshop-saved-details"><summary>Saved and project-specific parts</summary><p class="muted">Optional: manage exact manufacturer parts and extra wire types when a project requires them.</p><div id="resource-commonparts" class="resource-grid"><article class="resource-card"><h2>Wire and cable</h2><p>Reusable wire types for projects and harnesses.</p></article><article class="resource-card"><h2>Screws / fasteners</h2><p>Common fastener specifications.</p></article><article class="resource-card"><h2>DC–DC buck converters</h2><p>Reusable step-down power converter references.</p></article></div><section class="resource-wire-manager"><div class="row space"><div><h2>Saved wire types</h2><p class="muted">Extra wire types for specific projects; the standard choices are already listed above.</p></div><button type="button" class="btn primary resource-wire-new">+ Wire type</button></div><div class="resource-wire-list"></div><form class="resource-wire-form hide"><h3 class="resource-wire-form-title">New wire type</h3><div class="resource-wire-fields"></div><div class="row"><button class="btn primary" type="submit">Save wire type</button><button class="btn resource-wire-cancel" type="button">Cancel</button></div></form><p class="resource-wire-status" role="status"></p></section><section class="resource-common-manager"><div class="row space"><div><h2>Saved components</h2><p class="muted">Save exact screw and power-module specifications for use across projects.</p></div><button type="button" class="btn primary resource-common-new">+ Part</button></div><div class="resource-common-list"></div><form class="resource-common-form hide"><h3 class="resource-common-form-title">New saved part</h3><div class="resource-common-fields"></div><div class="row"><button class="btn primary" type="submit">Save common part</button><button class="btn resource-common-cancel" type="button">Cancel</button></div></form><p class="resource-common-status" role="status"></p></section></details></div></section>
+<section id="commonparts" class="view"><a href="workshop.html">Open the Workshop</a></section>
 <section id="home" class="view active"><div class="wrap section project-index">
 <div class="project-directory-heading"><h1 class="index-title">Projects</h1></div>
 <p class="project-catalog-loading muted" role="status">Loading projects…</p>
@@ -91,11 +86,7 @@
 <script src="/assets/project-review.js?v=revision-checks-1"></script>
 <script src="/assets/catalog-ui.js?v=chevrons-20261121"></script>
 <script src="/assets/project-manager.js?v=project-quantities-20261118"></script>
-<script src="/assets/workshop-model.js?v=electrical-categories-20261121"></script>
 <script src="/assets/product-lookup.js?v=compact-ai-bottom-20261121"></script>
-<script src="/assets/workshop-product-builder.js?v=catalog-template-builder-20261121b"></script>
-<script src="/assets/workshop-template-manager.js?v=category-rightclick-20261121"></script>
-<script src="/assets/personal-workshop.js?v=category-rightclick-20261121"></script>
 <script src="/assets/knowledge-seed.js?v=structural-cleanup-20261114a"></script>
 <script src="/assets/site.js?v=mfg-part-number-label-20261119"></script>
 </body></html>

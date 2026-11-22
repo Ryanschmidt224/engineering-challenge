@@ -8,3 +8,8 @@ PHOTO_SETUP.md
 node_modules/**
 tests/**
 package.json
+package-lock.json
+scripts/**
+docs/**
+STATUS.md
+ARCHITECTURE.md

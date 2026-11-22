@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">
+ <title>The Workshop · BuildingSchmidt</title>
+ <link rel="stylesheet" href="assets/theme.css"><link rel="stylesheet" href="assets/components.css"><link rel="stylesheet" href="assets/family-workshop.css">
+ <script type="module" src="assets/family-workshop.js"></script>
+</head>
+<body class="workshop-app">
+ <header class="app-header"><a class="brand" href="index.html#home">BUILDING SCHMIDT</a><nav aria-label="Main navigation"><a href="index.html#home">Projects</a><a href="workshop.html" aria-current="page">The Workshop</a></nav></header>
+ <div class="workshop-heading"><div><p class="eyebrow">Private reference catalog</p><h1>The Workshop</h1><p class="muted">Start with a kind of part. Choose a specific product when you need one.</p></div><div class="actions"><a id="return-project" hidden>Back to project</a><button id="export-workshop" class="button">Export Workshop</button></div></div>
+ <div class="workshop-layout">
+  <aside class="category-panel" aria-label="Workshop categories"><div class="section-header"><h2>Categories</h2><button id="category-actions" class="button button--quiet">Category actions</button></div><div id="category-tree"></div></aside>
+  <section class="family-panel" aria-label="Families"><label class="search-label" for="catalog-search">Search families & products</label><input id="catalog-search" class="field" type="search" placeholder="Name, manufacturer, MPN or specification"><div class="actions catalog-actions"><button id="add-family" class="button button--primary">Add family</button><label class="checkbox"><input id="show-archived" type="checkbox"> Show archived</label></div><div id="family-list"></div></section>
+  <main id="workshop-detail" class="detail-panel"><div class="empty">Loading your Workshop…</div></main>
+ </div>
+ <div id="workshop-status" class="status" role="status" aria-live="polite"></div>
+ <dialog id="workshop-dialog" class="dialog"></dialog>
+ <div id="category-menu" class="context-menu" role="menu" hidden></div>
+</body>
+</html>

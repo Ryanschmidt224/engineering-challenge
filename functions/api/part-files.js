@@ -1,3 +1,4 @@
+import {getFamilyProjectPart} from "./workshop-db.js";
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
 const EXTENSIONS=new Set(["x_t","x_b","stl","step","stp","iges","igs","sldprt","sldasm","dxf","dwg","zip","pdf","3mf","obj","csv","txt"]);
@@ -14,7 +15,7 @@ export async function handlePartFiles(request,env){
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  const component=await env.PHOTOS.get("components/"+project+".json");
  const parts=component?JSON.parse(await component.text()):[];
- const part=parts.find(p=>p.id===partId);
+ const part=parts.find(p=>p.id===partId)||await getFamilyProjectPart(env,project,partId);
  if(!part)return json({error:"Part not found"},404);
  const requested=u.searchParams.get("implementation");
  if(requested!==null&&!implementationId(requested))return json({error:"Invalid implementation"},400);

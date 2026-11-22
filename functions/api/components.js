@@ -4,6 +4,7 @@ import {issueNumber} from "./numbering.js";
 import {getPartPhoto,linkedWorkshopItem,partPhotoKey,workshopItemLookup,workshopLinkId,workshopDocumentation,workshopPartDetails,workshopSourcing} from "./workshop-linked-part.js";
 import {annotationKey,renditionKey} from "./photo-annotations.js";
 import {resolveFunctionalPart,encodeFunctionalPart,changeImplementation} from "./functional-part-model.js";
+import {projectFamilyParts,getFamilyProjectPart,changeFamilyProjectPart} from "./workshop-db.js";
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const authorized=async(request,env)=>{const u=new URL(request.url),project=u.searchParams.get("project");return project?canEditProject(request,env,project):isAdmin(request,env)};
 const key=project=>"components/"+project+".json";
@@ -249,9 +250,11 @@ export async function handleComponents(request,env){
    }
    return presentPart(part);
   }));
-  return json({components});
+  return json({components:[...components,...await projectFamilyParts(env,project)]});
  }
  if(!await authorized(request,env))return json({error:"Administrator token required"},401);
+ const familyPartId=url.searchParams.get("id");
+ if(familyPartId&&await getFamilyProjectPart(env,project,familyPartId))return changeFamilyProjectPart(request,env,project,familyPartId,await request.json().catch(()=>({})));
  if(request.method==="POST"){
   const input=await request.json().catch(()=>null);
   if(!input||typeof input.name!=="string"||!input.name.trim()||input.name.length>180||!Array.isArray(input.specifications)||input.specifications.length>35)return json({error:"Invalid component"},400);
@@ -504,6 +507,11 @@ export async function handleComponentPhoto(request,env){
  if(!env.PHOTOS)return json({error:"Photo storage unavailable"},503);
  if(!["GET","POST","DELETE"].includes(request.method))return json({error:"Method not allowed"},405);
  if(request.method!=="GET"&&!await authorized(request,env))return json({error:"Admin login required"},401);
+ const familyPart=await getFamilyProjectPart(env,project,id);
+ if(familyPart){
+  if(request.method!=="GET")return json({error:"Add or edit photos on this project use in Workshop."},409);
+  return familyPart.photoUrl?new Response(null,{status:302,headers:{location:familyPart.photoUrl,"cache-control":"private, no-store"}}):new Response("Not found",{status:404});
+ }
  const state=await readEditable(env,project),part=state.items.find(record=>record.id===id);
  if(!part)return json({error:"Part not found"},404);
  const photoKey=partPhotoKey(project,part);

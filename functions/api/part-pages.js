@@ -1,3 +1,4 @@
+import {getFamilyProjectPart} from "./workshop-db.js";
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
@@ -10,7 +11,7 @@ export async function handlePartPages(request,env){
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  const item=await env.PHOTOS.get("components/"+project+".json");
  const parts=item?JSON.parse(await item.text()):[];
- const part=parts.find(p=>p.id===partId);
+ const part=parts.find(p=>p.id===partId)||await getFamilyProjectPart(env,project,partId);
  if(!part)return json({error:"Part not found"},404);
  const requested=u.searchParams.get("implementation");
  if(requested!==null&&!/^(?:implementation-)?[a-f0-9-]{36}$/i.test(requested))

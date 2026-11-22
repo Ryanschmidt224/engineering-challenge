@@ -1,0 +1,58 @@
+/* Workshop layout only; controls and field rows belong to components.css. */
+.app-header { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-6); padding: var(--space-4) var(--space-6); background: var(--color-selected); border-bottom: 1px solid var(--color-border-strong); }
+.brand { font-weight: 750; letter-spacing: .04em; text-decoration: none; color: var(--color-text); }
+.app-header nav { display: flex; gap: var(--space-5); }
+.app-header nav a { padding: var(--space-2) 0; }
+.app-header [aria-current=page] { font-weight: 600; text-decoration-thickness: 2px; }
+.workshop-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); padding: var(--space-6); }
+.workshop-heading h1 { margin-bottom: var(--space-2); }
+.workshop-heading p { margin-bottom: 0; }
+/* Three task panes need their own minimum widths, rather than another control-size token. */
+.workshop-layout { display: grid; grid-template-columns: minmax(12rem, 17rem) minmax(13rem, 19rem) minmax(0, 1fr); gap: var(--space-5); padding: 0 var(--space-6) var(--space-6); max-width: 110rem; margin: auto; }
+.category-panel, .family-panel, .detail-panel { min-width: 0; }
+.category-panel > .section-header h2 { font-size: var(--text-body); }
+.category-panel > .section-header { gap: 0; }
+.category-panel > .section-header .button { padding-inline: var(--space-2); }
+.category-children { margin-left: var(--space-3); border-left: 1px solid var(--color-border); padding-left: var(--space-2); }
+.category-node { margin: var(--space-1) 0; }
+.category-node > summary { min-height: var(--control-height); display: flex; align-items: center; }
+.category-node > summary::before { content: '▸'; margin-right: var(--space-1); color: var(--color-text-muted); }
+.category-node[open] > summary::before { content: '▾'; }
+.category-button { width: 100%; justify-content: start; text-align: left; border: 0; padding: var(--space-2); background: transparent; border-radius: var(--radius-medium); color: var(--color-text); min-height: var(--control-height); }
+.category-button:hover { background: var(--color-hover); }
+.category-button.is-selected { background: var(--color-selected); font-weight: 600; }
+.search-label { display: block; font-size: var(--text-small); margin-bottom: var(--space-2); }
+.catalog-actions { margin: var(--space-3) 0; justify-content: space-between; }
+.family-card { width: 100%; display: block; padding: var(--space-3); text-align: left; border: 1px solid transparent; border-bottom-color: var(--color-border); border-radius: var(--radius-medium); background: transparent; color: var(--color-text); }
+.family-card:hover { background: var(--color-hover); }
+.family-card.is-selected { background: var(--color-selected); border-color: var(--color-border-strong); }
+.family-card strong, .family-card small { display: block; }
+.family-card small { color: var(--color-text-muted); font-size: var(--text-small); margin-top: var(--space-1); }
+#family-list { max-height: 70vh; overflow-y: auto; }
+.detail-heading { margin-bottom: var(--space-5); }
+.detail-heading h2 { font-size: var(--text-page); margin-bottom: var(--space-2); }
+.detail-heading .actions { margin-top: var(--space-3); }
+.field-definition { padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-medium); margin: var(--space-4) 0; min-width: 0; }
+.field-definition legend { font-weight: 600; padding: 0 var(--space-2); }
+.field-definition .actions { justify-content: flex-start; }
+.product-list { display: grid; gap: var(--space-2); }
+.product-list .button { justify-content: start; text-align: left; }
+.specification-note { display: block; margin-top: var(--space-1); font-size: var(--text-small); color: var(--color-info); }
+.draft-banner { border-left-color: var(--color-warning); }
+.supplier-reference { border: 1px solid var(--color-border); border-radius: var(--radius-medium); padding: var(--space-3); margin: var(--space-3) 0; min-width: 0; }
+.notes { white-space: pre-wrap; }
+.table-scroll { overflow-x: auto; }
+@media (max-width: 1024px) {
+ .workshop-layout { grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr); }
+ .category-panel { grid-column: 1 / -1; }
+ #category-tree { display: grid; grid-template-columns: repeat(auto-fit,minmax(12rem,1fr)); gap: var(--space-2); }
+}
+@media (max-width: 640px) {
+ .app-header { padding: var(--space-4); gap: var(--space-4); }
+ .workshop-heading { padding: var(--space-5) var(--space-4); }
+ .workshop-layout { display: block; padding: 0 var(--space-4) var(--space-5); }
+ .category-panel, .family-panel { margin-bottom: var(--space-5); }
+ #category-tree { display: block; }
+ .family-panel { border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-5); }
+ #family-list { max-height: 18rem; }
+}

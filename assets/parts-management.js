@@ -173,7 +173,7 @@
     input.addEventListener("blur",()=>{if(input.value.trim()!==part.name)void change(part,"name",input.value.trim(),input);else input.value=part.name});
     nameCell.append(input);tr.append(nameCell);
     const descriptionCell=el("td"),description=el("input","field");
-    description.value=fields.treeDescriptionFor(part);description.maxLength=120;description.disabled=readOnly;
+    description.value=fields.treeDescriptionFor(part);description.maxLength=120;description.disabled=readOnly||part.familyUse;
     description.title=description.value;description.placeholder="Feature tree description";
     description.setAttribute("aria-label","Feature tree description for "+part.name);
     description.addEventListener("keydown",event=>{
@@ -193,7 +193,7 @@
      if(isValue)field.maxLength=120;
      else{field.step="any";field.min="0.000001";field.max="10000000"}
      field.placeholder=isValue?"e.g. 10 kΩ":"Not set";
-     field.disabled=readOnly||fields.itemTypeFor(part)!=="part";
+     field.disabled=readOnly||fields.itemTypeFor(part)!=="part"||isValue&&part.familyUse;
      field.setAttribute("aria-label",(isValue?"Value":"Quantity")+" for "+part.name);
      field.addEventListener("keydown",event=>{
       if(event.key==="Enter"){event.preventDefault();field.blur()}
@@ -208,7 +208,7 @@
      });
      cell.append(field);tr.append(cell);
     }
-    const typeCell=el("td"),type=dropdown(typeValues,partTypeFor(part),readOnly);
+    const typeCell=el("td"),type=dropdown(typeValues,partTypeFor(part),readOnly||part.familyUse);
     type.setAttribute("aria-label","Part type for "+part.name);
     type.onchange=()=>void change(part,"partType",type.value,type);typeCell.append(type);tr.append(typeCell);
     const stateCell=el("td"),stateKey=fields.statusField(part),state=dropdown(fields.statusesFor(part),statusFor(part),readOnly);
