@@ -122,7 +122,7 @@ for (const width of [1440, 390]) test("shared section gaps across summary, assem
   await gaps(page.locator("#launcher .project-summary-page"), ["summary-photos", "summary-description", "summary-cost"]);
   await page.screenshot({path: testInfo.outputPath("summary-spacing.png"), fullPage: true});
   await page.goto("/#launcher/workspace/__root__");
-  await gaps(page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)"), ["work-instructions", "helpful-tools", "history", "notes"]);
+  await gaps(page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)"), ["work-instructions", "helpful-tools", "archived-items", "history", "notes"]);
   await page.screenshot({path: testInfo.outputPath("assembly-spacing.png"), fullPage: true});
   const response = await page.request.post("/api/workshop", {headers: {origin: "http://127.0.0.1:4173"}, data: {entity: "use", expectedRevision: null, expectedFamilyRevision: 1, record: {id: crypto.randomUUID(), project_id: "launcher", family_id: "f-resistor", product_id: null, tree_node_id: null, purpose: "Spacing fixture", quantity: 1, unit: "pcs", field_values: {}, notes: ""}}});
   expect(response.ok(), await response.text()).toBe(true);
