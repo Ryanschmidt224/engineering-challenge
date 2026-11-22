@@ -21,6 +21,12 @@
  const photoExt=/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i;
  const fileUrl=id=>"/api/recipe-files?id="+encodeURIComponent(id);
  const recordDate=record=>record.date||[...(record.entries||[])].reverse().find(entry=>entry.date)?.date||record.createdAt?.slice(0,10)||"";
+ const formatTimestamp=savedAt=>{
+  const parsed=new Date(savedAt.length===10?savedAt+"T12:00:00":savedAt);
+  return Number.isNaN(parsed.getTime())?savedAt:parsed.toLocaleString(undefined,{
+   year:"numeric",month:"short",day:"numeric",hour:savedAt.length===10?undefined:"numeric",minute:savedAt.length===10?undefined:"2-digit"
+  });
+ };
  function dateLabelFor(record){
   const value=recordDate(record);
   const label=make("time","investigation-record-date",value);
@@ -613,12 +619,8 @@
       const savedAt=historical?record.archivedAt||record.partSnapshot?.archivedAt:
        record.createdAt||record.date;
       if(savedAt){
-       const parsed=new Date(savedAt.length===10?savedAt+"T12:00:00":savedAt);
-       const stamp=Number.isNaN(parsed.getTime())?savedAt:
-        parsed.toLocaleString(undefined,{year:"numeric",month:"short",day:"numeric",
-         hour:savedAt.length===10?undefined:"numeric",minute:savedAt.length===10?undefined:"2-digit"});
        const timestamp=make("time","investigation-record-date investigation-record-footer-date",
-        (historical?"Archived ":"Created ")+stamp);
+        (historical?"Archived ":"Created ")+formatTimestamp(savedAt));
        timestamp.dateTime=savedAt;body.append(timestamp);
       }
      }
@@ -894,7 +896,7 @@
      if(entry.archiveNote?.trim())container.append(make("p","","Archive reason: "+entry.archiveNote));
      attach(entry,container,null,false);
      const timestamp=entry.archivedAt||entry.createdAt||entry.date;
-     if(timestamp){const label=make("time","investigation-record-date",(isArchived(entry)?"Archived ":"Created ")+timestamp);label.dateTime=timestamp;container.append(label);}
+     if(timestamp){const label=make("time","investigation-record-date",(isArchived(entry)?"Archived ":"Created ")+formatTimestamp(timestamp));label.dateTime=timestamp;container.append(label);}
     };
     appendRecord(record,body);
     for(const child of saved.filter(entry=>entry.parentRecordId===record.id)){

@@ -225,9 +225,11 @@ textarea.field {
 }
 .app-header nav {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-5);
 }
 .app-header nav a {
+  white-space: nowrap;
   padding: var(--space-2) 0;
 }
 .app-header [aria-current="page"] {

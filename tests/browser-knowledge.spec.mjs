@@ -25,11 +25,25 @@ async function expectStackedCard(card) {
   for (let i = 1; i < layout.children.length; i++) expect(layout.children[i].y).toBeGreaterThanOrEqual(layout.children[i - 1].bottom);
 }
 
+async function expectHeaderLabels(page) {
+  const links = page.locator(".app-header nav a");
+  const layout = await links.evaluateAll(elements => elements.map(element => {
+    const box = element.getBoundingClientRect();
+    return {whiteSpace: getComputedStyle(element).whiteSpace, left: box.left, right: box.right, viewport: document.documentElement.clientWidth};
+  }));
+  for (const link of layout) {
+    expect(link.whiteSpace).toBe("nowrap");
+    expect(link.left).toBeGreaterThanOrEqual(0);
+    expect(link.right).toBeLessThanOrEqual(link.viewport);
+  }
+}
+
 for (const width of [1440, 390]) test("selectable Knowledge and Workshop cards stack at " + width + "px", async ({page}, testInfo) => {
   await page.setViewportSize({width, height: 900});
   await createTileFromFamily(page, "A long engineering lesson title that needs the full list width");
   const card = page.locator("#tile-list > button").first();
   await expectStackedCard(card);
+  await expectHeaderLabels(page);
   await page.keyboard.press("Tab");
   await card.focus();
   await expect(card).toBeFocused();
@@ -40,6 +54,7 @@ for (const width of [1440, 390]) test("selectable Knowledge and Workshop cards s
   await page.goto("/workshop.html?family=f-buck-converter");
   const family = page.locator("#family-list > button.is-selected");
   await expectStackedCard(family);
+  await expectHeaderLabels(page);
   await family.focus();
   await expect(family).toBeFocused();
   await family.press("Enter");
