@@ -331,7 +331,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
 
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
  await expect(workspace).toBeVisible();
- await workspace.locator(".recipe-disclosure-toggle").click();
+ await workspace.locator('[data-section="work-instructions"]>.ui-section__header').click();
  const browser=workspace.locator(".recipe-step-browser");
  const divider=browser.locator(".recipe-step-resizer");
  await expect(divider).toBeVisible();
@@ -377,7 +377,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(partPhotoActions.getByRole("button",{name:"Add"})).toBeVisible();
  await partPencil.click();
  await expect(partPhotoActions).toBeHidden();
- await partPage.locator(".part-details-collapse > summary").click();
+ await partPage.locator('[data-section="part-details"]>.ui-section__header').click();
  await expect(partPage.getByRole("button",{name:"Edit part details",exact:true})).toBeVisible();
  await partPage.getByRole("button",{name:"Edit part details",exact:true}).click();
  await expect(workspace).toHaveClass(/is-editing-bom-part/);
@@ -461,15 +461,15 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await sidebar.locator(".assembly-name",{hasText:"Motor and Motor Control"}).click();
  await expect(workspace).toBeVisible();
  // Linked resources show one action until a user creates a reference.
- const toolsDisclosure=workspace.locator(".workspace-resource-disclosure");
+ const toolsDisclosure=workspace.locator('[data-section="helpful-tools"]');
  const resources=workspace.locator(".workspace-resources");
  await expect(resources.locator(".linked-resource-group")).toHaveCount(0);
  await expect(toolsDisclosure.locator(".workspace-tool-controls .linked-resource-add")).toBeHidden();
- await toolsDisclosure.locator("summary").click();
- await expect(workspace.locator(".workspace-archive-history > summary")).toContainText("Archives and Revision History");
- await expect(workspace.locator(".workspace-archive-history")).not.toHaveAttribute("open","");
- await workspace.locator(".workspace-archive-history > summary").click();
- await expect(workspace.locator(".workspace-archive-history")).toHaveAttribute("open","");
+ await toolsDisclosure.locator(":scope>.ui-section__header").click();
+ await expect(workspace.locator('[data-section="history"]>.ui-section__header')).toContainText("Archives and Revision History");
+ await expect(workspace.locator('[data-section="history"]')).not.toHaveAttribute("open","");
+ await workspace.locator('[data-section="history"]>.ui-section__header').click();
+ await expect(workspace.locator('[data-section="history"]')).toHaveAttribute("open","");
  await expect(workspace.locator(".workspace-archive-history > .investigations-panel")).toBeVisible();
  await expect(toolsDisclosure.locator(".workspace-tool-controls .linked-resource-add")).toBeVisible();
  await toolsDisclosure.locator(".workspace-tool-controls .linked-resource-add").click();
@@ -503,7 +503,7 @@ test("Work Instructions keep stable containers while typed entries own their con
   window.testRecipe.setData({recipe:[{id:"step-measure",title:"Measure voltage",tileOrder:["record:measurement"]}]});
  });
  const card=page.locator(".recipe-current-fixture");
- await card.locator(".recipe-disclosure-toggle").click();
+ await card.locator(':scope>.ui-section__header').click();
  await expect(card.getByText("Voltage measurement",{exact:true})).toBeVisible();
  await card.getByRole("button",{name:"Expand all entries"}).click();
  await expect(card.locator("details.investigation-card")).toHaveAttribute("open","");
@@ -532,7 +532,7 @@ test("failed Work Instruction saves preserve the edited title and allow retry",a
   window.testRecipe.setData({recipe:[{id:"step-inspect",title:"Inspect"}]});
  });
  const card=page.locator(".recipe-save-fixture");
- await card.locator(".recipe-disclosure-toggle").click();
+ await card.locator(':scope>.ui-section__header').click();
  await card.getByRole("button",{name:"Edit",exact:true}).click();
  await card.getByPlaceholder("Work Instruction name").fill("Inspect voltage");
  await card.getByRole("button",{name:"Save",exact:true}).click();
@@ -620,7 +620,7 @@ test("saving a part closes the moved editor and restores part workspace",async({
  await page.locator("#launcher .assembly-tree-nodes .assembly-name",{hasText:"Linked Motor"}).click();
  const partWorkspace=page.locator("#launcher .bom-part-workspace");
  await expect(partWorkspace).toBeVisible();
- await partWorkspace.locator(".part-details-collapse > summary").click();
+ await partWorkspace.locator('[data-section="part-details"]>.ui-section__header').click();
  await partWorkspace.getByRole("button",{name:"Edit part details",exact:true}).click();
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
  const editor=workspace.locator(".workspace-main-bom-editor");
@@ -872,10 +872,10 @@ test("project navigation orders summary below tree and page notes can be created
  expect(tree).toBeGreaterThanOrEqual(0);expect(summary).toBe(tree+1);
  await expect(sidebar.locator(".assembly-summary-sidebar-card button")).toHaveText(["Project summary","Parts Management","Project Settings"]);
  await expect(sidebar.locator(".assembly-project-settings-entry")).toBeHidden();
- const panel=page.locator("#launcher .project-summary-page .bs-unstructured-notes");
+ const panel=page.locator('#launcher .project-summary-page [data-section="notes"]');
  await expect(panel).toBeVisible();
  await expect(panel.getByRole("button",{name:"+ Add entry"})).toBeHidden();
- await panel.locator("summary.bs-unstructured-notes-heading").click();
+ await panel.locator(".ui-section__header").click();
  await panel.getByRole("button",{name:"+ Add entry"}).click();
  await panel.getByPlaceholder("Enter a note title").fill("Loose thoughts");
  await panel.getByPlaceholder("Write anything useful here…").fill("Test mounting orientation");
@@ -891,7 +891,7 @@ test("project navigation orders summary below tree and page notes can be created
  expect(saves[0].scope).toBe("summary");
  expect(saves[0].notes[0].photos).toHaveLength(1);
  await sidebar.locator(".assembly-tree-nodes .assembly-name").first().click();
- await expect(page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace) .bs-unstructured-notes")).toBeVisible();
+ await expect(page.locator('#launcher .assembly-workspace-page:not(.bom-part-workspace) [data-section="notes"]')).toBeVisible();
  expect(seen).toContain("summary:root");expect(seen.some(x=>x.startsWith("workspace:"))).toBe(true);
 });
 

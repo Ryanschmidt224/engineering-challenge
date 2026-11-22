@@ -17,7 +17,8 @@ async function fixtures(page,originalCSS){
  if(originalCSS)await page.route(/\/assets\/[a-z-]+\.css(?:\?.*)?$/,async route=>{
   const path=new URL(route.request().url()).pathname.slice(1);
   if(!/^assets\/[a-z-]+\.css$/.test(path))throw Error("Unexpected stylesheet path");
-  if(!baselineStyles.has(path))baselineStyles.set(path,execFileSync("git",["show",baseline+":"+path],{encoding:"utf8"}));
+  // Files added after the baseline (the shared UI kit) did not exist then.
+  if(!baselineStyles.has(path)){let css="";try{css=execFileSync("git",["show",baseline+":"+path],{encoding:"utf8",stdio:["ignore","pipe","ignore"]});}catch{}baselineStyles.set(path,css);}
   intercepted.add(path);await route.fulfill({contentType:"text/css",body:baselineStyles.get(path)});
  });
  await page.route("**/api/**",async route=>{
@@ -52,14 +53,14 @@ async function openWorkspace(page,project,kind){
  // focus/summary navigation otherwise races the site's smooth scroll animation.
  await page.addStyleTag({content:"html { scroll-behavior: auto !important; }"});
  const workspace=page.locator("#"+project+" .assembly-workspace-page"+(kind==="part"?".bom-part-workspace":":not(.bom-part-workspace)"));
- await expect(workspace).toBeVisible();await expect(workspace.locator(".recipe-disclosure-toggle")).toContainText("1 record");
- await expect(workspace.locator(".bs-unstructured-notes-heading")).toContainText("0 records");
+ await expect(workspace).toBeVisible();await expect(workspace.locator('[data-section="work-instructions"]>.ui-section__header')).toContainText("1 record");
+ await expect(workspace.locator('[data-section="notes"]>.ui-section__header')).toContainText("0 records");
  await page.waitForLoadState("networkidle");return workspace;
 }
+// Every standard section shares one header element (docs/UI_STANDARDS.md).
 async function expand(workspace){
- await workspace.locator(".recipe-disclosure-toggle").press("Enter");
- for(const selector of [".part-details-collapse>summary",".workspace-resource-disclosure>summary",".workspace-archive-history>summary",".bs-unstructured-notes-heading"]){
-  const summary=workspace.locator(selector);if(await summary.count())await summary.press("Enter");
+ for(const role of ["work-instructions","part-details","helpful-tools","history","notes"]){
+  const header=workspace.locator('[data-section="'+role+'"]>.ui-section__header');if(await header.count())await header.press("Enter");
  }
 }
 for(const width of [1440,390])for(const project of projects)for(const kind of ["part","assembly"]){
@@ -84,8 +85,8 @@ for(const width of [1440,390])for(const project of projects)for(const kind of ["
      await writeFile(testInfo.outputPath((index?"candidate-":"baseline-")+state+".png"),image);
     }
     // The owner approves standard sizes over exact preservation of legacy pixels.
-    const metrics=await workspaces[1].locator(".recipe-disclosure-toggle,.workspace-resource-disclosure>summary,.workspace-archive-history>summary,.bs-unstructured-notes-heading,.part-details-collapse>summary").evaluateAll(elements=>elements.filter(element=>element.getClientRects().length).map(element=>{
-     const heading=element.querySelector("h2,h4"),count=element.querySelector(".workspace-record-count"),box=element.getBoundingClientRect();
+    const metrics=await workspaces[1].locator(".ui-section>.ui-section__header").evaluateAll(elements=>elements.filter(element=>element.getClientRects().length).map(element=>{
+     const heading=element.querySelector(".ui-section__title"),count=element.querySelector(".ui-section__count:not(:empty)"),box=element.getBoundingClientRect();
      // Hidden, absolutely positioned tooltips may enlarge scrollHeight without
      // clipping the actual title. Check the visible text boxes themselves.
      const clipped=[heading,count].filter(Boolean).some(text=>{const r=text.getBoundingClientRect();return text.scrollHeight>text.clientHeight+1||text.scrollWidth>text.clientWidth+1||r.top<box.top-1||r.bottom>box.bottom+1||r.left<box.left-1||r.right>box.right+1;});
@@ -100,11 +101,11 @@ for(const width of [1440,390])for(const project of projects)for(const kind of ["
      const bounds=await tip.boundingBox();
      expect(bounds.x).toBeGreaterThanOrEqual(0);expect(bounds.x+bounds.width).toBeLessThanOrEqual(width);
      // A text-only help surface must not swallow the next section's click.
-     const archive=workspaces[1].locator(".workspace-archive-history");
+     const archive=workspaces[1].locator('[data-section="history"]');
      const wasOpen=await archive.getAttribute("open");
-     await archive.locator("summary").click();
+     await archive.locator(".ui-section__header").click();
      expect(await archive.getAttribute("open")).not.toBe(wasOpen);
-     await archive.locator("summary").click();
+     await archive.locator(".ui-section__header").click();
      await help.focus();await help.press("Escape");await expect(tip).toBeHidden();
     }
     const issues=[];

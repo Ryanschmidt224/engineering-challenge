@@ -1,29 +1,3 @@
-/* Sequential workspace and part controls; loaded after site.css to preserve cascade. */
-
-/* Read-only part information, with editing available as a secondary action. */
-.bom-part-workspace .part-details-view {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  background: color-mix(in srgb, var(--color-surface-muted) 22%, transparent);
-  margin: 18px 0 12px;
-  overflow: hidden;
-}
-.bom-part-workspace .part-details-view.hide {
-  display: none;
-}
-.bom-part-workspace .part-details-view-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  background: color-mix(in srgb, var(--color-selected) 32%, transparent);
-  border-bottom: 1px solid var(--color-border);
-  padding: var(--space-3) var(--space-4);
-}
-.bom-part-workspace .part-details-view-heading h2 {
-  margin: 0;
-  font-size: var(--text-body);
-}
 .bom-part-workspace .part-details-view-mode {
   font-size: var(--text-small);
   color: var(--color-text-muted);
@@ -66,9 +40,6 @@
   display: none;
 }
 @media (max-width: 650px) {
-  .bom-part-workspace .part-details-view-heading {
-    padding: var(--space-3) var(--space-3);
-  }
   .bom-part-workspace .part-details-view-rows {
     padding: 0 12px;
   }
@@ -81,7 +52,6 @@
 /* Keep the header, part details, action buttons, instructions and drawings
    on a shared column instead of mixing full-width and 900px sections. */
 .bom-part-workspace > .workspace-heading,
-.bom-part-workspace > .part-details-view,
 .bom-part-workspace > .workspace-panels {
   width: 100%;
   max-width: 1100px;
@@ -419,16 +389,14 @@
   font-size: var(--text-small);
   margin: 8px 0;
 }
-.instruction-log,
-.instruction-history {
+.instruction-log {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
   padding: 11px 14px;
   margin-top: 12px;
   min-width: 0;
 }
-.instruction-log summary,
-.instruction-history summary {
+.instruction-log summary {
   font-weight: var(--font-semibold);
   cursor: pointer;
 }
@@ -1282,21 +1250,6 @@
   flex: 1 1 240px;
 }
 
-/* Part detail disclosure and engineering attachments */
-.bom-part-workspace .part-details-collapse > summary {
-  cursor: pointer;
-  list-style: none;
-}
-.bom-part-workspace .part-details-collapse > summary::-webkit-details-marker {
-  display: none;
-}
-.bom-part-workspace .part-details-collapse > summary:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: -2px;
-}
-.bom-part-workspace .part-details-collapse:not([open]) > summary {
-  border-bottom: 0;
-}
 .bom-part-workspace .part-details-toggle-label {
   font-size: var(--text-small);
   font-weight: var(--font-semibold);
@@ -1823,11 +1776,7 @@
     max-width: none;
     width: 100%;
   }
-  .assembly-workspace-page:not(.bom-part-workspace)
-    .workspace-panels
-    > article {
-    margin-bottom: 20px;
-  }
+
   .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels h2 {
     margin-top: 0;
   }
@@ -2141,24 +2090,6 @@
 :is(#launcher, .personal-project-view)
   .assembly-workspace-page:not(.bom-part-workspace)
   .workspace-panels
-  > article {
-  margin: 0 0 32px;
-  padding: 0 0 3px;
-  background: transparent;
-}
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-panels
-  > article
-  h2 {
-  color: var(--color-text);
-
-  font-weight: var(--font-semibold);
-  margin: 0 0 13px;
-}
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-panels
   > article
   p,
 :is(#launcher, .personal-project-view)
@@ -2239,20 +2170,7 @@
   .workspace-heading {
   margin-bottom: 30px;
 }
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-panels
-  > article {
-  margin-bottom: 52px;
-  padding-bottom: 0;
-}
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-panels
-  > article
-  h2 {
-  margin-bottom: 18px;
-}
+
 :is(#launcher, .personal-project-view)
   .assembly-workspace-page:not(.bom-part-workspace)
   .workspace-panels
@@ -2272,12 +2190,6 @@
     > .workspace-bom {
     margin-top: 24px;
     padding-top: 18px;
-  }
-  :is(#launcher, .personal-project-view)
-    .assembly-workspace-page:not(.bom-part-workspace)
-    .workspace-panels
-    > article {
-    margin-bottom: 36px;
   }
 }
 
@@ -2365,26 +2277,7 @@
   display: block;
   max-width: none;
 }
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-panels
-  > article {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  padding: 20px 22px 22px;
-  margin: 0 0 22px;
-  min-width: 0;
-}
 
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-panels
-  > article
-  h2 {
-  margin: 0 0 18px;
-  font-size: var(--text-body);
-}
 :is(#launcher, .personal-project-view)
   .assembly-workspace-page:not(.bom-part-workspace)
   .workspace-panels
@@ -2398,13 +2291,6 @@
     .assembly-sidebar.bom-sidebar-active
     > .workspace-bom {
     margin-top: 18px;
-  }
-  :is(#launcher, .personal-project-view)
-    .assembly-workspace-page:not(.bom-part-workspace)
-    .workspace-panels
-    > article {
-    padding: 16px;
-    margin-bottom: 18px;
   }
 }
 
@@ -2855,10 +2741,6 @@
 :is(#launcher, .personal-project-view)
   .assembly-workspace-page:not(.bom-part-workspace)
   .workspace-panels
-  > article,
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-panels
   > article
   + article,
 :is(#launcher, .personal-project-view)
@@ -2883,11 +2765,5 @@
     .assembly-workspace-page:not(.bom-part-workspace)
     .workspace-panels {
     gap: var(--space-4);
-  }
-  :is(#launcher, .personal-project-view)
-    .assembly-workspace-page:not(.bom-part-workspace)
-    .workspace-panels
-    > article {
-    margin-bottom: 0;
   }
 }

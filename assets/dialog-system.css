@@ -362,11 +362,7 @@ dialog.bs-edit-conflict {
   top: calc(100% + 8px);
   left: 0;
 }
-/* Center help attached to workspace headings within their available width. */
-.workspace-tool-actions .bs-section-tooltip-content {
-  left: 50%;
-  transform: translateX(-50%);
-}
+
 .bs-action-input-tooltip {
   z-index: 500;
   bottom: calc(100% + 8px);

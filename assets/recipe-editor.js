@@ -19,9 +19,8 @@
   const panel=el("section","recipe-editor recipe-compact"),content=el("div","recipe-content"),feedback=el("p","recipe-feedback muted");
   panel.append(content,feedback);
   const heading=article.querySelector("h2");
-  const count=el("span","workspace-record-count");
-  const headingRow=el("div","recipe-heading-row");
-  const disclosure=button("",()=>setInstructionsOpen(!instructionsOpen),"recipe-disclosure-toggle");
+  const count=el("span","ui-section__count");
+  const disclosure=button("",()=>setInstructionsOpen(!instructionsOpen),"");
   disclosure.setAttribute("aria-expanded","false");
   disclosure.title="Open work instructions, steps, tests, measurements, and notes for this part or assembly.";
   disclosure.setAttribute("aria-description",disclosure.title);
@@ -34,12 +33,14 @@
    disclosure.setAttribute("aria-expanded",String(instructionsOpen));
    panel.hidden=!instructionsOpen;
   };
+  // Standard section look (window.BSUI): the toggle is the section header.
   if(heading){
-   heading.before(headingRow);
+   heading.className="ui-section__title";
+   heading.before(disclosure);
    disclosure.append(heading,count);
-   headingRow.append(disclosure);
-   headingRow.after(panel);
-  }else article.prepend(headingRow,panel);
+   disclosure.after(panel);
+  }else article.prepend(disclosure,panel);
+  window.BSUI?.sectionShell(article,disclosure,panel,"work-instructions");
   // Creation lives inside the expanded body, like other workspace sections.
   const addActions=el("div","recipe-body-actions");
   panel.prepend(addActions);

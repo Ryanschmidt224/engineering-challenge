@@ -211,51 +211,6 @@
   display: none !important;
 }
 
-/* Shared disclosures for secondary workspace sections. */
-.assembly-workspace-page .workspace-secondary-disclosure {
-  margin: 12px 0 0;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-page);
-}
-.assembly-workspace-page .workspace-secondary-disclosure > summary {
-  cursor: pointer;
-  padding: var(--space-3) var(--space-4);
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
-.assembly-workspace-page .workspace-secondary-disclosure > summary:hover {
-  background: var(--color-hover);
-}
-.assembly-workspace-page .workspace-secondary-disclosure[open] > summary {
-  border-bottom: 1px solid var(--color-border);
-  color: var(--color-text);
-}
-.assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-backup-details
-  .workspace-archive-actions {
-  padding: 15px 17px 8px;
-  margin: 0;
-}
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-backup-details
-  .workspace-backup-history {
-  padding: 0 17px 16px;
-}
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page
-  .workspace-secondary-disclosure
-  .btn {
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
-
 /* BOM editor uses the main workspace instead of the narrow sidebar. */
 :is(#launcher, .personal-project-view)
   .assembly-workspace-page.is-editing-bom-part
@@ -279,11 +234,7 @@
   > .workspace-actions {
   display: none !important;
 }
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page.is-editing-bom-part
-  > .workspace-secondary-disclosure {
-  display: none;
-}
+
 :is(#launcher, .personal-project-view)
   .assembly-workspace-page.is-editing-bom-part
   .workspace-main-bom-editor
@@ -1327,12 +1278,7 @@
   gap: 0;
   min-width: 0;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-panels
-  > .recipe-instructions {
-  order: 1;
-}
+
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
   .assembly-workspace-page:not(.bom-part-workspace)
   .workspace-panels
@@ -1802,12 +1748,6 @@
   .workspace-panels
   > .workspace-actions {
   order: 5;
-}
-:is(#launcher, .personal-project-view, #linear, #robot)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-panels
-  > .bs-unstructured-notes {
-  order: 4;
 }
 
 /* Private account and personal project management (no public data toggled by CSS). */
@@ -3121,36 +3061,6 @@
   }
 }
 
-/* Part details: an Edit button directly beside the heading, visible only when
-   the disclosure is expanded and the viewer has edit permissions. */
-.bom-part-workspace .part-details-view-heading {
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-}
-.bom-part-workspace .part-details-view-heading .part-details-edit,
-.bom-part-workspace .part-details-view-heading .part-details-edit-workshop {
-  margin-left: 6px;
-  flex: 0 0 auto;
-  padding: var(--space-2) var(--space-3);
-  min-height: 34px;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
-.bom-part-workspace .part-details-view-heading .part-details-edit[hidden],
-.bom-part-workspace
-  .part-details-view-heading
-  .part-details-edit-workshop[hidden],
-.bom-part-workspace
-  .part-details-collapse:not([open])
-  > .part-details-view-heading
-  .part-details-edit,
-.bom-part-workspace
-  .part-details-collapse:not([open])
-  > .part-details-view-heading
-  .part-details-edit-workshop {
-  display: none !important;
-}
 .assembly-parts-management-link {
   display: block;
   width: 100%;

@@ -720,13 +720,9 @@ function setupAssemblyTrees(){
    return button;
   };
   archiveActions.append(backupButton("Create project backup",false),backupButton("Create readable backup (HTML)",true),archiveStatus);
-  const backupDetails=document.createElement("details");
-  backupDetails.className="workspace-backup-details workspace-secondary-disclosure";
-  const backupSummary=document.createElement("summary");
-  backupSummary.textContent="Project backups";
-  backupSummary.title="Create and download backups of this project for safekeeping or offline use.";
-  backupSummary.setAttribute("aria-description",backupSummary.title);
-  backupDetails.append(backupSummary,archiveActions);
+  const backupSection=window.BSUI.section({title:"Project backups",role:"backups",quiet:true,tooltip:"Create and download backups of this project for safekeeping or offline use."});
+  const backupDetails=backupSection.root;
+  backupSection.body.append(archiveActions);
   workspace.append(backupDetails);
   const partDrawingPanel=window.BSDrawings?.mount(partWorkspace.querySelector(".part-drawing-panel"),()=>canEdit());
   const partFilesPanel=window.BSPartFiles?.mount(partWorkspace.querySelector(".part-files-panel"),()=>canEdit());
@@ -752,15 +748,13 @@ function setupAssemblyTrees(){
     }
     logDetails.classList.toggle("hide",experiments.length===0);
    };
-   const historyDetails=document.createElement("details");historyDetails.className="instruction-history workspace-secondary-disclosure";
-   const historySummary=document.createElement("summary");historySummary.textContent="Recent changes";
-   historySummary.title="Review previous changes to this workspace and restore earlier saved versions when available.";
-   historySummary.setAttribute("aria-description",historySummary.title);
+   const recentSection=window.BSUI.section({title:"Recent changes",role:"recent-changes",quiet:true,tooltip:"Review previous changes to this workspace and restore earlier saved versions when available."});
+   const historyDetails=recentSection.root;
    const historyList=document.createElement("div");historyList.className="instruction-history-list";
-   historyDetails.append(historySummary,historyList);panel.querySelector(prefix==="part"?".part-workspace-save":".workspace-save").after(historyDetails);
+   recentSection.body.append(historyList);panel.querySelector(prefix==="part"?".part-workspace-save":".workspace-save").after(historyDetails);
    const olderButton=document.createElement("button");
    olderButton.type="button";olderButton.className="instruction-history-restore";olderButton.textContent="Load older changes";
-   historyDetails.append(olderButton);
+   recentSection.body.append(olderButton);
    let olderHistory=null,loadedOwner=null,generation=0;
    olderButton.onclick=async()=>{
     const token=generation;
@@ -850,37 +844,27 @@ function setupAssemblyTrees(){
    });
    const resourcesPanel=panel.querySelector(".workspace-resources,.part-linked-resources");
    resourcesPanel.classList.add("workspace-resources");
-   const tools=document.createElement("details");
-   tools.className="workspace-resource-disclosure workspace-primary-disclosure";
-   const toolsSummary=document.createElement("summary");
-   const toolsHeading=document.createElement("h2");toolsHeading.textContent="Helpful tools";
-   const toolsActions=document.createElement("div");toolsActions.className="workspace-tool-actions";
-   toolsActions.append(toolsHeading,window.BSDialogs.tooltip("About Helpful tools","Link calculators, tools, and Workshop references for this work."));
-   const toolsCount=document.createElement("span");toolsCount.className="workspace-record-count";
-   toolsActions.append(toolsCount);
-   toolsSummary.append(toolsActions);
-   toolsSummary.title="Open calculators, tools, and Workshop references linked to this work.";
-   toolsSummary.setAttribute("aria-description",toolsSummary.title);
+   const toolsSection=window.BSUI.section({title:"Helpful tools",role:"helpful-tools",tooltip:"Open calculators, tools, and Workshop references linked to this work."});
+   const tools=toolsSection.root,toolsCount=toolsSection.count;
+   toolsSection.aside.append(window.BSDialogs.tooltip("About Helpful tools","Link calculators, tools, and Workshop references for this work."));
    const toolsControls=document.createElement("div");toolsControls.className="workspace-tool-controls";
-   tools.append(toolsSummary,toolsControls,resourcesPanel);
+   // Legacy content styles are scoped by this class; it marks the section body only.
+   toolsSection.body.classList.add("workspace-resource-disclosure");
+   toolsSection.body.append(toolsControls,resourcesPanel);
    const history=document.createElement("article");history.className="investigations-panel";
    const activeRecords=document.createElement("section");activeRecords.className="investigations-active-panel";
    history.activeEntriesHost=activeRecords;
-   const archiveHistory=document.createElement("details");
-   archiveHistory.className="workspace-archive-history workspace-primary-disclosure";
-   const archiveSummary=document.createElement("summary");
-   const archiveTitle=document.createElement("h2");archiveTitle.textContent="Archives and Revision History";
-   const archiveCount=document.createElement("span");archiveCount.className="workspace-record-count workspace-archive-count";
-   archiveSummary.append(archiveTitle,archiveCount);
-   archiveSummary.title="Review archived records and revision history associated with this workspace.";
-   archiveSummary.setAttribute("aria-description",archiveSummary.title);
-   archiveHistory.append(archiveSummary,activeRecords,history);
+   const archiveSection=window.BSUI.section({title:"Archives and Revision History",role:"history",tooltip:"Review archived records and revision history associated with this workspace."});
+   const archiveHistory=archiveSection.root;
+   // investigations.js writes the total into this element.
+   archiveSection.count.classList.add("workspace-archive-count");
+   archiveSection.body.classList.add("workspace-archive-history");
+   archiveSection.body.append(activeRecords,history);
    history.archiveHistoryDisclosure=archiveHistory;
    instructions.after(tools);
    panel.querySelector(".workspace-panels").after(archiveHistory);
    const resources=window.BSResources?.mount(resourcesPanel,{addTo:toolsControls,onChange:()=>scheduleWorkspaceAutosave(scope),onCount:count=>{
-    toolsCount.textContent="("+count+(count===1?" record)":" records)");
-    tools.classList.toggle("is-empty",count===0);
+    toolsSection.setCount(count);
    }});
    const extras=installInstructionExtras(panel,scope==="part"?"part":"workspace",
     data=>resources?.setData(data,canEdit()),data=>recipe?.setData(data),ownerId);
@@ -902,12 +886,16 @@ function setupAssemblyTrees(){
   instructionsFeedback(workspace,()=> "section:instructions_"+(selected||"root"));
   instructionsFeedback(partWorkspace,()=> "section:instructions_"+(partRoute()||"root"));
 
+  const partDetailsSection=window.BSUI.section({title:"Part details",role:"part-details",tooltip:"Review the part identity, specifications, and other details. Expand to edit or view related files."});
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
-  detailsPanel.innerHTML='<details class="part-details-collapse"><summary class="part-details-view-heading"><div class="part-details-heading-copy"><h2>Part details</h2><span class="part-details-summary-fields"></span></div></summary><div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div><div class="part-drawing-panel"></div><div class="part-files-panel"></div></details>';
-  const partDetailsCollapse=detailsPanel.querySelector(".part-details-collapse");
-  const partDetailsHeading=detailsPanel.querySelector(".part-details-view-heading");
-  partDetailsHeading.title="Review the part identity, specifications, and other details. Expand to edit or view related files.";
-  partDetailsHeading.setAttribute("aria-description",partDetailsHeading.title);
+  detailsPanel.append(partDetailsSection.root);
+  // Static structure only; part text is filled in later with textContent.
+  partDetailsSection.body.innerHTML='<div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div><div class="part-drawing-panel"></div><div class="part-files-panel"></div>';
+  const partSummaryFields=document.createElement("span");partSummaryFields.className="ui-section__meta";
+  partDetailsSection.count.after(partSummaryFields);
+  partDetailsSection.body.classList.add("part-details-collapse");
+  const partDetailsCollapse=partDetailsSection.root;
+  const partDetailsHeading=partDetailsSection.header;
   // Edit belongs beside the heading, not at the bottom of the expanded details.
   const detailEditButton=detailsPanel.querySelector(".part-details-edit");
   const editWorkshopButton=document.createElement("button");
@@ -951,14 +939,11 @@ function setupAssemblyTrees(){
   const reloadWorkshopStatus=document.createElement("p");
   reloadWorkshopStatus.setAttribute("role","status");
   reloadWorkshopStatus.hidden=true;
-  const detailHeading=detailsPanel.querySelector(".part-details-view-heading");
-  // Keep the linked-part actions beside the Part details heading.
-  // Collapsed sections hide both actions through the existing heading styles.
-  detailHeading.append(detailEditButton);
-  detailHeading.insertBefore(editWorkshopButton,detailEditButton);
-  detailHeading.insertBefore(documentationButton,detailEditButton);
+  // Part actions sit in the section header's action area, as small buttons.
+  const detailActions=partDetailsSection.aside;
+  for(const action of [editWorkshopButton,documentationButton,detailEditButton,reloadWorkshopButton]){action.classList.remove("btn","primary");action.classList.add("ui-button","ui-button--small");}
+  detailActions.append(editWorkshopButton,documentationButton,detailEditButton,reloadWorkshopButton);
   detailEditButton.textContent="Modify part";
-  detailHeading.append(reloadWorkshopButton);
   detailsPanel.querySelector(".part-details-view-actions").replaceWith(reloadWorkshopStatus);
   partDetailsCollapse.addEventListener("toggle",()=>{
    if(partDetailsCollapse.open&&currentPartInfo){
@@ -967,7 +952,7 @@ function setupAssemblyTrees(){
    }
   });
   const detailRows=detailsPanel.querySelector(".part-details-view-rows");
-  const detailSummary=detailsPanel.querySelector(".part-details-summary-fields");
+  const detailSummary=partSummaryFields;
   const progressPanel=document.createElement("section");progressPanel.className="part-progress-panel";
   progressPanel.innerHTML='<label class="part-progress-inline-label" for="part-progress-select-'+project+'">Status</label><select id="part-progress-select-'+project+'" class="field part-progress-select" aria-label="Status"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="complete">Complete</option></select><label class="part-attention-toggle"><input type="checkbox" class="part-needs-attention"> Needs attention</label><label class="part-attention-note-field" hidden>What needs to be fixed?<textarea class="field part-attention-note" rows="2" maxlength="2000" placeholder="What needs attention?"></textarea></label><span class="part-progress-feedback" role="status" aria-live="polite"></span><button type="button" class="part-progress-save" hidden>Save status</button>';
   partWorkspace.querySelector(".workspace-heading > div:not(.workspace-cover)").append(progressPanel);
@@ -2698,8 +2683,8 @@ function setupAssemblyTrees(){
   // Both versions of Recent changes were originally inserted directly
   // beside the workspace Save button. Move each to the bottom instead,
   // after notes, archives, and backups, without replacing its handlers.
-  const assemblyRecentChanges=workspace.querySelector(".instruction-history");
-  const partRecentChanges=partWorkspace.querySelector(".instruction-history");
+  const assemblyRecentChanges=workspace.querySelector("[data-section=\"recent-changes\"]");
+  const partRecentChanges=partWorkspace.querySelector("[data-section=\"recent-changes\"]");
   if(assemblyRecentChanges)workspace.append(assemblyRecentChanges);
   if(partRecentChanges)partWorkspace.append(partRecentChanges);
   summary.append(creatorInsightsTarget);
@@ -3061,18 +3046,12 @@ function setupAssemblyTrees(){
   };
   // Intentional, parent-scoped history. The API snapshots a complete subtree
   // before removing active tree/BOM references. Revisions remain a separate tool.
-  const archivePanel=document.createElement("section");
-  archivePanel.className="assembly-archived-items";
-  const archiveDetails=document.createElement("details");
-  archiveDetails.className="assembly-archived-disclosure";
-  const archiveHeading=document.createElement("summary");
-  archiveHeading.textContent="Archived items (0)";
-  archiveHeading.title="View items removed from this assembly and restore archived items when available.";
-  archiveHeading.setAttribute("aria-description",archiveHeading.title);
+  const archivedSection=window.BSUI.section({title:"Archived items",role:"archived-items",count:0,countLabel:["item","items"],tooltip:"View items removed from this assembly and restore archived items when available."});
+  const archivePanel=archivedSection.root;
   const archiveList=document.createElement("div");
   archiveList.className="assembly-archived-list";
-  archiveDetails.append(archiveHeading,archiveList);
-  archivePanel.append(archiveDetails);
+  archivedSection.body.classList.add("assembly-archived-disclosure");
+  archivedSection.body.append(archiveList);
   workspace.querySelector(".workspace-panels").append(archivePanel);
   let archiveRequestSerial=0;
   const archiveURL="/api/assembly-archive?project="+encodeURIComponent(project);
@@ -3130,7 +3109,7 @@ function setupAssemblyTrees(){
    try{
     const result=await archiveFetch(archiveURL+"&parent="+encodeURIComponent(parentId));
     if(serial!==archiveRequestSerial)return;
-    archiveHeading.textContent="Archived items ("+result.items.length+")";
+    archivedSection.setCount(result.items.length);
     archiveList.replaceChildren();
     if(!result.items.length){
      const empty=document.createElement("p");empty.className="muted";

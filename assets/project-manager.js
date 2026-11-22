@@ -16,15 +16,15 @@ window.BSProjectManager=(()=>{
  const init=({setupAssemblyTrees,setupComponents,setupPhotos,navigate})=>{
   const root=document.querySelector("#home .project-index"),grid=root?.querySelector(".project-grid");if(!grid)return;
   const loading=root.querySelector(".project-catalog-loading");
-  const newButton=element("button","btn primary project-directory-new","+ New project");newButton.type="button";
-  const archiveButton=element("button","btn","Archived projects");archiveButton.type="button";
+  const newButton=element("button","ui-button ui-button--primary project-directory-new","+ New project");newButton.type="button";
+  const archiveButton=element("button","ui-button","Archived projects");archiveButton.type="button";
   const more=element("details","project-directory-menu");
-  more.append(element("summary","btn","More"),archiveButton);
+  more.append(element("summary","ui-button","More"),archiveButton);
   const filters=element("div","project-directory-controls");
   const searchLabel=element("label","project-directory-label project-directory-search","Find a project");
-  const searchInput=element("input","field project-search");searchInput.type="search";searchInput.placeholder="Search projects…";searchInput.setAttribute("aria-label","Search projects");searchLabel.append(searchInput);
+  const searchInput=element("input","ui-control project-search");searchInput.type="search";searchInput.placeholder="Search projects…";searchInput.setAttribute("aria-label","Search projects");searchLabel.append(searchInput);
   const sortLabel=element("label","project-directory-label","Sort by");
-  const sortSelect=element("select","field project-sort-filter");
+  const sortSelect=element("select","ui-control project-sort-filter");
   for(const [value,label] of [["name_asc","Name A–Z"],["name_desc","Name Z–A"],["newest","Newest first"],["oldest","Oldest first"]]){
    const option=element("option","",label);option.value=value;sortSelect.append(option);
   }
@@ -32,7 +32,7 @@ window.BSProjectManager=(()=>{
   const directoryStatus=element("span","project-directory-count muted");directoryStatus.setAttribute("role","status");
   root.classList.add("compact-project-directory");
   const filterMenu=element("details","project-filter-menu");
-  filterMenu.append(element("summary","btn","Filters"));
+  filterMenu.append(element("summary","ui-button","Filters"));
   const selectedTags=element("div","project-selected-descriptors");
   filters.append(newButton,searchLabel,filterMenu,sortLabel,directoryStatus,more);
   grid.before(filters,selectedTags);
