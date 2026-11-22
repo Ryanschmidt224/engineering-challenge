@@ -212,7 +212,7 @@ summary.ui-button::-webkit-details-marker {
   min-width: 0;
   font-size: var(--text-body);
 }
-.ui-summary-content > :empty {
+.ui-summary-content > :is(div, p, section, article):empty {
   display: none;
 }
 .ui-summary-content > :first-child {
@@ -408,7 +408,7 @@ summary.ui-button::-webkit-details-marker {
 .ui-section__actions + :not(:empty):not([hidden]) {
   margin-top: var(--space-3);
 }
-.ui-section__body > :empty,
+.ui-section__body > :is(div, p, section, article):empty,
 .ui-section__body > [hidden] {
   display: none;
 }

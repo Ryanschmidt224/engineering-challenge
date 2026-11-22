@@ -35,6 +35,7 @@ for (const width of [1440, 390]) test("shared headers, controls and collapsed su
   for (const panel of await panels.all()) {
     const header = panel.locator(":scope > .ui-section__header, :scope > .project-milestone-heading > .ui-section__header");
     await expect(header).toBeVisible();
+    expect(await header.evaluate(el => el.getBoundingClientRect().height)).toBe(48);
     await expect(panel.locator(".ui-section__body").first()).toBeHidden();
     await expect(header.locator(".ui-section__title")).toHaveCSS("font-size", "16px");
     await header.click();
@@ -44,6 +45,7 @@ for (const width of [1440, 390]) test("shared headers, controls and collapsed su
   const description = summary.locator('[data-section="summary-description"]');
   await description.locator(".ui-section__header").click();
   await description.locator(".project-short-summary").fill("Shared summary save check");
+  await description.getByRole("textbox", {name: "Project summary", exact: true}).fill("The long project summary remains editable and is saved with the short summary.");
   await description.getByRole("button", {name: "Save", exact: true}).click();
   await expect(description.locator(".project-summary-message")).toHaveText("Summary saved.");
   await page.screenshot({path: testInfo.outputPath("summary.png"), fullPage: true});
