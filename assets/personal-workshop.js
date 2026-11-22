@@ -874,8 +874,9 @@
     orderingSection.classList.toggle("workshop-generic-ordering-collapsed",generic&&!orderingExpanded);
     orderingReveal.hidden=!generic;
     orderingReveal.textContent=orderingExpanded?"Hide ordering details":"Add ordering details";
-    orderingSection.querySelector(".part-editor-section-heading").firstChild.textContent=
-     generic?"Ordering (optional)":"Ordering";
+    const orderingHeading=tableEditors.ordering?.headingText;
+    if(orderingHeading)orderingHeading.textContent=tableEditors.ordering.titleInput.value.trim()||
+     (generic?"Ordering (optional)":"Ordering");
    };
    const updateIdentityPanels=()=>{
     const generic=identityRadios.generic.checked;
