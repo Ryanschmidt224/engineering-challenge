@@ -34,7 +34,7 @@ test("catalog layout remains CSS responsive and doesn't change storage schemas",
  assert.match(css,/\.bs-catalog-layout\s*\{/);
  assert.match(css,/\.bs-catalog-category\.is-active/);
  assert.match(css,/@media\s*\(max-width:\s*800px\)/);
- assert.match(html,/data-nav="home">Projects<\/button>/);
- assert.match(html,/data-nav="knowledge">Knowledge<\/button>/);
- assert.match(html,/data-nav="commonparts">The Workshop<\/button>/);
+ assert.match(html,/data-site-header="projects"/);
+ const header=read("assets/site-header.js");
+ for(const name of ["Projects","Knowledge","The Workshop"])assert.ok(header.includes(name));
 });

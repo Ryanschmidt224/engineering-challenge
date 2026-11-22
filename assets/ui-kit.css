@@ -7,6 +7,7 @@
    uses "button" for other things. */
 .button,
 .ui-button {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -45,11 +46,9 @@
   background: transparent;
   border-color: transparent;
 }
-.button--danger,
 .ui-button--danger {
   color: var(--color-danger);
 }
-.button--small,
 .ui-button--small {
   min-height: var(--control-height-small);
   padding: var(--space-1) var(--space-2);
@@ -69,6 +68,7 @@ summary.ui-button::-webkit-details-marker {
 
 /* Text inputs, search boxes and selects that sit in a toolbar with buttons. */
 .ui-control {
+  box-sizing: border-box;
   min-height: var(--control-height);
   margin: 0;
   border: 1px solid var(--color-border-strong);
@@ -78,7 +78,183 @@ summary.ui-button::-webkit-details-marker {
   padding: var(--space-2) var(--space-3);
   font: inherit;
   font-size: var(--text-small);
+  font-weight: var(--font-normal);
   line-height: 1.3;
+}
+
+/* One site header, independent of the page's legacy typography. */
+.ui-site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-header);
+  color: var(--color-text);
+  font:
+    var(--text-body) / 1.4 system-ui,
+    sans-serif;
+}
+.ui-site-header__inner {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 4rem;
+  max-width: 115rem;
+  margin: auto;
+  padding: var(--space-2) var(--space-5);
+}
+.ui-site-brand {
+  color: var(--color-text);
+  font-size: var(--text-title);
+  font-weight: var(--font-bold);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ui-site-brand span {
+  color: var(--color-accent);
+}
+.ui-site-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.ui-site-nav > .ui-site-nav__item {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height);
+  border: 0;
+  border-radius: var(--radius-medium);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-muted);
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-small);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ui-site-nav > [aria-current="page"],
+.ui-site-nav > .ui-site-nav__item:hover {
+  background: var(--color-selected);
+  color: var(--color-text);
+}
+.ui-site-account {
+  justify-self: end;
+}
+@media (max-width: 1024px) {
+  .ui-site-header__inner {
+    grid-template-columns: 1fr auto;
+    gap: var(--space-2);
+    padding-inline: var(--space-3);
+  }
+  .ui-site-brand {
+    font-size: var(--text-lead);
+  }
+  .ui-site-nav {
+    grid-row: 2;
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 640px) {
+  .ui-site-nav {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .ui-site-nav > .ui-site-nav__item {
+    flex-shrink: 0;
+    padding-inline: var(--space-1);
+  }
+}
+
+/* Shared toolbar geometry: controls and labels no longer fight old page rules. */
+.ui-directory-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.ui-toolbar-search {
+  flex: 1 1 14rem;
+  max-width: 26rem;
+}
+.ui-toolbar-search > .ui-control {
+  width: 100%;
+}
+.ui-toolbar-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-small);
+}
+.ui-directory-toolbar :is(.ui-button, .ui-control) {
+  height: var(--control-height);
+  font-size: var(--text-small);
+}
+.ui-toolbar-count {
+  margin-inline-start: auto;
+  font-size: var(--text-small);
+  white-space: nowrap;
+}
+.ui-toolbar-menu {
+  position: relative;
+}
+.ui-toolbar-menu > :not(summary) {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  z-index: 40;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+}
+.ui-toolbar-menu > button {
+  right: 0;
+  white-space: nowrap;
+}
+.ui-summary-content {
+  min-width: 0;
+  font-size: var(--text-body);
+}
+.ui-summary-content > :is(div, p, section, article, span):empty {
+  display: none;
+}
+.ui-summary-content > :first-child {
+  margin-top: 0;
+}
+.ui-summary-content > :last-child {
+  margin-bottom: 0;
+}
+.ui-status-mark {
+  display: inline-block;
+  margin-inline-end: var(--space-1);
+  font-size: var(--text-caption);
+  line-height: 1;
+  color: var(--color-text-muted);
+}
+.ui-status-mark--complete {
+  color: var(--color-accent);
+  font-weight: var(--font-semibold);
+}
+.ui-status-mark--attention {
+  color: var(--color-danger);
+}
+.ui-toolbar-menu__panel {
+  display: grid;
+  gap: var(--space-3);
+  left: 0;
+  width: min(20rem, calc(100vw - 2rem));
+  padding: var(--space-3);
+}
+.ui-toolbar-menu__panel[hidden] {
+  display: none;
 }
 
 /* Tags and filter chips. */
@@ -100,6 +276,34 @@ summary.ui-button::-webkit-details-marker {
 .ui-chip[aria-pressed="true"] {
   background: var(--color-selected);
   border-color: var(--color-accent);
+}
+.ui-chip:hover {
+  background: var(--color-hover);
+}
+.ui-chip:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* The list owns separation, so nested layout groups never add section margins. */
+.ui-section-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+.ui-section-list > .ui-section {
+  margin: 0;
+}
+.ui-section-list > :is(div, p, section, article, span):empty {
+  display: none;
+}
+.ui-section-list--columns {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 640px) {
+  .ui-section-list--columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* Section: every collapsible block on project, assembly and part pages. */
@@ -235,7 +439,7 @@ summary.ui-button::-webkit-details-marker {
   justify-content: flex-start;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin: 0 0 var(--space-3);
+  margin: 0;
   padding: 0;
 }
 .ui-section__actions:empty,
@@ -244,4 +448,11 @@ summary.ui-button::-webkit-details-marker {
 }
 .ui-section__actions:last-child {
   margin-bottom: 0;
+}
+.ui-section__actions + :not(:empty):not([hidden]) {
+  margin-top: var(--space-3);
+}
+.ui-section__body > :is(div, p, section, article, span):empty,
+.ui-section__body > [hidden] {
+  display: none;
 }

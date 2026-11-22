@@ -26,11 +26,12 @@ async function expectStackedCard(card) {
 }
 
 async function expectHeaderLabels(page) {
-  const links = page.locator(".app-header nav a");
+  const links = page.locator(".ui-site-nav a");
   const layout = await links.evaluateAll(elements => elements.map(element => {
     const box = element.getBoundingClientRect();
     return {whiteSpace: getComputedStyle(element).whiteSpace, left: box.left, right: box.right, viewport: document.documentElement.clientWidth};
   }));
+  expect(layout).toHaveLength(4);
   for (const link of layout) {
     expect(link.whiteSpace).toBe("nowrap");
     expect(link.left).toBeGreaterThanOrEqual(0);

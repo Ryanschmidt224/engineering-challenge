@@ -40,31 +40,7 @@ a {
   margin: auto;
   padding: 0 22px;
 }
-.top {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: color-mix(in srgb, var(--color-header) 93.7%, transparent);
-  backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--edge);
-}
-.topin {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-4);
-  min-height: 70px;
-}
-.brand {
-  font-weight: 850;
-  font-size: var(--text-title);
-  color: var(--color-text);
-  text-decoration: none;
-  white-space: nowrap;
-}
-.brand span {
-  color: var(--accent);
-}
+
 nav {
   display: flex;
   flex-wrap: wrap;
@@ -370,11 +346,7 @@ label {
   .sidebar {
     position: static;
   }
-  .topin {
-    align-items: flex-start;
-    flex-direction: column;
-    padding: 12px 0;
-  }
+
   nav button {
     padding: 6px 8px;
     font-size: var(--text-small);
@@ -2412,12 +2384,7 @@ label {
   background: var(--color-surface);
   object-fit: contain;
 }
-.bom-subassembly-label {
-  font-size: var(--text-small);
-  white-space: nowrap;
-  color: var(--color-text-muted);
-  font-weight: var(--font-semibold);
-}
+
 .bom-subassembly-children {
   padding: 10px 12px 12px 18px;
 }
@@ -2426,13 +2393,7 @@ label {
   border-left: 1px solid var(--color-border);
   padding-left: 12px;
 }
-.bom-part-actions {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  margin-top: 12px;
-}
-.bom-part-actions .btn,
+
 .bom-open-subassembly {
   font-size: var(--text-small);
   padding: 7px 10px;
@@ -2451,9 +2412,6 @@ label {
     max-width: 32px;
   }
   .bom-part-meta {
-    font-size: var(--text-caption);
-  }
-  .bom-subassembly-label {
     font-size: var(--text-caption);
   }
 }
@@ -2663,16 +2621,7 @@ label {
   min-width: 76px;
   max-width: 76px;
 }
-.assembly-workspace-page
-  .workspace-saved-parts
-  .bom-part.bom-thumbnail-active[open]
-  > .bom-part-summary
-  > .bom-row-thumbnail {
-  width: 228px;
-  height: 228px;
-  min-width: 228px;
-  max-width: 228px;
-}
+
 @media (max-width: 650px) {
   .assembly-workspace-page
     .workspace-saved-parts
@@ -2688,16 +2637,6 @@ label {
     height: 64px;
     min-width: 64px;
     max-width: 64px;
-  }
-  .assembly-workspace-page
-    .workspace-saved-parts
-    .bom-part.bom-thumbnail-active[open]
-    > .bom-part-summary
-    > .bom-row-thumbnail {
-    width: 192px;
-    height: 192px;
-    min-width: 192px;
-    max-width: 192px;
   }
 }
 
@@ -2843,15 +2782,7 @@ label {
 }
 
 /* Global reference-library tabs and calculators. */
-.top nav {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  flex-wrap: wrap;
-}
-.top nav button {
-  white-space: nowrap;
-}
+
 .resource-page {
   max-width: 1160px;
 }
@@ -3039,26 +2970,11 @@ label {
   display: none;
 }
 @media (max-width: 850px) {
-  .top nav {
-    gap: 2px;
-  }
-  .top nav button {
-    font-size: var(--text-small);
-    padding: 6px 9px;
-  }
 }
 @media (max-width: 570px) {
   .resource-grid,
   .linked-resource-groups {
     grid-template-columns: 1fr;
-  }
-  .top .topin {
-    flex-wrap: wrap;
-  }
-  .top nav {
-    order: 3;
-    width: 100%;
-    justify-content: flex-start;
   }
 }
 

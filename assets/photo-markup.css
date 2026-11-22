@@ -240,22 +240,7 @@
 }
 
 /* Attachment controls match project, assembly and part photo controls. */
-.recipe-compact .recipe-step-photo > .bs-photo-control {
-  width: 100%;
-  max-width: 100%;
-  align-items: stretch;
-}
-.recipe-compact .recipe-step-photo > .bs-photo-control .recipe-photo-frame {
-  width: 100%;
-  max-width: 100%;
-}
-.recipe-compact .recipe-step-photo > .bs-photo-control .bs-photo-actions {
-  justify-content: flex-end;
-  margin: 3px 0 0;
-}
-.recipe-compact .recipe-step-photo > .bs-photo-control .bs-photo-more {
-  justify-content: flex-end;
-}
+
 .workspace-heading
   > .bs-photo-control
   .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="false"]) {
@@ -823,60 +808,6 @@
 
 /* Work Instructions photo edit: pencil overlays the lower-right of the image.
    Expanded actions stay on a single line below the framed image/caption. */
-.recipe-compact .recipe-step-photo .recipe-photo-image-stage {
-  position: relative;
-  display: block;
-  width: 100%;
-  min-width: 0;
-}
-.recipe-compact
-  .recipe-step-photo
-  .recipe-photo-image-stage
-  > .bs-photo-toggle {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  z-index: 2;
-  margin: 0;
-  width: 34px;
-  height: 34px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  box-shadow: 0 1px 5px #0003;
-}
-.recipe-compact .recipe-step-photo > .bs-photo-control > .bs-photo-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  flex-wrap: nowrap;
-  width: 100%;
-  min-width: 0;
-  margin: 6px 0 0;
-  padding: 0;
-}
-.recipe-compact
-  .recipe-step-photo
-  > .bs-photo-control
-  > .bs-photo-actions
-  > .bs-photo-more:not([hidden]) {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: var(--space-1);
-  flex-wrap: nowrap;
-  width: 100%;
-  min-width: 0;
-}
-.recipe-compact .recipe-step-photo > .bs-photo-control .bs-photo-more > .btn {
-  flex: 0 0 auto;
-  min-height: 32px;
-  padding: 5px 7px;
-  font-size: var(--text-caption);
-  white-space: nowrap;
-}
-.recipe-compact .recipe-step-photo > .bs-photo-control .bs-photo-status {
-  text-align: left;
-}
 
 /* Text and arrow sizing options in the shared photo markup toolbar. */
 .bs-markup-toolbar .bs-markup-size-control {

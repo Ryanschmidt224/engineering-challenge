@@ -40,7 +40,6 @@
  function mount({project,summary,canEdit}){
   let revision=null,originalIntent=null,milestones=[],loadId=0;
   const panel=el("section","project-overview-card project-intent-milestones");
-  const header=el("div","project-milestone-heading");
   const expand=button("Project Intent & Milestones",()=>{
    const isOpen=expand.getAttribute("aria-expanded")==="true";
    expand.setAttribute("aria-expanded",String(!isOpen));
@@ -48,10 +47,8 @@
   },"project-milestone-expand");
   expand.setAttribute("aria-expanded","false");
   expand.setAttribute("aria-controls","project-milestone-content-"+project);
-  const chevron=el("span","project-milestone-chevron");
-  chevron.setAttribute("aria-hidden","true");
-  expand.prepend(chevron);
-  header.append(expand);panel.append(header);
+  const title=el("h2","ui-section__title","Project Intent & Milestones");expand.replaceChildren(title);
+  panel.append(expand);
   const content=el("div","project-milestone-content");
   content.id="project-milestone-content-"+project;
   content.hidden=true;
@@ -66,6 +63,7 @@
   const historyHost=el("div","project-milestone-history");
   content.append(feedback,intentHost,historyHost);
   panel.append(content);
+  window.BSUI.sectionShell(panel,expand,content,"summary-milestones");
   summary.querySelector(".project-summary-overview")?.after(panel);
   function setFeedback(text){feedback.textContent=text||""}
   function addText(host,label,value){

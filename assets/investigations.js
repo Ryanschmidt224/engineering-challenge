@@ -70,7 +70,7 @@
   const openSections=new Set();
   const api="/api/investigations?project="+encodeURIComponent(project);
   const feedback=target=>{const area=target||activeContext?.target;return area?.activeEntriesHost?.querySelector(".investigation-feedback")||area?.querySelector(".investigation-feedback")};
-  const report=(message,target)=>{const p=feedback(target);if(p)p.textContent=message};
+  const report=(message,target)=>{const p=feedback(target);if(p){p.textContent=message;if(message&&p.closest(".investigation-active-area"))p.closest(".investigation-active-area").hidden=false;}};
   const makeContext=(ownerType,ownerId,stepId="",title="")=>({scope:stepId?"step":ownerType,ownerType,ownerId,stepId,title});
   const parentOf=id=>getTree().find(node=>node.id===id)?.parentId??null;
   const isDescendant=(child,ancestor)=>{
@@ -701,7 +701,7 @@
    activeContent.append(make("p","investigation-feedback muted"));
    // The shared action row precedes records, including in step Edit mode. Avoid
    // displaying a blank active-entry wrapper when there are no cards yet.
-   activeHost.hidden=!activeOwn.length&&!stepSlot?.mainTile&&!activeContent.querySelector("button")&&!canCreate;
+   activeHost.hidden=!activeOwn.length&&!stepSlot?.mainTile&&!activeContent.querySelector("button");
 
    archivedOwn.forEach(record=>renderCard(record,content,{historical:true}));
    if(archivedRelated.length){
@@ -713,6 +713,7 @@
    }
    if(!archiveCount&&compact)content.append(make("p","muted investigation-empty","No archived records yet."));
    if(!compact&&!archiveCount)disclosure.hidden=true;
+   if(!compact)target.hidden=!archiveCount;
   }
 
   function showSnapshot(snapshot,target){
@@ -778,6 +779,7 @@
     }catch(error){report(error.message,target);saveBtn.disabled=false}
    },"btn primary");
    form.append(field,date,saveBtn,btn("Cancel",()=>form.remove(),"btn"));
+   if(target.activeEntriesHost)target.activeEntriesHost.hidden=false;
    (target.activeEntriesHost?.querySelector(".investigation-active-content")||target.querySelector(".investigation-active-content"))?.append(form);
    field.focus();
   }

@@ -20,6 +20,7 @@ function setupAssemblyTrees(){
   featureTreeCard.className="assembly-feature-tree-card";
   while(root.firstChild)featureTreeCard.append(root.firstChild);
   root.append(featureTreeCard,summaryCard);
+  root.querySelector("h3")?.append(window.BSDialogs.tooltip("Reordering the feature tree","Drag onto a sibling to reorder. Drop onto another assembly to move inside it; hold Alt to nest under a sibling."));
   // Legacy project pages share the same workspace styling as newer projects.
   if(project==="linear"||project==="robot")view.classList.add("personal-project-view");
   const canEdit=()=>window.BSProjectManager?.isOwner?.(project)===true || (["launcher","linear","robot"].includes(project)&&adminAuthenticated);
@@ -204,7 +205,7 @@ function setupAssemblyTrees(){
   }
   // Project and subassembly workspaces remain independent of the BOM screen.
   const workspace=document.createElement("section");workspace.className="assembly-workspace-page hide";
-  workspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div class="workspace-title-group"><h1 class="workspace-title"></h1><button type="button" class="btn workspace-back">Open BOM</button></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><div class="workspace-actions"><button type="button" class="btn primary workspace-save" hidden aria-hidden="true" tabindex="-1">Save workspace</button><span class="workspace-status" role="status"></span></div></section>';
+  workspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover"><span>No photo yet</span></div><div class="workspace-title-group"><h1 class="workspace-title"></h1><button type="button" class="btn workspace-back">Open BOM</button></div></div><section class="workspace-panels"><article class="workspace-bom"><div class="workspace-bom-heading"><h2>Bill of materials</h2><button type="button" class="btn primary workspace-new-part">+ New part</button></div><div class="workspace-saved-parts" aria-live="polite">Loading saved parts…</div><div class="workspace-bom-mount"></div></article><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="workspace-resources"></article><button type="button" class="btn primary workspace-save" hidden aria-hidden="true" tabindex="-1">Save workspace</button><span class="workspace-status" role="status"></span></section>';
   detail.after(workspace);
   // Assembly photo management lives in the workspace, not the read-only overview.
   const workspacePhotoEditor=document.createElement("article");
@@ -692,7 +693,7 @@ function setupAssemblyTrees(){
   });
   // Each saved BOM part has its own independent instructions document.
   const partWorkspace=document.createElement("section");partWorkspace.className="assembly-workspace-page bom-part-workspace hide";
-  partWorkspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1></div></div><section class="workspace-panels"><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article class="part-linked-resources"></article><div class="workspace-actions"><button type="button" class="btn primary part-workspace-save" hidden aria-hidden="true" tabindex="-1">Save workspace</button><span class="part-workspace-status" role="status"></span></div></section>';
+  partWorkspace.innerHTML='<div class="workspace-heading"><div class="workspace-cover part-workspace-cover"><span>No picture yet</span></div><div><h1 class="part-workspace-title">Part instructions</h1></div></div><section class="workspace-panels"><article class="recipe-instructions"><h2>Work instructions</h2></article><article class="part-harness-preview hide"><h2>Wire harness cutting list</h2><div class="part-harness-preview-content"></div></article><article class="part-linked-resources"></article><button type="button" class="btn primary part-workspace-save" hidden aria-hidden="true" tabindex="-1">Save workspace</button><span class="part-workspace-status" role="status"></span></section>';
   workspace.after(partWorkspace);
   const archiveActions=document.createElement("div");archiveActions.className="workspace-archive-actions";
   const archiveStatus=document.createElement("span");archiveStatus.className="muted workspace-archive-status";
@@ -958,7 +959,7 @@ function setupAssemblyTrees(){
   progressPanel.innerHTML='<label class="part-progress-inline-label" for="part-progress-select-'+project+'">Status</label><select id="part-progress-select-'+project+'" class="field part-progress-select" aria-label="Status"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="complete">Complete</option></select><label class="part-attention-toggle"><input type="checkbox" class="part-needs-attention"> Needs attention</label><label class="part-attention-note-field" hidden>What needs to be fixed?<textarea class="field part-attention-note" rows="2" maxlength="2000" placeholder="What needs attention?"></textarea></label><span class="part-progress-feedback" role="status" aria-live="polite"></span><button type="button" class="part-progress-save" hidden>Save status</button>';
   partWorkspace.querySelector(".workspace-heading > div:not(.workspace-cover)").append(progressPanel);
   partWorkspace.querySelector(".workspace-heading").after(detailsPanel);
-  const codeHost=document.createElement("div");codeHost.className="part-source-code-host";detailsPanel.after(codeHost);
+  const codeHost=document.createElement("div");codeHost.className="part-source-code-host";codeHost.hidden=true;detailsPanel.after(codeHost);
   const codePanel=window.BSPartCode.mount(codeHost,{project,canEdit});
   const progressSelect=progressPanel.querySelector(".part-progress-select"),attentionCheckbox=progressPanel.querySelector(".part-needs-attention"),attentionText=progressPanel.querySelector(".part-attention-note");
   function installAttentionExpander(panel){
@@ -1560,7 +1561,8 @@ function setupAssemblyTrees(){
     reloadWorkshopButton.hidden=!hasWorkshopLink||!canEdit()||!!part.generatedFrom;
     partDetailsCollapse.open=keepDetailsOpen;
     detailEditButton.textContent=part.familyUse?"Edit project use":hasWorkshopLink?"Modify part":"Edit part details";
-    codePanel.setVisible(part.partType==="code");
+    codeHost.hidden=part.partType!=="code";
+    codePanel.setVisible(!codeHost.hidden);
     if(part.partType==="code")void codePanel.load(part.id,part.name);
     progressPanel.hidden=part.isTool===true;
     if(!part.isTool)fillProgressPanel(part);
@@ -3412,12 +3414,12 @@ function setupAssemblyTrees(){
     const needsAttention=partAttention.get(node.partId);
     if(needsAttention){el.classList.add("part-needs-attention");name.title="Needs attention — open part to view the reminder"}
     if(needsAttention||status==="complete"||status==="in_progress"){
-     const marker=document.createElement("span");marker.className="assembly-tree-status-marker";
+     const marker=document.createElement("span");marker.className="ui-status-mark ui-status-mark--"+(needsAttention?"attention":status==="complete"?"complete":"progress");
      marker.textContent=needsAttention?"⚑":status==="complete"?"✓":"◐";
      marker.title=needsAttention?"Needs attention":status==="complete"?"Complete":"In progress";
      marker.setAttribute("role","img");marker.setAttribute("aria-label",marker.title);
-     // Keep status beside the name, before the optional description's block.
-     name.insertBefore(marker,name.querySelector(".assembly-tree-description"));
+     // Status precedes the item text; it is a read-only indicator.
+     name.prepend(marker);
     }
    }
    if(isPartNode(node)&&partRoute()===node.partId)el.classList.add("selected");name.onclick=()=>{if(isPartNode(node)){openTreePart(node);return}selected=id;history.pushState(null,"",workspaceHash(id));render();notify();window.scrollTo(0,0)};
@@ -3446,7 +3448,7 @@ function setupAssemblyTrees(){
     el.append(more);
    }
    if(node&&canEdit()){
-    el.draggable=true;el.title="Drag onto a sibling to reorder. Drop onto another assembly to move inside it; hold Alt to nest under a sibling.";
+    el.draggable=true;
     el.ondragstart=event=>{event.dataTransfer.setData("text/plain",node.id);event.dataTransfer.effectAllowed="move";el.classList.add("assembly-dragging")};
     el.ondragend=()=>el.classList.remove("assembly-dragging");
     el.ondragover=event=>{const dragged=Array.from(event.dataTransfer.types).includes("text/plain");if(!dragged)return;event.preventDefault();el.classList.add("assembly-drop-target");event.dataTransfer.dropEffect="move"};
@@ -3570,6 +3572,25 @@ function setupAssemblyTrees(){
   };
   root.querySelector(".assembly-rename").onclick=async()=>{if(selected===null){status.textContent="Select a subassembly to rename.";return}const node=nodes.find(n=>n.id===selected),name=await window.BSDialogs.prompt("Enter a new name",node.name,{title:"Rename subassembly",label:"Name"});if(!name?.trim())return;try{await save(nodes.map(n=>n.id===selected?{...n,name:name.trim()}:n))}catch(e){status.textContent=e.message}};
   root.querySelector(".assembly-remove").onclick=async()=>{if(selected===null){status.textContent="Select a subassembly to delete.";return}const node=nodes.find(n=>n.id===selected);if(!await window.BSDialogs.danger("Delete "+node.name+" and its nested subassemblies? Existing BOM components will remain in the project but may become unassigned.",{title:"Delete subassembly?"}))return;const removed=new Set([selected]);let changed=true;while(changed){changed=false;for(const n of nodes)if(removed.has(n.parentId)&&!removed.has(n.id)){removed.add(n.id);changed=true}}try{await save(nodes.filter(n=>!removed.has(n.id)));selected=null;render();notify()}catch(e){status.textContent=e.message}};
+  // Keep content and save handlers mounted inside standard collapsed sections.
+  for(const [selector,label,role] of [
+   [".project-summary-gallery","Project photos","summary-photos"],
+   [".project-summary-overview > .project-overview-card:not(.project-cost-card)","Project summary","summary-description"],
+   [".project-cost-card","Estimated project cost","summary-cost"],
+   [".project-summary-bom-section","Project BOM","summary-bom"],
+   [".project-summary-tools-section","Tools needed","summary-tools"]
+  ]){
+   const content=summary.querySelector(selector);if(!content)continue;
+   const section=window.BSUI.section({title:label,role});
+   const oldHeading=content.querySelector("h2");
+   const help=oldHeading?.parentElement.querySelector(".bs-help-button");
+   if(help)section.aside.append(help);
+   oldHeading?.remove();
+   content.classList.add("ui-summary-content");
+   content.before(section.root);section.body.append(content);
+  }
+  for(const panel of [summary,overview,summary.querySelector(".project-summary-lists"),creatorInsightsTarget,workspace,workspace.querySelector(".workspace-panels"),partWorkspace,partWorkspace.querySelector(".workspace-panels"),detailsPanel])panel?.classList.add("ui-section-list");
+  summary.querySelector(".project-summary-lists")?.classList.add("ui-section-list--columns");
   load();
  })
 }

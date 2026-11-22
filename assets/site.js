@@ -255,7 +255,7 @@ setupComponents();
 
 // First edit replaces existing text instead of appending to a saved value.
 // Subsequent clicks allow normal caret placement and partial corrections.
-const overwriteSelector=".workspace-main-bom-editor input.field, .workspace-main-bom-editor textarea.field, .recipe-one-step-body input.recipe-input, .recipe-one-step-body textarea.recipe-input";
+const overwriteSelector=".workspace-main-bom-editor input.field, .workspace-main-bom-editor textarea.field";
 const overwriteFocus=new WeakMap();
 document.addEventListener("focusin",event=>{
  const field=event.target;

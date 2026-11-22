@@ -18,20 +18,20 @@ window.BSProjectManager=(()=>{
   const loading=root.querySelector(".project-catalog-loading");
   const newButton=element("button","ui-button ui-button--primary project-directory-new","+ New project");newButton.type="button";
   const archiveButton=element("button","ui-button","Archived projects");archiveButton.type="button";
-  const more=element("details","project-directory-menu");
+  const more=element("details","project-directory-menu ui-toolbar-menu");
   more.append(element("summary","ui-button","More"),archiveButton);
-  const filters=element("div","project-directory-controls");
-  const searchLabel=element("label","project-directory-label project-directory-search","Find a project");
+  const filters=element("div","project-directory-controls ui-directory-toolbar");
+  const searchLabel=element("label","project-directory-label project-directory-search ui-toolbar-search","");
   const searchInput=element("input","ui-control project-search");searchInput.type="search";searchInput.placeholder="Search projects…";searchInput.setAttribute("aria-label","Search projects");searchLabel.append(searchInput);
-  const sortLabel=element("label","project-directory-label","Sort by");
+  const sortLabel=element("label","project-directory-label ui-toolbar-field","Sort by");
   const sortSelect=element("select","ui-control project-sort-filter");
   for(const [value,label] of [["name_asc","Name A–Z"],["name_desc","Name Z–A"],["newest","Newest first"],["oldest","Oldest first"]]){
    const option=element("option","",label);option.value=value;sortSelect.append(option);
   }
   sortLabel.append(sortSelect);
-  const directoryStatus=element("span","project-directory-count muted");directoryStatus.setAttribute("role","status");
+  const directoryStatus=element("span","project-directory-count muted ui-toolbar-count");directoryStatus.setAttribute("role","status");
   root.classList.add("compact-project-directory");
-  const filterMenu=element("details","project-filter-menu");
+  const filterMenu=element("details","project-filter-menu ui-toolbar-menu");
   filterMenu.append(element("summary","ui-button","Filters"));
   const selectedTags=element("div","project-selected-descriptors");
   filters.append(newButton,searchLabel,filterMenu,sortLabel,directoryStatus,more);
@@ -39,7 +39,7 @@ window.BSProjectManager=(()=>{
   const suggestions=["Mechanical","Electronics","Software","Controls","CAD","3D Printing","Woodworking","PCB Design","Machining","Robotics","Measurement","Fabrication"];
   const projectTags=project=>Array.isArray(project?.tags)?project.tags:[];
   const parseTags=text=>[...new Map(String(text||"").split(",").map(x=>x.trim().replace(/\\s+/g," ")).filter(Boolean).map(x=>[x.toLowerCase(),x])).values()].slice(0,20);
-  const tagFilter=element("div","bs-project-tag-filter");
+  const tagFilter=element("div","bs-project-tag-filter ui-toolbar-menu__panel");
   const tagTitle=element("span","bs-project-tag-title","Descriptors");
   const tagSearchLabel=element("label","bs-project-descriptor-search-label","Find a descriptor");
   const tagSearch=element("input","field bs-project-descriptor-search");
@@ -68,7 +68,7 @@ window.BSProjectManager=(()=>{
    for(const [key,{name,count}] of [...counts].sort((a,b)=>a[1].name.localeCompare(b[1].name))){
     if(filter&&!key.includes(filter)&&!activeTags.has(key))continue;
     visibleCount++;
-    const chip=element("button","bs-project-tag-chip"+(activeTags.has(key)?" is-active":""),name);
+    const chip=element("button","ui-chip",name);
     chip.type="button";chip.setAttribute("aria-pressed",String(activeTags.has(key)));
     chip.append(element("span","bs-project-tag-count",String(count)));
     chip.onclick=()=>{activeTags.has(key)?activeTags.delete(key):activeTags.add(key);renderTagFilters();updateDirectory()};
@@ -79,8 +79,8 @@ window.BSProjectManager=(()=>{
    for(const key of activeTags){
     const name=counts.get(key)?.name;
     if(!name){activeTags.delete(key);continue}
-    const chip=element("button","bs-project-tag-chip is-active",name+" ×");
-    chip.type="button";chip.setAttribute("aria-label","Remove "+name+" filter");
+    const chip=element("button","ui-chip",name+" ×");
+    chip.type="button";chip.setAttribute("aria-pressed","true");chip.setAttribute("aria-label","Remove "+name+" filter");
     chip.onclick=()=>{
      activeTags.delete(key);renderTagFilters();updateDirectory();
      (selectedTags.querySelector("button")||filterMenu.querySelector("summary")).focus();
@@ -101,7 +101,7 @@ window.BSProjectManager=(()=>{
     choices.replaceChildren();const current=parseTags(input.value);
     for(const name of options){
      const selected=current.some(tag=>tag.toLowerCase()===name.toLowerCase());
-     const chip=element("button","bs-project-tag-chip"+(selected?" is-active":""),name);
+     const chip=element("button","ui-chip",name);
      chip.type="button";chip.setAttribute("aria-pressed",String(selected));
      chip.onclick=()=>{
       const next=selected?current.filter(tag=>tag.toLowerCase()!==name.toLowerCase()):[...current,name];
@@ -480,6 +480,8 @@ window.BSProjectManager=(()=>{
    }
   }
   void refresh();
+  const accountUrl=new URL(location.href);
+  if(accountUrl.searchParams.has("account")){accountUrl.searchParams.delete("account");history.replaceState(null,"",accountUrl);showAccount();}
  };
  return {init,openAccount:()=>openAccount(),updateProjectSummary:(...args)=>updateProjectSummary(...args),isOwner:id=>currentProjects.some(project=>project.id===id&&project.isOwner),getProject:id=>currentProjects.find(project=>project.id===id)};
 })();
