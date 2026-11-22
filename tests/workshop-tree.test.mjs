@@ -118,6 +118,28 @@ test("Specific Workshop products link to generic items without inheriting specif
  // A link is for discovery, not a copy or inheritance operation.
  assert.doesNotMatch(workshop,/\.\.\.item\.specifications[^\n]*genericParentId/);
 });
+test("Product Builder fields remain item-owned and project imports use explicit scopes",()=>{
+ const api=readFileSync("functions/api/workshop-reference.js","utf8");
+ const builder=readFileSync("assets/workshop-product-builder.js","utf8");
+ const workshop=readFileSync("assets/personal-workshop.js","utf8");
+ const picker=readFileSync("assets/library-part-picker.js","utf8");
+ const html=readFileSync("index.html","utf8");
+ assert.match(api,/cleanProductSections\(body\.details\.productSections\)/);
+ assert.match(api,/fieldIds\.has\(f\.id\)/);
+ assert.match(api,/f\.scope==="workshop"\?String\(f\.value/);
+ assert.match(builder,/window\.BSWorkshopProductBuilder=\{create\}/);
+ assert.match(builder,/text\/workshop-section/);
+ assert.match(builder,/text\/workshop-field/);
+ assert.match(builder,/getSections:/);
+ assert.match(workshop,/productSections:productBuilder\?\.getSections\(\)/);
+ assert.match(picker,/fieldDef\.scope==="project"/);
+ assert.match(picker,/field\.scope==="workshop"/);
+ assert.match(html,/workshop-product-builder\.js/);
+ const css=readFileSync("assets/site-workspaces.css","utf8");
+ assert.match(css,/workspace-panels\{\s*display:flex;\s*flex-direction:column;\s*gap:18px/);
+ const polish=readFileSync("assets/site-polish.css","utf8");
+ assert.match(polish,/workspace-resource-disclosure>summary::before\{\s*top:50%/);
+});
 test("Edit Part inputs use paired descriptor/value layout with mobile fallback",()=>{
  const css=readFileSync("assets/site-workspaces.css","utf8");
  assert.match(css,/\.component-review>label\s*\{\s*display:grid/);
