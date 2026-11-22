@@ -570,8 +570,11 @@
      const control=type==="textarea"?el("textarea"):el("input");
      if(type==="textarea")control.rows=3;else control.type=type;
      control.className="field";control.value=item[name]||"";
-     if(name==="partNumber")control.placeholder="Optional for generic items";
-      if(name==="featureTreeDescription"){control.maxLength=20;control.placeholder="e.g. Resistor, LED, Motor";}
+     // The Workshop API requires an item name and category. All other
+     // free-text product fields are optional; placeholders are only hints.
+     control.placeholder=name==="name"?"Required":"Optional";
+     if(name==="name")control.required=true;
+     if(name==="featureTreeDescription")control.maxLength=20;
      label.append(control);fieldsGrid.append(label);controls[name]=control;
      if(name==="featureTreeDescription")fieldsGrid.append(lookupActions);
     }
@@ -702,7 +705,8 @@
      ["label","Property (e.g. Drain voltage)",100],
      ["value","Value",220],["unit","Unit",32],["conditions","Conditions (optional)",300]
     ]){
-     const field=el("input");field.type="text";field.className="field";field.placeholder=placeholder;
+     const field=el("input");field.type="text";field.className="field";
+     field.placeholder=key==="label"?"Required to save specification":"Optional";
      field.maxLength=max;field.value=spec[key]||"";field.dataset.spec=key;
      if(key==="label")field.addEventListener("input",()=>{if(field.value!==(spec.label||""))row.dataset.propertyId=""});
      row.append(field);
@@ -742,7 +746,7 @@
     const label=el("input"),unit=el("input");
     label.className=unit.className="field";
     label.dataset.generic="label";unit.dataset.generic="unit";
-    label.placeholder="Field name (e.g. Color)";unit.placeholder="Unit (optional)";
+    label.placeholder="Required to save field";unit.placeholder="Optional";
     label.maxLength=100;unit.maxLength=32;
     label.value=entry.label||"";unit.value=entry.unit||"";
     const remove=itemButton("Remove",()=>row.remove(),"btn");
