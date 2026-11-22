@@ -34,7 +34,7 @@ function cleanLayout(raw){
   for(const row of rows){
    if(!row||typeof row!=="object"||typeof row.label!=="string")return null;
    if(!row.label.trim())continue;
-   cleaned.push({id:validId(row.id)?row.id:"row-"+crypto.randomUUID(),
+   cleaned.push({id:typeof row.id==="string"&&/^row-[0-9a-f-]{36}$/.test(row.id)?row.id:"row-"+crypto.randomUUID(),
     label:row.label.trim().slice(0,100),value:""});
   }
   sections[key]={title:String(value.title||"").trim().slice(0,100),
