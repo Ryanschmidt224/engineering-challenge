@@ -19,7 +19,6 @@
   const panel=el("section","recipe-editor recipe-compact"),content=el("div","recipe-content"),feedback=el("p","recipe-feedback muted");
   panel.append(content,feedback);
   const heading=article.querySelector("h2");
-  const headingActions=el("div","recipe-heading-actions");
   const count=el("span","workspace-record-count");
   const headingRow=el("div","recipe-heading-row");
   const disclosure=button("",()=>setInstructionsOpen(!instructionsOpen),"recipe-disclosure-toggle");
