@@ -741,10 +741,11 @@ test("owner manages project settings, numbering and removal",async({page})=>{
  await settings.getByRole("button",{name:"Save numbering format"}).click();
  await expect.poll(()=>numbering.prefix).toBe("PR");
  await expect(settings.locator(".project-numbering-preview")).toContainText("PR01001");
- await settings.getByLabel("Visibility").selectOption("public");
+ await expect(settings.getByLabel("Visibility")).toHaveCount(0);
  await settings.getByRole("button",{name:"Save settings"}).click();
- await expect.poll(()=>catalog[0].visibility).toBe("public");
- await expect(settings.getByLabel("Visibility")).toHaveValue("public");
+ await expect(settings.locator(".project-summary-settings-status")).toHaveText("Project settings saved.");
+ await expect.poll(()=>catalog[0].visibility).toBe("private");
+ await expect(settings.getByLabel("Editing permissions")).toHaveCount(0);
  await settings.getByRole("button",{name:"← Project summary",exact:true}).click();
  await tree.locator(".assembly-name").first().click();
  await expect(page).toHaveURL(new RegExp("#"+id+"/workspace/__root__"));
