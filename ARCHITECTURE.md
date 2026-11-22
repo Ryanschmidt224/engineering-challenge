@@ -1,6 +1,6 @@
 # BuildingSchmidt architecture
 
-BuildingSchmidt is a private engineering application for one owner, hosted on the existing Cloudflare Worker/static-assets deployment. The approved Workshop model replaces the earlier template/community/inventory systems. The owner has approved implementation and production deployment; see `STATUS.md` for actual release status and `docs/WORKSHOP_RELEASE.md` for acceptance and rollback.
+BuildingSchmidt is a private engineering application for one owner, hosted on the existing Cloudflare Worker/static-assets deployment. The approved Workshop model replaces the earlier template/community/inventory systems. The owner has approved implementation and production deployment; see `STATUS.md` for actual release status and `docs/CODEBASE_GUIDE.md` for acceptance and rollback.
 
 ## Storage and responsibilities
 

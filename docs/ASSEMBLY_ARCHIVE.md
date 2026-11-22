@@ -1,5 +1,7 @@
 # Nested Part and Subassembly Archive
 
+> **Legacy engine only.** This describes the current R2 archive, which remains in service. The approved replacement is `HISTORY_REWRITE_PLAN.md` plus `BATCH0_CUSTOM_PART_SPEC.md`; this document does not define new-engine behavior.
+
 ## Goal
 
 An administrator can right-click any part or subassembly in the feature tree and

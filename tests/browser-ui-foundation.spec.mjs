@@ -229,3 +229,14 @@ test("an empty owner catalog does not instantiate hidden built-in projects",asyn
  await expect(page.locator(".project-grid > .project-card")).toHaveCount(0);
  await expect(page.locator("#launcher,#linear,#robot")).toHaveCount(0);
 });
+
+test("project and calculator pages do not request retired Workshop endpoints",async({page})=>{
+ const retired=[];
+ page.on("request",request=>{if(["/api/commonparts","/api/purchased-parts"].includes(new URL(request.url()).pathname))retired.push(request.url());});
+ await page.goto("/index.html#launcher");
+ await expect(page.locator("#launcher .project-summary-page")).toBeVisible();
+ await page.goto("/index.html#calculators");
+ await expect(page.locator("#resource-calculators")).toBeVisible();
+ await expect(page.locator("#resource-calculators .resource-card").first()).toBeVisible();
+ expect(retired).toEqual([]);
+});
