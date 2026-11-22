@@ -188,7 +188,7 @@
     builder=window.BSWorkshopProductBuilder?.create({item:{productSections:[]},readOnly:false});
     if(builder)builderHost.append(builder.element);
    }
-   builder?.setSections(template?.productSections||[]);
+   builder?.setSections(template?.productSections||[],{preserveExisting:false});
    deleteButton.disabled=!selectedId;
    message.textContent=selectedId?"Editing '"+template.name+"'. Saving updates this master only.":"New blank template — choose fields and save.";
    dirty=false;
@@ -251,7 +251,7 @@
   panel.addEventListener("change",()=>{dirty=true});
   launch.hidden=!isEditable();
   return {setEditable:enabled=>{launch.hidden=!enabled;if(!enabled)setOpen(false)},
-   close:()=>setOpen(false)};
+   open:()=>setOpen(true),close:()=>setOpen(false)};
  }
  window.BSWorkshopTemplateManager={mount};
 })();
