@@ -1188,3 +1188,10 @@
   padding:10px 12px;
  }
 }
+
+/* Workshop: distinguish permanent reference values from per-project inputs. */
+#commonparts .workshop-item-edit-form .workshop-generic-template>h4::before{content:"◇";margin-right:8px;color:var(--color-accent)}
+#commonparts .workshop-item-edit-form .workshop-structured-specs>h3::before{content:"▣";margin-right:8px;color:var(--color-accent)}
+#commonparts .workshop-item-edit-form .workshop-generic-ordering-reveal{margin-left:auto;font-size:.79rem;font-weight:500;min-height:30px;padding:4px 9px}
+#commonparts .workshop-item-edit-form .workshop-part-editor-section .workshop-item-edit-grid[hidden]{display:none}
+#commonparts .workshop-item-edit-form .workshop-generic-ordering-collapsed{padding-bottom:0}
