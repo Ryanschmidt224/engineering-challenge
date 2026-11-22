@@ -1161,18 +1161,21 @@ function setupAssemblyTrees(){
    nameValue.readOnly=true;nameValue.setAttribute("aria-label","Container name");
    nameValue.title="Use Modify part to rename this container";
    nameRow.append(nameLabel,nameValue);panel.append(nameRow);
+   // Purpose and alternatives belong below the one-line container field,
+   // not inside its framed box.
+   const extras=document.createElement("div");extras.className="part-functional-extras";
    const feedback=document.createElement("span");feedback.className="part-functional-feedback";feedback.setAttribute("role","status");
    const editable=canEdit();
    const purpose=document.createElement("p");purpose.className="part-functional-purpose";
    purpose.textContent=part.description||"";
    if(!purpose.textContent)purpose.hidden=true;
-   panel.append(purpose);
+   extras.append(purpose);
    const edit=document.createElement("button");edit.type="button";edit.className="btn";edit.textContent="Edit purpose";
    edit.hidden=!editable;
    // Keep purpose editing available without making it a separate heading
    // above the container name.
    const purposeActions=document.createElement("div");purposeActions.className="part-functional-purpose-actions";
-   purposeActions.append(edit);panel.append(purposeActions);
+   purposeActions.append(edit);extras.append(purposeActions);
    const form=document.createElement("div");form.className="part-functional-edit";form.hidden=true;
    const purposeLabel=document.createElement("label");purposeLabel.className="part-functional-field";
    const caption=document.createElement("span");caption.textContent="Purpose";
@@ -1183,7 +1186,7 @@ function setupAssemblyTrees(){
    const save=document.createElement("button");save.type="button";save.className="btn primary";save.textContent="Save";
    const cancel=document.createElement("button");cancel.type="button";cancel.className="btn";cancel.textContent="Cancel";
    cancel.onclick=()=>{form.hidden=true;edit.hidden=!editable};
-   formActions.append(save,cancel);form.append(formActions);panel.append(form);
+   formActions.append(save,cancel);form.append(formActions);extras.append(form);
    edit.onclick=()=>{form.hidden=false;edit.hidden=true};
    async function change(action,data){
     if(!currentPartInfo||currentPartInfo.id!==part.id)throw Error("Part changed; reload before saving");
@@ -1258,12 +1261,14 @@ function setupAssemblyTrees(){
      addButton.onclick=()=>{newForm.hidden=false;addButton.hidden=true;name.focus()};
      alternatives.append(newForm);
     }
-    if(candidates.length>1||editable)panel.append(alternatives);
+    if(candidates.length>1||editable)extras.append(alternatives);
    }
    // Custom part changes are revisions of the same design, not competing
    // implementations. The existing Revisions panel owns that history.
-   panel.append(feedback);
-   return panel;
+   extras.append(feedback);
+   const fragment=document.createDocumentFragment();
+   fragment.append(panel,extras);
+   return fragment;
   };
   const renderPartDetails=part=>{
    // The header is visible even when Part Details is collapsed: permanent
