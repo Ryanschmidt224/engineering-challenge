@@ -9,12 +9,16 @@ const workspace=readFileSync("functions/api/workspace.js","utf8");
 
 test("Work Instructions create named containers, not duplicate entry editors",()=>{
  assert.equal((recipe.match(/"btn recipe-add-step bs-section-add-entry"/g)||[]).length,1);
- assert.match(recipe,/button\("\+ Add Work Instruction"/);
- assert.match(recipe,/headingActions\.append\(add\)/);
+ assert.match(recipe,/button\("\+ Add entry"/);
+ assert.match(recipe,/addActions\.append\(add\)/);
+ assert.match(recipe,/panel\.prepend\(addActions\)/);
+ assert.match(recipe,/const disclosure=button/);
+ assert.match(recipe,/panel\.hidden=!instructionsOpen/);
+ assert.match(recipe,/disclosure\.append\(heading,count\)/);
  assert.match(recipe,/options\.renderInvestigations\(step,area/);
  assert.match(recipe,/recipe-step-browser/);
  assert.match(recipe,/recipe-step-nav-row/);
- assert.doesNotMatch(recipe,/button\("\+ Add entry"/);
+ assert.doesNotMatch(recipe,/button\("\+ Add Work Instruction"/);
  assert.doesNotMatch(site,/Preview steps|Hide preview/);
 });
 
