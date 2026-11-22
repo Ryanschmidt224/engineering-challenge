@@ -1139,3 +1139,52 @@
  #commonparts .workshop-builder-field{grid-template-columns:minmax(0,1fr)}
  #commonparts .workshop-builder-field-actions{justify-content:flex-start}
 }
+
+
+/* Workshop section headings: a quiet green visual hierarchy, while fields
+   and editable values remain on neutral surfaces. Shared across View/Edit. */
+#commonparts .workshop-item-edit-form{
+ --workshop-heading-tint:var(--color-accent-soft,#eaf4ee);
+ --workshop-heading-line:var(--color-border,#cbd5d1);
+}
+#commonparts .workshop-item-edit-form .workshop-part-editor-section>.part-editor-section-heading{
+ display:flex;
+ align-items:center;
+ min-height:44px;
+ margin:-16px -18px 14px;
+ padding:11px 18px;
+ border:0;
+ border-bottom:1px solid var(--workshop-heading-line);
+ border-radius:9px 9px 0 0;
+ background:var(--workshop-heading-tint);
+ color:var(--color-text);
+ font-size:1rem;
+ font-weight:650;
+}
+#commonparts .workshop-item-edit-form .workshop-product-builder>.workshop-builder-heading,
+#commonparts .workshop-item-edit-form .workshop-builder-section>.workshop-builder-section-heading{
+ background:var(--workshop-heading-tint);
+ border-bottom:1px solid var(--workshop-heading-line);
+ border-radius:8px 8px 0 0;
+ padding:11px 14px;
+ margin:-14px -14px 13px;
+}
+#commonparts .workshop-item-edit-form .workshop-product-builder>.workshop-builder-heading{
+ margin:-16px -18px 14px;
+ padding:11px 18px;
+ border-radius:9px 9px 0 0;
+}
+#commonparts .workshop-item-edit-form .workshop-part-editor-section .workshop-structured-specs>h3,
+#commonparts .workshop-item-edit-form .workshop-part-editor-section .workshop-generic-template>h4{
+ color:var(--color-text);
+ background:var(--workshop-heading-tint);
+ border-radius:6px;
+ padding:9px 12px;
+ margin:0;
+}
+@media(max-width:620px){
+ #commonparts .workshop-item-edit-form .workshop-part-editor-section>.part-editor-section-heading{
+  margin:-12px -12px 12px;
+  padding:10px 12px;
+ }
+}
