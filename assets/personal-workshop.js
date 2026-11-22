@@ -856,31 +856,8 @@
     for(const [label,unit] of template)if(!fixed.has(label.toLowerCase()))addGenericField({label,unit});
    };
    if(window.BSResources.workshopIdentityKind(item)==="generic")suggestGenericFields();
-   // Generic components usually have no supplier: keep ordering available
-   // without making six empty purchase fields dominate the editor.
-   const orderingSection=grid.querySelector('[data-part-editor-section="ordering"]');
-   const orderingGrid=orderingSection.querySelector(".workshop-item-edit-grid");
-   const orderingReveal=itemButton("Add ordering details",()=>{
-    orderingExpanded=!orderingExpanded;
-    updateOrderingVisibility();
-   },"btn workshop-generic-ordering-reveal");
-   orderingReveal.type="button";
-   orderingSection.querySelector(".part-editor-section-heading").append(orderingReveal);
-   let orderingExpanded=["supplier","supplierPartNumber","supplierUrl","asin","price","packageQuantity"]
-    .some(key=>String(controls[key]?.value||"").trim());
-   const updateOrderingVisibility=()=>{
-    const generic=identityRadios.generic.checked;
-    orderingGrid.hidden=generic&&!orderingExpanded;
-    orderingSection.classList.toggle("workshop-generic-ordering-collapsed",generic&&!orderingExpanded);
-    orderingReveal.hidden=!generic;
-    orderingReveal.textContent=orderingExpanded?"Hide ordering details":"Add ordering details";
-    const orderingHeading=tableEditors.ordering?.headingText;
-    if(orderingHeading)orderingHeading.textContent=tableEditors.ordering.titleInput.value.trim()||
-     (generic?"Ordering (optional)":"Ordering");
-   };
    const updateIdentityPanels=()=>{
     const generic=identityRadios.generic.checked;
-    updateOrderingVisibility();
     genericTemplateSection.hidden=!generic;
     parentLabel.hidden=generic;
     // Manufacturer identity belongs to specific purchasable products, never
@@ -951,7 +928,6 @@
      if(!confirmed){identityRadios.specific.checked=true;updateIdentityPanels();return}
      for(const field of specificOnlyFields)if(controls[field])controls[field].value="";
      specRows.replaceChildren();
-     orderingExpanded=false;
     }
     approvedIdentity="generic";
     parentSelect.value="";
