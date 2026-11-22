@@ -126,3 +126,11 @@ textarea::placeholder {
   --chevron-size: 0.375rem;
   --chevron-stroke: 1.5px;
 }
+
+/* Shared split-pane geometry. Lists stay usable and preserve a detail column. */
+:root {
+  --pane-handle-size: 0.75rem;
+  --pane-list-min: 12rem;
+  --pane-list-max: 32rem;
+  --pane-detail-min: 16rem;
+}

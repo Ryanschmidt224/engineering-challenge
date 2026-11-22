@@ -530,3 +530,39 @@ summary.ui-button::-webkit-details-marker {
     gap: var(--space-1);
   }
 }
+
+/* One accessible divider behavior for Workshop and Knowledge. */
+.ui-pane-resizer {
+  position: relative;
+  align-self: stretch;
+  min-height: var(--control-height);
+  width: var(--pane-handle-size);
+  cursor: col-resize;
+  touch-action: none;
+  border-radius: var(--radius-small);
+}
+.ui-pane-resizer::before {
+  content: "";
+  position: absolute;
+  inset: 0 calc(50% - 1px);
+  background: var(--color-border);
+}
+.ui-pane-resizer:hover,
+.ui-pane-resizer:focus-visible {
+  background: var(--color-hover);
+  outline: 2px solid var(--color-focus);
+}
+.ui-pane-dragging {
+  cursor: col-resize;
+  user-select: none;
+}
+@media (max-width: 1024px) {
+  .ui-pane-resizer--wide {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .ui-pane-resizer {
+    display: none;
+  }
+}
