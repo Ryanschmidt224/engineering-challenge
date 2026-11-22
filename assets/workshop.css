@@ -1244,3 +1244,22 @@
 
 /* Generic components have no purchasable-product ordering section. */
 #commonparts .workshop-item-edit-form .workshop-part-editor-section[hidden]{display:none!important}
+
+/* Category master-template library: compact, separate from item values. */
+#commonparts .workshop-item-edit-form .workshop-master-templates{
+ margin:10px 0 16px;
+ padding:13px 16px;
+ background:var(--color-surface);
+ border:1px solid var(--color-border);
+ border-radius:9px;
+}
+#commonparts .workshop-item-edit-form .workshop-master-templates[hidden]{display:none!important}
+#commonparts .workshop-master-templates h3{margin:0 0 5px;font-size:.96rem;font-weight:650}
+#commonparts .workshop-master-templates>.muted{margin:0 0 10px;font-size:.8rem}
+#commonparts .workshop-template-controls{display:grid;grid-template-columns:minmax(150px,1fr) minmax(210px,2fr);gap:8px 12px}
+#commonparts .workshop-template-controls>.field{min-width:0;max-width:none;width:100%}
+#commonparts .workshop-template-controls>.field:nth-child(3){grid-column:1/-1}
+#commonparts .workshop-template-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start}
+#commonparts .workshop-template-actions>.btn{font-size:.81rem;padding:6px 10px;min-height:32px}
+#commonparts .workshop-template-status{margin:8px 0 0;min-height:0;font-size:.8rem}
+@media(max-width:650px){#commonparts .workshop-template-controls{grid-template-columns:minmax(0,1fr)}#commonparts .workshop-template-controls>.field:nth-child(3),#commonparts .workshop-template-actions{grid-column:1}}
