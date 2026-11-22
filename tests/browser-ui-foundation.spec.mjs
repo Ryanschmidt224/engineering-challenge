@@ -45,7 +45,7 @@ for (const width of [1440, 390]) test("shared headers, controls and collapsed su
   await description.locator(".ui-section__header").click();
   await description.locator(".project-short-summary").fill("Shared summary save check");
   await description.getByRole("button", {name: "Save", exact: true}).click();
-  await expect(description.locator(".project-summary-message")).toContainText("Saved");
+  await expect(description.locator(".project-summary-message")).toHaveText("Summary saved.");
   await page.screenshot({path: testInfo.outputPath("summary.png"), fullPage: true});
 });
 
@@ -53,6 +53,10 @@ test("empty section bodies share geometry and tooltip help does not cover the tr
   const response = await page.request.post("/api/workshop", {headers: {origin: "http://127.0.0.1:4173"}, data: {entity: "use", expectedRevision: null, expectedFamilyRevision: 1, record: {id: crypto.randomUUID(), project_id: "launcher", family_id: "f-resistor", product_id: null, tree_node_id: null, purpose: "Test resistor", quantity: 1, unit: "pcs", field_values: {}, notes: ""}}});
   expect(response.ok(), await response.text()).toBe(true);
   const {record} = await response.json();
+  const components = await (await page.request.get("/api/components?project=launcher")).json();
+  const part = components.components.find(entry => entry.id === record.id);
+  const progress = await page.request.patch("/api/components?project=launcher&id=" + record.id, {headers: {origin: "http://127.0.0.1:4173"}, data: {expectedRevision: part.revision, progressStatus: "complete"}});
+  expect(progress.ok(), await progress.text()).toBe(true);
   await page.goto("/index.html#launcher/part/" + record.id);
   const workspace = page.locator("#launcher .bom-part-workspace");
   await expect(workspace).toBeVisible();
@@ -71,6 +75,9 @@ test("empty section bodies share geometry and tooltip help does not cover the tr
   await expect(history.getByText("Entry type", {exact: true})).toBeVisible();
   await history.getByRole("button", {name: "Cancel", exact: true}).click();
   const tree = page.locator("#launcher [data-assembly-tree]");
+  const complete = tree.locator(".assembly-name").filter({has: page.locator(".assembly-tree-status-marker")});
+  await expect(complete).toHaveCount(1);
+  expect(await complete.evaluate(el => el.firstElementChild.classList.contains("assembly-tree-status-marker") && el.firstChild === el.firstElementChild)).toBe(true);
   const row = tree.locator(".assembly-node").first();
   await row.hover();
   await expect(page.locator("#bs-global-tooltip")).toBeHidden();

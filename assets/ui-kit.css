@@ -220,6 +220,20 @@ summary.ui-button::-webkit-details-marker {
 .ui-summary-content > :last-child {
   margin-bottom: 0;
 }
+.assembly-tree-status-marker {
+  display: inline-block;
+  margin-inline-end: var(--space-1);
+  font-size: var(--text-caption);
+  line-height: 1;
+  color: var(--color-text-muted);
+}
+.part-progress-complete .assembly-tree-status-marker {
+  color: var(--color-accent);
+  font-weight: var(--font-semibold);
+}
+.part-needs-attention .assembly-tree-status-marker {
+  color: var(--color-danger);
+}
 .ui-toolbar-menu > .bs-project-tag-filter {
   left: 0;
   width: min(20rem, calc(100vw - 2rem));

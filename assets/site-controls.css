@@ -2406,22 +2406,8 @@
   color: var(--color-text-muted);
   font-size: var(--text-small);
 }
-.assembly-tree-status-marker {
-  display: inline-block;
-  margin-left: 0.4em;
-  font-size: 0.75em;
-  line-height: 1;
-  vertical-align: baseline;
-  color: var(--color-text-muted);
-}
-.assembly-node.part-progress-complete .assembly-tree-status-marker {
-  color: var(--color-accent);
-  font-weight: var(--font-semibold);
-}
+
 .assembly-node.part-needs-attention > .assembly-name {
-  color: var(--color-danger);
-}
-.assembly-node.part-needs-attention .assembly-tree-status-marker {
   color: var(--color-danger);
 }
 

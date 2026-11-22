@@ -40,7 +40,6 @@
  function mount({project,summary,canEdit}){
   let revision=null,originalIntent=null,milestones=[],loadId=0;
   const panel=el("section","project-overview-card project-intent-milestones");
-  const header=el("div","project-milestone-heading");
   const expand=button("Project Intent & Milestones",()=>{
    const isOpen=expand.getAttribute("aria-expanded")==="true";
    expand.setAttribute("aria-expanded",String(!isOpen));
@@ -48,10 +47,8 @@
   },"project-milestone-expand");
   expand.setAttribute("aria-expanded","false");
   expand.setAttribute("aria-controls","project-milestone-content-"+project);
-  const chevron=el("span","project-milestone-chevron");
-  chevron.setAttribute("aria-hidden","true");
   const title=el("h2","ui-section__title","Project Intent & Milestones");expand.replaceChildren(title);
-  header.append(expand);panel.append(header);
+  panel.append(expand);
   const content=el("div","project-milestone-content");
   content.id="project-milestone-content-"+project;
   content.hidden=true;
