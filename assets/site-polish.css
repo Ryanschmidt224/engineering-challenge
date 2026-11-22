@@ -4850,3 +4850,72 @@
  font-family:inherit;
  font-weight:400;
 }
+
+/* One exact disclosure header grid for part and subassembly.
+   Previous rules matched type sizes but left pseudo-chevrons in different layouts. */
+.assembly-workspace-page{
+ --workspace-tile-label-size:.91rem;
+ --workspace-tile-label-weight:650;
+ --workspace-tile-label-left:27px;
+ --workspace-tile-chevron-left:11px;
+}
+.assembly-workspace-page :is(
+ .part-details-collapse>summary.part-details-view-heading,
+ .workspace-primary-disclosure>summary,
+ .workspace-secondary-disclosure>summary,
+ .assembly-archived-disclosure>summary,
+ .investigation-collapse>summary.investigation-collapse-heading,
+ .bs-unstructured-notes>summary.bs-unstructured-notes-heading){
+ position:relative;
+ box-sizing:border-box;
+ padding:9px 20px 9px var(--workspace-tile-label-left)!important;
+ min-height:48px;
+ align-items:center;
+ gap:8px;
+ font-family:inherit;
+ font-size:var(--workspace-tile-label-size)!important;
+ font-weight:var(--workspace-tile-label-weight)!important;
+ line-height:1.3;
+}
+.assembly-workspace-page :is(
+ .part-details-collapse>summary.part-details-view-heading,
+ .workspace-primary-disclosure>summary,
+ .workspace-secondary-disclosure>summary,
+ .investigation-collapse>summary.investigation-collapse-heading)::before{
+ position:absolute!important;
+ left:var(--workspace-tile-chevron-left)!important;
+ top:50%!important;
+ margin:0!important;
+ transform:translateY(-50%) rotate(45deg);
+}
+.assembly-workspace-page :is(
+ .part-details-collapse[open]>summary.part-details-view-heading,
+ .workspace-primary-disclosure[open]>summary,
+ .workspace-secondary-disclosure[open]>summary,
+ .investigation-collapse[open]>summary.investigation-collapse-heading)::before{
+ transform:translateY(-50%) rotate(135deg);
+}
+.assembly-workspace-page :is(
+ .part-details-collapse>summary.part-details-view-heading,
+ .workspace-primary-disclosure>summary,
+ .workspace-secondary-disclosure>summary,
+ .investigation-collapse>summary.investigation-collapse-heading,
+ .bs-unstructured-notes>summary.bs-unstructured-notes-heading) :is(h2,.workspace-disclosure-title),
+.assembly-workspace-page .recipe-instructions .recipe-disclosure-toggle>h2{
+ font-family:inherit!important;
+ font-size:var(--workspace-tile-label-size)!important;
+ font-weight:var(--workspace-tile-label-weight)!important;
+ line-height:1.3!important;
+ margin:0!important;
+}
+.assembly-workspace-page .recipe-instructions .recipe-disclosure-toggle{
+ padding-left:var(--workspace-tile-label-left)!important;
+ font-size:var(--workspace-tile-label-size)!important;
+}
+.assembly-workspace-page .recipe-instructions .recipe-disclosure-toggle::before{
+ left:var(--workspace-tile-chevron-left)!important;
+}
+.assembly-workspace-page :is(.workspace-record-count,.part-details-summary-fields){
+ font-size:.76rem!important;
+ font-weight:400!important;
+}
