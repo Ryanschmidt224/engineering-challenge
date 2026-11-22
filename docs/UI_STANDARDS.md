@@ -33,6 +33,12 @@ Every collapsible block on project, assembly and part pages: Part details, Work 
 - One body: the same inner padding. Empty sections say so in one muted line.
 - Variant `ui-section--quiet` (no frame) for secondary, utility sections such as Project backups and Recent changes.
 
+### Section actions (`BSUI.sectionActions`)
+- The action row is the first element inside the expanded section body, aligned with its standard padding.
+- "+ Add entry" uses `BSUI.button`, appears first, and uses the same 44px control height everywhere. Secondary actions follow on the same wrapping row.
+- Pass callbacks/buttons from each controller; controllers retain their permission and edit-mode rules. Do not add section-specific offsets or restyle the buttons.
+- Re-rendering reuses the direct action slot. Read-only sections have no empty action strip.
+
 ### Button (`BSUI.button`, classes `ui-button` / `button`)
 - One height (`--control-height`, 44 px) for every button and form control in a toolbar; `--small` (32 px) for in-row actions.
 - Variants: default (outlined), `--primary` (filled, one per area), `--quiet` (text only), `--danger`.

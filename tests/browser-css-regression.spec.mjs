@@ -30,7 +30,10 @@ async function fixtures(page,originalCSS){
    case "/api/tree":data=url.searchParams.has("metadata")?{metadata:{title:"CSS fixture"},revision:"tree"}:url.searchParams.has("assembly")?{page:{description:"A fixed description for the visual baseline."},revision:"tree"}:{nodes:[{id:"control",kind:"assembly",parentId:null,name:"Control assembly",quantity:2}],revision:"tree"};break;
    case "/api/components":data={components:[{id:partId,name:"Sensor bracket",partType:"custom",assemblyId:"control",quantity:2,quantityUnit:"pcs",revision:"part",description:"Retains instructions, measurements and project history.",specifications:[{name:"Material",value:"Aluminum"}]}]};break;
    case "/api/workspace":data={workspace:{recipe:[{id:"measure",title:"Measure voltage before connecting the sensor",tileOrder:[]}],resources:{tools:[],parts:[],calculators:[]},experiments:[],history:[]}};break;
-   case "/api/investigations":data={records:[],revision:null};break;
+   case "/api/investigations":data={records:[
+    {id:"22222222-2222-4222-8222-222222222222",ownerType:"part",ownerId:partId,scope:"part",category:"note",title:"Existing part note",description:"A saved entry must not push creation below the records.",lifecycle:"active",entries:[],createdAt:"2026-11-20T12:00:00Z"},
+    {id:"33333333-3333-4333-8333-333333333333",ownerType:"assembly",ownerId:"__root__",scope:"assembly",category:"note",title:"Existing assembly note",description:"The shared action row stays first for an assembly too.",lifecycle:"active",entries:[],createdAt:"2026-11-20T12:00:00Z"}
+   ],revision:"css-fixture-records"};break;
    case "/api/unstructured-notes":data={notes:[],revision:null,canEdit:true};break;
    case "/api/photos":data={photos:[]};break;
    case "/api/photo-annotations":return route.fulfill({status:404});
@@ -107,6 +110,23 @@ for(const width of [1440,390])for(const project of projects)for(const kind of ["
      expect(await archive.getAttribute("open")).not.toBe(wasOpen);
      await archive.locator(".ui-section__header").click();
      await help.focus();await help.press("Escape");await expect(tip).toBeHidden();
+    }
+    if(state==="expanded"){
+     const geometry=await workspaces[1].evaluate(workspace=>["work-instructions","helpful-tools","history","notes"].map(role=>{
+      const section=workspace.querySelector('[data-section="'+role+'"]');
+      const body=section.querySelector(":scope > .ui-section__body");
+      const row=body.querySelector(":scope > .ui-section__actions");
+      const primary=row?.querySelector("button");
+      if(!row||!primary)return {role,error:"missing shared action row"};
+      const b=body.getBoundingClientRect(),p=primary.getBoundingClientRect(),style=getComputedStyle(body);
+      return {role,first:body.firstElementChild===row,label:primary.textContent.trim(),x:p.left-b.left,y:p.top-b.top,paddingX:parseFloat(style.paddingLeft),paddingY:parseFloat(style.paddingTop),height:p.height};
+     }));
+     for(const g of geometry){
+      expect(g.error,g.role).toBeUndefined();expect(g.first,g.role).toBe(true);expect(g.label,g.role).toBe("+ Add entry");
+      expect(Math.abs(g.x-g.paddingX),g.role+" horizontal inset").toBeLessThanOrEqual(1);
+      expect(Math.abs(g.y-g.paddingY),g.role+" vertical inset").toBeLessThanOrEqual(1);
+      expect(g.height,g.role+" control height").toBe(44);
+     }
     }
     const issues=[];
     for(const metric of metrics){if(metric.font!=="16px")issues.push(metric.title+": title "+metric.font);if(metric.count&&metric.count!=="14px")issues.push(metric.title+": count "+metric.count);if(metric.height<48)issues.push(metric.title+": header "+metric.height);if(metric.clipped)issues.push(metric.title+": visible text is clipped");}

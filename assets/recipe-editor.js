@@ -42,8 +42,7 @@
   }else article.prepend(disclosure,panel);
   window.BSUI?.sectionShell(article,disclosure,panel,"work-instructions");
   // Creation lives inside the expanded body, like other workspace sections.
-  const addActions=el("div","recipe-body-actions");
-  panel.prepend(addActions);
+  const addActions=window.BSUI.sectionActions(panel);
   setInstructionsOpen(false);
   const admin=()=>!!options.admin?.();
   let steps=[],expanded=null,dirty=false,pendingUploads=0,saving=false,draft=null,scope=null,loading=true;
@@ -339,7 +338,7 @@
    if(archived.length)stepList.append(archive);
    add.hidden=!admin();
   }
-  const add=button("+ Add entry",()=>{
+  const add=window.BSUI.button("+ Add entry",()=>{
    if(!admin()||loading||saving||pendingUploads)return;
    if(!draft){
     draft={id:newId(),title:"",archivedAt:"",archiveNote:"",tileOrder:[]};
@@ -347,7 +346,7 @@
    }
    expanded=draft.id;editSnapshots.clear();editing.clear();editing.add(draft.id);render();
    content.querySelector(".recipe-step-name")?.focus();
-  },"btn recipe-add-step bs-section-add-entry");
+  });
   addActions.append(add);
   function setLoading(value){
    loading=value;

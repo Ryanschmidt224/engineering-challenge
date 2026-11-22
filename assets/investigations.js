@@ -458,16 +458,17 @@
    // A step has one edit-mode switch: its Work Instruction header.
    // Other workspace pages have no parent editor and retain their own controls.
    const allowEntryEditing=admin()&&(!compact||!stepSlot?.step?.archivedAt);
-   const activeHeader=make("div","investigation-active-heading");
    // The step editor has its own Edit mode. Other workspace sections have no
    // separate editing toggle, so retain their Add entry button.
    const canCreate=allowEntryEditing&&(!compact||Boolean(stepSlot?.editing));
-   if(canCreate)activeHeader.append(btn("+ Add entry",event=>{
+   const addEntry=canCreate?window.BSUI.button("+ Add entry",event=>{
     event.preventDefault();newRecord(context,target);
-   },"btn investigation-add investigation-create-button"));
+   }):null;
+   const canReplace=admin()&&context.ownerType==="part"&&!context.stepId&&getPart?.()?.id===context.ownerId&&typeof onReplacePart==="function";
+   const replace=canReplace?window.BSUI.button("Replace part / save revision",()=>replacePart(context,target),{variant:"quiet"}):null;
+   window.BSUI.sectionActions(target.sectionBody||activeHost,{primary:addEntry,secondary:[replace]});
    const activeContent=make("div","investigation-active-content");
    activeHost.append(activeContent);
-   if(canCreate&&!compact)activeHost.append(activeHeader);
 
    const archiveCount=archivedOwn.length+archivedRelated.length;
    const archiveShell=target.archiveHistoryDisclosure;
@@ -493,10 +494,6 @@
    // Full workspaces have one shared Archives and Revision History
    // disclosure. Step-level archive disclosures remain independent.
    disclosure.append(content);
-   if(canCreate&&compact){
-    activeHeader.classList.add("investigation-create-card");
-    target.append(activeHeader);
-   }
    target.append(disclosure);
 
    const renderCard=(record,destination,{historical=false,inherited=false}={})=>{
@@ -699,11 +696,8 @@
    }
    // An empty active section adds no value in read mode. The chevrons
    // on actual entries and Project Archive already communicate structure.
-   if(admin()&&context.ownerType==="part"&&!context.stepId&&getPart?.()?.id===context.ownerId&&typeof onReplacePart==="function"){
-    activeContent.append(btn("Replace part / save revision",()=>replacePart(context,target),"btn investigation-add"));
-   }
    activeContent.append(make("p","investigation-feedback muted"));
-   // The step-level Add entry button lives beneath Project Archive. Avoid
+   // The shared action row precedes records, including in step Edit mode. Avoid
    // displaying a blank active-entry wrapper when there are no cards yet.
    activeHost.hidden=!activeOwn.length&&!stepSlot?.mainTile&&!activeContent.querySelector("button")&&!canCreate;
 

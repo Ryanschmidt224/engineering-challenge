@@ -847,10 +847,10 @@ function setupAssemblyTrees(){
    const toolsSection=window.BSUI.section({title:"Helpful tools",role:"helpful-tools",tooltip:"Open calculators, tools, and Workshop references linked to this work."});
    const tools=toolsSection.root,toolsCount=toolsSection.count;
    toolsSection.aside.append(window.BSDialogs.tooltip("About Helpful tools","Link calculators, tools, and Workshop references for this work."));
-   const toolsControls=document.createElement("div");toolsControls.className="workspace-tool-controls";
+   const toolsControls=window.BSUI.sectionActions(toolsSection.body);
    // Legacy content styles are scoped by this class; it marks the section body only.
    toolsSection.body.classList.add("workspace-resource-disclosure");
-   toolsSection.body.append(toolsControls,resourcesPanel);
+   toolsSection.body.append(resourcesPanel);
    const history=document.createElement("article");history.className="investigations-panel";
    const activeRecords=document.createElement("section");activeRecords.className="investigations-active-panel";
    history.activeEntriesHost=activeRecords;
@@ -861,6 +861,7 @@ function setupAssemblyTrees(){
    archiveSection.body.classList.add("workspace-archive-history");
    archiveSection.body.append(activeRecords,history);
    history.archiveHistoryDisclosure=archiveHistory;
+   history.sectionBody=archiveSection.body;
    instructions.after(tools);
    panel.querySelector(".workspace-panels").after(archiveHistory);
    const resources=window.BSResources?.mount(resourcesPanel,{addTo:toolsControls,onChange:()=>scheduleWorkspaceAutosave(scope),onCount:count=>{

@@ -14,7 +14,8 @@
   const status=el("p","muted bs-unstructured-status");status.setAttribute("role","status");
   const list=el("div","bs-unstructured-list");
   const content=section.body;content.classList.add("bs-unstructured-notes");
-  content.append(add,status,list);
+  window.BSUI.sectionActions(content,{primary:add});
+  content.append(status,list);
   parent.append(panel);
   let pageId="root",records=[],revision=null,editable=false,version=0,editing=null;
   const endpoint=()=>"/api/unstructured-notes?project="+encodeURIComponent(project)+

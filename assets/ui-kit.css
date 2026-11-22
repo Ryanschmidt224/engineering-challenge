@@ -227,3 +227,21 @@ summary.ui-button::-webkit-details-marker {
 .ui-section[hidden] {
   display: none;
 }
+
+/* The shared action slot is the first row inside an open section body. */
+.ui-section__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+}
+.ui-section__actions:empty,
+.ui-section__actions:not(:has(> :not([hidden]))) {
+  display: none;
+}
+.ui-section__actions:last-child {
+  margin-bottom: 0;
+}

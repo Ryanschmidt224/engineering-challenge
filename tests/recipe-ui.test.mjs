@@ -8,10 +8,10 @@ const site=readFileSync("assets/site.js","utf8");
 const workspace=readFileSync("functions/api/workspace.js","utf8");
 
 test("Work Instructions create named containers, not duplicate entry editors",()=>{
- assert.equal((recipe.match(/"btn recipe-add-step bs-section-add-entry"/g)||[]).length,1);
+ assert.equal((recipe.match(/BSUI\.button\("\+ Add entry"/g)||[]).length,1);
  assert.match(recipe,/button\("\+ Add entry"/);
  assert.match(recipe,/addActions\.append\(add\)/);
- assert.match(recipe,/panel\.prepend\(addActions\)/);
+ assert.match(recipe,/BSUI\.sectionActions\(panel\)/);
  assert.match(recipe,/const disclosure=button/);
  assert.match(recipe,/panel\.hidden=!instructionsOpen/);
  assert.match(recipe,/disclosure\.append\(heading,count\)/);
