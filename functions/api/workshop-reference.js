@@ -7,6 +7,38 @@ const indexKey="workshop-reference-overrides/v1.json";
 const photoKey=id=>"workshop-reference-photos/"+id;
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json","cache-control":"no-store","x-content-type-options":"nosniff"}});
 const fields={genericParentId:110,productIdentity:12,name:180,subtitle:240,featureTreeDescription:20,spec:5000,use:3000,caution:3000,manufacturer:160,model:160,partNumber:160,supplier:160,supplierPartNumber:160,supplierUrl:1200,asin:20,price:80,packageQuantity:80,orderNotes:2000,documentationUrl:1200,notes:5000,category:40,kind:20,familyId:100,familyName:120,typeName:120};
+// Flexible Product Builder data remains item-owned. Field IDs are stable across
+// reorderings; no values are inherited from related generic/specific products.
+const validBuilderId=id=>/^[a-zA-Z0-9_-]{1,64}$/.test(String(id||""));
+function cleanProductSections(raw){
+ if(raw===undefined)return [];
+ if(!Array.isArray(raw)||raw.length>16)return null;
+ const sections=[],ids=new Set(),fieldIds=new Set();
+ for(const part of raw){
+  if(!part||typeof part!=="object"||!validBuilderId(part.id)||ids.has(part.id)||
+   typeof part.title!=="string"||part.title.trim().length>100||
+   !Array.isArray(part.fields)||part.fields.length>30)return null;
+  ids.add(part.id);
+  const fields=[];
+  for(const f of part.fields){
+   if(!f||typeof f!=="object"||!validBuilderId(f.id)||fieldIds.has(f.id)||
+    typeof f.label!=="string"||!f.label.trim()||f.label.length>100||
+    !["text","number","select","checkbox","photo","link"].includes(f.type)||
+    !["workshop","project"].includes(f.scope)||
+    (f.unit!==undefined&&(typeof f.unit!=="string"||f.unit.length>32))||
+    (f.value!==undefined&&(typeof f.value!=="string"||f.value.length>1200))||
+    (f.options!==undefined&&(!Array.isArray(f.options)||f.options.length>30||
+     f.options.some(o=>typeof o!=="string"||o.length>100))))return null;
+   fieldIds.add(f.id);
+   fields.push({id:f.id,label:f.label.trim(),type:f.type,scope:f.scope,
+    unit:String(f.unit||"").trim(),value:f.scope==="workshop"?String(f.value||"").trim():"",
+    options:Array.isArray(f.options)?f.options.map(o=>o.trim()).filter(Boolean):[]});
+  }
+  sections.push({id:part.id,title:part.title.trim()||"Untitled section",fields});
+ }
+ if(fieldIds.size>120)return null;
+ return sections;
+}
 const validId=id=>/^workshop:[a-z0-9-]{2,100}$/.test(String(id||""));
 const validUrl=url=>!url||/^https:\/\//i.test(url);
 async function read(env){
@@ -137,6 +169,9 @@ export async function onRequest({request,env}){
    seenGeneric.add(key);genericFields.push({label,unit});
   }
   patch.genericFields=genericFields;
+  const productSections=cleanProductSections(body.details.productSections);
+  if(productSections===null)return json({error:"Invalid Product Builder sections or fields"},400);
+  patch.productSections=productSections;
   const id=creating?"workshop:custom-"+crypto.randomUUID():body.id;
   // Preserve compatibility with seed references while marking new records as
   // first-class catalog items. Never trust the client to set the created flag.
