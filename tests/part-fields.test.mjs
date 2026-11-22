@@ -262,6 +262,6 @@ test("part detail container name uses shared help tooltip and one aligned read-o
  assert.match(site,/BSDialogs\.tooltip\("About container names",containerHelp\)/);
  assert.match(site,/nameValue\.value=window\.BSPartFields\.treeDescriptionFor\(part\)\|\|part\.name/);
  assert.match(site,/nameValue\.readOnly=true/);
- assert.match(css,/\.part-container-overview>\.part-container-name-row\{/);
- assert.match(css,/grid-template-columns:minmax\(175px,30%\) minmax\(0,1fr\)/);
+ assert.match(css,/\.part-container-overview\s*>\s*\.part-container-name-row\s*\{/);
+ assert.match(css,/grid-template-columns:\s*minmax\(175px,\s*30%\) minmax\(0,\s*1fr\)/);
 });

@@ -5,9 +5,9 @@ import {runInNewContext} from "node:vm";
 
 test("Edit Part inputs use paired descriptor/value layout with mobile fallback",()=>{
  const css=readFileSync("assets/site-workspaces.css","utf8");
- assert.match(css,/\.component-review>label\s*\{\s*display:grid/);
- assert.match(css,/grid-template-columns:minmax\(150px,215px\) minmax\(0,1fr\)/);
- assert.match(css,/@media\(max-width:620px\)/);
+ assert.match(css,/\.component-review\s*>\s*label\s*\{\s*display:\s*grid/);
+ assert.match(css,/grid-template-columns:\s*minmax\(150px,\s*215px\) minmax\(0,\s*1fr\)/);
+ assert.match(css,/@media\s*\(max-width:\s*620px\)/);
 });
 
 test("Feature tree uses explicit show/hide controls for Workshop items and documents",()=>{
@@ -30,8 +30,8 @@ test("Feature tree uses explicit show/hide controls for Workshop items and docum
 });
 test("Parts Management input backgrounds and column grips are uncluttered",()=>{
  const css=readFileSync("assets/parts-management.css","utf8");
- assert.match(css,/background-color:#fff!important/);
- assert.match(css,/border-radius:7px/);
+ assert.match(css,/background-color:\s*#fff\s*!important/);
+ assert.match(css,/border-radius:\s*7px/);
 });
 
 test("Projects use tags instead of a category selector, without deleting legacy API metadata",()=>{

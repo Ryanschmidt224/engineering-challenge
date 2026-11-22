@@ -34,9 +34,9 @@ test("Projects use tag discovery while Knowledge, Workshop and Parts Management 
 test("catalog layout remains CSS responsive and doesn't change storage schemas",()=>{
  const css=read("assets/site-controls.css");
  const html=read("index.html");
- assert.match(css,/\.bs-catalog-layout\{/);
+ assert.match(css,/\.bs-catalog-layout\s*\{/);
  assert.match(css,/\.bs-catalog-category\.is-active/);
- assert.match(css,/@media\(max-width:800px\)/);
+ assert.match(css,/@media\s*\(max-width:\s*800px\)/);
  assert.match(html,/data-nav="home">Projects<\/button>/);
  assert.match(html,/data-nav="learn">Knowledge Base<\/button>/);
  assert.match(html,/data-nav="commonparts">The Workshop<\/button>/);

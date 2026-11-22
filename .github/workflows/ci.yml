@@ -17,6 +17,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: npm ci
       - name: Check source syntax and run regression tests
         run: npm run check
   browser:
@@ -25,6 +26,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Fetch fixed pre-cleanup visual reference
+        run: git fetch --no-tags --depth=1 origin 1ed47284dcea58bdadb4f86b4065e3746fa2995d
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

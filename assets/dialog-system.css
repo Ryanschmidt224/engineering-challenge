@@ -1,341 +1,505 @@
 /* Shared visual language for website dialogs. Loaded last to override legacy themes.
    Full-screen/photo viewers retain their specialized layout and media controls. */
-:root{
- --bs-dialog-bg:#fff;
- --bs-dialog-fg:#293a33;
- --bs-dialog-border:#d1dbd5;
- --bs-dialog-muted:#60736a;
- --bs-dialog-backdrop:rgba(17,29,24,.52);
- --bs-dialog-shadow:0 24px 72px rgba(16,29,22,.25);
- --bs-dialog-radius:14px;
+:root {
+  --bs-dialog-bg: #fff;
+  --bs-dialog-fg: #293a33;
+  --bs-dialog-border: #d1dbd5;
+  --bs-dialog-muted: #60736a;
+  --bs-dialog-backdrop: rgba(17, 29, 24, 0.52);
+  --bs-dialog-shadow: 0 24px 72px rgba(16, 29, 22, 0.25);
+  --bs-dialog-radius: 14px;
 }
-dialog:is(.bs-dialog,.bs-delete-confirm,.project-account-dialog,.project-create-dialog,
-.project-manage-dialog,.project-delete-dialog,.assembly-create-dialog,.library-part-dialog,
-.part-editor-dialog,.workspace-photo-dialog,.my-build-feedback-dialog,.workspace-photo-dialog,
-.project-review-dialog,.bs-markup-modal,.admin-dialog):modal{
- position:fixed;
- inset:0;
- margin:auto;
- box-sizing:border-box;
- border:1px solid var(--bs-dialog-border);
- border-radius:var(--bs-dialog-radius);
- background:var(--bs-dialog-bg);
- color:var(--bs-dialog-fg);
- box-shadow:var(--bs-dialog-shadow);
- max-height:calc(100dvh - 36px);
- overflow:auto;
+dialog:is(
+    .bs-dialog,
+    .bs-delete-confirm,
+    .project-account-dialog,
+    .project-create-dialog,
+    .project-manage-dialog,
+    .project-delete-dialog,
+    .assembly-create-dialog,
+    .library-part-dialog,
+    .part-editor-dialog,
+    .workspace-photo-dialog,
+    .my-build-feedback-dialog,
+    .workspace-photo-dialog,
+    .project-review-dialog,
+    .bs-markup-modal,
+    .admin-dialog
+  ):modal {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  box-sizing: border-box;
+  border: 1px solid var(--bs-dialog-border);
+  border-radius: var(--bs-dialog-radius);
+  background: var(--bs-dialog-bg);
+  color: var(--bs-dialog-fg);
+  box-shadow: var(--bs-dialog-shadow);
+  max-height: calc(100dvh - 36px);
+  overflow: auto;
 }
-dialog:is(.bs-dialog,.bs-delete-confirm,.project-account-dialog,.project-create-dialog,
-.project-manage-dialog,.project-delete-dialog,.assembly-create-dialog,.library-part-dialog,
-.part-editor-dialog,.workspace-photo-dialog,.my-build-feedback-dialog,.project-review-dialog,
-.bs-markup-modal,.admin-dialog)::backdrop{
- background:var(--bs-dialog-backdrop);
+dialog:is(
+    .bs-dialog,
+    .bs-delete-confirm,
+    .project-account-dialog,
+    .project-create-dialog,
+    .project-manage-dialog,
+    .project-delete-dialog,
+    .assembly-create-dialog,
+    .library-part-dialog,
+    .part-editor-dialog,
+    .workspace-photo-dialog,
+    .my-build-feedback-dialog,
+    .project-review-dialog,
+    .bs-markup-modal,
+    .admin-dialog
+  )::backdrop {
+  background: var(--bs-dialog-backdrop);
 }
-dialog:is(.bs-dialog,.bs-delete-confirm,.project-account-dialog,.project-create-dialog,
-.project-manage-dialog,.project-delete-dialog,.assembly-create-dialog,.library-part-dialog,
-.part-editor-dialog,.workspace-photo-dialog,.my-build-feedback-dialog,.project-review-dialog,
-.bs-markup-modal,.admin-dialog) :is(input.field,textarea.field,select.field){
- border:1px solid var(--bs-dialog-border);
- border-radius:9px;
- background:#fff;
- color:var(--bs-dialog-fg);
+dialog:is(
+    .bs-dialog,
+    .bs-delete-confirm,
+    .project-account-dialog,
+    .project-create-dialog,
+    .project-manage-dialog,
+    .project-delete-dialog,
+    .assembly-create-dialog,
+    .library-part-dialog,
+    .part-editor-dialog,
+    .workspace-photo-dialog,
+    .my-build-feedback-dialog,
+    .project-review-dialog,
+    .bs-markup-modal,
+    .admin-dialog
+  )
+  :is(input.field, textarea.field, select.field) {
+  border: 1px solid var(--bs-dialog-border);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--bs-dialog-fg);
 }
-dialog:is(.bs-dialog,.bs-delete-confirm,.project-account-dialog,.project-create-dialog,
-.project-manage-dialog,.project-delete-dialog,.assembly-create-dialog,.library-part-dialog,
-.part-editor-dialog,.workspace-photo-dialog,.my-build-feedback-dialog,.project-review-dialog,
-.bs-markup-modal,.admin-dialog) :is(h2,h3){
- color:var(--bs-dialog-fg);
+dialog:is(
+    .bs-dialog,
+    .bs-delete-confirm,
+    .project-account-dialog,
+    .project-create-dialog,
+    .project-manage-dialog,
+    .project-delete-dialog,
+    .assembly-create-dialog,
+    .library-part-dialog,
+    .part-editor-dialog,
+    .workspace-photo-dialog,
+    .my-build-feedback-dialog,
+    .project-review-dialog,
+    .bs-markup-modal,
+    .admin-dialog
+  )
+  :is(h2, h3) {
+  color: var(--bs-dialog-fg);
 }
-dialog:is(.bs-dialog,.bs-delete-confirm,.project-account-dialog,.project-create-dialog,
-.project-manage-dialog,.project-delete-dialog,.assembly-create-dialog,.library-part-dialog,
-.part-editor-dialog,.workspace-photo-dialog,.my-build-feedback-dialog,.project-review-dialog,
-.bs-markup-modal,.admin-dialog) .btn:not(.primary):not(.bs-dialog-danger){
- background:#f4f7f5;
- border:1px solid var(--bs-dialog-border);
- color:var(--bs-dialog-fg);
+dialog:is(
+    .bs-dialog,
+    .bs-delete-confirm,
+    .project-account-dialog,
+    .project-create-dialog,
+    .project-manage-dialog,
+    .project-delete-dialog,
+    .assembly-create-dialog,
+    .library-part-dialog,
+    .part-editor-dialog,
+    .workspace-photo-dialog,
+    .my-build-feedback-dialog,
+    .project-review-dialog,
+    .bs-markup-modal,
+    .admin-dialog
+  )
+  .btn:not(.primary):not(.bs-dialog-danger) {
+  background: #f4f7f5;
+  border: 1px solid var(--bs-dialog-border);
+  color: var(--bs-dialog-fg);
 }
-dialog:is(.bs-dialog,.bs-delete-confirm,.project-account-dialog,.project-create-dialog,
-.project-manage-dialog,.project-delete-dialog,.assembly-create-dialog,.library-part-dialog,
-.part-editor-dialog,.workspace-photo-dialog,.my-build-feedback-dialog,.project-review-dialog,
-.bs-markup-modal,.admin-dialog) .btn:focus-visible{
- outline:3px solid #a9d6c1;
- outline-offset:2px;
+dialog:is(
+    .bs-dialog,
+    .bs-delete-confirm,
+    .project-account-dialog,
+    .project-create-dialog,
+    .project-manage-dialog,
+    .project-delete-dialog,
+    .assembly-create-dialog,
+    .library-part-dialog,
+    .part-editor-dialog,
+    .workspace-photo-dialog,
+    .my-build-feedback-dialog,
+    .project-review-dialog,
+    .bs-markup-modal,
+    .admin-dialog
+  )
+  .btn:focus-visible {
+  outline: 3px solid #a9d6c1;
+  outline-offset: 2px;
 }
-dialog.bs-dialog{
- width:min(460px,calc(100vw - 32px));
- padding:24px;
+dialog.bs-dialog {
+  width: min(460px, calc(100vw - 32px));
+  padding: 24px;
 }
-.bs-dialog h2{font-size:1.17rem;line-height:1.3;margin:0 0 12px;font-weight:720}
-.bs-dialog p{font-size:.94rem;line-height:1.55;color:var(--bs-dialog-muted);margin:0;white-space:pre-line;overflow-wrap:anywhere}
-.bs-dialog .bs-dialog-field{display:grid;gap:7px;margin-top:16px}
-.bs-dialog .bs-dialog-field label{font-size:.85rem;font-weight:650;color:var(--bs-dialog-fg)}
-.bs-dialog .bs-dialog-field :is(input,textarea){
- width:100%;border:1px solid var(--bs-dialog-border);
- background:#fff;color:var(--bs-dialog-fg);border-radius:9px;
- padding:10px 12px;min-height:40px;
+.bs-dialog h2 {
+  font-size: 1.17rem;
+  line-height: 1.3;
+  margin: 0 0 12px;
+  font-weight: 720;
 }
-.bs-dialog .bs-dialog-field textarea{min-height:100px;resize:vertical}
-.bs-dialog .bs-dialog-actions{
- display:flex;align-items:center;justify-content:flex-end;
- flex-wrap:wrap;gap:10px;margin-top:24px;
+.bs-dialog p {
+  font-size: 0.94rem;
+  line-height: 1.55;
+  color: var(--bs-dialog-muted);
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
-.bs-dialog .bs-dialog-actions .btn{
- display:inline-flex;align-items:center;justify-content:center;
- min-width:93px;min-height:39px;
- margin:0;border-radius:9px;padding:8px 15px;font-size:.9rem;font-weight:650;
+.bs-dialog .bs-dialog-field {
+  display: grid;
+  gap: 7px;
+  margin-top: 16px;
+}
+.bs-dialog .bs-dialog-field label {
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: var(--bs-dialog-fg);
+}
+.bs-dialog .bs-dialog-field :is(input, textarea) {
+  width: 100%;
+  border: 1px solid var(--bs-dialog-border);
+  background: #fff;
+  color: var(--bs-dialog-fg);
+  border-radius: 9px;
+  padding: 10px 12px;
+  min-height: 40px;
+}
+.bs-dialog .bs-dialog-field textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+.bs-dialog .bs-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+.bs-dialog .bs-dialog-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 93px;
+  min-height: 39px;
+  margin: 0;
+  border-radius: 9px;
+  padding: 8px 15px;
+  font-size: 0.9rem;
+  font-weight: 650;
 }
 .bs-dialog .bs-dialog-actions .bs-dialog-danger,
 dialog .bs-dialog-danger,
-dialog.bs-delete-confirm .bs-delete-confirm-danger{
- background:#a52a32!important;color:#fff!important;border:1px solid #a52a32!important;
+dialog.bs-delete-confirm .bs-delete-confirm-danger {
+  background: #a52a32 !important;
+  color: #fff !important;
+  border: 1px solid #a52a32 !important;
 }
 .bs-dialog .bs-dialog-actions .bs-dialog-danger:hover,
-dialog.bs-delete-confirm .bs-delete-confirm-danger:hover{
- background:#8d232a!important;border-color:#8d232a!important;
+dialog.bs-delete-confirm .bs-delete-confirm-danger:hover {
+  background: #8d232a !important;
+  border-color: #8d232a !important;
 }
-.bs-dialog[hidden],dialog.bs-dialog:not([open]){display:none!important}
+.bs-dialog[hidden],
+dialog.bs-dialog:not([open]) {
+  display: none !important;
+}
 /* Larger editors use the same surfaces, but keep their existing width. */
-dialog:is(.library-part-dialog,.part-editor-dialog,.bs-markup-modal):modal{
- max-height:calc(100dvh - 24px);
+dialog:is(.library-part-dialog, .part-editor-dialog, .bs-markup-modal):modal {
+  max-height: calc(100dvh - 24px);
 }
-dialog.workspace-photo-dialog:modal{
- background:#fff;color:var(--bs-dialog-fg);
+dialog.workspace-photo-dialog:modal {
+  background: #fff;
+  color: var(--bs-dialog-fg);
 }
-dialog.workspace-photo-dialog .part-photo-placeholder{color:var(--bs-dialog-muted)}
-dialog.workspace-photo-dialog :is(.workspace-photos-editor,.workspace-photo-tools){background:#fff;color:var(--bs-dialog-fg)}
-#modalRoot .modal{background:#fff;color:var(--bs-dialog-fg);border:1px solid var(--bs-dialog-border);border-radius:var(--bs-dialog-radius);box-shadow:var(--bs-dialog-shadow)}
-#modalRoot.modalback{background:var(--bs-dialog-backdrop)}
-@media(max-width:550px){
- dialog.bs-dialog{padding:18px;width:calc(100vw - 22px)}
- .bs-dialog .bs-dialog-actions .btn{flex:1 1 auto}
+dialog.workspace-photo-dialog .part-photo-placeholder {
+  color: var(--bs-dialog-muted);
+}
+dialog.workspace-photo-dialog
+  :is(.workspace-photos-editor, .workspace-photo-tools) {
+  background: #fff;
+  color: var(--bs-dialog-fg);
+}
+#modalRoot .modal {
+  background: #fff;
+  color: var(--bs-dialog-fg);
+  border: 1px solid var(--bs-dialog-border);
+  border-radius: var(--bs-dialog-radius);
+  box-shadow: var(--bs-dialog-shadow);
+}
+#modalRoot.modalback {
+  background: var(--bs-dialog-backdrop);
+}
+@media (max-width: 550px) {
+  dialog.bs-dialog {
+    padding: 18px;
+    width: calc(100vw - 22px);
+  }
+  .bs-dialog .bs-dialog-actions .btn {
+    flex: 1 1 auto;
+  }
 }
 
 /* Larger part forms: the fields, descriptions and project-only sections need
    room to breathe. This overrides the original 680px/760px dialog widths,
    without enlarging brief confirmation dialogs or photo viewers. */
-dialog.library-part-dialog:modal{
- width:min(980px,calc(100vw - 44px));
- max-width:calc(100vw - 44px);
- height:min(92dvh,1020px);
- max-height:calc(100dvh - 30px);
- margin:auto;
- overflow-y:auto;
- overscroll-behavior:contain;
+dialog.library-part-dialog:modal {
+  width: min(980px, calc(100vw - 44px));
+  max-width: calc(100vw - 44px);
+  height: min(92dvh, 1020px);
+  max-height: calc(100dvh - 30px);
+  margin: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
-dialog.part-editor-dialog:modal{
- width:min(1100px,calc(100vw - 44px));
- max-width:calc(100vw - 44px);
- height:min(94dvh,1080px);
- max-height:calc(100dvh - 24px);
- margin:auto;
- overflow-y:auto;
- overscroll-behavior:contain;
+dialog.part-editor-dialog:modal {
+  width: min(1100px, calc(100vw - 44px));
+  max-width: calc(100vw - 44px);
+  height: min(94dvh, 1080px);
+  max-height: calc(100dvh - 24px);
+  margin: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
-dialog.library-part-dialog .library-part-form{
- padding:26px 30px;
+dialog.library-part-dialog .library-part-form {
+  padding: 26px 30px;
 }
-dialog.part-editor-dialog .workspace-main-bom-editor{
- padding-left:32px!important;
- padding-right:32px!important;
+dialog.part-editor-dialog .workspace-main-bom-editor {
+  padding-left: 32px !important;
+  padding-right: 32px !important;
 }
-@media(max-width:700px){
- dialog.library-part-dialog:modal,
- dialog.part-editor-dialog:modal{
-  width:calc(100vw - 16px);
-  max-width:calc(100vw - 16px);
-  height:calc(100dvh - 16px);
-  max-height:calc(100dvh - 16px);
-  border-radius:10px;
- }
- dialog.library-part-dialog .library-part-form{padding:17px}
- dialog.part-editor-dialog .workspace-main-bom-editor{
-  padding-left:16px!important;
-  padding-right:16px!important;
- }
+@media (max-width: 700px) {
+  dialog.library-part-dialog:modal,
+  dialog.part-editor-dialog:modal {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 16px);
+    border-radius: 10px;
+  }
+  dialog.library-part-dialog .library-part-form {
+    padding: 17px;
+  }
+  dialog.part-editor-dialog .workspace-main-bom-editor {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
 }
 
-dialog.bs-edit-conflict{width:min(640px,calc(100vw - 32px));max-height:85dvh;overflow:auto}
-.bs-edit-conflict fieldset{min-width:0;margin:1rem 0;border:1px solid var(--color-border);border-radius:8px}
-.bs-edit-conflict legend{font-weight:650}
-.bs-edit-conflict pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere;margin:.2rem 0 .7rem}
-
+dialog.bs-edit-conflict {
+  width: min(640px, calc(100vw - 32px));
+  max-height: 85dvh;
+  overflow: auto;
+}
+.bs-edit-conflict fieldset {
+  min-width: 0;
+  margin: 1rem 0;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+.bs-edit-conflict legend {
+  font-weight: 650;
+}
+.bs-edit-conflict pre {
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0.2rem 0 0.7rem;
+}
 
 /* Shared tooltip surface across Project, Workshop, and part editors.
    A narrow readable measure gives long explanations vertical breathing room. */
-:root{
- --bs-tooltip-width:228px;
- --bs-tooltip-radius:12px;
- --bs-tooltip-padding:13px 15px;
- --bs-tooltip-bg:var(--bs-dialog-bg,#fff);
- --bs-tooltip-fg:var(--bs-dialog-fg,#293a33);
- --bs-tooltip-border:var(--bs-dialog-border,#d1dbd5);
- --bs-tooltip-shadow:0 10px 28px rgba(16,29,22,.16);
+:root {
+  --bs-tooltip-width: 228px;
+  --bs-tooltip-radius: 12px;
+  --bs-tooltip-padding: 13px 15px;
+  --bs-tooltip-bg: var(--bs-dialog-bg, #fff);
+  --bs-tooltip-fg: var(--bs-dialog-fg, #293a33);
+  --bs-tooltip-border: var(--bs-dialog-border, #d1dbd5);
+  --bs-tooltip-shadow: 0 10px 28px rgba(16, 29, 22, 0.16);
 }
 .bs-global-tooltip,
 .bs-section-tooltip-content,
-.bs-action-input-tooltip{
- box-sizing:border-box;
- width:max-content;
- max-width:min(var(--bs-tooltip-width),calc(100vw - 28px));
- padding:var(--bs-tooltip-padding);
- border:1px solid var(--bs-tooltip-border);
- border-radius:var(--bs-tooltip-radius);
- background:var(--bs-tooltip-bg);
- color:var(--bs-tooltip-fg);
- box-shadow:var(--bs-tooltip-shadow);
- font-size:.83rem;
- font-weight:400;
- line-height:1.58;
- text-align:left;
- white-space:normal;
- overflow-wrap:anywhere;
+.bs-action-input-tooltip {
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(var(--bs-tooltip-width), calc(100vw - 28px));
+  padding: var(--bs-tooltip-padding);
+  border: 1px solid var(--bs-tooltip-border);
+  border-radius: var(--bs-tooltip-radius);
+  background: var(--bs-tooltip-bg);
+  color: var(--bs-tooltip-fg);
+  box-shadow: var(--bs-tooltip-shadow);
+  font-size: 0.83rem;
+  font-weight: 400;
+  line-height: 1.58;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
-.bs-global-tooltip{
- position:fixed;
- z-index:2147483000;
- pointer-events:none;
+.bs-global-tooltip {
+  position: fixed;
+  z-index: 2147483000;
+  pointer-events: none;
 }
-.bs-global-tooltip[hidden]{display:none!important}
-.bs-section-tooltip-content{
- z-index:500;
- top:calc(100% + 8px);
- left:0;
+.bs-global-tooltip[hidden] {
+  display: none !important;
 }
-.bs-action-input-tooltip{
- z-index:500;
- bottom:calc(100% + 8px);
- right:0;
+.bs-section-tooltip-content {
+  z-index: 500;
+  top: calc(100% + 8px);
+  left: 0;
 }
-
+.bs-action-input-tooltip {
+  z-index: 500;
+  bottom: calc(100% + 8px);
+  right: 0;
+}
 
 /* Shared interactive help: hover for a short explanation, double-click for examples. */
 .bs-help-button,
 .library-part-dialog button.library-function-tip,
-.library-part-dialog button.library-auto-number-tip{
- display:inline-grid;
- place-items:center;
- flex:none;
- box-sizing:border-box;
- width:20px;
- height:20px;
- min-width:20px;
- min-height:20px;
- margin:0;
- padding:0;
- border:0;
- border-radius:50%;
- background:transparent;
- box-shadow:none;
- color:var(--color-text-muted,#60736a);
- font:inherit;
- font-size:.85rem;
- font-weight:500;
- line-height:1;
- cursor:help;
- vertical-align:middle;
+.library-part-dialog button.library-auto-number-tip {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-text-muted, #60736a);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: help;
+  vertical-align: middle;
 }
 .bs-help-button:hover,
-.bs-help-button:focus-visible{
- color:var(--color-accent,#317d61);
- background:var(--color-surface-muted,#f0f4f2);
+.bs-help-button:focus-visible {
+  color: var(--color-accent, #317d61);
+  background: var(--color-surface-muted, #f0f4f2);
 }
-.bs-help-button:focus-visible{
- outline:2px solid var(--color-accent,#317d61);
- outline-offset:2px;
+.bs-help-button:focus-visible {
+  outline: 2px solid var(--color-accent, #317d61);
+  outline-offset: 2px;
 }
-dialog.bs-help-detail-dialog{
- width:min(500px,calc(100vw - 32px));
- max-width:calc(100vw - 32px);
- padding:22px 24px;
- border-radius:14px;
+dialog.bs-help-detail-dialog {
+  width: min(500px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  padding: 22px 24px;
+  border-radius: 14px;
 }
-.bs-help-detail-header{
- display:flex;
- align-items:start;
- justify-content:space-between;
- gap:12px;
- margin-bottom:11px;
+.bs-help-detail-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 11px;
 }
-.bs-help-detail-dialog .bs-help-detail-header h2{
- margin:0;
- font-size:1.1rem;
+.bs-help-detail-dialog .bs-help-detail-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
 }
-.bs-help-detail-close{
- display:grid;
- place-items:center;
- min-width:30px;
- height:30px;
- padding:0;
- border:1px solid var(--bs-dialog-border,#d1dbd5);
- border-radius:8px;
- background:transparent;
- color:var(--bs-dialog-fg,#293a33);
- font-size:1.3rem;
- cursor:pointer;
+.bs-help-detail-close {
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--bs-dialog-border, #d1dbd5);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--bs-dialog-fg, #293a33);
+  font-size: 1.3rem;
+  cursor: pointer;
 }
-.bs-help-detail-dialog h3{
- margin:18px 0 8px;
- font-size:.91rem;
- font-weight:650;
+.bs-help-detail-dialog h3 {
+  margin: 18px 0 8px;
+  font-size: 0.91rem;
+  font-weight: 650;
 }
-.bs-help-examples{
- display:grid;
- gap:9px;
- padding-left:21px;
- margin:0;
- font-size:.87rem;
- line-height:1.55;
+.bs-help-examples {
+  display: grid;
+  gap: 9px;
+  padding-left: 21px;
+  margin: 0;
+  font-size: 0.87rem;
+  line-height: 1.55;
 }
-.bs-help-examples li{padding-left:2px}
-@media(max-width:550px){
- dialog.bs-help-detail-dialog{padding:17px}
+.bs-help-examples li {
+  padding-left: 2px;
 }
-
+@media (max-width: 550px) {
+  dialog.bs-help-detail-dialog {
+    padding: 17px;
+  }
+}
 
 /* Extended Container guide: compact examples with the same dialog design. */
-dialog.bs-help-container-guide{
- width:min(720px,calc(100vw - 32px));
- max-width:calc(100vw - 32px);
- max-height:min(86dvh,900px);
- overflow-y:auto;
+dialog.bs-help-container-guide {
+  width: min(720px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  max-height: min(86dvh, 900px);
+  overflow-y: auto;
 }
-.bs-help-container-guide .bs-help-detail-intro{
- margin:11px 0 16px;
- font-size:.88rem;
- line-height:1.5;
+.bs-help-container-guide .bs-help-detail-intro {
+  margin: 11px 0 16px;
+  font-size: 0.88rem;
+  line-height: 1.5;
 }
-.bs-help-scenarios{
- display:grid;
- grid-template-columns:repeat(2,minmax(0,1fr));
- gap:10px;
+.bs-help-scenarios {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
-.bs-help-scenario{
- min-width:0;
- border:1px solid var(--bs-dialog-border,#d1dbd5);
- border-radius:10px;
- padding:13px 14px;
- background:var(--bs-dialog-bg,#fff);
+.bs-help-scenario {
+  min-width: 0;
+  border: 1px solid var(--bs-dialog-border, #d1dbd5);
+  border-radius: 10px;
+  padding: 13px 14px;
+  background: var(--bs-dialog-bg, #fff);
 }
-.bs-help-container-guide .bs-help-scenario h3{
- margin:0 0 11px;
- font-size:.92rem;
- line-height:1.3;
- color:var(--bs-dialog-fg,#293a33);
+.bs-help-container-guide .bs-help-scenario h3 {
+  margin: 0 0 11px;
+  font-size: 0.92rem;
+  line-height: 1.3;
+  color: var(--bs-dialog-fg, #293a33);
 }
-.bs-help-scenario-row{
- display:grid;
- gap:2px;
- margin-top:8px;
- font-size:.82rem;
- line-height:1.45;
+.bs-help-scenario-row {
+  display: grid;
+  gap: 2px;
+  margin-top: 8px;
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
-.bs-help-scenario-row strong{
- font-weight:650;
- color:var(--bs-dialog-fg,#293a33);
+.bs-help-scenario-row strong {
+  font-weight: 650;
+  color: var(--bs-dialog-fg, #293a33);
 }
-.bs-help-scenario-row span{
- color:var(--bs-dialog-muted,#60736a);
+.bs-help-scenario-row span {
+  color: var(--bs-dialog-muted, #60736a);
 }
-@media(max-width:600px){
- .bs-help-scenarios{grid-template-columns:minmax(0,1fr)}
+@media (max-width: 600px) {
+  .bs-help-scenarios {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
