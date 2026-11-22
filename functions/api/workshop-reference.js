@@ -197,7 +197,12 @@ export async function onRequest({request,env}){
     rows.push({id:/^row-[a-f0-9-]{10,64}$/.test(row.id||"")?row.id:crypto.randomUUID(),
      label:row.label.trim().slice(0,100),value:row.value.slice(0,1000)});
    }
-   layoutSections[key]={title:String(entry.title||"").trim().slice(0,100),labels,rows};
+   const hiddenFields=Array.isArray(entry.hiddenFields)?entry.hiddenFields:[];
+   if(hiddenFields.length>30||hiddenFields.some(name=>typeof name!=="string"||
+      !/^[a-zA-Z][a-zA-Z0-9]{0,50}$/.test(name)))
+    return json({error:"Invalid hidden table fields"},400);
+   layoutSections[key]={title:String(entry.title||"").trim().slice(0,100),labels,rows,
+    hiddenFields:[...new Set(hiddenFields.filter(name=>name!=="name"))]};
   }
   patch.tableLayout={sections:layoutSections};
   const productSections=cleanProductSections(body.details.productSections);
