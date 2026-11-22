@@ -154,3 +154,5 @@ Practice records upgrade once to Notes through record-upgrades.js. Before changi
 
 
 All built-in and newly created projects use project-workspace-template in index.html and the same catalog/card renderer. There are no duplicated built-in project sections. Original project IDs stay stable for routing and data storage; nested field IDs and their label/ARIA references are unique per instance. Layout selectors use project-view rather than project IDs. The strict CSS producer check follows the browser import graph and documents computed class patterns in scripts/css-dynamic-classes.json.
+
+Part details use assets/part-information.js (an ES module dynamically imported by the assembly controller) and the shared BSUI informationPanel/fieldRow helpers. The module owns presentation and receives the existing revision-checked write callback. assets/family-model.js derives separate Workshop and project specification rows while preserving the existing combined projection for BOM/historical readers. These view fields are not persisted or migrated.

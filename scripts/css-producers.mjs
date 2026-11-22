@@ -29,6 +29,7 @@ export async function classProducers(root=process.cwd()){
    if(node.type==="StringLiteral")literals(node.value);
    if(node.type==="TemplateElement")literals(node.value.cooked);
    if(["ImportDeclaration","ExportNamedDeclaration","ExportAllDeclaration"].includes(node.type))dependency(node.source?.value,file);
+   if(node.type==="ImportExpression")dependency(node.source?.value,file);
    if(node.type==="CallExpression"&&node.callee?.type==="Import")dependency(node.arguments?.[0]?.value,file);
   });
  };

@@ -70,3 +70,7 @@ Follow the tooltip plan: icon buttons get short labels; concepts get a "?" help 
 ### Selectable list cards
 
 Selectable rows use `listCard()` and `.list-card`, with title, metadata and summary stacked at the full available width. Action buttons use `button()` and `.button`. Do not combine these classes: their layout and text hierarchy have different purposes. Both retain native keyboard focus and activation.
+
+### Information tiles and field rows
+
+`BSUI.informationPanel()` supplies one static title/body shell and `BSUI.fieldRow()` one label/value row. Reference and project information use identical borders, typography, padding and label widths. They stack within Part details; narrow screens stack each label above its value. Container names are ordinary read-only text rather than editable-looking inputs. Purpose editing and alternative selection keep revision checks and preserve drafts on failed saves.

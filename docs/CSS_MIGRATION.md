@@ -14,7 +14,7 @@ The owner's screenshots define the intended standard, rather than exact preserva
 
 ## Follow-up batches
 
-1. Part details: the Container name and Purpose fields should use the common field layout; Workshop information and Project-specific information should be matching tiles. Preserve the separation between Workshop source data and project edits.
+1. Completed in the Part information batch: matching reference/project information tiles and shared Container/Purpose field rows. Existing project-owned edits stay separate from Workshop.
 2. One accessible, persistent column-resizer behavior for Workshop and Knowledge. Phone layouts should stack rather than expose unusable narrow panes.
 3. Continue migrating remaining dialogs, lists, Work instruction content and photo markup. Delete the corresponding legacy rules in each batch. Consolidate breakpoints as their layouts migrate.
 
@@ -42,3 +42,5 @@ A blanket unused-class failure remains deferred because text search cannot estab
 
 
 The next CSS batch replaces duplicated built-in project markup with one inert HTML template and uses the same catalog/card rendering for built-ins and new projects. Existing project IDs and stored records remain unchanged. Project scopes use a shared project-view class instead of launcher/linear/robot ID selectors; this lowers specificity at the original rule rather than adding overrides. A strict static class-producer check follows loaded scripts and module imports, ignores comments and selector-only lookups, and requires an explicit documented pattern for code-built class names. It fails on unmatched selectors, with a reviewed retirement list supplying removals. Boolean selector pseudos retain live alternatives and simplify retired branches; unit and browser tests cover these transformations. Literal matches are conservative static evidence, not a runtime reachability proof inside every function.
+
+The Part information batch moves the detail renderer into an ES module and replaces its old table/container/view classes with shared information panels and field rows. The 24 replaced class names are curated retirements; their old CSS branches are deleted in the same batch. Editor-only rules remain. Product facts and project requirements are distinct derived API fields, not another stored copy. Rollback reverts this code batch and deploys scripts/styles together; there is no database migration or project data to reverse.

@@ -7,7 +7,8 @@
 const assemblySelections={};
 // Tree snapshots let each assembly BOM roll up all descendant parts.
 const assemblyTreeSnapshots={};
-function setupAssemblyTrees(){
+async function setupAssemblyTrees(){
+ const {renderPartInformation}=await import("./part-information.js");
  document.querySelectorAll("[data-assembly-tree]:not([data-tree-ready])").forEach(root=>{
   root.dataset.treeReady="true";
   const project=root.dataset.assemblyTree,view=document.getElementById(project),nodesEl=root.querySelector(".assembly-tree-nodes"),status=root.querySelector(".assembly-tree-status"),controls=root.querySelector(".assembly-edit");
@@ -883,7 +884,7 @@ function setupAssemblyTrees(){
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
   detailsPanel.append(partDetailsSection.root);
   // Static structure only; part text is filled in later with textContent.
-  partDetailsSection.body.innerHTML='<div class="part-details-view-rows"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div><div class="part-drawing-panel"></div><div class="part-files-panel"></div>';
+  partDetailsSection.body.innerHTML='<div class="part-information"></div><div class="part-details-view-actions"><button type="button" class="btn part-details-edit">Edit part details</button></div><div class="part-drawing-panel"></div><div class="part-files-panel"></div>';
   const partSummaryFields=document.createElement("span");partSummaryFields.className="ui-section__meta";
   partDetailsSection.count.after(partSummaryFields);
   partDetailsSection.body.classList.add("part-details-collapse");
@@ -944,7 +945,7 @@ function setupAssemblyTrees(){
     reloadWorkshopButton.hidden=!canEdit()||!workshopLinkId(currentPartInfo)||!!currentPartInfo.generatedFrom;
    }
   });
-  const detailRows=detailsPanel.querySelector(".part-details-view-rows");
+  const detailRows=detailsPanel.querySelector(".part-information");
   const detailSummary=partSummaryFields;
   const progressPanel=document.createElement("section");progressPanel.className="part-progress-panel";
   progressPanel.innerHTML='<label class="part-progress-inline-label" for="part-progress-select-'+project+'">Status</label><select id="part-progress-select-'+project+'" class="field part-progress-select" aria-label="Status"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="complete">Complete</option></select><label class="part-attention-toggle"><input type="checkbox" class="part-needs-attention"> Needs attention</label><label class="part-attention-note-field" hidden>What needs to be fixed?<textarea class="field part-attention-note" rows="2" maxlength="2000" placeholder="What needs attention?"></textarea></label><span class="part-progress-feedback" role="status" aria-live="polite"></span><button type="button" class="part-progress-save" hidden>Save status</button>';
@@ -1134,133 +1135,6 @@ function setupAssemblyTrees(){
    }).catch(()=>{heading.textContent="Knowledge (could not load)";});
    return box;
   };
-  const renderFunctionalPartPanel=part=>{
-   if(part.itemType==="document"||part.generatedFrom)return null;
-   if(part.familyUse){const section=document.createElement("section");section.className="part-functional-panel";const text=document.createElement("p");text.textContent="Family: "+part.familyName+" · "+(part.productId?"Product: "+part.implementationName:"No product selected");section.append(text,renderPartKnowledge(part));return section;}
-   const panel=document.createElement("section");panel.className="part-functional-panel part-container-overview";
-   // Keep container identity in the same label-left/value-right format as
-   // the rest of Part Details. This is a read-only field in View mode;
-   // renaming continues through the existing Modify part editor.
-   const nameRow=document.createElement("div");nameRow.className="part-container-name-row";
-   const nameLabel=document.createElement("div");nameLabel.className="part-container-name-label";
-   const nameCaption=document.createElement("strong");nameCaption.textContent="Container (name)";
-   const containerHelp="The container is the permanent item in your project's feature tree. Its name identifies the role or purpose; the physical part can be replaced without losing its instructions, tests, revisions, or history.";
-   nameLabel.append(nameCaption,window.BSDialogs.tooltip("About container names",containerHelp));
-   const nameValue=document.createElement("input");
-   nameValue.type="text";nameValue.className="field part-container-name-value";
-   nameValue.value=window.BSPartFields.treeDescriptionFor(part)||part.name||"";
-   nameValue.readOnly=true;nameValue.setAttribute("aria-label","Container name");
-   nameValue.title="Use Modify part to rename this container";
-   nameRow.append(nameLabel,nameValue);panel.append(nameRow);
-   // Purpose and alternatives belong below the one-line container field,
-   // not inside its framed box.
-   const extras=document.createElement("div");extras.className="part-functional-extras";
-   const feedback=document.createElement("span");feedback.className="part-functional-feedback";feedback.setAttribute("role","status");
-   const editable=canEdit();
-   const purpose=document.createElement("p");purpose.className="part-functional-purpose";
-   purpose.textContent=part.description||"";
-   if(!purpose.textContent)purpose.hidden=true;
-   extras.append(purpose);
-   const edit=document.createElement("button");edit.type="button";edit.className="btn";edit.textContent="Edit purpose";
-   edit.hidden=!editable;
-   // Keep purpose editing available without making it a separate heading
-   // above the container name.
-   const purposeActions=document.createElement("div");purposeActions.className="part-functional-purpose-actions";
-   purposeActions.append(edit);extras.append(purposeActions);
-   const form=document.createElement("div");form.className="part-functional-edit";form.hidden=true;
-   const purposeLabel=document.createElement("label");purposeLabel.className="part-functional-field";
-   const caption=document.createElement("span");caption.textContent="Purpose";
-   const purposeInput=document.createElement("textarea");purposeInput.className="field";
-   purposeInput.value=part.description||"";purposeInput.maxLength=2000;purposeInput.rows=2;
-   purposeLabel.append(caption,purposeInput);form.append(purposeLabel);
-   const formActions=document.createElement("div");formActions.className="part-functional-actions";
-   const save=document.createElement("button");save.type="button";save.className="btn primary";save.textContent="Save";
-   const cancel=document.createElement("button");cancel.type="button";cancel.className="btn";cancel.textContent="Cancel";
-   cancel.onclick=()=>{form.hidden=true;edit.hidden=!editable};
-   formActions.append(save,cancel);form.append(formActions);extras.append(form);
-   edit.onclick=()=>{form.hidden=false;edit.hidden=true};
-   async function change(action,data){
-    if(!currentPartInfo||currentPartInfo.id!==part.id)throw Error("Part changed; reload before saving");
-    const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{
-     method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},
-     body:JSON.stringify({functionalAction:action,expectedRevision:currentPartInfo.revision??null,...data})
-    });
-    const result=await response.json().catch(()=>({}));
-    if(!response.ok)throw Error(result.error||"Could not update part");
-    if(currentPartInfo?.id===part.id){
-     currentPartInfo=result.component;
-     syncPartNodes([result.component]);
-     renderPartDetails(result.component);
-     void partDrawingPanel?.load(project,"part",part.id,result.component.selectedImplementationId||null);
-     void partFilesPanel?.load(project,part.id,result.component.selectedImplementationId||null);
-     void showPartPicture(part.id,true);
-     refreshBom();
-    }
-   }
-   const run=async(button,action,data)=>{
-    button.disabled=true;feedback.textContent="Saving…";
-    try{await change(action,data)}catch(error){feedback.textContent=error.message;button.disabled=false}
-   };
-   save.onclick=()=>void run(save,"requirements",{purpose:purposeInput.value});
-   const purchased=part.partType==="purchased";
-   if(purchased){
-    const candidates=(part.implementations||[]).filter(item=>!item.retiredAt&&item.partType==="purchased");
-    const alternatives=document.createElement("details");alternatives.className="part-alternatives-panel";
-    const title=document.createElement("summary");
-    title.textContent="Alternative purchased parts"+(candidates.length>1?" ("+(candidates.length-1)+")":"");
-    alternatives.append(title);
-    const help=document.createElement("p");help.className="muted part-alternatives-intro";
-    help.textContent="Choose another purchased part for this container. The container's name and history stay the same.";
-    alternatives.append(help);
-    if(candidates.length>1){
-     const chooser=document.createElement("label");chooser.className="part-functional-field";
-     const caption=document.createElement("span");caption.textContent="Use part";
-     const dropdown=document.createElement("select");dropdown.className="field";
-     for(const candidate of candidates){
-      const option=document.createElement("option");option.value=candidate.id;
-      option.textContent=candidate.name+(candidate.model?" · "+candidate.model:"");
-      dropdown.append(option);
-     }
-     dropdown.value=part.selectedImplementationId||"";
-     dropdown.disabled=!editable;
-     dropdown.onchange=()=>void run(dropdown,"select",{implementation:{id:dropdown.value}});
-     chooser.append(caption,dropdown);alternatives.append(chooser);
-    }
-    if(editable){
-     const addButton=document.createElement("button");addButton.type="button";
-     addButton.className="btn part-alternatives-add";addButton.textContent="Add alternative part";
-     alternatives.append(addButton);
-     const newForm=document.createElement("div");newForm.className="part-alternative-new";newForm.hidden=true;
-     const shortField=(label)=>{
-      const wrap=document.createElement("label");wrap.className="part-functional-field";
-      const span=document.createElement("span");span.textContent=label;
-      const input=document.createElement("input");input.className="field";input.maxLength=180;
-      wrap.append(span,input);newForm.append(wrap);return input;
-     };
-     const name=shortField("Part name");
-     const model=shortField("Manufacturer part number");
-     const manufacturer=shortField("Manufacturer");
-     const actions=document.createElement("div");actions.className="part-functional-actions";
-     const commit=document.createElement("button");commit.type="button";commit.className="btn primary";commit.textContent="Add and use part";
-     const back=document.createElement("button");back.type="button";back.className="btn";back.textContent="Cancel";
-     actions.append(commit,back);newForm.append(actions);
-     commit.onclick=()=>{
-      if(!name.value.trim()){feedback.textContent="Enter a part name.";name.focus();return}
-      void run(commit,"add",{implementation:{name:name.value,partType:"purchased",model:model.value,manufacturer:manufacturer.value}});
-     };
-     back.onclick=()=>{newForm.hidden=true;addButton.hidden=false};
-     addButton.onclick=()=>{newForm.hidden=false;addButton.hidden=true;name.focus()};
-     alternatives.append(newForm);
-    }
-    if(candidates.length>1||editable)extras.append(alternatives);
-   }
-   // Custom part changes are revisions of the same design, not competing
-   // implementations. The existing Revisions panel owns that history.
-   extras.append(feedback);
-   const fragment=document.createDocumentFragment();
-   fragment.append(panel,extras);
-   return fragment;
-  };
   const renderPartDetails=part=>{
    // The header is visible even when Part Details is collapsed: permanent
    // project purpose above, selected physical solution directly below.
@@ -1278,9 +1152,6 @@ function setupAssemblyTrees(){
     selected.textContent=implementation;
     selected.hidden=!implementation||implementation===purposeLabel;
    }
-   detailRows.replaceChildren();
-   const functionalPanel=renderFunctionalPartPanel(part);
-   if(functionalPanel)detailRows.append(functionalPanel);
    currentDocumentation=window.BSPartFields.documentationLinks({
     ...part,workshopDocumentation:part.workshopDocumentation??currentDocumentation
    });
@@ -1299,56 +1170,26 @@ function setupAssemblyTrees(){
    }
    const summary=[part.description,quantity,cost];
    detailSummary.textContent=summary.filter(Boolean).join(" · ");
-   const makeDetailLine=(title,value,isLink=false)=>{
-    const line=document.createElement("div");
-    line.className="part-details-view-row part-detail-item part-detail-inline";
-    const label=document.createElement("strong");label.textContent=title;
-    const body=document.createElement("div");body.className="part-detail-item-content";
-    const content=document.createElement(isLink?"a":"span");
-    content.textContent=isLink?"Open order website":String(value);
-    if(isLink){
-     content.href=value;content.target="_blank";content.rel="noopener noreferrer";
-     content.className="part-order-url";
-     content.title=String(value);
+   renderPartInformation(detailRows,{
+    part,fields:window.BSPartFields,ui:window.BSUI,dialogs:window.BSDialogs,
+    suppliers:window.BSPartSuppliers,editable:canEdit(),linked:part.familyUse===true||!!workshopLinkId(part),
+    knowledge:renderPartKnowledge,
+    async onChange(action,data){
+     if(currentPartInfo?.id!==part.id)throw Error("Part changed; reload before saving");
+     const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{
+      method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},
+      body:JSON.stringify({functionalAction:action,expectedRevision:currentPartInfo.revision??null,...data})
+     });
+     const result=await response.json().catch(()=>({}));
+     if(!response.ok)throw Error(result.error||"Could not update part");
+     if(currentPartInfo?.id!==part.id)return;
+     currentPartInfo=result.component;syncPartNodes([result.component]);
+     renderPartDetails(result.component);
+     void partDrawingPanel?.load(project,"part",part.id,result.component.selectedImplementationId||null);
+     void partFilesPanel?.load(project,part.id,result.component.selectedImplementationId||null);
+     void showPartPicture(part.id,true);refreshBom();
     }
-    body.append(content);line.append(label,body);return line;
-   };
-   const appendDetail=(title,value,isLink=false)=>{
-    if(value===null||value===undefined||String(value).trim()==="")return;
-    detailRows.append(makeDetailLine(title,value,isLink));
-   };
-   for(const [title,value] of fields)appendDetail(title,value);
-   const specs=(part.specifications||[]).filter(spec=>!window.BSPartFields.isPurchased(part)||!window.BSPartFields.sourcingLabels.includes(spec.name)&&spec.name!=="Supplier part number");
-   if(specs.length){
-    const heading=document.createElement("h3");heading.textContent="Specifications";detailRows.append(heading);
-    for(const spec of specs){
-     detailRows.append(makeDetailLine(spec.name||"Specification",(spec.value||"")+(spec.source==="inferred"?" (inferred)":"")));
-    }
-   }
-   const annotations=part.projectDetails||{};
-   if(Object.values(annotations).some(Boolean)){
-    const projectSection=document.createElement("section");
-    projectSection.className="part-project-only-view";
-    const title=document.createElement("h3");title.textContent="Project-specific information";
-    const notice=document.createElement("p");notice.className="part-project-only-warning";
-    notice.textContent="These notes and schematic details apply only to this project; they do not modify the Workshop reference.";
-    projectSection.append(title,notice);
-    for(const [key,label] of [
-     ["notes","Project notes"],["changes","Project changes / modifications"],
-     ["featureTreeName","Feature tree description"],
-     ["referenceDesignators","Reference designators"],["footprint","Footprint"],
-     ["schematicValue","Schematic value"],["sourceApplication","Source application"],
-     ["sourceFile","Source schematic file"],["sourceComponentId","Source component ID"]
-    ]){
-     if(!annotations[key])continue;
-     projectSection.append(makeDetailLine(label,annotations[key]));
-    }
-    detailRows.append(projectSection);
-   }
-   window.BSPartSuppliers?.renderLinks(detailRows,part);
-   // Ordering is an action, not part of the technical specifications.
-   // Keep it at the end of the Part details page.
-   appendDetail("Part order website",sourcing.url,true);
+   });
    detailsPanel.classList.remove("hide");
   };
 

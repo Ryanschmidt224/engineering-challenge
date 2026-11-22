@@ -8,9 +8,9 @@ Sizes are bytes, not rounded KB. Compressed totals sum gzip output for individua
 
 | Page | Stylesheets | Uncompressed before → after | gzip before → after | !important before → after |
 | --- | --- | --- | --- | --- |
-| `index.html` | 12 | 586,048 → 433,175 | 90,339 → 73,074 | 738 → 592 |
-| `workshop.html` | 5 | 21,082 → 24,987 | 6,309 → 7,191 | 0 → 0 |
-| `knowledge.html` | 5 | 19,614 → 23,579 | 5,902 → 6,802 | 0 → 0 |
+| `index.html` | 12 | 586,048 → 425,918 | 90,339 → 72,705 | 738 → 590 |
+| `workshop.html` | 5 | 21,082 → 26,792 | 6,309 → 7,428 | 0 → 0 |
+| `knowledge.html` | 5 | 19,614 → 25,384 | 5,902 → 7,040 | 0 → 0 |
 
 The shared header and toolbar definitions add a small amount to the module pages while eliminating separate header implementations. The four legacy stylesheets still exist; remaining excess is not hidden by new override layers.
 

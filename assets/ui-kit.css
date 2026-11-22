@@ -456,3 +456,77 @@ summary.ui-button::-webkit-details-marker {
 .ui-section__body > [hidden] {
   display: none;
 }
+
+/* Information tiles: the same shell and label/value rows for reference and
+   project data. The label column is a shared layout dimension, not a field fix. */
+.ui-information-panel {
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  font-size: var(--text-small);
+}
+.ui-information-panel > .ui-information-panel__title {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
+  line-height: 1.5;
+}
+.ui-information-panel__body {
+  padding: var(--space-4);
+  min-width: 0;
+}
+.ui-information-panel .ui-information-note {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+  line-height: 1.5;
+}
+.ui-field-row {
+  display: grid;
+  grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-small);
+  line-height: 1.5;
+}
+.ui-field-row:last-child {
+  border-bottom: 0;
+}
+.ui-field-row__label {
+  min-width: 0;
+  font-size: inherit;
+  font-weight: var(--font-semibold);
+}
+.ui-field-row__value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.ui-field-row__value > .ui-control {
+  width: 100%;
+  max-width: 100%;
+  resize: vertical;
+}
+.ui-information-form {
+  margin-block: var(--space-3);
+}
+.ui-information-form[hidden] {
+  display: none;
+}
+.ui-information-feedback {
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+}
+.ui-information-feedback:empty {
+  display: none;
+}
+@media (max-width: 640px) {
+  .ui-field-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+  }
+}

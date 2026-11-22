@@ -23,7 +23,6 @@ test("the edit view supports multiple vendor entries and preserves legacy Amazon
  const assembly=source("assets/site-assembly.js"),backend=source("functions/api/components.js"),html=source("index.html");
  assert.match(assembly,/supplierEditor\?\.setOffers\(part\.supplierOffers\|\|\[\]\)/);
  assert.match(assembly,/component\.supplierOffers=supplierEditor\?\.getOffers\(\)\|\|\[\]/);
- assert.match(assembly,/renderLinks\(detailRows,part\)/);
  assert.match(backend,/normalizeSupplierOffers\(input\.supplierOffers\)/);
  assert.match(backend,/if\(supplierOffers!==undefined\)updated\.supplierOffers=supplierOffers/);
  assert.match(html,/\/assets\/part-suppliers\.js\?v=/);

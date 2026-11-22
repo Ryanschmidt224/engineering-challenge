@@ -4586,73 +4586,7 @@ body > .footer {
 
 /* Container and purchased alternatives: compact, optional secondary controls. */
 
-.part-container-overview .part-functional-purpose {
-  margin: 4px 0 0;
-  font-size: var(--text-small);
-  line-height: 1.5;
-}
-.part-container-overview .part-alternatives-panel {
-  margin-top: 12px;
-  padding: 8px 0 0;
-  border: 0;
-  border-top: 1px solid var(--color-border);
-  background: transparent;
-  box-shadow: none;
-}
-.part-container-overview .part-alternatives-panel > summary {
-  padding: 3px 0;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  color: var(--color-text);
-  cursor: pointer;
-}
-.part-container-overview .part-alternatives-panel .part-alternatives-intro {
-  margin: 6px 0 10px;
-  font-size: var(--text-small);
-  line-height: 1.4;
-}
-.part-container-overview .part-alternatives-panel .part-functional-field,
-.part-container-overview
-  .part-alternatives-panel
-  .part-alternative-new
-  > .part-functional-field {
-  display: grid;
-  grid-template-columns: 168px minmax(0, 1fr);
-  gap: var(--space-3);
-  align-items: center;
-  margin: 7px 0;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
-.part-container-overview .part-alternatives-panel .field {
-  width: 100%;
-  min-width: 0;
-  min-height: 35px;
-  margin: 0;
-  font-size: var(--text-small);
-  font-weight: var(--font-normal);
-}
-.part-container-overview .part-alternative-new {
-  margin-top: 9px;
-  padding: 10px 0;
-  border: 0;
-  background: transparent;
-}
-.part-container-overview .part-alternatives-add {
-  min-height: 31px;
-  padding: 5px 10px;
-  margin-top: 3px;
-  font-size: var(--text-small);
-}
 @media (max-width: 560px) {
-  .part-container-overview .part-alternatives-panel .part-functional-field,
-  .part-container-overview
-    .part-alternatives-panel
-    .part-alternative-new
-    > .part-functional-field {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-1);
-  }
 }
 
 /* Unified Part details: name, manufacturer and MPN appear before AI search.

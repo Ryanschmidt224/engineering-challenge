@@ -20,6 +20,7 @@ test('strict CSS check rejects unknown classes, comments, selector-only referenc
   assert.notEqual(run().status,0);
   writeFileSync(js,'document.querySelector(".unloaded-class");');assert.notEqual(run().status,0);
   writeFileSync(js,'import "./unloaded.js";');assert.equal(run().status,0);
+  writeFileSync(js,'async function start(){const module=await import("./unloaded.js");}');assert.equal(run().status,0);
   writeFileSync(css,'.comment-only { color: red; }');assert.notEqual(run().status,0);
   writeFileSync(allow,JSON.stringify([{pattern:'^.*$',producer:'assets/fixture.js',reason:'blanket escape'}]));assert.match(run().stderr,/Invalid dynamic-class allowance/);
  }finally{rmSync(root,{recursive:true,force:true});}
