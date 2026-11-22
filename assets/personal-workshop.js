@@ -867,6 +867,10 @@
    // separate browsing levels or independent editor categories.
    const characteristics=grid.querySelector('[data-part-editor-section="characteristics"]');
    characteristics.append(classification,structuredSection,genericTemplateSection);
+   // The builder lives on the same page as the legacy fields. Existing data
+   // remains visible and editable without requiring a lossy migration.
+   const productBuilder=window.BSWorkshopProductBuilder?.create({item,readOnly:viewOnly});
+   if(productBuilder)grid.append(productBuilder.element);
    const photoTitle=el("h4","Photos");
    const notesSection=grid.querySelector('[data-part-editor-section="notes"]');
    notesSection.append(photoTitle);
@@ -1076,7 +1080,8 @@
    form.addEventListener("submit",async event=>{
     event.preventDefault();
     if(!editingEnabled)return;
-    const details={photos,specifications:storedSpecs(),genericFields:identityRadios.generic.checked?getGenericFields():[]};
+    const details={photos,specifications:storedSpecs(),genericFields:identityRadios.generic.checked?getGenericFields():[],
+     productSections:productBuilder?.getSections()||[]};
     for(const field of saveableFields)if(controls[field])details[field]=controls[field].value;
     details.kind=kind.value;details.category=category.value;
     details.productIdentity=identityRadios.generic.checked?"generic":"specific";
@@ -1121,6 +1126,7 @@
     for(const btn of gallery.querySelectorAll("button"))btn.hidden=!editing;
     if(!editing)reviewPanel.hidden=true;
     for(const button of genericTemplateSection.querySelectorAll("button"))button.disabled=!editing;
+    productBuilder?.setEditing(editing);
     updateIdentityPanels();
     if(editing&&!identityRadios.generic.checked)refreshSuggestions();
     if(editing&&viewOnly){
