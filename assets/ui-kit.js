@@ -58,6 +58,17 @@
     sync();
   }
 
+  // One action slot per section body. Creation is always first, with secondary
+  // actions alongside it; re-rendering updates the slot rather than duplicating it.
+  function sectionActions(body, {primary = null, secondary = []} = {}) {
+    let row = body.querySelector(":scope > .ui-section__actions");
+    if (!row) row = make("div", "ui-section__actions");
+    row.replaceChildren();
+    for (const action of [primary, ...secondary].filter(Boolean)) row.append(action);
+    body.prepend(row);
+    return row;
+  }
+
   // variant: "" | "primary" | "quiet" | "danger"; small: compact in-row action.
   function button(label, onClick, {variant = "", small = false, className = ""} = {}) {
     const element = make(
@@ -70,5 +81,5 @@
     return element;
   }
 
-  window.BSUI = Object.freeze({section, sectionShell, button});
+  window.BSUI = Object.freeze({section, sectionShell, sectionActions, button});
 })();

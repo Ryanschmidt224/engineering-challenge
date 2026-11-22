@@ -333,7 +333,7 @@
   const heading=element("h2","","Linked resources");
   const description=element("p","muted","Linked resources are references, not additional BOM quantities.");
   const body=element("div","linked-resource-groups");
-  const addButton=element("button","linked-resource-add",addTo?"+ Add entry":"+ Add resources");
+  const addButton=addTo?window.BSUI.button("+ Add entry"):element("button","linked-resource-add","+ Add resources");
   addButton.type="button";addButton.setAttribute("aria-expanded","false");
   const chooser=element("div","linked-resource-chooser");
   const typePicker=element("select","field");
