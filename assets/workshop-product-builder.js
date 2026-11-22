@@ -197,6 +197,19 @@ function create({item={},readOnly=true}={}){
     value:f.scope==="workshop"?String(f.value||""):"",options:[...f.options]
    }))
   })),
+  setSections:incoming=>{
+   // Layout-only import: keep IDs stable for future editing, never copy source
+   // product values. Workshop-specific values can be entered after applying.
+   sections=(Array.isArray(incoming)?incoming:[]).map(section=>({
+    id:section.id||ID(),title:section.title||"Section",
+    fields:(section.fields||[]).map(field=>({
+     id:field.id||ID(),label:field.label||"",type:field.type||"text",
+     scope:field.scope||"workshop",unit:field.unit||"",value:"",
+     options:[...(field.options||[])]
+    }))
+   }));
+   render();
+  },
   setEditing:value=>{editing=!!value;render()}
  };
 }
