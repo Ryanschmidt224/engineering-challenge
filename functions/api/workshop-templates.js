@@ -42,6 +42,34 @@ function cleanLayout(raw){
  }
  return {sections};
 }
+function cleanBuilderSections(raw){
+ if(!Array.isArray(raw)||raw.length>16)return null;
+ const sections=[],ids=new Set(),fieldIds=new Set();
+ for(const section of raw){
+  if(!section||typeof section!=="object"||typeof section.id!=="string"||
+     !/^[a-zA-Z0-9_-]{1,64}$/.test(section.id)||ids.has(section.id)||
+     typeof section.title!=="string"||section.title.length>100||
+     !Array.isArray(section.fields)||section.fields.length>30)return null;
+  ids.add(section.id);
+  const fields=[];
+  for(const field of section.fields){
+   if(!field||typeof field!=="object"||typeof field.id!=="string"||
+      !/^[a-zA-Z0-9_-]{1,64}$/.test(field.id)||fieldIds.has(field.id)||
+      typeof field.label!=="string"||!field.label.trim()||field.label.length>100||
+      !["text","number","select","checkbox","photo","link"].includes(field.type)||
+      !["workshop","project"].includes(field.scope)||
+      (field.unit!==undefined&&(typeof field.unit!=="string"||field.unit.length>32))||
+      (field.options!==undefined&&(!Array.isArray(field.options)||field.options.length>30||
+       field.options.some(option=>typeof option!=="string"||option.length>100))))return null;
+   fieldIds.add(field.id);
+   fields.push({id:field.id,label:field.label.trim(),type:field.type,
+    scope:field.scope,unit:String(field.unit||"").slice(0,32),
+    value:"",options:Array.isArray(field.options)?field.options:[]});
+  }
+  sections.push({id:section.id,title:section.title.trim()||"Untitled section",fields});
+ }
+ return fieldIds.size<=120?sections:null;
+}
 function cleanGenericFields(raw){
  if(!Array.isArray(raw)||raw.length>40)return null;
  const seen=new Set(),result=[];
@@ -78,9 +106,9 @@ export async function onRequest({request,env}){
   const name=String(body.name||"").trim().slice(0,90);
   const category=String(body.category||"").trim().slice(0,60);
   if(!name||!/^[a-z][a-z0-9-]{0,59}$/.test(category))return respond({error:"Choose a template name and category"},400);
-  const layout=cleanLayout(body.tableLayout),genericFields=cleanGenericFields(body.genericFields||[]);
-  if(!layout||!genericFields)return respond({error:"Invalid template fields or layout"},400);
-  payload={id,name,category,tableLayout:layout,genericFields};
+  const layout=cleanLayout(body.tableLayout),genericFields=cleanGenericFields(body.genericFields||[]),productSections=cleanBuilderSections(body.productSections||[]);
+  if(!layout||!genericFields||!productSections)return respond({error:"Invalid template fields or layout"},400);
+  payload={id,name,category,tableLayout:layout,genericFields,productSections};
  }
  for(let attempt=0;attempt<3;attempt++){
   const {value,etag}=await read(env);
