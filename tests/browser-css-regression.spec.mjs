@@ -54,9 +54,9 @@ async function openWorkspace(page,project,kind){
  await page.waitForLoadState("networkidle");return workspace;
 }
 async function expand(workspace){
- await workspace.locator(".recipe-disclosure-toggle").click();
+ await workspace.locator(".recipe-disclosure-toggle").press("Enter");
  for(const selector of [".part-details-collapse>summary",".workspace-resource-disclosure>summary",".workspace-archive-history>summary",".bs-unstructured-notes-heading"]){
-  const summary=workspace.locator(selector);if(await summary.count())await summary.click();
+  const summary=workspace.locator(selector);if(await summary.count())await summary.press("Enter");
  }
 }
 for(const width of [1440,390])for(const project of projects)for(const kind of ["part","assembly"]){
@@ -65,7 +65,7 @@ for(const width of [1440,390])for(const project of projects)for(const kind of ["
   try{
    for(const original of [true,false]){
     const context=await browser.newContext({viewport:{width,height:1000},reducedMotion:"reduce"});contexts.push(context);
-    const page=await context.newPage();page.on("pageerror",error=>errors.push(error.message));intercepts.push(await fixtures(page,original));pages.push(page);
+    const page=await context.newPage();page.setDefaultTimeout(5000);page.on("pageerror",error=>errors.push(error.message));intercepts.push(await fixtures(page,original));pages.push(page);
    }
    const workspaces=[];for(const page of pages)workspaces.push(await openWorkspace(page,project.id,kind));
    expect(intercepts[0].size).toBe(await pages[0].locator('link[rel="stylesheet"][href^="/assets/"]').count());
@@ -94,7 +94,13 @@ for(const width of [1440,390])for(const project of projects)for(const kind of ["
      await expect(tip).toBeVisible();
      const bounds=await tip.boundingBox();
      expect(bounds.x).toBeGreaterThanOrEqual(0);expect(bounds.x+bounds.width).toBeLessThanOrEqual(width);
-     await help.press("Escape");await expect(tip).toBeHidden();
+     // A text-only help surface must not swallow the next section's click.
+     const archive=workspaces[1].locator(".workspace-archive-history");
+     const wasOpen=await archive.getAttribute("open");
+     await archive.locator("summary").click();
+     expect(await archive.getAttribute("open")).not.toBe(wasOpen);
+     await archive.locator("summary").click();
+     await help.focus();await help.press("Escape");await expect(tip).toBeHidden();
     }
     const issues=[];
     for(const metric of metrics){if(metric.font!=="16px")issues.push(metric.title+": title "+metric.font);if(metric.count&&metric.count!=="14px")issues.push(metric.title+": count "+metric.count);if(metric.height<48)issues.push(metric.title+": header "+metric.height);if(metric.clipped)issues.push(metric.title+": visible text is clipped");}
@@ -104,6 +110,6 @@ for(const width of [1440,390])for(const project of projects)for(const kind of ["
     expect(issues).toEqual([]);
    }
    expect(errors).toEqual([]);
-  }finally{for(const context of contexts)await context.close();}
+  }finally{await Promise.all(contexts.map(context=>context.close().catch(()=>{})));}
  });
 }

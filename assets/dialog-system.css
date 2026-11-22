@@ -357,6 +357,7 @@ dialog.bs-edit-conflict {
   display: none !important;
 }
 .bs-section-tooltip-content {
+  pointer-events: none;
   z-index: 500;
   top: calc(100% + 8px);
   left: 0;
