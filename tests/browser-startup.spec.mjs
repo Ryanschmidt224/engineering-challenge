@@ -1205,6 +1205,9 @@ test("linked Workshop items open, search current fields and return to the origin
  await expect(page.locator("#launcher .part-workspace-title")).toHaveText("Project spare switch");
  await page.locator('nav [data-nav="commonparts"]').click();
  await startCatalogPart(page);
+ await expect(itemPage.getByRole("radio",{name:"Generic component",exact:true})).toBeChecked();
+ await expect(itemPage.locator('.workshop-structured-spec-rows [data-spec="label"]')).toHaveCount(0);
+ await itemPage.getByRole("radio",{name:"Specific product",exact:true}).check();
  await itemPage.getByRole("textbox",{name:"Manufacturer part number",exact:true}).fill("NEW-42");
  const placement=await itemPage.locator('[data-part-editor-section="identity"]').evaluate(section=>{
   const button=section.querySelector(".bs-action-lookup-button");
