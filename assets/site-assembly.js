@@ -959,7 +959,7 @@ function setupAssemblyTrees(){
   progressPanel.innerHTML='<label class="part-progress-inline-label" for="part-progress-select-'+project+'">Status</label><select id="part-progress-select-'+project+'" class="field part-progress-select" aria-label="Status"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="complete">Complete</option></select><label class="part-attention-toggle"><input type="checkbox" class="part-needs-attention"> Needs attention</label><label class="part-attention-note-field" hidden>What needs to be fixed?<textarea class="field part-attention-note" rows="2" maxlength="2000" placeholder="What needs attention?"></textarea></label><span class="part-progress-feedback" role="status" aria-live="polite"></span><button type="button" class="part-progress-save" hidden>Save status</button>';
   partWorkspace.querySelector(".workspace-heading > div:not(.workspace-cover)").append(progressPanel);
   partWorkspace.querySelector(".workspace-heading").after(detailsPanel);
-  const codeHost=document.createElement("div");codeHost.className="part-source-code-host";detailsPanel.after(codeHost);
+  const codeHost=document.createElement("div");codeHost.className="part-source-code-host";codeHost.hidden=true;detailsPanel.after(codeHost);
   const codePanel=window.BSPartCode.mount(codeHost,{project,canEdit});
   const progressSelect=progressPanel.querySelector(".part-progress-select"),attentionCheckbox=progressPanel.querySelector(".part-needs-attention"),attentionText=progressPanel.querySelector(".part-attention-note");
   function installAttentionExpander(panel){
@@ -1561,7 +1561,8 @@ function setupAssemblyTrees(){
     reloadWorkshopButton.hidden=!hasWorkshopLink||!canEdit()||!!part.generatedFrom;
     partDetailsCollapse.open=keepDetailsOpen;
     detailEditButton.textContent=part.familyUse?"Edit project use":hasWorkshopLink?"Modify part":"Edit part details";
-    codePanel.setVisible(part.partType==="code");
+    codeHost.hidden=part.partType!=="code";
+    codePanel.setVisible(!codeHost.hidden);
     if(part.partType==="code")void codePanel.load(part.id,part.name);
     progressPanel.hidden=part.isTool===true;
     if(!part.isTool)fillProgressPanel(part);
