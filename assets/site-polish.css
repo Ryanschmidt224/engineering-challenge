@@ -4666,3 +4666,60 @@
  display:flex;align-items:center;
  padding-top:9px;padding-bottom:9px;
 }
+
+
+/* A container is project identity, not a standalone title card. Present its
+   persistent name using the same label-left/value-right field layout as all
+   other Part Details rows, retaining the visual boundary of the container. */
+.assembly-workspace-page .part-container-overview>.part-container-name-row{
+ display:grid;
+ grid-template-columns:minmax(175px,30%) minmax(0,1fr);
+ align-items:center;
+ gap:12px 18px;
+ min-width:0;
+}
+.assembly-workspace-page .part-container-name-label{
+ display:inline-flex;
+ align-items:center;
+ gap:8px;
+ min-width:0;
+ font-size:.88rem;
+ font-weight:600;
+}
+.assembly-workspace-page .part-container-name-label .bs-section-tooltip{
+ margin:0;
+ flex:none;
+}
+.assembly-workspace-page .part-container-name-value{
+ width:100%;
+ max-width:none;
+ min-width:0;
+ min-height:38px;
+ padding:8px 12px;
+ box-sizing:border-box;
+ border:1px solid var(--color-border);
+ border-radius:8px;
+ background:var(--color-surface);
+ color:var(--color-text);
+ font:inherit;
+ font-size:.88rem;
+ cursor:default;
+}
+.assembly-workspace-page .part-container-overview>.part-functional-purpose{
+ margin:0;
+ font-size:.85rem;
+}
+.assembly-workspace-page .part-container-overview>.part-functional-purpose-actions{
+ display:flex;
+ justify-content:flex-start;
+}
+.assembly-workspace-page .part-container-overview>.part-functional-purpose-actions>.btn{
+ min-height:30px;
+ padding:5px 10px;
+}
+@media(max-width:620px){
+ .assembly-workspace-page .part-container-overview>.part-container-name-row{
+  grid-template-columns:minmax(0,1fr);
+  gap:6px;
+ }
+}
