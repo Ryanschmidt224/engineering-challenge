@@ -42,6 +42,8 @@ export async function handleAccounts(request,env){
  if(request.headers.get("origin")!==new URL(request.url).origin)return json({error:"Invalid request origin"},403);
  if(request.method==="DELETE")return json({user:null},200,{"set-cookie":cookie("",0)});
  const body=await request.json().catch(()=>null);
+ if(body?.action==="register")return json({error:"BuildingSchmidt is a private application. Public registration is closed.",code:"REGISTRATION_CLOSED"},410);
+ if(!["login","claim-admin"].includes(body?.action))return json({error:"Invalid account action",code:"INVALID_ACCOUNT_ACTION"},400);
  // One-time migration: attach legacy administrator access to an authenticated
  // user account. Never trust role values submitted during registration.
  if(body?.action==="claim-admin"){
@@ -93,29 +95,8 @@ export async function handleAccounts(request,env){
   return json({user:{id:user.id,email:user.email,displayName:user.displayName,role:"admin"}});
  }
  const email=String(body?.email||"").toLowerCase().trim(),password=body?.password;
- if(!/^[^\s@]{1,80}@[^\s@]{1,120}\.[^\s@]{2,30}$/.test(email)||typeof password!=="string"||password.length<12||password.length>256)return json({error:"Enter a valid email and a password between 12 and 256 characters",code:"INVALID_REGISTRATION"},400);
+ if(!/^[^\s@]{1,80}@[^\s@]{1,120}\.[^\s@]{2,30}$/.test(email)||typeof password!=="string"||password.length<12||password.length>256)return json({error:"Enter a valid email and a password between 12 and 256 characters",code:"INVALID_LOGIN"},400);
  const emailObject=await env.PHOTOS.get(await emailKey(email));
- if(body.action==="register"){
-  if(emailObject)return json({error:"An account already exists for this email address",code:"EMAIL_IN_USE"},409);
-  const id="u"+crypto.randomUUID().replace(/-/g,""),salt=b64(crypto.getRandomValues(new Uint8Array(16)));
-  const user={id,email,role:"member",displayName:String(body.displayName||"").trim().slice(0,80)||email.split("@")[0],salt,passwordHash:await passwordHash(password,salt),sessionVersion:crypto.randomUUID()};
-  // Persist the account before publishing its email lookup. If the lookup fails,
-  // remove only this newly generated account so registration can be retried.
-  const stored=await env.PHOTOS.put(userKey(id),JSON.stringify(user),{onlyIf:{etagDoesNotMatch:"*"}});
-  if(!stored)throw Error("New account ID collision");
-  let claimed;
-  try{
-   claimed=await env.PHOTOS.put(await emailKey(email),JSON.stringify({id}),{onlyIf:{etagDoesNotMatch:"*"}});
-  }catch(error){
-   await env.PHOTOS.delete(userKey(id)).catch(()=>{});
-   throw error;
-  }
-  if(!claimed){
-   await env.PHOTOS.delete(userKey(id)).catch(()=>{});
-   return json({error:"An account already exists for this email address",code:"EMAIL_IN_USE"},409);
-  }
-  return json({user:{id,email,displayName:user.displayName,role:"member"}},201,{"set-cookie":cookie(await createSession(user,env),30*86400)});
- }
  if(!emailObject)return json({error:"Invalid email or password"},401);
  const {id}=JSON.parse(await emailObject.text()),object=await env.PHOTOS.get(userKey(id));
  if(!object)return json({error:"Invalid email or password"},401);

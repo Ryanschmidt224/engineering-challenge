@@ -1,3 +1,4 @@
+import {provisionTestAccount} from "./helpers/accounts.mjs";
 import {test} from "node:test";
 import assert from "node:assert/strict";
 import {handleAccounts} from "../functions/api/accounts.js";
@@ -29,8 +30,8 @@ const read=async response=>({status:response.status,data:await response.json()})
 const cookie=response=>response.headers.get("set-cookie")?.split(";")[0];
 test("ownership hides private projects, preserves archives, and gates writes",async()=>{
  const env={PHOTOS:new Bucket(),admin_password:"test-separate-administrator-secret"};
- const a=await handleAccounts(request("/api/accounts","POST",{action:"register",email:"one@example.test",password:"one-strong-test-password"}),env);
- const b=await handleAccounts(request("/api/accounts","POST",{action:"register",email:"two@example.test",password:"two-strong-test-password"}),env);
+ const a=await provisionTestAccount(request("/api/accounts","POST",{action:"register",email:"one@example.test",password:"one-strong-test-password"}),env);
+ const b=await provisionTestAccount(request("/api/accounts","POST",{action:"register",email:"two@example.test",password:"two-strong-test-password"}),env);
  assert.equal(a.status,201);assert.equal(b.status,201);
  const owner=cookie(a),other=cookie(b);
  const created=await projectsApi({request:request("/api/projects","POST",{name:"Private stepper design",description:"Personal prototype"},owner),env});
@@ -83,7 +84,7 @@ test("ownership hides private projects, preserves archives, and gates writes",as
 
 test("part progress and attention notes are editable only by the project owner",async()=>{
  const env={PHOTOS:new Bucket(),admin_password:"test-part-status-signing-secret"};
- const register=await handleAccounts(request("/api/accounts","POST",{action:"register",email:"status-owner@example.test",password:"strong-project-password"}),env);
+ const register=await provisionTestAccount(request("/api/accounts","POST",{action:"register",email:"status-owner@example.test",password:"strong-project-password"}),env);
  const owner=cookie(register);
  const created=await projectsApi({request:request("/api/projects","POST",{name:"Progress test project"},owner),env});
  const project=(await created.json()).projects.find(p=>p.name==="Progress test project").id;
@@ -107,7 +108,7 @@ test("part progress and attention notes are editable only by the project owner",
 
 test("Projects share one catalog with custom categories and no legacy mini project type",async()=>{
  const env={PHOTOS:new Bucket(),admin_password:"test-category-project-secret"};
- const response=await handleAccounts(request("/api/accounts","POST",{
+ const response=await provisionTestAccount(request("/api/accounts","POST",{
   action:"register",email:"categories@example.test",password:"a-strong-category-password"
  }),env);
  assert.equal(response.status,201);
@@ -134,7 +135,7 @@ test("Projects share one catalog with custom categories and no legacy mini proje
 
 test("administrator is a role on an existing email/password account, never a public signup option",async()=>{
  const env={PHOTOS:new Bucket(),admin_password:"role-based-test-admin-secret"};
- const response=await handleAccounts(request("/api/accounts","POST",{
+ const response=await provisionTestAccount(request("/api/accounts","POST",{
   action:"register",email:"role-admin@example.test",password:"strong-account-password",displayName:"Site Owner",role:"admin"
  }),env);
  assert.equal(response.status,201);
@@ -150,7 +151,7 @@ test("administrator is a role on an existing email/password account, never a pub
  assert.equal(await isAdmin(current,env),true);
  assert.equal((await (await handleAccounts(request("/api/accounts","GET",undefined,session),env)).json()).user.role,"admin");
  assert.equal((await auth(request("/api/auth","POST",{password:env.admin_password}),env)).status,410);
- const other=await handleAccounts(request("/api/accounts","POST",{
+ const other=await provisionTestAccount(request("/api/accounts","POST",{
   action:"register",email:"ordinary@example.test",password:"another-strong-password"
  }),env);
  assert.equal(other.status,201);
@@ -160,7 +161,7 @@ test("administrator is a role on an existing email/password account, never a pub
 
 test("project tags are optional, case-insensitive unique, and can describe several disciplines",async()=>{
  const env={PHOTOS:new Bucket(),admin_password:"role-tags-test-password"};
- const response=await handleAccounts(request("/api/accounts","POST",{
+ const response=await provisionTestAccount(request("/api/accounts","POST",{
   action:"register",email:"tags@example.test",password:"strong-tags-test-password"
  }),env);
  assert.equal(response.status,201);
@@ -180,33 +181,27 @@ test("project tags are optional, case-insensitive unique, and can describe sever
  assert.equal(result.status,400);
 });
 
-test("account registration reports actionable failure codes without exposing secrets",async()=>{
+test("public registration is closed without creating accounts or exposing secrets",async()=>{
  const env={PHOTOS:new Bucket(),admin_password:"registration-error-test-secret"};
- const payload={action:"register",email:"existing@example.test",password:"a-long-valid-test-password"};
- let result=await handleAccounts(request("/api/accounts","POST",payload),env);
- assert.equal(result.status,201);
- result=await handleAccounts(request("/api/accounts","POST",payload),env);
- assert.equal(result.status,409);
- let data=await result.json();
- assert.equal(data.code,"EMAIL_IN_USE");
- assert.match(data.error,/email address/);
- result=await handleAccounts(request("/api/accounts","POST",{...payload,email:"bad",password:"short"}),env);
- assert.equal(result.status,400);
- data=await result.json();
- assert.equal(data.code,"INVALID_REGISTRATION");
- result=await handleAccounts(request("/api/accounts","POST",payload),{PHOTOS:env.PHOTOS});
- assert.equal(result.status,503);
- data=await result.json();
- assert.equal(data.code,"ACCOUNT_STORAGE_UNAVAILABLE");
- assert.doesNotMatch(JSON.stringify(data),/registration-error-test-secret/);
+ for(const payload of [
+  {action:"register",email:"existing@example.test",password:"a-long-valid-test-password"},
+  {action:"register",email:"bad",password:"short",role:"admin"}
+ ]){
+  const result=await handleAccounts(request("/api/accounts","POST",payload),env);
+  assert.equal(result.status,410);
+  const data=await result.json();
+  assert.equal(data.code,"REGISTRATION_CLOSED");
+  assert.doesNotMatch(JSON.stringify(data),/registration-error-test-secret/);
+ }
+ assert.equal(env.PHOTOS.data.size,0);
 });
 
 test("legacy administrator password can be linked only once",async()=>{
  const env={PHOTOS:new Bucket(),admin_password:"unique-admin-migration-secret"};
- const first=await handleAccounts(request("/api/accounts","POST",{
+ const first=await provisionTestAccount(request("/api/accounts","POST",{
   action:"register",email:"first-admin@example.test",password:"first-valid-password"
  }),env);
- const second=await handleAccounts(request("/api/accounts","POST",{
+ const second=await provisionTestAccount(request("/api/accounts","POST",{
   action:"register",email:"second-admin@example.test",password:"second-valid-password"
  }),env);
  assert.equal(first.status,201);assert.equal(second.status,201);
@@ -225,7 +220,7 @@ test("legacy administrator password can be linked only once",async()=>{
 
 test("short summary and hierarchical quantities persist independently of existing project data",async()=>{
  const env={PHOTOS:new Bucket(),admin_password:"test-separate-administrator-secret"};
- const registered=await handleAccounts(request("/api/accounts","POST",{
+ const registered=await provisionTestAccount(request("/api/accounts","POST",{
   action:"register",email:"quantities@example.test",password:"a-strong-test-password"
  }),env);
  assert.equal(registered.status,201);

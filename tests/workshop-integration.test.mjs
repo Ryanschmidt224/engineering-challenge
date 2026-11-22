@@ -1,3 +1,4 @@
+import {provisionTestAccount} from "./helpers/accounts.mjs";
 import {test} from "node:test";
 import assert from "node:assert/strict";
 import {handleAccounts} from "../functions/api/accounts.js";
@@ -37,7 +38,7 @@ const request=(path,method="GET",body,session)=>{
 const cookie=r=>r.headers.get("set-cookie")?.split(";")[0];
 const data=async r=>({status:r.status,body:await r.json()});
 const register=async(env,email)=>{
- const response=await handleAccounts(request("/api/accounts","POST",{action:"register",email,password:"test-account-password-strong-2026"}),env);
+ const response=await provisionTestAccount(request("/api/accounts","POST",{action:"register",email,password:"test-account-password-strong-2026"}),env);
  assert.equal(response.status,201);
  return cookie(response);
 };

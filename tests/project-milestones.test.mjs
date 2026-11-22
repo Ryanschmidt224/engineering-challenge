@@ -1,3 +1,4 @@
+import {provisionTestAccount} from "./helpers/accounts.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {handleAccounts} from "../functions/api/accounts.js";
@@ -27,7 +28,7 @@ async function fixture(){
    ...(body?{"content-type":"application/json"}:{}),...(cookie?{cookie}:{})},
   ...(body?{body:JSON.stringify(body)}:{})
  });
- const register=await handleAccounts(request("/api/accounts","POST",{
+ const register=await provisionTestAccount(request("/api/accounts","POST",{
   action:"register",email:"milestone-author@example.test",password:"valid-milestone-test-password"
  }),env);
  assert.equal(register.status,201);

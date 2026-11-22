@@ -1,3 +1,4 @@
+import {provisionTestAccount} from "./helpers/accounts.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
@@ -46,7 +47,7 @@ async function projectFixture() {
   method, headers: {origin, cookie, "content-type": "application/json"},
   body: json === undefined ? undefined : JSON.stringify(json)
  });
- const registered = await handleAccounts(request("/api/accounts", "POST", {
+ const registered = await provisionTestAccount(request("/api/accounts", "POST", {
   action: "register", email: "fixture@example.test", password: "test-project-owner"
  }), env);
  assert.equal(registered.status, 201);
