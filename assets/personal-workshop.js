@@ -989,6 +989,132 @@
    // remains visible and editable without requiring a lossy migration.
    const productBuilder=window.BSWorkshopProductBuilder?.create({item,readOnly:viewOnly});
    if(productBuilder)grid.append(productBuilder.element);
+   // Master templates are category-scoped snapshots of field layout.
+   // Applying one never copies another product's values and does not create
+   // a live dependency that could unexpectedly change an existing item.
+   const templatePanel=el("section",undefined,"workshop-master-templates");
+   const templateTitle=el("h3","Master templates");
+   const templateHint=el("p","Choose a layout for this category, or save the current fields as a reusable template. Existing product values are not replaced.","muted");
+   const templateControls=el("div",undefined,"workshop-template-controls");
+   const templateSearch=el("input",undefined,"field");
+   templateSearch.type="search";templateSearch.placeholder="Search templates in this category";
+   templateSearch.setAttribute("aria-label","Search master templates");
+   const templateSelect=el("select",undefined,"field");
+   templateSelect.setAttribute("aria-label","Select a master template");
+   const templateName=el("input",undefined,"field");
+   templateName.placeholder="New template name (e.g. MOSFET, relay, pushbutton)";
+   templateName.maxLength=90;templateName.setAttribute("aria-label","New master template name");
+   const templateActions=el("div",undefined,"workshop-template-actions");
+   const applyTemplateButton=itemButton("Use template",()=>void applySelectedTemplate(),"btn");
+   const saveTemplateButton=itemButton("Save as new template",()=>void saveCurrentTemplate(false),"btn");
+   const updateTemplateButton=itemButton("Update selected template",()=>void saveCurrentTemplate(true),"btn");
+   const removeTemplateButton=itemButton("Delete template",()=>void deleteSelectedTemplate(),"btn");
+   for(const button of [applyTemplateButton,saveTemplateButton,updateTemplateButton,removeTemplateButton])button.type="button";
+   templateActions.append(applyTemplateButton,saveTemplateButton,updateTemplateButton,removeTemplateButton);
+   const templateStatus=el("p","","muted workshop-template-status");
+   templateStatus.setAttribute("role","status");
+   templateControls.append(templateSearch,templateSelect,templateName,templateActions);
+   templatePanel.append(templateTitle,templateHint,templateControls,templateStatus);
+   heading.after(templatePanel);
+   let masterTemplates=[],selectedMasterTemplate="";
+   const selectedTemplate=()=>masterTemplates.find(template=>template.id===templateSelect.value);
+   const refreshTemplateOptions=()=>{
+    const previous=templateSelect.value||selectedMasterTemplate;
+    templateSelect.replaceChildren();
+    const blank=el("option","Choose a template");blank.value="";templateSelect.append(blank);
+    const term=templateSearch.value.trim().toLowerCase();
+    for(const template of masterTemplates.filter(template=>template.category===category.value&&
+     (!term||template.name.toLowerCase().includes(term)))){
+     const option=el("option",template.name);option.value=template.id;templateSelect.append(option);
+    }
+    templateSelect.value=[...templateSelect.options].some(option=>option.value===previous)?previous:"";
+    selectedMasterTemplate=templateSelect.value;
+    applyTemplateButton.disabled=!selectedMasterTemplate;
+    updateTemplateButton.disabled=!selectedMasterTemplate;
+    removeTemplateButton.disabled=!selectedMasterTemplate;
+   };
+   const fetchMasterTemplates=async()=>{
+    try{
+     const response=await req("/api/workshop-templates");
+     masterTemplates=response.templates||[];
+     refreshTemplateOptions();
+    }catch(error){templateStatus.textContent="Unable to load templates: "+error.message}
+   };
+   templateSearch.addEventListener("input",refreshTemplateOptions);
+   templateSelect.addEventListener("change",()=>{
+    selectedMasterTemplate=templateSelect.value;
+    refreshTemplateOptions();
+   });
+   category.addEventListener("change",()=>{
+    selectedMasterTemplate="";templateSelect.value="";refreshTemplateOptions();
+   });
+   const templateSnapshot=()=>({
+    tableLayout:currentTableLayout(),
+    genericFields:getGenericFields()
+   });
+   const applySelectedTemplate=async()=>{
+    const template=selectedTemplate();
+    if(!template)return;
+    // Explicit user action; do not touch identity, ordering values or photos.
+    const layout=template.tableLayout?.sections||{};
+    for(const [key,editor] of Object.entries(tableEditors)){
+     const section=layout[key]||{};
+     editor.titleInput.value=section.title||sections.find(entry=>entry[0]===key)[1];
+     editor.headingText.textContent=editor.titleInput.value;
+     for(const [name,input] of Object.entries(editor.labelInputs)){
+      const defaultLabel=fieldDescriptors[name]?.[0]||name;
+      input.value=section.labels?.[name]||defaultLabel;
+      const caption=controls[name]?.closest("label")?.querySelector("span");
+      if(caption)caption.textContent=input.value;
+     }
+     editor.hiddenFields.clear();
+     for(const field of section.hiddenFields||[])if(field!=="name")editor.hiddenFields.add(field);
+     editor.customRows.replaceChildren();
+     for(const row of section.rows||[])editor.addCustomRow({...row,value:""});
+     editor.updateFieldVisibility();
+     editor.customRows.classList.toggle("workshop-table-editing",editor.active);
+    }
+    if(identityRadios.generic.checked){
+     genericTemplateRows.replaceChildren();
+     for(const field of template.genericFields||[])addGenericField(field);
+    }
+    templateStatus.textContent="Applied "+template.name+" layout. Review changes and save the Workshop item to keep them.";
+   };
+   const saveCurrentTemplate=async updating=>{
+    const existing=selectedTemplate();
+    if(updating&&!existing)return;
+    const name=updating?existing.name:templateName.value.trim();
+    if(!name){templateStatus.textContent="Enter a new template name first.";templateName.focus();return}
+    const snapshot=templateSnapshot();
+    const body={...(updating?{id:existing.id}:{}),name,category:category.value,...snapshot};
+    templateStatus.textContent=updating?"Updating master template…":"Saving master template…";
+    try{
+     const response=await req("/api/workshop-templates",updating?"PUT":"POST",body);
+     const template=response.template;
+     masterTemplates=masterTemplates.filter(entry=>entry.id!==template.id).concat(template);
+     selectedMasterTemplate=template.id;
+     templateSearch.value="";
+     refreshTemplateOptions();
+     templateName.value="";
+     templateStatus.textContent="Saved master template: "+template.name+". Other Workshop items are unchanged.";
+    }catch(error){templateStatus.textContent=error.message}
+   };
+   const deleteSelectedTemplate=async()=>{
+    const template=selectedTemplate();
+    if(!template)return;
+    const confirmed=window.BSDialogs?.confirm
+     ?await window.BSDialogs.confirm("Delete master template '"+template.name+"' from "+category.options[category.selectedIndex].text+"? Existing Workshop items keep their layouts.",{title:"Delete master template?",confirmLabel:"Delete"})
+     :window.confirm("Delete master template '"+template.name+"'?");
+    if(!confirmed)return;
+    try{
+     await req("/api/workshop-templates","DELETE",{id:template.id});
+     masterTemplates=masterTemplates.filter(item=>item.id!==template.id);
+     selectedMasterTemplate="";
+     refreshTemplateOptions();
+     templateStatus.textContent="Template deleted. Existing Workshop item layouts were not changed.";
+    }catch(error){templateStatus.textContent=error.message}
+   };
+   void fetchMasterTemplates();
    const photoTitle=el("h4","Photos");
    const notesSection=grid.querySelector('[data-part-editor-section="notes"]');
    notesSection.append(photoTitle);
@@ -1256,6 +1382,7 @@
      editor.updateFieldVisibility();
     }
     actions.hidden=!editing;
+    templatePanel.hidden=!editing;
     uploadRow.hidden=!editing;
     if(!editing)uploader.panel.hidden=true;
     uploadPreviews.hidden=!editing;
