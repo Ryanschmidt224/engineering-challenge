@@ -23,6 +23,8 @@
   const headingRow=el("div","recipe-heading-row");
   const disclosure=button("",()=>setInstructionsOpen(!instructionsOpen),"recipe-disclosure-toggle");
   disclosure.setAttribute("aria-expanded","false");
+  disclosure.title="Open work instructions, steps, tests, measurements, and notes for this part or assembly.";
+  disclosure.setAttribute("aria-description",disclosure.title);
   const bodyId="recipe-content-"+newId();
   panel.id=bodyId;
   disclosure.setAttribute("aria-controls",bodyId);
