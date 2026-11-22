@@ -2,14 +2,9 @@
 // Capture before any photo, BOM or assembly controller modifies the DOM.
 window.BSProjectTemplate=document.getElementById("linear")?.cloneNode(true);
 
-const {tiles,disciplines,topicDisciplines,topicProjects}=window.BSKnowledgeSeed;
-let activeDiscipline="All";
-const byId=id=>tiles.find(t=>t.id===id);const safe=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const store=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){alert("Browser storage is unavailable. Export your notes instead.")}};
-const load=k=>{try{return JSON.parse(localStorage.getItem(k))||[]}catch(e){return []}};
-let notes=load("bs_notes"),drafts=load("bs_drafts"),feedback=load("bs_feedback"),hintIndex=0,selectionText="";
-function navigate(page){if(page==="commonparts"||page==="tools"){location.href="workshop.html";return;}const route=page.match(/^([a-z0-9]+)\/(?:(?:assembly|workspace|part|bom)\/([^/]+)|parts|settings)$/);if(route)page=route[1];if(page==="challenge"||page==="workshop")page="launcher";if(page==="community"||page==="calculators")page="learn";if(page==="tools")page="commonparts";if(!document.getElementById(page))page="home";document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===page));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.nav===page));if(!route||location.hash.slice(1)!==route[0])location.hash=page;window.scrollTo({top:0,behavior:"instant"});if(page==="learn")renderTiles()}
-document.addEventListener("click",e=>{const nav=e.target.closest("[data-nav]");if(nav){e.preventDefault();navigate(nav.dataset.nav)}const topic=e.target.closest("[data-topic]");if(topic)openTile(topic.dataset.topic);const project=e.target.closest("[data-project]");if(project)navigate(project.dataset.project)});
+// Knowledge tiles live on knowledge.html; #learn (and #calculators) now shows only the calculators.
+function navigate(page){if(page==="commonparts"||page==="tools"){location.href="workshop.html";return;}if(page==="knowledge"||page==="community"){location.href="knowledge.html";return;}const route=page.match(/^([a-z0-9]+)\/(?:(?:assembly|workspace|part|bom)\/([^/]+)|parts|settings)$/);if(route)page=route[1];if(page==="challenge"||page==="workshop")page="launcher";if(page==="calculators")page="learn";if(page==="tools")page="commonparts";if(!document.getElementById(page))page="home";document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===page));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.nav===page));if(!route||location.hash.slice(1)!==route[0])location.hash=page;window.scrollTo({top:0,behavior:"instant"})}
+document.addEventListener("click",e=>{const nav=e.target.closest("[data-nav]");if(nav){e.preventDefault();navigate(nav.dataset.nav)}const project=e.target.closest("[data-project]");if(project)navigate(project.dataset.project)});
 window.addEventListener("hashchange",()=>{
  const hash=location.hash.slice(1)||"home";navigate(hash);
  const route=hash.match(/^([a-z0-9]+)\/(?:assembly|workspace|part|bom)\/([^/]+)$/);
@@ -21,118 +16,6 @@ window.addEventListener("hashchange",()=>{
   if(manager)document.querySelector('[data-assembly-tree="'+manager[1]+'"]')?.dispatchEvent(new Event("openprojectpage"));
  }
 });
-// Use the same catalog column/navigation component as the Projects page.
-const knowledgeRoot=document.querySelector("#learn .knowledge-base-page");
-const knowledgeNavMount=document.getElementById("topicFilters");
-window.BSCatalogUI?.build(knowledgeRoot,knowledgeNavMount,[
- document.querySelector("#learn .knowledge-directory-toolbar"),
- document.getElementById("knowledgeResultsCount"),
- document.getElementById("knowledgeExplanations"),
- document.getElementById("knowledgeCalculators")
-]);
-const knowledgeNav=window.BSCatalogUI?.categories(knowledgeNavMount,{
- heading:"Browse by discipline",
- onChange:value=>{activeDiscipline=value==="all"?"All":value;renderTiles()}
-});
-knowledgeNav?.setItems([
- {value:"all",label:"All disciplines"},
- ...disciplines.filter(value=>value!=="All").map(value=>({value,label:value}))
-]);
-function renderTiles(){
- const q=document.getElementById("search").value.toLowerCase().trim();
- const kind=document.getElementById("knowledgeTypeFilter")?.value||"all";
- const found=tiles.filter(t=>(activeDiscipline==="All"||topicDisciplines[t.id].includes(activeDiscipline))&&
-  (t.title+" "+t.category+" "+t.short+" "+topicDisciplines[t.id].join(" ")).toLowerCase().includes(q));
- const section=document.getElementById("knowledgeExplanations"),calculators=document.getElementById("knowledgeCalculators");
- section.hidden=kind==="calculators";
- document.getElementById("tileList").innerHTML=found.map(t=>
-  '<article class="card knowledge-topic-card"><div class="project-tags">'+topicDisciplines[t.id].map(d=>'<span>'+d+'</span>').join("")+
-  '</div><h3>'+safe(t.title)+'</h3><p>'+safe(t.short)+'</p><button class="btn" data-topic="'+t.id+'">Read explanation</button></article>'
- ).join("")||'<p class="muted">No explanations match your filters.</p>';
- const calcCards=[...document.querySelectorAll("#resource-calculators .resource-card")];
- let calculatorCount=0;
- for(const card of calcCards){
-  const match=activeDiscipline==="All"||activeDiscipline==="Mechanics"&&/surface speed|sfm/i.test(card.textContent)||
-   activeDiscipline==="Electronics"&&/ohm|resistance|current/i.test(card.textContent)||
-   activeDiscipline==="Manufacturing"&&/surface speed|sfm/i.test(card.textContent);
-  const foundCard=match&&card.textContent.toLowerCase().includes(q);
-  card.hidden=!foundCard;
-  if(foundCard)calculatorCount++;
- }
- calculators.hidden=kind==="explanations"||calculatorCount===0;
- const total=(kind==="calculators"?0:found.length)+(kind==="explanations"?0:calculatorCount);
- document.getElementById("knowledgeResultsCount").textContent=total+" result"+(total===1?"":"s");
- if(kind!=="calculators"&&!found.length)section.hidden=true;
-}
-document.getElementById("search").addEventListener("input",renderTiles);
-document.getElementById("knowledgeTypeFilter").addEventListener("change",renderTiles);
-function modal(body){document.getElementById("modalRoot").className="modalback";document.getElementById("modalRoot").innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-label="Knowledge detail"><header><span class="eyebrow">Building Schmidt</span><button class="close" id="closeModal" aria-label="Close">×</button></header>'+body+'</div>';document.getElementById("closeModal").focus()}
-function closeModal(){document.getElementById("modalRoot").className="hide";document.getElementById("modalRoot").innerHTML=""}
-document.getElementById("modalRoot").addEventListener("click",e=>{if(e.target.id==="modalRoot"||e.target.closest("#closeModal"))closeModal()});
-document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
-// Public, read-only lookup for contextual searches from work instructions.
-window.BSKnowledgeArticles={
- search(query){
-  const q=String(query||"").toLowerCase().trim().replace(/\s+/g," ");
-  if(!q||q.length>220)return [];
-  const words=q.split(/\s+/).filter(x=>x.length>2);
-  return tiles.map(t=>{
-   const title=t.title.toLowerCase(),short=t.short.toLowerCase();
-   const score=title===q?100:title.includes(q)?80:short.includes(q)?35:
-    words.length&&words.every(w=>(title+" "+short).includes(w))?20:0;
-   return {id:t.id,title:t.title,summary:t.short,score};
-  }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,8);
- },
- open(id){openTile(id)}
-};
-function openTile(id){const t=byId(id);if(!t)return;const count=feedback.filter(f=>f.id===id&&f.type==="helpful").length;modal('<h2>'+safe(t.title)+'</h2><span class="tag">Explanation</span><p>'+safe(t.short)+'</p><details><summary><strong>Go deeper</strong></summary><p>'+safe(t.deep)+'</p></details><div class="line"></div><h3>Related topics</h3><div class="row">'+t.related.map(x=>'<button class="btn" data-topic="'+x+'">'+safe(byId(x).title)+'</button>').join("")+'</div><div class="line"></div><h3>Used in</h3><div class="row">'+(topicProjects[id].length?topicProjects[id].map(p=>'<button class="btn" data-project="'+p[1]+'">'+safe(p[0])+'</button>').join(""):'<span class="muted">No projects linked yet</span>')+'</div><div class="line"></div><h3>Feedback</h3><p class="small muted">Local feedback · Helpful marks: '+count+'</p><div class="row"><button class="btn" id="helpful" data-id="'+id+'">Helpful</button><button class="btn" id="flagTile" data-id="'+id+'">Suggest correction</button></div><div class="line"></div><h3>Versions</h3><div class="version"><strong>Official starter version</strong><p class="small muted">Current version.</p></div>'+drafts.filter(d=>d.tile===id).map(d=>'<div class="version"><strong>My local draft</strong><p>'+safe(d.text)+'</p></div>').join(""))}
-document.getElementById("modalRoot").addEventListener("click",e=>{const t=e.target.closest("[data-topic]");if(t){openTile(t.dataset.topic);return}const p=e.target.closest("[data-project]");if(p){closeModal();navigate(p.dataset.project);return}if(e.target.id==="helpful"){feedback.push({id:e.target.dataset.id,type:"helpful"});store("bs_feedback",feedback);openTile(e.target.dataset.id)}if(e.target.id==="flagTile"){const id=e.target.dataset.id;closeModal();navigate("learn");document.getElementById("topic-contributions").scrollIntoView({behavior:"smooth"});document.getElementById("proposalTitle").value=byId(id).title;document.getElementById("proposalText").focus()}});
-const hints=["Start by defining how you will measure a 50-foot launch. What counts as a successful test?","Sketch two possible mechanisms and list what each needs to store or transfer energy.","Identify the variables you can control: geometry, supply, motor speed, launch angle, and dart type.","Build a small, guarded test. Record what actually happens before deciding what to change.","Choose one variable to change, make a prediction, and test whether the measurement supports it."];
-document.getElementById("hintBtn").onclick=()=>{document.getElementById("hintBox").classList.remove("hide");document.getElementById("hintBox").textContent=hints[Math.min(hintIndex,hints.length-1)];hintIndex++;if(hintIndex>=hints.length)document.getElementById("hintBtn").disabled=true;document.getElementById("resetHints").classList.remove("hide")};
-document.getElementById("resetHints").onclick=()=>{hintIndex=0;document.getElementById("hintBox").classList.add("hide");document.getElementById("hintBtn").disabled=false;document.getElementById("resetHints").classList.add("hide")};
-function calc(){const rpm=Number(document.getElementById("rpm").value),mm=Number(document.getElementById("diameter").value);document.getElementById("speedResult").textContent=Number.isFinite(rpm)&&Number.isFinite(mm)&&rpm>=0&&mm>0?(Math.PI*mm/1000*rpm/60).toFixed(1)+" m/s":"Enter valid values"}
-["rpm","diameter"].forEach(id=>document.getElementById(id).addEventListener("input",calc));calc();
-function validLink(s){try{const u=new URL(s);return ["https:","http:"].includes(u.protocol)?u.href:""}catch(e){return ""}}
-function renderNotes(){document.getElementById("notes").innerHTML=notes.length?notes.map((n,i)=>'<div class="topic"><strong>'+safe(n.title)+'</strong><span class="chip">'+safe(n.type)+'</span><p>'+safe(n.observation)+'</p>'+(n.theory?'<p><strong>Next:</strong> '+safe(n.theory)+'</p>':'')+(n.evidence?'<p><a target="_blank" rel="noopener noreferrer" href="'+safe(n.evidence)+'">Evidence link</a></p>':'')+'<button class="btn" data-delete-note="'+i+'">Delete note</button></div>').join(""):'<p class="muted">No notes yet.</p>'}
-document.getElementById("logForm").onsubmit=e=>{e.preventDefault();notes.unshift({title:document.getElementById("logTitle").value.trim(),type:document.getElementById("logType").value,observation:document.getElementById("logObservation").value.trim(),theory:document.getElementById("logTheory").value.trim(),evidence:validLink(document.getElementById("logEvidence").value)});store("bs_notes",notes);renderNotes();e.target.reset()};
-document.getElementById("notes").onclick=async e=>{const b=e.target.closest("[data-delete-note]");if(b&&await window.BSDialogs.danger("Delete this local note?",{title:"Delete note?"})){notes.splice(Number(b.dataset.deleteNote),1);store("bs_notes",notes);renderNotes()}};
-function renderDrafts(){document.getElementById("drafts").innerHTML=drafts.length?drafts.map((d,i)=>'<div class="topic"><strong>'+safe(d.title)+'</strong><p>'+safe(d.text)+'</p>'+(d.source?'<a target="_blank" rel="noopener noreferrer" href="'+safe(d.source)+'">Source</a>':'')+'<p class="small muted">Local draft</p><button class="btn" data-delete-draft="'+i+'">Delete draft</button></div>').join(""):'<p class="muted">No drafts yet.</p>'}
-document.getElementById("proposalForm").onsubmit=e=>{e.preventDefault();const title=document.getElementById("proposalTitle").value.trim();const match=tiles.find(t=>t.title.toLowerCase()===title.toLowerCase());drafts.unshift({title,text:document.getElementById("proposalText").value.trim(),source:validLink(document.getElementById("proposalSource").value),tile:match?match.id:null});store("bs_drafts",drafts);renderDrafts();e.target.reset()};
-document.getElementById("drafts").onclick=async e=>{const b=e.target.closest("[data-delete-draft]");if(b&&await window.BSDialogs.danger("Delete this local draft?",{title:"Delete draft?"})){drafts.splice(Number(b.dataset.deleteDraft),1);store("bs_drafts",drafts);renderDrafts()}};
-function exportData(data,name){const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-document.getElementById("exportNotes").onclick=()=>exportData(notes,"building-schmidt-experiments.json");
-document.getElementById("exportDrafts").onclick=()=>exportData(drafts,"building-schmidt-drafts.json");
-
-document.addEventListener("selectionchange",()=>{return;const s=String(window.getSelection()).trim();if(s&&s.length<220&&!document.getElementById("modalRoot").classList.contains("modalback")){selectionText=s;document.getElementById("explainSelection").classList.remove("hide")}else if(!s){document.getElementById("explainSelection").classList.add("hide")}});
-document.getElementById("explainSelection").onclick=()=>{const selected=selectionText;window.getSelection().removeAllRanges();document.getElementById("explainSelection").classList.add("hide");const found=tiles.find(t=>(t.title+" "+t.short+" "+t.deep).toLowerCase().includes(selected.toLowerCase())&&selected.length>3);if(found){openTile(found.id)}else{modal('<h2>Please explain this</h2><p class="muted">Selected term or phrase:</p><p><strong>'+safe(selected)+'</strong></p><p>No matching tile yet. Add one.</p><button class="btn primary" id="proposeSelected">Add draft</button>');document.getElementById("proposeSelected").onclick=()=>{closeModal();navigate("community");document.getElementById("proposalTitle").value=selected;document.getElementById("proposalText").focus()}}};
-
-// Reuse the site's knowledge tiles for precisely highlighted recipe terms.
-window.BSExplainText=(selected,context={})=>{
- const term=String(selected||"").trim().slice(0,220);
- if(!term)return;
- const normalized=term.toLowerCase().replace(/\s+/g," ").trim();
- const aliases={
-  "m4×0.7":"threads","m4 x 0.7":"threads","m4 0.7":"threads","thread pitch":"threads",
-  "rpm":"rpm","revolutions per minute":"rpm","flywheel speed":"rpm",
-  "esc":"motors","brushless motor":"motors","electronic speed controller":"motors",
-  "voltage spike":"voltage","inductive spike":"voltage","flyback":"voltage",
-  "buck converter":"power","startup inrush":"power","inrush current":"power",
-  "measure":"measurement","repeatability":"measurement"
- };
- const alias=aliases[normalized.replace(/\s*×\s*/g,"×")];
- const found=tiles.find(t=>t.id===alias)||
-  tiles.find(t=>t.title.toLowerCase()===normalized);
- if(found){openTile(found.id);return}
- const step=String(context.stepTitle||"");
- modal('<h2>Please explain this</h2><p class="muted">Selected from '+safe(step||"the recipe")+':</p><p><strong>'+safe(term)+'</strong></p><p>There is no matching knowledge tile yet.</p><button class="btn primary" id="proposeSelected">Request an explanation</button>');
- document.getElementById("proposeSelected").onclick=()=>{
-  closeModal();navigate("community");
-  const title=document.getElementById("proposalTitle"),body=document.getElementById("proposalText");
-  if(title)title.value=term;
-  if(body){body.value="Please explain \""+term+"\" in the context of: "+step+".";body.focus()}
- };
-};
-
 let adminAuthenticated=false;
 const photoToken=()=>adminAuthenticated?"session":"";
  const isOwnProject=element=>window.BSProjectManager?.isOwner?.(element.closest(".view")?.id)===true;
@@ -402,5 +285,5 @@ document.addEventListener("focusout",event=>{
 
 
 window.BSResources?.init();
-renderNotes();renderDrafts();renderTiles();navigate(location.hash.slice(1)||"home");
+navigate(location.hash.slice(1)||"home");
 window.BSProjectManager?.init({setupAssemblyTrees,setupComponents,setupPhotos,navigate});

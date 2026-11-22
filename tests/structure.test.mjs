@@ -14,7 +14,7 @@ test('single external stylesheet and application entrypoint',()=>{
   assert.match(html,/<script src="\/assets\/site\.js(?:\?[^"]+)?"><\/script>/);
   assert.doesNotMatch(html,/<style>|<script>(?!<\/script>)/);
   assert.ok(css.length>10000);
-  assert.ok(js.length>30000);
+  assert.ok(js.length>10000); // site.js shrank when the seeded Knowledge Base moved to knowledge.html
   assert.ok(assemblies.length>80000);
   const loaded=cssFiles.map(name=>html.indexOf('/assets/'+name));
   assert.ok(loaded.every(x=>x>=0),'all component CSS sections must be loaded');

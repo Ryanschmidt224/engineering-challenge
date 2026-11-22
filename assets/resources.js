@@ -8,7 +8,8 @@
  ];
  const calculators=[
   {id:"ohms-law",name:"Ohm's law",subtitle:"Current, voltage and resistance",detail:"Calculate I = V / R and power P = V × I for a simple resistive load."},
-  {id:"surface-footage",name:"Surface speed / SFM",subtitle:"Machining surface feet per minute",detail:"Calculate SFM from tool/work diameter in inches and RPM, or RPM from desired SFM."}
+  {id:"surface-footage",name:"Surface speed / SFM",subtitle:"Machining surface feet per minute",detail:"Calculate SFM from tool/work diameter in inches and RPM, or RPM from desired SFM."},
+  {id:"wheel-speed",name:"Wheel surface speed",subtitle:"Flywheel or wheel rim speed",detail:"Calculate the rim speed of a wheel from its diameter in mm and its RPM. This is wheel surface speed only, not dart speed or range."}
  ];
  const baseParts=[
   {id:"common-wire",name:"Wire and cable",subtitle:"Wire gauge, conductor, insulation and color",detail:"Use the shared wire material records below for exact wire sizes, colors, manufacturer and part numbers. Link a specific wire to harness cut lists."},
@@ -285,6 +286,17 @@
      controls.append(volts.label,ohms.label,result);
      [volts.input,ohms.input].forEach(input=>input.addEventListener("input",calculate));
      calculate();
+    }else if(item.id==="wheel-speed"){
+     const rpm=makeNum("RPM",10000,1),diameter=makeNum("Wheel diameter (mm)",50,0.1);
+     const result=element("output","calculator-output");
+     const calculate=()=>{
+      const r=Number(rpm.input.value),d=Number(diameter.input.value);
+      result.textContent=r>=0&&d>0?"Surface speed "+format(Math.PI*d/1000*r/60)+" m/s":"Enter a positive diameter and nonnegative RPM.";
+     };
+     controls.append(rpm.label,diameter.label,result);
+     [rpm.input,diameter.input].forEach(input=>input.addEventListener("input",calculate));
+     calculate();
+     card.append(element("p","resource-footnote","Speed = π × diameter × RPM ÷ 60. The dart usually leaves slower because of slip and deformation."));
     }else{
      const diameter=makeNum("Diameter (in)",0.5,0.001),rpm=makeNum("RPM",4000,1),sfm=makeNum("SFM",523.599,0.01);
      const result=element("output","calculator-output");
