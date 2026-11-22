@@ -15,12 +15,16 @@
 }
 /* Three task panes need their own minimum widths, rather than another control-size token. */
 .workshop-layout {
+  --pane-default-categories: 17rem;
+  --pane-default-families: 19rem;
   display: grid;
-  grid-template-columns: minmax(12rem, 17rem) minmax(13rem, 19rem) minmax(
-      0,
-      1fr
-    );
-  gap: var(--space-5);
+  grid-template-columns:
+    var(--pane-categories, var(--pane-default-categories)) var(
+      --pane-handle-size
+    )
+    var(--pane-families, var(--pane-default-families)) var(--pane-handle-size)
+    minmax(0, 1fr);
+  gap: var(--space-2);
   padding: 0 var(--space-6) var(--space-6);
   max-width: 110rem;
   margin: auto;
@@ -142,7 +146,10 @@
 }
 @media (max-width: 1024px) {
   .workshop-layout {
-    grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+    --pane-default-families: 16rem;
+    grid-template-columns:
+      var(--pane-families, var(--pane-default-families)) var(--pane-handle-size)
+      minmax(0, 1fr);
   }
   .category-panel {
     grid-column: 1 / -1;

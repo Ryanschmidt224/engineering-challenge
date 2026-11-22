@@ -74,3 +74,7 @@ Selectable rows use `listCard()` and `.list-card`, with title, metadata and summ
 ### Information tiles and field rows
 
 `BSUI.informationPanel()` supplies one static title/body shell and `BSUI.fieldRow()` one label/value row. Reference and project information use identical borders, typography, padding and label widths. They stack within Part details; narrow screens stack each label above its value. Container names are ordinary read-only text rather than editable-looking inputs. Purpose editing and alternative selection keep revision checks and preserve drafts on failed saves.
+
+### Adjustable task panes
+
+Workshop and Knowledge use assets/split-panes.js, explicitly initialized per page, with one shared ui-pane-resizer style. Drag, Left/Right, Shift+Left/Right, Home and End resize the preceding list. Double-click resets that column; Escape or pointer cancellation restores the width before dragging. Widths persist only in this browser, separately for each page. Layout bounds keep lists usable and reserve detail space. Workshop categories move above the family/detail columns at 1024 px; all panels stack and dividers leave the tab order at 640 px. Disabled/corrupt storage falls back to defaults. Default list widths belong to page layout; shared minimum/maximum and handle geometry belong to theme.css.

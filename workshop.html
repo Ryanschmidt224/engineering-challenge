@@ -3,7 +3,7 @@
 <head>
  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">
  <title>The Workshop · BuildingSchmidt</title>
- <link rel="stylesheet" href="assets/theme.css"><link rel="stylesheet" href="assets/base.css"><link rel="stylesheet" href="assets/components.css?v=css-foundation-20261122"><link rel="stylesheet" href="assets/ui-kit.css?v=part-information-20261122"><link rel="stylesheet" href="assets/family-workshop.css">
+ <link rel="stylesheet" href="assets/theme.css?v=split-panes-20261122"><link rel="stylesheet" href="assets/base.css"><link rel="stylesheet" href="assets/components.css?v=css-foundation-20261122"><link rel="stylesheet" href="assets/ui-kit.css?v=split-panes-20261122"><link rel="stylesheet" href="assets/family-workshop.css?v=split-panes-20261122">
  <script type="module" src="assets/family-workshop.js?v=knowledge-review-20261122"></script>
 </head>
 <body class="workshop-app">
@@ -18,5 +18,6 @@
  <div id="workshop-status" class="status" role="status" aria-live="polite"></div>
  <dialog id="workshop-dialog" class="dialog"></dialog>
  <div id="category-menu" class="context-menu" role="menu" hidden></div>
+<script type="module">import {initSplitPanes} from "/assets/split-panes.js?v=split-panes-20261122"; initSplitPanes(document.querySelector(".workshop-layout"),{key:"workshop",panes:[{key:"categories",name:"categories",selector:".category-panel",wideOnly:true},{key:"families",name:"families",selector:".family-panel"}]});</script>
 </body>
 </html>
