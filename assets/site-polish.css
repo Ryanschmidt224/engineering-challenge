@@ -1,90 +1,15 @@
 /* Latest shared UI controls and design refinements; preserve cascade ordering. */
 
 /* Display photo name as a single editable caption immediately below the image. */
-.recipe-step-photo {
-  gap: 0;
-}
-.recipe-step-photo .recipe-step-photo-image {
-  margin: 0;
-  display: block;
-}
-.recipe-step-photo-name {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  margin: 3px 0 9px;
-}
 
 /* Work-instruction notes take the full available editing width. */
-.recipe-compact .recipe-step-notes,
-.recipe-compact .recipe-step-note {
+.recipe-compact .recipe-step-notes {
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
-}
-.recipe-compact .recipe-step-note {
-  align-items: stretch;
-}
-.recipe-compact .recipe-step-note textarea.recipe-input {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  resize: vertical;
-  min-height: 120px;
-}
-.recipe-compact .recipe-step-note .recipe-small-action {
-  align-self: flex-start;
 }
 
 /* Photo and its editable name form one framed object, not two separate boxes. */
-.recipe-compact .recipe-step-photo {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--space-2);
-}
-.recipe-compact .recipe-photo-frame {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  overflow: hidden;
-  background: var(--color-media-backdrop);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-}
-.recipe-compact .recipe-photo-frame .recipe-step-photo-image {
-  display: block;
-  max-width: 100%;
-  width: 100%;
-  height: auto;
-  max-height: 240px;
-  object-fit: contain;
-  margin: 0;
-  border-radius: 0;
-}
-.recipe-compact .recipe-photo-frame .recipe-step-photo-name {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  margin: 0;
-  padding: 9px 11px;
-  background: var(--color-media-backdrop);
-  border: 0;
-  border-top: 1px solid var(--color-border);
-  border-radius: 0;
-  color: inherit;
-  font-weight: var(--font-semibold);
-}
-.recipe-compact .recipe-photo-frame .recipe-step-photo-name:focus {
-  outline: 2px solid var(--color-focus);
-  outline-offset: -2px;
-}
-.recipe-compact .recipe-step-photo > .recipe-small-action {
-  align-self: flex-start;
-}
 
 /* Contextual knowledge search from right-clicking instruction words. */
 .recipe-knowledge-context-menu {
@@ -150,54 +75,7 @@
 }
 
 /* Work-instruction attachments flow horizontally and wrap on narrow screens. */
-.recipe-compact .recipe-step-photos {
-  display: grid;
-  width: 100%;
-  min-width: 0;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 260px));
-  align-items: start;
-  justify-content: start;
-  gap: var(--space-4);
-  margin-top: 10px;
-}
-.recipe-compact .recipe-step-photo {
-  min-width: 0;
-  width: 100%;
-  margin: 0;
-}
-.recipe-compact .recipe-photo-frame {
-  width: 100%;
-}
 
-.recipe-compact .recipe-reader-photo {
-  display: inline-flex;
-  flex-direction: column;
-  vertical-align: top;
-  width: min(260px, 100%);
-  max-width: 100%;
-  margin: 8px 14px 12px 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  overflow: hidden;
-  background: var(--color-media-backdrop);
-}
-.recipe-compact .recipe-reader-photo .recipe-step-photo-image {
-  display: block;
-  width: 100%;
-  height: 210px;
-  max-height: 210px;
-  object-fit: contain;
-  margin: 0;
-  border-radius: 0;
-}
-.recipe-compact .recipe-reader-photo figcaption {
-  display: block;
-  padding: 9px 11px;
-  background: var(--color-media-backdrop);
-  border-top: 1px solid var(--color-border);
-  font-weight: var(--font-semibold);
-  overflow-wrap: anywhere;
-}
 .recipe-document-link {
   width: 100%;
   min-height: 175px;
@@ -238,47 +116,8 @@
 }
 
 /* Work instruction notes: clear, high-contrast read-only presentation. */
-.recipe-compact .recipe-reader-text {
-  width: 100%;
-  min-width: 0;
-  color: var(--color-text);
-  font-size: var(--text-body);
-  line-height: 1.7;
-}
-.recipe-compact .recipe-reader-text p {
-  margin: 0 0 12px;
-  color: var(--color-text);
-}
-.recipe-compact .recipe-reader-text p:first-child {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  padding: 14px 16px;
-}
 
 /* All work-instruction notes should be equally legible, not only the first. */
-.recipe-compact .recipe-reader-text p.recipe-reader-note {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  margin: 0 0 12px;
-  padding: 15px 18px;
-  color: var(--color-text);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-left: 4px solid var(--color-accent);
-  border-radius: var(--radius-medium);
-  font-size: var(--text-body);
-  line-height: 1.65;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-.recipe-compact .recipe-reader-text p.recipe-reader-note:first-child {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-left: 4px solid var(--color-accent);
-  padding: 15px 18px;
-}
 
 /* Failures and lessons: reuse the same dark workspace card language as recipes. */
 .investigations-panel,
@@ -1310,11 +1149,6 @@
 .photo-dropzone > span:not(.photo-drop-icon) {
   color: var(--color-text-muted);
 }
-.recipe-compact .recipe-photo-frame .recipe-step-photo-name,
-.recipe-compact .recipe-reader-photo figcaption {
-  background: var(--color-surface-muted);
-  color: var(--color-text);
-}
 
 /* Shared workspace treatment: part pages inherit the white, framed
    work-instruction cards already used for subassemblies. */
@@ -1472,44 +1306,19 @@
   margin: 0;
   background: transparent;
 }
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary {
-  padding: 16px 18px;
-  min-height: 62px;
-  font-size: var(--text-body);
-  cursor: default;
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary::before {
-  content: none;
-}
+
 .recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-body {
   padding: 18px;
   width: 100%;
   align-items: stretch;
   gap: var(--space-4);
 }
-.recipe-compact .recipe-step-detail .recipe-reader-text {
-  width: 100%;
-  max-width: none;
-}
-.recipe-compact .recipe-step-detail .recipe-reader-note {
-  width: 100%;
-}
+
 .recipe-compact .recipe-step-detail .recipe-step-investigations {
   width: 100%;
   margin: 0;
 }
-.recipe-compact .recipe-step-detail .recipe-detail-controls {
-  margin: 12px 16px 0;
-}
-.recipe-compact .recipe-content > .recipe-add-step {
-  margin-top: 4px;
-}
+
 @media (max-width: 760px) {
   .recipe-compact .recipe-step-list {
     max-height: 235px;
@@ -1520,13 +1329,7 @@
     min-height: 40px;
     padding: 8px 10px;
   }
-  .recipe-compact
-    .recipe-step-detail
-    > .recipe-one-step
-    > .recipe-one-step-summary {
-    min-height: 54px;
-    padding: 12px;
-  }
+
   .recipe-compact
     .recipe-step-detail
     > .recipe-one-step
@@ -1538,50 +1341,11 @@
 /* Focused instruction reader refinements:
    selection and detail heading share one semantic accent surface;
    reading prose stays typographic, and step revisions are secondary. */
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step[open]
-  > .recipe-one-step-summary {
-  background: var(--color-accent-soft);
-  border-left: 4px solid var(--color-accent);
 
-  border-radius: 0;
-  padding-left: 14px;
-  color: var(--color-text);
-}
 .recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-body {
   gap: var(--space-4);
 }
-.recipe-compact .recipe-step-detail .recipe-reader-text {
-  display: block;
-}
-.recipe-compact .recipe-step-detail .recipe-reader-text p.recipe-reader-note,
-.recipe-compact
-  .recipe-step-detail
-  .recipe-reader-text
-  p.recipe-reader-note:first-child {
-  display: block;
-  width: 100%;
-  margin: 0 0 12px;
-  padding: 0;
-  border: 0;
-  border-left: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--color-text);
-  font-size: var(--text-body);
-  font-weight: var(--font-normal);
-  line-height: 1.7;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  box-shadow: none;
-}
-.recipe-compact
-  .recipe-step-detail
-  .recipe-reader-text
-  p.recipe-reader-note:last-child {
-  margin-bottom: 0;
-}
+
 /* Compact, text-first step revision disclosure; expand only when needed. */
 .recipe-compact .recipe-step-detail .recipe-step-investigations,
 .recipe-compact
@@ -1663,71 +1427,22 @@
 .recipe-compact .recipe-step-browser {
   --recipe-active-heading-height: 74px;
 }
-.recipe-compact .recipe-step-nav-item.is-active,
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step[open]
-  > .recipe-one-step-summary {
+.recipe-compact .recipe-step-nav-item.is-active {
   border-radius: var(--radius-large);
   background: var(--color-accent-soft);
   border-left: 4px solid var(--color-accent);
 }
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step[open]
-  > .recipe-one-step-summary {
-  border-radius: 10px 10px 0 0;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--color-border);
-}
+
 .recipe-compact .recipe-step-nav-item.is-active {
   padding: 12px 14px;
 }
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-step-edit-toggle {
-  margin-left: auto;
-}
+
 /* Per-note photo actions are adjacent to the note they belong to. */
-.recipe-compact .recipe-step-note {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-2);
-  width: 100%;
-  min-width: 0;
-}
-.recipe-compact .recipe-step-note > .recipe-note-attachments {
-  display: flex;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  width: 100%;
-}
-.recipe-compact .recipe-step-note > .recipe-note-attachments:empty {
-  display: none;
-}
+
 .recipe-compact .recipe-add-note-photo {
   font-size: var(--text-small);
 }
-.recipe-compact .recipe-edit-controls {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  width: 100%;
-}
-.recipe-compact .recipe-edit-controls .recipe-save-step-bottom {
-  min-width: 94px;
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  border-color: var(--color-accent);
-}
-.recipe-compact .recipe-edit-controls .recipe-save-step-bottom:hover {
-  background: var(--color-accent-hover);
-}
+
 @media (max-width: 760px) {
   .recipe-compact .recipe-step-browser {
     --recipe-active-heading-height: 64px;
@@ -1783,18 +1498,8 @@
   border-left-color: transparent !important;
   background: var(--color-accent-soft);
 }
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step[open]
-  > .recipe-one-step-summary {
-  border-left: 0 !important;
-  box-shadow: none !important;
-}
+
 /* Remove the doubled green selection stripes on both sides of the split. */
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step[open]
-  > .recipe-one-step-summary::before,
 .recipe-compact .recipe-step-nav-item.is-active::before {
   border-left: 0 !important;
 }
@@ -1816,21 +1521,13 @@
 }
 
 /* No accent stripe on either selected step surface. */
-.recipe-compact .recipe-step-nav-item.is-active,
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step[open]
-  > .recipe-one-step-summary {
+.recipe-compact .recipe-step-nav-item.is-active {
   border-left: 0 !important;
 }
 
 /* Work instruction polish: consistent neutral active-step surfaces.
    Both headers use the exact same opaque fill, height and corner geometry. */
-.recipe-compact .recipe-step-nav-item.is-active,
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step[open]
-  > .recipe-one-step-summary {
+.recipe-compact .recipe-step-nav-item.is-active {
   box-sizing: border-box;
 
   background: var(--color-surface-muted) !important;
@@ -1848,12 +1545,7 @@
 .recipe-compact .recipe-step-detail {
   padding: 9px;
 }
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step[open]
-  > .recipe-one-step-summary {
-  border-bottom: 0 !important;
-}
+
 .recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-body {
   padding: 18px 7px 9px;
 }
@@ -1887,11 +1579,7 @@
 
 /* Workspace refinement: restore green selection while retaining matched
    geometry, and match the secondary history panel to Linked resources. */
-.recipe-compact .recipe-step-nav-item.is-active,
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step[open]
-  > .recipe-one-step-summary {
+.recipe-compact .recipe-step-nav-item.is-active {
   background: var(--color-accent-soft) !important;
   height: var(--recipe-active-heading-height);
   min-height: var(--recipe-active-heading-height);
@@ -3301,25 +2989,19 @@
   margin-top: 8px;
 }
 
-.recipe-heading-actions,
 .investigation-heading-actions {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
 }
-.recipe-instructions .recipe-heading-actions h2 {
-  margin: 0;
-}
-.recipe-instructions .recipe-heading-actions .recipe-add-step,
+
 .investigation-heading-actions .investigation-add {
   font-size: var(--text-small);
   padding: var(--space-1) var(--space-2);
   min-height: 30px;
 }
-.recipe-instructions .recipe-add-step[hidden] {
-  display: none;
-}
+
 .workspace-record-count {
   display: block;
   color: var(--color-text-muted);
@@ -3332,7 +3014,6 @@
   margin: 0 0 20px;
 }
 
-.assembly-workspace-page .recipe-instructions .recipe-heading-actions h2,
 .assembly-workspace-page .investigation-heading-label h2 {
   margin: 0;
 }
@@ -3411,14 +3092,12 @@
   gap: var(--space-2);
 }
 
-.recipe-heading-actions,
 .investigation-heading-actions {
   min-height: 30px;
 }
 .workspace-record-count {
   line-height: 18px;
 }
-.recipe-heading-actions .recipe-add-step,
 .investigation-heading-actions .investigation-add,
 .investigation-add-controls .investigation-add-note,
 .recipe-step-additions .recipe-add-entry {
@@ -3876,22 +3555,6 @@
 }
 
 /* Keep the Work Instructions step's Edit/Save button alongside its title. */
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary {
-  justify-content: flex-start;
-  gap: var(--space-3);
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-step-edit-toggle {
-  margin-left: 0 !important;
-  margin-right: 0;
-  flex: 0 0 auto;
-}
 
 /* Each populated Part Details field has its own closed-by-default chevron. */
 .bom-part-workspace .part-details-view-row.part-detail-item {
@@ -3936,49 +3599,8 @@
   overflow-wrap: anywhere;
 }
 
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-kind-caption {
-  margin-left: 0;
-}
-
 /* Work Instructions: title is edited directly in the selected heading. */
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-one-step-number {
-  flex: 0 0 auto;
-  font-weight: var(--font-bold);
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-step-title-input {
-  flex: 1 1 140px;
-  width: auto;
-  min-width: 80px;
-  max-width: 650px;
-  box-sizing: border-box;
-  padding: 6px 9px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  font-weight: var(--font-semibold);
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-step-title-input:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 1px;
-}
+
 /* Reorder indicators on the navigation rows; do not interfere with the resizer. */
 .recipe-compact .recipe-step-nav-item[draggable="true"] {
   cursor: grab;
@@ -4036,26 +3658,6 @@
   margin: 0 0 8px;
   padding: 0;
 }
-.investigations-panel .investigation-create-button,
-.recipe-step-investigations .investigation-create-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  min-height: 34px;
-  padding: 7px 12px;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  color: var(--color-text);
-  background: var(--color-surface);
-  cursor: pointer;
-}
-.investigations-panel .investigation-create-button:hover,
-.recipe-step-investigations .investigation-create-button:hover {
-  background: var(--color-hover);
-}
 
 /* Active records stay at their creation scope. Project History only lists
    deliberately archived entries, preserving existing record IDs and owners. */
@@ -4069,37 +3671,12 @@
   border-radius: var(--radius-large);
   background: var(--color-surface);
 }
-.investigation-active-heading {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  margin: 0 0 8px;
-}
-.investigation-active-heading h2,
-.investigation-active-heading h4 {
-  margin: 0;
-  font-size: var(--text-body);
-  color: var(--color-text);
-}
+
 .investigation-active-content > .investigation-empty {
   margin: 8px 0;
   font-size: var(--text-small);
 }
-.investigation-active-heading .investigation-create-button {
-  display: inline-flex;
-  align-items: center;
-  min-height: 33px;
-  padding: 6px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  color: var(--color-text);
-  cursor: pointer;
-}
+
 .investigation-archive-button {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
@@ -4154,9 +3731,6 @@
   margin: 0 0 8px;
   border: 0;
   background: transparent;
-}
-.recipe-step-investigations .investigation-active-heading h4 {
-  font-size: var(--text-body);
 }
 
 /* Entry header controls: read mode shows Edit at the far right;
@@ -4307,130 +3881,11 @@
   --recipe-attachment-width: 260px;
   --recipe-attachment-image-height: 210px;
 }
-.recipe-compact .recipe-step-photos {
-  grid-template-columns: repeat(
-    auto-fill,
-    minmax(min(100%, 230px), var(--recipe-attachment-width))
-  );
-}
-.recipe-compact .recipe-step-photo,
-.recipe-compact .recipe-step-photo > .bs-photo-control {
-  width: var(--recipe-attachment-width);
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-}
-.recipe-compact .recipe-step-photo .recipe-photo-frame {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-.recipe-compact .recipe-step-photo .recipe-photo-image-stage {
-  width: 100%;
-  height: var(--recipe-attachment-image-height);
-  max-height: var(--recipe-attachment-image-height);
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-media-backdrop);
-}
-.recipe-compact
-  .recipe-step-photo
-  .recipe-photo-image-stage
-  .recipe-step-photo-image {
-  display: block;
-  width: 100%;
-  height: 100%;
-  max-height: none;
-  object-fit: contain;
-  margin: 0;
-  border: 0;
-  border-radius: 0;
-}
-.recipe-compact .recipe-step-photo .recipe-photo-frame .recipe-step-photo-name {
-  min-height: 42px;
-  padding: 9px 11px;
-  box-sizing: border-box;
-}
-.recipe-compact .recipe-reader-photo {
-  width: min(var(--recipe-attachment-width), 100%);
-}
-.recipe-compact .recipe-reader-photo .recipe-step-photo-image {
-  height: var(--recipe-attachment-image-height);
-  max-height: var(--recipe-attachment-image-height);
-}
 
 /* Main Work Instruction disclosure and its nested hierarchy control.
    The step heading uses the same chevron language as Project Archive. */
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary {
-  cursor: pointer;
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary::before {
-  content: "" !important;
-  display: inline-block !important;
-  width: 7px;
-  height: 7px;
-  border-top: 2px solid currentColor;
-  border-right: 2px solid currentColor;
-  transform: rotate(45deg);
-  transform-origin: center;
-  flex: 0 0 7px;
-  margin-right: 5px;
-  color: var(--color-text-muted);
-  transition: transform 0.15s ease;
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step[open]
-  > .recipe-one-step-summary::before {
-  transform: rotate(135deg);
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: -2px;
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-expand-hierarchy {
-  margin-left: auto;
-  flex: 0 0 auto;
-  padding: 6px 10px;
-  min-height: 34px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  white-space: nowrap;
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-expand-hierarchy:hover {
-  background: var(--color-hover);
-}
+
 @media (max-width: 600px) {
-  .recipe-compact
-    .recipe-step-detail
-    > .recipe-one-step
-    > .recipe-one-step-summary
-    .recipe-expand-hierarchy {
-    margin-left: 0;
-  }
 }
 
 /* A selected step displays its own collapsed heading and the independent
@@ -4451,12 +3906,6 @@
   margin-top: 10px;
   padding: 0 8px 8px;
   box-sizing: border-box;
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step:not([open])
-  > .recipe-one-step-summary {
-  border-radius: var(--radius-medium) !important;
 }
 
 /* Make each level of a selected Work Instruction visually independent.
@@ -4540,10 +3989,6 @@
 
 /* Work Instructions: remove the redundant separator above Save / Remove.
    The instruction card already provides the section boundary. */
-.recipe-compact .recipe-step-detail .recipe-edit-controls {
-  border-top: 0 !important;
-  padding-top: 0 !important;
-}
 
 /* Empty active-entry containers are omitted in read mode. */
 .investigation-active-area[hidden],
@@ -4583,27 +4028,10 @@
   overflow: hidden;
   background: var(--color-surface) !important;
 }
-.recipe-compact .recipe-step-detail .investigation-active-heading {
-  margin: 0 0 8px;
-  padding: 0;
-}
-.recipe-compact .recipe-step-detail .investigation-active-heading:empty {
-  display: none;
-}
 
 /* Align Work Instruction and active-entry headings as one visual system.
    Keep Project Archive subdued because it is secondary historical content. */
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-one-step-title {
-  flex: 0 1 auto;
-  min-width: 0;
-  font-size: var(--text-body);
-  font-weight: var(--font-bold);
-  line-height: 1.4;
-}
+
 .recipe-compact
   .recipe-step-detail
   .investigation-card
@@ -4614,44 +4042,8 @@
   font-weight: var(--font-bold);
   line-height: 1.4;
 }
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-expand-hierarchy {
-  margin-left: 12px !important;
-  margin-right: 0;
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-step-edit-toggle {
-  margin-left: auto !important;
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-step-title-input {
-  flex: 0 1 600px;
-  width: min(600px, 100%);
-}
+
 @media (max-width: 600px) {
-  .recipe-compact
-    .recipe-step-detail
-    > .recipe-one-step
-    > .recipe-one-step-summary
-    .recipe-expand-hierarchy {
-    margin-left: 0 !important;
-  }
-  .recipe-compact
-    .recipe-step-detail
-    > .recipe-one-step
-    > .recipe-one-step-summary
-    .recipe-step-edit-toggle {
-    margin-left: auto !important;
-  }
 }
 
 /* Notes: photo attachments belong directly to the note, not an additional
@@ -4709,15 +4101,6 @@
 
   border-radius: var(--radius-medium);
 }
-.recipe-compact .recipe-expand-hierarchy {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-1);
-}
-.recipe-compact .recipe-expand-hierarchy svg {
-  flex: 0 0 16px;
-}
 
 /* The left instruction list owns step selection and the primary Edit control.
    Keep the draggable title as a separate button to avoid nesting buttons. */
@@ -4768,37 +4151,6 @@
 
 /* Expand/collapse all is a compact icon, not a filled button.
    Retain a sufficiently large click target and keyboard-focus indicator. */
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-expand-hierarchy {
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  border-radius: var(--radius-medium);
-  padding: 8px !important;
-  min-height: 36px;
-  min-width: 36px;
-  margin-left: 6px !important;
-  color: var(--color-text-muted);
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-expand-hierarchy:hover {
-  background: transparent !important;
-  color: var(--color-text);
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-expand-hierarchy:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 1px;
-}
 
 /* The Project Archive is secondary navigation, not another framed card.
    Keep its disclosure text and its archived record cards, but remove the
@@ -4853,34 +4205,9 @@
 
 /* Expand-all double chevrons: larger icon, visually adjacent to step title.
    Keep a 32px hit target without adding a background or border. */
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-expand-hierarchy {
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  min-width: 32px;
-  min-height: 32px;
-  padding: 4px !important;
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-expand-hierarchy
-  svg {
-  width: 22px;
-  height: 22px;
-  flex: 0 0 22px;
-}
 
 /* Match the single disclosure chevrons in step, entry and archive headers.
    Make their direction, weight and title spacing consistent at each level. */
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary::before,
 .recipe-compact
   .recipe-step-investigations
   .investigation-card
@@ -4908,10 +4235,6 @@
   visibility: visible !important;
 }
 .recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step[open]
-  > .recipe-one-step-summary::before,
-.recipe-compact
   .recipe-step-investigations
   .investigation-card[open]
   > .investigation-summary::before,
@@ -4921,10 +4244,6 @@
   > .investigation-collapse-heading::before {
   transform: rotate(135deg);
 }
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  > .recipe-one-step-summary,
 .recipe-compact
   .recipe-step-investigations
   .investigation-card
@@ -5016,13 +4335,6 @@
   border-radius: var(--radius-large) !important;
   background: var(--color-surface) !important;
   box-shadow: none !important;
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-step-investigations
-  > .investigation-create-card
-  .investigation-create-button {
-  margin: 0;
 }
 
 /* Unified attachment and editing controls for work instructions and records.
@@ -5239,37 +4551,10 @@
 
 /* Work Instructions uses the same heading-level Add entry link as other
    workspace sections (Helpful tools, Notes, and record sections). */
-.recipe-instructions .recipe-heading-actions > .bs-section-add-entry {
-  display: inline-flex !important;
-  align-items: center;
-  min-height: 30px !important;
-  padding: 4px 9px !important;
-  margin: 0 !important;
-  border: 0 !important;
-  border-radius: var(--radius-medium);
-  background: transparent !important;
-  box-shadow: none !important;
-  color: var(--color-accent) !important;
-  font-size: var(--text-small) !important;
-  font-weight: var(--font-semibold) !important;
-  line-height: 1.3;
-  white-space: nowrap;
-}
-.recipe-instructions .recipe-heading-actions > .bs-section-add-entry:hover {
-  text-decoration: underline;
-  background: transparent !important;
-}
-.recipe-instructions
-  .recipe-heading-actions
-  > .bs-section-add-entry:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
 
 /* One editor-control system for steps, notes, measurements, revisions and
    failures. Form bodies remain tailored to their actual data fields. */
 .recipe-compact .bs-entry-editor-actions,
-.recipe-compact .recipe-edit-controls,
 .recipe-compact .investigation-edit-actions {
   display: flex !important;
   align-items: center !important;
@@ -5336,33 +4621,6 @@
 }
 .recipe-compact .recipe-step-nav-row.is-editing > .recipe-step-nav-item {
   padding-right: 12px !important;
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  .recipe-edit-controls
-  > .recipe-delete-entry {
-  color: var(--color-danger-action) !important;
-  border-color: color-mix(
-    in srgb,
-    var(--color-danger-action) 28%,
-    var(--color-border)
-  ) !important;
-  background: var(--color-surface) !important;
-}
-.recipe-compact
-  .recipe-step-detail
-  > .recipe-one-step
-  .recipe-edit-controls
-  > .recipe-delete-entry:hover {
-  background: color-mix(
-    in srgb,
-    var(--color-danger-action) 7%,
-    var(--color-surface)
-  ) !important;
-}
-.recipe-compact .recipe-step-note:first-child textarea {
-  min-height: 90px;
 }
 
 /* One nested entry level under a Work Instruction record.
@@ -5488,78 +4746,7 @@
   background: var(--color-surface) !important;
   box-shadow: none !important;
 }
-.recipe-compact
-  .recipe-step-detail
-  .investigation-active-content
-  > .recipe-one-step
-  > .recipe-one-step-summary {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 64px;
-  padding: 12px 16px;
-  background: var(--color-accent-soft);
-  border: 0;
-  border-radius: var(--radius-large);
-}
-.recipe-compact
-  .recipe-step-detail
-  .investigation-active-content
-  > .recipe-one-step
-  > .recipe-one-step-summary::before {
-  content: "";
-  display: inline-block !important;
-  width: 10px !important;
-  height: 10px !important;
-  flex: 0 0 10px !important;
-  border-top: 2px solid currentColor !important;
-  border-right: 2px solid currentColor !important;
-  border-bottom: 0 !important;
-  border-left: 0 !important;
-  transform: rotate(45deg);
-  margin: 0 4px 0 0 !important;
-}
-.recipe-compact
-  .recipe-step-detail
-  .investigation-active-content
-  > .recipe-one-step[open]
-  > .recipe-one-step-summary::before {
-  transform: rotate(135deg);
-}
-.recipe-compact
-  .recipe-step-detail
-  .investigation-active-content
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-expand-hierarchy {
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  padding: 4px !important;
-  min-width: 32px;
-  min-height: 32px;
-  margin-left: 0 !important;
-}
-.recipe-compact
-  .recipe-step-detail
-  .investigation-active-content
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-expand-hierarchy
-  svg {
-  width: 22px;
-  height: 22px;
-}
-.recipe-compact
-  .recipe-step-detail
-  .investigation-active-content
-  > .recipe-one-step
-  > .recipe-one-step-summary
-  .recipe-step-title-input {
-  flex: 0 1 600px;
-  width: min(600px, 100%);
-  min-width: 0;
-}
+
 .recipe-compact
   .investigation-active-content
   > :is(.recipe-one-step, .investigation-card)
@@ -7076,14 +6263,7 @@
   border: 0;
   background: transparent;
 }
-.assembly-workspace-page
-  .workspace-archive-history
-  .investigation-active-heading {
-  margin: 5px 0 10px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
+
 .assembly-workspace-page .workspace-archive-history .investigation-create-card {
   margin: 4px 0 10px;
   padding: 0;
@@ -7452,44 +6632,6 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 2px;
   }
-}
-
-.assembly-workspace-page .recipe-instructions .recipe-body-actions {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  margin: 0 0 10px;
-}
-.assembly-workspace-page
-  .recipe-instructions
-  .recipe-body-actions
-  > .recipe-add-step {
-  display: inline-flex !important;
-  align-items: center;
-  width: auto;
-  min-height: 31px !important;
-  margin: 0 !important;
-  padding: 5px 10px !important;
-  border: 1px solid var(--color-border) !important;
-  border-radius: var(--radius-medium);
-  background: var(--color-surface) !important;
-  color: var(--color-text) !important;
-  font-size: var(--text-small) !important;
-  font-weight: var(--font-semibold) !important;
-  box-shadow: none !important;
-  text-decoration: none !important;
-}
-.assembly-workspace-page
-  .recipe-instructions
-  .recipe-body-actions
-  > .recipe-add-step:hover {
-  border-color: var(--color-accent) !important;
-}
-.assembly-workspace-page
-  .recipe-instructions
-  .recipe-body-actions
-  > .recipe-add-step[hidden] {
-  display: none !important;
 }
 
 /* All collapsed project/subassembly detail tiles share the same header rhythm.

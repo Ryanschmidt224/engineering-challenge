@@ -2412,12 +2412,7 @@ label {
   background: var(--color-surface);
   object-fit: contain;
 }
-.bom-subassembly-label {
-  font-size: var(--text-small);
-  white-space: nowrap;
-  color: var(--color-text-muted);
-  font-weight: var(--font-semibold);
-}
+
 .bom-subassembly-children {
   padding: 10px 12px 12px 18px;
 }
@@ -2426,13 +2421,7 @@ label {
   border-left: 1px solid var(--color-border);
   padding-left: 12px;
 }
-.bom-part-actions {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  margin-top: 12px;
-}
-.bom-part-actions .btn,
+
 .bom-open-subassembly {
   font-size: var(--text-small);
   padding: 7px 10px;
@@ -2451,9 +2440,6 @@ label {
     max-width: 32px;
   }
   .bom-part-meta {
-    font-size: var(--text-caption);
-  }
-  .bom-subassembly-label {
     font-size: var(--text-caption);
   }
 }
@@ -2663,16 +2649,7 @@ label {
   min-width: 76px;
   max-width: 76px;
 }
-.assembly-workspace-page
-  .workspace-saved-parts
-  .bom-part.bom-thumbnail-active[open]
-  > .bom-part-summary
-  > .bom-row-thumbnail {
-  width: 228px;
-  height: 228px;
-  min-width: 228px;
-  max-width: 228px;
-}
+
 @media (max-width: 650px) {
   .assembly-workspace-page
     .workspace-saved-parts
@@ -2688,16 +2665,6 @@ label {
     height: 64px;
     min-width: 64px;
     max-width: 64px;
-  }
-  .assembly-workspace-page
-    .workspace-saved-parts
-    .bom-part.bom-thumbnail-active[open]
-    > .bom-part-summary
-    > .bom-row-thumbnail {
-    width: 192px;
-    height: 192px;
-    min-width: 192px;
-    max-width: 192px;
   }
 }
 

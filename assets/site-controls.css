@@ -1098,43 +1098,12 @@
   flex-wrap: wrap;
   margin: 12px 0;
 }
-.recipe-step-notes,
-.recipe-step-photos {
+.recipe-step-notes {
   display: grid;
   gap: var(--space-3);
 }
-.recipe-step-note {
-  display: grid;
-  gap: var(--space-1);
-  margin-top: 10px;
-}
-.recipe-step-note .recipe-small-action {
-  justify-self: start;
-}
-.recipe-step-photos {
-  grid-template-columns: repeat(auto-fill, minmax(140px, 190px));
-  margin-top: 10px;
-}
-.recipe-step-photo {
-  display: grid;
-  gap: var(--space-1);
-}
-.recipe-step-photo-image {
-  display: block;
-  max-width: 100%;
-  max-height: 240px;
-  object-fit: contain;
-  border-radius: var(--radius-medium);
-  margin: 8px 0;
-}
-.recipe-edit-controls .recipe-save-step {
-  margin-left: auto;
-  font-weight: var(--font-bold);
-}
+
 @media (max-width: 600px) {
-  .recipe-edit-controls .recipe-save-step {
-    width: 100%;
-  }
 }
 
 /* Named work-instruction photos and keyboard-accessible full-screen viewer. */
@@ -1148,24 +1117,7 @@
   width: 100%;
   box-sizing: border-box;
 }
-.recipe-step-photo-image {
-  cursor: zoom-in;
-}
-.recipe-step-photo-image:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 3px;
-}
-.recipe-reader-photo {
-  display: inline-block;
-  vertical-align: top;
-  margin: 8px 14px 8px 0;
-  max-width: 240px;
-}
-.recipe-reader-photo figcaption {
-  font-size: var(--text-small);
-  overflow-wrap: anywhere;
-  padding: 2px 0;
-}
+
 .recipe-photo-viewer {
   position: fixed;
   inset: 0;
@@ -1206,11 +1158,7 @@
 }
 
 /* Step name opens a read-only view; edit must be explicitly requested. */
-.recipe-one-step-summary {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
+
 .recipe-one-step-title {
   flex: 1;
   min-width: 0;
@@ -1221,15 +1169,8 @@
   padding: 5px 14px;
   flex: 0 0 auto;
 }
-.recipe-edit-controls .recipe-save-step {
-  margin-left: 0;
-  width: auto;
-}
+
 @media (max-width: 600px) {
-  .recipe-edit-controls .recipe-save-step {
-    width: auto;
-    margin-left: 0;
-  }
 }
 
 /* Feature-tree visibility is a display filter, not a BOM classification. */
@@ -1311,12 +1252,7 @@
   .bom-part-stack {
   min-width: 0;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .workspace-bom
-  .bom-compact-list {
-  max-width: 100%;
-  min-width: 0;
-}
+
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
   .workspace-bom
   .bom-subassembly-children {
@@ -1459,10 +1395,7 @@
   flex-direction: column;
   gap: var(--space-2);
 }
-.assembly-bom-screen .bom-compact-list {
-  width: 100%;
-  min-width: 0;
-}
+
 .assembly-bom-screen .bom-part {
   min-width: 0;
 }
@@ -4871,67 +4804,6 @@ body > .footer {
 }
 
 /* Shared deletion confirmation: white centered in-page modal, not a browser alert. */
-dialog.bs-delete-confirm {
-  position: fixed;
-  inset: 0;
-  margin: auto;
-  box-sizing: border-box;
-  width: min(440px, calc(100vw - 36px));
-  max-width: calc(100vw - 36px);
-  max-height: calc(100dvh - 40px);
-  padding: 24px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  background: var(--color-surface);
-  color: var(--color-text);
-  box-shadow: 0 22px 70px
-    color-mix(in srgb, var(--color-shadow) 25%, transparent);
-  overflow: auto;
-  z-index: 10000;
-}
-dialog.bs-delete-confirm::backdrop {
-  background: color-mix(in srgb, var(--color-media-backdrop) 48%, transparent);
-}
-dialog.bs-delete-confirm h2 {
-  margin: 0 0 12px;
-  font-size: var(--text-lead);
-  font-weight: var(--font-bold);
-  color: var(--color-text);
-}
-dialog.bs-delete-confirm p {
-  margin: 0;
-  line-height: 1.55;
-  font-size: var(--text-body);
-  color: var(--color-text-muted);
-  overflow-wrap: anywhere;
-}
-dialog.bs-delete-confirm .bs-delete-confirm-actions {
-  display: flex;
-  gap: var(--space-3);
-  justify-content: flex-end;
-  margin-top: 25px;
-}
-dialog.bs-delete-confirm .bs-delete-confirm-actions .btn {
-  min-width: 94px;
-  min-height: 39px;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: var(--radius-medium);
-}
-dialog.bs-delete-confirm .bs-delete-confirm-danger {
-  background: var(--color-danger-action);
-  border: 1px solid var(--color-danger-action);
-  color: var(--color-on-accent);
-}
-dialog.bs-delete-confirm .bs-delete-confirm-danger:hover {
-  background: var(--color-danger-hover);
-  border-color: var(--color-danger-hover);
-}
-dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
-  outline: 3px solid var(--color-danger-focus);
-  outline-offset: 2px;
-}
 
 /* Workshop MPN lookup: compact search control and explicit review/apply step. */
 #commonparts .workshop-ai-lookup-row {
@@ -5277,22 +5149,8 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .library-part-dialog .library-workshop-choice-group > legend {
   padding: 0 5px;
 }
-.library-part-dialog .library-workshop-first {
-  padding: 8px 10px;
 
-  column-gap: var(--space-2);
-  row-gap: 1px;
-}
-
-.library-part-dialog .library-workshop-choice-description {
-  font-size: var(--text-caption);
-}
-.library-part-dialog .library-workshop-add {
-  grid-column: 1/-1;
-}
-.library-part-dialog .library-workshop-quick-search,
-.library-part-dialog .library-workshop-scope,
-.library-part-dialog .library-workshop-add-help {
+.library-part-dialog .library-workshop-scope {
   grid-column: 1/-1;
 }
 .library-part-dialog .library-number-choice {
@@ -5302,7 +5160,6 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .library-part-dialog .library-auto-number {
   gap: var(--space-2);
 }
-.library-part-dialog .library-picker-section,
 .library-part-dialog .library-wire-section,
 .library-part-dialog .library-components {
   gap: var(--space-2);
@@ -5343,14 +5200,6 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   border-radius: var(--radius-small);
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
-}
-.library-part-dialog .library-workshop-add {
-  margin-top: 0;
-  padding: 8px 10px;
-}
-.library-part-dialog .library-workshop-add.hide,
-.library-part-dialog .library-project-only.hide {
-  display: none !important;
 }
 
 /* New Part form visual system (2026-11-21).
@@ -5436,66 +5285,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   font-weight: var(--font-semibold);
   color: var(--color-text);
 }
-.library-part-dialog .library-workshop-first {
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  gap: 0 var(--space-2);
-  align-items: center;
-  width: 100%;
-  margin: 0;
-  padding: 5px 6px;
-  border: 0;
-  border-radius: var(--radius-medium);
-  background: transparent;
-  box-shadow: none;
-  font-size: var(--text-small);
-  font-weight: var(--font-normal);
-  line-height: 1.25;
-  cursor: pointer;
-}
-.library-part-dialog .library-workshop-first:hover,
-.library-part-dialog .library-workshop-first:has(input:checked) {
-  border: 0;
-  background: var(--color-hover);
-}
-.library-part-dialog
-  .library-workshop-first:has(input:checked)
-  .library-workshop-choice-copy {
-  font-weight: var(--font-semibold);
-}
-.library-part-dialog .library-workshop-first > input {
-  grid-column: 1;
-  grid-row: 1 / span 2;
-  width: 16px;
-  height: 16px;
-  margin: 0;
-}
-.library-part-dialog .library-workshop-choice-copy {
-  grid-column: 2;
-  grid-row: 1;
-  font-size: var(--text-small);
-  line-height: 1.3;
-  font-weight: var(--font-normal);
-}
-.library-part-dialog .library-workshop-choice-copy strong {
-  font-weight: var(--font-semibold);
-}
-.library-part-dialog .library-workshop-choice-description {
-  grid-column: 2;
-  grid-row: 2;
-  font-size: var(--text-caption);
-  line-height: 1.3;
-  font-weight: var(--font-normal);
-  color: var(--color-text-muted);
-}
-.library-part-dialog .library-workshop-add {
-  margin: 0;
-  padding: 5px 6px;
-}
-.library-part-dialog .library-workshop-add .library-workshop-choice-copy {
-  font-weight: var(--font-semibold);
-}
+
 .library-part-dialog .library-number-choice label {
   display: flex;
   align-items: center;
@@ -5514,7 +5304,6 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   font-weight: var(--font-normal);
 }
 .library-part-dialog .library-vendor-info,
-.library-part-dialog .library-picker-hint,
 .library-part-dialog .library-part-form > p.muted:not(:first-of-type) {
   font-size: var(--text-small);
   line-height: 1.3;
@@ -5542,8 +5331,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 }
 
 /* Help moved beside the relevant label; no duplicate persistent hint lines. */
-.library-part-dialog .library-vendor-info,
-.library-part-dialog .library-part-form > .library-picker-hint {
+.library-part-dialog .library-vendor-info {
   display: none !important;
 }
 
@@ -5582,8 +5370,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   line-height: 1.3;
   color: var(--color-text);
 }
-.library-part-dialog .library-item-type-section,
-.library-part-dialog .library-quantity-section {
+.library-part-dialog .library-item-type-section {
   display: grid;
   gap: var(--space-1);
 }
@@ -5634,18 +5421,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .library-part-dialog .library-number-choice > .library-field {
   padding: 2px 6px 3px;
 }
-.library-part-dialog .library-workshop-choice-group > .library-workshop-add {
-  grid-column: 1;
-  margin: 2px 0 0;
-  padding: 7px 6px 3px;
-  border-top: 1px solid var(--color-border);
-  border-radius: 0;
-}
-.library-part-dialog
-  .library-workshop-choice-group
-  > .library-workshop-first:not(.library-workshop-add) {
-  padding: 5px 6px;
-}
+
 .library-part-dialog
   :is(
     .library-form-section,
@@ -5658,12 +5434,10 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .library-part-dialog .library-number-choice > .library-field.hide {
   display: none !important;
 }
-.library-part-dialog .library-identity-section > .library-field[hidden],
-.library-part-dialog .library-quantity-section > .library-field[hidden] {
+.library-part-dialog .library-identity-section > .library-field[hidden] {
   display: none !important;
 }
-.library-part-dialog .library-identity-section .library-vendor-info,
-.library-part-dialog .library-quantity-section > .library-picker-hint {
+.library-part-dialog .library-identity-section .library-vendor-info {
   display: none !important;
 }
 @media (max-width: 620px) {
@@ -5700,71 +5474,9 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 
 /* New Part: radio/checkbox state is the only selection indicator.
    Keep the section frames, but never fill an entire choice with green. */
-.library-part-dialog .library-workshop-choice-group > .library-workshop-first,
-.library-part-dialog
-  .library-workshop-choice-group
-  > .library-workshop-first:hover,
-.library-part-dialog
-  .library-workshop-choice-group
-  > .library-workshop-first:has(input:checked),
-.library-part-dialog .library-workshop-scope > .library-workshop-scope-option,
-.library-part-dialog
-  .library-workshop-scope
-  > .library-workshop-scope-option:hover,
-.library-part-dialog
-  .library-workshop-scope
-  > .library-workshop-scope-option:has(input:checked) {
-  background: transparent;
-  box-shadow: none;
-}
-.library-part-dialog
-  .library-workshop-scope
-  > .library-workshop-scope-option:has(input:checked) {
-  border-color: var(--color-border);
-}
-.library-part-dialog
-  .library-workshop-choice-group
-  > .library-workshop-first:focus-within,
-.library-part-dialog
-  .library-workshop-scope
-  > .library-workshop-scope-option:focus-within {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 1px;
-}
+
 /* Nested publication option is secondary to the two Part source radio choices. */
-.library-part-dialog .library-workshop-choice-group > .library-workshop-add,
-.library-part-dialog
-  .library-workshop-choice-group
-  > .library-workshop-add:hover,
-.library-part-dialog
-  .library-workshop-choice-group
-  > .library-workshop-add:has(input:checked) {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: 3px 0 0 25px;
-  padding: 6px 4px 3px;
-  width: calc(100% - 25px);
-  border: 0;
-  border-top: 1px solid var(--color-border);
-  border-radius: 0;
-  background: transparent;
-  min-height: 30px;
-}
-.library-part-dialog .library-workshop-add > input[type="checkbox"] {
-  flex: 0 0 14px;
-  width: 14px;
-  height: 14px;
-  margin: 0;
-}
-.library-part-dialog .library-workshop-add .library-workshop-choice-copy {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-small);
-  font-weight: var(--font-normal);
-  line-height: 1.3;
-}
+
 .library-part-dialog .library-workshop-add-tip {
   flex: none;
   font-size: var(--text-small);
@@ -5772,17 +5484,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 
 /* Workshop publication options: radio-only presentation with no nested frames.
    The outer Part Source border remains as the single section boundary. */
-.library-part-dialog .library-workshop-choice-group > .library-workshop-add,
-.library-part-dialog
-  .library-workshop-choice-group
-  > .library-workshop-add:hover,
-.library-part-dialog
-  .library-workshop-choice-group
-  > .library-workshop-add:has(input:checked) {
-  border-top: 0;
-  padding-top: 4px;
-  margin-top: 0;
-}
+
 .library-part-dialog .library-workshop-choice-group > .library-workshop-scope {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -5801,32 +5503,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   font-weight: var(--font-semibold);
   font-size: var(--text-small);
 }
-.library-part-dialog .library-workshop-scope > .library-workshop-scope-option,
-.library-part-dialog
-  .library-workshop-scope
-  > .library-workshop-scope-option:hover,
-.library-part-dialog
-  .library-workshop-scope
-  > .library-workshop-scope-option:has(input:checked) {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 5px 4px;
-  border: 0;
-  border-radius: var(--radius-small);
-  background: transparent;
-  box-shadow: none;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  line-height: 1.3;
-  min-height: 31px;
-}
-.library-part-dialog .library-workshop-scope-option > input[type="radio"] {
-  flex: none;
-  width: 16px;
-  height: 16px;
-  margin: 0;
-}
+
 .library-part-dialog .library-workshop-scope-name {
   display: inline-flex;
   gap: var(--space-2);
@@ -5838,9 +5515,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   font-size: var(--text-small);
   font-weight: var(--font-normal);
 }
-.library-part-dialog .library-workshop-scope-option small {
-  display: none !important;
-}
+
 @media (max-width: 620px) {
   .library-part-dialog
     .library-workshop-choice-group
@@ -5851,25 +5526,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 
 /* Workshop lookup: label and search input share one aligned row.
    Search results are the only content shown beneath the input. */
-.library-part-dialog .library-workshop-quick-search {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-2);
-  padding: 9px 12px;
-  min-width: 0;
-}
-.library-part-dialog
-  .library-workshop-quick-search
-  .library-workshop-search-label {
-  display: grid;
-  grid-template-columns: var(--new-part-label-width, 150px) minmax(0, 1fr);
-  gap: var(--space-3);
-  align-items: center;
-  min-width: 0;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  line-height: 1.3;
-}
+
 .library-part-dialog .library-workshop-search-title {
   display: inline-flex;
   align-items: center;
@@ -5882,16 +5539,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   font-weight: var(--font-normal);
   flex: none;
 }
-.library-part-dialog .library-workshop-search-label > input.field {
-  grid-column: 2;
-  width: 100%;
-  min-width: 0;
-  min-height: 36px;
-  padding: 7px 11px;
-  font-size: var(--text-small);
-  font-weight: var(--font-normal);
-  border-radius: var(--radius-medium);
-}
+
 .library-part-dialog .library-workshop-quick-results:empty {
   display: none;
 }
@@ -5899,51 +5547,16 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   margin-top: 3px;
 }
 @media (max-width: 620px) {
-  .library-part-dialog
-    .library-workshop-quick-search
-    .library-workshop-search-label {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-1);
-  }
-  .library-part-dialog .library-workshop-search-label > input.field {
-    grid-column: 1;
-  }
 }
 
 /* The global Workshop search belongs to the Workshop item selection section,
    not the Part source radio group. Keep one enclosing frame. */
-.library-part-dialog fieldset.library-picker-section {
-  min-width: 0;
-  margin: 0;
-  padding: 14px 16px 16px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-}
-.library-part-dialog fieldset.library-picker-section > legend {
-  margin: 0;
-  padding: 0 6px;
-  color: var(--color-text);
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
-.library-part-dialog .library-picker-section > .library-workshop-quick-search {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  padding: 2px 0 10px;
-  margin: 0 0 4px;
-}
+
 @media (max-width: 620px) {
-  .library-part-dialog fieldset.library-picker-section {
-    padding: 10px 12px 12px;
-  }
 }
 
 /* Workshop picker: one lookup mode at a time, shared label alignment and spacing. */
-.library-part-dialog .library-picker-section {
-  display: grid;
-  gap: var(--space-3);
-}
+
 .library-part-dialog .library-lookup-mode {
   display: flex;
   align-items: center;
@@ -5972,66 +5585,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   margin: 0;
   accent-color: var(--color-accent);
 }
-.library-part-dialog .library-picker-section > .library-field,
-.library-part-dialog
-  .library-picker-section
-  .library-components
-  > .library-field,
-.library-part-dialog .library-picker-section .library-workshop-search-label {
-  display: grid;
-  grid-template-columns: var(--new-part-label-width, 150px) minmax(0, 1fr);
-  gap: var(--space-3);
-  align-items: center;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
-.library-part-dialog .library-picker-section > .library-field > .field,
-.library-part-dialog
-  .library-picker-section
-  .library-components
-  > .library-field
-  > .field,
-.library-part-dialog
-  .library-picker-section
-  .library-workshop-search-label
-  > .field {
-  grid-column: 2;
-  width: 100%;
-  min-width: 0;
-  min-height: 36px;
-  padding: 7px 11px;
-  font-size: var(--text-small);
-  font-weight: var(--font-normal);
-}
-.library-part-dialog .library-picker-section > .library-workshop-quick-search {
-  display: grid;
-  gap: var(--space-2);
-  padding: 0;
-  margin: 0;
-}
-.library-part-dialog .library-picker-section .library-workshop-search-title {
-  display: inline-flex;
-  gap: var(--space-2);
-  align-items: center;
-}
-.library-part-dialog .library-picker-section .library-components {
-  display: grid;
-  gap: var(--space-3);
-}
-.library-part-dialog
-  .library-picker-section
-  .library-workshop-reference-preview {
-  margin-top: 2px;
-  padding: 12px;
-}
-.library-part-dialog
-  .library-picker-section
-  .library-workshop-reference-preview.hide {
-  display: none !important;
-}
+
 .library-part-dialog .library-workshop-finish-note {
   margin: 6px 0 2px;
   padding: 0;
@@ -6040,27 +5594,6 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   line-height: 1.4;
 }
 @media (max-width: 620px) {
-  .library-part-dialog .library-picker-section > .library-field,
-  .library-part-dialog
-    .library-picker-section
-    .library-components
-    > .library-field,
-  .library-part-dialog .library-picker-section .library-workshop-search-label {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-1);
-  }
-  .library-part-dialog .library-picker-section > .library-field > .field,
-  .library-part-dialog
-    .library-picker-section
-    .library-components
-    > .library-field
-    > .field,
-  .library-part-dialog
-    .library-picker-section
-    .library-workshop-search-label
-    > .field {
-    grid-column: 1;
-  }
 }
 
 /* Edit Part: project Container versus its selected physical implementation.

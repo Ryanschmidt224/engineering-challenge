@@ -200,14 +200,12 @@ dialog.bs-dialog {
   font-weight: var(--font-semibold);
 }
 .bs-dialog .bs-dialog-actions .bs-dialog-danger,
-dialog .bs-dialog-danger,
-dialog.bs-delete-confirm .bs-delete-confirm-danger {
+dialog .bs-dialog-danger {
   background: #a52a32 !important;
   color: #fff !important;
   border: 1px solid #a52a32 !important;
 }
-.bs-dialog .bs-dialog-actions .bs-dialog-danger:hover,
-dialog.bs-delete-confirm .bs-delete-confirm-danger:hover {
+.bs-dialog .bs-dialog-actions .bs-dialog-danger:hover {
   background: #8d232a !important;
   border-color: #8d232a !important;
 }
