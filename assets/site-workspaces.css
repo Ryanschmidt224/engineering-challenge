@@ -1273,3 +1273,25 @@
   gap:5px;
  }
 }
+
+
+/* Subassembly workspace: one spacing owner, not accumulated article margins
+   and section-specific offsets. Applies to project/subassembly pages alike. */
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels{
+ display:flex;
+ flex-direction:column;
+ gap:18px;
+}
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article,
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article+article,
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-actions,
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>.workspace-resources{
+ margin-block:0;
+}
+:is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article+article{
+ padding-top:20px;
+}
+@media(max-width:800px){
+ :is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels{gap:14px}
+ :is(#launcher,.personal-project-view) .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels>article{margin-bottom:0}
+}
