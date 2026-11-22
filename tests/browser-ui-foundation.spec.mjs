@@ -48,6 +48,7 @@ for (const width of [1440, 390]) test("shared headers, controls and collapsed su
   await description.getByRole("textbox", {name: "Project summary", exact: true}).fill("The long project summary remains editable and is saved with the short summary.");
   await description.getByRole("button", {name: "Save", exact: true}).click();
   await expect(description.locator(".project-summary-message")).toHaveText("Summary saved.");
+  await page.evaluate(() => window.scrollTo({top: 0, left: 0, behavior: "instant"}));
   await page.screenshot({path: testInfo.outputPath("summary.png"), fullPage: true});
 });
 
@@ -89,6 +90,7 @@ test("empty section bodies share geometry and tooltip help does not cover the tr
   await expect(tree.getByRole("tooltip")).toBeVisible();
   await help.press("Escape");
   await expect(tree.getByRole("tooltip")).toBeHidden();
+  await page.evaluate(() => window.scrollTo({top: 0, left: 0, behavior: "instant"}));
   await page.screenshot({path: testInfo.outputPath("standard-empty-sections.png"), fullPage: true});
 });
 

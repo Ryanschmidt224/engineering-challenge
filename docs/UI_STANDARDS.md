@@ -32,6 +32,16 @@ Every collapsible block on project, assembly and part pages: Part details, Work 
 - One header: at least 48 px (`--section-height`), chevron on the left (6 px, 1.5 px stroke, rotates when open), title 16 px semibold, record count in parentheses 14 px muted, optional help or actions on the right. The header grows when the title wraps; it never clips.
 - One body: the same inner padding. Empty sections say so in one muted line.
 - Variant `ui-section--quiet` (no frame) for secondary, utility sections such as Project backups and Recent changes.
+- Project summary content sections use this same header and body and start collapsed. Existing editable fields stay inside the body. A zero record count already communicates emptiness; do not repeat it with “No notes yet”. Preserve loading and error feedback.
+
+### Site header
+- `assets/site-header.js` exports one explicit `initSiteHeader()` entry point, called by each page. `ui-kit.css` owns branding, navigation, current-page appearance, Account control and responsive layout.
+- Navigation order is Projects, Knowledge, The Workshop, Calculators. Account stays available on every page. Standalone pages link to the existing account dialog on Projects.
+- Use the documented narrow/wide breakpoint values in `theme.css` as layouts migrate. Native media queries use literal values, not `var()`.
+
+### Tooltip interaction
+- Hover help waits 650 ms and cancels when the pointer leaves, on pointer-down, scroll or Escape. Keyboard help remains immediate.
+- Do not put a long drag instruction on every tree row. Use the explicit feature-tree help control. Indicators precede the item text and are not editable checkboxes.
 
 ### Section actions (`BSUI.sectionActions`)
 - The action row is the first element inside the expanded section body, aligned with its standard padding.

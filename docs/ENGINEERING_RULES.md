@@ -60,7 +60,7 @@ Status: proposed for owner adoption, 2026-11-22. The current CSS batch follows t
 - One control height for every button and input on a toolbar row; one section header height; one body padding.
 - Vocabulary is consistent across screens. History uses the redesign wording: *Edit details, Revise design, Change selected product, Add record, Remove from build, Restore to build, Retire step*.
 - Help text lives in one file (keyed), not scattered string literals.
-- Empty states say so in one muted line; errors say what happened and what to do next.
+- Communicate emptiness once: a zero count in a section header needs no redundant “No notes yet” line. Otherwise use one concise guidance line. Errors say what happened and what to do next.
 
 ---
 
