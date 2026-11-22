@@ -441,7 +441,7 @@ window.BSProjectManager=(()=>{
     }
     renderTagFilters();updateDirectory();
     grid.hidden=false;loading.hidden=true;
-    setupAssemblyTrees();setupComponents();setupPhotos();
+    await setupAssemblyTrees();setupComponents();setupPhotos();
     const route=location.hash.slice(1);
     const routedProject=projects.find(project=>(route===project.id||route.startsWith(project.id+"/")));
     if(routedProject&&!document.getElementById(routedProject.id)?.classList.contains("active"))navigate(route);
