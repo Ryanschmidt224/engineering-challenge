@@ -1,0 +1,118 @@
+/* Knowledge page layout only; controls, header, list cards and field rows belong to components.css. */
+.knowledge-heading {
+  padding: var(--space-6);
+}
+.knowledge-heading h1 {
+  margin-bottom: var(--space-2);
+}
+.knowledge-heading p {
+  margin-bottom: 0;
+}
+.knowledge-layout {
+  display: grid;
+  grid-template-columns: minmax(14rem, 24rem) minmax(0, 1fr);
+  gap: var(--space-5);
+  padding: 0 var(--space-6) var(--space-6);
+  max-width: 100rem;
+  margin: auto;
+}
+.tile-panel,
+.detail-panel {
+  min-width: 0;
+}
+.search-label {
+  display: block;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--space-1);
+}
+.tile-filters {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+  margin: var(--space-3) 0;
+}
+.tile-filters .search-label {
+  margin: 0;
+}
+.catalog-actions {
+  margin: var(--space-3) 0;
+}
+#tile-list {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.list-card .tile-summary {
+  margin-top: var(--space-1);
+  color: var(--color-text);
+  font-size: var(--text-small);
+}
+.detail-heading {
+  margin-bottom: var(--space-5);
+}
+.detail-heading h2 {
+  margin-bottom: var(--space-2);
+}
+.tile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.link-list,
+.source-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.link-list li,
+.source-list li {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.link-list li:last-child,
+.source-list li:last-child {
+  border-bottom: 0;
+}
+.link-target {
+  font-weight: var(--font-semibold);
+}
+.link-note {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+}
+.source-row {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  padding: var(--space-3);
+  margin: var(--space-3) 0;
+}
+.family-results {
+  max-height: 18rem;
+  overflow-y: auto;
+  margin: var(--space-3) 0;
+}
+@media (max-width: 1024px) {
+  .knowledge-layout {
+    grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .knowledge-heading {
+    padding: var(--space-5) var(--space-4);
+  }
+  .knowledge-layout {
+    display: block;
+    padding: 0 var(--space-4) var(--space-5);
+  }
+  .tile-panel {
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--space-5);
+    margin-bottom: var(--space-5);
+  }
+  #tile-list {
+    max-height: 18rem;
+  }
+}

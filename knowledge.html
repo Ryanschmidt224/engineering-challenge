@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">
+ <title>Knowledge · BuildingSchmidt</title>
+ <link rel="stylesheet" href="assets/theme.css"><link rel="stylesheet" href="assets/components.css"><link rel="stylesheet" href="assets/knowledge.css">
+ <script type="module" src="assets/knowledge.js"></script>
+</head>
+<body class="knowledge-app">
+ <header class="app-header"><a class="brand" href="index.html#home">BUILDING SCHMIDT</a><nav aria-label="Main navigation"><a href="index.html#home">Projects</a><a href="workshop.html">The Workshop</a><a href="knowledge.html" aria-current="page">Knowledge</a></nav></header>
+ <div class="knowledge-heading"><div><p class="eyebrow">Your lessons, written once and linked where they apply</p><h1>Knowledge</h1><p class="muted">Concepts you had to understand, methods you used and lessons from what happened.</p></div></div>
+ <div class="knowledge-layout">
+  <section class="tile-panel" aria-label="Knowledge tiles">
+   <label class="search-label" for="tile-search">Search tiles</label>
+   <input id="tile-search" class="field" type="search" placeholder="Title, summary or text">
+   <div class="tile-filters">
+    <label class="search-label" for="type-filter">Type</label><select id="type-filter" class="field"></select>
+    <label class="search-label" for="status-filter">Status</label><select id="status-filter" class="field"></select>
+   </div>
+   <div class="actions catalog-actions"><button id="new-tile" class="button button--primary" type="button">New tile</button><label class="checkbox"><input id="show-archived" type="checkbox"> Show archived</label></div>
+   <div id="tile-list"></div>
+  </section>
+  <main id="knowledge-detail" class="detail-panel"><div class="empty">Loading your Knowledge…</div></main>
+ </div>
+ <div id="knowledge-status" class="status" role="status" aria-live="polite"></div>
+ <dialog id="knowledge-dialog" class="dialog"></dialog>
+</body>
+</html>

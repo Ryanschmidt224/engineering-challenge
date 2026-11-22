@@ -27,6 +27,46 @@ export const migrations = [
     // marker keeps it from ever being re-inserted after owner edits.
     seed: true,
   },
+  {
+    version: 2,
+    name: "knowledge-tiles",
+    // Tile type, relation and target type are validated in knowledge-model.js
+    // (not CHECK constraints) so the vocabularies can grow without rebuilding
+    // tables. Links are separate rows; incoming and outgoing views read the
+    // same row. A target is not a foreign key because targets live in
+    // different tables (and later in R2); target_label keeps the last known
+    // name so a missing target still reads sensibly.
+    statements: [
+      `CREATE TABLE IF NOT EXISTS knowledge_tiles (
+ id TEXT PRIMARY KEY,
+ type TEXT NOT NULL,
+ title TEXT NOT NULL CHECK(length(trim(title)) BETWEEN 1 AND 160),
+ summary TEXT NOT NULL CHECK(length(trim(summary)) BETWEEN 1 AND 400),
+ body TEXT NOT NULL DEFAULT '',
+ status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','verified')),
+ sources TEXT NOT NULL DEFAULT '[]' CHECK(json_valid(sources)),
+ revision INTEGER NOT NULL DEFAULT 1,
+ archived INTEGER NOT NULL DEFAULT 0 CHECK(archived IN (0,1)),
+ created_at TEXT NOT NULL,
+ updated_at TEXT NOT NULL)`,
+      `CREATE TABLE IF NOT EXISTS knowledge_links (
+ id TEXT PRIMARY KEY,
+ tile_id TEXT NOT NULL REFERENCES knowledge_tiles(id) ON DELETE RESTRICT,
+ target_type TEXT NOT NULL,
+ target_id TEXT NOT NULL,
+ target_project_id TEXT,
+ target_label TEXT NOT NULL DEFAULT '',
+ relation TEXT NOT NULL DEFAULT 'see_also',
+ note TEXT NOT NULL DEFAULT '',
+ revision INTEGER NOT NULL DEFAULT 1,
+ archived INTEGER NOT NULL DEFAULT 0 CHECK(archived IN (0,1)),
+ created_at TEXT NOT NULL)`,
+      `CREATE INDEX IF NOT EXISTS knowledge_links_tile ON knowledge_links(tile_id,archived)`,
+      `CREATE INDEX IF NOT EXISTS knowledge_links_target ON knowledge_links(target_type,target_id,archived)`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS knowledge_links_active_unique
+ ON knowledge_links(tile_id,target_type,target_id,COALESCE(target_project_id,''),relation) WHERE archived=0`,
+    ],
+  },
 ];
 
 export const latestSchemaVersion = migrations.at(-1).version;

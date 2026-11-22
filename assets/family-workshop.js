@@ -1,9 +1,12 @@
 import {node,button,actions,panel,field,checkbox,readValue,valuesEditor,requestWorkshop} from "./workshop-ui.js";
 import {present,resolveFamilyValues,validateFamilyFields,validateFamilyValues,isWebUrl} from "./family-model.js";
+import {tileTypes,tileStatuses,relations,labelFor} from "./knowledge-model.js";
 
 const $=selector=>document.querySelector(selector),detail=$("#workshop-detail"),dialog=$("#workshop-dialog");
 const params=new URLSearchParams(location.search);
 let data={categories:[],families:[],fields:[],products:[],uses:[],attachments:[]},projects=[];
+// Knowledge is optional context on this page: if it fails to load, the Workshop still works.
+let knowledge={tiles:[],links:[],error:""};
 let selectedCategory="",selectedFamily="",selectedProduct="",selectedUse="",draft=null,editing=false,dirty=false,busy=false,showUseFields=false;
 const status=(message,error=false)=>{$("#workshop-status").textContent=message;$("#workshop-status").classList.toggle("status--error",error);};
 const mark=()=>{dirty=true;};
@@ -16,7 +19,29 @@ async function run(operation){
  if(busy)return;busy=true;detail.inert=true;$("#family-list").inert=true;$("#category-tree").inert=true;
  try{await operation();}catch(error){status(error.message,true);}finally{busy=false;detail.inert=false;$("#family-list").inert=false;$("#category-tree").inert=false;}
 }
-async function refresh(){data=await requestWorkshop();renderNavigation();}
+async function refresh(){
+ data=await requestWorkshop();
+ try{const result=await requestWorkshop("/api/knowledge");knowledge={tiles:result.tiles,links:result.links,error:""};}
+ catch(error){knowledge={tiles:[],links:[],error:error.message};}
+ renderNavigation();
+}
+// Tiles linked directly to this family. Archived tiles and removed links are not shown.
+function renderFamilyKnowledge(record){
+ const linked=knowledge.links.filter(link=>!link.archived&&link.target_type==="family"&&link.target_id===record.id);
+ const entries=[];
+ for(const link of linked){const tile=knowledge.tiles.find(tile=>tile.id===link.tile_id&&!tile.archived);if(tile&&!entries.some(entry=>entry.tile.id===tile.id))entries.push({tile,link});}
+ const section=panel("Knowledge ("+entries.length+")");
+ if(knowledge.error)section.append(node("p","Knowledge could not load: "+knowledge.error,"error"));
+ const list=node("div","","knowledge-list");
+ for(const {tile,link} of entries){
+  const entry=node("a","","list-card");entry.href="knowledge.html?tile="+encodeURIComponent(tile.id);
+  entry.append(node("strong",tile.title),node("small",[labelFor(tileTypes,tile.type),labelFor(tileStatuses,tile.status),labelFor(relations,link.relation)+" this family"].join(" · ")),node("small",tile.summary));
+  list.append(entry);
+ }
+ if(!entries.length&&!knowledge.error)list.append(node("p","No knowledge linked yet. Lessons, methods and concepts about this kind of part appear here.","empty"));
+ const create=node("a","New knowledge tile for this family","button");create.href="knowledge.html?new=1&family="+encodeURIComponent(record.id);
+ section.append(list,actions(create));detail.append(section);
+}
 function updateLocation(){
  const url=new URL(location.href);url.searchParams.delete("edit");
  for(const [key,value] of [["family",selectedFamily],["product",selectedProduct],["use",selectedUse]])value?url.searchParams.set(key,value):url.searchParams.delete(key);
@@ -50,7 +75,7 @@ function renderNavigation(){
   return [f.name,f.description,...products.flatMap(p=>[p.name,p.manufacturer,p.mpn,...Object.values(p.field_values)])].join(" ").toLowerCase().includes(query);
  }).sort((a,b)=>a.name.localeCompare(b.name))){
   const count=data.products.filter(p=>p.family_id===item.id&&!p.archived).length;
-  const entry=button("",()=>changeSelection({familyId:item.id}),"family-card"+(item.id===selectedFamily?" is-selected":""));
+  const entry=button("",()=>changeSelection({familyId:item.id}),"list-card family-card"+(item.id===selectedFamily?" is-selected":""));
   entry.append(node("strong",item.name+(item.archived?" (archived)":"")),node("small",(item.kind==="tool"?"Tool · ":item.kind==="material"?"Material · ":"")+count+" "+(count===1?"product":"products")));list.append(entry);
  }
  if(!list.children.length)list.append(node("p","No matching families. Add one or change the search.","empty"));
@@ -175,6 +200,7 @@ function renderFamilyRead(record){
  const fields=panel("Fields","Values are entered on a product, a project use, or both.");
  const scroll=node("div","","table-scroll"),table=node("table","","data-table"),head=node("thead"),header=node("tr");for(const label of ["Field","Unit","Type"])header.append(node("th",label));head.append(header);table.append(head);
  const body=node("tbody");for(const definition of familyFields().filter(f=>!f.hidden)){const row=node("tr");row.append(node("td",definition.label+(definition.filled_on_use?" · usually entered in project":"")),node("td",definition.unit),node("td",definition.type));body.append(row);}table.append(body);scroll.append(table);fields.append(scroll);detail.append(fields);
+ renderFamilyKnowledge(record);
  const related=panel("Products");const list=node("div","","product-list");
  for(const product of data.products.filter(p=>p.family_id===record.id&&active(p)))list.append(button(product.name+(product.mpn?" · "+product.mpn:"")+(product.archived?" (archived)":""),()=>changeSelection({familyId:record.id,productId:product.id})));
  if(!list.children.length)list.append(node("p","No specific products yet. This family can still be used in a project.","empty"));

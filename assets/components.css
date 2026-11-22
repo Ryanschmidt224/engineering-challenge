@@ -304,3 +304,82 @@ textarea.field {
     padding: var(--space-4);
   }
 }
+
+/* Shared app header for the standalone pages (Workshop, Knowledge). */
+.app-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  padding: var(--space-4) var(--space-6);
+  background: var(--color-selected);
+  border-bottom: 1px solid var(--color-border-strong);
+}
+.brand {
+  font-weight: var(--font-bold);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  color: var(--color-text);
+}
+.app-header nav {
+  display: flex;
+  gap: var(--space-5);
+}
+.app-header nav a {
+  padding: var(--space-2) 0;
+}
+.app-header [aria-current="page"] {
+  font-weight: var(--font-semibold);
+  text-decoration-thickness: 2px;
+}
+@media (max-width: 640px) {
+  .app-header {
+    padding: var(--space-4);
+    gap: var(--space-4);
+  }
+}
+/* Selectable row in a list of records (families, knowledge tiles). */
+.list-card {
+  width: 100%;
+  display: block;
+  text-decoration: none;
+  padding: var(--space-3);
+  text-align: left;
+  border: 1px solid transparent;
+  border-bottom-color: var(--color-border);
+  border-radius: var(--radius-medium);
+  background: transparent;
+  color: var(--color-text);
+}
+.list-card:hover {
+  background: var(--color-hover);
+}
+.list-card.is-selected {
+  background: var(--color-selected);
+  border-color: var(--color-border-strong);
+}
+.list-card strong,
+.list-card small {
+  display: block;
+}
+.list-card small {
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+  margin-top: var(--space-1);
+}
+.notes {
+  white-space: pre-wrap;
+}
+.chip {
+  display: inline-block;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-caption);
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+}
+.chip--verified {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
