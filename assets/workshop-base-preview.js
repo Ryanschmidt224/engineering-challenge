@@ -28,8 +28,9 @@ function control(label, value, update, {type = "text", options, placeholder = ""
   wrapper.append(caption, input); return wrapper;
 }
 function section(title, help = "", collapsible = false, open = false) {
-  const node = h(collapsible ? "details" : "section", "section"), heading = h(collapsible ? "summary" : "h2", "section-title", title);
-  node.append(heading); if (collapsible) node.open = open;
+  const node = h(collapsible ? "details" : "section", "section"), heading = h("h2", "section-title", title);
+  if (collapsible) {const summary = h("summary"); summary.append(heading); node.append(summary); node.open = open;}
+  else node.append(heading);
   if (help) node.append(h("p", "section-help", help));
   return node;
 }
@@ -45,6 +46,11 @@ function renderNavigation() {
     const b = button("", () => {selected = example.key; mode = "edit"; templateDraft = null; render();});
     b.setAttribute("aria-current", selected === example.key ? "page" : "false");
     b.append(h("small", "", example.caption), h("span", "", example.item.identity.name)); nav.append(b);
+  }
+  for (const [key, draft] of drafts) {
+    if (examples.some(example => example.key === key)) continue;
+    const b = button(draft.item.identity.name || "Untitled draft", () => {selected = key; mode = "edit"; render();});
+    b.setAttribute("aria-current", selected === key ? "page" : "false"); nav.append(b);
   }
 }
 function valueRow(field, values, readOnly = false) {
@@ -66,12 +72,16 @@ function valueRow(field, values, readOnly = false) {
 }
 function fieldDesigner(source) {
   const area = section("Specification fields", "A field is either saved on the Workshop item or filled in for a project. Templates contain no values.");
-  const duplicates = duplicateLabels(source.fields);
-  if (duplicates.length) area.append(h("p", "warning", "Repeated names: " + duplicates.join(", ") + ". These remain separate fields; consider clearer names."));
+  const warning = h("p", "warning"); warning.setAttribute("role", "status");
+  const updateWarning = () => {
+    const duplicates = duplicateLabels(source.fields); warning.hidden = !duplicates.length;
+    warning.textContent = duplicates.length ? "Repeated names: " + duplicates.join(", ") + ". These remain separate fields; consider clearer names." : "";
+  };
+  updateWarning(); area.append(warning);
   source.fields.forEach((field, index) => {
     const row = h("fieldset", "definition"); row.dataset.fieldId = field.id;
     row.append(h("legend", "", field.label || "New specification"));
-    row.append(control("Field name", field.label, value => {field.label = value;}));
+    row.append(control("Field name", field.label, value => {field.label = value; updateWarning();}));
     row.append(control("Type", field.type, value => {field.type = value; if (value === "choice") field.options ??= ["Option 1", "Option 2"]; render();}, {options: fieldTypes.map(type => [type, {text: "Text", number: "Number", checkbox: "Yes / No", choice: "Choice", url: "Link"}[type]])}));
     row.append(control("Unit", field.unit, value => {field.unit = value;}, {placeholder: "Optional, e.g. V or mm"}));
     row.append(control("Value belongs to", field.destination, value => {field.destination = value;}, {options: [["workshop", "Workshop item"], ["project", "Project use"]]}));
@@ -94,13 +104,7 @@ function renderTemplate(host) {
   info.append(control("Category", templateDraft.category, value => {templateDraft.category = value;}));
   host.append(info);
   // The same definitions drive this designer, the item form and the read view.
-  const source = templateSource();
-  const designer = fieldDesigner(source);
-  designer.addEventListener("input", () => {templateDraft.fields = source.fields;});
-  designer.addEventListener("change", () => {templateDraft.fields = source.fields;});
-  // Reorder/remove replace the array before render; retain the source object.
-  templateDraft = Object.assign(source, {name: templateDraft.name, category: templateDraft.category});
-  host.append(designer);
+  host.append(fieldDesigner(templateDraft));
   const footer = h("div", "form-actions");
   footer.append(button("Keep template in this tab", () => guard(() => {
     keptTemplate = templateFromItem(templateSource(), templateDraft.name);
@@ -251,13 +255,6 @@ function render() {
   if (!readOnly || item.notes) {
     const notes = section("Notes", "", !readOnly, !!item.notes);
     if (readOnly) notes.append(h("p", "notes-text", item.notes));
-    else notes.append(control("Notes", item.notes, value => {item.notes = value;}, {type: "textarea"}));
-    form.append(notes);
-  }
-  renderStock(form, readOnly);
-  if (!readOnly || item.notes) {
-    const notes = section("Notes", "", !readOnly, !!item.notes);
-    if (readOnly) notes.append(h("p", "notes", item.notes));
     else notes.append(control("Notes", item.notes, value => {item.notes = value;}, {type: "textarea"}));
     form.append(notes);
   }

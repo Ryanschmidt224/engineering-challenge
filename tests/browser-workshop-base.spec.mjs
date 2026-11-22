@@ -20,6 +20,9 @@ test("name-only creation inherits category and read view hides empty optional se
   await page.getByRole("button", {name: "Read view", exact: true}).click();
   await expect(page.getByRole("heading", {level: 1})).toHaveText("Name-only part");
   await expect(page.getByRole("heading", {name: /^(Ordering|Files & links|Notes|Stock|Specifications)$/})).toHaveCount(0);
+  await example(page, "Generic component").click();
+  await page.getByRole("navigation", {name: "Review examples"}).getByRole("button", {name: "Name-only part", exact: true}).click();
+  await expect(page.getByLabel("Item name", {exact: true})).toHaveValue("Name-only part");
   expect(requests).toEqual([]);
 });
 
