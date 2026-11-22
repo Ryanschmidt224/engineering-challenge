@@ -1198,7 +1198,7 @@
     const name=updating?existing.name:templateName.value.trim();
     if(!name){templateStatus.textContent="Enter a new template name first.";templateName.focus();return}
     const snapshot=templateSnapshot();
-    const body={...(updating?{id:existing.id}:{}),name,category:category.value,...snapshot};
+    const body={...(updating?{id:existing.id,expectedRevision:existing.revision??null}:{}),name,category:category.value,...snapshot};
     templateStatus.textContent=updating?"Updating master template…":"Saving master template…";
     try{
      const response=await req("/api/workshop-templates",updating?"PUT":"POST",body);
@@ -1219,7 +1219,7 @@
      :window.confirm("Delete master template '"+template.name+"'?");
     if(!confirmed)return;
     try{
-     await req("/api/workshop-templates","DELETE",{id:template.id});
+     await req("/api/workshop-templates","DELETE",{id:template.id,expectedRevision:template.revision??null});
      masterTemplates=masterTemplates.filter(item=>item.id!==template.id);
      selectedMasterTemplate="";
      refreshTemplateOptions();

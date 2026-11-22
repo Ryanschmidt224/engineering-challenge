@@ -1,3 +1,4 @@
+import {provisionTestAccount} from "./helpers/accounts.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {handleAccounts} from "../functions/api/accounts.js";
@@ -36,7 +37,7 @@ const request=(path,method="GET",body,cookie)=>{
 const parse=async response=>({status:response.status,body:await response.json()});
 const send=(env,path,method="GET",body,cookie)=>notes({request:request(path,method,body,cookie),env});
 const access=async(env)=>{
- const r=await handleAccounts(request("/api/accounts","POST",{
+ const r=await provisionTestAccount(request("/api/accounts","POST",{
   action:"register",email:"notes-admin@example.test",password:"test-account-password-strong-2026"}),env);
  assert.equal(r.status,201);
  const cookie=r.headers.get("set-cookie").split(";")[0];
@@ -102,7 +103,7 @@ test("production worker routes notes requests instead of serving the app shell",
  const saved=await parse(await worker.fetch(request(URL,"PUT",{notes:[note],expectedRevision:null},cookie),env,{}));
  assert.equal(saved.status,200);
  assert.equal(saved.body.notes[0].description,"Saved through worker");
- const result=await parse(await worker.fetch(request(URL),env,{}));
+ const result=await parse(await worker.fetch(request(URL,"GET",undefined,cookie),env,{}));
  assert.equal(result.status,200);
  assert.equal(result.body.notes[0].title,"Routed note");
 });

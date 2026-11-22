@@ -1,3 +1,4 @@
+import {provisionTestAccount} from "./helpers/accounts.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {handleAccounts} from "../functions/api/accounts.js";
@@ -23,7 +24,7 @@ const base="https://example.test";
 async function setup(){
  const env={PHOTOS:new Bucket(),admin_password:"long-test-password"};
  await env.PHOTOS.put("components/launcher.json",JSON.stringify([{id,name:"Motor controller",partType:"code",itemType:"document",progressStatus:"not_started"}]));
- const login=await handleAccounts(new Request(base+"/api/accounts",{
+ const login=await provisionTestAccount(new Request(base+"/api/accounts",{
   method:"POST",headers:{"origin":base,"content-type":"application/json"},
   body:JSON.stringify({action:"register",email:"admin@example.test",password:"strong-test-user-password",displayName:"Test Admin"})
  }),env);

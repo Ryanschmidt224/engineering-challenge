@@ -141,7 +141,8 @@ function refreshAdminUI(){
  window.BSResources?.setAdmin?.(adminAuthenticated);
  document.querySelectorAll(".photo-admin,.component-section").forEach(el=>{
   el.querySelectorAll(".photo-upload,.component-save").forEach(control=>control.hidden=!(adminAuthenticated||isOwnProject(el)));
-  el.querySelectorAll(".component-extract").forEach(control=>control.hidden=false);
+  // Keep the retired lookup action hidden after authentication refreshes.
+  el.querySelectorAll(".component-extract").forEach(control=>control.hidden=!!el.bsProductLookup);
  });
 }
 async function checkAdmin(){

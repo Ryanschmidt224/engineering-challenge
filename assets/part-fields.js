@@ -43,7 +43,7 @@
   if(!part||itemTypeFor(part)!=="part"||part.generatedFrom)return "";
   if(part.implementationResolved===false)return "Part not selected";
   const name=String(part.implementationName||part.model||"").trim();
-  return name&&name!==String(part.name||"").trim()?name:"";
+  return name&&name!==(treeDescriptionFor(part)||String(part.name||"").trim())?name:"";
  };
  const sourcingLabels=["Supplier URL","Reference price","Quantity per package"];
  function priceInUsd(value){

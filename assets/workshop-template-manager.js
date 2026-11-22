@@ -103,7 +103,7 @@
   };
   generic.append(genericRows,button("+ Add project field",()=>{if(genericRows.children.length<40)addGeneric()},"btn"));
   tables.after(generic);
-  let templates=[],selectedId="",open=false,dirty=false,builder=null;
+  let templates=[],selectedId="",selectedRevision=null,open=false,dirty=false,builder=null;
   const tableRows=new Map();
   const readTables=()=>({sections:Object.fromEntries(sectionSpecs.map(([key])=>{
    const ui=tableRows.get(key);
@@ -180,6 +180,7 @@
   };
   const openTemplate=template=>{
    selectedId=template?.id||"";
+   selectedRevision=template?.revision??null;
    name.value=template?.name||"";
    buildTables(template?.tableLayout);
    genericRows.replaceChildren();
@@ -209,11 +210,11 @@
    saveButton.disabled=true;message.textContent="Saving master template…";
    try{
     const response=await request(selectedId?"PUT":"POST",{
-     ...payload,...(selectedId?{id:selectedId}:{})
+     ...payload,...(selectedId?{id:selectedId,expectedRevision:selectedRevision}:{})
     });
     const saved=response.template;
     templates=templates.filter(entry=>entry.id!==saved.id).concat(saved);
-    selectedId=saved.id;search.value="";refreshChoices();
+    selectedId=saved.id;selectedRevision=saved.revision;search.value="";refreshChoices();
     message.textContent="Saved '"+saved.name+"'. Existing Workshop parts are unchanged.";
     dirty=false;
    }catch(error){message.textContent=error.message}
@@ -225,7 +226,7 @@
    if(!window.confirm("Delete master template '"+current.name+"'? Existing Workshop parts keep their layouts."))return;
    deleteButton.disabled=true;
    try{
-    await request("DELETE",{id:current.id});
+    await request("DELETE",{id:current.id,expectedRevision:selectedRevision});
     templates=templates.filter(entry=>entry.id!==current.id);
     beginNew();message.textContent="Master template deleted. Workshop parts are unchanged.";
    }catch(error){message.textContent=error.message}

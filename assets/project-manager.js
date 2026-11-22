@@ -150,7 +150,7 @@ window.BSProjectManager=(()=>{
    if(project){Object.assign(project,summary);updateDirectory()}
   };
   const dialog=element("dialog","project-account-dialog");
-  dialog.innerHTML='<form class="project-account-form"><div class="project-account-header"><h2 class="project-account-title">Sign in</h2><button type="button" class="btn project-close" aria-label="Close account window">×</button></div><p class="project-account-subtitle muted">Your projects and Workshop are saved to your account.</p><p class="project-account-message" role="status" aria-live="polite"></p><label class="project-account-name hide">Display name<input class="field" name="displayName" maxlength="80" autocomplete="name"></label><label class="project-account-email">Email<input class="field" type="email" name="email" autocomplete="email" required></label><label class="project-account-password">Password<input class="field" type="password" name="password" autocomplete="current-password" minlength="12" required></label><div class="project-account-buttons"><button class="btn primary project-signin" type="submit">Sign in</button><button class="btn project-register" type="button">Create an account</button><button class="btn project-switch-login hide" type="button">Already have an account? Sign in</button><button class="btn project-signout hide" type="button">Sign out</button></div><div class="project-admin-link hide"><p class="muted">Already manage this website? Link your existing administrator access to this account.</p><label>Existing administrator password<input class="field" type="password" name="adminPassword" autocomplete="off"></label><button type="button" class="btn project-link-admin">Link administrator access</button></div></form>';
+  dialog.innerHTML='<form class="project-account-form"><div class="project-account-header"><h2 class="project-account-title">Sign in</h2><button type="button" class="btn project-close" aria-label="Close account window">×</button></div><p class="project-account-subtitle muted">Private engineering application. Sign in with the existing owner account.</p><p class="project-account-message" role="status" aria-live="polite"></p><label class="project-account-email">Email<input class="field" type="email" name="email" autocomplete="email" required></label><label class="project-account-password">Password<input class="field" type="password" name="password" autocomplete="current-password" minlength="12" required></label><div class="project-account-buttons"><button class="btn primary project-signin" type="submit">Sign in</button><button class="btn project-signout hide" type="button">Sign out</button></div><div class="project-admin-link hide"><p class="muted">Already manage this website? Link your existing administrator access to this account.</p><label>Existing administrator password<input class="field" type="password" name="adminPassword" autocomplete="off"></label><button type="button" class="btn project-link-admin">Link administrator access</button></div></form>';
   document.body.append(dialog);
   const form=dialog.querySelector(".project-account-form");
   form.noValidate=true; // Use specific, actionable inline errors instead of browser bubbles.
@@ -160,57 +160,38 @@ window.BSProjectManager=(()=>{
   retryHelp.hidden=true;
   dialog.querySelector(".project-account-message")?.after(retryHelp);
   const note=dialog.querySelector(".project-account-message"),email=dialog.querySelector('[name="email"]'),
-   password=dialog.querySelector('[name="password"]'),name=dialog.querySelector('[name="displayName"]');
-  let user=null,projects=[],accountMode="login";
+   password=dialog.querySelector('[name="password"]');
+  let user=null,projects=[];
   const clearAccountError=()=>{
    note.textContent="";note.classList.remove("is-error");retryHelp.textContent="";retryHelp.hidden=true;
-   for(const control of [email,password,name])control.removeAttribute("aria-invalid");
+   for(const control of [email,password])control.removeAttribute("aria-invalid");
   };
   const showAccountError=(message,detail="",field=null)=>{
    note.classList.add("is-error");note.textContent=message;
    retryHelp.textContent=detail;retryHelp.hidden=!detail;
    if(field){field.setAttribute("aria-invalid","true");field.focus()}
   };
-  for(const control of [email,password,name])control.addEventListener("input",()=>{
+  for(const control of [email,password])control.addEventListener("input",()=>{
    control.removeAttribute("aria-invalid");
    if(note.classList.contains("is-error"))clearAccountError();
   });
-  const explainAccountFailure=(error,action)=>{
-   if(error.status===409||error.code==="EMAIL_IN_USE")
-    return ["That email is already registered.","Select “Already have an account? Sign in” to use your existing account.",email];
-   if(error.code==="ACCOUNT_UNEXPECTED_ERROR")return [
-    "The account server encountered an error.",
-    (error.reference?"Reference: "+error.reference+". ":"")+"Please provide this reference to the website administrator. Your account may not have been created.",null
-   ];
-   if(error.status===503||error.code==="ACCOUNT_STORAGE_UNAVAILABLE")
-    return ["Account creation is temporarily unavailable.","The website could not access its account service. Please try again later. Your account may not have been created.",null];
-   if(error.status===429)return ["Too many requests.","Try again later before submitting another request.",null];
-   if(error.status===403)return ["Account request was not accepted.","Reload this website and try again. If the problem continues, the session or request origin may be invalid.",null];
-   if(error.status===401)return ["Email or password not recognized.","Check both fields and try signing in again.",password];
-   if(error.status===400||error.code==="INVALID_REGISTRATION")
-    return ["Please check your account information.",error.message||"Use a valid email and a password between 12 and 256 characters.",null];
-   return [action==="register"?"We couldn't create your account.":"We couldn't sign you in.",
-    error.status?"Server error (HTTP "+error.status+"). "+error.message+" Try again later.":"Could not reach the server. Check your connection and try again.",null];
+  const explainAccountFailure=error=>{
+   if(error.status===401)return ["Email or password not recognized.","Use the existing owner account.",password];
+   if(error.status===403)return ["Sign-in request was not accepted.","Reload this website and try again.",null];
+   if(error.status===503)return ["Sign-in is temporarily unavailable.","The account service could not be reached. Try again later.",null];
+   return ["We couldn't sign you in.",error.message||"Check your connection and try again.",null];
   };
   const updateAccount=()=>{
-   const signed=!!user,registering=accountMode==="register"&&!signed;
-   dialog.querySelector(".project-account-title").textContent=signed?"My account":registering?"Create account":"Sign in";
-   dialog.querySelector(".project-account-subtitle").textContent=signed?user.email+" · "+(user.role==="admin"?"Administrator":"Member"):"Your projects and Workshop are saved to your account.";
-   for(const selector of [".project-account-email",".project-account-password"])dialog.querySelector(selector).classList.toggle("hide",signed);
-   dialog.querySelector(".project-account-name").classList.toggle("hide",!registering);
-   dialog.querySelector(".project-signin").classList.toggle("hide",signed);
-   dialog.querySelector(".project-signin").textContent=registering?"Create account":"Sign in";
-   dialog.querySelector(".project-register").classList.toggle("hide",signed||registering);
-   dialog.querySelector(".project-switch-login").classList.toggle("hide",signed||!registering);
+   const signed=!!user;
+   dialog.querySelector(".project-account-title").textContent=signed?"Owner account":"Sign in";
+   dialog.querySelector(".project-account-subtitle").textContent=signed?user.email:"Private engineering application. Public registration is closed.";
+   for(const selector of [".project-account-email",".project-account-password",".project-signin"])dialog.querySelector(selector).classList.toggle("hide",signed);
    dialog.querySelector(".project-signout").classList.toggle("hide",!signed);
    dialog.querySelector(".project-admin-link").classList.toggle("hide",!signed||user.role==="admin");
-   password.autocomplete=registering?"new-password":"current-password";
   };
-  const showAccount=()=>{accountMode="login";clearAccountError();updateAccount();dialog.showModal()};
+  const showAccount=()=>{clearAccountError();updateAccount();dialog.showModal()};
   dialog.querySelector(".project-close").onclick=()=>dialog.close();
-  dialog.querySelector(".project-register").onclick=()=>{accountMode="register";clearAccountError();updateAccount();name.focus()};
-  dialog.querySelector(".project-switch-login").onclick=()=>{accountMode="login";clearAccountError();updateAccount();email.focus()};
-  async function sign(action){
+  async function sign(){
    clearAccountError();
    const address=email.value.trim(),secret=password.value;
    if(!address||!email.validity.valid){
@@ -220,20 +201,17 @@ window.BSProjectManager=(()=>{
     showAccountError("Your password must be between 12 and 256 characters.",
      secret.length<12?"Add "+(12-secret.length)+" more character"+(12-secret.length===1?"":"s")+" to continue.":"Shorten the password to 256 characters or fewer.",password);return
    }
-   if(action==="register"&&!name.value.trim()){
-    showAccountError("Enter a display name.","This is the name shown on projects you create.",name);return
-   }
    const submit=dialog.querySelector(".project-signin");submit.disabled=true;
-   note.textContent=action==="register"?"Creating account…":"Signing in…";
+   note.textContent="Signing in…";
    try{
-    const data=await api("POST","/api/accounts",{action,email:address,password:secret,displayName:name.value});
+    const data=await api("POST","/api/accounts",{action:"login",email:address,password:secret});
     user=data.user;password.value="";dialog.close();location.href="#home";location.reload();
    }catch(error){
-    const [message,detail,control]=explainAccountFailure(error,action);
+    const [message,detail,control]=explainAccountFailure(error);
     showAccountError(message,detail,control);
    }finally{submit.disabled=false}
   }
-  dialog.querySelector("form").onsubmit=event=>{event.preventDefault();void sign(accountMode)};
+  dialog.querySelector("form").onsubmit=event=>{event.preventDefault();void sign()};
   dialog.querySelector(".project-signout").onclick=async()=>{await api("DELETE","/api/accounts");user=null;dialog.close();location.href="#home";location.reload()};
   dialog.querySelector(".project-link-admin").onclick=async()=>{
    const field=dialog.querySelector('[name="adminPassword"]'),button=dialog.querySelector(".project-link-admin");
@@ -252,7 +230,7 @@ window.BSProjectManager=(()=>{
   editor.querySelector('.project-create-form [name="name"]')?.closest("label")?.after(createTagPicker.element);
   editor.querySelector(".project-create-cancel").onclick=()=>editor.close();
   const openCreate=()=>{
-   if(!user){showAccount();note.textContent="Create an account or log in before creating a project.";return}
+   if(!user){showAccount();note.textContent="Sign in with the owner account before creating a project.";return}
    editor.querySelector(".project-create-message").textContent="";
    editor.showModal();
   };

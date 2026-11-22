@@ -156,7 +156,7 @@ test("New Part Workshop picker uses shared electrical categories",()=>{
  assert.match(picker,/partClassification\.input\.value="purchased"/);
  assert.match(picker,/payload\.addToWorkshop=publicRadio\.checked\?"public":"private"/);
  assert.match(picker,/const lib=isPart&&workshopCheckbox\.checked/);
- assert.match(picker,/form\.append\(heading,subtitle,itemKind\.label,workshopChoices/);
+ assert.match(picker,/form\.append\(heading,subtitle,itemTypeSection,workshopChoices/);
  assert.match(picker,/name="new-part-source"/);
  assert.match(picker,/name="workshop-destination"/);
  assert.match(picker,/saveCreatedPartToWorkshop/);
@@ -196,7 +196,7 @@ test("Electronics & Components retains useful subtype filters",()=>{
  for(const label of ["Power supplies & converters","Motors & motor drives","Controllers & circuit boards","Sensors & switches","Other electronics"])
   assert.ok(picker.includes(label),"Missing power filter: "+label);
  assert.doesNotMatch(picker,/field\("Filter parts","select"\)/);
- assert.match(picker,/powerType\.label\.classList\.toggle\("hide",!lib\|\|category\.input\.value!=="electronics"\)/);
+ assert.match(picker,/powerType\.label\.classList\.toggle\("hide",!lib\|\|!browseCategory\|\|category\.input\.value!=="electronics"\)/);
  assert.match(picker,/fetch\("\/api\/purchased-parts"/);
  assert.match(picker,/workshopStandardRows/);
 });
@@ -231,7 +231,7 @@ test("Workshop detail editing is tied to the opened record, with one image-adjac
  const css=readFileSync("assets/workshop.css","utf8");
  const shared=source.slice(source.indexOf("  function showItem("),source.indexOf("  function openItemEditor("));
  assert.doesNotMatch(shared,/Edit shared catalog|Edit My Workshop copy|Edit item in My Workshop/);
- assert.match(shared,/if\(canEditCatalog\(item\)\)\s*mediaButtons\.append\(itemButton\("Edit",\(\)=>openItemEditor\(item\)/);
+ assert.match(shared,/if\(canEditCatalog\(item\)\)\s*mediaButtons\.append\(itemButton\("Edit",\(\)=>detailUI\?\.setEditing\(true\)/);
  assert.equal((shared.match(/itemButton\("Edit"/g)||[]).length,1);
  assert.match(shared,/mediaWithEdit\.append\(mediaButtons\)/);
  assert.match(shared,/itemButton\("View in My Workshop",\(\)=>showPersonalItem\(owned\[0\]\.id\)/);
@@ -243,12 +243,13 @@ test("Workshop detail editing is tied to the opened record, with one image-adjac
  assert.match(css,/\.workshop-under-image-edit\{min-width:0/);
 });
 
-test("Only nine core supplies are seeded, with reference images and buying guidance",()=>{
+test("Seed catalog has two generic components and nine illustrated shop supplies",()=>{
  const sandbox={window:{},document:{readyState:"loading",addEventListener(){}}};
  runInNewContext(readFileSync("assets/resources.js","utf8"),sandbox);
  const {workshopReferences,workshopCategories,workshopGroups}=sandbox.window.BSResources;
- assert.equal(workshopReferences.length,9);
+ assert.equal(workshopReferences.length,11);
  assert.deepEqual([...workshopReferences.map(item=>item.id)].sort(),[
+  "workshop:resistor-quarter","workshop:led-generic",
   "workshop:ferrule18","workshop:ferrule22","workshop:heatshrink",
   "workshop:sealshrink","workshop:silicone","workshop:solder",
   "workshop:wire16","workshop:wire18","workshop:wire22"
@@ -257,8 +258,8 @@ test("Only nine core supplies are seeded, with reference images and buying guida
  assert.ok(workshopCategories.some(([id])=>id==="electrical-sensors"));
  assert.equal(workshopReferences.find(item=>item.id==="workshop:wire22").category,"electrical-wiring");
  assert.ok(workshopGroups.some(group=>group.id==="measurement"),"Empty family remains available for new items");
- for(const item of workshopReferences){
-  assert.equal(item.kind,"material");
+ assert.equal(workshopReferences.filter(item=>item.kind==="component").length,2);
+ for(const item of workshopReferences.filter(item=>item.kind==="material")){
   assert.ok(item.orderNotes?.length>45,"Missing buying advice: "+item.name);
   assert.ok(item.illustration,"Missing picture for "+item.name);
   const path="assets/workshop-illustrations/"+item.illustration+".svg";

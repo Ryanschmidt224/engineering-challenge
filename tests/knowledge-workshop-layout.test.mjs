@@ -35,5 +35,5 @@ test("Account sign-in is unified; admin access requires a role",()=>{
  assert.match(site,/window\.BSProjectManager\?\.openAccount/);
  assert.match(auth,/user\?\.role==="admin"/);
  assert.match(accounts,/action==="claim-admin"/);
- assert.match(accounts,/role:"member"/);
+ assert.match(accounts,/REGISTRATION_CLOSED/);
 });

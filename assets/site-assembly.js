@@ -2349,13 +2349,6 @@ function setupAssemblyTrees(){
     if(addSpec){
      addSpec.textContent="+ Add specification";
      implementationGroup.insertBefore(addSpec,specsDisclosure);
-     if(!addSpec.bsShowInlineSpecs){
-      addSpec.bsShowInlineSpecs=true;
-      addSpec.addEventListener("click",()=>{
-       const section=review.querySelector(".part-editor-specs-disclosure");
-       if(section){section.hidden=false;section.open=true}
-      });
-     }
     }
     review.append(actions); // Only Save and Cancel remain in the primary footer.
     const buttons=actions.querySelector(".component-editor-primary-actions");
@@ -2559,6 +2552,10 @@ function setupAssemblyTrees(){
     for(const entry of ["explicit","inferred"]){const option=document.createElement("option");option.value=entry;option.textContent=entry==="explicit"?"✓ From product listing":"◇ Estimated / inferred";source.append(option)}
     remove.className="btn";remove.type="button";remove.textContent="Remove";remove.onclick=()=>row.remove();
     row.append(name,value,source,remove);container.append(row);
+    // This capture handler consumes the click before target listeners run.
+    // Reveal the new row here, before moving focus into it.
+    const disclosure=container.closest(".part-editor-specs-disclosure");
+    if(disclosure){disclosure.hidden=false;disclosure.open=true}
     bomRoot()?.querySelector(".component-review")?.classList.remove("hide");
     name.focus();bomReport("Specification added. Enter the name and value.");
    }else if(target.closest(".component-save")){

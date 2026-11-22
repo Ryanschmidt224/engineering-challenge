@@ -33,10 +33,13 @@ import {onRequestGet as listPhotos,onRequestPost as uploadPhoto,onRequestDelete 
 import {onRequestGet as getPhoto} from "./functions/api/photo.js";
 import {handlePhotoAnnotations} from "./functions/api/photo-annotations.js";
 import {handlePartCode} from "./functions/api/part-code.js";
+import {guardPrivateApi} from "./functions/api/private-access.js";
 export default {
   async fetch(request,env,ctx){
     const path=new URL(request.url).pathname;
     try{
+      const denied=await guardPrivateApi(request,env);
+      if(denied)return denied;
       if(path==="/api/accounts")return await handleAccounts(request,env);
       if(path==="/api/projects")return projectsApi({request,env,ctx});
       if(path==="/api/numbering")return numberingApi({request,env,ctx});
@@ -97,6 +100,7 @@ export default {
         if(request.method==="GET")return getPhoto({request,env,ctx});
         return new Response("Method not allowed",{status:405,headers:{Allow:"GET"}});
       }
+      if(path.startsWith("/api/"))return Response.json({error:"API route not found"},{status:404,headers:{"cache-control":"no-store"}});
       return env.ASSETS.fetch(request);
     }catch(error){
       // Return a structured, non-sensitive error for account failures.
