@@ -74,7 +74,8 @@ for(const width of [1440,390])for(const project of projects)for(const kind of ["
     if(state==="expanded")for(const workspace of workspaces)await expand(workspace);
     if(state==="editor")for(let index=0;index<pages.length;index++){await workspaces[index].getByRole("button",{name:"Edit part details",exact:true}).click();await expect(pages[index].getByRole("dialog",{name:"Part editor",exact:true})).toBeVisible();}
     for(let index=0;index<pages.length;index++){
-     await pages[index].evaluate(()=>window.scrollTo(0,0));
+     await pages[index].evaluate(()=>window.scrollTo({top:0,left:0,behavior:"instant"}));
+     expect(await pages[index].evaluate(()=>window.scrollY)).toBe(0);
      const image=await pages[index].screenshot({fullPage:true,animations:"disabled",caret:"hide"});
      await writeFile(testInfo.outputPath((index?"candidate-":"baseline-")+state+".png"),image);
     }
