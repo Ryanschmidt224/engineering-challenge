@@ -2192,20 +2192,12 @@
 .recipe-step-detail .build-confusion-control {
   margin-top: 10px;
 }
-.build-confusion-insights {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  background: var(--color-surface);
-  padding: 12px 16px;
-  margin: 15px 0 25px;
-}
+
 .build-confusion-insights summary {
   font-weight: var(--font-semibold);
   cursor: pointer;
 }
-.build-confusion-insights-body {
-  padding: 12px 0;
-}
+
 .build-confusion-insight {
   padding: 10px 0;
   border-bottom: 1px solid var(--color-border);
@@ -2322,14 +2314,9 @@
     color-mix(in srgb, var(--color-shadow-base) 6.2745%, transparent);
   font-size: var(--text-small);
 }
-.project-summary-gallery,
-.project-summary-bom-section,
-.project-summary-tools-section,
-.workspace-resources,
 .workspace-bom,
 .part-linked-resources,
 .recipe-one-step-body,
-.build-confusion-insights,
 .project-summary-page > .project-summary-heading {
   position: relative;
 }
@@ -3116,16 +3103,7 @@
 ):hover {
   text-decoration: underline;
 }
-.assembly-workspace-page
-  .workspace-panels
-  > .bs-unstructured-notes
-  :is(.bs-unstructured-empty, .bs-unstructured-status:empty) {
-  display: none;
-}
-.workspace-resource-disclosure > .workspace-resources {
-  padding: var(--space-3) var(--space-4);
-  margin: 0;
-}
+
 .workspace-resource-disclosure > .workspace-resources > h2 {
   display: none;
 }
@@ -3346,12 +3324,6 @@
   margin: 0;
 }
 
-.project-overview-card {
-  padding: 14px 20px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  background: var(--color-surface);
-}
 .project-summary-edit-actions {
   display: flex;
   gap: var(--space-2);
@@ -3377,87 +3349,7 @@
   font-size: clamp(1.8rem, 3vw, 2.5rem);
   margin: 0 0 16px;
 }
-#home .compact-project-directory > .project-directory-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  padding: 0;
-  margin: 0 0 12px;
-  border: 0;
-  background: transparent;
-}
-.compact-project-directory .project-directory-search {
-  font-size: 0;
-  flex: 1 1 230px;
-  max-width: 420px;
-}
-.compact-project-directory .project-directory-search .field {
-  font-size: var(--text-body);
-  width: 100%;
-  margin: 0;
-}
-#home
-  .compact-project-directory
-  .project-directory-label:has(.project-sort-filter) {
-  flex: 0 0 auto;
-  flex-direction: row;
-  align-items: center;
-  gap: var(--space-2);
-  white-space: nowrap;
-}
-#home .compact-project-directory .project-sort-filter {
-  width: auto;
-  min-width: 0;
-  margin: 0;
-}
-#home .compact-project-directory .project-directory-controls :is(.field, .btn) {
-  box-sizing: border-box;
-  min-height: 42px;
-  margin: 0;
-}
-#home .compact-project-directory .project-directory-count {
-  font-size: var(--text-small);
-  padding: 0;
-  margin-inline-start: auto;
-  white-space: nowrap;
-}
-.compact-project-directory .project-directory-new {
-  white-space: nowrap;
-}
-.compact-project-directory :is(.project-filter-menu, .project-directory-menu) {
-  position: relative;
-}
-.compact-project-directory
-  :is(.project-filter-menu, .project-directory-menu)
-  > summary {
-  list-style: none;
-  cursor: pointer;
-}
-.compact-project-directory
-  :is(.project-filter-menu, .project-directory-menu)
-  > summary::-webkit-details-marker {
-  display: none;
-}
-#home .compact-project-directory .project-filter-menu > .bs-project-tag-filter,
-.compact-project-directory .project-directory-menu > button {
-  position: absolute;
-  z-index: 3;
-  top: calc(100% + 6px);
-  margin: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-}
-#home .compact-project-directory .project-filter-menu > .bs-project-tag-filter {
-  left: 0;
-  width: min(320px, calc(100vw - 40px));
-  padding: 12px;
-}
-.compact-project-directory .project-directory-menu > button {
-  right: 0;
-  white-space: nowrap;
-}
+
 .project-selected-descriptors {
   display: flex;
   gap: var(--space-2);
@@ -3538,20 +3430,6 @@
   color: var(--color-text-muted);
 }
 @media (max-width: 550px) {
-  #home .compact-project-directory .project-directory-search {
-    flex: 1 1 150px;
-    min-width: 0;
-    max-width: none;
-  }
-  #home .compact-project-directory .project-directory-search .field {
-    min-width: 0;
-  }
-  #home
-    .compact-project-directory
-    .project-filter-menu
-    > .bs-project-tag-filter {
-    width: min(300px, calc(100vw - 55px));
-  }
 }
 
 /* Keep the Work Instructions step's Edit/Save button alongside its title. */
@@ -5880,13 +5758,7 @@
 .project-intent-milestones[hidden] {
   display: none;
 }
-.project-milestone-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-}
+
 .project-milestone-heading h2 {
   margin: 0;
 }
@@ -6049,9 +5921,7 @@
   .project-milestone-editor {
     padding: 16px;
   }
-  .project-milestone-heading {
-    flex-direction: column;
-  }
+
   .project-milestone-actions {
     width: 100%;
   }
@@ -6315,10 +6185,6 @@
   border-color: var(--color-accent);
   text-decoration: none;
 }
-.assembly-workspace-page .workspace-resource-disclosure > .workspace-resources {
-  padding: var(--space-1) var(--space-4) var(--space-3);
-  margin: 0;
-}
 
 .assembly-workspace-page .bs-unstructured-notes .bs-unstructured-add {
   display: inline-flex;
@@ -6403,16 +6269,7 @@
   gap: var(--space-3);
   margin: 12px 0;
 }
-.project-summary-page .project-summary-overview > .project-overview-card {
-  padding: 14px 20px;
-}
-.project-summary-page
-  .project-summary-overview
-  > .project-overview-card:first-child {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-}
+
 .project-summary-page .project-summary-overview .project-summary-tags {
   display: flex;
   align-items: center;
@@ -6452,10 +6309,7 @@
   padding: 14px 20px;
   gap: var(--space-2);
 }
-.project-summary-page .project-milestone-heading {
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-}
+
 .project-summary-page .project-milestone-heading h2 {
   margin: 0;
   font-size: var(--text-body);
@@ -6528,9 +6382,6 @@
 .project-summary-page > .project-summary-tracker {
   margin: 0;
 }
-.project-summary-page > .project-summary-overview > .project-overview-card {
-  margin: 0;
-}
 
 /* Original intent: concise spelling reminder before the irreversible save. */
 .project-milestone-spelling-hint {
@@ -6551,57 +6402,6 @@
 }
 .project-summary-page .project-summary-title-row .bs-help-button {
   flex: none;
-  margin: 0;
-}
-.project-summary-page .project-intent-milestones .project-milestone-expand {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
-  padding: 0;
-  margin: 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-text);
-  text-align: left;
-  font: inherit;
-  font-size: var(--text-body);
-  font-weight: var(--font-semibold);
-  cursor: pointer;
-}
-.project-summary-page
-  .project-intent-milestones
-  .project-milestone-expand:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 4px;
-  border-radius: var(--radius-small);
-}
-.project-summary-page .project-intent-milestones .project-milestone-chevron {
-  display: inline-block;
-  flex: none;
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  transform: rotate(-45deg);
-  transition: transform 0.15s ease;
-}
-.project-summary-page
-  .project-intent-milestones
-  .project-milestone-expand[aria-expanded="true"]
-  .project-milestone-chevron {
-  transform: rotate(45deg);
-}
-.project-summary-page .project-intent-milestones .project-milestone-content {
-  display: grid;
-  gap: var(--space-2);
-}
-.project-summary-page
-  .project-intent-milestones
-  .project-milestone-content[hidden] {
-  display: none !important;
-}
-.project-summary-page .project-intent-milestones .project-milestone-heading {
   margin: 0;
 }
 

@@ -1,8 +1,8 @@
 {
   "frozen": {
-    "assets/site-polish.css": "7f667e557023678ee07043e6bdd5cc1658ad88c0799b42cd803765a94e32e455",
-    "assets/site-controls.css": "d410b7ffa6a46d66f243355469101456929150ee6c7e5e3e15786b3af8482b7c",
-    "assets/site-workspaces.css": "9f6c7b354cdbc936b2ca699b22a0aba0c66e0666157a035d1eeea1017d4742b0"
+    "assets/site-polish.css": "d1ad9c3e30f694af6f7ef8fe18f387c5a31e6a96f18b854584cdd3a09a186d22",
+    "assets/site-controls.css": "35da6e23059d49f61dc640c99769256558cbe7b0dba18895ef3529a70de951a1",
+    "assets/site-workspaces.css": "c294a40420920f1c84e15f11a8066706666479becfba27837ec5a044a0570f28"
   },
   "limits": {
     "assets/site.css": {
@@ -15,14 +15,14 @@
     },
     "assets/site-workspaces.css": {
       "important": 9,
-      "projectIds": 79
+      "projectIds": 76
     },
     "assets/product-lookup.css": {
       "important": 1,
       "projectIds": 3
     },
     "assets/site-polish.css": {
-      "important": 362,
+      "important": 361,
       "projectIds": 42
     },
     "assets/photo-markup.css": {

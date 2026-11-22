@@ -50,7 +50,7 @@
   expand.setAttribute("aria-controls","project-milestone-content-"+project);
   const chevron=el("span","project-milestone-chevron");
   chevron.setAttribute("aria-hidden","true");
-  expand.prepend(chevron);
+  const title=el("h2","ui-section__title","Project Intent & Milestones");expand.replaceChildren(title);
   header.append(expand);panel.append(header);
   const content=el("div","project-milestone-content");
   content.id="project-milestone-content-"+project;
@@ -66,6 +66,7 @@
   const historyHost=el("div","project-milestone-history");
   content.append(feedback,intentHost,historyHost);
   panel.append(content);
+  window.BSUI.sectionShell(panel,expand,content,"summary-milestones");
   summary.querySelector(".project-summary-overview")?.after(panel);
   function setFeedback(text){feedback.textContent=text||""}
   function addText(host,label,value){

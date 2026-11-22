@@ -38,7 +38,7 @@
   function render(){
    list.replaceChildren();add.hidden=!editable;
    count.textContent="("+records.length+(records.length===1?" record)":" records)");
-   if(!records.length)list.append(el("p","muted bs-unstructured-empty","No notes yet."));
+
    for(const note of records){
     const card=el("article","bs-unstructured-card");
     const heading=button(note.title,()=>{

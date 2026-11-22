@@ -367,6 +367,7 @@
   function render(){
    body.replaceChildren();
    const total=Object.values(refs).reduce((sum,list)=>sum+list.length,0);
+   if(addTo)panel.hidden=!total&&!adding;
    description.hidden=total===0;
    onCount(total);
    for(const kind of ["tools","calculators","parts"]){

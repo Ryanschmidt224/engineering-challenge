@@ -96,6 +96,7 @@ test("project feature tree and workspace initialize without browser errors", asy
  await expect(summary.locator(".project-summary-bom-items")).not.toContainText("Soldering Iron");
  await expect(summary.locator(".project-summary-photo-position")).toContainText("1 of 2");
  await expect(summary.locator(".project-summary-photo-caption")).toContainText("Launcher front view");
+ await summary.locator('[data-section="summary-photos"] > .ui-section__header').click();
  await summary.locator(".project-summary-next").click();
  await expect(summary.locator(".project-summary-photo-position")).toContainText("2 of 2");
  await expect(summary.locator(".project-summary-photo-caption")).toContainText("Launcher side view");
@@ -253,9 +254,10 @@ test("linear and robot projects share the complete feature tree, summary, BOM an
   const tree=root.locator(".assembly-tree-nodes");
   await expect(root.locator(".assembly-summary-sidebar-card .assembly-project-summary-entry:first-child")).toBeVisible();
   await expect(root.locator(".project-summary-page")).toBeVisible();
-  await expect(root.locator(".project-summary-gallery")).toBeVisible();
-  await expect(root.locator(".project-summary-bom-section")).toBeVisible();
-  await expect(root.locator(".project-summary-tools-section")).toBeVisible();
+  for(const role of ["summary-photos","summary-bom","summary-tools"]){
+   await expect(root.locator('[data-section="'+role+'"] > .ui-section__header')).toBeVisible();
+   await expect(root.locator('[data-section="'+role+'"] > .ui-section__body')).toBeHidden();
+  }
   await tree.locator(".assembly-name").first().click();
   await expect(root.locator(".assembly-workspace-page:not(.bom-part-workspace)")).toBeVisible();
   await expect(root.locator(".workspace-back")).toHaveText("Open BOM");

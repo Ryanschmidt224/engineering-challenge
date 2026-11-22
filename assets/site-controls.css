@@ -1799,9 +1799,7 @@
   gap: var(--space-3);
   flex-wrap: wrap;
 }
-.project-summary-gallery {
-  min-width: 0;
-}
+
 .project-summary-gallery-heading {
   display: flex;
   justify-content: space-between;
@@ -1882,9 +1880,7 @@
   gap: var(--space-6);
   align-items: start;
 }
-.project-summary-lists > section {
-  min-width: 0;
-}
+
 .project-summary-lists h2 {
   padding: 0 0 12px;
   border-bottom: 1px solid var(--color-border);
@@ -2163,16 +2159,7 @@
   gap: var(--space-5);
   align-items: stretch;
 }
-.project-summary-lists > .project-summary-bom-section,
-.project-summary-lists > .project-summary-tools-section {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  background: var(--color-surface);
-  padding: 21px 22px 25px;
-  box-shadow: 0 1px 3px
-    color-mix(in srgb, var(--color-shadow-base) 3.1373%, transparent);
-  min-width: 0;
-}
+
 .project-summary-lists h2 {
   padding: 0 0 13px;
   margin: 0 0 6px;
@@ -2181,12 +2168,7 @@
   line-height: 1.5;
 }
 /* Summary gallery aligns with the page's left edge instead of filling ultrawide panels. */
-.project-summary-gallery {
-  width: min(100%, 880px);
-  max-width: 880px;
-  justify-self: start;
-  margin: 0;
-}
+
 .project-summary-photo-stage {
   position: relative;
   justify-content: flex-start;
@@ -2245,10 +2227,7 @@
   .project-summary-lists {
     gap: var(--space-4);
   }
-  .project-summary-lists > .project-summary-bom-section,
-  .project-summary-lists > .project-summary-tools-section {
-    padding: 17px 16px 20px;
-  }
+
   .project-summary-photo-stage {
     height: clamp(220px, 55vw, 390px);
   }
@@ -3423,43 +3402,8 @@
 }
 
 /* One Projects dashboard; category choices are catalog metadata, not separate pages. */
-.project-directory-controls {
-  display: flex;
-  align-items: end;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  margin: 20px 0 0;
-}
-.project-directory-label {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  color: var(--color-text);
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
-.project-directory-label .field {
-  min-width: 170px;
-  max-width: 240px;
-  margin: 0;
-  background: var(--color-on-media);
-}
-.project-directory-count {
-  font-size: var(--text-small);
-  padding-bottom: 10px;
-}
+
 @media (max-width: 600px) {
-  .project-directory-controls {
-    align-items: stretch;
-  }
-  .project-directory-label {
-    flex: 1 1 145px;
-  }
-  .project-directory-label .field {
-    min-width: 0;
-    max-width: none;
-    width: 100%;
-  }
 }
 
 /* Single account entry point: login/register is one consistent dialog. */
@@ -3555,34 +3499,7 @@
 #home .project-owner-actions {
   justify-content: flex-end;
 }
-#home .project-directory-controls {
-  margin: 24px 0 22px;
-  padding: 18px 20px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  background: var(--color-surface);
-  gap: var(--space-4) var(--space-4);
-  align-items: end;
-}
-#home .project-directory-label {
-  gap: var(--space-2);
-}
-#home .project-directory-label .field {
-  margin: 0;
-  min-height: 42px;
-}
-#home .project-directory-search {
-  flex: 1 1 270px;
-}
-#home .project-directory-search .field {
-  width: 100%;
-  max-width: none;
-}
-#home .project-directory-count {
-  margin-left: auto;
-  padding: 0 0 12px;
-  white-space: nowrap;
-}
+
 #home .project-grid {
   margin-top: 18px;
   gap: var(--space-5);
@@ -3623,15 +3540,6 @@
   #home .project-owner-actions {
     width: 100%;
     justify-content: flex-start;
-  }
-  #home .project-directory-controls {
-    padding: 14px;
-    gap: var(--space-3);
-  }
-  #home .project-directory-count {
-    margin: 0;
-    flex: 1 1 100%;
-    padding: 0;
   }
 }
 /* Knowledge Base: explanations and interactive calculators share one directory. */
@@ -3817,7 +3725,6 @@
 .bs-catalog-main {
   min-width: 0;
 }
-.bs-catalog-main .project-directory-controls,
 .bs-catalog-main .knowledge-directory-toolbar {
   margin: 0 0 18px;
   border-radius: var(--radius-large);
@@ -3977,7 +3884,6 @@
   #home .bs-catalog-layout .project-copy {
     padding: 14px 16px;
   }
-  .bs-catalog-main .project-directory-controls,
   .bs-catalog-main .knowledge-directory-toolbar {
     padding: 12px;
   }
@@ -3997,20 +3903,13 @@ body > main {
 body > .footer {
   margin-top: auto;
 }
-.top .topin {
-  min-height: 64px;
-}
-.top .brand {
-  font-size: var(--text-title);
-  letter-spacing: -0.02em;
-}
+
 :is(#home, #learn, #commonparts) > .wrap.section {
   width: min(100%, 1840px);
   max-width: none;
   padding: 30px clamp(20px, 2.5vw, 46px) 48px;
   margin-inline: auto;
 }
-.top .topin,
 .footer .wrap {
   max-width: 1840px;
   width: 100%;
@@ -4033,7 +3932,6 @@ body > .footer {
   width: 100%;
   max-width: none;
 }
-:is(#home, #learn, #commonparts) .bs-catalog-main > .project-directory-controls,
 :is(#home, #learn, #commonparts)
   .bs-catalog-main
   > .knowledge-directory-toolbar {
@@ -4623,12 +4521,7 @@ body > .footer {
   font-size: var(--text-lead);
   margin: 0;
 }
-#home .bs-project-search-sidebar .project-directory-search {
-  display: grid;
-  gap: var(--space-1);
-  margin: 0;
-  min-width: 0;
-}
+
 #home .bs-project-search-sidebar .project-search {
   width: 100%;
   min-width: 0;
@@ -4688,12 +4581,6 @@ body > .footer {
 }
 #home .bs-catalog-main {
   min-width: 0;
-}
-#home .bs-catalog-main > .project-directory-controls {
-  justify-content: flex-end;
-  align-items: end;
-  gap: var(--space-3);
-  padding: 0;
 }
 
 @media (max-width: 900px) {
@@ -4939,70 +4826,8 @@ body > .footer {
 
 /* Page-level action placement: keep controls beside the content they operate on,
    not stranded on the far edge of a wide monitor. Editing form footers unchanged. */
-#home .bs-catalog-main > .project-directory-controls {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-3) var(--space-4);
-  margin: 0 0 16px;
-  padding: 12px 0;
-  background: transparent;
-  border: 0;
-}
-#home .bs-catalog-main > .project-directory-controls .project-owner-actions {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  flex: 0 1 auto;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  width: auto;
-  margin: 0;
-  padding-right: 18px;
-  border-right: 1px solid var(--color-border);
-}
-#home
-  .bs-catalog-main
-  > .project-directory-controls
-  .project-owner-actions
-  .btn {
-  min-height: 39px;
-  margin: 0;
-  white-space: nowrap;
-}
-#home .bs-catalog-main > .project-directory-controls .project-directory-label {
-  display: flex;
-  flex: 0 0 auto;
-  gap: var(--space-1);
-}
-#home .bs-catalog-main > .project-directory-controls .project-sort-filter {
-  min-width: 140px;
-  min-height: 39px;
-}
-#home .bs-catalog-main > .project-directory-controls .project-directory-count {
-  margin: 0;
-  padding: 0;
-  align-self: end;
-}
+
 @media (max-width: 680px) {
-  #home .bs-catalog-main > .project-directory-controls {
-    padding: 10px 0;
-    gap: var(--space-3);
-  }
-  #home .bs-catalog-main > .project-directory-controls .project-owner-actions {
-    flex: 1 1 100%;
-    padding-right: 0;
-    padding-bottom: 10px;
-    border-right: 0;
-    border-bottom: 1px solid var(--color-border);
-  }
-  #home
-    .bs-catalog-main
-    > .project-directory-controls
-    .project-directory-count {
-    align-self: center;
-  }
 }
 
 /* Project Summary BOM: make saved parts navigable without adding visual clutter. */

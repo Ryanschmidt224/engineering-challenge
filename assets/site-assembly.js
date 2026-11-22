@@ -20,6 +20,7 @@ function setupAssemblyTrees(){
   featureTreeCard.className="assembly-feature-tree-card";
   while(root.firstChild)featureTreeCard.append(root.firstChild);
   root.append(featureTreeCard,summaryCard);
+  root.querySelector("h3")?.append(window.BSDialogs.tooltip("Reordering the feature tree","Drag onto a sibling to reorder. Drop onto another assembly to move inside it; hold Alt to nest under a sibling."));
   // Legacy project pages share the same workspace styling as newer projects.
   if(project==="linear"||project==="robot")view.classList.add("personal-project-view");
   const canEdit=()=>window.BSProjectManager?.isOwner?.(project)===true || (["launcher","linear","robot"].includes(project)&&adminAuthenticated);
@@ -3416,8 +3417,8 @@ function setupAssemblyTrees(){
      marker.textContent=needsAttention?"⚑":status==="complete"?"✓":"◐";
      marker.title=needsAttention?"Needs attention":status==="complete"?"Complete":"In progress";
      marker.setAttribute("role","img");marker.setAttribute("aria-label",marker.title);
-     // Keep status beside the name, before the optional description's block.
-     name.insertBefore(marker,name.querySelector(".assembly-tree-description"));
+     // Status precedes the item text; it is a read-only indicator.
+     name.prepend(marker);
     }
    }
    if(isPartNode(node)&&partRoute()===node.partId)el.classList.add("selected");name.onclick=()=>{if(isPartNode(node)){openTreePart(node);return}selected=id;history.pushState(null,"",workspaceHash(id));render();notify();window.scrollTo(0,0)};
@@ -3446,7 +3447,7 @@ function setupAssemblyTrees(){
     el.append(more);
    }
    if(node&&canEdit()){
-    el.draggable=true;el.title="Drag onto a sibling to reorder. Drop onto another assembly to move inside it; hold Alt to nest under a sibling.";
+    el.draggable=true;
     el.ondragstart=event=>{event.dataTransfer.setData("text/plain",node.id);event.dataTransfer.effectAllowed="move";el.classList.add("assembly-dragging")};
     el.ondragend=()=>el.classList.remove("assembly-dragging");
     el.ondragover=event=>{const dragged=Array.from(event.dataTransfer.types).includes("text/plain");if(!dragged)return;event.preventDefault();el.classList.add("assembly-drop-target");event.dataTransfer.dropEffect="move"};
@@ -3570,6 +3571,23 @@ function setupAssemblyTrees(){
   };
   root.querySelector(".assembly-rename").onclick=async()=>{if(selected===null){status.textContent="Select a subassembly to rename.";return}const node=nodes.find(n=>n.id===selected),name=await window.BSDialogs.prompt("Enter a new name",node.name,{title:"Rename subassembly",label:"Name"});if(!name?.trim())return;try{await save(nodes.map(n=>n.id===selected?{...n,name:name.trim()}:n))}catch(e){status.textContent=e.message}};
   root.querySelector(".assembly-remove").onclick=async()=>{if(selected===null){status.textContent="Select a subassembly to delete.";return}const node=nodes.find(n=>n.id===selected);if(!await window.BSDialogs.danger("Delete "+node.name+" and its nested subassemblies? Existing BOM components will remain in the project but may become unassigned.",{title:"Delete subassembly?"}))return;const removed=new Set([selected]);let changed=true;while(changed){changed=false;for(const n of nodes)if(removed.has(n.parentId)&&!removed.has(n.id)){removed.add(n.id);changed=true}}try{await save(nodes.filter(n=>!removed.has(n.id)));selected=null;render();notify()}catch(e){status.textContent=e.message}};
+  // Keep content and save handlers mounted inside standard collapsed sections.
+  for(const [selector,label,role] of [
+   [".project-summary-gallery","Project photos","summary-photos"],
+   [".project-summary-overview > .project-overview-card:not(.project-cost-card)","Project summary","summary-description"],
+   [".project-cost-card","Estimated project cost","summary-cost"],
+   [".project-summary-bom-section","Project BOM","summary-bom"],
+   [".project-summary-tools-section","Tools needed","summary-tools"]
+  ]){
+   const content=summary.querySelector(selector);if(!content)continue;
+   const section=window.BSUI.section({title:label,role});
+   const oldHeading=content.querySelector("h2");
+   const help=oldHeading?.parentElement.querySelector(".bs-help-button");
+   if(help)section.aside.append(help);
+   oldHeading?.remove();
+   content.classList.add("ui-summary-content");
+   content.before(section.root);section.body.append(content);
+  }
   load();
  })
 }

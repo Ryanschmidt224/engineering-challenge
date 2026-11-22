@@ -160,10 +160,9 @@
   // Personal step notes remain available without a separate feedback icon.
  }
  function insights(target,{project}){
-  const panel=node("details","build-confusion-insights");
-  const heading=node("summary","","Areas that need clarification");
-  const body=node("div","build-confusion-insights-body");
-  panel.append(heading,body);target.append(panel);
+  const section=window.BSUI.section({title:"Areas that need clarification",role:"summary-clarification"});
+  const panel=section.root;panel.classList.add("build-confusion-insights");
+  const body=section.body;body.classList.add("build-confusion-insights-body");target.append(panel);
   panel.addEventListener("toggle",async()=>{
    if(!panel.open)return;
    body.textContent="Loading feedback…";

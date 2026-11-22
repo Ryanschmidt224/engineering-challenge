@@ -62,7 +62,7 @@
  globalTooltip.setAttribute("role","tooltip");
  globalTooltip.hidden=true;
  document.body.append(globalTooltip);
- let activeTooltip=null;
+ let activeTooltip=null,pendingTooltip=null,tooltipTimer=null;
  const tooltipTarget=node=>{
   const el=node instanceof Element?node.closest("[data-bs-tooltip],[title]"):null;
   // This control already includes an interactive, built-in popover.
@@ -70,9 +70,10 @@
   return el;
  };
  const dismissTooltip=()=>{
+  clearTimeout(tooltipTimer);tooltipTimer=null;pendingTooltip=null;
   if(activeTooltip){
    const previous=activeTooltip.getAttribute("aria-describedby")||"";
-   const restored=previous.split(/\\s+/).filter(id=>id!==globalTooltip.id).join(" ");
+   const restored=previous.split(/\s+/).filter(id=>id!==globalTooltip.id).join(" ");
    if(restored)activeTooltip.setAttribute("aria-describedby",restored);
    else activeTooltip.removeAttribute("aria-describedby");
   }
@@ -116,11 +117,15 @@
  document.addEventListener("pointerover",event=>{
   if(event.pointerType==="touch")return;
   const target=tooltipTarget(event.target);
-  if(target)showTooltip(target);
+  if(!target||target===activeTooltip||target===pendingTooltip)return;
+  dismissTooltip();pendingTooltip=target;
+  // Passing over the page must not immediately cover the next control.
+  tooltipTimer=setTimeout(()=>{if(target.isConnected)showTooltip(target);},650);
  },true);
  document.addEventListener("pointerout",event=>{
-  if(!activeTooltip||!activeTooltip.contains(event.target))return;
-  if(event.relatedTarget instanceof Node&&activeTooltip.contains(event.relatedTarget))return;
+  const target=pendingTooltip||activeTooltip;
+  if(!target||!target.contains(event.target))return;
+  if(event.relatedTarget instanceof Node&&target.contains(event.relatedTarget))return;
   dismissTooltip();
  },true);
  document.addEventListener("focusin",event=>{
@@ -134,6 +139,7 @@
  document.addEventListener("keydown",event=>{
   if(event.key==="Escape")dismissTooltip();
  },true);
+ document.addEventListener("pointerdown",dismissTooltip,true);
  document.addEventListener("click",event=>{
   const target=tooltipTarget(event.target);
   if(!target)return;
