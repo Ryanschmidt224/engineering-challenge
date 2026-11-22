@@ -4,7 +4,7 @@ The owner's screenshots define the intended standard, rather than exact preserva
 
 ## This batch
 
-- A curated dead-rule pass removes 359 selectors and 49,202 bytes. Its first isolated commit passed all 226 Node and 48 browser tests. The parser preserves active branches of mixed selectors and leaves ambiguous pseudo-selector cases alone. `node scripts/prune-retired-css.mjs` is a non-writing, repeatable check; `--write` applies only the reviewed list.
+- A curated dead-rule pass removes 359 selectors and 49,202 bytes. Its first isolated commit passed all 226 Node and 48 browser tests. The parser preserves active branches of mixed selectors and leaves ambiguous pseudo-selector cases alone. `node scripts/prune-retired-css.mjs` reports without writing; `--check` fails if reviewed retired selectors remain, and is included in `npm run check`. `--write` applies only the reviewed list.
 - One header renderer and one header style serve Projects, Workshop, Knowledge and calculators, with matching branding, navigation order, current-page treatment and Account access.
 - The Projects toolbar uses shared control height, typography, padding and menu layout. Superseded header/toolbar rules are removed from legacy files rather than overridden.
 - Hover tooltips wait 650 ms, cancel on exit, pointer-down, scroll or Escape, and remain immediately available to keyboard users. Tree dragging help is on an explicit help control, rather than the whole row.

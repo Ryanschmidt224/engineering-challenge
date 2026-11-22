@@ -110,13 +110,13 @@ test("Account is reachable from the shared Workshop header", async ({page}) => {
 for (const width of [1440, 390]) test("shared section gaps across summary, assembly and part at " + width + "px", async ({page}, testInfo) => {
   await page.setViewportSize({width, height: 1000});
   async function gaps(root, roles) {
-    const boxes = [];
-    for (const role of roles) {
-      const section = root.locator('[data-section="' + role + '"]');
-      await expect(section).toBeVisible();
-      boxes.push(await section.boundingBox());
-    }
-    for(let i = 1; i < boxes.length; i++) expect(boxes[i].y - boxes[i - 1].y - boxes[i - 1].height, roles[i - 1] + " to " + roles[i]).toBeCloseTo(12, 0);
+    for (const role of roles) await expect(root.locator('[data-section="' + role + '"]')).toBeVisible();
+    // Read all rectangles in one layout snapshot; individual async reads can
+    // straddle startup scrolling or font/layout updates.
+    await expect.poll(() => root.evaluate((el, roles) => {
+      const boxes = roles.map(role => el.querySelector('[data-section="' + role + '"]').getBoundingClientRect());
+      return boxes.slice(1).map((box, i) => Math.round(box.top - boxes[i].bottom));
+    }, roles), {message: roles.join(" → ")}).toEqual(roles.slice(1).map(() => 12));
   }
   await page.goto("/#launcher");
   await gaps(page.locator("#launcher .project-summary-page"), ["summary-photos", "summary-description", "summary-cost"]);
