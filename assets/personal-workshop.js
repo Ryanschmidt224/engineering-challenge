@@ -556,17 +556,77 @@
      "use","caution","orderNotes","documentationUrl","notes"
     ]]
    ];
+   // Per-item table customization changes presentation, never the stable data keys.
+   const tableDraft=JSON.parse(JSON.stringify(item.tableLayout||{}));
+   const tableSections=tableDraft.sections||{};
+   const tableEditors={};
+   const currentTableLayout=()=>({sections:Object.fromEntries(
+    sections.map(([key])=>{
+     const editor=tableEditors[key],meta=tableSections[key]||{};
+     return [key,{
+      title:editor?.titleInput.value.trim()||meta.title||sections.find(s=>s[0]===key)[1],
+      labels:Object.fromEntries(Object.entries(editor?.labelInputs||{}).map(([name,input])=>
+       [name,input.value.trim()]).filter(([,value])=>value)),
+      rows:[...(editor?.customRows.children||[])].map(row=>({
+       id:row.dataset.id,
+       label:row.querySelector('[data-table-label]').value.trim(),
+       value:row.querySelector('[data-table-value]').value
+      })).filter(row=>row.label)
+     }];
+    })
+   )});
    const controls={};
    for(const [key,title,fields] of sections){
     const section=el("section",undefined,"workshop-part-editor-section");
     section.dataset.partEditorSection=key;
-    section.append(el("h3",title,"part-editor-section-heading"));
+    const meta=tableSections[key]||{};
+    const header=el("h3",undefined,"part-editor-section-heading");
+    const headingText=el("span",meta.title||title,"workshop-table-title-text");
+    const editTable=itemButton("Edit table",()=>toggleTableEdit(key),"btn workshop-edit-table");
+    editTable.type="button";header.append(headingText,editTable);
+    section.append(header);
     const fieldsGrid=el("div",undefined,"workshop-item-edit-grid");
+    const tableControls=el("div",undefined,"workshop-table-controls");
+    tableControls.hidden=true;
+    const titleInput=el("input",undefined,"field workshop-table-title-input");
+    titleInput.value=meta.title||title;titleInput.maxLength=100;
+    const titleLabel=el("label",undefined,"workshop-table-title-editor");
+    titleLabel.append(el("span","Section title"),titleInput);tableControls.append(titleLabel);
+    const labelInputs={};
+    const customRows=el("div",undefined,"workshop-table-custom-rows");
+    const addCustomRow=(record={})=>{
+     if(customRows.children.length>=30)return;
+     const row=el("div",undefined,"workshop-table-custom-row");
+     row.dataset.id=record.id||("row-"+crypto.randomUUID());
+     const label=el("input",undefined,"field");
+     label.dataset.tableLabel="";label.placeholder="Field name";label.maxLength=100;
+     label.value=record.label||"";
+     const value=el("input",undefined,"field");
+     value.dataset.tableValue="";value.placeholder="Value (optional)";value.maxLength=1000;
+     value.value=record.value||"";
+     const remove=itemButton("Remove",()=>row.remove(),"btn");
+     remove.type="button";row.append(label,value,remove);customRows.append(row);
+     return label;
+    };
+    for(const record of meta.rows||[])addCustomRow(record);
+    const addRow=itemButton("+ Add row",()=>addCustomRow()?.focus(),"btn");
+    addRow.type="button";addRow.classList.add("workshop-table-add-row");
+    const finishTable=itemButton("Done",()=>toggleTableEdit(key,false),"btn");
+    finishTable.type="button";
+    const rowActions=el("div",undefined,"workshop-table-actions");
+    rowActions.append(addRow,finishTable);
+    tableEditors[key]={section,headingText,editTable,tableControls,titleInput,labelInputs,customRows,addCustomRow,active:false};
+    tableControls.append(rowActions);
     for(const name of [...new Set(fields)]){
      const [labelText,type]=fieldDescriptors[name];
      const label=el("label",undefined,type==="textarea"?"workshop-edit-wide":"");
      if(key==="identity"&&(name==="partNumber"||name==="featureTreeDescription"))label.classList.add("workshop-identity-priority-field");
-     label.append(el("span",labelText));
+     const caption=el("span",meta.labels?.[name]||labelText);
+     label.append(caption);
+     const rename=el("input",undefined,"field workshop-table-rename");
+     rename.value=meta.labels?.[name]||labelText;rename.maxLength=100;rename.hidden=true;
+     rename.addEventListener("input",()=>{caption.textContent=rename.value.trim()||labelText});
+     labelInputs[name]=rename;
      const control=type==="textarea"?el("textarea"):el("input");
      if(type==="textarea")control.rows=3;else control.type=type;
      control.className="field";control.value=item[name]||"";
@@ -575,14 +635,37 @@
      control.placeholder=name==="name"?"Required":"Optional";
      if(name==="name")control.required=true;
      if(name==="featureTreeDescription")control.maxLength=20;
-     label.append(control);fieldsGrid.append(label);controls[name]=control;
+     label.append(control,rename);fieldsGrid.append(label);controls[name]=control;
 
     }
     // Shared AI action comes after all Product Identity fields, not between
     // the default container name and the item name.
     if(key==="identity")fieldsGrid.append(lookupActions);
-    section.append(fieldsGrid);grid.append(section);
+    section.append(fieldsGrid,tableControls,customRows);grid.append(section);
    }
+   let tableEditingAllowed=!viewOnly;
+   const toggleTableEdit=(key,force)=>{
+    const editor=tableEditors[key];
+    if(!editor||!tableEditingAllowed)return;
+    const active=force===undefined?!editor.active:force;
+    editor.active=active;
+    editor.tableControls.hidden=!active;
+    editor.editTable.textContent=active?"Editing table":"Edit table";
+    for(const [name,rename] of Object.entries(editor.labelInputs)){
+     rename.hidden=!active;
+     const field=controls[name]?.closest("label");
+     const caption=field?.querySelector("span");
+     if(caption)caption.hidden=active;
+    }
+    editor.titleInput.value=editor.titleInput.value||editor.headingText.textContent;
+    if(!active)editor.headingText.textContent=editor.titleInput.value.trim()||sections.find(section=>section[0]===key)[1];
+    editor.customRows.classList.toggle("workshop-table-editing",active);
+    for(const row of editor.customRows.children){
+     row.querySelector('[data-table-label]').readOnly=!active;
+     row.querySelector('[data-table-value]').readOnly=!tableEditingAllowed;
+     row.querySelector("button").hidden=!active;
+    }
+   };
    const classification=el("div",undefined,"workshop-item-classification");
    const addSelect=(labelText,values,value)=>{
     const label=el("label");
@@ -1107,7 +1190,7 @@
     event.preventDefault();
     if(!editingEnabled)return;
     const details={photos,specifications:storedSpecs(),genericFields:identityRadios.generic.checked?getGenericFields():[],
-     productSections:productBuilder?.getSections()||[]};
+     productSections:productBuilder?.getSections()||[],tableLayout:currentTableLayout()};
     for(const field of saveableFields)if(controls[field])details[field]=controls[field].value;
     details.kind=kind.value;details.category=category.value;
     details.productIdentity=identityRadios.generic.checked?"generic":"specific";
@@ -1133,6 +1216,21 @@
    // Save or Cancel returns to the read-only view without moving sections.
    const setEditing=editing=>{
     editingEnabled=editing;
+    tableEditingAllowed=editing;
+    for(const [key,editor] of Object.entries(tableEditors)){
+     editor.active=false;
+     editor.tableControls.hidden=true;
+     editor.editTable.hidden=!editing;
+     editor.editTable.textContent="Edit table";
+     editor.customRows.classList.remove("workshop-table-editing");
+     editor.headingText.textContent=editor.titleInput.value.trim()||sections.find(section=>section[0]===key)[1];
+     for(const [name,rename] of Object.entries(editor.labelInputs)){
+      rename.hidden=true;
+      const caption=controls[name]?.closest("label")?.querySelector("span");
+      if(caption)caption.hidden=false;
+     }
+     for(const row of editor.customRows.children)row.querySelector("button").hidden=true;
+    }
     form.classList.toggle("is-readonly",!editing);
     form.classList.toggle("is-editing",editing);
     for(const control of form.querySelectorAll("input,textarea,select")){
