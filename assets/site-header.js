@@ -23,7 +23,7 @@ export function initSiteHeader() {
   inner.append(brand, nav, account); header.append(inner);
   const update = () => {
     const route = location.hash.slice(1);
-    const current = projectPage ? (["learn", "calculators"].includes(route) ? "calculators" : "home") : header.dataset.siteHeader;
+    const current = projectPage ? (route === "calculators" ? "calculators" : "home") : header.dataset.siteHeader;
     for (const item of nav.children) item.dataset.page === current ? item.setAttribute("aria-current", "page") : item.removeAttribute("aria-current");
   };
   update(); window.addEventListener("hashchange", update);

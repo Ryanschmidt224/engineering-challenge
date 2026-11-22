@@ -64,7 +64,7 @@ test("project feature tree and workspace initialize without browser errors", asy
  await page.goto("/");
  const initialTree=page.locator("#launcher .assembly-tree-nodes");
  await expect(initialTree.locator(".assembly-name")).toHaveCount(2);
- await page.locator('.project-link[data-nav="launcher"]').click();
+ await page.locator('.project-link[data-project="launcher"]').click();
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
  const screen=page.locator("#launcher .assembly-bom-screen");
  const tree=page.locator("#launcher .assembly-tree-nodes");
@@ -215,6 +215,7 @@ test("new custom part retains explicit project numbering without confusing it wi
 });
 
 test("new assembly offers automatic or manually entered part numbers",async({page})=>{
+ await page.route("**/api/**",route=>route.fulfill({json:apiResponse(route,{user:{id:"assembly-fixture",role:"admin"},nodes:[],components:[],photos:[],workspace:{recipe:[],resources:{tools:[],parts:[],calculators:[]}}})}));
  await page.goto("/");
  const dialog=page.locator("#launcher ~ .assembly-create-dialog").first();
  // Dialogs are mounted at document level, outside the project view.
@@ -243,7 +244,7 @@ test("linear and robot projects share the complete feature tree, summary, BOM an
   else if(u.pathname==="/api/components")data={components:[]};
   else if(u.pathname==="/api/photos")data={photos:[]};
   else if(u.pathname==="/api/workspace")data={workspace:{recipe:[],resources:{tools:[],parts:[],calculators:[]}},revision:"test"};
-  else if(u.pathname==="/api/projects")data={projects:[]};
+  else if(u.pathname==="/api/projects")data={};
   else if(u.pathname==="/api/accounts")data={user:null};
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
@@ -294,7 +295,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/");
- await page.locator('.project-link[data-nav="launcher"]').click();
+ await page.locator('.project-link[data-project="launcher"]').click();
  const sidebar=page.locator("#launcher .assembly-sidebar");
  await expect(sidebar.locator(".assembly-rename")).toBeHidden();
  await expect(sidebar.locator(".assembly-add")).toBeHidden();
@@ -565,7 +566,7 @@ test("Workshop and Document tree filters operate independently",async({page})=>{
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/");
- await page.locator('.project-link[data-nav="launcher"]').click();
+ await page.locator('.project-link[data-project="launcher"]').click();
  const tree=page.locator("#launcher .assembly-tree-nodes");
  const controls=page.locator("#launcher .assembly-tree-filters");
  await expect(controls).toBeVisible();
@@ -616,7 +617,7 @@ test("saving a part closes the moved editor and restores part workspace",async({
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/");
- await page.locator('.project-link[data-nav="launcher"]').click();
+ await page.locator('.project-link[data-project="launcher"]').click();
  const motorRow=page.locator("#launcher .assembly-tree-nodes .assembly-node",{hasText:"Motor Control"});
  await expect(motorRow).toBeVisible();
  await motorRow.locator(".assembly-expander").click();
@@ -769,7 +770,7 @@ test("documents can be hidden independently in feature tree and BOM",async({page
   else if(u.pathname==="/api/components")data={components};
   else if(u.pathname==="/api/photos")data={photos:[]};
   else if(u.pathname==="/api/workspace")data={workspace:{recipe:[],resources:{tools:[],parts:[],calculators:[]}},revision:"one"};
-  else if(u.pathname==="/api/projects")data={projects:[]};
+  else if(u.pathname==="/api/projects")data={};
   else if(u.pathname==="/api/accounts")data={user:null};
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
@@ -858,7 +859,7 @@ test("project navigation orders summary below tree and page notes can be created
   }else if(url.pathname==="/api/components")data={components:[]};
   else if(url.pathname==="/api/tree")data={nodes:[],revision:"test"};
   else if(url.pathname==="/api/workspace")data={workspace:{recipe:[],resources:[]},revision:"test"};
-  else if(url.pathname==="/api/projects")data={projects:[]};
+  else if(url.pathname==="/api/projects")data={};
   else if(url.pathname==="/api/auth")data={authenticated:false,isAdmin:false};
   else if(url.pathname==="/api/accounts")data={user:null};
   else if(url.pathname==="/api/commonparts"||url.pathname==="/api/purchased-parts")data={parts:[]};

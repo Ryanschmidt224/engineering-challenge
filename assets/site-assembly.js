@@ -3,9 +3,9 @@
  * Loaded before assets/site.js; setupAssemblyTrees() is called from site.js
  * after shared application globals are initialized. Existing APIs and IDs are unchanged.
  */
-// Project assembly trees are public; editing requires administrator login.
+// Project assembly trees are private and editable through the owner session.
 const assemblySelections={};
-// Public tree snapshots let each assembly BOM roll up all descendant parts.
+// Tree snapshots let each assembly BOM roll up all descendant parts.
 const assemblyTreeSnapshots={};
 function setupAssemblyTrees(){
  document.querySelectorAll("[data-assembly-tree]:not([data-tree-ready])").forEach(root=>{

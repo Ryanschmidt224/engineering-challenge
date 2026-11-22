@@ -3006,12 +3006,12 @@
   height: auto;
 }
 
-#learn .bs-catalog-main #tileList.grid.two {
+.calculators-view .bs-catalog-main #tileList.grid.two {
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
 }
 
-#learn .bs-catalog-main .resource-grid {
+.calculators-view .bs-catalog-main .resource-grid {
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 }
 
@@ -3084,7 +3084,7 @@ body > .footer {
   margin-top: auto;
 }
 
-:is(#home, #learn, #commonparts) > .wrap.section {
+:is(#home, .calculators-view, #commonparts) > .wrap.section {
   width: min(100%, 1840px);
   max-width: none;
   padding: 30px clamp(20px, 2.5vw, 46px) 48px;
@@ -3096,17 +3096,17 @@ body > .footer {
   padding-inline: clamp(20px, 2.5vw, 46px);
 }
 
-:is(#home, #learn, #commonparts) .bs-catalog-layout {
+:is(#home, .calculators-view, #commonparts) .bs-catalog-layout {
   grid-template-columns: clamp(218px, 17vw, 278px) minmax(0, 1fr);
   gap: clamp(22px, 2vw, 38px);
   margin-top: 24px;
 }
-:is(#home, #learn, #commonparts) .bs-catalog-sidebar {
+:is(#home, .calculators-view, #commonparts) .bs-catalog-sidebar {
   padding-right: 18px;
   top: 81px;
   max-height: calc(100vh - 96px);
 }
-:is(#home, #learn, #commonparts) .bs-catalog-main {
+:is(#home, .calculators-view, #commonparts) .bs-catalog-main {
   width: 100%;
   max-width: none;
 }
@@ -3157,18 +3157,18 @@ body > .footer {
 #home .bs-catalog-layout .project-card {
   border-radius: var(--radius-large);
 }
-#learn .knowledge-header {
+.calculators-view .knowledge-header {
   margin: 0;
 }
-#learn .knowledge-header h1 {
+.calculators-view .knowledge-header h1 {
   font-size: clamp(2.25rem, 3vw, 3.1rem);
 }
-#learn .bs-catalog-main #tileList.grid.two {
+.calculators-view .bs-catalog-main #tileList.grid.two {
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: var(--space-4);
 }
 
-#learn .bs-catalog-main #resource-calculators.resource-grid {
+.calculators-view .bs-catalog-main #resource-calculators.resource-grid {
   grid-template-columns: repeat(auto-fit, minmax(335px, 1fr));
   gap: var(--space-4);
 }
@@ -3194,7 +3194,7 @@ body > .footer {
   font-size: var(--text-small);
 }
 @media (max-width: 1050px) {
-  :is(#home, #learn, #commonparts) .bs-catalog-layout {
+  :is(#home, .calculators-view, #commonparts) .bs-catalog-layout {
     grid-template-columns: 205px minmax(0, 1fr);
     gap: var(--space-5);
   }
@@ -3202,19 +3202,19 @@ body > .footer {
     width: 180px;
     flex-basis: 180px;
   }
-  #learn .bs-catalog-main #tileList.grid.two {
+  .calculators-view .bs-catalog-main #tileList.grid.two {
     grid-template-columns: 1fr;
   }
 }
 @media (max-width: 800px) {
-  :is(#home, #learn, #commonparts) > .wrap.section {
+  :is(#home, .calculators-view, #commonparts) > .wrap.section {
     padding: 22px 16px 36px;
   }
-  :is(#home, #learn, #commonparts) .bs-catalog-layout {
+  :is(#home, .calculators-view, #commonparts) .bs-catalog-layout {
     display: block;
     margin-top: 16px;
   }
-  :is(#home, #learn, #commonparts) .bs-catalog-sidebar {
+  :is(#home, .calculators-view, #commonparts) .bs-catalog-sidebar {
     position: static;
     max-height: none;
     overflow: visible;
@@ -3239,7 +3239,7 @@ body > .footer {
     display: block;
     min-height: 0;
   }
-  #learn .bs-catalog-main #resource-calculators.resource-grid {
+  .calculators-view .bs-catalog-main #resource-calculators.resource-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -3566,35 +3566,35 @@ body > .footer {
 /* Edge-aligned desktop navigation and near full-width top-level catalogs.
    Assembly/workspace editing pages keep their own constrained layouts. */
 @media (min-width: 801px) {
-  :is(#home, #learn, #commonparts) > .wrap.section {
+  :is(#home, .calculators-view, #commonparts) > .wrap.section {
     box-sizing: border-box;
     width: 100%;
     max-width: none;
     margin: 0;
     padding: 20px clamp(12px, 1.35vw, 28px) 42px;
   }
-  :is(#home, #learn, #commonparts) .bs-catalog-layout {
+  :is(#home, .calculators-view, #commonparts) .bs-catalog-layout {
     width: 100%;
     margin-top: 16px;
     grid-template-columns: clamp(205px, 15vw, 250px) minmax(0, 1fr);
     gap: clamp(12px, 1.35vw, 24px);
   }
-  :is(#home, #learn, #commonparts) .bs-catalog-sidebar {
+  :is(#home, .calculators-view, #commonparts) .bs-catalog-sidebar {
     padding-right: 12px;
   }
-  :is(#home, #learn, #commonparts) .bs-catalog-category {
+  :is(#home, .calculators-view, #commonparts) .bs-catalog-category {
     padding-left: 6px;
   }
-  :is(#home, #learn, #commonparts) .bs-catalog-main {
+  :is(#home, .calculators-view, #commonparts) .bs-catalog-main {
     min-width: 0;
   }
   #home .project-index,
-  #learn .knowledge-base-page {
+  .calculators-view .knowledge-base-page {
     max-width: none;
   }
 }
 @media (min-width: 1500px) {
-  :is(#home, #learn, #commonparts) > .wrap.section {
+  :is(#home, .calculators-view, #commonparts) > .wrap.section {
     padding-inline: 20px;
   }
 }

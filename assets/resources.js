@@ -378,7 +378,7 @@
     for(const id of refs[kind]){
      const row=element("div","linked-resource-row");
      row.append(element("span","",label(kind,id)));
-     const target=kind==="calculators"?"learn":"commonparts";
+     const target=kind==="calculators"?"calculators":"commonparts";
      const open=element("button","btn","Open");open.type="button";open.onclick=()=>{
       location.hash=target;
       if(kind==="tools"){

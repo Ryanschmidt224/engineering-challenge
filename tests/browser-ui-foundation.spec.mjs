@@ -207,3 +207,25 @@ test("one project template supports built-in and new project routes without dupl
   const duplicateIDs=await page.locator("[id]").evaluateAll(nodes=>nodes.map(node=>node.id).filter((id,index,all)=>all.indexOf(id)!==index));
   expect(duplicateIDs).toEqual([]);
 });
+
+test("Calculators uses its own route and preserves the existing calculation forms",async({page})=>{
+ await page.goto("/#home");
+ await page.getByRole("button",{name:"Calculators",exact:true}).click();
+ await expect(page).toHaveURL(/#calculators$/);
+ await expect(page.locator("#calculators")).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Calculators",exact:true})).toBeVisible();
+ await expect(page.locator("#resource-calculators .resource-card")).toHaveCount(3);
+ await page.getByLabel("Voltage (V)",{exact:true}).fill("12");
+ await page.getByLabel("Resistance (Ω)",{exact:true}).fill("6");
+ await expect(page.locator(".calculator-output").filter({hasText:"Current"})).toHaveText("Current 2 A · Power 24 W");
+ await expect(page.locator(".ui-site-nav__item[aria-current=page]")).toHaveText("Calculators");
+});
+
+
+test("an empty owner catalog does not instantiate hidden built-in projects",async({page})=>{
+ await page.route("**/api/projects",route=>route.fulfill({json:{projects:[]}}));
+ await page.goto("/#home");
+ await expect(page.locator(".project-directory-empty")).toBeVisible();
+ await expect(page.locator(".project-grid > .project-card")).toHaveCount(0);
+ await expect(page.locator("#launcher,#linear,#robot")).toHaveCount(0);
+});
