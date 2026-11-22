@@ -207,3 +207,8 @@ The old learn view is removed: Calculators now uses #calculators, including link
 Part information batch (6.3–6.5): reference/selected-product information and project-owned information now use the same static shared tile and field-row helpers. The rendering is extracted from site-assembly.js into part-information.js, loaded through a literal dynamic import. Purpose saves, alternative selection, supplier links and project annotations retain existing API protection. D1 projections expose product facts and project requirements separately; false, zero and hidden stored values are retained. No stored data changes or deletions. Full part-page rebuilding remains incomplete.
 
 Workshop/Knowledge pane batch: categories/families/details and tiles/details now have shared accessible resizers, per-browser remembered widths, a reset gesture and responsive stacked layouts. Existing category actions, searches and detail forms keep their DOM and handlers. Preferences contain only numeric widths; there is no API, schema, engineering-data or backup-format change.
+
+
+## Rewrite preparation (Batch 0)
+
+The approved D1 plan and first custom-part acceptance flows are in `HISTORY_REWRITE_PLAN.md` and `BATCH0_CUSTOM_PART_SPEC.md`. No legacy project feature is marked Rebuilt by this preparation. Section 10 legacy Workshop editors for common/purchased parts are no longer called from the browser; current family/product Workshop and the server reference catalogue remain. Current project data is untouched. Preview engine work must pass the real-D1 transaction gate before dependent flows are built.

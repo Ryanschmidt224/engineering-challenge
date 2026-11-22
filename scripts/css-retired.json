@@ -358,6 +358,8 @@
     "workspace-photo-meta",
     "workspace-photo-title",
     "workspace-project-settings",
-    "workspace-tool-controls"
+    "workspace-tool-controls",
+    "workshop-purchase-item",
+    "workshop-purchase-actions"
   ]
 }

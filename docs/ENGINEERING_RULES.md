@@ -75,7 +75,7 @@ To add (proposed, in this order):
 1. **Completed: strict CSS class-producer check.** Unmatched classes fail CI unless covered by an explicit code-built pattern. Literal matches remain conservative static evidence. The original candidate count was reviewed before removal.
 2. **No ID selectors or `!important` in any non-legacy CSS file** (zero, not "no increase").
 3. **Breakpoint check:** migrated CSS uses the documented literal media-query values from `theme.css`; do not require unsupported `var()` syntax.
-4. **JS size check:** fail if a non-legacy JS file exceeds 40 KB, or a legacy JS file grows (hash or size baseline like the CSS one).
+4. **Completed: JS size check** (`scripts/check-js.mjs`, `scripts/js-baseline.json`): fail if a non-legacy JS file exceeds 40 KB, or a legacy JS file grows (hash or size baseline like the CSS one).
 5. **Unloaded-file check:** fail if an `assets/*.js` or `*.css` file is not referenced by any page or module. Today `work-tracker.js` and `site-components.js` fail this.
 6. **CSS budget per page:** fail if the stylesheets a page loads exceed its budget.
 7. **`innerHTML` guard:** fail on `innerHTML` assignments in new modules, except a reviewed allowlist of static templates.
@@ -117,5 +117,5 @@ The legacy main page (projects, assembly, part, work instructions, history, phot
 ## 8. Documentation hygiene
 
 - `docs/` holds **current** truth: rules, architecture, data model, UI standards, feature inventory, runbooks.
-- Dated reviews, progress notes and handoffs are not kept as permanent docs. Fold anything still true into the current docs and delete the rest; Git keeps history. Candidates today: `INFRASTRUCTURE_REVIEW_20261120.md`, `PRELAUNCH_STATUS.md`, `FAMILY_WORKSHOP_PROGRESS.md`, `FUNCTIONAL_PARTS_ROLLBACK.md`, `WORKSHOP_RELEASE.md`.
+- Dated reviews, progress notes and handoffs are not kept as permanent docs. Fold anything still true into the current docs and delete the rest; Git keeps history. The dated infrastructure/prelaunch/Workshop/functional-part/CSS progress notes were folded into the current codebase guide and UI standards. Git retains their original versions.
 - `docs/CODEBASE_GUIDE.md` is updated as each area is rebuilt, so it always describes the code as it is.

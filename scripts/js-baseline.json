@@ -1,0 +1,42 @@
+{
+  "legacy": {
+    "assets/archive-check.js": 2251,
+    "assets/archive-layout.js": 1771,
+    "assets/attachment-types.js": 1516,
+    "assets/bom-model.js": 4241,
+    "assets/bom-purchasing.js": 4340,
+    "assets/catalog-ui.js": 3648,
+    "assets/dialog-system.js": 14405,
+    "assets/drawings.js": 7603,
+    "assets/edit-conflicts.js": 4478,
+    "assets/engineering-core.js": 4377,
+    "assets/entry-editor.js": 1830,
+    "assets/investigations.js": 53325,
+    "assets/library-part-picker.js": 6530,
+    "assets/local-project.js": 4615,
+    "assets/part-code.js": 10367,
+    "assets/part-fields.js": 11857,
+    "assets/part-files.js": 5112,
+    "assets/part-suppliers.js": 6708,
+    "assets/parts-management.js": 21253,
+    "assets/photo-editor.js": 6347,
+    "assets/photo-markup.js": 20031,
+    "assets/photo-viewer.js": 2477,
+    "assets/product-lookup.js": 13513,
+    "assets/project-manager.js": 29997,
+    "assets/project-milestones.js": 12592,
+    "assets/project-readable-backup.js": 6642,
+    "assets/recipe-editor.js": 19510,
+    "assets/resources.js": 48127,
+    "assets/site-assembly.js": 236523,
+    "assets/site.js": 23771,
+    "assets/transient-status.js": 504,
+    "assets/ui-kit.js": 4489,
+    "assets/unstructured-notes.js": 8969,
+    "functions/api/components.js": 55817
+  },
+  "dataModules": {
+    "functions/api/workshop-seed.js": "Declarative seeded catalog; not an application controller."
+  },
+  "maximumModuleBytes": 40000
+}

@@ -12,7 +12,7 @@ PR #33 merged at `f47a4d5342a080c8765f8e3a984a94ce5115d007`. Cloudflare producti
 
 The new D1 schema, editable starter catalog (33 categories / 60 families / 233 fields), family/product/use UI, project projections, private uploads and verified streaming exports are implemented. The retired template/Builder/inventory interfaces and mutation handlers are removed. Existing project-only part creation remains available. No live data has been deleted.
 
-198 Node tests and 22 browser workflows passed at source head `9902587be788f8c7dd5b8f6d790b6a179762668e`; Cloudflare also built its branch preview successfully. The initial browser fixture/numbering assertions were corrected before this result. Actual production build/version and live verification are tracked on PR #35; this source document alone is not proof of deployment. See `docs/WORKSHOP_RELEASE.md` for exact limits, backup scope and rollback.
+198 Node tests and 22 browser workflows passed at source head `9902587be788f8c7dd5b8f6d790b6a179762668e`; Cloudflare also built its branch preview successfully. The initial browser fixture/numbering assertions were corrected before this result. Actual production build/version and live verification are tracked on PR #35; this source document alone is not proof of deployment. See `docs/CODEBASE_GUIDE.md` for exact limits, backup scope and rollback.
 
 The CSS writeup is applied to the new Workshop foundation: shared geometry/tokens, common controls, minimum touch sizes, phone layouts and CI guardrails. The broad legacy cascade rewrite is deferred. The three existing override files are frozen; new important/project-ID escalation is rejected.
 

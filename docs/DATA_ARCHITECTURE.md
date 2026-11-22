@@ -1,5 +1,7 @@
 # Building Schmidt — data architecture contract (draft v1)
 
+> **Superseded target design.** New project-engine work follows `HISTORY_REWRITE_PLAN.md` and `BATCH0_CUSTOM_PART_SPEC.md`. The old offline/public/multi-user assumptions below are historical, not requirements. Current behavior is in `CODEBASE_GUIDE.md`; no project data may be deleted before the approved cutover gate.
+
 > **Superseded product assumptions:** consult `../STATUS.md` for the private, single-owner Cloudflare direction. Local/desktop adapters, public publishing and multi-tenant scopes in this historical draft are no longer requirements. The owner permits discarding existing placeholder application records, so a clean D1 start does not require a legacy-data migration layer. No live deletion is performed without a verified independent backup.
 
 Status: approved direction; **no destructive migration is authorized by this document**.

@@ -158,3 +158,24 @@ All built-in and newly created projects use project-workspace-template in index.
 Part details use assets/part-information.js (an ES module dynamically imported by the assembly controller) and the shared BSUI informationPanel/fieldRow helpers. The module owns presentation and receives the existing revision-checked write callback. assets/family-model.js derives separate Workshop and project specification rows while preserving the existing combined projection for BOM/historical readers. These view fields are not persisted or migrated.
 
 Workshop and Knowledge explicitly initialize assets/split-panes.js from their page modules. Page CSS defines responsive grid tracks and default list widths; ui-kit.css owns the divider, theme.css its shared bounds. Width preferences are localStorage presentation settings, never server data. ResizeObserver and breakpoint listeners clamp effective widths while retaining preferences across viewport changes.
+
+
+## Approved project-engine replacement
+
+The current production project engine remains R2-backed. `HISTORY_REWRITE_PLAN.md` and `BATCH0_CUSTOM_PART_SPEC.md` define the approved D1 replacement and its gates; they do not claim it is implemented. Initial scope is one project root and custom parts. Workshop integration, nested assemblies, purchasing, markup, code and harness follow later. The preview flag must never be set in production until the owner approves cutover.
+
+The legacy `resources.js` server import still supplies reference definitions and link IDs. Its browser no longer calls the retired common-parts or purchased-parts routes, or mounts their abandoned editors. Wire/harness and calculator/reference readers remain until their planned replacement. The legacy JS size baseline prevents adding more features to frozen controllers; rebuilt modules stay below 40,000 bytes. The declarative Workshop seed is an explicit data-file exception.
+
+The legacy functional-part model remains in `functions/api/functional-part-model.js`: a stable requirement/number and a selected physical implementation. Purpose and project tree labels remain project-owned; changing the selected physical implementation must not change the number or instructions. Number sequences reserve 1–99 for assemblies and start parts at 100. Legacy compatibility is temporary and is not a requirement to reproduce its obsolete fields in the new engine.
+
+## Recovery and release operations
+
+Production uses `WORKSHOP_DB` for Workshop/Knowledge and `PHOTOS` for project data/files. Branch previews must use `building-schmidt-workshop-preview` and `building-schmidt-photos-preview`. Never point QA at production. D1 migrations are append-only; retain databases and R2 bytes across code rollbacks.
+
+Export Workshop to NDJSON and verify with `node scripts/workshop-backup.mjs <file>`. The verifier checks bytes and checksums, not just record counts. A project export must also include its linked dependencies and newer namespaces. Neither Git nor a same-bucket weekly snapshot is independent data recovery. Scheduled success, edge throttling and Cloudflare Access require separate infrastructure verification; passing local tests does not establish any of them.
+
+Before a release, require all checks at the exact PR head and verify Cloudflare's production build after merging. Test owner login, direct anonymous denial, catalog/part reopen, files and export. If a release regresses, stop edits and verify exports before a data-affecting reversal. Roll back code to the immediately preceding authenticated healthy release; retain bindings, D1 rows and R2 files. A former UI may temporarily hide D1 uses. Never reseed/delete a database or reopen registration/paid AI to get a green deployment. The historical pre-functional-parts checkpoint `b1d628794e8944dc7eef0e726f71f98db18f36ec` on `backup-before-functional-parts-2026-11-20` is a source reference, not the recommended current security rollback and not a data backup.
+
+Outstanding legacy risks to verify during replacement: finite embedded instruction-history windows; uneven stale-form guards; non-transactional multi-object saves/number allocation; archive coverage and concurrent export consistency; upload-versus-save format validation; login resource limits; private static serving across all hostnames. Prior dated audits described older code and test failures, not current measured production state. Use current code and tests to establish each risk before changing it.
+
+The family Workshop owns category → family → optional product → project use. Hidden fields keep values; populated field type/unit changes are refused; zero and false are values. Project requirements remain separate from product facts. Seed data is catalog definitions only, not user products or inventory. Its former release/progress documents are superseded by this guide, the architecture and current tests.
