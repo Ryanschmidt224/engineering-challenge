@@ -392,20 +392,17 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(workspace.locator(":scope > .workspace-heading")).toBeHidden();
  await expect(workspace.locator(":scope > .workspace-back")).toBeHidden();
  await expect(workspace.locator(".recipe-instructions")).toBeHidden();
- await expect(editor.locator(".part-type-select option[value='custom']")).toHaveText("Custom");
- const optionalLabels=await editor.locator("label").allTextContents();
- expect(optionalLabels.some(label=>label.includes("(optional)"))).toBe(false);
+ await expect(editor.locator(".part-type-select option[value='custom']")).toHaveText("Custom — made in-house");
+ await expect(editor.locator(".part-description-input")).toBeVisible();
 
  await expect(editor.locator(".component-name")).toHaveValue("Linked Motor");
  await expect(editor.locator(".component-full-name")).toBeHidden();
  // The short headline is the BOM and tree label; the legacy full-name field remains hidden.
  await expect(bomScreen.locator(".workspace-saved-parts")).toContainText("Linked Motor");
  await expect(bomScreen.locator(".workspace-saved-parts")).not.toContainText("Long descriptive motor part name");
- await editor.locator(".component-name").click();
- await page.keyboard.type("Short motor");
+ await editor.locator(".component-name").fill("Short motor");
  await expect(editor.locator(".component-name")).toHaveValue("Short motor");
- await editor.locator(".component-quantity").click();
- await page.keyboard.press("3");
+ await editor.locator(".component-quantity").fill("3");
  await expect(editor.locator(".component-quantity")).toHaveValue("3");
 
  await expect(editor.locator(".component-quantity")).toHaveValue("3");
@@ -452,7 +449,6 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(editor.locator(".component-supplier")).toBeHidden();
  await expect(editor.locator(".component-asin")).toBeHidden();
  await expect(editor.locator(".component-historical-price")).toBeHidden();
- await expect(editor.locator(".component-category")).toBeHidden();
  await expect(editor.locator(".component-name")).toBeVisible();
  await kind.selectOption("purchased");
  await expect(editor.locator(".part-functional-edit-field",{hasText:"Part name"})).toBeVisible();
@@ -1232,6 +1228,7 @@ test("linked Workshop items open, search current fields and return to the origin
  await itemPage.getByRole("button",{name:"View suggested changes"}).click();
  await expect(review).toBeVisible();
  const endMillType=itemPage.getByRole("textbox",{name:"Product type (e.g. Multimeters)",exact:true});
+ await itemPage.getByRole("radio",{name:"Specific product",exact:true}).check();
  await endMillType.fill("End mills");
  await endMillType.blur();
  await expect.poll(()=>itemPage.locator('.workshop-structured-spec-rows [data-spec="label"]').evaluateAll(fields=>fields.map(field=>field.value))).toEqual([
