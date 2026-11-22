@@ -2,43 +2,12 @@
 // Reference IDs and authored defaults remain in assets/resources.js.
 import {isAdmin} from "./auth.js";
 import {accountUser} from "./accounts.js";
+import {cleanLayout,cleanProductSections,cleanGenericFields,workshopCategories} from "./workshop-template-schema.js";
 import {normalizeSpecifications} from "./workshop-specifications.js";
 const indexKey="workshop-reference-overrides/v1.json";
 const photoKey=id=>"workshop-reference-photos/"+id;
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json","cache-control":"no-store","x-content-type-options":"nosniff"}});
 const fields={genericParentId:110,productIdentity:12,name:180,subtitle:240,featureTreeDescription:20,spec:5000,use:3000,caution:3000,manufacturer:160,model:160,partNumber:160,supplier:160,supplierPartNumber:160,supplierUrl:1200,asin:20,price:80,packageQuantity:80,orderNotes:2000,documentationUrl:1200,notes:5000,category:40,kind:20,familyId:100,familyName:120,typeName:120};
-// Flexible Product Builder data remains item-owned. Field IDs are stable across
-// reorderings; no values are inherited from related generic/specific products.
-const validBuilderId=id=>/^[a-zA-Z0-9_-]{1,64}$/.test(String(id||""));
-function cleanProductSections(raw){
- if(raw===undefined)return [];
- if(!Array.isArray(raw)||raw.length>16)return null;
- const sections=[],ids=new Set(),fieldIds=new Set();
- for(const part of raw){
-  if(!part||typeof part!=="object"||!validBuilderId(part.id)||ids.has(part.id)||
-   typeof part.title!=="string"||part.title.trim().length>100||
-   !Array.isArray(part.fields)||part.fields.length>30)return null;
-  ids.add(part.id);
-  const fields=[];
-  for(const f of part.fields){
-   if(!f||typeof f!=="object"||!validBuilderId(f.id)||fieldIds.has(f.id)||
-    typeof f.label!=="string"||!f.label.trim()||f.label.length>100||
-    !["text","number","select","checkbox","photo","link"].includes(f.type)||
-    !["workshop","project"].includes(f.scope)||
-    (f.unit!==undefined&&(typeof f.unit!=="string"||f.unit.length>32))||
-    (f.value!==undefined&&(typeof f.value!=="string"||f.value.length>1200))||
-    (f.options!==undefined&&(!Array.isArray(f.options)||f.options.length>30||
-     f.options.some(o=>typeof o!=="string"||o.length>100))))return null;
-   fieldIds.add(f.id);
-   fields.push({id:f.id,label:f.label.trim(),type:f.type,scope:f.scope,
-    unit:String(f.unit||"").trim(),value:f.scope==="workshop"?String(f.value||"").trim():"",
-    options:Array.isArray(f.options)?f.options.map(o=>o.trim()).filter(Boolean):[]});
-  }
-  sections.push({id:part.id,title:part.title.trim()||"Untitled section",fields});
- }
- if(fieldIds.size>120)return null;
- return sections;
-}
 const validId=id=>/^workshop:[a-z0-9-]{2,100}$/.test(String(id||""));
 const validUrl=url=>!url||/^https:\/\//i.test(url);
 async function read(env){
@@ -119,7 +88,7 @@ export async function onRequest({request,env}){
   }
   if(patch.kind&&!["tool","equipment","component","material","other"].includes(patch.kind))
    return json({error:"Invalid item type"},400);
-  if(patch.category&&!["tools","consumables","electronics","hardware","safety","electrical-power","electrical-controllers","electrical-sensors","electrical-switching","electrical-basic","electrical-wiring","electrical-motors","electrical-displays","tools-measurement","tools-making","consumables-assembly","consumables-general","hardware-fasteners","hardware-materials"].includes(patch.category))
+  if(patch.category&&!workshopCategories.has(patch.category))
    return json({error:"Invalid Workshop category"},400);
   if(patch.productIdentity&&!["generic","specific"].includes(patch.productIdentity))return json({error:"Invalid product identity"},400);
   if(patch.genericParentId&&(!validId(patch.genericParentId)||patch.genericParentId===body.id))
@@ -154,57 +123,12 @@ export async function onRequest({request,env}){
   patch.specifications=specifications;
   // Names and units are templates. Values are supplied by each project, never
   // written to the shared Workshop record through this field.
-  const rawGenericFields=body.details.genericFields??[];
-  if(!Array.isArray(rawGenericFields)||rawGenericFields.length>40)return json({error:"Generic component fields must be a list of up to 40 fields"},400);
-  const seenGeneric=new Set();
-  const genericFields=[];
-  for(const entry of rawGenericFields){
-   if(!entry||typeof entry!=="object"||Array.isArray(entry)||typeof entry.label!=="string"||
-      (entry.unit!==undefined&&typeof entry.unit!=="string"))
-    return json({error:"Invalid generic component field"},400);
-   const label=entry.label.trim().slice(0,100),unit=String(entry.unit||"").trim().slice(0,32);
-   if(!label)continue;
-   const key=label.toLowerCase();
-   if(seenGeneric.has(key))continue;
-   seenGeneric.add(key);genericFields.push({label,unit});
-  }
+  const genericFields=cleanGenericFields(body.details.genericFields);
+  if(!genericFields)return json({error:"Invalid generic component fields"},400);
   patch.genericFields=genericFields;
-  // Presentation metadata is owned by this Workshop item. Never rename stable keys.
-  const rawLayout=body.details.tableLayout||{};
-  if(!rawLayout||typeof rawLayout!=="object"||Array.isArray(rawLayout))
-   return json({error:"Invalid table layout"},400);
-  const sectionKeys=["identity","ordering","characteristics","notes"];
-  const layoutSections={};
-  for(const key of sectionKeys){
-   const entry=rawLayout.sections?.[key]||{};
-   if(!entry||typeof entry!=="object"||Array.isArray(entry))
-    return json({error:"Invalid table section"},400);
-   const labels={};
-   if(entry.labels&&(!entry.labels||typeof entry.labels!=="object"||Array.isArray(entry.labels)))
-    return json({error:"Invalid field labels"},400);
-   for(const [name,label] of Object.entries(entry.labels||{})){
-    if(!/^[a-zA-Z][a-zA-Z0-9]{0,50}$/.test(name)||typeof label!=="string")
-     return json({error:"Invalid table field label"},400);
-    labels[name]=label.trim().slice(0,100);
-   }
-   if(entry.rows!==undefined&&(!Array.isArray(entry.rows)||entry.rows.length>30))
-    return json({error:"Invalid custom table rows"},400);
-   const rows=[];
-   for(const row of entry.rows||[]){
-    if(!row||typeof row!=="object"||Array.isArray(row)||typeof row.label!=="string"||typeof row.value!=="string")
-     return json({error:"Invalid custom table row"},400);
-    if(!row.label.trim())continue;
-    rows.push({id:/^row-[a-f0-9-]{10,64}$/.test(row.id||"")?row.id:crypto.randomUUID(),
-     label:row.label.trim().slice(0,100),value:row.value.slice(0,1000)});
-   }
-   const hiddenFields=Array.isArray(entry.hiddenFields)?entry.hiddenFields:[];
-   if(hiddenFields.length>30||hiddenFields.some(name=>typeof name!=="string"||
-      !/^[a-zA-Z][a-zA-Z0-9]{0,50}$/.test(name)))
-    return json({error:"Invalid hidden table fields"},400);
-   layoutSections[key]={title:String(entry.title||"").trim().slice(0,100),labels,rows,
-    hiddenFields:[...new Set(hiddenFields.filter(name=>name!=="name"))]};
-  }
-  patch.tableLayout={sections:layoutSections};
+  const layout=cleanLayout(body.details.tableLayout);
+  if(!layout)return json({error:"Invalid table layout or duplicate field IDs"},400);
+  patch.tableLayout=layout;
   const productSections=cleanProductSections(body.details.productSections);
   if(productSections===null)return json({error:"Invalid Product Builder sections or fields"},400);
   patch.productSections=productSections;
