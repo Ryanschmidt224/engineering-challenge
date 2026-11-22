@@ -1,4 +1,4 @@
-import {node,button,actions,panel,field,checkbox,readValue,valuesEditor,requestWorkshop} from "./workshop-ui.js";
+import {node,button,listCard,actions,panel,field,checkbox,readValue,valuesEditor,requestWorkshop} from "./workshop-ui.js";
 import {present,resolveFamilyValues,validateFamilyFields,validateFamilyValues,isWebUrl} from "./family-model.js";
 import {tileTypes,tileStatuses,relations,labelFor} from "./knowledge-model.js";
 
@@ -74,7 +74,7 @@ function renderNavigation(){
   return [f.name,f.description,...products.flatMap(p=>[p.name,p.manufacturer,p.mpn,...Object.values(p.field_values)])].join(" ").toLowerCase().includes(query);
  }).sort((a,b)=>a.name.localeCompare(b.name))){
   const count=data.products.filter(p=>p.family_id===item.id&&!p.archived).length;
-  const entry=button("",()=>changeSelection({familyId:item.id}),"list-card family-card"+(item.id===selectedFamily?" is-selected":""));
+  const entry=listCard("",()=>changeSelection({familyId:item.id}),"family-card"+(item.id===selectedFamily?" is-selected":""));
   entry.append(node("strong",item.name+(item.archived?" (archived)":"")),node("small",(item.kind==="tool"?"Tool · ":item.kind==="material"?"Material · ":"")+count+" "+(count===1?"product":"products")));list.append(entry);
  }
  if(!list.children.length)list.append(node("p","No matching families. Add one or change the search.","empty"));

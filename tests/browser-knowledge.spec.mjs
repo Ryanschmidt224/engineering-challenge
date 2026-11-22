@@ -13,6 +13,38 @@ test.beforeEach(async ({request, context}) => {
 
 const detail = (page) => page.locator("#knowledge-detail");
 
+async function expectStackedCard(card) {
+  await expect(card).toBeVisible();
+  const layout = await card.evaluate(element => {
+    const children = [...element.children].map(child => child.getBoundingClientRect());
+    const box = element.getBoundingClientRect();
+    return {display: getComputedStyle(element).display, width: box.width, children: children.map(child => ({x: child.x, y: child.y, width: child.width, bottom: child.bottom}))};
+  });
+  expect(layout.display).toBe("block");
+  for (const child of layout.children) expect(child.width).toBeGreaterThan(layout.width * 0.75);
+  for (let i = 1; i < layout.children.length; i++) expect(layout.children[i].y).toBeGreaterThanOrEqual(layout.children[i - 1].bottom);
+}
+
+for (const width of [1440, 390]) test("selectable Knowledge and Workshop cards stack at " + width + "px", async ({page}) => {
+  await page.setViewportSize({width, height: 900});
+  await createTileFromFamily(page, "A long engineering lesson title that needs the full list width");
+  const card = page.locator("#tile-list > button").first();
+  await expectStackedCard(card);
+  await card.focus();
+  await expect(card).toBeFocused();
+  await expect(card).toHaveCSS("outline-style", "solid");
+  await card.press("Enter");
+  await expect(detail(page).getByRole("heading", {name: "A long engineering lesson title that needs the full list width", exact: true})).toBeVisible();
+  await page.goto("/workshop.html?family=f-buck-converter");
+  const family = page.locator("#family-list > button.is-selected");
+  await expectStackedCard(family);
+  await family.focus();
+  await expect(family).toBeFocused();
+  await family.press("Enter");
+  await expect(page.locator("#workshop-detail").getByRole("heading", {name: "Knowledge (1)", exact: true})).toBeVisible();
+  await expectStackedCard(page.locator("#workshop-detail .knowledge-list > a").first());
+});
+
 async function createTileFromFamily(page, title) {
   await page.goto("/workshop.html?family=f-buck-converter");
   await expect(page.locator("#workshop-detail").getByRole("heading", {name: "Knowledge (0)", exact: true})).toBeVisible();

@@ -5,8 +5,33 @@ import {TestR2} from "./helpers/r2.mjs";
 import {provisionTestAccount} from "./helpers/accounts.mjs";
 import worker from "../worker.js";
 import {targetHref} from "../assets/knowledge-model.js";
+import {resolveTargets, key} from "../functions/api/knowledge-targets.js";
 
 const origin = "https://knowledge.example.test";
+
+test("D1 test bindings enforce the platform's 100-parameter limit", (t) => {
+  const db = new TestD1();
+  t.after(() => db.close());
+  assert.throws(() => db.prepare("SELECT 1").bind(...Array(101).fill(1)), /parameter limit/);
+});
+
+test("target resolution handles large catalogs, duplicates, missing and archived IDs within D1 limits", async (t) => {
+  const {env} = await fixture(t);
+  const db = env.WORKSHOP_DB;
+  for (let i = 0; i < 350; i++) {
+    await db.prepare("INSERT INTO workshop_families(id,name,archived) VALUES(?,?,?)").bind("boundary-" + i, "Family " + i, i === 349 ? 1 : 0).run();
+  }
+  for (const count of [0, 1, 100, 101, 350]) {
+    const wanted = Array.from({length: count}, (_, i) => ({target_type: "family", target_id: "boundary-" + i}));
+    const found = await resolveTargets(env, db, wanted);
+    assert.equal(found.size, count);
+    for (const target of wanted) assert.equal(found.get(key(target)).state, target.target_id === "boundary-349" ? "archived" : "available");
+  }
+  const wanted = [{target_type: "family", target_id: "boundary-0"}, {target_type: "family", target_id: "missing-id"}];
+  const found = await resolveTargets(env, db, [...wanted, ...wanted]);
+  assert.equal(found.size, 2);
+  assert.equal(found.get(key(wanted[1])).state, "missing");
+});
 
 async function fixture(t) {
   const env = {WORKSHOP_DB: new TestD1(), PHOTOS: new TestR2(), admin_password: "test-only-owner-secret"};

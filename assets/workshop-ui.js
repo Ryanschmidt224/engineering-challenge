@@ -2,6 +2,8 @@ import {present,isWebUrl} from "./family-model.js";
 
 export const node=(tag,text="",className="")=>{const element=document.createElement(tag);element.className=className;element.textContent=text;return element;};
 export const button=(label,action,variant="")=>{const element=node("button",label,"button "+variant);element.type="button";element.onclick=action;return element;};
+// Selectable list rows own their layout; action-button styles must not apply.
+export const listCard=(label,action,variant="")=>{const element=node("button",label,"list-card "+variant);element.type="button";element.onclick=action;return element;};
 export const actions=(...elements)=>{const element=node("div","","actions");element.append(...elements);return element;};
 export const panel=(title,help="")=>{const element=node("section","","panel");element.append(node("h3",title));if(help)element.append(node("p",help,"muted"));return element;};
 export function field(label,value,update,{type="text",options=null,required=false,placeholder=""}={}) {

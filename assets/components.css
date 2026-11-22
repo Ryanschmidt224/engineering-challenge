@@ -244,6 +244,10 @@ textarea.field {
 .list-card {
   width: 100%;
   display: block;
+  min-height: var(--control-height);
+  margin: 0;
+  font: inherit;
+  overflow-wrap: anywhere;
   text-decoration: none;
   padding: var(--space-3);
   text-align: left;
@@ -252,6 +256,7 @@ textarea.field {
   border-radius: var(--radius-medium);
   background: transparent;
   color: var(--color-text);
+  cursor: pointer;
 }
 .list-card:hover {
   background: var(--color-hover);
