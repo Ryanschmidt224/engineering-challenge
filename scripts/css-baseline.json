@@ -1,8 +1,8 @@
 {
   "frozen": {
-    "assets/site-polish.css": "041b472242fadfc7a8ad4b218f551b138afb6e5dde8d9d5703b003796cac5795",
-    "assets/site-controls.css": "c178a2e6e4691757e8cec9fe645df4f6ddc8724543fe2a2810bcd25f45027a58",
-    "assets/site-workspaces.css": "4bb8dfca79c034aaedc51296f27687113fa4430021b8ed680fdb6660f9bcdcd8"
+    "assets/site-polish.css": "ea01562deccda1a8d2def918a5050f9df02f641f77972b8cab54624703a090a4",
+    "assets/site-controls.css": "17b0d0a15b4bc0c72e5eaf9533b0988853aceaeb5f4bc452b5555d0ce97153a3",
+    "assets/site-workspaces.css": "4ca0e1380ef4b31cfa1b2b6f5f3f60a02e169f4bc472bb2309feb4d653607fef"
   },
   "limits": {
     "assets/site.css": {
@@ -15,23 +15,23 @@
     },
     "assets/site-workspaces.css": {
       "important": 12,
-      "projectIds": 89
+      "projectIds": 79
     },
     "assets/product-lookup.css": {
       "important": 1,
       "projectIds": 3
     },
     "assets/site-polish.css": {
-      "important": 467,
-      "projectIds": 78
+      "important": 426,
+      "projectIds": 42
     },
     "assets/photo-markup.css": {
       "important": 53,
       "projectIds": 0
     },
     "assets/site-controls.css": {
-      "important": 159,
-      "projectIds": 374
+      "important": 158,
+      "projectIds": 365
     },
     "assets/theme.css": {
       "important": 0,

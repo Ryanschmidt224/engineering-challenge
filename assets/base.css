@@ -1,0 +1,66 @@
+/* Page basics for the standalone pages (Workshop, Knowledge). The legacy
+   project pages keep their own base until they are migrated. */
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font:
+    var(--text-body) / 1.55 system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button,
+summary,
+select {
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+button,
+a,
+input,
+select,
+textarea,
+summary {
+  touch-action: manipulation;
+}
+a {
+  color: var(--color-accent);
+  overflow-wrap: anywhere;
+}
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+h1 {
+  font-size: var(--text-page);
+  line-height: 1.25;
+}
+h2 {
+  font-size: var(--text-title);
+  line-height: 1.35;
+}
+h3 {
+  font-size: var(--text-body);
+}
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}

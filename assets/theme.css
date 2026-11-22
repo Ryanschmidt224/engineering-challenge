@@ -102,6 +102,7 @@ textarea::placeholder {
   --radius-medium: 0.5rem;
   --radius-large: 0.75rem;
   --control-height: 2.75rem;
+  --control-height-small: 2rem;
   --section-height: 3rem;
   --shadow-dialog: 0 1rem 4rem
     color-mix(in srgb, var(--color-shadow) 25%, transparent);

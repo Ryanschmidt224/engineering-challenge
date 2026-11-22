@@ -21,13 +21,13 @@ test("A single Projects page and common workspace controller are used for every 
 
 test("One visible New project action with tag filters and sorting",()=>{
  const manager=read("assets/project-manager.js");
- assert.match(manager,/const newButton=element\("button","btn primary project-directory-new","\+ New project"\)/);
+ assert.match(manager,/const newButton=element\("button","ui-button ui-button--primary project-directory-new","\+ New project"\)/);
  assert.match(manager,/newButton\.hidden=false/);
  assert.match(manager,/newButton\.onclick=openCreate/);
  assert.match(manager,/if\(!user\)\{showAccount\(\)/);
  assert.match(manager,/bs-project-tag-filter/);
  assert.doesNotMatch(manager,/categoryNavigation/);
- assert.match(manager,/const sortSelect=element\("select","field project-sort-filter"\)/);
+ assert.match(manager,/const sortSelect=element\("select","ui-control project-sort-filter"\)/);
  for(const value of ["name_asc","name_desc","newest","oldest"])
   assert.ok(manager.includes('"'+value+'"'),"Missing sort "+value);
  assert.match(manager,/tags:createTagPicker\.getTags\(\)/);

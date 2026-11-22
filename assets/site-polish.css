@@ -280,18 +280,6 @@
   padding: 15px 18px;
 }
 
-.recipe-instructions .recipe-heading-row {
-  display: flex;
-
-  justify-content: space-between;
-  flex-wrap: wrap;
-  column-gap: var(--space-5);
-  row-gap: var(--space-2);
-}
-.recipe-instructions .recipe-heading-row > h2 {
-  margin: 0;
-}
-
 /* Failures and lessons: reuse the same dark workspace card language as recipes. */
 .investigations-panel,
 .recipe-step-investigations {
@@ -1337,50 +1325,7 @@
   width: 100%;
   max-width: none;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .assembly-workspace-page.bom-part-workspace
-  > .workspace-panels
-  > article {
-  min-width: 0;
-  margin: 0 0 22px;
-  padding: 20px 22px 22px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .assembly-workspace-page.bom-part-workspace
-  > .workspace-panels
-  > article
-  h2 {
-  margin: 0 0 18px;
-  font-size: var(--text-body);
-  font-weight: var(--font-semibold);
-  color: var(--color-text);
-}
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .assembly-workspace-page.bom-part-workspace
-  > .part-details-view {
-  margin: 0 0 22px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-}
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .assembly-workspace-page.bom-part-workspace
-  .part-details-view-heading {
-  padding: var(--space-4) var(--space-5);
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .assembly-workspace-page.bom-part-workspace
-  .part-details-view-heading
-  h2 {
-  color: var(--color-text);
-  font-weight: var(--font-semibold);
-}
+
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
   .assembly-workspace-page.bom-part-workspace
   .workspace-panels
@@ -1445,13 +1390,6 @@
   outline-offset: 3px;
 }
 @media (max-width: 800px) {
-  :is(:is(#launcher, .personal-project-view), #linear, #robot)
-    .assembly-workspace-page.bom-part-workspace
-    > .workspace-panels
-    > article {
-    padding: 16px;
-    margin-bottom: 18px;
-  }
   :is(:is(#launcher, .personal-project-view), #linear, #robot)
     .assembly-main
     .assembly-photo-stage
@@ -1978,9 +1916,6 @@
   background: var(--color-surface) !important;
   padding: var(--space-2) var(--space-3);
   border: 0;
-}
-.recipe-instructions .recipe-heading-row {
-  align-items: center;
 }
 
 /* Resume work and readiness checks: compact, integrated with the workspace. */
@@ -2704,9 +2639,7 @@
 .project-summary-tools-section,
 .workspace-resources,
 .workspace-bom,
-.recipe-instructions,
 .part-linked-resources,
-.part-details-view,
 .recipe-one-step-body,
 .build-confusion-insights,
 .project-summary-page > .project-summary-heading {
@@ -2890,13 +2823,6 @@
   display: none !important;
 }
 
-/* Match Part details to the full-width content column and box each investigation. */
-.bom-part-workspace > .part-details-view {
-  width: 100% !important;
-  max-width: none !important;
-  box-sizing: border-box;
-  align-self: stretch;
-}
 :is(.investigations-panel, .recipe-step-investigations) .investigation-card {
   border: 1px solid var(--color-border) !important;
   border-radius: var(--radius-large) !important;
@@ -3386,8 +3312,7 @@
   margin: 0;
 }
 .recipe-instructions .recipe-heading-actions .recipe-add-step,
-.investigation-heading-actions .investigation-add,
-.bs-unstructured-notes-heading .bs-unstructured-add {
+.investigation-heading-actions .investigation-add {
   font-size: var(--text-small);
   padding: var(--space-1) var(--space-2);
   min-height: 30px;
@@ -3403,7 +3328,7 @@
 :is(#launcher, .personal-project-view, #linear, #robot)
   .assembly-workspace-page
   .workspace-panels
-  > article:is(.recipe-instructions, .investigations-panel) {
+  > article:is(.investigations-panel) {
   margin: 0 0 20px;
 }
 
@@ -3418,9 +3343,6 @@
 }
 .investigation-collapse > summary.investigation-collapse-heading::before,
 .investigation-card > summary.investigation-summary::before,
-.workspace-secondary-disclosure > summary::before,
-.workspace-primary-disclosure > summary::before,
-.part-details-collapse > summary::before,
 .bs-unstructured-note-title::before {
   content: "";
   width: var(--chevron-size);
@@ -3434,16 +3356,10 @@
 }
 .investigation-collapse[open] > summary.investigation-collapse-heading::before,
 .investigation-card[open] > summary.investigation-summary::before,
-.workspace-secondary-disclosure[open] > summary::before,
-.workspace-primary-disclosure[open] > summary::before,
-.part-details-collapse[open] > summary::before,
 .bs-unstructured-note-title[aria-expanded="true"]::before {
   transform: rotate(135deg);
 }
-:is(.workspace-resource-disclosure, .investigation-collapse).is-empty:not(
-    [open]
-  )
-  > summary::before {
+:is(.investigation-collapse).is-empty:not([open]) > summary::before {
   visibility: hidden;
 }
 :is(.investigations-panel, .recipe-step-investigations)
@@ -3469,12 +3385,7 @@
   left: 7px;
   top: calc(12px + (30px - 6px) / 2);
 }
-:is(#launcher, .personal-project-view, #linear, #robot)
-  .assembly-workspace-page
-  .workspace-panels
-  > article.recipe-instructions {
-  padding: 12px 20px;
-}
+
 :is(#launcher, .personal-project-view, #linear, #robot)
   .assembly-workspace-page
   .workspace-panels
@@ -3489,37 +3400,19 @@
   > h2 {
   margin: 0;
 }
-.assembly-workspace-page .workspace-panels > .bs-unstructured-notes {
-  margin-top: 0;
-  padding: 12px 20px;
-}
-.assembly-workspace-page .workspace-panels .bs-unstructured-notes-heading h2 {
-  margin: 0;
-}
-.investigation-summary::-webkit-details-marker,
-.workspace-secondary-disclosure > summary::-webkit-details-marker,
-.workspace-primary-disclosure > summary::-webkit-details-marker,
-.part-details-collapse > summary::-webkit-details-marker {
+
+.investigation-summary::-webkit-details-marker {
   display: none;
 }
-.workspace-secondary-disclosure > summary {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  list-style: none;
-}
+
 .bs-unstructured-note-title {
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
 
-.recipe-instructions .recipe-heading-row {
-  display: block;
-}
 .recipe-heading-actions,
-.investigation-heading-actions,
-.bs-unstructured-notes-heading {
+.investigation-heading-actions {
   min-height: 30px;
 }
 .workspace-record-count {
@@ -3527,7 +3420,6 @@
 }
 .recipe-heading-actions .recipe-add-step,
 .investigation-heading-actions .investigation-add,
-.bs-unstructured-notes-heading .bs-unstructured-add,
 .investigation-add-controls .investigation-add-note,
 .recipe-step-additions .recipe-add-entry {
   background: transparent;
@@ -3551,7 +3443,6 @@
   :is(.bs-unstructured-empty, .bs-unstructured-status:empty) {
   display: none;
 }
-.workspace-secondary-disclosure .instruction-history-list,
 .workspace-resource-disclosure > .workspace-resources {
   padding: var(--space-3) var(--space-4);
   margin: 0;
@@ -3564,20 +3455,13 @@
   font-weight: var(--font-semibold);
   color: var(--color-text);
 }
-.assembly-project-settings-entry[hidden],
-.workspace-backup-details[hidden] {
+.assembly-project-settings-entry[hidden] {
   display: none !important;
 }
 .project-settings-page h1 {
   margin: 12px 0 16px;
 }
-:is(#launcher, .personal-project-view, #linear, #robot)
-  .assembly-workspace-page
-  .workspace-panels
-  > .workspace-resource-disclosure {
-  order: 2;
-  margin: 0 0 20px;
-}
+
 .assembly-workspace-page .instruction-history-list {
   gap: var(--space-1);
 }
@@ -3599,48 +3483,6 @@
   text-decoration: underline;
 }
 
-.assembly-workspace-page .workspace-panels > .workspace-primary-disclosure {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-}
-.workspace-primary-disclosure > summary {
-  position: relative;
-  padding: var(--space-3) var(--space-5);
-  list-style: none;
-  cursor: pointer;
-}
-.workspace-primary-disclosure > summary::before {
-  position: absolute;
-  left: 7px;
-  top: calc(12px + (30px - 6px) / 2);
-}
-.workspace-primary-disclosure > summary h2 {
-  margin: 0;
-  min-height: 30px;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  font-size: var(--text-body);
-  font-weight: var(--font-semibold);
-}
-.workspace-primary-disclosure[open] > summary {
-  border-bottom: 1px solid var(--color-border);
-}
-.assembly-workspace-page.bom-part-workspace .workspace-secondary-disclosure {
-  margin: 12px 0 0;
-}
-.bom-part-workspace .part-details-view-heading {
-  list-style: none;
-  cursor: pointer;
-}
-.part-details-collapse:not([open]) > .part-details-view-heading {
-  border-bottom: 0;
-}
-.part-details-heading-copy {
-  min-width: 0;
-}
 .part-details-summary-fields {
   display: block;
   color: var(--color-text-muted);
@@ -3656,29 +3498,6 @@
   min-width: 0;
 }
 
-.workspace-tool-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  min-height: 30px;
-}
-.workspace-tool-actions .linked-resource-add {
-  border: 0;
-  background: transparent;
-  color: var(--color-accent);
-  padding: 4px 0;
-  font: inherit;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  cursor: pointer;
-}
-.workspace-tool-actions .linked-resource-add[hidden] {
-  display: none;
-}
-.workspace-tool-actions .linked-resource-add:hover {
-  text-decoration: underline;
-}
 .assembly-workspace-page .workspace-panels > article.investigations-panel {
   overflow: visible;
 }
@@ -3726,32 +3545,18 @@
   visibility: visible;
 }
 
-.workspace-tool-actions > h2,
 .investigation-heading-actions > :is(h2, h4) {
   line-height: 1.3;
 }
 .assembly-workspace-page
   .workspace-panels
-  :is(.workspace-tool-actions, .investigation-heading-actions)
+  :is(.investigation-heading-actions)
   > h2 {
   display: block;
   min-height: 0;
   margin: 0;
   font-size: var(--text-body);
   font-weight: var(--font-semibold);
-}
-.assembly-workspace-page .workspace-secondary-disclosure > summary,
-.assembly-workspace-page .part-details-collapse > summary {
-  position: relative;
-  gap: var(--space-2);
-  padding-inline-start: var(--space-5);
-}
-.assembly-workspace-page
-  :is(.workspace-secondary-disclosure, .part-details-collapse)
-  > summary::before {
-  position: absolute;
-  left: 7px;
-  top: calc(50% - 4px);
 }
 
 .assembly-layout .assembly-sidebar > .assembly-summary-sidebar-card {
@@ -6531,23 +6336,6 @@
   }
 }
 
-/* Nested feature-tree history: discreet, read-only parent archive. */
-.assembly-workspace-page .assembly-archived-items {
-  min-width: 0;
-  margin: 10px 0 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-}
-.assembly-archived-disclosure > summary {
-  display: flex;
-  align-items: center;
-  min-height: 40px;
-  padding: 10px 14px;
-  font-weight: var(--font-semibold);
-  font-size: var(--text-body);
-  color: var(--color-text);
-  cursor: pointer;
-}
 .assembly-archived-list {
   padding: 0 14px 12px;
 }
@@ -7255,53 +7043,6 @@
   }
 }
 
-/* Project records: one compact Archives and Revision History disclosure.
-   Revision actions and archived entries share the same open/close control. */
-.assembly-workspace-page .workspace-archive-history {
-  margin: 0 0 12px;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  background: var(--color-surface);
-  min-width: 0;
-  overflow: visible;
-}
-.assembly-workspace-page .workspace-archive-history > summary {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 42px;
-  padding: 9px 16px 9px 27px;
-  list-style: none;
-  cursor: pointer;
-}
-.assembly-workspace-page .workspace-archive-history > summary::before {
-  left: 12px;
-  top: calc(50% - 4px);
-}
-.assembly-workspace-page
-  .workspace-archive-history
-  > summary::-webkit-details-marker {
-  display: none;
-}
-.assembly-workspace-page .workspace-archive-history > summary h2 {
-  margin: 0;
-  min-height: 0;
-  font-size: var(--text-body);
-  font-weight: var(--font-semibold);
-  line-height: 1.35;
-}
-.assembly-workspace-page
-  .workspace-archive-history
-  > summary
-  .workspace-record-count {
-  display: inline;
-  margin: 0;
-  font-size: var(--text-small);
-}
-.assembly-workspace-page .workspace-archive-history[open] > summary {
-  border-bottom: 1px solid var(--color-border);
-}
 .assembly-workspace-page
   .workspace-archive-history
   > .investigations-active-panel {
@@ -7366,37 +7107,7 @@
   border-color: var(--color-accent) !important;
   text-decoration: none;
 }
-/* Helpful tools: title, info and count on one line. Add entry is a
-   conventional framed button that appears only inside the open section. */
-.assembly-workspace-page .workspace-resource-disclosure > summary {
-  min-height: 42px;
-  padding-top: var(--space-2);
-  padding-bottom: var(--space-2);
-}
-.assembly-workspace-page
-  .workspace-resource-disclosure
-  .workspace-tool-actions {
-  display: flex;
 
-  flex-wrap: wrap;
-
-  gap: var(--space-2);
-}
-.assembly-workspace-page
-  .workspace-resource-disclosure
-  .workspace-tool-actions
-  > h2 {
-  min-height: 0;
-  font-size: var(--text-body);
-}
-.assembly-workspace-page
-  .workspace-resource-disclosure
-  .workspace-tool-actions
-  > .workspace-record-count {
-  display: inline;
-  margin: 0 0 0 1px;
-  font-size: var(--text-small);
-}
 .assembly-workspace-page
   .workspace-resource-disclosure
   .workspace-tool-controls {
@@ -7428,77 +7139,7 @@
   padding: var(--space-1) var(--space-4) var(--space-3);
   margin: 0;
 }
-/* Notes: a single summary line when collapsed, with its framed add button
-   and all saved notes available only in the expanded body. */
-.assembly-workspace-page .bs-unstructured-notes {
-  margin: 0 0 12px !important;
-  padding: 0 !important;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  background: var(--color-surface);
-}
-.assembly-workspace-page
-  .bs-unstructured-notes
-  > .bs-unstructured-notes-heading {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  min-height: 42px;
-  padding: var(--space-2) var(--space-4) var(--space-2) var(--space-5);
-  list-style: none;
-  cursor: pointer;
-}
-.assembly-workspace-page
-  .bs-unstructured-notes
-  > .bs-unstructured-notes-heading::-webkit-details-marker {
-  display: none;
-}
-.assembly-workspace-page
-  .bs-unstructured-notes
-  > .bs-unstructured-notes-heading::before {
-  content: "";
-  position: absolute;
-  left: 12px;
-  top: calc(50% - 4px);
-  width: var(--chevron-size);
-  height: var(--chevron-size);
-  border-block-start: 1.5px solid var(--color-text-muted);
-  border-inline-end: 1.5px solid var(--color-text-muted);
-  transform: rotate(45deg);
-}
-.assembly-workspace-page
-  .bs-unstructured-notes[open]
-  > .bs-unstructured-notes-heading::before {
-  transform: rotate(135deg);
-}
-.assembly-workspace-page
-  .bs-unstructured-notes[open]
-  > .bs-unstructured-notes-heading {
-  border-bottom: 1px solid var(--color-border);
-}
-.assembly-workspace-page
-  .bs-unstructured-notes
-  > .bs-unstructured-notes-heading
-  h2 {
-  margin: 0;
-  font-size: var(--text-body);
-  font-weight: var(--font-semibold);
-  line-height: 1.35;
-}
-.assembly-workspace-page
-  .bs-unstructured-notes
-  > .bs-unstructured-notes-heading
-  > .workspace-record-count {
-  display: inline;
-  margin: 0;
-  font-size: var(--text-small);
-}
-.assembly-workspace-page .bs-unstructured-notes > .bs-unstructured-content {
-  padding: 10px 15px 12px;
-}
+
 .assembly-workspace-page .bs-unstructured-notes .bs-unstructured-add {
   display: inline-flex;
   align-items: center;
@@ -7521,15 +7162,6 @@
   margin-top: 8px;
 }
 
-/* Even empty sections remain expandable so the user can add the first entry. */
-.assembly-workspace-page
-  .workspace-resource-disclosure.is-empty:not([open])
-  > summary::before,
-.assembly-workspace-page
-  .workspace-archive-history:not([open])
-  > summary::before {
-  visibility: visible;
-}
 .assembly-workspace-page
   .workspace-archive-history
   .investigation-active-content
@@ -7822,146 +7454,6 @@
   }
 }
 
-/* Consistent compact collapsed tile headers across part/subassembly pages.
-   Header height is fixed; expanded bodies can grow with their content. */
-.assembly-workspace-page .workspace-resource-disclosure > summary,
-.assembly-workspace-page .workspace-primary-disclosure > summary,
-.assembly-workspace-page .workspace-secondary-disclosure > summary,
-.assembly-workspace-page
-  .part-details-collapse
-  > summary.part-details-view-heading {
-  box-sizing: border-box;
-  min-height: var(--section-height);
-  padding-top: var(--space-2);
-  padding-bottom: var(--space-2);
-  display: flex;
-  align-items: center;
-}
-.assembly-workspace-page .workspace-resource-disclosure > summary {
-  padding-left: var(--space-5);
-}
-.assembly-workspace-page .workspace-resource-disclosure > summary::before {
-  top: 50%;
-  left: 11px;
-  transform: translateY(-50%) rotate(45deg);
-}
-.assembly-workspace-page
-  .workspace-resource-disclosure[open]
-  > summary::before {
-  transform: translateY(-50%) rotate(135deg);
-}
-.assembly-workspace-page
-  .workspace-resource-disclosure
-  .workspace-tool-actions {
-  min-height: 0;
-  align-items: center;
-}
-.assembly-workspace-page
-  .workspace-resource-disclosure
-  .workspace-tool-actions
-  > h2 {
-  line-height: 1.3;
-  margin: 0;
-}
-.assembly-workspace-page
-  .part-details-collapse
-  > summary.part-details-view-heading
-  h2,
-.assembly-workspace-page .workspace-resource-disclosure > summary h2 {
-  min-height: 0;
-  margin: 0;
-}
-.assembly-workspace-page
-  .workspace-panels
-  > article.recipe-instructions
-  > .recipe-heading-row {
-  box-sizing: border-box;
-  min-height: var(--section-height);
-  display: flex;
-  align-items: center;
-}
-
-/* Work Instructions: same disclosure/header geometry as other workspace tiles.
-   Count stays immediately beside title. Add entry belongs inside open body. */
-.assembly-workspace-page .workspace-panels > article.recipe-instructions {
-  padding-top: 0 !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  padding-bottom: 0 !important;
-  overflow: hidden;
-}
-.assembly-workspace-page .recipe-instructions > .recipe-heading-row {
-  display: flex;
-  align-items: center;
-  min-height: var(--section-height);
-  margin: 0;
-  padding: 0;
-}
-.assembly-workspace-page .recipe-instructions .recipe-disclosure-toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
-  min-width: 0;
-  min-height: var(--section-height);
-  padding: var(--space-2) var(--space-4) var(--space-2) var(--space-5);
-  margin: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--color-text);
-  text-align: left;
-  cursor: pointer;
-  font: inherit;
-  box-shadow: none;
-}
-.assembly-workspace-page
-  .recipe-instructions
-  .recipe-disclosure-toggle::before {
-  content: "";
-  position: absolute;
-  width: var(--chevron-size);
-  height: var(--chevron-size);
-  border-block-start: var(--chevron-stroke) solid currentColor;
-  border-inline-end: var(--chevron-stroke) solid currentColor;
-  left: 11px;
-  top: 50%;
-  transform: translateY(-50%) rotate(45deg);
-}
-.assembly-workspace-page .recipe-instructions .recipe-disclosure-toggle {
-  position: relative;
-}
-.assembly-workspace-page
-  .recipe-instructions
-  .recipe-disclosure-toggle[aria-expanded="true"]::before {
-  transform: translateY(-50%) rotate(135deg);
-}
-.assembly-workspace-page .recipe-instructions .recipe-disclosure-toggle > h2 {
-  flex: none;
-  min-height: 0;
-  margin: 0 !important;
-  font-size: var(--text-body);
-  line-height: 1.3;
-  font-weight: var(--font-semibold);
-}
-.assembly-workspace-page
-  .recipe-instructions
-  .recipe-disclosure-toggle
-  > .workspace-record-count {
-  display: inline;
-  margin: 0;
-  line-height: 1.3;
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-  font-weight: var(--font-normal);
-}
-.assembly-workspace-page .recipe-instructions > .recipe-editor {
-  padding: 12px 16px 16px;
-  border-top: 1px solid var(--color-border);
-}
-.assembly-workspace-page .recipe-instructions > .recipe-editor[hidden] {
-  display: none !important;
-}
 .assembly-workspace-page .recipe-instructions .recipe-body-actions {
   display: flex;
   justify-content: flex-start;
@@ -8003,20 +7495,10 @@
 /* All collapsed project/subassembly detail tiles share the same header rhythm.
    Keep expanded body heights content-driven. */
 .assembly-workspace-page
-  :is(
-    .workspace-primary-disclosure > summary,
-    .workspace-secondary-disclosure > summary,
-    .part-details-collapse > summary.part-details-view-heading,
-    .investigation-collapse > summary.investigation-collapse-heading,
-    .bs-unstructured-notes > .bs-unstructured-notes-heading,
-    .recipe-instructions > .recipe-heading-row
-  ) {
+  :is(.investigation-collapse > summary.investigation-collapse-heading) {
   box-sizing: border-box;
   min-height: var(--section-height);
 }
-.assembly-workspace-page
-  .bs-unstructured-notes
-  > .bs-unstructured-notes-heading,
 .assembly-workspace-page
   .investigation-collapse
   > summary.investigation-collapse-heading {
@@ -8080,48 +7562,17 @@
   min-height: 30px;
   padding: 5px 10px;
 }
-@media (max-width: 620px) {
-}
 
 /* Closed part/workspace tiles: identical 48px boxes, regardless of summary text.
    Expanded sections retain their natural content height. */
-.assembly-workspace-page.bom-part-workspace
-  .part-details-collapse:not([open])
-  > summary.part-details-view-heading,
-.assembly-workspace-page .workspace-primary-disclosure:not([open]) > summary,
-.assembly-workspace-page .workspace-secondary-disclosure:not([open]) > summary,
 .assembly-workspace-page
   .investigation-collapse:not([open])
-  > summary.investigation-collapse-heading,
-.assembly-workspace-page
-  .bs-unstructured-notes:not([open])
-  > summary.bs-unstructured-notes-heading,
-.assembly-workspace-page
-  .recipe-instructions:not(:has(.recipe-body:not([hidden])))
-  > .recipe-heading-row {
+  > summary.investigation-collapse-heading {
   box-sizing: border-box;
   height: auto;
   min-height: var(--section-height);
   padding-top: var(--space-2);
   padding-bottom: var(--space-2);
-}
-.assembly-workspace-page.bom-part-workspace
-  .part-details-collapse:not([open])
-  .part-details-summary-fields {
-  display: none !important;
-}
-.assembly-workspace-page.bom-part-workspace
-  .part-details-collapse:not([open])
-  .part-details-heading-copy {
-  display: flex;
-  align-items: center;
-  min-height: 0;
-}
-.assembly-workspace-page.bom-part-workspace
-  .part-details-collapse:not([open])
-  > summary.part-details-view-heading {
-  align-items: center;
-  overflow: hidden;
 }
 
 /* Shared compact disclosure appearance for part and subassembly workspaces.
@@ -8132,15 +7583,7 @@
   --workspace-tile-font-weight: var(--font-semibold);
 }
 .assembly-workspace-page
-  :is(
-    .part-details-collapse > summary.part-details-view-heading,
-    .workspace-primary-disclosure > summary,
-    .workspace-secondary-disclosure > summary,
-    .assembly-archived-disclosure > summary,
-    .investigation-collapse > summary.investigation-collapse-heading,
-    .bs-unstructured-notes > summary.bs-unstructured-notes-heading,
-    .recipe-instructions > .recipe-heading-row
-  ) {
+  :is(.investigation-collapse > summary.investigation-collapse-heading) {
   box-sizing: border-box;
   min-height: var(--workspace-tile-height);
   font-family: inherit;
@@ -8149,28 +7592,14 @@
   color: var(--color-text);
 }
 .assembly-workspace-page
-  :is(
-    .part-details-collapse > summary.part-details-view-heading,
-    .workspace-primary-disclosure > summary,
-    .workspace-secondary-disclosure > summary,
-    .assembly-archived-disclosure > summary,
-    .investigation-collapse > summary.investigation-collapse-heading,
-    .bs-unstructured-notes > summary.bs-unstructured-notes-heading
-  ) {
+  :is(.investigation-collapse > summary.investigation-collapse-heading) {
   display: flex;
 
   padding-top: var(--space-2);
   padding-bottom: var(--space-2);
 }
 .assembly-workspace-page
-  :is(
-    .part-details-collapse > summary.part-details-view-heading,
-    .workspace-primary-disclosure > summary,
-    .workspace-secondary-disclosure > summary,
-    .assembly-archived-disclosure > summary,
-    .investigation-collapse > summary.investigation-collapse-heading,
-    .bs-unstructured-notes > summary.bs-unstructured-notes-heading
-  )
+  :is(.investigation-collapse > summary.investigation-collapse-heading)
   :is(h2, .workspace-disclosure-title) {
   font-family: inherit;
   font-size: var(--workspace-tile-font-size);
@@ -8178,70 +7607,15 @@
   line-height: 1.3;
   margin: 0;
 }
-.assembly-workspace-page
-  .recipe-instructions
-  > .recipe-heading-row
-  :is(h2, .recipe-disclosure-toggle),
-.assembly-workspace-page
-  .recipe-instructions
-  > .recipe-heading-row
-  .recipe-heading-actions
-  h2 {
-  font-family: inherit;
-  font-size: var(--workspace-tile-font-size);
-  font-weight: var(--workspace-tile-font-weight);
-}
+
 .assembly-workspace-page
   :is(
-    .workspace-primary-disclosure:not([open]) > summary,
-    .workspace-secondary-disclosure:not([open]) > summary,
-    .assembly-archived-disclosure:not([open]) > summary,
-    .investigation-collapse:not([open])
-      > summary.investigation-collapse-heading,
-    .bs-unstructured-notes:not([open]) > summary.bs-unstructured-notes-heading,
-    .part-details-collapse:not([open]) > summary.part-details-view-heading
+    .investigation-collapse:not([open]) > summary.investigation-collapse-heading
   ) {
   height: auto;
   min-height: var(--workspace-tile-height);
 }
-.assembly-workspace-page .assembly-archived-items {
-  padding: 0;
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-}
-.assembly-workspace-page .assembly-archived-disclosure > summary {
-  padding-left: 27px;
-  padding-right: 20px;
-}
-.assembly-workspace-page .bs-unstructured-notes:not([open]) {
-  padding: 0 !important;
-  min-height: var(--workspace-tile-height);
-}
-.assembly-workspace-page
-  .bs-unstructured-notes:not([open])
-  > summary.bs-unstructured-notes-heading {
-  padding-left: var(--space-5);
-  padding-right: var(--space-5);
-  margin: 0;
-}
-.assembly-workspace-page
-  .workspace-panels
-  > .bs-unstructured-notes:not([open]) {
-  padding: 0 !important;
-}
-.assembly-workspace-page .workspace-panels > .workspace-secondary-disclosure,
-.assembly-workspace-page .workspace-panels > .assembly-archived-items {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-}
-.assembly-workspace-page .workspace-secondary-disclosure > summary {
-  padding-left: var(--space-5);
-  padding-right: var(--space-5);
-}
-.assembly-workspace-page .workspace-panels > .assembly-archived-items {
-  margin: 0 0 12px;
-}
+
 .assembly-workspace-page
   :is(.workspace-record-count, .part-details-summary-fields) {
   font-family: inherit;
@@ -8257,14 +7631,7 @@
   --workspace-tile-chevron-left: var(--section-chevron-inset);
 }
 .assembly-workspace-page
-  :is(
-    .part-details-collapse > summary.part-details-view-heading,
-    .workspace-primary-disclosure > summary,
-    .workspace-secondary-disclosure > summary,
-    .assembly-archived-disclosure > summary,
-    .investigation-collapse > summary.investigation-collapse-heading,
-    .bs-unstructured-notes > summary.bs-unstructured-notes-heading
-  ) {
+  :is(.investigation-collapse > summary.investigation-collapse-heading) {
   position: relative;
   box-sizing: border-box;
   padding: var(--space-2) var(--space-5) var(--space-2)
@@ -8279,9 +7646,6 @@
 }
 .assembly-workspace-page
   :is(
-    .part-details-collapse > summary.part-details-view-heading,
-    .workspace-primary-disclosure > summary,
-    .workspace-secondary-disclosure > summary,
     .investigation-collapse > summary.investigation-collapse-heading
   )::before {
   position: absolute !important;
@@ -8292,114 +7656,32 @@
 }
 .assembly-workspace-page
   :is(
-    .part-details-collapse[open] > summary.part-details-view-heading,
-    .workspace-primary-disclosure[open] > summary,
-    .workspace-secondary-disclosure[open] > summary,
     .investigation-collapse[open] > summary.investigation-collapse-heading
   )::before {
   transform: translateY(-50%) rotate(135deg);
 }
 .assembly-workspace-page
-  :is(
-    .part-details-collapse > summary.part-details-view-heading,
-    .workspace-primary-disclosure > summary,
-    .workspace-secondary-disclosure > summary,
-    .investigation-collapse > summary.investigation-collapse-heading,
-    .bs-unstructured-notes > summary.bs-unstructured-notes-heading
-  )
-  :is(h2, .workspace-disclosure-title),
-.assembly-workspace-page .recipe-instructions .recipe-disclosure-toggle > h2 {
+  :is(.investigation-collapse > summary.investigation-collapse-heading)
+  :is(h2, .workspace-disclosure-title) {
   font-family: inherit !important;
   font-size: var(--workspace-tile-label-size) !important;
   font-weight: var(--workspace-tile-label-weight) !important;
   line-height: 1.3 !important;
   margin: 0 !important;
 }
-.assembly-workspace-page .recipe-instructions .recipe-disclosure-toggle {
-  padding-left: var(--workspace-tile-label-left) !important;
-  font-size: var(--workspace-tile-label-size) !important;
-}
-.assembly-workspace-page
-  .recipe-instructions
-  .recipe-disclosure-toggle::before {
-  left: var(--workspace-tile-chevron-left) !important;
-}
+
 .assembly-workspace-page
   :is(.workspace-record-count, .part-details-summary-fields) {
   font-size: var(--text-small) !important;
   font-weight: var(--font-normal) !important;
 }
 
-/* Consistent 12px spacing between collapsed/expanded section cards on both
-   part and subassembly workspaces. Override legacy per-section margins. */
-:is(#launcher, .personal-project-view, #linear, #robot)
-  .assembly-workspace-page.bom-part-workspace
-  > .part-details-view {
-  margin-bottom: 12px !important;
-}
 :is(#launcher, .personal-project-view, #linear, #robot)
   .assembly-workspace-page
   .workspace-panels
-  > :is(
-    .recipe-instructions,
-    .workspace-resource-disclosure,
-    .workspace-archive-history,
-    .investigations-panel,
-    .bs-unstructured-notes,
-    .workspace-backup-details,
-    .instruction-history,
-    .assembly-archived-items
-  ) {
+  > :is(.investigations-panel) {
   margin-top: 0 !important;
   margin-bottom: 12px !important;
-}
-
-/* Work Instructions uses a nested button rather than a native summary.
-   Center the button contents in the identical 48px header area. */
-:is(#launcher, .personal-project-view, #linear, #robot)
-  .assembly-workspace-page
-  .workspace-panels
-  > article.recipe-instructions
-  > .recipe-heading-row {
-  display: flex !important;
-  align-items: center !important;
-  box-sizing: border-box !important;
-  height: auto !important;
-  min-height: var(--section-height) !important;
-  max-height: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-:is(#launcher, .personal-project-view, #linear, #robot)
-  .assembly-workspace-page
-  .workspace-panels
-  > article.recipe-instructions
-  > .recipe-heading-row
-  > .recipe-disclosure-toggle {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  box-sizing: border-box !important;
-  height: auto !important;
-  min-height: var(--section-height) !important;
-  max-height: none !important;
-  padding: 0 var(--space-4) 0 var(--workspace-tile-label-left, 27px) !important;
-  margin: 0 !important;
-  line-height: 1.3 !important;
-}
-:is(#launcher, .personal-project-view, #linear, #robot)
-  .assembly-workspace-page
-  .workspace-panels
-  > article.recipe-instructions
-  > .recipe-heading-row
-  > .recipe-disclosure-toggle
-  > :is(h2, .workspace-record-count) {
-  align-self: center !important;
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  line-height: 1.3 !important;
 }
 
 /* Container is one conventional label/value field, not a multi-row card.
