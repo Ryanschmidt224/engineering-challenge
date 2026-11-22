@@ -37,8 +37,8 @@ The existing 48px header geometry is still defined by several late rules and inc
 
 ## Validation and rollback
 
-`browser-css-regression.spec.mjs` compares candidate screenshots with CSS read from deployed source commit `1ed47284dcea58bdadb4f86b4065e3746fa2995d`, using identical fixture APIs and browser contexts. It covers all three built-in project layouts plus a personal project, part/assembly workspaces, 1440px/390px widths, collapsed and expanded states. Both image sets are retained as CI artifacts. The baseline is derived from the fixed older commit, not regenerated from candidate CSS.
+`browser-css-regression.spec.mjs` compares candidate screenshots with CSS read from deployed source commit `1ed47284dcea58bdadb4f86b4065e3746fa2995d`, using identical fixture APIs and browser contexts. It covers all three built-in project layouts plus a personal project, part/assembly workspaces, 1440px/390px widths, collapsed and expanded states plus the part-edit dialog. Both image sets are retained as CI artifacts. The baseline is derived from the fixed older commit, not regenerated from candidate CSS.
 
-Existing Node and application browser workflows remain required. Six source assertions are made whitespace-tolerant without weakening their layout/property checks. CI installs the pinned formatter and checks formatting plus existing specificity/freeze guardrails.
+Existing Node and application browser workflows remain required. Source assertions are made whitespace-tolerant without weakening their layout/property checks. CI installs the pinned formatter and checks formatting plus existing specificity/freeze guardrails.
 
 Rollback is a code-only revert to the previous authenticated release. No D1 schema, R2 files, project records, authentication or deployment bindings are changed. Backup work is paused at the owner’s request.

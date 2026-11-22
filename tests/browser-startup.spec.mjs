@@ -828,10 +828,10 @@ test("Edit Part separates Container, Part details and purchased alternatives",as
   const response=await fetch("/assets/site-controls.css",{cache:"no-store"});
   return response.text();
  });
- expect(editorStyles).toContain("--edit-part-label-width:168px");
- expect(editorStyles).toContain("grid-template-columns:var(--edit-part-label-width) minmax(0,1fr)");
- expect(editorStyles).toContain(".part-editor-group>label>.field");
- expect(editorStyles).toContain("@media(max-width:520px)");
+ expect(editorStyles).toMatch(/--edit-part-label-width:\s*168px/);
+ expect(editorStyles).toMatch(/grid-template-columns:\s*var\(--edit-part-label-width\) minmax\(0,\s*1fr\)/);
+ expect(editorStyles).toMatch(/\.part-editor-group\s*>\s*label\s*>\s*\.field/);
+ expect(editorStyles).toMatch(/@media\s*\(max-width:\s*520px\)/);
 });
 
 test("project navigation orders summary below tree and page notes can be created with existing photo upload",async({page})=>{

@@ -71,8 +71,9 @@ for(const width of [1440,390])for(const project of projects)for(const kind of ["
    const workspaces=[];for(const page of pages)workspaces.push(await openWorkspace(page,project.id,kind));
    expect(intercepts[0].size).toBe(await pages[0].locator('link[rel="stylesheet"][href^="/assets/"]').count());
    expect(intercepts[0].size).toBeGreaterThan(0);
-   for(const state of ["collapsed","expanded"]){
+   for(const state of (kind==="part"?["collapsed","expanded","editor"]:["collapsed","expanded"])){
     if(state==="expanded")for(const workspace of workspaces)await expand(workspace);
+    if(state==="editor")for(let index=0;index<pages.length;index++){await workspaces[index].getByRole("button",{name:"Edit part details",exact:true}).click();await expect(pages[index].locator(".part-editor-dialog")).toBeVisible();}
     const images=[];
     for(let index=0;index<pages.length;index++){
      const image=await pages[index].screenshot({fullPage:true,animations:"disabled",caret:"hide"});images.push(image);
