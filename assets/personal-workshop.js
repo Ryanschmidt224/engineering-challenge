@@ -1050,7 +1050,8 @@
    });
    const templateSnapshot=()=>({
     tableLayout:currentTableLayout(),
-    genericFields:getGenericFields()
+    genericFields:getGenericFields(),
+    productSections:productBuilder?.getSections()||[]
    });
    const applySelectedTemplate=async()=>{
     const template=selectedTemplate();
@@ -1074,6 +1075,7 @@
      editor.updateFieldVisibility();
      editor.customRows.classList.toggle("workshop-table-editing",editor.active);
     }
+    productBuilder?.setSections(template.productSections||[]);
     if(identityRadios.generic.checked){
      genericTemplateRows.replaceChildren();
      for(const field of template.genericFields||[])addGenericField(field);
