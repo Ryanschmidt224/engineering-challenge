@@ -21,7 +21,7 @@ dialog:is(
     .workspace-photo-dialog,
     .workspace-photo-dialog,
     .bs-markup-modal
-  ):modal() {
+  ):modal {
   position: fixed;
   inset: 0;
   margin: auto;
@@ -45,7 +45,7 @@ dialog:is(
     .part-editor-dialog,
     .workspace-photo-dialog,
     .bs-markup-modal
-  )::backdrop() {
+  )::backdrop {
   background: var(--bs-dialog-backdrop);
 }
 dialog:is(
@@ -110,7 +110,7 @@ dialog:is(
     .workspace-photo-dialog,
     .bs-markup-modal
   )
-  .btn:focus-visible() {
+  .btn:focus-visible {
   outline: 3px solid #a9d6c1;
   outline-offset: 2px;
 }

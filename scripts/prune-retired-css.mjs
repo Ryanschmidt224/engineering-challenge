@@ -34,7 +34,7 @@ function printNode(node) {
     case "selector-id": return "#" + node.value;
     case "selector-tag": case "selector-universal": return namespace + node.value;
     case "selector-attribute": return "[" + namespace + node.attribute + (node.operator || "") + (node.value || "") + (node.raws?.insensitive || (node.insensitive ? " i" : "")) + "]";
-    case "selector-pseudo": return node.value + (node.nodes ? "(" + node.nodes.map(selector => selector.nodes.map(printNode).join("")).join(", ") + ")" : "");
+    case "selector-pseudo": return node.value + (node.nodes?.length ? "(" + node.nodes.map(selector => selector.nodes.map(printNode).join("")).join(", ") + ")" : "");
     case "selector-combinator": return node.value === " " ? " " : " " + node.value + " ";
     case "selector-string": case "selector-nesting": return node.value;
     case "selector-comment": return node.value.startsWith("/*") ? node.value : "/*" + node.value + "*/";

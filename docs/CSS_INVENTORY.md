@@ -8,7 +8,7 @@ Sizes are bytes, not rounded KB. Compressed totals sum gzip output for individua
 
 | Page | Stylesheets | Uncompressed before → after | gzip before → after | !important before → after |
 | --- | --- | --- | --- | --- |
-| `index.html` | 12 | 586,048 → 433,031 | 90,339 → 73,073 | 738 → 592 |
+| `index.html` | 12 | 586,048 → 433,175 | 90,339 → 73,074 | 738 → 592 |
 | `workshop.html` | 5 | 21,082 → 24,987 | 6,309 → 7,191 | 0 → 0 |
 | `knowledge.html` | 5 | 19,614 → 23,579 | 5,902 → 6,802 | 0 → 0 |
 
@@ -31,4 +31,4 @@ Additional superseded header, toolbar and section-frame selectors are removed wh
 See FEATURE_INVENTORY.md for feature-preservation scope and CSS_MIGRATION.md for pending screenshot requests and rollback. Claude reviewed the foundation batch; the owner subsequently authorized deployment of the evaluated feature-inventory cleanup.
 
 
-After the owner-approved cleanup, project markup is one inert template and all project layout scopes use project-view. CSS contains no launcher/linear/robot ID selectors. The strict class-producer CI check follows loaded scripts and imports; its two narrow patterns cover computed button variants and status markers. The subsequent reviewed retirement pass removes or simplifies 677 selectors, including dead branches inside boolean pseudos, saving 75,798 bytes after project-scope consolidation. Existing live alternatives and attribute selectors are retained. Full class/mode lists are in scripts/css-retired.json and scripts/css-dynamic-classes.json.
+After the owner-approved cleanup, project markup is one inert template and all project layout scopes use project-view. CSS contains no launcher/linear/robot ID selectors. The strict class-producer CI check follows loaded scripts and imports; its two narrow patterns cover computed button variants and status markers. The subsequent reviewed retirement pass removes or simplifies 677 selectors, including dead branches inside boolean pseudos, saving 75,889 bytes after project-scope consolidation. Existing live alternatives and attribute selectors are retained. Full class/mode lists are in scripts/css-retired.json and scripts/css-dynamic-classes.json.
