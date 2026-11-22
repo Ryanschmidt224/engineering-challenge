@@ -1138,9 +1138,27 @@ function setupAssemblyTrees(){
   }
   // A container owns the project-tree identity and purpose. Custom parts use
   // the existing Revisions workspace; purchased parts may have alternatives.
+  // Knowledge that applies to this project part: tiles linked to the part, its
+  // selected product or its family (one server rule, one card per tile).
+  // Text only; failures leave the rest of the part page untouched.
+  const renderPartKnowledge=part=>{
+   const box=document.createElement("div");box.className="part-knowledge";
+   const heading=document.createElement("p");heading.className="part-knowledge-heading";heading.textContent="Knowledge";box.append(heading);
+   const list=document.createElement("ul");box.append(list);
+   const add=document.createElement("a");add.textContent="New knowledge tile for this part";add.href="knowledge.html?new=1&link=use:"+encodeURIComponent(part.id);box.append(add);
+   fetch("/api/knowledge?related=use&id="+encodeURIComponent(part.id),{credentials:"same-origin",cache:"no-store"}).then(response=>response.ok?response.json():Promise.reject(Error("HTTP "+response.status))).then(result=>{
+    heading.textContent="Knowledge ("+result.tiles.length+")";
+    const via={use:"this part",product:"product",family:"family"};
+    for(const tile of result.tiles){
+     const item=document.createElement("li"),link=document.createElement("a");link.href="knowledge.html?tile="+encodeURIComponent(tile.id);link.textContent=tile.title;
+     item.append(link,document.createTextNode(" — "+tile.summary+" ("+[...new Set(tile.via.map(entry=>"via "+via[entry.target_type]))].join(", ")+")"));list.append(item);
+    }
+   }).catch(()=>{heading.textContent="Knowledge (could not load)";});
+   return box;
+  };
   const renderFunctionalPartPanel=part=>{
    if(part.itemType==="document"||part.generatedFrom)return null;
-   if(part.familyUse){const section=document.createElement("section");section.className="part-functional-panel";const text=document.createElement("p");text.textContent="Family: "+part.familyName+" · "+(part.productId?"Product: "+part.implementationName:"No product selected");section.append(text);return section;}
+   if(part.familyUse){const section=document.createElement("section");section.className="part-functional-panel";const text=document.createElement("p");text.textContent="Family: "+part.familyName+" · "+(part.productId?"Product: "+part.implementationName:"No product selected");section.append(text,renderPartKnowledge(part));return section;}
    const panel=document.createElement("section");panel.className="part-functional-panel part-container-overview";
    // Keep container identity in the same label-left/value-right format as
    // the rest of Part Details. This is a read-only field in View mode;

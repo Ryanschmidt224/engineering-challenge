@@ -24,8 +24,19 @@ export const relations = [
   {value: "see_also", label: "See also"},
 ];
 
-// Target types are added batch by batch. Batch 2 links tiles to Workshop families.
-export const targetTypes = ["family"];
+// What a tile can link to. "use" is a project part that uses a Workshop
+// family (the current project-part model); "record" is a top-level project
+// record (test, problem, note) and is identified together with its project.
+export const targets = [
+  {value: "tile", label: "Knowledge tile"},
+  {value: "family", label: "Workshop family"},
+  {value: "product", label: "Workshop product"},
+  {value: "use", label: "Project part"},
+  {value: "project", label: "Project"},
+  {value: "record", label: "Project record"},
+];
+export const targetTypes = targets.map((target) => target.value);
+const projectId = /^(?:launcher|linear|robot|p[a-f0-9]{32})$/;
 
 export const limits = {title: 160, summary: 400, body: 20000, sources: 20, sourceTitle: 160, note: 300};
 
@@ -69,6 +80,9 @@ export function validateLink(record) {
   if (!validId(record.id) || !validId(record.tile_id)) throw Error("Invalid link ID.");
   if (!targetTypes.includes(record.target_type)) throw Error("This kind of link target is not supported yet.");
   if (!validId(record.target_id)) throw Error("Choose what this tile links to.");
+  if (record.target_type === "tile" && record.target_id === record.tile_id) throw Error("A tile cannot link to itself.");
+  const needsProject = record.target_type === "record";
+  if (needsProject && !projectId.test(String(record.target_project_id || ""))) throw Error("Choose the project of this record.");
   const relation = record.relation || "see_also";
   if (!relations.some((entry) => entry.value === relation)) throw Error("Choose a listed relation.");
   return {
@@ -76,6 +90,7 @@ export function validateLink(record) {
     tile_id: record.tile_id,
     target_type: record.target_type,
     target_id: record.target_id,
+    target_project_id: needsProject ? record.target_project_id : null,
     relation,
     note: text(record.note, limits.note, "Link note"),
   };
@@ -88,3 +103,25 @@ export const paragraphs = (body) =>
     .split(/\n\s*\n/)
     .map((part) => part.trim())
     .filter(Boolean);
+
+// Where a link target opens in the app.
+export function targetHref(link) {
+  const id = encodeURIComponent(link.target_id);
+  const project = encodeURIComponent(link.target_project_id || "");
+  switch (link.target_type) {
+    case "tile":
+      return "knowledge.html?tile=" + id;
+    case "family":
+      return "workshop.html?family=" + id;
+    case "product":
+      return "workshop.html?product=" + id;
+    case "use":
+      return project ? "index.html#" + project + "/part/" + id : "workshop.html?use=" + id;
+    case "project":
+      return "index.html#" + id;
+    case "record":
+      return "index.html#" + project;
+    default:
+      return "";
+  }
+}
