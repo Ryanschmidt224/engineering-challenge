@@ -4937,3 +4937,36 @@
  margin-top:0!important;
  margin-bottom:12px!important;
 }
+
+/* Work Instructions uses a nested button rather than a native summary.
+   Center the button contents in the identical 48px header area. */
+:is(#launcher,.personal-project-view,#linear,#robot) .assembly-workspace-page .workspace-panels>article.recipe-instructions>.recipe-heading-row{
+ display:flex!important;
+ align-items:center!important;
+ box-sizing:border-box!important;
+ height:48px!important;
+ min-height:48px!important;
+ max-height:48px!important;
+ padding:0!important;
+ margin:0!important;
+}
+:is(#launcher,.personal-project-view,#linear,#robot) .assembly-workspace-page .workspace-panels>article.recipe-instructions>.recipe-heading-row>.recipe-disclosure-toggle{
+ display:flex!important;
+ align-items:center!important;
+ justify-content:flex-start!important;
+ box-sizing:border-box!important;
+ height:48px!important;
+ min-height:48px!important;
+ max-height:48px!important;
+ padding:0 16px 0 var(--workspace-tile-label-left,27px)!important;
+ margin:0!important;
+ line-height:1.3!important;
+}
+:is(#launcher,.personal-project-view,#linear,#robot) .assembly-workspace-page .workspace-panels>article.recipe-instructions>.recipe-heading-row>.recipe-disclosure-toggle> :is(h2,.workspace-record-count){
+ align-self:center!important;
+ margin-top:0!important;
+ margin-bottom:0!important;
+ padding-top:0!important;
+ padding-bottom:0!important;
+ line-height:1.3!important;
+}
