@@ -227,11 +227,7 @@
 :is(#launcher, .personal-project-view)
   .assembly-workspace-page.is-editing-bom-part
   .workspace-panels
-  > article:not(.workspace-main-bom-editor),
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page.is-editing-bom-part
-  .workspace-panels
-  > .workspace-actions {
+  > article:not(.workspace-main-bom-editor) {
   display: none !important;
 }
 
@@ -607,11 +603,7 @@
   > .workspace-heading {
   display: none !important;
 }
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page.is-editing-bom-part
-  .workspace-panels {
-  margin-top: 0;
-}
+
 :is(#launcher, .personal-project-view)
   .assembly-workspace-page.is-editing-bom-part
   .workspace-panels
@@ -1103,9 +1095,6 @@
   gap: var(--space-3);
 }
 
-@media (max-width: 600px) {
-}
-
 /* Named work-instruction photos and keyboard-accessible full-screen viewer. */
 .recipe-step-photo-name-label {
   display: grid;
@@ -1170,9 +1159,6 @@
   flex: 0 0 auto;
 }
 
-@media (max-width: 600px) {
-}
-
 /* Feature-tree visibility is a display filter, not a BOM classification. */
 .assembly-hidden-toggle {
   display: block;
@@ -1213,10 +1199,8 @@
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
   .assembly-workspace-page:not(.bom-part-workspace)
   .workspace-panels {
-  display: flex;
-  flex-direction: column;
   align-items: stretch;
-  gap: 0;
+
   min-width: 0;
 }
 
@@ -1228,12 +1212,7 @@
   display: block;
   min-width: 0;
 }
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-panels
-  > .workspace-actions {
-  order: 4;
-}
+
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
   .assembly-workspace-page:not(.bom-part-workspace)
   .workspace-panels
@@ -1664,23 +1643,12 @@
 }
 
 /* Keep the record panel and unstructured notes ahead of the workspace actions. */
-:is(#launcher, .personal-project-view, #linear, #robot)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-panels
-  > .workspace-actions {
-  margin-bottom: 0;
-}
+
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
   .assembly-workspace-page:not(.bom-part-workspace)
   .workspace-panels
   > .investigations-panel {
   order: 3;
-}
-:is(:is(#launcher, .personal-project-view), #linear, #robot)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-panels
-  > .workspace-actions {
-  order: 5;
 }
 
 /* Private account and personal project management (no public data toggled by CSS). */
@@ -1771,8 +1739,7 @@
 .project-summary-page {
   width: 100%;
   min-width: 0;
-  display: grid;
-  gap: var(--space-5);
+
   padding: 4px 2px 30px;
 }
 .project-summary-page.hide {
@@ -1874,9 +1841,6 @@
   white-space: nowrap;
 }
 .project-summary-lists {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr);
-  gap: var(--space-6);
   align-items: start;
 }
 
@@ -1911,10 +1875,6 @@
   font-size: var(--text-body);
 }
 @media (max-width: 760px) {
-  .project-summary-lists {
-    grid-template-columns: 1fr;
-    gap: var(--space-6);
-  }
   .project-summary-photo-stage {
     height: clamp(230px, 54vw, 370px);
   }
@@ -2151,7 +2111,6 @@
 }
 /* Project summary: distinct BOM and tool surfaces with a text-first interior. */
 .project-summary-lists {
-  gap: var(--space-5);
   align-items: stretch;
 }
 
@@ -2215,10 +2174,6 @@
   justify-content: flex-start;
 }
 @media (max-width: 760px) {
-  .project-summary-lists {
-    gap: var(--space-4);
-  }
-
   .project-summary-photo-stage {
     height: clamp(220px, 55vw, 390px);
   }
@@ -3380,9 +3335,6 @@
 
 /* One Projects dashboard; category choices are catalog metadata, not separate pages. */
 
-@media (max-width: 600px) {
-}
-
 /* Single account entry point: login/register is one consistent dialog. */
 .project-account-dialog {
   width: min(440px, calc(100vw - 32px));
@@ -4213,17 +4165,7 @@ body > .footer {
 }
 
 /* Nonexclusive project attributes. Clicking several chips matches all selected tags. */
-#home .bs-project-tag-filter {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3) var(--space-4);
-  margin: 0 0 15px;
-  padding: 5px 0 4px;
-}
-#home .bs-project-tag-filter[hidden] {
-  display: none !important;
-}
+
 .bs-project-tag-title {
   font-size: var(--text-small);
   font-weight: var(--font-bold);
@@ -4241,33 +4183,7 @@ body > .footer {
   flex: 1 1 100%;
   gap: var(--space-2);
 }
-.bs-project-tag-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  background: var(--color-surface);
-  color: var(--color-text);
-  padding: 7px 12px;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  line-height: 1.2;
-  cursor: pointer;
-  transition:
-    background 0.12s,
-    border-color 0.12s;
-}
-.bs-project-tag-chip:hover {
-  border-color: var(--color-accent);
-  background: var(--color-hover);
-}
-.bs-project-tag-chip.is-active {
-  border-color: var(--color-accent);
-  background: var(--color-selected);
-  font-weight: var(--font-bold);
-}
-.bs-project-tag-chip:focus-visible,
+
 .bs-project-tag-clear:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
@@ -4302,20 +4218,10 @@ body > .footer {
 .bs-project-tag-suggestions {
   gap: var(--space-2);
 }
-.bs-project-tag-suggestions .bs-project-tag-chip {
-  padding: 6px 10px;
-  font-size: var(--text-small);
-}
+
 @media (max-width: 600px) {
-  #home .bs-project-tag-filter {
-    gap: var(--space-2);
-  }
   .bs-project-tag-options {
     gap: var(--space-1);
-  }
-  .bs-project-tag-chip {
-    padding: 7px 10px;
-    font-size: var(--text-small);
   }
 }
 
@@ -4504,15 +4410,7 @@ body > .footer {
   min-width: 0;
   min-height: 40px;
 }
-#home .bs-project-tag-filter {
-  display: grid;
-  gap: var(--space-3);
-  margin: 5px 0 0;
-  padding: 15px 0 0;
-  border-top: 1px solid var(--color-border);
-  background: transparent;
-  box-shadow: none;
-}
+
 #home .bs-project-tag-filter-heading {
   display: flex;
   justify-content: space-between;
@@ -4540,13 +4438,7 @@ body > .footer {
   align-items: flex-start;
   gap: var(--space-2);
 }
-#home .bs-project-tag-chip {
-  white-space: normal;
-  text-align: left;
-  font-size: var(--text-small);
-  line-height: 1.2;
-  padding: 7px 9px;
-}
+
 #home .bs-project-tag-clear {
   font-size: var(--text-small);
   white-space: nowrap;
@@ -4803,9 +4695,6 @@ body > .footer {
 
 /* Page-level action placement: keep controls beside the content they operate on,
    not stranded on the far edge of a wide monitor. Editing form footers unchanged. */
-
-@media (max-width: 680px) {
-}
 
 /* Project Summary BOM: make saved parts navigable without adding visual clutter. */
 .project-summary-part-list .project-summary-part-link {
@@ -5348,14 +5237,9 @@ body > .footer {
 .library-part-dialog .library-workshop-quick-results {
   margin-top: 3px;
 }
-@media (max-width: 620px) {
-}
 
 /* The global Workshop search belongs to the Workshop item selection section,
    not the Part source radio group. Keep one enclosing frame. */
-
-@media (max-width: 620px) {
-}
 
 /* Workshop picker: one lookup mode at a time, shared label alignment and spacing. */
 
@@ -5394,8 +5278,6 @@ body > .footer {
   border: 0;
   font-size: var(--text-small);
   line-height: 1.4;
-}
-@media (max-width: 620px) {
 }
 
 /* Edit Part: project Container versus its selected physical implementation.

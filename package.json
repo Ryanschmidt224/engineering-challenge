@@ -8,7 +8,7 @@
     "test:browser": "playwright test --config=playwright.config.mjs",
     "dev": "node scripts/test-server.mjs",
     "format:css": "prettier --write \"assets/*.css\"",
-    "check:css": "prettier --check \"assets/*.css\" && node scripts/check-css.mjs"
+    "check:css": "prettier --check \"assets/*.css\" && node scripts/check-css.mjs && node scripts/prune-retired-css.mjs --check"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",

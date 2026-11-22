@@ -31,3 +31,11 @@ The owner confirmed that this batch must remain unmerged for Claude review. The 
 This is an incremental CSS ownership migration, not a completed ES-module rebuild of the main page. The existing site-assembly.js, project-manager.js and dialog-system.js grow slightly to preserve mounted handlers, use the shared header/account bridge and fix tooltip interaction. This is an explicit transition exception to the proposed “legacy JS never grows” rule. New header code is a small ES module with explicit initialization and no added window global. Help text is not yet fully centralized. The feature inventory is not falsely marked Rebuilt.
 
 No new dependency, schema migration, API change, feature removal or application-data deletion is included. Proposed drops in the inventory remain undecided.
+
+## Claude review corrections
+
+The uploaded PR45 review approved the batch with no blocking issues. Follow-up changes give summary, assembly and part section lists one shared 12 px gap, retire their conflicting legacy container layout rules, and keep the requested collapsed defaults. Empty legacy save wrappers are removed while status messages and save handlers remain mounted. The phone header keeps navigation on one row, scrolling horizontally only when necessary, and the Projects brand returns home without a document reload.
+
+Tree status marks and menu panels now use generic UI component classes; project tag filter and editor chips adopt the shared chip component. Keep `button--quiet`: Workshop and Knowledge actively use it. Only the unused small/danger aliases are removed. The contradictory empty-state wording is corrected. The obsolete one-shot pruner is removed, and the curated retirement check now runs in `npm run check` and fails on reintroduced retired CSS or source references. A CLI regression test verifies non-writing checks, mixed-selector preservation and reintroduction detection.
+
+A blanket unused-class failure remains deferred because text search cannot establish absence of dynamic and stored-content classes. Retain reviewed retirement lists and the CSS guardrails. The Workshop/project information tiles and adjustable columns remain separate follow-up batches.

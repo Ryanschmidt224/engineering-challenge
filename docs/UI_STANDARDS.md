@@ -30,7 +30,7 @@ Every collapsible block on project, assembly and part pages: Part details, Work 
 
 - One frame: surface background, 1px border, large radius, the same vertical gap between sections.
 - One header: at least 48 px (`--section-height`), chevron on the left (6 px, 1.5 px stroke, rotates when open), title 16 px semibold, record count in parentheses 14 px muted, optional help or actions on the right. The header grows when the title wraps; it never clips.
-- One body: the same inner padding. Empty sections say so in one muted line.
+- One body: the same inner padding. Communicate emptiness once: a zero header count needs no duplicate message. Otherwise provide one concise guidance line. Preserve loading and error feedback.
 - Variant `ui-section--quiet` (no frame) for secondary, utility sections such as Project backups and Recent changes.
 - Project summary content sections use this same header and body and start collapsed. Existing editable fields stay inside the body. A zero record count already communicates emptiness; do not repeat it with “No notes yet”. Preserve loading and error feedback.
 

@@ -22,6 +22,11 @@ for (const width of [1440, 390]) test("shared headers, controls and collapsed su
     await page.screenshot({path: testInfo.outputPath(path.includes("workshop") ? "workshop.png" : path.includes("knowledge") ? "knowledge.png" : "projects.png")});
   }
   expect(headers[1]).toEqual(headers[0]); expect(headers[2]).toEqual(headers[0]);
+  if(width === 390) {
+    expect(headers[0].height).toBeLessThanOrEqual(120);
+    const rows = await page.locator(".ui-site-nav__item").evaluateAll(els => els.map(el => el.getBoundingClientRect().top));
+    expect(new Set(rows).size).toBe(1);
+  }
   await page.goto("/index.html#home");
   await expect(page.getByRole("button", {name: "+ New project", exact: true})).toBeVisible();
   const controls = await page.locator(".ui-directory-toolbar .ui-control, .ui-directory-toolbar > .ui-button, .ui-toolbar-menu > summary").evaluateAll(els => els.filter(el => el.getClientRects().length).map(el => ({height: el.getBoundingClientRect().height, font: getComputedStyle(el).fontSize})));
@@ -78,9 +83,9 @@ test("empty section bodies share geometry and tooltip help does not cover the tr
   await expect(history.getByRole("combobox", {name: "Entry type", exact: true})).toBeVisible();
   await history.getByRole("button", {name: "Cancel", exact: true}).click();
   const tree = page.locator("#launcher [data-assembly-tree]");
-  const complete = tree.locator(".assembly-name").filter({has: page.locator(".assembly-tree-status-marker")});
+  const complete = tree.locator(".assembly-name").filter({has: page.locator(".ui-status-mark")});
   await expect(complete).toHaveCount(1);
-  expect(await complete.evaluate(el => el.firstElementChild.classList.contains("assembly-tree-status-marker") && el.firstChild === el.firstElementChild)).toBe(true);
+  expect(await complete.evaluate(el => el.firstElementChild.classList.contains("ui-status-mark") && el.firstChild === el.firstElementChild)).toBe(true);
   const row = tree.locator(".assembly-node").first();
   await row.hover();
   await expect(page.locator("#bs-global-tooltip")).toBeHidden();
@@ -99,4 +104,51 @@ test("Account is reachable from the shared Workshop header", async ({page}) => {
   await page.locator(".ui-site-account").click();
   await expect(page.locator(".project-account-dialog")).toBeVisible();
   await expect(page).not.toHaveURL(/account=1/);
+});
+
+
+for (const width of [1440, 390]) test("shared section gaps across summary, assembly and part at " + width + "px", async ({page}, testInfo) => {
+  await page.setViewportSize({width, height: 1000});
+  async function gaps(root, roles) {
+    const boxes = [];
+    for (const role of roles) {
+      const section = root.locator('[data-section="' + role + '"]');
+      await expect(section).toBeVisible();
+      boxes.push(await section.boundingBox());
+    }
+    for(let i = 1; i < boxes.length; i++) expect(boxes[i].y - boxes[i - 1].y - boxes[i - 1].height, roles[i - 1] + " to " + roles[i]).toBeCloseTo(12, 0);
+  }
+  await page.goto("/#launcher");
+  await gaps(page.locator("#launcher .project-summary-page"), ["summary-photos", "summary-description", "summary-cost"]);
+  await page.screenshot({path: testInfo.outputPath("summary-spacing.png"), fullPage: true});
+  await page.goto("/#launcher/workspace/__root__");
+  await gaps(page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)"), ["work-instructions", "helpful-tools", "history", "notes"]);
+  await page.screenshot({path: testInfo.outputPath("assembly-spacing.png"), fullPage: true});
+  const response = await page.request.post("/api/workshop", {headers: {origin: "http://127.0.0.1:4173"}, data: {entity: "use", expectedRevision: null, expectedFamilyRevision: 1, record: {id: crypto.randomUUID(), project_id: "launcher", family_id: "f-resistor", product_id: null, tree_node_id: null, purpose: "Spacing fixture", quantity: 1, unit: "pcs", field_values: {}, notes: ""}}});
+  expect(response.ok(), await response.text()).toBe(true);
+  const {record} = await response.json();
+  await page.goto("/#launcher/part/" + record.id);
+  await gaps(page.locator("#launcher .bom-part-workspace"), ["part-details", "work-instructions", "helpful-tools", "history", "notes"]);
+  await page.screenshot({path: testInfo.outputPath("part-spacing.png"), fullPage: true});
+  let navigations = 0;
+  page.on("request", request => { if(request.isNavigationRequest() && request.frame() === page.mainFrame()) navigations++; });
+  await page.locator(".ui-site-brand").click();
+  await expect(page).toHaveURL(/\/#home$/);
+  await expect(page.locator(".ui-directory-toolbar")).toBeVisible();
+  expect(navigations).toBe(0);
+});
+
+test("project filter chips use the shared component and retain toggle and remove behavior", async ({page}) => {
+  await page.goto("/#home");
+  await page.locator(".project-filter-menu > summary").click();
+  const chip = page.locator(".ui-toolbar-menu__panel .ui-chip").first();
+  await expect(chip).toBeVisible();
+  await expect(chip).toHaveAttribute("aria-pressed", "false");
+  await chip.click();
+  await expect(chip).toHaveAttribute("aria-pressed", "true");
+  const remove = page.locator(".project-selected-descriptors .ui-chip");
+  await expect(remove).toHaveCount(1);
+  await remove.click();
+  await expect(remove).toHaveCount(0);
+  await expect(chip).toHaveAttribute("aria-pressed", "false");
 });

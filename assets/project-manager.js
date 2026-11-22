@@ -39,7 +39,7 @@ window.BSProjectManager=(()=>{
   const suggestions=["Mechanical","Electronics","Software","Controls","CAD","3D Printing","Woodworking","PCB Design","Machining","Robotics","Measurement","Fabrication"];
   const projectTags=project=>Array.isArray(project?.tags)?project.tags:[];
   const parseTags=text=>[...new Map(String(text||"").split(",").map(x=>x.trim().replace(/\\s+/g," ")).filter(Boolean).map(x=>[x.toLowerCase(),x])).values()].slice(0,20);
-  const tagFilter=element("div","bs-project-tag-filter");
+  const tagFilter=element("div","bs-project-tag-filter ui-toolbar-menu__panel");
   const tagTitle=element("span","bs-project-tag-title","Descriptors");
   const tagSearchLabel=element("label","bs-project-descriptor-search-label","Find a descriptor");
   const tagSearch=element("input","field bs-project-descriptor-search");
@@ -68,7 +68,7 @@ window.BSProjectManager=(()=>{
    for(const [key,{name,count}] of [...counts].sort((a,b)=>a[1].name.localeCompare(b[1].name))){
     if(filter&&!key.includes(filter)&&!activeTags.has(key))continue;
     visibleCount++;
-    const chip=element("button","bs-project-tag-chip"+(activeTags.has(key)?" is-active":""),name);
+    const chip=element("button","ui-chip",name);
     chip.type="button";chip.setAttribute("aria-pressed",String(activeTags.has(key)));
     chip.append(element("span","bs-project-tag-count",String(count)));
     chip.onclick=()=>{activeTags.has(key)?activeTags.delete(key):activeTags.add(key);renderTagFilters();updateDirectory()};
@@ -79,8 +79,8 @@ window.BSProjectManager=(()=>{
    for(const key of activeTags){
     const name=counts.get(key)?.name;
     if(!name){activeTags.delete(key);continue}
-    const chip=element("button","bs-project-tag-chip is-active",name+" ×");
-    chip.type="button";chip.setAttribute("aria-label","Remove "+name+" filter");
+    const chip=element("button","ui-chip",name+" ×");
+    chip.type="button";chip.setAttribute("aria-pressed","true");chip.setAttribute("aria-label","Remove "+name+" filter");
     chip.onclick=()=>{
      activeTags.delete(key);renderTagFilters();updateDirectory();
      (selectedTags.querySelector("button")||filterMenu.querySelector("summary")).focus();
@@ -101,7 +101,7 @@ window.BSProjectManager=(()=>{
     choices.replaceChildren();const current=parseTags(input.value);
     for(const name of options){
      const selected=current.some(tag=>tag.toLowerCase()===name.toLowerCase());
-     const chip=element("button","bs-project-tag-chip"+(selected?" is-active":""),name);
+     const chip=element("button","ui-chip",name);
      chip.type="button";chip.setAttribute("aria-pressed",String(selected));
      chip.onclick=()=>{
       const next=selected?current.filter(tag=>tag.toLowerCase()!==name.toLowerCase()):[...current,name];

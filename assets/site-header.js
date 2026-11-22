@@ -7,7 +7,8 @@ export function initSiteHeader() {
     const el = document.createElement(tag); el.className = className; if (text) el.textContent = text; return el;
   };
   const inner = make("div", "ui-site-header__inner");
-  const brand = make("a", "ui-site-brand", "BUILDING "); brand.href = "index.html#home";
+  const brand = make("a", "ui-site-brand", "BUILDING "); brand.href = projectPage ? "#home" : "index.html#home";
+  if (projectPage) brand.dataset.nav = "home";
   brand.append(make("span", "", "SCHMIDT"));
   const nav = make("nav", "ui-site-nav"); nav.setAttribute("aria-label", "Main navigation");
   for (const [id, label, href] of [["home", "Projects", "index.html#home"], ["knowledge", "Knowledge", "knowledge.html"], ["commonparts", "The Workshop", "workshop.html"], ["calculators", "Calculators", "index.html#calculators"]]) {

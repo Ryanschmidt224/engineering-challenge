@@ -61,3 +61,4 @@ for (const file of readdirSync("assets").filter(name => name.endsWith(".css"))) 
   if (edits.length) console.log(path + ": " + edits.length + " rule edits");
 }
 console.log(total + " selectors removed; " + bytes + " bytes saved" + (process.argv.includes("--write") ? "." : " (dry run)."));
+if (process.argv.includes("--check") && total) throw Error(total + " retired selectors remain; review and remove them before merging.");

@@ -38,7 +38,6 @@
   function render(){
    list.replaceChildren();add.hidden=!editable;
    count.textContent="("+records.length+(records.length===1?" record)":" records)");
-
    for(const note of records){
     const card=el("article","bs-unstructured-card");
     const heading=button(note.title,()=>{

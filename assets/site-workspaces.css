@@ -51,12 +51,15 @@
 /* Consistent alignment for individual part workspaces. */
 /* Keep the header, part details, action buttons, instructions and drawings
    on a shared column instead of mixing full-width and 900px sections. */
-.bom-part-workspace > .workspace-heading,
-.bom-part-workspace > .workspace-panels {
+.bom-part-workspace > .workspace-heading {
   width: 100%;
   max-width: 1100px;
   margin-left: 0;
   margin-right: 0;
+}
+.bom-part-workspace > .workspace-panels {
+  width: 100%;
+  max-width: 1100px;
 }
 .bom-part-workspace > .workspace-panels {
   max-width: 1100px;
@@ -946,8 +949,6 @@
   flex-wrap: wrap;
   margin: 14px 0;
 }
-@media (max-width: 650px) {
-}
 
 /* Project portability actions are secondary to BOM/recipe authoring. */
 .workspace-archive-actions {
@@ -1233,9 +1234,6 @@
 
 /* Compact BOM list: one horizontally aligned row per part. */
 
-@media (max-width: 650px) {
-}
-
 /* The feature tree and BOM live in the SAME left sidebar on assembly workspaces. */
 .assembly-sidebar > .workspace-bom {
   display: none;
@@ -1362,7 +1360,6 @@
     min-width: 0;
   }
   .assembly-workspace-page:not(.bom-part-workspace) .workspace-panels {
-    display: block;
     max-width: none;
     width: 100%;
   }
@@ -1684,12 +1681,7 @@
   border: 1px solid var(--color-border);
   color: var(--color-text);
 }
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-actions {
-  margin: 12px 0 32px;
-  padding-top: 8px;
-}
+
 /* Keep section groups aligned while using quiet, consistent separation. */
 :is(#launcher, .personal-project-view)
   .assembly-workspace-page:not(.bom-part-workspace)
@@ -1737,13 +1729,6 @@
   margin-bottom: 30px;
 }
 
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-panels
-  > .workspace-actions {
-  margin-top: 6px;
-  padding-top: 0;
-}
 @media (max-width: 800px) {
   :is(#launcher, .personal-project-view)
     .assembly-sidebar.bom-sidebar-active
@@ -1834,17 +1819,9 @@
 :is(#launcher, .personal-project-view)
   .assembly-workspace-page:not(.bom-part-workspace)
   .workspace-panels {
-  display: block;
   max-width: none;
 }
 
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-panels
-  > .workspace-actions {
-  margin: 14px 0 24px;
-  padding: 0;
-}
 /* Match section spacing at mobile widths without compressing the contents. */
 @media (max-width: 800px) {
   :is(#launcher, .personal-project-view)
@@ -2238,27 +2215,15 @@
   font-size: var(--text-small);
   line-height: 1.4;
 }
-@media (max-width: 620px) {
-}
 
 /* Subassembly workspace: one spacing owner, not accumulated article margins
    and section-specific offsets. Applies to project/subassembly pages alike. */
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-panels {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
+
 :is(#launcher, .personal-project-view)
   .assembly-workspace-page:not(.bom-part-workspace)
   .workspace-panels
   > article
-  + article,
-:is(#launcher, .personal-project-view)
-  .assembly-workspace-page:not(.bom-part-workspace)
-  .workspace-panels
-  > .workspace-actions {
+  + article {
   margin-block: 0;
 }
 :is(#launcher, .personal-project-view)
@@ -2267,11 +2232,4 @@
   > article
   + article {
   padding-top: 20px;
-}
-@media (max-width: 800px) {
-  :is(#launcher, .personal-project-view)
-    .assembly-workspace-page:not(.bom-part-workspace)
-    .workspace-panels {
-    gap: var(--space-4);
-  }
 }

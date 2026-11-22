@@ -1155,7 +1155,6 @@
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
   .assembly-workspace-page.bom-part-workspace
   > .workspace-panels {
-  display: block;
   width: 100%;
   max-width: none;
 }
@@ -3251,11 +3250,7 @@
   max-width: none;
   font-weight: var(--font-normal);
 }
-.project-summary-overview {
-  display: grid;
-  gap: var(--space-3);
-  margin: 16px 0;
-}
+
 .project-summary-overview h2 {
   margin: 0 0 8px;
   font-size: var(--text-body);
@@ -3335,11 +3330,6 @@
 }
 .project-overview-card .project-summary-tags {
   margin: 0;
-}
-@media (min-width: 761px) {
-  .project-summary-page .project-summary-lists {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 #home .compact-project-directory {
@@ -3428,8 +3418,6 @@
 #home .compact-project-directory .project-author {
   font-size: var(--text-caption);
   color: var(--color-text-muted);
-}
-@media (max-width: 550px) {
 }
 
 /* Keep the Work Instructions step's Edit/Save button alongside its title. */
@@ -3763,9 +3751,6 @@
 /* Main Work Instruction disclosure and its nested hierarchy control.
    The step heading uses the same chevron language as Project Archive. */
 
-@media (max-width: 600px) {
-}
-
 /* A selected step displays its own collapsed heading and the independent
    active-entry/archive headings beneath it. They must not be nested under
    the step's native <details> element. */
@@ -3919,9 +3904,6 @@
   font-size: var(--text-body);
   font-weight: var(--font-bold);
   line-height: 1.4;
-}
-
-@media (max-width: 600px) {
 }
 
 /* Notes: photo attachments belong directly to the note, not an additional
@@ -4290,16 +4272,6 @@
 .assembly-workspace-page .workspace-save[hidden],
 .bom-part-workspace .part-workspace-save[hidden] {
   display: none !important;
-}
-.workspace-actions:has(> .workspace-save[hidden]):not(
-    :has(.workspace-status:not(:empty))
-  ),
-.workspace-actions:has(> .part-workspace-save[hidden]):not(
-    :has(.part-workspace-status:not(:empty))
-  ) {
-  min-height: 0;
-  padding: 0;
-  margin: 0;
 }
 
 /* Archived Work Instruction steps reuse the existing left-hand navigation.
@@ -6253,10 +6225,6 @@
 }
 
 /* Project Summary: condensed, consistent cards and an inline cost explanation. */
-.project-summary-overview {
-  gap: var(--space-3);
-  margin: 12px 0;
-}
 
 .project-summary-page .project-summary-overview .project-summary-tags {
   display: flex;
@@ -6338,20 +6306,7 @@
 /* One owner for spacing between Project Summary frames.
    The outer page spaces its direct sections; the overview spaces its two cards.
    Neither card nor the milestone panel adds outer vertical margins. */
-.project-summary-page {
-  --project-summary-frame-gap: 16px;
-  gap: var(--project-summary-frame-gap);
-}
-.project-summary-page > .project-summary-overview {
-  display: grid;
-  gap: var(--project-summary-frame-gap);
-  margin: 0;
-}
 
-.project-summary-page > .project-summary-lists {
-  margin: 0;
-  row-gap: var(--project-summary-frame-gap);
-}
 .project-summary-page > .project-summary-tracker {
   margin: 0;
 }
