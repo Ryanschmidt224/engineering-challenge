@@ -1,8 +1,22 @@
-# CSS cleanup: first batch
+# Shared CSS standards
 
-This batch preserves the deployed appearance. It formats all 13 stylesheets with pinned Prettier 3.6.2 and removes only earlier exact duplicate declarations in the same file, selector and conditional context. Different values, fallbacks, selector groups and keyframes remain intact. No selectors, markup, storage or APIs are renamed.
+The owner prefers consistent text, spacing and graphics over exact reproduction of the old cascade. This batch deliberately normalizes near-identical values to shared theme tokens, after making all 13 stylesheets readable and removing 153 exact duplicate declarations / 19 empty rules. Eight duplicate `!important` declarations are removed; specificity ceilings are lowered, not raised.
 
-Removed 153 exact duplicate declarations and 19 resulting empty rules. Eight duplicate `!important` declarations are removed. Existing freeze hashes are refreshed for this reviewed cleanup; the allowed specificity ceilings are reduced, never raised. Formatted source grows in line count because declarations are readable on separate lines; raw line count is not a correctness target.
+## Intended appearance
+
+| Element | Standard |
+| --- | --- |
+| Caption / secondary text | 12px / 14px |
+| Body and workspace section titles | 16px |
+| Lead / section title / page title / display | 18px / 22px / 28px / 36px |
+| Font weights | 400 normal, 600 semibold, 750 bold |
+| Spacing scale | 4, 8, 12, 16, 24, 32, 48px |
+| Corners | 4, 8, 12px; pills and circles retain their purpose |
+| Workspace headings | Minimum 48px, content-driven height when labels wrap |
+| Heading counts | 14px |
+| Disclosure graphics | Shared 6px chevron / 1.5px stroke and common inset tokens |
+
+Explicit CSS text sizes/weights, gaps, near-identical corner radii and workspace-heading padding use the shared scale. Purposeful layout dimensions, responsive calculations, photo dimensions and margins remain local. Embedded JavaScript styles and font shorthands are outside this batch. This makes deliberate visual changes; exact screenshot equality is not an acceptance requirement.
 
 ## Stylesheet inventory
 
@@ -33,12 +47,14 @@ Removed 153 exact duplicate declarations and 19 resulting empty rules. Eight dup
 | Nested instruction archives | `site-polish.css` | `.investigation-collapse-heading`; empty/open/closed/step-editing states |
 | Workshop panels and headings | `components.css`, `family-workshop.css` | Shared controls already isolated from the legacy cascade |
 
-The existing 48px header geometry is still defined by several late rules and includes `!important`. This batch does not claim that the final component migration is complete. Consolidating those rules is a separate reviewed batch after these visual baselines pass. Keep minimum heights, title wrapping, counts, action visibility, keyboard focus and chevron alignment in the acceptance cases.
+Header ownership remains distributed, with shared values now supplied by theme tokens. A later component migration can remove competing rules using this inventory. Retain title wrapping, counts, action visibility, keyboard focus and chevron alignment.
 
 ## Validation and rollback
 
-`browser-css-regression.spec.mjs` compares candidate screenshots with CSS read from deployed source commit `1ed47284dcea58bdadb4f86b4065e3746fa2995d`, using identical fixture APIs and browser contexts. It covers all three built-in project layouts plus a personal project, part/assembly workspaces, 1440px/390px widths, collapsed and expanded states plus the part-edit dialog. Both image sets are retained as CI artifacts. The baseline is derived from the fixed older commit, not regenerated from candidate CSS.
+`browser-css-regression.spec.mjs` captures old and new renderings using CSS from fixed deployed source `1ed47284dcea58bdadb4f86b4065e3746fa2995d`. Identical fixtures cover three built-in projects and a personal project, part/assembly workspaces, 1440px/390px widths, collapsed/expanded states and the part-edit dialog. Both image sets are retained in CI as evidence of intentional differences.
 
-Existing Node and application browser workflows remain required. Source assertions are made whitespace-tolerant without weakening their layout/property checks. CI installs the pinned formatter and checks formatting plus existing specificity/freeze guardrails.
+Acceptance checks require readable standard title/count sizes, headings at least 48px tall, no clipped header contents, no horizontal page overflow, working disclosures/edit dialogs and no browser errors. Existing project/Workshop workflows and Node checks remain required. Source assertions tolerate formatting and refer to the shared radius token. CI checks pinned formatting plus the existing specificity/freeze guardrails.
 
-Rollback is a code-only revert to the previous authenticated release. No D1 schema, R2 files, project records, authentication or deployment bindings are changed. Backup work is paused at the owner’s request.
+The underlying header rules still occur in several files; consolidating ownership is a later bounded batch. Do not claim that all override files or `!important` rules have been removed. This batch establishes common values while retaining existing application behavior.
+
+Rollback is a code-only revert to the previous authenticated release. No D1 schema, R2 files, project records, authentication or deployment bindings change. Backup work is paused at the owner's request.

@@ -5,7 +5,7 @@
 @media (min-width: 1100px) {
   :is(#launcher, .personal-project-view)
     .assembly-layout:has(> .assembly-sidebar.bom-sidebar-active) {
-    column-gap: 14px;
+    column-gap: var(--space-4);
   }
 }
 /* Use the same muted selected-row shade as the feature tree, not a new accent. */
@@ -22,7 +22,7 @@
   .bom-subassembly[open]
   > .bom-part-summary {
   background: var(--color-sidebar);
-  border-radius: 5px;
+  border-radius: var(--radius-small);
 }
 :is(#launcher, .personal-project-view)
   .assembly-sidebar
@@ -42,7 +42,7 @@
 /* Matching outer frame for the main assembly page. */
 .assembly-layout > .assembly-content {
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-page);
   overflow: visible;
 }
@@ -50,7 +50,7 @@
   .assembly-layout > .assembly-content {
     padding: 16px;
     border: 1px solid var(--color-border);
-    border-radius: 10px;
+    border-radius: var(--radius-large);
   }
 }
 /* Right-click is the primary tree editing surface; old buttons stay wired
@@ -64,10 +64,10 @@
   flex: 0 0 auto;
   min-width: 23px;
   text-align: center;
-  border-radius: 4px !important;
+  border-radius: var(--radius-small) !important;
   padding: 2px 4px !important;
   color: var(--color-text-muted) !important;
-  font-size: 1rem !important;
+  font-size: var(--text-body) !important;
 }
 
 .assembly-row-menu-trigger:hover,
@@ -81,7 +81,7 @@
   min-width: 185px;
   padding: 5px;
 
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   box-shadow: 0 12px 28px
     color-mix(in srgb, var(--color-shadow) 40%, transparent);
 }
@@ -92,13 +92,13 @@
   display: block;
   width: 100%;
   border: 0;
-  border-radius: 5px;
+  border-radius: var(--radius-small);
   background: transparent;
   text-align: left;
   color: var(--color-text);
   padding: 9px 12px;
   font: inherit;
-  font-size: 0.84rem;
+  font-size: var(--text-small);
   cursor: pointer;
 }
 
@@ -122,13 +122,13 @@
   :is(#launcher, .personal-project-view) .assembly-layout,
   #linear .assembly-layout,
   #robot .assembly-layout {
-    column-gap: 22px;
+    column-gap: var(--space-5);
   }
   :is(#launcher, .personal-project-view)
     .assembly-layout:has(> .assembly-sidebar.bom-sidebar-active),
   #linear .assembly-layout:has(> .assembly-sidebar.bom-sidebar-active),
   #robot .assembly-layout:has(> .assembly-sidebar.bom-sidebar-active) {
-    column-gap: 7px;
+    column-gap: var(--space-2);
   }
 }
 /* Do not insert a menu button on hover. Keep its layout width stable and
@@ -175,7 +175,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   margin: 6px 0 18px;
 }
 .assembly-main .project-root-actions.hide {
@@ -184,16 +184,16 @@
 .assembly-main .project-root-actions .btn {
   padding: 7px 12px;
   border: 1px solid var(--color-border);
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 0.81rem;
+  font-size: var(--text-small);
 }
 .assembly-main .project-root-actions .btn:hover {
   background: var(--color-hover);
 }
 .assembly-main .project-root-status {
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
 }
 .project-art.has-project-cover > svg {
@@ -216,15 +216,15 @@
   margin: 12px 0 0;
   padding: 0;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-page);
 }
 .assembly-workspace-page .workspace-secondary-disclosure > summary {
   cursor: pointer;
-  padding: 13px 17px;
+  padding: var(--space-3) var(--space-4);
   color: var(--color-text-muted);
-  font-size: 0.82rem;
-  font-weight: 550;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .assembly-workspace-page .workspace-secondary-disclosure > summary:hover {
   background: var(--color-hover);
@@ -252,8 +252,8 @@
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
   color: var(--color-text);
-  font-size: 0.79rem;
-  font-weight: 500;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 
 /* BOM editor uses the main workspace instead of the narrow sidebar. */
@@ -267,7 +267,7 @@
   max-width: none;
   background: var(--color-sidebar);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
 }
 :is(#launcher, .personal-project-view)
   .assembly-workspace-page.is-editing-bom-part
@@ -322,7 +322,7 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: var(--space-4);
   margin: 0 0 22px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--color-border);
@@ -332,7 +332,7 @@
   .workspace-main-bom-editor
   .workspace-bom-editor-title {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: var(--text-lead);
   color: var(--color-text);
 }
 :is(#launcher, .personal-project-view)
@@ -418,10 +418,10 @@
   .part-type-field {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: var(--space-2);
   max-width: 390px;
   margin-bottom: 20px;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   color: var(--color-text);
 }
 :is(#launcher, .personal-project-view)
@@ -454,8 +454,8 @@
   padding: 7px 3px;
   text-align: left;
   font: inherit;
-  font-size: 0.92rem;
-  font-weight: 600;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
   cursor: pointer;
 }
 .linked-resources .linked-resource-add:hover {
@@ -465,12 +465,12 @@
 .linked-resources .linked-resource-chooser {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: center;
   margin-top: 12px;
   padding: 14px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
 }
 .linked-resources .linked-resource-chooser select {
@@ -481,7 +481,7 @@
 .linked-resources .linked-resource-groups {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--space-3);
   margin: 12px 0;
 }
 .linked-resources .linked-resource-group {
@@ -506,7 +506,7 @@
   > .bom-part-summary {
   display: flex;
   flex-wrap: nowrap;
-  gap: 9px;
+  gap: var(--space-2);
   align-items: center;
   padding: 10px 3px;
 }
@@ -519,8 +519,8 @@
   text-align: left;
   color: var(--color-text);
   font: inherit;
-  font-size: 0.82rem;
-  font-weight: 550;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   cursor: pointer;
   padding: 0;
   min-width: 0;
@@ -540,9 +540,9 @@
   background: transparent;
   color: var(--color-text-muted);
   border: 1px solid var(--color-border);
-  border-radius: 5px;
+  border-radius: var(--radius-small);
   padding: 4px 9px;
-  font-size: 0.76rem;
+  font-size: var(--text-small);
   white-space: nowrap;
   flex: 0 0 auto;
 }
@@ -559,7 +559,7 @@
   .bom-shop-material-row {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
 }
 :is(#launcher, .personal-project-view)
   .assembly-sidebar
@@ -617,8 +617,8 @@
   background: transparent;
   border: 0;
   box-shadow: none;
-  font-size: 0.89rem;
-  font-weight: 650;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
   text-align: right;
   line-height: 1.35;
   text-shadow: 0 1px 3px
@@ -632,9 +632,9 @@
   bottom: 12px;
   top: auto;
   border: 1px solid color-mix(in srgb, var(--color-on-media) 30%, transparent);
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
   padding: 8px 12px;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   background: color-mix(in srgb, var(--color-media-backdrop) 72%, transparent);
   box-shadow: none;
   z-index: 9;
@@ -740,14 +740,14 @@
   overflow: hidden;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
 }
 :is(#launcher, .personal-project-view) .assembly-main .assembly-tile-cover,
 :is(#launcher, .personal-project-view) .assembly-detail .assembly-tile-cover {
   width: 100%;
   margin: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   overflow: hidden;
 }
 :is(#launcher, .personal-project-view) .assembly-main .assembly-tile-overlay,
@@ -760,8 +760,8 @@
   padding: 30px 14px 13px;
   margin: 0;
   text-align: left;
-  font-size: 0.88rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1.35;
   color: var(--color-on-media);
   background: linear-gradient(
@@ -805,7 +805,7 @@
   color: var(--color-on-media);
   background: color-mix(in srgb, var(--color-media-backdrop) 78%, transparent);
   line-height: 1;
-  font-size: 1.15rem;
+  font-size: var(--text-lead);
   box-shadow: none;
 }
 :is(#launcher, .personal-project-view)
@@ -826,7 +826,7 @@
     .assembly-photo-stage
     .assembly-photo-name {
     max-width: calc(100% - 170px);
-    font-size: 0.78rem;
+    font-size: var(--text-small);
   }
   :is(#launcher, .personal-project-view)
     .assembly-main
@@ -836,7 +836,7 @@
     .assembly-detail
     .assembly-photo-stage
     .assembly-open-workspace {
-    font-size: 0.72rem;
+    font-size: var(--text-caption);
     padding: 7px 9px;
   }
 }
@@ -849,7 +849,7 @@
   display: grid;
   width: min(100%, 960px);
   max-width: 960px;
-  gap: 16px;
+  gap: var(--space-4);
   margin: 20px 0 0;
 }
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
@@ -894,9 +894,9 @@
   border: 1px solid var(--color-border);
   background: var(--color-surface-muted);
   color: var(--color-text);
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   padding: 10px 16px;
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   margin-bottom: 8px;
 }
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
@@ -920,7 +920,7 @@
   .historical-price-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: var(--space-4);
   max-width: 850px;
   border-top: 1px solid var(--color-border);
   padding-top: 16px;
@@ -931,8 +931,8 @@
   > label {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  font-weight: 600;
+  gap: var(--space-2);
+  font-weight: var(--font-semibold);
   margin: 0;
   min-width: 0;
 }
@@ -947,7 +947,7 @@
   .component-specs {
   width: 100%;
   display: grid;
-  gap: 9px;
+  gap: var(--space-2);
 }
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
   .workspace-main-bom-editor
@@ -957,7 +957,7 @@
     minmax(120px, 1fr) minmax(120px, 1fr) minmax(180px, 220px)
     32px;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   width: 100%;
   margin: 0;
 }
@@ -974,9 +974,9 @@
   .component-spec-source {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
   color: var(--color-text);
-  font-size: 0.8rem;
+  font-size: var(--text-small);
 }
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
   .workspace-main-bom-editor
@@ -988,10 +988,10 @@
   height: 34px;
   padding: 0;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
   background: transparent;
   color: var(--color-text-muted);
-  font-size: 1.3rem;
+  font-size: var(--text-title);
 }
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
   .workspace-main-bom-editor
@@ -1006,7 +1006,7 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: var(--space-4);
   margin-top: 12px;
   padding-top: 20px;
   border-top: 1px solid var(--color-border);
@@ -1015,7 +1015,7 @@
   .workspace-main-bom-editor
   .component-editor-primary-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: center;
   margin-left: auto;
 }
@@ -1027,27 +1027,27 @@
   background: transparent;
   border: 1px solid var(--color-border);
   color: var(--color-text-muted);
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
 }
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
   .workspace-main-bom-editor
   .component-editor-primary-actions
   .component-save {
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   background: var(--color-accent-soft);
   color: var(--color-text);
   padding: 10px 20px;
-  font-weight: 700;
+  font-weight: var(--font-bold);
 }
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
   .workspace-main-bom-editor
   .component-editor-primary-actions
   .workspace-bom-editor-cancel {
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   background: transparent;
   border: 1px solid var(--color-border);
   padding: 10px 15px;
-  font-weight: 500;
+  font-weight: var(--font-semibold);
   color: var(--color-text-muted);
 }
 @media (max-width: 700px) {
@@ -1081,7 +1081,7 @@
   .part-type-field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   max-width: 390px;
   margin: 20px 0 22px;
 }
@@ -1092,7 +1092,7 @@
   padding: 17px 20px;
   margin: 0 0 24px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
 }
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
@@ -1106,7 +1106,7 @@
   > label {
   display: block;
   width: 100%;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
 }
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
   .workspace-main-bom-editor
@@ -1128,7 +1128,7 @@
   margin: 12px 0 0;
   border-left: 2px solid var(--color-accent);
   padding: 8px 12px;
-  font-size: 0.84rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
   background: var(--color-surface);
 }
@@ -1143,18 +1143,18 @@
 /* Compact recipe step authoring: optional notes, photos, and local save control. */
 .recipe-step-additions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   margin: 12px 0;
 }
 .recipe-step-notes,
 .recipe-step-photos {
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .recipe-step-note {
   display: grid;
-  gap: 5px;
+  gap: var(--space-1);
   margin-top: 10px;
 }
 .recipe-step-note .recipe-small-action {
@@ -1166,19 +1166,19 @@
 }
 .recipe-step-photo {
   display: grid;
-  gap: 5px;
+  gap: var(--space-1);
 }
 .recipe-step-photo-image {
   display: block;
   max-width: 100%;
   max-height: 240px;
   object-fit: contain;
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   margin: 8px 0;
 }
 .recipe-edit-controls .recipe-save-step {
   margin-left: auto;
-  font-weight: 700;
+  font-weight: var(--font-bold);
 }
 @media (max-width: 600px) {
   .recipe-edit-controls .recipe-save-step {
@@ -1189,9 +1189,9 @@
 /* Named work-instruction photos and keyboard-accessible full-screen viewer. */
 .recipe-step-photo-name-label {
   display: grid;
-  gap: 6px;
-  font-size: 0.83rem;
-  font-weight: 600;
+  gap: var(--space-2);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .recipe-step-photo-name-label .recipe-input {
   width: 100%;
@@ -1211,7 +1211,7 @@
   max-width: 240px;
 }
 .recipe-reader-photo figcaption {
-  font-size: 0.85rem;
+  font-size: var(--text-small);
   overflow-wrap: anywhere;
   padding: 2px 0;
 }
@@ -1224,7 +1224,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 55px 22px 24px;
   box-sizing: border-box;
 }
@@ -1235,7 +1235,7 @@
 }
 .recipe-photo-viewer-caption {
   color: var(--color-on-media);
-  font-size: 1rem;
+  font-size: var(--text-body);
   text-align: center;
   max-width: 90vw;
   overflow-wrap: anywhere;
@@ -1245,11 +1245,11 @@
   top: 12px;
   right: 20px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-media-backdrop);
   color: var(--color-on-media);
   cursor: pointer;
-  font-size: 2rem;
+  font-size: var(--text-display);
   line-height: 1;
   padding: 4px 13px;
 }
@@ -1258,7 +1258,7 @@
 .recipe-one-step-summary {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .recipe-one-step-title {
   flex: 1;
@@ -1266,7 +1266,7 @@
 }
 .recipe-step-edit-toggle {
   margin-left: auto;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   padding: 5px 14px;
   flex: 0 0 auto;
 }
@@ -1286,7 +1286,7 @@
   display: block;
   margin: 7px 10px 9px auto;
   padding: 5px 9px;
-  font-size: 0.79rem;
+  font-size: var(--text-small);
   max-width: calc(100% - 20px);
 }
 .assembly-hidden-toggle[hidden] {
@@ -1299,9 +1299,9 @@
 .library-visibility-field {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   margin: 13px 0 8px;
-  font-size: 0.91rem;
+  font-size: var(--text-body);
   cursor: pointer;
 }
 .part-visibility-field input,
@@ -1386,12 +1386,12 @@
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
   .workspace-bom
   .workspace-new-part {
-  font-size: 0.83rem;
+  font-size: var(--text-small);
 }
 .assembly-return-workspace {
   display: inline-flex;
   margin: 0 0 16px;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .assembly-workspace-page > .workspace-back {
   display: inline-flex;
@@ -1413,15 +1413,15 @@
   min-width: 0;
 }
 .assembly-tree-filters legend {
-  font-size: 0.76rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   color: var(--color-text-muted);
   padding: 0 2px;
 }
 .assembly-tree-filters label {
   display: flex;
 
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   cursor: pointer;
   padding: 5px 0;
 }
@@ -1444,7 +1444,7 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 18px;
+  gap: var(--space-4);
   flex-wrap: wrap;
   margin: 0 0 20px;
 }
@@ -1455,14 +1455,14 @@
 }
 .assembly-bom-back {
   padding: 7px 12px;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
 }
 .assembly-bom-view-switch {
   display: inline-flex;
   align-items: center;
   gap: 0;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   overflow: hidden;
 }
 .assembly-bom-view-switch .btn {
@@ -1470,7 +1470,7 @@
   border-radius: 0;
   box-shadow: none;
   padding: 9px 18px;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
   min-width: 92px;
 }
 .assembly-bom-view-switch .btn + .btn {
@@ -1478,7 +1478,7 @@
 }
 .assembly-bom-view-switch .btn.is-active {
   background: var(--color-selected);
-  font-weight: 750;
+  font-weight: var(--font-bold);
 }
 .assembly-bom-list-view.hide,
 .assembly-bom-picture-view.hide {
@@ -1489,18 +1489,18 @@
   min-width: 0;
   padding: 18px 20px 22px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
 }
 .assembly-bom-screen .workspace-bom-heading {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   margin-bottom: 14px;
 }
 .assembly-bom-screen .workspace-bom-heading h2 {
-  font-size: 1.15rem;
+  font-size: var(--text-lead);
   margin: 0 auto 0 0;
 }
 .assembly-bom-screen .workspace-saved-parts {
@@ -1511,7 +1511,7 @@
 .assembly-bom-screen .bom-part-stack {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .assembly-bom-screen .bom-compact-list {
   width: 100%;
@@ -1535,7 +1535,7 @@
 .assembly-bom-picture-view .assembly-tile-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 14px;
+  gap: var(--space-4);
   align-items: start;
 }
 .assembly-bom-picture-view .assembly-tile {
@@ -1545,14 +1545,14 @@
   gap: 0;
   overflow: hidden;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
 }
 .assembly-bom-picture-view .assembly-tile-cover {
   position: relative;
   width: 100%;
   height: clamp(170px, 22vw, 290px);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   overflow: hidden;
   cursor: pointer;
 }
@@ -1568,8 +1568,8 @@
   text-align: left;
   padding: 30px 14px 12px;
   color: var(--color-on-media);
-  font-size: 0.88rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   background: linear-gradient(
     transparent,
     color-mix(in srgb, var(--color-media-backdrop) 75%, transparent)
@@ -1579,16 +1579,16 @@
 .assembly-bom-picture-view .assembly-bom-parts-heading {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .assembly-bom-picture-view .assembly-bom-parts-heading h2 {
-  font-size: 1.15rem;
+  font-size: var(--text-lead);
   margin: 0;
 }
 .assembly-bom-picture-view .assembly-bom-parts-count,
 .assembly-bom-picture-view .assembly-bom-parts-description {
-  font-size: 0.84rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
 }
 @media (max-width: 650px) {
@@ -1615,7 +1615,7 @@
   > .workspace-heading {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: var(--space-5);
   min-width: 0;
 }
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
@@ -1632,7 +1632,7 @@
   flex: none;
   margin: 0 0 0 auto;
   padding: 11px 22px;
-  font-size: 0.91rem;
+  font-size: var(--text-body);
   white-space: nowrap;
 }
 @media (max-width: 660px) {
@@ -1666,11 +1666,11 @@
   margin: 0;
   padding: 0;
   overflow-x: auto;
-  font-size: 0.9rem;
+  font-size: var(--text-body);
 }
 .assembly-bom-screen .workspace-saved-parts .bom-count {
   color: var(--color-text-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   margin: 4px 0 14px;
 }
 .assembly-bom-screen .bom-part-stack {
@@ -1700,10 +1700,10 @@
   box-shadow: none;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   min-height: 39px;
   padding: 7px 4px;
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   line-height: 1.4;
 }
 .assembly-bom-screen .bom-part-summary:hover,
@@ -1715,29 +1715,29 @@
   display: none !important;
 }
 .assembly-bom-screen .bom-part-name {
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
   color: var(--color-text);
 }
 .assembly-bom-screen .bom-subassembly > .bom-part-summary .bom-part-name {
-  font-weight: 700;
+  font-weight: var(--font-bold);
 }
 .assembly-bom-screen .bom-part-meta,
 .assembly-bom-screen .bom-subassembly-count {
   color: var(--color-text-muted);
-  font-size: 0.79rem;
+  font-size: var(--text-small);
   white-space: nowrap;
 }
 .assembly-bom-screen .bom-part-edit,
 .assembly-bom-screen .bom-open-subassembly {
   border: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-small);
   background: transparent;
   box-shadow: none;
   color: var(--color-text-muted);
   padding: 3px 5px;
-  font-size: 0.79rem;
-  font-weight: 550;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .assembly-bom-screen .bom-part-edit:hover,
 .assembly-bom-screen .bom-open-subassembly:hover {
@@ -1770,7 +1770,7 @@
 .assembly-bom-screen .bom-shop-materials > summary {
   background: transparent;
   padding: 12px 4px;
-  font-size: 0.86rem;
+  font-size: var(--text-small);
 }
 .assembly-bom-screen .bom-shop-material-row {
   border-bottom: 1px solid var(--color-border);
@@ -1814,7 +1814,7 @@
 .project-owner-actions {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 .project-account-dialog,
@@ -1823,7 +1823,7 @@
   background: var(--color-surface);
   color: var(--color-text);
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: var(--radius-large);
   padding: 22px;
   width: min(510px, calc(100vw - 32px));
   max-height: 85vh;
@@ -1838,12 +1838,12 @@
 .project-create-form,
 .project-manage-form {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .project-account-form h2,
 .project-create-form h2,
 .project-manage-form h2 {
-  font-size: 1.35rem;
+  font-size: var(--text-title);
   margin: 0;
 }
 .project-account-form .field,
@@ -1853,13 +1853,13 @@
   margin: 5px 0 0;
 }
 .project-account-buttons {
-  gap: 8px;
+  gap: var(--space-2);
 }
 .project-personal-art {
   display: grid;
   place-items: center;
   font-size: 5rem;
-  font-weight: 400;
+  font-weight: var(--font-normal);
   color: var(--color-accent);
   background: var(--color-surface-muted);
 }
@@ -1874,12 +1874,12 @@
 .project-card-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0 16px 14px;
 }
 .project-card-actions .btn {
   padding: 7px 10px;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   margin: 0;
 }
 .project-card[hidden] {
@@ -1890,7 +1890,7 @@
     width: 100%;
   }
   .project-owner-actions .btn {
-    font-size: 0.79rem;
+    font-size: var(--text-small);
   }
 }
 
@@ -1899,7 +1899,7 @@
   width: 100%;
   min-width: 0;
   display: grid;
-  gap: 26px;
+  gap: var(--space-5);
   padding: 4px 2px 30px;
 }
 .project-summary-page.hide {
@@ -1909,7 +1909,7 @@
   display: flex;
   justify-content: space-between;
   align-items: end;
-  gap: 16px;
+  gap: var(--space-4);
   flex-wrap: wrap;
 }
 .project-summary-heading h1 {
@@ -1919,11 +1919,11 @@
 }
 .project-summary-heading p {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .project-summary-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .project-summary-gallery {
@@ -1933,12 +1933,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .project-summary-gallery-heading h2,
 .project-summary-lists h2 {
-  font-size: 1.12rem;
-  font-weight: 700;
+  font-size: var(--text-lead);
+  font-weight: var(--font-bold);
   margin: 0;
 }
 .project-summary-photo-stage {
@@ -1947,7 +1947,7 @@
   justify-content: center;
   width: 100%;
   height: clamp(240px, 34vw, 480px);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   background: var(--color-surface-muted);
 }
 .project-summary-photo-stage img {
@@ -1960,7 +1960,7 @@
 }
 .project-summary-photo-empty {
   color: var(--color-text-muted);
-  font-size: 0.94rem;
+  font-size: var(--text-body);
 }
 .project-summary-photo-stage > button {
   position: absolute;
@@ -1970,10 +1970,10 @@
   height: 48px;
   padding: 0;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 1.6rem;
+  font-size: var(--text-page);
   cursor: pointer;
   box-shadow: 0 2px 8px
     color-mix(in srgb, var(--color-shadow-base) 13.3333%, transparent);
@@ -1991,11 +1991,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   min-height: 24px;
   padding: 8px 2px;
   color: var(--color-text-muted);
-  font-size: 0.83rem;
+  font-size: var(--text-small);
 }
 .project-summary-photo-footer p {
   margin: 0;
@@ -2006,7 +2006,7 @@
 .project-summary-lists {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr);
-  gap: 28px;
+  gap: var(--space-6);
   align-items: start;
 }
 .project-summary-lists > section {
@@ -2025,10 +2025,10 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 14px;
+  gap: var(--space-4);
   padding: 10px 1px;
   border-bottom: 1px solid var(--color-border);
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   line-height: 1.4;
 }
 .project-summary-part-name {
@@ -2037,19 +2037,19 @@
 }
 .project-summary-part-quantity {
   color: var(--color-text-muted);
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   text-align: right;
   white-space: nowrap;
   flex: none;
 }
 .project-summary-lists .muted {
   margin-top: 14px;
-  font-size: 0.89rem;
+  font-size: var(--text-body);
 }
 @media (max-width: 760px) {
   .project-summary-lists {
     grid-template-columns: 1fr;
-    gap: 28px;
+    gap: var(--space-6);
   }
   .project-summary-photo-stage {
     height: clamp(230px, 54vw, 370px);
@@ -2064,7 +2064,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 16px 20px;
+  gap: var(--space-4) var(--space-5);
   flex-wrap: wrap;
 }
 :is(#launcher, #linear, #robot, .personal-project-view)
@@ -2081,7 +2081,7 @@
   > .workspace-heading-actions {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   flex: 0 0 auto;
   margin-left: clamp(12px, 2.2vw, 38px);
@@ -2092,10 +2092,10 @@
   > .workspace-back {
   margin: 0;
   padding: 11px 20px;
-  font-size: 0.91rem;
+  font-size: var(--text-body);
   white-space: nowrap;
   min-height: 42px;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
 }
 :is(#launcher, #linear, #robot, .personal-project-view)
   .assembly-workspace-page:not(.bom-part-workspace)
@@ -2155,10 +2155,10 @@
     display: grid;
     place-items: center;
     color: var(--color-text-muted);
-    font-size: 19px;
+    font-size: var(--text-lead);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: var(--radius-medium);
     z-index: 1;
     pointer-events: none;
   }
@@ -2172,11 +2172,11 @@
   text-align: left;
   margin: 7px 7px 11px;
   padding: 10px 11px;
-  font-size: 0.84rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1.3;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   color: var(--color-text);
   cursor: pointer;
@@ -2184,7 +2184,7 @@
 .assembly-project-summary-entry:before {
   content: "▤";
   display: inline-block;
-  font-size: 1rem;
+  font-size: var(--text-body);
   margin-right: 10px;
   color: var(--color-text-muted);
 }
@@ -2198,36 +2198,36 @@
 }
 /* Project-wide ownership settings are kept below the project gallery and lists. */
 .project-summary-owner-settings:not([hidden]) {
-  gap: 12px;
+  gap: var(--space-3);
   margin-top: 8px;
   padding: 20px 22px;
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
 }
 .project-summary-owner-settings[hidden] {
   display: none !important;
 }
 .project-summary-owner-settings h2 {
-  font-size: 1.15rem;
+  font-size: var(--text-lead);
   margin: 0;
 }
 .project-summary-owner-settings p {
   margin: 0;
-  font-size: 0.87rem;
+  font-size: var(--text-small);
   line-height: 1.5;
 }
 .project-summary-settings-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: var(--space-4);
 }
 .project-summary-settings-form label {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  font-size: 0.85rem;
-  font-weight: 650;
+  gap: var(--space-2);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .project-summary-settings-form select {
   width: 100%;
@@ -2235,7 +2235,7 @@
 }
 .project-summary-settings-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   align-items: center;
 }
@@ -2260,7 +2260,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px 18px;
+  gap: var(--space-2) var(--space-4);
   padding: 9px 12px 13px;
 }
 .assembly-tree-filters legend {
@@ -2272,14 +2272,14 @@
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
   padding: 4px 0;
   white-space: nowrap;
 }
 @media (max-width: 320px) {
   .assembly-tree-filters {
-    gap: 4px 12px;
+    gap: var(--space-1) var(--space-3);
   }
   .assembly-tree-filters label {
     flex-basis: 100%;
@@ -2287,13 +2287,13 @@
 }
 /* Project summary: distinct BOM and tool surfaces with a text-first interior. */
 .project-summary-lists {
-  gap: 22px;
+  gap: var(--space-5);
   align-items: stretch;
 }
 .project-summary-lists > .project-summary-bom-section,
 .project-summary-lists > .project-summary-tools-section {
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
   padding: 21px 22px 25px;
   box-shadow: 0 1px 3px
@@ -2320,7 +2320,7 @@
   align-items: center;
   height: clamp(250px, 35vw, 490px);
   padding: 10px;
-  border-radius: 16px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   box-shadow: 0 3px 14px
@@ -2332,7 +2332,7 @@
   height: 100%;
   object-fit: contain;
   object-position: left center;
-  border-radius: 11px;
+  border-radius: var(--radius-large);
 }
 .project-summary-photo-stage > .project-summary-photo-edit {
   position: absolute;
@@ -2343,8 +2343,8 @@
   height: 36px;
   transform: none;
   z-index: 2;
-  font-size: 18px;
-  border-radius: 8px;
+  font-size: var(--text-lead);
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   padding: 0;
   display: grid;
@@ -2370,7 +2370,7 @@
 }
 @media (max-width: 760px) {
   .project-summary-lists {
-    gap: 16px;
+    gap: var(--space-4);
   }
   .project-summary-lists > .project-summary-bom-section,
   .project-summary-lists > .project-summary-tools-section {
@@ -2387,24 +2387,24 @@
   border-top: 1px solid var(--color-border);
   padding: 20px 0 0;
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .project-numbering-settings h3,
 .project-numbering-nomenclature h3 {
-  font-size: 1.05rem;
+  font-size: var(--text-body);
   margin: 0;
 }
 .project-numbering-fields {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(155px, 0.65fr);
-  gap: 16px;
+  gap: var(--space-4);
 }
 .project-numbering-fields label {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  font-weight: 650;
-  font-size: 0.85rem;
+  gap: var(--space-2);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-small);
 }
 .project-numbering-fields .field {
   min-width: 0;
@@ -2412,8 +2412,8 @@
 }
 .project-numbering-preview {
   font-variant-numeric: tabular-nums;
-  font-weight: 650;
-  font-size: 0.93rem;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-body);
   letter-spacing: 0.01em;
   margin: 0;
 }
@@ -2421,8 +2421,8 @@
   margin: 0;
   padding-left: 21px;
   display: grid;
-  gap: 8px;
-  font-size: 0.87rem;
+  gap: var(--space-2);
+  font-size: var(--text-small);
   line-height: 1.55;
 }
 .project-numbering-settings .btn {
@@ -2431,18 +2431,18 @@
 .part-number-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 12px 0 10px;
-  font-size: 0.85rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .part-number-field .field {
   max-width: 420px;
 }
 .part-number-field small {
-  font-size: 0.78rem;
+  font-size: var(--text-small);
   line-height: 1.45;
-  font-weight: 400;
+  font-weight: var(--font-normal);
   color: var(--color-text-muted);
 }
 @media (max-width: 650px) {
@@ -2450,16 +2450,16 @@
     grid-template-columns: 1fr;
   }
   .project-numbering-preview {
-    font-size: 0.84rem;
+    font-size: var(--text-small);
   }
 }
 
 .part-number-existing-option:not([hidden]) {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.81rem;
-  font-weight: 500;
+  gap: var(--space-2);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   margin: 6px 0 0;
   cursor: pointer;
 }
@@ -2480,27 +2480,27 @@
 /* Simple persistent project part progress / reminder. */
 .bom-part-workspace .part-progress-panel {
   display: grid;
-  gap: 11px;
+  gap: var(--space-3);
   margin: 13px 0 18px;
   padding: 17px 20px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
 }
 .bom-part-workspace .part-progress-heading {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .bom-part-workspace .part-progress-heading h2 {
-  font-size: 1rem;
+  font-size: var(--text-body);
   margin: 0;
 }
 .bom-part-workspace .part-progress-badge {
-  font-size: 0.79rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
-  font-weight: 600;
+  font-weight: var(--font-semibold);
 }
 .bom-part-workspace .part-progress-panel.is-flagged .part-progress-badge {
   color: var(--color-danger);
@@ -2508,14 +2508,14 @@
 .bom-part-workspace .part-progress-fields {
   display: flex;
   align-items: end;
-  gap: 22px;
+  gap: var(--space-5);
   flex-wrap: wrap;
 }
 .bom-part-workspace .part-progress-fields > label:first-child {
   display: grid;
-  gap: 7px;
-  font-size: 0.85rem;
-  font-weight: 650;
+  gap: var(--space-2);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .bom-part-workspace .part-progress-select {
   min-width: 170px;
@@ -2523,17 +2523,17 @@
 .bom-part-workspace .part-attention-toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   padding-bottom: 12px;
 }
 .bom-part-workspace .part-attention-note-field {
   display: grid;
-  gap: 8px;
-  font-size: 0.86rem;
-  font-weight: 650;
+  gap: var(--space-2);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .bom-part-workspace .part-attention-note-field[hidden],
 .bom-part-workspace .part-progress-fields[hidden],
@@ -2548,11 +2548,11 @@
 .bom-part-workspace .part-progress-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .bom-part-workspace .part-progress-feedback {
   color: var(--color-text-muted);
-  font-size: 0.82rem;
+  font-size: var(--text-small);
 }
 .assembly-tree-status-marker {
   display: inline-block;
@@ -2564,7 +2564,7 @@
 }
 .assembly-node.part-progress-complete .assembly-tree-status-marker {
   color: var(--color-accent);
-  font-weight: 650;
+  font-weight: var(--font-semibold);
 }
 .assembly-node.part-needs-attention > .assembly-name {
   color: var(--color-danger);
@@ -2578,22 +2578,22 @@
   border-color: var(--color-accent);
   background: var(--color-accent-soft);
   flex-wrap: wrap;
-  column-gap: 8px;
-  row-gap: 3px;
+  column-gap: var(--space-2);
+  row-gap: var(--space-1);
 }
 .assembly-summary-pending-count {
   margin-left: auto;
-  font-weight: 700;
-  font-size: 0.73rem;
+  font-weight: var(--font-bold);
+  font-size: var(--text-caption);
   color: var(--color-text);
   white-space: nowrap;
 }
 .project-summary-review:not([hidden]) {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 18px 21px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
 }
 .project-summary-review[hidden] {
@@ -2603,11 +2603,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .project-summary-review-header h2 {
-  font-size: 1.08rem;
+  font-size: var(--text-body);
   margin: 0;
 }
 .project-summary-review-list {
@@ -2619,20 +2619,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   border-top: 1px solid var(--color-border);
   padding: 10px 0;
-  font-size: 0.88rem;
+  font-size: var(--text-small);
 }
 .project-summary-review-list .btn {
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   padding: 6px 10px;
 }
 
 /* Separate cards for project settings and part-number configuration. */
 .project-summary-owner-settings:not([hidden]) {
   display: grid;
-  gap: 22px;
+  gap: var(--space-5);
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -2641,10 +2641,10 @@
 .project-summary-owner-settings > .project-settings-card,
 .project-summary-owner-settings > .project-numbering-card {
   display: grid;
-  gap: 14px;
+  gap: var(--space-4);
   padding: 23px 25px;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
   box-shadow: 0 2px 9px
     color-mix(in srgb, var(--color-shadow-base) 3.5294%, transparent);
@@ -2664,7 +2664,7 @@
 }
 .project-summary-settings-actions {
   justify-content: flex-start;
-  gap: 20px;
+  gap: var(--space-5);
 }
 .project-summary-settings-actions .project-delete-button {
   margin-left: clamp(30px, 5vw, 90px);
@@ -2682,7 +2682,7 @@
   width: min(480px, calc(100vw - 32px));
   max-height: 90vh;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: var(--radius-large);
   padding: 0;
   background: var(--color-surface);
   color: var(--color-text);
@@ -2698,23 +2698,23 @@
 }
 .project-delete-form {
   display: grid;
-  gap: 16px;
+  gap: var(--space-4);
   padding: 25px;
 }
 .project-delete-form h2 {
-  font-size: 1.3rem;
+  font-size: var(--text-title);
   margin: 0;
 }
 .project-delete-form p {
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   line-height: 1.55;
   margin: 0;
 }
 .project-delete-form label {
   display: grid;
-  gap: 7px;
-  font-size: 0.86rem;
-  font-weight: 600;
+  gap: var(--space-2);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .project-delete-form .field {
   width: 100%;
@@ -2726,7 +2726,7 @@
 .project-delete-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .project-delete-confirm {
@@ -2756,30 +2756,30 @@
   padding: 9px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: var(--radius-large);
   box-shadow: 0 16px 42px
     color-mix(in srgb, var(--color-shadow-base) 14.5098%, transparent);
 }
 .assembly-context-heading {
   display: grid;
-  gap: 5px;
+  gap: var(--space-1);
   padding: 12px 13px 13px;
   border-bottom: 1px solid var(--color-border);
   margin-bottom: 6px;
 }
 .assembly-context-heading strong {
   display: block;
-  font-size: 1.02rem;
+  font-size: var(--text-body);
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
 .assembly-context-heading span {
   color: var(--color-text-muted);
-  font-size: 0.79rem;
+  font-size: var(--text-small);
 }
 .assembly-context-section-label {
-  font-size: 0.7rem;
-  font-weight: 750;
+  font-size: var(--text-caption);
+  font-weight: var(--font-bold);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -2787,9 +2787,9 @@
 }
 .assembly-context-menu button {
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   padding: 10px 12px;
-  font-size: 0.87rem;
+  font-size: var(--text-small);
 }
 .assembly-context-menu button:hover,
 .assembly-context-menu button:focus-visible {
@@ -2805,9 +2805,9 @@
 .library-auto-number:not(.hide) {
   display: flex;
   align-items: center;
-  gap: 9px;
-  font-weight: 650;
-  font-size: 0.9rem;
+  gap: var(--space-2);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-body);
   cursor: pointer;
 }
 .library-auto-number input {
@@ -2818,8 +2818,8 @@
 .library-auto-number-inline-note {
   display: inline-block;
   margin-left: 8px;
-  font-size: 0.78rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
   line-height: 1.35;
   cursor: default;
   white-space: nowrap;
@@ -2835,21 +2835,21 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px 24px;
+  gap: var(--space-3) var(--space-5);
   flex-wrap: wrap;
   padding: 0 0 12px;
   margin: 0 0 14px;
   border-bottom: 1px solid var(--color-border);
 }
 .assembly-bom-screen > .workspace-bom-heading h2 {
-  font-size: 1.15rem;
+  font-size: var(--text-lead);
   margin: 0;
   flex: 0 0 auto;
 }
 .assembly-bom-heading-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   margin-left: 0;
 }
@@ -2866,7 +2866,7 @@
   }
   .assembly-bom-heading-actions {
     width: 100%;
-    gap: 10px;
+    gap: var(--space-3);
   }
   .assembly-bom-heading-actions .assembly-bom-view-switch {
     flex: 0 1 auto;
@@ -2881,25 +2881,25 @@
 .library-number-choice,
 .assembly-number-choice {
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   padding: 12px 14px;
   display: grid;
-  gap: 11px;
+  gap: var(--space-3);
   margin: 0;
 }
 .library-number-choice legend,
 .assembly-number-choice legend {
   padding: 0 6px;
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: var(--text-small);
+  font-weight: var(--font-bold);
 }
 .library-number-choice label,
 .assembly-number-choice label {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 0.88rem;
-  font-weight: 550;
+  gap: var(--space-3);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   cursor: pointer;
   line-height: 1.45;
 }
@@ -2919,7 +2919,7 @@
   overflow: auto;
   padding: 0;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
   color: var(--color-text);
   box-shadow: 0 24px 65px
@@ -2934,23 +2934,23 @@
 }
 .assembly-create-form {
   display: grid;
-  gap: 16px;
+  gap: var(--space-4);
   padding: 24px;
 }
 .assembly-create-form h2 {
-  font-size: 1.35rem;
+  font-size: var(--text-title);
   margin: 0;
 }
 .assembly-create-form p {
   margin: 0;
   line-height: 1.5;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .assembly-create-form > label {
   display: grid;
-  gap: 7px;
-  font-size: 0.87rem;
-  font-weight: 650;
+  gap: var(--space-2);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .assembly-create-form > label[hidden] {
   display: none !important;
@@ -2962,7 +2962,7 @@
 .assembly-create-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .assembly-create-status {
@@ -2974,11 +2974,11 @@
 .assembly-bom-documents-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0 4px;
   padding: 6px 2px;
-  font-size: 0.84rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   color: var(--color-text);
   white-space: nowrap;
   cursor: pointer;
@@ -3008,8 +3008,8 @@
   padding: 11px 0 2px;
   border-top: 1px solid var(--color-border);
   color: var(--color-text);
-  font-size: 0.96rem;
-  font-weight: 700;
+  font-size: var(--text-body);
+  font-weight: var(--font-bold);
   letter-spacing: 0;
 }
 .workspace-main-bom-editor
@@ -3041,7 +3041,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
-  gap: 8px 12px;
+  gap: var(--space-2) var(--space-3);
   box-sizing: border-box;
   width: min(100%, 960px);
   max-width: 960px;
@@ -3063,12 +3063,12 @@
   > label {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
   min-width: 0;
   width: auto;
   margin: 0;
-  font-size: 0.88rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 :is(#launcher, #linear, #robot, .personal-project-view)
   .workspace-main-bom-editor
@@ -3126,16 +3126,16 @@
 .bom-part-workspace .part-details-view-heading {
   justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: var(--space-4);
 }
 .bom-part-workspace .part-details-view-heading .part-details-edit,
 .bom-part-workspace .part-details-view-heading .part-details-edit-workshop {
   margin-left: 6px;
   flex: 0 0 auto;
-  padding: 6px 13px;
+  padding: var(--space-2) var(--space-3);
   min-height: 34px;
-  font-size: 0.84rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .bom-part-workspace .part-details-view-heading .part-details-edit[hidden],
 .bom-part-workspace
@@ -3179,7 +3179,7 @@
   display: grid !important;
   grid-template-columns: minmax(150px, 190px) minmax(0, 1fr) !important;
   align-items: center !important;
-  gap: 7px 16px !important;
+  gap: var(--space-2) var(--space-4) !important;
   width: min(100%, 960px) !important;
   max-width: 960px !important;
   margin: 0 0 12px !important;
@@ -3229,7 +3229,7 @@
   display: grid !important;
   grid-template-columns: minmax(150px, 190px) minmax(0, 1fr);
   align-items: center;
-  gap: 16px;
+  gap: var(--space-4);
 }
 @media (max-width: 680px) {
   :is(#launcher, #linear, #robot, .personal-project-view)
@@ -3253,7 +3253,7 @@
     .part-api-panel
     > label {
     grid-template-columns: minmax(0, 1fr) !important;
-    gap: 5px !important;
+    gap: var(--space-1) !important;
   }
   :is(#launcher, #linear, #robot, .personal-project-view)
     .workspace-main-bom-editor
@@ -3281,11 +3281,11 @@
   min-height: 31px;
   margin: 0;
   padding: 5px 10px;
-  font-size: 0.79rem;
-  font-weight: 550;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   cursor: pointer;
 }
 :is(#launcher, #linear, #robot, .personal-project-view)
@@ -3300,8 +3300,8 @@
   .part-number-field
   > .part-number-help {
   grid-column: 2;
-  font-weight: 400;
-  font-size: 0.76rem;
+  font-weight: var(--font-normal);
+  font-size: var(--text-small);
   color: var(--color-text-muted);
 }
 :is(#launcher, #linear, #robot, .personal-project-view)
@@ -3309,14 +3309,14 @@
   .part-visibility-field {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .part-option-help {
   display: inline-flex;
   justify-content: center;
   align-items: center;
   margin-left: 3px;
-  font-size: 0.84rem;
+  font-size: var(--text-small);
   color: var(--color-accent);
   cursor: help;
   text-decoration: none;
@@ -3339,7 +3339,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
   max-width: none;
   margin: 10px 0 20px;
@@ -3348,12 +3348,12 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: auto;
   max-width: 100%;
   margin: 0;
   padding: 0;
-  font-weight: 500;
+  font-weight: var(--font-semibold);
 }
 .workspace-main-bom-editor .part-display-options .part-visibility-field input {
   width: 17px;
@@ -3379,7 +3379,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
   color: var(--color-text);
   box-shadow: 0 22px 65px
@@ -3417,8 +3417,8 @@
   background: var(--color-surface);
 }
 .part-editor-dialog .workspace-bom-editor-title {
-  font-size: 1.16rem !important;
-  font-weight: 700;
+  font-size: var(--text-lead) !important;
+  font-weight: var(--font-bold);
   margin: 0 !important;
 }
 .part-editor-dialog .component-section,
@@ -3445,7 +3445,7 @@
   max-width: 100%;
 }
 .part-editor-dialog .component-review > .part-editor-section-heading {
-  font-size: 0.87rem;
+  font-size: var(--text-small);
   margin-top: 14px;
   padding-top: 12px;
 }
@@ -3468,7 +3468,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   padding: 14px 0 6px;
   margin-top: 20px;
@@ -3477,7 +3477,7 @@
 }
 .part-editor-dialog .component-editor-primary-actions {
   display: flex;
-  gap: 9px;
+  gap: var(--space-2);
   margin-left: auto;
 }
 .part-editor-dialog .part-editor-validation-error:not([hidden]) {
@@ -3485,17 +3485,17 @@
   padding: 10px 13px;
   margin: 10px 0 12px;
   border: 1px solid var(--color-danger);
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   color: var(--color-danger);
   background: color-mix(in srgb, var(--color-danger) 7%, var(--color-surface));
-  font-size: 0.88rem;
+  font-size: var(--text-small);
 }
 @media (max-width: 650px) {
   .part-editor-dialog {
     width: calc(100vw - 16px);
     height: min(94vh, 900px);
     max-height: 94vh;
-    border-radius: 9px;
+    border-radius: var(--radius-medium);
   }
   .part-editor-dialog .workspace-main-bom-editor {
     padding: 0 15px 12px !important;
@@ -3518,9 +3518,9 @@
   padding: 0;
   background: transparent;
   border: 1px solid var(--color-border);
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   color: var(--color-text);
-  font-size: 1.55rem;
+  font-size: var(--text-page);
   line-height: 1;
   cursor: pointer;
 }
@@ -3542,14 +3542,14 @@
   overflow: visible;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .assembly-sidebar > .assembly-summary-sidebar-card,
 .assembly-sidebar > .assembly-feature-tree-card {
   min-width: 0;
   background: var(--color-sidebar);
   border: 1px solid var(--color-border);
-  border-radius: 11px;
+  border-radius: var(--radius-large);
   overflow: hidden;
 }
 .assembly-sidebar > .assembly-summary-sidebar-card {
@@ -3583,17 +3583,17 @@
 .project-directory-controls {
   display: flex;
   align-items: end;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   margin: 20px 0 0;
 }
 .project-directory-label {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
   color: var(--color-text);
-  font-size: 0.85rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .project-directory-label .field {
   min-width: 170px;
@@ -3602,7 +3602,7 @@
   background: var(--color-on-media);
 }
 .project-directory-count {
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   padding-bottom: 10px;
 }
 @media (max-width: 600px) {
@@ -3623,41 +3623,41 @@
 .project-account-dialog {
   width: min(440px, calc(100vw - 32px));
   padding: 28px;
-  border-radius: 16px;
+  border-radius: var(--radius-large);
 }
 .project-account-dialog .project-account-form {
-  gap: 16px;
+  gap: var(--space-4);
 }
 .project-account-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .project-account-header h2 {
-  font-size: 1.6rem;
+  font-size: var(--text-page);
   line-height: 1.25;
   margin: 0;
 }
 .project-account-header .project-close {
   width: 36px;
   height: 36px;
-  font-size: 20px;
+  font-size: var(--text-title);
   padding: 0;
 }
 .project-account-subtitle {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--text-body);
 }
 .project-account-message {
   margin: 0;
-  font-size: 0.86rem;
+  font-size: var(--text-small);
   min-height: 1.1em;
   color: var(--color-text-muted);
 }
 .project-account-form > label {
-  font-size: 0.88rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .project-account-form > label .field {
   width: 100%;
@@ -3665,7 +3665,7 @@
 }
 .project-account-form .project-account-buttons {
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .project-account-form .project-account-buttons .btn {
   width: 100%;
@@ -3673,7 +3673,7 @@
 }
 .project-admin-link {
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
   border-top: 1px solid var(--color-border);
   padding-top: 15px;
 }
@@ -3696,7 +3696,7 @@
 #home .project-directory-heading {
   padding: 4px 0 12px;
   align-items: flex-end;
-  gap: 24px;
+  gap: var(--space-5);
 }
 #home .project-directory-heading h1 {
   font-size: clamp(2.45rem, 4.3vw, 3.55rem);
@@ -3707,7 +3707,7 @@
   max-width: 580px;
   margin: 0;
   line-height: 1.5;
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 #home .project-owner-actions {
   justify-content: flex-end;
@@ -3716,13 +3716,13 @@
   margin: 24px 0 22px;
   padding: 18px 20px;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
-  gap: 14px 16px;
+  gap: var(--space-4) var(--space-4);
   align-items: end;
 }
 #home .project-directory-label {
-  gap: 7px;
+  gap: var(--space-2);
 }
 #home .project-directory-label .field {
   margin: 0;
@@ -3742,10 +3742,10 @@
 }
 #home .project-grid {
   margin-top: 18px;
-  gap: 22px;
+  gap: var(--space-5);
 }
 #home .project-card {
-  border-radius: 15px;
+  border-radius: var(--radius-large);
   box-shadow: 0 3px 15px color-mix(in srgb, var(--color-shadow) 8%, transparent);
   transition:
     transform 0.16s,
@@ -3761,8 +3761,8 @@
   padding: 20px 21px 22px;
 }
 #home .project-copy h2 {
-  font-size: 1.2rem;
-  font-weight: 750;
+  font-size: var(--text-title);
+  font-weight: var(--font-bold);
   letter-spacing: -0.018em;
   line-height: 1.3;
 }
@@ -3783,7 +3783,7 @@
   }
   #home .project-directory-controls {
     padding: 14px;
-    gap: 12px;
+    gap: var(--space-3);
   }
   #home .project-directory-count {
     margin: 0;
@@ -3810,12 +3810,12 @@
 }
 .knowledge-directory-toolbar {
   display: flex;
-  gap: 16px;
+  gap: var(--space-4);
   flex-wrap: wrap;
   align-items: end;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
-  border-radius: 14px;
+  border-radius: var(--radius-large);
   padding: 18px;
   margin: 0 0 18px;
 }
@@ -3823,7 +3823,7 @@
   flex: 1 1 210px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .knowledge-directory-toolbar label:first-child {
   flex: 2 1 320px;
@@ -3834,14 +3834,14 @@
 }
 .knowledge-base-page #topicFilters {
   margin: 12px 0 10px;
-  gap: 7px;
+  gap: var(--space-2);
 }
 .knowledge-base-page #topicFilters .filter {
   padding: 7px 13px;
-  font-size: 0.86rem;
+  font-size: var(--text-small);
 }
 .knowledge-results-count {
-  font-size: 0.85rem;
+  font-size: var(--text-small);
   margin: 0 0 22px;
 }
 .knowledge-section {
@@ -3852,47 +3852,47 @@
 }
 .knowledge-section-heading {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: baseline;
   flex-wrap: wrap;
   margin: 0 0 16px;
 }
 .knowledge-section-heading h2 {
-  font-size: 1.4rem;
+  font-size: var(--text-title);
   margin: 0;
   letter-spacing: -0.025em;
 }
 .knowledge-section-heading span {
-  font-size: 0.88rem;
+  font-size: var(--text-small);
 }
 .knowledge-base-page #tileList {
-  gap: 16px;
+  gap: var(--space-4);
 }
 .knowledge-topic-card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  border-radius: 14px;
+  gap: var(--space-3);
+  border-radius: var(--radius-large);
 }
 .knowledge-topic-card .project-tags {
   margin-bottom: 2px;
 }
 .knowledge-topic-card h3 {
-  font-size: 1.07rem;
+  font-size: var(--text-body);
   margin: 0;
   line-height: 1.4;
 }
 .knowledge-topic-card p {
   line-height: 1.52;
   margin: 0;
-  font-size: 0.93rem;
+  font-size: var(--text-body);
 }
 .knowledge-topic-card .btn {
   align-self: flex-start;
   margin-top: auto;
 }
 .knowledge-base-page #resource-calculators .resource-card {
-  border-radius: 14px;
+  border-radius: var(--radius-large);
 }
 @media (max-width: 650px) {
   .knowledge-base-page {
@@ -3911,7 +3911,7 @@
 .bs-catalog-layout {
   display: grid;
   grid-template-columns: minmax(200px, 242px) minmax(0, 1fr);
-  column-gap: 24px;
+  column-gap: var(--space-5);
   align-items: start;
   margin: 22px 0 0;
 }
@@ -3926,31 +3926,31 @@
 }
 .bs-catalog-sidebar-heading {
   margin: 3px 0 12px;
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   line-height: 1.4;
-  font-weight: 750;
+  font-weight: var(--font-bold);
   letter-spacing: 0.005em;
   color: var(--color-text);
 }
 .bs-catalog-category-list {
   display: grid;
-  gap: 3px;
+  gap: var(--space-1);
 }
 .bs-catalog-category {
   border: 0;
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   background: transparent;
   color: var(--color-text);
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 9px 10px;
   text-align: left;
-  font-size: 0.88rem;
+  font-size: var(--text-small);
   line-height: 1.35;
-  font-weight: 520;
+  font-weight: var(--font-semibold);
   cursor: pointer;
 }
 .bs-catalog-category:hover {
@@ -3959,7 +3959,7 @@
 .bs-catalog-category.is-active {
   background: var(--color-selected);
   color: var(--color-text);
-  font-weight: 750;
+  font-weight: var(--font-bold);
 }
 .bs-catalog-category:focus-visible {
   outline: 2px solid var(--color-accent);
@@ -3968,7 +3968,7 @@
 .bs-catalog-category-count {
   flex: none;
   color: var(--color-text-muted);
-  font-size: 0.77rem;
+  font-size: var(--text-small);
   font-variant-numeric: tabular-nums;
 }
 .bs-catalog-main {
@@ -3977,7 +3977,7 @@
 .bs-catalog-main .project-directory-controls,
 .bs-catalog-main .knowledge-directory-toolbar {
   margin: 0 0 18px;
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   padding: 14px 16px;
 }
 .bs-catalog-main #home .project-grid {
@@ -3986,12 +3986,12 @@
 #home .bs-catalog-layout .project-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: var(--space-3);
   margin-top: 14px;
 }
 #home .bs-catalog-layout .project-card {
   border: 1px solid var(--color-border);
-  border-radius: 11px;
+  border-radius: var(--radius-large);
   box-shadow: none;
   transform: none;
   min-width: 0;
@@ -4030,15 +4030,15 @@
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 #home .bs-catalog-layout .project-copy h2 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--text-lead);
 }
 #home .bs-catalog-layout .project-copy p {
   margin: 0;
-  font-size: 0.86rem;
+  font-size: var(--text-small);
 }
 #home .bs-catalog-layout .project-tags {
   margin-top: auto;
@@ -4056,19 +4056,19 @@
 }
 #learn .bs-catalog-main #tileList.grid.two {
   grid-template-columns: minmax(0, 1fr);
-  gap: 10px;
+  gap: var(--space-3);
 }
 #learn .bs-catalog-main .knowledge-topic-card {
   padding: 14px 18px;
-  border-radius: 10px;
-  gap: 8px;
+  border-radius: var(--radius-large);
+  gap: var(--space-2);
 }
 #learn .bs-catalog-main .knowledge-topic-card h3 {
-  font-size: 1.04rem;
+  font-size: var(--text-body);
 }
 #learn .bs-catalog-main .knowledge-topic-card .btn {
   padding: 6px 12px;
-  font-size: 0.81rem;
+  font-size: var(--text-small);
 }
 #learn .bs-catalog-main .knowledge-topic-card .project-tags {
   margin-bottom: 0;
@@ -4082,7 +4082,7 @@
 #commonparts .bs-catalog-main .workshop-standard-list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 6px;
+  gap: var(--space-2);
 }
 #commonparts .bs-catalog-main .workshop-tree-branch {
   border-color: var(--color-border);
@@ -4112,7 +4112,7 @@
   .bs-catalog-category-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: var(--space-2);
   }
   .bs-catalog-category {
     width: auto;
@@ -4158,7 +4158,7 @@ body > .footer {
   min-height: 64px;
 }
 .top .brand {
-  font-size: 1.25rem;
+  font-size: var(--text-title);
   letter-spacing: -0.02em;
 }
 :is(#home, #learn, #commonparts) > .wrap.section {
@@ -4194,18 +4194,18 @@ body > .footer {
 :is(#home, #learn, #commonparts)
   .bs-catalog-main
   > .knowledge-directory-toolbar {
-  gap: 16px;
+  gap: var(--space-4);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   padding: 16px 20px;
-  border-radius: 12px;
+  border-radius: var(--radius-large);
 }
 #home .project-index {
   padding-top: 30px;
 }
 #home .project-directory-heading {
   margin: 0;
-  gap: 20px;
+  gap: var(--space-5);
 }
 #home .project-directory-heading h1 {
   font-size: clamp(2.25rem, 3vw, 3.15rem);
@@ -4218,7 +4218,7 @@ body > .footer {
   align-self: center;
 }
 #home .bs-catalog-layout .project-grid {
-  gap: 14px;
+  gap: var(--space-4);
   margin-top: 12px;
 }
 #home .bs-catalog-layout .project-link {
@@ -4232,13 +4232,13 @@ body > .footer {
 }
 #home .bs-catalog-layout .project-copy {
   padding: 22px 26px;
-  gap: 10px;
+  gap: var(--space-3);
 }
 #home .bs-catalog-layout .project-copy h2 {
-  font-size: 1.3rem;
+  font-size: var(--text-title);
 }
 #home .bs-catalog-layout .project-copy p {
-  font-size: 0.94rem;
+  font-size: var(--text-body);
   max-width: 770px;
   line-height: 1.5;
 }
@@ -4246,7 +4246,7 @@ body > .footer {
   padding: 5px 9px;
 }
 #home .bs-catalog-layout .project-card {
-  border-radius: 13px;
+  border-radius: var(--radius-large);
 }
 #learn .knowledge-header {
   margin: 0;
@@ -4256,7 +4256,7 @@ body > .footer {
 }
 #learn .bs-catalog-main #tileList.grid.two {
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 14px;
+  gap: var(--space-4);
 }
 #learn .bs-catalog-main .knowledge-topic-card {
   padding: 20px 24px;
@@ -4264,7 +4264,7 @@ body > .footer {
 }
 #learn .bs-catalog-main #resource-calculators.resource-grid {
   grid-template-columns: repeat(auto-fit, minmax(335px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
 }
 #commonparts .resource-heading {
   margin-bottom: 10px;
@@ -4277,15 +4277,15 @@ body > .footer {
 }
 #commonparts .bs-catalog-main .workshop-standard-list {
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 10px;
+  gap: var(--space-3);
 }
 #commonparts .bs-catalog-main .workshop-standard-item {
   background: var(--color-surface);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
 }
 #commonparts .bs-catalog-main .workshop-tree {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 #commonparts .bs-catalog-main .workshop-tree-branch {
   min-width: 0;
@@ -4295,12 +4295,12 @@ body > .footer {
 }
 .footer {
   padding: 22px 0;
-  font-size: 0.83rem;
+  font-size: var(--text-small);
 }
 @media (max-width: 1050px) {
   :is(#home, #learn, #commonparts) .bs-catalog-layout {
     grid-template-columns: 205px minmax(0, 1fr);
-    gap: 20px;
+    gap: var(--space-5);
   }
   #home .bs-catalog-layout .project-art {
     width: 180px;
@@ -4352,37 +4352,37 @@ body > .footer {
 .part-editor-dialog .bs-supplier-editor,
 .workspace-main-bom-editor .bs-supplier-editor {
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
   border-top: 1px solid var(--color-border);
   margin-top: 18px;
   padding-top: 18px;
   max-width: 100%;
 }
 .bs-supplier-heading {
-  font-size: 1.08rem;
+  font-size: var(--text-body);
   line-height: 1.35;
   margin: 0;
-  font-weight: 750;
+  font-weight: var(--font-bold);
 }
 .bs-supplier-hint {
-  font-size: 0.83rem;
+  font-size: var(--text-small);
   line-height: 1.5;
   margin: 0;
 }
 .bs-supplier-offers {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .bs-supplier-offer {
   display: grid;
   grid-template-columns:
     minmax(115px, 160px) minmax(145px, 1fr) minmax(200px, 1.55fr)
     auto;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: center;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
-  border-radius: 11px;
+  border-radius: var(--radius-large);
   padding: 12px;
 }
 .bs-supplier-offer .field {
@@ -4401,7 +4401,7 @@ body > .footer {
 }
 .bs-supplier-validation {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
   color: var(--color-danger, var(--color-text-muted));
 }
 .bs-supplier-validation:empty {
@@ -4413,31 +4413,31 @@ body > .footer {
   border-top: 1px solid var(--color-border);
 }
 .bs-part-buy-links h3 {
-  font-size: 1.03rem;
+  font-size: var(--text-body);
   margin: 0 0 5px;
 }
 .bs-part-buy-links p {
-  font-size: 0.83rem;
+  font-size: var(--text-small);
   line-height: 1.5;
   margin: 0 0 10px;
 }
 .bs-part-buy-options {
   display: flex;
-  gap: 9px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 .bs-part-buy-link {
   display: inline-flex;
   align-items: center;
   min-height: 36px;
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   border: 1px solid var(--color-border);
   padding: 8px 12px;
   background: var(--color-surface-muted);
   color: var(--color-text);
   text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .bs-part-buy-link:hover {
   border-color: var(--color-accent);
@@ -4466,7 +4466,7 @@ body > .footer {
 .workshop-supplier-search {
   display: flex;
   align-items: end;
-  gap: 9px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   margin-top: 12px;
   padding-top: 12px;
@@ -4474,7 +4474,7 @@ body > .footer {
 }
 .workshop-supplier-search label {
   flex: 1 1 150px;
-  font-size: 0.81rem;
+  font-size: var(--text-small);
 }
 .workshop-supplier-search .field {
   min-width: 145px;
@@ -4490,7 +4490,7 @@ body > .footer {
 .workshop-supplier-search .workshop-supplier-disclaimer {
   flex: 1 1 100%;
   margin: 0;
-  font-size: 0.75rem;
+  font-size: var(--text-caption);
   line-height: 1.45;
 }
 
@@ -4499,7 +4499,7 @@ body > .footer {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 16px;
+  gap: var(--space-3) var(--space-4);
   margin: 0 0 15px;
   padding: 5px 0 4px;
 }
@@ -4507,8 +4507,8 @@ body > .footer {
   display: none !important;
 }
 .bs-project-tag-title {
-  font-size: 0.82rem;
-  font-weight: 750;
+  font-size: var(--text-small);
+  font-weight: var(--font-bold);
   color: var(--color-text);
   white-space: nowrap;
 }
@@ -4516,24 +4516,24 @@ body > .footer {
 .bs-project-tag-suggestions {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 .bs-project-tag-options {
   flex: 1 1 100%;
-  gap: 7px;
+  gap: var(--space-2);
 }
 .bs-project-tag-chip {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   border: 1px solid var(--color-border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--color-surface);
   color: var(--color-text);
   padding: 7px 12px;
-  font-size: 0.82rem;
-  font-weight: 550;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1.2;
   cursor: pointer;
   transition:
@@ -4547,7 +4547,7 @@ body > .footer {
 .bs-project-tag-chip.is-active {
   border-color: var(--color-accent);
   background: var(--color-selected);
-  font-weight: 750;
+  font-weight: var(--font-bold);
 }
 .bs-project-tag-chip:focus-visible,
 .bs-project-tag-clear:focus-visible {
@@ -4555,14 +4555,14 @@ body > .footer {
   outline-offset: 2px;
 }
 .bs-project-tag-count {
-  font-size: 0.75rem;
+  font-size: var(--text-caption);
   color: var(--color-text-muted);
 }
 .bs-project-tag-clear {
   border: 0;
   background: transparent;
   color: var(--color-accent);
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   cursor: pointer;
   padding: 3px 6px;
 }
@@ -4571,33 +4571,33 @@ body > .footer {
 }
 .bs-project-tag-picker {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 12px 0 16px;
 }
 .bs-project-tag-picker > label {
-  font-weight: 700;
-  font-size: 0.88rem;
+  font-weight: var(--font-bold);
+  font-size: var(--text-small);
 }
 .bs-project-tag-picker .field {
   margin: 6px 0 0;
 }
 .bs-project-tag-suggestions {
-  gap: 6px;
+  gap: var(--space-2);
 }
 .bs-project-tag-suggestions .bs-project-tag-chip {
   padding: 6px 10px;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
 }
 @media (max-width: 600px) {
   #home .bs-project-tag-filter {
-    gap: 8px;
+    gap: var(--space-2);
   }
   .bs-project-tag-options {
-    gap: 5px;
+    gap: var(--space-1);
   }
   .bs-project-tag-chip {
     padding: 7px 10px;
-    font-size: 0.78rem;
+    font-size: var(--text-small);
   }
 }
 
@@ -4605,19 +4605,19 @@ body > .footer {
 .project-account-dialog .project-account-message.is-error {
   padding: 11px 13px;
   margin: 0;
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   border: 1px solid var(--color-border);
   border-left: 3px solid var(--color-danger-strong);
   background: var(--color-surface-muted);
   color: var(--color-text);
-  font-size: 0.91rem;
-  font-weight: 700;
+  font-size: var(--text-body);
+  font-weight: var(--font-bold);
   line-height: 1.45;
 }
 .project-account-dialog .project-account-recovery {
   margin: -8px 0 4px;
   padding: 0 2px;
-  font-size: 0.84rem;
+  font-size: var(--text-small);
   line-height: 1.5;
 }
 .project-account-dialog .project-account-recovery[hidden] {
@@ -4625,8 +4625,8 @@ body > .footer {
 }
 .project-account-dialog .project-password-hint {
   margin: 3px 0 0;
-  font-size: 0.78rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
   line-height: 1.4;
 }
 .project-account-dialog .field[aria-invalid="true"] {
@@ -4641,39 +4641,39 @@ body > .footer {
 }
 .bs-bom-purchasing {
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
   padding: 16px 20px;
 }
 .bs-bom-purchasing > summary {
-  font-size: 1.05rem;
-  font-weight: 750;
+  font-size: var(--text-body);
+  font-weight: var(--font-bold);
   cursor: pointer;
 }
 .bs-bom-purchasing > p {
   margin: 12px 0;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
   line-height: 1.55;
 }
 .bs-digikey-cart-form {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .bs-digikey-cart-lines {
   display: grid;
   gap: 0;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   overflow: hidden;
 }
 .bs-digikey-cart-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 12px;
   border-bottom: 1px solid var(--color-border);
-  font-size: 0.85rem;
-  font-weight: 450;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
   cursor: pointer;
 }
 .bs-digikey-cart-row:last-child {
@@ -4698,11 +4698,11 @@ body > .footer {
 }
 .bs-digikey-cart-form .bs-digikey-cart-hint {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
 }
 .bs-digikey-exclusions {
   margin-top: 12px;
-  font-size: 0.83rem;
+  font-size: var(--text-small);
 }
 .bs-digikey-exclusions summary {
   cursor: pointer;
@@ -4757,7 +4757,7 @@ body > .footer {
 #home .bs-catalog-layout {
   display: grid;
   grid-template-columns: minmax(240px, 278px) minmax(0, 1fr);
-  gap: 24px;
+  gap: var(--space-5);
   align-items: start;
 }
 #home .bs-catalog-sidebar {
@@ -4768,21 +4768,21 @@ body > .footer {
   overflow-y: auto;
   padding: 17px 15px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
 }
 #home .bs-project-search-sidebar {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
   min-width: 0;
 }
 #home .bs-project-search-sidebar > .bs-catalog-sidebar-heading {
-  font-size: 1.1rem;
+  font-size: var(--text-lead);
   margin: 0;
 }
 #home .bs-project-search-sidebar .project-directory-search {
   display: grid;
-  gap: 5px;
+  gap: var(--space-1);
   margin: 0;
   min-width: 0;
 }
@@ -4793,7 +4793,7 @@ body > .footer {
 }
 #home .bs-project-tag-filter {
   display: grid;
-  gap: 11px;
+  gap: var(--space-3);
   margin: 5px 0 0;
   padding: 15px 0 0;
   border-top: 1px solid var(--color-border);
@@ -4804,17 +4804,17 @@ body > .footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
 }
 #home .bs-project-tag-title {
-  font-weight: 700;
-  font-size: 0.89rem;
+  font-weight: var(--font-bold);
+  font-size: var(--text-body);
 }
 #home .bs-project-descriptor-search-label {
   display: grid;
-  gap: 5px;
-  font-size: 0.79rem;
-  font-weight: 600;
+  gap: var(--space-1);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 #home .bs-project-descriptor-search {
   width: 100%;
@@ -4825,23 +4825,23 @@ body > .footer {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 7px;
+  gap: var(--space-2);
 }
 #home .bs-project-tag-chip {
   white-space: normal;
   text-align: left;
-  font-size: 0.78rem;
+  font-size: var(--text-small);
   line-height: 1.2;
   padding: 7px 9px;
 }
 #home .bs-project-tag-clear {
-  font-size: 0.76rem;
+  font-size: var(--text-small);
   white-space: nowrap;
   padding: 4px 2px;
 }
 #home .bs-project-tag-empty {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
 }
 #home .bs-catalog-main {
   min-width: 0;
@@ -4849,14 +4849,14 @@ body > .footer {
 #home .bs-catalog-main > .project-directory-controls {
   justify-content: flex-end;
   align-items: end;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 0;
 }
 
 @media (max-width: 900px) {
   #home .bs-catalog-layout {
     grid-template-columns: 210px minmax(0, 1fr);
-    gap: 15px;
+    gap: var(--space-4);
   }
   #home .bs-catalog-sidebar {
     padding: 12px 10px;
@@ -4882,7 +4882,7 @@ body > .footer {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) !important;
   grid-auto-flow: row;
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
 }
 #home .bs-catalog-main > .project-grid > .project-card {
@@ -4899,7 +4899,7 @@ body > .footer {
 .assembly-tree-nodes .assembly-name .assembly-tree-description {
   display: block;
   font-size: 0.78em;
-  font-weight: 400;
+  font-weight: var(--font-normal);
   line-height: 1.4;
   opacity: 0.75;
   text-align: left;
@@ -4911,7 +4911,7 @@ body > .footer {
 /* AI-assisted manufacturer-part-number lookup in the Workshop editor. */
 .workshop-ai-lookup {
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   padding: 16px;
   margin: 12px 0 18px;
   background: var(--color-surface);
@@ -4922,7 +4922,7 @@ body > .footer {
 .workshop-ai-lookup-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .workshop-ai-lookup-row input {
@@ -4934,12 +4934,12 @@ body > .footer {
 }
 .workshop-ai-lookup-results {
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
   margin-top: 10px;
 }
 .workshop-ai-source-list {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   align-items: center;
 }
@@ -4947,7 +4947,7 @@ body > .footer {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .workshop-ai-image-candidate img {
   display: block;
@@ -4956,7 +4956,7 @@ body > .footer {
   max-height: 190px;
   object-fit: contain;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
 }
 
@@ -4971,7 +4971,7 @@ dialog.bs-delete-confirm {
   max-height: calc(100dvh - 40px);
   padding: 24px;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
   color: var(--color-text);
   box-shadow: 0 22px 70px
@@ -4984,20 +4984,20 @@ dialog.bs-delete-confirm::backdrop {
 }
 dialog.bs-delete-confirm h2 {
   margin: 0 0 12px;
-  font-size: 1.18rem;
-  font-weight: 700;
+  font-size: var(--text-lead);
+  font-weight: var(--font-bold);
   color: var(--color-text);
 }
 dialog.bs-delete-confirm p {
   margin: 0;
   line-height: 1.55;
-  font-size: 0.94rem;
+  font-size: var(--text-body);
   color: var(--color-text-muted);
   overflow-wrap: anywhere;
 }
 dialog.bs-delete-confirm .bs-delete-confirm-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   justify-content: flex-end;
   margin-top: 25px;
 }
@@ -5007,7 +5007,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-actions .btn {
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
 }
 dialog.bs-delete-confirm .bs-delete-confirm-danger {
   background: var(--color-danger-action);
@@ -5028,7 +5028,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   max-width: 760px;
 }
 #commonparts .workshop-ai-lookup-row > input {
@@ -5047,12 +5047,12 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   .workshop-part-editor-section[data-part-editor-section="identity"]
   > .part-editor-section-heading {
   display: flex;
-  gap: 16px;
+  gap: var(--space-4);
   align-items: center;
   flex-wrap: wrap;
 }
 #commonparts .workshop-ai-review-trigger {
-  font-size: 0.87rem;
+  font-size: var(--text-small);
   min-height: 35px;
   padding: 7px 13px;
 }
@@ -5062,11 +5062,11 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   background: var(--color-surface);
   color: var(--color-text);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
 }
 #commonparts .workshop-ai-changes-panel h4 {
   margin: 0 0 8px;
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 #commonparts .workshop-ai-changes-panel h5 {
   margin: 16px 0 7px;
@@ -5075,7 +5075,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   width: 100%;
   border-collapse: collapse;
   margin-top: 14px;
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   table-layout: fixed;
 }
 #commonparts .workshop-ai-diff-table th,
@@ -5093,7 +5093,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   display: flex;
   justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--space-3);
   margin-top: 18px;
 }
 @media (max-width: 550px) {
@@ -5101,7 +5101,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
     flex-basis: 100%;
   }
   #commonparts .workshop-ai-diff-table {
-    font-size: 0.8rem;
+    font-size: var(--text-small);
   }
 }
 
@@ -5115,7 +5115,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   padding: 17px 18px;
   border: 1px solid var(--color-border-strong);
   border-left: 4px solid var(--color-accent);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
   color: var(--color-text);
 }
@@ -5124,11 +5124,11 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 }
 .part-editor-dialog .part-project-edit-notice strong {
   display: block;
-  font-size: 1.07rem;
+  font-size: var(--text-body);
 }
 .part-editor-dialog .part-project-edit-notice p {
   margin: 6px 0 0;
-  font-size: 0.96rem;
+  font-size: var(--text-body);
   line-height: 1.5;
 }
 #commonparts .workshop-return-to-project {
@@ -5143,10 +5143,10 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   z-index: 12;
   margin: 0 0 16px;
   padding: 10px 15px;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   box-shadow: 0 2px 8px color-mix(in srgb, var(--color-shadow) 9%, transparent);
   color: var(--color-accent-hover);
 }
@@ -5162,7 +5162,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   justify-content: flex-start;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px 18px;
+  gap: var(--space-3) var(--space-4);
   margin: 0 0 16px;
   padding: 12px 0;
   background: transparent;
@@ -5174,7 +5174,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   align-items: center;
   flex: 0 1 auto;
   flex-wrap: wrap;
-  gap: 9px;
+  gap: var(--space-2);
   width: auto;
   margin: 0;
   padding-right: 18px;
@@ -5192,7 +5192,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 #home .bs-catalog-main > .project-directory-controls .project-directory-label {
   display: flex;
   flex: 0 0 auto;
-  gap: 4px;
+  gap: var(--space-1);
 }
 #home .bs-catalog-main > .project-directory-controls .project-sort-filter {
   min-width: 140px;
@@ -5206,7 +5206,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 @media (max-width: 680px) {
   #home .bs-catalog-main > .project-directory-controls {
     padding: 10px 0;
-    gap: 10px;
+    gap: var(--space-3);
   }
   #home .bs-catalog-main > .project-directory-controls .project-owner-actions {
     flex: 1 1 100%;
@@ -5232,11 +5232,11 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-small);
   background: transparent;
   color: var(--color-accent);
   font: inherit;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   text-align: left;
   line-height: inherit;
   overflow-wrap: anywhere;
@@ -5290,8 +5290,8 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   display: grid;
   grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
   align-items: center;
-  column-gap: 14px;
-  row-gap: 5px;
+  column-gap: var(--space-4);
+  row-gap: var(--space-1);
 }
 .library-part-dialog .library-field > .field {
   grid-column: 2;
@@ -5300,7 +5300,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 }
 .library-part-dialog .library-field > small {
   grid-column: 2;
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 /* Long notes are more legible with the label above the text area. */
 .library-part-dialog .library-field:has(> textarea) {
@@ -5332,11 +5332,11 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 /* Compact form rhythm, initially scoped to New Part.
    Keep all fields and progressive-disclosure behavior unchanged. */
 .library-part-dialog .library-part-form {
-  gap: 9px;
+  gap: var(--space-2);
   padding: 16px 18px;
 }
 .library-part-dialog .library-part-form > h2 {
-  font-size: 1.38rem;
+  font-size: var(--text-title);
   line-height: 1.25;
 }
 .library-part-dialog .library-part-form > .muted {
@@ -5344,16 +5344,16 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 }
 .library-part-dialog .library-field {
   grid-template-columns: minmax(0, 185px) minmax(0, 1fr);
-  column-gap: 12px;
-  row-gap: 4px;
-  font-size: 0.85rem;
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
+  font-size: var(--text-small);
 }
 .library-part-dialog .library-field > .field {
   min-height: 35px;
   padding-block: 6px;
 }
 .library-part-dialog .library-field:has(> textarea) {
-  gap: 5px;
+  gap: var(--space-1);
 }
 .library-part-dialog .library-field > textarea.field {
   min-height: 62px;
@@ -5361,7 +5361,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 }
 .library-part-dialog .library-workshop-choice-group {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px 9px;
+  gap: var(--space-2) var(--space-2);
   padding: 8px;
 }
 .library-part-dialog .library-workshop-choice-group > legend {
@@ -5370,12 +5370,12 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .library-part-dialog .library-workshop-first {
   padding: 8px 10px;
 
-  column-gap: 8px;
+  column-gap: var(--space-2);
   row-gap: 1px;
 }
 
 .library-part-dialog .library-workshop-choice-description {
-  font-size: 0.73rem;
+  font-size: var(--text-caption);
 }
 .library-part-dialog .library-workshop-add {
   grid-column: 1/-1;
@@ -5386,16 +5386,16 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   grid-column: 1/-1;
 }
 .library-part-dialog .library-number-choice {
-  gap: 7px;
+  gap: var(--space-2);
   padding: 8px 11px;
 }
 .library-part-dialog .library-auto-number {
-  gap: 7px;
+  gap: var(--space-2);
 }
 .library-part-dialog .library-picker-section,
 .library-part-dialog .library-wire-section,
 .library-part-dialog .library-components {
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 @media (max-width: 620px) {
@@ -5403,34 +5403,34 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
     grid-template-columns: minmax(0, 1fr);
   }
   .library-part-dialog .library-field {
-    gap: 4px;
+    gap: var(--space-1);
   }
   .library-part-dialog .library-part-form {
-    gap: 9px;
+    gap: var(--space-2);
   }
 }
 
 /* New Part: Container is the named tree-level record and its associated workspace. */
 .library-part-dialog .library-function-caption {
   display: inline-flex;
-  gap: 7px;
+  gap: var(--space-2);
   align-items: center;
   min-width: 0;
 }
 .library-part-dialog .library-container-name-hint {
   color: var(--color-text-muted);
   font-size: 0.84em;
-  font-weight: 400;
+  font-weight: var(--font-normal);
   white-space: nowrap;
 }
 .library-part-dialog .library-function-tip {
-  font-size: 0.86rem;
-  font-weight: 500;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   color: var(--color-text-muted);
   cursor: help;
 }
 .library-part-dialog .library-function-tip:focus-visible {
-  border-radius: 3px;
+  border-radius: var(--radius-small);
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
@@ -5456,13 +5456,13 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 }
 .library-part-dialog .library-part-form > h2 {
   margin: 0;
-  font-size: 1.42rem;
-  font-weight: 700;
+  font-size: var(--text-title);
+  font-weight: var(--font-bold);
   line-height: 1.22;
 }
 .library-part-dialog .library-part-form > .muted {
   margin: 0 0 5px;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   line-height: 1.35;
 }
 .library-part-dialog .library-part-form > .library-field,
@@ -5470,10 +5470,10 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   display: grid;
   grid-template-columns: var(--new-part-label-width) minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   margin: 0;
-  font-size: 0.86rem;
-  font-weight: 500;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1.3;
 }
 .library-part-dialog .library-part-form > .library-field > span:first-child,
@@ -5490,10 +5490,10 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   min-width: 0;
   min-height: 36px;
   padding: 7px 11px;
-  font-size: 0.86rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
   line-height: 1.35;
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
 }
 .library-part-dialog .library-part-form > .library-field > textarea.field {
   min-height: 68px;
@@ -5502,14 +5502,14 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 }
 .library-part-dialog .library-part-form > .library-field > small {
   grid-column: 2;
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 /* Fieldsets are section labels, not oversized cards. */
 .library-part-dialog .library-workshop-choice-group,
 .library-part-dialog .library-number-choice {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 3px;
+  gap: var(--space-1);
   min-width: 0;
   margin: 3px 0 0;
   padding: 3px 0 0;
@@ -5522,25 +5522,25 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .library-part-dialog .library-number-choice > legend {
   margin: 0 0 4px;
   padding: 0;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   color: var(--color-text);
 }
 .library-part-dialog .library-workshop-first {
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr);
   grid-template-rows: auto auto;
-  gap: 0 9px;
+  gap: 0 var(--space-2);
   align-items: center;
   width: 100%;
   margin: 0;
   padding: 5px 6px;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
   background: transparent;
   box-shadow: none;
-  font-size: 0.86rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
   line-height: 1.25;
   cursor: pointer;
 }
@@ -5552,7 +5552,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .library-part-dialog
   .library-workshop-first:has(input:checked)
   .library-workshop-choice-copy {
-  font-weight: 550;
+  font-weight: var(--font-semibold);
 }
 .library-part-dialog .library-workshop-first > input {
   grid-column: 1;
@@ -5564,19 +5564,19 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .library-part-dialog .library-workshop-choice-copy {
   grid-column: 2;
   grid-row: 1;
-  font-size: 0.86rem;
+  font-size: var(--text-small);
   line-height: 1.3;
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 .library-part-dialog .library-workshop-choice-copy strong {
-  font-weight: 550;
+  font-weight: var(--font-semibold);
 }
 .library-part-dialog .library-workshop-choice-description {
   grid-column: 2;
   grid-row: 2;
-  font-size: 0.74rem;
+  font-size: var(--text-caption);
   line-height: 1.3;
-  font-weight: 400;
+  font-weight: var(--font-normal);
   color: var(--color-text-muted);
 }
 .library-part-dialog .library-workshop-add {
@@ -5584,16 +5584,16 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   padding: 5px 6px;
 }
 .library-part-dialog .library-workshop-add .library-workshop-choice-copy {
-  font-weight: 500;
+  font-weight: var(--font-semibold);
 }
 .library-part-dialog .library-number-choice label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: 29px;
   padding: 3px 6px;
-  font-size: 0.86rem;
-  font-weight: 500;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1.3;
 }
 .library-part-dialog .library-number-choice input {
@@ -5601,12 +5601,12 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 }
 .library-part-dialog .library-auto-number-tip,
 .library-part-dialog .library-function-tip {
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 .library-part-dialog .library-vendor-info,
 .library-part-dialog .library-picker-hint,
 .library-part-dialog .library-part-form > p.muted:not(:first-of-type) {
-  font-size: 0.76rem;
+  font-size: var(--text-small);
   line-height: 1.3;
   margin: 0;
 }
@@ -5621,7 +5621,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 4px;
+    gap: var(--space-1);
   }
   .library-part-dialog .library-part-form > .library-field > .field {
     width: 100%;
@@ -5648,34 +5648,34 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   margin: 0;
   padding: 11px 13px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
   box-shadow: none;
 }
 .library-part-dialog .library-workshop-choice-group,
 .library-part-dialog .library-number-choice,
 .library-part-dialog .library-identity-section {
-  gap: 5px;
+  gap: var(--space-1);
 }
 .library-part-dialog .library-identity-section {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  row-gap: 9px;
+  row-gap: var(--space-2);
 }
 .library-part-dialog .library-form-section > legend,
 .library-part-dialog .library-workshop-choice-group > legend,
 .library-part-dialog .library-number-choice > legend {
   padding: 0 5px;
   margin: 0 0 2px;
-  font-size: 0.85rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1.3;
   color: var(--color-text);
 }
 .library-part-dialog .library-item-type-section,
 .library-part-dialog .library-quantity-section {
   display: grid;
-  gap: 5px;
+  gap: var(--space-1);
 }
 .library-part-dialog
   :is(
@@ -5688,10 +5688,10 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   display: grid;
   grid-template-columns: var(--new-part-label-width, 150px) minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   margin: 0;
-  font-size: 0.86rem;
-  font-weight: 500;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1.3;
   min-width: 0;
 }
@@ -5710,9 +5710,9 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   min-height: 36px;
   margin: 0;
   padding: 7px 11px;
-  font-size: 0.86rem;
-  font-weight: 400;
-  border-radius: 8px;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
+  border-radius: var(--radius-medium);
 }
 .library-part-dialog
   .library-identity-section
@@ -5768,7 +5768,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 4px;
+    gap: var(--space-1);
   }
   .library-part-dialog
     :is(
@@ -5831,7 +5831,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   > .library-workshop-add:has(input:checked) {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 3px 0 0 25px;
   padding: 6px 4px 3px;
   width: calc(100% - 25px);
@@ -5850,14 +5850,14 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .library-part-dialog .library-workshop-add .library-workshop-choice-copy {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 0.81rem;
-  font-weight: 450;
+  gap: var(--space-2);
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
   line-height: 1.3;
 }
 .library-part-dialog .library-workshop-add-tip {
   flex: none;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
 }
 
 /* Workshop publication options: radio-only presentation with no nested frames.
@@ -5876,7 +5876,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .library-part-dialog .library-workshop-choice-group > .library-workshop-scope {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 4px;
+  gap: var(--space-1);
   margin: 2px 0 0 25px;
   padding: 0 0 0 7px;
   border: 0;
@@ -5888,8 +5888,8 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .library-part-dialog .library-workshop-scope > legend {
   padding: 0;
   margin: 2px 0 4px;
-  font-weight: 600;
-  font-size: 0.84rem;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-small);
 }
 .library-part-dialog .library-workshop-scope > .library-workshop-scope-option,
 .library-part-dialog
@@ -5900,14 +5900,14 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   > .library-workshop-scope-option:has(input:checked) {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   padding: 5px 4px;
   border: 0;
-  border-radius: 5px;
+  border-radius: var(--radius-small);
   background: transparent;
   box-shadow: none;
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1.3;
   min-height: 31px;
 }
@@ -5919,14 +5919,14 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 }
 .library-part-dialog .library-workshop-scope-name {
   display: inline-flex;
-  gap: 7px;
+  gap: var(--space-2);
   align-items: center;
   min-width: 0;
-  font-weight: 500;
+  font-weight: var(--font-semibold);
 }
 .library-part-dialog .library-workshop-scope-tip {
-  font-size: 0.83rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
 }
 .library-part-dialog .library-workshop-scope-option small {
   display: none !important;
@@ -5944,7 +5944,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .library-part-dialog .library-workshop-quick-search {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 6px;
+  gap: var(--space-2);
   padding: 9px 12px;
   min-width: 0;
 }
@@ -5953,23 +5953,23 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   .library-workshop-search-label {
   display: grid;
   grid-template-columns: var(--new-part-label-width, 150px) minmax(0, 1fr);
-  gap: 10px;
+  gap: var(--space-3);
   align-items: center;
   min-width: 0;
-  font-size: 0.86rem;
-  font-weight: 500;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1.3;
 }
 .library-part-dialog .library-workshop-search-title {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   min-width: 0;
-  font-weight: 500;
+  font-weight: var(--font-semibold);
 }
 .library-part-dialog .library-workshop-search-tip {
-  font-size: 0.83rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
   flex: none;
 }
 .library-part-dialog .library-workshop-search-label > input.field {
@@ -5978,9 +5978,9 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   min-width: 0;
   min-height: 36px;
   padding: 7px 11px;
-  font-size: 0.86rem;
-  font-weight: 400;
-  border-radius: 8px;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
+  border-radius: var(--radius-medium);
 }
 .library-part-dialog .library-workshop-quick-results:empty {
   display: none;
@@ -5993,7 +5993,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
     .library-workshop-quick-search
     .library-workshop-search-label {
     grid-template-columns: minmax(0, 1fr);
-    gap: 4px;
+    gap: var(--space-1);
   }
   .library-part-dialog .library-workshop-search-label > input.field {
     grid-column: 1;
@@ -6007,14 +6007,14 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   margin: 0;
   padding: 14px 16px 16px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
 }
 .library-part-dialog fieldset.library-picker-section > legend {
   margin: 0;
   padding: 0 6px;
   color: var(--color-text);
-  font-size: 0.88rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .library-part-dialog .library-picker-section > .library-workshop-quick-search {
   border: 0;
@@ -6032,29 +6032,29 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 /* Workshop picker: one lookup mode at a time, shared label alignment and spacing. */
 .library-part-dialog .library-picker-section {
   display: grid;
-  gap: 13px;
+  gap: var(--space-3);
 }
 .library-part-dialog .library-lookup-mode {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: var(--space-4);
   padding: 1px 0 4px;
-  font-size: 0.86rem;
+  font-size: var(--text-small);
   line-height: 1.3;
 }
 .library-part-dialog .library-lookup-mode-caption {
   color: var(--color-text);
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   margin-right: 4px;
 }
 .library-part-dialog .library-lookup-mode-option {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   margin: 0;
   cursor: pointer;
-  font-weight: 450;
+  font-weight: var(--font-normal);
 }
 .library-part-dialog .library-lookup-mode-option input {
   width: 16px;
@@ -6070,13 +6070,13 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .library-part-dialog .library-picker-section .library-workshop-search-label {
   display: grid;
   grid-template-columns: var(--new-part-label-width, 150px) minmax(0, 1fr);
-  gap: 10px;
+  gap: var(--space-3);
   align-items: center;
   min-width: 0;
   margin: 0;
   padding: 0;
-  font-size: 0.86rem;
-  font-weight: 500;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .library-part-dialog .library-picker-section > .library-field > .field,
 .library-part-dialog
@@ -6093,23 +6093,23 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   min-width: 0;
   min-height: 36px;
   padding: 7px 11px;
-  font-size: 0.86rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
 }
 .library-part-dialog .library-picker-section > .library-workshop-quick-search {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 0;
   margin: 0;
 }
 .library-part-dialog .library-picker-section .library-workshop-search-title {
   display: inline-flex;
-  gap: 7px;
+  gap: var(--space-2);
   align-items: center;
 }
 .library-part-dialog .library-picker-section .library-components {
   display: grid;
-  gap: 13px;
+  gap: var(--space-3);
 }
 .library-part-dialog
   .library-picker-section
@@ -6126,7 +6126,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   margin: 6px 0 2px;
   padding: 0;
   border: 0;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   line-height: 1.4;
 }
 @media (max-width: 620px) {
@@ -6137,7 +6137,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
     > .library-field,
   .library-part-dialog .library-picker-section .library-workshop-search-label {
     grid-template-columns: minmax(0, 1fr);
-    gap: 5px;
+    gap: var(--space-1);
   }
   .library-part-dialog .library-picker-section > .library-field > .field,
   .library-part-dialog
@@ -6161,12 +6161,12 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   > .part-editor-group {
   display: grid;
 
-  gap: 11px;
+  gap: var(--space-3);
   min-width: 0;
   margin: 0 0 14px;
   padding: 17px 19px;
 
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
 }
 .part-editor-dialog
@@ -6176,8 +6176,8 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   padding: 0 0 9px;
 
   border-bottom: 1px solid var(--color-border);
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: var(--text-body);
+  font-weight: var(--font-bold);
   color: var(--color-text);
 }
 .part-editor-dialog .component-review > .part-editor-group > label {
@@ -6215,7 +6215,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
     .component-review
     > .part-editor-group {
     padding: 12px;
-    gap: 9px;
+    gap: var(--space-2);
   }
 }
 
@@ -6223,7 +6223,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .part-editor-dialog .part-container-name-hint {
   color: var(--color-text-muted);
   font-size: 0.84em;
-  font-weight: 400;
+  font-weight: var(--font-normal);
   margin: 0 6px;
 }
 .part-editor-dialog .part-editor-group .library-function-tip {
@@ -6236,7 +6236,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .part-editor-dialog .part-editor-group .library-function-tip:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
-  border-radius: 3px;
+  border-radius: var(--radius-small);
 }
 
 /* Edit Part uses the compact New Part label/control grid.
@@ -6250,7 +6250,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 }
 .part-editor-dialog .workspace-main-bom-editor .component-review {
   display: grid !important;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .part-editor-dialog
   .workspace-main-bom-editor
@@ -6259,11 +6259,11 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr);
   align-content: start;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   padding: 12px 14px 13px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: transparent;
   box-shadow: none;
 }
@@ -6275,9 +6275,9 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   padding: 0 0 6px;
   border: 0;
   border-bottom: 0;
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   line-height: 1.3;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
 }
 /* Individual labels, including fields moved from the legacy component editor,
    use the same two-column structure as the New Part dialog. */
@@ -6300,8 +6300,8 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   display: grid !important;
   grid-template-columns: var(--edit-part-label-width) minmax(0, 1fr) !important;
   align-items: center !important;
-  column-gap: 12px !important;
-  row-gap: 4px !important;
+  column-gap: var(--space-3) !important;
+  row-gap: var(--space-1) !important;
   width: 100% !important;
   max-width: none !important;
   min-width: 0;
@@ -6309,9 +6309,9 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   margin: 0 !important;
   padding: 0 !important;
   box-sizing: border-box;
-  font-size: 0.86rem;
+  font-size: var(--text-small);
   line-height: 1.35;
-  font-weight: 500;
+  font-weight: var(--font-semibold);
 }
 /* Toggle controls are intentionally compact, not two-column text inputs. */
 .part-editor-dialog
@@ -6329,7 +6329,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   justify-content: flex-start;
   align-items: center !important;
   min-height: 26px;
-  gap: 8px !important;
+  gap: var(--space-2) !important;
 }
 .part-editor-dialog
   .workspace-main-bom-editor
@@ -6358,10 +6358,10 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   min-height: 36px;
   margin: 0 !important;
   padding: 7px 11px !important;
-  border-radius: 8px;
-  font-size: 0.86rem;
+  border-radius: var(--radius-medium);
+  font-size: var(--text-small);
   line-height: 1.4;
-  font-weight: 400;
+  font-weight: var(--font-normal);
   box-sizing: border-box;
 }
 .part-editor-dialog
@@ -6377,7 +6377,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: var(--space-1);
   min-width: 0;
 }
 .part-editor-dialog .part-container-caption .part-container-name-hint {
@@ -6409,7 +6409,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   > .part-number-next {
   min-height: 29px;
   padding: 4px 9px;
-  font-size: 0.77rem;
+  font-size: var(--text-small);
 }
 .part-editor-dialog
   .workspace-main-bom-editor
@@ -6417,7 +6417,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   > .part-editor-group
   > .part-number-field
   > .part-number-help {
-  font-size: 0.73rem;
+  font-size: var(--text-caption);
   line-height: 1.3;
 }
 /* Less visual weight for auxiliary controls and project-only details. */
@@ -6427,7 +6427,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   .part-display-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px 20px;
+  gap: var(--space-2) var(--space-5);
   margin: 0;
   padding: 0;
   border: 0;
@@ -6448,7 +6448,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   .part-project-only-editor
   > h3 {
   margin: 0 0 8px;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .part-editor-dialog
   .component-review
@@ -6456,7 +6456,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   .part-feature-tree-help {
   grid-column: 2;
   margin: 0;
-  font-size: 0.73rem;
+  font-size: var(--text-caption);
 }
 .part-editor-dialog
   .component-review
@@ -6488,7 +6488,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
     .component-review
     > .part-editor-group {
     padding: 10px 11px;
-    gap: 7px;
+    gap: var(--space-2);
   }
 }
 @media (max-width: 520px) {
@@ -6509,7 +6509,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
     .historical-price-fields
     > label {
     grid-template-columns: minmax(0, 1fr) !important;
-    gap: 4px !important;
+    gap: var(--space-1) !important;
   }
   .part-editor-dialog
     .workspace-main-bom-editor
@@ -6550,22 +6550,22 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .part-container-overview .part-functional-heading {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .part-container-overview .part-functional-heading h3 {
-  font-size: 0.92rem;
-  font-weight: 650;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
   margin: 0;
 }
 .part-container-overview .part-functional-heading .btn {
   padding: 4px 9px;
   min-height: 28px;
-  font-size: 0.77rem;
+  font-size: var(--text-small);
 }
 .part-container-overview .part-functional-purpose {
   margin: 4px 0 0;
-  font-size: 0.86rem;
+  font-size: var(--text-small);
   line-height: 1.5;
 }
 .part-container-overview .part-alternatives-panel {
@@ -6578,14 +6578,14 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 }
 .part-container-overview .part-alternatives-panel > summary {
   padding: 3px 0;
-  font-size: 0.84rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   color: var(--color-text);
   cursor: pointer;
 }
 .part-container-overview .part-alternatives-panel .part-alternatives-intro {
   margin: 6px 0 10px;
-  font-size: 0.79rem;
+  font-size: var(--text-small);
   line-height: 1.4;
 }
 .part-container-overview .part-alternatives-panel .part-functional-field,
@@ -6595,19 +6595,19 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   > .part-functional-field {
   display: grid;
   grid-template-columns: 168px minmax(0, 1fr);
-  gap: 10px;
+  gap: var(--space-3);
   align-items: center;
   margin: 7px 0;
-  font-size: 0.84rem;
-  font-weight: 500;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .part-container-overview .part-alternatives-panel .field {
   width: 100%;
   min-width: 0;
   min-height: 35px;
   margin: 0;
-  font-size: 0.84rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
 }
 .part-container-overview .part-alternative-new {
   margin-top: 9px;
@@ -6619,7 +6619,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   min-height: 31px;
   padding: 5px 10px;
   margin-top: 3px;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
 }
 @media (max-width: 560px) {
   .part-container-overview .part-alternatives-panel .part-functional-field,
@@ -6628,7 +6628,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
     .part-alternative-new
     > .part-functional-field {
     grid-template-columns: minmax(0, 1fr);
-    gap: 4px;
+    gap: var(--space-1);
   }
 }
 
@@ -6636,7 +6636,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
    The AI results and optional specs live within the same section. */
 .part-editor-dialog .component-review > .part-editor-group .product-ai-inline {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
   min-width: 0;
   margin: 5px 0 1px;
@@ -6651,11 +6651,11 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   min-height: 34px;
   padding: 6px 12px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 0.84rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   cursor: pointer;
 }
 .part-editor-dialog
@@ -6682,12 +6682,12 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   cursor: pointer;
   padding: 9px 0 5px;
   color: var(--color-text);
-  font-size: 0.84rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .part-editor-dialog .component-review .part-editor-specs-body {
   display: grid;
-  gap: 9px;
+  gap: var(--space-2);
   padding: 3px 0 9px;
 }
 .part-editor-dialog
@@ -6700,15 +6700,15 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 }
 .part-editor-dialog .component-review .product-ai-review-list {
   display: grid;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 7px 0;
 }
 .part-editor-dialog .component-review .product-ai-review-option {
   display: flex;
-  gap: 9px;
+  gap: var(--space-2);
   align-items: flex-start;
   padding: 5px 0;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   line-height: 1.45;
 }
 .part-editor-dialog .component-review .product-ai-review-option input {
@@ -6719,11 +6719,11 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 }
 .part-editor-dialog .component-review .product-ai-review-title {
   margin: 8px 0 3px;
-  font-size: 0.9rem;
+  font-size: var(--text-body);
 }
 .part-editor-dialog .component-review .product-ai-review-match {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: var(--text-small);
 }
 
 /* Tool classification follows the same label/value grid as Part name and MPN. */
@@ -6735,24 +6735,24 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
   display: grid !important;
   grid-template-columns: var(--edit-part-label-width) minmax(0, 1fr) !important;
   align-items: center !important;
-  column-gap: 12px !important;
-  row-gap: 4px !important;
+  column-gap: var(--space-3) !important;
+  row-gap: var(--space-1) !important;
   min-height: 36px;
   width: 100%;
   margin: 0 !important;
   padding: 0 !important;
-  font-size: 0.86rem;
+  font-size: var(--text-small);
 }
 .part-editor-dialog .part-tool-field > .part-tool-caption {
   grid-column: 1;
-  font-weight: 500;
+  font-weight: var(--font-semibold);
 }
 .part-editor-dialog .part-tool-field > .part-tool-control {
   grid-column: 2;
   display: inline-flex;
   align-items: center;
   justify-self: start;
-  gap: 9px;
+  gap: var(--space-2);
   min-height: 32px;
 }
 .part-editor-dialog .part-tool-control > input[type="checkbox"] {
@@ -6768,7 +6768,7 @@ dialog.bs-delete-confirm .bs-delete-confirm-danger:focus-visible {
 .part-editor-dialog .part-tool-control > .part-option-help {
   margin: 0;
   color: var(--color-text-muted);
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 @media (max-width: 520px) {
   .part-editor-dialog

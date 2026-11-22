@@ -1,19 +1,19 @@
 .product-ai-search {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
   min-width: 0;
   width: 100%;
   box-sizing: border-box;
   padding: 16px;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
 }
 .product-ai-search .product-ai-field {
   display: grid;
-  gap: 6px;
-  font-weight: 600;
-  font-size: 0.88rem;
+  gap: var(--space-2);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-small);
 }
 .product-ai-search .field {
   width: 100%;
@@ -25,18 +25,18 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .product-ai-actions .btn {
   margin: 0;
 }
 .product-ai-actions .muted {
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .product-ai-status,
 .product-ai-cost {
   margin: 0;
-  font-size: 0.87rem;
+  font-size: var(--text-small);
 }
 .product-ai-status:empty,
 .product-ai-results:empty {
@@ -66,12 +66,12 @@
 .product-ai-disclosure > .product-ai-disclosure-heading {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   list-style: none;
   cursor: pointer;
   padding: 12px 16px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
   color: var(--color-text);
 }
 .product-ai-disclosure
@@ -98,7 +98,7 @@
 .product-ai-disclosure > .product-ai-disclosure-heading:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: -2px;
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
 }
 :is(#launcher, .personal-project-view, #linear, #robot)
   .workspace-main-bom-editor
@@ -111,7 +111,7 @@
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 10px;
+  gap: var(--space-3);
   min-width: 0;
 }
 .bs-action-input-row > .btn {
@@ -141,8 +141,8 @@
   border-radius: 50%;
   background: var(--color-surface);
   color: var(--color-text-muted);
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: var(--text-small);
+  font-weight: var(--font-bold);
   cursor: help;
 }
 .bs-action-input-help-button:focus-visible {
@@ -159,13 +159,13 @@
   max-width: min(310px, calc(100vw - 48px));
   padding: 9px 11px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   box-shadow: 0 5px 20px
     color-mix(in srgb, var(--color-shadow-base) 22%, transparent);
   color: var(--color-text);
-  font-weight: 400;
-  font-size: 0.81rem;
+  font-weight: var(--font-normal);
+  font-size: var(--text-small);
   line-height: 1.45;
   white-space: normal;
 }
@@ -188,7 +188,7 @@
 .product-ai-search.product-ai-compact {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 6px;
+  gap: var(--space-2);
   width: 100%;
   min-width: 0;
   padding: 0;
@@ -202,19 +202,19 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .product-ai-compact .bs-action-lookup-button {
   flex: none;
   min-height: 32px;
   padding: 5px 11px;
   border: 1px solid var(--color-border);
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   color: var(--color-text);
   box-shadow: none;
-  font-size: 0.81rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .product-ai-compact .bs-action-lookup-button:hover {
   border-color: var(--color-accent);
@@ -228,5 +228,5 @@
 .product-ai-compact .bs-action-input-help-button {
   width: 23px;
   height: 23px;
-  font-size: 0.74rem;
+  font-size: var(--text-caption);
 }

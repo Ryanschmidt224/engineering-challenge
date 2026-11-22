@@ -9,7 +9,7 @@
   border-bottom: 1px solid var(--color-border-strong);
 }
 .brand {
-  font-weight: 750;
+  font-weight: var(--font-bold);
   letter-spacing: 0.04em;
   text-decoration: none;
   color: var(--color-text);
@@ -22,7 +22,7 @@
   padding: var(--space-2) 0;
 }
 .app-header [aria-current="page"] {
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   text-decoration-thickness: 2px;
 }
 .workshop-heading {
@@ -102,7 +102,7 @@
 }
 .category-button.is-selected {
   background: var(--color-selected);
-  font-weight: 600;
+  font-weight: var(--font-semibold);
 }
 .search-label {
   display: block;
@@ -162,7 +162,7 @@
   min-width: 0;
 }
 .field-definition legend {
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   padding: 0 var(--space-2);
 }
 .field-definition .actions {

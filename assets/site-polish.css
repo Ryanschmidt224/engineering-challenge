@@ -43,7 +43,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 7px;
+  gap: var(--space-2);
 }
 .recipe-compact .recipe-photo-frame {
   display: flex;
@@ -52,7 +52,7 @@
   overflow: hidden;
   background: var(--color-media-backdrop);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
 }
 .recipe-compact .recipe-photo-frame .recipe-step-photo-image {
   display: block;
@@ -76,7 +76,7 @@
   border-top: 1px solid var(--color-border);
   border-radius: 0;
   color: inherit;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
 }
 .recipe-compact .recipe-photo-frame .recipe-step-photo-name:focus {
   outline: 2px solid var(--color-focus);
@@ -97,18 +97,18 @@
   background: var(--color-surface);
   color: var(--color-text);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   box-shadow: 0 12px 36px
     color-mix(in srgb, var(--color-shadow) 50%, transparent);
   padding: 7px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-1);
 }
 .recipe-knowledge-context-heading {
   padding: 9px 10px 11px;
-  font-weight: 700;
-  font-size: 0.88rem;
+  font-weight: var(--font-bold);
+  font-size: var(--text-small);
   overflow-wrap: anywhere;
   border-bottom: 1px solid var(--color-border);
 }
@@ -118,19 +118,19 @@
   flex-direction: column;
   align-items: flex-start;
   text-align: left;
-  gap: 3px;
+  gap: var(--space-1);
   width: 100%;
   padding: 9px 10px;
   background: transparent;
   color: inherit;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
   font: inherit;
   cursor: pointer;
 }
 .recipe-knowledge-context-result small {
   color: var(--color-text-muted);
-  font-size: 0.75rem;
+  font-size: var(--text-caption);
 }
 .recipe-knowledge-context-result:hover,
 .recipe-knowledge-context-result:focus-visible,
@@ -146,7 +146,7 @@
 .recipe-knowledge-empty {
   padding: 4px 10px;
   color: var(--color-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 
 /* Work-instruction attachments flow horizontally and wrap on narrow screens. */
@@ -157,7 +157,7 @@
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 260px));
   align-items: start;
   justify-content: start;
-  gap: 16px;
+  gap: var(--space-4);
   margin-top: 10px;
 }
 .recipe-compact .recipe-step-photo {
@@ -177,7 +177,7 @@
   max-width: 100%;
   margin: 8px 14px 12px 0;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   overflow: hidden;
   background: var(--color-media-backdrop);
 }
@@ -195,7 +195,7 @@
   padding: 9px 11px;
   background: var(--color-media-backdrop);
   border-top: 1px solid var(--color-border);
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   overflow-wrap: anywhere;
 }
 .recipe-document-link {
@@ -207,7 +207,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 14px;
+  gap: var(--space-4);
   text-align: center;
   text-decoration: none;
   color: var(--color-text);
@@ -227,13 +227,13 @@
   padding: 14px 8px;
   background: var(--color-surface-muted);
   border: 1px solid var(--color-accent);
-  border-radius: 8px;
-  font-weight: 800;
+  border-radius: var(--radius-medium);
+  font-weight: var(--font-bold);
   letter-spacing: 0.06em;
-  font-size: 0.95rem;
+  font-size: var(--text-body);
 }
 .recipe-document-open {
-  font-size: 0.78rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
 }
 
@@ -242,7 +242,7 @@
   width: 100%;
   min-width: 0;
   color: var(--color-text);
-  font-size: 1.05rem;
+  font-size: var(--text-body);
   line-height: 1.7;
 }
 .recipe-compact .recipe-reader-text p {
@@ -252,7 +252,7 @@
 .recipe-compact .recipe-reader-text p:first-child {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   padding: 14px 16px;
 }
 
@@ -267,8 +267,8 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-left: 4px solid var(--color-accent);
-  border-radius: 9px;
-  font-size: 1.04rem;
+  border-radius: var(--radius-medium);
+  font-size: var(--text-body);
   line-height: 1.65;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -285,8 +285,8 @@
 
   justify-content: space-between;
   flex-wrap: wrap;
-  column-gap: 22px;
-  row-gap: 6px;
+  column-gap: var(--space-5);
+  row-gap: var(--space-2);
 }
 .recipe-instructions .recipe-heading-row > h2 {
   margin: 0;
@@ -310,7 +310,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   margin-bottom: 12px;
 }
@@ -320,19 +320,19 @@
   color: var(--color-text);
 }
 .investigation-heading h2 {
-  font-size: 1.22rem;
+  font-size: var(--text-title);
 }
 .investigation-heading h4 {
-  font-size: 0.98rem;
+  font-size: var(--text-body);
 }
 .investigation-add {
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .investigation-card,
 .investigation-rollup {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   margin: 8px 0;
   overflow: hidden;
 }
@@ -341,21 +341,21 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 12px 14px;
   color: var(--color-text);
 }
 .investigation-summary strong {
-  font-size: 0.98rem;
+  font-size: var(--text-body);
 }
 .investigation-status-pill {
   display: inline-block;
   white-space: nowrap;
   color: var(--color-accent);
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: var(--radius-large);
   padding: 3px 10px;
-  font-size: 0.75rem;
+  font-size: var(--text-caption);
 }
 .investigation-body {
   padding: 12px 15px;
@@ -363,13 +363,13 @@
 }
 .investigation-entries {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .investigation-entry {
   border-left: 4px solid var(--color-accent);
   background: var(--color-surface);
   padding: 12px 16px;
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   color: var(--color-text);
   overflow-wrap: anywhere;
 }
@@ -388,7 +388,7 @@
   max-height: 420px;
   object-fit: contain;
   margin-top: 12px;
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
 }
 .investigation-file {
   display: inline-block;
@@ -398,7 +398,7 @@
 .investigation-add-controls {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 13px;
   padding-top: 12px;
   border-top: 1px solid var(--color-border);
@@ -421,11 +421,11 @@
 }
 .investigation-origin {
   color: var(--color-text-muted);
-  font-size: 0.82rem;
+  font-size: var(--text-small);
 }
 .investigation-create {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   align-items: center;
   margin: 10px 0;
@@ -444,13 +444,13 @@
 }
 .investigation-empty {
   margin: 7px 0;
-  font-size: 0.87rem;
+  font-size: var(--text-small);
 }
 .investigation-feedback:empty {
   display: none;
 }
 .investigation-feedback {
-  font-size: 0.85rem;
+  font-size: var(--text-small);
   margin: 8px 0 0;
 }
 
@@ -460,33 +460,33 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .investigation-entry-date {
-  font-size: 0.78rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
 .investigation-entry-field {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: var(--space-2);
   color: var(--color-text);
-  font-size: 0.88rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .investigation-entry-field .field {
   width: 100%;
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 .investigation-date-field {
   display: grid;
   grid-template-columns: 175px minmax(0, 240px);
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   color: var(--color-text);
-  font-size: 0.87rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   max-width: none;
   margin: 0;
 }
@@ -498,7 +498,7 @@
   margin: 0;
   padding: 6px 12px;
   line-height: 1.4;
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 @media (max-width: 650px) {
   .investigation-date-field {
@@ -506,7 +506,7 @@
   }
 }
 .investigation-rename {
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   padding: 5px 10px;
   flex: 0 0 auto;
 }
@@ -525,7 +525,7 @@
 }
 .investigation-snapshot {
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   padding: 10px 13px;
   margin-bottom: 14px;
   background: var(--color-surface);
@@ -533,12 +533,12 @@
 .investigation-snapshot summary {
   cursor: pointer;
   color: var(--color-accent);
-  font-weight: 600;
+  font-weight: var(--font-semibold);
 }
 .investigation-snapshot-content {
   padding-top: 12px;
   display: grid;
-  gap: 7px;
+  gap: var(--space-2);
 }
 .investigation-snapshot-content p {
   margin: 0;
@@ -549,10 +549,10 @@
   padding: 10px 13px;
   border-left: 3px solid var(--color-accent);
   background: var(--color-surface);
-  border-radius: 5px;
+  border-radius: var(--radius-small);
 }
 .investigation-heading .btn {
-  font-size: 0.82rem;
+  font-size: var(--text-small);
 }
 
 /* Assembly overview: BOM parts are a separate, clearly labeled group of child tiles. */
@@ -562,20 +562,20 @@
   margin: 22px 0 8px;
   padding: 18px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
 }
 .assembly-bom-parts-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .assembly-workflow .assembly-bom-parts-heading h2 {
   margin: 0;
   color: var(--color-text);
-  font-size: 1.15rem;
+  font-size: var(--text-lead);
   line-height: 1.35;
 }
 .assembly-bom-parts-count {
@@ -584,14 +584,14 @@
   color: var(--color-text-muted);
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
-  border-radius: 16px;
+  border-radius: var(--radius-large);
   padding: 3px 11px;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
 }
 .assembly-bom-parts-description {
   margin: 4px 0 15px;
   color: var(--color-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .assembly-bom-parts-group .assembly-tile-grid {
   margin: 0;
@@ -627,7 +627,7 @@
 }
 .assembly-detail .assembly-bom-parts-group .assembly-tile-grid {
   grid-template-columns: repeat(auto-fill, minmax(150px, 220px));
-  gap: 12px;
+  gap: var(--space-3);
   justify-content: start;
 }
 .assembly-detail .assembly-bom-parts-group .assembly-tile {
@@ -638,7 +638,7 @@
   height: 150px;
 }
 .assembly-detail .assembly-bom-parts-group .assembly-tile-overlay {
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   padding: 20px 9px 8px;
 }
 @media (max-width: 540px) {
@@ -663,7 +663,7 @@
 .bom-duplicate-heading {
   cursor: pointer;
   color: var(--color-accent);
-  font-size: 0.75rem;
+  font-size: var(--text-caption);
   line-height: 1.35;
 }
 .bom-duplicate-records {
@@ -672,7 +672,7 @@
   padding-left: 10px;
 }
 .bom-duplicate-record {
-  font-size: 0.86rem;
+  font-size: var(--text-small);
 }
 .bom-duplicate-record .bom-part-summary {
   padding: 7px 0;
@@ -687,9 +687,9 @@
   background: color-mix(in srgb, var(--color-media-backdrop) 86%, transparent);
   border: 1px solid var(--color-border);
   padding: 2px 8px;
-  border-radius: 5px;
-  font-size: 0.72rem;
-  font-weight: 650;
+  border-radius: var(--radius-small);
+  font-size: var(--text-caption);
+  font-weight: var(--font-semibold);
   color: var(--color-on-media);
   line-height: 1.4;
 }
@@ -709,7 +709,7 @@
   overflow: hidden;
   background: color-mix(in srgb, var(--color-header) 22%, transparent);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
 }
 .investigations-panel .investigation-collapse,
 .recipe-step-investigations .investigation-collapse {
@@ -720,10 +720,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   background: color-mix(in srgb, var(--color-selected) 32%, transparent);
   border-bottom: 1px solid var(--color-border);
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   cursor: pointer;
   list-style: none;
 }
@@ -742,8 +742,8 @@
 .investigation-collapse-heading h4 {
   margin: 0;
   color: var(--color-text);
-  font-size: 1.06rem;
-  font-weight: 700;
+  font-size: var(--text-body);
+  font-weight: var(--font-bold);
 }
 .investigation-collapse-content {
   padding: 14px 16px;
@@ -760,7 +760,7 @@
 @media (max-width: 550px) {
   .investigation-collapse-heading h2,
   .investigation-collapse-heading h4 {
-    font-size: 0.95rem;
+    font-size: var(--text-body);
   }
   .investigation-collapse-content {
     padding: 12px;
@@ -775,34 +775,34 @@
 .workspace-photos-editor {
   max-width: 900px;
 
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   padding: 15px 17px;
   margin: 4px 0 16px;
 }
 .workspace-photos-editor h2 {
-  font-size: 1.08rem;
+  font-size: var(--text-body);
   margin: 0 0 3px;
 }
 .workspace-photos-editor > p.muted {
-  font-size: 0.84rem;
+  font-size: var(--text-small);
   margin: 0 0 12px;
 }
 .workspace-photos-editor .assembly-unified-photo {
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
 }
 .workspace-photos-editor .assembly-photos {
   display: block;
 }
 .workspace-photos-editor .assembly-photo-stage {
   height: clamp(240px, 32vw, 440px);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
 }
 .workspace-photos-editor .assembly-stage-image {
   object-fit: contain;
 }
 .workspace-photos-editor .assembly-photo-admin {
   align-items: flex-end;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 12px 0 0;
 }
 .workspace-photos-editor .assembly-photo-admin.hide {
@@ -811,23 +811,23 @@
 .workspace-photos-editor .assembly-photo-zone {
   display: flex !important;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   border: 1px dashed var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   padding: 10px 13px;
 }
 .workspace-photos-editor .assembly-photo-pick {
   background: var(--color-media-backdrop);
   color: var(--color-on-media);
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
   padding: 8px 12px;
   cursor: pointer;
 }
 .workspace-photos-editor .assembly-photo-caption-label {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-1);
   flex: 1 1 230px;
   max-width: 370px;
 }
@@ -836,7 +836,7 @@
 }
 .workspace-photos-editor .workspace-photo-status {
   margin: 9px 0 0;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
 }
 .workspace-photos-editor .assembly-photo-actions {
   z-index: 5;
@@ -859,44 +859,44 @@
   padding: 9px 12px;
   background: var(--color-media-backdrop);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
 }
 .workspace-photos-editor .workspace-photo-compact {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: var(--space-3);
 }
 .workspace-photos-editor .workspace-photo-meta {
   display: flex;
   align-items: flex-start;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .workspace-photos-editor .workspace-photo-title {
-  font-size: 0.85rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   color: var(--color-on-media);
 }
 .workspace-photos-editor .workspace-photo-edit-toggle {
-  font-size: 0.78rem;
+  font-size: var(--text-small);
   padding: 6px 10px;
 }
 .workspace-photos-editor .assembly-unified-photo {
   width: 112px;
   flex: 0 0 112px;
   border: 1px solid var(--color-border);
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   overflow: hidden;
 }
 .workspace-photos-editor .assembly-photo-stage {
   width: 112px;
   height: 84px;
   min-height: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
 }
 .workspace-photos-editor .assembly-photo-placeholder {
   height: 100%;
-  font-size: 0.75rem;
+  font-size: var(--text-caption);
 }
 .workspace-photos-editor .assembly-stage-image {
   width: 100%;
@@ -907,7 +907,7 @@
   display: none;
 }
 .workspace-photos-editor .assembly-photo-arrow {
-  font-size: 1.15rem;
+  font-size: var(--text-lead);
   width: 20px;
   height: 30px;
   padding: 0;
@@ -926,14 +926,14 @@
   display: flex;
   top: 3px;
   right: 3px;
-  gap: 3px;
+  gap: var(--space-1);
 }
 .workspace-photos-editor .assembly-photo-icon {
   width: 22px;
   height: 22px;
-  font-size: 1rem;
+  font-size: var(--text-body);
   background: color-mix(in srgb, var(--color-media-backdrop) 85%, transparent);
-  border-radius: 5px;
+  border-radius: var(--radius-small);
 }
 .workspace-photos-editor .workspace-photo-tools {
   padding-top: 10px;
@@ -946,38 +946,38 @@
 .workspace-photos-editor .assembly-photo-admin {
   padding: 0;
   display: flex;
-  gap: 9px;
+  gap: var(--space-2);
   align-items: flex-start;
   flex-wrap: wrap;
 }
 .workspace-photos-editor .assembly-photo-zone {
   padding: 6px 9px;
-  gap: 5px;
+  gap: var(--space-1);
   min-height: 0;
 }
 .workspace-photos-editor .assembly-photo-drop-hint {
-  font-size: 0.73rem;
+  font-size: var(--text-caption);
 }
 .workspace-photos-editor .assembly-photo-pick {
-  font-size: 0.75rem;
+  font-size: var(--text-caption);
   padding: 5px 8px;
 }
 .workspace-photos-editor .assembly-photo-caption-label {
-  font-size: 0.75rem;
+  font-size: var(--text-caption);
   flex: 1 1 145px;
   max-width: none;
 }
 .workspace-photos-editor .assembly-photo-caption {
   min-height: 32px;
   padding: 5px 8px;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
 }
 .workspace-photos-editor .workspace-photo-status:empty {
   display: none;
 }
 .workspace-photos-editor .workspace-photo-status {
   margin: 7px 0 0;
-  font-size: 0.76rem;
+  font-size: var(--text-small);
   max-width: 400px;
 }
 
@@ -1002,10 +1002,10 @@
   display: grid;
   place-items: center;
   border: 1px solid var(--color-border);
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   background: color-mix(in srgb, var(--color-media-backdrop) 90%, transparent);
   color: var(--color-on-media);
-  font-size: 1.15rem;
+  font-size: var(--text-lead);
   line-height: 1;
   cursor: pointer;
   padding: 0;
@@ -1026,7 +1026,7 @@
   overflow: auto;
   box-sizing: border-box;
   border: 1px solid var(--color-accent);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   background: var(--color-media-backdrop);
   color: var(--color-on-media);
   padding: 16px 18px;
@@ -1050,24 +1050,24 @@
 }
 .workspace-photo-dialog .workspace-photos-editor h2 {
   display: block;
-  font-size: 1.14rem;
+  font-size: var(--text-lead);
   margin: 0 0 4px;
 }
 .workspace-photo-dialog .workspace-photos-editor > p.muted {
   display: block;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   margin: 0 0 12px;
 }
 .workspace-photo-dialog .assembly-unified-photo {
   width: 100%;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   overflow: hidden;
 }
 .workspace-photo-dialog .assembly-photo-stage {
   width: 100%;
   height: clamp(250px, 45vw, 460px);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
 }
 .workspace-photo-dialog .assembly-stage-image {
   width: 100%;
@@ -1078,7 +1078,7 @@
   display: block;
 }
 .workspace-photo-dialog .assembly-photo-arrow {
-  font-size: 2rem;
+  font-size: var(--text-display);
   width: 38px;
   height: 45px;
 }
@@ -1092,12 +1092,12 @@
   display: flex;
   top: 10px;
   right: 12px;
-  gap: 7px;
+  gap: var(--space-2);
 }
 .workspace-photo-dialog .assembly-photo-icon {
   width: 33px;
   height: 33px;
-  font-size: 1.3rem;
+  font-size: var(--text-title);
   border-radius: 50%;
 }
 .workspace-photo-dialog .workspace-photo-tools {
@@ -1107,7 +1107,7 @@
 }
 .workspace-photo-dialog .assembly-photo-admin {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: flex-end;
   flex-wrap: wrap;
 }
@@ -1115,11 +1115,11 @@
   padding: 9px 12px;
 }
 .workspace-photo-dialog .assembly-photo-pick {
-  font-size: 0.84rem;
+  font-size: var(--text-small);
   padding: 8px 13px;
 }
 .workspace-photo-dialog .assembly-photo-caption-label {
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   max-width: 310px;
 }
 .workspace-photo-dialog .workspace-photo-status {
@@ -1136,11 +1136,11 @@
   padding: 7px 15px;
   margin-left: auto;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface-muted);
   color: var(--color-text);
-  font-size: 0.86rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1.3;
   white-space: nowrap;
   box-shadow: none;
@@ -1182,7 +1182,7 @@
   justify-content: center;
   align-items: center;
   background: var(--color-media-backdrop);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   overflow: hidden;
 }
 .part-photo-dialog .part-photo-preview {
@@ -1197,19 +1197,19 @@
 }
 .part-photo-dialog .part-photo-placeholder {
   color: var(--color-on-media);
-  font-size: 0.96rem;
+  font-size: var(--text-body);
 }
 .part-photo-dialog .part-photo-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .part-photo-dialog .part-photo-actions .btn {
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .part-photo-dialog .part-photo-status {
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 
 /* Root project overview matches the child-assembly overview rather than
@@ -1219,7 +1219,7 @@
   max-width: 650px;
   margin: 14px 0 22px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   background: var(--color-media-backdrop);
   overflow: hidden;
 }
@@ -1246,7 +1246,7 @@
 }
 .assembly-main .project-root-actions .project-root-rename {
   padding: 5px 9px;
-  font-size: 0.75rem;
+  font-size: var(--text-caption);
   background: transparent;
   border-color: var(--color-border);
   color: var(--color-text-muted);
@@ -1345,7 +1345,7 @@
   margin: 0 0 22px;
   padding: 20px 22px 22px;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   color: var(--color-text);
 }
@@ -1355,8 +1355,8 @@
   > article
   h2 {
   margin: 0 0 18px;
-  font-size: 1.05rem;
-  font-weight: 650;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
   color: var(--color-text);
 }
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
@@ -1365,12 +1365,12 @@
   margin: 0 0 22px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
 }
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
   .assembly-workspace-page.bom-part-workspace
   .part-details-view-heading {
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   background: var(--color-surface);
   color: var(--color-text);
 }
@@ -1379,7 +1379,7 @@
   .part-details-view-heading
   h2 {
   color: var(--color-text);
-  font-weight: 650;
+  font-weight: var(--font-semibold);
 }
 :is(:is(#launcher, .personal-project-view), #linear, #robot)
   .assembly-workspace-page.bom-part-workspace
@@ -1411,12 +1411,12 @@
   min-height: 46px;
   padding: 10px 17px;
   border: 2px solid var(--color-on-media);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-accent);
   color: var(--color-on-accent);
-  font-size: 0.94rem;
+  font-size: var(--text-body);
   line-height: 1.3;
-  font-weight: 750;
+  font-weight: var(--font-bold);
   text-shadow: none;
   box-shadow: 0 3px 12px
     color-mix(in srgb, var(--color-shadow) 30%, transparent);
@@ -1464,7 +1464,7 @@
     bottom: 12px;
     min-height: 40px;
     padding: 8px 12px;
-    font-size: 0.82rem;
+    font-size: var(--text-small);
   }
 }
 
@@ -1474,7 +1474,7 @@
 .recipe-compact .recipe-step-browser {
   display: grid;
   grid-template-columns: minmax(190px, 26%) minmax(0, 1fr);
-  gap: 14px;
+  gap: var(--space-4);
   align-items: stretch;
 }
 .recipe-compact .recipe-step-list {
@@ -1485,7 +1485,7 @@
 
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   max-height: min(68vh, 850px);
   overflow-y: auto;
 }
@@ -1498,15 +1498,15 @@
   padding: 10px 12px;
   border: 0;
   border-left: 4px solid transparent;
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   text-align: left;
   white-space: normal;
   overflow-wrap: anywhere;
   color: var(--color-text);
   background: transparent;
   line-height: 1.4;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
   cursor: pointer;
 }
 .recipe-compact .recipe-step-nav-item:hover {
@@ -1515,7 +1515,7 @@
 .recipe-compact .recipe-step-nav-item.is-active {
   border-left-color: var(--color-accent);
   color: var(--color-text);
-  font-weight: 750;
+  font-weight: var(--font-bold);
 }
 .recipe-compact .recipe-step-nav-item:focus-visible {
   outline: 2px solid var(--color-focus);
@@ -1525,7 +1525,7 @@
   min-width: 0;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   overflow: hidden;
 }
 .recipe-compact .recipe-step-detail > .recipe-one-step {
@@ -1540,7 +1540,7 @@
   > .recipe-one-step-summary {
   padding: 16px 18px;
   min-height: 62px;
-  font-size: 1.04rem;
+  font-size: var(--text-body);
   cursor: default;
 }
 .recipe-compact
@@ -1553,7 +1553,7 @@
   padding: 18px;
   width: 100%;
   align-items: stretch;
-  gap: 16px;
+  gap: var(--space-4);
 }
 .recipe-compact .recipe-step-detail .recipe-reader-text {
   width: 100%;
@@ -1612,7 +1612,7 @@
   color: var(--color-text);
 }
 .recipe-compact .recipe-step-detail > .recipe-one-step > .recipe-one-step-body {
-  gap: 14px;
+  gap: var(--space-4);
 }
 .recipe-compact .recipe-step-detail .recipe-reader-text {
   display: block;
@@ -1631,8 +1631,8 @@
   border-radius: 0;
   background: transparent;
   color: var(--color-text);
-  font-size: 1.075rem;
-  font-weight: 400;
+  font-size: var(--text-body);
+  font-weight: var(--font-normal);
   line-height: 1.7;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -1668,12 +1668,12 @@
   display: inline-flex;
   justify-content: flex-start;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: auto;
   max-width: 100%;
   min-height: 0;
   margin: 0;
-  padding: 3px 0;
+  padding: var(--space-1) 0;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -1697,8 +1697,8 @@
   margin: 0;
   padding: 0;
   color: inherit;
-  font-size: 0.79rem;
-  font-weight: 500;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1.5;
 }
 .recipe-compact
@@ -1730,7 +1730,7 @@
   .recipe-step-detail
   > .recipe-one-step[open]
   > .recipe-one-step-summary {
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-accent-soft);
   border-left: 4px solid var(--color-accent);
 }
@@ -1757,7 +1757,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 9px;
+  gap: var(--space-2);
   width: 100%;
   min-width: 0;
 }
@@ -1765,20 +1765,20 @@
   display: flex;
   align-items: flex-start;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
 }
 .recipe-compact .recipe-step-note > .recipe-note-attachments:empty {
   display: none;
 }
 .recipe-compact .recipe-add-note-photo {
-  font-size: 0.81rem;
+  font-size: var(--text-small);
 }
 .recipe-compact .recipe-edit-controls {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
 }
 .recipe-compact .recipe-edit-controls .recipe-save-step-bottom {
@@ -1830,7 +1830,7 @@
   bottom: 12px;
   left: 4px;
   width: 4px;
-  border-radius: 3px;
+  border-radius: var(--radius-small);
   background: var(--color-border);
 }
 .recipe-compact .recipe-step-resizer:hover::after,
@@ -1862,18 +1862,18 @@
 }
 @media (max-width: 760px) {
   .recipe-compact .recipe-step-browser {
-    gap: 10px;
+    gap: var(--space-3);
   }
   .recipe-compact .recipe-step-resizer {
     display: none;
   }
   .recipe-compact .recipe-step-list {
     border: 1px solid var(--color-border);
-    border-radius: 10px;
+    border-radius: var(--radius-large);
   }
   .recipe-compact .recipe-step-detail {
     border: 1px solid var(--color-border);
-    border-radius: 10px;
+    border-radius: var(--radius-large);
   }
 }
 
@@ -1905,7 +1905,7 @@
 }
 .recipe-compact .recipe-step-list {
   padding: 9px;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .recipe-compact .recipe-step-detail {
   padding: 9px;
@@ -1957,12 +1957,12 @@
   background: var(--color-accent-soft) !important;
   height: var(--recipe-active-heading-height);
   min-height: var(--recipe-active-heading-height);
-  border-radius: 9px !important;
+  border-radius: var(--radius-medium) !important;
 }
 .assembly-workspace-page .workspace-panels > article.investigations-panel {
   background: var(--color-surface) !important;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   padding: 0;
   overflow: hidden;
   box-shadow: none;
@@ -1976,7 +1976,7 @@
   .investigation-collapse
   > summary.investigation-collapse-heading {
   background: var(--color-surface) !important;
-  padding: 6px 12px;
+  padding: var(--space-2) var(--space-3);
   border: 0;
 }
 .recipe-instructions .recipe-heading-row {
@@ -1989,12 +1989,12 @@
   margin: 0 0 24px !important;
   background: var(--color-surface) !important;
   border: 1px solid var(--color-border) !important;
-  border-radius: 12px;
+  border-radius: var(--radius-large);
 }
 .project-work-tracker {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   min-width: 0;
 }
 .tracker-heading,
@@ -2002,16 +2002,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .tracker-heading h2 {
   margin: 0 !important;
-  font-size: 1.08rem !important;
+  font-size: var(--text-body) !important;
 }
 .tracker-status {
   color: var(--color-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .tracker-status:empty {
   display: none;
@@ -2019,12 +2019,12 @@
 .tracker-resume-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 6px 18px;
+  gap: var(--space-2) var(--space-4);
   align-items: center;
   padding: 12px 14px;
   background: var(--color-accent-soft);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
 }
 .tracker-resume-card strong {
   grid-column: 1;
@@ -2033,7 +2033,7 @@
   grid-column: 1;
   margin: 0;
   color: var(--color-text-muted);
-  font-size: 0.87rem;
+  font-size: var(--text-small);
 }
 .tracker-resume-card button {
   grid-column: 2;
@@ -2042,15 +2042,15 @@
 .tracker-task-list {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-1);
 }
 .tracker-task {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: center;
   padding: 8px 10px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
 }
 .tracker-task > input {
   flex: 0 0 auto;
@@ -2060,14 +2060,14 @@
   min-width: 0;
 }
 .tracker-task-body strong {
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
   overflow-wrap: anywhere;
 }
 .tracker-task-body p {
   margin: 2px 0 0;
   color: var(--color-text-muted);
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   white-space: pre-wrap;
 }
 .tracker-task.is-done .tracker-task-body {
@@ -2077,12 +2077,12 @@
 .tracker-link,
 .tracker-remove {
   padding: 5px 8px;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
 }
 .tracker-add-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: start;
 }
 .tracker-add-form .field {
@@ -2096,23 +2096,23 @@
 }
 .tracker-readiness summary {
   cursor: pointer;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
 }
 .tracker-readiness-body {
   padding-top: 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .tracker-readiness-body > p {
   margin: 0;
 }
 .tracker-ready-count {
-  font-weight: 650;
+  font-weight: var(--font-semibold);
 }
 .tracker-ready-item {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: center;
   border-bottom: 1px solid var(--color-border);
   padding: 7px 0;
@@ -2154,7 +2154,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
 
   flex: 1;
 }
@@ -2173,25 +2173,25 @@
   padding: 16px 20px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
 }
 
 /* Project BOM: nested, collapsible assembly branches like the feature tree. */
 .project-summary-bom-items {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-1);
 }
 .project-summary-bom-items .project-summary-assembly {
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   overflow: hidden;
 }
 .project-summary-bom-items .project-summary-assembly > summary {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   cursor: pointer;
   padding: 10px 13px;
   list-style: none;
@@ -2205,19 +2205,19 @@
   content: "▸";
   display: inline-block;
   color: var(--color-text-muted);
-  font-size: 1rem;
+  font-size: var(--text-body);
   transition: transform 0.12s;
 }
 .project-summary-bom-items .project-summary-assembly[open] > summary::before {
   transform: rotate(90deg);
 }
 .project-summary-bom-items .project-summary-assembly > summary strong {
-  font-size: 0.9rem;
-  font-weight: 650;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
   min-width: 0;
 }
 .project-summary-bom-items .project-summary-assembly > summary .muted {
-  font-size: 0.79rem;
+  font-size: var(--text-small);
   margin-left: auto;
   white-space: nowrap;
 }
@@ -2246,7 +2246,7 @@
   margin: -5px 0 15px;
   padding: 0;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   box-shadow: none;
 }
@@ -2256,7 +2256,7 @@
 .bom-part-workspace .part-progress-heading {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 9px 13px;
   cursor: pointer;
   list-style: none;
@@ -2267,7 +2267,7 @@
 .bom-part-workspace .part-progress-heading::before {
   content: "▸";
   color: var(--color-text-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-small);
 }
 .bom-part-workspace
   .part-progress-disclosure[open]
@@ -2275,16 +2275,16 @@
   content: "▾";
 }
 .bom-part-workspace .part-progress-heading h2 {
-  font-size: 0.86rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   margin: 0;
 }
 .bom-part-workspace .part-progress-badge {
-  font-size: 0.8rem;
-  font-weight: 450;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
 }
 .bom-part-workspace .part-progress-edit-label {
-  font-size: 0.75rem;
+  font-size: var(--text-caption);
   color: var(--color-text-muted);
   margin-left: 10px;
 }
@@ -2295,17 +2295,17 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 11px;
+  gap: var(--space-3);
   padding: 12px 14px 14px;
   border-top: 1px solid var(--color-border);
   min-width: min(340px, 80vw);
 }
 .bom-part-workspace .part-progress-fields {
-  gap: 14px;
+  gap: var(--space-4);
   align-items: center;
 }
 .bom-part-workspace .part-progress-fields > label:first-child {
-  gap: 5px;
+  gap: var(--space-1);
 }
 .bom-part-workspace .part-attention-toggle {
   padding-bottom: 0;
@@ -2339,13 +2339,13 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 9px;
+  gap: var(--space-2);
 }
 .bom-part-workspace .part-progress-panel {
   display: flex !important;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px 12px;
+  gap: var(--space-2) var(--space-3);
   width: auto;
   max-width: 100%;
   margin: 0 !important;
@@ -2356,8 +2356,8 @@
   box-shadow: none !important;
 }
 .bom-part-workspace .part-progress-inline-label {
-  font-size: 0.85rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   color: var(--color-text-muted);
 }
 .bom-part-workspace .part-progress-select {
@@ -2365,18 +2365,18 @@
   max-width: 220px;
   min-height: 36px;
   padding: 6px 12px;
-  font-size: 0.88rem;
-  border-radius: 8px;
+  font-size: var(--text-small);
+  border-radius: var(--radius-medium);
 }
 .bom-part-workspace .part-attention-toggle {
-  font-size: 0.8rem;
+  font-size: var(--text-small);
 
   margin-left: 2px;
 }
 .bom-part-workspace .part-attention-note-field {
   flex-basis: 100%;
   width: min(100%, 480px);
-  font-size: 0.82rem;
+  font-size: var(--text-small);
 }
 .bom-part-workspace .part-attention-note-field[hidden] {
   display: none !important;
@@ -2386,7 +2386,7 @@
   max-width: 480px;
 }
 .bom-part-workspace .part-progress-feedback {
-  font-size: 0.76rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
 }
 .bom-part-workspace .part-progress-feedback:empty {
@@ -2397,7 +2397,7 @@
 }
 @media (max-width: 650px) {
   .bom-part-workspace .part-progress-panel {
-    gap: 8px;
+    gap: var(--space-2);
   }
   .bom-part-workspace .part-progress-inline-label {
     flex: 0 0 auto;
@@ -2416,8 +2416,8 @@
   flex-direction: row;
 
   flex-wrap: wrap;
-  column-gap: 12px;
-  row-gap: 6px;
+  column-gap: var(--space-3);
+  row-gap: var(--space-2);
 }
 .bom-part-workspace .part-progress-inline-label {
   display: inline-flex;
@@ -2435,7 +2435,7 @@
 .bom-part-workspace .part-attention-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   min-height: 38px;
@@ -2448,7 +2448,7 @@
   flex: 0 1 300px;
   width: auto;
   min-width: 190px;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   font-size: 0;
   line-height: 1;
@@ -2461,7 +2461,7 @@
   padding: 8px 11px;
   resize: vertical;
   box-sizing: border-box;
-  font-size: 0.87rem;
+  font-size: var(--text-small);
   line-height: 1.3;
 }
 @media (max-width: 620px) {
@@ -2478,13 +2478,13 @@
 .my-build-panel {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 11px;
+  border-radius: var(--radius-large);
   overflow: hidden;
 }
 .my-build-disclosure > summary {
   padding: 13px 17px;
   cursor: pointer;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   list-style: revert;
   color: var(--color-text);
 }
@@ -2494,12 +2494,12 @@
 .my-build-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 16px 18px;
 }
 .my-build-body .muted {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .my-build-progress {
   width: min(220px, 100%);
@@ -2512,7 +2512,7 @@
 }
 .my-build-task-row {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: center;
   padding: 7px 0;
   border-bottom: 1px solid var(--color-border);
@@ -2527,7 +2527,7 @@
 .my-build-task-form {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 .my-build-task-form .field {
@@ -2536,7 +2536,7 @@
   max-width: 540px;
 }
 .my-build-save-state {
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
 }
 .my-build-save-state:empty {
@@ -2545,13 +2545,13 @@
 
 /* Feedback is an unobtrusive secondary action, not a competing section. */
 .build-confusion-control {
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   margin: 9px 0 12px;
 }
 .build-confusion-button {
-  font-size: 0.79rem !important;
-  font-weight: 500 !important;
+  font-size: var(--text-small) !important;
+  font-weight: var(--font-semibold) !important;
   padding: 5px 9px !important;
   min-height: 30px;
   background: transparent !important;
@@ -2563,7 +2563,7 @@
   background: var(--color-hover) !important;
 }
 .build-confusion-status {
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
 }
 .recipe-step-detail .build-confusion-control {
@@ -2571,13 +2571,13 @@
 }
 .build-confusion-insights {
   border: 1px solid var(--color-border);
-  border-radius: 11px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
   padding: 12px 16px;
   margin: 15px 0 25px;
 }
 .build-confusion-insights summary {
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   cursor: pointer;
 }
 .build-confusion-insights-body {
@@ -2588,14 +2588,14 @@
   border-bottom: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-1);
 }
 .build-confusion-insight span {
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
 }
 .build-confusion-insight p {
-  font-size: 0.86rem;
+  font-size: var(--text-small);
   margin: 2px 0;
   white-space: pre-wrap;
 }
@@ -2604,7 +2604,7 @@
   width: min(520px, calc(100vw - 32px));
   max-width: 520px;
   border: 1px solid var(--color-border);
-  border-radius: 13px;
+  border-radius: var(--radius-large);
   padding: 20px 22px;
   background: var(--color-surface);
   color: var(--color-text);
@@ -2619,11 +2619,11 @@
   );
 }
 .my-build-feedback-dialog h3 {
-  font-size: 1.15rem;
+  font-size: var(--text-lead);
   margin: 0 0 9px;
 }
 .my-build-feedback-dialog .muted {
-  font-size: 0.84rem;
+  font-size: var(--text-small);
   line-height: 1.5;
   margin: 0 0 15px;
 }
@@ -2636,7 +2636,7 @@
 .my-build-feedback-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 9px;
+  gap: var(--space-2);
 }
 .my-build-feedback-actions {
   justify-content: flex-end;
@@ -2656,7 +2656,7 @@
   z-index: 3;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 0 !important;
   padding: 0 !important;
 }
@@ -2673,8 +2673,8 @@
   border-radius: 50% !important;
   background: var(--color-surface) !important;
   color: var(--color-text-muted) !important;
-  font-size: 14px !important;
-  font-weight: 700 !important;
+  font-size: var(--text-small) !important;
+  font-weight: var(--font-bold) !important;
   line-height: 1 !important;
   cursor: pointer;
   box-shadow: 0 1px 3px
@@ -2693,11 +2693,11 @@
   max-width: min(300px, 60vw);
   padding: 5px 9px;
   border: 1px solid var(--color-border);
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   box-shadow: 0 2px 6px
     color-mix(in srgb, var(--color-shadow-base) 6.2745%, transparent);
-  font-size: 0.78rem;
+  font-size: var(--text-small);
 }
 .project-summary-gallery,
 .project-summary-bom-section,
@@ -2726,10 +2726,10 @@
   background: transparent;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   cursor: pointer;
   color: var(--color-text-muted);
-  font-size: 22px;
+  font-size: var(--text-title);
   line-height: 1;
 }
 .my-build-feedback-close:hover {
@@ -2764,7 +2764,7 @@
   max-width: none !important;
   flex-wrap: nowrap !important;
   align-items: center !important;
-  gap: 10px 14px;
+  gap: var(--space-3) var(--space-4);
 }
 .bom-part-workspace .part-progress-inline-label {
   flex: 0 0 auto;
@@ -2795,7 +2795,7 @@
 .assembly-hidden-filter-label {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   position: relative;
 }
 .assembly-hidden-filter-help {
@@ -2806,7 +2806,7 @@
   height: 17px;
   cursor: help;
   flex: 0 0 17px;
-  font-size: 13px;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
   border-radius: 50%;
 }
@@ -2825,7 +2825,7 @@
 .assembly-progress-panel:not([hidden]) {
   display: flex;
   align-items: center;
-  gap: 10px 14px;
+  gap: var(--space-3) var(--space-4);
   flex-wrap: wrap;
   margin: 8px 0 0;
   padding: 0;
@@ -2840,8 +2840,8 @@
 }
 .assembly-progress-panel .part-progress-inline-label {
   white-space: nowrap;
-  font-size: 0.85rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   color: var(--color-text-muted);
 }
 .assembly-progress-panel .part-progress-select {
@@ -2851,17 +2851,17 @@
   max-width: 100%;
   margin: 0;
   padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 0.88rem;
+  border-radius: var(--radius-medium);
+  font-size: var(--text-small);
 }
 .assembly-progress-panel .part-attention-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   white-space: nowrap;
   margin: 0;
   padding: 0;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .assembly-progress-panel .part-attention-note-field:not([hidden]) {
   display: flex;
@@ -2878,11 +2878,11 @@
   min-height: 38px;
   padding: 8px 11px;
   box-sizing: border-box;
-  font-size: 0.87rem;
+  font-size: var(--text-small);
   resize: vertical;
 }
 .assembly-progress-panel .part-progress-feedback {
-  font-size: 0.76rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
 }
 .assembly-progress-panel .part-progress-feedback:empty,
@@ -2899,14 +2899,14 @@
 }
 :is(.investigations-panel, .recipe-step-investigations) .investigation-card {
   border: 1px solid var(--color-border) !important;
-  border-radius: 10px !important;
+  border-radius: var(--radius-large) !important;
   background: transparent !important;
   margin: 10px 0 !important;
   overflow: hidden;
 }
 :is(.investigations-panel, .recipe-step-investigations) .investigation-summary {
   padding: 12px 15px !important;
-  gap: 12px;
+  gap: var(--space-3);
   min-height: 44px;
 }
 :is(.investigations-panel, .recipe-step-investigations)
@@ -2921,7 +2921,7 @@
 }
 :is(.investigations-panel, .recipe-step-investigations) .investigation-entry {
   border: 1px solid var(--color-border) !important;
-  border-radius: 8px !important;
+  border-radius: var(--radius-medium) !important;
   margin: 0 0 8px;
   padding: 11px 13px !important;
   background: transparent !important;
@@ -2929,7 +2929,7 @@
 .investigation-add-controls .investigation-entry-field {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: var(--space-2);
   padding: 10px 0;
   border-bottom: 1px solid var(--color-border);
 }
@@ -2937,33 +2937,33 @@
   display: grid;
   grid-template-columns: 175px minmax(0, 1fr);
 
-  font-size: 0.87rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1.5;
 }
 .investigation-field-label > .field {
   width: 100%;
   min-height: 58px !important;
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 .investigation-field-attachments {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   margin-left: 187px;
 }
 .investigation-field-attachments .btn {
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   padding: 5px 9px;
 }
 .investigation-status-row,
 .investigation-record-title {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 0.88rem;
-  font-weight: 600;
+  gap: var(--space-3);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   flex-wrap: wrap;
 }
 .investigation-status-row {
@@ -2979,7 +2979,7 @@
 @media (max-width: 650px) {
   .investigation-field-label {
     grid-template-columns: 1fr;
-    gap: 5px;
+    gap: var(--space-1);
   }
   .investigation-field-attachments {
     margin-left: 0;
@@ -2990,7 +2990,7 @@
 .investigation-new-record.investigation-create {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 .investigation-new-record .investigation-record-title {
@@ -3024,7 +3024,7 @@
 .investigation-field-label {
   align-items: start;
   margin: 0;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .investigation-field-descriptor {
   padding-top: 8px;
@@ -3034,7 +3034,7 @@
   display: block;
 }
 .investigation-field-attachments {
-  gap: 6px;
+  gap: var(--space-2);
   margin-top: 0;
   padding: 0;
   min-height: 0;
@@ -3045,8 +3045,8 @@
   box-shadow: none !important;
   border-radius: 0 !important;
   color: var(--color-accent);
-  font-size: 0.79rem;
-  font-weight: 550;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1.3;
   cursor: pointer;
   padding: 1px 0 !important;
@@ -3062,9 +3062,9 @@
   display: grid;
   grid-template-columns: 175px minmax(0, 210px);
   align-items: center;
-  gap: 12px;
-  font-size: 0.87rem;
-  font-weight: 650;
+  gap: var(--space-3);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   margin: 0;
 }
 .investigation-fixed-row .field {
@@ -3102,7 +3102,7 @@
   max-height: none !important;
   padding: 8px 32px 8px 12px !important;
   line-height: 1.4 !important;
-  font-size: 0.88rem;
+  font-size: var(--text-small);
   width: 100%;
   margin: 0;
   vertical-align: middle;
@@ -3112,7 +3112,7 @@
 .investigation-title-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   min-width: 0;
   margin-inline-end: auto;
 }
@@ -3126,27 +3126,27 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   margin-top: 8px;
   flex-wrap: wrap;
 }
 .investigation-existing-files {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--space-3);
   margin-left: 187px;
 }
 .investigation-existing-file {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .investigation-edit-thumbnail {
   width: 100px;
   height: 76px;
   object-fit: contain;
-  border-radius: 5px;
+  border-radius: var(--radius-small);
   border: 1px solid var(--color-border);
 }
 .investigation-existing-files:empty {
@@ -3156,7 +3156,7 @@
   background: none;
   border: 0;
   color: var(--color-text-muted);
-  font-size: 0.78rem;
+  font-size: var(--text-small);
   cursor: pointer;
 }
 .investigation-field-label > input.field {
@@ -3176,8 +3176,8 @@
 
 /* Record dates remain visible in collapsed headers; destructive action is separated from Save. */
 .investigation-record-date {
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   color: var(--color-text-muted);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -3206,18 +3206,18 @@
   padding: 8px 12px;
   margin: 8px 0 10px;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
-  gap: 10px;
+  border-radius: var(--radius-medium);
+  gap: var(--space-3);
 }
 .investigation-new-record .investigation-record-title {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex: 1 1 650px;
   max-width: 960px;
-  font-size: 0.87rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   color: var(--color-text);
   line-height: 1.5;
 }
@@ -3230,9 +3230,9 @@
 .investigation-new-record .investigation-record-title .field {
   height: 40px;
   min-height: 40px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 400;
+  border-radius: var(--radius-medium);
+  font-size: var(--text-body);
+  font-weight: var(--font-normal);
   line-height: 1.4;
   padding: 8px 12px;
 }
@@ -3252,7 +3252,7 @@
 .investigation-file-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 14px;
+  gap: var(--space-2) var(--space-4);
 }
 #home .project-grid[hidden] {
   display: none !important;
@@ -3280,14 +3280,14 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   margin-top: 9px;
 }
 .bs-photo-more:not([hidden]) {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 .bs-photo-more[hidden],
@@ -3295,20 +3295,20 @@
   display: none !important;
 }
 .bs-photo-actions .btn {
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   padding: 7px 11px;
   min-height: 34px;
   white-space: nowrap;
 }
 .bs-photo-toggle {
-  font-weight: 650;
+  font-weight: var(--font-semibold);
 }
 .bs-photo-toggle[aria-expanded="true"] {
   background: var(--color-accent-soft);
   border-color: var(--color-accent);
 }
 .bs-photo-status {
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
   margin: 5px 0 0;
   text-align: right;
@@ -3345,11 +3345,11 @@
     justify-content: flex-start;
   }
   .bs-photo-more:not([hidden]) {
-    gap: 5px;
+    gap: var(--space-1);
   }
   .bs-photo-actions .btn {
     padding: 6px 8px;
-    font-size: 0.76rem;
+    font-size: var(--text-small);
   }
 }
 
@@ -3358,7 +3358,7 @@
   padding-block: 10px;
 }
 .investigation-add-controls .investigation-add-note {
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   padding: 5px 10px;
   min-height: 34px;
 }
@@ -3369,7 +3369,7 @@
   padding: 12px;
   margin: 10px 0;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
 }
 .investigation-note-editor > .btn {
   margin-top: 8px;
@@ -3379,7 +3379,7 @@
 .investigation-heading-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 .recipe-instructions .recipe-heading-actions h2 {
@@ -3388,8 +3388,8 @@
 .recipe-instructions .recipe-heading-actions .recipe-add-step,
 .investigation-heading-actions .investigation-add,
 .bs-unstructured-notes-heading .bs-unstructured-add {
-  font-size: 0.82rem;
-  padding: 4px 9px;
+  font-size: var(--text-small);
+  padding: var(--space-1) var(--space-2);
   min-height: 30px;
 }
 .recipe-instructions .recipe-add-step[hidden] {
@@ -3398,7 +3398,7 @@
 .workspace-record-count {
   display: block;
   color: var(--color-text-muted);
-  font-size: 0.75rem;
+  font-size: var(--text-small);
 }
 :is(#launcher, .personal-project-view, #linear, #robot)
   .assembly-workspace-page
@@ -3423,11 +3423,11 @@
 .part-details-collapse > summary::before,
 .bs-unstructured-note-title::before {
   content: "";
-  width: 6px;
-  height: 6px;
+  width: var(--chevron-size);
+  height: var(--chevron-size);
   color: var(--color-text-muted);
-  border-block-start: 1.5px solid currentColor;
-  border-inline-end: 1.5px solid currentColor;
+  border-block-start: var(--chevron-stroke) solid currentColor;
+  border-inline-end: var(--chevron-stroke) solid currentColor;
   transform: rotate(45deg);
   flex: none;
   display: inline-block;
@@ -3453,13 +3453,13 @@
 }
 .investigation-collapse > summary.investigation-collapse-heading {
   justify-content: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .assembly-workspace-page
   .investigations-panel
   .investigation-collapse
   > summary.investigation-collapse-heading {
-  padding: 12px 20px;
+  padding: var(--space-3) var(--space-5);
 }
 .assembly-workspace-page
   .investigations-panel
@@ -3505,13 +3505,13 @@
 .workspace-secondary-disclosure > summary {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   list-style: none;
 }
 .bs-unstructured-note-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .recipe-instructions .recipe-heading-row {
@@ -3553,7 +3553,7 @@
 }
 .workspace-secondary-disclosure .instruction-history-list,
 .workspace-resource-disclosure > .workspace-resources {
-  padding: 12px 17px;
+  padding: var(--space-3) var(--space-4);
   margin: 0;
 }
 .workspace-resource-disclosure > .workspace-resources > h2 {
@@ -3561,7 +3561,7 @@
 }
 
 .workspace-disclosure-title {
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   color: var(--color-text);
 }
 .assembly-project-settings-entry[hidden],
@@ -3579,12 +3579,12 @@
   margin: 0 0 20px;
 }
 .assembly-workspace-page .instruction-history-list {
-  gap: 5px;
+  gap: var(--space-1);
 }
 .assembly-workspace-page .instruction-history-item {
   display: flex;
   align-items: baseline;
-  gap: 6px 16px;
+  gap: var(--space-2) var(--space-4);
   flex-wrap: wrap;
   border: 0;
   padding: 0;
@@ -3602,11 +3602,11 @@
 .assembly-workspace-page .workspace-panels > .workspace-primary-disclosure {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
 }
 .workspace-primary-disclosure > summary {
   position: relative;
-  padding: 12px 20px;
+  padding: var(--space-3) var(--space-5);
   list-style: none;
   cursor: pointer;
 }
@@ -3621,9 +3621,9 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 5px;
-  font-size: 1.05rem;
-  font-weight: 650;
+  gap: var(--space-1);
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
 }
 .workspace-primary-disclosure[open] > summary {
   border-bottom: 1px solid var(--color-border);
@@ -3644,7 +3644,7 @@
 .part-details-summary-fields {
   display: block;
   color: var(--color-text-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
@@ -3660,7 +3660,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: 30px;
 }
 .workspace-tool-actions .linked-resource-add {
@@ -3669,8 +3669,8 @@
   color: var(--color-accent);
   padding: 4px 0;
   font: inherit;
-  font-size: 0.82rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   cursor: pointer;
 }
 .workspace-tool-actions .linked-resource-add[hidden] {
@@ -3698,7 +3698,7 @@
   height: 22px;
   padding: 0;
   font: inherit;
-  font-size: 0.72rem;
+  font-size: var(--text-caption);
   line-height: 1;
   cursor: help;
 }
@@ -3710,11 +3710,11 @@
   width: max-content;
   max-width: min(220px, 45vw);
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
   background: var(--color-text);
   color: var(--color-surface);
-  font-size: 0.78rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
   line-height: 1.4;
   white-space: normal;
   visibility: hidden;
@@ -3735,14 +3735,14 @@
   display: block;
   min-height: 0;
   margin: 0;
-  font-size: 1.05rem;
-  font-weight: 650;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
 }
 .assembly-workspace-page .workspace-secondary-disclosure > summary,
 .assembly-workspace-page .part-details-collapse > summary {
   position: relative;
-  gap: 8px;
-  padding-inline-start: 20px;
+  gap: var(--space-2);
+  padding-inline-start: var(--space-5);
 }
 .assembly-workspace-page
   :is(.workspace-secondary-disclosure, .part-details-collapse)
@@ -3754,7 +3754,7 @@
 
 .assembly-layout .assembly-sidebar > .assembly-summary-sidebar-card {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 0;
   border: 0;
   background: transparent;
@@ -3767,7 +3767,7 @@
   flex-wrap: wrap !important;
 }
 .attention-note-expand {
-  font-size: 0.78rem;
+  font-size: var(--text-small);
   padding: 4px 8px;
   min-height: 32px;
 }
@@ -3785,16 +3785,16 @@
   height: 132px;
   min-height: 132px;
   max-width: none;
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 .project-summary-overview {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
   margin: 16px 0;
 }
 .project-summary-overview h2 {
   margin: 0 0 8px;
-  font-size: 1.05rem;
+  font-size: var(--text-body);
 }
 .project-summary-overview textarea {
   width: 100%;
@@ -3803,10 +3803,10 @@
 }
 .project-short-summary-label {
   display: grid;
-  gap: 4px;
+  gap: var(--space-1);
   max-width: 28rem;
   margin-bottom: 8px;
-  font-size: 0.86rem;
+  font-size: var(--text-small);
 }
 .project-short-summary-label[hidden] {
   display: none;
@@ -3816,7 +3816,7 @@
   margin: 0;
 }
 .project-short-summary-text {
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   margin: 0 0 8px;
   overflow-wrap: anywhere;
 }
@@ -3824,9 +3824,9 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 10px;
-  font-size: 0.87rem;
+  font-size: var(--text-small);
 }
 .workspace-quantity[hidden] {
   display: none;
@@ -3834,8 +3834,8 @@
 .workspace-quantity label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 600;
+  gap: var(--space-2);
+  font-weight: var(--font-semibold);
 }
 .workspace-quantity .field {
   width: 7rem;
@@ -3863,12 +3863,12 @@
 .project-overview-card {
   padding: 14px 20px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
 }
 .project-summary-edit-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   margin-top: 4px;
 }
@@ -3894,7 +3894,7 @@
 #home .compact-project-directory > .project-directory-controls {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   padding: 0;
   margin: 0 0 12px;
@@ -3907,7 +3907,7 @@
   max-width: 420px;
 }
 .compact-project-directory .project-directory-search .field {
-  font-size: 0.95rem;
+  font-size: var(--text-body);
   width: 100%;
   margin: 0;
 }
@@ -3917,7 +3917,7 @@
   flex: 0 0 auto;
   flex-direction: row;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   white-space: nowrap;
 }
 #home .compact-project-directory .project-sort-filter {
@@ -3931,7 +3931,7 @@
   margin: 0;
 }
 #home .compact-project-directory .project-directory-count {
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   padding: 0;
   margin-inline-start: auto;
   white-space: nowrap;
@@ -3960,7 +3960,7 @@
   top: calc(100% + 6px);
   margin: 0;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
 }
 #home .compact-project-directory .project-filter-menu > .bs-project-tag-filter {
@@ -3974,7 +3974,7 @@
 }
 .project-selected-descriptors {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   margin: 0 0 10px;
 }
@@ -3984,14 +3984,14 @@
 #home .compact-project-directory > .project-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 10px;
 }
 #home .compact-project-directory .project-card[hidden] {
   display: none;
 }
 #home .compact-project-directory .project-card {
-  border-radius: 10px;
+  border-radius: var(--radius-large);
 }
 #home .compact-project-directory .project-card:hover {
   transform: none;
@@ -4000,7 +4000,7 @@
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 12px;
   margin: 0;
   width: 100%;
@@ -4009,7 +4009,7 @@
 #home .compact-project-directory .project-art {
   width: 72px;
   aspect-ratio: 1;
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   display: grid;
   place-items: center;
   background: var(--color-surface-muted);
@@ -4022,12 +4022,12 @@
 }
 #home .compact-project-directory .project-copy {
   display: grid;
-  gap: 4px;
+  gap: var(--space-1);
   padding: 0;
   min-width: 0;
 }
 #home .compact-project-directory .project-copy h2 {
-  font-size: 1.04rem;
+  font-size: var(--text-body);
   margin: 0;
   overflow-wrap: anywhere;
 }
@@ -4040,7 +4040,7 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-  font-size: 0.86rem;
+  font-size: var(--text-small);
   overflow-wrap: anywhere;
 }
 #home .compact-project-directory .project-copy p:empty,
@@ -4048,7 +4048,7 @@
   display: none;
 }
 #home .compact-project-directory .project-author {
-  font-size: 0.74rem;
+  font-size: var(--text-caption);
   color: var(--color-text-muted);
 }
 @media (max-width: 550px) {
@@ -4074,7 +4074,7 @@
   > .recipe-one-step
   > .recipe-one-step-summary {
   justify-content: flex-start;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .recipe-compact
   .recipe-step-detail
@@ -4096,7 +4096,7 @@
 .bom-part-workspace .part-detail-item-toggle {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   cursor: pointer;
   list-style: none;
   padding: 11px 4px;
@@ -4116,7 +4116,7 @@
 .bom-part-workspace .part-detail-item-toggle:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: -2px;
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
 }
 .bom-part-workspace .part-detail-item-content {
   padding: 0 12px 12px 28px;
@@ -4144,7 +4144,7 @@
   > .recipe-one-step-summary
   .recipe-one-step-number {
   flex: 0 0 auto;
-  font-weight: 700;
+  font-weight: var(--font-bold);
 }
 .recipe-compact
   .recipe-step-detail
@@ -4158,11 +4158,11 @@
   box-sizing: border-box;
   padding: 6px 9px;
   border: 1px solid var(--color-border);
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   color: var(--color-text);
   font: inherit;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
 }
 .recipe-compact
   .recipe-step-detail
@@ -4193,14 +4193,14 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 9px;
+  gap: var(--space-2);
 }
 .investigations-panel .investigation-heading-actions .workspace-record-count {
   display: inline;
   width: auto;
   margin: 0;
   white-space: nowrap;
-  font-size: 0.83rem;
+  font-size: var(--text-small);
 }
 .investigations-panel .investigation-heading-actions h2 {
   margin: 0;
@@ -4237,10 +4237,10 @@
   flex: 0 0 auto;
   min-height: 34px;
   padding: 7px 12px;
-  font-size: 0.84rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   color: var(--color-text);
   background: var(--color-surface);
   cursor: pointer;
@@ -4259,26 +4259,26 @@
   margin: 12px 0 10px;
   padding: 12px 16px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
 }
 .investigation-active-heading {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   margin: 0 0 8px;
 }
 .investigation-active-heading h2,
 .investigation-active-heading h4 {
   margin: 0;
-  font-size: 1.02rem;
+  font-size: var(--text-body);
   color: var(--color-text);
 }
 .investigation-active-content > .investigation-empty {
   margin: 8px 0;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .investigation-active-heading .investigation-create-button {
   display: inline-flex;
@@ -4286,20 +4286,20 @@
   min-height: 33px;
   padding: 6px 12px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
-  font-size: 0.84rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   color: var(--color-text);
   cursor: pointer;
 }
 .investigation-archive-button {
   border: 1px solid var(--color-border);
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   padding: 5px 10px;
-  font-size: 0.81rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .investigation-archive-dialog {
   width: min(470px, calc(100vw - 32px));
@@ -4309,7 +4309,7 @@
   background: var(--color-surface);
   color: var(--color-text);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
 }
 .investigation-archive-dialog::backdrop {
   background: color-mix(in srgb, var(--color-shadow-base) 53.33%, transparent);
@@ -4321,9 +4321,9 @@
 .investigation-description-label {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  font-size: 0.86rem;
-  font-weight: 600;
+  gap: var(--space-2);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   margin: 10px 0;
 }
 .investigation-archive-dialog textarea,
@@ -4349,7 +4349,7 @@
   background: transparent;
 }
 .recipe-step-investigations .investigation-active-heading h4 {
-  font-size: 0.9rem;
+  font-size: var(--text-body);
 }
 
 /* Entry header controls: read mode shows Edit at the far right;
@@ -4359,7 +4359,7 @@
   > .investigation-summary {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
 }
 :is(.investigations-panel, .recipe-step-investigations)
   .investigation-card
@@ -4368,7 +4368,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
   flex: 0 0 auto;
   margin-left: auto;
 }
@@ -4384,12 +4384,12 @@
 }
 .investigation-history-delete {
   border: 1px solid var(--color-border);
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   padding: 5px 10px;
   color: var(--color-danger-action);
-  font-size: 0.81rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .investigation-history-delete:hover {
   background: color-mix(
@@ -4406,7 +4406,7 @@
 :is(.investigations-panel, .recipe-step-investigations) .bs-content-card {
   box-sizing: border-box;
   min-width: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-large);
 }
 .recipe-compact .recipe-step-detail .bs-content-card > .bs-content-card-heading,
 :is(.investigations-panel, .recipe-step-investigations)
@@ -4415,16 +4415,16 @@
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   min-height: var(--recipe-active-heading-height, 74px);
   padding: 12px 16px;
   color: var(--color-text);
   background: var(--color-accent-soft) !important;
   border: 0 !important;
-  border-radius: 9px !important;
+  border-radius: var(--radius-medium) !important;
   box-shadow: none !important;
-  font-size: 1rem;
-  font-weight: 650;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
 }
 .recipe-compact
   .recipe-step-detail
@@ -4445,8 +4445,8 @@
   .btn {
   min-height: 38px;
   padding: 6px 12px;
-  font-size: 0.83rem;
-  border-radius: 8px;
+  font-size: var(--text-small);
+  border-radius: var(--radius-medium);
 }
 .recipe-compact .recipe-step-detail .bs-content-card > .bs-content-card-body,
 :is(.investigations-panel, .recipe-step-investigations)
@@ -4602,11 +4602,11 @@
   padding: 6px 10px;
   min-height: 34px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 0.81rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   white-space: nowrap;
 }
 .recipe-compact
@@ -4649,18 +4649,18 @@
   .recipe-step-detail
   > .recipe-one-step:not([open])
   > .recipe-one-step-summary {
-  border-radius: 9px !important;
+  border-radius: var(--radius-medium) !important;
 }
 
 /* Make each level of a selected Work Instruction visually independent.
    Borders belong to the three existing sections, not new wrapper elements:
    main step, active entries, and Project Archive. */
 .recipe-compact .recipe-step-detail {
-  gap: 12px;
+  gap: var(--space-3);
 }
 .recipe-compact .recipe-step-detail > .recipe-one-step {
   border: 1px solid var(--color-border) !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-large) !important;
   overflow: hidden;
   background: var(--color-surface) !important;
   box-shadow: none;
@@ -4669,7 +4669,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 12px;
+  gap: var(--space-3);
   margin: 0;
   padding: 0;
   border: 0;
@@ -4687,7 +4687,7 @@
   width: 100%;
   box-sizing: border-box;
   border: 1px solid var(--color-border) !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-large) !important;
   padding: 12px 16px !important;
   margin: 0 !important;
   background: var(--color-surface) !important;
@@ -4707,7 +4707,7 @@
   > .investigation-collapse-heading {
   width: 100%;
   box-sizing: border-box;
-  padding: 6px 0 !important;
+  padding: var(--space-2) 0 !important;
 }
 .recipe-compact
   .recipe-step-detail
@@ -4764,7 +4764,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .recipe-compact
   .recipe-step-detail
@@ -4772,7 +4772,7 @@
   > .investigation-card {
   margin: 0 !important;
   border: 1px solid var(--color-border) !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-large) !important;
   overflow: hidden;
   background: var(--color-surface) !important;
 }
@@ -4793,8 +4793,8 @@
   .recipe-one-step-title {
   flex: 0 1 auto;
   min-width: 0;
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: var(--text-body);
+  font-weight: var(--font-bold);
   line-height: 1.4;
 }
 .recipe-compact
@@ -4803,8 +4803,8 @@
   > .investigation-summary
   .investigation-title-actions
   > strong {
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: var(--text-body);
+  font-weight: var(--font-bold);
   line-height: 1.4;
 }
 .recipe-compact
@@ -4853,7 +4853,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
+  gap: var(--space-3);
   width: 100%;
   min-width: 0;
   margin: 10px 0;
@@ -4862,7 +4862,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
 }
 .investigation-note-photo,
@@ -4871,7 +4871,7 @@
   max-width: 100%;
   box-sizing: border-box;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
 }
 .investigation-note-photo {
   display: block;
@@ -4889,10 +4889,10 @@
 }
 .investigation-note-photo-remove {
   margin: 6px;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
 }
 .investigation-note-pending-photos {
-  gap: 8px;
+  gap: var(--space-2);
 }
 .investigation-note-pending-photo {
   display: inline-flex;
@@ -4900,13 +4900,13 @@
 
   padding: 5px 8px;
 
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
 }
 .recipe-compact .recipe-expand-hierarchy {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: var(--space-1);
 }
 .recipe-compact .recipe-expand-hierarchy svg {
   flex: 0 0 16px;
@@ -4920,7 +4920,7 @@
   min-width: 0;
   width: 100%;
   box-sizing: border-box;
-  border-radius: 10px;
+  border-radius: var(--radius-large);
 }
 .recipe-compact .recipe-step-nav-row.is-active {
   background: var(--color-accent-soft);
@@ -4945,7 +4945,7 @@
   margin: 0 10px 0 4px;
   padding: 6px 11px;
   min-height: 36px;
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   white-space: nowrap;
 }
 .recipe-compact
@@ -4969,7 +4969,7 @@
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
   padding: 8px !important;
   min-height: 36px;
   min-width: 36px;
@@ -5017,7 +5017,7 @@
   width: auto !important;
   max-width: 100%;
   min-height: 0 !important;
-  padding: 4px 0 !important;
+  padding: var(--space-1) 0 !important;
   margin: 0 !important;
   border: 0 !important;
   background: transparent !important;
@@ -5122,7 +5122,7 @@
   .recipe-step-investigations
   .investigation-card
   > .investigation-summary {
-  column-gap: 9px !important;
+  column-gap: var(--space-2) !important;
 }
 .recipe-compact .recipe-step-nav-row.is-active {
   min-height: var(--recipe-active-heading-height, 74px);
@@ -5138,8 +5138,8 @@
   margin-top: 14px;
   padding-top: 3px;
   color: var(--color-text-muted);
-  font-size: 0.78rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
   text-align: right;
 }
 
@@ -5162,7 +5162,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: var(--space-2);
   max-width: calc(100% - 24px);
   margin: 0;
 }
@@ -5170,8 +5170,8 @@
   flex: 0 0 auto;
   min-height: 36px;
   padding: 6px 11px;
-  border-radius: 8px;
-  font-size: 0.82rem;
+  border-radius: var(--radius-medium);
+  font-size: var(--text-small);
   white-space: nowrap;
 }
 .recipe-compact .recipe-step-nav-actions > .recipe-delete-step {
@@ -5188,7 +5188,7 @@
   }
   .recipe-compact .recipe-step-nav-actions > .btn {
     padding: 5px 7px;
-    font-size: 0.74rem;
+    font-size: var(--text-caption);
   }
 }
 
@@ -5206,7 +5206,7 @@
   margin: 0 !important;
   padding: 12px 16px !important;
   border: 1px solid var(--color-border) !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-large) !important;
   background: var(--color-surface) !important;
   box-shadow: none !important;
 }
@@ -5229,11 +5229,11 @@
   min-height: 40px;
   padding: 8px 14px !important;
   border: 1px solid var(--color-border) !important;
-  border-radius: 9px !important;
+  border-radius: var(--radius-medium) !important;
   background: var(--color-surface) !important;
   box-shadow: none !important;
-  font-size: 0.86rem !important;
-  font-weight: 650 !important;
+  font-size: var(--text-small) !important;
+  font-weight: var(--font-semibold) !important;
   line-height: 1.2;
   color: var(--color-text) !important;
   cursor: pointer;
@@ -5248,7 +5248,7 @@
   flex-wrap: wrap;
   justify-content: flex-start;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   width: 100%;
 }
 .recipe-compact :is(.recipe-edit-controls, .investigation-edit-actions) > .btn {
@@ -5256,9 +5256,9 @@
   min-height: 40px;
   min-width: 78px;
   padding: 8px 14px !important;
-  border-radius: 9px !important;
-  font-size: 0.87rem !important;
-  font-weight: 650 !important;
+  border-radius: var(--radius-medium) !important;
+  font-size: var(--text-small) !important;
+  font-weight: var(--font-semibold) !important;
   line-height: 1.2;
 }
 .recipe-compact
@@ -5318,10 +5318,10 @@
 .recipe-compact .recipe-archive-steps-heading {
   cursor: pointer;
   color: var(--color-text-muted);
-  font-size: 0.86rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   list-style: none;
 }
 .recipe-compact .recipe-archive-steps-heading::-webkit-details-marker {
@@ -5347,7 +5347,7 @@
 .recipe-compact .recipe-archived-step-list {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-1);
   padding: 2px 0 0;
 }
 .recipe-compact .recipe-archived-step-list .recipe-step-nav-item {
@@ -5358,7 +5358,7 @@
   padding-top: 12px;
   border-top: 1px solid var(--color-border);
   color: var(--color-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .recipe-compact .recipe-step-archive-metadata p {
   margin: 6px 0 0;
@@ -5394,12 +5394,12 @@
   max-height: 90vh;
   box-sizing: border-box;
   padding: 20px;
-  border-radius: 12px;
+  border-radius: var(--radius-large);
 }
 .recipe-step-archive-dialog .recipe-archive-note-label {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 14px;
 }
 .recipe-step-archive-dialog .recipe-archive-note {
@@ -5408,7 +5408,7 @@
 }
 .recipe-step-archive-dialog .recipe-archive-dialog-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   margin-top: 16px;
 }
 @media (max-width: 1100px) {
@@ -5439,12 +5439,12 @@
   padding: 4px 9px !important;
   margin: 0 !important;
   border: 0 !important;
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
   background: transparent !important;
   box-shadow: none !important;
   color: var(--color-accent) !important;
-  font-size: 0.82rem !important;
-  font-weight: 650 !important;
+  font-size: var(--text-small) !important;
+  font-weight: var(--font-semibold) !important;
   line-height: 1.3;
   white-space: nowrap;
 }
@@ -5468,7 +5468,7 @@
   align-items: center !important;
   justify-content: flex-start !important;
   flex-wrap: wrap;
-  gap: 10px !important;
+  gap: var(--space-3) !important;
   width: 100%;
   margin-top: 16px;
   padding: 0 !important;
@@ -5486,9 +5486,9 @@
   min-height: 40px !important;
   min-width: 78px;
   padding: 8px 14px !important;
-  border-radius: 9px !important;
-  font-size: 0.87rem !important;
-  font-weight: 650 !important;
+  border-radius: var(--radius-medium) !important;
+  font-size: var(--text-small) !important;
+  font-weight: var(--font-semibold) !important;
   line-height: 1.2;
   box-shadow: none !important;
 }
@@ -5511,12 +5511,12 @@
   min-height: 40px !important;
   padding: 8px 14px !important;
   border: 1px solid var(--color-border) !important;
-  border-radius: 9px !important;
+  border-radius: var(--radius-medium) !important;
   background: var(--color-surface) !important;
   color: var(--color-text) !important;
   box-shadow: none !important;
-  font-size: 0.86rem !important;
-  font-weight: 650 !important;
+  font-size: var(--text-small) !important;
+  font-weight: var(--font-semibold) !important;
   white-space: normal;
 }
 
@@ -5566,7 +5566,7 @@
   border-left: 3px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
   min-width: 0;
 }
 .recipe-compact .investigation-nested-section > .investigation-nested-card {
@@ -5574,18 +5574,18 @@
   width: 100%;
   box-sizing: border-box;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   overflow: hidden;
 }
 .recipe-compact .investigation-nested-section > .investigation-add-nested {
   align-self: flex-start;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   min-height: 36px;
   padding: 7px 12px;
-  font-size: 0.84rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   color: var(--color-text);
   cursor: pointer;
 }
@@ -5600,14 +5600,14 @@
   margin: 0;
   padding: 14px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
 }
 .recipe-compact .investigation-nested-archive {
   margin: 6px 0;
   padding: 6px 0;
   color: var(--color-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .recipe-compact .investigation-nested-archive > summary {
   cursor: pointer;
@@ -5616,7 +5616,7 @@
 .recipe-compact .investigation-nested-archive-content {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 8px 0;
 }
 @media (max-width: 600px) {
@@ -5659,8 +5659,8 @@
   margin: 8px 0 14px;
   padding: 8px 14px;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
-  font-weight: 650;
+  border-radius: var(--radius-medium);
+  font-weight: var(--font-semibold);
   background: var(--color-surface);
 }
 
@@ -5676,7 +5676,7 @@
   box-sizing: border-box;
   margin: 0 !important;
   border: 1px solid var(--color-border) !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-large) !important;
   overflow: hidden;
   background: var(--color-surface) !important;
   box-shadow: none !important;
@@ -5688,12 +5688,12 @@
   > .recipe-one-step-summary {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   min-height: 64px;
   padding: 12px 16px;
   background: var(--color-accent-soft);
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-large);
 }
 .recipe-compact
   .recipe-step-detail
@@ -5771,7 +5771,7 @@
   height: 32px;
   padding: 4px;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
   background: transparent;
   color: var(--color-text-muted);
   cursor: grab;
@@ -5805,19 +5805,19 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: 58px;
 
   padding: 10px 12px;
   margin: 0;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   background: var(--color-accent-soft);
   color: var(--color-text);
 }
 .recipe-compact .recipe-step-detail > .recipe-container-heading > strong {
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: var(--text-body);
+  font-weight: var(--font-bold);
   flex: 1 1 200px;
   min-width: 0;
 }
@@ -5836,10 +5836,10 @@
   min-height: 35px;
   padding: 7px 11px;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
-  font-size: 0.83rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .recipe-compact .recipe-step-detail > .recipe-container-heading > .btn.primary {
   background: var(--color-accent);
@@ -5875,7 +5875,7 @@
    named and saved. Avoid a large blank placeholder panel. */
 .recipe-compact .recipe-step-detail > .muted {
   margin: 4px 6px;
-  font-size: 0.88rem;
+  font-size: var(--text-small);
 }
 @media (max-width: 650px) {
   .recipe-compact .recipe-step-detail > .recipe-container-heading > strong,
@@ -5925,7 +5925,7 @@
   transform: translateY(-50%) !important;
   display: flex !important;
   justify-content: flex-end;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .recipe-compact .recipe-step-nav-row.is-editing > .recipe-step-nav-item,
 .recipe-compact
@@ -5941,7 +5941,7 @@
   align-items: center;
   width: 100%;
   max-width: 100%;
-  gap: 6px;
+  gap: var(--space-2);
   padding: 0 9px 9px;
   margin: 0;
 }
@@ -5950,7 +5950,7 @@
   > .recipe-step-nav-actions
   > .btn {
   min-height: 34px;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   padding: 5px 9px;
 }
 .recipe-compact
@@ -5965,7 +5965,7 @@
   margin-top: 0 !important;
   padding-top: 0 !important;
   border-top: 0 !important;
-  gap: 5px !important;
+  gap: var(--space-1) !important;
 }
 :is(.recipe-step-investigations, .investigations-panel)
   .investigation-add-controls
@@ -5973,13 +5973,13 @@
   margin: 0 !important;
   min-height: 0;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 :is(.recipe-step-investigations, .investigations-panel)
   .investigation-add-controls
   > .investigation-description-label {
   margin: 2px 0 7px !important;
-  gap: 4px !important;
+  gap: var(--space-1) !important;
 }
 :is(.recipe-step-investigations, .investigations-panel)
   .investigation-add-controls
@@ -5991,7 +5991,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .investigation-note-pending-photo {
   display: flex;
@@ -6000,9 +6000,9 @@
   width: 150px;
   max-width: 100%;
   padding: 7px;
-  gap: 6px;
+  gap: var(--space-2);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
 }
 .investigation-note-pending-thumbnail {
@@ -6010,16 +6010,16 @@
   width: 100%;
   height: 110px;
   object-fit: contain;
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   background: var(--color-media-backdrop);
 }
 .investigation-note-pending-info {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   overflow-wrap: anywhere;
-  font-size: 0.75rem;
+  font-size: var(--text-caption);
 }
 .investigation-note-pending-info .btn {
   margin-left: auto;
@@ -6031,7 +6031,7 @@
   .investigation-add-controls
   > .investigation-field-label {
   grid-template-columns: 95px minmax(0, 1fr) !important;
-  column-gap: 10px !important;
+  column-gap: var(--space-3) !important;
   align-items: center !important;
 }
 :is(.recipe-step-investigations, .investigations-panel)
@@ -6039,7 +6039,7 @@
   > .investigation-description-label {
   display: grid !important;
   grid-template-columns: 95px minmax(0, 1fr) !important;
-  gap: 10px !important;
+  gap: var(--space-3) !important;
   align-items: start !important;
   margin: 1px 0 6px !important;
 }
@@ -6055,7 +6055,7 @@
     .investigation-add-controls
     > :is(.investigation-field-label, .investigation-description-label) {
     grid-template-columns: 1fr !important;
-    row-gap: 4px !important;
+    row-gap: var(--space-1) !important;
   }
 }
 
@@ -6064,7 +6064,7 @@
   display: flex;
   align-items: flex-start;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .investigation-photos-entry .investigation-note-photo,
 .investigation-photos-entry .investigation-note-photo-tile {
@@ -6085,7 +6085,7 @@
 .investigation-note-photos.is-upload-expanded {
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   gap: 0;
 }
 .investigation-note-photos.is-upload-expanded > .investigation-note-photo-add {
@@ -6112,7 +6112,7 @@
   flex-direction: row !important;
   align-items: center !important;
   flex-wrap: nowrap !important;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .recipe-compact .recipe-step-nav-row.is-editing > .recipe-step-nav-item {
   flex: 1 1 auto !important;
@@ -6179,8 +6179,8 @@
     .investigation-field-label,
     .investigation-description-label
   ) {
-  font-size: 0.88rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1.4;
 }
 :is(.recipe-step-investigations, .investigations-panel)
@@ -6205,12 +6205,12 @@
   min-width: 0 !important;
   margin: 0 !important;
   border: 1px solid var(--color-border) !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-large) !important;
   background: var(--color-surface-muted) !important;
   color: var(--color-text);
   box-shadow: none;
-  font-size: 1rem;
-  font-weight: 400;
+  font-size: var(--text-body);
+  font-weight: var(--font-normal);
 }
 :is(.recipe-step-investigations, .investigations-panel)
   .investigation-new-record
@@ -6230,12 +6230,12 @@
   .investigation-new-record
   .investigation-note-photos {
   margin: 10px 0;
-  border-radius: 12px;
+  border-radius: var(--radius-large);
 }
 :is(.recipe-step-investigations, .investigations-panel)
   .investigation-new-record
   .investigation-note-photo-add {
-  border-radius: 12px;
+  border-radius: var(--radius-large);
 }
 @media (max-width: 650px) {
   :is(.recipe-step-investigations, .investigations-panel)
@@ -6253,7 +6253,7 @@
     .investigation-add-controls
     > :is(.investigation-field-label, .investigation-description-label) {
     grid-template-columns: minmax(0, 1fr) !important;
-    row-gap: 5px !important;
+    row-gap: var(--space-1) !important;
   }
   :is(.recipe-step-investigations, .investigations-panel)
     .investigation-new-record
@@ -6270,7 +6270,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 5px;
+  gap: var(--space-1);
   margin: 0;
   width: 160px;
   max-width: 100%;
@@ -6281,7 +6281,7 @@
   object-fit: contain;
 }
 .investigation-photo-name {
-  font-size: 0.83rem;
+  font-size: var(--text-small);
   line-height: 1.35;
   color: var(--color-text);
   overflow-wrap: anywhere;
@@ -6296,14 +6296,14 @@
   min-height: 34px;
   padding: 5px 8px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
-  font-size: 0.82rem;
+  font-size: var(--text-small);
 }
 .investigation-note-photo-tile {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 /* Match the Photos tile's anchored expand/collapse uploader for every entry field. */
@@ -6314,7 +6314,7 @@
 :is(.recipe-step-investigations, .investigations-panel)
   .investigation-field-attachments.is-upload-expanded {
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   background: var(--color-surface-muted);
   gap: 0;
 }
@@ -6324,7 +6324,7 @@
   margin: -1px 0 0 -1px;
   position: relative;
   z-index: 1;
-  border-radius: 12px;
+  border-radius: var(--radius-large);
 }
 :is(.recipe-step-investigations, .investigations-panel)
   .investigation-field-attachments
@@ -6369,7 +6369,7 @@
   padding: 3px;
   margin: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
   background: transparent;
   color: var(--color-text-muted);
   cursor: pointer;
@@ -6405,15 +6405,15 @@
   min-height: 46px;
   padding: 7px 12px;
   border-color: var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-accent-soft) !important;
 }
 .recipe-compact
   .recipe-step-detail
   > .recipe-container-heading
   > .recipe-entries-heading {
-  font-size: 0.87rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   letter-spacing: 0;
   color: var(--color-text-muted);
 }
@@ -6423,7 +6423,7 @@
   > .investigation-card {
   background: var(--color-surface) !important;
   border: 1px solid var(--color-border) !important;
-  border-radius: 9px !important;
+  border-radius: var(--radius-medium) !important;
   margin: 7px 0 !important;
 }
 .recipe-compact
@@ -6435,8 +6435,8 @@
   align-items: center;
 
   padding: 7px 12px !important;
-  gap: 9px !important;
-  border-radius: 8px;
+  gap: var(--space-2) !important;
+  border-radius: var(--radius-medium);
   background: var(--color-surface-muted) !important;
   color: var(--color-text) !important;
 }
@@ -6461,7 +6461,7 @@
   > .investigation-card
   > summary.investigation-summary
   .investigation-title-actions {
-  gap: 7px;
+  gap: var(--space-2);
   align-items: center;
   flex-wrap: wrap;
 }
@@ -6472,8 +6472,8 @@
   > summary.investigation-summary
   .investigation-title-actions
   strong {
-  font-size: 0.88rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .recipe-compact
   .recipe-step-investigations
@@ -6481,8 +6481,8 @@
   > .investigation-card
   > summary.investigation-summary
   > .small.muted {
-  font-size: 0.76rem;
-  font-weight: 450;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
   color: var(--color-text-muted);
 }
 .recipe-compact
@@ -6495,7 +6495,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .recipe-compact
   .recipe-step-investigations
@@ -6506,8 +6506,8 @@
   .btn {
   min-height: 32px;
   padding: 5px 9px;
-  border-radius: 8px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-medium);
+  font-size: var(--text-small);
 }
 .recipe-compact
   .recipe-step-investigations
@@ -6534,15 +6534,15 @@
   min-width: 0;
   margin: 10px 0 0;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
 }
 .assembly-archived-disclosure > summary {
   display: flex;
   align-items: center;
   min-height: 40px;
   padding: 10px 14px;
-  font-weight: 650;
-  font-size: 0.89rem;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-body);
   color: var(--color-text);
   cursor: pointer;
 }
@@ -6550,17 +6550,17 @@
   padding: 0 14px 12px;
 }
 .assembly-archived-list > .muted {
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   margin: 0;
 }
 .assembly-archived-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 8px 0;
   border-top: 1px solid var(--color-border);
-  font-size: 0.86rem;
+  font-size: var(--text-small);
 }
 .assembly-archived-row > span {
   min-width: 0;
@@ -6568,7 +6568,7 @@
 }
 .assembly-archived-row .btn {
   flex: 0 0 auto;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   padding: 5px 10px;
 }
 .assembly-archive-dialog {
@@ -6577,7 +6577,7 @@
   overflow: auto;
   padding: 22px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
   color: var(--color-text);
 }
@@ -6595,16 +6595,16 @@
   overflow-wrap: anywhere;
   max-height: 300px;
   overflow: auto;
-  font-size: 0.72rem;
+  font-size: var(--text-caption);
   background: var(--color-surface-muted);
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
 }
 .assembly-archive-actions {
   display: flex;
   justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 18px;
 }
 
@@ -6616,14 +6616,14 @@
 }
 .assembly-archive-media > summary {
   cursor: pointer;
-  font-size: 0.86rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   padding: 5px 0;
 }
 .assembly-archive-gallery {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--space-3);
   margin: 10px 0;
 }
 .assembly-archive-image {
@@ -6633,7 +6633,7 @@
   width: 160px;
   max-width: 100%;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-surface-muted);
 }
 .assembly-archive-image > img {
@@ -6641,18 +6641,18 @@
   width: 100%;
   height: 125px;
   object-fit: contain;
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
 }
 .assembly-archive-image > figcaption {
   margin-top: 6px;
-  font-size: 0.75rem;
+  font-size: var(--text-caption);
   overflow-wrap: anywhere;
   color: var(--color-text-muted);
 }
 .assembly-archive-media li {
   margin: 5px 0;
   overflow-wrap: anywhere;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
 }
 
 /* Preserve the assembly breadcrumb as visible context for archived items. */
@@ -6660,48 +6660,48 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 3px;
+  gap: var(--space-1);
   min-width: 0;
   flex: 1 1 auto;
 }
 .assembly-archive-row-info > strong {
-  font-size: 0.89rem;
+  font-size: var(--text-body);
   overflow-wrap: anywhere;
 }
 .assembly-archive-origin {
   display: block;
   color: var(--color-text-muted);
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
 .assembly-archive-origin > strong {
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   color: var(--color-text);
 }
 .assembly-archive-origin > small {
   display: block;
-  font-size: 0.76rem;
+  font-size: var(--text-small);
   margin-top: 2px;
   color: var(--color-text-muted);
 }
 .assembly-archive-meta {
   color: var(--color-text-muted);
-  font-size: 0.75rem;
+  font-size: var(--text-caption);
 }
 .assembly-archive-dialog > .assembly-archive-origin {
   margin: 7px 0 12px;
   padding: 11px 12px;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-body);
 }
 
 /* Archived parts: keep destructive archive actions separate from viewing. */
 .assembly-archive-row-actions {
   display: inline-flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   flex: 0 0 auto;
   flex-wrap: wrap;
@@ -6719,7 +6719,7 @@
 }
 .assembly-archive-delete-feedback {
   color: var(--color-danger);
-  font-size: 0.84rem;
+  font-size: var(--text-small);
 }
 @media (max-width: 460px) {
   .assembly-archived-row {
@@ -6735,24 +6735,24 @@
 .part-functional-panel {
   display: flex;
   flex-direction: column;
-  gap: 11px;
+  gap: var(--space-3);
   padding: 15px 16px;
   margin: 4px 0 14px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
 }
 .part-functional-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .part-functional-heading h3,
 .part-implementation-panel h3 {
   margin: 0;
-  font-size: 0.97rem;
-  font-weight: 650;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
 }
 .part-functional-heading .btn,
 .part-implementation-add {
@@ -6765,7 +6765,7 @@
 .part-implementation-summary {
   margin: 0;
   line-height: 1.5;
-  font-size: 0.87rem;
+  font-size: var(--text-small);
   overflow-wrap: anywhere;
   white-space: pre-line;
 }
@@ -6777,31 +6777,31 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 9px;
+  gap: var(--space-2);
   border-top: 1px solid var(--color-border);
   padding-top: 12px;
 }
 .part-implementation-summary {
-  font-weight: 500;
+  font-weight: var(--font-semibold);
 }
 .part-functional-edit,
 .part-implementation-new {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 12px;
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
 }
 .part-functional-field,
 .part-functional-edit-field {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 5px;
-  font-size: 0.86rem;
-  font-weight: 550;
+  gap: var(--space-1);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .part-functional-field > :is(input, textarea, select),
 .part-functional-edit-field > :is(input, textarea) {
@@ -6809,9 +6809,9 @@
   width: 100%;
   max-width: 100%;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   padding: 10px 12px;
-  font-weight: 400;
+  font-weight: var(--font-normal);
   background: var(--color-surface);
 }
 .part-functional-field textarea,
@@ -6820,12 +6820,12 @@
 }
 .part-functional-actions {
   display: flex;
-  gap: 9px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   justify-content: flex-start;
 }
 .part-functional-feedback {
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
 }
 .part-functional-feedback:empty {
@@ -6833,11 +6833,11 @@
 }
 .part-functional-unselected {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   margin: 4px 0 9px;
-  font-size: 0.86rem;
-  font-weight: 500;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .part-functional-unselected input {
   margin: 0;
@@ -6860,8 +6860,8 @@
 .bom-part-name .bom-implementation-label {
   display: block;
   margin-top: 3px;
-  font-size: 0.75rem;
-  font-weight: 450;
+  font-size: var(--text-caption);
+  font-weight: var(--font-normal);
   line-height: 1.3;
   color: var(--color-text-muted);
 }
@@ -6869,7 +6869,7 @@
   font-style: italic;
 }
 .bom-implementation-totals {
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   line-height: 1.5;
   color: var(--color-text-muted);
   margin: 9px 0 7px;
@@ -6880,16 +6880,16 @@
 .bom-part-workspace .part-workspace-selected-component:not([hidden]) {
   max-width: 100%;
   margin-top: -2px;
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   line-height: 1.4;
   color: var(--color-text-muted);
   overflow-wrap: anywhere;
 }
 .part-feature-tree-help {
   display: block;
-  font-size: 0.76rem;
+  font-size: var(--text-small);
   line-height: 1.4;
-  font-weight: 400;
+  font-weight: var(--font-normal);
   margin-top: 3px;
 }
 
@@ -6897,7 +6897,7 @@
 .project-intent-milestones {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   margin: 16px 0;
 }
 .project-intent-milestones[hidden] {
@@ -6907,7 +6907,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .project-milestone-heading h2 {
@@ -6916,14 +6916,14 @@
 .project-milestone-actions,
 .project-milestone-editor-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   align-items: center;
 }
 .project-milestone-intro,
 .project-milestone-feedback {
   margin: 0;
-  font-size: 0.86rem;
+  font-size: var(--text-small);
 }
 .project-milestone-feedback:empty {
   display: none;
@@ -6931,7 +6931,7 @@
 .project-milestone-intent,
 .project-milestone-history {
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .project-milestone-intent > p,
 .project-milestone-history > p {
@@ -6939,20 +6939,20 @@
 }
 .project-milestone-original {
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   padding: 14px 16px;
   background: var(--color-surface-muted);
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .project-milestone-original h3,
 .project-milestone-history h3 {
   margin: 0;
-  font-size: 0.98rem;
+  font-size: var(--text-body);
 }
 .project-milestone-list {
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
   list-style: none;
   padding: 0;
   margin: 0;
@@ -6960,38 +6960,38 @@
 .project-milestone-record {
   padding: 14px 16px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
   background: var(--color-surface);
 }
 .project-milestone-record h4 {
   margin: 0;
-  font-size: 0.92rem;
+  font-size: var(--text-body);
 }
 .project-milestone-field-view {
   display: grid;
-  gap: 3px;
+  gap: var(--space-1);
 }
 .project-milestone-field-view strong {
-  font-size: 0.82rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .project-milestone-field-view p {
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   line-height: 1.48;
 }
 .project-milestone-date {
   margin: 0;
-  font-size: 0.76rem;
+  font-size: var(--text-small);
   color: var(--color-text-subtle);
 }
 .project-milestone-source {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
   overflow-wrap: anywhere;
 }
@@ -7004,7 +7004,7 @@
   overflow: auto;
   padding: 0;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   box-shadow: 0 12px 45px
     color-mix(in srgb, var(--color-shadow-base) 22%, transparent);
   color: var(--color-text);
@@ -7015,12 +7015,12 @@
 }
 .project-milestone-editor {
   display: grid;
-  gap: 13px;
+  gap: var(--space-3);
   padding: 24px;
 }
 .project-milestone-editor h2 {
   margin: 0;
-  font-size: 1.22rem;
+  font-size: var(--text-title);
 }
 .project-milestone-editor > p {
   margin: 0;
@@ -7028,25 +7028,25 @@
 }
 .project-milestone-field {
   display: grid;
-  gap: 6px;
-  font-size: 0.89rem;
-  font-weight: 600;
+  gap: var(--space-2);
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
 }
 .project-milestone-field textarea {
   box-sizing: border-box;
   width: 100%;
-  font-weight: 400;
+  font-weight: var(--font-normal);
   resize: vertical;
   min-height: 76px;
 }
 .project-milestone-draft-source {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   padding: 9px 11px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
 }
 .project-milestone-draft-source span {
   flex: 1;
@@ -7054,7 +7054,7 @@
 }
 .project-milestone-form-feedback {
   min-height: 1em;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   margin: 0;
 }
 .project-milestone-editor-actions {
@@ -7065,7 +7065,7 @@
 }
 .investigation-milestone-button {
   margin: 6px 0 8px;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   align-self: flex-start;
 }
 @media (max-width: 560px) {
@@ -7084,7 +7084,7 @@
    The 42px row applies to view mode only; editing may grow to fit controls. */
 .recipe-compact .recipe-step-browser .recipe-step-list {
   padding: 0 6px 6px;
-  gap: 3px;
+  gap: var(--space-1);
 }
 .recipe-compact .recipe-step-nav-row.has-nav-actions:not(.is-editing) {
   min-height: 42px;
@@ -7098,7 +7098,7 @@
   min-height: 42px;
   height: 42px;
   padding: 6px 78px 6px 10px !important;
-  font-size: 0.86rem;
+  font-size: var(--text-small);
   line-height: 1.2;
 }
 .recipe-compact
@@ -7111,11 +7111,11 @@
 .recipe-compact .recipe-step-detail > .recipe-container-heading {
   min-height: 42px;
   padding: 5px 10px;
-  border-radius: 9px;
-  gap: 7px;
+  border-radius: var(--radius-medium);
+  gap: var(--space-2);
 }
 .recipe-compact .recipe-step-detail > .recipe-container-heading > strong {
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   line-height: 1.25;
 }
 .recipe-compact
@@ -7132,7 +7132,7 @@
   .investigation-active-content
   > .investigation-card {
   margin: 4px 0 !important;
-  border-radius: 8px !important;
+  border-radius: var(--radius-medium) !important;
 }
 .recipe-compact
   .recipe-step-investigations
@@ -7141,8 +7141,8 @@
   > summary.investigation-summary {
   min-height: 42px !important;
   padding: 5px 10px !important;
-  gap: 7px !important;
-  border-radius: 7px;
+  gap: var(--space-2) !important;
+  border-radius: var(--radius-medium);
   box-sizing: border-box;
 }
 .recipe-compact
@@ -7259,7 +7259,7 @@
   margin: 0 0 12px;
   padding: 0;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
   min-width: 0;
   overflow: visible;
@@ -7267,7 +7267,7 @@
 .assembly-workspace-page .workspace-archive-history > summary {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   min-height: 42px;
   padding: 9px 16px 9px 27px;
   list-style: none;
@@ -7285,8 +7285,8 @@
 .assembly-workspace-page .workspace-archive-history > summary h2 {
   margin: 0;
   min-height: 0;
-  font-size: 0.91rem;
-  font-weight: 650;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
   line-height: 1.35;
 }
 .assembly-workspace-page
@@ -7295,7 +7295,7 @@
   .workspace-record-count {
   display: inline;
   margin: 0;
-  font-size: 0.76rem;
+  font-size: var(--text-small);
 }
 .assembly-workspace-page .workspace-archive-history[open] > summary {
   border-bottom: 1px solid var(--color-border);
@@ -7352,12 +7352,12 @@
   min-height: 31px;
   padding: 5px 10px !important;
   border: 1px solid var(--color-border) !important;
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface) !important;
   color: var(--color-text) !important;
   box-shadow: none;
-  font-size: 0.8rem;
-  font-weight: 550;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   text-decoration: none;
 }
 .assembly-workspace-page .workspace-archive-history .investigation-add:hover {
@@ -7368,8 +7368,8 @@
    conventional framed button that appears only inside the open section. */
 .assembly-workspace-page .workspace-resource-disclosure > summary {
   min-height: 42px;
-  padding-top: 8px;
-  padding-bottom: 8px;
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
 }
 .assembly-workspace-page
   .workspace-resource-disclosure
@@ -7378,14 +7378,14 @@
 
   flex-wrap: wrap;
 
-  gap: 7px;
+  gap: var(--space-2);
 }
 .assembly-workspace-page
   .workspace-resource-disclosure
   .workspace-tool-actions
   > h2 {
   min-height: 0;
-  font-size: 0.91rem;
+  font-size: var(--text-body);
 }
 .assembly-workspace-page
   .workspace-resource-disclosure
@@ -7393,25 +7393,25 @@
   > .workspace-record-count {
   display: inline;
   margin: 0 0 0 1px;
-  font-size: 0.76rem;
+  font-size: var(--text-small);
 }
 .assembly-workspace-page
   .workspace-resource-disclosure
   .workspace-tool-controls {
-  padding: 10px 15px 0;
+  padding: var(--space-3) var(--space-4) 0;
 }
 .assembly-workspace-page
   .workspace-resource-disclosure
   .workspace-tool-controls
   .linked-resource-add {
   min-height: 31px;
-  padding: 5px 10px;
+  padding: var(--space-1) var(--space-3);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 0.8rem;
-  font-weight: 550;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   box-shadow: none;
   cursor: pointer;
 }
@@ -7423,7 +7423,7 @@
   text-decoration: none;
 }
 .assembly-workspace-page .workspace-resource-disclosure > .workspace-resources {
-  padding: 5px 15px 12px;
+  padding: var(--space-1) var(--space-4) var(--space-3);
   margin: 0;
 }
 /* Notes: a single summary line when collapsed, with its framed add button
@@ -7432,7 +7432,7 @@
   margin: 0 0 12px !important;
   padding: 0 !important;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
 }
 .assembly-workspace-page
@@ -7443,9 +7443,9 @@
   align-items: center;
   justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 9px;
+  gap: var(--space-2);
   min-height: 42px;
-  padding: 9px 16px 9px 27px;
+  padding: var(--space-2) var(--space-4) var(--space-2) var(--space-5);
   list-style: none;
   cursor: pointer;
 }
@@ -7461,8 +7461,8 @@
   position: absolute;
   left: 12px;
   top: calc(50% - 4px);
-  width: 6px;
-  height: 6px;
+  width: var(--chevron-size);
+  height: var(--chevron-size);
   border-block-start: 1.5px solid var(--color-text-muted);
   border-inline-end: 1.5px solid var(--color-text-muted);
   transform: rotate(45deg);
@@ -7482,8 +7482,8 @@
   > .bs-unstructured-notes-heading
   h2 {
   margin: 0;
-  font-size: 0.91rem;
-  font-weight: 650;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
   line-height: 1.35;
 }
 .assembly-workspace-page
@@ -7492,7 +7492,7 @@
   > .workspace-record-count {
   display: inline;
   margin: 0;
-  font-size: 0.76rem;
+  font-size: var(--text-small);
 }
 .assembly-workspace-page .bs-unstructured-notes > .bs-unstructured-content {
   padding: 10px 15px 12px;
@@ -7503,11 +7503,11 @@
   min-height: 31px;
   padding: 5px 10px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 0.8rem;
-  font-weight: 550;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   box-shadow: none;
   cursor: pointer;
 }
@@ -7541,8 +7541,8 @@
   display: grid !important;
   grid-template-columns: minmax(145px, 205px) minmax(0, 1fr);
   align-items: start;
-  column-gap: 16px;
-  row-gap: 3px;
+  column-gap: var(--space-4);
+  row-gap: var(--space-1);
   padding: 9px 4px;
   margin: 0;
   border-bottom: 1px solid var(--color-border);
@@ -7553,8 +7553,8 @@
   > strong {
   display: block;
   min-width: 0;
-  font-size: 0.84rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1.4;
 }
 .bom-part-workspace
@@ -7564,7 +7564,7 @@
   min-width: 0;
   margin: 0;
   padding: 0 !important;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
   line-height: 1.5;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
@@ -7580,13 +7580,13 @@
   .bom-part-workspace
     .part-details-view-row.part-detail-item.part-detail-inline {
     grid-template-columns: minmax(0, 1fr);
-    gap: 3px;
+    gap: var(--space-1);
   }
 }
 
 /* Project Summary: condensed, consistent cards and an inline cost explanation. */
 .project-summary-overview {
-  gap: 10px;
+  gap: var(--space-3);
   margin: 12px 0;
 }
 .project-summary-page .project-summary-overview > .project-overview-card {
@@ -7603,7 +7603,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 9px 0 0;
   padding: 8px 0 0;
   border-top: 1px solid var(--color-border);
@@ -7615,8 +7615,8 @@
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  column-gap: 14px;
-  row-gap: 3px;
+  column-gap: var(--space-4);
+  row-gap: var(--space-1);
   margin-bottom: 8px;
 }
 .project-summary-page .project-cost-heading h2 {
@@ -7625,7 +7625,7 @@
 .project-summary-page .project-cost-heading .project-summary-cost-missing {
   flex: 1 1 260px;
   margin: 0;
-  font-size: 0.78rem;
+  font-size: var(--text-small);
   line-height: 1.35;
 }
 .project-summary-page .project-cost-card > .project-summary-cost,
@@ -7636,39 +7636,39 @@
 .project-summary-page .project-intent-milestones {
   margin: 10px 0 12px;
   padding: 14px 20px;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .project-summary-page .project-milestone-heading {
   align-items: center;
-  gap: 8px 12px;
+  gap: var(--space-2) var(--space-3);
 }
 .project-summary-page .project-milestone-heading h2 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--text-body);
   line-height: 1.3;
 }
 .project-summary-page .project-milestone-actions {
-  gap: 6px;
+  gap: var(--space-2);
 }
 .project-summary-page .project-milestone-actions > .btn {
   min-height: 32px;
   padding: 5px 10px;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
 }
 .project-summary-page .project-milestone-intro {
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   line-height: 1.4;
 }
 .project-summary-page .project-milestone-original,
 .project-summary-page .project-milestone-record {
   padding: 10px 12px;
-  gap: 7px;
-  border-radius: 8px;
+  gap: var(--space-2);
+  border-radius: var(--radius-medium);
 }
 .project-summary-page .project-milestone-intent,
 .project-summary-page .project-milestone-history,
 .project-summary-page .project-milestone-list {
-  gap: 7px;
+  gap: var(--space-2);
 }
 .project-summary-page .project-milestone-field-view {
   gap: 2px;
@@ -7678,7 +7678,7 @@
 }
 .project-summary-page .project-milestone-original h3,
 .project-summary-page .project-milestone-history h3 {
-  font-size: 0.91rem;
+  font-size: var(--text-body);
 }
 @media (max-width: 600px) {
   .project-summary-page .project-cost-heading {
@@ -7721,7 +7721,7 @@
 /* Original intent: concise spelling reminder before the irreversible save. */
 .project-milestone-spelling-hint {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   line-height: 1.45;
 }
 
@@ -7729,7 +7729,7 @@
 .project-summary-page .project-summary-title-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 8px;
 }
 .project-summary-page .project-summary-title-row h2 {
@@ -7742,7 +7742,7 @@
 .project-summary-page .project-intent-milestones .project-milestone-expand {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   width: 100%;
   padding: 0;
   margin: 0;
@@ -7751,8 +7751,8 @@
   color: var(--color-text);
   text-align: left;
   font: inherit;
-  font-size: 1.05rem;
-  font-weight: 650;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
   cursor: pointer;
 }
 .project-summary-page
@@ -7760,7 +7760,7 @@
   .project-milestone-expand:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-small);
 }
 .project-summary-page .project-intent-milestones .project-milestone-chevron {
   display: inline-block;
@@ -7780,7 +7780,7 @@
 }
 .project-summary-page .project-intent-milestones .project-milestone-content {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .project-summary-page
   .project-intent-milestones
@@ -7797,20 +7797,20 @@
   display: grid;
   grid-template-columns: minmax(195px, 220px) minmax(0, 1fr);
   align-items: baseline;
-  gap: 8px 12px;
+  gap: var(--space-2) var(--space-3);
 }
 .project-summary-page .project-cost-line-label {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.86rem;
+  gap: var(--space-2);
+  font-size: var(--text-small);
 }
 .project-summary-page .project-cost-line-label .bs-help-button {
   flex: none;
 }
 .project-summary-page .project-cost-line-value {
   min-width: 0;
-  font-size: 0.86rem;
+  font-size: var(--text-small);
 }
 @media (max-width: 580px) {
   .project-summary-page .project-cost-card > .project-summary-cost,
@@ -7829,14 +7829,14 @@
   .part-details-collapse
   > summary.part-details-view-heading {
   box-sizing: border-box;
-  min-height: 48px;
-  padding-top: 9px;
-  padding-bottom: 9px;
+  min-height: var(--section-height);
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
   display: flex;
   align-items: center;
 }
 .assembly-workspace-page .workspace-resource-disclosure > summary {
-  padding-left: 27px;
+  padding-left: var(--space-5);
 }
 .assembly-workspace-page .workspace-resource-disclosure > summary::before {
   top: 50%;
@@ -7874,7 +7874,7 @@
   > article.recipe-instructions
   > .recipe-heading-row {
   box-sizing: border-box;
-  min-height: 48px;
+  min-height: var(--section-height);
   display: flex;
   align-items: center;
 }
@@ -7891,18 +7891,18 @@
 .assembly-workspace-page .recipe-instructions > .recipe-heading-row {
   display: flex;
   align-items: center;
-  min-height: 48px;
+  min-height: var(--section-height);
   margin: 0;
   padding: 0;
 }
 .assembly-workspace-page .recipe-instructions .recipe-disclosure-toggle {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   width: 100%;
   min-width: 0;
-  min-height: 48px;
-  padding: 9px 16px 9px 27px;
+  min-height: var(--section-height);
+  padding: var(--space-2) var(--space-4) var(--space-2) var(--space-5);
   margin: 0;
   border: 0;
   border-radius: 0;
@@ -7918,10 +7918,10 @@
   .recipe-disclosure-toggle::before {
   content: "";
   position: absolute;
-  width: 6px;
-  height: 6px;
-  border-block-start: 1.5px solid currentColor;
-  border-inline-end: 1.5px solid currentColor;
+  width: var(--chevron-size);
+  height: var(--chevron-size);
+  border-block-start: var(--chevron-stroke) solid currentColor;
+  border-inline-end: var(--chevron-stroke) solid currentColor;
   left: 11px;
   top: 50%;
   transform: translateY(-50%) rotate(45deg);
@@ -7938,9 +7938,9 @@
   flex: none;
   min-height: 0;
   margin: 0 !important;
-  font-size: 1.05rem;
+  font-size: var(--text-body);
   line-height: 1.3;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
 }
 .assembly-workspace-page
   .recipe-instructions
@@ -7950,8 +7950,8 @@
   margin: 0;
   line-height: 1.3;
   color: var(--color-text-muted);
-  font-size: 0.78rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
 }
 .assembly-workspace-page .recipe-instructions > .recipe-editor {
   padding: 12px 16px 16px;
@@ -7977,11 +7977,11 @@
   margin: 0 !important;
   padding: 5px 10px !important;
   border: 1px solid var(--color-border) !important;
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface) !important;
   color: var(--color-text) !important;
-  font-size: 0.8rem !important;
-  font-weight: 550 !important;
+  font-size: var(--text-small) !important;
+  font-weight: var(--font-semibold) !important;
   box-shadow: none !important;
   text-decoration: none !important;
 }
@@ -8010,7 +8010,7 @@
     .recipe-instructions > .recipe-heading-row
   ) {
   box-sizing: border-box;
-  min-height: 48px;
+  min-height: var(--section-height);
 }
 .assembly-workspace-page
   .bs-unstructured-notes
@@ -8020,8 +8020,8 @@
   > summary.investigation-collapse-heading {
   display: flex;
   align-items: center;
-  padding-top: 9px;
-  padding-bottom: 9px;
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
 }
 
 /* A container is project identity, not a standalone title card. Present its
@@ -8031,16 +8031,16 @@
   display: grid;
 
   align-items: center;
-  gap: 12px 18px;
+  gap: var(--space-3) var(--space-4);
   min-width: 0;
 }
 .assembly-workspace-page .part-container-name-label {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
-  font-size: 0.88rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .assembly-workspace-page .part-container-name-label .bs-section-tooltip {
   margin: 0;
@@ -8054,16 +8054,16 @@
   padding: 8px 12px;
   box-sizing: border-box;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   color: var(--color-text);
   font: inherit;
-  font-size: 0.88rem;
+  font-size: var(--text-small);
   cursor: default;
 }
 .assembly-workspace-page .part-container-overview > .part-functional-purpose {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .assembly-workspace-page
   .part-container-overview
@@ -8098,10 +8098,10 @@
   .recipe-instructions:not(:has(.recipe-body:not([hidden])))
   > .recipe-heading-row {
   box-sizing: border-box;
-  height: 48px;
-  min-height: 48px;
-  padding-top: 9px;
-  padding-bottom: 9px;
+  height: auto;
+  min-height: var(--section-height);
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
 }
 .assembly-workspace-page.bom-part-workspace
   .part-details-collapse:not([open])
@@ -8125,9 +8125,9 @@
 /* Shared compact disclosure appearance for part and subassembly workspaces.
    Apply to the actual header elements, not their data/expanded bodies. */
 .assembly-workspace-page {
-  --workspace-tile-height: 48px;
-  --workspace-tile-font-size: 0.91rem;
-  --workspace-tile-font-weight: 650;
+  --workspace-tile-height: var(--section-height);
+  --workspace-tile-font-size: var(--text-body);
+  --workspace-tile-font-weight: var(--font-semibold);
 }
 .assembly-workspace-page
   :is(
@@ -8157,8 +8157,8 @@
   ) {
   display: flex;
 
-  padding-top: 9px;
-  padding-bottom: 9px;
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
 }
 .assembly-workspace-page
   :is(
@@ -8199,12 +8199,12 @@
     .bs-unstructured-notes:not([open]) > summary.bs-unstructured-notes-heading,
     .part-details-collapse:not([open]) > summary.part-details-view-heading
   ) {
-  height: var(--workspace-tile-height);
+  height: auto;
   min-height: var(--workspace-tile-height);
 }
 .assembly-workspace-page .assembly-archived-items {
   padding: 0;
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
 }
 .assembly-workspace-page .assembly-archived-disclosure > summary {
@@ -8218,8 +8218,8 @@
 .assembly-workspace-page
   .bs-unstructured-notes:not([open])
   > summary.bs-unstructured-notes-heading {
-  padding-left: 27px;
-  padding-right: 20px;
+  padding-left: var(--space-5);
+  padding-right: var(--space-5);
   margin: 0;
 }
 .assembly-workspace-page
@@ -8230,12 +8230,12 @@
 .assembly-workspace-page .workspace-panels > .workspace-secondary-disclosure,
 .assembly-workspace-page .workspace-panels > .assembly-archived-items {
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
 }
 .assembly-workspace-page .workspace-secondary-disclosure > summary {
-  padding-left: 27px;
-  padding-right: 20px;
+  padding-left: var(--space-5);
+  padding-right: var(--space-5);
 }
 .assembly-workspace-page .workspace-panels > .assembly-archived-items {
   margin: 0 0 12px;
@@ -8243,16 +8243,16 @@
 .assembly-workspace-page
   :is(.workspace-record-count, .part-details-summary-fields) {
   font-family: inherit;
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 
 /* One exact disclosure header grid for part and subassembly.
    Previous rules matched type sizes but left pseudo-chevrons in different layouts. */
 .assembly-workspace-page {
-  --workspace-tile-label-size: 0.91rem;
-  --workspace-tile-label-weight: 650;
-  --workspace-tile-label-left: 27px;
-  --workspace-tile-chevron-left: 11px;
+  --workspace-tile-label-size: var(--text-body);
+  --workspace-tile-label-weight: var(--font-semibold);
+  --workspace-tile-label-left: var(--section-label-inset);
+  --workspace-tile-chevron-left: var(--section-chevron-inset);
 }
 .assembly-workspace-page
   :is(
@@ -8265,10 +8265,11 @@
   ) {
   position: relative;
   box-sizing: border-box;
-  padding: 9px 20px 9px var(--workspace-tile-label-left) !important;
-  min-height: 48px;
+  padding: var(--space-2) var(--space-5) var(--space-2)
+    var(--workspace-tile-label-left) !important;
+  min-height: var(--section-height);
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-family: inherit;
   font-size: var(--workspace-tile-label-size) !important;
   font-weight: var(--workspace-tile-label-weight) !important;
@@ -8323,8 +8324,8 @@
 }
 .assembly-workspace-page
   :is(.workspace-record-count, .part-details-summary-fields) {
-  font-size: 0.76rem !important;
-  font-weight: 400 !important;
+  font-size: var(--text-small) !important;
+  font-weight: var(--font-normal) !important;
 }
 
 /* Consistent 12px spacing between collapsed/expanded section cards on both
@@ -8361,9 +8362,9 @@
   display: flex !important;
   align-items: center !important;
   box-sizing: border-box !important;
-  height: 48px !important;
-  min-height: 48px !important;
-  max-height: 48px !important;
+  height: auto !important;
+  min-height: var(--section-height) !important;
+  max-height: none !important;
   padding: 0 !important;
   margin: 0 !important;
 }
@@ -8377,10 +8378,10 @@
   align-items: center !important;
   justify-content: flex-start !important;
   box-sizing: border-box !important;
-  height: 48px !important;
-  min-height: 48px !important;
-  max-height: 48px !important;
-  padding: 0 16px 0 var(--workspace-tile-label-left, 27px) !important;
+  height: auto !important;
+  min-height: var(--section-height) !important;
+  max-height: none !important;
+  padding: 0 var(--space-4) 0 var(--workspace-tile-label-left, 27px) !important;
   margin: 0 !important;
   line-height: 1.3 !important;
 }
@@ -8413,7 +8414,7 @@
 }
 .assembly-workspace-page .part-container-overview > .part-container-name-row {
   grid-template-columns: minmax(175px, 30%) minmax(0, 1fr);
-  column-gap: 18px;
+  column-gap: var(--space-4);
   row-gap: 0;
   min-height: 38px;
 }
@@ -8425,13 +8426,13 @@
 .assembly-workspace-page .part-details-view-rows > .part-functional-extras {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 0 16px 10px;
   min-width: 0;
 }
 .assembly-workspace-page .part-functional-extras > .part-functional-purpose {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .assembly-workspace-page
   .part-functional-extras
@@ -8456,6 +8457,6 @@
 @media (max-width: 620px) {
   .assembly-workspace-page .part-container-overview > .part-container-name-row {
     grid-template-columns: minmax(0, 1fr);
-    gap: 6px;
+    gap: var(--space-2);
   }
 }

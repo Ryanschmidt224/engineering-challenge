@@ -74,7 +74,7 @@ textarea:focus-visible {
   background: var(--color-surface);
   color: var(--color-accent);
   padding: var(--space-2) var(--space-3);
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   font-size: var(--text-small);
   text-decoration: none;
   white-space: normal;
@@ -121,7 +121,7 @@ textarea.field {
 .field-row > label {
   padding-top: var(--space-2);
   font-size: var(--text-small);
-  font-weight: 600;
+  font-weight: var(--font-semibold);
 }
 .field-row > dd {
   margin: 0;
@@ -186,7 +186,7 @@ textarea.field {
 }
 .disclosure > summary {
   min-height: var(--section-height);
-  font-weight: 600;
+  font-weight: var(--font-semibold);
 }
 .disclosure > summary h2 {
   display: inline;
@@ -267,7 +267,7 @@ textarea.field {
 .eyebrow {
   color: var(--color-accent);
   font-size: var(--text-small);
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   margin-bottom: var(--space-2);
 }
 .photo-thumb {

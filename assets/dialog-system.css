@@ -74,7 +74,7 @@ dialog:is(
   )
   :is(input.field, textarea.field, select.field) {
   border: 1px solid var(--bs-dialog-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   background: #fff;
   color: var(--bs-dialog-fg);
 }
@@ -143,13 +143,13 @@ dialog.bs-dialog {
   padding: 24px;
 }
 .bs-dialog h2 {
-  font-size: 1.17rem;
+  font-size: var(--text-lead);
   line-height: 1.3;
   margin: 0 0 12px;
-  font-weight: 720;
+  font-weight: var(--font-bold);
 }
 .bs-dialog p {
-  font-size: 0.94rem;
+  font-size: var(--text-body);
   line-height: 1.55;
   color: var(--bs-dialog-muted);
   margin: 0;
@@ -158,12 +158,12 @@ dialog.bs-dialog {
 }
 .bs-dialog .bs-dialog-field {
   display: grid;
-  gap: 7px;
+  gap: var(--space-2);
   margin-top: 16px;
 }
 .bs-dialog .bs-dialog-field label {
-  font-size: 0.85rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   color: var(--bs-dialog-fg);
 }
 .bs-dialog .bs-dialog-field :is(input, textarea) {
@@ -171,7 +171,7 @@ dialog.bs-dialog {
   border: 1px solid var(--bs-dialog-border);
   background: #fff;
   color: var(--bs-dialog-fg);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   padding: 10px 12px;
   min-height: 40px;
 }
@@ -184,7 +184,7 @@ dialog.bs-dialog {
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--space-3);
   margin-top: 24px;
 }
 .bs-dialog .bs-dialog-actions .btn {
@@ -194,10 +194,10 @@ dialog.bs-dialog {
   min-width: 93px;
   min-height: 39px;
   margin: 0;
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   padding: 8px 15px;
-  font-size: 0.9rem;
-  font-weight: 650;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
 }
 .bs-dialog .bs-dialog-actions .bs-dialog-danger,
 dialog .bs-dialog-danger,
@@ -286,7 +286,7 @@ dialog.part-editor-dialog .workspace-main-bom-editor {
     max-width: calc(100vw - 16px);
     height: calc(100dvh - 16px);
     max-height: calc(100dvh - 16px);
-    border-radius: 10px;
+    border-radius: var(--radius-large);
   }
   dialog.library-part-dialog .library-part-form {
     padding: 17px;
@@ -306,10 +306,10 @@ dialog.bs-edit-conflict {
   min-width: 0;
   margin: 1rem 0;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
 }
 .bs-edit-conflict legend {
-  font-weight: 650;
+  font-weight: var(--font-semibold);
 }
 .bs-edit-conflict pre {
   font: inherit;
@@ -341,8 +341,8 @@ dialog.bs-edit-conflict {
   background: var(--bs-tooltip-bg);
   color: var(--bs-tooltip-fg);
   box-shadow: var(--bs-tooltip-shadow);
-  font-size: 0.83rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
   line-height: 1.58;
   text-align: left;
   white-space: normal;
@@ -387,8 +387,8 @@ dialog.bs-edit-conflict {
   box-shadow: none;
   color: var(--color-text-muted, #60736a);
   font: inherit;
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1;
   cursor: help;
   vertical-align: middle;
@@ -406,18 +406,18 @@ dialog.bs-help-detail-dialog {
   width: min(500px, calc(100vw - 32px));
   max-width: calc(100vw - 32px);
   padding: 22px 24px;
-  border-radius: 14px;
+  border-radius: var(--radius-large);
 }
 .bs-help-detail-header {
   display: flex;
   align-items: start;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   margin-bottom: 11px;
 }
 .bs-help-detail-dialog .bs-help-detail-header h2 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--text-lead);
 }
 .bs-help-detail-close {
   display: grid;
@@ -426,23 +426,23 @@ dialog.bs-help-detail-dialog {
   height: 30px;
   padding: 0;
   border: 1px solid var(--bs-dialog-border, #d1dbd5);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: transparent;
   color: var(--bs-dialog-fg, #293a33);
-  font-size: 1.3rem;
+  font-size: var(--text-title);
   cursor: pointer;
 }
 .bs-help-detail-dialog h3 {
   margin: 18px 0 8px;
-  font-size: 0.91rem;
-  font-weight: 650;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
 }
 .bs-help-examples {
   display: grid;
-  gap: 9px;
+  gap: var(--space-2);
   padding-left: 21px;
   margin: 0;
-  font-size: 0.87rem;
+  font-size: var(--text-small);
   line-height: 1.55;
 }
 .bs-help-examples li {
@@ -463,24 +463,24 @@ dialog.bs-help-container-guide {
 }
 .bs-help-container-guide .bs-help-detail-intro {
   margin: 11px 0 16px;
-  font-size: 0.88rem;
+  font-size: var(--text-small);
   line-height: 1.5;
 }
 .bs-help-scenarios {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--space-3);
 }
 .bs-help-scenario {
   min-width: 0;
   border: 1px solid var(--bs-dialog-border, #d1dbd5);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   padding: 13px 14px;
   background: var(--bs-dialog-bg, #fff);
 }
 .bs-help-container-guide .bs-help-scenario h3 {
   margin: 0 0 11px;
-  font-size: 0.92rem;
+  font-size: var(--text-body);
   line-height: 1.3;
   color: var(--bs-dialog-fg, #293a33);
 }
@@ -488,11 +488,11 @@ dialog.bs-help-container-guide {
   display: grid;
   gap: 2px;
   margin-top: 8px;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   line-height: 1.45;
 }
 .bs-help-scenario-row strong {
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   color: var(--bs-dialog-fg, #293a33);
 }
 .bs-help-scenario-row span {

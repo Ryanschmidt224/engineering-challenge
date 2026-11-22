@@ -22,7 +22,7 @@ dialog.bs-photo-fullscreen::backdrop {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 14px;
+  gap: var(--space-4);
   height: 60px;
   box-sizing: border-box;
   padding: 10px 20px;
@@ -34,18 +34,18 @@ dialog.bs-photo-fullscreen::backdrop {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.92rem;
+  font-size: var(--text-body);
 }
 .bs-photo-fullscreen-close {
   min-height: 38px;
   padding: 8px 15px;
   border: 1px solid #718079;
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   color: #fff;
   background: #38483f;
   cursor: pointer;
   font: inherit;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
 }
 .bs-photo-fullscreen-close:hover {
   background: #52665a;

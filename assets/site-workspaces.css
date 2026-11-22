@@ -3,7 +3,7 @@
 /* Read-only part information, with editing available as a secondary action. */
 .bom-part-workspace .part-details-view {
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   background: color-mix(in srgb, var(--color-surface-muted) 22%, transparent);
   margin: 18px 0 12px;
   overflow: hidden;
@@ -15,17 +15,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   background: color-mix(in srgb, var(--color-selected) 32%, transparent);
   border-bottom: 1px solid var(--color-border);
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
 }
 .bom-part-workspace .part-details-view-heading h2 {
   margin: 0;
-  font-size: 1.06rem;
+  font-size: var(--text-body);
 }
 .bom-part-workspace .part-details-view-mode {
-  font-size: 0.76rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
   background: color-mix(in srgb, var(--color-accent) 46%, transparent);
   border-radius: 20px;
@@ -38,21 +38,21 @@
 .bom-part-workspace .part-details-view-row {
   display: flex;
   align-items: baseline;
-  gap: 7px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   padding: 8px 0;
   border-bottom: 1px solid
     color-mix(in srgb, var(--color-accent) 27%, transparent);
-  font-size: 0.92rem;
+  font-size: var(--text-body);
 }
 .bom-part-workspace .part-details-view-row:last-child {
   border-bottom: 0;
 }
 .bom-part-workspace .part-details-view-row strong {
-  font-weight: 650;
+  font-weight: var(--font-semibold);
 }
 .bom-part-workspace .part-details-view-rows h3 {
-  font-size: 0.85rem;
+  font-size: var(--text-small);
   margin: 16px 0 3px;
   color: var(--color-text-muted);
 }
@@ -67,7 +67,7 @@
 }
 @media (max-width: 650px) {
   .bom-part-workspace .part-details-view-heading {
-    padding: 11px 12px;
+    padding: var(--space-3) var(--space-3);
   }
   .bom-part-workspace .part-details-view-rows {
     padding: 0 12px;
@@ -98,7 +98,7 @@
   max-height: min(90vh, 850px);
   overflow: auto;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: var(--radius-large);
   background: var(--color-sidebar);
   color: var(--color-text);
   padding: 0;
@@ -112,7 +112,7 @@
   padding: 22px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: var(--space-4);
 }
 .library-part-form h2 {
   margin: 0;
@@ -120,34 +120,34 @@
 /* New Part: progressively disclose source and publication choices. */
 .library-workshop-choice-group {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   padding: 10px 12px 12px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   min-width: 0;
 }
 .library-workshop-choice-group > legend,
 .library-workshop-scope > legend {
   padding: 0 6px;
-  font-weight: 700;
-  font-size: 0.85rem;
+  font-weight: var(--font-bold);
+  font-size: var(--text-small);
 }
 .library-workshop-first {
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr);
   grid-template-rows: auto auto;
-  column-gap: 10px;
-  row-gap: 3px;
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
   align-items: center;
   margin: 0;
   min-width: 0;
   padding: 10px 12px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
-  font-size: 0.92rem;
-  font-weight: 400;
+  font-size: var(--text-body);
+  font-weight: var(--font-normal);
   cursor: pointer;
 }
 .library-workshop-first:hover,
@@ -174,13 +174,13 @@
   line-height: 1.4;
 }
 .library-workshop-choice-copy strong {
-  font-weight: 750;
+  font-weight: var(--font-bold);
   margin-right: 0;
 }
 .library-workshop-choice-description {
   grid-column: 2;
   grid-row: 2;
-  font-size: 0.77rem;
+  font-size: var(--text-small);
   line-height: 1.35;
 }
 .library-workshop-add {
@@ -188,22 +188,22 @@
 }
 .library-workshop-scope {
   display: grid;
-  gap: 7px;
+  gap: var(--space-2);
   margin: 0 0 0 30px;
   padding: 9px 10px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
 }
 .library-workshop-scope-option {
   display: grid;
   grid-template-columns: 18px 1fr;
-  gap: 2px 9px;
+  gap: 2px var(--space-2);
   align-items: center;
   cursor: pointer;
   padding: 8px 10px;
   border: 1px solid var(--color-border);
-  border-radius: 7px;
-  font-weight: 650;
+  border-radius: var(--radius-medium);
+  font-weight: var(--font-semibold);
 }
 .library-workshop-scope-option input {
   grid-row: 1 / span 2;
@@ -214,15 +214,15 @@
 }
 .library-workshop-scope-option small {
   grid-column: 2;
-  font-size: 0.75rem;
-  font-weight: 400;
+  font-size: var(--text-caption);
+  font-weight: var(--font-normal);
 }
 .library-workshop-scope > .library-field {
   margin: 6px 2px;
 }
 .library-workshop-add-help {
   margin: 0 0 0 30px !important;
-  font-size: 0.78rem !important;
+  font-size: var(--text-small) !important;
   line-height: 1.45;
 }
 .library-workshop-add-help[hidden] {
@@ -238,32 +238,32 @@
 }
 .library-part-form > .muted {
   margin: 0;
-  font-size: 0.87rem;
+  font-size: var(--text-small);
 }
 .library-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 0.87rem;
-  font-weight: 600;
+  gap: var(--space-2);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   min-width: 0;
 }
 .library-field .field {
   width: 100%;
-  font-weight: 400;
+  font-weight: var(--font-normal);
   min-height: 38px;
 }
 .library-picker-section,
 .library-wire-section,
 .library-components {
   display: grid;
-  gap: 13px;
+  gap: var(--space-3);
   min-width: 0;
 }
 .library-picker-section {
   padding: 14px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: color-mix(in srgb, var(--color-surface-muted) 16%, transparent);
 }
 .library-part-form .hide,
@@ -272,23 +272,23 @@
   display: none !important;
 }
 .library-picker-hint {
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   line-height: 1.5;
   margin: 0;
 }
 .wire-gauge-helper {
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   padding: 12px;
 }
 .wire-gauge-helper summary {
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   cursor: pointer;
 }
 .wire-gauge-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--space-3);
   margin-top: 12px;
 }
 .wire-gauge-result,
@@ -296,22 +296,22 @@
   grid-column: 1/-1;
 }
 .wire-gauge-result {
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   line-height: 1.45;
 }
 .wire-gauge-grid > .muted {
-  font-size: 0.78rem;
+  font-size: var(--text-small);
   line-height: 1.5;
   margin: 0;
 }
 .library-dialog-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   justify-content: flex-end;
   flex-wrap: wrap;
 }
 .library-dialog-status {
-  font-size: 0.84rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
   margin: 0;
   min-height: 1em;
@@ -331,22 +331,22 @@
 }
 .part-harness-preview-content {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .part-harness-cut {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-1);
   padding: 11px 13px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: color-mix(in srgb, var(--color-surface-muted) 18%, transparent);
 }
 .part-harness-cut strong {
-  font-size: 0.9rem;
+  font-size: var(--text-body);
 }
 .part-harness-cut span {
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
 }
 
@@ -354,31 +354,31 @@
 .wire-workflow-choice {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--space-3);
 }
 .wire-workflow-choice .btn {
   padding: 15px 12px;
-  font-size: 1rem;
-  font-weight: 650;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
   border: 1px solid var(--color-border);
 }
 .wire-workflow-choice .btn.primary {
   border-color: var(--color-accent);
 }
 .wire-workflow-hint {
-  font-size: 0.84rem;
+  font-size: var(--text-small);
   line-height: 1.5;
   margin: 0;
 }
 .wire-manual-fields,
 .wire-wizard-fields {
   display: grid;
-  gap: 13px;
+  gap: var(--space-3);
   min-width: 0;
 }
 .wire-gauge-helper h3 {
   margin: 0 0 12px;
-  font-size: 1.03rem;
+  font-size: var(--text-body);
 }
 .wire-gauge-grid .btn {
   justify-self: start;
@@ -391,7 +391,7 @@
 
 /* Progressive disclosure: one alternate BOM view, optional instruction tools. */
 .workspace-bom-heading {
-  gap: 10px;
+  gap: var(--space-3);
 }
 .bom-shopping-toggle {
   margin-left: auto;
@@ -399,7 +399,7 @@
 .bom-shopping-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.91rem;
+  font-size: var(--text-body);
 }
 .bom-shopping-table th,
 .bom-shopping-table td {
@@ -416,33 +416,33 @@
   opacity: 0.8;
 }
 .bom-auto-note {
-  font-size: 0.86rem;
+  font-size: var(--text-small);
   margin: 8px 0;
 }
 .instruction-log,
 .instruction-history {
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   padding: 11px 14px;
   margin-top: 12px;
   min-width: 0;
 }
 .instruction-log summary,
 .instruction-history summary {
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   cursor: pointer;
 }
 .instruction-log-entries,
 .instruction-history-list {
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
   margin: 12px 0;
 }
 .instruction-log-item,
 .instruction-history-item {
   padding: 10px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
 }
 .instruction-log-item small {
   display: block;
@@ -471,7 +471,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .workspace-bom-heading h2 {
@@ -485,7 +485,7 @@
 }
 .bom-view-switch .bom-view-button {
   border-radius: 0;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
   padding: 9px 13px;
   white-space: nowrap;
 }
@@ -513,7 +513,7 @@
   padding: 2px 0;
   box-shadow: none;
   text-align: left;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
 }
 .bom-list-part-link:hover {
   text-decoration: underline;
@@ -559,14 +559,14 @@
 .bom-shop-materials {
   margin-top: 16px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   background: color-mix(in srgb, var(--color-accent) 6.5%, transparent);
   overflow: hidden;
 }
 .bom-shop-materials > summary {
   cursor: pointer;
   padding: 15px 18px;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   list-style-position: inside;
 }
 .bom-shop-materials[open] > summary {
@@ -574,7 +574,7 @@
 }
 .bom-shop-note {
   margin: 12px 18px;
-  font-size: 0.86rem;
+  font-size: var(--text-small);
   line-height: 1.5;
 }
 .bom-shop-material-rows {
@@ -583,7 +583,7 @@
   gap: 0;
 }
 .bom-shop-material-row {
-  gap: 14px;
+  gap: var(--space-4);
   flex-wrap: wrap;
   padding: 11px 0;
   border-bottom: 1px solid var(--color-border);
@@ -601,7 +601,7 @@
   color: var(--color-text-muted);
 }
 .bom-material-preference {
-  font-size: 0.77rem;
+  font-size: var(--text-small);
   padding: 6px 10px;
   white-space: normal;
 }
@@ -633,7 +633,7 @@
   margin-bottom: 20px;
 }
 .workshop-essentials-heading h2 {
-  font-size: 1.4rem;
+  font-size: var(--text-title);
   margin: 0 0 8px;
 }
 .workshop-essentials-heading p {
@@ -643,14 +643,14 @@
 }
 #workshop-essentials-list {
   display: grid;
-  gap: 26px;
+  gap: var(--space-5);
   min-width: 0;
 }
 .workshop-group {
   min-width: 0;
 }
 .workshop-group > h3 {
-  font-size: 1.12rem;
+  font-size: var(--text-lead);
   line-height: 1.35;
   margin: 0 0 12px;
 }
@@ -658,13 +658,13 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .workshop-standard-item {
   min-width: 0;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   overflow: hidden;
 }
 .workshop-standard-item[open] {
@@ -673,7 +673,7 @@
 .workshop-standard-item > summary {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 12px;
+  gap: var(--space-1) var(--space-3);
   align-items: center;
   list-style: none;
   cursor: pointer;
@@ -692,7 +692,7 @@
   right: 15px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 1.2rem;
+  font-size: var(--text-title);
   color: var(--color-text-muted);
 }
 .workshop-standard-item[open] > summary::after {
@@ -702,31 +702,31 @@
   display: block;
   width: 100%;
   min-width: 0;
-  font-weight: 700;
+  font-weight: var(--font-bold);
 
   overflow-wrap: anywhere;
 }
 .workshop-standard-caption {
   color: var(--color-text-muted);
-  font-size: 0.84rem;
+  font-size: var(--text-small);
   line-height: 1.45;
   flex: 1 1 175px;
 }
 .workshop-standard-tag {
   display: inline-block;
-  font-size: 0.7rem;
+  font-size: var(--text-caption);
   line-height: 1.2;
-  font-weight: 700;
+  font-weight: var(--font-bold);
   color: var(--color-accent);
   background: var(--color-surface-muted);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 4px 9px;
 }
 .workshop-standard-body {
   padding: 15px 17px 18px;
   border-top: 1px solid var(--color-border);
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
   overflow-wrap: anywhere;
 }
 .workshop-standard-body > p {
@@ -742,13 +742,13 @@
   color: var(--color-accent);
   text-decoration: underline;
   text-underline-offset: 3px;
-  font-size: 0.87rem;
+  font-size: var(--text-small);
   max-width: max-content;
 }
 .workshop-optional-group,
 .workshop-saved-details {
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   min-width: 0;
   overflow: hidden;
 }
@@ -759,7 +759,7 @@
 .workshop-saved-details > summary {
   padding: 16px 42px 16px 18px;
   cursor: pointer;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   position: relative;
   list-style: none;
 }
@@ -835,19 +835,19 @@
   padding: 12px 36px 12px 15px;
 }
 .workshop-standard-name {
-  font-size: 0.96rem;
+  font-size: var(--text-body);
   line-height: 1.35;
 }
 .workshop-standard-body {
-  gap: 10px;
+  gap: var(--space-3);
   padding: 12px 15px 15px;
 }
 .workshop-quick-spec {
-  font-size: 0.91rem;
+  font-size: var(--text-body);
   line-height: 1.5;
 }
 .workshop-technical-notes {
-  font-size: 0.83rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
   min-width: 0;
 }
@@ -871,7 +871,7 @@
 .bom-shop-material-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(90px, auto) auto auto;
-  gap: 8px 14px;
+  gap: var(--space-2) var(--space-4);
 }
 .bom-shop-material-row > .bom-list-part-link {
   min-width: 0;
@@ -889,19 +889,19 @@
   justify-self: end;
 }
 .bom-workshop-link {
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   padding: 6px 10px;
   border-color: var(--color-accent);
 }
 .bom-workshop-selected {
   grid-column: 1/-1;
   color: var(--color-text-muted);
-  font-size: 0.81rem;
+  font-size: var(--text-small);
 }
 @media (max-width: 880px) {
   .bom-shop-material-row {
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px;
+    gap: var(--space-2);
   }
   .bom-shop-material-row > .bom-list-part-link {
     min-width: 0;
@@ -943,8 +943,8 @@
   flex-flow: row wrap;
   align-items: center;
   justify-content: flex-start;
-  column-gap: 18px;
-  row-gap: 10px;
+  column-gap: var(--space-4);
+  row-gap: var(--space-3);
   text-align: left;
 }
 .bom-shop-material-row > .bom-list-part-link {
@@ -1005,12 +1005,12 @@
   max-width: 100%;
   padding: 8px 12px;
   border: 1px solid var(--color-accent);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface-muted);
   color: var(--color-text);
   text-decoration: none;
-  font-size: 0.88rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .workshop-amazon-search:hover,
 .workshop-amazon-search:focus-visible {
@@ -1029,7 +1029,7 @@
   padding: 0;
   margin: 0;
   font: inherit;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   text-align: left;
   cursor: pointer;
   min-width: 0;
@@ -1042,25 +1042,25 @@
 }
 .bom-open-part-details {
   margin: 0 0 12px;
-  font-size: 0.83rem;
+  font-size: var(--text-small);
 }
 
 /* Explicit Part Details action on every BOM row; names are plain text. */
 .bom-part-summary > .bom-open-part-details {
   flex: 0 0 auto;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   padding: 7px 11px;
   white-space: nowrap;
 }
 .bom-shopping-table .bom-list-part-name {
   display: block;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   line-height: 1.4;
 }
 .bom-shopping-table .bom-open-part-details {
   display: inline-flex;
   margin-top: 7px;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   padding: 6px 10px;
 }
 .bom-shop-material-row > .bom-shop-material-name {
@@ -1068,7 +1068,7 @@
   width: auto;
   min-width: 160px;
   max-width: 100%;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   line-height: 1.4;
   text-align: left;
   overflow-wrap: anywhere;
@@ -1077,7 +1077,7 @@
   flex: 0 0 auto;
   justify-self: start;
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   padding: 7px 10px;
 }
 @media (max-width: 900px) {
@@ -1104,7 +1104,7 @@
   margin: 12px 0 18px;
   padding: 16px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
   min-width: 0;
 }
@@ -1112,15 +1112,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .recipe-heading h3 {
   margin: 0;
-  font-size: 1.12rem;
+  font-size: var(--text-lead);
 }
 .recipe-editor > .muted {
-  font-size: 0.84rem;
+  font-size: var(--text-small);
   line-height: 1.5;
   margin: 7px 0 13px;
 }
@@ -1130,16 +1130,16 @@
 .recipe-detail-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   margin: 0 0 17px;
 }
 .recipe-detail-controls > span {
   margin-right: 8px;
-  font-size: 0.83rem;
+  font-size: var(--text-small);
 }
 .recipe-detail-button {
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   padding: 6px 10px;
 }
 .recipe-detail-button.active {
@@ -1154,17 +1154,17 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   color: var(--color-text-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-small);
 }
 .recipe-step-type {
   border: 1px solid var(--color-border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 4px 9px;
 }
 .recipe-reader-title {
-  font-size: 1.3rem;
+  font-size: var(--text-title);
   line-height: 1.35;
   margin: 12px 0;
 }
@@ -1179,23 +1179,23 @@
 }
 .recipe-explain {
   margin: 8px 0 2px;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .recipe-selection-hint {
-  font-size: 0.79rem;
+  font-size: var(--text-small);
   margin: 5px 0 17px;
 }
 .recipe-reader-nav {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: center;
   margin-top: 16px;
   padding-top: 14px;
   border-top: 1px solid var(--color-border);
 }
 .recipe-feedback {
-  font-size: 0.84rem;
+  font-size: var(--text-small);
   margin: 8px 0 0;
   min-height: 0;
 }
@@ -1204,14 +1204,14 @@
   margin: 10px 0;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   min-width: 0;
 }
 .recipe-step-toolbar {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .recipe-step-toolbar > strong {
@@ -1221,37 +1221,37 @@
 .recipe-edit-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: var(--space-1);
 }
 .recipe-edit-controls > .btn {
-  font-size: 0.77rem;
+  font-size: var(--text-small);
   padding: 5px 9px;
 }
 .recipe-step-fields {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(140px, 1fr);
-  gap: 11px;
+  gap: var(--space-3);
   margin-top: 11px;
 }
 .recipe-step-fields label {
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
   min-width: 0;
 }
 .recipe-step-fields .field {
   width: 100%;
   max-width: 100%;
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 .recipe-wide-field {
   grid-column: 1/-1;
 }
 .recipe-edit-footer {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   margin: 14px 0;
 }
@@ -1269,15 +1269,15 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 9px;
+  gap: var(--space-2);
   margin: 10px 0 20px;
 }
 .workspace-archive-actions > .btn {
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   padding: 8px 11px;
 }
 .workspace-archive-status {
-  font-size: 0.81rem;
+  font-size: var(--text-small);
   line-height: 1.45;
   flex: 1 1 240px;
 }
@@ -1298,11 +1298,11 @@
   border-bottom: 0;
 }
 .bom-part-workspace .part-details-toggle-label {
-  font-size: 0.86rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   color: var(--color-text-muted);
   border: 1px solid var(--color-accent);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   padding: 7px 11px;
 }
 .bom-part-workspace .part-drawing-panel,
@@ -1312,12 +1312,12 @@
 }
 .part-files-panel h3 {
   margin: 0 0 7px;
-  font-size: 1.05rem;
+  font-size: var(--text-body);
 }
 .part-file-item {
   display: flex;
   align-items: center;
-  gap: 9px 14px;
+  gap: var(--space-2) var(--space-4);
   flex-wrap: wrap;
   border-bottom: 1px solid var(--color-border);
   padding: 9px 0;
@@ -1328,7 +1328,7 @@
   min-width: 0;
 }
 .part-file-item > .btn {
-  font-size: 0.81rem;
+  font-size: var(--text-small);
 }
 .part-saved-pages {
   margin-top: 8px;
@@ -1357,28 +1357,28 @@
 }
 .workshop-purchased-results {
   display: grid;
-  gap: 9px;
+  gap: var(--space-2);
 }
 .workshop-purchase-item {
   display: flex;
   align-items: start;
   flex-wrap: wrap;
-  gap: 6px 15px;
+  gap: var(--space-2) var(--space-4);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   padding: 12px;
 }
 .workshop-purchase-item > strong {
   flex: 1 1 260px;
 }
 .workshop-purchase-item > .muted {
-  font-size: 0.82rem;
+  font-size: var(--text-small);
 }
 .workshop-purchase-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   width: 100%;
 }
@@ -1386,7 +1386,7 @@
   max-width: 235px;
 }
 .workshop-purchase-actions > .btn {
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .part-workspace-cover[role="button"] {
   cursor: pointer;
@@ -1399,8 +1399,8 @@
   display: grid;
   grid-template-columns: minmax(150px, 215px) minmax(0, 1fr);
   align-items: center;
-  column-gap: 18px;
-  row-gap: 5px;
+  column-gap: var(--space-4);
+  row-gap: var(--space-1);
   width: 100%;
   margin: 0;
   text-align: left;
@@ -1419,7 +1419,7 @@
 @media (max-width: 620px) {
   .assembly-workspace-page .workspace-bom .component-review > label {
     grid-template-columns: minmax(0, 1fr);
-    gap: 5px;
+    gap: var(--space-1);
   }
 }
 
@@ -1427,30 +1427,30 @@
 #workshop-essentials-list.workshop-tree {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: var(--space-2);
 }
 .workshop-tree-branch {
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   overflow: hidden;
   background: var(--color-surface);
 }
 .workshop-tree-branch > summary {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   cursor: pointer;
   list-style: none;
   padding: 13px 15px;
-  font-weight: 650;
-  font-size: 1.01rem;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-body);
 }
 .workshop-tree-branch > summary::-webkit-details-marker {
   display: none;
 }
 .workshop-tree-branch > summary:before {
   content: "▸";
-  font-size: 1.05rem;
+  font-size: var(--text-body);
   color: var(--color-accent);
   flex: 0 0 12px;
 }
@@ -1462,14 +1462,14 @@
 }
 .workshop-tree-branch-count {
   margin-left: auto;
-  font-size: 0.76rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 .workshop-tree-children {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 9px 12px 12px 20px;
 }
 .workshop-tree-branch-nested {
@@ -1477,7 +1477,7 @@
   background: var(--color-surface);
 }
 .workshop-tree-branch-nested > summary {
-  font-size: 0.92rem;
+  font-size: var(--text-body);
   padding: 9px 12px;
 }
 .workshop-tree-branch-nested > .workshop-tree-children {
@@ -1486,7 +1486,7 @@
 .workshop-tree .workshop-standard-list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 7px;
+  gap: var(--space-2);
 }
 .workshop-tree .workshop-standard-item {
   width: 100%;
@@ -1526,11 +1526,11 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 9px;
+  gap: var(--space-2);
 }
 .recipe-compact .recipe-one-step {
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   margin: 0;
   overflow: hidden;
@@ -1538,11 +1538,11 @@
 .recipe-compact .recipe-one-step-summary {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   cursor: pointer;
   padding: 12px 14px;
-  font-size: 0.96rem;
-  font-weight: 650;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
   list-style: none;
 }
 .recipe-compact .recipe-one-step-summary::-webkit-details-marker {
@@ -1551,7 +1551,7 @@
 .recipe-compact .recipe-one-step-summary::before {
   content: "▸";
   color: var(--color-accent);
-  font-weight: 700;
+  font-weight: var(--font-bold);
 }
 .recipe-compact .recipe-one-step[open] > .recipe-one-step-summary::before {
   content: "▾";
@@ -1561,8 +1561,8 @@
 }
 .recipe-compact .recipe-kind-caption {
   color: var(--color-text-muted);
-  font-size: 0.77rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
   margin-left: auto;
 }
 .recipe-compact .recipe-one-step-body {
@@ -1570,19 +1570,19 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 9px;
+  gap: var(--space-2);
 }
 .recipe-compact .recipe-one-field {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 0.86rem;
-  font-weight: 600;
+  gap: var(--space-2);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .recipe-compact .recipe-one-field > .field {
   width: 100%;
-  font-weight: 400;
+  font-weight: var(--font-normal);
   max-width: 100%;
 }
 .recipe-compact .recipe-one-field > textarea {
@@ -1591,7 +1591,7 @@
 }
 .recipe-compact .recipe-small-action {
   padding: 5px 9px;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   background: transparent;
   border: 1px solid var(--color-border);
   color: var(--color-text-muted);
@@ -1601,10 +1601,10 @@
   border: 0;
   background: transparent;
   color: var(--color-accent);
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   box-shadow: none;
   padding: 8px 3px;
-  font-size: 0.95rem;
+  font-size: var(--text-body);
 }
 .recipe-compact .recipe-add-step:hover,
 .recipe-compact .recipe-add-step:focus-visible {
@@ -1618,11 +1618,11 @@
   border-top: 1px solid var(--color-border);
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .recipe-compact .recipe-edit-controls > .btn {
   padding: 5px 9px;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
 }
 .recipe-compact .recipe-detail-controls {
   margin-bottom: 3px;
@@ -1631,7 +1631,7 @@
   width: 100%;
 }
 .recipe-compact + .recipe-feedback {
-  font-size: 0.81rem;
+  font-size: var(--text-small);
 }
 .recipe-compact .recipe-feedback:empty {
   display: none;
@@ -1646,7 +1646,7 @@
 }
 .bom-shopping-table.bom-compact-list .bom-list-part-name {
   display: inline;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   line-height: 1.3;
 }
 .bom-shopping-table.bom-compact-list .bom-open-part-details {
@@ -1654,7 +1654,7 @@
   align-items: center;
   margin: 0;
   padding: 5px 9px;
-  font-size: 0.78rem;
+  font-size: var(--text-small);
   white-space: nowrap;
 }
 .bom-shopping-table.bom-compact-list th:nth-child(3),
@@ -1670,7 +1670,7 @@
 }
 @media (max-width: 650px) {
   .bom-shopping-table.bom-compact-list {
-    font-size: 0.8rem;
+    font-size: var(--text-small);
   }
   .bom-shopping-table.bom-compact-list th,
   .bom-shopping-table.bom-compact-list td {
@@ -1678,7 +1678,7 @@
   }
   .bom-shopping-table.bom-compact-list .bom-open-part-details {
     padding: 5px 6px;
-    font-size: 0.72rem;
+    font-size: var(--text-caption);
   }
 }
 
@@ -1696,17 +1696,17 @@
 .assembly-sidebar.bom-sidebar-active > .workspace-bom .workspace-bom-heading {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
 }
 .assembly-sidebar > .workspace-bom .workspace-bom-heading h2 {
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .assembly-sidebar > .workspace-bom .workspace-new-part {
   padding: 6px 8px;
 }
 .assembly-sidebar > .workspace-bom .bom-view-button {
-  font-size: 0.75rem;
+  font-size: var(--text-caption);
   padding: 6px 8px;
 }
 .assembly-sidebar > .workspace-bom .workspace-saved-parts {
@@ -1716,17 +1716,17 @@
   overflow-x: auto;
   padding: 0;
   margin: 8px 0 12px;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
 }
 .assembly-sidebar > .workspace-bom .bom-part-stack {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .assembly-sidebar > .workspace-bom .bom-part {
   border: 1px solid var(--color-border);
   border-left: 3px solid var(--color-accent);
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   background: var(--color-sidebar);
   overflow: hidden;
 }
@@ -1736,10 +1736,10 @@
 .assembly-sidebar > .workspace-bom .bom-part-summary {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: var(--space-2);
   padding: 8px;
   min-height: 48px;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
 }
 .assembly-sidebar > .workspace-bom .bom-row-thumbnail {
   width: 42px;
@@ -1751,14 +1751,14 @@
 .assembly-sidebar > .workspace-bom .bom-part-actions .btn,
 .assembly-sidebar > .workspace-bom .bom-open-part-details,
 .assembly-sidebar > .workspace-bom .bom-part-toggle-label {
-  font-size: 0.72rem;
+  font-size: var(--text-caption);
   padding: 5px 7px;
 }
 .assembly-sidebar > .workspace-bom .bom-subassembly-children {
   padding: 9px;
 }
 .assembly-sidebar > .workspace-bom .bom-compact-list {
-  font-size: 0.78rem;
+  font-size: var(--text-small);
   min-width: 510px;
 }
 .assembly-sidebar > .workspace-bom .bom-compact-list tbody tr td {
@@ -1769,7 +1769,7 @@
 }
 .assembly-sidebar > .workspace-bom .bom-shop-materials > summary {
   padding: 10px;
-  font-size: 0.77rem;
+  font-size: var(--text-small);
 }
 .workspace-bom-resizer {
   display: none;
@@ -1807,7 +1807,7 @@
     top: 8px;
     bottom: 8px;
     width: 3px;
-    border-radius: 3px;
+    border-radius: var(--radius-small);
     background: var(--color-surface-muted);
   }
   .assembly-layout > .workspace-bom-resizer:hover:after,
@@ -1850,22 +1850,22 @@
 }
 .assembly-sidebar > .workspace-bom .workspace-bom-heading {
   padding: 10px 10px 8px;
-  gap: 7px;
+  gap: var(--space-2);
 }
 .assembly-sidebar > .workspace-bom .workspace-bom-heading h2 {
   color: var(--color-text);
-  font-size: 0.84rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   margin: 0 auto 0 0;
 }
 .assembly-sidebar > .workspace-bom .workspace-new-part {
   background: transparent;
   border: 1px solid var(--color-border);
-  border-radius: 5px;
+  border-radius: var(--radius-small);
   color: var(--color-text-muted);
   padding: 5px 7px;
-  font-size: 0.73rem;
-  font-weight: 500;
+  font-size: var(--text-caption);
+  font-weight: var(--font-semibold);
 }
 .assembly-sidebar > .workspace-bom .workspace-saved-parts {
   padding: 0 7px;
@@ -1873,7 +1873,7 @@
   margin: 0;
 }
 .assembly-sidebar > .workspace-bom .bom-count {
-  font-size: 0.73rem;
+  font-size: var(--text-caption);
   color: var(--color-text-muted);
   margin: 2px 3px 9px;
   line-height: 1.45;
@@ -1905,11 +1905,11 @@
   align-items: center;
   justify-content: flex-start;
   min-height: 35px;
-  gap: 5px 9px;
+  gap: var(--space-1) var(--space-2);
   padding: 7px 5px;
   background: transparent;
-  font-size: 0.82rem;
-  font-weight: 400;
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
 }
 .assembly-sidebar > .workspace-bom .bom-part-summary:hover {
   background: var(--color-hover);
@@ -1922,28 +1922,28 @@
   flex: 1 1 140px;
   min-width: 0;
   color: var(--color-text);
-  font-size: 0.82rem;
-  font-weight: 550;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
 .assembly-sidebar > .workspace-bom .bom-part-meta,
 .assembly-sidebar > .workspace-bom .bom-subassembly-count {
-  font-size: 0.73rem;
+  font-size: var(--text-caption);
   color: var(--color-text-muted);
-  font-weight: 400;
+  font-weight: var(--font-normal);
   white-space: nowrap;
 }
 .assembly-sidebar > .workspace-bom .bom-open-part-details {
   margin: 0;
   padding: 3px 6px;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-small);
   color: var(--color-text-muted);
   background: transparent;
   box-shadow: none;
-  font-size: 0.73rem;
-  font-weight: 500;
+  font-size: var(--text-caption);
+  font-weight: var(--font-semibold);
 }
 .assembly-sidebar > .workspace-bom .bom-open-part-details:hover {
   text-decoration: underline;
@@ -1955,7 +1955,7 @@
   .bom-subassembly
   > .bom-part-summary
   .bom-part-name {
-  font-weight: 650;
+  font-weight: var(--font-semibold);
 }
 .assembly-sidebar > .workspace-bom .bom-subassembly-children {
   padding: 0 0 8px 14px;
@@ -1971,10 +1971,10 @@
   background: var(--color-sidebar);
   border-top: 1px solid var(--color-border);
   padding: 10px 12px;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
 }
 .assembly-sidebar > .workspace-bom .bom-part-body .btn {
-  font-size: 0.73rem;
+  font-size: var(--text-caption);
   padding: 5px 8px;
 }
 .assembly-sidebar > .workspace-bom .bom-shop-materials {
@@ -1987,8 +1987,8 @@
 .assembly-sidebar > .workspace-bom .bom-shop-materials > summary {
   color: var(--color-text-muted);
   padding: 10px 4px;
-  font-size: 0.76rem;
-  font-weight: 500;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .assembly-sidebar > .workspace-bom .bom-part-summary .bom-part-toggle-label,
 .assembly-sidebar > .workspace-bom .bom-row-thumbnail,
@@ -2016,7 +2016,7 @@
 :is(#launcher, .personal-project-view) .assembly-sidebar .assembly-edit {
   border-color: var(--color-border);
   padding: 12px 9px;
-  gap: 7px;
+  gap: var(--space-2);
 }
 :is(#launcher, .personal-project-view) .assembly-sidebar .assembly-edit .btn {
   background: var(--color-sidebar);
@@ -2053,7 +2053,7 @@
   .assembly-sidebar
   .workspace-bom
   .bom-part-stack {
-  gap: 4px;
+  gap: var(--space-1);
 }
 :is(#launcher, .personal-project-view)
   .assembly-sidebar
@@ -2122,7 +2122,7 @@
   padding: 13px;
   background: var(--color-sidebar);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
 }
 :is(#launcher, .personal-project-view)
   .assembly-sidebar
@@ -2153,7 +2153,7 @@
   h2 {
   color: var(--color-text);
 
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   margin: 0 0 13px;
 }
 :is(#launcher, .personal-project-view)
@@ -2225,7 +2225,7 @@
   .assembly-sidebar
   .workspace-bom
   .bom-part-stack {
-  gap: 7px;
+  gap: var(--space-2);
 }
 :is(#launcher, .personal-project-view)
   .assembly-sidebar
@@ -2292,7 +2292,7 @@
 :is(#launcher, .personal-project-view) .assembly-sidebar .feature-tree-frame {
   background: var(--color-sidebar);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   overflow: hidden;
 }
 :is(#launcher, .personal-project-view)
@@ -2321,7 +2321,7 @@
   padding: 0 0 14px;
   background: var(--color-sidebar);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   overflow: hidden;
 }
 :is(#launcher, .personal-project-view)
@@ -2336,7 +2336,7 @@
   .assembly-sidebar
   .workspace-bom-heading
   h2 {
-  font-size: 0.85rem;
+  font-size: var(--text-small);
   margin: 0 auto 0 0;
   color: var(--color-text);
 }
@@ -2371,7 +2371,7 @@
   > article {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
   padding: 20px 22px 22px;
   margin: 0 0 22px;
   min-width: 0;
@@ -2383,7 +2383,7 @@
   > article
   h2 {
   margin: 0 0 18px;
-  font-size: 1.05rem;
+  font-size: var(--text-body);
 }
 :is(#launcher, .personal-project-view)
   .assembly-workspace-page:not(.bom-part-workspace)
@@ -2525,7 +2525,7 @@
   box-shadow: none;
   color: var(--color-text-muted);
   background: transparent;
-  font-weight: 500;
+  font-weight: var(--font-semibold);
 }
 :is(#launcher, .personal-project-view)
   .assembly-sidebar
@@ -2553,23 +2553,23 @@
 /* Purchased-part discovery: search before selecting a category or issuing a BOM number. */
 .library-workshop-quick-search {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 12px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
 }
 .library-workshop-search-label {
   display: grid;
-  gap: 6px;
-  font-size: 0.85rem;
-  font-weight: 700;
+  gap: var(--space-2);
+  font-size: var(--text-small);
+  font-weight: var(--font-bold);
 }
 .library-workshop-search-label input {
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 .library-workshop-quick-results {
   display: grid;
-  gap: 6px;
+  gap: var(--space-2);
   max-height: 230px;
   overflow: auto;
 }
@@ -2578,10 +2578,10 @@
   align-items: center;
   justify-content: space-between;
   text-align: left;
-  gap: 12px;
+  gap: var(--space-3);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
   padding: 9px 11px;
   cursor: pointer;
 }
@@ -2591,25 +2591,25 @@
 }
 .library-workshop-found-item small {
   white-space: nowrap;
-  font-size: 0.72rem;
+  font-size: var(--text-caption);
 }
 .library-workshop-quick-create {
   justify-self: start;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
 }
 .library-vendor-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--space-3);
   margin: -5px 0 2px;
 }
 .library-vendor-search-link {
-  font-size: 0.84rem;
+  font-size: var(--text-small);
   text-decoration: underline;
 }
 .library-vendor-info {
   margin: -4px 0 3px;
-  font-size: 0.77rem;
+  font-size: var(--text-small);
   line-height: 1.4;
 }
 
@@ -2618,18 +2618,18 @@
 .part-project-only-editor,
 .part-project-only-view {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
   margin: 23px 0 8px;
   padding: 19px 20px;
   border: 1px solid var(--color-border);
   border-top: 4px solid var(--color-accent);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
 }
 .library-project-only h3,
 .part-project-only-editor h3,
 .part-project-only-view h3 {
-  font-size: 1.06rem;
+  font-size: var(--text-body);
   margin: 0;
 }
 .library-project-only-warning,
@@ -2637,22 +2637,22 @@
   margin: 0 0 7px;
   max-width: 850px;
   color: var(--color-text-muted);
-  font-size: 0.88rem;
+  font-size: var(--text-small);
   line-height: 1.5;
 }
 .library-project-only > .library-field,
 .part-project-only-field {
   display: grid;
-  gap: 7px;
-  font-weight: 650;
-  font-size: 0.85rem;
+  gap: var(--space-2);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-small);
 }
 .library-project-only textarea,
 .part-project-only-editor textarea {
   width: 100%;
   min-height: 95px;
   resize: vertical;
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 .library-project-kicad,
 .part-project-only-cad {
@@ -2662,46 +2662,46 @@
 }
 .library-project-kicad summary,
 .part-project-only-cad summary {
-  font-size: 0.88rem;
-  font-weight: 700;
+  font-size: var(--text-small);
+  font-weight: var(--font-bold);
   cursor: pointer;
   margin-bottom: 10px;
 }
 .library-project-kicad > .library-field,
 .part-project-only-cad > .part-project-only-field {
   display: grid;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 11px 0;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
 }
 .library-project-kicad input,
 .part-project-only-cad input {
   width: 100%;
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 .library-workshop-reference-preview {
   margin: 14px 0;
   padding: 15px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius: var(--radius-medium);
 }
 .library-workshop-reference-preview h3 {
   margin: 0 0 11px;
-  font-size: 0.97rem;
+  font-size: var(--text-body);
 }
 .library-workshop-reference-rows {
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .library-workshop-reference-row {
   display: grid;
   grid-template-columns: minmax(140px, 210px) minmax(0, 1fr);
-  gap: 12px;
-  font-size: 0.87rem;
+  gap: var(--space-3);
+  font-size: var(--text-small);
 }
 .library-workshop-reference-row strong {
-  font-weight: 700;
+  font-weight: var(--font-bold);
 }
 .part-project-only-view {
   margin: 20px 0;
@@ -2725,7 +2725,7 @@
   padding: 12px 14px;
   border-top: 1px solid var(--color-border);
   color: var(--color-text-muted);
-  font-size: 0.86rem;
+  font-size: var(--text-small);
   line-height: 1.45;
 }
 .library-workshop-finish-note.hide {
@@ -2737,7 +2737,7 @@
   display: grid;
   grid-template-columns: minmax(145px, 220px) minmax(0, 1fr);
   align-items: start;
-  gap: 8px 16px;
+  gap: var(--space-2) var(--space-4);
 }
 .bom-part-workspace .part-detail-inline > strong {
   min-width: 0;
@@ -2755,7 +2755,7 @@
 @media (max-width: 620px) {
   .bom-part-workspace .part-detail-inline {
     grid-template-columns: minmax(0, 1fr);
-    gap: 3px;
+    gap: var(--space-1);
   }
 }
 
@@ -2768,7 +2768,7 @@
   height: 18px;
   flex: none;
   color: var(--color-text-muted);
-  font-size: 0.92rem;
+  font-size: var(--text-body);
   cursor: help;
   border-radius: 50%;
 }
@@ -2784,31 +2784,31 @@
 /* Generic Workshop sources expose only project-owned, optional specifications. */
 .library-generic-spec-fields {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--color-border);
 }
 .library-generic-spec-fields h4 {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--text-body);
 }
 .library-generic-spec-fields > .muted {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   line-height: 1.4;
 }
 .library-generic-spec-inputs {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
-  gap: 9px 14px;
+  gap: var(--space-2) var(--space-4);
 }
 .library-generic-spec-inputs > .library-field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-1);
   min-width: 0;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
 }
 .library-generic-spec-inputs > .library-field > .field {
   width: 100%;
@@ -2821,25 +2821,25 @@
   display: grid;
   grid-template-columns: minmax(150px, 205px) minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   margin: 12px 0 4px;
-  font-size: 0.84rem;
-  font-weight: 650;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .library-workshop-reference-preview > .library-field > .field {
   width: 100%;
   min-width: 0;
-  font-weight: 400;
+  font-weight: var(--font-normal);
 }
 .library-container-suggestion-help {
   margin: 0 0 12px;
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   line-height: 1.4;
 }
 @media (max-width: 620px) {
   .library-workshop-reference-preview > .library-field {
     grid-template-columns: minmax(0, 1fr);
-    gap: 5px;
+    gap: var(--space-1);
   }
 }
 
@@ -2850,7 +2850,7 @@
   .workspace-panels {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--space-4);
 }
 :is(#launcher, .personal-project-view)
   .assembly-workspace-page:not(.bom-part-workspace)
@@ -2882,7 +2882,7 @@
   :is(#launcher, .personal-project-view)
     .assembly-workspace-page:not(.bom-part-workspace)
     .workspace-panels {
-    gap: 14px;
+    gap: var(--space-4);
   }
   :is(#launcher, .personal-project-view)
     .assembly-workspace-page:not(.bom-part-workspace)

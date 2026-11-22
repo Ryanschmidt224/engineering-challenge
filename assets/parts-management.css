@@ -15,7 +15,7 @@
 }
 .bs-parts-controls {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   margin: 12px 0;
 }
@@ -29,13 +29,13 @@
   flex: 1 1 270px;
 }
 .bs-parts-page .muted {
-  font-size: 0.84rem;
+  font-size: var(--text-small);
 }
 .bs-parts-scroll {
   overflow-x: auto;
   width: 100%;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
 }
 .bs-parts-table {
@@ -62,7 +62,7 @@
 .bs-parts-package-size {
   display: block;
   color: var(--color-text-muted);
-  font-size: 0.76rem;
+  font-size: var(--text-small);
   margin-top: 3px;
 }
 .bs-parts-table tbody td {
@@ -97,7 +97,7 @@
 }
 .bs-parts-table th {
   background: var(--color-surface-muted);
-  font-size: 0.81rem;
+  font-size: var(--text-small);
   white-space: nowrap;
   position: relative;
   user-select: none;
@@ -105,7 +105,7 @@
 }
 .bs-parts-table .bs-parts-sort {
   font: inherit;
-  font-weight: 650;
+  font-weight: var(--font-semibold);
   background: transparent;
   border: 0;
   padding: 5px 2px;
@@ -120,7 +120,7 @@
   min-width: 0;
   margin: 0;
   box-sizing: border-box;
-  font-size: 0.87rem;
+  font-size: var(--text-small);
 }
 .bs-parts-table td:nth-child(2) {
   min-width: 0;
@@ -137,11 +137,11 @@
 .bs-parts-number {
   font-variant-numeric: tabular-nums;
   color: var(--color-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--text-small);
   white-space: nowrap;
 }
 .bs-parts-feedback {
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
   min-height: 1.3em;
   margin: 8px 0;
@@ -150,45 +150,45 @@
   margin: 16px 0 20px;
   padding: 16px;
   border: 1px solid var(--color-border);
-  border-radius: 11px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
 }
 .bs-code-heading {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .bs-code-heading h2 {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: var(--text-lead);
 }
 .bs-code-head-actions,
 .bs-code-actions {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 .bs-code-description {
-  font-size: 0.83rem;
+  font-size: var(--text-small);
   margin: 6px 0 12px;
 }
 .bs-code-metadata {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   margin: 0 0 11px;
 }
 .bs-code-metadata label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   min-width: 160px;
   flex: 1 1 210px;
-  font-size: 0.83rem;
-  font-weight: 600;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
 }
 .bs-code-editor,
 .bs-code-viewer {
@@ -199,7 +199,7 @@
   max-height: 65vh;
   overflow: auto;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   padding: 13px 15px;
   margin: 0 0 12px;
   background: var(--color-surface-muted);
@@ -224,17 +224,17 @@
   border-top: 1px solid var(--color-border);
 }
 .bs-code-history summary {
-  font-size: 0.86rem;
+  font-size: var(--text-small);
   cursor: pointer;
 }
 .bs-code-history-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   padding: 8px 2px;
   border-bottom: 1px solid var(--color-border);
-  font-size: 0.83rem;
+  font-size: var(--text-small);
 }
 .bs-code-status {
   margin: 8px 0;
@@ -251,7 +251,7 @@
     padding: 8px 0 28px;
   }
   .bs-parts-scroll {
-    border-radius: 6px;
+    border-radius: var(--radius-medium);
   }
   .bs-part-code {
     padding: 10px;
@@ -273,13 +273,13 @@
   justify-content: center;
   cursor: col-resize;
   touch-action: none;
-  font-size: 13px;
+  font-size: var(--text-small);
   letter-spacing: -4px;
   padding-right: 4px;
   color: var(--color-text-muted);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
 }
 .bs-parts-resize:hover,
 .bs-parts-resize:focus-visible,
@@ -294,7 +294,7 @@
 .bs-number-lookup {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   margin: 6px 0;
 }
@@ -308,7 +308,7 @@
 }
 .bs-number-result {
   margin: 4px 0 10px;
-  font-size: 0.85rem;
+  font-size: var(--text-small);
   color: var(--color-text-muted);
 }
 .bs-number-result:empty {
@@ -322,7 +322,7 @@
   grid-template-columns: max-content max-content minmax(0, 1fr);
   align-items: center;
   justify-content: start !important;
-  column-gap: 34px;
+  column-gap: var(--space-6);
   width: 100%;
   min-width: 0;
 }
@@ -340,9 +340,9 @@
 .bs-attention-line {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
   flex: none;
-  font-size: 0.81rem;
+  font-size: var(--text-small);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -401,10 +401,10 @@
   height: 27px;
   padding: 0;
   border: 0;
-  border-radius: 5px;
+  border-radius: var(--radius-small);
   background: transparent;
   color: var(--color-text);
-  font-size: 17px;
+  font-size: var(--text-body);
   line-height: 1;
   cursor: pointer;
   z-index: 1;

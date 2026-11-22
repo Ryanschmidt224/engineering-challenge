@@ -3,7 +3,7 @@
   max-width: 1100px;
   max-height: 96vh;
   border: 1px solid var(--color-border, #ccd7d0);
-  border-radius: 16px;
+  border-radius: var(--radius-large);
   padding: 16px;
   background: var(--color-surface, #fff);
   color: var(--color-text, #172a21);
@@ -17,7 +17,7 @@
 .bs-markup-toolbar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 .bs-markup-header {
@@ -44,7 +44,7 @@
   overflow: auto;
   text-align: center;
   background: #262b2d;
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   padding: 8px;
   touch-action: pan-x pan-y;
 }
@@ -65,7 +65,7 @@
   margin: 8px 0;
 }
 .bs-photo-edit {
-  font-size: 13px;
+  font-size: var(--text-small);
 }
 @media (max-width: 600px) {
   .bs-markup-modal {
@@ -95,14 +95,14 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   margin-top: 8px;
 }
 .bs-photo-more {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 .bs-photo-more[hidden],
@@ -112,7 +112,7 @@
 .bs-photo-actions .btn {
   min-height: 34px;
   padding: 6px 11px;
-  font-size: 0.82rem;
+  font-size: var(--text-small);
   white-space: nowrap;
 }
 .bs-photo-actions .bs-photo-toggle[aria-expanded="true"] {
@@ -130,10 +130,10 @@
   margin-top: 8px;
   padding: 9px 11px;
   border: 1px dashed var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
   background: var(--color-surface);
   color: var(--color-text-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   line-height: 1.4;
   cursor: text;
 }
@@ -143,7 +143,7 @@
   outline-offset: 2px;
 }
 .bs-photo-status {
-  font-size: 0.8rem;
+  font-size: var(--text-small);
   line-height: 1.4;
   color: var(--color-text-muted);
   margin: 6px 0 0;
@@ -166,10 +166,10 @@
   background: color-mix(in srgb, var(--color-media-backdrop) 80%, transparent);
   color: var(--color-on-media);
   padding: 2px 5px;
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
   cursor: pointer;
   font: inherit;
-  font-size: 23px;
+  font-size: var(--text-title);
 }
 .bs-photo-control .bs-photo-previous {
   left: 2px;
@@ -235,7 +235,7 @@
   }
   .bs-photo-actions .btn {
     padding: 6px 9px;
-    font-size: 0.79rem;
+    font-size: var(--text-small);
   }
 }
 
@@ -283,7 +283,7 @@
   padding: 4px 6px;
   margin: 0;
   border: 1px solid #fff;
-  border-radius: 5px;
+  border-radius: var(--radius-small);
   outline: 2px solid #238a7e;
   background: rgba(24, 33, 36, 0.84);
   box-shadow: 0 2px 12px #0008;
@@ -296,7 +296,7 @@
 }
 .bs-markup-inline-text::placeholder {
   color: rgba(255, 255, 255, 0.75);
-  font-weight: 500;
+  font-weight: var(--font-semibold);
 }
 
 /* Discreet pencil at the photo's bottom-right; click expands its actions. */
@@ -309,7 +309,7 @@
   min-width: 32px;
   min-height: 32px;
   padding: 5px;
-  border-radius: 7px;
+  border-radius: var(--radius-medium);
   color: var(--color-text);
   line-height: 1;
 }
@@ -320,12 +320,12 @@
   pointer-events: none;
 }
 .bs-photo-control .bs-photo-actions {
-  gap: 7px;
+  gap: var(--space-2);
   margin-top: 4px;
   justify-content: flex-end;
 }
 .bs-photo-control .bs-photo-more:not([hidden]) {
-  gap: 7px;
+  gap: var(--space-2);
 }
 .bs-photo-control .bs-photo-toggle[aria-expanded="true"] {
   background: var(--color-accent-soft);
@@ -365,7 +365,7 @@
   margin: 0;
 }
 .project-summary-gallery > .bs-photo-control .bs-photo-more:not([hidden]) {
-  gap: 7px;
+  gap: var(--space-2);
 }
 .project-summary-gallery > .bs-photo-control .bs-photo-status:not(:empty) {
   position: absolute;
@@ -383,8 +383,8 @@
 .bom-part-workspace > .workspace-heading {
   align-items: flex-start !important;
   flex-wrap: wrap;
-  column-gap: 22px;
-  row-gap: 14px;
+  column-gap: var(--space-5);
+  row-gap: var(--space-4);
 }
 .assembly-workspace-page:not(.bom-part-workspace)
   > .workspace-heading
@@ -426,7 +426,7 @@
   margin: 8px 0 0;
   padding: 0;
   justify-content: flex-start;
-  gap: 7px;
+  gap: var(--space-2);
   z-index: auto;
 }
 .assembly-workspace-page:not(.bom-part-workspace)
@@ -496,7 +496,7 @@
   display: grid !important;
   grid-template-columns: 190px minmax(0, 1fr);
   align-items: start !important;
-  column-gap: 18px;
+  column-gap: var(--space-4);
   row-gap: 0;
   width: 100%;
   max-width: 1100px;
@@ -533,7 +533,7 @@
   width: 100% !important;
   max-width: 190px !important;
   margin: 6px 0 0 !important;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .bom-part-workspace
   > .workspace-heading
@@ -541,7 +541,7 @@
   .bs-photo-more:not([hidden]) {
   display: flex;
   flex-wrap: wrap !important;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .bom-part-workspace
   > .workspace-heading
@@ -558,7 +558,7 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  gap: 9px;
+  gap: var(--space-2);
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -581,7 +581,7 @@
 @media (max-width: 600px) {
   .bom-part-workspace > .workspace-heading:has(> .bs-photo-control) {
     grid-template-columns: minmax(0, 1fr);
-    row-gap: 12px;
+    row-gap: var(--space-3);
   }
   .bom-part-workspace > .workspace-heading > .bs-photo-control {
     grid-column: 1;
@@ -599,8 +599,8 @@
   > .workspace-heading:has(> .bs-photo-control) {
   display: grid !important;
   grid-template-columns: 245px minmax(0, 1fr);
-  column-gap: 18px;
-  row-gap: 10px;
+  column-gap: var(--space-4);
+  row-gap: var(--space-3);
   align-items: start !important;
   flex-wrap: nowrap !important;
   margin-bottom: 20px !important;
@@ -633,7 +633,7 @@
   max-width: 245px !important;
   flex-wrap: wrap;
   justify-content: flex-start !important;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 6px 0 0 !important;
 }
 .assembly-workspace-page:not(.bom-part-workspace)
@@ -641,7 +641,7 @@
   > .bs-photo-control
   .bs-photo-more:not([hidden]) {
   flex-wrap: wrap !important;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .assembly-workspace-page:not(.bom-part-workspace)
   > .workspace-heading
@@ -665,7 +665,7 @@
   .assembly-workspace-page:not(.bom-part-workspace)
     > .workspace-heading:has(> .bs-photo-control) {
     grid-template-columns: minmax(0, 1fr);
-    row-gap: 12px;
+    row-gap: var(--space-3);
   }
   .assembly-workspace-page:not(.bom-part-workspace)
     > .workspace-heading
@@ -793,12 +793,12 @@
   align-items: center;
   justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .project-summary-gallery > .bs-photo-control .bs-photo-more:not([hidden]) {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   min-width: 0;
 }
@@ -807,7 +807,7 @@
   .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="true"]) {
   padding: 9px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
 }
 .project-summary-gallery > .bs-photo-control .bs-photo-status:not(:empty) {
@@ -862,7 +862,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 4px;
+  gap: var(--space-1);
   flex-wrap: nowrap;
   width: 100%;
   min-width: 0;
@@ -871,7 +871,7 @@
   flex: 0 0 auto;
   min-height: 32px;
   padding: 5px 7px;
-  font-size: 0.72rem;
+  font-size: var(--text-caption);
   white-space: nowrap;
 }
 .recipe-compact .recipe-step-photo > .bs-photo-control .bs-photo-status {
@@ -882,12 +882,12 @@
 .bs-markup-toolbar .bs-markup-size-control {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   padding: 4px 7px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  border-radius: var(--radius-medium);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
   white-space: nowrap;
 }
 .bs-markup-toolbar .bs-markup-size-control input {
@@ -896,7 +896,7 @@
   box-sizing: border-box;
   padding: 4px 5px;
   border: 1px solid var(--color-border);
-  border-radius: 5px;
+  border-radius: var(--radius-small);
   background: var(--color-surface);
   color: var(--color-text);
   font: inherit;
@@ -906,14 +906,14 @@
 .bs-upload-panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: stretch;
   width: 100%;
   box-sizing: border-box;
   margin: 12px 0 16px;
   padding: 18px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-large);
   background: var(--color-surface-muted);
   color: var(--color-text);
 }
@@ -924,15 +924,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .bs-upload-heading strong {
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: var(--text-body);
+  font-weight: var(--font-bold);
 }
 .bs-upload-hint {
   margin: 0;
-  font-size: 0.86rem;
+  font-size: var(--text-small);
   line-height: 1.5;
   color: var(--color-text-muted);
 }
@@ -947,11 +947,11 @@
   padding: 22px;
   text-align: center;
   border: 2px dashed var(--color-accent);
-  border-radius: 10px;
+  border-radius: var(--radius-large);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 0.96rem;
-  font-weight: 600;
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
   line-height: 1.6;
 }
 .bs-upload-panel > .bs-upload-drop.is-dragover,

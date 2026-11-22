@@ -31,7 +31,7 @@ test("Feature tree uses explicit show/hide controls for Workshop items and docum
 test("Parts Management input backgrounds and column grips are uncluttered",()=>{
  const css=readFileSync("assets/parts-management.css","utf8");
  assert.match(css,/background-color:\s*#fff\s*!important/);
- assert.match(css,/border-radius:\s*7px/);
+ assert.match(css,/border-radius:\s*var\(--radius-medium\)/);
 });
 
 test("Projects use tags instead of a category selector, without deleting legacy API metadata",()=>{

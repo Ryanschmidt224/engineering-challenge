@@ -1,5 +1,4 @@
-// Compare the candidate stylesheet cascade with the deployed pre-cleanup CSS.
-// Expected images come from a fixed Git commit, never the candidate's CSS.
+// Retain before/after evidence while checking the approved standard geometry.
 import {test,expect} from "@playwright/test";
 import {execFileSync} from "node:child_process";
 import {writeFile} from "node:fs/promises";
@@ -74,13 +73,17 @@ for(const width of [1440,390])for(const project of projects)for(const kind of ["
    for(const state of (kind==="part"?["collapsed","expanded","editor"]:["collapsed","expanded"])){
     if(state==="expanded")for(const workspace of workspaces)await expand(workspace);
     if(state==="editor")for(let index=0;index<pages.length;index++){await workspaces[index].getByRole("button",{name:"Edit part details",exact:true}).click();await expect(pages[index].getByRole("dialog",{name:"Part editor",exact:true})).toBeVisible();}
-    const images=[];
     for(let index=0;index<pages.length;index++){
      await pages[index].evaluate(()=>window.scrollTo(0,0));
-     const image=await pages[index].screenshot({fullPage:true,animations:"disabled",caret:"hide"});images.push(image);
+     const image=await pages[index].screenshot({fullPage:true,animations:"disabled",caret:"hide"});
      await writeFile(testInfo.outputPath((index?"candidate-":"baseline-")+state+".png"),image);
     }
-    expect(images[1].equals(images[0]),"Rendered CSS changed: inspect the baseline/candidate "+state+" images").toBe(true);
+    // The owner approves standard sizes over exact preservation of legacy pixels.
+    const metrics=await workspaces[1].locator(".recipe-disclosure-toggle,.workspace-resource-disclosure>summary,.workspace-archive-history>summary,.bs-unstructured-notes-heading,.part-details-collapse>summary").evaluateAll(elements=>elements.filter(element=>element.getClientRects().length).map(element=>{const heading=element.querySelector("h2,h4"),count=element.querySelector(".workspace-record-count"),box=element.getBoundingClientRect();return {title:heading?.textContent||"",font:heading?getComputedStyle(heading).fontSize:null,count:count?getComputedStyle(count).fontSize:null,height:box.height,clipped:element.scrollHeight>element.clientHeight+1};}));
+    expect(metrics.length).toBeGreaterThanOrEqual(4);
+    for(const metric of metrics){expect(metric.font,metric.title).toBe("16px");if(metric.count)expect(metric.count,metric.title).toBe("14px");expect(metric.height,metric.title).toBeGreaterThanOrEqual(48);expect(metric.clipped,metric.title+" clips its contents").toBe(false);}
+    expect(await pages[1].evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),"Page overflows horizontally").toBe(true);
+    if(state==="editor"){const bounds=await pages[1].getByRole("dialog",{name:"Part editor",exact:true}).boundingBox();expect(bounds.x).toBeGreaterThanOrEqual(0);expect(bounds.x+bounds.width).toBeLessThanOrEqual(width+1);}
    }
    expect(errors).toEqual([]);
   }finally{for(const context of contexts)await context.close();}

@@ -106,3 +106,18 @@ textarea::placeholder {
   --shadow-dialog: 0 1rem 4rem
     color-mix(in srgb, var(--color-shadow) 25%, transparent);
 }
+
+/* Shared typography and disclosure graphics. */
+:root {
+  --text-caption: 0.75rem;
+  --text-lead: 1.125rem;
+  --text-display: 2.25rem;
+  --font-normal: 400;
+  --font-semibold: 600;
+  --font-bold: 750;
+  --radius-pill: 999px;
+  --section-label-inset: 1.75rem;
+  --section-chevron-inset: 0.75rem;
+  --chevron-size: 0.375rem;
+  --chevron-stroke: 1.5px;
+}
