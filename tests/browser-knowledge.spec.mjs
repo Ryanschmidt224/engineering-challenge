@@ -25,7 +25,7 @@ async function expectStackedCard(card) {
   for (let i = 1; i < layout.children.length; i++) expect(layout.children[i].y).toBeGreaterThanOrEqual(layout.children[i - 1].bottom);
 }
 
-for (const width of [1440, 390]) test("selectable Knowledge and Workshop cards stack at " + width + "px", async ({page}) => {
+for (const width of [1440, 390]) test("selectable Knowledge and Workshop cards stack at " + width + "px", async ({page}, testInfo) => {
   await page.setViewportSize({width, height: 900});
   await createTileFromFamily(page, "A long engineering lesson title that needs the full list width");
   const card = page.locator("#tile-list > button").first();
@@ -36,6 +36,7 @@ for (const width of [1440, 390]) test("selectable Knowledge and Workshop cards s
   await expect(card).toHaveCSS("outline-style", "solid");
   await card.press("Enter");
   await expect(detail(page).getByRole("heading", {name: "A long engineering lesson title that needs the full list width", exact: true})).toBeVisible();
+  await page.screenshot({path: testInfo.outputPath("knowledge-cards.png"), fullPage: true});
   await page.goto("/workshop.html?family=f-buck-converter");
   const family = page.locator("#family-list > button.is-selected");
   await expectStackedCard(family);
@@ -44,6 +45,7 @@ for (const width of [1440, 390]) test("selectable Knowledge and Workshop cards s
   await family.press("Enter");
   await expect(page.locator("#workshop-detail").getByRole("heading", {name: "Knowledge (1)", exact: true})).toBeVisible();
   await expectStackedCard(page.locator("#workshop-detail .knowledge-list > a").first());
+  await page.screenshot({path: testInfo.outputPath("workshop-cards.png"), fullPage: true});
 });
 
 async function createTileFromFamily(page, title) {
@@ -181,7 +183,7 @@ test("a tile can be started from a project part and links to it", async ({page})
   await expect(detail(page).getByRole("link", {name: "Pull-up", exact: true})).toHaveAttribute("href", "index.html#launcher/part/" + use.id);
 });
 
-for (const width of [1440, 390]) test("Knowledge opens the exact project record, including archived and missing records, at " + width + "px", async ({page}) => {
+for (const width of [1440, 390]) test("Knowledge opens the exact project record, including archived and missing records, at " + width + "px", async ({page}, testInfo) => {
   await page.setViewportSize({width, height: 900});
   const created = await api(page, "/api/investigations?project=launcher", {
     action: "create", expectedRevision: null, scope: "assembly", ownerType: "assembly", ownerId: "__root__",
@@ -199,6 +201,7 @@ for (const width of [1440, 390]) test("Knowledge opens the exact project record,
   await expect(page).toHaveURL(new RegExp("record=" + created.createdId + "#launcher$"));
   await page.reload();
   await expect(reader).toBeVisible();
+  await page.screenshot({path: testInfo.outputPath("linked-record.png")});
   expect(await reader.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(0);
   await reader.getByRole("button", {name: "Close", exact: true}).click();
   await expect(page).not.toHaveURL(/record=/);
