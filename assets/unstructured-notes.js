@@ -10,6 +10,8 @@
   const panel=el("details","bs-unstructured-notes");
   panel.setAttribute("aria-label","Unstructured Notes");
   const bar=el("summary","bs-unstructured-notes-heading");
+  bar.title="View or add free-form notes that do not belong in a structured work instruction.";
+  bar.setAttribute("aria-description",bar.title);
   bar.append(el("h2","","Unstructured Notes"));
   const add=button("+ Add entry",()=>edit(null),"btn bs-unstructured-add");
   const count=el("span","workspace-record-count");
