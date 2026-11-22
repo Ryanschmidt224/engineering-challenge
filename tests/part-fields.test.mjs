@@ -220,7 +220,7 @@ test("UI keeps functional number in the feature tree and BOM independent of MPN"
  assert.match(source,/const firstLine=isPartNode\(node\)\?window\.BSPartFields\.numberedFunctionalName/);
  assert.match(source,/name\.textContent=window\.BSPartFields\.numberedFunctionalName\(part\)/);
  assert.match(source,/heading\.textContent=window\.BSPartFields\.numberedFunctionalName\(part\)/);
- assert.match(source,/Functional part number/);
+ assert.match(source,/document\.createTextNode\("Part number"\)/);
 });
 
 test("project-owned feature description is primary and selected physical item is secondary",()=>{
@@ -241,7 +241,7 @@ test("custom implementations and unselected components use the same project purp
  const core={partNumber:"105",name:"Shaft Coupler",projectDetails:{featureTreeName:"Motor Shaft Coupling"},itemType:"part"};
  assert.equal(fields.numberedFunctionalName(core),"105 · Motor Shaft Coupling");
  assert.equal(fields.implementationLabelFor({...core,partType:"custom",implementationName:"Rigid Coupling · Rev B",implementationResolved:true}),"Rigid Coupling · Rev B");
- assert.equal(fields.implementationLabelFor({...core,implementationResolved:false}),"No component selected");
+ assert.equal(fields.implementationLabelFor({...core,implementationResolved:false}),"Part not selected");
  assert.equal(fields.numberedFunctionalName({...core,itemType:"document"}),"105 · Shaft Coupler");
 });
 test("feature tree reads the project caption independently of Workshop metadata",()=>{
@@ -249,7 +249,7 @@ test("feature tree reads the project caption independently of Workshop metadata"
  const backend=readFileSync(new URL("../functions/api/components.js",import.meta.url),"utf8");
  assert.match(site,/numberedFunctionalName\(\{/);
  assert.match(site,/implementationLabelFor\(\{/);
- assert.match(site,/Feature tree description \(project-owned\)/);
+ assert.match(site,/Container \(name\)/);
  assert.match(site,/const functionalTreeDescriptionField=/);
  assert.match(backend,/featureTreeName:180/);
  assert.match(backend,/featureTreeName:previous\.projectDetails\?\.featureTreeName\|\|""/);

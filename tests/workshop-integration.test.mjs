@@ -304,7 +304,7 @@ test("Workshop AI receives both identity fields and prioritizes the exact manufa
   const result=await lookUp(fields);
   assert.equal(result.status,200);
   assert.equal(result.body.draft.partNumber,draft.partNumber);
-  assert.ok(query.includes(JSON.stringify(fields)));
+  assert.ok(query.includes(JSON.stringify({partNumber:fields.partNumber,manufacturer:"",partName:"",featureTreeDescription:fields.featureTreeDescription})));
   assert.match(query,/search first for the exact manufacturer part number/);
  }
  draft={partNumber:"ABC10",name:"Different part"};
@@ -496,7 +496,7 @@ test("Workshop AI verifies a McMaster catalog SKU independently of the manufactu
  let verifiedSku=sku;
  t.mock.method(globalThis,"fetch",async (_url,options)=>{
   const prompt=JSON.parse(options.body).input;
-  assert.ok(prompt.includes(JSON.stringify({partNumber:"",featureTreeDescription:"10-32 SHCS 3/16 long",
+  assert.ok(prompt.includes(JSON.stringify({partNumber:"",manufacturer:"",partName:"",featureTreeDescription:"10-32 SHCS 3/16 long",
    searchHint:"Mcmaster",supplierPartNumber:sku,supplier:"McMaster-Carr",supplierPage})));
   return Response.json({output:[{type:"message",content:[{type:"output_text",text:JSON.stringify({
    partNumber:"",supplierPartNumber:verifiedSku,name:"Socket head cap screw"
@@ -527,7 +527,7 @@ test("Workshop AI checks supplier numbers for vendors other than McMaster",async
  let sku=supplierPartNumber;
  t.mock.method(globalThis,"fetch",async (_url,options)=>{
   const prompt=JSON.parse(options.body).input;
-  assert.ok(prompt.includes(JSON.stringify({partNumber:"",featureTreeDescription:"",supplierPartNumber,supplier})));
+  assert.ok(prompt.includes(JSON.stringify({partNumber:"",manufacturer:"",partName:"",featureTreeDescription:"",supplierPartNumber,supplier})));
   return Response.json({output:[{type:"message",content:[{type:"output_text",text:JSON.stringify({
    partNumber:"LM358P",supplierPartNumber:sku,name:"Dual op amp"
   })}]}]});
