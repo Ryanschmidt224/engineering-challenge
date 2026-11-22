@@ -433,7 +433,7 @@ function open({onCreate,hideDefault=false}){
   "Suggested by the Workshop. You can rename this container for your project; the Workshop item will not change.");
  referencePreview.append(projectContainerName.label,nameHint);
  const genericProjectFields=el("div","library-generic-spec-fields hide");
- genericProjectFields.append(el("h4","","Configure this component for your project"),
+ genericProjectFields.append(el("h4","","Fields for this project"),
   el("p","These values apply only to this project, not to the Workshop source.","muted"));
  const genericProjectInputs=el("div","library-generic-spec-inputs");
  genericProjectFields.append(genericProjectInputs);
@@ -493,7 +493,9 @@ function open({onCreate,hideDefault=false}){
    option(specificChoice.input,choice.origin+":"+choice.id,choice.name+(identity?" · "+identity:""));
   }
   referencePreview.classList.toggle("hide",!usingWorkshop||!item);
-  genericProjectFields.classList.toggle("hide",!usingWorkshop||!generic);
+  const customProjectFields=(Array.isArray(item?.productSections)?item.productSections:[])
+   .flatMap(section=>section.fields||[]).filter(field=>field.scope==="project");
+  genericProjectFields.classList.toggle("hide",!usingWorkshop||(!generic&&!customProjectFields.length));
   referenceRows.replaceChildren();
   if(usingWorkshop){
    manufacturerNumber.input.value=generic?"":item?.partNumber||item?.model||"";
@@ -514,21 +516,44 @@ function open({onCreate,hideDefault=false}){
   const key=item.origin+":"+item.id;
   if(key!==genericReferenceKey){
    genericReferenceKey=key;genericProjectInputs.replaceChildren();
+   const existingSpecs=Array.isArray(item.specifications)?item.specifications:[];
+   const fixedLabels=new Set(existingSpecs.filter(spec=>String(spec.value||"").trim())
+    .map(spec=>String(spec.name||spec.label||"").trim().toLowerCase()));
+   const builderFixed=new Set((Array.isArray(item.productSections)?item.productSections:[])
+    .flatMap(section=>section.fields||[]).filter(field=>field.scope==="workshop"&&field.value)
+    .map(field=>field.label.trim().toLowerCase()));
+   const seen=new Set([...fixedLabels,...builderFixed]);
+   const addProjectInput=fieldDef=>{
+    const labelName=String(fieldDef.label||"").trim();
+    if(!labelName||seen.has(labelName.toLowerCase()))return;
+    seen.add(labelName.toLowerCase());
+    const unit=fieldDef.unit||"";
+    const row=el("label","library-field");
+    row.append(el("span","",labelName+(unit?" ("+unit+")":"")));
+    let control;
+    if(fieldDef.type==="select"){
+     control=el("select","field");option(control,"","Select...");
+     for(const value of fieldDef.options||[])option(control,value,value);
+    }else{
+     control=el("input","field");
+     if(fieldDef.type==="checkbox")control.type="checkbox";
+     else if(fieldDef.type==="number"){control.type="number";control.step="any"}
+     else if(["link","photo"].includes(fieldDef.type)){control.type="url";control.placeholder="https://..."}
+     else control.type="text";
+    }
+    control.dataset.specName=labelName;control.dataset.specUnit=unit;
+    control.dataset.specType=fieldDef.type||"text";
+    row.append(control);genericProjectInputs.append(row);
+   };
    if(generic){
-    const sourceSpecs=Array.isArray(item.specifications)?item.specifications:[];
-    const fixedLabels=new Set(sourceSpecs.filter(spec=>String(spec.value||"").trim()).map(spec=>String(spec.name||spec.label||"").trim().toLowerCase()));
-    const suggested=window.BSResources.genericSpecificationTemplate(item);
-    for(const [label,unit] of suggested){
-     if(fixedLabels.has(label.toLowerCase()))continue;
-     const row=field(label+(unit?" ("+unit+")":""));
-     row.input.dataset.specName=label;
-     row.input.dataset.specUnit=unit;
-     genericProjectInputs.append(row.label);
-    }
-    if(!genericProjectInputs.children.length){
-     genericProjectInputs.append(el("p","No standard fields for this component yet. Edit its specifications on the project part page.","muted"));
-    }
+    for(const [label,unit] of window.BSResources.genericSpecificationTemplate(item))
+     addProjectInput({label,unit,type:"text"});
    }
+   for(const section of Array.isArray(item.productSections)?item.productSections:[])
+    for(const fieldDef of section.fields||[])
+     if(fieldDef.scope==="project")addProjectInput(fieldDef);
+   if(!genericProjectInputs.children.length&&generic)
+    genericProjectInputs.append(el("p","No project-specific fields defined yet. Add details on the project part page.","muted"));
   }
   referenceRows.hidden=false;
   for(const [label,value] of [
@@ -759,10 +784,14 @@ function open({onCreate,hideDefault=false}){
    const generic=window.BSResources.workshopIdentityKind(p)==="generic";
    const genericName=projectContainerName.input.value.trim()||window.BSResources.genericContainerName(p);
    if(genericName.length>20){status.textContent="Container name must be 20 characters or fewer.";projectContainerName.input.focus();return}
-   const genericSpecs=generic?[...genericProjectInputs.querySelectorAll("input[data-spec-name]")].map(input=>({
-    name:input.dataset.specName,
-    value:input.value.trim()+(input.value.trim()&&input.dataset.specUnit?" "+input.dataset.specUnit:"")
-   })).filter(spec=>spec.name&&spec.value):[];
+   const genericSpecs=[...genericProjectInputs.querySelectorAll("[data-spec-name]")].map(input=>{
+    const raw=input.type==="checkbox"?String(input.checked):input.value.trim();
+    return {name:input.dataset.specName,
+     value:raw+(raw&&input.dataset.specUnit?" "+input.dataset.specUnit:"")};
+   }).filter(spec=>spec.name&&spec.value);
+   const builderSpecs=(Array.isArray(p.productSections)?p.productSections:[])
+    .flatMap(section=>section.fields||[]).filter(field=>field.scope==="workshop"&&String(field.value||"").trim())
+    .map(field=>({name:field.label.trim(),value:String(field.value)+(field.unit?" "+field.unit:"")}));
    const configuredNames=new Set(genericSpecs.map(spec=>spec.name.toLowerCase()));
    const sourceSpecs=(Array.isArray(p.specifications)?p.specifications:[])
     .map(spec=>({
@@ -770,12 +799,14 @@ function open({onCreate,hideDefault=false}){
      value:String(spec.value||"").trim()+(spec.value&&spec.unit?" "+spec.unit:"")
     }))
     .filter(spec=>spec.name&&spec.value&&(!generic||!configuredNames.has(spec.name.toLowerCase())));
-   const mergedSpecs=[...sourceSpecs,...genericSpecs].slice(0,38);
+   const seenSpecs=new Set();
+   const mergedSpecs=[...sourceSpecs,...builderSpecs,...genericSpecs]
+    .filter(spec=>{const key=spec.name.toLowerCase();if(seenSpecs.has(key))return false;seenSpecs.add(key);return true}).slice(0,38);
    payload=isStandard?{
     name:genericName,quantity:count,category:commonGroup(p),manufacturer:p.manufacturer||"",
     model:generic?"":p.partNumber||p.model||"",supplier:p.supplier||"",description:p.subtitle||p.description||"",
     isTool:commonGroup(p)==="tools",
-    specifications:generic
+    specifications:generic||mergedSpecs.length
      ?[{name:"Workshop reference",value:p.id},...mergedSpecs]
      :[{name:"Workshop reference",value:p.id},{name:"Tool specification",value:String(p.detail||p.spec||"Workshop reference").slice(0,300)}]
    }:(isPublic||isMine)?{
