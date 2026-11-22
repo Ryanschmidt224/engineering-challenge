@@ -524,7 +524,7 @@
     onResult:response=>{pendingSuggestion=response;showReview()}
    });
    const lookupActions=aiLookup.element;
-   lookupActions.classList.add("workshop-identity-priority-field");
+   lookupActions.classList.add("workshop-ai-bottom-action");
    const lookupResults=aiLookup.results,lookupMessage=aiLookup.message;
    const lookupHint=aiLookup.hint;
    const grid=el("div",undefined,"workshop-item-edit-grid");
@@ -576,8 +576,11 @@
      if(name==="name")control.required=true;
      if(name==="featureTreeDescription")control.maxLength=20;
      label.append(control);fieldsGrid.append(label);controls[name]=control;
-     if(name==="featureTreeDescription")fieldsGrid.append(lookupActions);
+
     }
+    // Shared AI action comes after all Product Identity fields, not between
+    // the default container name and the item name.
+    if(key==="identity")fieldsGrid.append(lookupActions);
     section.append(fieldsGrid);grid.append(section);
    }
    const classification=el("div",undefined,"workshop-item-classification");
