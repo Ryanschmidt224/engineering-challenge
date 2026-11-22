@@ -4723,3 +4723,28 @@
   gap:6px;
  }
 }
+
+/* Closed part/workspace tiles: identical 48px boxes, regardless of summary text.
+   Expanded sections retain their natural content height. */
+.assembly-workspace-page.bom-part-workspace .part-details-collapse:not([open])>summary.part-details-view-heading,
+.assembly-workspace-page .workspace-primary-disclosure:not([open])>summary,
+.assembly-workspace-page .workspace-secondary-disclosure:not([open])>summary,
+.assembly-workspace-page .investigation-collapse:not([open])>summary.investigation-collapse-heading,
+.assembly-workspace-page .bs-unstructured-notes:not([open])>summary.bs-unstructured-notes-heading,
+.assembly-workspace-page .recipe-instructions:not(:has(.recipe-body:not([hidden])))>.recipe-heading-row{
+ box-sizing:border-box;
+ height:48px;
+ min-height:48px;
+ padding-top:9px;
+ padding-bottom:9px;
+}
+.assembly-workspace-page.bom-part-workspace .part-details-collapse:not([open]) .part-details-summary-fields{
+ display:none!important;
+}
+.assembly-workspace-page.bom-part-workspace .part-details-collapse:not([open]) .part-details-heading-copy{
+ display:flex;align-items:center;min-height:0;
+}
+.assembly-workspace-page.bom-part-workspace .part-details-collapse:not([open])>summary.part-details-view-heading{
+ align-items:center;
+ overflow:hidden;
+}
