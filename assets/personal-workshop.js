@@ -118,6 +118,92 @@
    getSelectedCategory:()=>selectedWorkshopCategory,
    isEditable:()=>canCreateReferences
   });
+  // The category is the entry point for creating a Workshop catalog part.
+  // Delegate events to the stable sidebar host because category rows rerender.
+  const categoryMenu=el("div",undefined,"workshop-category-context-menu");
+  categoryMenu.hidden=true;
+  categoryMenu.setAttribute("role","menu");
+  document.body.append(categoryMenu);
+  let contextCategory="";
+  const closeCategoryMenu=()=>{categoryMenu.hidden=true;contextCategory=""};
+  const chooseCategoryTemplate=async categoryId=>{
+   closeCategoryMenu();
+   if(!canCreateReferences)return;
+   const categoryName=workshopCategories.find(([id])=>id===categoryId)?.[1]||categoryId;
+   const dialog=el("dialog",undefined,"workshop-category-create-dialog");
+   const title=el("h2","Add part to "+categoryName);
+   const description=el("p","Choose a saved master template or start with an empty part.","muted");
+   const picker=el("select",undefined,"field");
+   picker.setAttribute("aria-label","Master template");
+   const blank=el("option","Blank part — no template");blank.value="";picker.append(blank);
+   const feedback=el("p",undefined,"workshop-category-create-status");
+   feedback.setAttribute("role","status");
+   const actions=el("div",undefined,"workshop-category-create-actions");
+   const create=itemButton("Add part",()=>{
+    const templateId=picker.value;
+    dialog.close();
+    createCatalogItem({category:categoryId,kind:"component",
+     ...(templateId?{initialTemplateId:templateId}:{})});
+   },"btn primary");
+   const cancel=itemButton("Cancel",()=>dialog.close(),"btn");
+   actions.append(create,cancel);
+   dialog.append(title,description,picker,feedback,actions);
+   dialog.addEventListener("close",()=>dialog.remove(),{once:true});
+   document.body.append(dialog);dialog.showModal();
+   picker.disabled=true;create.disabled=true;feedback.textContent="Loading templates…";
+   try{
+    const data=await req("/api/workshop-templates");
+    for(const template of (data.templates||[]).filter(entry=>entry.category===categoryId)){
+     const option=el("option",template.name);option.value=template.id;picker.append(option);
+    }
+    feedback.textContent=picker.options.length===1?"No templates yet for this category. A blank part is available.":"Choose a template or blank part.";
+   }catch(error){feedback.textContent="Could not load templates: "+error.message+". You can still create a blank part."}
+   picker.disabled=false;create.disabled=false;
+  };
+  const openCategoryContext=(categoryId,x,y)=>{
+   if(!canCreateReferences||!workshopCategories.some(([id])=>id===categoryId))return;
+   contextCategory=categoryId;
+   categoryMenu.replaceChildren();
+   const categoryName=workshopCategories.find(([id])=>id===categoryId)?.[1]||categoryId;
+   categoryMenu.append(el("div",categoryName,"workshop-category-context-title"));
+   const add=itemButton("Add part",()=>{
+    const id=contextCategory;void chooseCategoryTemplate(id);
+   },"workshop-category-context-action");
+   add.setAttribute("role","menuitem");
+   const manage=itemButton("Edit templates",()=>{
+    const id=contextCategory;closeCategoryMenu();templateManager?.open(id);
+   },"workshop-category-context-action");
+   manage.setAttribute("role","menuitem");
+   categoryMenu.append(add,manage);
+   categoryMenu.hidden=false;
+   categoryMenu.style.left=Math.max(8,Math.min(x,window.innerWidth-230))+"px";
+   categoryMenu.style.top=Math.max(8,Math.min(y,window.innerHeight-110))+"px";
+   add.focus();
+  };
+  sidebar.addEventListener("contextmenu",event=>{
+   const target=event.target.closest("[data-catalog-category]");
+   if(!target||!canCreateReferences)return;
+   const id=target.dataset.catalogCategory;
+   if(!workshopCategories.some(([key])=>key===id))return;
+   event.preventDefault();openCategoryContext(id,event.clientX,event.clientY);
+  });
+  sidebar.addEventListener("keydown",event=>{
+   if(event.key!=="ContextMenu"&&!(event.shiftKey&&event.key==="F10"))return;
+   const target=event.target.closest("[data-catalog-category]");
+   if(!target)return;
+   const id=target.dataset.catalogCategory;
+   if(!workshopCategories.some(([key])=>key===id))return;
+   event.preventDefault();
+   const rect=target.getBoundingClientRect();
+   openCategoryContext(id,rect.left+12,rect.bottom);
+  });
+  document.addEventListener("pointerdown",event=>{
+   if(!categoryMenu.hidden&&!categoryMenu.contains(event.target))closeCategoryMenu();
+  });
+  document.addEventListener("keydown",event=>{
+   if(event.key==="Escape"&&!categoryMenu.hidden)closeCategoryMenu();
+  });
+  window.addEventListener("scroll",closeCategoryMenu,{passive:true});
   function categoryFor(item){
    return window.BSResources.electricalCategoryFor(item);
   }
@@ -497,7 +583,8 @@
    openItemEditor({category:["all","mine"].includes(selectedWorkshopCategory)?"tools":selectedWorkshopCategory,
     kind:"equipment",photos:[],...prefill});
   }
-  $(".workshop-catalog-create",catalog).onclick=()=>createCatalogItem();
+  // Creation now starts from the selected category in the left sidebar.
+  $(".workshop-catalog-create",catalog).hidden=true;
   $(".workshop-personal-create",catalog).onclick=()=>{
    nav?.select("mine");
    if($("#workshop-editor",personal)){
@@ -1044,6 +1131,14 @@
      const response=await req("/api/workshop-templates");
      masterTemplates=response.templates||[];
      refreshTemplateOptions();
+     if(item.initialTemplateId){
+      const selected=masterTemplates.find(template=>template.id===item.initialTemplateId&&template.category===category.value);
+      if(selected){
+       selectedMasterTemplate=selected.id;
+       refreshTemplateOptions();
+       await applySelectedTemplate();
+      }else templateStatus.textContent="Selected template is unavailable; using blank layout.";
+     }
     }catch(error){templateStatus.textContent="Unable to load templates: "+error.message}
    };
    templateSearch.addEventListener("input",refreshTemplateOptions);
@@ -1573,7 +1668,7 @@
     canCreateReferences=!!data.canCreate||canEditReferences;
     canDeleteReferences=!!data.canDelete;
     editableReferenceIds=new Set(data.editableIds||[]);
-    $(".workshop-catalog-create",catalog).hidden=!canCreateReferences;
+    $(".workshop-catalog-create",catalog).hidden=true;
     templateManager?.setEditable(canCreateReferences);
     renderCatalog();
     if(openedItem&&!openedItem.startsWith("my:")&&location.hash==="#commonparts")showItem(openedItem,false);
