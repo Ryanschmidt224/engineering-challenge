@@ -106,7 +106,7 @@ export async function handleInvestigations(request,env){
    const part=(Array.isArray(parts)?parts.find(item=>item.id===ownerId):null)||await getFamilyProjectPart(env,project,ownerId);
    if(!part)return json({error:"Part no longer exists"},404);
    const selected=part.familyUse?part:resolveFunctionalPart(part);
-   ownerImplementation={id:selected?.selectedImplementationId||null,
+   ownerImplementation={id:selected?.productId||selected?.selectedImplementationId||null,
     name:selected?.implementationResolved?selected.implementationName||selected.model||"":""};
   }else if(ownerId!=="__root__"){
    const treeFile=await env.PHOTOS.get("trees/"+project+".json");
@@ -143,7 +143,7 @@ export async function handleInvestigations(request,env){
   const workspaceObject=await env.PHOTOS.get("part-workspaces/"+project+"/"+partId+".json");
   const workspace=workspaceObject?JSON.parse(await workspaceObject.text()):{};
   const revisionId=crypto.randomUUID();
-  const thumbnail=await getPartPhoto(request,env,project,resolveFunctionalPart(part));
+  const thumbnail=part.familyUse?null:await getPartPhoto(request,env,project,resolveFunctionalPart(part));
   let archivedThumbnail=null;
   if(thumbnail){
    archivedThumbnail="part-revisions/"+project+"/"+partId+"/"+revisionId+"/thumbnail";

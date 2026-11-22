@@ -474,43 +474,43 @@ export const starterFamilies = [
     "id": "f-sheet-goods",
     "category_id": "c-c-materials-wood-and-sheet",
     "name": "Sheet goods",
-    "kind": "part"
+    "kind": "material"
   },
   {
     "id": "f-lumber",
     "category_id": "c-c-materials-wood-and-sheet",
     "name": "Lumber",
-    "kind": "part"
+    "kind": "material"
   },
   {
     "id": "f-metal-stock",
     "category_id": "c-c-materials-metal-stock",
     "name": "Metal stock",
-    "kind": "part"
+    "kind": "material"
   },
   {
     "id": "f-filament",
     "category_id": "c-c-materials-3d-printing",
     "name": "Filament",
-    "kind": "part"
+    "kind": "material"
   },
   {
     "id": "f-paint",
     "category_id": "c-c-materials-finishes-and-adhesives",
     "name": "Paint",
-    "kind": "part"
+    "kind": "material"
   },
   {
     "id": "f-adhesive",
     "category_id": "c-c-materials-finishes-and-adhesives",
     "name": "Adhesive",
-    "kind": "part"
+    "kind": "material"
   },
   {
     "id": "f-solder",
     "category_id": "c-c-materials-finishes-and-adhesives",
     "name": "Solder",
-    "kind": "part"
+    "kind": "material"
   },
   {
     "id": "f-soldering-iron",

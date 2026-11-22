@@ -1,5 +1,6 @@
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
+import {getFamilyProjectPart} from "./workshop-db.js";
 
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const validId=value=>typeof value==="string"&&/^[a-zA-Z0-9-]{1,80}$/.test(value);
@@ -32,7 +33,7 @@ async function validOwner(env,project,type,id){
  if(type==="part"&&validUuid(id)){
   const record=await env.PHOTOS.get("components/"+project+".json");
   const parts=record?JSON.parse(await record.text()):[];
-  return parts.some(part=>part.id===id);
+  return parts.some(part=>part.id===id)||!!await getFamilyProjectPart(env,project,id);
  }
  return false;
 }

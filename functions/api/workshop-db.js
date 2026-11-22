@@ -48,6 +48,13 @@ async function writeSimple(db,table,row,expected,familyGuard=null) {
  if(!result.meta.changes)return null;
  return parseRow(await stmt(db,"SELECT * FROM "+table+" WHERE id=?",row.id).first());
 }
+async function assemblyFor(env,project,id) {
+ if(!id||id==="__root__")return null;
+ const file=await env.PHOTOS.get("trees/"+project+".json");
+ const nodes=file?JSON.parse(await file.text()):[];
+ if(typeof id!=="string"||!nodes.some(node=>node.id===id&&node.kind!=="part"))throw Error("Choose an existing project assembly, or the project root.");
+ return id;
+}
 export async function saveFamily(db,record,expected) {
  validateFamilyFields(record.fields);
  const token=crypto.randomUUID(),columns=["category_id","name","kind","description","notes","mutation_id"];
@@ -85,17 +92,24 @@ export async function saveWorkshopEntity(request,env,input) {
   const fields=await dbRows(db,"SELECT * FROM workshop_fields WHERE family_id=?",family.id);
   validateFamilyValues(fields,record.field_values);
   if(entity==="product"){
-   const suppliers=record.supplier_links||[];
-   if(!Array.isArray(suppliers)||suppliers.length>20)throw Error("Use at most 20 supplier links.");
-   for(const supplier of suppliers)if(supplier.url&&!isWebUrl(supplier.url))throw Error("Supplier links need an http or https URL.");
+   const rawSuppliers=record.supplier_links||[];
+   if(!Array.isArray(rawSuppliers)||rawSuppliers.length>20)throw Error("Use at most 20 supplier links.");
+   const suppliers=rawSuppliers.map(supplier=>{
+    if(!supplier||typeof supplier!=="object"||Array.isArray(supplier))throw Error("Invalid supplier link.");
+    const url=text(supplier.url,1200);if(url&&!isWebUrl(url))throw Error("Supplier links need an http or https URL.");
+    return {supplier:text(supplier.supplier,120),part_number:text(supplier.part_number,160),url};
+   });
    return writeSimple(db,tables.product,{id:record.id,family_id:family.id,name:text(record.name,180,true),manufacturer:text(record.manufacturer),mpn:text(record.mpn),supplier_links:JSON.stringify(suppliers),notes:text(record.notes,12000),field_values:JSON.stringify(record.field_values)},input.expectedRevision,family);
   }
   if(!await projectAllowed(env,record.project_id,request))throw Error("Project not found.");
+  if(!/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(record.id))throw Error("Project uses require UUID identifiers.");
   if(previous&&previous.project_id!==record.project_id)throw Error("Create a new use to copy this part into another project.");
   if(record.quantity!==null&&(!Number.isFinite(record.quantity)||record.quantity<0))throw Error("Quantity must be zero or greater, or blank.");
   const product=record.product_id?await stmt(db,"SELECT * FROM workshop_products WHERE id=? AND family_id=?",record.product_id,family.id).first():null;
   if(record.product_id&&!product)throw Error("The selected product does not belong to this family.");
-  return writeSimple(db,tables.use,{id:record.id,project_id:record.project_id,tree_node_id:record.tree_node_id||null,family_id:family.id,product_id:record.product_id||null,purpose:text(record.purpose,180),quantity:record.quantity,unit:text(record.unit,32)||"pcs",field_values:JSON.stringify(record.field_values),notes:text(record.notes,12000)},input.expectedRevision,family);
+  if(product?.archived&&previous?.product_id!==product.id)throw Error("Restore the product before selecting it for a new use.");
+  const assembly=await assemblyFor(env,record.project_id,record.tree_node_id);
+  return writeSimple(db,tables.use,{id:record.id,project_id:record.project_id,tree_node_id:assembly,family_id:family.id,product_id:record.product_id||null,purpose:text(record.purpose,180),quantity:record.quantity,unit:text(record.unit,32)||"pcs",field_values:JSON.stringify(record.field_values),notes:text(record.notes,12000)},input.expectedRevision,family);
  }
  if(entity==="attachment"){
   if(!["family","product","use"].includes(record.owner_type)||!validId(record.owner_id))throw Error("Choose an attachment owner.");
@@ -144,6 +158,22 @@ export async function projectFamilyParts(env,project) {
   return familyUsePart(use,family,product,snapshot.fields.filter(field=>field.family_id===family.id),attachments);
  }).filter(Boolean);
 }
+// Tree links are a projection of uses; D1 owns membership and assembly placement.
+// Removing a use never deletes its instructions or historical R2 files.
+export async function projectUseTree(env,project,nodes) {
+ if(!env.WORKSHOP_DB)return nodes;
+ await initializeWorkshop(env.WORKSHOP_DB);
+ const uses=await dbRows(env.WORKSHOP_DB,"SELECT u.*,f.name AS family_name FROM workshop_uses u JOIN workshop_families f ON f.id=u.family_id WHERE project_id=?",project);
+ const ids=new Set(uses.map(use=>use.id)),active=uses.filter(use=>!use.archived);
+ const result=nodes.filter(node=>node.kind!=="part"||!ids.has(node.partId)||active.some(use=>use.id===node.partId)).map(node=>({...node}));
+ for(const use of active){
+  const parent=result.some(node=>node.id===use.tree_node_id&&node.kind!=="part")?use.tree_node_id:null;
+  const linked=result.find(node=>node.kind==="part"&&node.partId===use.id);
+  if(linked){linked.name=use.purpose||use.family_name;linked.parentId=parent;}
+  else result.push({id:"part-"+use.id,kind:"part",partId:use.id,name:use.purpose||use.family_name,parentId:parent});
+ }
+ return result;
+}
 export async function getFamilyProjectPart(env,project,id){
  if(!env.WORKSHOP_DB)return null;
  await initializeWorkshop(env.WORKSHOP_DB);
@@ -170,8 +200,14 @@ export async function changeFamilyProjectPart(request,env,project,id,input){
  if(input.attentionNote!==undefined){if(typeof input.attentionNote!=="string"||input.attentionNote.length>6000)return json({error:"Attention note is too long"},400);state.attentionNote=input.attentionNote;}
  if(input.quantity!==undefined){if(input.quantity!==null&&(!Number.isFinite(input.quantity)||input.quantity<0))return json({error:"Invalid quantity"},400);use.quantity=input.quantity;}
  if(input.name!==undefined)use.purpose=text(input.name,180,true);
- const supported=new Set(["expectedRevision","progressStatus","needsAttention","hideFromFeatureTree","attentionNote","quantity","quantityUnit","name"]);
+ if(input.assemblyId!==undefined)use.tree_node_id=await assemblyFor(env,project,input.assemblyId);
+ if(input.purchaseStatus!==undefined){if(!["not_started","already_have","need_to_buy","ignore"].includes(input.purchaseStatus))return json({error:"Invalid purchase status"},400);state.purchaseStatus=input.purchaseStatus;}
+ const updates=structuredClone(state.progressUpdates||[]);
+ if(input.progressOperationAdd!==undefined){if(input.progressOperationAdd!==true||updates.length>=200)return json({error:"Progress is limited to 200 operations"},400);updates.push({id:crypto.randomUUID(),text:"",createdAt:new Date().toISOString()});}
+ if(input.progressOperationEdit!==undefined){const edit=input.progressOperationEdit,entry=updates.find(item=>item.id===edit?.id);if(!entry||typeof edit.text!=="string"||edit.text.length>500)return json({error:"Invalid progress operation"},400);entry.text=edit.text.trim();}
+ if(input.progressOperationAdd||input.progressOperationEdit)state.progressUpdates=updates;
+ const supported=new Set(["expectedRevision","progressStatus","needsAttention","hideFromFeatureTree","attentionNote","quantity","quantityUnit","name","assemblyId","purchaseStatus","progressOperationAdd","progressOperationEdit"]);
  if(Object.keys(input).some(key=>!supported.has(key)))return json({error:"Open the project use in Workshop to edit these details."},409);
- const result=await stmt(db,"UPDATE workshop_uses SET purpose=?,quantity=?,unit=?,project_state=?,revision=revision+1 WHERE id=? AND revision=?",use.purpose,use.quantity,input.quantityUnit===undefined?use.unit:text(input.quantityUnit,32),JSON.stringify(state),id,use.revision).run();
+ const result=await stmt(db,"UPDATE workshop_uses SET purpose=?,quantity=?,unit=?,tree_node_id=?,project_state=?,revision=revision+1 WHERE id=? AND revision=?",use.purpose,use.quantity,input.quantityUnit===undefined?use.unit:text(input.quantityUnit,32),use.tree_node_id,JSON.stringify(state),id,use.revision).run();
  return result.meta.changes?json({component:await getFamilyProjectPart(env,project,id)}):json({error:"Project use changed in another tab"},409);
 }

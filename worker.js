@@ -8,14 +8,7 @@ import {onRequest as buildConfusionApi} from "./functions/api/build-confusion.js
 import {onRequest as projectTasksApi} from "./functions/api/project-tasks.js";
 import {handleTree} from "./functions/api/tree.js";
 import {handleWires,handleHarness} from "./functions/api/wires.js";
-import {handleCommonParts} from "./functions/api/commonparts.js";
-import {handlePurchasedParts} from "./functions/api/purchased-parts.js";
-import {onRequest as personalWorkshopApi} from "./functions/api/personal-workshop.js";
-import {onRequest as workshopPhotoApi} from "./functions/api/workshop-photo.js";
-import {onRequest as workshopReferenceApi} from "./functions/api/workshop-reference.js";
-import {onRequest as workshopTemplatesApi} from "./functions/api/workshop-templates.js";
 import {onRequest as workshopLookupApi} from "./functions/api/workshop-lookup.js";
-import {onRequest as workshopImageImportApi} from "./functions/api/workshop-image-import.js";
 import {handlePartFiles} from "./functions/api/part-files.js";
 import {handlePartPages} from "./functions/api/part-pages.js";
 import {handleWorkspace} from "./functions/api/workspace.js";
@@ -46,6 +39,7 @@ export default {
       if(path==="/api/workshop")return handleFamilyWorkshop(request,env);
       if(path==="/api/workshop/file")return handleFamilyWorkshopFile(request,env);
       if(path==="/api/workshop/export")return handleWorkshopExport(request,env);
+      if(["/api/commonparts","/api/purchased-parts","/api/personal-workshop","/api/workshop-photo","/api/workshop-reference","/api/workshop-templates","/api/workshop-image-import"].includes(path))return Response.json({error:"This Workshop has been replaced by families and products.",code:"WORKSHOP_RETIRED"},{status:410,headers:{"cache-control":"no-store"}});
       if(path==="/api/projects")return projectsApi({request,env,ctx});
       if(path==="/api/numbering")return numberingApi({request,env,ctx});
       if(path==="/api/proposals")return handleProposals(request,env);
@@ -67,14 +61,7 @@ export default {
       if(path==="/api/project-tasks")return projectTasksApi({request,env,ctx});
       if(path==="/api/tree")return handleTree(request,env);
       if(path==="/api/wires")return handleWires(request,env);
-      if(path==="/api/commonparts")return handleCommonParts(request,env);
-      if(path==="/api/purchased-parts")return handlePurchasedParts(request,env);
-      if(path==="/api/personal-workshop")return personalWorkshopApi({request,env,ctx});
-      if(path==="/api/workshop-photo")return workshopPhotoApi({request,env,ctx});
-      if(path==="/api/workshop-reference")return await workshopReferenceApi({request,env,ctx});
-      if(path==="/api/workshop-templates")return await workshopTemplatesApi({request,env,ctx});
       if(path==="/api/workshop-lookup")return workshopLookupApi({request,env,ctx});
-      if(path==="/api/workshop-image-import")return workshopImageImportApi({request,env,ctx});
       if(path==="/api/part-files")return handlePartFiles(request,env);
       if(path==="/api/part-pages")return handlePartPages(request,env);
       if(path==="/api/harness")return handleHarness(request,env);

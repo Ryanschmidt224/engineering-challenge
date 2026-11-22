@@ -58,6 +58,7 @@ function begin(entity,record){
 }
 function newFamily(){
  if(!mayLeave())return;
+ dirty=false;
  selectedFamily="";selectedProduct="";selectedUse="";
  begin("family",{id:crypto.randomUUID(),category_id:selectedCategory||null,name:"",kind:"part",description:"",notes:"",fields:[]});
 }
@@ -66,6 +67,7 @@ async function newUse(productId=selectedProduct){
  if(!mayLeave())return;
  if(!projects.length){const response=await requestWorkshop("/api/projects");projects=response.projects||[];}
  if(!projects.length){status("Create a project before adding a use.",true);return;}
+ dirty=false;
  begin("use",{id:crypto.randomUUID(),family_id:selectedFamily,project_id:params.get("project")||projects[0].id,tree_node_id:params.get("assembly")||null,product_id:productId||null,purpose:"",quantity:null,unit:"pcs",field_values:{},notes:""});
 }
 async function saveDraft(form){
@@ -74,7 +76,8 @@ async function saveDraft(form){
  if(["product","use"].includes(draft.entity))validateFamilyValues(familyFields(),draft.record.field_values);
  const payload=copy(draft);status("Saving…");
  const result=await requestWorkshop("/api/workshop","POST",payload);
- await refresh();dirty=false;editing=false;
+ dirty=false;editing=false;draft=null;
+ await refresh();
  if(payload.entity==="family"){selectedFamily=result.record.id;selectedProduct="";selectedUse="";}
  if(payload.entity==="product"){selectedProduct=result.record.id;selectedUse="";}
  if(payload.entity==="use"){selectedUse=result.record.id;selectedProduct=result.record.product_id||"";}
@@ -165,8 +168,8 @@ function renderDetail(){
 function renderFamilyRead(record){
  const intro=panel("About this family");appendRead(intro,"Kind",record.kind);appendRead(intro,"Description",record.description);appendRead(intro,"Notes",record.notes);detail.append(intro);
  const fields=panel("Fields","Values are entered on a product, a project use, or both.");
- const table=node("table","","data-table"),head=node("thead"),header=node("tr");for(const label of ["Field","Unit","Type"])header.append(node("th",label));head.append(header);table.append(head);
- const body=node("tbody");for(const definition of familyFields().filter(f=>!f.hidden)){const row=node("tr");row.append(node("td",definition.label+(definition.filled_on_use?" · usually entered in project":"")),node("td",definition.unit),node("td",definition.type));body.append(row);}table.append(body);fields.append(table);detail.append(fields);
+ const scroll=node("div","","table-scroll"),table=node("table","","data-table"),head=node("thead"),header=node("tr");for(const label of ["Field","Unit","Type"])header.append(node("th",label));head.append(header);table.append(head);
+ const body=node("tbody");for(const definition of familyFields().filter(f=>!f.hidden)){const row=node("tr");row.append(node("td",definition.label+(definition.filled_on_use?" · usually entered in project":"")),node("td",definition.unit),node("td",definition.type));body.append(row);}table.append(body);scroll.append(table);fields.append(scroll);detail.append(fields);
  const related=panel("Products");const list=node("div","","product-list");
  for(const product of data.products.filter(p=>p.family_id===record.id&&active(p)))list.append(button(product.name+(product.mpn?" · "+product.mpn:"")+(product.archived?" (archived)":""),()=>changeSelection({familyId:record.id,productId:product.id})));
  if(!list.children.length)list.append(node("p","No specific products yet. This family can still be used in a project.","empty"));
@@ -197,6 +200,7 @@ function renderInstanceRead(entity,record,selected,selectedProductRecord){
  if(count)detail.append(specs);
  if(entity==="product"&&record.supplier_links.length){const suppliers=panel("Supplier links");for(const supplier of record.supplier_links){appendRead(suppliers,"Supplier",supplier.supplier);appendRead(suppliers,"Supplier part number",supplier.part_number);appendRead(suppliers,"Order URL",supplier.url,{url:true});}detail.append(suppliers);}
  if(record.notes){const notes=panel("Notes");notes.append(node("p",record.notes,"notes"));detail.append(notes);}
+ if(entity==="use"){renderAttachments(detail,"family",selected.id,false);if(product)renderAttachments(detail,"product",product.id,false);}
  renderAttachments(detail,entity,record.id,false);
 }
 async function archive(entity,record){
@@ -250,11 +254,12 @@ document.addEventListener("click",event=>{if(!event.target.closest("#category-me
 document.addEventListener("keydown",event=>{if(event.key==="Escape")$("#category-menu").hidden=true;});
 $("#export-workshop").onclick=()=>{location.href="/api/workshop/export";};
 const returnHash=params.get("return")||"";
-if(/^#[a-z0-9]+\/(?:part|workspace)\/[a-zA-Z0-9_-]+$/.test(returnHash)){const link=$("#return-project");link.hidden=false;link.href="index.html"+returnHash;}
+if(/^#[a-z0-9]+(?:\/(?:part|workspace|assembly|bom|parts)(?:\/[a-zA-Z0-9_-]+)?)?$/.test(returnHash)){const link=$("#return-project");link.hidden=false;link.href="index.html"+returnHash;}
 window.addEventListener("beforeunload",event=>{if(dirty){event.preventDefault();event.returnValue="";}});
 try{
  await refresh();selectedFamily=params.get("family")||"";selectedProduct=params.get("product")||"";selectedUse=params.get("use")||"";
  const use=data.uses.find(use=>use.id===selectedUse),product=data.products.find(product=>product.id===selectedProduct);
  if(use){selectedFamily=use.family_id;selectedProduct=use.product_id||"";}else if(product)selectedFamily=product.family_id;
  renderNavigation();renderDetail();
+ if(params.get("edit")==="1"&&use){projects=(await requestWorkshop("/api/projects")).projects||[];begin("use",use);}
 }catch(error){detail.replaceChildren(panel("Workshop unavailable",error.message),button("Try again",()=>location.reload()));const signIn=node("a","Open Projects to sign in");signIn.href="index.html#home";detail.append(signIn);status(error.message,true);}

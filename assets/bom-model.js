@@ -87,11 +87,17 @@
    ?"Not specified"
    :String(part.quantity)+(part.quantityUnit?" "+part.quantityUnit:"");
  }
+ // Stable family identity, requirements and units prevent equal names from
+ // merging electrically different parts. Records remain individually openable.
+ function familyIdentity(part){
+  if(!part.familyUse)return null;
+  return JSON.stringify([part.familyId,part.productId||null,part.quantityUnit||"pcs",Object.entries(part.familyValues||{}).filter(([,value])=>value!==null&&value!==undefined&&value!=="").sort(([a],[b])=>a.localeCompare(b))]);
+ }
 
  function assemblyText(part,currentId,nodes){
   if((part.assemblyId??null)===currentId)return currentId===null?"Project":"This assembly";
   return nodes.find(node=>node.id===part.assemblyId)?.name||"Project";
  }
 
- return Object.freeze({isPartNode,assemblyIds,assemblyQuantity,quantityMultiplier,projectQuantity,selectWorkspaceParts,resolution,splitPhysicalPlan,quantityText,assemblyText});
+ return Object.freeze({isPartNode,assemblyIds,assemblyQuantity,quantityMultiplier,projectQuantity,selectWorkspaceParts,resolution,splitPhysicalPlan,quantityText,assemblyText,familyIdentity});
 });

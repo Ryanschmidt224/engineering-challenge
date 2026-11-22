@@ -80,7 +80,7 @@ export async function handleTree(request,env){
  const key="trees/"+project+".json";
  if(request.method==="GET"){
   const obj=await env.PHOTOS.get(key);
-  return reply({nodes:obj?JSON.parse(await obj.text()):[],revision:obj?.etag??null});
+  return reply({nodes:await projectUseTree(env,project,obj?JSON.parse(await obj.text()):[]),revision:obj?.etag??null});
  }
  if(request.method!=="PUT")return reply({error:"Method not allowed"},405);
  if(!await canEditProject(request,env,project))return reply({error:"Admin login required"},401);
@@ -88,7 +88,7 @@ export async function handleTree(request,env){
  if(!Array.isArray(nodes)||nodes.length>200)return reply({error:"Invalid feature tree"},400);
  const ids=new Set();
  for(const n of nodes){
-  if(!n||typeof n.id!=="string"||!/^[a-zA-Z0-9-]{1,80}$/.test(n.id)||ids.has(n.id)||typeof n.name!=="string"||!n.name.trim()||n.name.length>100||!(n.parentId===null||typeof n.parentId==="string"))return reply({error:"Invalid node"},400);
+  if(!n||typeof n.id!=="string"||!/^[a-zA-Z0-9-]{1,80}$/.test(n.id)||ids.has(n.id)||typeof n.name!=="string"||!n.name.trim()||n.name.length>(n.kind==="part"?180:100)||!(n.parentId===null||typeof n.parentId==="string"))return reply({error:"Invalid node"},400);
   ids.add(n.id);
  }
  for(const n of nodes){
@@ -142,3 +142,4 @@ export async function handleTree(request,env){
  if(written===null)return reply({error:"Concurrent tree edit. Reload before saving."},409);
  return reply({ok:true,nodes:savedNodes,revision:written?.etag??null});
 }
+import {projectUseTree} from "./workshop-db.js";

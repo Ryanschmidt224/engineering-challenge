@@ -37,18 +37,9 @@ function setupAssemblyTrees(){
    if(partWorkshopItems.get(node.partId)===true&&!showWorkshopItems)return false;
    return true;
   };
-  // Refresh the shared/personal Workshop captions without changing project BOM records.
+  // Historical labels remain readable without loading retired inventory APIs.
   const loadWorkshopCaptions=async()=>{
-   const [shared,personal]=await Promise.allSettled([
-    fetch("/api/workshop-reference",{credentials:"same-origin",cache:"no-store"}).then(r=>r.ok?r.json():null),
-    fetch("/api/personal-workshop",{credentials:"same-origin",cache:"no-store"}).then(r=>r.ok?r.json():null)
-   ]);
-   const builtIn=window.BSResources?.workshopReferences||[];
-   for(const item of builtIn)if(item.id)workshopReferences.set(item.id,item);
-   if(shared.status==="fulfilled")for(const [id,item] of Object.entries(shared.value?.items||{}))
-    workshopReferences.set(id,{...(workshopReferences.get(id)||{}),...item});
-   if(personal.status==="fulfilled")for(const item of personal.value?.items||[])
-    if(item.id){workshopReferences.set(item.id,item);workshopReferences.set("my:"+item.id,item)}
+   for(const item of window.BSResources?.workshopReferences||[])if(item.id)workshopReferences.set(item.id,item);
    render();
   };
   const syncPartNodes=parts=>{
@@ -57,7 +48,7 @@ function setupAssemblyTrees(){
     if(part.generatedFrom)continue;
     partVisibility.set(part.id,part.hideFromFeatureTree===true);
     partTools.set(part.id,part.isTool===true);
-    partWorkshopItems.set(part.id,!!part.sharedPartRef||!!part.workshopChoice||!!part.projectDetails?.workshopReferenceId||part.isTool===true);
+    partWorkshopItems.set(part.id,part.familyUse===true||!!part.sharedPartRef||!!part.workshopChoice||!!part.projectDetails?.workshopReferenceId||part.isTool===true);
     partDocuments.set(part.id,part.itemType==="document");
     if(part.partNumber)partNumbers.set(part.id,part.partNumber);
     partProgress.set(part.id,part.progressStatus||"not_started");
@@ -66,7 +57,10 @@ function setupAssemblyTrees(){
     partTreeLabels.set(part.id,{mpn:part.model||"",description:part.description||"",
      implementationName:part.implementationName||"",implementationResolved:part.implementationResolved,
      details:part.projectDetails||{},defaultPicture:defaultPartPicture(part)});
-    for(const linked of nodes.filter(n=>isPartNode(n)&&n.partId===part.id))if(linked.name!==part.name){linked.name=part.name;changed=true}
+    for(const linked of nodes.filter(n=>isPartNode(n)&&n.partId===part.id)){
+     if(linked.name!==part.name){linked.name=part.name;changed=true}
+     if(part.familyUse){const parent=nodes.some(n=>n.id===part.assemblyId&&!isPartNode(n))?part.assemblyId:null;if(linked.parentId!==parent){linked.parentId=parent;changed=true}}
+    }
     if(!known.has(part.id)){
      const parentId=nodes.some(n=>n.id===part.assemblyId&&!isPartNode(n))?part.assemblyId:null;
      nodes.push({id:"part-"+part.id,kind:"part",partId:part.id,name:part.name,parentId});
@@ -1146,6 +1140,7 @@ function setupAssemblyTrees(){
   // the existing Revisions workspace; purchased parts may have alternatives.
   const renderFunctionalPartPanel=part=>{
    if(part.itemType==="document"||part.generatedFrom)return null;
+   if(part.familyUse){const section=document.createElement("section");section.className="part-functional-panel";const text=document.createElement("p");text.textContent="Family: "+part.familyName+" · "+(part.productId?"Product: "+part.implementationName:"No product selected");section.append(text);return section;}
    const panel=document.createElement("section");panel.className="part-functional-panel part-container-overview";
    // Keep container identity in the same label-left/value-right format as
    // the rest of Part Details. This is a read-only field in View mode;
@@ -1571,7 +1566,7 @@ function setupAssemblyTrees(){
     renderPartDetails(part);
     void partDrawingPanel?.load(project,"part",partId,part.selectedImplementationId||null);
     void partFilesPanel?.load(project,partId,part.selectedImplementationId||null);
-    void showHarnessPreview(partId,version);
+    if(!part.familyUse)void showHarnessPreview(partId,version);
     if(partBackAssembly===null)partBackAssembly=part.assemblyId??null;
     partResourcePicker?.setData(data.workspace?.resources,canEdit());
     partRecipe?.setData(data.workspace,partId);
@@ -1811,7 +1806,7 @@ function setupAssemblyTrees(){
    return item;
   }
   // Group matching displayed names while preserving each underlying saved record.
-  const bomIdentity=part=>[part.name,window.BSPartFields.valueFor(part),part.manufacturer,part.model,part.partType,part.sharedPartRef]
+  const bomIdentity=part=>window.BSBomModel.familyIdentity(part)||[part.name,window.BSPartFields.valueFor(part),part.manufacturer,part.model,part.partType,part.sharedPartRef]
    .map(value=>String(value||"").trim().replace(/\s+/g," ").toLowerCase()).join("|");
   function appendGroupedBomParts(mount,entries){
    const groups=new Map();
@@ -1834,7 +1829,8 @@ function setupAssemblyTrees(){
      child.classList.add("bom-duplicate-record");children.append(child);
     }
     list.append(children);
-    row.querySelector(".bom-part-meta").textContent=group.length+" records";
+    const total=group.every(entry=>entry.part.quantity!==null&&entry.part.quantity!==undefined)?group.reduce((sum,entry)=>sum+entry.part.quantity,0):null;
+    row.querySelector(".bom-part-meta").textContent=first.part.familyUse?"Qty "+window.BSBomModel.quantityText({...first.part,quantity:total}):group.length+" records";
     row.append(list);mount.append(row);
    }
   }
@@ -1852,7 +1848,8 @@ function setupAssemblyTrees(){
     const parts=Array.isArray(result.components)?result.components:[];
     syncPartNodes(parts);
     if(bomView==="pictures"&&bomRoute())renderTiles();
-    const visibleParts=(showBomDocuments?parts:parts.filter(part=>part.itemType!=="document")).map(rolledUpPart);
+    const bomParts=parts.filter(part=>!part.isTool);
+    const visibleParts=(showBomDocuments?bomParts:bomParts.filter(part=>part.itemType!=="document")).map(rolledUpPart);
     const {shopItems,shopIds}=window.BSBomModel.selectWorkspaceParts(visibleParts,nodes,assemblyId);
     container.replaceChildren();
     // A real subassembly is shown once as an expandable BOM row, not duplicated as a normal part.
@@ -2951,7 +2948,7 @@ function setupAssemblyTrees(){
      const response=await fetch("/api/components?project="+encodeURIComponent(project),{cache:"no-store"});
      const data=await response.json();if(!response.ok)throw Error(data.error||"Could not load part");
      const part=data.components?.find(item=>item.id===node.partId);if(!part)throw Error("Linked BOM part not found");
-     const update=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{method:"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({...part,expectedRevision:part.revision??null,assemblyId:newParent})});
+     const update=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(part.id),{method:part.familyUse?"PATCH":"PUT",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(part.familyUse?{expectedRevision:part.revision??null,assemblyId:newParent}:{...part,expectedRevision:part.revision??null,assemblyId:newParent})});
      const result=await update.json();if(!update.ok)throw Error(result.error||"Unable to update BOM parent");
     }catch(error){warning=" Tree moved, but BOM parent could not be updated: "+error.message}
     openTreePart({...node,parentId:newParent});status.textContent="Part moved."+warning;
@@ -3308,7 +3305,8 @@ function setupAssemblyTrees(){
    sectionLabel("Edit");
    addItem("Rename",()=>node?renameTreeItem(node):editProjectName.click());
    if(isPart)addItem(isToolNode(node)?"Mark as build component":"Mark as tool",async()=>{
-    const res=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({isTool:!isToolNode(node),expectedRevision:partQuantities.get(node.partId)?.revision??null})});
+    if(partQuantities.get(node.partId)?.familyUse){status.textContent="Change the family kind in Workshop to classify its uses as tools.";return;}
+   const res=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({isTool:!isToolNode(node),expectedRevision:partQuantities.get(node.partId)?.revision??null})});
     const data=await res.json();if(!res.ok)throw Error(data.error||"Could not update tool classification");syncPartNodes([data.component]);
    });
    if(isPart)addItem(isHiddenPart(node)?"Unhide on feature tree":"Hide on feature tree",async()=>{

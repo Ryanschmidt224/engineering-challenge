@@ -1,4 +1,5 @@
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
+import {projectUseTree,getFamilyProjectPart} from "./workshop-db.js";
 
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const idOK=id=>typeof id==="string"&&/^[a-zA-Z0-9_-]{1,80}$/.test(id);
@@ -247,7 +248,7 @@ export async function handleAssemblyArchive(request,env){
  const body=await request.json().catch(()=>null);
  if(!body||!["archive","restore"].includes(body.action))return json({error:"Invalid archive action"},400);
  const tree=await read(bucket,treeKey(project),[]);
- const current=tree.value;
+ const current=await projectUseTree(env,project,tree.value);
  if(body.expectedRevision!==undefined&&(body.expectedRevision??null)!==(tree.object?.etag??null))
   return json({error:"The feature tree changed. Reload and retry."},409);
  if(body.action==="archive"){
@@ -255,6 +256,11 @@ export async function handleAssemblyArchive(request,env){
   const original=current.find(n=>n.id===body.nodeId);
   if(!original)return json({error:"Node no longer exists"},404);
   const subtree=collectSubtree(current,original.id),ids=nodeIds(subtree);
+  // Do not start a cross-storage archive that could silently recreate a D1 use.
+  // Workshop uses have their own reversible archive; the R2 assembly archive
+  // remains available once those uses have been moved or archived.
+  for(const node of subtree.filter(node=>node.kind==="part"))if(await getFamilyProjectPart(env,project,node.partId))
+   return json({error:"This assembly contains Workshop project uses. Move or archive those uses in Workshop first; their instructions and files are retained."},409);
   const affectedDependents=current.filter(n=>!ids.has(n.id)&&(n.dependsOn||[]).some(dep=>ids.has(dep)))
    .map(n=>({id:n.id,dependsOn:n.dependsOn.filter(dep=>ids.has(dep))}));
   const remaining=current.filter(n=>!ids.has(n.id)).map(n=>({...n,dependsOn:(n.dependsOn||[]).filter(dep=>!ids.has(dep))}));
