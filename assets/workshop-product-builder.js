@@ -197,7 +197,7 @@ function create({item={},readOnly=true}={}){
     value:f.scope==="workshop"?String(f.value||""):"",options:[...f.options]
    }))
   })),
-  setSections:incoming=>{
+  setSections:(incoming,{preserveExisting=true}={})=>{
    // Layout-only import: keep IDs stable for future editing, never copy source
    // product values. Workshop-specific values can be entered after applying.
    const previousSections=sections;
@@ -205,7 +205,7 @@ function create({item={},readOnly=true}={}){
    const imported=(Array.isArray(incoming)?incoming:[]).map(section=>({
     id:section.id||ID(),title:section.title||"Section",
     fields:(section.fields||[]).map(field=>{
-     const previous=existingFields.get(field.id);
+     const previous=preserveExisting?existingFields.get(field.id):null;
      return {
       id:field.id||ID(),label:field.label||"",type:field.type||"text",
       scope:field.scope||"workshop",unit:field.unit||"",
@@ -216,7 +216,7 @@ function create({item={},readOnly=true}={}){
    // Keep independently authored sections and fields instead of silently
    // deleting their values when applying a shared master template.
    const used=new Set(imported.flatMap(section=>section.fields.map(field=>field.id)));
-   for(const section of previousSections){
+   if(preserveExisting)for(const section of previousSections){
     const retained=section.fields.filter(field=>!used.has(field.id));
     const match=imported.find(candidate=>candidate.id===section.id);
     if(match)match.fields.push(...retained);
