@@ -13,6 +13,7 @@ import {handlePurchasedParts} from "./functions/api/purchased-parts.js";
 import {onRequest as personalWorkshopApi} from "./functions/api/personal-workshop.js";
 import {onRequest as workshopPhotoApi} from "./functions/api/workshop-photo.js";
 import {onRequest as workshopReferenceApi} from "./functions/api/workshop-reference.js";
+import {onRequest as workshopTemplatesApi} from "./functions/api/workshop-templates.js";
 import {onRequest as workshopLookupApi} from "./functions/api/workshop-lookup.js";
 import {onRequest as workshopImageImportApi} from "./functions/api/workshop-image-import.js";
 import {handlePartFiles} from "./functions/api/part-files.js";
@@ -63,6 +64,7 @@ export default {
       if(path==="/api/personal-workshop")return personalWorkshopApi({request,env,ctx});
       if(path==="/api/workshop-photo")return workshopPhotoApi({request,env,ctx});
       if(path==="/api/workshop-reference")return await workshopReferenceApi({request,env,ctx});
+      if(path==="/api/workshop-templates")return await workshopTemplatesApi({request,env,ctx});
       if(path==="/api/workshop-lookup")return workshopLookupApi({request,env,ctx});
       if(path==="/api/workshop-image-import")return workshopImageImportApi({request,env,ctx});
       if(path==="/api/part-files")return handlePartFiles(request,env);
