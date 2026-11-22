@@ -1,5 +1,4 @@
-import {workshopSchema} from "./workshop-schema.js";
-import {starterCategories,starterFamilies,starterFields} from "./workshop-seed.js";
+import {migrateWorkshop} from "./workshop-migrations.js";
 import {validateFamilyFields,validateFamilyValues,validId,isWebUrl,familyUsePart} from "../../assets/family-model.js";
 import {isAdmin} from "./auth.js";
 import {projectAllowed} from "./projects.js";
@@ -13,15 +12,8 @@ export const dbRows = async (db,sql,...values) => (await stmt(db,sql,...values).
 export async function initializeWorkshop(db) {
  if(!db)throw Error("The Workshop database is not bound to this deployment.");
  if(bootstraps.has(db))return bootstraps.get(db);
- const setup=(async()=>{
-  try{if((await stmt(db,"SELECT value FROM workshop_meta WHERE key='schema'").first())?.value==="1")return;}catch{}
-  const seed=(table,columns,entries)=>stmt(db,`INSERT OR IGNORE INTO ${table} (${columns.join(",")}) SELECT ${columns.map(key=>`json_extract(value,'$.${key}')`).join(",")} FROM json_each(?) WHERE NOT EXISTS(SELECT 1 FROM workshop_meta WHERE key='seed')`,JSON.stringify(entries));
-  await db.batch([...workshopSchema.map(sql=>db.prepare(sql)),
-   seed("workshop_categories",["id","parent_id","name","sort_order"],starterCategories),
-   seed("workshop_families",["id","category_id","name","kind"],starterFamilies),
-   seed("workshop_fields",["id","family_id","label","unit","type","choices","sort_order","hidden","filled_on_use"],starterFields),
-   db.prepare("INSERT OR IGNORE INTO workshop_meta(key,value) VALUES('seed','1'),('schema','1')")]);
- })();
+ // Numbered migrations (workshop-migrations.js) run once per isolate.
+ const setup=migrateWorkshop(db);
  bootstraps.set(db,setup);
  try{await setup;}catch(error){bootstraps.delete(db);throw error;}
 }

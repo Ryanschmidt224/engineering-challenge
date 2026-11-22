@@ -5,7 +5,7 @@ import {createInterface} from "node:readline";
 import {createHash} from "node:crypto";
 import {DatabaseSync} from "node:sqlite";
 import {pathToFileURL} from "node:url";
-import {workshopSchema} from "../functions/api/workshop-schema.js";
+import {allSchemaStatements,latestSchemaVersion} from "../functions/api/workshop-migrations.js";
 import {validateFamilyFields,validateFamilyValues,isWebUrl} from "../assets/family-model.js";
 
 const names=["categories","families","fields","products","uses","attachments"];
@@ -15,7 +15,7 @@ export function restoreCatalog(catalog,db) {
  if(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'workshop_%'").get())throw Error("Restore requires an empty destination database");
  db.exec("PRAGMA foreign_keys=ON; BEGIN");
  try {
-  for(const sql of workshopSchema)db.exec(sql);
+  for(const sql of allSchemaStatements())db.exec(sql);
   for(const name of names){
    const table="workshop_"+name,columns=new Set(db.prepare("PRAGMA table_info("+table+")").all().map(row=>row.name));
    let rows=catalog[name];
@@ -34,7 +34,8 @@ export function restoreCatalog(catalog,db) {
   }
   for(const file of catalog.attachments)if(file.url&&!isWebUrl(file.url))throw Error("Unsafe attachment link");
   if(db.prepare("PRAGMA foreign_key_check").all().length)throw Error("Broken catalog references");
-  db.exec("INSERT INTO workshop_meta(key,value) VALUES('schema','1'),('seed','1'); COMMIT");
+  db.prepare("INSERT INTO workshop_meta(key,value) VALUES('schema',?),('seed','1')").run(String(latestSchemaVersion));
+  db.exec("COMMIT");
  }catch(error){db.exec("ROLLBACK");throw error;}
 }
 
