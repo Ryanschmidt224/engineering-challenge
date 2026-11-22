@@ -169,6 +169,37 @@ export async function onRequest({request,env}){
    seenGeneric.add(key);genericFields.push({label,unit});
   }
   patch.genericFields=genericFields;
+  // Presentation metadata is owned by this Workshop item. Never rename stable keys.
+  const rawLayout=body.details.tableLayout||{};
+  if(!rawLayout||typeof rawLayout!=="object"||Array.isArray(rawLayout))
+   return json({error:"Invalid table layout"},400);
+  const sectionKeys=["identity","ordering","characteristics","notes"];
+  const layoutSections={};
+  for(const key of sectionKeys){
+   const entry=rawLayout.sections?.[key]||{};
+   if(!entry||typeof entry!=="object"||Array.isArray(entry))
+    return json({error:"Invalid table section"},400);
+   const labels={};
+   if(entry.labels&&(!entry.labels||typeof entry.labels!=="object"||Array.isArray(entry.labels)))
+    return json({error:"Invalid field labels"},400);
+   for(const [name,label] of Object.entries(entry.labels||{})){
+    if(!/^[a-zA-Z][a-zA-Z0-9]{0,50}$/.test(name)||typeof label!=="string")
+     return json({error:"Invalid table field label"},400);
+    labels[name]=label.trim().slice(0,100);
+   }
+   if(entry.rows!==undefined&&(!Array.isArray(entry.rows)||entry.rows.length>30))
+    return json({error:"Invalid custom table rows"},400);
+   const rows=[];
+   for(const row of entry.rows||[]){
+    if(!row||typeof row!=="object"||Array.isArray(row)||typeof row.label!=="string"||typeof row.value!=="string")
+     return json({error:"Invalid custom table row"},400);
+    if(!row.label.trim())continue;
+    rows.push({id:/^row-[a-f0-9-]{10,64}$/.test(row.id||"")?row.id:crypto.randomUUID(),
+     label:row.label.trim().slice(0,100),value:row.value.slice(0,1000)});
+   }
+   layoutSections[key]={title:String(entry.title||"").trim().slice(0,100),labels,rows};
+  }
+  patch.tableLayout={sections:layoutSections};
   const productSections=cleanProductSections(body.details.productSections);
   if(productSections===null)return json({error:"Invalid Product Builder sections or fields"},400);
   patch.productSections=productSections;
