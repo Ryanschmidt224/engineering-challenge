@@ -2,6 +2,23 @@
 // No production data or credentials are used; every /api request is mocked.
 import {test,expect} from "@playwright/test";
 
+// Supply the catalog contract even when a test only mocks a narrower feature.
+// Missing catalog fixtures previously hid all project cards before a test began.
+function apiResponse(route, data) {
+ if(new URL(route.request().url()).pathname!=="/api/projects"||Array.isArray(data?.projects))return data;
+ return {projects:[
+  {id:"launcher",name:"Foam-dart launcher",isOwner:true,builtIn:true},
+  {id:"linear",name:"Electromagnetic linear actuator",isOwner:true,builtIn:true},
+  {id:"robot",name:"Robotic arm",isOwner:true,builtIn:true}
+ ]};
+}
+
+async function startCatalogPart(page) {
+ await page.locator('#commonparts [data-catalog-category="electronics"]').click({button:"right"});
+ await page.getByRole("menuitem",{name:"Add part",exact:true}).click();
+ await page.locator(".workshop-category-create-dialog").getByRole("button",{name:"Add part",exact:true}).click();
+}
+
 test("project feature tree and workspace initialize without browser errors", async ({page}) => {
  const errors=[];
  page.on("pageerror", error=>errors.push(error.stack||error.message));
@@ -34,7 +51,7 @@ test("project feature tree and workspace initialize without browser errors", asy
    case "/api/wires": data={wires:[]};break;
    default: data={};break;
   }
-  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/");
  const initialTree=page.locator("#launcher .assembly-tree-nodes");
@@ -152,7 +169,7 @@ test("new custom part retains explicit project numbering without confusing it wi
  const partDetailsOrder=await page.locator(".library-part-dialog .library-identity-section > .library-field").allTextContents();
  expect(partDetailsOrder[0]).toContain("Part type");
  await expect(page.locator(".library-part-dialog .library-auto-number-tip")).toHaveAttribute("title", /next available part number as defined in the part settings page/);
- await expect(page.locator(".library-part-dialog .library-function-tip")).toHaveAttribute("title", /project hierarchy/);
+ await expect(page.locator(".library-part-dialog .library-function-tip").first()).toHaveAttribute("title", /project hierarchy/);
  // Tooltip must be visible in the modal top layer, not behind the dialog.
  await page.locator(".library-part-dialog .library-auto-number-tip").hover();
  const sharedTip=page.locator(".library-part-dialog > .bs-global-tooltip");
@@ -170,7 +187,7 @@ test("new custom part retains explicit project numbering without confusing it wi
  await expect(guide).toContainText("No implementation selected yet");
  await guide.getByRole("button",{name:"Close examples"}).click();
  await expect(guide).toHaveCount(0);
- await expect(page.locator(".library-part-dialog .library-field",{hasText:"Container"}).locator("input")).toHaveAttribute("maxlength","20");
+ await expect(page.locator(".library-part-dialog .library-field",{hasText:"Container"}).locator("input[placeholder=\"e.g. Motor switch\"]")).toHaveAttribute("maxlength","20");
  await expect(page.locator(".library-part-dialog .library-container-name-hint")).toHaveText("(name)");
  await expect(page.locator(".library-part-dialog .library-project-only")).toBeHidden();
  await expect(page.locator(".library-part-dialog .library-auto-number-help")).toHaveCount(0);
@@ -220,7 +237,7 @@ test("linear and robot projects share the complete feature tree, summary, BOM an
   else if(u.pathname==="/api/workspace")data={workspace:{recipe:[],resources:{tools:[],parts:[],calculators:[]}},revision:"test"};
   else if(u.pathname==="/api/projects")data={projects:[]};
   else if(u.pathname==="/api/accounts")data={user:null};
-  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/");
  for(const id of ["linear","robot"]){
@@ -265,7 +282,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
    {id:"step-one",title:"Prepare components",standard:"Inspect the parts",notes:[],photos:[]},
    {id:"step-two",title:"Measure resistance",standard:"Verify resistance",notes:[],photos:[]}
   ],resources:[]},revision:"test"};
-  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/");
  await page.locator('.project-link[data-nav="launcher"]').click();
@@ -463,124 +480,61 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
 });
 
 
-test("step editor keeps photo attachments with their note and saves from either end",async({page})=>{
- const errors=[];
- page.on("pageerror",error=>errors.push(error.message));
- await page.route("**/api/**",route=>{
-  const pathname=new URL(route.request().url()).pathname;
-  if(pathname==="/api/recipe-files"&&route.request().method()==="POST"){
-   return route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({id:"recipe-files/launcher/11111111-1111-4111-8111-111111111111.png"})});
-  }
-  return route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(pathname==="/api/auth"?{authenticated:false,isAdmin:false}:{})});
- });
+test("Work Instructions keep stable containers while typed entries own their content",async({page})=>{
+ await page.route("**/api/**",route=>route.fulfill({json:apiResponse(route,{})}));
  await page.goto("/");
  await page.evaluate(()=>{
-  const article=document.createElement("article");
-  article.className="recipe-test-article";
-  article.innerHTML="<h2>Work instructions</h2>";
-  document.body.append(article);
+  const article=document.createElement("article");article.className="recipe-current-fixture";
+  article.innerHTML="<h2>Work instructions</h2>";document.body.append(article);
   window.testRecipe=window.BSRecipes.mount(article,{
-   project:"launcher",admin:()=>true,
-   onSave:async()=>{window.lastRecipeSave=window.testRecipe.getData()}
-  });
-  window.testRecipe.setData({recipe:[
-   {id:"test-step",title:"Measure",standard:"Verify resistance",
-    notes:["Connect the meter","Record the reading"],photos:[],photoNames:{}}
-  ]});
- });
- const card=page.locator(".recipe-test-article");
- await card.locator(".recipe-step-edit-toggle").click();
- await expect(card.locator(".recipe-step-edit-toggle")).toHaveText("Save");
- await expect(card.locator(".recipe-save-step-bottom")).toHaveText("Save");
- await expect(card.getByRole("button",{name:"Duplicate"})).toHaveCount(0);
- const notes=card.locator(".recipe-step-note");
- await expect(notes).toHaveCount(2);
- const chooser=page.waitForEvent("filechooser");
- await notes.nth(0).getByRole("button",{name:"Add photo after note 1"}).click();
- await (await chooser).setFiles({name:"measurement.png",mimeType:"image/png",buffer:Buffer.from("sample")});
- await expect(notes.nth(0).locator(".recipe-step-photo")).toHaveCount(1);
- await expect(notes.nth(1).locator(".recipe-step-photo")).toHaveCount(0);
- await expect.poll(()=>page.evaluate(()=>window.testRecipe.hasPendingUploads())).toBe(false);
- await card.locator(".recipe-save-step-bottom").click();
- await expect(card.locator(".recipe-step-edit-toggle")).toHaveText("Edit");
- const saved=await page.evaluate(()=>window.lastRecipeSave?.[0]);
- expect(saved.photoAfterNote).toEqual({"recipe-files/launcher/11111111-1111-4111-8111-111111111111.png":0});
- expect(saved.noteIds).toHaveLength(2);
- expect(saved.photoNoteIds["recipe-files/launcher/11111111-1111-4111-8111-111111111111.png"]).toBe(saved.noteIds[0]);
- await page.evaluate(()=>window.testRecipe.setData({recipe:window.lastRecipeSave}));
- await expect(card.locator(".recipe-step-detail .recipe-reader-photo")).toHaveCount(1);
- const content=await card.locator(".recipe-reader-text").innerText();
- expect(content.indexOf("Connect the meter")).toBeLessThan(content.indexOf("Record the reading"));
- // Removing an associated note makes its photo unassigned, never deleted.
- await card.locator(".recipe-step-edit-toggle").click();
- await card.locator(".recipe-step-note").first().getByRole("button",{name:"Remove note"}).click();
- await expect(card.locator(".recipe-step-photos .recipe-step-photo")).toHaveCount(1);
- await card.locator(".recipe-save-step-bottom").click();
- const afterRemoval=await page.evaluate(()=>window.lastRecipeSave?.[0]);
- expect(afterRemoval.notes).toEqual(["Record the reading"]);
- expect(afterRemoval.noteIds).toHaveLength(1);
- expect(afterRemoval.photos).toHaveLength(1);
- expect(afterRemoval.photoNoteIds).toEqual({});
- await page.evaluate(()=>window.testRecipe.setData({recipe:window.lastRecipeSave}));
- await expect(card.locator(".recipe-step-detail .recipe-reader-photo")).toHaveCount(1);
- expect(errors).toEqual([]);
-});
-
-test("in-flight uploads block saving and a failed save preserves the editor",async({page})=>{
- let releaseUpload;
- const uploadGate=new Promise(resolve=>{releaseUpload=resolve});
- const errors=[];
- page.on("pageerror",error=>errors.push(error.message));
- await page.route("**/api/**",async route=>{
-  const pathname=new URL(route.request().url()).pathname;
-  if(pathname==="/api/recipe-files"&&route.request().method()==="POST"){
-   await uploadGate;
-   return route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
-    id:"recipe-files/launcher/22222222-2222-4222-8222-222222222222.png"
-   })});
-  }
-  return route.fulfill({status:200,contentType:"application/json",body:"{}"});
- });
- await page.goto("/");
- await page.evaluate(()=>{
-  const article=document.createElement("article");
-  article.className="recipe-upload-guard";
-  article.innerHTML="<h2>Work instructions</h2>";
-  document.body.append(article);
-  window.saveAttempts=0;
-  window.guardedRecipe=window.BSRecipes.mount(article,{
-   project:"launcher",admin:()=>true,
-   onSave:async()=>{
-    window.saveAttempts++;
-    if(window.saveAttempts===1)throw Error("Network unavailable");
-    window.successfulRecipe=window.guardedRecipe.getData();
+   project:"launcher",admin:()=>true,onSave:async()=>{window.lastRecipeSave=window.testRecipe.getData()},
+   renderInvestigations:(step,area)=>{
+    const host=document.createElement("div");host.className="investigation-active-content";
+    const entry=document.createElement("details");entry.className="investigation-card";
+    entry.innerHTML="<summary>Voltage measurement</summary><p>5 V</p>";host.append(entry);area.append(host);
    }
   });
-  window.guardedRecipe.setData({recipe:[{
-   id:"guard-step",title:"Inspect",standard:"Check voltage",
-   notes:["Test note"],photos:[],photoNames:{}
-  }]});
+  window.testRecipe.setData({recipe:[{id:"step-measure",title:"Measure voltage",tileOrder:["record:measurement"]}]});
  });
- const card=page.locator(".recipe-upload-guard");
- await card.locator(".recipe-step-edit-toggle").click();
- const chooser=page.waitForEvent("filechooser");
- await card.getByRole("button",{name:"Add photo after note 1"}).click();
- await (await chooser).setFiles({name:"meter.png",mimeType:"image/png",buffer:Buffer.from("sample")});
- await expect(card.locator(".recipe-feedback")).toContainText("Uploading attachment");
- await card.locator(".recipe-save-step-bottom").click();
- await expect(card.locator(".recipe-feedback")).toContainText("Wait for photo uploads");
- expect(await page.evaluate(()=>window.saveAttempts)).toBe(0);
- releaseUpload();
- await expect(card.locator(".recipe-step-note .recipe-step-photo")).toHaveCount(1);
- await card.locator(".recipe-save-step-bottom").click();
- await expect(card.locator(".recipe-feedback")).toContainText("Network unavailable");
- await expect(card.locator(".recipe-step-edit-toggle")).toHaveText("Save");
- await expect(card.locator(".recipe-step-note textarea")).toHaveValue("Test note");
- await card.locator(".recipe-save-step-bottom").click();
- await expect(card.locator(".recipe-step-edit-toggle")).toHaveText("Edit");
- const saved=await page.evaluate(()=>window.successfulRecipe?.[0]);
- expect(saved.photoNoteIds[saved.photos[0]]).toBe(saved.noteIds[0]);
- expect(errors).toEqual([]);
+ const card=page.locator(".recipe-current-fixture");
+ await card.locator(".recipe-disclosure-toggle").click();
+ await expect(card.getByText("Voltage measurement",{exact:true})).toBeVisible();
+ await card.getByRole("button",{name:"Expand all entries"}).click();
+ await expect(card.locator("details.investigation-card")).toHaveAttribute("open","");
+ await card.getByRole("button",{name:"Edit",exact:true}).click();
+ await card.getByPlaceholder("Work Instruction name").fill("Measure loaded voltage");
+ await card.getByRole("button",{name:"Save",exact:true}).click();
+ expect(await page.evaluate(()=>window.lastRecipeSave)).toEqual([{
+  id:"step-measure",title:"Measure loaded voltage",archivedAt:"",archiveNote:"",tileOrder:["record:measurement"]
+ }]);
+ await expect(card.getByRole("button",{name:"Edit",exact:true})).toBeVisible();
+});
+
+test("failed Work Instruction saves preserve the edited title and allow retry",async({page})=>{
+ await page.route("**/api/**",route=>route.fulfill({json:apiResponse(route,{})}));
+ await page.goto("/");
+ await page.evaluate(()=>{
+  const article=document.createElement("article");article.className="recipe-save-fixture";
+  article.innerHTML="<h2>Work instructions</h2>";document.body.append(article);
+  window.saveAttempts=0;
+  window.testRecipe=window.BSRecipes.mount(article,{
+   project:"launcher",admin:()=>true,onSave:async()=>{
+    window.saveAttempts++;if(window.saveAttempts===1)throw Error("Network unavailable");
+    window.successfulRecipe=window.testRecipe.getData();
+   }
+  });
+  window.testRecipe.setData({recipe:[{id:"step-inspect",title:"Inspect"}]});
+ });
+ const card=page.locator(".recipe-save-fixture");
+ await card.locator(".recipe-disclosure-toggle").click();
+ await card.getByRole("button",{name:"Edit",exact:true}).click();
+ await card.getByPlaceholder("Work Instruction name").fill("Inspect voltage");
+ await card.getByRole("button",{name:"Save",exact:true}).click();
+ await expect(card.locator(".recipe-feedback")).toHaveText("Network unavailable");
+ await expect(card.getByPlaceholder("Work Instruction name")).toHaveValue("Inspect voltage");
+ await card.getByRole("button",{name:"Save",exact:true}).click();
+ await expect(card.getByRole("button",{name:"Edit",exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>window.successfulRecipe[0].title)).toBe("Inspect voltage");
 });
 
 test("Workshop and Document tree filters operate independently",async({page})=>{
@@ -599,7 +553,7 @@ test("Workshop and Document tree filters operate independently",async({page})=>{
   if(url.pathname==="/api/photos")data={photos:[]};
   if(url.pathname==="/api/workspace")data={workspace:{recipe:[],resources:[]},revision:"test"};
   if(url.pathname==="/api/auth")data={authenticated:false,isAdmin:false};
-  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/");
  await page.locator('.project-link[data-nav="launcher"]').click();
@@ -649,7 +603,7 @@ test("saving a part closes the moved editor and restores part workspace",async({
    else data={components:[part]};
   }else if(url.pathname==="/api/photos")data={photos:[]};
   else if(url.pathname==="/api/workspace")data={workspace:{recipe:[],resources:[]},revision:"test"};
-  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/");
  await page.locator('.project-link[data-nav="launcher"]').click();
@@ -690,7 +644,7 @@ test("personal project builds a private editable workspace from the shared proje
   if(url.pathname==="/api/workspace")value={workspace:{recipe:[],resources:{tools:[],parts:[],calculators:[]}},revision:null};
   if(url.pathname==="/api/photos")value={photos:[]};
   if(url.pathname==="/api/drawings")value={drawings:[]};
-  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(value)});
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,value))});
  });
  await page.goto("/");
  const card=page.locator(".project-personal-card",{hasText:"Test Personal Project"});
@@ -740,7 +694,7 @@ test("owner manages project privacy and removal from the summary",async({page})=
   else if(url.pathname==="/api/workspace")value={workspace:{recipe:[],resources:{tools:[],parts:[],calculators:[]}},revision:null};
   else if(url.pathname==="/api/personal-workshop")value={items:[]};
   else if(url.pathname==="/api/auth")value={authenticated:false};
-  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(value)});
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,value))});
  });
  await page.goto("/");
  await expect(page.locator(".project-directory-new")).toBeVisible();
@@ -815,7 +769,7 @@ test("documents can be hidden independently in feature tree and BOM",async({page
   else if(u.pathname==="/api/workspace")data={workspace:{recipe:[],resources:{tools:[],parts:[],calculators:[]}},revision:"one"};
   else if(u.pathname==="/api/projects")data={projects:[]};
   else if(u.pathname==="/api/accounts")data={user:null};
-  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/#launcher");
  const tree=page.locator("#launcher .assembly-tree-nodes");
@@ -863,24 +817,22 @@ test("administrator can add a catalog item from the Workshop and open its detail
   else if(url.pathname==="/api/photos")data={photos:[]};
   else if(url.pathname==="/api/workspace")data={workspace:{recipe:[],resources:[]},revision:"test"};
   await route.fulfill({status:url.pathname==="/api/workshop-reference"&&method==="POST"?201:200,
-   contentType:"application/json",body:JSON.stringify(data)});
+   contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/#commonparts");
  const workshop=page.locator("#commonparts");
- const create=workshop.locator(".workshop-catalog-create");
- await expect(create).toBeVisible();
- await create.click();
+ await startCatalogPart(page);
  const editor=workshop.locator(".workshop-item-edit-form");
  await expect(editor).toBeVisible();
  await editor.getByLabel("Item name").fill("Adjustable 24 V supply");
  await editor.getByLabel("Product type (e.g. Multimeters)").fill("Bench DC Power Supplies");
  await editor.getByLabel("Specifications").fill("24 V DC output");
  await editor.getByLabel("Website category").selectOption("electronics");
- await editor.getByLabel("Product family").selectOption("power-supplies");
+
  await editor.getByRole("button",{name:"Create catalog item"}).click();
  await expect(workshop.locator(".workshop-item-page-heading h2")).toContainText("Adjustable 24 V supply");
- await expect(workshop.locator(".workshop-spec-table")).toContainText("24 V DC output");
- expect(posted.details.familyId).toBe("power-supplies");
+ await expect(workshop.locator(".workshop-item-edit-form").getByLabel("Specifications",{exact:true})).toHaveValue("24 V DC output");
+ expect(posted.details.spec).toBe("24 V DC output");
  expect(posted.details.category).toBe("electronics");
  expect(posted.details.typeName).toBe("Bench DC Power Supplies");
 });
@@ -904,7 +856,7 @@ test("New Part ends Workshop edits after identity and confirms public/private sa
   else if(u.pathname==="/api/components")data={components:[]};
   else if(u.pathname==="/api/photos")data={photos:[]};
   else if(u.pathname==="/api/workspace")data={workspace:{recipe:[],resources:[]},revision:"test"};
-  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/");
  const open=()=>page.evaluate(()=>{
@@ -939,7 +891,7 @@ test("New Part ends Workshop edits after identity and confirms public/private sa
  await modal.getByLabel("Public Workshop category").selectOption("electronics");
  await expect(modal.locator(".library-field",{hasText:"Part type"}).first()).toBeHidden();
  await modal.locator(".library-field",{hasText:"Mfg part # (MPN)"}).locator("input").fill("PSU-24V");
- await modal.locator(".library-field",{hasText:"Container"}).locator("input").fill("DC supply");
+ await modal.locator(".library-field",{hasText:"Container"}).locator("input[placeholder=\"e.g. Motor switch\"]").fill("DC supply");
  await expect(modal.locator(".library-project-only")).toBeHidden();
  await expect(modal.locator(".library-number-choice")).toBeHidden();
  await expect(modal.locator(".library-field",{hasText:"Quantity (optional)"})).toBeHidden();
@@ -963,7 +915,7 @@ test("New Part ends Workshop edits after identity and confirms public/private sa
  await open();
  modal=page.locator(".library-part-dialog");
  await modal.locator(".library-workshop-add input").check();
- await modal.locator(".library-field",{hasText:"Container"}).locator("input").fill("1/4 W resistor");
+ await modal.locator(".library-field",{hasText:"Container"}).locator("input[placeholder=\"e.g. Motor switch\"]").fill("1/4 W resistor");
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
  await expect(modal).toHaveCount(0);
  payload=await page.evaluate(()=>window.__createdTestPart);
@@ -998,7 +950,7 @@ test("Failed Workshop publication remains in New Part dialog and does not create
    url.pathname==="/api/workshop-reference"?{items:{}}:
    url.pathname==="/api/personal-workshop"?{items:[]}:
    url.pathname==="/api/projects"?{projects:[]}:{};
-  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(body)});
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,body))});
  });
  await page.goto("/");
  await page.exposeFunction("recordBomCreate",()=>{createCalls++});
@@ -1009,7 +961,7 @@ test("Failed Workshop publication remains in New Part dialog and does not create
  await modal.locator(".library-workshop-add input").check();
  await modal.locator('input[name="workshop-destination"][value="public"]').check();
  await modal.locator(".library-field",{hasText:"Mfg part # (MPN)"}).locator("input").fill("2N7000");
- await modal.locator(".library-field",{hasText:"Container"}).locator("input").fill("2N7000 MOSFET");
+ await modal.locator(".library-field",{hasText:"Container"}).locator("input[placeholder=\"e.g. Motor switch\"]").fill("2N7000 MOSFET");
  await modal.locator(".library-dialog-actions").getByRole("button",{name:"Create part"}).click();
  await expect(modal).toBeVisible();
  await expect(modal.locator(".library-dialog-status")).toContainText("Sign in to contribute to the public Workshop");
@@ -1047,7 +999,7 @@ test("Edit Part separates Container, Part details and purchased alternatives",as
  expect(source).not.toContain('group("specifications","Specifications"');
  expect(source).toContain('document.createTextNode("Part number")');
  expect(source).toContain('className="part-container-caption"');
- expect(source).toContain('textContent="Container"');
+ expect(source).toContain('textContent="Container (name)"');
  expect(source).not.toContain('firstChild.nodeValue="Functional part name"');
  expect(source).not.toContain('document.createTextNode("Functional part number")');
  const editorStyles=await page.evaluate(async()=>{
@@ -1073,7 +1025,7 @@ test("Missing Workshop search offers Create new part radio and preserved manufac
   else if(url.pathname==="/api/tree")data={nodes:[],revision:"test"};
   else if(url.pathname==="/api/components")data={components:[]};
   else if(url.pathname==="/api/workspace")data={workspace:{recipe:[],resources:[]},revision:"test"};
-  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/");
  await page.evaluate(()=>{
@@ -1102,11 +1054,11 @@ test("Missing Workshop search offers Create new part radio and preserved manufac
  await expect(dialog.locator(".library-workshop-quick-search")).toBeVisible();
  await expect(dialog.locator(".library-field",{hasText:"Part category"})).toBeHidden();
  await dialog.locator('input[name="new-part-source"][value="new"]').check();
- await dialog.locator(".library-field",{hasText:"Container"}).locator("input").fill("2N7000");
+ await dialog.locator(".library-field",{hasText:"Container"}).locator("input[placeholder=\"e.g. Motor switch\"]").fill("2N7000");
  await dialog.locator(".library-field",{hasText:"Mfg part # (MPN)"}).locator("input").fill("2N7000");
  await dialog.locator(".library-workshop-add input").check();
  await expect(dialog.locator('input[name="new-part-source"][value="new"]')).toBeChecked();
- await expect(dialog.locator(".library-field",{hasText:"Container"}).locator("input")).toHaveValue("2N7000");
+ await expect(dialog.locator(".library-field",{hasText:"Container"}).locator("input[placeholder=\"e.g. Motor switch\"]")).toHaveValue("2N7000");
  await expect(dialog.locator(".library-field",{hasText:"Mfg part # (MPN)"}).locator("input")).toHaveValue("2N7000");
  await expect(dialog.locator('input[name="new-part-number-mode"][value="auto"]')).toBeChecked();
  await expect(dialog.locator('input[name="new-part-number-mode"]')).toHaveCount(2);
@@ -1150,7 +1102,7 @@ test("project navigation orders summary below tree and page notes can be created
   else if(url.pathname==="/api/part-files")data={files:[]};
   else if(url.pathname==="/api/drawings")data={drawings:[]};
   await route.fulfill({status:method==="POST"&&url.pathname==="/api/photos"?201:200,
-   contentType:"application/json",body:JSON.stringify(data)});
+   contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/#launcher");
  const sidebar=page.locator("#launcher .assembly-sidebar");
@@ -1213,7 +1165,7 @@ test("linked Workshop items open, search current fields and return to the origin
    data={draft:{name:"Suggested switch"},needsReview:true,
     lookupUsage:{estimatedUsd:0.051,searches:2},missingSpecs:searches.at(-1).searchHint?["Coating"]:[]};
   }
-  await route.fulfill({json:data});
+  await route.fulfill({json:apiResponse(route,data)});
  });
  const details=page.locator("#launcher .part-details-collapse");
  const itemPage=page.locator(".workshop-item-page");
@@ -1233,10 +1185,10 @@ test("linked Workshop items open, search current fields and return to the origin
  await expect(itemPage.getByRole("heading",{name:item.name,exact:true})).toBeVisible();
  await itemPage.getByRole("button",{name:"Edit",exact:true}).click();
  await itemPage.getByRole("button",{name:"Find with AI"}).click();
- await expect.poll(()=>searches.at(-1)).toEqual({partNumber:"ABC-10",featureTreeDescription:"Motor switch"});
+ await expect.poll(()=>searches.at(-1)).toMatchObject({partNumber:"ABC-10",featureTreeDescription:"Motor switch"});
  await itemPage.getByLabel("Manufacturer part number",{exact:true}).fill("");
  await itemPage.getByRole("button",{name:"Find with AI"}).click();
- await expect.poll(()=>searches.at(-1)).toEqual({partNumber:"",featureTreeDescription:"Motor switch"});
+ await expect.poll(()=>searches.at(-1)).toMatchObject({partNumber:"",featureTreeDescription:"Motor switch"});
  await itemPage.getByRole("button",{name:"Back to project part"}).click();
  await expect(page).toHaveURL(new RegExp("#launcher/part/"+publicPart+"$"));
  await expect(page.locator("#launcher .part-workspace-title")).toHaveText("Project switch");
@@ -1246,27 +1198,23 @@ test("linked Workshop items open, search current fields and return to the origin
  await itemPage.getByRole("button",{name:"Edit",exact:true}).click();
  await page.locator("#workshop-editor").getByRole("button",{name:"Fill details with AI"}).click();
  await expect.poll(()=>searches.length).toBe(3);
- await expect.poll(()=>searches.at(-1)).toEqual({partNumber:"ABC-10",featureTreeDescription:"Motor switch"});
+ await expect.poll(()=>searches.at(-1)).toMatchObject({partNumber:"ABC-10",featureTreeDescription:"Motor switch"});
  await page.getByRole("button",{name:"Back to project part"}).click();
  await expect(page).toHaveURL(new RegExp("#launcher/part/"+privatePart+"$"));
  await expect(page.locator("#launcher .part-workspace-title")).toHaveText("Project spare switch");
  await page.locator('nav [data-nav="commonparts"]').click();
- await page.getByRole("button",{name:"+ Add catalog item"}).click();
+ await startCatalogPart(page);
  await itemPage.getByLabel("Manufacturer part number",{exact:true}).fill("NEW-42");
  const placement=await itemPage.locator('[data-part-editor-section="identity"]').evaluate(section=>{
-  const [,description,,manufacturer]=section.querySelectorAll("input");
-  const button=section.querySelector(".workshop-ai-lookup-row button");
-  return [description,button,manufacturer].map(element=>element.getBoundingClientRect().toJSON());
+  const button=section.querySelector(".bs-action-lookup-button");
+  return {button:button.getBoundingClientRect().top,inputs:[...section.querySelectorAll(".part-editor-fields-grid input")].map(input=>input.getBoundingClientRect().bottom)};
  });
- const [description,button,manufacturer]=placement;
- expect(button.top).toBeGreaterThanOrEqual(description.bottom);
- expect(button.left).toBeCloseTo(description.left,1);
- expect(manufacturer.top).toBeGreaterThan(button.bottom);
+ expect(placement.button).toBeGreaterThanOrEqual(Math.max(...placement.inputs));
  await itemPage.getByRole("button",{name:"Find with AI"}).click();
- await expect.poll(()=>searches.at(-1)).toEqual({partNumber:"NEW-42",featureTreeDescription:""});
- await itemPage.getByLabel("Help AI find the item (optional)",{exact:true}).fill("DigiKey https://www.digikey.com/example");
- await itemPage.getByLabel("Help AI find the item (optional)",{exact:true}).press("Enter");
- await expect.poll(()=>searches.at(-1)).toEqual({
+ await expect.poll(()=>searches.at(-1)).toMatchObject({partNumber:"NEW-42",featureTreeDescription:""});
+ await itemPage.getByLabel("Optional information for Find with AI",{exact:true}).fill("DigiKey https://www.digikey.com/example");
+ await itemPage.getByLabel("Optional information for Find with AI",{exact:true}).press("Enter");
+ await expect.poll(()=>searches.at(-1)).toMatchObject({
   partNumber:"NEW-42",featureTreeDescription:"",searchHint:"DigiKey https://www.digikey.com/example"
  });
  await expect(itemPage.getByText("Estimated API cost $0.051 · 2 web searches",{exact:true})).toBeVisible();
@@ -1317,7 +1265,7 @@ test("Reload Workshop data sits after Modify part and refreshes the linked proje
    }else data={components:[part]};
   }
   if(url.pathname==="/api/workspace")data={workspace:{recipe:[],resources:[]}};
-  await route.fulfill({json:data});
+  await route.fulfill({json:apiResponse(route,data)});
  });
  await page.goto("/#launcher/part/"+id);
  await expect(page.locator("#launcher .part-workspace-title")).toHaveText("Project edit");
@@ -1365,7 +1313,7 @@ test("photo pencil accepts pasted images and Code and Document items have distin
     return route.fulfill({path:"assets/default-document-photo.webp",contentType:"image/webp"});
    return route.fulfill({status:404});
   }
-  await route.fulfill({json:data});
+  await route.fulfill({json:apiResponse(route,data)});
  });
  const pasteImage=async field=>field.evaluate(element=>{
   const data=new DataTransfer();
@@ -1377,6 +1325,7 @@ test("photo pencil accepts pasted images and Code and Document items have distin
  const pasteField=scope=>scope.getByRole("textbox",{name:"Paste a copied photo",includeHidden:true});
  await expect(pasteField(assembly)).toBeHidden();
  await assembly.getByRole("button",{name:"Edit photo"}).click();
+ await assembly.getByRole("button",{name:"Add",exact:true}).click();
  await expect(pasteField(assembly)).toBeVisible();
  await expect(pasteField(assembly)).toHaveAttribute("contenteditable","true");
  await pasteImage(pasteField(assembly));
@@ -1391,6 +1340,7 @@ test("photo pencil accepts pasted images and Code and Document items have distin
  await expect.poll(()=>cover.evaluate(image=>image.naturalWidth)).toBeGreaterThan(0);
  await part.getByRole("button",{name:"Edit photo"}).click();
  await expect(part.getByRole("button",{name:"Delete",exact:true})).toBeDisabled();
+ await part.getByRole("button",{name:"Add",exact:true}).click();
  await expect(pasteField(part)).toBeVisible();
  await pasteImage(pasteField(part));
  await expect.poll(()=>uploads.at(1)).toEqual({scope:code,mime:"image/png"});

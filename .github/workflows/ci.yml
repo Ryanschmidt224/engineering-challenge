@@ -7,6 +7,7 @@ permissions:
   contents: read
 jobs:
   test:
+    name: Node checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -18,3 +19,23 @@ jobs:
           node-version: '22'
       - name: Check source syntax and run regression tests
         run: npm run check
+  browser:
+    name: Browser workflows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - name: Preserve browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-results
+          path: test-results/
+          retention-days: 7
