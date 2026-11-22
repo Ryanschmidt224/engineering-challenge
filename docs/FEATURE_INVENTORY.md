@@ -183,7 +183,7 @@ Still planned there: files and photos on tiles; "Make this a knowledge tile" on 
 
 PR #45 touches 1.1 (shared header), 1.10 (tooltip interaction), 2.2–2.7 (toolbar presentation), 4.1–4.5 / 4.7 (shared collapsed summary sections), 5.1 / 5.4 (help and leading status indicators), 6.13 / 7.4 (consistent empty action sections), and 11.9 (reviewed dead styles). Existing feature behavior is retained. None of these full feature areas is marked Rebuilt solely because its styling changed.
 
-Still pending from the owner screenshots: matching Workshop/project information tiles in Part details and resizable Workshop/Knowledge columns.
+Part-details information tiles are covered by the follow-up below. Resizable Workshop/Knowledge columns remain pending.
 
 ## Implementation interpretation
 
@@ -203,3 +203,5 @@ Project shell/CSS implementation: all projects instantiate one workspace templat
 Implementation boundary after the first batches: deleting the old wire API/catalog immediately would violate the inventory's no-reader condition. The current cutting-list renderer still calls /api/wires, and functions/api/workshop-linked-part.js imports the static resources catalog for legacy snapshots, photos and backup dependencies. These are live readers, not unloaded leftovers. Keep them until Workshop-product cutting lists and the source/snapshot reads are replaced and tested together; do not simply delete them. Paid AI stays disabled while its Workshop-specific redesign and spending controls remain separate work. The History decisions remain an area rebuild, not a promise that changing a label rebuilds its process.
 
 The old learn view is removed: Calculators now uses #calculators, including links from workspaces and the active header state. The searchable calculator directory is lower priority than the current private/CSS cleanup; the three existing calculation forms are retained.
+
+Part information batch (6.3–6.5): reference/selected-product information and project-owned information now use the same static shared tile and field-row helpers. The rendering is extracted from site-assembly.js into part-information.js, loaded through a literal dynamic import. Purpose saves, alternative selection, supplier links and project annotations retain existing API protection. D1 projections expose product facts and project requirements separately; false, zero and hidden stored values are retained. No stored data changes or deletions. Full part-page rebuilding remains incomplete.

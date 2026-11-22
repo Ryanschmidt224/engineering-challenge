@@ -1,8 +1,8 @@
 {
   "frozen": {
-    "assets/site-polish.css": "e064c6576dc1d2c9fa32a4556ef3196dedfe49343b66d6899a17c9cc5c4b2889",
-    "assets/site-controls.css": "fdfdf02c2331825fcb731f2a8a91344550f41be00eede47de60b03baf6189954",
-    "assets/site-workspaces.css": "b609a7ef475f83b4a87e519ae8355531ba2f65d86003c8a12ed99c8344fa483a"
+    "assets/site-polish.css": "fef23e5316f29423f1890d568860135f12b11fb6619d2f4b8d3ac945574a7392",
+    "assets/site-controls.css": "da072e4c5a9414ea59741354130992da5b0c3f5b73b2a741fa5337662665fb56",
+    "assets/site-workspaces.css": "5beaba4534615175e27c16a69c6a3d5fc3ada51ea161828badd9eaa483927a7c"
   },
   "limits": {
     "assets/site.css": {
@@ -22,7 +22,7 @@
       "projectIds": 0
     },
     "assets/site-polish.css": {
-      "important": 309,
+      "important": 307,
       "projectIds": 0
     },
     "assets/photo-markup.css": {

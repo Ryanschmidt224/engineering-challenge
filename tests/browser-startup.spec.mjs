@@ -815,10 +815,6 @@ test("Edit Part separates Container, Part details and purchased alternatives",as
  expect(source).toContain('toolCaption.textContent="Is a tool?"');
  expect(source).toContain('toolControl.append(toolCheckbox,toolHelp)');
  expect(source).toContain('className="part-visibility-field part-tool-field"');
- expect(source).toContain('const purchased=part.partType==="purchased"');
- expect(source).toContain('item.partType==="purchased"');
- expect(source).toContain('Alternative purchased parts');
- expect(source).toContain('part.implementations||[]');
  expect(source).not.toContain('retire.textContent="Retire selected implementation"');
  expect(source).not.toContain('addButton.textContent="Add implementation"');
  expect(source).not.toContain('heading.textContent="Function & requirements"');

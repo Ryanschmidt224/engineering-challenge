@@ -81,5 +81,24 @@
     return element;
   }
 
-  window.BSUI = Object.freeze({section, sectionShell, sectionActions, button});
+  // Static information tiles share one heading and one label/value layout.
+  function informationPanel(title, role = "") {
+    const root = make("section", "ui-information-panel");
+    if (role) root.dataset.information = role;
+    const heading = make("h3", "ui-information-panel__title", title);
+    const body = make("div", "ui-information-panel__body");
+    root.append(heading, body);
+    return {root, heading, body};
+  }
+  function fieldRow(title, value) {
+    const root = make("div", "ui-field-row");
+    const label = make("strong", "ui-field-row__label", title);
+    const body = make("div", "ui-field-row__value");
+    if (value instanceof Node) body.append(value);
+    else body.textContent = String(value ?? "");
+    root.append(label, body);
+    return {root, label, body};
+  }
+
+  window.BSUI = Object.freeze({section, sectionShell, sectionActions, button, informationPanel, fieldRow});
 })();

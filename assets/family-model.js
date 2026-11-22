@@ -39,7 +39,10 @@ export function familyUsePart(use, family, product, fields, attachments = []) {
     familyValues: use.field_values,
     revision: String(use.revision), quantity: use.quantity, quantityUnit: use.unit, assemblyId: use.tree_node_id || null,
     itemType: "part", partType: "purchased", isTool: family.kind === "tool", manufacturer: product?.manufacturer || "", model: product?.mpn || "",
-    specifications, projectDetails: {}, workshopDocumentation: attachments.map(file => ({label: file.title, url: file.url || "/api/workshop/file?id=" + file.id})),
+    specifications,
+    workshopSpecifications: values.filter(field => present(field.product)).map(field => ({name: field.label, value: [typeof field.product === "boolean" ? field.product ? "Yes" : "No" : String(field.product), field.unit].filter(Boolean).join(" ")})),
+    projectSpecifications: values.filter(field => present(field.required)).map(field => ({name: field.label, value: [typeof field.required === "boolean" ? field.required ? "Yes" : "No" : String(field.required), field.unit].filter(Boolean).join(" "), different: field.different})),
+    projectDetails: {}, workshopDocumentation: attachments.map(file => ({label: file.title, url: file.url || "/api/workshop/file?id=" + file.id})),
     workshopSourcing: {url: product?.supplier_links?.find(link=>link.url)?.url || ""},
     photoUrl: attachments.find(file => file.kind === "photo") ? attachments.find(file => file.kind === "photo").url || "/api/workshop/file?id=" + attachments.find(file => file.kind === "photo").id : null,
     purchaseStatus: "not_started", progressStatus: "not_started", needsAttention: false, attentionNote: "", progressUpdates: [], hideFromFeatureTree: false,...(use.project_state||{})};

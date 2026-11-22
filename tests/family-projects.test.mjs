@@ -72,3 +72,16 @@ test("retired Workshop write APIs return 410 and new routes retain the owner bou
  }
  for(const path of ["workshop","workshop/file?id=missing","workshop/export"])assert.equal((await worker.fetch(new Request("https://family-project.example.test/api/"+path),env,{})).status,401,path);
 });
+
+test("part information separates product facts from project requirements without losing zero, false or hidden values",async()=>{
+ const {familyUsePart}=await import("../assets/family-model.js");
+ const fields=[{id:"value",label:"Resistance",unit:"Ω",type:"number"},{id:"zero",label:"Offset",unit:"V",type:"number"},{id:"bool",label:"Enabled",unit:"",type:"boolean"},{id:"hidden",label:"Historical",unit:"",type:"text",hidden:true}];
+ const use={id:"use",revision:1,purpose:"Input pull-up",field_values:{value:10000,zero:0,bool:false,hidden:"keep this"}};
+ const product={id:"product",name:"12k resistor",field_values:{value:12000,bool:true}};
+ const result=familyUsePart(use,{id:"family",name:"Resistor"},product,fields);
+ assert.deepEqual(result.workshopSpecifications,[{name:"Resistance",value:"12000 Ω"},{name:"Enabled",value:"Yes"}]);
+ assert.deepEqual(result.projectSpecifications,[{name:"Resistance",value:"10000 Ω",different:true},{name:"Offset",value:"0 V",different:false},{name:"Enabled",value:"No",different:true}]);
+ assert.equal(result.familyValues.hidden,"keep this");
+ assert.equal(use.field_values.value,10000);assert.equal(product.field_values.value,12000);
+ assert.deepEqual(familyUsePart(use,{id:"family",name:"Resistor"},null,fields).workshopSpecifications,[]);
+});

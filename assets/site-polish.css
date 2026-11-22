@@ -2288,11 +2288,6 @@
   text-decoration: underline;
 }
 
-.part-order-url {
-  overflow-wrap: anywhere;
-  min-width: 0;
-}
-
 .assembly-workspace-page .workspace-panels > article.investigations-panel {
   overflow: visible;
 }
@@ -2558,23 +2553,6 @@
 /* Keep the Work Instructions step's Edit/Save button alongside its title. */
 
 /* Each populated Part Details field has its own closed-by-default chevron. */
-.bom-part-workspace .part-details-view-row.part-detail-item {
-  display: block;
-  padding: 0;
-  border-bottom: 1px solid
-    color-mix(in srgb, var(--color-accent) 27%, transparent);
-}
-
-.bom-part-workspace .part-detail-item-content {
-  padding: 0 12px 12px 28px;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-  line-height: 1.5;
-}
-.bom-part-workspace .part-detail-item-content a {
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
 
 /* Work Instructions: title is edited directly in the selected heading. */
 
@@ -4538,35 +4516,7 @@
 
 /* Functional part / chosen implementation. Reuses the existing field, button,
    and rounded panel vocabulary without changing the surrounding layout. */
-.part-functional-panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: 15px 16px;
-  margin: 4px 0 14px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  background: var(--color-surface);
-}
 
-.part-functional-purpose {
-  margin: 0;
-  line-height: 1.5;
-  font-size: var(--text-small);
-  overflow-wrap: anywhere;
-  white-space: pre-line;
-}
-
-.part-functional-edit {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: 12px;
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-}
-.part-functional-field,
 .part-functional-edit-field {
   display: flex;
   flex-direction: column;
@@ -4575,7 +4525,6 @@
   font-size: var(--text-small);
   font-weight: var(--font-semibold);
 }
-.part-functional-field > :is(input, textarea, select),
 .part-functional-edit-field > :is(input, textarea) {
   box-sizing: border-box;
   width: 100%;
@@ -4586,22 +4535,8 @@
   font-weight: var(--font-normal);
   background: var(--color-surface);
 }
-.part-functional-field textarea,
 .part-functional-edit-field textarea {
   resize: vertical;
-}
-.part-functional-actions {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  justify-content: flex-start;
-}
-.part-functional-feedback {
-  font-size: var(--text-small);
-  color: var(--color-text-muted);
-}
-.part-functional-feedback:empty {
-  display: none;
 }
 
 .part-editor-section-heading[data-part-editor-section="function"],
@@ -4609,12 +4544,6 @@
   margin-top: 15px;
 }
 @media (max-width: 560px) {
-  .part-functional-panel {
-    padding: 12px;
-  }
-  .part-functional-edit {
-    padding: 10px;
-  }
 }
 
 /* BOM resolves the selected physical solution, without altering the feature tree. */
@@ -5041,51 +4970,8 @@
 
 /* Every Part Details value uses the same compact label-left/value-right
    grid, including long notes and links. No per-field disclosure chrome. */
-.bom-part-workspace .part-details-view-row.part-detail-item.part-detail-inline {
-  display: grid !important;
-  grid-template-columns: minmax(145px, 205px) minmax(0, 1fr);
-  align-items: start;
-  column-gap: var(--space-4);
-  row-gap: var(--space-1);
-  padding: 9px 4px;
-  margin: 0;
-  border-bottom: 1px solid var(--color-border);
-  background: transparent;
-}
-.bom-part-workspace
-  .part-details-view-row.part-detail-item.part-detail-inline
-  > strong {
-  display: block;
-  min-width: 0;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  line-height: 1.4;
-}
-.bom-part-workspace
-  .part-details-view-row.part-detail-item.part-detail-inline
-  > .part-detail-item-content {
-  display: block;
-  min-width: 0;
-  margin: 0;
-  padding: 0 !important;
-  font-size: var(--text-small);
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-}
-.bom-part-workspace
-  .part-details-view-row.part-detail-item.part-detail-inline
-  > .part-detail-item-content
-  a {
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
+
 @media (max-width: 620px) {
-  .bom-part-workspace
-    .part-details-view-row.part-detail-item.part-detail-inline {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-1);
-  }
 }
 
 /* Project Summary: condensed, consistent cards and an inline cost explanation. */
@@ -5241,57 +5127,6 @@
 /* A container is project identity, not a standalone title card. Present its
    persistent name using the same label-left/value-right field layout as all
    other Part Details rows, retaining the visual boundary of the container. */
-.assembly-workspace-page .part-container-overview > .part-container-name-row {
-  display: grid;
-
-  align-items: center;
-  gap: var(--space-3) var(--space-4);
-  min-width: 0;
-}
-.assembly-workspace-page .part-container-name-label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
-.assembly-workspace-page .part-container-name-label .bs-section-tooltip {
-  margin: 0;
-  flex: none;
-}
-.assembly-workspace-page .part-container-name-value {
-  width: 100%;
-  max-width: none;
-  min-width: 0;
-  min-height: 38px;
-  padding: 8px 12px;
-  box-sizing: border-box;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  font-size: var(--text-small);
-  cursor: default;
-}
-.assembly-workspace-page .part-container-overview > .part-functional-purpose {
-  margin: 0;
-  font-size: var(--text-small);
-}
-.assembly-workspace-page
-  .part-container-overview
-  > .part-functional-purpose-actions {
-  display: flex;
-  justify-content: flex-start;
-}
-.assembly-workspace-page
-  .part-container-overview
-  > .part-functional-purpose-actions
-  > .btn {
-  min-height: 30px;
-  padding: 5px 10px;
-}
 
 /* Closed part/workspace tiles: identical 48px boxes, regardless of summary text.
    Expanded sections retain their natural content height. */
@@ -5414,61 +5249,6 @@
 
 /* Container is one conventional label/value field, not a multi-row card.
    Purpose/alternatives are independent secondary part controls. */
-.assembly-workspace-page .part-details-view-rows > .part-container-overview {
-  display: block;
-  box-sizing: border-box;
-  padding: 8px 16px;
-  margin: 0 0 8px;
-  border: 0;
-  border-bottom: 1px solid var(--color-border);
-  border-radius: 0;
-  background: transparent;
-}
-.assembly-workspace-page .part-container-overview > .part-container-name-row {
-  grid-template-columns: minmax(175px, 30%) minmax(0, 1fr);
-  column-gap: var(--space-4);
-  row-gap: 0;
-  min-height: 38px;
-}
-.assembly-workspace-page .part-container-overview .part-container-name-value {
-  height: 36px;
-  min-height: 36px;
-  padding: 6px 10px;
-}
-.assembly-workspace-page .part-details-view-rows > .part-functional-extras {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin: 0 16px 10px;
-  min-width: 0;
-}
-.assembly-workspace-page .part-functional-extras > .part-functional-purpose {
-  margin: 0;
-  font-size: var(--text-small);
-}
-.assembly-workspace-page
-  .part-functional-extras
-  > .part-functional-purpose-actions {
-  display: flex;
-  justify-content: flex-start;
-}
-.assembly-workspace-page
-  .part-functional-extras
-  > .part-functional-purpose-actions
-  > .btn {
-  min-height: 30px;
-  padding: 5px 10px;
-}
-.assembly-workspace-page .part-functional-extras > .part-alternatives-panel {
-  margin: 4px 0 0;
-  padding: 8px 0 0;
-  border: 0;
-  border-top: 1px solid var(--color-border);
-  background: transparent;
-}
+
 @media (max-width: 620px) {
-  .assembly-workspace-page .part-container-overview > .part-container-name-row {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-2);
-  }
 }
