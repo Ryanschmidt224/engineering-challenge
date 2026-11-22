@@ -10,11 +10,9 @@
   photos:{label:"Photos",fields:[]},
   test:{label:"Tests/Measurements",fields:[["theory","What did you want to verify?"],["attempt","How did you test it?"] ,["result","What happened?"]]},
   revision:{label:"Revisions",fields:[["revision","What changed?"],["theory","Why did you change it?"]]},
-  failure:{label:"Failures",fields:[...types.slice(0,2),["resolution","Did you fix it?"]]},
-  // Keep this legacy definition so previously saved Practice records remain readable/editable.
-  practice:{label:"Practice (legacy)",fields:[["attempt","What did you practice?"]]}
+  failure:{label:"Failures",fields:[...types.slice(0,2),["resolution","Did you fix it?"]]}
  };
- const retiredLabels={practice:{lesson:"What did you learn?"},revision:{result:"What was the result?"},note:{note:"Notes"}};
+ const retiredLabels={revision:{result:"What was the result?"},note:{note:"Notes"}};
  const categoryOf=record=>record.category||(record.partSnapshot?"revision":"failure");
  const sectionTitle="Project Archive";
  const acceptedAttachments=globalThis.BSAttachmentTypes.accept;
@@ -799,7 +797,7 @@
    const select=make("select","field");
    const prompt=make("option","","Choose an entry type");prompt.value="";prompt.disabled=true;prompt.selected=true;
    select.append(prompt);
-   for(const [value,category] of Object.entries(categories).filter(([value])=>value!=="practice")){
+   for(const [value,category] of Object.entries(categories)){
     const option=make("option","",category.label);option.value=value;select.append(option);
    }
    const fields=make("div","investigation-new-fields");fields.hidden=true;

@@ -148,3 +148,6 @@ startup suite covers upload/save UI behavior and photo preservation.
 
 
 The private-owner cleanup removes public visibility/editing controls, proposal review, My Build/stuck feedback, administrator-password linking and unloaded tracker/component scripts. Stored project publishing flags no longer grant read access. Existing owner accounts and session cookies keep working; the administrator role can manage all retained projects. Summary disclosure state is a browser preference in summary-state.js, separate from project data. Retired feature API URLs return the normal JSON 404 for the owner; unauthenticated requests still stop at the private API boundary.
+
+
+Practice records upgrade once to Notes through record-upgrades.js. Before changing the investigation store, the API writes and reads back an immutable recovery copy under record-migrations/<project>/. The conversion preserves record/entry IDs, field text, descriptors, dates, attachments and unrelated records. An R2 ETag conflict aborts instead of overwriting a concurrent edit. Recovery copies are part of project exports and restore validation. Existing drafts receive a revision conflict after an upgrade; there is no silent overwrite.
