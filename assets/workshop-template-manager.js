@@ -251,7 +251,13 @@
   panel.addEventListener("change",()=>{dirty=true});
   launch.hidden=!isEditable();
   return {setEditable:enabled=>{launch.hidden=!enabled;if(!enabled)setOpen(false)},
-   open:()=>setOpen(true),close:()=>setOpen(false)};
+   open:requestedCategory=>{
+    setOpen(true);
+    if(requestedCategory&&[...category.options].some(option=>option.value===requestedCategory)){
+     category.value=requestedCategory;
+     beginNew();
+    }
+   },close:()=>setOpen(false)};
  }
  window.BSWorkshopTemplateManager={mount};
 })();
