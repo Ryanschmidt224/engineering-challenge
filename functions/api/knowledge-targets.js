@@ -73,6 +73,7 @@ export async function resolveTargets(env, db, wanted) {
         const entry = (records.get(target.target_project_id) || []).find((record) => record.id === target.target_id);
         row = entry && {name: entry.title || "Untitled record", archived: entry.lifecycle && entry.lifecycle !== "active" ? 1 : 0};
         project = projects.get(target.target_project_id);
+        if (project?.archived) archived = true;
         break;
       }
     }

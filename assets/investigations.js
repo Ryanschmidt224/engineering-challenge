@@ -856,6 +856,56 @@
    const context=makeContext(ownerType,ownerId,step.id);
    stepSlots.set(step.id,{target,context,editing,mainTile,onReorder,step});render(target,context,true);
   }
+  // Knowledge links preserve the exact record ID. Reuse the existing record
+  // renderer in a read-only standard dialog; do not duplicate editor fields or
+  // require the owning part/assembly to still exist to read a saved record.
+  let linkedDialog=null;
+  async function showLinkedRecord(){
+   const url=new URL(location.href),id=url.searchParams.get("record");
+   if(!id||url.hash.slice(1).split("/")[0]!==project){linkedDialog?.close();return;}
+   if(linkedDialog?.dataset.recordId===id)return;
+   linkedDialog?.close();
+   const dialog=make("dialog","bs-dialog linked-record-dialog");linkedDialog=dialog;dialog.dataset.recordId=id;
+   const heading=make("h2","","Project record");heading.id="linked-record-title-"+project;
+   dialog.setAttribute("aria-labelledby",heading.id);
+   const body=make("div","linked-record-body","Loading record…");body.setAttribute("role","status");
+   const actions=make("div","bs-dialog-actions");
+   actions.append(window.BSUI.button("Close",()=>dialog.close()));dialog.append(heading,body,actions);
+   dialog.addEventListener("close",()=>{
+    if(linkedDialog===dialog)linkedDialog=null;
+    const current=new URL(location.href);
+    if(current.searchParams.get("record")===id&&current.hash.slice(1).split("/")[0]===project){
+     current.searchParams.delete("record");history.replaceState(null,"",current);
+    }
+    dialog.remove();
+   },{once:true});
+   document.body.append(dialog);dialog.showModal();
+   try{
+    const response=await fetch(api,{credentials:"same-origin",cache:"no-store"});
+    const data=await response.json();if(!response.ok)throw Error(data.error||"Unable to load this record.");
+    if(!dialog.isConnected)return;
+    const saved=Array.isArray(data.records)?data.records:[],record=saved.find(entry=>entry.id===id);
+    body.replaceChildren();
+    if(!record){heading.textContent="Record unavailable";body.textContent="This record no longer exists. Its Knowledge link keeps the last known name.";return;}
+    heading.textContent=record.title||"Untitled record";
+    body.append(make("p","muted",(categories[categoryOf(record)]?.label||"Entry")+(isArchived(record)?" · Archived":"")));
+    const appendRecord=(entry,container)=>{
+     if(entry.partSnapshot)showSnapshot(entry.partSnapshot,container);
+     if(entry.archiveNote?.trim())container.append(make("p","","Archive reason: "+entry.archiveNote));
+     attach(entry,container,null,false);
+     const timestamp=entry.archivedAt||entry.createdAt||entry.date;
+     if(timestamp){const label=make("time","investigation-record-date",(isArchived(entry)?"Archived ":"Created ")+timestamp);label.dateTime=timestamp;container.append(label);}
+    };
+    appendRecord(record,body);
+    for(const child of saved.filter(entry=>entry.parentRecordId===record.id)){
+     const section=make("section","bs-content-card");section.append(make("h3","",child.title||categories[categoryOf(child)]?.label||"Entry"));
+     appendRecord(child,section);body.append(section);
+    }
+    showAttachmentNames(body);
+   }catch(error){if(dialog.isConnected){heading.textContent="Record unavailable";body.textContent=error.message;}}
+  }
+  window.addEventListener("hashchange",()=>void showLinkedRecord());
+  void showLinkedRecord();
   return {showAssembly,showPart,showStep,saveStepEdits,resetStepDisclosures,load};
  }
  window.BSInvestigations={mount};

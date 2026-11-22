@@ -131,7 +131,7 @@ test("tiles link to tiles, products, project parts, projects and project records
   assert.ok(links.every((entry) => entry.target_state === "available"));
 
   assert.equal(targetHref(byType.use), "index.html#launcher/part/" + use.id);
-  assert.equal(targetHref(byType.record), "index.html#launcher");
+  assert.equal(targetHref(byType.record), "index.html?record=" + recordId + "#launcher");
   assert.equal(targetHref(byType.tile), "knowledge.html?tile=" + concept);
 });
 
