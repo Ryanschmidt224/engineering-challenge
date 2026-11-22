@@ -21,10 +21,28 @@
   const heading=article.querySelector("h2");
   const headingActions=el("div","recipe-heading-actions");
   const count=el("span","workspace-record-count");
+  const headingRow=el("div","recipe-heading-row");
+  const disclosure=button("",()=>setInstructionsOpen(!instructionsOpen),"recipe-disclosure-toggle");
+  disclosure.setAttribute("aria-expanded","false");
+  const bodyId="recipe-content-"+newId();
+  panel.id=bodyId;
+  disclosure.setAttribute("aria-controls",bodyId);
+  let instructionsOpen=false;
+  const setInstructionsOpen=value=>{
+   instructionsOpen=!!value;
+   disclosure.setAttribute("aria-expanded",String(instructionsOpen));
+   panel.hidden=!instructionsOpen;
+  };
   if(heading){
-   const headingRow=el("div","recipe-heading-row");
-   heading.before(headingRow);headingActions.append(heading);headingRow.append(headingActions,count);headingRow.after(panel);
-  }else article.prepend(headingActions,panel);
+   heading.before(headingRow);
+   disclosure.append(heading,count);
+   headingRow.append(disclosure);
+   headingRow.after(panel);
+  }else article.prepend(headingRow,panel);
+  // Creation lives inside the expanded body, like other workspace sections.
+  const addActions=el("div","recipe-body-actions");
+  panel.prepend(addActions);
+  setInstructionsOpen(false);
   const admin=()=>!!options.admin?.();
   let steps=[],expanded=null,dirty=false,pendingUploads=0,saving=false,draft=null,scope=null,loading=true;
   const editing=new Set();
@@ -144,7 +162,7 @@
   function render(){
    content.replaceChildren();
    const total=savedSteps().filter(step=>!step.archivedAt).length;
-   count.textContent="("+total+(total===1?" record)":" records)");
+   count.textContent=total+(total===1?" record":" records");
    if(steps.length&&!steps.some(step=>step.id===expanded))
     expanded=steps.find(step=>!step.archivedAt)?.id||steps[0].id;
    const browser=el("div","recipe-step-browser");
@@ -325,7 +343,7 @@
    expanded=draft.id;editSnapshots.clear();editing.clear();editing.add(draft.id);render();
    content.querySelector(".recipe-step-name")?.focus();
   },"btn recipe-add-step bs-section-add-entry");
-  headingActions.append(add);
+  addActions.append(add);
   function setLoading(value){
    loading=value;
    add.disabled=value;
