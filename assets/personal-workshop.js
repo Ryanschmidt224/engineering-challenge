@@ -112,6 +112,12 @@
   const results=$("#workshop-recommend-search",shared);
   results.placeholder="Search wire, ferrules, oscilloscope, MOSFET…";
   results.after(catalog);
+  const templateManager=window.BSWorkshopTemplateManager?.mount({
+   catalog,
+   categories:workshopCategories,
+   getSelectedCategory:()=>selectedWorkshopCategory,
+   isEditable:()=>canCreateReferences
+  });
   function categoryFor(item){
    return window.BSResources.electricalCategoryFor(item);
   }
@@ -1568,6 +1574,7 @@
     canDeleteReferences=!!data.canDelete;
     editableReferenceIds=new Set(data.editableIds||[]);
     $(".workshop-catalog-create",catalog).hidden=!canCreateReferences;
+    templateManager?.setEditable(canCreateReferences);
     renderCatalog();
     if(openedItem&&!openedItem.startsWith("my:")&&location.hash==="#commonparts")showItem(openedItem,false);
    }catch(error){
