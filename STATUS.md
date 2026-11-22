@@ -43,3 +43,7 @@ The central gate deliberately uses the existing administrator session as tempora
 5. Remove old account/community/duplicate Workshop flows in reviewable batches, retaining engineering instructions, tests, revisions, notes and intentional milestones.
 
 See `docs/PRIVATE_CLOUD_ROLLOUT.md` for deployment acceptance and rollback. Older local/offline and community architecture proposals are superseded by these decisions.
+
+## Workshop base preview batch
+
+`workshop/base-form` is stacked on the foundation branch. It adds a working, isolated `workshop-preview.html` and a clean definition/value model for reviewing the base form before persistence or category expansion. It does not replace the old Workshop or write to application APIs. See `docs/WORKSHOP_BASE_REVIEW.md` for the review cases, limitations and rollback.
