@@ -431,6 +431,8 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(actions).toBeVisible();
  await editor.locator(".part-editor-group .component-add-spec").click();
  await expect(editor.locator(".part-editor-specs-disclosure")).toBeVisible();
+ await expect(editor.locator(".component-spec-row")).toHaveCount(1);
+ await expect(editor.locator(".component-spec-row input").first()).toBeFocused();
  const source=editor.locator(".component-spec-row .component-spec-source").first();
  await expect(source).toBeVisible();
  await expect(source.locator('option[value="explicit"]')).toContainText("From product listing");
