@@ -1093,3 +1093,49 @@
   grid-column:1!important;
  }
 }
+
+
+/* Flexible Product Builder, sharing the Workshop's existing neutral tiles. */
+#commonparts .workshop-product-builder{
+ display:grid;gap:12px;padding:16px 18px;
+ border:1px solid var(--color-border);border-radius:9px;
+ background:var(--color-surface);min-width:0;
+}
+#commonparts .workshop-builder-heading h3{margin:0 0 6px;font-size:1rem}
+#commonparts .workshop-builder-heading p{margin:0;font-size:.83rem}
+#commonparts .workshop-builder-sections{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+#commonparts .workshop-builder-section{
+ border:1px solid var(--color-border);border-radius:9px;
+ background:var(--color-surface);
+ padding:14px;min-width:0;
+}
+#commonparts .workshop-builder-section-heading{
+ display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;
+}
+#commonparts .workshop-builder-section-heading h4{margin:0;font-size:.96rem}
+#commonparts .workshop-builder-section-heading>.field{flex:1;min-width:180px}
+#commonparts .workshop-builder-section-actions{display:flex;gap:5px;flex-wrap:wrap}
+#commonparts .workshop-builder-grip{font-size:1.1rem;color:var(--color-text-muted);cursor:grab}
+#commonparts .workshop-builder-field-list{display:grid;gap:8px;margin-bottom:12px}
+#commonparts .workshop-builder-field{
+ display:grid;grid-template-columns:minmax(160px,205px) minmax(0,1fr) auto;
+ gap:10px;align-items:start;min-width:0;
+ border-bottom:1px solid var(--color-border);padding:6px 0 10px;
+}
+#commonparts .workshop-builder-field-heading{display:flex;align-items:center;gap:7px;min-width:0}
+#commonparts .workshop-builder-field-heading>.field{width:100%;min-width:0}
+#commonparts .workshop-builder-field-value{display:grid;gap:7px;min-width:0}
+#commonparts .workshop-builder-field-value>.field{width:100%;min-width:0;max-width:none}
+#commonparts .workshop-builder-field-meta{display:flex;gap:7px;flex-wrap:wrap}
+#commonparts .workshop-builder-field-meta>.field{flex:1;min-width:115px}
+#commonparts .workshop-builder-field-actions{display:flex;gap:5px;flex-wrap:wrap}
+#commonparts .workshop-builder-project-hint{font-size:.81rem;color:var(--color-text-muted)}
+#commonparts .workshop-builder-photo{max-width:220px;max-height:180px;object-fit:contain}
+#commonparts .workshop-builder-actions{display:flex;justify-content:flex-start}
+#commonparts .workshop-item-edit-form.is-readonly .workshop-builder-field-actions,
+#commonparts .workshop-item-edit-form.is-readonly .workshop-builder-section-actions,
+#commonparts .workshop-item-edit-form.is-readonly .workshop-builder-actions{display:none}
+@media(max-width:760px){
+ #commonparts .workshop-builder-field{grid-template-columns:minmax(0,1fr)}
+ #commonparts .workshop-builder-field-actions{justify-content:flex-start}
+}
