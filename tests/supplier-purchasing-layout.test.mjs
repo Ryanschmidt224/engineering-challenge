@@ -32,10 +32,10 @@ test("the edit view supports multiple vendor entries and preserves legacy Amazon
 
 test("top-level catalog pages fill the desktop width and shrink responsibly",()=>{
  const css=source("assets/site-controls.css");
- assert.match(css,/width:min\(100%,1840px\)/);
- assert.match(css,/grid-template-columns:clamp\(218px,17vw,278px\)/);
- assert.match(css,/body>main\{flex:1 0 auto/);
- assert.match(css,/@media\(max-width:800px\)/);
+ assert.match(css,/width:\s*min\(100%,\s*1840px\)/);
+ assert.match(css,/grid-template-columns:\s*clamp\(218px,\s*17vw,\s*278px\)/);
+ assert.match(css,/body\s*>\s*main\s*\{[^}]*flex:\s*1 0 auto/);
+ assert.match(css,/@media\s*\(max-width:\s*800px\)/);
  const resources=source("assets/resources.js");
  assert.match(resources,/className|workshop-supplier-search/);
  assert.match(resources,/BSPa(?:rtSuppliers)\?\.searchUrlFor/);

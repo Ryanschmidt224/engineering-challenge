@@ -1,69 +1,231 @@
 /* Reusable Unstructured Notes layout, shared across project pages. */
-.bs-unstructured-notes{margin:28px 0 18px;padding:18px 20px;border:1px solid var(--color-border);border-radius:11px;background:var(--color-surface);min-width:0}
-.bs-unstructured-notes-heading{display:flex;align-items:center;justify-content:flex-start;gap:8px;flex-wrap:wrap}
-.bs-unstructured-notes-heading h2{margin:0;font-size:1.07rem}
-.bs-unstructured-add[hidden]{display:none!important}
-.bs-unstructured-status{margin:6px 0;font-size:.82rem;min-height:0}
-.bs-unstructured-list{display:grid;gap:9px}
-.bs-unstructured-empty{margin:5px 0;color:var(--color-text-muted);font-size:.85rem}
-.bs-unstructured-card{border:1px solid var(--color-border);border-radius:8px;overflow:hidden;background:var(--color-surface)}
-.bs-unstructured-note-title{display:block;width:100%;padding:11px 14px;text-align:left;color:var(--color-text);background:transparent;border:0;font:inherit;font-size:.9rem;font-weight:700;cursor:pointer}
-.bs-unstructured-note-content{padding:3px 14px 15px}
-.bs-unstructured-note-content[hidden]{display:none!important}
-.bs-unstructured-description{margin:5px 0 14px;white-space:pre-wrap;line-height:1.55;overflow-wrap:anywhere}
-.bs-unstructured-note-actions,.bs-unstructured-photo-actions{display:flex;gap:8px;flex-wrap:wrap}
-.bs-unstructured-note-actions{margin-top:15px}
-.bs-unstructured-photos,.bs-unstructured-edit-photos{display:flex;gap:12px;flex-wrap:wrap;margin:9px 0}
-.bs-unstructured-photo,.bs-unstructured-edit-photo{width:min(190px,100%);display:grid;gap:7px;padding:7px;border:1px solid var(--color-border);border-radius:6px}
-.bs-unstructured-photo img,.bs-unstructured-edit-photo img{display:block;width:100%;height:148px;object-fit:contain;background:var(--color-surface-muted)}
-.bs-unstructured-photo-actions>.btn,.bs-unstructured-edit-photo>.btn{font-size:.75rem;padding:5px 8px}
-.bs-unstructured-editor{display:grid;gap:13px;margin-top:14px}
-.bs-unstructured-field{display:grid;gap:5px;font-size:.83rem;font-weight:650}
-.bs-unstructured-field input,.bs-unstructured-field textarea{font-weight:400;width:100%;max-width:none}
-.bs-unstructured-field textarea{min-height:130px;resize:vertical}
-.bs-unstructured-editor-actions{display:flex;gap:10px;margin-top:5px}
-.bs-unstructured-editor>.btn{justify-self:start}
-.assembly-sidebar>.feature-tree-frame{width:100%;border:1px solid var(--color-border);border-radius:11px;background:var(--color-sidebar);overflow:auto;min-height:0;flex:1 1 auto}
-.assembly-sidebar>.feature-tree-frame>.assembly-feature-tree-card{border:0;background:transparent;border-radius:0}
-.assembly-sidebar>.assembly-summary-sidebar-card{flex:none;order:1}
-.assembly-sidebar>.assembly-parts-management-link{order:2;flex:none;width:100%;margin:0;box-sizing:border-box;border-radius:10px}
-.assembly-sidebar>.feature-tree-frame{order:0}
-@media(max-width:680px){.bs-unstructured-notes{padding:14px 12px}.bs-unstructured-photo,.bs-unstructured-edit-photo{width:min(160px,100%)}}
+.bs-unstructured-notes {
+  margin: 28px 0 18px;
+  padding: 18px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  min-width: 0;
+}
+.bs-unstructured-notes-heading {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.bs-unstructured-notes-heading h2 {
+  margin: 0;
+  font-size: var(--text-body);
+}
+.bs-unstructured-add[hidden] {
+  display: none !important;
+}
+.bs-unstructured-status {
+  margin: 6px 0;
+  font-size: var(--text-small);
+  min-height: 0;
+}
+.bs-unstructured-list {
+  display: grid;
+  gap: var(--space-2);
+}
+.bs-unstructured-empty {
+  margin: 5px 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+}
+.bs-unstructured-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+.bs-unstructured-note-title {
+  display: block;
+  width: 100%;
+  padding: 11px 14px;
+  text-align: left;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: var(--text-body);
+  font-weight: var(--font-bold);
+  cursor: pointer;
+}
+.bs-unstructured-note-content {
+  padding: 3px 14px 15px;
+}
+.bs-unstructured-note-content[hidden] {
+  display: none !important;
+}
+.bs-unstructured-description {
+  margin: 5px 0 14px;
+  white-space: pre-wrap;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.bs-unstructured-note-actions,
+.bs-unstructured-photo-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.bs-unstructured-note-actions {
+  margin-top: 15px;
+}
+.bs-unstructured-photos,
+.bs-unstructured-edit-photos {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin: 9px 0;
+}
+.bs-unstructured-photo,
+.bs-unstructured-edit-photo {
+  width: min(190px, 100%);
+  display: grid;
+  gap: var(--space-2);
+  padding: 7px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+}
+.bs-unstructured-photo img,
+.bs-unstructured-edit-photo img {
+  display: block;
+  width: 100%;
+  height: 148px;
+  object-fit: contain;
+  background: var(--color-surface-muted);
+}
+.bs-unstructured-photo-actions > .btn,
+.bs-unstructured-edit-photo > .btn {
+  font-size: var(--text-caption);
+  padding: 5px 8px;
+}
+.bs-unstructured-editor {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: 14px;
+}
+.bs-unstructured-field {
+  display: grid;
+  gap: var(--space-1);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
+}
+.bs-unstructured-field input,
+.bs-unstructured-field textarea {
+  font-weight: var(--font-normal);
+  width: 100%;
+  max-width: none;
+}
+.bs-unstructured-field textarea {
+  min-height: 130px;
+  resize: vertical;
+}
+.bs-unstructured-editor-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: 5px;
+}
+.bs-unstructured-editor > .btn {
+  justify-self: start;
+}
+.assembly-sidebar > .feature-tree-frame {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background: var(--color-sidebar);
+  overflow: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+.assembly-sidebar > .feature-tree-frame > .assembly-feature-tree-card {
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+}
+.assembly-sidebar > .assembly-summary-sidebar-card {
+  flex: none;
+  order: 1;
+}
+.assembly-sidebar > .assembly-parts-management-link {
+  order: 2;
+  flex: none;
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  border-radius: var(--radius-large);
+}
+.assembly-sidebar > .feature-tree-frame {
+  order: 0;
+}
+@media (max-width: 680px) {
+  .bs-unstructured-notes {
+    padding: 14px 12px;
+  }
+  .bs-unstructured-photo,
+  .bs-unstructured-edit-photo {
+    width: min(160px, 100%);
+  }
+}
 
 /* Project summary is a single neutral navigation button, not a button nested in a shaded card. */
-.assembly-sidebar>.assembly-summary-sidebar-card{background:transparent;border:0;box-shadow:none;padding:0;border-radius:0}
-.assembly-sidebar>.assembly-summary-sidebar-card .assembly-project-summary-entry{width:100%;margin:0}
+.assembly-sidebar > .assembly-summary-sidebar-card {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+}
+.assembly-sidebar
+  > .assembly-summary-sidebar-card
+  .assembly-project-summary-entry {
+  width: 100%;
+  margin: 0;
+}
 
 /* Sidebar peer navigation: Project summary and Parts Management are identical
  * full-width controls, without a second surrounding summary card. */
-.assembly-layout .assembly-sidebar > .assembly-summary-sidebar-card{
- display:contents;
+.assembly-layout .assembly-sidebar > .assembly-summary-sidebar-card {
+  display: contents;
 }
-.assembly-layout .assembly-sidebar .assembly-summary-sidebar-card > .assembly-project-summary-entry,
-.assembly-layout .assembly-sidebar > .assembly-parts-management-link{
- display:flex;
- align-items:center;
- box-sizing:border-box;
- width:100%;
- min-height:55px;
- padding:12px 15px!important;
- margin:0!important;
- border:1px solid var(--color-border)!important;
- border-radius:10px;
- background:var(--color-surface);
- color:var(--color-text);
- font-size:.84rem;
- font-weight:650;
- line-height:1.3;
- text-align:left;
- cursor:pointer;
+.assembly-layout
+  .assembly-sidebar
+  .assembly-summary-sidebar-card
+  > .assembly-project-summary-entry,
+.assembly-layout .assembly-sidebar > .assembly-parts-management-link {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 55px;
+  padding: 12px 15px !important;
+  margin: 0 !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
 }
-.assembly-layout .assembly-sidebar .assembly-summary-sidebar-card > .assembly-project-summary-entry:hover,
-.assembly-layout .assembly-sidebar > .assembly-parts-management-link:hover{
- background:var(--color-hover);
+.assembly-layout
+  .assembly-sidebar
+  .assembly-summary-sidebar-card
+  > .assembly-project-summary-entry:hover,
+.assembly-layout .assembly-sidebar > .assembly-parts-management-link:hover {
+  background: var(--color-hover);
 }
-.assembly-layout .assembly-sidebar .assembly-summary-sidebar-card > .assembly-project-summary-entry.selected,
-.assembly-layout .assembly-sidebar > .assembly-parts-management-link.selected{
- background:var(--color-selected);
- border-color:var(--color-accent)!important;
+.assembly-layout
+  .assembly-sidebar
+  .assembly-summary-sidebar-card
+  > .assembly-project-summary-entry.selected,
+.assembly-layout .assembly-sidebar > .assembly-parts-management-link.selected {
+  background: var(--color-selected);
+  border-color: var(--color-accent) !important;
 }

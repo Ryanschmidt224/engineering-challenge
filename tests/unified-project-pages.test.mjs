@@ -65,6 +65,6 @@ test("Projects use a compact toolbar and optional descriptor filters",()=>{
  assert.match(manager,/chip\.setAttribute\("aria-pressed"/);
  assert.match(manager,/terms\.some\(term=>/);
  assert.match(manager,/projectTags\(project\)/);
- assert.match(css,/compact-project-directory>\.project-grid\{display:grid;grid-template-columns:minmax\(0,1fr\)/);
+ assert.match(css,/compact-project-directory\s*>\s*\.project-grid\s*\{[^}]*display:\s*grid;\s*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
  assert.doesNotMatch(manager,/categoryNavigation/);
 });

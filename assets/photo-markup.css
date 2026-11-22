@@ -1,557 +1,973 @@
-.bs-markup-modal{width:min(96vw,1100px);max-width:1100px;max-height:96vh;border:1px solid var(--color-border,#ccd7d0);border-radius:16px;padding:16px;background:var(--color-surface,#fff);color:var(--color-text,#172a21);box-shadow:0 16px 60px #0005}
-.bs-markup-modal::backdrop{background:#0b151bbd}
-.bs-markup-header,.bs-markup-footer,.bs-markup-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.bs-markup-header{justify-content:space-between;margin-bottom:12px}
-.bs-markup-toolbar{margin-bottom:10px}
-.bs-markup-toolbar button[aria-pressed="true"]{background:#cce6d8;border-color:#508d70;color:#153b26}
-.bs-markup-toolbar input[type=color]{width:38px;height:34px;border:0;background:transparent;cursor:pointer}
-.bs-markup-canvas-wrap{max-height:62vh;overflow:auto;text-align:center;background:#262b2d;border-radius:8px;padding:8px;touch-action:pan-x pan-y}
-.bs-markup-canvas{display:block;max-width:100%;height:auto;margin:auto;touch-action:none;cursor:crosshair;user-select:none}
-.bs-markup-footer{justify-content:flex-end;margin-top:10px}
-.bs-markup-modal .muted{margin:8px 0}
-.bs-photo-edit{font-size:13px}
-@media(max-width:600px){.bs-markup-modal{padding:10px}.bs-markup-canvas-wrap{max-height:55vh}.bs-markup-toolbar button{padding:7px}.bs-markup-footer{justify-content:flex-start}}
+.bs-markup-modal {
+  width: min(96vw, 1100px);
+  max-width: 1100px;
+  max-height: 96vh;
+  border: 1px solid var(--color-border, #ccd7d0);
+  border-radius: var(--radius-large);
+  padding: 16px;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #172a21);
+  box-shadow: 0 16px 60px #0005;
+}
+.bs-markup-modal::backdrop {
+  background: #0b151bbd;
+}
+.bs-markup-header,
+.bs-markup-footer,
+.bs-markup-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.bs-markup-header {
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.bs-markup-toolbar {
+  margin-bottom: 10px;
+}
+.bs-markup-toolbar button[aria-pressed="true"] {
+  background: #cce6d8;
+  border-color: #508d70;
+  color: #153b26;
+}
+.bs-markup-toolbar input[type="color"] {
+  width: 38px;
+  height: 34px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.bs-markup-canvas-wrap {
+  max-height: 62vh;
+  overflow: auto;
+  text-align: center;
+  background: #262b2d;
+  border-radius: var(--radius-medium);
+  padding: 8px;
+  touch-action: pan-x pan-y;
+}
+.bs-markup-canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: auto;
+  touch-action: none;
+  cursor: crosshair;
+  user-select: none;
+}
+.bs-markup-footer {
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+.bs-markup-modal .muted {
+  margin: 8px 0;
+}
+.bs-photo-edit {
+  font-size: var(--text-small);
+}
+@media (max-width: 600px) {
+  .bs-markup-modal {
+    padding: 10px;
+  }
+  .bs-markup-canvas-wrap {
+    max-height: 55vh;
+  }
+  .bs-markup-toolbar button {
+    padding: 7px;
+  }
+  .bs-markup-footer {
+    justify-content: flex-start;
+  }
+}
 
 /* Shared photo action row — placed below the photo, never over its image. */
-.bs-photo-control{position:relative;display:flex;flex-direction:column;align-items:stretch;min-width:0;max-width:100%}
-.bs-photo-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
-.bs-photo-more{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.bs-photo-more[hidden],.bs-photo-toggle[hidden]{display:none!important}
-.bs-photo-actions .btn{min-height:34px;padding:6px 11px;font-size:.82rem;white-space:nowrap}
-.bs-photo-actions .bs-photo-toggle[aria-expanded="true"]{border-color:var(--color-accent);background:var(--color-accent-soft);color:var(--color-text)}
-.bs-photo-actions button:disabled{opacity:.48;cursor:not-allowed}
-.bs-photo-paste:not([hidden]){
- box-sizing:border-box;
- width:100%;
- margin-top:8px;
- padding:9px 11px;
- border:1px dashed var(--color-border);
- border-radius:8px;
- background:var(--color-surface);
- color:var(--color-text-muted);
- font-size:.8rem;
- line-height:1.4;
- cursor:text;
+.bs-photo-control {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  max-width: 100%;
 }
-.bs-photo-paste.is-dragover,.bs-photo-paste:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
-.bs-photo-status{font-size:.8rem;line-height:1.4;color:var(--color-text-muted);margin:6px 0 0;text-align:right}
-.bs-photo-status:empty{display:none}
-.bs-photo-control .workspace-cover,.bs-photo-control .part-workspace-cover{position:relative}
-.bs-photo-control .bs-photo-previous,.bs-photo-control .bs-photo-next{
- position:absolute;top:35%;z-index:1;transform:translateY(-50%);
- border:0;background:color-mix(in srgb,var(--color-media-backdrop) 80%,transparent);
- color:var(--color-on-media);padding:2px 5px;border-radius:6px;cursor:pointer;font:inherit;font-size:23px
+.bs-photo-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: 8px;
 }
-.bs-photo-control .bs-photo-previous{left:2px}
-.bs-photo-control .bs-photo-next{right:2px}
-.project-summary-gallery>.bs-photo-control{width:100%;max-width:100%}
-.project-summary-gallery>.bs-photo-control .project-summary-photo-stage{width:100%}
-.project-summary-gallery>.bs-photo-control .bs-photo-actions{padding:0 0 4px}
-.workspace-heading>.bs-photo-control{flex:0 0 auto;align-self:flex-start;width:132px;max-width:none}
-.workspace-heading>.bs-photo-control .bs-photo-actions{
- position:absolute;left:0;top:100%;margin-top:7px;justify-content:flex-start;width:max-content;max-width:calc(100vw - 50px);z-index:2
+.bs-photo-more {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
-.workspace-heading>.bs-photo-control .bs-photo-more{flex-wrap:nowrap}
-.workspace-heading>.bs-photo-control .bs-photo-status{position:absolute;left:0;top:calc(100% + 44px);width:max-content;max-width:300px;text-align:left}
-.assembly-workspace-page .workspace-heading:has(>.bs-photo-control),
-.bom-part-workspace .workspace-heading:has(>.bs-photo-control){margin-bottom:76px}
-@media(max-width:700px){
- .workspace-heading>.bs-photo-control{width:94px}
- .workspace-heading>.bs-photo-control .bs-photo-actions{flex-wrap:wrap;max-width:calc(100vw - 40px)}
- .workspace-heading>.bs-photo-control .bs-photo-more{flex-wrap:wrap}
- .assembly-workspace-page .workspace-heading:has(>.bs-photo-control),
- .bom-part-workspace .workspace-heading:has(>.bs-photo-control){margin-bottom:105px}
- .bs-photo-actions .btn{padding:6px 9px;font-size:.79rem}
+.bs-photo-more[hidden],
+.bs-photo-toggle[hidden] {
+  display: none !important;
+}
+.bs-photo-actions .btn {
+  min-height: 34px;
+  padding: 6px 11px;
+  font-size: var(--text-small);
+  white-space: nowrap;
+}
+.bs-photo-actions .bs-photo-toggle[aria-expanded="true"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+}
+.bs-photo-actions button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+.bs-photo-paste:not([hidden]) {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px 11px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+  line-height: 1.4;
+  cursor: text;
+}
+.bs-photo-paste.is-dragover,
+.bs-photo-paste:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.bs-photo-status {
+  font-size: var(--text-small);
+  line-height: 1.4;
+  color: var(--color-text-muted);
+  margin: 6px 0 0;
+  text-align: right;
+}
+.bs-photo-status:empty {
+  display: none;
+}
+.bs-photo-control .workspace-cover,
+.bs-photo-control .part-workspace-cover {
+  position: relative;
+}
+.bs-photo-control .bs-photo-previous,
+.bs-photo-control .bs-photo-next {
+  position: absolute;
+  top: 35%;
+  z-index: 1;
+  transform: translateY(-50%);
+  border: 0;
+  background: color-mix(in srgb, var(--color-media-backdrop) 80%, transparent);
+  color: var(--color-on-media);
+  padding: 2px 5px;
+  border-radius: var(--radius-medium);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-title);
+}
+.bs-photo-control .bs-photo-previous {
+  left: 2px;
+}
+.bs-photo-control .bs-photo-next {
+  right: 2px;
+}
+.project-summary-gallery > .bs-photo-control {
+  width: 100%;
+  max-width: 100%;
+}
+.project-summary-gallery > .bs-photo-control .project-summary-photo-stage {
+  width: 100%;
+}
+.project-summary-gallery > .bs-photo-control .bs-photo-actions {
+  padding: 0 0 4px;
+}
+.workspace-heading > .bs-photo-control {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  width: 132px;
+  max-width: none;
+}
+.workspace-heading > .bs-photo-control .bs-photo-actions {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: 7px;
+  justify-content: flex-start;
+  width: max-content;
+  max-width: calc(100vw - 50px);
+  z-index: 2;
+}
+.workspace-heading > .bs-photo-control .bs-photo-more {
+  flex-wrap: nowrap;
+}
+.workspace-heading > .bs-photo-control .bs-photo-status {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 44px);
+  width: max-content;
+  max-width: 300px;
+  text-align: left;
+}
+.assembly-workspace-page .workspace-heading:has(> .bs-photo-control),
+.bom-part-workspace .workspace-heading:has(> .bs-photo-control) {
+  margin-bottom: 76px;
+}
+@media (max-width: 700px) {
+  .workspace-heading > .bs-photo-control {
+    width: 94px;
+  }
+  .workspace-heading > .bs-photo-control .bs-photo-actions {
+    flex-wrap: wrap;
+    max-width: calc(100vw - 40px);
+  }
+  .workspace-heading > .bs-photo-control .bs-photo-more {
+    flex-wrap: wrap;
+  }
+  .assembly-workspace-page .workspace-heading:has(> .bs-photo-control),
+  .bom-part-workspace .workspace-heading:has(> .bs-photo-control) {
+    margin-bottom: 105px;
+  }
+  .bs-photo-actions .btn {
+    padding: 6px 9px;
+    font-size: var(--text-small);
+  }
 }
 
 /* Attachment controls match project, assembly and part photo controls. */
-.recipe-compact .recipe-step-photo>.bs-photo-control{width:100%;max-width:100%;align-items:stretch}
-.recipe-compact .recipe-step-photo>.bs-photo-control .recipe-photo-frame{width:100%;max-width:100%}
-.recipe-compact .recipe-step-photo>.bs-photo-control .bs-photo-actions{justify-content:flex-end;margin:3px 0 0}
-.recipe-compact .recipe-step-photo>.bs-photo-control .bs-photo-more{justify-content:flex-end}
-.workspace-heading>.bs-photo-control .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="false"]){
- width:100%;justify-content:flex-end
+.recipe-compact .recipe-step-photo > .bs-photo-control {
+  width: 100%;
+  max-width: 100%;
+  align-items: stretch;
 }
-.bs-photo-control .bs-photo-previous,.bs-photo-control .bs-photo-next{top:50%}
-
+.recipe-compact .recipe-step-photo > .bs-photo-control .recipe-photo-frame {
+  width: 100%;
+  max-width: 100%;
+}
+.recipe-compact .recipe-step-photo > .bs-photo-control .bs-photo-actions {
+  justify-content: flex-end;
+  margin: 3px 0 0;
+}
+.recipe-compact .recipe-step-photo > .bs-photo-control .bs-photo-more {
+  justify-content: flex-end;
+}
+.workspace-heading
+  > .bs-photo-control
+  .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="false"]) {
+  width: 100%;
+}
+.bs-photo-control .bs-photo-previous,
+.bs-photo-control .bs-photo-next {
+  top: 50%;
+}
 
 /* Type directly onto the image while the text tool is selected. */
-.bs-markup-canvas-wrap{position:relative}
-.bs-markup-inline-text{
- position:absolute;z-index:4;box-sizing:border-box;display:block;
- min-width:80px;min-height:34px;max-height:170px;resize:both;
- overflow:auto;padding:4px 6px;margin:0;
- border:1px solid #fff;border-radius:5px;outline:2px solid #238a7e;
- background:rgba(24,33,36,.84);box-shadow:0 2px 12px #0008;
- color:#e63838;font:bold 18px/1.25 sans-serif;
- text-align:left;white-space:pre-wrap;overflow-wrap:break-word;
- caret-color:#ffffff;
+.bs-markup-canvas-wrap {
+  position: relative;
 }
-.bs-markup-inline-text::placeholder{color:rgba(255,255,255,.75);font-weight:500}
-
+.bs-markup-inline-text {
+  position: absolute;
+  z-index: 4;
+  box-sizing: border-box;
+  display: block;
+  min-width: 80px;
+  min-height: 34px;
+  max-height: 170px;
+  resize: both;
+  overflow: auto;
+  padding: 4px 6px;
+  margin: 0;
+  border: 1px solid #fff;
+  border-radius: var(--radius-small);
+  outline: 2px solid #238a7e;
+  background: rgba(24, 33, 36, 0.84);
+  box-shadow: 0 2px 12px #0008;
+  color: #e63838;
+  font: bold 18px/1.25 sans-serif;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  caret-color: #ffffff;
+}
+.bs-markup-inline-text::placeholder {
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: var(--font-semibold);
+}
 
 /* Discreet pencil at the photo's bottom-right; click expands its actions. */
-.bs-photo-control .bs-photo-toggle{
- display:inline-flex;align-items:center;justify-content:center;
- width:32px;height:32px;min-width:32px;min-height:32px;
- padding:5px;border-radius:7px;
- color:var(--color-text);line-height:1;
+.bs-photo-control .bs-photo-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 5px;
+  border-radius: var(--radius-medium);
+  color: var(--color-text);
+  line-height: 1;
 }
-.bs-photo-control .bs-photo-toggle svg{width:16px;height:16px;display:block;pointer-events:none}
-.bs-photo-control .bs-photo-actions{gap:7px;margin-top:4px;justify-content:flex-end}
-.bs-photo-control .bs-photo-more:not([hidden]){gap:7px}
-.bs-photo-control .bs-photo-toggle[aria-expanded="true"]{background:var(--color-accent-soft);border-color:var(--color-accent)}
-.bs-photo-control .bs-photo-toggle:focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}
-.project-summary-gallery>.bs-photo-control .bs-photo-actions{padding-right:0;margin-top:4px}
-.workspace-heading>.bs-photo-control .bs-photo-actions{
- margin-top:4px;
+.bs-photo-control .bs-photo-toggle svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  pointer-events: none;
 }
-.workspace-heading>.bs-photo-control .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="false"]){
- justify-content:flex-end
+.bs-photo-control .bs-photo-actions {
+  gap: var(--space-2);
+  margin-top: 4px;
+  justify-content: flex-end;
 }
-
+.bs-photo-control .bs-photo-more:not([hidden]) {
+  gap: var(--space-2);
+}
+.bs-photo-control .bs-photo-toggle[aria-expanded="true"] {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+}
+.bs-photo-control .bs-photo-toggle:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.project-summary-gallery > .bs-photo-control .bs-photo-actions {
+  padding-right: 0;
+  margin-top: 4px;
+}
+.workspace-heading > .bs-photo-control .bs-photo-actions {
+  margin-top: 4px;
+}
+.workspace-heading
+  > .bs-photo-control
+  .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="false"]) {
+  justify-content: flex-end;
+}
 
 /* Project summary: place the pencil at the lower-left inside the photo card
    (the location indicated on the screenshot), with actions expanding right. */
-.project-summary-gallery>.bs-photo-control{position:relative}
-.project-summary-gallery>.bs-photo-control .bs-photo-actions{
- position:absolute;bottom:12px;left:14px;right:auto;z-index:4;
- width:max-content;max-width:calc(100% - 28px);
- justify-content:flex-start;flex-wrap:wrap;margin:0;padding:0;
+.project-summary-gallery > .bs-photo-control {
+  position: relative;
 }
-.project-summary-gallery>.bs-photo-control .bs-photo-more:not([hidden]){
- display:flex;flex-wrap:wrap;gap:7px;
-}
-.project-summary-gallery>.bs-photo-control .bs-photo-status:not(:empty){
- position:absolute;left:14px;right:14px;bottom:51px;
- text-align:left;margin:0;z-index:4;
-}
+.project-summary-gallery > .bs-photo-control .bs-photo-actions {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
 
+  z-index: 4;
+  width: max-content;
+  max-width: calc(100% - 28px);
+
+  margin: 0;
+}
+.project-summary-gallery > .bs-photo-control .bs-photo-more:not([hidden]) {
+  gap: var(--space-2);
+}
+.project-summary-gallery > .bs-photo-control .bs-photo-status:not(:empty) {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 51px;
+
+  margin: 0;
+  z-index: 4;
+}
 
 /* Assembly photo header: larger preview and all editor controls in normal flow.
    The expanded buttons must not cover the status or heading. */
-.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading,
-.bom-part-workspace>.workspace-heading{
- align-items:flex-start!important;
- flex-wrap:wrap;
- column-gap:22px;
- row-gap:14px;
+.assembly-workspace-page:not(.bom-part-workspace) > .workspace-heading,
+.bom-part-workspace > .workspace-heading {
+  align-items: flex-start !important;
+  flex-wrap: wrap;
+  column-gap: var(--space-5);
+  row-gap: var(--space-4);
 }
-.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control,
-.bom-part-workspace>.workspace-heading>.bs-photo-control{
- position:relative;
- flex:0 1 405px;
- width:405px;
- max-width:100%;
- min-width:0;
- align-self:flex-start;
+.assembly-workspace-page:not(.bom-part-workspace)
+  > .workspace-heading
+  > .bs-photo-control,
+.bom-part-workspace > .workspace-heading > .bs-photo-control {
+  position: relative;
+  flex: 0 1 405px;
+  width: 405px;
+  max-width: 100%;
+  min-width: 0;
+  align-self: flex-start;
 }
-.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control>.workspace-cover,
-.bom-part-workspace>.workspace-heading>.bs-photo-control>.part-workspace-cover{
- width:205px!important;
- height:175px;
- max-width:100%;
- box-sizing:border-box;
+.assembly-workspace-page:not(.bom-part-workspace)
+  > .workspace-heading
+  > .bs-photo-control
+  > .workspace-cover,
+.bom-part-workspace
+  > .workspace-heading
+  > .bs-photo-control
+  > .part-workspace-cover {
+  width: 205px !important;
+  height: 175px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
-.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control>.bs-photo-actions,
-.bom-part-workspace>.workspace-heading>.bs-photo-control>.bs-photo-actions{
- position:static;
- display:flex;
- flex-wrap:wrap;
- width:auto;
- max-width:100%;
- margin:8px 0 0;
- padding:0;
- justify-content:flex-start;
- gap:7px;
- z-index:auto;
+.assembly-workspace-page:not(.bom-part-workspace)
+  > .workspace-heading
+  > .bs-photo-control
+  > .bs-photo-actions,
+.bom-part-workspace
+  > .workspace-heading
+  > .bs-photo-control
+  > .bs-photo-actions {
+  position: static;
+  display: flex;
+  flex-wrap: wrap;
+  width: auto;
+  max-width: 100%;
+  margin: 8px 0 0;
+  padding: 0;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  z-index: auto;
 }
-.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control .bs-photo-more,
-.bom-part-workspace>.workspace-heading>.bs-photo-control .bs-photo-more{
- flex-wrap:wrap;
+.assembly-workspace-page:not(.bom-part-workspace)
+  > .workspace-heading
+  > .bs-photo-control
+  .bs-photo-more,
+.bom-part-workspace > .workspace-heading > .bs-photo-control .bs-photo-more {
+  flex-wrap: wrap;
 }
-.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control>.bs-photo-status,
-.bom-part-workspace>.workspace-heading>.bs-photo-control>.bs-photo-status{
- position:static;
- width:auto;
- max-width:100%;
- margin:5px 0 0;
- text-align:left;
+.assembly-workspace-page:not(.bom-part-workspace)
+  > .workspace-heading
+  > .bs-photo-control
+  > .bs-photo-status,
+.bom-part-workspace
+  > .workspace-heading
+  > .bs-photo-control
+  > .bs-photo-status {
+  position: static;
+  width: auto;
+  max-width: 100%;
+  margin: 5px 0 0;
+  text-align: left;
 }
-.assembly-workspace-page .workspace-heading:has(>.bs-photo-control),
-.bom-part-workspace .workspace-heading:has(>.bs-photo-control){
- margin-bottom:26px!important;
+.assembly-workspace-page .workspace-heading:has(> .bs-photo-control),
+.bom-part-workspace .workspace-heading:has(> .bs-photo-control) {
+  margin-bottom: 26px !important;
 }
-.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.workspace-title-group,
-.bom-part-workspace>.workspace-heading>div:has(>.part-workspace-title){
- flex:1 1 350px;
- min-width:min(100%,260px);
- max-width:none;
- padding-top:7px;
+.assembly-workspace-page:not(.bom-part-workspace)
+  > .workspace-heading
+  > .workspace-title-group,
+.bom-part-workspace > .workspace-heading > div:has(> .part-workspace-title) {
+  flex: 1 1 350px;
+  min-width: min(100%, 260px);
+  max-width: none;
+  padding-top: 7px;
 }
-@media(max-width:760px){
- .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control,
- .bom-part-workspace>.workspace-heading>.bs-photo-control{
-  flex:1 1 100%;
-  width:100%;
- }
- .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control>.workspace-cover,
- .bom-part-workspace>.workspace-heading>.bs-photo-control>.part-workspace-cover{
-  width:min(205px,100%)!important;
- }
- .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.workspace-title-group,
- .bom-part-workspace>.workspace-heading>div:has(>.part-workspace-title){flex:1 1 100%;padding-top:0}
+@media (max-width: 760px) {
+  .assembly-workspace-page:not(.bom-part-workspace)
+    > .workspace-heading
+    > .bs-photo-control,
+  .bom-part-workspace > .workspace-heading > .bs-photo-control {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+  .assembly-workspace-page:not(.bom-part-workspace)
+    > .workspace-heading
+    > .bs-photo-control
+    > .workspace-cover,
+  .bom-part-workspace
+    > .workspace-heading
+    > .bs-photo-control
+    > .part-workspace-cover {
+    width: min(205px, 100%) !important;
+  }
+  .assembly-workspace-page:not(.bom-part-workspace)
+    > .workspace-heading
+    > .workspace-title-group,
+  .bom-part-workspace > .workspace-heading > div:has(> .part-workspace-title) {
+    flex: 1 1 100%;
+    padding-top: 0;
+  }
 }
-
 
 /* Compact part-page header. Keep the image, title and status related instead
    of reserving an invisible 405px-wide column for photo edit actions. */
-.bom-part-workspace>.workspace-heading:has(>.bs-photo-control){
- display:grid!important;
- grid-template-columns:190px minmax(0,1fr);
- align-items:start!important;
- column-gap:18px;
- row-gap:0;
- width:100%;
- max-width:1100px;
- margin:0 0 15px!important;
+.bom-part-workspace > .workspace-heading:has(> .bs-photo-control) {
+  display: grid !important;
+  grid-template-columns: 190px minmax(0, 1fr);
+  align-items: start !important;
+  column-gap: var(--space-4);
+  row-gap: 0;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 0 15px !important;
 }
-.bom-part-workspace>.workspace-heading>.bs-photo-control{
- grid-column:1;
- grid-row:1;
- width:190px!important;
- min-width:0;
- max-width:190px!important;
- flex:none!important;
- align-self:start;
+.bom-part-workspace > .workspace-heading > .bs-photo-control {
+  grid-column: 1;
+  grid-row: 1;
+  width: 190px !important;
+  min-width: 0;
+  max-width: 190px !important;
+  flex: none !important;
+  align-self: start;
 }
-.bom-part-workspace>.workspace-heading>.bs-photo-control>.part-workspace-cover{
- display:block;
- box-sizing:border-box;
- width:190px!important;
- height:160px!important;
- max-width:100%;
+.bom-part-workspace
+  > .workspace-heading
+  > .bs-photo-control
+  > .part-workspace-cover {
+  display: block;
+  box-sizing: border-box;
+  width: 190px !important;
+  height: 160px !important;
+  max-width: 100%;
 }
-.bom-part-workspace>.workspace-heading>.bs-photo-control>.bs-photo-actions{
- position:static!important;
- display:flex;
- justify-content:flex-start!important;
- align-items:center;
- flex-wrap:wrap!important;
- width:100%!important;
- max-width:190px!important;
- margin:6px 0 0!important;
- gap:6px;
+.bom-part-workspace
+  > .workspace-heading
+  > .bs-photo-control
+  > .bs-photo-actions {
+  position: static !important;
+  display: flex;
+  justify-content: flex-start !important;
+  align-items: center;
+  flex-wrap: wrap !important;
+  width: 100% !important;
+  max-width: 190px !important;
+  margin: 6px 0 0 !important;
+  gap: var(--space-2);
 }
-.bom-part-workspace>.workspace-heading>.bs-photo-control .bs-photo-more:not([hidden]){
- display:flex;
- flex-wrap:wrap!important;
- gap:6px;
+.bom-part-workspace
+  > .workspace-heading
+  > .bs-photo-control
+  .bs-photo-more:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap !important;
+  gap: var(--space-2);
 }
-.bom-part-workspace>.workspace-heading>.bs-photo-control>.bs-photo-status{
- position:static!important;
- margin:5px 0 0!important;
- max-width:190px;
+.bom-part-workspace
+  > .workspace-heading
+  > .bs-photo-control
+  > .bs-photo-status {
+  position: static !important;
+  margin: 5px 0 0 !important;
+  max-width: 190px;
 }
-.bom-part-workspace>.workspace-heading>div:has(>.part-workspace-title){
- grid-column:2;
- grid-row:1;
- display:flex;
- flex-direction:column;
- align-items:flex-start;
- justify-content:flex-start;
- gap:9px;
- width:100%;
- max-width:100%;
- min-width:0;
- padding:0!important;
+.bom-part-workspace > .workspace-heading > div:has(> .part-workspace-title) {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0 !important;
 }
-.bom-part-workspace>.workspace-heading .part-workspace-title{
- font-size:clamp(1.5rem,2.1vw,2.1rem);
- line-height:1.16;
- margin:0;
- overflow-wrap:break-word;
+.bom-part-workspace > .workspace-heading .part-workspace-title {
+  font-size: clamp(1.5rem, 2.1vw, 2.1rem);
+  line-height: 1.16;
+  margin: 0;
+  overflow-wrap: break-word;
 }
-.bom-part-workspace>.workspace-heading .part-progress-panel{
- margin:2px 0 0!important;
+.bom-part-workspace > .workspace-heading .part-progress-panel {
+  margin: 2px 0 0 !important;
 }
-.bom-part-workspace>.part-workspace-back{
- margin:0 0 12px;
- padding:8px 12px;
- min-height:36px;
+.bom-part-workspace > .part-workspace-back {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  min-height: 36px;
 }
-@media(max-width:600px){
- .bom-part-workspace>.workspace-heading:has(>.bs-photo-control){
-  grid-template-columns:minmax(0,1fr);
-  row-gap:12px;
- }
- .bom-part-workspace>.workspace-heading>.bs-photo-control{
-  grid-column:1;grid-row:1;
- }
- .bom-part-workspace>.workspace-heading>div:has(>.part-workspace-title){
-  grid-column:1;grid-row:2;
- }
+@media (max-width: 600px) {
+  .bom-part-workspace > .workspace-heading:has(> .bs-photo-control) {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-3);
+  }
+  .bom-part-workspace > .workspace-heading > .bs-photo-control {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .bom-part-workspace > .workspace-heading > div:has(> .part-workspace-title) {
+    grid-column: 1;
+    grid-row: 2;
+  }
 }
-
 
 /* Assembly header: the photo's editor should not reserve 405px of empty width.
    Keep the title within a short, predictable gap of the visible thumbnail. */
-.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading:has(>.bs-photo-control){
- display:grid!important;
- grid-template-columns:245px minmax(0,1fr);
- column-gap:18px;
- row-gap:10px;
- align-items:start!important;
- flex-wrap:nowrap!important;
- margin-bottom:20px!important;
+.assembly-workspace-page:not(.bom-part-workspace)
+  > .workspace-heading:has(> .bs-photo-control) {
+  display: grid !important;
+  grid-template-columns: 245px minmax(0, 1fr);
+  column-gap: var(--space-4);
+  row-gap: var(--space-3);
+  align-items: start !important;
+  flex-wrap: nowrap !important;
+  margin-bottom: 20px !important;
 }
-.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control{
- grid-column:1;
- width:245px!important;
- max-width:245px!important;
- min-width:0;
- flex:none!important;
+.assembly-workspace-page:not(.bom-part-workspace)
+  > .workspace-heading
+  > .bs-photo-control {
+  grid-column: 1;
+  width: 245px !important;
+  max-width: 245px !important;
+  min-width: 0;
+  flex: none !important;
 }
-.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control>.workspace-cover{
- width:245px!important;
- max-width:100%;
- height:205px;
- box-sizing:border-box;
+.assembly-workspace-page:not(.bom-part-workspace)
+  > .workspace-heading
+  > .bs-photo-control
+  > .workspace-cover {
+  width: 245px !important;
+  max-width: 100%;
+  height: 205px;
+  box-sizing: border-box;
 }
-.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control>.bs-photo-actions{
- position:static!important;
- display:flex;
- width:100%!important;
- max-width:245px!important;
- flex-wrap:wrap;
- justify-content:flex-start!important;
- gap:6px;
- margin:6px 0 0!important;
+.assembly-workspace-page:not(.bom-part-workspace)
+  > .workspace-heading
+  > .bs-photo-control
+  > .bs-photo-actions {
+  position: static !important;
+  display: flex;
+  width: 100% !important;
+  max-width: 245px !important;
+  flex-wrap: wrap;
+  justify-content: flex-start !important;
+  gap: var(--space-2);
+  margin: 6px 0 0 !important;
 }
-.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control .bs-photo-more:not([hidden]){
- flex-wrap:wrap!important;
- gap:6px;
+.assembly-workspace-page:not(.bom-part-workspace)
+  > .workspace-heading
+  > .bs-photo-control
+  .bs-photo-more:not([hidden]) {
+  flex-wrap: wrap !important;
+  gap: var(--space-2);
 }
-.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control>.bs-photo-status{
- position:static!important;
- max-width:245px;
+.assembly-workspace-page:not(.bom-part-workspace)
+  > .workspace-heading
+  > .bs-photo-control
+  > .bs-photo-status {
+  position: static !important;
+  max-width: 245px;
 }
-.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.workspace-title-group{
- grid-column:2;
- width:100%;
- min-width:0;
- max-width:none!important;
- margin:0!important;
- padding-top:4px;
- flex:none!important;
+.assembly-workspace-page:not(.bom-part-workspace)
+  > .workspace-heading
+  > .workspace-title-group {
+  grid-column: 2;
+  width: 100%;
+  min-width: 0;
+  max-width: none !important;
+  margin: 0 !important;
+  padding-top: 4px;
+  flex: none !important;
 }
-@media(max-width:640px){
- .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading:has(>.bs-photo-control){
-  grid-template-columns:minmax(0,1fr);
-  row-gap:12px;
- }
- .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control{
-  grid-column:1;
-  width:min(245px,100%)!important;
- }
- .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.workspace-title-group{
-  grid-column:1;
-  padding-top:0;
- }
+@media (max-width: 640px) {
+  .assembly-workspace-page:not(.bom-part-workspace)
+    > .workspace-heading:has(> .bs-photo-control) {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-3);
+  }
+  .assembly-workspace-page:not(.bom-part-workspace)
+    > .workspace-heading
+    > .bs-photo-control {
+    grid-column: 1;
+    width: min(245px, 100%) !important;
+  }
+  .assembly-workspace-page:not(.bom-part-workspace)
+    > .workspace-heading
+    > .workspace-title-group {
+    grid-column: 1;
+    padding-top: 0;
+  }
 }
-
 
 /* Expanded photo controls grow rightward from the pencil instead of being
    constrained to the thumbnail's 190/245px column. The row stays in normal
    flow, so the content underneath remains clear of the buttons. */
-.bom-part-workspace>.workspace-heading>.bs-photo-control>.bs-photo-actions,
-.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control>.bs-photo-actions{
- width:max-content!important;
- max-width:none!important;
- flex-wrap:nowrap!important;
- white-space:nowrap;
+.bom-part-workspace
+  > .workspace-heading
+  > .bs-photo-control
+  > .bs-photo-actions,
+.assembly-workspace-page:not(.bom-part-workspace)
+  > .workspace-heading
+  > .bs-photo-control
+  > .bs-photo-actions {
+  width: max-content !important;
+  max-width: none !important;
+  flex-wrap: nowrap !important;
+  white-space: nowrap;
 }
-.bom-part-workspace>.workspace-heading>.bs-photo-control .bs-photo-more:not([hidden]),
-.assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control .bs-photo-more:not([hidden]){
- flex-wrap:nowrap!important;
- white-space:nowrap;
+.bom-part-workspace
+  > .workspace-heading
+  > .bs-photo-control
+  .bs-photo-more:not([hidden]),
+.assembly-workspace-page:not(.bom-part-workspace)
+  > .workspace-heading
+  > .bs-photo-control
+  .bs-photo-more:not([hidden]) {
+  flex-wrap: nowrap !important;
+  white-space: nowrap;
 }
-@media(max-width:650px){
- .bom-part-workspace>.workspace-heading>.bs-photo-control>.bs-photo-actions,
- .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control>.bs-photo-actions{
-  max-width:calc(100vw - 48px)!important;
-  flex-wrap:wrap!important;
-  white-space:normal;
- }
- .bom-part-workspace>.workspace-heading>.bs-photo-control .bs-photo-more:not([hidden]),
- .assembly-workspace-page:not(.bom-part-workspace)>.workspace-heading>.bs-photo-control .bs-photo-more:not([hidden]){
-  flex-wrap:wrap!important;
-  white-space:normal;
- }
+@media (max-width: 650px) {
+  .bom-part-workspace
+    > .workspace-heading
+    > .bs-photo-control
+    > .bs-photo-actions,
+  .assembly-workspace-page:not(.bom-part-workspace)
+    > .workspace-heading
+    > .bs-photo-control
+    > .bs-photo-actions {
+    max-width: calc(100vw - 48px) !important;
+    flex-wrap: wrap !important;
+    white-space: normal;
+  }
+  .bom-part-workspace
+    > .workspace-heading
+    > .bs-photo-control
+    .bs-photo-more:not([hidden]),
+  .assembly-workspace-page:not(.bom-part-workspace)
+    > .workspace-heading
+    > .bs-photo-control
+    .bs-photo-more:not([hidden]) {
+    flex-wrap: wrap !important;
+    white-space: normal;
+  }
 }
-
 
 /* The pencil shares the image grid cell. Its menu and paste target stay below. */
-.assembly-workspace-page>.workspace-heading>.bs-photo-control{
- display:grid;grid-template-columns:minmax(0,1fr);
+.assembly-workspace-page > .workspace-heading > .bs-photo-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
 }
-.assembly-workspace-page>.workspace-heading>.bs-photo-control>:is(.workspace-cover,.part-workspace-cover),
-.assembly-workspace-page>.workspace-heading>.bs-photo-control>.bs-photo-actions>.bs-photo-toggle{
- grid-area:1 / 1;
+.assembly-workspace-page
+  > .workspace-heading
+  > .bs-photo-control
+  > :is(.workspace-cover, .part-workspace-cover),
+.assembly-workspace-page
+  > .workspace-heading
+  > .bs-photo-control
+  > .bs-photo-actions
+  > .bs-photo-toggle {
+  grid-area: 1 / 1;
 }
-.assembly-workspace-page>.workspace-heading>.bs-photo-control>.bs-photo-actions{display:contents!important}
-.assembly-workspace-page>.workspace-heading>.bs-photo-control .bs-photo-toggle{
- z-index:2;place-self:end end;margin:7px;
- background:var(--color-surface);color:var(--color-text);
+.assembly-workspace-page
+  > .workspace-heading
+  > .bs-photo-control
+  > .bs-photo-actions {
+  display: contents !important;
 }
-.assembly-workspace-page>.workspace-heading>.bs-photo-control .bs-photo-more:not([hidden]){
- margin-top:6px;flex-wrap:wrap!important;white-space:normal;
+.assembly-workspace-page
+  > .workspace-heading
+  > .bs-photo-control
+  .bs-photo-toggle {
+  z-index: 2;
+  place-self: end end;
+  margin: 7px;
+  background: var(--color-surface);
+  color: var(--color-text);
 }
-
+.assembly-workspace-page
+  > .workspace-heading
+  > .bs-photo-control
+  .bs-photo-more:not([hidden]) {
+  margin-top: 6px;
+  flex-wrap: wrap !important;
+  white-space: normal;
+}
 
 /* Project summary: keep photo edit controls outside the image and the
    summary text. The compact pencil overlays the picture only while closed. */
-.project-summary-gallery>.bs-photo-control .bs-photo-actions{
- position:relative;
- inset:auto;
- bottom:auto;
- left:auto;
- right:auto;
- z-index:auto;
- box-sizing:border-box;
- width:100%;
- max-width:100%;
- margin:8px 0 0;
- padding:0;
- display:flex;
- align-items:center;
- justify-content:flex-start;
- flex-wrap:wrap;
- gap:8px;
+.project-summary-gallery > .bs-photo-control .bs-photo-actions {
+  position: relative;
+  inset: auto;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  z-index: auto;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
-.project-summary-gallery>.bs-photo-control .bs-photo-more:not([hidden]){
- display:flex;
- align-items:center;
- gap:8px;
- flex-wrap:wrap;
- min-width:0;
+.project-summary-gallery > .bs-photo-control .bs-photo-more:not([hidden]) {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  min-width: 0;
 }
-.project-summary-gallery>.bs-photo-control .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="true"]){
- padding:9px;
- border:1px solid var(--color-border);
- border-radius:10px;
- background:var(--color-surface);
+.project-summary-gallery
+  > .bs-photo-control
+  .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="true"]) {
+  padding: 9px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
 }
-.project-summary-gallery>.bs-photo-control .bs-photo-status:not(:empty){
- position:static;
- margin:6px 0 0;
- text-align:left;
+.project-summary-gallery > .bs-photo-control .bs-photo-status:not(:empty) {
+  position: static;
+  margin: 6px 0 0;
+  text-align: left;
 }
-@media(max-width:600px){
- .project-summary-gallery>.bs-photo-control .bs-photo-actions .btn{
-  min-height:36px;
- }
+@media (max-width: 600px) {
+  .project-summary-gallery > .bs-photo-control .bs-photo-actions .btn {
+    min-height: 36px;
+  }
 }
-
 
 /* Work Instructions photo edit: pencil overlays the lower-right of the image.
    Expanded actions stay on a single line below the framed image/caption. */
-.recipe-compact .recipe-step-photo .recipe-photo-image-stage{
- position:relative;
- display:block;
- width:100%;
- min-width:0;
+.recipe-compact .recipe-step-photo .recipe-photo-image-stage {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 0;
 }
-.recipe-compact .recipe-step-photo .recipe-photo-image-stage>.bs-photo-toggle{
- position:absolute;
- right:8px;
- bottom:8px;
- z-index:2;
- margin:0;
- width:34px;
- height:34px;
- background:var(--color-surface);
- border:1px solid var(--color-border);
- box-shadow:0 1px 5px #0003;
+.recipe-compact
+  .recipe-step-photo
+  .recipe-photo-image-stage
+  > .bs-photo-toggle {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 2;
+  margin: 0;
+  width: 34px;
+  height: 34px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 5px #0003;
 }
-.recipe-compact .recipe-step-photo>.bs-photo-control>.bs-photo-actions{
- display:flex;
- align-items:center;
- justify-content:flex-start;
- flex-wrap:nowrap;
- width:100%;
- min-width:0;
- margin:6px 0 0;
- padding:0;
+.recipe-compact .recipe-step-photo > .bs-photo-control > .bs-photo-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  width: 100%;
+  min-width: 0;
+  margin: 6px 0 0;
+  padding: 0;
 }
-.recipe-compact .recipe-step-photo>.bs-photo-control>.bs-photo-actions>.bs-photo-more:not([hidden]){
- display:flex;
- align-items:center;
- justify-content:flex-start;
- gap:4px;
- flex-wrap:nowrap;
- width:100%;
- min-width:0;
+.recipe-compact
+  .recipe-step-photo
+  > .bs-photo-control
+  > .bs-photo-actions
+  > .bs-photo-more:not([hidden]) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-1);
+  flex-wrap: nowrap;
+  width: 100%;
+  min-width: 0;
 }
-.recipe-compact .recipe-step-photo>.bs-photo-control .bs-photo-more>.btn{
- flex:0 0 auto;
- min-height:32px;
- padding:5px 7px;
- font-size:.72rem;
- white-space:nowrap;
+.recipe-compact .recipe-step-photo > .bs-photo-control .bs-photo-more > .btn {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 5px 7px;
+  font-size: var(--text-caption);
+  white-space: nowrap;
 }
-.recipe-compact .recipe-step-photo>.bs-photo-control .bs-photo-status{
- text-align:left;
+.recipe-compact .recipe-step-photo > .bs-photo-control .bs-photo-status {
+  text-align: left;
 }
-
 
 /* Text and arrow sizing options in the shared photo markup toolbar. */
-.bs-markup-toolbar .bs-markup-size-control{
- display:inline-flex;
- align-items:center;
- gap:6px;
- padding:4px 7px;
- border:1px solid var(--color-border);
- border-radius:8px;
- font-size:.8rem;
- font-weight:600;
- white-space:nowrap;
+.bs-markup-toolbar .bs-markup-size-control {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px 7px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
+  white-space: nowrap;
 }
-.bs-markup-toolbar .bs-markup-size-control input{
- width:56px;
- min-height:29px;
- box-sizing:border-box;
- padding:4px 5px;
- border:1px solid var(--color-border);
- border-radius:5px;
- background:var(--color-surface);
- color:var(--color-text);
- font:inherit;
+.bs-markup-toolbar .bs-markup-size-control input {
+  width: 56px;
+  min-height: 29px;
+  box-sizing: border-box;
+  padding: 4px 5px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
 }
-
 
 /* Shared, on-demand upload panel for photos and attachments site-wide. */
-.bs-upload-panel{
- display:flex;flex-direction:column;gap:12px;align-items:stretch;
- width:100%;box-sizing:border-box;margin:12px 0 16px;padding:18px;
- border:1px solid var(--color-border);border-radius:12px;
- background:var(--color-surface-muted);color:var(--color-text);
+.bs-upload-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: stretch;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 12px 0 16px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
 }
-.bs-upload-panel[hidden]{display:none!important}
-.bs-upload-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.bs-upload-heading strong{font-size:1rem;font-weight:700}
-.bs-upload-hint{margin:0;font-size:.86rem;line-height:1.5;color:var(--color-text-muted)}
-.bs-upload-panel>.bs-upload-drop{
- display:flex;align-items:center;justify-content:center;
- min-height:155px;width:100%;box-sizing:border-box;
- margin:0;padding:22px;text-align:center;
- border:2px dashed var(--color-accent);border-radius:10px;
- background:var(--color-surface);color:var(--color-text);
- font-size:.96rem;font-weight:600;line-height:1.6;
+.bs-upload-panel[hidden] {
+  display: none !important;
 }
-.bs-upload-panel>.bs-upload-drop.is-dragover,
-.bs-upload-panel>.bs-upload-drop:focus-visible{
- outline:3px solid var(--color-accent);outline-offset:2px;
+.bs-upload-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
-.bs-upload-choose{align-self:flex-start}
-@media(max-width:550px){.bs-upload-panel{padding:12px}.bs-upload-panel>.bs-upload-drop{min-height:125px;padding:14px}}
+.bs-upload-heading strong {
+  font-size: var(--text-body);
+  font-weight: var(--font-bold);
+}
+.bs-upload-hint {
+  margin: 0;
+  font-size: var(--text-small);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+.bs-upload-panel > .bs-upload-drop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 155px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 22px;
+  text-align: center;
+  border: 2px dashed var(--color-accent);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
+  line-height: 1.6;
+}
+.bs-upload-panel > .bs-upload-drop.is-dragover,
+.bs-upload-panel > .bs-upload-drop:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.bs-upload-choose {
+  align-self: flex-start;
+}
+@media (max-width: 550px) {
+  .bs-upload-panel {
+    padding: 12px;
+  }
+  .bs-upload-panel > .bs-upload-drop {
+    min-height: 125px;
+    padding: 14px;
+  }
+}
