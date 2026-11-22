@@ -16,8 +16,9 @@ const description = field => field.label + (field.unit ? " (" + field.unit + ")"
 const displayValue = value => typeof value === "boolean" ? value ? "Yes" : "No" : String(value);
 const link = (text, url) => {const a = h("a", "", text); if (safeUrl(url)) {a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";} return a;};
 function control(label, value, update, {type = "text", options, placeholder = "", required = false} = {}) {
-  const wrapper = h("label", "form-row"), caption = h("span", "field-label", label);
+  const wrapper = h("div", "form-row"), caption = h("label", "field-label", label);
   const input = h(options ? "select" : type === "textarea" ? "textarea" : "input", "input");
+  input.id = "workshop-input-" + crypto.randomUUID(); caption.htmlFor = input.id;
   if (options) for (const [value, label] of options) {const option = h("option", "", label); option.value = value; input.append(option);}
   else if (type !== "textarea") input.type = type;
   if (type === "number") input.step = "any";
