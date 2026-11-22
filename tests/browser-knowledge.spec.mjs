@@ -17,7 +17,7 @@ async function createTileFromFamily(page, title) {
   await page.goto("/workshop.html?family=f-buck-converter");
   await expect(page.locator("#workshop-detail").getByRole("heading", {name: "Knowledge (0)", exact: true})).toBeVisible();
   await page.getByRole("link", {name: "New knowledge tile for this family", exact: true}).click();
-  await expect(page).toHaveURL(/knowledge\.html\?new=1&family=f-buck-converter/);
+  await expect(page).toHaveURL(/knowledge\.html\?new=1&link=family:f-buck-converter/);
   await page.getByLabel("Title", {exact: true}).fill(title);
   await page.getByLabel("Summary", {exact: true}).fill("Switching 24 V on through a switch can ring above the converter's rating.");
   await page.getByRole("button", {name: "Save tile", exact: true}).click();
@@ -41,9 +41,9 @@ test("a tile started from a family is linked to it and shows on the family page"
 test("adding and removing a link from the tile page; archive keeps links", async ({page}) => {
   await createTileFromFamily(page, "Inrush current");
   page.on("dialog", (dialog) => dialog.accept());
-  await detail(page).getByRole("button", {name: "Add link to a Workshop family", exact: true}).click();
+  await detail(page).getByRole("button", {name: "Add link", exact: true}).click();
   const dialog = page.locator("#knowledge-dialog");
-  await dialog.getByLabel("Find a Workshop family", {exact: true}).fill("DC power");
+  await dialog.getByLabel("Search", {exact: true}).fill("DC power");
   await dialog.getByRole("button", {name: "DC power supply", exact: true}).click();
   await dialog.getByRole("button", {name: "Add link", exact: true}).click();
   await expect(detail(page).getByRole("heading", {name: "Links (2)", exact: true})).toBeVisible();
@@ -82,4 +82,68 @@ test("Knowledge has no horizontal overflow on a phone", async ({page}) => {
   await page.reload();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
+});
+
+const origin = "http://127.0.0.1:4173";
+async function api(page, path, data, method = "POST") {
+  const response = await page.request.fetch(path, {method, headers: {origin}, data});
+  expect(response.ok(), await response.text()).toBe(true);
+  return response.json();
+}
+async function tileFor(page, title, target_type, target_id) {
+  const id = crypto.randomUUID();
+  await api(page, "/api/knowledge", {entity: "tile", expectedRevision: null, record: {id, type: "concept", status: "draft", title, summary: title + " summary.", body: "", sources: []}});
+  await api(page, "/api/knowledge", {entity: "link", expectedRevision: null, record: {id: crypto.randomUUID(), tile_id: id, target_type, target_id, relation: "applies_to", note: ""}});
+  return id;
+}
+
+test("products and project parts show knowledge from their family, and tiles link between each other", async ({page}) => {
+  await page.goto("/workshop.html");
+  const product = {id: crypto.randomUUID(), family_id: "f-buck-converter", name: "Test buck module", manufacturer: "", mpn: "", supplier_links: [], notes: "", field_values: {}};
+  await api(page, "/api/workshop", {entity: "product", record: product, expectedRevision: null, expectedFamilyRevision: 1});
+  const use = {id: crypto.randomUUID(), project_id: "launcher", tree_node_id: null, family_id: "f-buck-converter", product_id: product.id, purpose: "Logic supply", quantity: 1, unit: "pcs", field_values: {}, notes: ""};
+  await api(page, "/api/workshop", {entity: "use", record: use, expectedRevision: null, expectedFamilyRevision: 1});
+  await tileFor(page, "Hot-plug ringing", "family", "f-buck-converter");
+  await tileFor(page, "Module input limits", "product", product.id);
+
+  await page.goto("/workshop.html?product=" + product.id);
+  const workshop = page.locator("#workshop-detail");
+  await expect(workshop.getByRole("heading", {name: "Knowledge (2)", exact: true})).toBeVisible();
+  await expect(workshop.getByRole("link", {name: /Hot-plug ringing.*via family/})).toBeVisible();
+
+  await page.goto("/index.html#launcher/part/" + use.id);
+  const workspace = page.locator("#launcher .bom-part-workspace");
+  await workspace.getByText("Part details", {exact: true}).click();
+  await expect(workspace.getByText("Knowledge (2)", {exact: true})).toBeVisible();
+  // The part page may re-render once its data arrives; follow the link's target
+  // rather than racing that re-render with a click.
+  const tileLink = workspace.getByRole("link", {name: "Hot-plug ringing", exact: true});
+  await expect(tileLink).toHaveAttribute("href", /knowledge\.html\?tile=/);
+  await page.goto("/" + (await tileLink.getAttribute("href")));
+  await expect(detail(page).getByRole("heading", {name: "Hot-plug ringing", exact: true})).toBeVisible();
+
+  // Link this tile to the other tile; the other tile lists it under "Linked from".
+  page.on("dialog", (dialog) => dialog.accept());
+  await detail(page).getByRole("button", {name: "Add link", exact: true}).click();
+  const dialog = page.locator("#knowledge-dialog");
+  await dialog.getByLabel("Link to", {exact: true}).selectOption("tile");
+  await dialog.getByRole("button", {name: "Module input limits", exact: true}).click();
+  await dialog.getByLabel("Relation", {exact: true}).selectOption("see_also");
+  await dialog.getByRole("button", {name: "Add link", exact: true}).click();
+  await expect(detail(page).getByRole("heading", {name: "Links (2)", exact: true})).toBeVisible();
+  await detail(page).getByRole("link", {name: "Module input limits", exact: true}).click();
+  await expect(detail(page).getByRole("heading", {name: "Linked from (1)", exact: true})).toBeVisible();
+});
+
+test("a tile can be started from a project part and links to it", async ({page}) => {
+  await page.goto("/workshop.html");
+  const use = {id: crypto.randomUUID(), project_id: "launcher", tree_node_id: null, family_id: "f-resistor", product_id: null, purpose: "Pull-up", quantity: 1, unit: "pcs", field_values: {}, notes: ""};
+  await api(page, "/api/workshop", {entity: "use", record: use, expectedRevision: null, expectedFamilyRevision: 1});
+  await page.goto("/knowledge.html?new=1&link=use:" + use.id);
+  await page.getByLabel("Title", {exact: true}).fill("Choosing pull-up values");
+  await page.getByLabel("Summary", {exact: true}).fill("Why 10 k was used here.");
+  await page.getByRole("button", {name: "Save tile", exact: true}).click();
+  await expect(page.locator("#knowledge-status")).toHaveText("Saved.");
+  await expect(detail(page).getByText(/Applies to project part:/)).toBeVisible();
+  await expect(detail(page).getByRole("link", {name: "Pull-up", exact: true})).toHaveAttribute("href", "index.html#launcher/part/" + use.id);
 });

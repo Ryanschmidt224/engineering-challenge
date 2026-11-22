@@ -5,6 +5,7 @@ import {isAdmin} from "./auth.js";
 import {initializeWorkshop} from "./workshop-db.js";
 import {validateTile, validateLink} from "../../assets/knowledge-model.js";
 import {validId} from "../../assets/family-model.js";
+import {resolveTargets, describeTargets, contextTargets, key} from "./knowledge-targets.js";
 
 const headers = {"cache-control": "private, no-store", "x-content-type-options": "nosniff"};
 const json = (data, status = 200) => Response.json(data, {status, headers});
@@ -14,28 +15,6 @@ const tables = {tile: "knowledge_tiles", link: "knowledge_links"};
 
 function parseTile(row) {
   return row && {...row, sources: JSON.parse(row.sources)};
-}
-
-// Resolve link targets to their current label and state. A target that no
-// longer exists is reported as missing (with its last known label), an
-// archived one as archived. Nothing is hidden silently.
-async function describeTargets(db, links) {
-  const familyIds = [...new Set(links.filter((link) => link.target_type === "family").map((link) => link.target_id))];
-  const families = new Map();
-  if (familyIds.length) {
-    const rows = (
-      await db
-        .prepare(`SELECT id,name,archived FROM workshop_families WHERE id IN (${familyIds.map(() => "?").join(",")})`)
-        .bind(...familyIds)
-        .all()
-    ).results;
-    for (const row of rows) families.set(row.id, row);
-  }
-  return links.map((link) => {
-    const family = link.target_type === "family" ? families.get(link.target_id) : null;
-    const state = !family ? "missing" : family.archived ? "archived" : "available";
-    return {...link, target_name: family?.name || link.target_label, target_state: state};
-  });
 }
 
 export async function knowledgeSnapshot(db) {
@@ -70,7 +49,7 @@ async function saveTile(db, input) {
   return parseTile(await db.prepare("SELECT * FROM knowledge_tiles WHERE id=?").bind(tile.id).first());
 }
 
-async function saveLink(db, input) {
+async function saveLink(env, db, input) {
   const link = validateLink(input.record);
   if (input.expectedRevision !== null) {
     // Only the relation and note of an existing link can change; a different
@@ -83,16 +62,43 @@ async function saveLink(db, input) {
   }
   const tile = await db.prepare("SELECT id FROM knowledge_tiles WHERE id=?").bind(link.tile_id).first();
   if (!tile) throw Error("Save the tile before adding links.");
-  const family = await db.prepare("SELECT name FROM workshop_families WHERE id=? AND archived=0").bind(link.target_id).first();
-  if (!family) throw Error("Choose an active Workshop family.");
+  const target = (await resolveTargets(env, db, [link])).get(key(link));
+  if (target.state !== "available") throw Error("Choose something that exists and is not archived.");
+  // A project part's project comes from the part itself, never from the request.
+  const project = link.target_type === "use" ? target.project_id : link.target_project_id;
   const result = await db
     .prepare(
-      `INSERT INTO knowledge_links(id,tile_id,target_type,target_id,target_label,relation,note,created_at)
- SELECT ?,?,?,?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM knowledge_links WHERE id=?)`,
+      `INSERT INTO knowledge_links(id,tile_id,target_type,target_id,target_project_id,target_label,relation,note,created_at)
+ SELECT ?,?,?,?,?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM knowledge_links WHERE id=?)`,
     )
-    .bind(link.id, link.tile_id, link.target_type, link.target_id, family.name, link.relation, link.note, new Date().toISOString(), link.id)
+    .bind(link.id, link.tile_id, link.target_type, link.target_id, project, target.name, link.relation, link.note, new Date().toISOString(), link.id)
     .run();
   return result.meta.changes ? db.prepare("SELECT * FROM knowledge_links WHERE id=?").bind(link.id).first() : null;
+}
+
+// Tiles that apply to something, with the explicit links that make them apply.
+// One entry per tile; archived tiles and removed links are left out.
+async function relatedTiles(db, type, id) {
+  const targets = await contextTargets(db, type, id);
+  if (targets === null) throw Error("Unknown context.");
+  if (!targets.length) return [];
+  const clauses = targets.map(() => "(l.target_type=? AND l.target_id=?)").join(" OR ");
+  const rows = (
+    await db
+      .prepare(
+        `SELECT l.target_type,l.target_id,l.relation,l.note,t.* FROM knowledge_links l JOIN knowledge_tiles t ON t.id=l.tile_id
+ WHERE l.archived=0 AND t.archived=0 AND (${clauses}) ORDER BY t.title COLLATE NOCASE`,
+      )
+      .bind(...targets.flatMap((target) => [target.target_type, target.target_id]))
+      .all()
+  ).results;
+  const tiles = new Map();
+  for (const row of rows) {
+    const {target_type, target_id, relation, note, ...tile} = row;
+    if (!tiles.has(tile.id)) tiles.set(tile.id, {...parseTile(tile), via: []});
+    tiles.get(tile.id).via.push({target_type, target_id, relation, note});
+  }
+  return [...tiles.values()];
 }
 
 function checkRevision(value) {
@@ -108,8 +114,18 @@ export async function handleKnowledge(request, env) {
   await initializeWorkshop(db);
 
   if (request.method === "GET") {
+    const url = new URL(request.url);
+    if (url.searchParams.has("related")) {
+      const id = url.searchParams.get("id");
+      if (!validId(id)) return json({error: "Invalid ID"}, 400);
+      try {
+        return json({tiles: await relatedTiles(db, url.searchParams.get("related"), id)});
+      } catch (error) {
+        return json({error: error.message}, 400);
+      }
+    }
     const snapshot = await knowledgeSnapshot(db);
-    return json({tiles: snapshot.tiles, links: await describeTargets(db, snapshot.links)});
+    return json({tiles: snapshot.tiles, links: await describeTargets(env, db, snapshot.links)});
   }
   if (!["POST", "PATCH"].includes(request.method)) return json({error: "Method not allowed"}, 405);
 
@@ -133,14 +149,15 @@ export async function handleKnowledge(request, env) {
       return result.meta.changes ? json({ok: true}) : conflict();
     }
 
-    const record = input.entity === "tile" ? await saveTile(db, input) : await saveLink(db, input);
+    const record = input.entity === "tile" ? await saveTile(db, input) : await saveLink(env, db, input);
     if (!record) return conflict();
-    if (input.entity === "link") return json({record: (await describeTargets(db, [record]))[0]});
+    if (input.entity === "link") return json({record: (await describeTargets(env, db, [record]))[0]});
     return json({record});
   } catch (error) {
     const message = String(error?.message || error);
     if (/UNIQUE constraint/.test(message))
       return json({error: "This tile already has that link.", code: "KNOWLEDGE_DUPLICATE"}, 409);
+    if (/Unexpected token|JSON/.test(message)) return json({error: "Invalid request."}, 400);
     if (/FOREIGN KEY/.test(message)) return json({error: "The tile for this link no longer exists."}, 400);
     if (/CHECK constraint/.test(message)) return json({error: "A required value is missing or too long."}, 400);
     return json({error: message.slice(0, 300)}, 400);

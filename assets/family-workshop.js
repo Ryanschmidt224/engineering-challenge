@@ -5,8 +5,7 @@ import {tileTypes,tileStatuses,relations,labelFor} from "./knowledge-model.js";
 const $=selector=>document.querySelector(selector),detail=$("#workshop-detail"),dialog=$("#workshop-dialog");
 const params=new URLSearchParams(location.search);
 let data={categories:[],families:[],fields:[],products:[],uses:[],attachments:[]},projects=[];
-// Knowledge is optional context on this page: if it fails to load, the Workshop still works.
-let knowledge={tiles:[],links:[],error:""};
+
 let selectedCategory="",selectedFamily="",selectedProduct="",selectedUse="",draft=null,editing=false,dirty=false,busy=false,showUseFields=false;
 const status=(message,error=false)=>{$("#workshop-status").textContent=message;$("#workshop-status").classList.toggle("status--error",error);};
 const mark=()=>{dirty=true;};
@@ -19,28 +18,28 @@ async function run(operation){
  if(busy)return;busy=true;detail.inert=true;$("#family-list").inert=true;$("#category-tree").inert=true;
  try{await operation();}catch(error){status(error.message,true);}finally{busy=false;detail.inert=false;$("#family-list").inert=false;$("#category-tree").inert=false;}
 }
-async function refresh(){
- data=await requestWorkshop();
- try{const result=await requestWorkshop("/api/knowledge");knowledge={tiles:result.tiles,links:result.links,error:""};}
- catch(error){knowledge={tiles:[],links:[],error:error.message};}
- renderNavigation();
-}
-// Tiles linked directly to this family. Archived tiles and removed links are not shown.
-function renderFamilyKnowledge(record){
- const linked=knowledge.links.filter(link=>!link.archived&&link.target_type==="family"&&link.target_id===record.id);
- const entries=[];
- for(const link of linked){const tile=knowledge.tiles.find(tile=>tile.id===link.tile_id&&!tile.archived);if(tile&&!entries.some(entry=>entry.tile.id===tile.id))entries.push({tile,link});}
- const section=panel("Knowledge ("+entries.length+")");
- if(knowledge.error)section.append(node("p","Knowledge could not load: "+knowledge.error,"error"));
- const list=node("div","","knowledge-list");
- for(const {tile,link} of entries){
-  const entry=node("a","","list-card");entry.href="knowledge.html?tile="+encodeURIComponent(tile.id);
-  entry.append(node("strong",tile.title),node("small",[labelFor(tileTypes,tile.type),labelFor(tileStatuses,tile.status),labelFor(relations,link.relation)+" this family"].join(" · ")),node("small",tile.summary));
-  list.append(entry);
- }
- if(!entries.length&&!knowledge.error)list.append(node("p","No knowledge linked yet. Lessons, methods and concepts about this kind of part appear here.","empty"));
- const create=node("a","New knowledge tile for this family","button");create.href="knowledge.html?new=1&family="+encodeURIComponent(record.id);
- section.append(list,actions(create));detail.append(section);
+async function refresh(){data=await requestWorkshop();renderNavigation();}
+// Knowledge that applies here: for a family its own tiles; for a product also
+// its family's; for a project use also its product's and family's. The server
+// applies that one rule. Optional context: a failure never blocks the Workshop.
+const knowledgeNoun={family:"family",product:"product",use:"project part"};
+const knowledgeVia={use:"this part",product:"product",family:"family"};
+function renderKnowledge(type,id){
+ const section=panel("Knowledge");detail.append(section);
+ const create=node("a","New knowledge tile for this "+knowledgeNoun[type],"button");create.href="knowledge.html?new=1&link="+type+":"+encodeURIComponent(id);
+ void requestWorkshop("/api/knowledge?related="+type+"&id="+encodeURIComponent(id)).then(result=>{
+  if(!section.isConnected)return;
+  section.querySelector("h3").textContent="Knowledge ("+result.tiles.length+")";
+  const list=node("div","","knowledge-list");
+  for(const tile of result.tiles){
+   const entry=node("a","","list-card");entry.href="knowledge.html?tile="+encodeURIComponent(tile.id);
+   const reasons=[...new Set(tile.via.map(via=>type==="family"?labelFor(relations,via.relation)+" this family":"via "+knowledgeVia[via.target_type]))];
+   entry.append(node("strong",tile.title),node("small",[labelFor(tileTypes,tile.type),labelFor(tileStatuses,tile.status),...reasons].join(" · ")),node("small",tile.summary));
+   list.append(entry);
+  }
+  if(!result.tiles.length)list.append(node("p","No knowledge linked yet. Lessons, methods and concepts about this "+knowledgeNoun[type]+" appear here.","empty"));
+  section.append(list,actions(create));
+ }).catch(error=>{if(section.isConnected)section.append(node("p","Knowledge could not load: "+error.message,"error"),actions(create));});
 }
 function updateLocation(){
  const url=new URL(location.href);url.searchParams.delete("edit");
@@ -200,7 +199,7 @@ function renderFamilyRead(record){
  const fields=panel("Fields","Values are entered on a product, a project use, or both.");
  const scroll=node("div","","table-scroll"),table=node("table","","data-table"),head=node("thead"),header=node("tr");for(const label of ["Field","Unit","Type"])header.append(node("th",label));head.append(header);table.append(head);
  const body=node("tbody");for(const definition of familyFields().filter(f=>!f.hidden)){const row=node("tr");row.append(node("td",definition.label+(definition.filled_on_use?" · usually entered in project":"")),node("td",definition.unit),node("td",definition.type));body.append(row);}table.append(body);scroll.append(table);fields.append(scroll);detail.append(fields);
- renderFamilyKnowledge(record);
+ renderKnowledge("family",record.id);
  const related=panel("Products");const list=node("div","","product-list");
  for(const product of data.products.filter(p=>p.family_id===record.id&&active(p)))list.append(button(product.name+(product.mpn?" · "+product.mpn:"")+(product.archived?" (archived)":""),()=>changeSelection({familyId:record.id,productId:product.id})));
  if(!list.children.length)list.append(node("p","No specific products yet. This family can still be used in a project.","empty"));
@@ -233,6 +232,7 @@ function renderInstanceRead(entity,record,selected,selectedProductRecord){
  if(record.notes){const notes=panel("Notes");notes.append(node("p",record.notes,"notes"));detail.append(notes);}
  if(entity==="use"){renderAttachments(detail,"family",selected.id,false);if(product)renderAttachments(detail,"product",product.id,false);}
  renderAttachments(detail,entity,record.id,false);
+ renderKnowledge(entity,record.id);
 }
 async function archive(entity,record){
  if(!window.confirm((record.archived?"Restore":"Archive")+" this "+entity+"? Existing project records and stored files are kept."))return;

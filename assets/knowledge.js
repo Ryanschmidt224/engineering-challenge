@@ -5,10 +5,12 @@ import {
   tileTypes,
   tileStatuses,
   relations,
+  targets,
   limits,
   labelFor,
   validateTile,
   paragraphs,
+  targetHref,
 } from "./knowledge-model.js";
 
 const $ = (selector) => document.querySelector(selector);
@@ -18,7 +20,7 @@ const params = new URLSearchParams(location.search);
 
 let tiles = [];
 let links = [];
-let families = null; // loaded the first time a link is added
+let catalog = null; // Workshop and project lists, loaded the first time a link is added
 let selectedTile = "";
 let draft = null; // {record, expectedRevision}
 let dirty = false;
@@ -57,7 +59,7 @@ async function refresh() {
 
 function updateLocation() {
   const url = new URL(location.href);
-  for (const key of ["tile", "new", "family"]) url.searchParams.delete(key);
+  for (const key of ["tile", "new", "family", "link"]) url.searchParams.delete(key);
   if (selectedTile) url.searchParams.set("tile", selectedTile);
   history.replaceState(null, "", url);
 }
@@ -175,38 +177,61 @@ function renderDetail() {
   const list = node("ul", "", "link-list");
   for (const link of linked) {
     const item = node("li");
-    const target = node("a", link.target_name, "link-target");
-    target.href = "workshop.html?family=" + encodeURIComponent(link.target_id);
-    const line = node("span");
-    line.append(document.createTextNode(labelFor(relations, link.relation) + " Workshop family: "), target);
-    if (link.target_state !== "available") {
-      line.append(
-        document.createTextNode(
-          link.target_state === "archived" ? " (archived in the Workshop)" : " (no longer in the Workshop; last known name)",
-        ),
-      );
-    }
-    item.append(line);
+    item.append(linkSentence(labelFor(relations, link.relation), link));
     if (link.note) item.append(node("span", link.note, "link-note"));
     item.append(button("Remove link", () => void archive("link", link), "button--quiet"));
     list.append(item);
   }
   if (!linked.length) list.append(node("li", "Not linked to anything yet.", "empty"));
-  linksPanel.append(list, actions(button("Add link to a Workshop family", () => void run(addLinkDialog))));
+  linksPanel.append(list, actions(button("Add link", () => void run(addLinkDialog))));
   detail.append(linksPanel);
+
+  // Other tiles that link here. Shown as their own sentence, so a "Caused by"
+  // link is never read backwards as a claim this tile makes.
+  const incoming = links.filter((link) => !link.archived && link.target_type === "tile" && link.target_id === tile.id);
+  if (incoming.length) {
+    const linkedFrom = panel("Linked from (" + incoming.length + ")");
+    const fromList = node("ul", "", "link-list");
+    for (const link of incoming) {
+      const source = tiles.find((entry) => entry.id === link.tile_id);
+      if (!source) continue;
+      const item = node("li");
+      const anchor = node("a", source.title, "link-target");
+      anchor.href = "knowledge.html?tile=" + encodeURIComponent(source.id);
+      item.append(anchor, document.createTextNode(" — " + labelFor(relations, link.relation).toLowerCase() + " this tile" + (source.archived ? " (archived tile)" : "")));
+      if (link.note) item.append(node("span", link.note, "link-note"));
+      fromList.append(item);
+    }
+    linkedFrom.append(fromList);
+    detail.append(linkedFrom);
+  }
 }
 
-function begin(record, expectedRevision, linkFamily = "") {
+// "Applies to Workshop family: Buck converter (archived in the Workshop)"
+function linkSentence(relation, link) {
+  const line = node("span");
+  const target = node("a", link.target_name || "Unnamed", "link-target");
+  const href = targetHref(link);
+  if (href && link.target_state !== "missing") target.href = href;
+  line.append(document.createTextNode(relation + " " + labelFor(targets, link.target_type).toLowerCase() + ": "), target);
+  if (link.target_project_name && link.target_type !== "project") line.append(document.createTextNode(" in " + link.target_project_name));
+  if (link.target_state === "archived") line.append(document.createTextNode(" (archived)"));
+  if (link.target_state === "missing") line.append(document.createTextNode(" (no longer exists; last known name)"));
+  return line;
+}
+
+function begin(record, expectedRevision, linkTarget = null) {
   if (!mayLeave()) return;
-  draft = {record, expectedRevision, linkFamily};
+  draft = {record, expectedRevision, linkTarget};
   dirty = false;
   renderDetail();
 }
 
-// linkFamily: a tile started from a Workshop family page is linked to it on save.
-function newTile(linkFamily = "") {
+// linkTarget: a tile started from a Workshop family/product or a project part
+// is linked to it on save ("Applies to").
+function newTile(linkTarget = null) {
   const record = {id: crypto.randomUUID(), type: "concept", status: "draft", title: "", summary: "", body: "", sources: []};
-  begin(record, null, linkFamily);
+  begin(record, null, linkTarget);
 }
 
 function limit(row, max) {
@@ -296,7 +321,7 @@ async function saveDraft(form) {
   validateTile(draft.record);
   status("Saving…");
   const isNew = draft.expectedRevision === null;
-  const family = draft.linkFamily;
+  const linkTarget = draft.linkTarget;
   const result = await requestWorkshop("/api/knowledge", "POST", {
     entity: "tile",
     record: draft.record,
@@ -306,11 +331,11 @@ async function saveDraft(form) {
   draft = null;
   selectedTile = result.record.id;
   let linkError = "";
-  if (isNew && family) {
+  if (isNew && linkTarget) {
     try {
       await requestWorkshop("/api/knowledge", "POST", {
         entity: "link",
-        record: {id: crypto.randomUUID(), tile_id: selectedTile, target_type: "family", target_id: family, relation: "applies_to", note: ""},
+        record: {id: crypto.randomUUID(), tile_id: selectedTile, ...linkTarget, relation: "applies_to", note: ""},
         expectedRevision: null,
       });
     } catch (error) {
@@ -320,7 +345,7 @@ async function saveDraft(form) {
   await refresh();
   updateLocation();
   renderDetail();
-  status(linkError ? "Saved, but the family link was not added: " + linkError : "Saved.", !!linkError);
+  status(linkError ? "Saved, but the link was not added: " + linkError : "Saved.", !!linkError);
 }
 
 async function archive(entity, record) {
@@ -343,31 +368,92 @@ async function archive(entity, record) {
   });
 }
 
+// Everything a tile can link to, loaded once when the first link is added.
+async function loadCatalog() {
+  if (catalog) return catalog;
+  const [workshop, projectList] = await Promise.all([requestWorkshop("/api/workshop"), requestWorkshop("/api/projects")]);
+  const projects = (projectList.projects || []).filter((project) => !project.archived);
+  const projectName = (id) => projects.find((project) => project.id === id)?.name || id;
+  const familyName = (id) => workshop.families.find((family) => family.id === id)?.name || "";
+  catalog = {
+    projects,
+    family: workshop.families.filter((family) => !family.archived).map((family) => ({id: family.id, label: family.name})),
+    product: workshop.products
+      .filter((product) => !product.archived)
+      .map((product) => ({id: product.id, label: product.name + " · " + familyName(product.family_id)})),
+    use: workshop.uses
+      .filter((use) => !use.archived)
+      .map((use) => ({id: use.id, label: (use.purpose || familyName(use.family_id)) + " · " + projectName(use.project_id)})),
+    project: projects.map((project) => ({id: project.id, label: project.name})),
+  };
+  return catalog;
+}
+
+async function choicesFor(type, project) {
+  if (type === "tile") {
+    return tiles.filter((tile) => !tile.archived && tile.id !== selectedTile).map((tile) => ({id: tile.id, label: tile.title}));
+  }
+  if (type === "record") {
+    if (!project) return [];
+    const result = await requestWorkshop("/api/investigations?project=" + encodeURIComponent(project));
+    return (result.records || [])
+      .filter((record) => !record.parentRecordId && (!record.lifecycle || record.lifecycle === "active"))
+      .map((record) => ({id: record.id, label: record.title || "Untitled record"}));
+  }
+  return (await loadCatalog())[type] || [];
+}
+
 async function addLinkDialog() {
-  if (!families) families = (await requestWorkshop("/api/workshop")).families.filter((family) => !family.archived);
-  const choice = {family: "", relation: "applies_to", note: ""};
+  const data = await loadCatalog();
+  const choice = {type: "family", project: "", target: "", relation: "applies_to", note: "", options: [], query: ""};
   const results = node("div", "", "family-results");
-  const search = field("Find a Workshop family", "", (value) => paint(value), {placeholder: "e.g. Buck converter"});
-  const paint = (query = "") => {
+  const projectRow = field("Project", "", (value) => {
+    choice.project = value;
+    void reload();
+  }, {options: [{value: "", label: "Choose a project"}, ...data.projects.map((project) => ({value: project.id, label: project.name}))]});
+  const paint = () => {
     results.replaceChildren();
-    const matches = families
-      .filter((family) => family.name.toLowerCase().includes(query.toLowerCase().trim()))
-      .sort((a, b) => a.name.localeCompare(b.name))
+    const query = choice.query.toLowerCase().trim();
+    const matches = choice.options
+      .filter((option) => option.label.toLowerCase().includes(query))
+      .sort((a, b) => a.label.localeCompare(b.label))
       .slice(0, 40);
-    for (const family of matches) {
+    for (const option of matches) {
       results.append(
-        button(family.name, () => {
-          choice.family = family.id;
-          paint(query);
-        }, "list-card" + (choice.family === family.id ? " is-selected" : "")),
+        button(option.label, () => {
+          choice.target = option.id;
+          paint();
+        }, "list-card" + (choice.target === option.id ? " is-selected" : "")),
       );
     }
-    if (!matches.length) results.append(node("p", "No matching family.", "empty"));
+    if (!matches.length) {
+      const message = choice.type === "record" && !choice.project ? "Choose a project first." : "Nothing matches.";
+      results.append(node("p", message, "empty"));
+    }
   };
-  paint();
+  const reload = async () => {
+    choice.target = "";
+    projectRow.hidden = choice.type !== "record";
+    try {
+      choice.options = await choicesFor(choice.type, choice.project);
+    } catch (failure) {
+      choice.options = [];
+      error.textContent = failure.message;
+    }
+    paint();
+  };
   const form = node("form");
+  const error = node("p", "", "error");
   form.append(
-    search,
+    field("Link to", choice.type, (value) => {
+      choice.type = value;
+      void reload();
+    }, {options: targets}),
+    projectRow,
+    field("Search", "", (value) => {
+      choice.query = value;
+      paint();
+    }, {placeholder: "Type to filter"}),
     results,
     field("Relation", choice.relation, (value) => {
       choice.relation = value;
@@ -375,19 +461,13 @@ async function addLinkDialog() {
     limit(field("Note (optional)", "", (value) => {
       choice.note = value;
     }), limits.note),
-  );
-  const error = node("p", "", "error");
-  form.append(
     error,
-    actions(
-      button("Add link", () => form.requestSubmit(), "button--primary"),
-      button("Cancel", () => dialog.close()),
-    ),
+    actions(button("Add link", () => form.requestSubmit(), "button--primary"), button("Cancel", () => dialog.close())),
   );
   form.onsubmit = (event) => {
     event.preventDefault();
-    if (!choice.family) {
-      error.textContent = "Choose a family from the list.";
+    if (!choice.target) {
+      error.textContent = "Choose something from the list.";
       return;
     }
     void run(async () => {
@@ -397,8 +477,9 @@ async function addLinkDialog() {
           record: {
             id: crypto.randomUUID(),
             tile_id: selectedTile,
-            target_type: "family",
-            target_id: choice.family,
+            target_type: choice.type,
+            target_id: choice.target,
+            target_project_id: choice.type === "record" ? choice.project : null,
             relation: choice.relation,
             note: choice.note,
           },
@@ -416,6 +497,15 @@ async function addLinkDialog() {
   };
   dialog.replaceChildren(node("h2", "Add link"), form);
   dialog.showModal();
+  await reload();
+}
+
+// knowledge.html?new=1&link=use:<id> (family=<id> still works).
+function startingLink() {
+  const [type, id] = (params.get("link") || "").split(":");
+  if (["family", "product", "use", "project"].includes(type) && id) return {target_type: type, target_id: id};
+  if (params.get("family")) return {target_type: "family", target_id: params.get("family")};
+  return null;
 }
 
 fillSelect($("#type-filter"), tileTypes, "All types");
@@ -435,7 +525,7 @@ try {
   await refresh();
   selectedTile = params.get("tile") || "";
   renderList();
-  if (params.get("new") === "1") newTile(params.get("family") || "");
+  if (params.get("new") === "1") newTile(startingLink());
   else renderDetail();
 } catch (error) {
   detail.replaceChildren(panel("Knowledge unavailable", error.message), button("Try again", () => location.reload()));
