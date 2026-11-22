@@ -4748,3 +4748,105 @@
  align-items:center;
  overflow:hidden;
 }
+
+/* Shared compact disclosure appearance for part and subassembly workspaces.
+   Apply to the actual header elements, not their data/expanded bodies. */
+.assembly-workspace-page{
+ --workspace-tile-height:48px;
+ --workspace-tile-font-size:.91rem;
+ --workspace-tile-font-weight:650;
+}
+.assembly-workspace-page :is(
+ .part-details-collapse>summary.part-details-view-heading,
+ .workspace-primary-disclosure>summary,
+ .workspace-secondary-disclosure>summary,
+ .assembly-archived-disclosure>summary,
+ .investigation-collapse>summary.investigation-collapse-heading,
+ .bs-unstructured-notes>summary.bs-unstructured-notes-heading,
+ .recipe-instructions>.recipe-heading-row){
+ box-sizing:border-box;
+ min-height:var(--workspace-tile-height);
+ font-family:inherit;
+ font-size:var(--workspace-tile-font-size);
+ font-weight:var(--workspace-tile-font-weight);
+ color:var(--color-text);
+}
+.assembly-workspace-page :is(
+ .part-details-collapse>summary.part-details-view-heading,
+ .workspace-primary-disclosure>summary,
+ .workspace-secondary-disclosure>summary,
+ .assembly-archived-disclosure>summary,
+ .investigation-collapse>summary.investigation-collapse-heading,
+ .bs-unstructured-notes>summary.bs-unstructured-notes-heading):not(.unused-selector){
+ display:flex;
+ align-items:center;
+ padding-top:9px;
+ padding-bottom:9px;
+}
+.assembly-workspace-page :is(
+ .part-details-collapse>summary.part-details-view-heading,
+ .workspace-primary-disclosure>summary,
+ .workspace-secondary-disclosure>summary,
+ .assembly-archived-disclosure>summary,
+ .investigation-collapse>summary.investigation-collapse-heading,
+ .bs-unstructured-notes>summary.bs-unstructured-notes-heading) :is(h2,.workspace-disclosure-title){
+ font-family:inherit;
+ font-size:var(--workspace-tile-font-size);
+ font-weight:var(--workspace-tile-font-weight);
+ line-height:1.3;
+ margin:0;
+}
+.assembly-workspace-page .recipe-instructions>.recipe-heading-row :is(h2,.recipe-disclosure-toggle),
+.assembly-workspace-page .recipe-instructions>.recipe-heading-row .recipe-heading-actions h2{
+ font-family:inherit;
+ font-size:var(--workspace-tile-font-size);
+ font-weight:var(--workspace-tile-font-weight);
+}
+.assembly-workspace-page :is(
+ .workspace-primary-disclosure:not([open])>summary,
+ .workspace-secondary-disclosure:not([open])>summary,
+ .assembly-archived-disclosure:not([open])>summary,
+ .investigation-collapse:not([open])>summary.investigation-collapse-heading,
+ .bs-unstructured-notes:not([open])>summary.bs-unstructured-notes-heading,
+ .part-details-collapse:not([open])>summary.part-details-view-heading){
+ height:var(--workspace-tile-height);
+ min-height:var(--workspace-tile-height);
+}
+.assembly-workspace-page .assembly-archived-items{
+ padding:0;
+ border-radius:9px;
+ background:var(--color-surface);
+}
+.assembly-workspace-page .assembly-archived-disclosure>summary{
+ padding-left:27px;
+ padding-right:20px;
+}
+.assembly-workspace-page .bs-unstructured-notes:not([open]){
+ padding:0!important;
+ min-height:var(--workspace-tile-height);
+}
+.assembly-workspace-page .bs-unstructured-notes:not([open])>summary.bs-unstructured-notes-heading{
+ padding-left:27px;
+ padding-right:20px;
+ margin:0;
+}
+.assembly-workspace-page .workspace-panels>.bs-unstructured-notes:not([open]){
+ padding:0!important;
+}
+.assembly-workspace-page .workspace-panels>.workspace-secondary-disclosure,
+.assembly-workspace-page .workspace-panels>.assembly-archived-items{
+ border:1px solid var(--color-border);
+ border-radius:9px;
+ background:var(--color-surface);
+}
+.assembly-workspace-page .workspace-secondary-disclosure>summary{
+ padding-left:27px;
+ padding-right:20px;
+}
+.assembly-workspace-page .workspace-panels>.assembly-archived-items{
+ margin:0 0 12px;
+}
+.assembly-workspace-page :is(.workspace-record-count,.part-details-summary-fields){
+ font-family:inherit;
+ font-weight:400;
+}
