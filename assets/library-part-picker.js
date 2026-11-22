@@ -15,12 +15,12 @@ function open({onCreate,project="",assemblyId=null}){
   workshop.onclick=()=>{const url=new URL("workshop.html",location.href);if(project)url.searchParams.set("project",project);if(assemblyId)url.searchParams.set("assembly",assemblyId);url.searchParams.set("return",location.hash);close({created:false});location.href=url.href;};
   source.append(workshop,el("p","muted","Choose a family or product in Workshop, or create a project-only part below."));
   const numberChoice=el("fieldset","library-number-choice");numberChoice.append(el("legend","","Part number"));
-  const numbering=el("div","library-auto-number");
+  const numbering=el("div","library-number-options");
   const auto=el("input");auto.type="radio";auto.name="new-part-number-mode";auto.value="auto";auto.checked=true;
-  const automatic=el("label","","Auto assign part number");automatic.prepend(auto);
+  const automatic=el("label","library-auto-number","Auto assign part number");automatic.prepend(auto);
   const tip=el("button","library-auto-number-tip","ⓘ");tip.type="button";tip.title="Part number will be assigned according to the next available part number as defined in the part settings page.";tip.setAttribute("aria-label",tip.title);tip.dataset.bsHelpTitle="Automatic part number";
   const manual=el("input");manual.type="radio";manual.name=auto.name;manual.value="manual";
-  const manualLabel=el("label","","User assign part number");manualLabel.prepend(manual);numbering.append(automatic,tip,manualLabel);
+  const manualLabel=el("label","library-auto-number","User assign part number");manualLabel.prepend(manual);numbering.append(automatic,tip,manualLabel);
   const number=field("Project BOM number (not manufacturer's number)");number.input.maxLength=30;numberChoice.append(numbering,number.label);
   const identity=el("section","library-identity-section");
   const partClassification=field("Part type","select");for(const [value,label] of [["purchased","Off-the-shelf"],["custom","Custom — made in-house"],["custom_purchased","Custom — purchased"]])option(partClassification.input,value,label);

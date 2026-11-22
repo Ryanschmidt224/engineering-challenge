@@ -17,10 +17,15 @@ async function run(operation){
  try{await operation();}catch(error){status(error.message,true);}finally{busy=false;detail.inert=false;$("#family-list").inert=false;$("#category-tree").inert=false;}
 }
 async function refresh(){data=await requestWorkshop();renderNavigation();}
+function updateLocation(){
+ const url=new URL(location.href);url.searchParams.delete("edit");
+ for(const [key,value] of [["family",selectedFamily],["product",selectedProduct],["use",selectedUse]])value?url.searchParams.set(key,value):url.searchParams.delete(key);
+ history.replaceState(null,"",url);
+}
 function changeSelection({category=selectedCategory,familyId="",productId="",useId=""}={}){
  if(!mayLeave())return;
  selectedCategory=category;selectedFamily=familyId;selectedProduct=productId;selectedUse=useId;draft=null;editing=false;dirty=false;showUseFields=false;
- const url=new URL(location.href);for(const [key,value] of [["family",familyId],["product",productId],["use",useId]])value?url.searchParams.set(key,value):url.searchParams.delete(key);history.replaceState(null,"",url);
+ updateLocation();
  renderNavigation();renderDetail();
 }
 function descendantCategories(id){const found=new Set([id]);let changed=true;while(changed){changed=false;for(const category of data.categories)if(found.has(category.parent_id)&&!found.has(category.id)){found.add(category.id);changed=true;}}return found;}
@@ -81,7 +86,7 @@ async function saveDraft(form){
  if(payload.entity==="family"){selectedFamily=result.record.id;selectedProduct="";selectedUse="";}
  if(payload.entity==="product"){selectedProduct=result.record.id;selectedUse="";}
  if(payload.entity==="use"){selectedUse=result.record.id;selectedProduct=result.record.product_id||"";}
- draft=null;renderNavigation();renderDetail();status("Saved.");
+ draft=null;updateLocation();renderNavigation();renderDetail();status("Saved.");
 }
 function editor(entity,title,record){
  detail.append(node("h2",title));
@@ -261,5 +266,5 @@ try{
  const use=data.uses.find(use=>use.id===selectedUse),product=data.products.find(product=>product.id===selectedProduct);
  if(use){selectedFamily=use.family_id;selectedProduct=use.product_id||"";}else if(product)selectedFamily=product.family_id;
  renderNavigation();renderDetail();
- if(params.get("edit")==="1"&&use){projects=(await requestWorkshop("/api/projects")).projects||[];begin("use",use);}
+ if(params.get("edit")==="1"&&use){projects=(await requestWorkshop("/api/projects")).projects||[];begin("use",use);updateLocation();}
 }catch(error){detail.replaceChildren(panel("Workshop unavailable",error.message),button("Try again",()=>location.reload()));const signIn=node("a","Open Projects to sign in");signIn.href="index.html#home";detail.append(signIn);status(error.message,true);}

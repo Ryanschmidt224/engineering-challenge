@@ -1,0 +1,61 @@
+{
+  "frozen": {
+    "assets/site-polish.css": "0bc4190903d5330de12906039b62ce2dc8ca9094b05317c3f9bfe17e0dcd9ffa",
+    "assets/site-controls.css": "983bf3f08e8304bf0f0c0f2465e1375ecc6e739eb20c04baa92f1bf4e85640e3",
+    "assets/site-workspaces.css": "c46ba58c807f020118fc04124d966e1eef2c9a52735347498b85abde5b729ab7"
+  },
+  "limits": {
+    "assets/site.css": {
+      "important": 55,
+      "projectIds": 0
+    },
+    "assets/parts-management.css": {
+      "important": 16,
+      "projectIds": 0
+    },
+    "assets/site-workspaces.css": {
+      "important": 12,
+      "projectIds": 91
+    },
+    "assets/product-lookup.css": {
+      "important": 1,
+      "projectIds": 3
+    },
+    "assets/site-polish.css": {
+      "important": 475,
+      "projectIds": 78
+    },
+    "assets/photo-markup.css": {
+      "important": 53,
+      "projectIds": 0
+    },
+    "assets/site-controls.css": {
+      "important": 159,
+      "projectIds": 374
+    },
+    "assets/theme.css": {
+      "important": 0,
+      "projectIds": 0
+    },
+    "assets/components.css": {
+      "important": 0,
+      "projectIds": 0
+    },
+    "assets/family-workshop.css": {
+      "important": 0,
+      "projectIds": 0
+    },
+    "assets/photo-viewer.css": {
+      "important": 0,
+      "projectIds": 0
+    },
+    "assets/dialog-system.css": {
+      "important": 11,
+      "projectIds": 0
+    },
+    "assets/unstructured-notes.css": {
+      "important": 6,
+      "projectIds": 0
+    }
+  }
+}

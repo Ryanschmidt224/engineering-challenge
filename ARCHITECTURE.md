@@ -1,50 +1,44 @@
-# Building Schmidt — architecture and cleanup contract
+# BuildingSchmidt architecture
 
-> **Private-application transition:** `STATUS.md` records the current owner decisions and implementation state. Community scopes and local/offline product requirements below and in older design documents are historical, not new implementation requirements. The owner confirmed all existing application records are disposable placeholders. Use a clean replacement data model rather than legacy-data conversion code; still verify an independent backup before actually deleting live objects. `docs/PRIVATE_CLOUD_ROLLOUT.md` defines the rollout and rollback gates.
+BuildingSchmidt is a private engineering application for one owner, hosted on the existing Cloudflare Worker/static-assets deployment. The approved Workshop model replaces the earlier template/community/inventory systems. The owner has approved implementation and production deployment; see `STATUS.md` for actual release status and `docs/WORKSHOP_RELEASE.md` for acceptance and rollback.
 
-## Current private boundary
+## Storage and responsibilities
 
-`worker.js` calls `functions/api/private-access.js` before dispatching application APIs. The temporary boundary requires the existing administrator session for reads and writes, validates mutation origins, and pauses paid AI routes until a global budget exists. Account registration is closed in `accounts.js` and removed from the UI. Existing login remains until owner-only Cloudflare Access and the replacement identity are verified. Static frontend privacy still requires deployment-side Access coverage; this batch does not configure it.
+| Area | Source | Storage |
+| --- | --- | --- |
+| Workshop categories, families, stable typed fields, products, project uses | `functions/api/workshop-db.js`, `workshop-schema.js` | D1 binding `WORKSHOP_DB` |
+| Workshop file metadata | `workshop_attachments`, exactly one family/product/use owner | D1 |
+| Workshop file bytes | `functions/api/family-workshop-files.js` | Immutable R2 keys under `workshop-v2/files/` |
+| Project catalog, assembly tree, project-only parts, instructions, evidence/history and project files | Existing project handlers | R2 binding `PHOTOS` |
+| Workshop project part display | `assets/family-model.js`, project API projections | Resolved from D1, never copied into the R2 components collection |
+| Workshop UI | `workshop.html`, `assets/family-workshop.js`, `workshop-ui.js` | Same Cloudflare site |
+| Styling | `theme.css`, `components.css`, `family-workshop.css` | New Workshop loads these without legacy project overrides |
+| Knowledge | `knowledge-seed.js`, existing project/site controllers | Existing source/R2 responsibilities |
 
-Master-template updates and deletion require the editor's expected revision, in addition to the conditional R2 collection write. Templates remain independent layout snapshots without live item inheritance. D1 and the redesigned Workshop form are subsequent bounded batches, not implemented facts.
+## Data contracts
 
-## Historical subsystem map
+1. IDs remain stable when labels/order change. Product values and project requirements share family field definitions, but remain separately stored. Product display updates are live and never rewrite instructions or history.
+2. Zero/false are distinct from missing values. Hidden fields retain data. A populated field cannot silently change its unit/type or lose a selected choice. Different product/requirement values prompt review; the app does not certify engineering compatibility.
+3. Revisions protect editing across tabs. Family header/field writes use a single transaction and mutation token, preventing a stale header from leaking dependent changes. Products/uses additionally guard the family revision used to render the draft.
+4. Foreign keys prevent cross-family product selection and orphan catalog references. Project references/assembly parents are checked against existing projects. Project use IDs are UUIDs compatible with the project file/instruction handlers.
+5. Tree links are projected from D1 use membership and placement. Tool uses are excluded from the BOM. Nested assembly multipliers and family/product/requirements/unit grouping preserve each underlying use.
+6. Files are uploaded to immutable R2 keys before metadata is inserted. Failed metadata writes can leave recoverable orphan bytes included in exports. Archiving never purges bytes.
+7. The initial D1 schema starts clean with editable starter definitions only. Existing R2 Workshop data is neither imported nor deleted. Any future persistent schema change needs its own versioned, tested upgrade procedure.
 
-## Applications
-- **Projects** — `functions/api/projects.js` owns project catalog authorization and persistence. `functions/api/project-seed.js` contains built-in project seed data. Project trees, BOMs, work instructions, revisions, and files are stored in distinct R2 namespaces under stable project IDs.
-- **Knowledge Base** — `assets/knowledge-seed.js` owns the initial topic content and classifications. `assets/site.js` renders the legacy knowledge experience and navigation. Browser-local notes and drafts must not be confused with server-side records.
-- **Workshop shared catalog** — `assets/resources.js` supplies curated generic references; `functions/api/workshop-reference.js` stores administrator-owned overrides, photos and ordering fields. `assets/workshop-model.js` owns classification, matching and stock-label logic.
-- **Workshop private inventory** — `functions/api/personal-workshop.js` enforces account ownership for individual equipment and stock statuses. A `catalogId` links an inventory item to a shared catalog reference; it never grants permission to edit the shared record.
-- **Workshop UI** — `assets/personal-workshop.js` renders the browsing/editor workflows. `assets/workshop.css` owns Workshop layout. The `assets/catalog-ui.js` shell is shared by top-level pages only.
-- **Accounts and authorization** — `functions/api/accounts.js` and `functions/api/auth.js` own authenticated sessions and the administrator role. The administrator password migration is not a shortcut for public registration.
-- **Worker** — `worker.js` is a route adapter, not a data store. It must not permit a private project's assets to be read without authorization.
+## Access
 
-## Contracts
-1. Preserve immutable record IDs across Projects, BOMs, Knowledge references and Workshop records. Do not use display names as primary keys.
-2. Keep public catalog overrides separate from private user inventory; never copy private user data into public responses.
-3. Every API write requires server-side authorization and schema validation. Client controls are not access control.
-4. Every persistent schema change requires a migration strategy, schema version, and regression test.
-5. Use one styling source per subsystem. Do not append new overriding copies of obsolete CSS.
-6. No UI change can be called validated solely because source parses. Test navigation, authorization, data round-trips and deployment separately.
+`worker.js` calls `private-access.js` before dispatching application APIs. The temporary boundary requires the existing administrator session for reads/writes and validates mutation origins. Public registration is closed. Paid AI endpoints stay paused until they share a tested spending limit. Unknown APIs return structured 404; retired Workshop APIs return 410 after authorization.
 
-## Testing
-- `npm run check` executes syntax checks and all `node:test` regressions.
-- `.github/workflows/ci.yml` runs the same command on pushes and pull requests.
-- `tests/project-ownership.test.mjs`: project authorization, archive behavior, and account roles.
-- `tests/workshop-integration.test.mjs`: shared edit authorization, personal inventory isolation and validation.
-- `tests/workshop-model.test.mjs`: classification, catalog matching and stock labels.
-- `tests/architecture.test.mjs`: scripts, stylesheets, Worker imports, and architecture boundaries.
-- `tests/content-reset.test.mjs`: guarded destructive reset scope and backup requirement.
+This is API privacy, not a claim that Cloudflare Access is configured over every static asset/hostname. Retain the existing working owner login until replacement identity and all serving hostnames are verified. Never trust an unverified identity header or weaken the boundary to repair a deployment.
 
-## Data retirement
-Code is versioned in GitHub. R2 data is not part of GitHub history. The pre-cleanup code is preserved on branch `archive/pre-structural-cleanup-2026-11-14`.
+## Recovery and validation
 
-**No live data purge has been performed.** A purge needs a separate, independently verified offsite R2 backup and operator-level access to the Cloudflare R2 binding. `scripts/content-reset.mjs` is an operator-only helper; it is not imported into the deployed Worker or exposed over HTTP. It inventories allowlisted content and refuses deletion of accounts, administrator role mappings, and backups.
+`npm run check` performs syntax, CSS guardrails and Node tests, including real SQLite transactions/constraints and Worker integration. `npm run test:browser` runs project workflows plus actual-handler family/product/use tests against a disposable server. Test server/accounts are excluded from deployed assets and are not imported by the Worker.
 
-The original site contains seed projects and seeded Knowledge topics in source. Removing R2 objects by itself does not remove those seeds. In addition, browser localStorage notes or drafts cannot be deleted remotely from Cloudflare R2. Decide separately whether to retire those seeds and local state after verifying replacement screens.
+Workshop exports contain catalog/use metadata and Workshop bytes with per-file hashes and a complete trailer. `scripts/workshop-backup.mjs` verifies a downloaded export and tests catalog restoration into an empty isolated database. Separate project exports remain necessary for project instructions/history/files. Existing scheduled R2 project snapshots are not a complete independent D1 backup.
 
-## Outstanding modernization before claiming full cleanup
-- Replace legacy hidden Workshop reference-tree dependencies in `assets/resources.js` and `index.html` only after migration tests cover saved wires, purchased items and part pickers.
-- Split the remaining large `assets/project-manager.js` and `assets/site.js` controllers at stable boundaries; do not delete routes their screens still call.
-- Add browser end-to-end tests for project editing, BOM save, account registration and Workshop photo upload.
-- Verify Cloudflare deployment, API responses, R2 permissions, migration, and recovery on staging before promoting to production.
+No live purge is part of this release. Old mutation handlers and UI source are removed in Git; retained read-only legacy project backup dependencies do not reopen Workshop writes. Old R2 bytes can be retired only after an enumerated independent backup and verified restore. Code rollback preserves both the D1 resource and all R2 bytes.
+
+## Deferred work
+
+Cloudflare Access/identity replacement; full independent automated backups across D1/R2; product family moves with explicit mapping; structured pin-list editing; a safe cross-storage assembly archive for active D1 uses; broad project controller/CSS consolidation. These are separate batches, not hidden compatibility systems in the new Workshop.
