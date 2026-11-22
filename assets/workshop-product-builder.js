@@ -52,16 +52,9 @@ function create({item={},readOnly=true}={}){
  };
  const fieldRow=(section,field)=>{
   const row=el("div","workshop-builder-field");
-  row.draggable=editing;
   row.dataset.builderField=field.id;
-  row.addEventListener("dragstart",event=>{
-   if(!editing)return;
-   event.stopPropagation();
-   event.dataTransfer.setData("text/workshop-field",field.id);
-   event.dataTransfer.effectAllowed="move";
-  });
   row.addEventListener("dragover",event=>{
-   if(!editing||!event.dataTransfer.types.includes("text/workshop-field"))return;
+   if(!editing||!Array.from(event.dataTransfer.types).includes("text/workshop-field"))return;
    event.preventDefault();event.stopPropagation();
   });
   row.addEventListener("drop",event=>{
@@ -71,6 +64,12 @@ function create({item={},readOnly=true}={}){
   const title=el("div","workshop-builder-field-heading");
   if(editing){
    const grip=el("span","workshop-builder-grip","⠿");grip.title="Drag to reorder";
+   grip.draggable=true;
+   grip.addEventListener("dragstart",event=>{
+    event.stopPropagation();
+    event.dataTransfer.setData("text/workshop-field",field.id);
+    event.dataTransfer.effectAllowed="move";
+   });
    const name=input(field.label,"Field title");name.maxLength=100;
    name.setAttribute("aria-label","Field title");
    name.oninput=()=>{field.label=name.value};
@@ -142,14 +141,9 @@ function create({item={},readOnly=true}={}){
   list.replaceChildren();
   for(const section of sections){
    const card=el("section","workshop-builder-section");
-   card.draggable=editing;
-   card.addEventListener("dragstart",event=>{
-    if(!editing||event.target!==card)return;
-    event.dataTransfer.setData("text/workshop-section",section.id);
-    event.dataTransfer.effectAllowed="move";
-   });
+
    card.addEventListener("dragover",event=>{
-    if(!editing||!event.dataTransfer.types.includes("text/workshop-section"))return;
+    if(!editing||!Array.from(event.dataTransfer.types).includes("text/workshop-section"))return;
     event.preventDefault();
    });
    card.addEventListener("drop",event=>{
@@ -159,6 +153,12 @@ function create({item={},readOnly=true}={}){
    const head=el("div","workshop-builder-section-heading");
    if(editing){
     const grip=el("span","workshop-builder-grip","⠿");grip.title="Drag section";
+    grip.draggable=true;
+    grip.addEventListener("dragstart",event=>{
+     event.stopPropagation();
+     event.dataTransfer.setData("text/workshop-section",section.id);
+     event.dataTransfer.effectAllowed="move";
+    });
     const title=input(section.title,"Section title");title.maxLength=100;
     title.setAttribute("aria-label","Section title");
     title.oninput=()=>{section.title=title.value};
