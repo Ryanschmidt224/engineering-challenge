@@ -1,3 +1,4 @@
+import {handleProjectEngine,projectEngineEnabled} from "./functions/api/project-engine.js";
 import {onRequest as numberingApi} from "./functions/api/numbering.js";
 import {onRequest as projectsApi,projectAllowed,canEditProject} from "./functions/api/projects.js";
 import {onRequest as unstructuredNotesApi} from "./functions/api/unstructured-notes.js";
@@ -16,6 +17,7 @@ import {handleProjectArchive} from "./functions/api/project-archive.js";
 import {handleArchiveStaging} from "./functions/api/archive-staging.js";
 import {backupAllProjects,handleAutomaticBackups} from "./functions/api/automatic-backups.js";
 import {handleDrawings} from "./functions/api/drawings.js";
+import {isAdmin} from "./functions/api/auth.js";
 import {auth} from "./functions/api/auth.js";
 import {handleComponents,handleExtract,handleComponentPhoto} from "./functions/api/components.js";
 import {onRequestGet as listPhotos,onRequestPost as uploadPhoto,onRequestDelete as deletePhoto} from "./functions/api/photos.js";
@@ -30,8 +32,12 @@ export default {
   async fetch(request,env,ctx){
     const path=new URL(request.url).pathname;
     try{
+      const engineRoute=path.startsWith("/api/project-engine/")||path==="/api/project-engine"||path.startsWith("/project-engine-proof");
+      if(engineRoute&&!projectEngineEnabled(env))return Response.json({error:"Not found"},{status:404,headers:{"cache-control":"no-store"}});
+      if(path.startsWith("/project-engine-proof")&&!await isAdmin(request,env))return new Response('<a href="/index.html?account=1#home">Sign in with the preview owner account, then return here.</a>',{status:401,headers:{"content-type":"text/html","cache-control":"no-store"}});
       const denied=await guardPrivateApi(request,env);
       if(denied)return denied;
+      if(path.startsWith("/api/project-engine/"))return handleProjectEngine(request,env);
       if(path==="/api/accounts")return await handleAccounts(request,env);
       if(path==="/api/workshop")return handleFamilyWorkshop(request,env);
       if(path==="/api/workshop/file")return handleFamilyWorkshopFile(request,env);
