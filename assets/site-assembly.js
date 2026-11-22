@@ -1141,9 +1141,9 @@ function setupAssemblyTrees(){
    // renaming continues through the existing Modify part editor.
    const nameRow=document.createElement("div");nameRow.className="part-container-name-row";
    const nameLabel=document.createElement("div");nameLabel.className="part-container-name-label";
-   const caption=document.createElement("strong");caption.textContent="Container (name)";
+   const nameCaption=document.createElement("strong");nameCaption.textContent="Container (name)";
    const containerHelp="The container is the permanent item in your project's feature tree. Its name identifies the role or purpose; the physical part can be replaced without losing its instructions, tests, revisions, or history.";
-   nameLabel.append(caption,window.BSDialogs.tooltip("About container names",containerHelp));
+   nameLabel.append(nameCaption,window.BSDialogs.tooltip("About container names",containerHelp));
    const nameValue=document.createElement("input");
    nameValue.type="text";nameValue.className="field part-container-name-value";
    nameValue.value=window.BSPartFields.treeDescriptionFor(part)||part.name||"";
@@ -1158,6 +1158,10 @@ function setupAssemblyTrees(){
    panel.append(purpose);
    const edit=document.createElement("button");edit.type="button";edit.className="btn";edit.textContent="Edit purpose";
    edit.hidden=!editable;
+   // Keep purpose editing available without making it a separate heading
+   // above the container name.
+   const purposeActions=document.createElement("div");purposeActions.className="part-functional-purpose-actions";
+   purposeActions.append(edit);panel.append(purposeActions);
    const form=document.createElement("div");form.className="part-functional-edit";form.hidden=true;
    const purposeLabel=document.createElement("label");purposeLabel.className="part-functional-field";
    const caption=document.createElement("span");caption.textContent="Purpose";
