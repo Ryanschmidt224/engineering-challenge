@@ -19,6 +19,12 @@ window.BSProductLookup=(()=>{
    helpButton.title="About Find with AI";helpButton.setAttribute("aria-expanded","false");
    const tip=el("span","bs-action-input-tooltip",description);
    tip.setAttribute("role","tooltip");
+   // Keep the existing ? help popover, but explain the action when hovering
+   // or focusing the Find with AI button itself too.
+   button.title=description;
+   const tooltipId="bs-action-tooltip-"+Math.random().toString(36).slice(2,10);
+   tip.id=tooltipId;
+   button.setAttribute("aria-describedby",tooltipId);
    const toggle=()=>{const open=help.classList.toggle("is-open");helpButton.setAttribute("aria-expanded",String(open))};
    helpButton.onclick=toggle;
    helpButton.addEventListener("blur",()=>{help.classList.remove("is-open");helpButton.setAttribute("aria-expanded","false")});
