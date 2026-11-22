@@ -18,7 +18,7 @@ test("Knowledge opens the D1 Knowledge page; #learn keeps only the calculators",
 test("Account sign-in is unified; admin access requires a role",()=>{
  const html=file("index.html"),site=file("assets/site.js"),auth=file("functions/api/auth.js"),accounts=file("functions/api/accounts.js");
  assert.ok(html.includes("assets/site-header.js"));
- assert.match(file("assets/site-header.js"),/account.id = "accountMenuButton"/);
+ assert.match(html,/id="accountMenuButton"/);
  assert.doesNotMatch(html,/id="adminLoginButton"|id="adminDialog"/);
  assert.match(site,/window\.BSProjectManager\?\.openAccount/);
  assert.match(auth,/user\?\.role==="admin"/);

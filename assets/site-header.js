@@ -1,5 +1,5 @@
 // One header structure for Projects, Workshop and Knowledge.
-(() => {
+export function initSiteHeader() {
   const header = document.querySelector("[data-site-header]");
   if (!header) return;
   const projectPage = header.dataset.siteHeader === "projects";
@@ -16,7 +16,7 @@
     if (projectPage) { item.type = "button"; item.dataset.nav = id; } else item.href = href;
     nav.append(item);
   }
-  const account = make(projectPage ? "button" : "a", "ui-button ui-site-account", "Account");
+  const account = header.querySelector(".ui-site-account") || make(projectPage ? "button" : "a", "ui-button ui-site-account", "Account");
   if (projectPage) { account.type = "button"; account.id = "accountMenuButton"; }
   else account.href = "index.html?account=1#home";
   inner.append(brand, nav, account); header.append(inner);
@@ -26,4 +26,4 @@
     for (const item of nav.children) item.dataset.page === current ? item.setAttribute("aria-current", "page") : item.removeAttribute("aria-current");
   };
   update(); window.addEventListener("hashchange", update);
-})();
+}

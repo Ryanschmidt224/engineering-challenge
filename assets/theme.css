@@ -86,7 +86,11 @@ textarea::placeholder {
 }
 
 /* Shared geometry for new components. Legacy screens migrate separately. */
+/* Media-query values: narrow 640px, wide 1024px. Native CSS cannot use var()
+   in media conditions; use these documented literal values as layouts migrate. */
 :root {
+  --bp-narrow: 640px;
+  --bp-wide: 1024px;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;

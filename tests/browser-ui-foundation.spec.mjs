@@ -72,7 +72,7 @@ test("empty section bodies share geometry and tooltip help does not cover the tr
   // Creation still works when an empty record wrapper has no visible padding.
   const history = workspace.locator('[data-section="history"]');
   await history.getByRole("button", {name: "+ Add entry", exact: true}).click();
-  await expect(history.getByText("Entry type", {exact: true})).toBeVisible();
+  await expect(history.getByRole("combobox", {name: "Entry type", exact: true})).toBeVisible();
   await history.getByRole("button", {name: "Cancel", exact: true}).click();
   const tree = page.locator("#launcher [data-assembly-tree]");
   const complete = tree.locator(".assembly-name").filter({has: page.locator(".assembly-tree-status-marker")});

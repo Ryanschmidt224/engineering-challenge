@@ -8,7 +8,7 @@
 </head>
 <body class="workshop-app">
  <header class="ui-site-header" data-site-header="commonparts"></header>
-<script src="/assets/site-header.js?v=css-foundation-20261122"></script>
+<script type="module">import {initSiteHeader} from "/assets/site-header.js?v=css-foundation-20261122"; initSiteHeader();</script>
  <div class="workshop-heading"><div><p class="eyebrow">Private reference catalog</p><h1>The Workshop</h1><p class="muted">Start with a kind of part. Choose a specific product when you need one.</p></div><div class="actions"><a id="return-project" hidden>Back to project</a><button id="export-workshop" class="button">Export Workshop</button></div></div>
  <div class="workshop-layout">
   <aside class="category-panel" aria-label="Workshop categories"><div class="section-header"><h2>Categories</h2><button id="category-actions" class="button button--quiet">Category actions</button></div><div id="category-tree"></div></aside>
