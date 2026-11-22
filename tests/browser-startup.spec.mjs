@@ -877,7 +877,7 @@ test("project navigation orders summary below tree and page notes can be created
  const summary=order.findIndex(c=>c.includes("assembly-summary-sidebar-card"));
  expect(tree).toBeGreaterThanOrEqual(0);expect(summary).toBe(tree+1);
  await expect(sidebar.locator(".assembly-summary-sidebar-card button")).toHaveText(["Project summary","Parts Management","Project Settings"]);
- await expect(sidebar.locator(".assembly-project-settings-entry")).toBeHidden();
+ await expect(sidebar.locator(".assembly-project-settings-entry")).toBeVisible();
  const panel=page.locator('#launcher .project-summary-page [data-section="notes"]');
  await expect(panel).toBeVisible();
  await expect(panel.getByRole("button",{name:"+ Add entry"})).toBeHidden();

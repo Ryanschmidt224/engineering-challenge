@@ -476,7 +476,7 @@
 /* Compact part-page header. Keep the image, title and status related instead
    of reserving an invisible 405px-wide column for photo edit actions. */
 .bom-part-workspace > .workspace-heading:has(> .bs-photo-control) {
-  display: grid !important;
+  display: grid;
   grid-template-columns: 190px minmax(0, 1fr);
   align-items: start !important;
   column-gap: var(--space-4);
@@ -576,7 +576,7 @@
    Keep the title within a short, predictable gap of the visible thumbnail. */
 .assembly-workspace-page:not(.bom-part-workspace)
   > .workspace-heading:has(> .bs-photo-control) {
-  display: grid !important;
+  display: grid;
   grid-template-columns: 245px minmax(0, 1fr);
   column-gap: var(--space-4);
   row-gap: var(--space-3);

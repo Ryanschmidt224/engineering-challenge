@@ -26,7 +26,7 @@ Revert the code batch and deploy its HTML, scripts and styles together. There is
 
 ## Review scope and transition exceptions
 
-The owner confirmed that this batch must remain unmerged for Claude review. The new engineering rules are recorded as proposed standards; this confirmation adopts the review gate, not every proposed automated check.
+The owner originally held the foundation batch for Claude review. Claude approved it with no blocking findings, and the owner subsequently authorized implementation and production deployment of the evaluated inventory cleanup. Remaining unimplemented engineering checks stay proposals; there is no outstanding deployment hold on these authorized batches.
 
 This is an incremental CSS ownership migration, not a completed ES-module rebuild of the main page. The existing site-assembly.js, project-manager.js and dialog-system.js grow slightly to preserve mounted handlers, use the shared header/account bridge and fix tooltip interaction. This is an explicit transition exception to the proposed “legacy JS never grows” rule. New header code is a small ES module with explicit initialization and no added window global. Help text is not yet fully centralized. The feature inventory is not falsely marked Rebuilt.
 
