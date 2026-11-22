@@ -4777,7 +4777,7 @@
  .workspace-secondary-disclosure>summary,
  .assembly-archived-disclosure>summary,
  .investigation-collapse>summary.investigation-collapse-heading,
- .bs-unstructured-notes>summary.bs-unstructured-notes-heading):not(.unused-selector){
+ .bs-unstructured-notes>summary.bs-unstructured-notes-heading){
  display:flex;
  align-items:center;
  padding-top:9px;
