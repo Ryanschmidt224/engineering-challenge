@@ -52,6 +52,16 @@ test("failed batch can retry with the same operation ID; no-op and cross-project
   assert.equal((await db.prepare("SELECT COUNT(*) AS count FROM engine_operations").first()).count,before);
  }finally{db.close();}
 });
+test("a command cannot accidentally update every item in a project",async()=>{
+ const db=new TestD1();try{
+  const {input,result}=await newProject(db);
+  const command={...input,operationId:id(),expectedRevision:result.revision,payload:{action:"invalid-broad-update"}};
+  const before=await db.prepare("SELECT revision FROM engine_projects").first();
+  await assert.rejects(commitProjectCommand(db,command,w=>{w.update("engine_items",{name:"Must not run"},{project_id:input.projectId});return {};}),/exact row ID/);
+  assert.deepEqual(await db.prepare("SELECT revision FROM engine_projects").first(),before);
+  assert.equal((await db.prepare("SELECT COUNT(*) AS count FROM engine_operations").first()).count,1);
+ }finally{db.close();}
+});
 const origin="https://preview.example.test";
 const req=(path,method="GET",cookie,body,requestOrigin=origin)=>new Request(origin+path,{method,headers:{origin:requestOrigin,...(cookie?{cookie}:{}),"content-type":"application/json"},...(body?{body:JSON.stringify(body)}:{})});
 async function environment(role="admin"){
@@ -81,4 +91,14 @@ test("preview proof needs owner, same origin and valid write tokens; no R2 objec
   assert.equal(response.status,200);assert.equal((await response.json()).ok,true);assert.deepEqual([...env.PHOTOS.objects.keys()],keys);
  }finally{env.WORKSHOP_DB.close();}
  const member=await environment("member");try{assert.equal((await worker.fetch(req("/api/project-engine/proof","POST",member.cookie,{expectedRevision:null,operationId:id()}),member.env,{})).status,401);}finally{member.env.WORKSHOP_DB.close();}
+});
+
+test("malformed preview proof input returns 400 before any migration",async()=>{
+ const {env,cookie}=await environment();try{
+  for(const raw of ["null","[]","false","42",'"text"',"{",JSON.stringify({expectedRevision:null,operationId:"invalid"})]){
+   const request=new Request(origin+"/api/project-engine/proof",{method:"POST",headers:{origin,cookie,"content-type":"application/json"},body:raw});
+   assert.equal((await worker.fetch(request,env,{})).status,400,raw);
+  }
+  assert.equal((await env.WORKSHOP_DB.prepare("SELECT COUNT(*) AS count FROM sqlite_master WHERE name='project_engine_migrations'").first()).count,0);
+ }finally{env.WORKSHOP_DB.close();}
 });

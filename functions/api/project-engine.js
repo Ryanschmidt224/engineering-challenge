@@ -14,7 +14,7 @@ export async function handleProjectEngine(request,env){
  if(!env.WORKSHOP_DB)return json({error:"Preview D1 binding is not configured"},503);
  const raw=await request.text();if(raw.length>2048)return json({error:"Request is too large"},413);
  let body;try{body=JSON.parse(raw);}catch{return json({error:"Use a JSON request"},400);}
- if(body.expectedRevision!==null||typeof body.operationId!=="string"||! /^[a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12}$/i.test(body.operationId))return json({error:"A new proof needs expectedRevision: null and a UUID operationId."},400);
+ if(!body||typeof body!=="object"||Array.isArray(body)||body.expectedRevision!==null||typeof body.operationId!=="string"||! /^[a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12}$/i.test(body.operationId))return json({error:"A new proof needs expectedRevision: null and a UUID operationId."},400);
  try{return json(await proveProjectCommands(env.WORKSHOP_DB,owner.id,body.operationId));}
  catch(error){
   if(error.status===409)return json({error:error.message},409);

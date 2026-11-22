@@ -40,6 +40,7 @@ export async function commitProjectCommand(db,input,build){
   },
   update(table,patch,where){
    if(!mutable.has(table))throw Error("Unsupported update table.");
+   if(!where||!uuid(where.id))throw Error("A guarded update requires one exact row ID.");
    if(table==="engine_projects"?(where.id!==projectId||where.owner_id!==actorId):where.project_id!==projectId)throw Error("Unsupported update target.");
    // Identity is immutable. The project header's revision is set centrally.
    if(Object.keys(patch).some(name=>["id","project_id","owner_id","revision"].includes(name)))throw Error("Identity and concurrency tokens cannot be edited.");
