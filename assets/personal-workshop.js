@@ -999,8 +999,8 @@
    // Applying one never copies another product's values and does not create
    // a live dependency that could unexpectedly change an existing item.
    const templatePanel=el("section",undefined,"workshop-master-templates");
-   const templateTitle=el("h3","Master templates");
-   const templateHint=el("p","Choose a layout for this category, or save the current fields as a reusable template. Existing product values are not replaced.","muted");
+   const templateTitle=el("h3","Use master template");
+   const templateHint=el("p","Apply a layout from this category. Create and edit master templates using Template builder on the main Workshop page.","muted");
    const templateControls=el("div",undefined,"workshop-template-controls");
    const templateSearch=el("input",undefined,"field");
    templateSearch.type="search";templateSearch.placeholder="Search templates in this category";
@@ -1016,10 +1016,10 @@
    const updateTemplateButton=itemButton("Update selected template",()=>void saveCurrentTemplate(true),"btn");
    const removeTemplateButton=itemButton("Delete template",()=>void deleteSelectedTemplate(),"btn");
    for(const button of [applyTemplateButton,saveTemplateButton,updateTemplateButton,removeTemplateButton])button.type="button";
-   templateActions.append(applyTemplateButton,saveTemplateButton,updateTemplateButton,removeTemplateButton);
+   templateActions.append(applyTemplateButton);
    const templateStatus=el("p","","muted workshop-template-status");
    templateStatus.setAttribute("role","status");
-   templateControls.append(templateSearch,templateSelect,templateName,templateActions);
+   templateControls.append(templateSearch,templateSelect,templateActions);
    templatePanel.append(templateTitle,templateHint,templateControls,templateStatus);
    heading.after(templatePanel);
    let masterTemplates=[],selectedMasterTemplate="";
