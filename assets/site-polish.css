@@ -2094,267 +2094,26 @@
 }
 
 /* Personal build notebook, kept separate from official project content. */
-.my-build-mount {
-  margin: 12px 0 20px;
-}
-.my-build-panel {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  overflow: hidden;
-}
-.my-build-disclosure > summary {
-  padding: 13px 17px;
-  cursor: pointer;
-  font-weight: var(--font-semibold);
-  list-style: revert;
-  color: var(--color-text);
-}
-.my-build-disclosure[open] > summary {
-  border-bottom: 1px solid var(--color-border);
-}
-.my-build-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: 16px 18px;
-}
-.my-build-body .muted {
-  margin: 0;
-  font-size: var(--text-small);
-}
-.my-build-progress {
-  width: min(220px, 100%);
-}
-.my-build-note {
-  width: 100%;
-  max-width: 780px;
-  box-sizing: border-box;
-  resize: vertical;
-}
-.my-build-task-row {
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--color-border);
-}
-.my-build-task-row span {
-  flex: 1;
-  overflow-wrap: anywhere;
-}
-.my-build-remove {
-  padding: 4px 8px;
-}
-.my-build-task-form {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
-.my-build-task-form .field {
-  min-width: 200px;
-  flex: 1;
-  max-width: 540px;
-}
-.my-build-save-state {
-  font-size: var(--text-small);
-  color: var(--color-text-muted);
-}
-.my-build-save-state:empty {
-  display: none;
-}
 
 /* Feedback is an unobtrusive secondary action, not a competing section. */
-.build-confusion-control {
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  margin: 9px 0 12px;
-}
-.build-confusion-button {
-  font-size: var(--text-small) !important;
-  font-weight: var(--font-semibold) !important;
-  padding: 5px 9px !important;
-  min-height: 30px;
-  background: transparent !important;
-  border: 1px solid var(--color-border) !important;
-  color: var(--color-text-muted) !important;
-}
-.build-confusion-button:hover {
-  color: var(--color-text) !important;
-  background: var(--color-hover) !important;
-}
-.build-confusion-status {
-  font-size: var(--text-small);
-  color: var(--color-text-muted);
-}
-.recipe-step-detail .build-confusion-control {
-  margin-top: 10px;
-}
 
-.build-confusion-insights summary {
-  font-weight: var(--font-semibold);
-  cursor: pointer;
-}
-
-.build-confusion-insight {
-  padding: 10px 0;
-  border-bottom: 1px solid var(--color-border);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-.build-confusion-insight span {
-  font-size: var(--text-small);
-  color: var(--color-text-muted);
-}
-.build-confusion-insight p {
-  font-size: var(--text-small);
-  margin: 2px 0;
-  white-space: pre-wrap;
-}
-
-.my-build-feedback-dialog {
-  width: min(520px, calc(100vw - 32px));
-  max-width: 520px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  padding: 20px 22px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  box-shadow: 0 16px 50px
-    color-mix(in srgb, var(--color-shadow-base) 20%, transparent);
-}
-.my-build-feedback-dialog::backdrop {
-  background: color-mix(
-    in srgb,
-    var(--color-shadow-base) 46.6667%,
-    transparent
-  );
-}
-.my-build-feedback-dialog h3 {
-  font-size: var(--text-lead);
-  margin: 0 0 9px;
-}
-.my-build-feedback-dialog .muted {
-  font-size: var(--text-small);
-  line-height: 1.5;
-  margin: 0 0 15px;
-}
-.my-build-feedback-dialog textarea {
-  width: 100%;
-  box-sizing: border-box;
-  margin-bottom: 13px;
-}
-.my-build-feedback-choices,
-.my-build-feedback-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-.my-build-feedback-actions {
-  justify-content: flex-end;
-  margin-top: 16px;
-}
 @media (max-width: 540px) {
-  .my-build-feedback-choices .btn {
-    flex: 1 1 100%;
-  }
 }
 
 /* Section feedback lives as a small corner help affordance. */
-.build-confusion-control {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: 0 !important;
-  padding: 0 !important;
-}
-.build-confusion-control .build-confusion-button {
-  display: grid !important;
-  place-items: center;
-  box-sizing: border-box;
-  width: 26px;
-  height: 26px;
-  min-width: 26px;
-  min-height: 26px;
-  padding: 0 !important;
-  border: 1px solid var(--color-border) !important;
-  border-radius: 50% !important;
-  background: var(--color-surface) !important;
-  color: var(--color-text-muted) !important;
-  font-size: var(--text-small) !important;
-  font-weight: var(--font-bold) !important;
-  line-height: 1 !important;
-  cursor: pointer;
-  box-shadow: 0 1px 3px
-    color-mix(in srgb, var(--color-shadow-base) 7.0588%, transparent);
-}
-.build-confusion-control .build-confusion-button:hover,
-.build-confusion-control .build-confusion-button:focus-visible {
-  background: var(--color-accent-soft) !important;
-  color: var(--color-text) !important;
-}
-.build-confusion-control .build-confusion-status:not(:empty) {
-  position: absolute;
-  right: 30px;
-  bottom: 0;
-  width: max-content;
-  max-width: min(300px, 60vw);
-  padding: 5px 9px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-  box-shadow: 0 2px 6px
-    color-mix(in srgb, var(--color-shadow-base) 6.2745%, transparent);
-  font-size: var(--text-small);
-}
+
 .workspace-bom,
 .part-linked-resources,
 .recipe-one-step-body,
 .project-summary-page > .project-summary-heading {
   position: relative;
 }
-.recipe-step-detail .build-confusion-control {
-  margin: 0 !important;
-}
-.my-build-feedback-dialog {
-  position: fixed;
-}
-.my-build-feedback-close {
-  position: absolute;
-  top: 9px;
-  right: 10px;
-  border: 0;
-  background: transparent;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-medium);
-  cursor: pointer;
-  color: var(--color-text-muted);
-  font-size: var(--text-title);
-  line-height: 1;
-}
-.my-build-feedback-close:hover {
-  background: var(--color-hover);
-}
-.my-build-feedback-dialog {
-  padding-top: 34px;
-}
 
 .workspace-heading,
 .project-summary-heading {
   position: relative;
 }
-.workspace-heading > .build-confusion-control,
-.project-summary-heading > .build-confusion-control {
-  right: 10px;
-  bottom: 8px;
-}
+
 .workspace-heading > div:has(> .build-confusion-control),
 .project-summary-heading > div:has(> .build-confusion-control) {
   position: static;

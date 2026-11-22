@@ -38,12 +38,9 @@ const parse=async response=>({status:response.status,body:await response.json()}
 const send=(env,path,method="GET",body,cookie)=>notes({request:request(path,method,body,cookie),env});
 const access=async(env)=>{
  const r=await provisionTestAccount(request("/api/accounts","POST",{
-  action:"register",email:"notes-admin@example.test",password:"test-account-password-strong-2026"}),env);
+  action:"register",email:"notes-admin@example.test",password:"test-account-password-strong-2026"}),env,{role:"admin"});
  assert.equal(r.status,201);
  const cookie=r.headers.get("set-cookie").split(";")[0];
- const claimed=await handleAccounts(request("/api/accounts","POST",{
-  action:"claim-admin",adminPassword:env.admin_password},cookie),env);
- assert.equal(claimed.status,200);
  return cookie;
 };
 const URL="/api/unstructured-notes?project=launcher&scope=summary&id=root";
@@ -51,7 +48,7 @@ const noteId="12345678-1234-4234-8234-123456789abc";
 test("free-form notes are readable but only project editors may create them",async()=>{
  const env={PHOTOS:new Bucket(),admin_password:"test-admin-secret"};
  const first=await parse(await send(env,URL));
- assert.equal(first.status,200);assert.deepEqual(first.body.notes,[]);assert.equal(first.body.canEdit,false);
+ assert.equal(first.status,403);
  const note={id:noteId,title:"Assembly idea",description:"Try different mounting screws.",photos:[]};
  const forbidden=await parse(await send(env,URL,"PUT",{notes:[note],expectedRevision:null}));
  assert.equal(forbidden.status,403);
@@ -60,9 +57,9 @@ test("free-form notes are readable but only project editors may create them",asy
  assert.equal(saved.status,200);
  assert.equal(saved.body.notes[0].title,"Assembly idea");
  assert.ok(saved.body.revision);
- const read=await parse(await send(env,URL));
+ const read=await parse(await send(env,URL,"GET",undefined,cookie));
  assert.equal(read.body.notes.length,1);assert.equal(read.body.notes[0].description,note.description);
- assert.equal(read.body.canEdit,false);
+ assert.equal(read.body.canEdit,true);
  const stale=await parse(await send(env,URL,"PUT",{notes:[note],expectedRevision:null},cookie));
  assert.equal(stale.status,409);
 });
@@ -74,7 +71,7 @@ test("notes remain independent across project summary, assemblies, BOM and parts
  for(const scope of ["workspace","bom","parts","part"]){
   const page="/api/unstructured-notes?project=launcher&scope="+scope+
    "&id="+(scope==="part"?"11111111-1111-4111-8111-111111111111":"root");
-  const result=await parse(await send(env,page));
+  const result=await parse(await send(env,page,"GET",undefined,cookie));
   assert.equal(result.status,200);assert.deepEqual(result.body.notes,[]);
  }
 });
@@ -92,7 +89,7 @@ test("notes reuse gallery photo storage and reject cross-note photo links",async
   {id:badId,title:"Wrong photo",description:"",photos:[photo]}
  ],expectedRevision:saved.body.revision},cookie));
  assert.equal(bad.status,400);
- const read=await parse(await send(env,URL));
+ const read=await parse(await send(env,URL,"GET",undefined,cookie));
  assert.deepEqual(read.body.notes[0].photos,[photo]);
 });
 

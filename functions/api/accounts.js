@@ -43,57 +43,7 @@ export async function handleAccounts(request,env){
  if(request.method==="DELETE")return json({user:null},200,{"set-cookie":cookie("",0)});
  const body=await request.json().catch(()=>null);
  if(body?.action==="register")return json({error:"BuildingSchmidt is a private application. Public registration is closed.",code:"REGISTRATION_CLOSED"},410);
- if(!["login","claim-admin"].includes(body?.action))return json({error:"Invalid account action",code:"INVALID_ACCOUNT_ACTION"},400);
- // One-time migration: attach legacy administrator access to an authenticated
- // user account. Never trust role values submitted during registration.
- if(body?.action==="claim-admin"){
-  const member=await accountUser(request,env);
-  if(!member)return json({error:"Sign in to your account before linking administrator access"},401);
-  if(member.role==="admin")return json({user:member});
-  const oldPassword=body.adminPassword;
-  if(typeof oldPassword!=="string"||oldPassword.length>256)return json({error:"Enter the existing administrator password"},400);
-  const candidate=new Uint8Array(await crypto.subtle.digest("SHA-256",encoder.encode(oldPassword)));
-  const expected=new Uint8Array(await crypto.subtle.digest("SHA-256",encoder.encode(env.admin_password)));
-  let difference=0;for(let i=0;i<expected.length;i++)difference|=candidate[i]^expected[i];
-  if(difference!==0)return json({error:"Administrator verification failed"},403);
-  // Claim the legacy administrator credential only once across the site.
-  // A failed account update can be retried by the same claimant.
-  const claimKey="account-admin-claim/v1.json";
-  const existing=await env.PHOTOS.get(claimKey);
-  if(existing){
-   const claim=JSON.parse(await existing.text());
-   if(claim.accountId!==member.id)return json({error:"Administrator access has already been linked to an account. Contact the site administrator.",code:"ADMIN_ALREADY_CLAIMED"},409);
-  }else{
-   // Detect administrators migrated before the one-time marker existed.
-   if(typeof env.PHOTOS.list==="function"){
-    let cursor,rounds=0;
-    do{
-     const page=await env.PHOTOS.list({prefix:"users/",limit:250,cursor});
-     for(const record of page.objects||[]){
-      if(record.key===userKey(member.id))continue;
-      const stored=await env.PHOTOS.get(record.key);
-      if(!stored)continue;
-      const other=JSON.parse(await stored.text());
-      if(other.role==="admin")return json({error:"An administrator account already exists. Ask that administrator to manage access.",code:"ADMIN_ALREADY_CLAIMED"},409);
-     }
-     if(!page.truncated)break;
-     if(!page.cursor||page.cursor===cursor||++rounds>100)return json({error:"Unable to verify administrator setup; try again later"},503);
-     cursor=page.cursor;
-    }while(true);
-   }
-   const written=await env.PHOTOS.put(claimKey,JSON.stringify({accountId:member.id,createdAt:new Date().toISOString()}),{onlyIf:{etagDoesNotMatch:"*"}});
-   if(written===null)return json({error:"Administrator access was claimed by another account. Refresh and try again.",code:"ADMIN_ALREADY_CLAIMED"},409);
-  }
-  const object=await env.PHOTOS.get(userKey(member.id));
-  if(!object)return json({error:"Account not found"},404);
-  const user=JSON.parse(await object.text());
-  if(user.disabled)return json({error:"Account disabled"},403);
-  user.role="admin";
-  // Use conditional writes so concurrent account changes cannot be overwritten.
-  const saved=await env.PHOTOS.put(userKey(member.id),JSON.stringify(user),{onlyIf:{etagMatches:object.etag}});
-  if(saved===null)return json({error:"Account changed; retry administrator verification"},409);
-  return json({user:{id:user.id,email:user.email,displayName:user.displayName,role:"admin"}});
- }
+ if(body?.action!=="login")return json({error:"Invalid account action",code:"INVALID_ACCOUNT_ACTION"},400);
  const email=String(body?.email||"").toLowerCase().trim(),password=body?.password;
  if(!/^[^\s@]{1,80}@[^\s@]{1,120}\.[^\s@]{2,30}$/.test(email)||typeof password!=="string"||password.length<12||password.length>256)return json({error:"Enter a valid email and a password between 12 and 256 characters",code:"INVALID_LOGIN"},400);
  const emailObject=await env.PHOTOS.get(await emailKey(email));

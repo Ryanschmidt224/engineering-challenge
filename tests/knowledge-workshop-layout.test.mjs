@@ -22,6 +22,6 @@ test("Account sign-in is unified; admin access requires a role",()=>{
  assert.doesNotMatch(html,/id="adminLoginButton"|id="adminDialog"/);
  assert.match(site,/window\.BSProjectManager\?\.openAccount/);
  assert.match(auth,/user\?\.role==="admin"/);
- assert.match(accounts,/action==="claim-admin"/);
+ assert.doesNotMatch(accounts,/action==="claim-admin"/);
  assert.match(accounts,/REGISTRATION_CLOSED/);
 });

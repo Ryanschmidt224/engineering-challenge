@@ -150,7 +150,7 @@ window.BSProjectManager=(()=>{
    if(project){Object.assign(project,summary);updateDirectory()}
   };
   const dialog=element("dialog","project-account-dialog");
-  dialog.innerHTML='<form class="project-account-form"><div class="project-account-header"><h2 class="project-account-title">Sign in</h2><button type="button" class="btn project-close" aria-label="Close account window">×</button></div><p class="project-account-subtitle muted">Private engineering application. Sign in with the existing owner account.</p><p class="project-account-message" role="status" aria-live="polite"></p><label class="project-account-email">Email<input class="field" type="email" name="email" autocomplete="email" required></label><label class="project-account-password">Password<input class="field" type="password" name="password" autocomplete="current-password" minlength="12" required></label><div class="project-account-buttons"><button class="btn primary project-signin" type="submit">Sign in</button><button class="btn project-signout hide" type="button">Sign out</button></div><div class="project-admin-link hide"><p class="muted">Already manage this website? Link your existing administrator access to this account.</p><label>Existing administrator password<input class="field" type="password" name="adminPassword" autocomplete="off"></label><button type="button" class="btn project-link-admin">Link administrator access</button></div></form>';
+  dialog.innerHTML='<form class="project-account-form"><div class="project-account-header"><h2 class="project-account-title">Sign in</h2><button type="button" class="btn project-close" aria-label="Close account window">×</button></div><p class="project-account-subtitle muted">Private engineering application. Sign in with the existing owner account.</p><p class="project-account-message" role="status" aria-live="polite"></p><label class="project-account-email">Email<input class="field" type="email" name="email" autocomplete="email" required></label><label class="project-account-password">Password<input class="field" type="password" name="password" autocomplete="current-password" minlength="12" required></label><div class="project-account-buttons"><button class="btn primary project-signin" type="submit">Sign in</button><button class="btn project-signout hide" type="button">Sign out</button></div></form>';
   document.body.append(dialog);
   const form=dialog.querySelector(".project-account-form");
   form.noValidate=true; // Use specific, actionable inline errors instead of browser bubbles.
@@ -187,7 +187,6 @@ window.BSProjectManager=(()=>{
    dialog.querySelector(".project-account-subtitle").textContent=signed?user.email:"Private engineering application. Public registration is closed.";
    for(const selector of [".project-account-email",".project-account-password",".project-signin"])dialog.querySelector(selector).classList.toggle("hide",signed);
    dialog.querySelector(".project-signout").classList.toggle("hide",!signed);
-   dialog.querySelector(".project-admin-link").classList.toggle("hide",!signed||user.role==="admin");
   };
   const showAccount=()=>{clearAccountError();updateAccount();dialog.showModal()};
   dialog.querySelector(".project-close").onclick=()=>dialog.close();
@@ -213,18 +212,9 @@ window.BSProjectManager=(()=>{
   }
   dialog.querySelector("form").onsubmit=event=>{event.preventDefault();void sign()};
   dialog.querySelector(".project-signout").onclick=async()=>{await api("DELETE","/api/accounts");user=null;dialog.close();location.href="#home";location.reload()};
-  dialog.querySelector(".project-link-admin").onclick=async()=>{
-   const field=dialog.querySelector('[name="adminPassword"]'),button=dialog.querySelector(".project-link-admin");
-   if(!field.value){note.textContent="Enter your existing administrator password.";return}
-   button.disabled=true;note.textContent="Verifying administrator access…";
-   try{
-    const data=await api("POST","/api/accounts",{action:"claim-admin",adminPassword:field.value});
-    user=data.user;field.value="";dialog.close();location.reload();
-   }catch(error){note.textContent=error.message}finally{button.disabled=false}
-  };
   openAccount=showAccount;
   const editor=element("dialog","project-create-dialog");
-  editor.innerHTML='<form method="dialog" class="project-create-form"><h2>New project</h2><p class="muted">Projects are private by default. Only you can edit them.</p><label>Project name<input class="field" name="name" maxlength="100" required></label><label>Description<textarea class="field" name="description" maxlength="500"></textarea></label><p class="project-create-message" role="status"></p><div class="row"><button type="button" class="btn primary project-create-save">Create project</button><button type="button" class="btn project-create-cancel">Cancel</button></div></form>';
+  editor.innerHTML='<form method="dialog" class="project-create-form"><h2>New project</h2><p class="muted">Projects are private. Only you can view and edit them.</p><label>Project name<input class="field" name="name" maxlength="100" required></label><label>Description<textarea class="field" name="description" maxlength="500"></textarea></label><p class="project-create-message" role="status"></p><div class="row"><button type="button" class="btn primary project-create-save">Create project</button><button type="button" class="btn project-create-cancel">Cancel</button></div></form>';
   document.body.append(editor);
   const createTagPicker=makeTagPicker();
   editor.querySelector('.project-create-form [name="name"]')?.closest("label")?.after(createTagPicker.element);
@@ -284,9 +274,7 @@ window.BSProjectManager=(()=>{
     const extra=element("span","project-other-tags","+"+(descriptors.length-3));
     extra.title=descriptors.slice(3).join(", ");tags.append(extra);
    }
-   const visibility=project.visibility==="private"?"Private":project.visibility==="unlisted"?"Unlisted":"Public";
-   const metadata=project.authorName?visibility+" · By "+project.authorName:visibility;
-   copy.append(tags,element("p","project-author",metadata));
+   copy.append(tags);
    link.append(copy);article.append(link);
    return article;
   };
@@ -317,7 +305,7 @@ window.BSProjectManager=(()=>{
    section.hidden=!project.isOwner;
    if(!project.isOwner)return;
    section.append(element("h2","","General"));
-   const intro=element("p","muted","Only the owner can rename this project, change its visibility or permissions, or delete it.");
+   const intro=element("p","muted","Rename this project, manage its descriptors, or delete it.");
    section.append(intro);
    const form=element("div","project-summary-settings-form");
    const nameLabel=element("label","","Project name");
@@ -326,23 +314,8 @@ window.BSProjectManager=(()=>{
    nameInput.autocomplete="off";nameInput.value=project.name;
    nameInput.setAttribute("aria-label","Project name");
    nameLabel.append(nameInput);
-   const visibility=element("label","","Visibility");
-   const visibilitySelect=element("select","field");
-   for(const [value,label] of [["private","Private — only you can view"],["public","Public — everyone can view"]]){
-    const option=element("option","",label);option.value=value;visibilitySelect.append(option);
-   }
-   visibilitySelect.value=project.visibility||"public";
-   visibility.append(visibilitySelect);
-   const permissions=element("label","","Editing permissions");
-   const permissionsSelect=element("select","field");
-   for(const [value,label] of [["locked","Locked — owner only"],["approval","Allow suggestions — owner approval"]]){
-    const option=element("option","",label);option.value=value;permissionsSelect.append(option);
-   }
-   permissionsSelect.value=project.editMode||"approval";
-   permissions.append(permissionsSelect);
    const settingsTags=makeTagPicker(projectTags(project));
-   form.append(nameLabel,settingsTags.element,visibility,permissions);
-   const note=element("p","muted","Changing to Private hides this project from other users. People may still have copies of previously published materials.");
+   form.append(nameLabel,settingsTags.element);
    const status=element("p","project-summary-settings-status");status.setAttribute("role","status");
    const actions=element("div","project-summary-settings-actions");
    const save=element("button","btn primary","Save settings");save.type="button";
@@ -353,8 +326,7 @@ window.BSProjectManager=(()=>{
     const renamed=name!==project.name;
     save.disabled=true;status.textContent="Saving…";
     try{
-     await api("PATCH","/api/projects",{id:project.id,name,tags:settingsTags.getTags(),
-      visibility:visibilitySelect.value,editMode:permissionsSelect.value});
+     await api("PATCH","/api/projects",{id:project.id,name,tags:settingsTags.getTags()});
      if(renamed){
       // Assembly controller caches the initial project title. Reload the
       // current route after saving so every heading, card and BOM uses the new name.
@@ -390,7 +362,7 @@ window.BSProjectManager=(()=>{
    };
    actions.append(save,remove);
    const projectSettingsCard=element("section","project-settings-card");
-   projectSettingsCard.append(section.querySelector("h2"),intro,form,note,actions,status);
+   projectSettingsCard.append(section.querySelector("h2"),intro,form,actions,status);
    section.append(projectSettingsCard);
    // A project has two independent sequential ranges: assemblies 001–099,
    // and custom parts 100 onward. Formatting can change without renumbering.
@@ -469,7 +441,7 @@ window.BSProjectManager=(()=>{
     const routedProject=projects.find(project=>route.startsWith(project.id+"/"));
     if(routedProject&&!document.getElementById(routedProject.id)?.classList.contains("active"))navigate(route);
     if(typeof refreshAdminUI==="function")refreshAdminUI();
-    for(const project of projects){window.BSReview?.attach(project,user);mountProjectSettings(project)}
+    for(const project of projects){mountProjectSettings(project)}
     document.querySelectorAll("[data-assembly-tree]").forEach(root=>root.dispatchEvent(new Event("projectpermissionschanged")));
    }catch(error){
     console.error("Project catalog unavailable",error);

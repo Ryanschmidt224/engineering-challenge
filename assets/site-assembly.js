@@ -879,15 +879,6 @@ function setupAssemblyTrees(){
   investigations=window.BSInvestigations?.mount({project,admin:()=>canEdit(),getTree:()=>nodes,
    getPart:()=>currentPartInfo,getPartList:()=>investigationParts,
     onReplacePart:()=>detailsPanel.querySelector(".part-details-edit")?.click()});
-  const creatorInsightsTarget=document.createElement("div");
-  creatorInsightsTarget.className="creator-feedback-target";
-  // Creator feedback is mounted at the end of the summary, after the notes and settings.
-  if(canEdit())window.BSMyBuild?.insights(creatorInsightsTarget,{project});
-  // A single feedback control on each Work Instructions section.
-  const instructionsFeedback=(panel,scope)=>window.BSMyBuild?.reportControl(panel.querySelector(".recipe-instructions"),{project,scope});
-  instructionsFeedback(workspace,()=> "section:instructions_"+(selected||"root"));
-  instructionsFeedback(partWorkspace,()=> "section:instructions_"+(partRoute()||"root"));
-
   const partDetailsSection=window.BSUI.section({title:"Part details",role:"part-details",tooltip:"Review the part identity, specifications, and other details. Expand to edit or view related files."});
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
   detailsPanel.append(partDetailsSection.root);
@@ -2690,7 +2681,6 @@ function setupAssemblyTrees(){
   const partRecentChanges=partWorkspace.querySelector("[data-section=\"recent-changes\"]");
   if(assemblyRecentChanges)workspace.append(assemblyRecentChanges);
   if(partRecentChanges)partWorkspace.append(partRecentChanges);
-  summary.append(creatorInsightsTarget);
   let lastNotePage="";
   const showNotes=(scope,id="root")=>{
    const page=scope+":"+id;
@@ -2716,8 +2706,7 @@ function setupAssemblyTrees(){
   workspace.querySelector(".workspace-back").onclick=openBom;
   const refreshSettingsControls=()=>{
    const record=window.BSProjectManager?.getProject?.(project);
-   const visibility=record?.visibility==="private"?"Private":"Public";
-   summary.querySelector(".project-summary-heading .muted").textContent=record?"Project summary · "+visibility:"Project summary";
+   summary.querySelector(".project-summary-heading .muted").textContent="Project summary";
   };
   bomScreen.querySelector(".assembly-bom-back").onclick=openWorkspace;
   async function showAssemblyPage(){
@@ -2912,7 +2901,6 @@ function setupAssemblyTrees(){
    }
   }
   root.addEventListener("projectpermissionschanged",()=>{refreshSettingsControls();render();notify()});
-   root.addEventListener("projectreviewchanged",()=>render());
   root.addEventListener("openpart",()=>{void showAssemblyPage()});
   root.addEventListener("openprojectpage",()=>{render();void showAssemblyPage()});
   root.addEventListener("openassembly",e=>{const id=e.detail;if(id==="__root__"){selected=null;history.pushState(null,"",workspaceHash(null));render();notify();return}if(!nodes.some(n=>n.id===id))return;selected=id;history.pushState(null,"",workspaceHash(id));let cursor=nodes.find(n=>n.id===id);while(cursor){expanded.add(cursor.parentId);cursor=nodes.find(n=>n.id===cursor.parentId)}render();notify()});
@@ -3360,13 +3348,6 @@ function setupAssemblyTrees(){
    controls.classList.toggle("hide",!canEdit()||isProjectSummary());projectActions.classList.toggle("hide",!canEdit());
    const summaryEntry=document.createElement("button");summaryEntry.type="button";summaryEntry.className="assembly-project-summary-entry"+(isProjectSummary()?" selected":"");
    summaryEntry.textContent="Project summary";summaryEntry.setAttribute("aria-current",isProjectSummary()?"page":"false");
-   const pendingCount=window.BSReview?.getPendingCount?.(project);
-   if(Number.isInteger(pendingCount)&&pendingCount>0&&canEdit()){
-    summaryEntry.classList.add("has-pending-changes");
-    const count=document.createElement("span");count.className="assembly-summary-pending-count";
-    count.textContent=pendingCount+" "+(pendingCount===1?"change":"changes")+" waiting";
-    summaryEntry.append(count);
-   }
    summaryEntry.onclick=()=>{selected=null;history.pushState(null,"","#"+project);render();notify();window.scrollTo(0,0)};
    summaryCard.replaceChildren(summaryEntry,partsEntry,settingsEntry);
    settingsEntry.hidden=!window.BSProjectManager?.isOwner?.(project);
@@ -3589,7 +3570,7 @@ function setupAssemblyTrees(){
    content.classList.add("ui-summary-content");
    content.before(section.root);section.body.append(content);
   }
-  for(const panel of [summary,overview,summary.querySelector(".project-summary-lists"),creatorInsightsTarget,workspace,workspace.querySelector(".workspace-panels"),partWorkspace,partWorkspace.querySelector(".workspace-panels"),detailsPanel])panel?.classList.add("ui-section-list");
+  for(const panel of [summary,overview,summary.querySelector(".project-summary-lists"),workspace,workspace.querySelector(".workspace-panels"),partWorkspace,partWorkspace.querySelector(".workspace-panels"),detailsPanel])panel?.classList.add("ui-section-list");
   summary.querySelector(".project-summary-lists")?.classList.add("ui-section-list--columns");
   load();
  })

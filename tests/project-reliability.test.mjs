@@ -8,7 +8,6 @@ import {onRequest as projects} from "../functions/api/projects.js";
 import {handleComponents} from "../functions/api/components.js";
 import {handleTree} from "../functions/api/tree.js";
 import {handleRecipeFiles} from "../functions/api/recipe-files.js";
-import {handleProposals} from "../functions/api/proposals.js";
 import {handleWorkspace} from "../functions/api/workspace.js";
 import {handleInvestigations} from "../functions/api/investigations.js";
 import {handleProjectArchive, inspectArchive} from "../functions/api/project-archive.js";
@@ -224,7 +223,7 @@ test("manual and scheduled exports freeze only linked Workshop items, shared fil
  assert.deepEqual(scheduled.get(datasheet.offlineFile),offline.get(datasheet.offlineFile));
 });
 
-test("part and assembly revisions survive 56 edits, approval, stale retries, offline export, and restore",async()=>{
+test("part and assembly revisions survive 56 edits, final save, stale retries, offline export, and restore",async()=>{
  const {env,request,create} = await projectFixture();
  const project = await create("History");
  const part = crypto.randomUUID();
@@ -246,15 +245,9 @@ test("part and assembly revisions survive 56 edits, approval, stale retries, off
   // Saving unchanged content must not drop a revision or generate another one.
   assert.equal((await (await write("Edit 55",revision)).json()).revision,revision);
   assert.equal((await write("Stale edit",null)).status,409);
-  const proposalPath="/api/proposals?project="+project;
-  const proposed=await handleProposals(request(proposalPath,"POST",{
-   scope,targetId:target,stepId:"s",field:"title",suggestedText:"Approved"
-  }),env);
-  assert.equal(proposed.status,201);
-  const {proposal}=await proposed.json();
-  assert.equal((await handleProposals(request(proposalPath,"PATCH",{id:proposal.id,action:"approve"}),env)).status,200);
+  assert.equal((await write("Final edit",revision)).status,200);
   const {workspace}=await get(path);
-  assert.equal(workspace.recipe[0].title,"Approved");
+  assert.equal(workspace.recipe[0].title,"Final edit");
   assert.ok(workspace.history.length<=20);
   let cursor=workspace.olderHistory;
   const newestFirst=workspace.history.toReversed(),pages=[];
@@ -281,7 +274,7 @@ test("part and assembly revisions survive 56 edits, approval, stale retries, off
   assert.equal(restored.status,200);
   const after=(await get(path)).workspace;
   assert.equal(after.recipe[0].title,"Edit 0");
-  assert.equal(after.history.at(-1).recipe[0].title,"Approved");
+  assert.equal(after.history.at(-1).recipe[0].title,"Final edit");
   assert.equal((await handleWorkspace(request(path+"&historyPage=invalid"),env)).status,400);
  }
 });
@@ -372,52 +365,4 @@ test("field review retains independent edits and defaults to the saved value on 
  contested[0].chooseDraft();
  assert.equal(merged.projectDetails.value,"2k");
  assert.equal(saved.projectDetails.value,"5k");
-});
-
-test("approval retries recover from an interruption after each write and preserve intervening edits",async()=>{
- const {env,request,create}=await projectFixture();
- const project=await create("Approval recovery");
- const path="/api/proposals?project="+project;
- const workspace="/api/workspace?project="+project+"&assembly=__root__";
- const put=env.PHOTOS.put.bind(env.PHOTOS);
- const initial=await handleWorkspace(request(workspace,"PUT",{recipe:[{id:"s",title:"Inspect"}]}),env);
- assert.equal(initial.status,200);
- for(const boundary of ["claim","workspace","log"]){
-  const suggestedText="Replacement "+boundary;
-  const submitted=await handleProposals(request(path,"POST",{scope:"assembly",targetId:"__root__",stepId:"s",field:"title",suggestedText}),env);
-  const {proposal}=await submitted.json();
-  const approve=action=>handleProposals(request(path,"PATCH",{id:proposal.id,action}),env);
-  const get=async()=>(await(await handleWorkspace(request(workspace),env)).json()).workspace;
-  const previous=await get();
-  let interrupted=false;
-  env.PHOTOS.put=async(key,value,options)=>{
-   const result=await put(key,value,options);
-   const entry=key.startsWith("change-proposals/")&&JSON.parse(value).find(p=>p.id===proposal.id);
-   if(!interrupted&&(boundary==="claim"&&entry?.approvalBase||boundary==="workspace"&&key.startsWith("workspaces/")||
-      boundary==="log"&&entry?.status==="approved")){
-    interrupted=true;throw Error("Simulated interruption after "+boundary);
-   }
-   return result;
-  };
-  assert.equal((await approve("approve")).status,503);
-  env.PHOTOS.put=put;
-  assert.ok(interrupted);
-  if(boundary==="workspace"){
-   const applied=await get();
-   assert.equal(applied.recipe[0].title,suggestedText);
-   assert.equal((await handleWorkspace(request(workspace,"PUT",{
-    expectedRevision:applied.revision,recipe:[{...applied.recipe[0],title:"An edit made after approval"}]
-   }),env)).status,200);
-  }
-  if(boundary==="claim")assert.equal((await approve("reject")).status,409);
-  assert.equal((await approve("approve")).status,200);
-  const after=await get();
-  assert.equal(after.history.length,previous.history.length+(boundary==="workspace"?2:1));
-  assert.equal(after.recipe[0].title,boundary==="workspace"?"An edit made after approval":suggestedText);
-  assert.equal((await approve("approve")).status,200);
-  assert.equal((await approve("reject")).status,409);
-  assert.equal((await get()).revision,after.revision);
-  const log=await (await handleProposals(request(path),env)).json();
-  assert.equal(log.proposals.find(p=>p.id===proposal.id).status,"approved");
- }
 });
