@@ -1,6 +1,6 @@
 # CSS inventory and migration boundaries
 
-The detailed component specification is [UI_STANDARDS.md](UI_STANDARDS.md). This inventory measures the proposed CSS foundation batch against production baseline f73e021. It is not a claim that the main page has been rebuilt or that every unmatched selector is dead.
+The detailed component specification is [UI_STANDARDS.md](UI_STANDARDS.md). This inventory measures the CSS migration against production baseline f73e021. It is not a claim that the main page has been rebuilt or that every unmatched selector is dead.
 
 ## Loaded CSS
 
@@ -8,9 +8,9 @@ Sizes are bytes, not rounded KB. Compressed totals sum gzip output for individua
 
 | Page | Stylesheets | Uncompressed before → after | gzip before → after | !important before → after |
 | --- | --- | --- | --- | --- |
-| `index.html` | 12 | 586,048 → 523,578 | 90,339 → 83,741 | 738 → 666 |
-| `workshop.html` | 5 | 21,082 → 25,345 | 6,309 → 7,257 | 0 → 0 |
-| `knowledge.html` | 5 | 19,614 → 23,877 | 5,902 → 6,848 | 0 → 0 |
+| `index.html` | 12 | 586,048 → 433,175 | 90,339 → 73,074 | 738 → 592 |
+| `workshop.html` | 5 | 21,082 → 24,987 | 6,309 → 7,191 | 0 → 0 |
+| `knowledge.html` | 5 | 19,614 → 23,579 | 5,902 → 6,802 | 0 → 0 |
 
 The shared header and toolbar definitions add a small amount to the module pages while eliminating separate header implementations. The four legacy stylesheets still exist; remaining excess is not hidden by new override layers.
 
@@ -28,4 +28,7 @@ The isolated dead-rule commit removes 359 selectors and 49,202 bytes. Its curate
 
 Additional superseded header, toolbar and section-frame selectors are removed when the shared definition takes ownership. Legacy freeze hashes and specificity ceilings are updated downwards in scripts/css-baseline.json. No new !important rules or project-ID selectors are introduced.
 
-See FEATURE_INVENTORY.md for feature-preservation scope and CSS_MIGRATION.md for pending screenshot requests and rollback. The owner requires Claude review before this batch is merged or deployed.
+See FEATURE_INVENTORY.md for feature-preservation scope and CSS_MIGRATION.md for pending screenshot requests and rollback. Claude reviewed the foundation batch; the owner subsequently authorized deployment of the evaluated feature-inventory cleanup.
+
+
+After the owner-approved cleanup, project markup is one inert template and all project layout scopes use project-view. CSS contains no launcher/linear/robot ID selectors. The strict class-producer CI check follows loaded scripts and imports; its two narrow patterns cover computed button variants and status markers. The subsequent reviewed retirement pass removes or simplifies 677 selectors, including dead branches inside boolean pseudos, saving 75,889 bytes after project-scope consolidation. Existing live alternatives and attribute selectors are retained. Full class/mode lists are in scripts/css-retired.json and scripts/css-dynamic-classes.json.

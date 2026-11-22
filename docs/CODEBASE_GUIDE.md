@@ -151,3 +151,6 @@ The private-owner cleanup removes public visibility/editing controls, proposal r
 
 
 Practice records upgrade once to Notes through record-upgrades.js. Before changing the investigation store, the API writes and reads back an immutable recovery copy under record-migrations/<project>/. The conversion preserves record/entry IDs, field text, descriptors, dates, attachments and unrelated records. An R2 ETag conflict aborts instead of overwriting a concurrent edit. Recovery copies are part of project exports and restore validation. Existing drafts receive a revision conflict after an upgrade; there is no silent overwrite.
+
+
+All built-in and newly created projects use project-workspace-template in index.html and the same catalog/card renderer. There are no duplicated built-in project sections. Original project IDs stay stable for routing and data storage; nested field IDs and their label/ARIA references are unique per instance. Layout selectors use project-view rather than project IDs. The strict CSS producer check follows the browser import graph and documents computed class patterns in scripts/css-dynamic-classes.json.

@@ -1,0 +1,4 @@
+[
+  {"pattern":"^ui-button--(?:danger|quiet)$","producer":"assets/ui-kit.js","reason":"BSUI.button appends the requested named variant to ui-button--; these two variants have no complete literal at a call site."},
+  {"pattern":"^ui-status-mark--(?:attention|complete)$","producer":"assets/site-assembly.js","reason":"The feature-tree marker appends attention or complete to the shared status-mark prefix."}
+]

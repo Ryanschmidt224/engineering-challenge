@@ -3,9 +3,9 @@
  * Loaded before assets/site.js; setupAssemblyTrees() is called from site.js
  * after shared application globals are initialized. Existing APIs and IDs are unchanged.
  */
-// Project assembly trees are public; editing requires administrator login.
+// Project assembly trees are private and editable through the owner session.
 const assemblySelections={};
-// Public tree snapshots let each assembly BOM roll up all descendant parts.
+// Tree snapshots let each assembly BOM roll up all descendant parts.
 const assemblyTreeSnapshots={};
 function setupAssemblyTrees(){
  document.querySelectorAll("[data-assembly-tree]:not([data-tree-ready])").forEach(root=>{
@@ -22,7 +22,7 @@ function setupAssemblyTrees(){
   root.append(featureTreeCard,summaryCard);
   root.querySelector("h3")?.append(window.BSDialogs.tooltip("Reordering the feature tree","Drag onto a sibling to reorder. Drop onto another assembly to move inside it; hold Alt to nest under a sibling."));
   // Legacy project pages share the same workspace styling as newer projects.
-  if(project==="linear"||project==="robot")view.classList.add("personal-project-view");
+  view.classList.add("project-view");
   const canEdit=()=>window.BSProjectManager?.isOwner?.(project)===true || (["launcher","linear","robot"].includes(project)&&adminAuthenticated);
   let title=view.querySelector(".assembly-main h1")?.textContent||"Project";let nodes=[],selected=null,expanded=new Set([null]);
   let showWorkshopItems=true,showTreeDocuments=true,showTreeDescriptions=true,showHiddenParts=false,showBomDocuments=true;

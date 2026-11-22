@@ -58,14 +58,7 @@ nav button.active {
   background: var(--color-hover);
   color: var(--color-text);
 }
-.hero {
-  padding: 72px 0 48px;
-  background: radial-gradient(
-    ellipse at 80% 0%,
-    var(--color-surface-muted) 0%,
-    transparent 55%
-  );
-}
+
 .eyebrow {
   color: var(--accent);
   font-size: var(--text-small);
@@ -156,17 +149,7 @@ nav button:focus-visible {
 .card p:last-child {
   margin-bottom: 0;
 }
-.card .tag,
-.tag {
-  display: inline-block;
-  border-radius: 30px;
-  background: var(--color-surface-muted);
-  color: var(--color-accent);
-  font-size: var(--text-caption);
-  font-weight: var(--font-bold);
-  padding: 3px 10px;
-  margin-bottom: 12px;
-}
+
 .chip {
   display: inline-block;
   padding: 5px 10px;
@@ -179,11 +162,7 @@ nav button:focus-visible {
 .card .btn {
   margin-top: 12px;
 }
-.steps {
-  counter-reset: s;
-  display: grid;
-  gap: var(--space-3);
-}
+
 .step {
   background: var(--panel);
   border: 1px solid var(--edge);
@@ -200,16 +179,7 @@ nav button:focus-visible {
   border-radius: 0 12px 12px 0;
   color: var(--color-text);
 }
-.layout {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: var(--space-5);
-}
-.sidebar {
-  align-self: start;
-  position: sticky;
-  top: 95px;
-}
+
 .field {
   width: 100%;
   border: 1px solid var(--color-border);
@@ -237,71 +207,14 @@ label {
 .view.active {
   display: block;
 }
-.topic {
-  border-bottom: 1px solid var(--edge);
-  padding: 15px 0;
-}
-.topic:last-child {
-  border-bottom: 0;
-}
-.topic button {
-  background: none;
-  border: 0;
-  padding: 0;
-  color: var(--accent);
-  font-weight: var(--font-bold);
-  text-align: left;
-}
-.hint {
-  margin-top: 12px;
-  padding: 14px;
-  background: var(--color-surface-muted);
-  border-radius: var(--radius-large);
-}
-.stat {
-  font-size: var(--text-display);
-  font-weight: 850;
-  color: var(--accent);
-}
+
 .row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   flex-wrap: wrap;
 }
-.space {
-  justify-content: space-between;
-}
-.line {
-  height: 1px;
-  background: var(--edge);
-  margin: 18px 0;
-}
-.modalback {
-  position: fixed;
-  inset: 0;
-  background: color-mix(in srgb, var(--color-page) 73.3%, transparent);
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-.modal {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  width: min(650px, 100%);
-  max-height: 88vh;
-  overflow: auto;
-  padding: 25px;
-}
-.modal header {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: var(--space-4);
-}
+
 .close {
   border: 0;
   background: var(--color-surface-muted);
@@ -330,30 +243,18 @@ label {
   border-top: 1px solid var(--edge);
   color: var(--muted);
 }
-.sr {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-}
+
 @media (max-width: 800px) {
   .grid,
-  .grid.two,
-  .layout {
+  .grid.two {
     grid-template-columns: 1fr;
-  }
-  .sidebar {
-    position: static;
   }
 
   nav button {
     padding: 6px 8px;
     font-size: var(--text-small);
   }
-  .hero {
-    padding-top: 45px;
-  }
+
   .section {
     padding: 36px 0;
   }
@@ -443,12 +344,7 @@ label {
     grid-template-columns: 1fr;
   }
 }
-.filters {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  margin: 20px 0 24px;
-}
+
 .filter {
   border: 1px solid var(--edge);
   background: var(--color-surface);
@@ -462,21 +358,7 @@ label {
   border-color: var(--accent);
   font-weight: var(--font-bold);
 }
-.mini-art {
-  height: 175px;
-  display: grid;
-  place-items: center;
-  background: radial-gradient(
-    circle at center,
-    var(--color-selected),
-    var(--color-surface)
-  );
-  font-size: 5rem;
-}
-.related-heading {
-  margin-top: 30px;
-  font-size: var(--text-title);
-}
+
 .photos {
   margin: 30px 0 12px;
   padding-top: 20px;
@@ -508,18 +390,7 @@ label {
 .photo-card .photo-delete {
   margin: 0 10px 10px;
 }
-.photo-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-}
-.photo-controls input {
-  max-width: 250px;
-}
-.photo-controls .field {
-  margin: 0;
-}
+
 .photo-status {
   font-size: var(--text-small);
   color: var(--muted);
@@ -550,10 +421,7 @@ label {
 .photo-card a {
   display: block;
 }
-.photo-config {
-  font-size: var(--text-small);
-  color: var(--warm);
-}
+
 .photo-dropzone {
   position: relative;
   display: flex;
@@ -626,42 +494,12 @@ label {
   overflow-wrap: anywhere;
   color: var(--muted);
 }
-.photo-change-password {
-  margin: 5px 0 12px;
-}
+
 .photo-dropzone[aria-busy="true"] {
   opacity: 0.6;
   pointer-events: none;
 }
-.admin-dialog {
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-large);
-  background: var(--panel);
-  color: inherit;
-  width: min(440px, calc(100% - 32px));
-  padding: 25px;
-}
-.admin-dialog::backdrop {
-  background: color-mix(
-    in srgb,
-    var(--color-media-backdrop) 73.3%,
-    transparent
-  );
-}
-.admin-dialog form {
-  display: grid;
-  gap: var(--space-3);
-}
-.admin-dialog .field {
-  margin: 0;
-}
-.admin-dialog .row {
-  justify-content: flex-end;
-}
-.photo-admin .photo-token,
-.photo-admin .photo-change-password {
-  display: none !important;
-}
+
 [hidden] {
   display: none !important;
 }
@@ -707,17 +545,12 @@ label {
   width: 22px;
   flex: none;
 }
-.assembly-node .assembly-action {
-  color: var(--accent);
-  font-size: var(--text-small);
-}
+
 .assembly-tree-status {
   font-size: var(--text-small);
   color: var(--muted);
 }
-.assembly-heading {
-  margin: 12px 0;
-}
+
 .assembly-sidebar .btn {
   font-size: var(--text-small);
   padding: 6px 9px;
@@ -892,34 +725,7 @@ label {
   flex-direction: column;
   gap: var(--space-3);
 }
-.assembly-tile-stage {
-  font-size: var(--text-caption);
-  color: var(--color-on-media);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-.assembly-tile-title {
-  font-size: var(--text-body);
-  font-weight: var(--font-semibold);
-  text-align: left;
-  border: 0;
-  background: none;
-  color: inherit;
-  cursor: pointer;
-}
-.assembly-tile-title:hover {
-  text-decoration: underline;
-}
-.assembly-tile-deps {
-  font-size: var(--text-small);
-  color: var(--color-text-muted);
-  margin: 0;
-}
-.assembly-tile-edit {
-  align-self: flex-start;
-  margin-top: auto;
-  font-size: var(--text-caption);
-}
+
 .assembly-main > .assembly-workflow {
   margin-bottom: 22px;
 }
@@ -941,7 +747,6 @@ label {
   gap: var(--space-3);
   align-items: start;
 }
-.assembly-info-tile,
 .assembly-content-tiles > .component-section {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -949,18 +754,12 @@ label {
   padding: 13px 15px;
   min-width: 0;
 }
-.assembly-info-tile > summary,
 .assembly-content-tiles > .component-section summary {
   font-size: var(--text-body);
   font-weight: var(--font-semibold);
   cursor: pointer;
 }
-.assembly-info-tile[open] > summary {
-  margin-bottom: 12px;
-}
-.assembly-info-tile textarea {
-  min-height: 76px;
-}
+
 .assembly-description {
   font-size: var(--text-small);
   line-height: 1.5;
@@ -987,13 +786,6 @@ label {
   gap: var(--space-2);
 }
 
-.assembly-tile-title {
-  font-size: var(--text-body);
-}
-.assembly-tile-edit {
-  padding: 5px 9px;
-  font-size: var(--text-caption);
-}
 .assembly-detail .assembly-photos {
   grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
   gap: var(--space-2);
@@ -1055,7 +847,6 @@ label {
 .assembly-unified-body {
   padding: 12px;
 }
-.assembly-unified-body .assembly-info-tile,
 .assembly-unified-body .component-section {
   border: 0;
   border-top: 1px solid var(--color-border);
@@ -1063,9 +854,7 @@ label {
   background: transparent;
   padding: 11px 4px;
 }
-.assembly-unified-body .assembly-info-tile:first-child {
-  border-top: 0;
-}
+
 .assembly-unified-body .assembly-content-tiles {
   display: block;
 }
@@ -1091,16 +880,7 @@ label {
   height: 100%;
   object-fit: cover;
 }
-.assembly-tile-title,
-.assembly-tile-stage,
-.assembly-tile-deps,
-.assembly-tile-edit {
-  margin-left: 12px;
-  margin-right: 12px;
-}
-.assembly-tile-stage:empty {
-  display: none;
-}
+
 @media (max-width: 600px) {
   .assembly-photo-admin {
     grid-template-columns: 1fr;
@@ -1192,7 +972,6 @@ label {
 .assembly-unified-body {
   padding: 4px 16px 12px;
 }
-.assembly-unified-body .assembly-info-tile,
 .assembly-unified-body .component-section {
   padding: 14px 0;
 }
@@ -1342,23 +1121,11 @@ label {
     color-mix(in srgb, var(--color-media-backdrop) 80%, transparent)
   );
 }
-.assembly-tile-title {
-  font-size: 0;
-  padding: 0;
-  margin: 0;
-  height: 0;
-  overflow: hidden;
-}
-.assembly-tile-title:focus-visible {
-  font-size: var(--text-body);
-  height: auto;
-}
+
 .assembly-tile {
   min-height: 0;
 }
-.assembly-tile-photo-button {
-  font-size: var(--text-caption);
-}
+
 @media (max-width: 600px) {
   .assembly-photo-stage {
     height: 260px;
@@ -1642,19 +1409,7 @@ label {
 .assembly-main-tile .photo-admin > summary {
   font-size: var(--text-small);
 }
-.assembly-main-description {
-  padding: 8px 14px;
-}
-.assembly-main-description textarea {
-  min-height: 44px;
-  background: transparent;
-  border: 1px solid transparent;
-  font-size: var(--text-small);
-  resize: vertical;
-}
-.assembly-main-description textarea::placeholder {
-  color: var(--color-accent);
-}
+
 .assembly-main-tile > .component-section {
   padding: 8px 14px 16px;
 }
@@ -1720,14 +1475,7 @@ label {
   margin: 0;
   padding: 0;
 }
-.assembly-main-tile .assembly-main-description {
-  padding: 10px 14px;
-}
-.assembly-main-tile .assembly-main-description textarea {
-  width: 100%;
-  height: 46px;
-  min-height: 46px;
-}
+
 .assembly-main-tile > .component-section {
   padding: 0 14px 14px;
 }
@@ -1748,18 +1496,11 @@ label {
     top: -275px;
   }
 }
-.assembly-main-tile .root-photo-ui .assembly-photo-stage {
-  height: clamp(290px, 35vw, 420px);
-}
-.assembly-main-tile .root-photo-ui .assembly-photo-admin {
-  padding: 12px 16px;
-}
+
 .assembly-main-tile .root-photo-status {
   margin: 0 12px;
 }
-.assembly-main-tile .root-photo-ui .assembly-photo-actions {
-  z-index: 5;
-} /* Shared project/assembly tile appearance. Legacy root rules are overridden here. */
+/* Shared project/assembly tile appearance. Legacy root rules are overridden here. */
 .assembly-main-tile.assembly-unified-tile {
   width: min(100%, 760px);
   max-width: 760px;
@@ -1768,27 +1509,11 @@ label {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-large);
 }
-.assembly-main-tile .root-photo-ui .assembly-photo-stage {
-  height: clamp(290px, 45vw, 510px);
-}
-.assembly-main-tile .root-photo-ui .assembly-photo-admin {
-  padding: 12px 16px 16px;
-}
+
 .assembly-main-tile .assembly-unified-body {
   padding: 12px;
 }
-.assembly-main-tile .assembly-unified-body .assembly-main-description {
-  padding: 0 4px 10px;
-}
-.assembly-main-tile .assembly-unified-body .assembly-main-description textarea {
-  width: 100%;
-  min-height: 70px;
-  height: auto;
-  background: transparent;
-  border: 1px solid transparent;
-  font-size: var(--text-small);
-  color: inherit;
-}
+
 .assembly-main-tile .assembly-unified-body > .component-section {
   border: 0;
   border-top: 1px solid var(--color-border);
@@ -1895,11 +1620,9 @@ label {
 .assembly-detail .assembly-unified-body {
   padding: 4px 16px 12px;
 }
-.assembly-main .assembly-main-description,
 .assembly-detail .assembly-description-inline {
   padding: 10px 0;
 }
-.assembly-main .assembly-main-description textarea,
 .assembly-detail .assembly-description-input {
   min-height: 44px;
   resize: vertical;
@@ -1910,13 +1633,10 @@ label {
   font-size: var(--text-small);
   width: 100%;
 }
-.assembly-main .assembly-main-description textarea::placeholder,
 .assembly-detail .assembly-description-input::placeholder {
   color: var(--color-accent);
   opacity: 0.8;
 }
-.assembly-main .assembly-main-description textarea:hover,
-.assembly-main .assembly-main-description textarea:focus,
 .assembly-detail .assembly-description-input:hover,
 .assembly-detail .assembly-description-input:focus {
   border-color: var(--color-border);
@@ -1938,24 +1658,7 @@ label {
 .assembly-photo-stage {
   position: relative;
 }
-.assembly-open-workspace {
-  position: absolute;
-  left: 14px;
-  top: 14px;
-  z-index: 5;
-  border: 0;
-  border-radius: var(--radius-medium);
-  padding: 8px 12px;
-  background: color-mix(in srgb, var(--color-page) 78%, transparent);
-  color: var(--color-text);
-  font: inherit;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  cursor: pointer;
-}
-.assembly-open-workspace:hover {
-  background: color-mix(in srgb, var(--color-hover) 95%, transparent);
-}
+
 .workspace-heading {
   display: flex;
   align-items: flex-start;
@@ -1995,28 +1698,6 @@ label {
 }
 
 /* The picture itself is the assembly's entry point to its build instructions. */
-.assembly-open-workspace {
-  left: 50%;
-  top: 50%;
-  bottom: auto;
-  transform: translate(-50%, -50%);
-  width: auto;
-  max-width: calc(100% - 32px);
-  white-space: nowrap;
-  border: 1px solid color-mix(in srgb, var(--color-on-media) 45%, transparent);
-  background: color-mix(in srgb, var(--color-media-backdrop) 78%, transparent);
-  padding: 12px 18px;
-  border-radius: var(--radius-medium);
-  font-size: var(--text-small);
-  box-shadow: 0 3px 15px
-    color-mix(in srgb, var(--color-shadow) 20%, transparent);
-}
-.assembly-open-workspace:hover,
-.assembly-open-workspace:focus-visible {
-  background: color-mix(in srgb, var(--color-hover) 95%, transparent);
-  outline: 2px solid color-mix(in srgb, var(--color-focus) 70%, transparent);
-  outline-offset: 2px;
-}
 
 /* Shared tile photo overlays: name upper-left, instructions lower-right. */
 .assembly-main .assembly-photo-name,
@@ -2026,15 +1707,6 @@ label {
   right: auto;
   bottom: auto;
   text-align: left;
-  z-index: 8;
-}
-.assembly-main .assembly-open-workspace,
-.assembly-detail .assembly-open-workspace {
-  top: auto;
-  left: auto;
-  right: 14px;
-  bottom: 14px;
-  transform: none;
   z-index: 8;
 }
 
@@ -2422,16 +2094,7 @@ label {
   outline-offset: -4px;
   background: color-mix(in srgb, var(--color-accent-soft) 12%, transparent);
 }
-.bom-picture-drop {
-  transition:
-    outline-color 0.12s,
-    background-color 0.12s;
-}
-.bom-picture-drop.is-dragover {
-  outline: 3px dashed var(--color-focus);
-  outline-offset: 2px;
-  background: color-mix(in srgb, var(--color-accent-soft) 18%, transparent);
-}
+
 .assembly-unified-photo.is-dragover .assembly-photo-stage {
   opacity: 0.8;
 }
@@ -2573,10 +2236,7 @@ label {
   > .bom-part-summary {
   align-items: center;
 }
-.bom-part-instructions {
-  margin: 0 0 12px;
-  font-size: var(--text-small);
-}
+
 .bom-part-workspace .part-workspace-cover img {
   height: 100%;
   width: 100%;
@@ -2613,7 +2273,7 @@ label {
   > .bom-row-thumbnail,
 .assembly-workspace-page
   .workspace-saved-parts
-  .bom-part[open]:not(.bom-thumbnail-active)
+  .bom-part[open]
   > .bom-part-summary
   > .bom-row-thumbnail {
   width: 76px;
@@ -2630,7 +2290,7 @@ label {
     > .bom-row-thumbnail,
   .assembly-workspace-page
     .workspace-saved-parts
-    .bom-part[open]:not(.bom-thumbnail-active)
+    .bom-part[open]
     > .bom-part-summary
     > .bom-row-thumbnail {
     width: 64px;
@@ -2660,138 +2320,14 @@ label {
 }
 
 /* Shared wire-material library and per-part wire-harness cutting toolkit. */
-.bom-part-workspace .part-harness {
-  margin-top: 8px;
-}
-.part-harness .harness-cuts {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-.part-harness .harness-cut-row {
-  display: grid;
-  grid-template-columns: minmax(165px, 2fr) repeat(4, minmax(90px, 1fr));
-  gap: var(--space-2);
-  align-items: end;
-  padding: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: color-mix(in srgb, var(--color-surface-muted) 22%, transparent);
-}
-.part-harness .harness-cut-row label {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  font-size: var(--text-small);
-  color: var(--color-text-muted);
-  min-width: 0;
-}
-.part-harness .harness-cut-row label:nth-of-type(n + 6) {
-  grid-column: span 2;
-}
-.part-harness .harness-cut-row .field {
-  width: 100%;
-  min-width: 0;
-}
-.part-harness .harness-cut-row > button {
-  justify-self: start;
-  margin-top: 3px;
-}
-.part-harness .harness-actions {
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  margin: 12px 0;
-}
-.part-harness .harness-summary {
-  font-size: var(--text-small);
-  margin: 10px 0;
-  padding: 8px 12px;
-  border-left: 2px solid var(--color-border);
-}
-.part-harness .harness-summary p {
-  margin: 3px 0;
-}
-.part-harness .harness-status,
-.part-harness .wire-library-status {
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-}
-.part-harness .harness-wire-library {
-  border-top: 1px solid var(--color-border);
-  margin-top: 16px;
-  padding-top: 12px;
-}
-.part-harness .harness-wire-library > summary {
-  font-weight: var(--font-semibold);
-  cursor: pointer;
-}
-.part-harness .wire-library-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  margin: 12px 0;
-}
-.part-harness .wire-library-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  justify-content: space-between;
-  padding: 7px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  font-size: var(--text-small);
-}
-.part-harness .wire-library-editor {
-  margin: 15px 0;
-  padding: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-}
-.part-harness .wire-library-fields {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--space-3);
-  margin: 10px 0;
-}
-.part-harness .wire-library-fields label {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-}
+
 @media (max-width: 850px) {
-  .part-harness .harness-cut-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .part-harness .harness-cut-row label:first-child {
-    grid-column: 1/-1;
-  }
-  .part-harness .harness-cut-row label:nth-of-type(n + 6) {
-    grid-column: span 1;
-  }
 }
 @media (max-width: 480px) {
-  .part-harness .harness-cut-row {
-    grid-template-columns: 1fr;
-  }
-  .part-harness .harness-cut-row label:nth-of-type(n) {
-    grid-column: 1/-1;
-  }
 }
 
 /* Global reference-library tabs and calculators. */
 
-.resource-page {
-  max-width: 1160px;
-}
-.resource-heading {
-  margin-bottom: 22px;
-}
-.resource-heading h1 {
-  margin: 6px 0 8px;
-}
 .resource-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -2853,20 +2389,7 @@ label {
   color: var(--color-text-muted);
   font-weight: var(--font-semibold);
 }
-.resource-wire-manager {
-  border-top: 1px solid var(--color-border);
-  margin-top: 30px;
-  padding-top: 22px;
-}
-.resource-wire-manager h2 {
-  font-size: var(--text-lead);
-}
-.resource-wire-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin: 15px 0;
-}
+
 .resource-wire-item {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
@@ -2886,29 +2409,7 @@ label {
 .resource-wire-item span:nth-child(2) {
   flex: 2;
 }
-.resource-wire-form {
-  max-width: 900px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  border-radius: var(--radius-large);
-  padding: 17px;
-}
-.resource-wire-fields {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--space-3);
-  margin: 14px 0;
-}
-.resource-wire-fields label {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  font-size: var(--text-small);
-}
-.resource-wire-status {
-  font-size: var(--text-small);
-  color: var(--color-text-muted);
-}
+
 .linked-resources h2 {
   margin-bottom: 8px;
 }
@@ -2952,23 +2453,7 @@ label {
   font-size: var(--text-small);
   padding: 5px 8px;
 }
-.linked-resource-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--space-2);
-  margin-top: 10px;
-}
-.linked-resource-actions .field {
-  min-width: 0;
-  width: 100%;
-}
-.linked-resource-actions .btn {
-  align-self: start;
-}
-.part-harness .harness-wire-library {
-  display: none;
-}
+
 @media (max-width: 850px) {
 }
 @media (max-width: 570px) {
@@ -2976,44 +2461,6 @@ label {
   .linked-resource-groups {
     grid-template-columns: 1fr;
   }
-}
-
-.resource-common-manager {
-  margin-top: 30px;
-  padding-top: 22px;
-  border-top: 1px solid var(--color-border);
-}
-.resource-common-manager h2 {
-  font-size: var(--text-lead);
-}
-.resource-common-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin: 15px 0;
-}
-.resource-common-form {
-  max-width: 900px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  padding: 17px;
-}
-.resource-common-fields {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: var(--space-3);
-  margin: 14px 0;
-}
-.resource-common-fields label {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  font-size: var(--text-small);
-}
-.resource-common-status {
-  font-size: var(--text-small);
-  color: var(--color-text-muted);
 }
 
 /* CAD drawing attachments (SolidWorks-exported PDFs). */

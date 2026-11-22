@@ -195,3 +195,11 @@ Separate functional batches replace the wire library with Workshop products, rem
 
 
 Practice-to-Notes implementation: existing Practice records become Notes on the next owner read or write, after their raw store has been backed up and verified. Their former practice/learning fields remain readable, labeled and retained when the Note is edited. No new Practice records can be created. Storage contention or backup failure stops the conversion and reports a retryable error.
+
+
+Project shell/CSS implementation: all projects instantiate one workspace template and one project-card renderer. Original launcher/linear/robot IDs remain as stable data and link identifiers. They no longer own separate HTML sections or CSS selectors. Template field IDs and label/ARIA references are made unique per project. The strict class-producer check follows loaded browser code and uses an explicit, narrow dynamic-class allowlist; retired positive and boolean-pseudo branches are removed without discarding live selector alternatives.
+
+
+Implementation boundary after the first batches: deleting the old wire API/catalog immediately would violate the inventory's no-reader condition. The current cutting-list renderer still calls /api/wires, and functions/api/workshop-linked-part.js imports the static resources catalog for legacy snapshots, photos and backup dependencies. These are live readers, not unloaded leftovers. Keep them until Workshop-product cutting lists and the source/snapshot reads are replaced and tested together; do not simply delete them. Paid AI stays disabled while its Workshop-specific redesign and spending controls remain separate work. The History decisions remain an area rebuild, not a promise that changing a label rebuilds its process.
+
+The old learn view is removed: Calculators now uses #calculators, including links from workspaces and the active header state. The searchable calculator directory is lower priority than the current private/CSS cleanup; the three existing calculation forms are retained.

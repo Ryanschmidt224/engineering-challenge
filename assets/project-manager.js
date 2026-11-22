@@ -240,16 +240,21 @@ window.BSProjectManager=(()=>{
   };
   // Reuse a single project workspace template for all projects.
   // It is captured before any controller mutates the DOM.
-  const template=window.BSProjectTemplate;
+  const template=document.getElementById("project-workspace-template")?.content.firstElementChild;
   const ensureProjectPage=project=>{
    const existing=document.getElementById(project.id);
    if(existing?.querySelector("[data-assembly-tree]"))return;
    if(!template)return;
    const section=template.cloneNode(true);
-   section.id=project.id;section.classList.add("personal-project-view");
+   section.id=project.id;section.classList.add("project-view");
+   const ids=new Map();
+   section.querySelectorAll("[id]").forEach(node=>{const old=node.id;node.id=project.id+"-"+old;ids.set(old,node.id)});
+   section.querySelectorAll("[for],[aria-controls],[aria-labelledby]").forEach(node=>{
+    for(const attribute of ["for","aria-controls","aria-labelledby"]){const value=node.getAttribute(attribute);if(value)node.setAttribute(attribute,value.split(" ").map(id=>ids.get(id)||id).join(" "))}
+   });
    // All projects, including original mini projects, use the identical assembly template.
    if(existing)existing.replaceWith(section);
-   else document.getElementById("linear")?.after(section);
+   else document.getElementById("project-workspace-template").before(section);
    section.querySelectorAll("[data-assembly-tree],[data-components],[data-photos]").forEach(node=>{
     if(node.hasAttribute("data-assembly-tree"))node.dataset.assemblyTree=project.id;
     if(node.hasAttribute("data-components"))node.dataset.components=project.id;
@@ -432,13 +437,13 @@ window.BSProjectManager=(()=>{
     document.querySelectorAll(".project-personal-card").forEach(node=>node.remove());
     for(const project of projects){
      ensureProjectPage(project);
-     if(project.id.startsWith("p"))grid.append(card(project));
+     grid.append(card(project));
     }
     renderTagFilters();updateDirectory();
     grid.hidden=false;loading.hidden=true;
     setupAssemblyTrees();setupComponents();setupPhotos();
     const route=location.hash.slice(1);
-    const routedProject=projects.find(project=>route.startsWith(project.id+"/"));
+    const routedProject=projects.find(project=>(route===project.id||route.startsWith(project.id+"/")));
     if(routedProject&&!document.getElementById(routedProject.id)?.classList.contains("active"))navigate(route);
     if(typeof refreshAdminUI==="function")refreshAdminUI();
     for(const project of projects){mountProjectSettings(project)}

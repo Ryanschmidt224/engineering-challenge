@@ -48,7 +48,7 @@ Status: engineering standards under incremental adoption, 2026-11-22. Claude rev
 - **Breakpoints:** use the documented values in `theme.css` (narrow 640 px, wide 1024 px) as layouts migrate. Native CSS does not allow `var()` in media-query conditions, so use those literal values there; custom properties can expose the same values to JavaScript. Unmigrated layouts retain their existing widths until reviewed.
 - **Specificity:** one class per selector where possible, at most three simple parts. **No `!important`. No ID selectors.** No `:is(#launcher, …)` patterns.
 - **Ownership:** each CSS file has one owner, either a shared component (`ui-kit.css`, `components.css`) or one page's layout. A page file never restyles a shared component; it asks for a named variant instead.
-- **Unused-selector review.** Report classes without an obvious producer. Account for dynamic construction, states and historical rendering before deleting or enforcing a failure. Curated, reviewed retirements can be enforced automatically.
+- **Strict class-producer check.** Fail when CSS classes have neither a literal producer in a loaded page/reachable module nor a documented code-built pattern in scripts/css-dynamic-classes.json. Keep dynamic patterns narrow and tied to their producing file. Comment text, selector-only lookups and unloaded files are not producers. Curated retirements fail if reintroduced. Static literal matches are conservative evidence; runtime states and historical rendering still need review.
 - **Budget:** a rebuilt page loads at most **60 KB** of CSS uncompressed. Workshop and Knowledge load about 20 KB today; the legacy main page loads 572 KB.
 - The legacy files (`site.css`, `site-workspaces.css`, `site-controls.css`, `site-polish.css`) are frozen: they may only lose rules, never gain them. When an area is rebuilt, its rules are deleted from them in the same PR. The end state is all four files deleted.
 
@@ -68,10 +68,11 @@ Status: engineering standards under incremental adoption, 2026-11-22. Claude rev
 
 Already in place:
 - Syntax check of every script, `prettier --check` on CSS, node unit tests, browser workflow tests, CSS screenshot regression at 1440 px and 390 px.
-- Frozen legacy CSS (hash baseline); `!important` and project-ID counts may not rise.
+- Frozen legacy CSS (hash baseline); `!important` and project-ID counts may not rise. Project-specific CSS ID counts are now zero.
+- Strict static class-producer checking and curated retirement guard, with narrow documented dynamic patterns and CLI regression tests.
 
 To add (proposed, in this order):
-1. **Unused CSS report:** report unmatched classes and review them. Fail only on curated retirements or migrated components whose class construction is explicit. The earlier 893-selector / 271-class count is a baseline candidate inventory, not proof of dead code.
+1. **Completed: strict CSS class-producer check.** Unmatched classes fail CI unless covered by an explicit code-built pattern. Literal matches remain conservative static evidence. The original candidate count was reviewed before removal.
 2. **No ID selectors or `!important` in any non-legacy CSS file** (zero, not "no increase").
 3. **Breakpoint check:** migrated CSS uses the documented literal media-query values from `theme.css`; do not require unsupported `var()` syntax.
 4. **JS size check:** fail if a non-legacy JS file exceeds 40 KB, or a legacy JS file grows (hash or size baseline like the CSS one).
