@@ -145,3 +145,6 @@ Regression coverage: `tests/recipe-note-ids.test.mjs` exercises legacy
 migration, note reordering, deletion, and stale-save protection; the Playwright
 startup suite covers upload/save UI behavior and photo preservation.
 
+
+
+The private-owner cleanup removes public visibility/editing controls, proposal review, My Build/stuck feedback, administrator-password linking and unloaded tracker/component scripts. Stored project publishing flags no longer grant read access. Existing owner accounts and session cookies keep working; the administrator role can manage all retained projects. Summary disclosure state is a browser preference in summary-state.js, separate from project data. Retired feature API URLs return the normal JSON 404 for the owner; unauthenticated requests still stop at the private API boundary.

@@ -1,7 +1,7 @@
 {
   "frozen": {
-    "assets/site-polish.css": "ddd2a76ea27bf3c5542d475848b5068e15b3c7a26ba160459bd8e6c6e07afedf",
-    "assets/site-controls.css": "64fcf6219a21ca783ea3023f2e0287fdd2616c8d23e1f10284f4da4590b6edb7",
+    "assets/site-polish.css": "d3942d6373cee3dd36ee5d311a5d853ff9dff8ff5beb7a1adbe125d51bbcf1bc",
+    "assets/site-controls.css": "19eae0bfe2ee6bac0395f85bbd7b79a5899ec5bbbef189f386b6cdfdec0fa636",
     "assets/site-workspaces.css": "310e355ca20bdd9d6b6f39c346b028e24a85eec89e80f4e0f72d9df986e4f027"
   },
   "limits": {
@@ -22,7 +22,7 @@
       "projectIds": 3
     },
     "assets/site-polish.css": {
-      "important": 361,
+      "important": 339,
       "projectIds": 42
     },
     "assets/photo-markup.css": {
@@ -30,7 +30,7 @@
       "projectIds": 0
     },
     "assets/site-controls.css": {
-      "important": 154,
+      "important": 153,
       "projectIds": 351
     },
     "assets/theme.css": {

@@ -27,14 +27,9 @@ async function setup(){
  const login=await provisionTestAccount(new Request(base+"/api/accounts",{
   method:"POST",headers:{"origin":base,"content-type":"application/json"},
   body:JSON.stringify({action:"register",email:"admin@example.test",password:"strong-test-user-password",displayName:"Test Admin"})
- }),env);
+ }),env,{role:"admin"});
  assert.equal(login.status,201);
  const cookie=login.headers.get("set-cookie").split(";")[0];
- const linked=await handleAccounts(new Request(base+"/api/accounts",{
-  method:"POST",headers:{"origin":base,"content-type":"application/json","cookie":cookie},
-  body:JSON.stringify({action:"claim-admin",adminPassword:env.admin_password})
- }),env);
- assert.equal(linked.status,200);
  assert.equal(await isAdmin(new Request(base+"/api/auth",{headers:{"cookie":cookie}}),env),true);
  const req=(path,method="GET",body)=>new Request(base+path,{method,headers:{cookie,...(body?{"content-type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
  // This editor carries its last successful per-part revision across sequential saves.

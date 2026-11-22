@@ -99,3 +99,15 @@ test("sign-in remains available while public signup stays closed", async () => {
   assert.equal(signup.status, 410);
   assert.equal(env.PHOTOS.objects.size, before);
 });
+
+
+test("removed community and tracker routes have no owner-facing handler", async () => {
+  const {env, cookie} = await fixture();
+  for(const route of ["proposals", "my-build", "build-confusion", "project-tasks"]) {
+    for(const method of ["GET", "POST", "PATCH", "DELETE"]) {
+      const response = await worker.fetch(request("/api/" + route, {method, cookie}), env, {});
+      assert.equal(response.status,404,method + " " + route);
+      assert.equal((await response.json()).error,"API route not found");
+    }
+  }
+});

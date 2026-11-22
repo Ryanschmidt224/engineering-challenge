@@ -36,7 +36,7 @@ const request=(path,method="GET",body,session)=>{
 const cookie=r=>r.headers.get("set-cookie")?.split(";")[0];
 const data=async r=>({status:r.status,body:await r.json()});
 const register=async(env,email)=>{
- const response=await provisionTestAccount(request("/api/accounts","POST",{action:"register",email,password:"test-account-password-strong-2026"}),env);
+ const response=await provisionTestAccount(request("/api/accounts","POST",{action:"register",email,password:"test-account-password-strong-2026"}),env,{role:"admin"});
  assert.equal(response.status,201);
  return cookie(response);
 };
@@ -168,9 +168,6 @@ test("Workshop AI checks supplier numbers for vendors other than McMaster",async
 test("functional part number survives selection between purchased and custom implementations",async()=>{
  const env={PHOTOS:new TestBucket(),admin_password:"test-admin-secret"};
  const session=await register(env,"functional-number-owner@example.test");
- const claimed=await data(await handleAccounts(request("/api/accounts","POST",
-  {action:"claim-admin",adminPassword:env.admin_password},session),env));
- assert.equal(claimed.status,200);
  const added=await data(await handleComponents(request("/api/components?project=launcher","POST",{
   name:"LED Switch",assignNumber:true,partType:"purchased",itemType:"part",
   description:"Switch a low-current LED from 5 V logic",functionalRequirements:"5 V GPIO",

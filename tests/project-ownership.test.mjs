@@ -6,7 +6,6 @@ import {isAdmin,auth} from "../functions/api/auth.js";
 import {onRequest as projectsApi,projectAllowed,canEditProject} from "../functions/api/projects.js";
 import {handleTree} from "../functions/api/tree.js";
 import {handleComponents} from "../functions/api/components.js";
-import {handleProposals} from "../functions/api/proposals.js";
 const ORIGIN="https://schmidt.example";
 class Bucket{
  constructor(){this.data=new Map();this.deletes=[]}
@@ -51,27 +50,9 @@ test("ownership hides private projects, preserves archives, and gates writes",as
  assert.equal((await otherListing.json()).projects.some(p=>p.id===id),false);
  assert.equal((await handleTree(request("/api/tree?project="+id,"PUT",{nodes:[]},other),env)).status,400);
  const published=await projectsApi({request:request("/api/projects","PATCH",{id,visibility:"public",editMode:"approval"},owner),env});
- assert.equal(published.status,200);
- assert.equal(await projectAllowed(env,id,outsiderRequest),true);
- assert.equal(await canEditProject(outsiderRequest,env,id),false);
- const recipe=[{id:"step1",title:"Solder contacts",tileOrder:[]}];
- await env.PHOTOS.put("workspaces/"+id+"/__root__.json",JSON.stringify({recipe,resources:{tools:[],parts:[],calculators:[]},revision:"r1",history:[]}));
- const proposed=await handleProposals(request("/api/proposals?project="+id,"POST",{
-  scope:"assembly",targetId:"__root__",stepId:"step1",field:"title",suggestedText:"Solder contacts at the manufacturer specified temperature"
- },other),env);
- assert.equal(proposed.status,201);
- const proposalId=(await proposed.json()).proposal.id;
- const unapproved=JSON.parse(await (await env.PHOTOS.get("workspaces/"+id+"/__root__.json")).text());
- assert.equal(unapproved.recipe[0].title,"Solder contacts");
- assert.equal((await handleProposals(request("/api/proposals?project="+id,"PATCH",{id:proposalId,action:"approve"},other),env)).status,403);
- assert.equal((await handleProposals(request("/api/proposals?project="+id,"PATCH",{id:proposalId,action:"approve"},owner),env)).status,200);
- const after=JSON.parse(await (await env.PHOTOS.get("workspaces/"+id+"/__root__.json")).text());
- assert.equal(after.recipe[0].title,"Solder contacts at the manufacturer specified temperature");
- assert.equal(after.history.at(-1).recipe[0].title,"Solder contacts");
- assert.equal((await projectsApi({request:request("/api/projects","PATCH",{id,editMode:"locked"},owner),env})).status,200);
- assert.equal((await handleProposals(request("/api/proposals?project="+id,"POST",{
-  scope:"assembly",targetId:"__root__",stepId:"step1",field:"title",suggestedText:"Change again"
- },other),env)).status,403);
+ assert.equal(published.status,400);
+ assert.equal(await projectAllowed(env,id,outsiderRequest),false);
+ await env.PHOTOS.put("workspaces/"+id+"/__root__.json",JSON.stringify({recipe:[{id:"s",title:"Preserved"}]}));
  assert.equal((await projectsApi({request:request("/api/projects","DELETE",{id,confirmName:"incorrect"},owner),env})).status,400);
  assert.equal((await projectsApi({request:request("/api/projects","DELETE",{id,confirmName:"Private stepper design"},owner),env})).status,200);
  assert.equal(await projectAllowed(env,id,ownerRequest),false);
@@ -133,30 +114,13 @@ test("Projects share one catalog with custom categories and no legacy mini proje
  },owner),env})).status,400);
 });
 
-test("administrator is a role on an existing email/password account, never a public signup option",async()=>{
+test("password linking is retired and cannot promote an ordinary account",async()=>{
  const env={PHOTOS:new Bucket(),admin_password:"role-based-test-admin-secret"};
- const response=await provisionTestAccount(request("/api/accounts","POST",{
-  action:"register",email:"role-admin@example.test",password:"strong-account-password",displayName:"Site Owner",role:"admin"
- }),env);
- assert.equal(response.status,201);
- const session=cookie(response);
- const current=new Request(ORIGIN+"/api/auth",{headers:{cookie:session}});
- assert.equal(await isAdmin(current,env),false);
- assert.equal((await handleAccounts(request("/api/accounts","POST",{action:"claim-admin",adminPassword:"incorrect"},session),env)).status,403);
- const elevated=await handleAccounts(request("/api/accounts","POST",{
-  action:"claim-admin",adminPassword:env.admin_password
- },session),env);
- assert.equal(elevated.status,200);
- assert.equal((await elevated.json()).user.role,"admin");
- assert.equal(await isAdmin(current,env),true);
- assert.equal((await (await handleAccounts(request("/api/accounts","GET",undefined,session),env)).json()).user.role,"admin");
- assert.equal((await auth(request("/api/auth","POST",{password:env.admin_password}),env)).status,410);
- const other=await provisionTestAccount(request("/api/accounts","POST",{
-  action:"register",email:"ordinary@example.test",password:"another-strong-password"
- }),env);
- assert.equal(other.status,201);
- assert.equal((await other.json()).user.role,"member");
- assert.equal(await isAdmin(new Request(ORIGIN+"/api/auth",{headers:{cookie:cookie(other)}}),env),false);
+ const member=await provisionTestAccount(request("/api/accounts","POST",{action:"register",email:"member@example.test",password:"strong-account-password"}),env);
+ const session=cookie(member);
+ const response=await handleAccounts(request("/api/accounts","POST",{action:"claim-admin",adminPassword:env.admin_password},session),env);
+ assert.equal(response.status,400);
+ assert.equal(await isAdmin(request("/api/auth","GET",undefined,session),env),false);
 });
 
 test("project tags are optional, case-insensitive unique, and can describe several disciplines",async()=>{
@@ -194,28 +158,6 @@ test("public registration is closed without creating accounts or exposing secret
   assert.doesNotMatch(JSON.stringify(data),/registration-error-test-secret/);
  }
  assert.equal(env.PHOTOS.data.size,0);
-});
-
-test("legacy administrator password can be linked only once",async()=>{
- const env={PHOTOS:new Bucket(),admin_password:"unique-admin-migration-secret"};
- const first=await provisionTestAccount(request("/api/accounts","POST",{
-  action:"register",email:"first-admin@example.test",password:"first-valid-password"
- }),env);
- const second=await provisionTestAccount(request("/api/accounts","POST",{
-  action:"register",email:"second-admin@example.test",password:"second-valid-password"
- }),env);
- assert.equal(first.status,201);assert.equal(second.status,201);
- const firstCookie=cookie(first),secondCookie=cookie(second);
- let result=await handleAccounts(request("/api/accounts","POST",{
-  action:"claim-admin",adminPassword:env.admin_password
- },firstCookie),env);
- assert.equal(result.status,200);
- result=await handleAccounts(request("/api/accounts","POST",{
-  action:"claim-admin",adminPassword:env.admin_password
- },secondCookie),env);
- assert.equal(result.status,409);
- assert.equal((await result.json()).code,"ADMIN_ALREADY_CLAIMED");
- assert.equal(await isAdmin(new Request(ORIGIN+"/api/auth",{headers:{cookie:secondCookie}}),env),false);
 });
 
 test("short summary and hierarchical quantities persist independently of existing project data",async()=>{

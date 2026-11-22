@@ -1,6 +1,6 @@
 # BuildingSchmidt engineering rules
 
-Status: proposed engineering standards, 2026-11-22. The owner confirmed the review gate for the current CSS batch: leave it ready for Claude review and do not merge or deploy it yet. Remaining proposed checks are not represented as already enforced.
+Status: engineering standards under incremental adoption, 2026-11-22. Claude reviewed PR #45 with no blocking findings; the owner then authorized implementation and production deployment with the updated feature inventory. That latest authorization replaces the earlier hold on deployment. Unimplemented checks below remain proposals until their code is in CI.
 
 **Goal:** in five years this site is still one clean system, not layers of patches. These rules apply to every change, whoever writes it. They are written so a reviewer can check a change against them instead of against taste.
 

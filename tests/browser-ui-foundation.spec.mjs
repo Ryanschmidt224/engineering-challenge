@@ -152,3 +152,42 @@ test("project filter chips use the shared component and retain toggle and remove
   await expect(remove).toHaveCount(0);
   await expect(chip).toHaveAttribute("aria-pressed", "false");
 });
+
+
+test("summary disclosures remember browser preferences independently for each project", async ({page}) => {
+  await page.goto("/#launcher");
+  const summary = page.locator("#launcher .project-summary-page");
+  const description = summary.locator('[data-section="summary-description"]');
+  const milestone = summary.locator('[data-section="summary-milestones"]');
+  await expect(description).not.toHaveAttribute("open");
+  await description.locator(".ui-section__header").click();
+  await milestone.locator(".ui-section__header").click();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("building-schmidt:summary:launcher:summary-description"))).toBe("open");
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("building-schmidt:summary:launcher:summary-milestones"))).toBe("open");
+  await page.reload();
+  await expect(description).toHaveAttribute("open");
+  await expect(milestone.locator(".ui-section__header")).toHaveAttribute("aria-expanded", "true");
+  await page.goto("/#linear");
+  await expect(page.locator('#linear [data-section="summary-description"]')).not.toHaveAttribute("open");
+  await page.goto("/#launcher");
+  await description.locator(".ui-section__header").click();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("building-schmidt:summary:launcher:summary-description"))).toBe("closed");
+  await page.reload();
+  await expect(description).not.toHaveAttribute("open");
+  await expect(milestone.locator(".ui-section__header")).toHaveAttribute("aria-expanded", "true");
+});
+
+
+test("private project controls omit publishing, suggestion and feedback UI", async ({page}) => {
+  await page.goto("/#launcher/settings");
+  await expect(page.getByRole("button", {name:"Save settings", exact:true})).toBeVisible();
+  await expect(page.getByText("Visibility", {exact:true})).toHaveCount(0);
+  await expect(page.getByText("Editing permissions", {exact:true})).toHaveCount(0);
+  await expect(page.getByText("Allow suggestions", {exact:false})).toHaveCount(0);
+  await page.goto("/#launcher/workspace/__root__");
+  await expect(page.locator(".assembly-workspace-page:not(.bom-part-workspace)").first()).toBeVisible();
+  await expect(page.getByRole("button", {name:"Report: stuck or confused", exact:true})).toHaveCount(0);
+  await page.locator(".ui-site-account").click();
+  await expect(page.locator(".project-account-dialog")).toBeVisible();
+  await expect(page.getByRole("button",{name:"Link administrator access",exact:true})).toHaveCount(0);
+});

@@ -35,7 +35,7 @@ export async function readCatalog(env){
  const overrides=new Map(records.map(item=>[item.id,item]));
  const projects=CORE_PROJECTS.map(item=>({...item,...overrides.get(item.id),builtIn:true}));
  for(const item of records)if(!CORE_PROJECTS.some(core=>core.id===item.id))projects.push({...item,builtIn:false});
- return {projects,stored:records,etag:object?.etag??null};
+ return {projects:projects.map(project=>({...project,visibility:"private",editMode:"locked"})),stored:records,etag:object?.etag??null};
 }
 export async function projectAllowed(env,id,request){
  if(!VALID_PROJECT_ID.test(String(id||"")))return false;
@@ -43,7 +43,6 @@ export async function projectAllowed(env,id,request){
  const {projects}=await readCatalog(env);
  const project=projects.find(project=>project.id===id&&!project.archived);
  if(!project)return false;
- if(project.visibility==="public"||project.builtIn&&project.visibility!=="private")return true;
  if(!request)return false;
  const user=await accountUser(request,env);
  return !!user&&project.ownerId===user.id||await isAdmin(request,env);
@@ -53,7 +52,7 @@ export async function canEditProject(request,env,id){
  const project=projects.find(p=>p.id===id&&!p.archived);
  if(!project)return false;
  const user=await accountUser(request,env);
- return !!user&&project.ownerId===user.id||project.builtIn&&await isAdmin(request,env);
+ return !!user&&project.ownerId===user.id||await isAdmin(request,env);
 }
 export async function projectDetails(request,env,id){
  const {projects}=await readCatalog(env);
@@ -61,7 +60,7 @@ export async function projectDetails(request,env,id){
  if(!project)return null;
  const user=await accountUser(request,env);
  const owner=!!user&&user.id===project.ownerId;
- const admin=project.builtIn&&await isAdmin(request,env);
+ const admin=await isAdmin(request,env);
  return {project,owner:owner||admin,user};
 }
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});
@@ -71,7 +70,7 @@ export async function onRequest({request,env}){
  if(method==="GET"){
   const includeArchived=new URL(request.url).searchParams.has("includeArchived");
   const {projects}=await readCatalog(env),user=await accountUser(request,env),admin=await isAdmin(request,env);
-  return json({projects:projects.filter(p=>(!p.archived||includeArchived&&(p.ownerId===user?.id||p.builtIn&&admin))&&(p.visibility==="public"||p.builtIn&&p.visibility!=="private"||p.ownerId===user?.id||p.builtIn&&admin)).map(p=>({...p,isOwner:p.ownerId===user?.id||p.builtIn&&admin}))});
+  return json({projects:projects.filter(p=>(!p.archived||includeArchived&&(p.ownerId===user?.id||admin))&&(p.ownerId===user?.id||admin)).map(p=>({...p,isOwner:p.ownerId===user?.id||admin}))});
 
  }
  if(!["POST","DELETE","PATCH"].includes(method))return json({error:"Method not allowed"},405);
@@ -79,6 +78,7 @@ export async function onRequest({request,env}){
  if(!user&&!admin)return json({error:"Sign in to manage projects"},401);
  const input=await request.json().catch(()=>null);
  if(!input||typeof input!=="object")return json({error:"Invalid project request"},400);
+ if(input.visibility!==undefined&&input.visibility!=="private"||input.editMode!==undefined&&input.editMode!=="locked")return json({error:"Projects are private and editable only by the owner"},400);
  const catalog=await readCatalog(env);
  let updated;
  if(method==="POST"){
@@ -89,12 +89,12 @@ export async function onRequest({request,env}){
   const tags=normalizeTags(input.tags);
   if(tags===null)return json({error:"Choose up to 20 short project tags"},400);
   if(!validCategory(category))return json({error:"Category must contain 1–60 characters"},400);
-  const project={id:"p"+crypto.randomUUID().replace(/-/g,""),name,description,kind:"project",category,tags:tags||[],createdAt:new Date().toISOString(),archived:false,ownerId:user.id,visibility:"private",editMode:"approval",authorName:user.displayName};
+  const project={id:"p"+crypto.randomUUID().replace(/-/g,""),name,description,kind:"project",category,tags:tags||[],createdAt:new Date().toISOString(),archived:false,ownerId:user.id,visibility:"private",editMode:"locked",authorName:user.displayName};
   updated=[...catalog.stored,project];
  }else{
   const item=catalog.projects.find(p=>p.id===input.id);
   if(!item)return json({error:"Project not found"},404);
-  if(item.ownerId!==user?.id&&!(item.builtIn&&admin))return json({error:"Only the project owner can manage it"},403);
+  if(item.ownerId!==user?.id&&!(admin))return json({error:"Only the project owner can manage it"},403);
   if(method==="DELETE"&&String(input.confirmName||"").trim()!==item.name)return json({error:"Type the exact project name to confirm removal"},400);
   if(method==="DELETE"&&item.archived)return json({error:"Project is already archived"},409);
   const changed={...item};
@@ -104,10 +104,6 @@ export async function onRequest({request,env}){
    changed.archived=false;
   }else{
    if(item.archived)return json({error:"Restore the project before changing settings"},409);
-   if(input.visibility!==undefined){
-    if(!["private","public"].includes(input.visibility))return json({error:"Invalid visibility"},400);
-    changed.visibility=input.visibility;
-   }
    if(input.tags!==undefined){
     const tags=normalizeTags(input.tags);
     if(tags===null)return json({error:"Choose up to 20 short project tags"},400);
@@ -116,10 +112,6 @@ export async function onRequest({request,env}){
    if(input.category!==undefined){
     if(!validCategory(input.category))return json({error:"Category must contain 1–60 characters"},400);
     changed.category=input.category.trim();
-   }
-   if(input.editMode!==undefined){
-    if(!["locked","approval"].includes(input.editMode))return json({error:"Invalid editing mode"},400);
-    changed.editMode=input.editMode;
    }
    if(input.shortSummary!==undefined||input.summary!==undefined){
     const stale=staleSummary(input,item);

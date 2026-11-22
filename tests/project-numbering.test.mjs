@@ -1,3 +1,4 @@
+import {provisionTestAccount} from "./helpers/accounts.mjs";
 import {test} from "node:test";
 import assert from "node:assert/strict";
 import {issueNumber,numberingState,onRequest} from "../functions/api/numbering.js";
@@ -65,12 +66,14 @@ test("legacy part and assembly numbers cannot be duplicated",async()=>{
 });
 
 test("number lookup identifies active records and historical reservations",async()=>{
- const env={PHOTOS:new MemoryR2()},project="launcher";
+ const env={PHOTOS:new MemoryR2(),admin_password:"numbering-fixture-secret"},project="launcher";
+ const login=await provisionTestAccount(new Request("https://example.test/api/accounts",{method:"POST",headers:{origin:"https://example.test"},body:JSON.stringify({action:"register",email:"numbers@example.test",password:"numbering-fixture-password"})}),env,{role:"admin"});
+ const cookie=login.headers.get("set-cookie").split(";")[0];
  await issueNumber(env,project,"part","deleted-part","NR116");
  await issueNumber(env,project,"part","active-part","NR117");
  await env.PHOTOS.put("components/"+project+".json",JSON.stringify([{id:"active-part",name:"Flywheel",partNumber:"NR117"},{id:"unassigned",name:"Bearing",partType:"purchased"}]));
  const get=async query=>{
-  const response=await onRequest({request:new Request("https://example.test/api/numbering?project=launcher&"+query),env});
+  const response=await onRequest({request:new Request("https://example.test/api/numbering?project=launcher&"+query,{headers:{cookie}}),env});
   assert.equal(response.status,200);
   return response.json();
  };

@@ -1,6 +1,15 @@
 # BuildingSchmidt feature inventory (main page)
 
-Status: inventory baseline from `main` at `f73e021`, 2026-11-22. Proposed drops remain undecided; they are not authorization to delete features. CSS-only presentation work does not mark an entire area Rebuilt.
+Status: owner decisions recorded 2026-11-22 (baseline from `main` at `f73e021`). Lines with a blank Decision are **Keep**.
+
+## Owner decisions (2026-11-22)
+
+- **Drop:** 1.4 admin-password link · 3.2 Public/Unlisted visibility (all projects private) · 3.3 Allow suggestions · 7.10 suggestion review queue · 11.3 My Build and stuck/confused feedback · all of section 11 (leftovers).
+- **Change:** 7.4 remove the Practice (legacy) record type and convert existing Practice records to Notes · 5.13 rebuild the harness cutting list on Workshop wire products and delete the separate wire library · 6.8 keep AI spec lookup but redesign it around the Workshop; it stays off while paid AI is paused.
+- **Keep:** 5.12 DigiKey cart.
+- **Project summary sections:** remember each section's last open/closed state (per browser); first visit uses collapsed.
+- **Dead-CSS check:** strict. A change fails if CSS names a class no page or script produces, except classes on an explicit allowlist of code-built patterns (for example `part-progress-*`) and the curated retired list.
+- Section 11 items are each verified against the code before deletion (no remaining caller, route or data reader).
 
 **Purpose:** a checklist of everything the legacy main page (`index.html`) does today, so the area-by-area rebuild doesn't silently drop anything, and so the owner can decide what *not* to rebuild. Workshop (`workshop.html`) and Knowledge (`knowledge.html`) are already on the new system; they are listed briefly at the end.
 
@@ -20,7 +29,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 1.1 | Top navigation: Projects · Knowledge · The Workshop · Calculators link · Account | `site-header.js`, `index.html`, `site.js` `navigate()` | | ☐ |
 | 1.2 | Owner sign-in dialog (email + password, 12–256 chars, error messages for wrong password, closed registration, service unavailable) | `project-manager.js` | | ☐ |
 | 1.3 | Sign out | `project-manager.js` | | ☐ |
-| 1.4 | "Link administrator access" with existing admin password | `project-manager.js` | *Suggest: decide (likely obsolete with owner accounts)* | ☐ |
+| 1.4 | "Link administrator access" with existing admin password | `project-manager.js` | **Drop** | ☐ |
 | 1.5 | Hash routing: `#home`, `#projects`, `#<project>/workspace/<node>`, `#<project>/part/<id>`; old `#knowledge`/`#community` redirect to `knowledge.html` | `site.js`, `SA` | | ☐ |
 | 1.6 | Session-expired handling ("Log in again") | `site.js` | | ☐ |
 | 1.7 | Edit-conflict dialog: "Review newer changes" shows saved vs. your draft, Keep editing / Save reviewed changes | `edit-conflicts.js` | | ☐ |
@@ -46,8 +55,8 @@ Legend: `SA` = `assets/site-assembly.js`.
 | # | Feature | Code today | Decision | Rebuilt |
 |---|---|---|---|---|
 | 3.1 | Rename project (≤100 chars) | `project-manager.js`, `SA` | | ☐ |
-| 3.2 | Visibility: Private / Unlisted / Public | `project-manager.js` | *Suggest: drop (single-user private site)* | ☐ |
-| 3.3 | Editing permissions: Locked / Allow suggestions with owner approval | `project-manager.js` | *Suggest: drop (no other users)* | ☐ |
+| 3.2 | Visibility: Private / Unlisted / Public | `project-manager.js` | **Drop**: all projects private; remove the setting and the labels | ☐ |
+| 3.3 | Editing permissions: Locked / Allow suggestions with owner approval | `project-manager.js` | **Drop** | ☐ |
 | 3.4 | Delete project (type exact name to confirm) | `project-manager.js` | | ☐ |
 | 3.5 | Part numbering format: prefix (default NR, ≤10 chars), minimum digits, next assembly preview; existing numbers unchanged | `project-manager.js`, `/api/numbering` | | ☐ |
 | 3.6 | Suggested part nomenclature guidance text | `project-manager.js` | | ☐ |
@@ -79,8 +88,8 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 5.9 | Assembly photos (same gallery controls as 4.1) | `SA` | | ☐ |
 | 5.10 | Assembly status: Not started / In progress / Complete, with "What needs attention?" note (minimize/expand) | `SA` `saveAssemblyStatus`, `installAttentionExpander` | | ☐ |
 | 5.11 | Bill of materials for the assembly: list view and picture view; grouped parts; nested assembly quantities; standard shop materials section | `SA` `renderWorkspaceParts`, `bom-model.js` | | ☐ |
-| 5.12 | Purchase parts: select items, "Add selected to DigiKey cart" (1–400 items) | `bom-purchasing.js` | *Suggest: decide* | ☐ |
-| 5.13 | Wire harness cutting list | `SA` `showHarnessPreview`, `/api/wires`, `/api/harness` | *Suggest: decide (check current use)* | ☐ |
+| 5.12 | Purchase parts: select items, "Add selected to DigiKey cart" (1–400 items) | `bom-purchasing.js` | **Keep** | ☐ |
+| 5.13 | Wire harness cutting list | `SA` `showHarnessPreview`, `/api/wires`, `/api/harness` | **Change**: rebuild on Workshop wire products; delete the separate wire library | ☐ |
 | 5.14 | Parts Management table: search, status filter, find/look up number (assigned or reserved), inline edit of name, tree description, quantity, type, status, cost per part/package, attention note; resizable columns | `parts-management.js` | | ☐ |
 
 ## 6. Part page
@@ -94,7 +103,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 6.5 | Specifications (from product listing or estimated), project-specific information | `SA`, `part-fields.js` | | ☐ |
 | 6.6 | Part editor: item type (Part/Document/Code), part type (off-the-shelf / custom in-house / custom purchased), number (auto or user, next available lookup), name, short tree name (20 chars), schematic/KiCad info, manufacturer, MPN, description, quantity, "Is a tool?" | `SA` `editBomPart`, `saveBomDraft`, `library-part-picker.js` | | ☐ |
 | 6.7 | Where to buy: up to 10 suppliers (DigiKey, Mouser, McMaster, Newark, Arrow, Amazon ASIN, custom), order code, URL | `part-suppliers.js` | | ☐ |
-| 6.8 | Find part specs with AI: lookup by MPN/name, review suggested specs, apply selected | `product-lookup.js` | Paid AI is paused; *Suggest: keep, behind the pause* | ☐ |
+| 6.8 | Find part specs with AI: lookup by MPN/name, review suggested specs, apply selected | `product-lookup.js` | **Change**: keep, but redesign around the Workshop (category → family → product); stays off while paid AI is paused | ☐ |
 | 6.9 | Part files: CAD / Parasolid / STL / STEP upload and download (≤20 MB); saved product webpages | `part-files.js`, `/api/part-files` | | ☐ |
 | 6.10 | Drawings (PDF): drop/upload, view, download, replace, delete (first 100) | `drawings.js`, `/api/drawings` | | ☐ |
 | 6.11 | Source code on a part: language, edit, import file, save, previous versions, view/restore, download (≤100 KB) | `part-code.js`, `/api/part-code` | | ☐ |
@@ -109,13 +118,13 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 7.1 | Work Instructions list per assembly/part: add, name, rename, delete, reorder by drag, resizable list | `recipe-editor.js` | | ☐ |
 | 7.2 | Autosave with "Unsaved step changes" / "More edits to save" states | `recipe-editor.js` | | ☐ |
 | 7.3 | Archive a Work Instruction with optional reason; archived steps list; restore | `recipe-editor.js` | | ☐ |
-| 7.4 | Records ("+ Add entry") inside a step. Types: Failures, Tests/Measurements, Revisions, Notes, Photos, Practice (legacy). Each type has its own prompts, e.g. "What happened? / What caused it? / Did you fix it?" | `investigations.js`, `entry-editor.js` | Practice (legacy): *Suggest: drop or convert* | ☐ |
+| 7.4 | Records ("+ Add entry") inside a step. Types: Failures, Tests/Measurements, Revisions, Notes, Photos, Practice (legacy). Each type has its own prompts, e.g. "What happened? / What caused it? / Did you fix it?" | `investigations.js`, `entry-editor.js` | **Change**: drop the Practice (legacy) type; convert any existing Practice records to Notes | ☐ |
 | 7.5 | Record attachments: up to 12 photos/files per field, ≤20 MB each, named photos | `investigations.js`, `attachment-types.js` | | ☐ |
 | 7.6 | Nested entries; drag or Alt+Up/Down to reorder record tiles | `investigations.js` | | ☐ |
 | 7.7 | Archive a record (date, reason); delete archived entry | `investigations.js` | | ☐ |
 | 7.8 | "Replace part / save revision": archive the current part and tests, then open the editor for the replacement | `investigations.js` | Rebuild under History redesign ("Revise design" / "Change selected product") | ☐ |
 | 7.9 | Open subassembly instructions from a BOM line | `SA` | | ☐ |
-| 7.10 | Suggestion review queue: suggest a Work Instruction name change, owner reviews and rejects/accepts | `project-review.js` | *Suggest: drop (single user)* | ☐ |
+| 7.10 | Suggestion review queue: suggest a Work Instruction name change, owner reviews and rejects/accepts | `project-review.js` | **Drop** | ☐ |
 
 ## 8. History, archives and recovery
 
@@ -149,15 +158,15 @@ These exist in code but serve features the owner has removed or never uses. *Sug
 
 | # | Item | Code today | Decision |
 |---|---|---|---|
-| 11.1 | `assets/work-tracker.js` (Continue working / tasks / parts checklist) | not loaded by any page | |
-| 11.2 | `assets/site-components.js` | not loaded by any page | |
-| 11.3 | My Build personal notes and "stuck / confused" feedback | `my-build.js`, `/api/my-build`, `/api/build-confusion`; still called from `SA` (`BSMyBuild.insights`, `reportControl`) | |
-| 11.4 | Proposals API | `/api/proposals` | |
-| 11.5 | Project tasks API (its only caller is the unloaded `work-tracker.js`) | `/api/project-tasks` | |
-| 11.6 | Old Workshop category data in `resources.js` (the D1 Workshop on `workshop.html` replaced it). `BSResources` is still read by `SA` and `site.js`, so move the calculators out first | `resources.js` | Verify each reader, then delete |
-| 11.7 | The `#learn` view name, now only hosting Calculators | `index.html`, `site.js` | |
-| 11.8 | Hard-coded legacy project sections `#launcher`, `#linear`, `#robot` and their 365+ ID-based CSS rules | `index.html`, legacy CSS | |
-| 11.9 | Baseline audit: 893 candidate selectors (271 unmatched classes); 359 reviewed selectors removed in CSS batch #45, remaining candidates require review | legacy CSS files, `scripts/css-retired.json` | |
+| 11.1 | `assets/work-tracker.js` (Continue working / tasks / parts checklist) | not loaded by any page | **Drop** |
+| 11.2 | `assets/site-components.js` | not loaded by any page | **Drop** |
+| 11.3 | My Build personal notes and "stuck / confused" feedback | `my-build.js`, `/api/my-build`, `/api/build-confusion`; still called from `SA` (`BSMyBuild.insights`, `reportControl`) | **Drop** |
+| 11.4 | Proposals API | `/api/proposals` | **Drop** |
+| 11.5 | Project tasks API (its only caller is the unloaded `work-tracker.js`) | `/api/project-tasks` | **Drop** |
+| 11.6 | Old Workshop category data in `resources.js` (the D1 Workshop on `workshop.html` replaced it). `BSResources` is still read by `SA` and `site.js`, so move the calculators out first | `resources.js` | **Drop** |
+| 11.7 | The `#learn` view name, now only hosting Calculators | `index.html`, `site.js` | **Drop** |
+| 11.8 | Hard-coded legacy project sections `#launcher`, `#linear`, `#robot` and their 365+ ID-based CSS rules | `index.html`, legacy CSS | **Drop** |
+| 11.9 | Baseline audit: 893 candidate selectors (271 unmatched classes); 359 reviewed selectors removed in CSS batch #45, remaining candidates require review | legacy CSS files, `scripts/css-retired.json` | **Drop** |
 
 ## 12. Already on the new system (for completeness)
 
@@ -175,3 +184,11 @@ Still planned there: files and photos on tiles; "Make this a knowledge tile" on 
 PR #45 touches 1.1 (shared header), 1.10 (tooltip interaction), 2.2–2.7 (toolbar presentation), 4.1–4.5 / 4.7 (shared collapsed summary sections), 5.1 / 5.4 (help and leading status indicators), 6.13 / 7.4 (consistent empty action sections), and 11.9 (reviewed dead styles). Existing feature behavior is retained. None of these full feature areas is marked Rebuilt solely because its styling changed.
 
 Still pending from the owner screenshots: matching Workshop/project information tiles in Part details and resizable Workshop/Knowledge columns.
+
+## Implementation interpretation
+
+The owner authorized implementation and production deployment of these decisions. Blank decisions preserve behavior; this is an area-by-area migration, not permission to silently omit Keep items. Stable built-in project IDs remain valid when their duplicated page markup is replaced. Project data and attachments are retained. Paid AI remains disabled; no provider calls are enabled by this cleanup.
+
+The first implementation batch removes visibility/permission controls and publishing paths, administrator-password linking, the suggestion queue and API, personal My Build / stuck-feedback code and APIs, and unloaded work-tracker/site-components scripts. It adds per-browser, per-project summary disclosure preferences with collapsed first visits. Removed runtime code has corresponding CSS removed in the same batch. Ordinary sign-in/out, private project edits, numbering, backups, DigiKey purchasing and revision history remain.
+
+Separate functional batches replace the wire library with Workshop products, remove the old Workshop resource catalog while preserving calculators/resource linking, replace repeated built-in page markup while preserving IDs, and enforce the strict class-producer check with reviewed dynamic patterns. The History wording and views require the existing History design, not a blanket rename of unrelated archives. These items are not marked Rebuilt until live behavior is checked.
