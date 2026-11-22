@@ -1207,3 +1207,37 @@
 #commonparts .workshop-item-edit-form .workshop-table-custom-row:not(:has(button:not([hidden]))){grid-template-columns:minmax(150px,180px) minmax(0,1fr)}
 #commonparts .workshop-item-edit-form .workshop-table-actions{display:flex;justify-content:flex-start;gap:10px;margin-top:10px}
 @media(max-width:620px){#commonparts .workshop-item-edit-form .workshop-table-custom-row,#commonparts .workshop-item-edit-form .workshop-table-title-editor{grid-template-columns:minmax(0,1fr)}}
+
+/* Workshop table editor v2: left label / right field even in table-edit mode. */
+#commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid{
+ display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:9px!important
+}
+#commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label{
+ display:grid!important;
+ grid-template-columns:minmax(140px,210px) minmax(0,1fr) auto!important;
+ gap:12px!important;align-items:center!important;width:100%;min-width:0;
+ margin:0!important
+}
+#commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label>span:first-child,
+#commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label>.workshop-table-rename{grid-column:1;grid-row:1;min-width:0}
+#commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label>.field:not(.workshop-table-rename){
+ grid-column:2;grid-row:1;width:100%;min-width:0;margin:0
+}
+#commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label>.workshop-table-remove-standard{grid-column:3;grid-row:1}
+#commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label[hidden]{display:none!important}
+#commonparts .workshop-item-edit-form .workshop-table-removed{opacity:.5}
+#commonparts .workshop-item-edit-form .workshop-table-controls[hidden]{display:none!important}
+#commonparts .workshop-item-edit-form .workshop-table-custom-row .field{width:100%;min-width:0}
+#commonparts .workshop-item-edit-form .workshop-table-custom-row button,
+#commonparts .workshop-item-edit-form .workshop-table-remove-standard{font-size:.78rem;padding:5px 9px;min-height:29px}
+#commonparts .workshop-item-edit-form .workshop-table-controls{margin:0 0 12px;padding:0 0 12px}
+#commonparts .workshop-item-edit-form .workshop-table-actions{margin:10px 0 0}
+#commonparts .workshop-item-edit-form .workshop-table-custom-row{grid-template-columns:minmax(140px,210px) minmax(0,1fr) auto}
+#commonparts .workshop-item-edit-form .workshop-table-custom-row button[hidden]{display:none!important}
+@media(max-width:620px){
+ #commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label{grid-template-columns:minmax(0,1fr) auto!important}
+ #commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label>span:first-child,
+ #commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label>.workshop-table-rename{grid-column:1;grid-row:1}
+ #commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label>.field:not(.workshop-table-rename){grid-column:1 / -1;grid-row:2}
+ #commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label>.workshop-table-remove-standard{grid-column:2;grid-row:1}
+}
