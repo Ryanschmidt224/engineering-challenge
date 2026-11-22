@@ -4506,17 +4506,6 @@
 
 /* Consistent compact collapsed tile headers across part/subassembly pages.
    Header height is fixed; expanded bodies can grow with their content. */
-.assembly-workspace-page .workspace-resource-disclosure>summary,
-.assembly-workspace-page .workspace-primary-disclosure>summary,
-.assembly-workspace-page .workspace-secondary-disclosure>summary,
-.assembly-workspace-page .part-details-collapse>summary.part-details-view-heading{
- box-sizing:border-box;
- min-height:48px;
- padding-top:9px;
- padding-bottom:9px;
- display:flex;
- align-items:center;
-}
 .assembly-workspace-page .workspace-resource-disclosure>summary{
  padding-left:27px;
 }
@@ -4541,12 +4530,7 @@
  min-height:0;
  margin:0;
 }
-.assembly-workspace-page .workspace-panels>article.recipe-instructions>.recipe-heading-row{
- box-sizing:border-box;
- min-height:48px;
- display:flex;
- align-items:center;
-}
+
 
 
 /* Work Instructions: same disclosure/header geometry as other workspace tiles.
@@ -4649,25 +4633,6 @@
 .assembly-workspace-page .recipe-instructions .recipe-body-actions>.recipe-add-step[hidden]{display:none!important}
 
 
-/* All collapsed project/subassembly detail tiles share the same header rhythm.
-   Keep expanded body heights content-driven. */
-.assembly-workspace-page :is(
- .workspace-primary-disclosure>summary,
- .workspace-secondary-disclosure>summary,
- .part-details-collapse>summary.part-details-view-heading,
- .investigation-collapse>summary.investigation-collapse-heading,
- .bs-unstructured-notes>.bs-unstructured-notes-heading,
- .recipe-instructions>.recipe-heading-row){
- box-sizing:border-box;
- min-height:48px;
-}
-.assembly-workspace-page .bs-unstructured-notes>.bs-unstructured-notes-heading,
-.assembly-workspace-page .investigation-collapse>summary.investigation-collapse-heading{
- display:flex;align-items:center;
- padding-top:9px;padding-bottom:9px;
-}
-
-
 /* A container is project identity, not a standalone title card. Present its
    persistent name using the same label-left/value-right field layout as all
    other Part Details rows, retaining the visual boundary of the container. */
@@ -4726,18 +4691,6 @@
 
 /* Closed part/workspace tiles: identical 48px boxes, regardless of summary text.
    Expanded sections retain their natural content height. */
-.assembly-workspace-page.bom-part-workspace .part-details-collapse:not([open])>summary.part-details-view-heading,
-.assembly-workspace-page .workspace-primary-disclosure:not([open])>summary,
-.assembly-workspace-page .workspace-secondary-disclosure:not([open])>summary,
-.assembly-workspace-page .investigation-collapse:not([open])>summary.investigation-collapse-heading,
-.assembly-workspace-page .bs-unstructured-notes:not([open])>summary.bs-unstructured-notes-heading,
-.assembly-workspace-page .recipe-instructions:not(:has(.recipe-body:not([hidden])))>.recipe-heading-row{
- box-sizing:border-box;
- height:48px;
- min-height:48px;
- padding-top:9px;
- padding-bottom:9px;
-}
 .assembly-workspace-page.bom-part-workspace .part-details-collapse:not([open]) .part-details-summary-fields{
  display:none!important;
 }
@@ -4751,66 +4704,9 @@
 
 /* Shared compact disclosure appearance for part and subassembly workspaces.
    Apply to the actual header elements, not their data/expanded bodies. */
-.assembly-workspace-page{
- --workspace-tile-height:48px;
- --workspace-tile-font-size:.91rem;
- --workspace-tile-font-weight:650;
-}
-.assembly-workspace-page :is(
- .part-details-collapse>summary.part-details-view-heading,
- .workspace-primary-disclosure>summary,
- .workspace-secondary-disclosure>summary,
- .assembly-archived-disclosure>summary,
- .investigation-collapse>summary.investigation-collapse-heading,
- .bs-unstructured-notes>summary.bs-unstructured-notes-heading,
- .recipe-instructions>.recipe-heading-row){
- box-sizing:border-box;
- min-height:var(--workspace-tile-height);
- font-family:inherit;
- font-size:var(--workspace-tile-font-size);
- font-weight:var(--workspace-tile-font-weight);
+/* Canonical header geometry and typography are defined below. */
+.assembly-workspace-page .recipe-instructions>.recipe-heading-row{
  color:var(--color-text);
-}
-.assembly-workspace-page :is(
- .part-details-collapse>summary.part-details-view-heading,
- .workspace-primary-disclosure>summary,
- .workspace-secondary-disclosure>summary,
- .assembly-archived-disclosure>summary,
- .investigation-collapse>summary.investigation-collapse-heading,
- .bs-unstructured-notes>summary.bs-unstructured-notes-heading){
- display:flex;
- align-items:center;
- padding-top:9px;
- padding-bottom:9px;
-}
-.assembly-workspace-page :is(
- .part-details-collapse>summary.part-details-view-heading,
- .workspace-primary-disclosure>summary,
- .workspace-secondary-disclosure>summary,
- .assembly-archived-disclosure>summary,
- .investigation-collapse>summary.investigation-collapse-heading,
- .bs-unstructured-notes>summary.bs-unstructured-notes-heading) :is(h2,.workspace-disclosure-title){
- font-family:inherit;
- font-size:var(--workspace-tile-font-size);
- font-weight:var(--workspace-tile-font-weight);
- line-height:1.3;
- margin:0;
-}
-.assembly-workspace-page .recipe-instructions>.recipe-heading-row :is(h2,.recipe-disclosure-toggle),
-.assembly-workspace-page .recipe-instructions>.recipe-heading-row .recipe-heading-actions h2{
- font-family:inherit;
- font-size:var(--workspace-tile-font-size);
- font-weight:var(--workspace-tile-font-weight);
-}
-.assembly-workspace-page :is(
- .workspace-primary-disclosure:not([open])>summary,
- .workspace-secondary-disclosure:not([open])>summary,
- .assembly-archived-disclosure:not([open])>summary,
- .investigation-collapse:not([open])>summary.investigation-collapse-heading,
- .bs-unstructured-notes:not([open])>summary.bs-unstructured-notes-heading,
- .part-details-collapse:not([open])>summary.part-details-view-heading){
- height:var(--workspace-tile-height);
- min-height:var(--workspace-tile-height);
 }
 .assembly-workspace-page .assembly-archived-items{
  padding:0;
@@ -4846,14 +4742,12 @@
 .assembly-workspace-page .workspace-panels>.assembly-archived-items{
  margin:0 0 12px;
 }
-.assembly-workspace-page :is(.workspace-record-count,.part-details-summary-fields){
- font-family:inherit;
- font-weight:400;
-}
+
 
 /* One exact disclosure header grid for part and subassembly.
    Previous rules matched type sizes but left pseudo-chevrons in different layouts. */
 .assembly-workspace-page{
+ --workspace-tile-height:48px;
  --workspace-tile-label-size:.91rem;
  --workspace-tile-label-weight:650;
  --workspace-tile-label-left:27px;
@@ -4869,8 +4763,10 @@
  position:relative;
  box-sizing:border-box;
  padding:9px 20px 9px var(--workspace-tile-label-left)!important;
- min-height:48px;
+ min-height:var(--workspace-tile-height);
+ display:flex;
  align-items:center;
+ color:var(--color-text);
  gap:8px;
  font-family:inherit;
  font-size:var(--workspace-tile-label-size)!important;
@@ -4916,8 +4812,19 @@
  left:var(--workspace-tile-chevron-left)!important;
 }
 .assembly-workspace-page :is(.workspace-record-count,.part-details-summary-fields){
+ font-family:inherit;
  font-size:.76rem!important;
  font-weight:400!important;
+}
+
+.assembly-workspace-page :is(
+ .workspace-primary-disclosure:not([open])>summary,
+ .workspace-secondary-disclosure:not([open])>summary,
+ .assembly-archived-disclosure:not([open])>summary,
+ .investigation-collapse:not([open])>summary.investigation-collapse-heading,
+ .bs-unstructured-notes:not([open])>summary.bs-unstructured-notes-heading,
+ .part-details-collapse:not([open])>summary.part-details-view-heading){
+ height:var(--workspace-tile-height);
 }
 
 /* Consistent 12px spacing between collapsed/expanded section cards on both
