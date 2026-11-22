@@ -8,11 +8,11 @@ Private, single-user engineering application on Cloudflare. The owner chose cate
 
 PR #33 merged at `f47a4d5342a080c8765f8e3a984a94ce5115d007`. Cloudflare production version `abbfd86f-6425-4c6c-ac73-376b759bc05c` built successfully. It closes registration, requires the existing administrator session on application APIs, checks mutation origins and pauses paid AI. It does not configure whole-site Cloudflare Access.
 
-## Family Workshop: PR #35, not deployed yet
+## Family Workshop: PR #35
 
 The new D1 schema, editable starter catalog (33 categories / 60 families / 233 fields), family/product/use UI, project projections, private uploads and verified streaming exports are implemented. The retired template/Builder/inventory interfaces and mutation handlers are removed. Existing project-only part creation remains available. No live data has been deleted.
 
-198 Node checks pass locally and in the first CI run. The initial browser run exposed one outdated numbering selector and a fixture that created a product after opening a stale catalog form. Those are being corrected; the release remains gated on all browser tests, review and actual Cloudflare D1 provisioning/live checks. See `docs/WORKSHOP_RELEASE.md` for exact limits, backup scope and rollback.
+198 Node tests and 22 browser workflows passed at source head `9902587be788f8c7dd5b8f6d790b6a179762668e`; Cloudflare also built its branch preview successfully. The initial browser fixture/numbering assertions were corrected before this result. Actual production build/version and live verification are tracked on PR #35; this source document alone is not proof of deployment. See `docs/WORKSHOP_RELEASE.md` for exact limits, backup scope and rollback.
 
 The CSS writeup is applied to the new Workshop foundation: shared geometry/tokens, common controls, minimum touch sizes, phone layouts and CI guardrails. The broad legacy cascade rewrite is deferred. The three existing override files are frozen; new important/project-ID escalation is rejected.
 
