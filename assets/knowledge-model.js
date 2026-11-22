@@ -120,7 +120,7 @@ export function targetHref(link) {
     case "project":
       return "index.html#" + id;
     case "record":
-      return "index.html#" + project;
+      return "index.html?record=" + id + "#" + project;
     default:
       return "";
   }

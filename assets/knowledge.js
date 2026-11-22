@@ -1,6 +1,6 @@
 // Knowledge page: tiles (concept / method / lesson) and their links.
 // All text is inserted as text nodes (textContent); markup is never parsed.
-import {node, button, actions, panel, field, requestWorkshop} from "./workshop-ui.js";
+import {node, button, listCard, actions, panel, field, requestWorkshop} from "./workshop-ui.js";
 import {
   tileTypes,
   tileStatuses,
@@ -97,7 +97,7 @@ function renderList() {
     if (state && tile.status !== state) continue;
     if (query && ![tile.title, tile.summary, tile.body].join(" ").toLowerCase().includes(query)) continue;
     const count = tileLinks(tile.id).length;
-    const entry = button("", () => select(tile.id), "list-card" + (tile.id === selectedTile ? " is-selected" : ""));
+    const entry = listCard("", () => select(tile.id), tile.id === selectedTile ? "is-selected" : "");
     entry.append(
       node("strong", tile.title + (tile.archived ? " (archived)" : "")),
       node(
@@ -420,10 +420,10 @@ async function addLinkDialog() {
       .slice(0, 40);
     for (const option of matches) {
       results.append(
-        button(option.label, () => {
+        listCard(option.label, () => {
           choice.target = option.id;
           paint();
-        }, "list-card" + (choice.target === option.id ? " is-selected" : "")),
+        }, choice.target === option.id ? "is-selected" : ""),
       );
     }
     if (!matches.length) {

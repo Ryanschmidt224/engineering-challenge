@@ -56,3 +56,7 @@ Follow the tooltip plan: icon buttons get short labels; concepts get a "?" help 
 ## Checking
 - Screenshot comparisons (`tests/browser-css-regression.spec.mjs`) at 1440 px and 390 px for every changed screen.
 - `tests/ui-standards.test.mjs` checks that pages load the shared files and that migrated screens use the helper.
+
+### Selectable list cards
+
+Selectable rows use `listCard()` and `.list-card`, with title, metadata and summary stacked at the full available width. Action buttons use `button()` and `.button`. Do not combine these classes: their layout and text hierarchy have different purposes. Both retain native keyboard focus and activation.

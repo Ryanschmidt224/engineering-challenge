@@ -12,7 +12,7 @@ export class TestD1 {
     if(statement.columns().length)return {results:statement.all(...values),meta:{changes:0},success:true};
     const result=statement.run(...values);return {results:[],meta:{changes:Number(result.changes)},success:true};
    };
-   return {bind:(...next)=>prepared(next),run:async()=>execute(),all:async()=>execute(),first:async()=>execute().results[0]||null,execute};
+   return {bind:(...next)=>{if(next.length>100)throw Error("D1 bound parameter limit exceeded: "+next.length);return prepared(next)},run:async()=>execute(),all:async()=>execute(),first:async()=>execute().results[0]||null,execute};
   }
   return prepared();
  }

@@ -13,6 +13,56 @@ test.beforeEach(async ({request, context}) => {
 
 const detail = (page) => page.locator("#knowledge-detail");
 
+async function expectStackedCard(card) {
+  await expect(card).toBeVisible();
+  const layout = await card.evaluate(element => {
+    const children = [...element.children].map(child => child.getBoundingClientRect());
+    const box = element.getBoundingClientRect();
+    return {display: getComputedStyle(element).display, width: box.width, children: children.map(child => ({x: child.x, y: child.y, width: child.width, bottom: child.bottom}))};
+  });
+  expect(layout.display).toBe("block");
+  for (const child of layout.children) expect(child.width).toBeGreaterThan(layout.width * 0.75);
+  for (let i = 1; i < layout.children.length; i++) expect(layout.children[i].y).toBeGreaterThanOrEqual(layout.children[i - 1].bottom);
+}
+
+async function expectHeaderLabels(page) {
+  const links = page.locator(".app-header nav a");
+  const layout = await links.evaluateAll(elements => elements.map(element => {
+    const box = element.getBoundingClientRect();
+    return {whiteSpace: getComputedStyle(element).whiteSpace, left: box.left, right: box.right, viewport: document.documentElement.clientWidth};
+  }));
+  for (const link of layout) {
+    expect(link.whiteSpace).toBe("nowrap");
+    expect(link.left).toBeGreaterThanOrEqual(0);
+    expect(link.right).toBeLessThanOrEqual(link.viewport);
+  }
+}
+
+for (const width of [1440, 390]) test("selectable Knowledge and Workshop cards stack at " + width + "px", async ({page}, testInfo) => {
+  await page.setViewportSize({width, height: 900});
+  await createTileFromFamily(page, "A long engineering lesson title that needs the full list width");
+  const card = page.locator("#tile-list > button").first();
+  await expectStackedCard(card);
+  await expectHeaderLabels(page);
+  await page.keyboard.press("Tab");
+  await card.focus();
+  await expect(card).toBeFocused();
+  await expect(card).toHaveCSS("outline-style", "solid");
+  await card.press("Enter");
+  await expect(detail(page).getByRole("heading", {name: "A long engineering lesson title that needs the full list width", exact: true})).toBeVisible();
+  await page.screenshot({path: testInfo.outputPath("knowledge-cards.png"), fullPage: true});
+  await page.goto("/workshop.html?family=f-buck-converter");
+  const family = page.locator("#family-list > button.is-selected");
+  await expectStackedCard(family);
+  await expectHeaderLabels(page);
+  await family.focus();
+  await expect(family).toBeFocused();
+  await family.press("Enter");
+  await expect(page.locator("#workshop-detail").getByRole("heading", {name: "Knowledge (1)", exact: true})).toBeVisible();
+  await expectStackedCard(page.locator("#workshop-detail .knowledge-list > a").first());
+  await page.screenshot({path: testInfo.outputPath("workshop-cards.png"), fullPage: true});
+});
+
 async function createTileFromFamily(page, title) {
   await page.goto("/workshop.html?family=f-buck-converter");
   await expect(page.locator("#workshop-detail").getByRole("heading", {name: "Knowledge (0)", exact: true})).toBeVisible();
@@ -146,4 +196,43 @@ test("a tile can be started from a project part and links to it", async ({page})
   await expect(page.locator("#knowledge-status")).toHaveText("Saved.");
   await expect(detail(page).getByText(/Applies to project part:/)).toBeVisible();
   await expect(detail(page).getByRole("link", {name: "Pull-up", exact: true})).toHaveAttribute("href", "index.html#launcher/part/" + use.id);
+});
+
+for (const width of [1440, 390]) test("Knowledge opens the exact project record, including archived and missing records, at " + width + "px", async ({page}, testInfo) => {
+  await page.setViewportSize({width, height: 900});
+  const created = await api(page, "/api/investigations?project=launcher", {
+    action: "create", expectedRevision: null, scope: "assembly", ownerType: "assembly", ownerId: "__root__",
+    category: "failure", title: "MCU power-on failure", entries: [{type: "observation", text: "The MCU failed immediately after switching on 24 V.", date: "2026-11-22", files: []}],
+  });
+  const id = crypto.randomUUID();
+  await api(page, "/api/knowledge", {entity: "tile", expectedRevision: null, record: {id, type: "lesson", status: "draft", title: "Power-on lesson", summary: "An unconfirmed cause needs a measurement.", body: "", sources: []}});
+  await api(page, "/api/knowledge", {entity: "link", expectedRevision: null, record: {id: crypto.randomUUID(), tile_id: id, target_type: "record", target_id: created.createdId, target_project_id: "launcher", relation: "see_also", note: ""}});
+  await page.goto("/knowledge.html?tile=" + id);
+  await detail(page).getByRole("link", {name: "MCU power-on failure", exact: true}).click();
+  const reader = page.getByRole("dialog", {name: "MCU power-on failure", exact: true});
+  await expect(reader).toBeVisible();
+  await expect(reader.getByText("The MCU failed immediately after switching on 24 V.", {exact: true})).toBeVisible();
+  await expect(reader.getByRole("button", {name: /Edit|Save|Archive/})).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp("record=" + created.createdId + "#launcher$"));
+  await page.reload();
+  await expect(reader).toBeVisible();
+  await page.screenshot({path: testInfo.outputPath("linked-record.png")});
+  expect(await reader.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(0);
+  await reader.getByRole("button", {name: "Close", exact: true}).click();
+  await expect(page).not.toHaveURL(/record=/);
+
+  const archived = await api(page, "/api/investigations?project=launcher", {action: "archiveRecord", id: created.createdId, expectedRevision: created.revision, note: "Retained as evidence."});
+  await page.goto("/knowledge.html?tile=" + id);
+  await expect(detail(page).getByText(/\(archived\)/)).toBeVisible();
+  await detail(page).getByRole("link", {name: "MCU power-on failure", exact: true}).click();
+  await expect(reader.getByText("Failures · Archived", {exact: true})).toBeVisible();
+  await expect(reader.getByText("Archive reason: Retained as evidence.", {exact: true})).toBeVisible();
+  await reader.getByRole("button", {name: "Close", exact: true}).click();
+
+  await api(page, "/api/investigations?project=launcher", {action: "deleteRecord", id: created.createdId, expectedRevision: archived.revision});
+  await page.goto("/knowledge.html?tile=" + id);
+  await expect(detail(page).getByText(/no longer exists; last known name/)).toBeVisible();
+  await expect(detail(page).locator("a.link-target")).not.toHaveAttribute("href");
+  await page.goto("/index.html?record=" + created.createdId + "#launcher");
+  await expect(page.getByRole("dialog", {name: "Record unavailable", exact: true})).toContainText("no longer exists");
 });

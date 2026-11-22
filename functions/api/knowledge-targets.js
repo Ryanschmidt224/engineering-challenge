@@ -5,11 +5,10 @@
 // archived. Nothing disappears silently.
 import {readCatalog} from "./projects.js";
 
-const placeholders = (values) => values.map(() => "?").join(",");
-
 async function rowsById(db, sql, ids) {
   if (!ids.length) return new Map();
-  const result = await db.prepare(sql.replace("%IDS%", placeholders(ids))).bind(...ids).all();
+  // One bound value regardless of catalog size (D1 allows 100 per query).
+  const result = await db.prepare(sql.replace("%IDS%", "SELECT value FROM json_each(?)")).bind(JSON.stringify(ids)).all();
   return new Map(result.results.map((row) => [row.id, row]));
 }
 
@@ -74,6 +73,7 @@ export async function resolveTargets(env, db, wanted) {
         const entry = (records.get(target.target_project_id) || []).find((record) => record.id === target.target_id);
         row = entry && {name: entry.title || "Untitled record", archived: entry.lifecycle && entry.lifecycle !== "active" ? 1 : 0};
         project = projects.get(target.target_project_id);
+        if (project?.archived) archived = true;
         break;
       }
     }
