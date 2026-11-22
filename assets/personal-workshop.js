@@ -736,8 +736,8 @@
    // Workshop-owned measurements are fixed. Generic field definitions are
    // separate placeholders for the next builder (name + unit, no values).
    const genericTemplateSection=el("section",undefined,"workshop-generic-template");
-   genericTemplateSection.append(el("h4","Fields the project user fills in"));
-   genericTemplateSection.append(el("p","Only field names and units are stored here. Each project supplies its own values; those values never update this Workshop item.","muted"));
+   genericTemplateSection.append(el("h4","Configured in project"));
+   genericTemplateSection.append(el("p","Define fields here, but leave their values for Modify Part. Project values do not change this Workshop item.","muted"));
    const genericTemplateRows=el("div",undefined,"workshop-generic-template-rows");
    const getGenericFields=()=>[...genericTemplateRows.children].map(row=>({
     label:row.querySelector('[data-generic="label"]')?.value.trim()||"",
@@ -773,8 +773,30 @@
     for(const [label,unit] of template)if(!fixed.has(label.toLowerCase()))addGenericField({label,unit});
    };
    if(window.BSResources.workshopIdentityKind(item)==="generic")suggestGenericFields();
+   // Generic components usually have no supplier: keep ordering available
+   // without making six empty purchase fields dominate the editor.
+   const orderingSection=grid.querySelector('[data-part-editor-section="ordering"]');
+   const orderingGrid=orderingSection.querySelector(".workshop-item-edit-grid");
+   const orderingReveal=itemButton("Add ordering details",()=>{
+    orderingExpanded=!orderingExpanded;
+    updateOrderingVisibility();
+   },"btn workshop-generic-ordering-reveal");
+   orderingReveal.type="button";
+   orderingSection.querySelector(".part-editor-section-heading").append(orderingReveal);
+   let orderingExpanded=["supplier","supplierPartNumber","supplierUrl","asin","price","packageQuantity"]
+    .some(key=>String(controls[key]?.value||"").trim());
+   const updateOrderingVisibility=()=>{
+    const generic=identityRadios.generic.checked;
+    orderingGrid.hidden=generic&&!orderingExpanded;
+    orderingSection.classList.toggle("workshop-generic-ordering-collapsed",generic&&!orderingExpanded);
+    orderingReveal.hidden=!generic;
+    orderingReveal.textContent=orderingExpanded?"Hide ordering details":"Add ordering details";
+    orderingSection.querySelector(".part-editor-section-heading").firstChild.textContent=
+     generic?"Ordering (optional)":"Ordering";
+   };
    const updateIdentityPanels=()=>{
     const generic=identityRadios.generic.checked;
+    updateOrderingVisibility();
     genericTemplateSection.hidden=!generic;
     parentLabel.hidden=generic;
     // Manufacturer identity belongs to specific purchasable products, never
@@ -785,7 +807,7 @@
     }
     // Generic items can retain fixed Workshop specifications (e.g. ¼ W);
     // only the configurable fields are left blank for project use.
-    structuredSection.querySelector("h3").textContent=generic?"Data retained in Workshop":"Specifications for this product";
+    structuredSection.querySelector("h3").textContent=generic?"Saved in Workshop — fixed specifications":"Specifications for this product";
     structuredSection.querySelector(".muted").textContent=generic
      ?"Enter only specifications that are fixed for every use of this Workshop item. For example, the resistor power rating."
      :"Product specifications are saved with this manufacturer product.";
@@ -845,6 +867,7 @@
      if(!confirmed){identityRadios.specific.checked=true;updateIdentityPanels();return}
      for(const field of specificOnlyFields)if(controls[field])controls[field].value="";
      specRows.replaceChildren();
+     orderingExpanded=false;
     }
     approvedIdentity="generic";
     parentSelect.value="";
