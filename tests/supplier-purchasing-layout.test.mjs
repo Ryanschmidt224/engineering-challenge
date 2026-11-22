@@ -66,5 +66,5 @@ test("DigiKey cart handoff includes only explicit codes and buyable quantities, 
   {name:"Fabricate",partType:"custom",implementationResolved:true,supplierOffers:[{vendor:"digikey",sku:"WRONG-ND"}],quantity:1}
  ]);
  assert.equal(gated.lines.length,0);
- assert.match(gated.skipped.join(" "),/no implementation selected/);
+ assert.match(gated.skipped.join(" "),/no part selected/);
 });

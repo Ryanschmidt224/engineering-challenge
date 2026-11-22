@@ -5,6 +5,9 @@ import {runInNewContext} from "node:vm";
 
 class Element{
  constructor(tag){this.tagName=tag;this.children=[];this.attributes={};this.value="";this.classList={remove(){}}}
+ querySelectorAll(selector){
+  return this.children.flatMap(child=>[...(selector.startsWith(".")&&child.className?.split(" ").includes(selector.slice(1))?[child]:[]),...(child.querySelectorAll?.(selector)||[])]);
+ }
  querySelector(selector){
   for(const child of this.children){
    if(selector.startsWith(".")&&child.className?.split(" ").includes(selector.slice(1)))return child;
@@ -25,7 +28,7 @@ class Element{
 const setup=fetch=>{
  const window={};
  runInNewContext(readFileSync("assets/product-lookup.js","utf8"),{
-  window,document:{createElement:tag=>new Element(tag)},fetch,URL,AbortController,setTimeout,clearTimeout
+  window,document:{createElement:tag=>new Element(tag),createTextNode:text=>({textContent:text})},fetch,URL,AbortController,setTimeout,clearTimeout
  });
  return window.BSProductLookup;
 };
@@ -68,7 +71,7 @@ test("stale and failed requests never apply suggestions and allow retry",async()
 });
 
 
-test("part editor loads shared AI suggestions into its draft without saving a component",async()=>{
+test("part editor reviews AI specs before applying them and leaves part identity unchanged",async()=>{
  const requests=[];
  const service=setup(async(path,request)=>{
   requests.push(path);
@@ -82,14 +85,16 @@ test("part editor loads shared AI suggestions into its draft without saving a co
  const name=field("component-name","Original"),model=field("component-model"),supplier=field("component-supplier");
  const tree=field("part-project-featureTreeName"),details=field("part-description-input");
  const specs=field("component-specs"),review=field("component-review");
- const widget=service.mountPart(root);
- widget.setIdentity({partNumber:"ABC",featureTreeDescription:"Resistor"});
+ model.value="ABC";
+ const widget=service.mountPart(root,{getPartName:()=>name.value});
  await widget.button.click();
  assert.deepEqual(requests,["/api/workshop-lookup"]);
- assert.equal(name.value,"New resistor");
+ assert.equal(name.value,"Original");
  assert.equal(model.value,"ABC");
- assert.equal(tree.value,"Resistor");
- assert.equal(details.value,"A resistor");
+ assert.equal(tree.value,"");
+ assert.equal(details.value,"");
+ assert.equal(specs.children.length,0);
+ await widget.results.querySelector(".product-ai-apply").click();
  assert.equal(specs.children[0].children[1].value,"10 kΩ");
  assert.equal(extract.hidden,true);
  assert.equal(label.hidden,true);

@@ -79,8 +79,8 @@ test("Generic Workshop resistors and LEDs keep stable containers with project-sp
  assert.match(editor,/Specific product/);
  assert.match(editor,/details\.productIdentity=/);
  assert.match(editor,/getGenericFields/);
- assert.match(editor,/confirmGenericSwitch/);
- assert.match(editor,/Erase data and switch/);
+ assert.match(editor,/identityRadios\.generic\.addEventListener\("change"/);
+ assert.doesNotMatch(editor,/Erase data and switch|specificOnlyFields/);
  const api=readFileSync("functions/api/workshop-reference.js","utf8");
  assert.match(api,/patch\.genericFields=genericFields/);
  assert.match(picker,/fixedLabels/);
@@ -125,8 +125,9 @@ test("Product Builder fields remain item-owned and project imports use explicit 
  const picker=readFileSync("assets/library-part-picker.js","utf8");
  const html=readFileSync("index.html","utf8");
  assert.match(api,/cleanProductSections\(body\.details\.productSections\)/);
- assert.match(api,/fieldIds\.has\(f\.id\)/);
- assert.match(api,/f\.scope==="workshop"\?String\(f\.value/);
+ const schema=readFileSync("functions/api/workshop-template-schema.js","utf8");
+ assert.match(schema,/fieldIds\.has\(f\.id\)/);
+ assert.match(schema,/!definitionsOnly&&f\.scope==="workshop"/);
  assert.match(builder,/window\.BSWorkshopProductBuilder=\{create\}/);
  assert.match(builder,/text\/workshop-section/);
  assert.match(builder,/text\/workshop-field/);
@@ -156,14 +157,14 @@ test("New Part Workshop picker uses shared electrical categories",()=>{
  assert.match(picker,/partClassification\.input\.value="purchased"/);
  assert.match(picker,/payload\.addToWorkshop=publicRadio\.checked\?"public":"private"/);
  assert.match(picker,/const lib=isPart&&workshopCheckbox\.checked/);
- assert.match(picker,/form\.append\(heading,subtitle,itemKind\.label,workshopChoices/);
+ assert.match(picker,/form\.append\(heading,subtitle,itemTypeSection,workshopChoices/);
  assert.match(picker,/name="new-part-source"/);
  assert.match(picker,/name="workshop-destination"/);
  assert.match(picker,/saveCreatedPartToWorkshop/);
  assert.match(picker,/publicCategory\.input\.value/);
  assert.match(picker,/BSResources\.workshopCategories/);
  for(const id of ["tools","consumables","electronics","hardware","safety","tools-measurement","tools-making","consumables-assembly","consumables-general","hardware-fasteners","hardware-materials","electrical-power","electrical-controllers","electrical-sensors","electrical-switching","electrical-basic","electrical-wiring","electrical-motors","electrical-displays"])
-  assert.ok(readFileSync("functions/api/workshop-reference.js","utf8").includes('"'+id+'"'),"Missing "+id+" category in public Workshop API");
+  assert.ok(readFileSync("functions/api/workshop-template-schema.js","utf8").includes('"'+id+'"'),"Missing "+id+" category in public Workshop API");
  assert.match(picker,/commonGroup\(p\)/);
  assert.match(picker,/wireModeCheckbox/);
 });
@@ -196,7 +197,7 @@ test("Electronics & Components retains useful subtype filters",()=>{
  for(const label of ["Power supplies & converters","Motors & motor drives","Controllers & circuit boards","Sensors & switches","Other electronics"])
   assert.ok(picker.includes(label),"Missing power filter: "+label);
  assert.doesNotMatch(picker,/field\("Filter parts","select"\)/);
- assert.match(picker,/powerType\.label\.classList\.toggle\("hide",!lib\|\|category\.input\.value!=="electronics"\)/);
+ assert.match(picker,/powerType\.label\.classList\.toggle\("hide",!lib\|\|!browseCategory\|\|category\.input\.value!=="electronics"\)/);
  assert.match(picker,/fetch\("\/api\/purchased-parts"/);
  assert.match(picker,/workshopStandardRows/);
 });
@@ -231,7 +232,7 @@ test("Workshop detail editing is tied to the opened record, with one image-adjac
  const css=readFileSync("assets/workshop.css","utf8");
  const shared=source.slice(source.indexOf("  function showItem("),source.indexOf("  function openItemEditor("));
  assert.doesNotMatch(shared,/Edit shared catalog|Edit My Workshop copy|Edit item in My Workshop/);
- assert.match(shared,/if\(canEditCatalog\(item\)\)\s*mediaButtons\.append\(itemButton\("Edit",\(\)=>openItemEditor\(item\)/);
+ assert.match(shared,/if\(canEditCatalog\(item\)\)\s*mediaButtons\.append\(itemButton\("Edit",\(\)=>detailUI\?\.setEditing\(true\)/);
  assert.equal((shared.match(/itemButton\("Edit"/g)||[]).length,1);
  assert.match(shared,/mediaWithEdit\.append\(mediaButtons\)/);
  assert.match(shared,/itemButton\("View in My Workshop",\(\)=>showPersonalItem\(owned\[0\]\.id\)/);
@@ -243,12 +244,14 @@ test("Workshop detail editing is tied to the opened record, with one image-adjac
  assert.match(css,/\.workshop-under-image-edit\{min-width:0/);
 });
 
-test("Only nine core supplies are seeded, with reference images and buying guidance",()=>{
+test("Core supplies keep reference images and buying guidance alongside generic resistor and LED components",()=>{
  const sandbox={window:{},document:{readyState:"loading",addEventListener(){}}};
  runInNewContext(readFileSync("assets/resources.js","utf8"),sandbox);
  const {workshopReferences,workshopCategories,workshopGroups}=sandbox.window.BSResources;
- assert.equal(workshopReferences.length,9);
- assert.deepEqual([...workshopReferences.map(item=>item.id)].sort(),[
+ assert.equal(workshopReferences.length,11);
+ const coreSupplies=workshopReferences.filter(item=>item.kind==="material");
+ assert.equal(coreSupplies.length,9);
+ assert.deepEqual([...coreSupplies.map(item=>item.id)].sort(),[
   "workshop:ferrule18","workshop:ferrule22","workshop:heatshrink",
   "workshop:sealshrink","workshop:silicone","workshop:solder",
   "workshop:wire16","workshop:wire18","workshop:wire22"
@@ -257,7 +260,7 @@ test("Only nine core supplies are seeded, with reference images and buying guida
  assert.ok(workshopCategories.some(([id])=>id==="electrical-sensors"));
  assert.equal(workshopReferences.find(item=>item.id==="workshop:wire22").category,"electrical-wiring");
  assert.ok(workshopGroups.some(group=>group.id==="measurement"),"Empty family remains available for new items");
- for(const item of workshopReferences){
+ for(const item of coreSupplies){
   assert.equal(item.kind,"material");
   assert.ok(item.orderNotes?.length>45,"Missing buying advice: "+item.name);
   assert.ok(item.illustration,"Missing picture for "+item.name);

@@ -1,4 +1,4 @@
-name: Browser startup regression
+name: Browser workflow regression
 on:
   push:
     branches: [main]
@@ -19,5 +19,5 @@ jobs:
         run: npm install --no-save @playwright/test@1.56.1
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Verify live DOM startup against mocked project data
-        run: npx playwright test tests/browser-startup.spec.mjs --config=playwright.config.mjs
+      - name: Verify browser workflows against isolated fixtures
+        run: npm run test:browser

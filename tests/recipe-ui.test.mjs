@@ -45,9 +45,9 @@ test("normal view shows Edit; Save, Cancel, Archive and Delete require edit mode
 
 test("top heading double chevron expands or collapses all typed entries",()=>{
  assert.match(recipe,/recipe-expand-all/);
- assert.match(recipe,/querySelectorAll\("\.investigation-active-content \.investigation-card"\)/);
- assert.match(recipe,/const expand=!entryCards\.every\(card=>card\.open\)/);
- assert.match(recipe,/for\(const card of entryCards\)card\.open=expand/);
+ assert.match(recipe,/querySelectorAll\("\.investigation-active-content details\.investigation-card"\)/);
+ assert.match(recipe,/expand=cards\.some\(card=>!card\.open\)/);
+ assert.match(recipe,/for\(const card of cards\)card\.open=expand/);
  assert.match(recipe,/header\.prepend\(expandAll\)/);
 });
 
