@@ -212,3 +212,5 @@ Workshop/Knowledge pane batch: categories/families/details and tiles/details now
 ## Rewrite preparation (Batch 0)
 
 The approved D1 plan and first custom-part acceptance flows are in `HISTORY_REWRITE_PLAN.md` and `BATCH0_CUSTOM_PART_SPEC.md`. No legacy project feature is marked Rebuilt by this preparation. Section 10 legacy Workshop editors for common/purchased parts are no longer called from the browser; current family/product Workshop and the server reference catalogue remain. Current project data is untouched. Preview engine work must pass the real-D1 transaction gate before dependent flows are built.
+
+Independent preparation for 6.6/6.14 and History: the pure custom-part model validates separated detail/build fields, stable specification IDs, numbering and typed before/after comparison. It is used by the existing transaction proof fixture, not the production editor. No feature is marked Rebuilt and the real-D1 gate is unchanged.

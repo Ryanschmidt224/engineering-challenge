@@ -1,5 +1,6 @@
 // Owner-only preview acceptance test. No R2 writes, no legacy readers, no purge.
 // This is the sole initial caller of the foundation until real D1 proof passes.
+import {normalizeCustomItem,normalizeOccurrence,allocatePartNumber,diffCustomItems} from "../../assets/project-item-model.js";
 import {initializeProjectEngine} from "./project-engine-migrations.js";
 import {commitProjectCommand,canonicalJSON,sha256,CommandConflict} from "./project-command.js";
 const tables=["engine_projects","engine_items","engine_occurrences","engine_configurations","engine_events","engine_operations"];
@@ -16,11 +17,12 @@ export async function proveProjectCommands(db,actorId,runId){
  });
  const initial=await input("item",project.revision,{action:"create-proof-item",thickness:3});
  const initialConfig=await stableId(runId,"initial-config");
+ const initialDetails=normalizeCustomItem({name:"Proof bracket",part_number:allocatePartNumber({prefix:"NR",digits:4},[]),fields:{specs:[{field_id:"thickness",label:"Thickness",value:3,unit:"mm"},{field_id:"zero",label:"Zero",value:0,unit:""},{field_id:"false",label:"False",value:false,unit:""},{field_id:"empty",label:"Empty",value:"",unit:""},{field_id:"unset",label:"Unset",unit:""}]}});
+ const build=normalizeOccurrence();
  const created=await commitProjectCommand(db,initial,w=>{
-  const fields={specs:[{field_id:"thickness",label:"Thickness",value:3,unit:"mm"},{field_id:"zero",label:"Zero",value:0,unit:""},{field_id:"false",label:"False",value:false,unit:""},{field_id:"empty",label:"Empty",value:"",unit:""},{field_id:"unset",label:"Unset",unit:""}]};
-  w.insert("engine_items",{id:itemId,project_id:projectId,name:"Proof bracket",part_number:"NR0100",kind:"part",source:"custom",fields:JSON.stringify(fields),created_at:w.createdAt});
-  w.insert("engine_occurrences",{id:occurrenceId,project_id:projectId,item_id:itemId,quantity:1});
-  w.insert("engine_configurations",{id:initialConfig,project_id:projectId,item_id:itemId,fingerprint:"initial",snapshot:JSON.stringify(fields),created_at:w.createdAt});
+  w.insert("engine_items",{id:itemId,project_id:projectId,...initialDetails,is_tool:initialDetails.is_tool?1:0,fields:JSON.stringify(initialDetails.fields),created_at:w.createdAt});
+  w.insert("engine_occurrences",{id:occurrenceId,project_id:projectId,item_id:itemId,...build,attention:build.attention?1:0,hidden:build.hidden?1:0});
+  w.insert("engine_configurations",{id:initialConfig,project_id:projectId,item_id:itemId,fingerprint:"initial",snapshot:JSON.stringify(initialDetails.fields),created_at:w.createdAt});
   return {itemId,configurationId:initialConfig};
  });
  const snapshot=async()=>{
@@ -33,7 +35,9 @@ export async function proveProjectCommands(db,actorId,runId){
   check(caught instanceof ErrorType,"expected rejection");
   if(ErrorType===Error)check(!(caught instanceof CommandConflict)&&/FOREIGN KEY/i.test(caught.message),"late failure must reach the SQL constraint");check(await snapshot()===before,"a rejected command changed rows");
  };
- const insertEvent=(w,id,selectedItem=itemId)=>w.insert("engine_events",{id,project_id:projectId,item_id:selectedItem,type:"revision",title:"Proof revision",payload:JSON.stringify({before:3,after:5}),created_at:w.createdAt});
+ const revisedDetails=structuredClone(initialDetails);revisedDetails.fields.specs[0].value=5;
+ const changes=diffCustomItems(initialDetails,revisedDetails);check(changes.length===1&&changes[0].key==="spec:thickness","revision comparison must isolate the changed field");
+ const insertEvent=(w,id,selectedItem=itemId)=>w.insert("engine_events",{id,project_id:projectId,item_id:selectedItem,type:"revision",title:"Proof revision",payload:JSON.stringify({before:3,after:5,changes}),created_at:w.createdAt});
  const stale=await input("stale",crypto.randomUUID(),{action:"stale-save"});
  const staleEvent=await stableId(runId,"stale-event");
  await rejected(stale,w=>{w.update("engine_items",{name:"Must not persist"},{project_id:projectId,id:itemId});insertEvent(w,staleEvent);return {};});
@@ -44,8 +48,8 @@ export async function proveProjectCommands(db,actorId,runId){
  let callbackRuns=0;
  const revise=w=>{
   callbackRuns++;
-  w.update("engine_items",{fields:JSON.stringify({specs:[{field_id:"thickness",label:"Thickness",value:5,unit:"mm"}]})},{project_id:projectId,id:itemId});
-  w.insert("engine_configurations",{id:configId,project_id:projectId,item_id:itemId,fingerprint:"revised",snapshot:JSON.stringify({thickness:5}),created_at:w.createdAt});
+  w.update("engine_items",{fields:JSON.stringify(revisedDetails.fields)},{project_id:projectId,id:itemId});
+  w.insert("engine_configurations",{id:configId,project_id:projectId,item_id:itemId,fingerprint:"revised",snapshot:JSON.stringify(revisedDetails.fields),created_at:w.createdAt});
   insertEvent(w,eventId);return {itemId,configurationId:configId,eventId};
  };
  const saved=await commitProjectCommand(db,revision,revise);

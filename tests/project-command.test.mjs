@@ -27,6 +27,11 @@ test("guarded command proof exercises real SQL and can replay its retained datas
   assert.equal((await proveProjectCommands(db,"fixture-owner",run)).ok,true);
   const initial=await db.prepare("SELECT snapshot FROM engine_configurations WHERE project_id=? AND fingerprint='initial'").bind(run).first();
   const specs=JSON.parse(initial.snapshot).specs;
+  assert.equal(specs[0].value,3);
+  const revised=await db.prepare("SELECT snapshot FROM engine_configurations WHERE project_id=? AND fingerprint='revised'").bind(run).first();
+  const current=await db.prepare("SELECT fields FROM engine_items WHERE project_id=?").bind(run).first();
+  assert.deepEqual(JSON.parse(current.fields),JSON.parse(revised.snapshot));assert.equal(JSON.parse(revised.snapshot).specs[0].value,5);
+  assert.equal(JSON.parse(revised.snapshot).specs.length,specs.length);
   assert.equal(specs[1].value,0);assert.equal(specs[2].value,false);assert.equal(specs[3].value,"");assert.equal(Object.hasOwn(specs[4],"value"),false);
  }finally{db.close();}
 });

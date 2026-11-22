@@ -10,6 +10,18 @@ Status: Batch 1 implementation, **real Cloudflare D1 proof pending**. This is no
 - `project-engine.js` requires the preview flag, the existing owner account and same-origin writes. There is no signup, fixture login or authentication bypass. `/project-engine-proof.html` reuses the site header and kit; it has no custom CSS.
 - `NEW_PROJECT_ENGINE=1` exists **only** under `previews.vars`. Production API and proof-page paths return 404 before authentication, migrations or assets. Enabled preview paths require sign-in (401). The production 404 takes precedence over the signed-out 401 described for enabled routes in F11.
 
+## Independent custom-part model preparation
+
+`assets/project-item-model.js` is pure validation/comparison code, used by the existing proof fixture. It has no DOM, network or storage access and introduces no new caller of the transaction primitive. This preparation can be reviewed while dashboard access is unavailable; it does not complete Batch 2 or waive its D1 gate.
+
+- Custom details validate name/short name/kind/number, optional description/purpose/acceptance/manufacturer/MPN, explicit tool state and stable specification IDs. Empty optional text is omitted. Specification values preserve zero, false, empty text, null and an absent value distinctly; nothing guesses a value or converts units.
+- Occurrence quantity, unit, status, attention/note and tree-hidden state are validated separately. Build information cannot silently become intrinsic engineering data. A disabled attention flag does not erase its note.
+- Automatic numbering uses the project's prefix and minimum digit count (current default NR/4), begins at 100 and takes every reserved number, including removed items. It neither changes old numbers nor establishes database uniqueness by itself; final commands must still use the D1 guard/constraint.
+- Revision comparisons match specification rows by stable ID. They show changed values with labels and old/new units, added/removed rows, label changes and ordering. Equivalent blank optional fields yield no change. Equal labels do not conflate separate rows.
+- The proof fixture now uses this same model. Its revised configuration matches the saved current fields, retains the unchanged specification rows and leaves the initial configuration at 3 mm. SQLite tests verify this; the actual preview proof is still pending.
+
+Remaining: the editor, record/step commands, immutable file lifecycle, History/Removed items screens and export/restore. They must not be connected to this transaction primitive before its real-D1 gate passes. No existing project record or production path is changed by the model preparation.
+
 ## Exact write contract
 
 1. Validate project/operation/revision IDs. Fingerprint the canonical JSON request, including owner, project, loaded revision and action payload. Types, zero, false, empty and missing values stay distinct.
