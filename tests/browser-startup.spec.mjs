@@ -19,6 +19,19 @@ async function startCatalogPart(page) {
  await page.locator(".workshop-category-create-dialog").getByRole("button",{name:"Add part",exact:true}).click();
 }
 
+test("owner sign-in remains available without public registration controls",async({page})=>{
+ await page.route("**/api/**",route=>route.fulfill({json:apiResponse(route,{})}));
+ await page.goto("/");
+ await page.locator("#accountMenuButton").click();
+ const account=page.locator(".project-account-dialog");
+ await expect(account).toBeVisible();
+ await expect(account).toContainText("Public registration is closed");
+ await expect(account.getByLabel("Email",{exact:true})).toBeVisible();
+ await expect(account.locator("input[type=password]")).toBeVisible();
+ await expect(account.getByRole("button",{name:"Sign in",exact:true})).toBeVisible();
+ await expect(account.locator(".project-register,.project-switch-login")).toHaveCount(0);
+});
+
 test("project feature tree and workspace initialize without browser errors", async ({page}) => {
  const errors=[];
  page.on("pageerror", error=>errors.push(error.stack||error.message));
@@ -371,8 +384,8 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await partPencil.click();
  await expect(partPhotoActions).toBeHidden();
  await partPage.locator(".part-details-collapse > summary").click();
- await expect(partPage.locator(".part-details-edit")).toBeVisible();
- await partPage.locator(".part-details-edit").click();
+ await expect(partPage.getByRole("button",{name:"Edit part details",exact:true})).toBeVisible();
+ await partPage.getByRole("button",{name:"Edit part details",exact:true}).click();
  await expect(workspace).toHaveClass(/is-editing-bom-part/);
  const editor=workspace.locator(".workspace-main-bom-editor");
  await expect(editor).toBeVisible();
@@ -616,7 +629,7 @@ test("saving a part closes the moved editor and restores part workspace",async({
  const partWorkspace=page.locator("#launcher .bom-part-workspace");
  await expect(partWorkspace).toBeVisible();
  await partWorkspace.locator(".part-details-collapse > summary").click();
- await partWorkspace.locator(".part-details-edit").click();
+ await partWorkspace.getByRole("button",{name:"Edit part details",exact:true}).click();
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
  const editor=workspace.locator(".workspace-main-bom-editor");
  await expect(editor).toBeVisible();
@@ -707,7 +720,7 @@ test("owner manages project settings, numbering and removal",async({page})=>{
  const tree=page.locator("#"+id+" .assembly-tree-nodes");
  const summaryEntry=page.locator("#"+id+" .assembly-summary-sidebar-card .assembly-project-summary-entry:first-child");
  // Community approval queues are outside the private-application workflow.
- await page.getByRole("button",{name:"Project Settings",exact:true}).click();
+ await page.locator("#"+id+" .assembly-project-settings-entry").click();
  await expect(settings.getByRole("heading",{name:"Project settings"})).toBeVisible();
  await expect(page).toHaveURL(new RegExp("#"+id+"/settings$"));
  await expect(settings.locator(".project-settings-card")).toBeVisible();
@@ -823,7 +836,7 @@ test("administrator can add a catalog item from the Workshop and open its detail
 
  await editor.getByRole("button",{name:"Create catalog item"}).click();
  await expect(workshop.locator(".workshop-item-page-heading h2")).toContainText("Adjustable 24 V supply");
- await expect(workshop.locator(".workshop-item-edit-form").getByLabel("Specifications",{exact:true})).toHaveValue("24 V DC output");
+ await expect(workshop.locator(".workshop-item-edit-form").getByRole("textbox",{name:"Specifications",exact:true})).toHaveValue("24 V DC output");
  expect(posted.details.spec).toBe("24 V DC output");
  expect(posted.details.category).toBe("electronics");
  expect(posted.details.typeName).toBe("Bench DC Power Supplies");
@@ -1213,12 +1226,12 @@ test("linked Workshop items open, search current fields and return to the origin
  const review=itemPage.locator(".workshop-ai-changes-panel");
  await expect(review.getByText("Could not verify: Coating.",{exact:true})).toBeVisible();
  await expect(review.getByRole("button",{name:"Apply suggested changes and save"})).toBeVisible();
- await expect(itemPage.getByLabel("Item name",{exact:true})).toHaveValue("");
+ await expect(itemPage.getByRole("textbox",{name:"Item name",exact:true})).toHaveValue("");
  await review.getByRole("button",{name:"Cancel"}).click();
  await expect(review).toBeHidden();
  await itemPage.getByRole("button",{name:"View suggested changes"}).click();
  await expect(review).toBeVisible();
- const endMillType=itemPage.getByLabel("Product type (e.g. Multimeters)",{exact:true});
+ const endMillType=itemPage.getByRole("textbox",{name:"Product type (e.g. Multimeters)",exact:true});
  await endMillType.fill("End mills");
  await endMillType.blur();
  await expect.poll(()=>itemPage.locator('.workshop-structured-spec-rows [data-spec="label"]').evaluateAll(fields=>fields.map(field=>field.value))).toEqual([

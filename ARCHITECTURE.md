@@ -1,5 +1,15 @@
 # Building Schmidt — architecture and cleanup contract
 
+> **Private-application transition:** `STATUS.md` records the current owner decisions and implementation state. Community scopes and local/offline product requirements below and in older design documents are historical, not new implementation requirements. The owner confirmed all existing application records are disposable placeholders. Use a clean replacement data model rather than legacy-data conversion code; still verify an independent backup before actually deleting live objects. `docs/PRIVATE_CLOUD_ROLLOUT.md` defines the rollout and rollback gates.
+
+## Current private boundary
+
+`worker.js` calls `functions/api/private-access.js` before dispatching application APIs. The temporary boundary requires the existing administrator session for reads and writes, validates mutation origins, and pauses paid AI routes until a global budget exists. Account registration is closed in `accounts.js` and removed from the UI. Existing login remains until owner-only Cloudflare Access and the replacement identity are verified. Static frontend privacy still requires deployment-side Access coverage; this batch does not configure it.
+
+Master-template updates and deletion require the editor's expected revision, in addition to the conditional R2 collection write. Templates remain independent layout snapshots without live item inheritance. D1 and the redesigned Workshop form are subsequent bounded batches, not implemented facts.
+
+## Historical subsystem map
+
 ## Applications
 - **Projects** — `functions/api/projects.js` owns project catalog authorization and persistence. `functions/api/project-seed.js` contains built-in project seed data. Project trees, BOMs, work instructions, revisions, and files are stored in distinct R2 namespaces under stable project IDs.
 - **Knowledge Base** — `assets/knowledge-seed.js` owns the initial topic content and classifications. `assets/site.js` renders the legacy knowledge experience and navigation. Browser-local notes and drafts must not be confused with server-side records.
