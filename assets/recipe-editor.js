@@ -334,7 +334,7 @@
    if(archived.length)stepList.append(archive);
    add.hidden=!admin();
   }
-  const add=button("+ Add Work Instruction",()=>{
+  const add=button("+ Add entry",()=>{
    if(!admin()||loading||saving||pendingUploads)return;
    if(!draft){
     draft={id:newId(),title:"",archivedAt:"",archiveNote:"",tileOrder:[]};
