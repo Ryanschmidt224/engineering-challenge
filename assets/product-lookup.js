@@ -9,14 +9,14 @@ window.BSProductLookup=(()=>{
  // Reusable button/input/tooltip control for AI search and other site actions.
  const actionInput=({label,placeholder,maxLength,description})=>{
    const row=el("div","bs-action-input-row");
-   const button=el("button","btn primary",label);button.type="button";
+   const button=el("button","btn bs-action-lookup-button",label);button.type="button";
    const input=el("input","field bs-action-input");input.type="text";
    input.maxLength=maxLength;input.placeholder=placeholder;
    input.setAttribute("aria-label","Optional information for "+label);
    const help=el("span","bs-action-input-help");
    const helpButton=el("button","bs-action-input-help-button","?");
    helpButton.type="button";helpButton.setAttribute("aria-label",description);
-   helpButton.title=description;helpButton.setAttribute("aria-expanded","false");
+   helpButton.title="About Find with AI";helpButton.setAttribute("aria-expanded","false");
    const tip=el("span","bs-action-input-tooltip",description);
    tip.setAttribute("role","tooltip");
    const toggle=()=>{const open=help.classList.toggle("is-open");helpButton.setAttribute("aria-expanded",String(open))};
@@ -26,7 +26,7 @@ window.BSProductLookup=(()=>{
    return {row,button,input,helpButton};
   };
  function create({identity=false,getQuery,onStart,onResult,canSearch=()=>true}={}){
-  const element=el("section","product-ai-search");
+  const element=el("section","product-ai-search product-ai-compact");
   const inputs={};
   const field=(key,label,max,placeholder)=>{
    const wrapper=el("label","product-ai-field"),input=el("input","field");
@@ -41,7 +41,7 @@ window.BSProductLookup=(()=>{
    label:"Find with AI",
    placeholder:"Manufacturer, supplier, product link, or datasheet link (optional)",
    maxLength:500,
-   description:"Optional: provide a manufacturer, supplier, product link, or datasheet link to help AI find the item. Either a manufacturer part number or a default container name can be used on its own."
+   description:"Search for product details and technical specifications using the item information above. The optional box can add a manufacturer, supplier, product link, or datasheet. AI results are suggestions for review; nothing is automatically saved or overwritten."
   });
   const {row,button}=control;
   const hint=control.input;inputs.searchHint=hint;
