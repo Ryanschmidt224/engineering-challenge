@@ -4647,3 +4647,22 @@
  border-color:var(--color-accent)!important;
 }
 .assembly-workspace-page .recipe-instructions .recipe-body-actions>.recipe-add-step[hidden]{display:none!important}
+
+
+/* All collapsed project/subassembly detail tiles share the same header rhythm.
+   Keep expanded body heights content-driven. */
+.assembly-workspace-page :is(
+ .workspace-primary-disclosure>summary,
+ .workspace-secondary-disclosure>summary,
+ .part-details-collapse>summary.part-details-view-heading,
+ .investigation-collapse>summary.investigation-collapse-heading,
+ .bs-unstructured-notes>.bs-unstructured-notes-heading,
+ .recipe-instructions>.recipe-heading-row){
+ box-sizing:border-box;
+ min-height:48px;
+}
+.assembly-workspace-page .bs-unstructured-notes>.bs-unstructured-notes-heading,
+.assembly-workspace-page .investigation-collapse>summary.investigation-collapse-heading{
+ display:flex;align-items:center;
+ padding-top:9px;padding-bottom:9px;
+}
