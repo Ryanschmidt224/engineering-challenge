@@ -1136,14 +1136,28 @@ function setupAssemblyTrees(){
   const renderFunctionalPartPanel=part=>{
    if(part.itemType==="document"||part.generatedFrom)return null;
    const panel=document.createElement("section");panel.className="part-functional-panel part-container-overview";
-   const header=document.createElement("div");header.className="part-functional-heading";
-   const heading=document.createElement("h3");heading.textContent="Container";header.append(heading);
+   // Keep container identity in the same label-left/value-right format as
+   // the rest of Part Details. This is a read-only field in View mode;
+   // renaming continues through the existing Modify part editor.
+   const nameRow=document.createElement("div");nameRow.className="part-container-name-row";
+   const nameLabel=document.createElement("div");nameLabel.className="part-container-name-label";
+   const caption=document.createElement("strong");caption.textContent="Container (name)";
+   const containerHelp="The container is the permanent item in your project's feature tree. Its name identifies the role or purpose; the physical part can be replaced without losing its instructions, tests, revisions, or history.";
+   nameLabel.append(caption,window.BSDialogs.tooltip("About container names",containerHelp));
+   const nameValue=document.createElement("input");
+   nameValue.type="text";nameValue.className="field part-container-name-value";
+   nameValue.value=window.BSPartFields.treeDescriptionFor(part)||part.name||"";
+   nameValue.readOnly=true;nameValue.setAttribute("aria-label","Container name");
+   nameValue.title="Use Modify part to rename this container";
+   nameRow.append(nameLabel,nameValue);panel.append(nameRow);
    const feedback=document.createElement("span");feedback.className="part-functional-feedback";feedback.setAttribute("role","status");
    const editable=canEdit();
-   const edit=document.createElement("button");edit.type="button";edit.className="btn";edit.textContent="Edit purpose";
-   edit.hidden=!editable;header.append(edit);panel.append(header);
    const purpose=document.createElement("p");purpose.className="part-functional-purpose";
-   purpose.textContent=part.description||"Purpose not described yet.";panel.append(purpose);
+   purpose.textContent=part.description||"";
+   if(!purpose.textContent)purpose.hidden=true;
+   panel.append(purpose);
+   const edit=document.createElement("button");edit.type="button";edit.className="btn";edit.textContent="Edit purpose";
+   edit.hidden=!editable;
    const form=document.createElement("div");form.className="part-functional-edit";form.hidden=true;
    const purposeLabel=document.createElement("label");purposeLabel.className="part-functional-field";
    const caption=document.createElement("span");caption.textContent="Purpose";
@@ -2230,8 +2244,8 @@ function setupAssemblyTrees(){
     // column; separate sibling nodes would otherwise disrupt the 2-column grid.
     if(identity[0]&&!identity[0].querySelector(".part-container-caption")){
      const caption=document.createElement("span");caption.className="part-container-caption";
-     const title=document.createElement("span");title.textContent="Container";
-     const nameHint=document.createElement("span");nameHint.className="part-container-name-hint";nameHint.textContent="(name)";
+     const title=document.createElement("span");title.textContent="Container (name)";
+     const nameHint=document.createElement("span");nameHint.className="part-container-name-hint";nameHint.textContent="";
      const help=document.createElement("button");help.type="button";help.className="library-function-tip bs-help-button";
      help.textContent="ⓘ";
      help.title="A container is an item in the project hierarchy that holds its purpose, part details, work instructions, tests, revisions, and history. Its name identifies it in the project tree (maximum 20 characters).";
