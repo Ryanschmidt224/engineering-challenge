@@ -1224,7 +1224,7 @@
  grid-column:2;grid-row:1;width:100%;min-width:0;margin:0
 }
 #commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label>.workshop-table-remove-standard{grid-column:3;grid-row:1}
-#commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label[hidden]{display:none!important}
+#commonparts .workshop-item-edit-form .workshop-part-editor-section>.workshop-item-edit-grid>label:is([hidden],.hide){display:none!important}
 #commonparts .workshop-item-edit-form .workshop-table-removed{opacity:.5}
 #commonparts .workshop-item-edit-form .workshop-table-controls[hidden]{display:none!important}
 #commonparts .workshop-item-edit-form .workshop-table-custom-row .field{width:100%;min-width:0}

@@ -1435,6 +1435,8 @@
      else control.readOnly=!editing;
     }
     for(const control of form.querySelectorAll("button"))control.disabled=!editing;
+    const requiredNameRemove=form.querySelector('[data-workshop-field="name"] .workshop-table-remove-standard');
+    if(requiredNameRemove)requiredNameRemove.disabled=true;
     for(const editor of Object.values(tableEditors)){
      for(const row of editor.customRows.children){
       row.querySelector("button").hidden=!editing||!editor.active;

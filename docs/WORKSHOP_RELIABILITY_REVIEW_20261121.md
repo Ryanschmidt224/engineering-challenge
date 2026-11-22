@@ -77,12 +77,11 @@ failure, damaged-entry isolation, same-template races, unrelated-index races,
 source-value stripping, stable IDs, value preservation, blank-template reset,
 and oversized-merge refusal.
 
-Seven additional Playwright scenarios use the **real template and reference
+Nine additional Playwright scenarios use the **real template and reference
 API handlers** with an in-memory conditional-write R2 fixture. They cover
 creation/reopening/editing/deletion, category creation, item refresh persistence,
 field hide/restore, generic/specific switching, applying layouts to existing
-items, template replacement, blank creation/network failure, stale drafts, and
-navigation cleanup at narrow width. Browser workflows discover both spec files.
+items, template replacement, blank creation/network failure, stale drafts, navigation cleanup at narrow width, late-response cleanup, and duplicate-submit protection. Browser workflows discover both spec files.
 
 The local Playwright runner cannot launch Chromium under this execution
 sandbox (`socket() failed: Operation not permitted`); browser downloads are also
@@ -91,7 +90,10 @@ test result. A separate browser preview exercised the real API handlers against
 isolated synthetic storage: template creation/edit/reopen, category right-click
 creation, saving/reopening a part, generic conversion followed by Save/refresh
 and restored supplier values, and two-editor revision conflict with draft
-retention were observed through the UI. The preview never contacts production R2.
+retention were observed through the UI. Blank creation in a category without
+templates was also verified. Assembly Work Instructions, Helpful tools, archive
+history, and notes headers were measured at 48 px with matching 14.56 px title
+text after the CSS consolidation. The preview never contacts production R2.
 
 ## Remaining limits and follow-up
 
@@ -109,3 +111,11 @@ retention were observed through the UI. The preview never contacts production R2
   was introduced.
 - Existing multi-step project archive/import transactions and AI quota races
   described in the November 20 infrastructure review remain separate work.
+
+## Publication state
+
+Repairs are committed on the local `workshop-reliability-review` branch.
+Automatic approval review rejected the initial GitHub push because publication
+was not explicitly authorized. No branch publication, pull request, or deployment
+is claimed. Publishing the branch and opening a draft pull request needs explicit
+user approval; production data remains untouched.

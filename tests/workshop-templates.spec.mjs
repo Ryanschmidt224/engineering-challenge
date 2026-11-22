@@ -106,10 +106,13 @@ test('generic/specific mode preserves ordering and existing values across templa
  await field(page,'name').fill('Existing switch');await field(page,'supplier').fill('Supplier to retain');
  await form(page).getByRole('radio',{name:'Generic component',exact:true}).check();
  await expect(page.locator('[data-part-editor-section="ordering"]')).toBeHidden();
+ await form(page).getByRole('button',{name:'Create catalog item',exact:true}).click();
+ await expect(page.locator('.workshop-under-image-edit')).toBeVisible();
+ await page.reload();await page.locator('.workshop-under-image-edit').click();
  await form(page).getByRole('radio',{name:'Specific product',exact:true}).check();
  await expect(field(page,'supplier')).toHaveValue('Supplier to retain');
  await customRows(page).locator('[data-table-value]').fill('Retained custom value');
- await form(page).getByRole('button',{name:'Create catalog item',exact:true}).click();
+ await form(page).getByRole('button',{name:'Save changes',exact:true}).click();
  await page.locator('.workshop-under-image-edit').click();
  await page.getByLabel('Select a master template',{exact:true}).selectOption(relay.id);
  await form(page).getByRole('button',{name:'Use template',exact:true}).click();
@@ -150,7 +153,7 @@ test('category with no templates supports keyboard menu and blank creation; fail
  await dialog.getByRole('button',{name:'Add part',exact:true}).click();await expect(form(page)).toBeVisible();
 });
 
-test('stale template save keeps the draft, blocks duplicate submits, and offers a fresh saved version',async({page})=>{
+test('stale template save keeps the draft and offers a fresh saved version',async({page})=>{
  const template=await seedTemplate();await openWorkshop(page);await page.locator('.workshop-template-launch').click();
  await manager(page).getByLabel('Category').selectOption(category);
  await savedSelect(page).selectOption(template.id);await nameInput(page).fill('My unsaved change');
@@ -179,4 +182,37 @@ test('new template clears prior fields and category menu cleanup survives naviga
  await page.evaluate(()=>{location.hash='#projects'});
  await expect(page.locator('.workshop-category-create-dialog')).toHaveCount(0);
  await expect(page.locator('.workshop-category-context-menu')).toBeHidden();
+});
+
+test('late template picker loads cannot reopen a dialog after leaving Workshop',async({page})=>{
+ await openWorkshop(page);let release;
+ await page.route('**/api/workshop-templates',async route=>{
+  await new Promise(resolve=>{release=resolve});
+  await route.fulfill({status:200,json:{templates:[]}});
+ });
+ await page.locator('.bs-workshop-category-sidebar [data-catalog-category="electrical-power"]').click({button:'right'});
+ await page.getByRole('menuitem',{name:'Add part',exact:true}).click();
+ await expect(page.locator('.workshop-category-create-dialog').getByRole('status')).toContainText('Loading');
+ await page.evaluate(()=>{location.hash='#projects'});
+ await expect(page.locator('.workshop-category-create-dialog')).toHaveCount(0);
+ await expect.poll(()=>typeof release).toBe('function');
+ release();await expect(page.locator('.workshop-category-create-dialog')).toHaveCount(0);
+ await expect(page).toHaveURL(/#projects$/);
+});
+
+test('one pending item save survives navigation without duplicating or reopening the item',async({page})=>{
+ await openWorkshop(page);await createFromCategory(page);
+ await field(page,'name').fill('One pending item');let release,posts=0;
+ await page.route('**/api/workshop-reference',async route=>{
+  if(route.request().method()!=='POST'){await route.fallback();return;}
+  posts++;await new Promise(resolve=>{release=resolve});
+  const response=await referencesAPI({request:request('/api/workshop-reference','POST',route.request().postDataJSON(),f.session),env:f.env});
+  await route.fulfill({status:response.status,json:await response.json()});
+ });
+ await form(page).getByRole('button',{name:'Create catalog item',exact:true}).click();
+ await expect(form(page).getByRole('button',{name:'Create catalog item',exact:true})).toBeDisabled();
+ await form(page).evaluate(element=>element.requestSubmit());
+ await expect.poll(()=>posts).toBe(1);
+ await page.evaluate(()=>{location.hash='#projects'});release();
+ await expect(page).toHaveURL(/#projects$/);expect(posts).toBe(1);
 });
