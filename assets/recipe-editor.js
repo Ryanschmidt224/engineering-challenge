@@ -161,7 +161,7 @@
   function render(){
    content.replaceChildren();
    const total=savedSteps().filter(step=>!step.archivedAt).length;
-   count.textContent=total+(total===1?" record":" records");
+   count.textContent="("+total+(total===1?" record":" records")+")";
    if(steps.length&&!steps.some(step=>step.id===expanded))
     expanded=steps.find(step=>!step.archivedAt)?.id||steps[0].id;
    const browser=el("div","recipe-step-browser");
