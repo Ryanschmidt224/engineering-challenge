@@ -4919,3 +4919,21 @@
  font-size:.76rem!important;
  font-weight:400!important;
 }
+
+/* Consistent 12px spacing between collapsed/expanded section cards on both
+   part and subassembly workspaces. Override legacy per-section margins. */
+:is(#launcher,.personal-project-view,#linear,#robot) .assembly-workspace-page.bom-part-workspace>.part-details-view{
+ margin-bottom:12px!important;
+}
+:is(#launcher,.personal-project-view,#linear,#robot) .assembly-workspace-page .workspace-panels> :is(
+ .recipe-instructions,
+ .workspace-resource-disclosure,
+ .workspace-archive-history,
+ .investigations-panel,
+ .bs-unstructured-notes,
+ .workspace-backup-details,
+ .instruction-history,
+ .assembly-archived-items){
+ margin-top:0!important;
+ margin-bottom:12px!important;
+}
