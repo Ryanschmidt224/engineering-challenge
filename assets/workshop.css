@@ -1263,3 +1263,128 @@
 #commonparts .workshop-template-actions>.btn{font-size:.81rem;padding:6px 10px;min-height:32px}
 #commonparts .workshop-template-status{margin:8px 0 0;min-height:0;font-size:.8rem}
 @media(max-width:650px){#commonparts .workshop-template-controls{grid-template-columns:minmax(0,1fr)}#commonparts .workshop-template-controls>.field:nth-child(3),#commonparts .workshop-template-actions{grid-column:1}}
+
+/* Master template builder lives on the main Workshop catalog, beside sorting. */
+#commonparts .workshop-catalog-controls>.workshop-template-launch{
+ min-height:36px;
+ padding:7px 12px;
+ white-space:nowrap;
+}
+#commonparts .workshop-template-manager{
+ margin:14px 0 20px;
+ padding:18px;
+ border:1px solid var(--color-border);
+ border-radius:10px;
+ background:var(--color-surface);
+}
+#commonparts .workshop-template-manager[hidden]{display:none!important}
+#commonparts .workshop-template-manager-heading{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-start;
+ gap:18px;
+ margin:0 0 18px;
+}
+#commonparts .workshop-template-manager-heading h3{
+ font-size:1.15rem;
+ margin:0 0 5px;
+}
+#commonparts .workshop-template-manager-heading p{margin:0}
+#commonparts .workshop-template-manager-controls{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:12px 18px;
+ margin:0 0 18px;
+}
+#commonparts .workshop-template-manager-controls>label{
+ display:grid;
+ gap:5px;
+ font-size:.84rem;
+ font-weight:600;
+ min-width:0;
+}
+#commonparts .workshop-template-manager .field{
+ width:100%;
+ min-width:0;
+ max-width:none;
+ font-weight:400;
+ font-size:.85rem;
+}
+#commonparts .workshop-template-manager-tables{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:12px;
+}
+#commonparts .workshop-template-manager-section{
+ border:1px solid var(--color-border);
+ border-radius:9px;
+ padding:13px;
+ min-width:0;
+ display:grid;
+ align-content:start;
+ gap:7px;
+}
+#commonparts .workshop-template-manager-section-title{
+ display:grid;
+ grid-template-columns:110px minmax(0,1fr);
+ gap:10px;
+ align-items:center;
+ font-size:.83rem;
+ font-weight:650;
+}
+#commonparts .workshop-template-manager-section>.muted{
+ font-size:.77rem;
+ margin:3px 0 5px;
+}
+#commonparts .workshop-template-manager-standard-row{
+ display:grid;
+ grid-template-columns:minmax(0,1fr) 75px;
+ gap:8px;
+ align-items:center;
+}
+#commonparts .workshop-template-manager-hide{
+ display:inline-flex;
+ align-items:center;
+ gap:5px;
+ font-size:.79rem;
+ font-weight:400;
+ white-space:nowrap;
+}
+#commonparts .workshop-template-manager-pair{
+ display:grid;
+ grid-template-columns:minmax(0,1fr) minmax(100px,1fr) auto;
+ align-items:center;
+ gap:9px;
+ margin:8px 0;
+}
+#commonparts .workshop-template-manager-custom-rows{margin:4px 0}
+#commonparts .workshop-template-manager-pair>.muted{font-size:.77rem}
+#commonparts .workshop-template-manager-generic{
+ margin-top:16px;
+ padding:14px;
+ border:1px solid var(--color-border);
+ border-radius:9px;
+}
+#commonparts .workshop-template-manager-generic h4{margin:0 0 5px}
+#commonparts .workshop-template-manager-generic p{margin:0 0 10px}
+#commonparts .workshop-template-manager-builder{margin:16px 0}
+#commonparts .workshop-template-manager-actions{
+ display:flex;
+ flex-wrap:wrap;
+ align-items:center;
+ gap:10px;
+ margin:18px 0 8px;
+}
+#commonparts .workshop-template-manager-status{
+ font-size:.82rem;
+ margin:8px 0;
+ color:var(--color-text-muted);
+}
+@media(max-width:850px){
+ #commonparts .workshop-template-manager-tables{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:600px){
+ #commonparts .workshop-template-manager-controls{grid-template-columns:minmax(0,1fr)}
+ #commonparts .workshop-template-manager-pair{grid-template-columns:minmax(0,1fr)}
+ #commonparts .workshop-template-manager-section-title{grid-template-columns:minmax(0,1fr)}
+}
