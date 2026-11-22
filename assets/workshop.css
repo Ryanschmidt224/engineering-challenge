@@ -1195,3 +1195,15 @@
 #commonparts .workshop-item-edit-form .workshop-generic-ordering-reveal{margin-left:auto;font-size:.79rem;font-weight:500;min-height:30px;padding:4px 9px}
 #commonparts .workshop-item-edit-form .workshop-part-editor-section .workshop-item-edit-grid[hidden]{display:none}
 #commonparts .workshop-item-edit-form .workshop-generic-ordering-collapsed{padding-bottom:0}
+
+/* Workshop: editable section labels and extra rows, scoped to this catalog item. */
+#commonparts .workshop-item-edit-form .workshop-edit-table{margin-left:auto;padding:5px 10px;min-height:30px;font-size:.78rem;font-weight:500}
+#commonparts .workshop-item-edit-form .workshop-table-controls{border-top:1px solid var(--color-border);margin:12px 0 0;padding:12px 0}
+#commonparts .workshop-item-edit-form .workshop-table-controls[hidden],#commonparts .workshop-item-edit-form .workshop-table-rename[hidden]{display:none}
+#commonparts .workshop-item-edit-form .workshop-table-title-editor{display:grid;grid-template-columns:180px minmax(0,1fr);align-items:center;gap:12px}
+#commonparts .workshop-item-edit-form .workshop-table-rename{margin-top:5px}
+#commonparts .workshop-item-edit-form .workshop-table-custom-rows{display:grid;gap:8px;margin-top:8px}
+#commonparts .workshop-item-edit-form .workshop-table-custom-row{display:grid;grid-template-columns:minmax(150px,180px) minmax(0,1fr) auto;align-items:center;gap:12px}
+#commonparts .workshop-item-edit-form .workshop-table-custom-row:not(:has(button:not([hidden]))){grid-template-columns:minmax(150px,180px) minmax(0,1fr)}
+#commonparts .workshop-item-edit-form .workshop-table-actions{display:flex;justify-content:flex-start;gap:10px;margin-top:10px}
+@media(max-width:620px){#commonparts .workshop-item-edit-form .workshop-table-custom-row,#commonparts .workshop-item-edit-form .workshop-table-title-editor{grid-template-columns:minmax(0,1fr)}}
