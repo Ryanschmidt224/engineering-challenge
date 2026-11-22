@@ -254,3 +254,14 @@ test("feature tree reads the project caption independently of Workshop metadata"
  assert.match(backend,/featureTreeName:180/);
  assert.match(backend,/featureTreeName:previous\.projectDetails\?\.featureTreeName\|\|""/);
 });
+
+test("part detail container name uses shared help tooltip and one aligned read-only field",()=>{
+ const site=readFileSync("assets/site-assembly.js","utf8");
+ const css=readFileSync("assets/site-polish.css","utf8");
+ assert.match(site,/nameCaption\.textContent="Container \(name\)"/);
+ assert.match(site,/BSDialogs\.tooltip\("About container names",containerHelp\)/);
+ assert.match(site,/nameValue\.value=window\.BSPartFields\.treeDescriptionFor\(part\)\|\|part\.name/);
+ assert.match(site,/nameValue\.readOnly=true/);
+ assert.match(css,/\.part-container-overview>\.part-container-name-row\{/);
+ assert.match(css,/grid-template-columns:minmax\(175px,30%\) minmax\(0,1fr\)/);
+});
