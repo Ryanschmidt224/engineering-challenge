@@ -1,6 +1,5 @@
 // Reusable, category-scoped Workshop layout templates.
 // Templates store field definitions and layout only, never item/product values.
-import {accountUser} from "./accounts.js";
 import {isAdmin} from "./auth.js";
 const key="workshop-templates/v1.json";
 const respond=(payload,status=200)=>new Response(JSON.stringify(payload),{
@@ -92,8 +91,7 @@ export async function onRequest({request,env}){
  if(request.method==="GET"){
   return respond({templates:Object.values(initial).sort((a,b)=>a.category.localeCompare(b.category)||a.name.localeCompare(b.name))});
  }
- const user=await accountUser(request,env),admin=await isAdmin(request,env);
- if(!user&&!admin)return respond({error:"Sign in to edit Workshop templates"},401);
+ if(!await isAdmin(request,env))return respond({error:"Owner access is required to edit Workshop templates"},403);
  if(request.headers.get("origin")!==url.origin)return respond({error:"Invalid request origin"},403);
  if(!["POST","PUT","DELETE"].includes(request.method))return respond({error:"Method not allowed"},405);
  const body=await request.json().catch(()=>null);
@@ -113,12 +111,15 @@ export async function onRequest({request,env}){
  for(let attempt=0;attempt<3;attempt++){
   const {value,etag}=await read(env);
   if(request.method!=="POST"&&!value[id])return respond({error:"Template not found. Refresh the template list."},404);
+  if(request.method!=="POST"&&(!Object.hasOwn(body,"expectedRevision")||
+     (body.expectedRevision??null)!==(value[id].revision??null)))
+   return respond({error:"This template changed since you opened it. Your draft has not been saved. Reload the template before trying again.",code:"TEMPLATE_CONFLICT",revision:value[id].revision??null},409);
   if(request.method==="POST"&&Object.keys(value).length>=300)return respond({error:"Template limit reached"},413);
   if(!deleting&&Object.values(value).some(item=>item.id!==id&&item.category===payload.category&&item.name.toLowerCase()===payload.name.toLowerCase()))
    return respond({error:"This category already has a template with that name"},409);
   const next={...value};
   if(deleting)delete next[id];
-  else next[id]={...payload,updatedAt:new Date().toISOString()};
+  else next[id]={...payload,updatedAt:new Date().toISOString(),revision:crypto.randomUUID()};
   const outcome=await env.PHOTOS.put(key,JSON.stringify(next),{
    ...(etag?{onlyIf:{etagMatches:etag}}:{onlyIf:{etagDoesNotMatch:"*"}}),
    httpMetadata:{contentType:"application/json"}
