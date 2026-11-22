@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>The Workshop · BuildingSchmidt</title>
+  <link rel="stylesheet" href="assets/workshop-base.css">
+  <script type="module" src="assets/workshop.js"></script>
+</head>
+<body>
+  <header class="masthead"><a href="index.html#home">BUILDING SCHMIDT</a><span>Private engineering workshop</span><nav aria-label="Main navigation"><a href="index.html#home">Projects</a><a href="workshop.html" aria-current="page">Workshop</a></nav></header>
+  <div class="layout">
+    <aside aria-label="Workshop catalog"><h2>The Workshop</h2><p class="muted">Your parts, tools and materials.</p>
+      <label class="catalog-search">Search Workshop<input id="workshop-search" class="input" type="search" placeholder="Name, manufacturer or MPN"></label>
+      <label class="catalog-search">Category<select id="workshop-category" class="input"><option value="">All categories</option></select></label>
+      <label class="checkbox-row"><input id="show-archived" type="checkbox"> Show archived items</label>
+      <nav id="examples" aria-label="Workshop items"></nav><button id="new-item" class="button">New item</button>
+      <p><a id="workshop-return" hidden>Back to project part</a></p>
+    </aside>
+    <main id="workshop-main"><h1>The Workshop</h1><p>Loading saved items…</p></main>
+  </div>
+  <p id="preview-status" role="status" aria-live="polite"></p>
+  <dialog id="template-preview" aria-labelledby="template-preview-title"></dialog>
+</body>
+</html>

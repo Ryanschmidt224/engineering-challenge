@@ -19,10 +19,11 @@ export function validateFields(fields) {
   for (const field of fields) {
     if (!safeId(field.id) || ids.has(field.id)) fail("Every field needs a unique, stable ID.");
     ids.add(field.id);
-    if (!nonempty(field.label)) fail("Give each specification a name.");
+    if (!nonempty(field.label) || field.label.length > 100) fail("Give each specification a name of at most 100 characters.");
+    if (field.unit !== undefined && (typeof field.unit !== "string" || field.unit.length > 32)) fail("Units must be short text.");
     if (!fieldTypes.includes(field.type) || !destinations.includes(field.destination)) fail("Choose a supported type and destination.");
-    if (field.type === "choice" && (!Array.isArray(field.options) || !field.options.length ||
-        field.options.some(value => !nonempty(value)) || new Set(field.options).size !== field.options.length))
+    if (field.type === "choice" && (!Array.isArray(field.options) || !field.options.length || field.options.length > 30 ||
+        field.options.some(value => !nonempty(value) || value.length > 100) || new Set(field.options).size !== field.options.length))
       fail("Choice fields need distinct, nonempty options.");
   }
   return fields;
@@ -37,10 +38,12 @@ export function validateValue(field, value) {
 }
 export function validateValues(fields, values, destination) {
   for (const [id, entry] of Object.entries(values)) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) fail("Invalid specification value.");
     const field = fields.find(field => field.id === id);
     if (!field || field.destination !== destination) fail("A value belongs to the wrong item or project destination.");
     validateValue(field, entry.value);
-    if (entry.source && !safeUrl(entry.source)) fail("Specification sources need an http or https link.");
+    if (entry.conditions !== undefined && (typeof entry.conditions !== "string" || entry.conditions.length > 2000)) fail("Conditions must be text of at most 2000 characters.");
+    if (entry.source && (typeof entry.source !== "string" || entry.source.length > 2000 || !safeUrl(entry.source))) fail("Specification sources need an http or https link.");
   }
 }
 export function validateItem(item) {
@@ -54,7 +57,7 @@ export function validateItem(item) {
     if (hasValue(offer.packPrice) && !/^[A-Z]{3}$/.test(offer.currency || "")) fail("Choose a three-letter currency code for the package price.");
   }
   for (const attachment of item.attachments) {
-    if (!safeUrl(attachment.url)) fail("Files and links need an http or https link.");
+    if (attachment.fileId ? !/^[a-f0-9-]{36}$/i.test(attachment.fileId) : !safeUrl(attachment.url)) fail("Files and links need an http or https link or an uploaded file.");
   }
   return item;
 }
@@ -63,7 +66,10 @@ export function unitPrice(offer) {
     ? offer.packPrice / offer.packQuantity : null;
 }
 export function validateStock(stock) {
+  if (stock && (typeof stock !== "object" || Array.isArray(stock) || Object.keys(stock).some(key => !["quantity", "unit", "state"].includes(key)))) fail("Invalid stock entry.");
   if (stock && hasValue(stock.quantity) && (!Number.isFinite(stock.quantity) || stock.quantity < 0)) fail("Stock quantity must be zero or greater.");
+  if (stock?.unit !== undefined && (typeof stock.unit !== "string" || stock.unit.length > 32)) fail("Stock unit must be short text.");
+  if (stock?.state !== undefined && !["", "In stock", "Reusable", "Committed"].includes(stock.state)) fail("Choose a valid stock state.");
   return stock;
 }
 export function duplicateLabels(fields) {
@@ -75,10 +81,23 @@ export function duplicateLabels(fields) {
   }
   return [...duplicates];
 }
-function definition(field) {
+export function definition(field) {
   return {id: field.id, label: field.label, type: field.type, destination: field.destination,
     ...(field.unit ? {unit: field.unit} : {}), ...(field.type === "choice" ? {options: [...field.options]} : {}),
     ...(field.hidden ? {hidden: true} : {})};
+}
+export function projectPartFromWorkshop(item, projectValues = {}) {
+  validateItem(item); validateValues(item.fields, projectValues, "project");
+  const specifications = item.fields.filter(field => hasValue((field.destination === "workshop" ? item.values : projectValues)[field.id]?.value)).map(field => {
+    const entry = (field.destination === "workshop" ? item.values : projectValues)[field.id];
+    const value = [typeof entry.value === "boolean" ? entry.value ? "Yes" : "No" : String(entry.value), field.unit, entry.conditions && "(" + entry.conditions + ")"].filter(Boolean).join(" ");
+    if (value.length > 300) fail("Shorten '" + field.label + "' to 300 characters before copying it to a project.");
+    return {name: field.label, value, source: "explicit"};
+  });
+  for (const attachment of item.attachments) specifications.push({name: attachment.label || "Documentation", value: attachment.fileId ? "/api/workshop-files?id=" + attachment.fileId : attachment.url, source: "explicit"});
+  if (specifications.length > 35) fail("Project parts currently support 35 specifications and document references. Reduce this copy before adding it.");
+  return {name: item.identity.name, implementationName: item.identity.name, description: item.identity.description || "", manufacturer: item.identity.manufacturer || "", model: item.identity.mpn || item.identity.model || "", category: item.identity.category || "", isTool: item.identity.isTool === true,
+    specifications, quantityUnit: "pcs", projectDetails: {workshopReferenceId: "item:" + item.id}};
 }
 export function templateFromItem(item, name) {
   if (!nonempty(name)) fail("Give the template a name.");
