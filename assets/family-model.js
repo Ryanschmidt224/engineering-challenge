@@ -40,5 +40,5 @@ export function familyUsePart(use, family, product, fields, attachments = []) {
     itemType: "part", partType: "purchased", isTool: family.kind === "tool", manufacturer: product?.manufacturer || "", model: product?.mpn || "",
     specifications, projectDetails: {}, workshopDocumentation: attachments.map(file => ({label: file.title, url: file.url || "/api/workshop/file?id=" + file.id})),
     photoUrl: attachments.find(file => file.kind === "photo") ? "/api/workshop/file?id=" + attachments.find(file => file.kind === "photo").id : null,
-    purchaseStatus: "not_started", progressStatus: "not_started", needsAttention: false, attentionNote: "", progressUpdates: [], hideFromFeatureTree: false};
+    purchaseStatus: "not_started", progressStatus: "not_started", needsAttention: false, attentionNote: "", progressUpdates: [], hideFromFeatureTree: false,...(use.project_state||{})};
 }

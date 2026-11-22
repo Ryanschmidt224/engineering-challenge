@@ -144,3 +144,34 @@ export async function projectFamilyParts(env,project) {
   return familyUsePart(use,family,product,snapshot.fields.filter(field=>field.family_id===family.id),attachments);
  }).filter(Boolean);
 }
+export async function getFamilyProjectPart(env,project,id){
+ if(!env.WORKSHOP_DB)return null;
+ await initializeWorkshop(env.WORKSHOP_DB);
+ const use=(await dbRows(env.WORKSHOP_DB,"SELECT * FROM workshop_uses WHERE id=? AND project_id=? AND archived=0",id,project))[0];
+ if(!use)return null;
+ const family=(await dbRows(env.WORKSHOP_DB,"SELECT * FROM workshop_families WHERE id=?",use.family_id))[0];
+ const product=use.product_id?(await dbRows(env.WORKSHOP_DB,"SELECT * FROM workshop_products WHERE id=?",use.product_id))[0]:null;
+ const fields=await dbRows(env.WORKSHOP_DB,"SELECT * FROM workshop_fields WHERE family_id=?",use.family_id);
+ const attachments=await dbRows(env.WORKSHOP_DB,"SELECT * FROM workshop_attachments WHERE archived=0 AND (family_id=? OR product_id=? OR use_id=?)",use.family_id,use.product_id,id);
+ return familyUsePart(use,family,product,fields,attachments);
+}
+export async function changeFamilyProjectPart(request,env,project,id,input){
+ const db=env.WORKSHOP_DB,use=(await dbRows(db,"SELECT * FROM workshop_uses WHERE id=? AND project_id=? AND archived=0",id,project))[0];
+ if(!use)return json({error:"Project use not found"},404);
+ if(String(input.expectedRevision)!==String(use.revision))return json({error:"This project use changed in another tab. Your draft is preserved."},409);
+ if(request.method==="DELETE"){
+  const result=await stmt(db,"UPDATE workshop_uses SET archived=1,revision=revision+1 WHERE id=? AND revision=?",id,use.revision).run();
+  return result.meta.changes?json({ok:true}):json({error:"Project use changed"},409);
+ }
+ if(request.method!=="PATCH")return json({error:"Edit this project use in the Workshop family form."},409);
+ const state={...use.project_state};
+ if(input.progressStatus!==undefined){if(!["not_started","in_progress","complete"].includes(input.progressStatus))return json({error:"Invalid progress"},400);state.progressStatus=input.progressStatus;}
+ for(const key of ["needsAttention","hideFromFeatureTree"])if(input[key]!==undefined){if(typeof input[key]!=="boolean")return json({error:"Invalid option"},400);state[key]=input[key];}
+ if(input.attentionNote!==undefined){if(typeof input.attentionNote!=="string"||input.attentionNote.length>6000)return json({error:"Attention note is too long"},400);state.attentionNote=input.attentionNote;}
+ if(input.quantity!==undefined){if(input.quantity!==null&&(!Number.isFinite(input.quantity)||input.quantity<0))return json({error:"Invalid quantity"},400);use.quantity=input.quantity;}
+ if(input.name!==undefined)use.purpose=text(input.name,180,true);
+ const supported=new Set(["expectedRevision","progressStatus","needsAttention","hideFromFeatureTree","attentionNote","quantity","quantityUnit","name"]);
+ if(Object.keys(input).some(key=>!supported.has(key)))return json({error:"Open the project use in Workshop to edit these details."},409);
+ const result=await stmt(db,"UPDATE workshop_uses SET purpose=?,quantity=?,unit=?,project_state=?,revision=revision+1 WHERE id=? AND revision=?",use.purpose,use.quantity,input.quantityUnit===undefined?use.unit:text(input.quantityUnit,32),JSON.stringify(state),id,use.revision).run();
+ return result.meta.changes?json({component:await getFamilyProjectPart(env,project,id)}):json({error:"Project use changed in another tab"},409);
+}

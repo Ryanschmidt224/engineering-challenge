@@ -1395,6 +1395,7 @@ function setupAssemblyTrees(){
    }else pictureCover.replaceChildren(Object.assign(document.createElement("span"),{textContent:"No picture yet"}));
   }
   function showPartPicture(partId,bust=false){
+   if(currentPartInfo?.familyUse){partPhotoActions.setEnabled(false);if(currentPartInfo.photoUrl){const image=document.createElement("img");image.src=currentPartInfo.photoUrl;image.alt=currentPartInfo.name;pictureCover.replaceChildren(image);}else showPartPictureFallback();return;}
    if(!partId)return;
    const load=++partPictureLoad;
    const src=window.BSPhotoMarkup.displayUrl("part",partId,project)+(bust?"&v="+Date.now():"");
@@ -1504,6 +1505,7 @@ function setupAssemblyTrees(){
   detailEditButton.onclick=event=>{
    event.preventDefault();event.stopPropagation();
    const part=currentPartInfo;if(!part)return;
+   if(part.familyUse){editBomPart(part,part.assemblyId);return;}
    const linked=nodes.find(n=>isPartNode(n)&&n.partId===part.id);
    selected=linked?linked.parentId:(part.assemblyId??null);
    partEditReturn={id:part.id,scrollY:window.scrollY};
@@ -1558,7 +1560,7 @@ function setupAssemblyTrees(){
     editWorkshopButton.hidden=!hasWorkshopLink;
     reloadWorkshopButton.hidden=!hasWorkshopLink||!canEdit()||!!part.generatedFrom;
     partDetailsCollapse.open=keepDetailsOpen;
-    detailEditButton.textContent=hasWorkshopLink?"Modify part":"Edit part details";
+    detailEditButton.textContent=part.familyUse?"Edit project use":hasWorkshopLink?"Modify part":"Edit part details";
     codePanel.setVisible(part.partType==="code");
     if(part.partType==="code")void codePanel.load(part.id,part.name);
     progressPanel.hidden=part.isTool===true;
@@ -2161,6 +2163,7 @@ function setupAssemblyTrees(){
    const save=bomField("save");if(save)save.textContent="Save part";
   }
   function editBomPart(part,originId){
+   if(part.familyUse){location.href="workshop.html?use="+encodeURIComponent(part.id)+"&edit=1&return="+encodeURIComponent("#"+project+"/part/"+part.id);return;}
    if(savingBom)return;
    clearBomDraft();editingPart=part.id;editingPartAssembly=originId;editingPartOriginal=structuredClone(part);
    projectEditNotice.hidden=!workshopLinkId(part);
@@ -2488,7 +2491,7 @@ function setupAssemblyTrees(){
    if(savingBom)return;
    if(!window.BSLibraryPartPicker){bomReport("Part library unavailable. Refresh and try again.");return}
    const targetAssembly=selected;
-   await window.BSLibraryPartPicker.open({hideDefault:true,onCreate:async payload=>{
+   await window.BSLibraryPartPicker.open({hideDefault:true,project,assemblyId:selected,onCreate:async payload=>{
     const {wireInfo,workshopSavedMessage="",addToWorkshop=false,workshopCategory="",...part}=payload;
     let newPart=null,wireId=wireInfo?.wireId||null;
     try{
@@ -3484,7 +3487,7 @@ function setupAssemblyTrees(){
    const parent=nodes.find(node=>node.id===selected);
    if(isPartNode(parent)){status.textContent="Select an assembly, not a part, before adding a new part.";return}
    if(!window.BSLibraryPartPicker){status.textContent="Part library is still loading. Refresh and try again.";return}
-   await window.BSLibraryPartPicker.open({onCreate:async payload=>{
+   await window.BSLibraryPartPicker.open({project,assemblyId:selected,onCreate:async payload=>{
     newPartButton.disabled=true;status.textContent="Creating part…";
     let newPart=null;
     try{

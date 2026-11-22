@@ -1,3 +1,4 @@
+import {getFamilyProjectPart} from "./workshop-db.js";
 import {getPartPhoto} from "./workshop-linked-part.js";
 import {resolveFunctionalPart} from "./functional-part-model.js";
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
@@ -102,9 +103,9 @@ export async function handleInvestigations(request,env){
   if(ownerType==="part"){
    const partsFile=await env.PHOTOS.get("components/"+project+".json");
    const parts=partsFile?JSON.parse(await partsFile.text()):[];
-   const part=Array.isArray(parts)?parts.find(item=>item.id===ownerId):null;
+   const part=(Array.isArray(parts)?parts.find(item=>item.id===ownerId):null)||await getFamilyProjectPart(env,project,ownerId);
    if(!part)return json({error:"Part no longer exists"},404);
-   const selected=resolveFunctionalPart(part);
+   const selected=part.familyUse?part:resolveFunctionalPart(part);
    ownerImplementation={id:selected?.selectedImplementationId||null,
     name:selected?.implementationResolved?selected.implementationName||selected.model||"":""};
   }else if(ownerId!=="__root__"){
@@ -136,7 +137,7 @@ export async function handleInvestigations(request,env){
    return json({error:"Enter a reason and valid revision date"},400);
   const partObject=await env.PHOTOS.get("components/"+project+".json");
   const parts=partObject?JSON.parse(await partObject.text()):[];
-  const part=Array.isArray(parts)?parts.find(item=>item.id===partId):null;
+  const part=(Array.isArray(parts)?parts.find(item=>item.id===partId):null)||await getFamilyProjectPart(env,project,partId);
   if(!part)return json({error:"Part no longer exists"},404);
   if(records.length>=300)return json({error:"Project investigation limit reached"},413);
   const workspaceObject=await env.PHOTOS.get("part-workspaces/"+project+"/"+partId+".json");

@@ -34,6 +34,8 @@ import {onRequestGet as getPhoto} from "./functions/api/photo.js";
 import {handlePhotoAnnotations} from "./functions/api/photo-annotations.js";
 import {handlePartCode} from "./functions/api/part-code.js";
 import {guardPrivateApi} from "./functions/api/private-access.js";
+import {handleFamilyWorkshop} from "./functions/api/workshop-db.js";
+import {handleFamilyWorkshopFile,handleWorkshopExport} from "./functions/api/family-workshop-files.js";
 export default {
   async fetch(request,env,ctx){
     const path=new URL(request.url).pathname;
@@ -41,6 +43,9 @@ export default {
       const denied=await guardPrivateApi(request,env);
       if(denied)return denied;
       if(path==="/api/accounts")return await handleAccounts(request,env);
+      if(path==="/api/workshop")return handleFamilyWorkshop(request,env);
+      if(path==="/api/workshop/file")return handleFamilyWorkshopFile(request,env);
+      if(path==="/api/workshop/export")return handleWorkshopExport(request,env);
       if(path==="/api/projects")return projectsApi({request,env,ctx});
       if(path==="/api/numbering")return numberingApi({request,env,ctx});
       if(path==="/api/proposals")return handleProposals(request,env);

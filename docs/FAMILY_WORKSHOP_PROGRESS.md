@@ -16,7 +16,12 @@ Implemented so far:
 - Idempotent clean bootstrap with the approved starter definitions. No old R2 import.
 - Administrator/origin guarded catalog CRUD, optimistic revisions, reversible archiving, atomic family field updates, stale family-schema guards and live product-value resolution that preserves project requirements.
 - Seven tests pass against a real SQLite database (Node's sqlite module), including foreign keys, JSON functions, transactional rollback and stale batches. Cloudflare binding/provisioning is still unverified.
-- Shared CSS geometry tokens, components.css, a layout-only family-workshop.css and the new workshop.html shell. The frontend module is not yet implemented; this checkpoint must not be merged or deployed.
+- Shared CSS geometry tokens, components.css, a layout-only family-workshop.css and the new workshop.html shell.
+- Work-in-progress family/product/use frontend, stable field editing, category search, duplication, archive/restore, supplier links and attachment controls. These are implemented but not yet browser-validated for release.
+- Worker routes for the new catalog, bounded R2 uploads and streaming Workshop exports; project component projections and partial integration with existing instructions/history/file handlers. New uses remain authoritative in D1.
+- An isolated test server using the real Worker handlers with disposable SQLite/R2 fixtures. This is development QA infrastructure, not a change to Cloudflare production hosting.
+
+Latest checkpoint is deliberately incomplete and must not be merged or deployed. The seven focused SQLite tests still pass. The full suite currently has failures in older source-structure assertions and the derived-BOM test harness, which needs the newly imported helpers supplied to its VM context. Browser coverage, export verification, project integration edge cases and production D1 provisioning remain open. No live data was changed by this checkpoint.
 
 Owner-confirmed behavior: product changes update current project views using that product. Requirements remain separate. Existing instructions, tests and history records are not rewritten. Differences are shown for human review; do not implement automatic engineering compatibility certification. `filled_on_use` is only a display hint; either level can store a value. No inventory or separate template library.
 

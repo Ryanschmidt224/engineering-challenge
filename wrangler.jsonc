@@ -27,5 +27,11 @@
         "bucket_name": "building-schmidt-photos-preview"
       }
     ]
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "WORKSHOP_DB",
+      "database_name": "building-schmidt-workshop"
+    }
+  ]
 }

@@ -68,7 +68,7 @@ async function saveCreatedPartToWorkshop({part,destination,category,projectTitle
  window.dispatchEvent(new Event("bsworkshopupdated"));
  return {id:data.items?.at(-1)?.id||null,destination:"private",message:"Added to My Workshop (quantity not confirmed)."};
 }
-function open({onCreate,hideDefault=false}){
+function open({onCreate,hideDefault=false,project="",assemblyId=null}){
  return new Promise(resolve=>{
  const dialog=el("dialog","library-part-dialog"),form=el("form","library-part-form");form.method="dialog";
  const heading=el("h2","","New part"),subtitle=el("p","muted","Create a part for this project or select an item from the Workshop.");
@@ -453,8 +453,7 @@ function open({onCreate,hideDefault=false}){
  const quantitySection=el("section","library-form-section library-quantity-section");
  quantitySection.append(qty.label,hintUnits);
  // The optional Workshop publication control is subordinate to the selected source.
- workshopChoices.append(workshopLegend,workshopChoice,newPartChoice,
-  addToWorkshopChoice,saveScope,workshopAddHelp);
+ workshopChoices.append(workshopLegend,workshopChoice,newPartChoice);
  // Manual numbering belongs inside the Part number section, immediately after
  // the two choices; both choices and input preserve their existing event handlers.
  numberChoice.append(partNumberField.label);
@@ -741,7 +740,14 @@ function open({onCreate,hideDefault=false}){
   selectWorkflow("manual");
   status.textContent="Wizard applied "+selectedRecommendation+" AWG "+construction.input.value+" copper and "+length.input.value+" in cut length. Review the wire and termination details before creating the part; ampacity is not verified.";
  };
- workshopCheckbox.onchange=()=>{addToWorkshopCheckbox.checked=false;update()};
+ workshopCheckbox.onchange=()=>{
+  if(!workshopCheckbox.checked)return;
+  const url=new URL("workshop.html",location.href);
+  if(project)url.searchParams.set("project",project);
+  if(assemblyId)url.searchParams.set("assembly",assemblyId);
+  url.searchParams.set("return",location.hash);
+  dialog.close();location.href=url.href;
+ };
  newPartRadio.onchange=update;
  addToWorkshopCheckbox.onchange=update;
  privateRadio.onchange=update;publicRadio.onchange=update;
@@ -898,21 +904,7 @@ function open({onCreate,hideDefault=false}){
  });
  vendorField.input.addEventListener("change",update);
  update();refreshCommon();updateCalc();dialog.showModal();
- Promise.allSettled([
-  fetch("/api/commonparts",{cache:"no-store"}).then(r=>r.ok?r.json():Promise.reject(Error("Saved parts unavailable"))),
-  fetch("/api/purchased-parts",{cache:"no-store",credentials:"same-origin"}).then(r=>r.ok?r.json():Promise.reject(Error("Recorded parts unavailable"))),
-  fetch("/api/workshop-reference",{cache:"no-store",credentials:"same-origin"}).then(r=>r.ok?r.json():Promise.reject(Error("Public Workshop unavailable"))),
-  fetch("/api/personal-workshop",{cache:"no-store",credentials:"same-origin"}).then(r=>r.ok?r.json():Promise.reject(Error("Personal Workshop unavailable")))
- ]).then(([saved,recorded,shared,mine])=>{
-  if(finished)return;
-  if(saved.status==="fulfilled")commons=saved.value.parts||[];
-  if(recorded.status==="fulfilled")purchased=recorded.value.parts||[];
-  if(shared.status==="fulfilled")sharedOverrides=shared.value.items||{};
-  if(mine.status==="fulfilled")personalItems=mine.value.items||[];
-  if(saved.status==="rejected"&&recorded.status==="rejected"&&shared.status==="rejected"&&mine.status==="rejected")
-   status.textContent="Workshop items are unavailable; wire tools remain available.";
-  refreshCommon();renderQuickSearch();
- });
+ // The private family catalog is opened directly when Use from Workshop is selected.
  itemKind.input.focus();
  });
 }

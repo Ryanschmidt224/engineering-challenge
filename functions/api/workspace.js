@@ -1,3 +1,4 @@
+import {getFamilyProjectPart} from "./workshop-db.js";
 import {historyKey,retainHistory} from "./workspace-history.js";
 import {isProjectRecipeFile} from "./recipe-files.js";
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
@@ -56,7 +57,7 @@ export async function handleWorkspace(request,env){
   if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
   const record=await env.PHOTOS.get("components/"+project+".json");
   const parts=record?JSON.parse(await record.text()):[];
-  if(!parts.some(item=>item.id===part))return json({error:"Part no longer exists"},404);
+  if(!parts.some(item=>item.id===part)&&!await getFamilyProjectPart(env,project,part))return json({error:"Part no longer exists"},404);
  }else if(!assembly||!(assembly==="__root__"||/^[a-zA-Z0-9-]{1,80}$/.test(assembly)))return json({error:"Invalid workspace"},400);
  if(!env.PHOTOS)return json({error:"Storage unavailable"},503);
  const key=part?"part-workspaces/"+project+"/"+part+".json":"workspaces/"+project+"/"+assembly+".json";

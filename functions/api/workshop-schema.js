@@ -26,6 +26,7 @@ export const workshopSchema = [
  id TEXT PRIMARY KEY, project_id TEXT NOT NULL, tree_node_id TEXT, family_id TEXT NOT NULL REFERENCES workshop_families(id) ON DELETE RESTRICT,
  product_id TEXT, purpose TEXT NOT NULL DEFAULT '', quantity REAL CHECK(quantity IS NULL OR quantity >= 0), unit TEXT NOT NULL DEFAULT 'pcs',
  field_values TEXT NOT NULL DEFAULT '{}' CHECK(json_valid(field_values)), notes TEXT NOT NULL DEFAULT '',
+ project_state TEXT NOT NULL DEFAULT '{}' CHECK(json_valid(project_state)),
  revision INTEGER NOT NULL DEFAULT 1, archived INTEGER NOT NULL DEFAULT 0 CHECK(archived IN (0,1)),
  FOREIGN KEY(product_id,family_id) REFERENCES workshop_products(id,family_id) ON DELETE RESTRICT)`,
 `CREATE INDEX IF NOT EXISTS workshop_uses_project ON workshop_uses(project_id,archived)`,
