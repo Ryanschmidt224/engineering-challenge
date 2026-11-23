@@ -37,7 +37,7 @@ export function openPartCreator({onCreate,project="",assemblyId=null}){
    event.preventDefault();if(!form.reportValidity())return;
    const part=itemKind.input.value==="part",count=quantity.input.value===""?null:Number(quantity.input.value);
    const payload={name:(part?container.input:name.input).value.trim(),itemType:part?"part":"document",partType:itemKind.input.value==="code"?"code":partClassification.input.value,quantity:part?count:itemKind.input.value==="code"?null:1,quantityUnit:"pcs",specifications:[],assignNumber:part&&auto.checked,partNumber:part&&manual.checked?number.input.value.trim().toUpperCase()||null:null,hideFromFeatureTree:false,isTool:false};
-   if(part)Object.assign(payload,{manufacturer:manufacturer.input.value.trim(),model:mpn.input.value.trim(),description:description.input.value.trim(),projectDetails:{featureTreeName:container.input.value.trim()}});
+   if(part)Object.assign(payload,{manufacturer:payload.partType==="custom"?"":manufacturer.input.value.trim(),model:payload.partType==="custom"?"":mpn.input.value.trim(),description:description.input.value.trim(),projectDetails:{featureTreeName:container.input.value.trim()}});
    save.disabled=true;status.textContent="Creating project item…";
    try{await onCreate(payload);close({created:true});}catch(error){status.textContent=error.message||"Could not create item. Your form is preserved.";save.disabled=false;}
   };
