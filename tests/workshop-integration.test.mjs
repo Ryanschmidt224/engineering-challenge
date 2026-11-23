@@ -42,7 +42,7 @@ const register=async(env,email)=>{
 };
 
 test("Workshop AI receives both identity fields and prioritizes the exact manufacturer number",async t=>{
- const env={PHOTOS:new TestBucket(),OPENAI_API_KEY:"test-key",admin_password:"test-admin-secret"};
+ const env={PHOTOS:new TestBucket(),AI_LOOKUP_ENABLED:"1",OPENAI_API_KEY:"test-key",admin_password:"test-admin-secret"};
  const session=await register(env,"lookup@example.test");
  let query,draft;
  t.mock.method(globalThis,"fetch",async (url,options)=>{
@@ -71,12 +71,12 @@ test("Workshop AI receives both identity fields and prioritizes the exact manufa
 });
 
 test("Workshop AI estimates API cost and identifies unverified end mill specifications",async t=>{
- const env={PHOTOS:new TestBucket(),OPENAI_API_KEY:"test-key",admin_password:"test-admin-secret"};
+ const env={PHOTOS:new TestBucket(),AI_LOOKUP_ENABLED:"1",OPENAI_API_KEY:"test-key",admin_password:"test-admin-secret"};
  const session=await register(env,"endmill-lookup@example.test");
  let reportUsage=true,partNumber="ABC-10";
  t.mock.method(globalThis,"fetch",async (_url,options)=>{
   const {input:prompt,tools}=JSON.parse(options.body);
-  assert.deepEqual(tools,[{type:"web_search",search_context_size:"low",search_content_types:["text"]}]);
+  assert.deepEqual(tools,[{type:"web_search",search_context_size:"low"}]);
   assert.match(prompt,/Stop searching once a reliable source verifies the exact part/);
   assert.match(prompt,/Cutting diameter, Shank diameter, Length of cut, Overall length, Flute count, Tool material, Coating, End geometry/);
   return Response.json({
@@ -111,7 +111,7 @@ test("Workshop AI estimates API cost and identifies unverified end mill specific
 });
 
 test("Workshop AI verifies a McMaster catalog SKU independently of the manufacturer number",async t=>{
- const env={PHOTOS:new TestBucket(),OPENAI_API_KEY:"test-key",admin_password:"test-admin-secret"};
+ const env={PHOTOS:new TestBucket(),AI_LOOKUP_ENABLED:"1",OPENAI_API_KEY:"test-key",admin_password:"test-admin-secret"};
  const session=await register(env,"mcmaster-lookup@example.test");
  const sku="90044A535",supplierPage="https://www.mcmaster.com/"+sku+"/";
  let verifiedSku=sku;
@@ -142,7 +142,7 @@ test("Workshop AI verifies a McMaster catalog SKU independently of the manufactu
 });
 
 test("Workshop AI checks supplier numbers for vendors other than McMaster",async t=>{
- const env={PHOTOS:new TestBucket(),OPENAI_API_KEY:"test-key",admin_password:"test-admin-secret"};
+ const env={PHOTOS:new TestBucket(),AI_LOOKUP_ENABLED:"1",OPENAI_API_KEY:"test-key",admin_password:"test-admin-secret"};
  const session=await register(env,"supplier-lookup@example.test");
  const supplierPartNumber="296-LM358P-ND",supplier="DigiKey";
  let sku=supplierPartNumber;

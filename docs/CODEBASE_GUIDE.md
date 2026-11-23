@@ -180,6 +180,10 @@ Outstanding legacy risks to verify during replacement: finite embedded instructi
 
 The family Workshop owns category → family → optional product → project use. Hidden fields keep values; populated field type/unit changes are refused; zero and false are values. Project requirements remain separate from product facts. Seed data is catalog definitions only, not user products or inventory. Its former release/progress documents are superseded by this guide, the architecture and current tests.
 
+## Owner AI part lookup
+
+The owner requested restoring the existing owner-only lookup under their reported enforced $5 provider cap. `AI_LOOKUP.md` describes the `AI_LOOKUP_ENABLED` switch, conditional daily attempt reservation and safe provider-limit errors. This is a separate API/configuration change, not part of the new project engine or Workshop-family redesign. It neither changes billing nor enables the unrelated extraction route. A successful real-provider check is required before claiming the deployed lookup works.
+
 ## Work Instruction first-entry visibility
 
 The shared section action row sits directly in the active-entry host, before its content. The empty-state check must inspect that host, not only the content subtree; otherwise an empty Work Instruction hides its Add entry button even in Edit mode. Cancelling the first new-entry form must also leave the action row available. The small visibility fix changes no record format, save API, permission or stored instruction data. Browser regression covers first-entry creation/cancel and saving/reopening Notes, Tests/Measurements, Revisions, Failures and named Photos at desktop and phone widths using the actual Worker handlers.
