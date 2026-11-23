@@ -143,13 +143,13 @@ test("linked test/revision/failure and archive sources are verified in the same 
 test("milestones are included in project exports, never editable, and source UI is opt-in",()=>{
  assert.ok(globalThis.BSArchiveLayout.singles("launcher").includes("project-milestones/launcher.json"));
  const frontend=readFileSync(new URL("../assets/project-milestones.js",import.meta.url),"utf8");
- const tree=readFileSync(new URL("../assets/site-assembly.js",import.meta.url),"utf8");
+ const tree=readFileSync(new URL("../assets/tree-archive.js",import.meta.url),"utf8");
  const entries=readFileSync(new URL("../assets/investigations.js",import.meta.url),"utf8");
  const index=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  assert.match(frontend,/Why is this significant to the project\?/);
  assert.match(frontend,/No original intent recorded/);
  assert.match(frontend,/const state=\{refresh,openMilestone/);
- assert.match(tree,/root\.querySelector\("\.assembly-archive-milestone-option"\)\?\.remove\(\)/);
+ assert.match(tree,/ui\.button\("Add to Project Milestones",\(\)=>window\.BSProjectMilestones\?\.offer/);
  assert.match(entries,/btn\("Add to Project Milestones"/);
  assert.match(index,/assets\/project-milestones\.js/);
 });

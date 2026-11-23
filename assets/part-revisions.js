@@ -1,4 +1,5 @@
 import {partHelp} from "./part-help.js";
+import {openHistoryEntryDialog,renderHistoryEntryDetails} from "./history-entry-dialog.js";
 
 const make=(tag,text)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;return node;};
 const revisionUrl=(project,id,extra={})=>"/api/investigations?"+new URLSearchParams({project,revision:id,...extra});
@@ -10,42 +11,29 @@ export function initPartRevisions({host,project,ui,dialogs,canEdit,beforeCreate}
  section.root.hidden=true;
  const explanation=make("p",partHelp.revisions);
  const list=make("div"),message=make("p");message.setAttribute("role","status");message.setAttribute("aria-live","polite");
- const commands=new Map(),openRevisions=new Set();let current=null,lastPartId=null;
- const create=ui.button("Create a Revision",async()=>{
+ const openRevisions=new Set();let current=null,lastPartId=null;
+ const create=ui.button("Create a Revision",()=>{
   if(!current||!canEdit())return;
-  const state=current,part=state.part;
-  let command=commands.get(part.id);
-  if(command?.pending)return;
-  if(!command){command={operationId:crypto.randomUUID(),pending:false,...state.getSource()};commands.set(part.id,command);}
-  let sent=false;
-  command.pending=true;create.disabled=true;create.textContent="Creating revision…";message.textContent="Creating a historical copy…";
-  try{
+  try{beforeCreate();}catch(error){message.textContent=error.message;return;}
+  const state=current,part=state.part,source=state.getSource();
+  openHistoryEntryDialog({trigger:create,project,title:"Create a Revision",description:partHelp.revisions,submitLabel:"Save revision",ui,photoEditor:window.BSPhotoEditor,onSave:async(entryDetails,operationId)=>{
    beforeCreate();
-   sent=true;
-   await state.save({action:"createPartRevision",partId:part.id,operationId:command.operationId,
-    expectedPartRevision:command.partRevision,expectedWorkspaceRevision:command.workspaceRevision});
-   commands.delete(part.id);
+   await state.save({action:"createPartRevision",partId:part.id,operationId,entryDetails,expectedPartRevision:source.partRevision,expectedWorkspaceRevision:source.workspaceRevision});
    if(current?.part.id===part.id)message.textContent="Revision created. The working part is unchanged. Use Edit part details when you are ready to make changes.";
-  }catch(error){
-   if(!sent||error.status===409)commands.delete(part.id);
-   if(current?.part.id===part.id)message.textContent=error.message;
-  }finally{
-   command.pending=false;
-   if(current?.part.id===part.id){create.disabled=!canEdit();create.textContent="Create a Revision";}
-  }
+  }});
  });
  ui.sectionActions(section.body,{primary:create});section.body.append(explanation,list,message);
  const controller={render(state){
   if(state.part&&lastPartId!==state.part.id){message.textContent="";section.root.open=false;lastPartId=state.part.id;}
   current=state.part?state:null;section.root.hidden=!current;
   if(!current)return;
-  create.hidden=!canEdit();create.disabled=!!commands.get(state.part.id)?.pending;
-  create.textContent=create.disabled?"Creating revision…":"Create a Revision";
+  create.hidden=!canEdit();
   section.setCount(state.records.length);list.replaceChildren();
   for(const record of [...state.records].reverse()){
    const item=ui.section({title:record.title||"Saved part revision",role:"part-revision",open:openRevisions.has(record.id)});
    const date=make("time",record.date||record.createdAt?.slice(0,10)||record.archivedAt?.slice(0,10)||"");date.className="ui-section__count";date.dateTime=date.textContent;item.count.replaceWith(date);
    item.root.addEventListener("toggle",()=>{if(item.root.open)openRevisions.add(record.id);else openRevisions.delete(record.id);});
+   renderHistoryEntryDetails(record.partSnapshot.entryDetails,item.body,{ui,imageUrlFor:id=>{const index=record.partSnapshot.assets?.findIndex(asset=>asset.original===id);return index>=0?revisionUrl(project,record.id,{asset:String(index),view:"1"}):"/api/recipe-files?id="+encodeURIComponent(id);}});
    renderRevisionSnapshot(record.partSnapshot,item.body,{project,revisionId:record.id,ui});
    if(record.archiveNote)item.body.prepend(make("p","Reason: "+record.archiveNote));
    if(canEdit()){

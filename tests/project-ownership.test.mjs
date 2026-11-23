@@ -8,6 +8,8 @@ import {handleTree} from "../functions/api/tree.js";
 import {handleComponents} from "../functions/api/components.js";
 const ORIGIN="https://schmidt.example";
 class Bucket{
+ async list({prefix=""}){return {objects:[...this.data.keys()].filter(key=>key.startsWith(prefix)).map(key=>({key})),truncated:false};}
+
  constructor(){this.data=new Map();this.deletes=[]}
  async get(key){const entry=this.data.get(key);if(!entry)return null;return {etag:entry.etag,async text(){return typeof entry.value==="string"?entry.value:JSON.stringify(entry.value)}}}
  async put(key,value,opts={}){

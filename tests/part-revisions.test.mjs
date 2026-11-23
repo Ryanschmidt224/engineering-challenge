@@ -56,6 +56,14 @@ test("a lost-response retry returns the same revision and operation reuse with a
  const retry=await f.call("/api/investigations?project=launcher",f.command);assert.equal(retry.status,200);const replay=await retry.json();assert.equal(replay.createdId,first.createdId);assert.equal(replay.revision,first.revision);assert.equal(replay.records.length,2);assert.equal((await f.env.PHOTOS.list({prefix:"part-revisions/launcher/"})).objects.length,copies);
  assert.equal((await f.call("/api/investigations?project=launcher",{...f.command,expectedPartRevision:"another"})).status,409);
 });
+test("revision explanation and named photos are frozen; edited retries and cross-project photo references are rejected",async()=>{
+ const f=await fixture(),photo="recipe-files/launcher/"+id()+".png";await f.env.PHOTOS.put(photo,"saved-photo",{httpMetadata:{contentType:"image/png"}});
+ const entryDetails={whatChanged:"  Increased thickness  ",whyChanged:"Reduce flex",notes:"Retest the bracket",photos:[photo],photoNames:{[photo]:"Thicker bracket"}};
+ const response=await f.call("/api/investigations?project=launcher",{...f.command,entryDetails});assert.equal(response.status,200);const saved=await response.json(),snapshot=saved.records.find(record=>record.partSnapshot).partSnapshot;assert.equal(snapshot.entryDetails.whatChanged,"Increased thickness");assert.equal(snapshot.entryDetails.photoNames[photo],"Thicker bracket");assert.ok(snapshot.assets.some(asset=>asset.original===photo));
+ assert.equal((await f.call("/api/investigations?project=launcher",{...f.command,entryDetails:{...entryDetails,notes:"Changed retry"}})).status,409);
+ const invalid={...f.command,operationId:id(),expectedRevision:saved.revision,entryDetails:{photos:["recipe-files/robot/"+id()+".png"]}};assert.equal((await f.call("/api/investigations?project=launcher",invalid)).status,400);
+ assert.equal((await f.call("/api/investigations?project=launcher",{...invalid,entryDetails:{whatChanged:"x".repeat(5001)}})).status,400);
+});
 test("stale part, workspace and record versions reject without publishing a revision",async()=>{
  for(const key of ["expectedPartRevision","expectedWorkspaceRevision","expectedRevision"]){
   const f=await fixture(),response=await f.call("/api/investigations?project=launcher",{...f.command,[key]:"stale"});assert.equal(response.status,409,key);assert.equal((await (await f.env.PHOTOS.get(f.storeKey)).json()).records.length,1);

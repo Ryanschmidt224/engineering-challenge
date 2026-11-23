@@ -325,7 +325,8 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(menu.getByRole("menuitem",{name:"Add part"})).toBeVisible();
  await expect(menu.getByRole("menuitem",{name:"Add subassembly"})).toBeVisible();
  await expect(menu.getByRole("menuitem",{name:"Rename"})).toBeVisible();
- await expect(menu.getByRole("menuitem",{name:"Delete",exact:true})).toBeVisible();
+ await expect(menu.getByRole("menuitem",{name:"Archive subassembly",exact:true})).toBeVisible();
+ await expect(menu.getByRole("menuitem",{name:"Delete",exact:true})).toHaveCount(0);
  await expect(menu.getByRole("menuitem",{name:"Move to…"})).toBeVisible();
  await expect(menu.getByRole("menuitem",{name:"Move up"})).toBeVisible();
  await page.keyboard.press("Escape");
@@ -471,7 +472,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(resources.locator(".linked-resource-group")).toHaveCount(0);
  await expect(toolsDisclosure.getByRole("button",{name:"+ Add entry",exact:true})).toBeHidden();
  await toolsDisclosure.locator(":scope>.ui-section__header").click();
- await expect(workspace.locator('[data-section="history"]>.ui-section__header')).toContainText("Records and archived entries");
+ await expect(workspace.locator('[data-section="history"]>.ui-section__header')).toContainText("History");
  await expect(workspace.locator('[data-section="history"]')).not.toHaveAttribute("open","");
  await workspace.locator('[data-section="history"]>.ui-section__header').click();
  await expect(workspace.locator('[data-section="history"]')).toHaveAttribute("open","");

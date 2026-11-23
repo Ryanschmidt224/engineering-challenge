@@ -13,7 +13,7 @@ export async function capturePartRevision(request,env,project,data,records){
  const workspaceKey="part-workspaces/"+project+"/"+part.id+".json",workspaceObject=await env.PHOTOS.get(workspaceKey),workspace=workspaceObject?await workspaceObject.json():{};
  if((data.expectedWorkspaceRevision??null)!==(workspace.revision??null))return {error:"Instructions changed since you opened them. Reload before creating a revision.",status:409};
  const id=crypto.randomUUID(),createdAt=new Date().toISOString();
- const snapshot={part,workspace,records:records.filter(record=>record.ownerType==="part"&&record.ownerId===part.id&&!record.partSnapshot),capturedAt:createdAt};
+ const snapshot={part,workspace,entryDetails:data.entryDetails,records:records.filter(record=>record.ownerType==="part"&&record.ownerId===part.id&&!record.partSnapshot),capturedAt:createdAt};
  const extraKeys=[];let photoSource=partPhotoKey(project,part);
  if(part.familyUse&&env.WORKSHOP_DB){
   const attachments=await env.WORKSHOP_DB.prepare("SELECT r2_key,kind FROM workshop_attachments WHERE archived=0 AND (use_id=? OR family_id=? OR product_id=?)").bind(part.id,part.familyId,part.productId).all();
@@ -25,7 +25,7 @@ export async function capturePartRevision(request,env,project,data,records){
  }
  if(JSON.stringify(snapshot).length>250000)return {error:"Part history is too large to snapshot",status:413};
  try{
-  snapshot.assets=await archiveAssets(env.PHOTOS,project,id,[{kind:"part",partId:part.id}],snapshot.records,[part],{
+  snapshot.assets=await archiveAssets(env.PHOTOS,project,id,[{kind:"part",partId:part.id}],[...snapshot.records,{entryDetails:data.entryDetails}],[part],{
    copyKey:(_,revision,key)=>"part-revisions/"+project+"/"+part.id+"/"+revision+"/objects/"+encodeURIComponent(key),verify:true,extraKeys
   });
  }catch(error){return {error:error.message,status:409};}

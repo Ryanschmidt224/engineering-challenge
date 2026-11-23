@@ -8,6 +8,8 @@ import {handlePhotoAnnotations} from "../functions/api/photo-annotations.js";
 
 const ORIGIN="https://schmidt.example";
 class TestBucket{
+ async list({prefix=""}){return {objects:[...this.objects.keys()].filter(key=>key.startsWith(prefix)).map(key=>({key})),truncated:false};}
+
  constructor(){this.objects=new Map()}
  async get(key){
   const entry=this.objects.get(key);if(!entry)return null;

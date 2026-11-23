@@ -13,6 +13,7 @@ async function setupAssemblyTrees(){
  const {initPartSpecifications,specificationRow}=await import("./part-specifications.js");
  const {openPartCreator}=await import("./part-create.js");
  const {initPartRevisions,renderRevisionSnapshot}=await import("./part-revisions.js");
+ const {initTreeArchive}=await import("./tree-archive.js");
  document.querySelectorAll("[data-assembly-tree]:not([data-tree-ready])").forEach(root=>{
   root.dataset.treeReady="true";
   const project=root.dataset.assemblyTree,view=document.getElementById(project),nodesEl=root.querySelector(".assembly-tree-nodes"),status=root.querySelector(".assembly-tree-status"),controls=root.querySelector(".assembly-edit");
@@ -842,7 +843,7 @@ async function setupAssemblyTrees(){
    const history=document.createElement("article");history.className="investigations-panel";
    const activeRecords=document.createElement("section");activeRecords.className="investigations-active-panel";
    history.activeEntriesHost=activeRecords;
-   const archiveSection=window.BSUI.section({title:"Records and archived entries",role:"history",tooltip:"Review records and entries moved out of their active sections. Part revisions have their own section."});
+   const archiveSection=window.BSUI.section({title:"History",role:"history",tooltip:"Review saved records. Tree items removed from this assembly are kept in its Archive folder. Part revisions have their own section."});
    const archiveHistory=archiveSection.root;
    // investigations.js writes the total into this element.
    archiveSection.count.classList.add("workspace-archive-count");
@@ -2795,265 +2796,10 @@ async function setupAssemblyTrees(){
    partQuantities.set(part.id,result.component);
    await save(nodes.map(item=>item.id===node.id?{...item,name:result.component.name}:item));
   };
-  const deleteTreeItem=async node=>{
-   if(!node)return;
-   if(!isPartNode(node)){
-    selected=node.id;
-    root.querySelector(".assembly-remove").click();
-    return;
-   }
-   const links=nodes.filter(item=>isPartNode(item)&&item.partId===node.partId);
-   if(!await window.BSDialogs.danger("Delete \""+node.name+"\" from this project?\n\nThis removes the part from the feature tree and all assembly BOM references ("+links.length+"). Its stored details are moved to the recovery bin. This action cannot be undone on this page.",{title:"Delete project part?"}))return;
-   // Delete the underlying part through the existing recovery-bin API, not
-   // by simply removing the tree node. Only remove links after API success.
-   const response=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{
-    method:"DELETE",credentials:"same-origin"
-   });
-   const data=await response.json().catch(()=>({}));
-   if(!response.ok)throw Error(data.error||"Part deletion failed");
-   try{
-    await save(nodes.filter(item=>!(isPartNode(item)&&item.partId===node.partId)));
-    partDocuments.delete(node.partId);partVisibility.delete(node.partId);
-    partTools.delete(node.partId);partNumbers.delete(node.partId);
-    partProgress.delete(node.partId);partAttention.delete(node.partId);partQuantities.delete(node.partId);
-    if(partRoute()===node.partId){
-     selected=node.parentId??null;
-     history.replaceState(null,"",workspaceHash(selected));
-     render();notify();
-    }
-    status.textContent="Part deleted from this project. A recovery copy was retained.";
-   }catch(error){
-    status.textContent="Part was archived and removed from the BOM, but its tree link could not be saved: "+error.message+". Refresh the page to reconcile.";
-   }
-  };
-  // Intentional, parent-scoped history. The API snapshots a complete subtree
-  // before removing active tree/BOM references. Revisions remain a separate tool.
-  const archivedSection=window.BSUI.section({title:"Archived items",role:"archived-items",count:0,countLabel:["item","items"],tooltip:"View items removed from this assembly and restore archived items when available."});
-  const archivePanel=archivedSection.root;
-  const archiveList=document.createElement("div");
-  archiveList.className="assembly-archived-list";
-  archivedSection.body.classList.add("assembly-archived-disclosure");
-  archivedSection.body.append(archiveList);
-  workspace.querySelector(".workspace-panels").append(archivePanel);
-  let archiveRequestSerial=0;
-  const archiveURL="/api/assembly-archive?project="+encodeURIComponent(project);
-  const archiveFetch=async(url,init)=>{
-   const response=await fetch(url,{credentials:"same-origin",cache:"no-store",...init});
-   const data=await response.json().catch(()=>({}));
-   if(!response.ok)throw Error(data.error||"Archive request failed");
-   return data;
-  };
-  const archiveLocationLabel=item=>{
-   const path=Array.isArray(item.originPath)?item.originPath:[];
-   const text=path.length?path.map(segment=>(segment.partNumber?segment.partNumber+" · ":"")+segment.name).join(" / ")
-    :"Original location not recorded";
-   if(item.originPathSource==="legacy-current-parent")
-    return {text,note:"Parent path reconstructed from its current location; original names may have changed."};
-   if(item.originPathSource==="legacy-missing-parent")
-    return {text,note:"Original parent was not recorded by the older archive format."};
-   if(item.originPathSource==="legacy-root")
-    return {text,note:"This archive predates original-location snapshots."};
-   return {text,note:""};
-  };
-  const appendArchiveLocation=(target,item)=>{
-   const origin=archiveLocationLabel(item);
-   const line=document.createElement("div");line.className="assembly-archive-origin";
-   const label=document.createElement("strong");label.textContent="Original location: ";
-   const path=document.createElement("span");path.textContent=origin.text;
-   line.append(label,path);
-   if(origin.note){const caveat=document.createElement("small");caveat.textContent=origin.note;line.append(caveat)}
-   target.append(line);
-  };
-  async function deleteArchivedPart(item,dialog=null){
-   if(!canEdit()||item.kind!=="part")return;
-   const message="Permanently delete archived part \""+item.name+"\"?\n\n"+
-    "This deletes its archived history and saved archive copies. It cannot be restored afterward. "+
-    "Active parts, shared photos, and active project files will not be deleted.";
-   if(!await window.BSDialogs.danger(message,{title:"Permanently delete archived part?",confirmLabel:"Delete"}))return;
-   try{
-    await archiveFetch(archiveURL+"&id="+encodeURIComponent(item.id),{method:"DELETE"});
-    for(const opened of document.querySelectorAll("dialog.assembly-archive-dialog"))opened.close();
-    await refreshAssemblyArchives(selected??"__root__");
-    status.textContent="Archived part \""+item.name+"\" permanently deleted.";
-   }catch(error){
-    if(dialog?.open){
-     let feedback=dialog.querySelector(".assembly-archive-delete-feedback");
-     if(!feedback){feedback=document.createElement("p");feedback.className="assembly-archive-delete-feedback";feedback.setAttribute("role","alert");dialog.append(feedback)}
-     feedback.textContent=error.message;
-    }else status.textContent=error.message;
-   }
-  };
-  async function refreshAssemblyArchives(parentId){
-   archivePanel.hidden=!canEdit();
-   if(archivePanel.hidden)return;
-   const serial=++archiveRequestSerial;
-   archiveList.textContent="Loading archived items…";
-   try{
-    const result=await archiveFetch(archiveURL+"&parent="+encodeURIComponent(parentId));
-    if(serial!==archiveRequestSerial)return;
-    archivedSection.setCount(result.items.length);
-    archiveList.replaceChildren();
-    if(!result.items.length){
-     const empty=document.createElement("p");empty.className="muted";
-     empty.textContent="No archived parts or subassemblies.";
-     archiveList.append(empty);return;
-    }
-    for(const item of result.items){
-     const row=document.createElement("div");row.className="assembly-archived-row";
-     const info=document.createElement("div");info.className="assembly-archive-row-info";
-     const name=document.createElement("strong");
-     name.textContent=(item.partNumber?item.partNumber+" · ":"")+item.name+" · "+(item.kind==="part"?"Part":"Subassembly")+(item.restoredAt?" · Restored":"");
-     if(item.state==="deleting")name.textContent+=" · Delete incomplete";
-     info.append(name);
-     appendArchiveLocation(info,item);
-     const meta=document.createElement("small");meta.className="assembly-archive-meta";
-     meta.textContent="Archived "+new Date(item.archivedAt).toLocaleDateString();
-     info.append(meta);
-     const view=document.createElement("button");view.type="button";view.className="btn";view.textContent="View";
-     view.onclick=()=>void viewAssemblyArchive(item.id);
-     const controls=document.createElement("div");controls.className="assembly-archive-row-actions";
-     controls.append(view);
-     if(item.kind==="part"){
-      const remove=document.createElement("button");remove.type="button";
-      remove.className="btn assembly-archive-delete";remove.textContent="Delete";
-      remove.onclick=()=>void deleteArchivedPart(item);
-      controls.append(remove);
-     }
-     row.append(info,controls);archiveList.append(row);
-    }
-   }catch(error){if(serial===archiveRequestSerial)archiveList.textContent=error.message}
-  }
-  async function viewAssemblyArchive(id){
-   try{
-    const {archive}=await archiveFetch(archiveURL+"&id="+encodeURIComponent(id));
-    const dialog=document.createElement("dialog");dialog.className="assembly-archive-dialog";
-    const header=document.createElement("h3");header.textContent=archive.name+" — Archived";
-    const summary=document.createElement("p");
-    summary.textContent="Archived "+new Date(archive.archivedAt).toLocaleString()+
-      " · "+archive.nodes.length+" tree item(s) · "+archive.parts.length+" part definition(s) · "+
-      archive.investigations.length+" history record(s) · "+archive.assets.length+" saved files";
-    dialog.append(header);
-    appendArchiveLocation(dialog,archive);
-    dialog.append(summary);
-    if(archive.reason){const p=document.createElement("p");p.textContent="Reason: "+archive.reason;dialog.append(p)}
-    const list=document.createElement("ul");
-    for(const node of archive.nodes){
-     const li=document.createElement("li");li.textContent=(node.partNumber?node.partNumber+" · ":"")+node.name+
-      (node.kind==="part"?" (part)":" (subassembly)");list.append(li);
-    }
-    dialog.append(list);
-    // An assembly can contain children that were archived before the assembly
-    // itself. Keep that earlier history discoverable within the parent archive.
-    if(archive.kind!=="part"){
-     const children=await archiveFetch(archiveURL+"&parent="+encodeURIComponent(archive.nodeId)).catch(()=>({items:[]}));
-     if(children.items.length){
-      const section=document.createElement("details");section.className="assembly-archive-media";
-      const heading=document.createElement("summary");heading.textContent="Previously archived children ("+children.items.length+")";
-      section.append(heading);
-      for(const child of children.items){
-       const row=document.createElement("div");row.className="assembly-archived-row";
-       const info=document.createElement("div");info.className="assembly-archive-row-info";
-       const label=document.createElement("strong");label.textContent=child.name;info.append(label);
-       appendArchiveLocation(info,child);
-       const open=document.createElement("button");open.type="button";open.className="btn";open.textContent="View";
-       open.onclick=()=>void viewAssemblyArchive(child.id);
-       row.append(info,open);section.append(row);
-      }
-      dialog.append(section);
-     }
-    }
-    const media=(archive.assets||[]).map((asset,index)=>({...asset,index})).filter(asset=>
-     !asset.original.startsWith("photo-annotations/")&&!asset.original.startsWith("photo-renders/"));
-    const images=media.filter(asset=>/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i.test(asset.original)||
-     asset.original.startsWith("component-thumbnails/"));
-    const documents=media.filter(asset=>!images.includes(asset));
-    if(images.length){
-     const photos=document.createElement("details");photos.className="assembly-archive-media";photos.open=images.length<=12;
-     const title=document.createElement("summary");title.textContent="Saved photos ("+images.length+")";photos.append(title);
-     const gallery=document.createElement("div");gallery.className="assembly-archive-gallery";
-     for(const asset of images){
-      const figure=document.createElement("figure");figure.className="assembly-archive-image";
-      const image=document.createElement("img");image.loading="lazy";
-      image.src=archiveURL+"&id="+encodeURIComponent(id)+"&asset="+asset.index;
-      image.alt=asset.original.split("/").pop()||"Archived photo";figure.append(image);
-      const caption=document.createElement("figcaption");caption.textContent=asset.original.split("/").pop();
-      figure.append(caption);gallery.append(figure);
-     }
-     photos.append(gallery);dialog.append(photos);
-    }
-    if(documents.length){
-     const docs=document.createElement("details");docs.className="assembly-archive-media";
-     const title=document.createElement("summary");title.textContent="Saved documents and data files ("+documents.length+")";docs.append(title);
-     const files=document.createElement("ul");
-     for(const asset of documents){
-      const li=document.createElement("li"),link=document.createElement("a");
-      link.href=archiveURL+"&id="+encodeURIComponent(id)+"&asset="+asset.index;
-      link.textContent=asset.original.split("/").pop()||asset.original;
-      link.download="";li.append(link);files.append(li);
-     }
-     docs.append(files);dialog.append(docs);
-    }
-    const data=document.createElement("details"),label=document.createElement("summary");
-    label.textContent="View saved record details";const pre=document.createElement("pre");
-    pre.className="assembly-archive-json";pre.textContent=JSON.stringify({
-     nodes:archive.nodes,parts:archive.parts,investigations:archive.investigations,assets:archive.assets
-    },null,2);
-    data.append(label,pre);dialog.append(data);
-    const actions=document.createElement("div");actions.className="assembly-archive-actions";
-    const close=document.createElement("button");close.type="button";close.className="btn";close.textContent="Close";close.onclick=()=>dialog.close();
-    actions.append(close);
-    if(canEdit()&&!archive.restoredAt&&archive.state!=="deleting"){
-     const restore=document.createElement("button");restore.type="button";restore.className="btn primary";restore.textContent="Restore";
-     restore.onclick=async()=>{
-      restore.disabled=true;
-      try{
-       await archiveFetch(archiveURL,{method:"POST",headers:{"content-type":"application/json"},
-        body:JSON.stringify({action:"restore",id,expectedRevision:treeSavedRevision})});
-       dialog.close();await load();
-      }catch(error){status.textContent=error.message;restore.disabled=false}
-     };
-     actions.append(restore);
-    }
-    if(canEdit()&&archive.kind==="part"){
-     const remove=document.createElement("button");remove.type="button";
-     remove.className="btn assembly-archive-delete";remove.textContent="Delete";
-     remove.onclick=()=>void deleteArchivedPart(archive,dialog);
-     actions.append(remove);
-    }
-    dialog.append(actions);document.body.append(dialog);
-    dialog.addEventListener("close",()=>dialog.remove(),{once:true});dialog.showModal();
-   }catch(error){status.textContent=error.message}
-  }
-  const archiveTreeItem=async node=>{
-   if(!node||!canEdit())return;
-   const descendantCount=nodes.filter(n=>n.parentId===node.id).length;
-   const message="Archive \""+node.name+"\"?\\n\\nThis removes it from the active feature tree and BOM, preserves its saved information under the parent assembly, and allows restoration."+
-    (descendantCount?"\\nIts nested items will be archived too.":"");
-   if(!await window.BSDialogs.danger(message,{title:"Archive "+(isPartNode(node)?"part":"subassembly")+"?",confirmLabel:"Archive"}))return;
-   const parent=node.parentId??null;
-   const result=await archiveFetch(archiveURL,{method:"POST",headers:{"content-type":"application/json"},
-    body:JSON.stringify({action:"archive",nodeId:node.id,expectedRevision:treeSavedRevision})});
-   if(selected!==null&&!result.nodes.some(active=>active.id===selected)){
-    selected=parent;
-    history.replaceState(null,"",workspaceHash(selected));
-   }
-   status.textContent=node.name+" archived. You can restore it from its parent assembly.";
-   await load();
-   await refreshAssemblyArchives(parent??"__root__");
-   // A successful archive presents an optional invitation, not an automatic
-   // milestone and not another required step in the archive operation.
-   root.querySelector(".assembly-archive-milestone-option")?.remove();
-   const milestoneButton=document.createElement("button");
-   milestoneButton.type="button";milestoneButton.className="btn assembly-archive-milestone-option";
-   milestoneButton.textContent="Add to Project Milestones";
-   milestoneButton.onclick=()=>{
-    window.BSProjectMilestones?.offer(project,{
-     kind:"archive",id:result.id,title:node.name,
-     prefill:"Archived "+(isPartNode(node)?"part":"subassembly")+": "+node.name
-    });
-   };
-   status.after(milestoneButton);
-  };
+  const treeArchives=initTreeArchive({project,root,host:assemblyInvestigationPanel.sectionBody,canEdit,isPartNode,getSelected:()=>selected,getRevision:()=>treeSavedRevision,load,status,ui:window.BSUI,dialogs:window.BSDialogs,afterArchive:async(result,parent,node)=>{
+   selected=parent;history.replaceState(null,"",workspaceHash(parent));await load();status.textContent=node.name+" archived. Open History → Archive in its parent to view or restore it.";
+  }});
+  const refreshAssemblyArchives=parent=>treeArchives.refresh(parent);
   const openTreeMenu=(node,x,y,trigger)=>{
    if(!canEdit())return;
    closeTreeMenu();
@@ -3092,8 +2838,7 @@ async function setupAssemblyTrees(){
     const res=await fetch("/api/components?project="+encodeURIComponent(project)+"&id="+encodeURIComponent(node.partId),{method:"PATCH",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({hideFromFeatureTree:!isHiddenPart(node),expectedRevision:partQuantities.get(node.partId)?.revision??null})});
     const data=await res.json();if(!res.ok)throw Error(data.error||"Could not change visibility");syncPartNodes([data.component]);
    });
-   if(node)addItem("Archive",()=>archiveTreeItem(node));
-   if(node)addItem("Delete",()=>deleteTreeItem(node));
+   if(node)addItem(isPart?"Archive part":"Archive subassembly",()=>treeArchives.archive(node));
    if(node){
     const moveSeparator=document.createElement("div");
     moveSeparator.className="assembly-context-separator";moveSeparator.setAttribute("role","separator");treeMenu.append(moveSeparator);
