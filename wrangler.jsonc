@@ -34,8 +34,7 @@
     "d1_databases": [
       {
         "binding": "WORKSHOP_DB",
-        "database_name": "building-schmidt-workshop-preview",
-        "database_id": "3314f42f-7c04-4798-99dc-b5b97c4fb82f"
+        "database_name": "building-schmidt-project-restore-preview"
       }
     ],
     "vars": {
