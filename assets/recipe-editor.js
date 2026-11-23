@@ -49,8 +49,7 @@
   const editing=new Set();
   const editSnapshots=new Map();
   let archivedStepsExpanded=false;
-  window.addEventListener("beforeunload",event=>{if(!dirty&&!pendingUploads&&!saving&&!draft)return;event.preventDefault();event.returnValue="";});
-  let changeVersion=0,saveTimer=null,savePromise=null,allowReplay=false;
+  let changeVersion=0,saveTimer=null,savePromise=null;
   async function savePending(){
    clearTimeout(saveTimer);
    if(savePromise){await savePromise;if(!dirty)return; }
@@ -81,18 +80,15 @@
    if(!editing.has(expanded))scheduleSave();
   };
   const saveHint=()=>{feedback.textContent="Unsaved step changes."};
-  // Capture navigation before the page replaces its editor or changes the workspace endpoint.
-  // Replay the original click only after the save has succeeded.
-  document.addEventListener("click",async event=>{
-   if(allowReplay||!dirty||!article.isConnected||article.closest(".hide")||article.offsetParent===null)return;
-   const target=event.target.closest("button,a,[role=button]");
-   if(!target||article.contains(target)||target.closest(".modalback,dialog,[role=dialog]")||target.matches(".workspace-save,.part-workspace-save"))return;
-   event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
-   try{
-    await savePending();
-    allowReplay=true;try{target.click()}finally{allowReplay=false}
-   }catch(error){feedback.textContent=error.message||"Save failed; navigation cancelled."}
-  },true);
+  void import("./work-instruction-save-guard.js").then(({installWorkInstructionSaveGuard})=>installWorkInstructionSaveGuard({
+   article,state:()=>({dirty,draft:!!draft,saving,uploading:pendingUploads>0}),save:savePending,
+   review(){
+    setInstructionsOpen(true);
+    const name=(draft||steps.find(step=>step.id===expanded))?.title?.trim()||"New Work Instruction";
+    feedback.textContent=saving||pendingUploads?"Work Instruction “"+name+"” is still saving. Wait for it to finish.":"Save or cancel Work Instruction “"+name+"” before leaving. Its controls are on the left.";
+    content.querySelector(".recipe-step-name")?.focus();feedback.scrollIntoView({block:"nearest"});
+   },error:message=>{feedback.textContent=message;}
+  }));
   async function persistContainer(step,{draftSave=false}={}){
    if(!step.title.trim())throw Error("Enter a Work Instruction name.");
    if(saving)return;
@@ -279,7 +275,7 @@
       const cancel=button("Cancel",()=>{
        if(isDraft){steps.splice(steps.indexOf(step),1);draft=null;expanded=steps.find(s=>!s.archivedAt)?.id||null}
        else{const snap=editSnapshots.get(step.id);if(snap)Object.assign(step,snap)}
-       editing.delete(step.id);editSnapshots.delete(step.id);dirty=false;
+       editing.delete(step.id);editSnapshots.delete(step.id);dirty=false;feedback.textContent="";
        render();
       },"btn");
       navActions.append(saveButton,cancel);

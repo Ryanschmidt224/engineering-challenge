@@ -183,3 +183,9 @@ The family Workshop owns category → family → optional product → project us
 ## Work Instruction first-entry visibility
 
 The shared section action row sits directly in the active-entry host, before its content. The empty-state check must inspect that host, not only the content subtree; otherwise an empty Work Instruction hides its Add entry button even in Edit mode. Cancelling the first new-entry form must also leave the action row available. The small visibility fix changes no record format, save API, permission or stored instruction data. Browser regression covers first-entry creation/cancel and saving/reopening Notes, Tests/Measurements, Revisions, Failures and named Photos at desktop and phone widths using the actual Worker handlers.
+# Work Instruction save protection
+
+`work-instruction-save-guard.js` is explicitly installed by each recipe editor. The guard includes new instruction drafts, which intentionally are not yet in the workspace save payload. Navigating out of a draft opens its Work Instructions section, identifies its name and focuses its editor; Save/Cancel remain available. The draft is not silently saved or discarded. Existing dirty saved steps retain save-before-navigation, and failures cancel navigation. Genuine drafts, edits and in-flight saves still trigger the browser's native leave warning; the page identifies the instruction because browser warning text itself cannot be customized. A clean editor, completed save or cancelled edit does not trigger this guard. Photo saves are independent.
+
+The former inline navigation/unload handlers were removed from the frozen recipe controller, which shrinks. No storage/API changes. Regression workflows cover clean state, collapsed draft navigation, cancellation, failed/successful saves and edited existing steps at desktop/phone widths. Rollback by reverting the guard and controller together; stored instructions remain unchanged.
+

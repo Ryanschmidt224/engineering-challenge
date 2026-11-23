@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 
 const recipe=readFileSync("assets/recipe-editor.js","utf8");
+const saveGuard=readFileSync("assets/work-instruction-save-guard.js","utf8");
 const investigations=readFileSync("assets/investigations.js","utf8");
 const site=readFileSync("assets/site.js","utf8");
 const workspace=readFileSync("functions/api/workspace.js","utf8");
@@ -52,12 +53,13 @@ test("top heading double chevron expands or collapses all typed entries",()=>{
 });
 
 test("unsaved work and uploads guard navigation and are never silently discarded",()=>{
- assert.match(recipe,/window\.addEventListener\("beforeunload"/);
+ assert.match(saveGuard,/window\.addEventListener\("beforeunload"/);
+ assert.match(recipe,/installWorkInstructionSaveGuard/);
  assert.match(recipe,/if\(pendingUploads\)throw Error/);
  assert.match(recipe,/async function savePending\(\)/);
  assert.match(recipe,/if\(!editing\.has\(expanded\)\)scheduleSave\(\)/);
  assert.match(recipe,/hasPendingUploads:\(\)=>pendingUploads>0/);
- assert.match(recipe,/window\.addEventListener|document\.addEventListener\("click"/);
+ assert.match(saveGuard,/document\.addEventListener\("click"/);
 });
 
 test("legacy freeform instruction panels are removed rather than merely hidden",()=>{
