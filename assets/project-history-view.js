@@ -67,5 +67,5 @@ export function createHistoryView(ctx,memo){
 }
 export async function latestHistory(ctx,container){
  const result=await ctx.client.request("/"+ctx.projectId+"/history?"+new URLSearchParams({scope:ctx.itemId,limit:"5"}));
- for(const entry of result.entries)container.append(entryCard(entry,()=>ctx.openHistory(ctx.itemId,entry.id)));return result.entries.length;
+ for(const entry of result.entries)container.append(entryCard(entry,()=>ctx.openHistory(ctx.itemId,entry.id)));return result.total;
 }

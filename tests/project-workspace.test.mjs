@@ -74,7 +74,7 @@ test("step reordering supports more than 100 steps without exceeding D1 bound pa
 test("History stable cursors handle equal timestamps, edited record search and project isolation",async()=>{
  const f=await fixture();try{
   const {db,call,itemId}=f,ids=[];for(let n=0;n<7;n++){const r=await call("/items/"+itemId+"/records","POST",{record:{type:"note",fields:{text:"Entry "+n}}});ids.push(r.result.eventId);}
-  db.sqlite.exec("UPDATE engine_events SET created_at='2026-11-22T12:00:00.000Z'");let cursor="",found=[];do{const page=await call("/history?limit=2"+(cursor?"&cursor="+cursor:""));assert.equal(page.status,200);found.push(...page.result.entries.map(row=>row.id));cursor=page.result.nextCursor;}while(cursor);assert.deepEqual(found,[...ids].sort().reverse());
+  db.sqlite.exec("UPDATE engine_events SET created_at='2026-11-22T12:00:00.000Z'");let cursor="",found=[];do{const page=await call("/history?limit=2"+(cursor?"&cursor="+cursor:""));assert.equal(page.status,200);assert.equal(page.result.total,7);found.push(...page.result.entries.map(row=>row.id));cursor=page.result.nextCursor;}while(cursor);assert.deepEqual(found,[...ids].sort().reverse());
   const detail=(await call("/history/"+ids[0])).result;await call("/records/"+detail.record.id,"PATCH",{record:{type:"problem",fields:{happened:"Unique fault",status:"resolved"}}});
   assert.equal((await call("/history?type=problems&q=Unique%20fault")).result.entries.length,1);
   assert.equal((await call("/history?type=notes&q=Unique%20fault")).result.entries.length,0);

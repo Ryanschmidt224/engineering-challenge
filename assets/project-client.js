@@ -9,7 +9,7 @@ export function createProjectClient(){
  async function load(projectId){const sequence=++loadSequence,result=await request("/"+projectId+"/state");if(sequence===loadSequence)state=result;return result;}
  async function write(projectId,path,method,data={},expectedRevision=state?.project.revision??null){
   const key=JSON.stringify([projectId,path,method,data,expectedRevision]);let body=pending.get(key);if(!body){body={...data,expectedRevision,operationId:crypto.randomUUID()};pending.set(key,body);}
-  try{const result=await request("/"+projectId+path,{method,headers:{"content-type":"application/json"},body:JSON.stringify(body)});pending.delete(key);loadSequence++;if(state?.project.id===projectId)state.project.revision=result.revision;return result;}catch(error){if(error.status)pending.delete(key);throw error;}
+  const result=await request("/"+projectId+path,{method,headers:{"content-type":"application/json"},body:JSON.stringify(body)});pending.delete(key);loadSequence++;if(state?.project.id===projectId)state.project.revision=result.revision;return result;
  }
  async function upload(projectId,file,{itemId=null}={}){
   const prepared=await write(projectId,"/files/prepare","POST",{name:file.name,content_type:file.type||"application/octet-stream"});

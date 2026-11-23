@@ -51,3 +51,7 @@ Transport failures retain the same command body/operation and loaded revision; e
 The conservative CSS literal scanner now excludes only the shared section's `countLabel` property, which is count text rather than a class producer. This fixes a false positive for the noun “steps”; an actual `className` reintroduction remains blocked by a regression test. No retired CSS or specificity exception is added.
 
 Owner refinement: custom in-house parts require neither Manufacturer nor MPN. The model already treats them as optional; the custom editor now groups them in a collapsed optional section. Missing values stay absent, and existing values are retained. The project part number remains separate.
+
+Owner refinement: in-house parts skip Where to buy / supplier-entry screens. This custom-part preview has no purchasing stage; later purchased-part flows may expose procurement fields. Hiding inapplicable fields must preserve any existing supplier data and historical evidence. The legacy production editor is unchanged until the reviewed cutover.
+
+Owner refinement: Add specification uses the shared content-width 44 px button, with hover help and a keyboard/touch-accessible explanation using the same wording in `project-help.js`. Later Add supplier must use the same button helper and sizing; there is no supplier UI in the in-house flow. History headers count all matching events even while showing only the latest five rows.
