@@ -179,3 +179,7 @@ Before a release, require all checks at the exact PR head and verify Cloudflare'
 Outstanding legacy risks to verify during replacement: finite embedded instruction-history windows; uneven stale-form guards; non-transactional multi-object saves/number allocation; archive coverage and concurrent export consistency; upload-versus-save format validation; login resource limits; private static serving across all hostnames. Prior dated audits described older code and test failures, not current measured production state. Use current code and tests to establish each risk before changing it.
 
 The family Workshop owns category → family → optional product → project use. Hidden fields keep values; populated field type/unit changes are refused; zero and false are values. Project requirements remain separate from product facts. Seed data is catalog definitions only, not user products or inventory. Its former release/progress documents are superseded by this guide, the architecture and current tests.
+
+## Owner AI part lookup
+
+The owner requested restoring the existing owner-only lookup under their reported enforced $5 provider cap. `AI_LOOKUP.md` describes the `AI_LOOKUP_ENABLED` switch, conditional daily attempt reservation and safe provider-limit errors. This is a separate API/configuration change, not part of the new project engine or Workshop-family redesign. It neither changes billing nor enables the unrelated extraction route. A successful real-provider check is required before claiming the deployed lookup works.
