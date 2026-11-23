@@ -21,7 +21,9 @@ test('CSS retirement CLI checks without writing, preserves mixed active selector
   assert.match(readFileSync(css,'utf8'),/\.active-fixture:has\(\.kept\)/);assert.match(readFileSync(css,'utf8'),/\.active-fixture > \*/);assert.doesNotMatch(readFileSync(css,'utf8'),/display: none/);assert.match(readFileSync(css,'utf8'),/:is\(input\[type="text" i\]\) > \.child/);
   assert.doesNotMatch(readFileSync(css,'utf8'),/:(?:hover|modal|:before)\(\)/);assert.match(readFileSync(css,'utf8'),/:hover::before/);assert.match(readFileSync(css,'utf8'),/:modal/);
   assert.equal(run('--check').status,0);
-  writeFileSync(source,'const name = "retired-fixture";');
+  writeFileSync(source,'window.BSUI.section({countLabel:["retired-fixture","retired-fixtures"]});');
+  assert.equal(run('--check').status,0,'count nouns are not class producers');
+  writeFileSync(source,'element.className = "retired-fixture";');
   const active=run('--check');assert.notEqual(active.status,0);assert.match(active.stderr,/is referenced/);
  } finally {rmSync(dir,{recursive:true,force:true});}
 });

@@ -1,0 +1,85 @@
+/* Preview project layout. Shared controls, sections and tiles keep their owners. */
+.project-workspace {
+  padding: var(--space-5);
+  max-width: 110rem; /* Task workspace, matching the Workshop's working width. */
+  margin: auto;
+}
+.project-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.project-heading h1,
+.project-heading p {
+  margin-bottom: var(--space-2);
+}
+.project-notice {
+  margin-bottom: var(--space-3);
+}
+.project-panes {
+  --pane-default-tree: 17rem; /* Initial engineering tree width. */
+  --pane-default-history: 24rem; /* History rows need room for title and outcome. */
+  display: grid;
+  grid-template-columns:
+    var(--pane-tree, var(--pane-default-tree)) var(--pane-handle-size)
+    minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: start;
+}
+.project-history-panes {
+  grid-template-columns:
+    var(--pane-history, var(--pane-default-history)) var(--pane-handle-size)
+    minmax(0, 1fr);
+}
+.project-tree,
+.project-main,
+.project-history-list,
+.project-history-detail {
+  min-width: 0;
+}
+.project-tree,
+.project-history-list {
+  max-height: 75vh;
+  overflow-y: auto;
+}
+.project-stack {
+  display: grid;
+  gap: var(--space-4);
+}
+.project-toolbar {
+  margin-bottom: var(--space-4);
+}
+.project-copy {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.project-picture {
+  display: block;
+  max-width: 100%;
+  max-height: 18rem; /* Preview engineering photograph, not a gallery. */
+  object-fit: contain;
+  margin-bottom: var(--space-3);
+}
+.project-history-detail:empty {
+  display: none;
+}
+@media (max-width: 640px) {
+  .project-workspace {
+    padding: var(--space-3);
+  }
+  .project-panes {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .project-tree,
+  .project-history-list {
+    max-height: none;
+  }
+  .project-history-panes[data-detail-open] .project-history-list {
+    display: none;
+  }
+}

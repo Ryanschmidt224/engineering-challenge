@@ -39,3 +39,13 @@ Remaining gates: real browser workflow checks at 1440/390 px; actual Cloudflare 
 Before preview deployment, revert this batch's code. After migration 2 has run, leave its tables and bytes intact: roll back code to the preceding proven preview, or disable the preview flag and redeploy. Never edit an applied migration, drop tables, reseed, delete R2 or point preview at production. If a correction needs schema changes after deployment, append migration 3. Production remains on the authenticated main branch; this preview is not a cutover.
 
 Cloudflare limits and conditional-write references checked November 22, 2026: https://developers.cloudflare.com/d1/platform/limits/ and https://developers.cloudflare.com/r2/api/workers/workers-api-reference/ . A D1 batch counts as one invocation query, while each statement retains the 100-parameter limit. No new dependency is required.
+
+## Preview screens
+
+`project.html` is gated along with its pretty-URL aliases. It uses the shared header/kit and small page-layout CSS; it imports no legacy controller. `project-workspace.js`, `project-editors.js`, `project-history-view.js` and `project-client.js` separate navigation, editors, History presentation and transport. Their explicit page initialization adds no new global API.
+
+The screen covers custom details/specification types, optional revision comparison, work steps/records, engineering/supporting files, removal/undo/restoration and flat History/Removed panes. Sections start collapsed; tests' saved configuration is opened when viewing their evidence. Tree indicators lead text. Pane widths persist through the existing shared resizer. History remembers filters, selected entry and list scroll in the current page session, and phones use Back to history. No Workshop/product or nested-assembly UI is implied by this slice.
+
+Transport failures retain the same command body/operation and loaded revision; edited content gets a new operation. 409 retains the open draft and offers an explicit newer-version review before using its token. Uploaded supporting files advance only the editor's own token. Cancel does not publish a record or revision. Server-generated current configurations remain authoritative.
+
+The conservative CSS literal scanner now excludes only the shared section's `countLabel` property, which is count text rather than a class producer. This fixes a false positive for the noun “steps”; an actual `className` reintroduction remains blocked by a regression test. No retired CSS or specificity exception is added.

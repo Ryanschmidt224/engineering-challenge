@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+ <title>Projects — Building Schmidt</title>
+ <link rel="stylesheet" href="assets/base.css"><link rel="stylesheet" href="assets/theme.css"><link rel="stylesheet" href="assets/ui-kit.css"><link rel="stylesheet" href="assets/components.css"><link rel="stylesheet" href="assets/project-workspace.css">
+</head>
+<body>
+ <header class="ui-site-header" data-site-header="home"></header>
+ <main class="project-workspace">
+  <div class="project-heading"><div><p class="muted">Private preview</p><h1 data-page-title>Projects</h1></div><div class="actions" data-page-actions></div></div>
+  <div class="project-notice" data-notice role="status" aria-live="polite"></div>
+  <div data-project-content></div>
+ </main>
+ <dialog class="dialog" data-project-editor></dialog>
+ <script src="assets/ui-kit.js"></script>
+ <script type="module">import {initProjectWorkspace} from "./assets/project-workspace.js"; initProjectWorkspace();</script>
+</body>
+</html>
