@@ -14,7 +14,7 @@ function editable(ctx,title,saveLabel,collect,save,{review=null}={}){
   }catch(problem){error.textContent=problem.message;}
  });reload.hidden=true;
  form.append(fields,error,reload,reviewArea,actions(saveButton,cancel));
- form.onsubmit=async event=>{event.preventDefault();if(busy)return;error.textContent="";try{const data=collect();busy=true;saveButton.disabled=true;cancel.disabled=true;await save(data,revision);dialog.close();await ctx.refresh();}catch(problem){error.textContent=problem.message;reload.hidden=problem.status!==409;}finally{busy=false;saveButton.disabled=false;cancel.disabled=false;}};
+ form.onsubmit=async event=>{event.preventDefault();if(busy)return;error.textContent="";try{const data=collect();busy=true;saveButton.disabled=true;cancel.disabled=true;await save(data,revision);await ctx.refresh();dialog.close();}catch(problem){error.textContent=problem.message;reload.hidden=problem.status!==409;}finally{busy=false;saveButton.disabled=false;cancel.disabled=false;}};
  dialog.oncancel=event=>{if(busy)event.preventDefault();};dialog.replaceChildren(node("h2",title),form);dialog.setAttribute("aria-label",title);queueMicrotask(()=>{dialog.showModal();dialog.querySelector("input,textarea,select")?.focus();});
  return {fields,form,saveButton,error,acceptOwnWrites(){revision=ctx.client.state.project.revision;}};
 }
