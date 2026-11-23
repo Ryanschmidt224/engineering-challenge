@@ -1,5 +1,5 @@
-import {commitProjectCommand,replayProjectCommand,canonicalJSON,CommandConflict} from "./project-command.js";
-import {rows,statement,uuid} from "./project-state.js";
+import {commitProjectCommand,replayProjectCommand,CommandConflict} from "./project-command.js";
+import {statement,uuid} from "./project-state.js";
 import {bytesHash,MAX_ENGINE_FILE} from "./project-files.js";
 // Explicit export schema: receipts and concurrency tokens are operational, not
 // engineering history. Restore issues a new token and a new import receipt.

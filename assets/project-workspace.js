@@ -19,7 +19,7 @@ export function initProjectWorkspace(root=document){
   try{await client.write(projectId,path,method,data);await refresh();notify(message,after);}catch(error){notify(error.message);}
  }
  function recordsFor(step,body){
-  const records=client.state.records.filter(record=>record.step_id===step.id);for(const record of records)body.append(button(record.title,()=>editRecord(ctx(),{record}),{variant:"quiet"}));
+  const records=client.state.records.filter(record=>record.step_id===step.id);for(const record of records){const event=client.state.record_events.find(event=>event.record_id===record.id);if(event)body.append(button(record.title,()=>openHistory(itemId,event.id),{variant:"quiet"}));}
  }
  function workInstructions(current){
   const state=client.state,steps=state.steps.filter(step=>step.item_id===current.id&&!step.retired_at).sort((a,b)=>a.sort_order-b.sort_order||a.id.localeCompare(b.id)),section=window.BSUI.section({title:"Work instructions",count:steps.length,countLabel:["step","steps"],role:"work-instructions"});

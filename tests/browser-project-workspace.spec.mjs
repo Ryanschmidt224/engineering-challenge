@@ -1,3 +1,4 @@
+import {readFile} from "node:fs/promises";
 import {test,expect} from "@playwright/test";
 test.describe.configure({mode:"serial"});test.use({hasTouch:true});
 async function login(page,request,context){
@@ -21,6 +22,7 @@ for(const width of [1440,390])test("custom part, frozen evidence, file history a
  await page.getByRole("button",{name:"History / Removed items",exact:true}).click();await page.getByLabel("Type",{exact:true}).selectOption("tests");await page.locator(".project-history-list").getByRole("button").filter({hasText:"Bracket stiffness"}).click();await expect(page.locator(".project-history-detail")).toContainText("3 mm");await expect(page.locator(".project-history-detail")).toContainText("3 mm flexed too much");
  await page.getByRole("button",{name:"Back to history",exact:true}).click();await expect(page.getByLabel("Type",{exact:true})).toHaveValue("tests");await page.getByLabel("View",{exact:true}).selectOption("removed");await page.locator(".project-history-list").getByRole("button").filter({hasText:"Drill mounting holes"}).click();await page.getByRole("button",{name:"Restore step…",exact:true}).click();await page.getByRole("dialog").getByRole("button",{name:"Restore step",exact:true}).click();await expect(page.getByRole("dialog")).not.toBeVisible();
  await page.getByLabel("View",{exact:true}).selectOption("history");await page.getByLabel("Type",{exact:true}).selectOption("changes");await page.getByLabel("Search history",{exact:true}).fill("bracket-a");await page.locator(".project-history-list").getByRole("button").filter({hasText:"Engineering file added"}).click();await expect(page.locator(".project-history-detail").getByRole("link",{name:"bracket-a.step",exact:true})).toBeVisible();
+ const oldFilePromise=page.waitForEvent("download");await page.locator(".project-history-detail").getByRole("link",{name:"bracket-a.step",exact:true}).click();const oldFile=await oldFilePromise;const oldPath=testInfo.outputPath("original-drawing.step");await oldFile.saveAs(oldPath);expect(await readFile(oldPath,"utf8")).toBe("drawing a");
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(0);await page.screenshot({path:testInfo.outputPath("custom-history.png"),fullPage:true});
 });
 test("stale editor keeps draft and requires review before saving; cancel never creates a revision",async({page,request,context})=>{
