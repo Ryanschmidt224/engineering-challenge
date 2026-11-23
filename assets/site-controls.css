@@ -4086,7 +4086,7 @@ body > .footer {
   > .part-editor-group
   .historical-price-fields
   > label {
-  display: grid !important;
+  display: grid;
   grid-template-columns: var(--edit-part-label-width) minmax(0, 1fr) !important;
   align-items: center !important;
   column-gap: var(--space-3) !important;
