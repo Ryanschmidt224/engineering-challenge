@@ -1,6 +1,6 @@
 # Project engine command foundation
 
-Status: Batch 1 implementation, **real Cloudflare D1 proof pending**. This is not the custom-part application or production cutover. The only initial caller is the protected preview proof handler. Do not build dependent project flows until the real-D1 result below is recorded.
+Status: **Batch 1 real Cloudflare D1 proof passed**, November 22, 2026 (Arizona). The initial run and same-proof replay passed all seven checks with unchanged counts. Exact source, binding, build ID and reports are recorded in `PROJECT_ENGINE_D1_PROOF.json`. Batch 2 dependent preview flows may now begin. This is not the completed custom-part application or production cutover.
 
 ## Ownership and boundaries
 
@@ -18,7 +18,7 @@ Status: Batch 1 implementation, **real Cloudflare D1 proof pending**. This is no
 - Occurrence quantity, unit, status, attention/note and tree-hidden state are validated separately. Build information cannot silently become intrinsic engineering data. A disabled attention flag does not erase its note.
 - Automatic numbering uses the project's prefix and minimum digit count (current default NR/4), begins at 100 and takes every reserved number, including removed items. It neither changes old numbers nor establishes database uniqueness by itself; final commands must still use the D1 guard/constraint.
 - Revision comparisons match specification rows by stable ID. They show changed values with labels and old/new units, added/removed rows, label changes and ordering. Equivalent blank optional fields yield no change. Equal labels do not conflate separate rows.
-- The proof fixture now uses this same model. Its revised configuration matches the saved current fields, retains the unchanged specification rows and leaves the initial configuration at 3 mm. SQLite tests verify this; the actual preview proof is still pending.
+- The proof fixture now uses this same model. Its revised configuration matches the saved current fields, retains the unchanged specification rows and leaves the initial configuration at 3 mm. SQLite tests verify this; the actual preview proof passed and its report is retained.
 
 Remaining: the editor, record/step commands, immutable file lifecycle, History/Removed items screens and export/restore. They must not be connected to this transaction primitive before its real-D1 gate passes. No existing project record or production path is changed by the model preparation.
 
@@ -35,7 +35,7 @@ All domain IDs and the result are chosen once per admitted command and returned 
 
 ## Preview authentication prerequisite
 
-A fresh preview was created after the owner configured Previews Base bindings and its separate session-signing secret. Its account service now returns the normal signed-out response. The preview R2 bucket contains engineering fixtures but no visible `users/` account folder; production login records are not implicitly shared.
+A fresh preview was created after the owner configured Previews Base bindings and its separate session-signing secret. Its account service now returns the normal signed-out response. The isolated preview owner was provisioned by the owner using the offline helper, then authenticated through the unchanged account handler. Production login records were not copied.
 
 For an empty preview account store, use the one-time operator procedure in `PREVIEW_OWNER_SETUP.md`. The self-contained HTML helper stays under `scripts/`, excluded from deployed assets. It creates no server endpoint and keeps the existing authentication boundary. Account generation/upload is not itself proof of D1 transactions.
 

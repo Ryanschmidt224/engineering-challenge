@@ -13,7 +13,7 @@ The owner approved the direction and the accompanying [Batch 0 decisions and cus
 - Do not delete project data before cutover. A later reviewed deletion is separate from code deployment. Preserve Workshop, Knowledge and accounts. Purge is deferred.
 - Ordinary edit / no-op / retry / configuration accuracy / file retention / remove / restore behavior must satisfy F1–F11 in the companion spec.
 
-**Status:** plan approved; implementation proceeds in reviewable batches. The earlier *History Redesign* and *Status and History Rewrite* proposals are superseded by this plan and the companion spec; Git history and the original review artifacts retain their rationale. They are not independent implementation requirements.
+**Status:** plan approved; Batch 1 command foundation passed real Cloudflare D1 verification and replay on November 22, 2026 (Arizona), recorded in `PROJECT_ENGINE_D1_PROOF.json`. Batch 2 preview workflow implementation may proceed. Production activation and data cutover remain gated. The earlier *History Redesign* and *Status and History Rewrite* proposals are superseded by this plan and the companion spec; Git history and the original review artifacts retain their rationale. They are not independent implementation requirements.
 
 ## Original detailed plan (review version 1)
 
