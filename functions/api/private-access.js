@@ -18,8 +18,8 @@ export async function guardPrivateApi(request, env) {
   if (!["GET", "HEAD"].includes(request.method) && request.headers.get("origin") !== url.origin) {
     return json({error: "Invalid request origin", code: "INVALID_ORIGIN"}, 403);
   }
-  if (paidRoutes.has(url.pathname)) {
-    return json({error: "AI lookup is paused while its global spending limit is implemented. You can still enter details manually.", code: "AI_PAUSED"}, 503);
+  if (paidRoutes.has(url.pathname) && !(url.pathname === "/api/workshop-lookup" && env.AI_LOOKUP_ENABLED === "1")) {
+    return json({error: "AI lookup is paused. You can still enter details manually.", code: "AI_PAUSED"}, 503);
   }
   return null;
 }

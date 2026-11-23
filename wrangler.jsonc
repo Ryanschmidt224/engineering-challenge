@@ -20,7 +20,9 @@
       "0 7 * * SUN"
     ]
   },
+  "vars": {"AI_LOOKUP_ENABLED": "1"},
   "previews": {
+    "vars": {"AI_LOOKUP_ENABLED": "1"},
     "r2_buckets": [
       {
         "binding": "PHOTOS",
