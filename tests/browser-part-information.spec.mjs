@@ -34,7 +34,8 @@ for(const width of [1440,390])test("matching information tiles, purpose editing 
  await project.getByRole("button",{name:"Edit purpose",exact:true}).click();await project.getByRole("textbox",{name:"Purpose",exact:true}).fill("Revised project purpose");
  await page.route("**/api/components?**",route=>route.request().method()==="PATCH"?route.fulfill({status:503,json:{error:"Temporary storage failure"}}):route.continue());
  await project.getByRole("button",{name:"Save",exact:true}).click();await expect(project.getByRole("status")).toHaveText("Temporary storage failure");await expect(project.getByRole("textbox",{name:"Purpose",exact:true})).toHaveValue("Revised project purpose");
- await page.unroute("**/api/components?**");await project.getByRole("button",{name:"Save",exact:true}).click();await expect(project.getByRole("textbox",{name:"Purpose",exact:true})).toHaveCount(1);await expect(project.getByRole("textbox",{name:"Purpose",exact:true})).toBeHidden();await expect(project).toContainText("Revised project purpose");
+ // Assert the saved state directly: a fast response may already hide the editor.
+ await page.unroute("**/api/components?**");await project.getByRole("button",{name:"Save",exact:true}).click();await expect(project.getByRole("textbox",{name:"Purpose",exact:true})).toBeHidden();await expect(project).toContainText("Revised project purpose");
  await project.locator('[data-section="part-alternatives"] > summary').click();
  await project.getByRole("button",{name:"Add alternative part",exact:true}).click();await project.getByRole("textbox",{name:"Part name",exact:true}).fill("Replacement switch");await project.getByRole("textbox",{name:"Manufacturer part number",exact:true}).fill("EX-2");await project.getByRole("button",{name:"Add and use part",exact:true}).click();
  await expect(reference).toContainText("EX-2");await expect(project).toContainText("Revised project purpose");
