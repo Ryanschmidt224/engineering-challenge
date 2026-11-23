@@ -9,6 +9,7 @@ const assemblySelections={};
 const assemblyTreeSnapshots={};
 async function setupAssemblyTrees(){
  const {renderPartInformation}=await import("./part-information.js");
+ const {initProjectFiles}=await import("./project-files.js");
  document.querySelectorAll("[data-assembly-tree]:not([data-tree-ready])").forEach(root=>{
   root.dataset.treeReady="true";
   const project=root.dataset.assemblyTree,view=document.getElementById(project),nodesEl=root.querySelector(".assembly-tree-nodes"),status=root.querySelector(".assembly-tree-status"),controls=root.querySelector(".assembly-edit");
@@ -2488,6 +2489,7 @@ async function setupAssemblyTrees(){
     view.querySelectorAll(".component-section").forEach(section=>section.dispatchEvent(new Event("assemblychange")));
    }
   });
+  initProjectFiles({target:partsPage,project,ui:window.BSUI});
   // Every project-level page gets the same notes component, but each page
   // keeps its own records. BOM and workspace for an assembly are independent.
   const notePanels=Object.fromEntries([

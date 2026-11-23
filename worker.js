@@ -6,6 +6,7 @@ import {handleTree} from "./functions/api/tree.js";
 import {handleWires,handleHarness} from "./functions/api/wires.js";
 import {onRequest as workshopLookupApi} from "./functions/api/workshop-lookup.js";
 import {handlePartFiles} from "./functions/api/part-files.js";
+import {handleProjectFiles} from "./functions/api/project-files.js";
 import {handlePartPages} from "./functions/api/part-pages.js";
 import {handleWorkspace} from "./functions/api/workspace.js";
 import {handleInvestigations} from "./functions/api/investigations.js";
@@ -57,6 +58,7 @@ export default {
       if(path==="/api/wires")return handleWires(request,env);
       if(path==="/api/workshop-lookup")return workshopLookupApi({request,env,ctx});
       if(path==="/api/part-files")return handlePartFiles(request,env);
+      if(path==="/api/project-files")return handleProjectFiles(request,env);
       if(path==="/api/part-pages")return handlePartPages(request,env);
       if(path==="/api/harness")return handleHarness(request,env);
       if(path==="/api/workspace")return handleWorkspace(request,env);
