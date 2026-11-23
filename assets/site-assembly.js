@@ -1141,8 +1141,7 @@ async function setupAssemblyTrees(){
    const fields=window.BSPartFields.detailRows(part);
    const values=new Map(fields);
    const quantity=part.quantity==null?"":"Qty "+values.get("Quantity");
-   const sourcing=window.BSPartFields.sourcingFor(part);
-   const {unitCost}=sourcing;
+   const {unitCost}=window.BSPartFields.sourcingFor(part);
    let cost="";
    if(unitCost!==null){
     const dollars=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:4});
@@ -1153,7 +1152,7 @@ async function setupAssemblyTrees(){
    const summary=[part.description,quantity,cost];
    detailSummary.textContent=summary.filter(Boolean).join(" · ");
    renderPartInformation(detailRows,{
-    part,fields:window.BSPartFields,ui:window.BSUI,dialogs:window.BSDialogs,
+    part,project,fields:window.BSPartFields,ui:window.BSUI,dialogs:window.BSDialogs,
     suppliers:window.BSPartSuppliers,editable:canEdit(),linked:part.familyUse===true||!!workshopLinkId(part),
     knowledge:renderPartKnowledge,
     async onChange(action,data){
