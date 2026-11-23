@@ -1,0 +1,83 @@
+{
+  "status": "actual Cloudflare source workflow, independent-target restore and final source integrity recheck passed",
+  "sourceEvidenceFile": "PROJECT_HISTORY_SOURCE_PROOF.json",
+  "sourceSha": "5dea81ecbf6429fb714847052602a67ca024fb9a",
+  "sourceBuild": "aae7a97b-e25a-4c8b-8b50-107039eaddb1",
+  "restoreSha": "ddf3eeb886889c51c7ea206dced794e2b1407524",
+  "restoreTreeSha": "fb1ee21f6ba2cc637c8a61b6854bc38ff47c0239",
+  "restoreBuild": "9971a730-d188-4ba6-851f-7dd3435023a7",
+  "runtimeComparison": "Restore uses the exact passing source runtime. Only preview D1 configuration and the source evidence document differ.",
+  "restoreBindingEvidence": {
+    "method": "Owner-provided Cloudflare restore-preview Bindings screenshot verifies the full bucket and database names.",
+    "PHOTOS": "building-schmidt-photos-preview",
+    "WORKSHOP_DB": "building-schmidt-project-restore-preview",
+    "configuredDatabaseId": "d761ae08-64f2-4130-8cfa-f596e8e89b80",
+    "databaseIdEvidence": "ID pinned by deployed configuration; owner screenshot checked its name."
+  },
+  "reportSource": "Owner ran Restore and verify in independent target on the deployed protected page and pasted the result in chat.",
+  "report": {
+    "ok": true,
+    "environment": "https://preview-project-restore-proof-engineering-challenge.ryanschmidt224.workers.dev",
+    "checkedAt": "2026-11-23T23:03:44.813Z",
+    "projectId": "743a7c75-aa2d-436e-86d1-6f43c3310191",
+    "targetWasAbsent": true,
+    "revisionReset": true,
+    "counts": {
+      "items": 2,
+      "occurrences": 2,
+      "steps": 1,
+      "configurations": 7,
+      "records": 1,
+      "events": 7,
+      "files": 3,
+      "file_links": 9
+    },
+    "files": [
+      {
+        "id": "274b18cb-d5c8-4797-af43-977f340af658",
+        "name": "proof-photo.png",
+        "size": 68,
+        "sha256": "726074f8da2365cabc1b29e074d630413344a7ce199152eaf81ed800a029ebf2"
+      },
+      {
+        "id": "af24ef60-46c1-473d-bca3-bbbb515cda6d",
+        "name": "proof-a.step",
+        "size": 19,
+        "sha256": "df391f9b128c87f473cdc8d4f0fec0b0df4983b1785bc99993b270366d70db10"
+      },
+      {
+        "id": "dec2a054-4ba9-486f-80f5-443e57c5d819",
+        "name": "proof-b.step",
+        "size": 19,
+        "sha256": "a1add889b82f890cff65584ac15824cf6b799eae43f18e036a513cd0b16239c8"
+      }
+    ],
+    "sourceBackupSha256": "2815b36f8a932cead97ac7077b3cb01f26fc8725f83b91ef795818d3539e23ca",
+    "checks": [
+      "Target project absent before restore; other projects preserved",
+      "All engineering metadata and stable identities match the source backup",
+      "Revision levels, full historical snapshots and archive explanations match",
+      "Every restored file matches its saved size and SHA-256",
+      "Restored files use independent storage keys",
+      "A fresh project token is issued and an exact restore retry replays"
+    ]
+  },
+  "invalidSourceRecheck": {
+    "environment": "https://preview-project-restore-proof-engineering-challenge.ryanschmidt224.workers.dev",
+    "error": "The source backup changed. Inspect the source before claiming recovery passed.",
+    "diagnosis": "Owner screenshot shows Verify source is unchanged was run on the restore preview, not on the source preview. New token and independent file keys necessarily differ there. This is not evidence that the original source changed, and does not satisfy the final source gate.",
+    "resolution": "The subsequent proper source-preview check passed with the exact original backup hash; its report is retained below."
+  },
+  "sourceIntegrityRecheckedAfterRestore": true,
+  "productionEngineEnabled": false,
+  "sourceIntegrityReport": {
+    "ok": true,
+    "environment": "https://feature-project-history-alignment-engineering-challenge.ryanschmidt224.workers.dev",
+    "projectId": "743a7c75-aa2d-436e-86d1-6f43c3310191",
+    "backupSha256": "2815b36f8a932cead97ac7077b3cb01f26fc8725f83b91ef795818d3539e23ca",
+    "checks": [
+      "Source metadata and exported file bytes are byte-for-byte unchanged after independent restore"
+    ]
+  },
+  "sourceIntegrityReportSource": "Owner ran Verify source is unchanged on the original source preview and pasted this passing report after the independent restore. No checkedAt field was emitted by this action."
+}
