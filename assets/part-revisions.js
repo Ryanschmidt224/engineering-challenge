@@ -1,0 +1,110 @@
+import {partHelp} from "./part-help.js";
+
+const make=(tag,text)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;return node;};
+const revisionUrl=(project,id,extra={})=>"/api/investigations?"+new URLSearchParams({project,revision:id,...extra});
+
+// One section and one in-flight command per part page. A failed/lost response
+// retains its operation ID so Retry cannot publish a second historical copy.
+export function initPartRevisions({host,project,ui,dialogs,canEdit,beforeCreate}){
+ const section=ui.section({title:"Revisions",role:"part-revisions",count:0,tooltip:partHelp.revisions});
+ section.root.hidden=true;
+ const explanation=make("p",partHelp.revisions);
+ const list=make("div"),message=make("p");message.setAttribute("role","status");message.setAttribute("aria-live","polite");
+ const commands=new Map(),openRevisions=new Set();let current=null,lastPartId=null;
+ const create=ui.button("Create a Revision",async()=>{
+  if(!current||!canEdit())return;
+  const state=current,part=state.part;
+  let command=commands.get(part.id);
+  if(command?.pending)return;
+  if(!command){command={operationId:crypto.randomUUID(),pending:false,...state.getSource()};commands.set(part.id,command);}
+  let sent=false;
+  command.pending=true;create.disabled=true;create.textContent="Creating revision…";message.textContent="Creating a historical copy…";
+  try{
+   beforeCreate();
+   sent=true;
+   await state.save({action:"createPartRevision",partId:part.id,operationId:command.operationId,
+    expectedPartRevision:command.partRevision,expectedWorkspaceRevision:command.workspaceRevision});
+   commands.delete(part.id);
+   if(current?.part.id===part.id)message.textContent="Revision created. The working part is unchanged. Use Edit part details when you are ready to make changes.";
+  }catch(error){
+   if(!sent||error.status===409)commands.delete(part.id);
+   if(current?.part.id===part.id)message.textContent=error.message;
+  }finally{
+   command.pending=false;
+   if(current?.part.id===part.id){create.disabled=!canEdit();create.textContent="Create a Revision";}
+  }
+ });
+ ui.sectionActions(section.body,{primary:create});section.body.append(explanation,list,message);
+ const controller={render(state){
+  if(state.part&&lastPartId!==state.part.id){message.textContent="";section.root.open=false;lastPartId=state.part.id;}
+  current=state.part?state:null;section.root.hidden=!current;
+  if(!current)return;
+  create.hidden=!canEdit();create.disabled=!!commands.get(state.part.id)?.pending;
+  create.textContent=create.disabled?"Creating revision…":"Create a Revision";
+  section.setCount(state.records.length);list.replaceChildren();
+  for(const record of [...state.records].reverse()){
+   const item=ui.section({title:record.title||"Saved part revision",role:"part-revision",open:openRevisions.has(record.id)});
+   const date=make("time",record.date||record.createdAt?.slice(0,10)||record.archivedAt?.slice(0,10)||"");date.className="ui-section__count";date.dateTime=date.textContent;item.count.replaceWith(date);
+   item.root.addEventListener("toggle",()=>{if(item.root.open)openRevisions.add(record.id);else openRevisions.delete(record.id);});
+   renderRevisionSnapshot(record.partSnapshot,item.body,{project,revisionId:record.id,ui});
+   if(record.archiveNote)item.body.prepend(make("p","Reason: "+record.archiveNote));
+   if(canEdit()){
+    const remove=ui.button("Delete revision",async()=>{
+     if(!await dialogs.danger('Delete revision "'+record.title+'"? This permanently removes the historical record.',{title:"Delete revision?",confirmLabel:"Delete revision"}))return;
+     remove.disabled=true;
+     try{await state.save({action:"deleteRecord",id:record.id});}
+     catch(error){message.textContent=error.message;remove.disabled=false;}
+    },{variant:"danger"});
+    item.body.append(remove);
+   }
+   list.append(item.root);
+  }
+  // Other part sections can mount later; keep revisions at the page bottom.
+  host.append(section.root);
+ }};
+ host.append(section.root);return controller;
+}
+
+export function renderRevisionSnapshot(snapshot,target,{project,revisionId,ui}){
+ const panel=ui.informationPanel("Saved part information");
+ const part=snapshot.part||{},workspace=snapshot.workspace||{};
+ const labels={name:"Part name",partNumber:"Part number",description:"Purpose",manufacturer:"Manufacturer",model:"Manufacturer part number",supplier:"Supplier",asin:"ASIN",historicalPurchasePrice:"Recorded purchase price",quantity:"Quantity",quantityUnit:"Quantity unit",partType:"Part type",progressStatus:"Status"};
+ for(const [key,label] of Object.entries(labels))if(part[key]!==undefined&&part[key]!==null&&String(part[key])){
+  const value=key==="progressStatus"?({not_started:"Not started",in_progress:"In progress",complete:"Complete"})[part[key]]||part[key]:part[key];panel.body.append(ui.fieldRow(label,value).root);
+ }
+ for(const spec of part.specifications||[])panel.body.append(ui.fieldRow(spec.name,spec.value+(spec.unit?" "+spec.unit:"")).root);
+ if(snapshot.thumbnailKey){const image=make("img");image.className="investigation-image";image.alt="Saved part photograph";image.loading="lazy";const photo=snapshot.assets?.findIndex(file=>file.archive===snapshot.thumbnailKey);image.src=photo>=0?revisionUrl(project,revisionId,{asset:String(photo),view:"1"}):"/api/investigations?"+new URLSearchParams({project,thumbnail:snapshot.thumbnailKey});panel.body.append(image);}
+ const steps=workspace.recipe||[];
+ if(steps.length){
+  panel.body.append(make("h3","Saved Work Instructions"));
+  for(const step of steps){
+   const block=make("section");block.append(make("h4",step.title||"Step"));
+   for(const text of [step.standard,step.detail,...(step.notes||[])])if(text)block.append(make("p",text));
+   panel.body.append(block);
+  }
+ }
+ if(snapshot.records?.length){
+  panel.body.append(make("h3","Saved tests and records"));
+  for(const record of snapshot.records){
+   const block=make("section");block.append(make("h4",record.title||record.category||"Record"));
+   if(record.description)block.append(make("p",record.description));
+   for(const entry of [...(record.entries||[]),...(record.notes||[])])if(entry.text)block.append(ui.fieldRow(entry.descriptor||entry.type.charAt(0).toUpperCase()+entry.type.slice(1),entry.text).root);
+   panel.body.append(block);
+  }
+ }
+ for(const experiment of workspace.experiments||[])if(experiment.text)panel.body.append(ui.fieldRow("Saved test note",experiment.text).root);
+ const files=make("div");
+ for(const [index,asset] of (snapshot.assets||[]).entries()){
+  if(!/^(?:part-files|part-pages|drawings|recipe-files|workshop-v2\/files)\//.test(asset.original)&&!asset.original.startsWith(project+"/"))continue;
+  const link=make("a",asset.name||asset.original.split("/").pop());link.href=revisionUrl(project,revisionId,{asset:String(index)});link.className="investigation-file";files.append(link);
+ }
+ if(files.childElementCount){panel.body.append(make("h3","Saved files"),files);}
+ if(!snapshot.assets){
+  panel.body.append(make("p","This older revision did not preserve separate copies of its attached file bytes. Original attachment links may reflect later changes."));
+  // Older saved copies never froze file bytes. Keep their existing attachment
+  // access without presenting those links as immutable revision files.
+  for(const step of steps)for(const file of step.photos||[]){const link=make("a",step.photoNames?.[file]||"Original instruction attachment (legacy link)");link.href=file.startsWith("recipe-files/")?"/api/recipe-files?id="+encodeURIComponent(file):"/api/photo?id="+encodeURIComponent(file);panel.body.append(link);}
+ }
+ if(revisionId){const download=make("a","Download revision data"),row=make("p");download.href=revisionUrl(project,revisionId,{download:"1"});row.append(download);panel.body.append(row);}
+ target.append(panel.root);
+}

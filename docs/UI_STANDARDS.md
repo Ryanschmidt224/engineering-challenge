@@ -28,6 +28,8 @@ A page never restyles a shared component. If something needs to look different, 
 ### Section (`BSUI.section`)
 Every collapsible block on project, assembly and part pages: Part details, Work instructions, Helpful tools, History, Archived items, Notes, Project backups, Recent changes.
 
+Part **Revisions** is a separate section at the bottom of the part page. **Create a Revision** captures the saved part without opening an editor or moving active records. Each saved copy uses the shared section header, a compact automatic date, and actions inside its expanded body. Keep the date and title readable at phone width; do not crowd destructive actions into the header. **Records and archived entries** remains separate. This owner refinement supersedes older Save as revision/Replace part labels; aligning the D1 preview is a later focused change.
+
 - One frame: surface background, 1px border, large radius, the same vertical gap between sections.
 - One header: at least 48 px (`--section-height`), chevron on the left (6 px, 1.5 px stroke, rotates when open), title 16 px semibold, record count in parentheses 14 px muted, optional help or actions on the right. The header grows when the title wraps; it never clips.
 - One body: the same inner padding. Communicate emptiness once: a zero header count needs no duplicate message. Otherwise provide one concise guidance line. Preserve loading and error feedback.

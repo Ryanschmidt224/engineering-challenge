@@ -45,8 +45,9 @@ function referencedProjectKeys(value,project,out){
  const source=JSON.stringify(value);
  for(const match of source.matchAll(pattern))out.add(match[0].replace(/[,}\\]]+$/,""));
 }
-export async function archiveAssets(bucket,project,archiveId,subtree,records,parts){
- const keys=new Set();
+export async function archiveAssets(bucket,project,archiveId,subtree,records,parts,{copyKey=stableKey,verify=false,extraKeys=[]}={}){
+ const keys=new Set(extraKeys),required=new Set(extraKeys);
+ const references=value=>{const linked=new Set();referencedProjectKeys(value,project,linked);for(const key of linked){keys.add(key);required.add(key);}};
  const sourceIds=subtree.filter(n=>n.kind!=="part").map(n=>n.id);
  const partIds=[...new Set([...subtree.filter(n=>n.kind==="part").map(n=>n.partId),...parts.map(p=>p.id)])];
  for(const id of sourceIds)for(const k of ["workspaces/"+project+"/"+id+".json","assembly-status/"+project+"/"+id+".json","unstructured-notes/"+project+"/workspace/"+id+".json"])keys.add(k);
@@ -69,7 +70,7 @@ export async function archiveAssets(bucket,project,archiveId,subtree,records,par
    if(assemblyIds.has(metadata?.customMetadata?.assemblyId))keys.add(item.key);
   }
  }
- referencedProjectKeys({subtree,records,parts},project,keys);
+ references({subtree,records,parts});
  // Linked notes, part code and workspace records may refer to more image or
  // document IDs. Follow those references without modifying the source files.
  const linkedRecords=[];
@@ -80,7 +81,7 @@ export async function archiveAssets(bucket,project,archiveId,subtree,records,par
   try{
    const parsed=JSON.parse(await record.text());
    linkedRecords.push(parsed);
-   referencedProjectKeys(parsed,project,keys);
+   references(parsed);
   }catch{ /* Preserve the original object even if an old record is unparseable. */ }
  }
  // Photos are sometimes referenced directly as project/UUID.ext IDs, rather
@@ -93,16 +94,26 @@ export async function archiveAssets(bucket,project,archiveId,subtree,records,par
   keys.add("photo-annotations/"+key+".json");
   keys.add("photo-renders/"+key+".webp");
  }
- const copied=[];
+ const copied=[];let totalBytes=0;
  for(const original of keys){
   if(original.startsWith("assembly-archives/")||original.length>600)continue;
   const object=await bucket.get(original);
+  if(!object&&verify&&required.has(original))throw Error("An attached source file is missing. Restore it before creating a revision.");
   if(!object)continue;
-  const saved=stableKey(project,archiveId,original);
-  await bucket.put(saved,await object.arrayBuffer(),{httpMetadata:object.httpMetadata,customMetadata:object.customMetadata});
-  copied.push({original,archive:saved,size:object.size});
+  totalBytes+=object.size;
+  if(verify&&(object.size>20*1024*1024||totalBytes>100*1024*1024))throw Error("Revision files exceed 20 MB per file or 100 MB total");
+  const saved=copyKey(project,archiveId,original),bytes=await object.arrayBuffer();
+  const result=await bucket.put(saved,bytes,{httpMetadata:object.httpMetadata,customMetadata:object.customMetadata,...(verify?{onlyIf:{etagDoesNotMatch:"*"}}:{})});
+  if(verify){
+   const copy=await bucket.get(saved);
+   if(!result||!copy||copy.size!==object.size)throw Error("A revision file could not be copied");
+   const digest=async value=>Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",value))).join(",");
+   if(await digest(bytes)!==await digest(await copy.arrayBuffer()))throw Error("A revision file failed verification");
+  }
+  copied.push({original,archive:saved,size:object.size,...(verify?{etag:object.etag,name:object.customMetadata?.filename||original.split("/").pop()}: {})});
   if(copied.length>500)throw Error("Too many referenced files for one archive");
  }
+ if(verify)for(const item of copied)if((await bucket.head(item.original))?.etag!==item.etag)throw Error("A source file changed while creating the revision. Reload and try again.");
  return copied;
 }
 // A snapshot of the path at the exact moment an item leaves the active tree.

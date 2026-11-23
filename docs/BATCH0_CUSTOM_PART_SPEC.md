@@ -9,7 +9,7 @@ Claude · 2026-11-22 · For Codex/ChatGPT. Companion to Codex's *History Rewrite
 The owner agreed with every point in Claude's review of the History Rewrite Plan:
 
 1. **Direction approved:** D1 for structured project state and History, R2 for immutable file bytes, Cloudflare hosting unchanged.
-2. **Editing:** one details editor with an optional **Save as revision** choice that shows changed fields and an optional reason. **Change selected product** is a separate action (Batch 3).
+2. **Editing (owner refinement, November 23):** **Create a Revision** is a separate action in Revisions at the bottom of the part page. It saves the entire currently saved part as historical context with an automatic date, leaves the working part unchanged and opens no editor. The owner modifies the working part afterward through the normal details editor. Archiving moves an entry out of its active section; it is separate from revision creation. **Change selected product** remains a separate action (Batch 3).
 3. **Duplicating a part creates an independent item.** Placements share an item only when explicitly intended.
 4. **Fast path at Batch 6:**
    - If the legacy-data inventory confirms nothing needs keeping: export every old project (with restore proven), cut over in one release, then delete legacy code and data.
@@ -30,6 +30,9 @@ Commit Codex's plan as `docs/HISTORY_REWRITE_PLAN.md` with these decisions recor
 ---
 
 ## Part B: Spec for the first complete flow (Batches 1–2)
+
+**November 23 refinement:** Part A.2 supersedes the original Save as revision editor and F4 interaction below. The existing D1 preview still implements that earlier interaction; align it in a focused preview refinement before marking the new flow accepted. A separate repair supplies Create a Revision on the existing live R2 part page. The major cutover gate remains unchanged.
+
 
 ### B1. Scope
 

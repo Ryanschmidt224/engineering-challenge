@@ -58,7 +58,7 @@ Status: engineering standards under incremental adoption, 2026-11-22. Claude rev
 
 - Screens are assembled from the shared kit: section, section actions, button, control, chip, dialog, tooltip/help, list card, status message. Never hand-build another `<details>/<summary>/<h2>/count` or another dialog shell.
 - One control height for every button and input on a toolbar row; one section header height; one body padding.
-- Vocabulary is consistent across screens. History uses the redesign wording: *Edit details, Revise design, Change selected product, Add record, Remove from build, Restore to build, Retire step*.
+- Vocabulary is consistent across screens. History uses the owner-refined wording: *Edit details, Create a Revision, Change selected product, Add record, Remove from build, Restore to build, Retire step*. Create a Revision captures the saved part separately before later edits; it does not open another editor.
 - Help text lives in one file (keyed), not scattered string literals.
 - Communicate emptiness once: a zero count in a section header needs no redundant “No notes yet” line. Otherwise use one concise guidance line. Errors say what happened and what to do next.
 

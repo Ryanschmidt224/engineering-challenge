@@ -1,6 +1,6 @@
 import {upgradePracticeRecords} from "./record-upgrades.js";
 import {getFamilyProjectPart} from "./workshop-db.js";
-import {getPartPhoto} from "./workshop-linked-part.js";
+import {capturePartRevision} from "./part-revision-snapshot.js";
 import {resolveFunctionalPart} from "./functional-part-model.js";
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isProjectRecipeFile} from "./recipe-files.js";
@@ -68,11 +68,29 @@ export async function handleInvestigations(request,env){
   try{({object,saved}=await upgradePracticeRecords(env,project,object,saved,original));}
   catch{return json({error:"Old records could not be upgraded safely. Retry before editing.",code:"RECORD_UPGRADE_RETRY"},503);}
  }
+ if(request.method==="GET"&&url.searchParams.has("revision")){
+  if(!await canEditProject(request,env,project))return json({error:"Project owner sign-in required"},403);
+  const record=(saved.records||[]).find(record=>record.id===url.searchParams.get("revision")&&record.partSnapshot);
+  if(!record)return json({error:"Revision not found"},404);
+  if(url.searchParams.has("asset")){
+   const index=Number(url.searchParams.get("asset")),assets=record.partSnapshot.assets||[],asset=assets[index];
+   if(!Number.isSafeInteger(index)||index<0||!asset||!asset.archive.startsWith("part-revisions/"+project+"/"+record.ownerId+"/"+record.id+"/objects/"))return json({error:"Revision file not found"},404);
+   const file=await env.PHOTOS.get(asset.archive);if(!file)return json({error:"Saved revision file is missing"},404);
+   const type=file.httpMetadata?.contentType||"application/octet-stream",inline=/^image\/(?:jpeg|png|webp|gif)$/.test(type)&&url.searchParams.get("view")==="1";
+   return new Response(file.body,{headers:{"content-type":inline?type:"application/octet-stream","content-disposition":(inline?"inline":"attachment")+"; filename*=UTF-8''"+encodeURIComponent(asset.name||asset.original.split("/").pop()),"cache-control":"private, no-store","x-content-type-options":"nosniff","content-security-policy":"default-src 'none'; sandbox"}});
+  }
+  return new Response(JSON.stringify(record.partSnapshot,null,2),{headers:{"content-type":"application/json","content-disposition":"attachment; filename=part-revision-"+record.id+".json","cache-control":"private, no-store"}});
+ }
  if(request.method==="GET")return json({records:Array.isArray(saved.records)?saved.records:[],revision:saved.revision??null});
  if(request.method!=="POST")return json({error:"Method not allowed"},405);
  if(!await canEditProject(request,env,project))return json({error:"Administrator login required"},401);
  const data=await request.json().catch(()=>null);
  if(!data||typeof data!=="object"||Array.isArray(data))return json({error:"Invalid request"},400);
+ const replay=data.action==="createPartRevision"&&(saved.records||[]).find(record=>record.operationId===data.operationId&&record.partSnapshot);
+ if(replay){
+  if(replay.ownerId!==data.partId||JSON.stringify(replay.revisionRequest)!==JSON.stringify({expectedPartRevision:data.expectedPartRevision??null,expectedWorkspaceRevision:data.expectedWorkspaceRevision??null}))return json({error:"This operation ID was already used for a different revision"},409);
+  return json({ok:true,revision:saved.revision??null,records:saved.records,createdId:replay.id});
+ }
  if((data.expectedRevision??null)!==(saved.revision??null))return json({error:"Investigations changed elsewhere. Reload before saving.",revision:saved.revision??null},409);
  const records=Array.isArray(saved.records)?saved.records:[];
  if(records.length>300)return json({error:"Project investigation limit reached"},413);
@@ -138,36 +156,12 @@ export async function handleInvestigations(request,env){
   const archivedAt=new Date().toISOString();
   changed=records.map(item=>(item.id===record.id||item.parentRecordId===record.id)
    ?{...item,lifecycle:"archived",archivedAt,archiveNote:item.id===record.id?note.trim():"Archived with parent entry."}:item);
- }else if(data.action==="archivePart"){
-  const partId=data.partId;
-  if(!uuid.test(partId)||!validDate(data.date)||!validText(data.reason,2500)||!data.reason.trim())
-   return json({error:"Enter a reason and valid revision date"},400);
-  const partObject=await env.PHOTOS.get("components/"+project+".json");
-  const parts=partObject?JSON.parse(await partObject.text()):[];
-  const part=(Array.isArray(parts)?parts.find(item=>item.id===partId):null)||await getFamilyProjectPart(env,project,partId);
-  if(!part)return json({error:"Part no longer exists"},404);
+ }else if(data.action==="createPartRevision"){
+  if(!uuid.test(data.partId)||!uuid.test(data.operationId))return json({error:"Invalid revision command"},400);
   if(records.length>=300)return json({error:"Project investigation limit reached"},413);
-  const workspaceObject=await env.PHOTOS.get("part-workspaces/"+project+"/"+partId+".json");
-  const workspace=workspaceObject?JSON.parse(await workspaceObject.text()):{};
-  const revisionId=crypto.randomUUID();
-  const thumbnail=part.familyUse?null:await getPartPhoto(request,env,project,resolveFunctionalPart(part));
-  let archivedThumbnail=null;
-  if(thumbnail){
-   archivedThumbnail="part-revisions/"+project+"/"+partId+"/"+revisionId+"/thumbnail";
-   await env.PHOTOS.put(archivedThumbnail,await thumbnail.arrayBuffer(),{
-    httpMetadata:{contentType:thumbnail.httpMetadata?.contentType||"image/jpeg"}
-   });
-  }
-  // Capture the original part definition and its instruction/test state before edits.
-  // Existing CAD files, drawing objects and uploaded evidence remain immutable in R2.
-  const snapshot={part:JSON.parse(JSON.stringify(part)),workspace:JSON.parse(JSON.stringify(workspace)),
-   thumbnailKey:archivedThumbnail,archivedAt:new Date().toISOString()};
-  if(JSON.stringify(snapshot).length>250000)return json({error:"Part history is too large to snapshot"},413);
-  record={id:revisionId,scope:"part",ownerType:"part",ownerId:partId,stepId:"",
-   title:"Revision: "+trim(part.name||"Previous part",160),status:"resolved",
-   date:data.date,lifecycle:"archived",partSnapshot:snapshot,archivedAt:new Date().toISOString(),archiveNote:data.reason.trim(),entries:[{id:crypto.randomUUID(),type:"revision",text:data.reason.trim(),
-    date:data.date,files:[],fileName:"",createdAt:new Date().toISOString()}],createdAt:new Date().toISOString()};
-  changed=[...records,record];
+  const captured=await capturePartRevision(request,env,project,data,records);
+  if(captured.error)return json({error:captured.error},captured.status);
+  record=captured.record;createdId=record.id;changed=[...records,record];
  }else if(data.action==="rename"){
   record=records.find(item=>item.id===data.id);
   if(!record)return json({error:"Investigation not found"},404);
