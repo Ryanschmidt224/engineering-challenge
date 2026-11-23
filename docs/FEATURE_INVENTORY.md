@@ -92,6 +92,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 5.12 | Purchase parts: select items, "Add selected to DigiKey cart" (1–400 items) | `bom-purchasing.js` | **Keep** | ☐ |
 | 5.13 | Wire harness cutting list | `SA` `showHarnessPreview`, `/api/wires`, `/api/harness` | **Change**: rebuild on Workshop wire products; delete the separate wire library | ☐ |
 | 5.14 | Parts Management table: search, status filter, find/look up number (assigned or reserved), inline edit of name, tree description, quantity, type, status, cost per part/package, attention note; resizable columns | `parts-management.js` | | ☐ |
+| 5.15 | Project files in Parts Management: CAD/drawings across current parts and assemblies; filename/part search, type filters, multi-select, one ZIP for slicer/PDF printing | `project-files.js`, `/api/project-files` | **Keep**: owner requested; current project attachments, not Workshop source or instruction attachments | ☐ |
 
 ## 6. Part page
 
