@@ -49,3 +49,5 @@ The screen covers custom details/specification types, optional revision comparis
 Transport failures retain the same command body/operation and loaded revision; edited content gets a new operation. 409 retains the open draft and offers an explicit newer-version review before using its token. Uploaded supporting files advance only the editor's own token. Cancel does not publish a record or revision. Server-generated current configurations remain authoritative.
 
 The conservative CSS literal scanner now excludes only the shared section's `countLabel` property, which is count text rather than a class producer. This fixes a false positive for the noun “steps”; an actual `className` reintroduction remains blocked by a regression test. No retired CSS or specificity exception is added.
+
+Owner refinement: custom in-house parts require neither Manufacturer nor MPN. The model already treats them as optional; the custom editor now groups them in a collapsed optional section. Missing values stay absent, and existing values are retained. The project part number remains separate.
