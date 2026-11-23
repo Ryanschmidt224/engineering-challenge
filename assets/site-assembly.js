@@ -12,6 +12,7 @@ async function setupAssemblyTrees(){
  const {initProjectFiles}=await import("./project-files.js");
  const {initPartSpecifications,specificationRow}=await import("./part-specifications.js");
  const {openPartCreator}=await import("./part-create.js");
+ const {initPartRevisions,renderRevisionSnapshot}=await import("./part-revisions.js");
  document.querySelectorAll("[data-assembly-tree]:not([data-tree-ready])").forEach(root=>{
   root.dataset.treeReady="true";
   const project=root.dataset.assemblyTree,view=document.getElementById(project),nodesEl=root.querySelector(".assembly-tree-nodes"),status=root.querySelector(".assembly-tree-status"),controls=root.querySelector(".assembly-edit");
@@ -841,7 +842,7 @@ async function setupAssemblyTrees(){
    const history=document.createElement("article");history.className="investigations-panel";
    const activeRecords=document.createElement("section");activeRecords.className="investigations-active-panel";
    history.activeEntriesHost=activeRecords;
-   const archiveSection=window.BSUI.section({title:"Archives and Revision History",role:"history",tooltip:"Review archived records and revision history associated with this workspace."});
+   const archiveSection=window.BSUI.section({title:"Records and archived entries",role:"history",tooltip:"Review records and entries moved out of their active sections. Part revisions have their own section."});
    const archiveHistory=archiveSection.root;
    // investigations.js writes the total into this element.
    archiveSection.count.classList.add("workspace-archive-count");
@@ -864,7 +865,10 @@ async function setupAssemblyTrees(){
    mountWorkspaceSections(partWorkspace,{scope:"part",ownerId:()=>partRoute(),save:savePartWorkspace,saveInProgress:()=>partSaveFlight});
   investigations=window.BSInvestigations?.mount({project,admin:()=>canEdit(),getTree:()=>nodes,
    getPart:()=>currentPartInfo,getPartList:()=>investigationParts,
-    onReplacePart:()=>detailsPanel.querySelector(".part-details-edit")?.click()});
+   revisions:initPartRevisions({host:partWorkspace,project,ui:window.BSUI,dialogs:window.BSDialogs,canEdit,beforeCreate:()=>{
+    if(partRecipe?.isDirty()||partRecipe?.hasPendingUploads()||partSaveFlight||workspaceAutosaveTimers.part||partWorkspace.querySelector(".recipe-step-nav-row.is-editing,.investigation-add-controls"))throw Error("Save or cancel your open Work Instruction and record edits before creating a revision.");
+   }}),getWorkspaceRevision:()=>partSavedRevision,
+   renderSnapshot:(snapshot,target,revisionId)=>renderRevisionSnapshot(snapshot,target,{project,revisionId,ui:window.BSUI})});
   const partDetailsSection=window.BSUI.section({title:"Part details",role:"part-details",tooltip:"Review the part identity, specifications, and other details. Expand to edit or view related files."});
   const detailsPanel=document.createElement("section");detailsPanel.className="part-details-view";
   detailsPanel.append(partDetailsSection.root);
@@ -1384,6 +1388,7 @@ async function setupAssemblyTrees(){
     if(!part.isTool)fillProgressPanel(part);
     partPhotoActions.setEnabled(canEdit());
     investigationParts=partData.components||[];
+    partSavedRevision=data.workspace?.revision??null;
     investigations?.showPart(partInvestigationPanel,partId);
     renderPartDetails(part);
     void partDrawingPanel?.load(project,"part",partId,part.selectedImplementationId||null);

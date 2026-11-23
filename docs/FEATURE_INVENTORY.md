@@ -125,7 +125,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 7.5 | Record attachments: up to 12 photos/files per field, ≤20 MB each, named photos | `investigations.js`, `attachment-types.js` | | ☐ |
 | 7.6 | Nested entries; drag or Alt+Up/Down to reorder record tiles | `investigations.js` | | ☐ |
 | 7.7 | Archive a record (date, reason); delete archived entry | `investigations.js` | | ☐ |
-| 7.8 | "Replace part / save revision": archive the current part and tests, then open the editor for the replacement | `investigations.js` | Rebuild under History redesign ("Revise design" / "Change selected product") | ☐ |
+| 7.8 | Create a Revision at the bottom of a part page: capture the saved part, instructions, records and local file bytes; automatic date; leave current data and editor unchanged | `part-revisions.js`, `part-revision-snapshot.js`, `/api/investigations` | **Keep**: separate historical-copy action; ordinary edits follow independently. Legacy repair; D1 preview alignment remains pending | ☐ |
 | 7.9 | Open subassembly instructions from a BOM line | `SA` | | ☐ |
 | 7.10 | Suggestion review queue: suggest a Work Instruction name change, owner reviews and rejects/accepts | `project-review.js` | **Drop** | ☐ |
 
@@ -133,7 +133,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 
 | # | Feature | Code today | Decision | Rebuilt |
 |---|---|---|---|---|
-| 8.1 | Archives and Revision History section: archived records in this part and its children, archived part and tests before replacement, archived instructions | `investigations.js`, `SA`, `/api/workspace-history` | Replace with History redesign (one History view + separate Removed items) | ☐ |
+| 8.1 | Records and archived entries stay separate from the part Revisions section; older saved revisions remain readable with an explicit file-retention limit | `investigations.js`, `part-revisions.js`, `SA`, `/api/workspace-history` | Later History redesign remains pending; owner requires a separate Create a Revision action at the part-page bottom | ☐ |
 | 8.2 | Archived items (parts/subassemblies): original location, reason, children, saved photos and files, view details, restore, permanent delete | `SA` `refreshAssemblyArchives`, `viewAssemblyArchive`, `/api/assembly-archive` | Becomes "Removed items" | ☐ |
 | 8.3 | Recent changes: list, load older, "Load this version" (restore a previous version) | `SA`, `/api/workspace` | Fold into History redesign | ☐ |
 | 8.4 | Project backups: download a project backup (JSON) and a readable HTML backup (print to PDF) | `SA`, `project-readable-backup.js`, `/api/project` | | ☐ |

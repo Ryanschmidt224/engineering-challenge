@@ -471,7 +471,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(resources.locator(".linked-resource-group")).toHaveCount(0);
  await expect(toolsDisclosure.getByRole("button",{name:"+ Add entry",exact:true})).toBeHidden();
  await toolsDisclosure.locator(":scope>.ui-section__header").click();
- await expect(workspace.locator('[data-section="history"]>.ui-section__header')).toContainText("Archives and Revision History");
+ await expect(workspace.locator('[data-section="history"]>.ui-section__header')).toContainText("Records and archived entries");
  await expect(workspace.locator('[data-section="history"]')).not.toHaveAttribute("open","");
  await workspace.locator('[data-section="history"]>.ui-section__header').click();
  await expect(workspace.locator('[data-section="history"]')).toHaveAttribute("open","");
