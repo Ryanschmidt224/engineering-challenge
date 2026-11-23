@@ -128,32 +128,13 @@ async function setupAssemblyTrees(){
   const updateProjectTitle=value=>{
    title=value;
    projectHeading.textContent=value;
-   const card=document.querySelector('.project-link[data-nav="'+project+'"],.project-link[data-project="'+project+'"]');
-   const cardHeading=card?.querySelector(".project-copy h2");
+   const card=document.querySelector(' .ui-project-open[data-nav="'+project+'"],.ui-project-open[data-project="'+project+'"]');
+   const cardHeading=card?.querySelector(".ui-project-name");
    if(cardHeading)cardHeading.textContent=value;
    if(card)card.setAttribute("aria-label","Open "+value+" project");
    render();
   };
-  const refreshProjectCover=async()=>{
-   const card=document.querySelector('.project-link[data-nav="'+project+'"],.project-link[data-project="'+project+'"]');
-   const art=card?.querySelector(".project-art");
-   if(!art)return;
-   try{
-    const response=await fetch("/api/photos?project="+encodeURIComponent(project),{cache:"no-store"});
-    if(!response.ok)return;
-    const result=await response.json();
-    const cover=(result.photos||[]).find(photo=>!photo.assembly);
-    if(cover){
-     let image=art.querySelector(".project-card-cover");
-     if(!image){image=document.createElement("img");image.className="project-card-cover";image.alt="";art.append(image)}
-     image.src=window.BSPhotoMarkup.displayUrl("gallery",cover.id);
-     art.classList.add("has-project-cover");
-    }else{
-     art.querySelector(".project-card-cover")?.remove();
-     art.classList.remove("has-project-cover");
-    }
-   }catch{/* Keep the existing illustration if photos are unavailable. */}
-  };
+  const refreshProjectCover=async()=>{window.dispatchEvent(new CustomEvent("projectphotoschanged",{detail:project}));};
   async function loadProjectMetadata(){
    try{
     const response=await fetch(projectMetaUrl,{cache:"no-store"});
@@ -557,6 +538,7 @@ async function setupAssemblyTrees(){
     const [photoData,partData]=await Promise.all([photosResponse.json(),partsResponse.json()]);
     if(version!==summaryVersion||!isProjectSummary())return;
     const previousPhotoId=summaryPhotos[summaryPhotoIndex]?.id;
+    void refreshProjectCover();
     summaryPhotos=(photoData.photos||[]).filter(photo=>photo.assembly==="project-summary"||!photo.assembly);
     summaryPhotoIndex=Math.max(0,summaryPhotos.findIndex(photo=>photo.id===previousPhotoId));
     displaySummaryPhoto();

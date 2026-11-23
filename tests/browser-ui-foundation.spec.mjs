@@ -197,7 +197,7 @@ test("one project template supports built-in and new project routes without dupl
   expect(response.ok(),await response.text()).toBe(true);
   const {projects}=await response.json(),created=projects.find(project=>project.name==="Shared template fixture");
   await page.goto("/#home");
-  await expect(page.locator(".project-grid > .project-card")).toHaveCount(4);
+  await expect(page.locator(".ui-project-list > .ui-project-card")).toHaveCount(4);
   for(const id of ["launcher","linear","robot",created.id]) {
     await page.goto("/#"+id+"/workspace/__root__");
     await expect(page).toHaveURL(new RegExp("#"+id+"/workspace/__root__$"));
@@ -226,7 +226,7 @@ test("an empty owner catalog does not instantiate hidden built-in projects",asyn
  await page.route("**/api/projects",route=>route.fulfill({json:{projects:[]}}));
  await page.goto("/#home");
  await expect(page.locator(".project-directory-empty")).toBeVisible();
- await expect(page.locator(".project-grid > .project-card")).toHaveCount(0);
+ await expect(page.locator(".ui-project-list > .ui-project-card")).toHaveCount(0);
  await expect(page.locator("#launcher,#linear,#robot")).toHaveCount(0);
 });
 

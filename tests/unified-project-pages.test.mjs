@@ -47,7 +47,7 @@ test("Old mini examples are retired; new category metadata is independent of pro
 test("Project discovery supports inclusive multi-select tags without forcing one exclusive category",()=>{
  const manager=read("assets/project-manager.js"),api=read("functions/api/projects.js");
  assert.match(manager,/const activeTags=new Set\(\)/);
- assert.match(manager,/\.some\(tag=>!projectTags\(project\)\.some/);
+ assert.match(read("assets/project-directory.js"),/active\.some\(tag=>/);
  assert.match(manager,/chip\.setAttribute\("aria-pressed"/);
  assert.match(manager,/makeTagPicker\(projectTags\(project\)\)/);
  assert.match(manager,/tags:createTagPicker\.getTags\(\)/);
@@ -58,15 +58,16 @@ test("Project discovery supports inclusive multi-select tags without forcing one
 
 test("Projects use a compact toolbar and optional descriptor filters",()=>{
  const manager=read("assets/project-manager.js");
- const css=read("assets/site-polish.css");
+ const css=read("assets/project-directory.css");
+ const directory=read("assets/project-directory.js");
  assert.match(manager,/filters\.append\(newButton,searchLabel,filterMenu,sortLabel/);
  assert.match(manager,/project-selected-descriptors/);
  assert.match(manager,/bs-project-descriptor-search/);
  assert.match(manager,/tagSearch\.oninput=renderTagFilters/);
  assert.match(manager,/activeTags=new Set\(\)/);
  assert.match(manager,/chip\.setAttribute\("aria-pressed"/);
- assert.match(manager,/terms\.some\(term=>/);
+ assert.match(directory,/query\.some\(term=>/);
  assert.match(manager,/projectTags\(project\)/);
- assert.match(css,/compact-project-directory\s*>\s*\.project-grid\s*\{[^}]*display:\s*grid;\s*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+ assert.match(css,/\.ui-project-list\s*\{[^}]*display:\s*grid;\s*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
  assert.doesNotMatch(manager,/categoryNavigation/);
 });

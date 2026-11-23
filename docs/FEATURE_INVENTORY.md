@@ -49,6 +49,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 2.6 | Descriptor tiles: search, select, clear, add custom tags (comma separated) | `project-manager.js` | | ☐ |
 | 2.7 | Archived projects list (under More) | `project-manager.js` | | ☐ |
 | 2.8 | Empty / loading / error states ("No projects yet", "Projects could not load") | `project-manager.js` | | ☐ |
+| 2.9 | Explorer-style View choices: Details, List, Tiles, Large icons; persistent browser preference; thumbnail from summary album | `project-directory.js`, `project-directory.css` | **Keep**: owner requested; same sorting/filtering in every view | ☐ |
 
 ## 3. Project settings
 
