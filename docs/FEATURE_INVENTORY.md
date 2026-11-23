@@ -85,7 +85,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 5.5 | + Part (inside the selected assembly only) | `SA` | | ☐ |
 | 5.6 | New assembly: number (NR####) + name | `SA` | | ☐ |
 | 5.7 | Rename, move (reparent, "Move subassembly", choose by number), reorder by drag | `SA` `moveSelected`, `reparent`, `moveToChoice` | | ☐ |
-| 5.8 | Delete part/subassembly → archived with recovery copy | `SA` | | ☐ |
+| 5.8 | Right-click Archive part/subassembly removes the selected subtree from the build and keeps the complete saved record in its parent’s History → Archive; guarded Restore to build | `tree-archive.js`, `/api/assembly-archive`, `workshop-tree-archive.js` | **Keep**: includes custom parts and Workshop project uses; no new part revision; numbers stay permanently consumed, including legacy reservations; replaces competing tree Delete | ☐ |
 | 5.9 | Assembly photos (same gallery controls as 4.1) | `SA` | | ☐ |
 | 5.10 | Assembly status: Not started / In progress / Complete, with "What needs attention?" note (minimize/expand) | `SA` `saveAssemblyStatus`, `installAttentionExpander` | | ☐ |
 | 5.11 | Bill of materials for the assembly: list view and picture view; grouped parts; nested assembly quantities; standard shop materials section | `SA` `renderWorkspaceParts`, `bom-model.js` | | ☐ |
@@ -124,8 +124,8 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 7.4 | Records ("+ Add entry") inside a step. Types: Failures, Tests/Measurements, Revisions, Notes, Photos, Practice (legacy). Each type has its own prompts, e.g. "What happened? / What caused it? / Did you fix it?" | `investigations.js`, `entry-editor.js` | **Change**: drop the Practice (legacy) type; convert any existing Practice records to Notes | ☐ |
 | 7.5 | Record attachments: up to 12 photos/files per field, ≤20 MB each, named photos | `investigations.js`, `attachment-types.js` | | ☐ |
 | 7.6 | Nested entries; drag or Alt+Up/Down to reorder record tiles | `investigations.js` | | ☐ |
-| 7.7 | Archive a record (date, reason); delete archived entry | `investigations.js` | | ☐ |
-| 7.8 | Create a Revision at the bottom of a part page: capture the saved part, instructions, records and local file bytes; automatic date; leave current data and editor unchanged | `part-revisions.js`, `part-revision-snapshot.js`, `/api/investigations` | **Keep**: separate historical-copy action; ordinary edits follow independently. Legacy repair; D1 preview alignment remains pending | ☐ |
+| 7.7 | Read earlier archived entries; archive whole parts/subassemblies through the feature tree instead of individual record controls | `investigations.js`, `tree-archive.js` | **Change**: old records retained; record Archive UI removed | ☐ |
+| 7.8 | Create a Revision at the bottom of a part page: prompt for What changed, Why did you change it, Notes and named photos, then capture the saved part/instructions/records/local bytes; automatic date; leave working part unchanged | `part-revisions.js`, `part-revision-snapshot.js`, `/api/investigations` | **Keep**: separate historical-copy action; ordinary edits follow independently. Legacy repair; D1 preview alignment remains pending | ☐ |
 | 7.9 | Open subassembly instructions from a BOM line | `SA` | | ☐ |
 | 7.10 | Suggestion review queue: suggest a Work Instruction name change, owner reviews and rejects/accepts | `project-review.js` | **Drop** | ☐ |
 
@@ -133,8 +133,8 @@ Legend: `SA` = `assets/site-assembly.js`.
 
 | # | Feature | Code today | Decision | Rebuilt |
 |---|---|---|---|---|
-| 8.1 | Records and archived entries stay separate from the part Revisions section; older saved revisions remain readable with an explicit file-retention limit | `investigations.js`, `part-revisions.js`, `SA`, `/api/workspace-history` | Later History redesign remains pending; owner requires a separate Create a Revision action at the part-page bottom | ☐ |
-| 8.2 | Archived items (parts/subassemblies): original location, reason, children, saved photos and files, view details, restore, permanent delete | `SA` `refreshAssemblyArchives`, `viewAssemblyArchive`, `/api/assembly-archive` | Becomes "Removed items" | ☐ |
+| 8.1 | History includes parent-scoped Archive folder for tree removals; part Revisions stays separate; earlier saved records remain readable | `investigations.js`, `part-revisions.js`, `SA`, `/api/workspace-history` | Later History redesign remains pending; owner requires a separate Create a Revision action at the part-page bottom | ☐ |
+| 8.2 | History → Archive (parts/subassemblies): original location, explanation/photos, children, saved records/files, readable details, Restore to build | `tree-archive.js`, `/api/assembly-archive` | Owner refinement: parent-scoped History → Archive; no new iteration or permanent-delete UI | ☐ |
 | 8.3 | Recent changes: list, load older, "Load this version" (restore a previous version) | `SA`, `/api/workspace` | Fold into History redesign | ☐ |
 | 8.4 | Project backups: download a project backup (JSON) and a readable HTML backup (print to PDF) | `SA`, `project-readable-backup.js`, `/api/project` | | ☐ |
 | 8.5 | Scheduled automatic backups of all projects (cron) | `worker.js` `scheduled`, `automatic-backups.js` | | ☐ |

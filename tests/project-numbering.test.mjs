@@ -14,6 +14,7 @@ class MemoryR2{
   if(condition.etagDoesNotMatch==="*"&&current)return null;
   const etag=crypto.randomUUID();this.map.set(key,{value,etag});return {etag};
  }
+ async list({prefix=""}){return {objects:[...this.map.keys()].filter(key=>key.startsWith(prefix)).map(key=>({key})),truncated:false};}
 }
 test("project numbering reserves numbers 001–099 for assemblies",async()=>{
  const env={PHOTOS:new MemoryR2()},project="launcher";

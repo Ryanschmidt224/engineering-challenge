@@ -14,7 +14,7 @@
  };
  const retiredLabels={revision:{result:"What was the result?"},note:{note:"Notes"}};
  const categoryOf=record=>record.category||(record.partSnapshot?"revision":"failure");
- const sectionTitle="Project Archive";
+ const sectionTitle="Earlier archived entries";
  const acceptedAttachments=globalThis.BSAttachmentTypes.accept;
  const photoExt=/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i;
  const fileUrl=id=>"/api/recipe-files?id="+encodeURIComponent(id);
@@ -398,9 +398,6 @@
      })
     );
    }else actions.append(saveBtn,window.BSEntryEditor.action("Cancel",onDone));
-   if(!creating&&!isArchived(record)){
-    actions.append(window.BSEntryEditor.action("Archive",()=>archiveRecord(record),{className:"investigation-archive-button"}));
-   }
    if(!creating)actions.append(window.BSEntryEditor.action("Delete",async()=>{
     const deleteBtn=actions.querySelector(".investigation-delete");
     if(!await window.BSDialogs.danger('Delete "'+(record.title?.trim()||categories[categoryOf(record)]?.label||"Entry")+'"? This removes the record from the project.',{title:"Delete record?"}))return;
@@ -415,26 +412,6 @@
   // without an archive flag remain active; previous part snapshots are history.
   const isArchived=record=>record.lifecycle!=="active"||Boolean(record.archivedAt||record.partSnapshot);
   const archiveDate=record=>(record.archivedAt||record.partSnapshot?.archivedAt||"").slice(0,10);
-  function archiveRecord(record){
-   const dialog=make("dialog","investigation-archive-dialog");
-   dialog.setAttribute("aria-label","Archive "+record.title);
-   dialog.append(make("h3","","Archive entry"),make("p","muted","Move this entry from its current section into Project Archive."));
-   dialog.append(make("p","investigation-archive-today","Archive date: "+new Date().toLocaleDateString()));
-   const label=make("label","investigation-archive-note-label","Why was it archived? (optional)");
-   const note=make("textarea","field");note.rows=3;note.maxLength=2500;note.placeholder="Reason for archiving (optional)";
-   label.append(note);
-   const actions=make("div","investigation-edit-actions");
-   const message=make("p","investigation-feedback muted");message.setAttribute("role","status");
-   const confirm=btn("Archive",async()=>{
-    confirm.disabled=true;confirm.textContent="Archiving…";
-    try{await save({action:"archiveRecord",id:record.id,note:note.value});dialog.close()}
-    catch(error){message.textContent=error.message;confirm.disabled=false;confirm.textContent="Archive"}
-   },"btn primary");
-   actions.append(confirm,btn("Cancel",()=>dialog.close()));
-   dialog.append(label,actions,message);
-   document.body.append(dialog);dialog.addEventListener("close",()=>dialog.remove(),{once:true});
-   dialog.showModal();note.focus();
-  }
   function render(target,context,compact=false){
    if(!target)return;
    const sectionKey=context.ownerType+":"+context.ownerId+":"+(context.stepId||"");
@@ -482,7 +459,8 @@
    }else if(archiveShell){
     const count=archiveShell.querySelector(".workspace-archive-count");
     const total=activeOwn.length+archiveCount;
-    if(count)count.textContent="("+total+(total===1?" record)":" records)");
+    archiveShell.dataset.recordCount=total;const combined=total+Number(archiveShell.dataset.archiveCount||0);
+    if(count)count.textContent="("+combined+(combined===1?" record)":" records)");
    }
    const content=make("div","investigation-collapse-content");
    // Part snapshots have their own Revisions section; step archives stay local.
@@ -530,9 +508,6 @@
      event.preventDefault();event.stopPropagation();card.open=true;editing=true;draw();
     },"btn investigation-rename");
     const editActions=make("span","investigation-title-controls");
-    const archive=btn("Archive",event=>{
-     event.preventDefault();event.stopPropagation();archiveRecord(record);
-    },"btn investigation-archive-button");
     if(allowEntryEditing&&!inherited){
      if(historical){
       const removeHistory=btn("Delete archived entry",async event=>{
@@ -554,7 +529,6 @@
      if(historical&&record.archiveNote?.trim())
       body.append(make("p","investigation-archive-reason","Reason: "+record.archiveNote));
      edit.hidden=editing||historical;
-     archive.hidden=true;
      attach(record,body,target,editing,()=>{editing=false;draw()},false,
       null);
      // Nested records sit below their parent entry and may use any existing

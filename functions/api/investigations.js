@@ -1,3 +1,4 @@
+import {historyEntryDetails} from "./history-entry-details.js";
 import {upgradePracticeRecords} from "./record-upgrades.js";
 import {getFamilyProjectPart} from "./workshop-db.js";
 import {capturePartRevision} from "./part-revision-snapshot.js";
@@ -86,9 +87,10 @@ export async function handleInvestigations(request,env){
  if(!await canEditProject(request,env,project))return json({error:"Administrator login required"},401);
  const data=await request.json().catch(()=>null);
  if(!data||typeof data!=="object"||Array.isArray(data))return json({error:"Invalid request"},400);
+ if(data.action==="createPartRevision"){try{data.entryDetails=historyEntryDetails(data.entryDetails,project);}catch(error){return json({error:error.message},400);}}
  const replay=data.action==="createPartRevision"&&(saved.records||[]).find(record=>record.operationId===data.operationId&&record.partSnapshot);
  if(replay){
-  if(replay.ownerId!==data.partId||JSON.stringify(replay.revisionRequest)!==JSON.stringify({expectedPartRevision:data.expectedPartRevision??null,expectedWorkspaceRevision:data.expectedWorkspaceRevision??null}))return json({error:"This operation ID was already used for a different revision"},409);
+  if(JSON.stringify(historyEntryDetails(replay.partSnapshot.entryDetails,project))!==JSON.stringify(data.entryDetails)||replay.ownerId!==data.partId||JSON.stringify(replay.revisionRequest)!==JSON.stringify({expectedPartRevision:data.expectedPartRevision??null,expectedWorkspaceRevision:data.expectedWorkspaceRevision??null}))return json({error:"This operation ID was already used for a different revision"},409);
   return json({ok:true,revision:saved.revision??null,records:saved.records,createdId:replay.id});
  }
  if((data.expectedRevision??null)!==(saved.revision??null))return json({error:"Investigations changed elsewhere. Reload before saving.",revision:saved.revision??null},409);

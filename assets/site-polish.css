@@ -2501,14 +2501,6 @@
   font-size: var(--text-small);
 }
 
-.investigation-archive-button {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-  padding: 5px 10px;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
 .investigation-archive-dialog {
   width: min(470px, calc(100vw - 32px));
   max-height: 85vh;
@@ -2525,7 +2517,6 @@
 .investigation-archive-dialog h3 {
   margin: 0 0 8px;
 }
-.investigation-archive-dialog .investigation-archive-note-label,
 .investigation-description-label {
   display: flex;
   flex-direction: column;
@@ -3172,13 +3163,6 @@
     var(--color-border)
   );
   background: var(--color-surface);
-}
-.recipe-compact
-  :is(.investigation-edit-actions)
-  > .investigation-archive-button {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
 }
 
 /* Workspace saves now run automatically. Keep legacy internal buttons hidden,
@@ -4268,36 +4252,9 @@
 .assembly-archive-dialog ul {
   padding-left: 24px;
 }
-.assembly-archive-json {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  max-height: 300px;
-  overflow: auto;
-  font-size: var(--text-caption);
-  background: var(--color-surface-muted);
-  padding: 12px;
-  border-radius: var(--radius-medium);
-}
-.assembly-archive-actions {
-  display: flex;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-top: 18px;
-}
 
 /* Read-only archive photo gallery and file access. */
-.assembly-archive-media {
-  margin-top: 12px;
-  border-top: 1px solid var(--color-border);
-  padding-top: 10px;
-}
-.assembly-archive-media > summary {
-  cursor: pointer;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  padding: 5px 0;
-}
+
 .assembly-archive-gallery {
   display: flex;
   flex-wrap: wrap;
@@ -4326,11 +4283,6 @@
   font-size: var(--text-caption);
   overflow-wrap: anywhere;
   color: var(--color-text-muted);
-}
-.assembly-archive-media li {
-  margin: 5px 0;
-  overflow-wrap: anywhere;
-  font-size: var(--text-small);
 }
 
 /* Preserve the assembly breadcrumb as visible context for archived items. */
@@ -4385,20 +4337,7 @@
   flex-wrap: wrap;
   justify-content: flex-end;
 }
-.assembly-archived-row .assembly-archive-delete,
-.assembly-archive-actions .assembly-archive-delete {
-  color: var(--color-danger);
-  border-color: var(--color-danger-border);
-  background: var(--color-surface);
-}
-.assembly-archived-row .assembly-archive-delete:hover,
-.assembly-archive-actions .assembly-archive-delete:hover {
-  background: var(--color-danger-soft);
-}
-.assembly-archive-delete-feedback {
-  color: var(--color-danger);
-  font-size: var(--text-small);
-}
+
 @media (max-width: 460px) {
   .assembly-archived-row {
     align-items: flex-start;
@@ -4626,9 +4565,7 @@
 .project-milestone-editor-actions {
   justify-content: flex-start;
 }
-.assembly-archive-milestone-option {
-  margin-left: 8px;
-}
+
 .investigation-milestone-button {
   margin: 6px 0 8px;
   font-size: var(--text-small);
