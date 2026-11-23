@@ -18,3 +18,19 @@ export function initPartSpecifications({parent,specs,projectOnlyPanel,addSpec,su
  }
  return section;
 }
+
+// Existing, manual and AI-created rows use the same controls and source vocabulary.
+export function specificationRow({name="",value="",source="explicit",unit=""}={}){
+ const row=document.createElement("div");row.className="component-spec-row";
+ const key=document.createElement("input"),input=document.createElement("input"),origin=document.createElement("select");
+ key.className=input.className="field ui-control";
+ key.placeholder="Specification";key.setAttribute("aria-label","Specification name");key.value=name;
+ input.placeholder=unit?"Value ("+unit+")":"Value";input.setAttribute("aria-label","Specification value");input.value=value;
+ origin.className="field ui-control component-spec-source";origin.setAttribute("aria-label","Specification source");
+ for(const [value,label] of [["explicit","From product listing"],["inferred","Estimated / inferred"]]){
+  const option=document.createElement("option");option.value=value;option.textContent=label;origin.append(option);
+ }
+ origin.value=source==="inferred"?"inferred":"explicit";
+ const remove=document.createElement("button");remove.type="button";remove.className="ui-button";remove.textContent="Remove";remove.setAttribute("aria-label","Remove specification");remove.onclick=()=>row.remove();
+ row.append(key,input,origin,remove);return row;
+}

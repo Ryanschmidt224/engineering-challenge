@@ -721,45 +721,6 @@
   display: grid;
   gap: var(--space-2);
 }
-.project-view .workspace-main-bom-editor .component-spec-row {
-  display: grid;
-  grid-template-columns:
-    minmax(120px, 1fr) minmax(120px, 1fr) minmax(180px, 220px)
-    32px;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
-  margin: 0;
-}
-.project-view .workspace-main-bom-editor .component-spec-row .field {
-  min-width: 0;
-  width: 100%;
-  margin: 0;
-}
-.project-view .workspace-main-bom-editor .component-spec-source {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  color: var(--color-text);
-  font-size: var(--text-small);
-}
-.project-view .workspace-main-bom-editor .component-spec-remove {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 34px;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: transparent;
-  color: var(--color-text-muted);
-  font-size: var(--text-title);
-}
-.project-view .workspace-main-bom-editor .component-spec-remove:hover {
-  background: var(--color-hover);
-  color: var(--color-text);
-}
 .project-view .workspace-main-bom-editor .component-editor-actions {
   display: flex;
   justify-content: space-between;
@@ -801,17 +762,6 @@
 @media (max-width: 700px) {
   .project-view .workspace-main-bom-editor .historical-price-fields {
     grid-template-columns: 1fr;
-  }
-  .project-view .workspace-main-bom-editor .component-spec-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px;
-  }
-  .project-view .workspace-main-bom-editor .component-spec-source {
-    grid-column: 1 / span 2;
-  }
-  .project-view .workspace-main-bom-editor .component-spec-remove {
-    grid-column: 3;
-    grid-row: 1 / span 2;
-    align-self: center;
   }
 }
 
@@ -4129,18 +4079,18 @@ body > .footer {
   .workspace-main-bom-editor
   .component-review
   > .part-editor-group
-  > label:not([hidden]),
+  > label,
 .part-editor-dialog
   .workspace-main-bom-editor
   .component-review
   > .part-editor-group
-  .part-project-only-field:not([hidden]),
+  .part-project-only-field,
 .part-editor-dialog
   .workspace-main-bom-editor
   .component-review
   > .part-editor-group
   .historical-price-fields
-  > label:not([hidden]) {
+  > label {
   display: grid !important;
   grid-template-columns: var(--edit-part-label-width) minmax(0, 1fr) !important;
   align-items: center !important;
