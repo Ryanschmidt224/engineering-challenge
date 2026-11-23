@@ -103,7 +103,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 6.3 | Part details: fields summary, View in Workshop, Documentation, Modify part, Reload Workshop data | `SA` | | ☐ |
 | 6.4 | Container / functional part: purpose ("what does this need to accomplish?"), alternative purchased parts, "Use part", "Add and use part" | `SA`, `/api/workshop-linked-part` | | ☐ |
 | 6.5 | Specifications (from product listing or estimated), project-specific information | `SA`, `part-fields.js` | | ☐ |
-| 6.6 | Part editor: item type (Part/Document/Code), part type (off-the-shelf / custom in-house / custom purchased), number (auto or user, next available lookup), name, short tree name (20 chars), schematic/KiCad info, manufacturer, MPN, description, quantity, "Is a tool?" | `SA` `editBomPart`, `saveBomDraft`, `library-part-picker.js` | | ☐ |
+| 6.6 | Part editor: item type (Part/Document/Code), part type (off-the-shelf / custom in-house / custom purchased), number (auto or user, next available lookup), name, short tree name (20 chars), schematic/KiCad info, manufacturer, MPN, description, quantity, "Is a tool?" | `SA` `editBomPart`, `saveBomDraft`, `part-create.js` | | ☐ |
 | 6.7 | Where to buy: up to 10 suppliers (DigiKey, Mouser, McMaster, Newark, Arrow, Amazon ASIN, custom), order code, URL | `part-suppliers.js` | | ☐ |
 | 6.8 | Find part specs with AI: lookup by MPN/name, review suggested specs, apply selected | `product-lookup.js` | **Change**: keep, but redesign around the Workshop (category → family → product); owner requested the separate lookup-resume fix under their $5 provider cap | ☐ |
 | 6.9 | Part files: CAD / Parasolid / STL / STEP upload and download (≤20 MB); saved product webpages | `part-files.js`, `/api/part-files` | | ☐ |

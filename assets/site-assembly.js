@@ -10,6 +10,8 @@ const assemblyTreeSnapshots={};
 async function setupAssemblyTrees(){
  const {renderPartInformation}=await import("./part-information.js");
  const {initProjectFiles}=await import("./project-files.js");
+ const {initPartSpecifications,specificationRow}=await import("./part-specifications.js");
+ const {openPartCreator}=await import("./part-create.js");
  document.querySelectorAll("[data-assembly-tree]:not([data-tree-ready])").forEach(root=>{
   root.dataset.treeReady="true";
   const project=root.dataset.assemblyTree,view=document.getElementById(project),nodesEl=root.querySelector(".assembly-tree-nodes"),status=root.querySelector(".assembly-tree-status"),controls=root.querySelector(".assembly-edit");
@@ -1868,6 +1870,7 @@ async function setupAssemblyTrees(){
    toolRow.hidden=documentMode;
    const qtyControl=bomEditorMount.querySelector(".component-quantity");if(qtyControl?.closest("label"))qtyControl.closest("label").hidden=documentMode;
    bomEditorMount.classList.toggle("is-custom-part",custom);
+   if(supplierEditor)supplierEditor.element.hidden=custom||documentMode;
    for(const name of ["manufacturer","model","supplier","asin"]){
     const control=bomEditorMount.querySelector(".component-"+name);
     const label=control?.closest("label");
@@ -2008,14 +2011,7 @@ async function setupAssemblyTrees(){
    priceBasis?.dispatchEvent(new Event("change"));
    const specs=bomRoot()?.querySelector(".component-specs");
    if(specs){for(const spec of part.specifications||[]){
-    const row=document.createElement("div");row.className="row component-spec-row";
-    const a=document.createElement("input"),b=document.createElement("input"),c=document.createElement("select"),remove=document.createElement("button");
-    a.className=b.className="field";a.placeholder="Specification";b.placeholder="Value";a.value=spec.name;b.value=spec.value;
-    c.className="field component-spec-source";c.setAttribute("aria-label","Specification source");
-    for(const v of ["explicit","inferred"]){const opt=document.createElement("option");opt.value=v;opt.textContent=v==="explicit"?"✓ From product listing":"◇ Estimated / inferred";c.append(opt)}
-    c.value=spec.source==="inferred"?"inferred":"explicit";
-    remove.type="button";remove.className="btn component-spec-remove";remove.textContent="×";remove.title="Remove specification";remove.setAttribute("aria-label","Remove specification");remove.onclick=()=>row.remove();
-    row.append(a,b,c,remove);specs.append(row);
+    specs.append(specificationRow(spec));
    }}
    // Generic Workshop items keep their standard fields available even if
    // optional values were left blank when the part was first imported.
@@ -2028,20 +2024,7 @@ async function setupAssemblyTrees(){
     const existing=new Set((part.specifications||[]).map(spec=>String(spec.name||"").toLowerCase()));
     for(const [label,unit] of templates){
      if(existing.has(label.toLowerCase()))continue;
-     const row=document.createElement("div");row.className="row component-spec-row";
-     const name=document.createElement("input"),value=document.createElement("input"),source=document.createElement("select"),remove=document.createElement("button");
-     name.className=value.className="field";name.value=label;name.placeholder="Specification";
-     value.placeholder=unit?"Value ("+unit+")":"Value";
-     source.className="field component-spec-source";source.setAttribute("aria-label","Specification source");
-     for(const mode of ["explicit","inferred"]){
-      const option=document.createElement("option");option.value=mode;
-      option.textContent=mode==="explicit"?"✓ From product listing":"◇ Estimated / inferred";
-      source.append(option);
-     }
-     remove.type="button";remove.className="btn component-spec-remove";remove.textContent="×";
-     remove.title="Remove specification";remove.setAttribute("aria-label","Remove specification");
-     remove.onclick=()=>row.remove();
-     row.append(name,value,source,remove);specs.append(row);
+     specs.append(specificationRow({name:label,unit}));
     }
    }
    // Ensure the workspace is visible before opening the modal. In particular,
@@ -2057,7 +2040,7 @@ async function setupAssemblyTrees(){
   }
   function openBomDraft(){
    const root=bomRoot();if(!root){bomReport("BOM editor unavailable. Refresh the page.");return}
-   const aiLookup=window.BSProductLookup.mountPart(root,{
+   const aiLookup=window.BSProductLookup.mountPart(root,{specificationRow,
     canSearch:canEdit,
     getPartName:()=>partImplementationNameInput.hidden||partImplementationNameRow.hidden
      ?bomField("name")?.value.trim()||"":partImplementationNameInput.value.trim()
@@ -2143,20 +2126,9 @@ async function setupAssemblyTrees(){
     displayGroup.append(...ordered(fields.display.filter(key=>key!=="isTool")));
     group("display","Display options",displayGroup);
     if(supplierEditor)implementationGroup.append(supplierEditor.element);
-    const specsDisclosure=review.querySelector(".part-editor-specs-disclosure")||document.createElement("details");
-    specsDisclosure.className="part-editor-specs-disclosure";
-    const specsSummary=document.createElement("summary");
-    specsSummary.textContent="Specifications";
-    const specsBody=document.createElement("div");specsBody.className="part-editor-specs-body";
-    specsDisclosure.replaceChildren(specsSummary,specsBody);
-    if(specs)specsBody.append(specs);
     projectOnlyPanel.hidden=!(editingPart&&editingPartOriginal&&workshopLinkId(editingPartOriginal));
     functionalTreeDescriptionField.hidden=true;
-    if(!projectOnlyPanel.hidden)specsBody.append(projectOnlyPanel);
-    implementationGroup.append(specsDisclosure);
-    const hasSpecs=Boolean(specs?.children.length||!projectOnlyPanel.hidden);
-    specsDisclosure.hidden=!hasSpecs;
-    specsDisclosure.open=false;
+    initPartSpecifications({parent:implementationGroup,specs,projectOnlyPanel,addSpec,supplier:supplierEditor?.element,ui:window.BSUI,dialogs:window.BSDialogs});
     if(specsHeading)specsHeading.remove();
     // Remove old section shells from previous render cycles.
     for(const section of review.querySelectorAll('[data-part-editor-group="additional"],[data-part-editor-group="specifications"]'))section.remove();
@@ -2165,10 +2137,6 @@ async function setupAssemblyTrees(){
      actions=document.createElement("div");actions.className="component-editor-actions";
      const right=document.createElement("div");right.className="component-editor-primary-actions";
      actions.append(right);review.append(actions);
-    }
-    if(addSpec){
-     addSpec.textContent="+ Add specification";
-     implementationGroup.insertBefore(addSpec,specsDisclosure);
     }
     review.append(actions); // Only Save and Cancel remain in the primary footer.
     const buttons=actions.querySelector(".component-editor-primary-actions");
@@ -2306,9 +2274,8 @@ async function setupAssemblyTrees(){
   // BOM creation uses the shared part picker and creates a hideable tree occurrence.
   bomHeading.querySelector(".workspace-new-part").onclick=async()=>{
    if(savingBom)return;
-   if(!window.BSLibraryPartPicker){bomReport("Part library unavailable. Refresh and try again.");return}
    const targetAssembly=selected;
-   await window.BSLibraryPartPicker.open({hideDefault:true,project,assemblyId:selected,onCreate:async payload=>{
+   await openPartCreator({hideDefault:true,project,assemblyId:selected,onCreate:async payload=>{
     const {wireInfo,workshopSavedMessage="",addToWorkshop=false,workshopCategory="",...part}=payload;
     let newPart=null,wireId=wireInfo?.wireId||null;
     try{
@@ -2365,13 +2332,8 @@ async function setupAssemblyTrees(){
     event.preventDefault();event.stopImmediatePropagation();
     const container=bomRoot()?.querySelector(".component-specs");
     if(!container){bomReport("Specification editor unavailable.");return}
-    const row=document.createElement("div");row.className="row component-spec-row";
-    const name=document.createElement("input"),value=document.createElement("input"),source=document.createElement("select"),remove=document.createElement("button");
-    name.className=value.className="field";name.placeholder="Specification";value.placeholder="Value";
-    source.className="field component-spec-source";source.setAttribute("aria-label","Specification source");
-    for(const entry of ["explicit","inferred"]){const option=document.createElement("option");option.value=entry;option.textContent=entry==="explicit"?"✓ From product listing":"◇ Estimated / inferred";source.append(option)}
-    remove.className="btn";remove.type="button";remove.textContent="Remove";remove.onclick=()=>row.remove();
-    row.append(name,value,source,remove);container.append(row);
+    const row=specificationRow();container.append(row);
+    const name=row.querySelector("input");
     // This capture handler consumes the click before target listeners run.
     // Reveal the new row here, before moving focus into it.
     const disclosure=container.closest(".part-editor-specs-disclosure");
@@ -3289,8 +3251,7 @@ async function setupAssemblyTrees(){
   newPartButton.onclick=async()=>{
    const parent=nodes.find(node=>node.id===selected);
    if(isPartNode(parent)){status.textContent="Select an assembly, not a part, before adding a new part.";return}
-   if(!window.BSLibraryPartPicker){status.textContent="Part library is still loading. Refresh and try again.";return}
-   await window.BSLibraryPartPicker.open({project,assemblyId:selected,onCreate:async payload=>{
+   await openPartCreator({project,assemblyId:selected,onCreate:async payload=>{
     newPartButton.disabled=true;status.textContent="Creating part…";
     let newPart=null;
     try{

@@ -21,7 +21,7 @@ This is a private single-owner HTML/CSS/JavaScript site hosted on Cloudflare Wor
 | Workshop | `assets/family-workshop.js`, `assets/workshop-ui.js`, `functions/api/workshop-db.js` | D1 families/products/uses and related Knowledge |
 | Legacy resource linking/calculators | `assets/resources.js` | Still used by workspace references and calculators; do not delete before auditing readers |
 | Knowledge | `assets/knowledge.js`, `assets/knowledge-model.js`, `functions/api/knowledge.js` | Plain-text tiles, explicit links and related knowledge |
-| BOM selection | `assets/library-part-picker.js` | Choosing library/Workshop parts |
+| Project item creation | `assets/part-create.js` | Project-only parts, documents and code; Workshop family/product selection stays on Workshop |
 | Drawings and part files | `assets/drawings.js`, `assets/part-files.js` | Drawing attachments and files |
 | Shared calculation rules | `assets/engineering-core.js` | Pure domain functions, portable outside browser |
 | Local project and recovery | `assets/local-project.js`, `assets/archive-check.js` | Local project support and archive validation |
@@ -215,4 +215,12 @@ The read-only `/api/project-files` index scans paginated `part-files/<project>/`
 The API requires owner/project authorization, checks an exact current-owner prefix and validates the listed R2 ETag before returning bytes. Replaced files return 409; removed/no-longer-current files cannot be fetched from an old selection. Browser-side `project-files-zip.js` streams uncompressed ZIP entries into a bounded download blob, with UTF-8 names, CRC32 and standard central directory. ZIP creation runs in the browser, not on Cloudflare. Groups are limited to 100 files / 200 MB; choose smaller groups on constrained devices. A failed or changed file aborts ZIP creation rather than quietly producing a partial collection.
 
 This collects a print job; it does not operate a printer, slice meshes, open SOLIDWORKS or merge PDF pages. Open the downloaded files together in the appropriate application. The browser never receives a Dropbox credential or new cloud permission. No new dependency is introduced. Tests cover actual Worker authorization, pagination, active selection, stale-file denial, standard ZIP metadata/CRC and ten STL plus ten drawing files across desktop/phone workflows. Revert the API/module/UI batch to roll back; all original file bytes remain in storage.
+
+# Part creation, purchasing fields and specification editing
+
+`part-create.js` owns project-only Part/Document/Code creation as an ES module. The project controller explicitly imports its creation function; the old classic picker, script tag and global are removed. Changing to Custom — made in-house hides Manufacturer and MPN immediately; switching back preserves the unsaved form values. Neither is required for an in-house part. The editor also hides its whole Where to buy section for in-house parts/documents, without deleting file/history data or introducing a purchasing stage.
+
+`part-specifications.js` builds one standard, initially collapsed Specifications section around the existing inputs and handlers. Add specification stays inside that section, with shared button sizing and keyed explanatory help in `part-help.js`. The supplier add action uses the same kit/action row. Replaced legacy specification shell/button CSS is deleted at its source. One shared row builder serves saved, manual and AI-created specifications; controls stack at the standard phone breakpoint without overlapping. The original part-label selector specificity is reduced so its existing phone layout can take effect. Existing AI suggestions still open the same disclosure through its retained controller hook; fields and values are moved, never cloned.
+
+The separate inline Edit purpose form is removed. Purpose remains visible in Project information and editable through the existing Edit part details dialog, alongside the rest of the part. Alternatives retain their revision-checked selection/add workflow. Browser tests verify purpose save/failure draft retention, unchanged project annotations, optional in-house sourcing fields, shared control geometry and specification save/reopen on desktop and phone. No schema/API changes. Revert this UI/module/CSS batch together to roll back; all stored part data remains intact.
 

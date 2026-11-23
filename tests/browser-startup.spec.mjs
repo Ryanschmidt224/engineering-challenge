@@ -155,8 +155,9 @@ test("project feature tree and workspace initialize without browser errors", asy
 
 test("new custom part retains explicit project numbering without confusing it with manufacturer MPN",async({page})=>{
  await page.goto("/");
+ await page.evaluate(async()=>{const {openPartCreator}=await import("/assets/part-create.js");void openPartCreator({onCreate:async part=>{window.__testCreatedPart=part}});});
+ await expect(page.locator(".library-part-dialog")).toBeVisible();
  const selection=await page.evaluate(async()=>{
-  const opened=window.BSLibraryPartPicker.open({onCreate:async part=>{window.__testCreatedPart=part}});
   const dialog=document.querySelector(".library-part-dialog");
   dialog.querySelector(".library-field select")?.setAttribute("data-test-picker","mode");
   const classification=[...dialog.querySelectorAll("label")].find(l=>l.textContent.includes("Part type"))?.querySelector("select");
@@ -426,6 +427,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  // Add / origin / save / cancel controls form one coherent footer.
  const actions=editor.locator(".component-editor-actions");
  await expect(actions).toBeVisible();
+ await editor.locator('[data-section="part-specifications"] > summary').click();
  await editor.locator(".part-editor-group .component-add-spec").click();
  await expect(editor.locator(".part-editor-specs-disclosure")).toBeVisible();
  await expect(editor.locator(".component-spec-row")).toHaveCount(1);
@@ -818,7 +820,7 @@ test("Edit Part separates Container, Part details and purchased alternatives",as
  expect(source).not.toContain('retire.textContent="Retire selected implementation"');
  expect(source).not.toContain('addButton.textContent="Add implementation"');
  expect(source).not.toContain('heading.textContent="Function & requirements"');
- expect(source).toContain('className="part-editor-specs-disclosure"');
+ expect(source).toContain("initPartSpecifications");
  expect(source).not.toContain('group("additional","Additional details"');
  expect(source).not.toContain('group("specifications","Specifications"');
  expect(source).toContain('document.createTextNode("Part number")');
