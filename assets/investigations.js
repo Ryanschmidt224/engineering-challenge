@@ -462,8 +462,7 @@
    // A step has one edit-mode switch: its Work Instruction header.
    // Other workspace pages have no parent editor and retain their own controls.
    const allowEntryEditing=admin()&&(!compact||!stepSlot?.step?.archivedAt);
-   // The step editor has its own Edit mode. Other workspace sections have no
-   // separate editing toggle, so retain their Add entry button.
+   // Step creation follows Edit mode; other sections expose their own action.
    const canCreate=allowEntryEditing&&(!compact||Boolean(stepSlot?.editing));
    const addEntry=canCreate?window.BSUI.button("+ Add entry",event=>{
     event.preventDefault();newRecord(context,target);
@@ -699,7 +698,7 @@
    activeContent.append(make("p","investigation-feedback muted"));
    // The shared action row precedes records, including in step Edit mode. Avoid
    // displaying a blank active-entry wrapper when there are no cards yet.
-   activeHost.hidden=!activeOwn.length&&!stepSlot?.mainTile&&!activeContent.querySelector("button");
+   activeHost.hidden=!activeOwn.length&&!stepSlot?.mainTile&&!activeHost.querySelector("button");
 
    archivedOwn.forEach(record=>renderCard(record,content,{historical:true}));
    if(archivedRelated.length){
@@ -804,7 +803,7 @@
    label.append(select);
    const cancel=btn("Cancel",()=>{
     form.remove();
-    if(!parentRecordId&&context.stepId&&activeHost&&!content.querySelector(".investigation-card"))activeHost.hidden=true;
+    if(!parentRecordId&&context.stepId&&activeHost&&!content.querySelector(".investigation-card"))activeHost.hidden=!activeHost.querySelector("button");
    });
    form.append(label,cancel,fields);
    content.append(form);
