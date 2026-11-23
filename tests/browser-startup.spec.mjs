@@ -64,7 +64,7 @@ test("project feature tree and workspace initialize without browser errors", asy
  await page.goto("/");
  const initialTree=page.locator("#launcher .assembly-tree-nodes");
  await expect(initialTree.locator(".assembly-name")).toHaveCount(2);
- await page.locator('.project-link[data-project="launcher"]').click();
+ await page.locator('.ui-project-open[data-project="launcher"]').click();
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
  const screen=page.locator("#launcher .assembly-bom-screen");
  const tree=page.locator("#launcher .assembly-tree-nodes");
@@ -295,7 +295,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/");
- await page.locator('.project-link[data-project="launcher"]').click();
+ await page.locator('.ui-project-open[data-project="launcher"]').click();
  const sidebar=page.locator("#launcher .assembly-sidebar");
  await expect(sidebar.locator(".assembly-rename")).toBeHidden();
  await expect(sidebar.locator(".assembly-add")).toBeHidden();
@@ -566,7 +566,7 @@ test("Workshop and Document tree filters operate independently",async({page})=>{
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/");
- await page.locator('.project-link[data-project="launcher"]').click();
+ await page.locator('.ui-project-open[data-project="launcher"]').click();
  const tree=page.locator("#launcher .assembly-tree-nodes");
  const controls=page.locator("#launcher .assembly-tree-filters");
  await expect(controls).toBeVisible();
@@ -617,7 +617,7 @@ test("saving a part closes the moved editor and restores part workspace",async({
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/");
- await page.locator('.project-link[data-project="launcher"]').click();
+ await page.locator('.ui-project-open[data-project="launcher"]').click();
  const motorRow=page.locator("#launcher .assembly-tree-nodes .assembly-node",{hasText:"Motor Control"});
  await expect(motorRow).toBeVisible();
  await motorRow.locator(".assembly-expander").click();
@@ -658,9 +658,9 @@ test("personal project builds a private editable workspace from the shared proje
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,value))});
  });
  await page.goto("/");
- const card=page.locator(".project-personal-card",{hasText:"Test Personal Project"});
+ const card=page.locator(".ui-project-card",{hasText:"Test Personal Project"});
  await expect(card).toBeVisible();
- await card.locator(".project-link").click();
+ await card.locator(".ui-project-open").click();
  const section=page.locator("#"+id);
  await expect(section.locator(".project-summary-page")).toBeVisible();
  await section.locator(".assembly-tree-nodes .assembly-name").first().click();
@@ -709,7 +709,7 @@ test("owner manages project settings, numbering and removal",async({page})=>{
  });
  await page.goto("/");
  await expect(page.locator(".project-directory-new")).toBeVisible();
- await page.locator(".project-personal-card .project-link").click();
+ await page.locator(".ui-project-card .ui-project-open").click();
  const summary=page.locator("#"+id+" .project-summary-page");
  const settings=page.locator("#"+id+" .project-settings-page");
  await expect(settings).toBeHidden();

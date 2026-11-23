@@ -82,6 +82,10 @@ Workshop and Knowledge use assets/split-panes.js, explicitly initialized per pag
 
 ## Migration and rollback
 
+### Project views
+
+Project directory views share one card renderer and `project-directory.css` layout. Details, List, Tiles and Large icons use the same name, keyboard activation, project route and summary-album thumbnail. View is a browser preference; sorting and descriptor/search filters work in each view. List/icons omit secondary text visually; Details labels the recorded timestamp Created. No fabricated modification dates or separate catalog-cover field.
+
 Use shared headers, section disclosures/body spacing, information panels and field rows, controls, dialogs and pane resizers. Tooltip hover waits 650 ms and cancels on pointer-down, scroll, exit or Escape; tree help belongs on an explicit control. A leading status mark is an indicator, not a checkbox. Empty sections communicate their count once. Summary sections remember browser-local open state and start collapsed. Workshop and Knowledge column widths are browser preferences; phones stack panels. These presentation preferences are not engineering data.
 
 Remove replaced rules at their original owner. Strict producer checks follow loaded modules and allow only documented computed class patterns; literal matches are conservative evidence, not proof every state is reachable. Do not delete classes based on text absence alone. Legacy CSS budgets may decrease, never grow. Shared-page CSS must use the standard breakpoints. Rollback a presentation batch by reverting and deploying its HTML, JS and CSS together; no data reversal is needed. Former CSS migration progress notes are superseded by these standards and the current feature inventory.

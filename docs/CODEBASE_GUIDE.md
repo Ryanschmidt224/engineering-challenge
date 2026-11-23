@@ -189,3 +189,11 @@ The shared section action row sits directly in the active-entry host, before its
 
 The former inline navigation/unload handlers were removed from the frozen recipe controller, which shrinks. No storage/API changes. Regression workflows cover clean state, collapsed draft navigation, cancellation, failed/successful saves and edited existing steps at desktop/phone widths. Rollback by reverting the guard and controller together; stored instructions remain unchanged.
 
+# Project directory views
+
+`project-directory.js` owns project cards, search/sort projection, the View control and summary-photo thumbnails. It is explicitly initialized by the existing project manager; no new global or server data is introduced. Details, List, Tiles and Large icons share one renderer, shared tokens/controls and one small layout stylesheet. View preference persists in browser storage, with safe defaults if storage is unavailable. Sort and descriptor/search filters apply in every view. Details labels the existing timestamp **Created**; it does not invent a modification timestamp.
+
+Thumbnails use the same `assembly=project-summary` album and first-photo order as the summary page, including eligible legacy unassigned photos while excluding root-assembly and instruction photos. The project controller emits `projectphotoschanged` after summary refresh/upload/delete; the directory invalidates its per-project photo cache. Missing or failed photos retain an initial. No duplicate photo field is stored in the catalog.
+
+Replaced card/render code is removed from the frozen project manager; obsolete card classes/rules are pruned from all three legacy stylesheets and added to the curated retirement guard. The frozen CSS hashes change only for these deletions. Cards remain native keyboard buttons with the same project routes. Rollback by reverting HTML, modules, CSS and updated retired-class guards together; preferences/data need no migration.
+
