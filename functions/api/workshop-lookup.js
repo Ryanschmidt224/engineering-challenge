@@ -87,7 +87,7 @@ export async function onRequest({request,env}){
   const response=await fetch("https://api.openai.com/v1/responses",{
    method:"POST",signal:AbortSignal.timeout(45000),headers:{"authorization":"Bearer "+env.OPENAI_API_KEY,"content-type":"application/json"},
    body:JSON.stringify({model:MODEL,reasoning:{effort:"low"},max_output_tokens:3600,
-    tools:[{type:"web_search",search_context_size:"low",search_content_types:["text"]}],
+    tools:[{type:"web_search",search_context_size:"low"}],
     tool_choice:"required",input:prompt})
   });
   const payload=await response.json().catch(()=>({}));
