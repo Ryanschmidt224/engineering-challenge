@@ -11,8 +11,9 @@ export function initProjectDirectory({grid,toolbar,projects,tags,search,sort,sta
    if(!response.ok)throw Error("Project photo unavailable");const data=await response.json();return (data.photos||[]).find(photo=>photo.assembly==="project-summary"||!photo.assembly)?.id||null;
   }).catch(()=>null));
   const photo=await photos.get(id);if(!photo||!art.isConnected)return;
-  const image=make("img","ui-project-cover");image.alt="";image.loading="lazy";image.src=photoUrl(photo);
+  const image=make("img","ui-project-cover");image.alt="";image.loading="lazy";
   image.onload=()=>{if(art.isConnected)art.replaceChildren(image);};
+  image.onerror=()=>image.remove();art.append(image);image.src=photoUrl(photo);
  };
  function render(){
   const all=projects(),query=search.value.trim().toLowerCase().split(/\s+/).filter(Boolean),active=[...tags()];
