@@ -593,3 +593,29 @@ summary.ui-button::-webkit-details-marker {
     justify-self: start;
   }
 }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.data-table th,
+.data-table td {
+  padding: var(--space-3) var(--space-2);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+.data-table th {
+  overflow-wrap: normal;
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+}
+
+.ui-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.ui-table-date {
+  white-space: nowrap;
+}

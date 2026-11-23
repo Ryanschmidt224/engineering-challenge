@@ -1,3 +1,4 @@
+import {partRevisionRecords,mergeRevisionRecords} from "./part-revision-records.js";
 import {resolveFunctionalPart} from "./functional-part-model.js";
 import {reserveProjectNumbers} from "./numbering.js";
 import {historyEntryDetails} from "./history-entry-details.js";
@@ -322,7 +323,7 @@ export async function handleAssemblyArchive(request,env){
    return json({error:"One or more linked parts are missing their saved definitions. Repair the BOM before archiving."},409);
   const remainingParts=componentState.value.filter(p=>!removedIds.has(p.id));
   const investigationState=await read(bucket,investigationKey(project),{records:[]});
-  const entries=relatedRecords(investigationState.value.records||[],subtree);
+  const entries=relatedRecords(mergeRevisionRecords(investigationState.value.records||[],await partRevisionRecords(env,project,allParts)),subtree);
   const settings=await read(bucket,"project-settings/"+project+".json",{});
   const originPath=archiveOriginPath(current,original.id,project,settings.value?.title||project,allParts);
   const id=crypto.randomUUID(),at=new Date().toISOString();
@@ -450,7 +451,7 @@ export async function handleAssemblyArchive(request,env){
  // Copies have already been verified and restored before tree activation.
  // Merge only missing investigation records; never overwrite newer ones.
  const investigationState=await read(bucket,investigationKey(project),{records:[],revision:null});
- const missingRecords=(archive.investigations||[]).filter(r=>!(investigationState.value.records||[]).some(existing=>existing.id===r.id));
+ const missingRecords=(archive.investigations||[]).filter(r=>!r.partRevisionRef&&!(investigationState.value.records||[]).some(existing=>existing.id===r.id));
  if(missingRecords.length){
   await bucket.put(investigationKey(project),JSON.stringify({...investigationState.value,records:[...(investigationState.value.records||[]),...missingRecords],revision:crypto.randomUUID()}),conditional(investigationState.object));
  }
