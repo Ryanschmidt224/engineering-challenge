@@ -8,7 +8,7 @@ const make = (tag, className, text) => {
 };
 const present = value => value !== null && value !== undefined && String(value).trim() !== "";
 
-export function renderPartInformation(target, {part, fields, ui, dialogs, suppliers, editable, linked, knowledge, onChange}) {
+export function renderPartInformation(target, {part, project: projectId, fields, ui, dialogs, suppliers, editable, linked, knowledge, onChange}) {
   target.replaceChildren();
   target.classList.add("ui-section-list");
   const reference = ui.informationPanel(linked ? "Workshop information" : "Part information", "reference");
@@ -59,6 +59,13 @@ export function renderPartInformation(target, {part, fields, ui, dialogs, suppli
     reference.body.append(ui.fieldRow("Part order website", link).root);
   }
   suppliers?.renderLinks(reference.body, part);
+  if (editable && functional && part.partType === "purchased" && !linked && projectId) {
+    const copy = ui.button("Copy to Workshop", () => {
+      const query = new URLSearchParams({copyProject: projectId, copyPart: part.id, return: "#" + projectId + "/part/" + part.id});
+      location.href = "workshop.html?" + query;
+    }, {small: true});
+    reference.body.append(copy, make("p", "ui-information-note", "Create a reusable product copy. This project part stays unchanged."));
+  }
   if (functional && !part.familyUse) addFunctionalControls(project.body, {part, ui, onChange, editable});
   if (part.familyUse) project.body.append(knowledge(part));
   target.append(reference.root, project.root);

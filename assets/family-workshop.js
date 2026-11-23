@@ -1,6 +1,7 @@
 import {node,button,listCard,actions,panel,field,checkbox,readValue,valuesEditor,requestWorkshop} from "./workshop-ui.js";
 import {present,resolveFamilyValues,validateFamilyFields,validateFamilyValues,isWebUrl} from "./family-model.js";
 import {tileTypes,tileStatuses,relations,labelFor} from "./knowledge-model.js";
+import {initProjectProductCopy} from "./project-product-copy.js";
 
 const $=selector=>document.querySelector(selector),detail=$("#workshop-detail"),dialog=$("#workshop-dialog");
 const params=new URLSearchParams(location.search);
@@ -293,4 +294,5 @@ try{
  if(use){selectedFamily=use.family_id;selectedProduct=use.product_id||"";}else if(product)selectedFamily=product.family_id;
  renderNavigation();renderDetail();
  if(params.get("edit")==="1"&&use){projects=(await requestWorkshop("/api/projects")).projects||[];begin("use",use);updateLocation();}
+ await initProjectProductCopy({params,data,detail,status,onDraft(familyId,record){selectedFamily=familyId;selectedProduct="";selectedUse="";begin("product",record);dirty=true;status("Review the copied product, then Save product. The project part is unchanged.");}});
 }catch(error){detail.replaceChildren(panel("Workshop unavailable",error.message),button("Try again",()=>location.reload()));const signIn=node("a","Open Projects to sign in");signIn.href="index.html#home";detail.append(signIn);status(error.message,true);}
