@@ -1,10 +1,8 @@
 /* Project-only part creation. Reusable items are created through Workshop families. */
-(function(){
-"use strict";
 const el=(tag,cls="",text="")=>{const node=document.createElement(tag);node.className=cls;node.textContent=text;return node;};
 const field=(label,tag="input",value="")=>{const row=el("label","library-field",label),input=el(tag,"field");if(tag==="input")input.type="text";input.value=value;row.append(input);return {label:row,input};};
 const option=(select,value,label)=>{const entry=el("option","",label);entry.value=value;select.append(entry);};
-function open({onCreate,project="",assemblyId=null}){
+export function openPartCreator({onCreate,project="",assemblyId=null}){
  return new Promise(resolve=>{
   const dialog=el("dialog","library-part-dialog"),form=el("form","library-part-form");
   const close=value=>{dialog.close();dialog.remove();resolve(value);};
@@ -33,8 +31,8 @@ function open({onCreate,project="",assemblyId=null}){
   const status=el("p","library-status");status.setAttribute("role","status");
   const actions=el("div","library-dialog-actions"),save=el("button","btn primary","Create part"),cancel=el("button","btn","Cancel");save.type="submit";cancel.type="button";cancel.onclick=()=>close({created:false});actions.append(save,cancel);
   form.append(el("h2","","New part"),itemKind.label,source,numberChoice,identity,status,actions);dialog.append(form);document.body.append(dialog);
-  const update=()=>{const part=itemKind.input.value==="part";source.hidden=!part;partClassification.label.hidden=!part;container.label.hidden=!part;container.input.required=part;name.label.hidden=part;name.input.required=!part;manufacturer.label.hidden=!part;mpn.label.hidden=!part;description.label.hidden=!part;quantity.label.hidden=!part;numberChoice.hidden=!part;number.label.hidden=auto.checked;number.input.required=part&&manual.checked;save.textContent=part?"Create part":itemKind.input.value==="code"?"Create code item":"Create document";};
-  itemKind.input.onchange=update;auto.onchange=update;manual.onchange=update;
+  const update=()=>{const part=itemKind.input.value==="part";source.hidden=!part;partClassification.label.hidden=!part;container.label.hidden=!part;container.input.required=part;name.label.hidden=part;name.input.required=!part;manufacturer.label.hidden=mpn.label.hidden=!part||partClassification.input.value==="custom";description.label.hidden=!part;quantity.label.hidden=!part;numberChoice.hidden=!part;number.label.hidden=auto.checked;number.input.required=part&&manual.checked;save.textContent=part?"Create part":itemKind.input.value==="code"?"Create code item":"Create document";};
+  itemKind.input.onchange=update;partClassification.input.onchange=update;auto.onchange=update;manual.onchange=update;
   form.onsubmit=async event=>{
    event.preventDefault();if(!form.reportValidity())return;
    const part=itemKind.input.value==="part",count=quantity.input.value===""?null:Number(quantity.input.value);
@@ -46,5 +44,3 @@ function open({onCreate,project="",assemblyId=null}){
   update();dialog.showModal();itemKind.input.focus();
  });
 }
-window.BSLibraryPartPicker={open};
-})();

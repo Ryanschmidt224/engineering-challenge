@@ -76,7 +76,7 @@ test("Code is displayed as its own item type for existing code records",()=>{
 });
 
 test("New Part and Part editor each show Part, Document, Code",()=>{
- const picker=readFileSync(new URL("../assets/library-part-picker.js",import.meta.url),"utf8");
+ const picker=readFileSync(new URL("../assets/part-create.js",import.meta.url),"utf8");
  const editor=readFileSync(new URL("../assets/site-assembly.js",import.meta.url),"utf8");
  for(const source of [picker,editor]){
   for(const [type,label] of [["part","Part"],["document","Document"],["code","Code"]])
