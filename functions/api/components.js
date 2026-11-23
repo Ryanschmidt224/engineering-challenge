@@ -1,3 +1,5 @@
+import {historicalPrice,quantityData} from "./component-values.js";
+import {revisionCommand,revisionReplay,prepareRevision} from "./part-revision-save.js";
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isAdmin} from "./auth.js";
 import {issueNumber} from "./numbering.js";
@@ -29,34 +31,6 @@ async function partWriteConflict(env,project,id,input){
  return stalePart(input,latest)||json({error:"Another part was saved at the same time. Try saving your draft again."},409);
 }
 
-// Historical price is entered per part or per package (never a live quote).
-// Keep historicalPrice as the derived unit cost for existing BOM calculations.
-const historicalPrice=input=>{
- const raw=Object.prototype.hasOwnProperty.call(input??{},"historicalPurchasePrice")?input.historicalPurchasePrice:input?.historicalPrice;
- const basis=input?.historicalPriceBasis==="per_package"?"per_package":"per_part";
- const countRaw=input?.historicalPackageQuantity;
- if(raw===undefined||raw===null||raw==="")return {price:null,date:null,basis,packageQuantity:null,purchasePrice:null};
- const count=basis==="per_package"?Number(countRaw):1;
- if(basis==="per_package"&&(!Number.isSafeInteger(count)||count<1||count>1000000))return null;
- const purchasePrice=Number(raw);
- const date=input?.historicalPriceDate;
- if(!Number.isFinite(purchasePrice)||purchasePrice<0||purchasePrice>10000000||Math.abs(Math.round(purchasePrice*100)-purchasePrice*100)>1e-6)return null;
- if(typeof date!=="string"||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)||!Number.isFinite(Date.parse(date))||new Date(date).toISOString().slice(0,10)!==date)return null;
- return {price:purchasePrice/count,date,basis,packageQuantity:basis==="per_package"?count:null,purchasePrice};
-};
-// BOM quantities may be unspecified or measured in non-piece units.
-const quantityData=(input,previous)=>{
- const raw=input.quantity;
- let quantity;
- if(raw===null||raw===undefined||raw==="")quantity=null;
- else{
-  quantity=Number(raw);
-  if(!Number.isFinite(quantity)||quantity<=0||quantity>10000000||!Number.isFinite(Number(raw)))return null;
- }
- const unit=input.quantityUnit===undefined?(previous?.quantityUnit??"pcs"):String(input.quantityUnit??"").trim();
- if(unit.length>32||(!/^[a-zA-Z0-9 °µ²³/_-]*$/.test(unit)))return null;
- return {quantity,quantityUnit:unit};
-};
 // Global, zero-setup shop defaults. An explicit override belongs to each BOM
 // usage; it never pretends to be a live inventory count.
 const standardShopMaterial=part=>{
@@ -421,6 +395,11 @@ export async function handleComponents(request,env){
   if(index<0)return json({error:"Part not found"},404);
   if(items[index].generatedFrom)return json({error:"This material is calculated from its wire. Edit the wire instead."},409);
   const clean=value=>String(value??"").slice(0,300),previous=items[index];
+  let revisionSave;
+  if(input.saveAsRevision===true){
+   try{revisionSave=await revisionCommand(input,project);if(revisionReplay(previous,revisionSave))return json({component:presentPart(previous)});}
+   catch(error){return json({error:error.message},error.status||400);}
+  }
   const stale=stalePart(input,previous);if(stale)return stale;
   const price=historicalPrice(input);
   if(!price)return json({error:"Historical price must be a nonnegative USD amount (2 decimals) with a valid recorded date"},400);
@@ -471,6 +450,10 @@ export async function handleComponents(request,env){
    const source=await linkedWorkshopItem(request,env,updated);
    if(source)updated.workshopSourcing=workshopSourcing(source.item);
    else delete updated.workshopSourcing;
+  }
+  if(revisionSave){
+   try{Object.assign(updated,(await prepareRevision(request,env,project,input,previous,revisionSave)).fields);}
+   catch(error){return json({error:error.message},error.status||409);}
   }
   items[index]=updated;syncDerived(items,updated);
   if(!await saveEditable(env,project,items,state))return partWriteConflict(env,project,id,input);

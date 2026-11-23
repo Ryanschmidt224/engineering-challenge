@@ -1,7 +1,7 @@
 import {historyEntryDetails} from "./history-entry-details.js";
 import {upgradePracticeRecords} from "./record-upgrades.js";
 import {getFamilyProjectPart} from "./workshop-db.js";
-import {capturePartRevision} from "./part-revision-snapshot.js";
+import {createRevision,removeReferencedRevision,revisionResponse} from "./part-revision-save.js";
 import {resolveFunctionalPart} from "./functional-part-model.js";
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {isProjectRecipeFile} from "./recipe-files.js";
@@ -69,6 +69,7 @@ export async function handleInvestigations(request,env){
   try{({object,saved}=await upgradePracticeRecords(env,project,object,saved,original));}
   catch{return json({error:"Old records could not be upgraded safely. Retry before editing.",code:"RECORD_UPGRADE_RETRY"},503);}
  }
+ saved.records=await revisionResponse(env,project,saved.records||[]);
  if(request.method==="GET"&&url.searchParams.has("revision")){
   if(!await canEditProject(request,env,project))return json({error:"Project owner sign-in required"},403);
   const record=(saved.records||[]).find(record=>record.id===url.searchParams.get("revision")&&record.partSnapshot);
@@ -89,11 +90,20 @@ export async function handleInvestigations(request,env){
  if(!data||typeof data!=="object"||Array.isArray(data))return json({error:"Invalid request"},400);
  if(data.action==="createPartRevision"){try{data.entryDetails=historyEntryDetails(data.entryDetails,project);}catch(error){return json({error:error.message},400);}}
  const replay=data.action==="createPartRevision"&&(saved.records||[]).find(record=>record.operationId===data.operationId&&record.partSnapshot);
- if(replay){
+ if(replay&&!replay.partRevisionRef){
   if(JSON.stringify(historyEntryDetails(replay.partSnapshot.entryDetails,project))!==JSON.stringify(data.entryDetails)||replay.ownerId!==data.partId||JSON.stringify(replay.revisionRequest)!==JSON.stringify({expectedPartRevision:data.expectedPartRevision??null,expectedWorkspaceRevision:data.expectedWorkspaceRevision??null}))return json({error:"This operation ID was already used for a different revision"},409);
   return json({ok:true,revision:saved.revision??null,records:saved.records,createdId:replay.id});
  }
+ if(data.action==="createPartRevision"&&(replay?.partRevisionRef||(data.expectedRevision??null)===(saved.revision??null))){
+  try{const result=await createRevision(request,env,project,data,saved.records);return json({ok:true,revision:saved.revision??null,records:await revisionResponse(env,project,saved.records.filter(record=>!record.partRevisionRef)),...result});}
+  catch(error){return json({error:error.message},error.status||409);}
+ }
  if((data.expectedRevision??null)!==(saved.revision??null))return json({error:"Investigations changed elsewhere. Reload before saving.",revision:saved.revision??null},409);
+ if(data.action==="deleteRecord"){
+  try{if(await removeReferencedRevision(env,project,data.id))return json({ok:true,revision:saved.revision??null,records:await revisionResponse(env,project,saved.records.filter(record=>!record.partRevisionRef))});}
+  catch(error){return json({error:error.message},error.status||409);}
+ }
+ if(data.action!=="deleteRecord"&&saved.records.some(record=>record.id===data.id&&record.partRevisionRef))return json({error:"Saved part revisions cannot be edited"},409);
  const records=Array.isArray(saved.records)?saved.records:[];
  if(records.length>300)return json({error:"Project investigation limit reached"},413);
  let changed,record,createdId;
@@ -158,12 +168,6 @@ export async function handleInvestigations(request,env){
   const archivedAt=new Date().toISOString();
   changed=records.map(item=>(item.id===record.id||item.parentRecordId===record.id)
    ?{...item,lifecycle:"archived",archivedAt,archiveNote:item.id===record.id?note.trim():"Archived with parent entry."}:item);
- }else if(data.action==="createPartRevision"){
-  if(!uuid.test(data.partId)||!uuid.test(data.operationId))return json({error:"Invalid revision command"},400);
-  if(records.length>=300)return json({error:"Project investigation limit reached"},413);
-  const captured=await capturePartRevision(request,env,project,data,records);
-  if(captured.error)return json({error:captured.error},captured.status);
-  record=captured.record;createdId=record.id;changed=[...records,record];
  }else if(data.action==="rename"){
   record=records.find(item=>item.id===data.id);
   if(!record)return json({error:"Investigation not found"},404);
@@ -228,7 +232,7 @@ export async function handleInvestigations(request,env){
  }else return json({error:"Invalid action"},400);
  const nextRevision=crypto.randomUUID();
  const conditions=object?.etag?{onlyIf:{etagMatches:object.etag}}:{onlyIf:{etagDoesNotMatch:"*"}};
- const result=await env.PHOTOS.put(key,JSON.stringify({records:changed,revision:nextRevision}),conditions);
+ const result=await env.PHOTOS.put(key,JSON.stringify({records:changed.filter(record=>!record.partRevisionRef),revision:nextRevision}),conditions);
  if(result===null)return json({error:"Another edit was saved first. Reload and try again."},409);
  return json({ok:true,revision:nextRevision,records:changed,createdId});
 }

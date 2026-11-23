@@ -13,6 +13,9 @@ async function setupAssemblyTrees(){
  const {initPartSpecifications,specificationRow}=await import("./part-specifications.js");
  const {openPartCreator}=await import("./part-create.js");
  const {initPartRevisions,renderRevisionSnapshot}=await import("./part-revisions.js");
+ const {attachPartEditorFiles}=await import("./part-editor-attachments.js");
+ const {revisionSaveButton,saveRevisionChanges,revisionContext}=await import("./part-revision-editor.js");
+ const {partHelp}=await import("./part-help.js");
  const {initTreeArchive}=await import("./tree-archive.js");
  document.querySelectorAll("[data-assembly-tree]:not([data-tree-ready])").forEach(root=>{
   root.dataset.treeReady="true";
@@ -866,7 +869,7 @@ async function setupAssemblyTrees(){
    mountWorkspaceSections(partWorkspace,{scope:"part",ownerId:()=>partRoute(),save:savePartWorkspace,saveInProgress:()=>partSaveFlight});
   investigations=window.BSInvestigations?.mount({project,admin:()=>canEdit(),getTree:()=>nodes,
    getPart:()=>currentPartInfo,getPartList:()=>investigationParts,
-   revisions:initPartRevisions({host:partWorkspace,project,ui:window.BSUI,dialogs:window.BSDialogs,canEdit,beforeCreate:()=>{
+   revisions:initPartRevisions({host:partWorkspace,project,ui:window.BSUI,dialogs:window.BSDialogs,canEdit,onSaved:async()=>{await showPartWorkspace({keepDetailsOpen:true});},beforeCreate:()=>{
     if(partRecipe?.isDirty()||partRecipe?.hasPendingUploads()||partSaveFlight||workspaceAutosaveTimers.part||partWorkspace.querySelector(".recipe-step-nav-row.is-editing,.investigation-add-controls"))throw Error("Save or cancel your open Work Instruction and record edits before creating a revision.");
    }}),getWorkspaceRevision:()=>partSavedRevision,
    renderSnapshot:(snapshot,target,revisionId)=>renderRevisionSnapshot(snapshot,target,{project,revisionId,ui:window.BSUI})});
@@ -2041,7 +2044,7 @@ async function setupAssemblyTrees(){
     render();notify();
    }
    openBomDraft();
-   const save=bomField("save");if(save)save.textContent="Save changes";
+   const save=bomField("save");if(save)save.textContent="Save";
    bomReport("");
   }
   function openBomDraft(){
@@ -2144,9 +2147,11 @@ async function setupAssemblyTrees(){
      const right=document.createElement("div");right.className="component-editor-primary-actions";
      actions.append(right);review.append(actions);
     }
-    review.append(actions); // Only Save and Cancel remain in the primary footer.
+    review.append(actions); // Save choices and Cancel share the primary footer.
     const buttons=actions.querySelector(".component-editor-primary-actions");
-    buttons.append(root.querySelector(".component-save"),bomEditorCancel);
+    saveAsRevision.hidden=!editingPart;
+    const standardSave=root.querySelector(".component-save");standardSave.title=partHelp.save;standardSave.setAttribute("aria-description",partHelp.save);
+    buttons.append(standardSave,saveAsRevision,bomEditorCancel);
    }
    moveBomEditorToTop();
    updatePartTypeFields();
@@ -2167,8 +2172,10 @@ async function setupAssemblyTrees(){
    partDialogError.hidden=true;partDialogError.textContent="";
    partNumberInput.focus({preventScroll:true});
   }
+  const saveAsRevision=revisionSaveButton({project,ui:window.BSUI,onError:bomReport,prepare:()=>editingPart&&!savingBom?revisionContext(project,editingPart):null,
+   onSave:async options=>{if(!await saveBomDraft(options))throw Error(bomField("status")?.textContent||"Check the part fields before saving.");}});
   let savingBom=false;
-  async function saveBomDraft(){
+  async function saveBomDraft(revisionOptions){
    if(savingBom)return false;
    const name=bomField("name")?.value.trim()||"";
    if(!name){bomReport("Enter a part name before saving.");openBomDraft();return false}
@@ -2222,27 +2229,14 @@ async function setupAssemblyTrees(){
     const address="/api/components?project="+encodeURIComponent(project)+(editingPart?"&id="+encodeURIComponent(editingPart):"");
     let result;
     if(wasEdit){
-     result=await window.BSEditConflicts.save(address,{method:"PUT",original:editingPartOriginal,changes:component,active:()=>partEditDialog.open});
+     result=revisionOptions?await saveRevisionChanges(address,component,editingPartOriginal,revisionOptions)
+      :await window.BSEditConflicts.save(address,{method:"PUT",original:editingPartOriginal,changes:component,active:()=>partEditDialog.open});
     }else{
      const response=await fetch(address,{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify(component)});
      result=await response.json();
      if(!response.ok)throw Error(result.error||"Save failed (HTTP "+response.status+")");
     }
-    let photoMessage="";
-    if(snapshotToAttach&&result.component?.id){
-     try{
-      const snapshotResponse=await fetch("/api/part-pages?"+new URLSearchParams({project,id:result.component.id,...(result.component.selectedImplementationId?{implementation:result.component.selectedImplementationId}:{})}),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({snapshotId:snapshotToAttach})});
-      const snapshotData=await snapshotResponse.json();if(!snapshotResponse.ok)throw Error(snapshotData.error||"Could not attach saved product page");
-      photoMessage+=" Product webpage archived with part details.";
-     }catch(error){photoMessage+=" Warning: product webpage was not attached: "+error.message}
-    }
-    if(imageToImport&&result.component?.id){
-     try{
-      const photoResponse=await fetch(partPhotoUrl(result.component.id),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({imageUrl:imageToImport})});
-      const photoData=await photoResponse.json().catch(()=>({}));
-      photoMessage=photoResponse.ok?" Product picture added.":" Product picture unavailable; you can upload one manually.";
-     }catch{photoMessage=" Product picture unavailable; you can upload one manually."}
-    }
+    let photoMessage=await attachPartEditorFiles({project,component:result.component,snapshotId:snapshotToAttach,imageUrl:imageToImport,photoUrl:result.component?.id?partPhotoUrl(result.component.id):""});
     if(wasEdit){
      const linked=nodes.filter(n=>isPartNode(n)&&n.partId===result.component?.id&&n.name!==result.component.name);
      if(linked.length){
@@ -2273,6 +2267,7 @@ async function setupAssemblyTrees(){
     bomReport("Could not save part: "+message);
     const dialogMessage=partEditDialog.querySelector(".part-editor-validation-error");
     if(dialogMessage){dialogMessage.textContent=message;dialogMessage.hidden=false}
+    if(revisionOptions)throw error;
     return false;
    }
    finally{savingBom=false;if(saveButton)saveButton.disabled=false}

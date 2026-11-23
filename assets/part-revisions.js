@@ -1,3 +1,4 @@
+import {dataTable} from "./data-table.js";
 import {partHelp} from "./part-help.js";
 import {openHistoryEntryDialog,renderHistoryEntryDetails} from "./history-entry-dialog.js";
 
@@ -6,7 +7,7 @@ const revisionUrl=(project,id,extra={})=>"/api/investigations?"+new URLSearchPar
 
 // One section and one in-flight command per part page. A failed/lost response
 // retains its operation ID so Retry cannot publish a second historical copy.
-export function initPartRevisions({host,project,ui,dialogs,canEdit,beforeCreate}){
+export function initPartRevisions({host,project,ui,dialogs,canEdit,beforeCreate,onSaved}){
  const section=ui.section({title:"Revisions",role:"part-revisions",count:0,tooltip:partHelp.revisions});
  section.root.hidden=true;
  const explanation=make("p",partHelp.revisions);
@@ -18,8 +19,9 @@ export function initPartRevisions({host,project,ui,dialogs,canEdit,beforeCreate}
   const state=current,part=state.part,source=state.getSource();
   openHistoryEntryDialog({trigger:create,project,title:"Create a Revision",description:partHelp.revisions,submitLabel:"Save revision",ui,photoEditor:window.BSPhotoEditor,onSave:async(entryDetails,operationId)=>{
    beforeCreate();
-   await state.save({action:"createPartRevision",partId:part.id,operationId,entryDetails,expectedPartRevision:source.partRevision,expectedWorkspaceRevision:source.workspaceRevision});
-   if(current?.part.id===part.id)message.textContent="Revision created. The working part is unchanged. Use Edit part details when you are ready to make changes.";
+   const result=await state.save({action:"createPartRevision",partId:part.id,operationId,entryDetails,expectedPartRevision:source.partRevision,expectedWorkspaceRevision:source.workspaceRevision});
+   await onSaved(result.component);
+   if(current?.part.id===part.id)message.textContent="Revision created. The working part has advanced to revision "+(result.component.revisionLevel||1)+". Use Edit part details when you are ready to make changes.";
   }});
  });
  ui.sectionActions(section.body,{primary:create});section.body.append(explanation,list,message);
@@ -29,9 +31,12 @@ export function initPartRevisions({host,project,ui,dialogs,canEdit,beforeCreate}
   if(!current)return;
   create.hidden=!canEdit();
   section.setCount(state.records.length);list.replaceChildren();
+  const table=dataTable("Part revision table",["Revision","Date","What changed"]);
+  table.append([String(state.part.revisionLevel||1),"Current","Working part"]);
+  list.append(table.root);
   for(const record of [...state.records].reverse()){
-   const item=ui.section({title:record.title||"Saved part revision",role:"part-revision",open:openRevisions.has(record.id)});
-   const date=make("time",record.date||record.createdAt?.slice(0,10)||record.archivedAt?.slice(0,10)||"");date.className="ui-section__count";date.dateTime=date.textContent;item.count.replaceWith(date);
+   const item=ui.section({title:record.partSnapshot.part.revisionLevel?"Revision "+record.partSnapshot.part.revisionLevel:record.title||"Earlier saved copy",role:"part-revision",open:openRevisions.has(record.id)});
+   const date=make("time",record.date||record.createdAt?.slice(0,10)||record.archivedAt?.slice(0,10)||"");date.className="ui-table-date";date.dateTime=date.textContent;item.count.textContent="";
    item.root.addEventListener("toggle",()=>{if(item.root.open)openRevisions.add(record.id);else openRevisions.delete(record.id);});
    renderHistoryEntryDetails(record.partSnapshot.entryDetails,item.body,{ui,imageUrlFor:id=>{const index=record.partSnapshot.assets?.findIndex(asset=>asset.original===id);return index>=0?revisionUrl(project,record.id,{asset:String(index),view:"1"}):"/api/recipe-files?id="+encodeURIComponent(id);}});
    renderRevisionSnapshot(record.partSnapshot,item.body,{project,revisionId:record.id,ui});
@@ -40,11 +45,14 @@ export function initPartRevisions({host,project,ui,dialogs,canEdit,beforeCreate}
     const remove=ui.button("Delete revision",async()=>{
      if(!await dialogs.danger('Delete revision "'+record.title+'"? This permanently removes the historical record.',{title:"Delete revision?",confirmLabel:"Delete revision"}))return;
      remove.disabled=true;
-     try{await state.save({action:"deleteRecord",id:record.id});}
+     try{await state.save({action:"deleteRecord",id:record.id});await onSaved();}
      catch(error){message.textContent=error.message;remove.disabled=false;}
     },{variant:"danger"});
     item.body.append(remove);
    }
+   const view=ui.button(record.partSnapshot.part.revisionLevel?"View "+record.partSnapshot.part.revisionLevel:"View copy",()=>{item.root.open=true;item.header.scrollIntoView({block:"center"});item.header.focus({preventScroll:true});},{small:true});
+   view.setAttribute("aria-label",record.partSnapshot.part.revisionLevel?"View revision "+record.partSnapshot.part.revisionLevel:"View earlier copy");
+   table.append([view,date,record.partSnapshot.entryDetails?.whatChanged||record.archiveNote||""]);
    list.append(item.root);
   }
   // Other part sections can mount later; keep revisions at the page bottom.

@@ -32,6 +32,7 @@ export function renderPartInformation(target, {part, project: projectId, fields,
     append(reference, "Family", part.familyName);
     append(reference, "Selected product", part.productId ? part.implementationName : "No product selected");
   }
+  append(project, "Revision", part.revisionLevel || 1);
   const projectLabels = new Set(["Status", "Quantity", "Part number", "Value", "Hidden from feature tree", "Feature tree description"]);
   const rows = fields.detailRows(part);
   for (const [title, value] of rows) {
