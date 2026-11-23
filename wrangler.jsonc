@@ -7,7 +7,10 @@
     "binding": "ASSETS",
     "run_worker_first": [
       "/api/*",
-      "/project-engine-proof*"
+      "/project-engine-proof*",
+      "/project",
+      "/project/",
+      "/project.html"
     ]
   },
   "r2_buckets": [

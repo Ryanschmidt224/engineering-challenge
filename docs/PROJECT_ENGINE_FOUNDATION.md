@@ -6,13 +6,13 @@ Status: **Batch 1 real Cloudflare D1 proof passed**, November 22, 2026 (Arizona)
 
 - `project-engine-migrations.js` has its own numbered ledger and additive minimal tables for projects, custom items, root occurrences, immutable configurations/events and operation receipts. It neither imports nor changes legacy projects, Workshop or Knowledge.
 - `project-command.js` serializes a single-owner project through one opaque project revision token. This conservative aggregate guard may reject unrelated simultaneous edits in two tabs; it keeps the first slice simple and prevents stale forms from overwriting changes. Editors must retain their drafts on 409. Later restore generates fresh tokens.
-- `project-engine-proof.js` is the sole foundation caller at this stage. It creates one clearly named disposable project per proof ID and leaves its D1 rows for inspection. It writes no R2 objects and never deletes data.
+- `project-engine-proof.js` establishes the foundation gate. After that gate passed, the custom-part API also began using the primitive; see `PROJECT_CUSTOM_FLOW.md`. The proof creates one clearly named disposable project per proof ID and leaves its D1 rows for inspection. It writes no R2 objects and never deletes data.
 - `project-engine.js` requires the preview flag, the existing owner account and same-origin writes. There is no signup, fixture login or authentication bypass. `/project-engine-proof.html` reuses the site header and kit; it has no custom CSS.
 - `NEW_PROJECT_ENGINE=1` exists **only** under `previews.vars`. Production API and proof-page paths return 404 before authentication, migrations or assets. Enabled preview paths require sign-in (401). The production 404 takes precedence over the signed-out 401 described for enabled routes in F11.
 
 ## Independent custom-part model preparation
 
-`assets/project-item-model.js` is pure validation/comparison code, used by the existing proof fixture. It has no DOM, network or storage access and introduces no new caller of the transaction primitive. This preparation can be reviewed while dashboard access is unavailable; it does not complete Batch 2 or waive its D1 gate.
+`assets/project-item-model.js` is pure validation/comparison code, used by the existing proof fixture. It has no DOM, network or storage access and introduces no new caller of the transaction primitive. The real D1 gate has passed. The model is now shared by the dependent custom-part commands; their separate acceptance status is recorded in `PROJECT_CUSTOM_FLOW.md`.
 
 - Custom details validate name/short name/kind/number, optional description/purpose/acceptance/manufacturer/MPN, explicit tool state and stable specification IDs. Empty optional text is omitted. Specification values preserve zero, false, empty text, null and an absent value distinctly; nothing guesses a value or converts units.
 - Occurrence quantity, unit, status, attention/note and tree-hidden state are validated separately. Build information cannot silently become intrinsic engineering data. A disabled attention flag does not erase its note.
@@ -20,7 +20,7 @@ Status: **Batch 1 real Cloudflare D1 proof passed**, November 22, 2026 (Arizona)
 - Revision comparisons match specification rows by stable ID. They show changed values with labels and old/new units, added/removed rows, label changes and ordering. Equivalent blank optional fields yield no change. Equal labels do not conflate separate rows.
 - The proof fixture now uses this same model. Its revised configuration matches the saved current fields, retains the unchanged specification rows and leaves the initial configuration at 3 mm. SQLite tests verify this; the actual preview proof passed and its report is retained.
 
-Remaining: the editor, record/step commands, immutable file lifecycle, History/Removed items screens and export/restore. They must not be connected to this transaction primitive before its real-D1 gate passes. No existing project record or production path is changed by the model preparation.
+The custom-part preview now adds record/step commands, immutable files, History queries and export/restore. Its UI and actual Cloudflare acceptance remain separate from the passed foundation proof; see `PROJECT_CUSTOM_FLOW.md`. No existing production project record or path is changed.
 
 ## Exact write contract
 
@@ -31,7 +31,7 @@ Remaining: the editor, record/step commands, immutable file lifecycle, History/R
 5. Every header/domain/configuration/event statement contains an `EXISTS` check for this receipt's **fresh attempt ID**. A zero-row admission therefore makes every dependent statement a no-op. An earlier retry receipt cannot authorize them. Updates also require their exact target in admission; identities and receipt/configuration/event updates are unavailable through the writer.
 6. A later SQL failure must roll back the receipt, header and all dependent writes. If admission made zero changes, look up a racing committed receipt for replay; otherwise return 409. An unchanged save must return before this primitive; it must not create a receipt.
 
-All domain IDs and the result are chosen once per admitted command and returned from its receipt on retry. Number uniqueness includes removed items. Composite keys prevent an event/configuration/occurrence from pointing at a different project's item. Domain field validation and all remaining custom-part commands follow after the D1 gate; these tables do not claim those flows are available.
+All domain IDs and the result are chosen once per admitted command and returned from its receipt on retry. Number uniqueness includes removed items. Composite keys prevent an event/configuration/occurrence from pointing at a different project's item. The custom-part commands now apply domain validation after the passed D1 gate. The foundation proof alone does not establish the complete workflow.
 
 ## Preview authentication prerequisite
 
