@@ -14,14 +14,15 @@ export async function historyPage(db,projectId,params){
  if(scope){conditions.push("e.item_id=?");values.push(scope);}
  if(type!=="all"){conditions.push(effectiveType+" IN("+filterTypes[type].map(()=>"?").join(",")+")");values.push(...filterTypes[type]);}
  if(q){conditions.push("instr("+searchText+",?)>0");values.push(q);}
+ const countConditions=[...conditions],countValues=[...values];
  if(after){conditions.push("(e.created_at<? OR e.created_at=? AND e.id<?)");values.push(after.time,after.time,after.id);}
- const list=await rows(db,`SELECT e.*,${effectiveType} AS display_type,COALESCE(r.title,e.title) AS display_title,r.event_date,
+ const from=`FROM engine_events e JOIN engine_items i ON i.project_id=e.project_id AND i.id=e.item_id LEFT JOIN engine_records r ON r.project_id=e.project_id AND r.id=json_extract(e.payload,'$.record_id')`;
+ const result=await db.batch([statement(db,`SELECT e.*,${effectiveType} AS display_type,COALESCE(r.title,e.title) AS display_title,r.event_date,
  COALESCE(json_extract(r.fields,'$.result'),json_extract(r.fields,'$.resolution'),json_extract(r.fields,'$.text'),json_extract(r.fields,'$.changed'),e.summary) AS outcome,
  COALESCE(json_extract(e.payload,'$.source.name'),i.name) AS source_name,i.part_number
- FROM engine_events e JOIN engine_items i ON i.project_id=e.project_id AND i.id=e.item_id
- LEFT JOIN engine_records r ON r.project_id=e.project_id AND r.id=json_extract(e.payload,'$.record_id')
- WHERE ${conditions.join(" AND ")} ORDER BY e.created_at DESC,e.id DESC LIMIT ?`,...values,limit+1);
- const selected=list.slice(0,limit).map(decode);return {entries:selected,nextCursor:list.length>limit?cursor(selected.at(-1)):null};
+ ${from} WHERE ${conditions.join(" AND ")} ORDER BY e.created_at DESC,e.id DESC LIMIT ?`,...values,limit+1),statement(db,`SELECT COUNT(*) AS total ${from} WHERE ${countConditions.join(" AND ")}`,...countValues)]);
+ const list=result[0].results;
+ const selected=list.slice(0,limit).map(decode);return {total:result[1].results[0].total,entries:selected,nextCursor:list.length>limit?cursor(selected.at(-1)):null};
 }
 export async function eventDetail(db,projectId,id){
  if(!uuid(id))throw new ProjectNotFound("History entry not found.");
