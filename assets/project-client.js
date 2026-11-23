@@ -9,14 +9,14 @@ export function createProjectClient(){
  async function load(projectId){const sequence=++loadSequence,result=await request("/"+projectId+"/state");if(sequence===loadSequence)state=result;return result;}
  async function write(projectId,path,method,data={},expectedRevision=state?.project.revision??null){
   const key=JSON.stringify([projectId,path,method,data,expectedRevision]);let body=pending.get(key);if(!body){body={...data,expectedRevision,operationId:crypto.randomUUID()};pending.set(key,body);}
-  const result=await request("/"+projectId+path,{method,headers:{"content-type":"application/json"},body:JSON.stringify(body)});pending.delete(key);loadSequence++;if(state?.project.id===projectId)state.project.revision=result.revision;return result;
+  const result=await request("/"+projectId+path,{method,headers:{"content-type":"application/json"},body:JSON.stringify(body)});loadSequence++;if(state?.project.id===projectId&&(state.project.revision===expectedRevision||state.project.revision===result.revision))state.project.revision=result.revision;return result;
  }
- async function upload(projectId,file,{itemId=null}={}){
-  const prepared=await write(projectId,"/files/prepare","POST",{name:file.name,content_type:file.type||"application/octet-stream"});
-  const operationId=crypto.randomUUID(),revision=state.project.revision,options={method:"PUT",headers:{"x-operation-id":operationId,"x-project-revision":revision},body:file};
+ async function upload(projectId,file,{itemId=null,expectedRevision=state?.project.revision??null}={}){
+  const prepared=await write(projectId,"/files/prepare","POST",{name:file.name,content_type:file.type||"application/octet-stream"},expectedRevision);
+  const operationId=crypto.randomUUID(),revision=prepared.revision,options={method:"PUT",headers:{"x-operation-id":operationId,"x-project-revision":revision},body:file};
   // Only a transport failure is retried; the immutable key and upload ID stay.
   try{await request("/"+projectId+"/files/"+prepared.fileId+"/bytes",options);}catch(error){if(error.status)throw error;await request("/"+projectId+"/files/"+prepared.fileId+"/bytes",options);}
-  return write(projectId,"/files/"+prepared.fileId+"/admit","POST",{role:itemId?"engineering":"support",...(itemId?{itemId}:{})});
+  return write(projectId,"/files/"+prepared.fileId+"/admit","POST",{role:itemId?"engineering":"support",...(itemId?{itemId}:{})},revision);
  }
  return {request,load,write,upload,get state(){return state;}};
 }

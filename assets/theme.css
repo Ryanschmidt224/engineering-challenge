@@ -91,6 +91,18 @@ textarea::placeholder {
 :root {
   --bp-narrow: 640px;
   --bp-wide: 1024px;
+  --history-photo-width: 260px;
+  --history-photo-height: 210px;
+  --history-named-photo-width: 160px;
+  --history-named-photo-height: 125px;
+  --photo-upload-padding: 18px;
+  --photo-upload-drop-height: 155px;
+  --photo-upload-drop-padding: 22px;
+  --photo-upload-border: 2px;
+  --photo-upload-focus: 3px;
+  --photo-upload-focus-offset: 2px;
+  --photo-upload-narrow-padding: 14px;
+  --history-photo-border: 1px;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;

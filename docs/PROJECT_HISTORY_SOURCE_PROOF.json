@@ -1,0 +1,75 @@
+{
+  "status": "actual Cloudflare source workflow passed; independent-target recovery and source integrity recheck pending",
+  "sourceSha": "5dea81ecbf6429fb714847052602a67ca024fb9a",
+  "sourceTreeSha": "34d86a500965c322b8000f48bc1a9a813345b284",
+  "sourceBuild": "aae7a97b-e25a-4c8b-8b50-107039eaddb1",
+  "sourceWorkerVersionPrefix": "c395cfc8",
+  "bindingEvidence": {
+    "method": "Owner-provided Cloudflare preview screenshots show branch feature/project-history-alignment and full binding target names.",
+    "PHOTOS": "building-schmidt-photos-preview",
+    "WORKSHOP_DB": "building-schmidt-workshop-preview",
+    "configuredDatabaseId": "3314f42f-7c04-4798-99dc-b5b97c4fb82f",
+    "databaseIdEvidence": "ID is pinned by the deployed source configuration; the owner screenshot verified the database name, not its UUID."
+  },
+  "reportSource": "Owner ran the deployed protected proof page using the existing preview owner session and pasted the result in chat.",
+  "report": {
+    "ok": true,
+    "environment": "https://feature-project-history-alignment-engineering-challenge.ryanschmidt224.workers.dev",
+    "checkedAt": "2026-11-23T22:49:31.348Z",
+    "projectId": "743a7c75-aa2d-436e-86d1-6f43c3310191",
+    "itemId": "079d2922-3d4f-4c1d-b67f-fe5663f6007a",
+    "revisionEvents": [
+      "0fe43ae0-fd6e-4f09-bee1-9109725304e6",
+      "6c93dd2a-348d-4782-a281-f23b80465de4"
+    ],
+    "archiveEvent": "6ca4f0b6-65b5-448b-aa3a-42feb9a33adf",
+    "revisionLevel": 3,
+    "counts": {
+      "items": 2,
+      "occurrences": 2,
+      "steps": 1,
+      "configurations": 7,
+      "records": 1,
+      "events": 7,
+      "files": 3,
+      "file_links": 9
+    },
+    "files": [
+      {
+        "id": "274b18cb-d5c8-4797-af43-977f340af658",
+        "name": "proof-photo.png",
+        "size": 68,
+        "sha256": "726074f8da2365cabc1b29e074d630413344a7ce199152eaf81ed800a029ebf2"
+      },
+      {
+        "id": "af24ef60-46c1-473d-bca3-bbbb515cda6d",
+        "name": "proof-a.step",
+        "size": 19,
+        "sha256": "df391f9b128c87f473cdc8d4f0fec0b0df4983b1785bc99993b270366d70db10"
+      },
+      {
+        "id": "dec2a054-4ba9-486f-80f5-443e57c5d819",
+        "name": "proof-b.step",
+        "size": 19,
+        "sha256": "a1add889b82f890cff65584ac15824cf6b799eae43f18e036a513cd0b16239c8"
+      }
+    ],
+    "backupSha256": "2815b36f8a932cead97ac7077b3cb01f26fc8725f83b91ef795818d3539e23ca",
+    "checks": [
+      "Standalone revision advances the working part exactly once",
+      "Revision 1 retains the complete old part, steps and records",
+      "Standard Save overwrites without advancing the revision",
+      "An identical revision retry replays the original receipt",
+      "Save as revision commits the edited part as Revision 3",
+      "Revision 2 retains the previous saved value and named photo explanation",
+      "Replacing a drawing leaves its historical file bytes intact",
+      "Later instruction and record edits leave the old full snapshot unchanged",
+      "Archiving removes active membership without creating a new revision",
+      "The archived number remains reserved with different zero padding",
+      "Automatic numbering skips the archived part number",
+      "Restore retains part and occurrence identities, number and revision level",
+      "The archive retains its complete saved context and explanation",
+      "The self-contained source backup retains both drawings and the named photo"
+    ]
+  }
+}

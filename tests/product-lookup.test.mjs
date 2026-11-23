@@ -30,10 +30,12 @@ class Element{
 }
 const setup=fetch=>{
  const window={};
+ const document={createElement:tag=>new Element(tag),createTextNode:text=>({textContent:text})};
+ const specificationRow=runInNewContext(readFileSync("assets/part-specifications.js","utf8").replace(/^import .*;\n/,"").replaceAll("export function ","function ")+"\nspecificationRow",{document});
  runInNewContext(readFileSync("assets/product-lookup.js","utf8"),{
-  window,document:{createElement:tag=>new Element(tag),createTextNode:text=>({textContent:text})},fetch,URL,AbortController,setTimeout,clearTimeout
+  window,document,fetch,URL,AbortController,setTimeout,clearTimeout
  });
- return window.BSProductLookup;
+ return {...window.BSProductLookup,mountPart:(root,options)=>window.BSProductLookup.mountPart(root,{specificationRow,...options})};
 };
 test("shared lookup submits both identity fields and displays cost before returning a draft",async()=>{
  const requests=[],results=[];

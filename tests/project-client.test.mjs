@@ -17,3 +17,11 @@ test("transport retry reuses its body, edited content gets a different operation
   mode="server";await assert.rejects(client.write(projectId,"/items","POST",{name:"Gateway retry"},revision),error=>error.status===502);const attempted=bodies.at(-1);mode="ok";await client.write(projectId,"/items","POST",{name:"Gateway retry"},revision);assert.deepEqual(bodies.at(-1),attempted);
  }finally{globalThis.fetch=original;}
 });
+
+test("a failed refresh after an admitted revision reuses its command and cannot roll a newer token backward",async()=>{
+ const original=globalThis.fetch,bodies=[];let revision="start",failLoad=false;globalThis.fetch=async(url,options)=>{if(!options.method){if(failLoad)throw Error("Refresh lost");return Response.json({project:{id:"project",revision}});}bodies.push(JSON.parse(options.body));return Response.json({revision:"admitted"});};
+ try{
+  const client=createProjectClient();await client.load("project");await client.write("project","/items/id/revisions","POST",{entryDetails:{notes:"Save once"}},"start");failLoad=true;await assert.rejects(client.load("project"),/Refresh lost/);await client.write("project","/items/id/revisions","POST",{entryDetails:{notes:"Save once"}},"start");assert.deepEqual(bodies[0],bodies[1]);
+  failLoad=false;revision="newer";await client.load("project");await client.write("project","/items/id/revisions","POST",{entryDetails:{notes:"Save once"}},"start");assert.equal(client.state.project.revision,"newer");assert.deepEqual(bodies[1],bodies[2]);
+ }finally{globalThis.fetch=original;}
+});

@@ -1,0 +1,40 @@
+/* Shared named photo gallery, moved from the frozen history styles without layout changes. */
+.investigation-note-photo-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.investigation-note-photo,
+.investigation-note-photo-tile {
+  width: var(--history-photo-width);
+  max-width: 100%;
+  box-sizing: border-box;
+  border: var(--history-photo-border) solid var(--color-border);
+  border-radius: var(--radius-medium);
+}
+
+.investigation-note-photo {
+  display: block;
+  height: var(--history-photo-height);
+  object-fit: contain;
+  background: var(--color-media-backdrop);
+}
+
+.investigation-named-photo {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-1);
+  margin: 0;
+  width: var(--history-named-photo-width);
+  max-width: 100%;
+}
+
+.investigation-named-photo > .investigation-note-photo {
+  width: 100%;
+  height: var(--history-named-photo-height);
+  object-fit: contain;
+}

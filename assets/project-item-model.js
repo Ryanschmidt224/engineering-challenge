@@ -1,3 +1,4 @@
+export const projectNumberKey=value=>String(value).toUpperCase().replace(/(\d+)$/,digits=>digits.replace(/^0+(?=\d)/,""));
 // Pure custom-part rules. No DOM, globals, API calls or persistence.
 // Occurrence/build fields are deliberately separate from engineering details.
 const owns=(value,key)=>Object.prototype.hasOwnProperty.call(value,key);
@@ -48,14 +49,14 @@ export function normalizeOccurrence(input={}){
  return {quantity:quantity===0?0:quantity,unit:text(input.unit,"Quantity unit",32)||"pcs",build_status,attention:boolean(input.attention,"Needs attention"),attention_note:text(input.attention_note,"Attention note",2500,{multiline:true}),hidden:boolean(input.hidden,"Hidden in tree")};
 }
 export function allocatePartNumber(numbering,reserved){
- plain(numbering,"Numbering");const prefix=text(numbering.prefix===undefined?"NR":numbering.prefix,"Number prefix",10),digits=numbering.digits===undefined?4:numbering.digits;
+ plain(numbering,"Numbering");const prefix=text(numbering.prefix===undefined?"NR":numbering.prefix,"Number prefix",10),digits=numbering.digits===undefined?3:numbering.digits;
  if(!Number.isInteger(digits)||digits<1||digits>8)throw Error("Use between 1 and 8 part-number digits.");
  if(!Array.isArray(reserved))throw Error("Supply every reserved number, including removed items.");
- const used=new Set(reserved.map(number=>text(number,"Reserved part number",80,{required:true}).toUpperCase()));
+ const used=new Set(reserved.map(number=>projectNumberKey(text(number,"Reserved part number",80,{required:true}))));
  // Assemblies reserve 1–99. Search holes without changing any existing number.
  for(let sequence=100;sequence<=100+used.size;sequence++){
   const number=prefix+String(sequence).padStart(digits,"0");
-  if(!used.has(number.toUpperCase()))return number;
+  if(!used.has(projectNumberKey(number)))return number;
  }
  throw Error("Unable to allocate a part number.");
 }

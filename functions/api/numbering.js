@@ -2,6 +2,7 @@
 // Numbers are never reused, even after deletion or renaming. Each record keeps
 // its assigned number permanently; changing formatting affects new issues only.
 import {projectAllowed,canEditProject} from "./projects.js";
+import {archivedNumberOwners,rememberNumbers} from "./number-reservations.js";
 const key=id=>"project-numbering/"+id+".json";
 const defaults=()=>({prefix:"NR",digits:3,nextAssembly:1,nextPart:100,issued:{},issuedSequences:{}});
 const err=(message,status=400)=>Object.assign(new Error(message),{status});
@@ -29,6 +30,13 @@ async function changeRegister(env,project,update){
  }
  throw err("Numbering was updated in another session. Retry the save.",409);
 }
+// Backfill existing identifiers before any active tree/BOM membership is removed.
+// Even a later purge of archive copies cannot release these reservations.
+export async function reserveProjectNumbers(env,project,nodes,parts){
+ const entries=[...nodes.filter(node=>node.kind!=="part").map(node=>[node.partNumber,"assembly:"+node.id]),...parts.map(part=>[part.partNumber,"part:"+part.id])].filter(([number])=>number);
+ if(!entries.length)return;
+ return changeRegister(env,project,data=>{rememberNumbers(data,entries);return entries.length;});
+}
 // Legacy project records may predate the numbering registry. Include them
 // when allocating or validating numbers, without renumbering existing items.
 async function legacyNumbers(env,project){
@@ -48,12 +56,15 @@ async function legacyNumbers(env,project){
    numbers.set(value,owner);
   }
  }
+ for(const [raw,owner] of await archivedNumberOwners(env.PHOTOS,project)){
+  const number=String(raw).trim().toUpperCase();if(numbers.has(number)&&numbers.get(number)!==owner)throw err("Duplicate historical project number "+number+". Resolve this conflict before issuing new numbers.",409);numbers.set(number,owner);
+ }
  return numbers;
 }
 function occupiedSequences(data,existing){
  const occupied=new Set(Object.keys(data.issuedSequences));
  // Also recognize legacy numbers with different zero padding under the current prefix.
- for(const number of [...existing.keys(),...Object.values(data.issued)]){
+ for(const number of [...existing.keys(),...Object.values(data.issued),...Object.keys(data.reservedNumbers||{})]){
   if(number.startsWith(data.prefix)&&/^\d+$/.test(number.slice(data.prefix.length)))occupied.add(String(Number(number.slice(data.prefix.length))));
  }
  return occupied;
@@ -70,6 +81,7 @@ export async function issueNumber(env,project,kind,recordId,manual){
  const recordKey=kind+":"+recordId;
  const existing=await legacyNumbers(env,project);
  return changeRegister(env,project,data=>{
+  rememberNumbers(data,[...existing].map(([number,owner])=>[number,owner]));
   if(data.issued[recordKey])return data.issued[recordKey];
   const occupied=occupiedSequences(data,existing);
   let value,sequence;
@@ -115,7 +127,7 @@ export async function onRequest({request,env}){
   const lookup=String(query.get("lookup")||"").trim().toUpperCase();
   if(lookup){
    if(!/^[A-Z0-9-]{1,32}$/.test(lookup))return json({error:"Invalid part number"},400);
-   const exact=Object.entries(data.issued).find(([,number])=>number.toUpperCase()===lookup)?.[0]||existing.get(lookup)||null;
+   const exact=Object.entries(data.issued).find(([,number])=>number.toUpperCase()===lookup)?.[0]||data.reservedNumbers?.[lookup]||existing.get(lookup)||null;
    let owner=exact;
    if(!owner&&lookup.startsWith(data.prefix)){
     const suffix=lookup.slice(data.prefix.length);

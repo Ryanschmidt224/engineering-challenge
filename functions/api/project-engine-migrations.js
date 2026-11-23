@@ -79,6 +79,8 @@ const migrations=[{version:1,statements:[
  `CREATE INDEX IF NOT EXISTS engine_records_owner ON engine_records(project_id,item_id,created_at DESC,id DESC)`,
  `CREATE INDEX IF NOT EXISTS engine_links_file ON engine_file_links(project_id,file_id)`,
  `CREATE INDEX IF NOT EXISTS engine_links_record ON engine_file_links(project_id,record_id,active)`
+]},{version:3,statements:[
+ `ALTER TABLE engine_items ADD COLUMN revision_level INTEGER NOT NULL DEFAULT 1 CHECK(revision_level>=1)`
 ]}];
 const pending=new WeakMap();
 export async function initializeProjectEngine(db){

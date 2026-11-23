@@ -82,21 +82,6 @@ textarea.field {
   border-top: 1px solid var(--color-border);
 }
 
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.data-table th,
-.data-table td {
-  padding: var(--space-3) var(--space-2);
-  text-align: left;
-  border-bottom: 1px solid var(--color-border);
-  overflow-wrap: anywhere;
-}
-.data-table th {
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-}
 .dialog {
   max-width: min(42rem, calc(100vw - 2rem));
   max-height: calc(100vh - 2rem);
@@ -120,7 +105,8 @@ textarea.field {
   border-radius: var(--radius-medium);
   box-shadow: var(--shadow-dialog);
 }
-.context-menu .button {
+.context-menu .button,
+.context-menu .ui-button {
   justify-content: start;
 }
 .status {
@@ -248,4 +234,9 @@ textarea.field {
 .chip--verified {
   border-color: var(--color-accent);
   color: var(--color-accent);
+}
+
+.ui-preformatted {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

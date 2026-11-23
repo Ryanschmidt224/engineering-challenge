@@ -106,9 +106,9 @@ for(const width of [1440,390])for(const project of projects)for(const kind of ["
      // A text-only help surface must not swallow the next section's click.
      const archive=workspaces[1].locator('[data-section="history"]');
      const wasOpen=await archive.getAttribute("open");
-     await archive.locator(".ui-section__header").click();
+     await archive.locator(":scope > .ui-section__header").click();
      expect(await archive.getAttribute("open")).not.toBe(wasOpen);
-     await archive.locator(".ui-section__header").click();
+     await archive.locator(":scope > .ui-section__header").click();
      await help.focus();await help.press("Escape");await expect(tip).toBeHidden();
     }
     if(state==="expanded"){
