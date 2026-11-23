@@ -20,7 +20,8 @@ export function initProjectFiles({target,project,ui}){
   if(busy||download.disabled)return;const chosen=files.filter(file=>selected.has(file.id));busy=true;section.body.inert=true;feedback.textContent="Preparing ZIP…";
   try{let done=0;const entries=chosen.map(file=>({...file,path:safePiece((file.partNumber?file.partNumber+" - ":"")+file.ownerName)+"/"+file.id.slice(0,8)+"-"+safePiece(file.name)}));
    const stream=zipStore(entries,async file=>{feedback.textContent="Downloading "+(++done)+" of "+chosen.length+" files…";const response=await fetch(file.url,{credentials:"same-origin",cache:"no-store"});if(!response.ok){const problem=await response.json().catch(()=>({}));throw Error(problem.error||"A selected file could not download. Refresh and try again.");}return response;});
-   const blob=await new Response(stream).blob(),url=URL.createObjectURL(blob),link=make("a");link.href=url;link.download="project-files.zip";document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);feedback.textContent="ZIP ready — "+chosen.length+" files. Open them together in your slicer or PDF application.";
+   const chunks=[];for await(const chunk of stream)chunks.push(chunk);
+   const blob=new Blob(chunks,{type:"application/zip"}),url=URL.createObjectURL(blob),link=make("a");link.href=url;link.download="project-files.zip";document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);feedback.textContent="ZIP ready — "+chosen.length+" files. Open them together in your slicer or PDF application.";
   }catch(error){feedback.textContent="ZIP not created: "+error.message;}finally{busy=false;section.body.inert=false;download.disabled=false;}
  }
  search.oninput=render;filter.onchange=render;section.root.addEventListener("toggle",()=>{if(section.root.open&&!loaded)void load();});target.append(section.root);return section;
