@@ -52,7 +52,7 @@
 .project-toolbar {
   margin-bottom: var(--space-4);
 }
-.project-copy {
+.project-instruction-text {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -82,4 +82,14 @@
   .project-history-panes[data-detail-open] .project-history-list {
     display: none;
   }
+}
+
+.project-tree-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.project-tree-row > .list-card {
+  flex: 1;
+  min-width: 0;
 }

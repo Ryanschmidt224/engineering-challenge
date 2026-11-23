@@ -37,7 +37,7 @@ export function addFileLinks(w,projectId,owner,files,role="support"){
 }
 export async function configurationPlan(db,project,item,occurrence,file){
  const projectId=project.id;
- const snapshot={format:1,item:{id:item.id,...itemDetails(item)},occurrence:{id:occurrence.id,...buildDetails(occurrence),root:{id:project.id,name:project.name}},file:file?{id:file.id,name:file.name,content_type:file.content_type,size:file.size,sha256:file.sha256}:null};
+ const snapshot={format:1,item:{id:item.id,...itemDetails(item),revision_level:item.revision_level||1},occurrence:{id:occurrence.id,...buildDetails(occurrence),root:{id:project.id,name:project.name}},file:file?{id:file.id,name:file.name,content_type:file.content_type,size:file.size,sha256:file.sha256}:null};
  const fingerprint=await sha256(canonicalJSON(snapshot));
  const existing=await statement(db,"SELECT id FROM engine_configurations WHERE project_id=? AND item_id=? AND fingerprint=?",projectId,item.id,fingerprint).first();
  const id=existing?.id||crypto.randomUUID();

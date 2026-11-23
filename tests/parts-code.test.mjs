@@ -8,6 +8,8 @@ import {handleComponents} from "../functions/api/components.js";
 import {folders,isAllowedKey} from "../functions/api/project-archive.js";
 
 class Bucket{
+ async list({prefix=""}){return {objects:[...this.data.keys()].filter(key=>key.startsWith(prefix)).map(key=>({key})),truncated:false};}
+
  data=new Map();version=0;
  async get(key){const item=this.data.get(key);return item?{etag:item.etag,text:async()=>item.text}:null}
  async put(key,value,options={}){

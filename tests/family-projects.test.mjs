@@ -45,14 +45,16 @@ test("project tree membership follows D1 archive/restore and assembly placement 
  await env.PHOTOS.put("trees/launcher.json",JSON.stringify([{id:assembly,kind:"assembly",name:"Control board",parentId:null,quantity:3}]));
  use.tree_node_id=assembly;assert.equal((await save("use",use)).status,200);
  let tree=await(await call("/api/tree?project=launcher")).json();assert.equal(tree.nodes.find(node=>node.partId===use.id).parentId,assembly);
- assert.equal((await call("/api/assembly-archive?project=launcher","POST",{action:"archive",nodeId:assembly,expectedRevision:tree.revision})).status,409);
- assert.equal((await call("/api/components?project=launcher&id="+use.id,"PATCH",{expectedRevision:"1",assemblyId:null})).status,200);
+ const archived=await call("/api/assembly-archive?project=launcher","POST",{action:"archive",nodeId:assembly,expectedRevision:tree.revision});assert.equal(archived.status,200);const archive=await archived.json();
+ tree=await(await call("/api/tree?project=launcher")).json();assert.equal(tree.nodes.some(node=>node.partId===use.id),false);
+ assert.equal((await call("/api/assembly-archive?project=launcher","POST",{action:"restore",id:archive.id,expectedRevision:tree.revision})).status,200);
+ assert.equal((await call("/api/components?project=launcher&id="+use.id,"PATCH",{expectedRevision:"3",assemblyId:null})).status,200);
  tree=await(await call("/api/tree?project=launcher")).json();assert.equal(tree.nodes.find(node=>node.partId===use.id).parentId,null);
  // Simulate a previously saved projection; archived uses must not reappear.
  await env.PHOTOS.put("trees/launcher.json",JSON.stringify(tree.nodes));
- assert.equal((await call("/api/workshop","PATCH",{entity:"use",id:use.id,expectedRevision:2,archived:true})).status,200);
+ assert.equal((await call("/api/workshop","PATCH",{entity:"use",id:use.id,expectedRevision:4,archived:true})).status,200);
  assert.equal((await(await call("/api/tree?project=launcher")).json()).nodes.some(node=>node.partId===use.id),false);
- assert.equal((await call("/api/workshop","PATCH",{entity:"use",id:use.id,expectedRevision:3,archived:false})).status,200);
+ assert.equal((await call("/api/workshop","PATCH",{entity:"use",id:use.id,expectedRevision:5,archived:false})).status,200);
  assert.equal((await(await call("/api/tree?project=launcher")).json()).nodes.filter(node=>node.partId===use.id).length,1);
  assert.equal(await env.PHOTOS.get("components/launcher.json"),null);
 });

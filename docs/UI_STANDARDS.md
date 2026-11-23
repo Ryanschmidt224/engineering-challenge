@@ -28,6 +28,8 @@ A page never restyles a shared component. If something needs to look different, 
 ### Section (`BSUI.section`)
 Every collapsible block on project, assembly and part pages: Part details, Work instructions, Helpful tools, History, Archived items, Notes, Project backups, Recent changes.
 
+Part **Revisions** is a separate section at the bottom of the part page. **Create a Revision** opens one optional metadata prompt: What changed, Why did you change it, Notes, and the shared choose/paste/drop uploader with thumbnails and photo names. **Save revision** captures the saved part plus this explanation and photos; it does not open the part-details editor. Cancel and failed saves preserve the appropriate draft boundary, dates stay automatic, and identical retries reuse their operation ID. A shared semantic revision table shows the working revision and each saved revision, its automatic date, What changed, and View revision. A saved copy keeps the previous revision number; the working part advances once. New numbering starts at Revision 1; older unnumbered historical copies are labeled Earlier copy. Full saved details expand through the existing shared section. Edit part details offers Save and Save as revision, with keyed tooltips explaining overwrite versus preserving the previous version. Save keeps the revision number; Save as revision prompts for explanation/photos, captures the old saved state, and commits the edits as the next revision. **History → Archive** in an assembly lists items removed through the tree’s **Archive part** / **Archive subassembly** context actions. There is no competing Delete menu item. Archived parts and subassemblies retain their permanently consumed numbers; restoring an item retains its original number. Older archived entries remain readable; their former record-archive controls are removed. These are legacy-flow refinements; the separate custom-part D1 preview now has the same refined interactions, with its deployment acceptance and later full cutover still separate.
+
 - One frame: surface background, 1px border, large radius, the same vertical gap between sections.
 - One header: at least 48 px (`--section-height`), chevron on the left (6 px, 1.5 px stroke, rotates when open), title 16 px semibold, record count in parentheses 14 px muted, optional help or actions on the right. The header grows when the title wraps; it never clips.
 - One body: the same inner padding. Communicate emptiness once: a zero header count needs no duplicate message. Otherwise provide one concise guidance line. Preserve loading and error feedback.
@@ -81,6 +83,10 @@ Workshop and Knowledge use assets/split-panes.js, explicitly initialized per pag
 
 
 ## Migration and rollback
+
+### Project views
+
+Project directory views share one card renderer and `project-directory.css` layout. Details, List, Tiles and Large icons use the same name, keyboard activation, project route and summary-album thumbnail. View is a browser preference; sorting and descriptor/search filters work in each view. List/icons omit secondary text visually; Details labels the recorded timestamp Created. No fabricated modification dates or separate catalog-cover field.
 
 Use shared headers, section disclosures/body spacing, information panels and field rows, controls, dialogs and pane resizers. Tooltip hover waits 650 ms and cancels on pointer-down, scroll, exit or Escape; tree help belongs on an explicit control. A leading status mark is an indicator, not a checkbox. Empty sections communicate their count once. Summary sections remember browser-local open state and start collapsed. Workshop and Knowledge column widths are browser preferences; phones stack panels. These presentation preferences are not engineering data.
 

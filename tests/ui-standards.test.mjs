@@ -31,9 +31,10 @@ test("shared kit files stay free of !important", () => {
 
 test("part and assembly sections are built by the kit, not by hand", () => {
   const assembly = read("assets/site-assembly.js");
-  for (const role of ["helpful-tools", "history", "backups", "recent-changes", "archived-items", "part-details"]) {
+  for (const role of ["helpful-tools", "history", "backups", "recent-changes", "part-details"]) {
     assert.match(assembly, new RegExp('role:"' + role + '"'), role);
   }
+  assert.match(read("assets/tree-archive.js"), /ui\.section\(\{title:"Archive",role:"archive-folder"/);
   assert.match(read("assets/unstructured-notes.js"), /BSUI\.section\(/);
   assert.match(read("assets/recipe-editor.js"), /BSUI\?\.sectionShell\(/);
   const retired = ["workspace-primary-disclosure", "workspace-secondary-disclosure", "workspace-backup-details", "recipe-heading-row", "recipe-disclosure-toggle", "bs-unstructured-notes-heading", "part-details-view-heading", "workspace-tool-actions"];

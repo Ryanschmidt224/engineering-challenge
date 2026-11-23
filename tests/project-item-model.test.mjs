@@ -35,7 +35,7 @@ test("automatic numbers use project format and reserve removed numbers without r
  const reserved=["NR0100","NR0101","NR0103","nr0102","Manual-A"],copy=[...reserved];
  assert.equal(allocatePartNumber({prefix:"NR",digits:4},reserved),"NR0104");
  assert.deepEqual(reserved,copy);
- assert.equal(allocatePartNumber({},[]),"NR0100");
+ assert.equal(allocatePartNumber({},[]),"NR100");
  assert.equal(allocatePartNumber({prefix:"BB",digits:3},[]),"BB100");
  assert.equal(allocatePartNumber({prefix:"",digits:1},["100"]),"101");
  assert.equal(allocatePartNumber({prefix:"NR",digits:4},["NR0101"]),"NR0100");

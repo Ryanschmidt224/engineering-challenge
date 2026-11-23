@@ -566,3 +566,56 @@ summary.ui-button::-webkit-details-marker {
     display: none;
   }
 }
+
+/* Property/value/source rows share one responsive layout in every part editor. */
+.component-specs {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.component-spec-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+}
+.component-spec-row > .ui-control {
+  min-width: 0;
+  width: 100%;
+}
+@media (max-width: 640px) {
+  .component-spec-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .component-spec-row > .ui-button {
+    justify-self: start;
+  }
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.data-table th,
+.data-table td {
+  padding: var(--space-3) var(--space-2);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+.data-table th {
+  overflow-wrap: normal;
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+}
+
+.ui-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.ui-table-date {
+  white-space: nowrap;
+}

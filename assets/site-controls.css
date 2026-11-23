@@ -194,15 +194,7 @@
   font-size: var(--text-small);
   color: var(--color-text-muted);
 }
-.project-art.has-project-cover > svg {
-  display: none;
-}
-.project-art > .project-card-cover {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+
 /* All feature-tree creation, ordering and move commands now live in the
    right-click / ⋯ context menu; retain their underlying handlers. */
 .assembly-sidebar .assembly-edit {
@@ -724,50 +716,6 @@
   grid-column: 1/-1;
   margin: 0;
 }
-.project-view .workspace-main-bom-editor .component-specs {
-  width: 100%;
-  display: grid;
-  gap: var(--space-2);
-}
-.project-view .workspace-main-bom-editor .component-spec-row {
-  display: grid;
-  grid-template-columns:
-    minmax(120px, 1fr) minmax(120px, 1fr) minmax(180px, 220px)
-    32px;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
-  margin: 0;
-}
-.project-view .workspace-main-bom-editor .component-spec-row .field {
-  min-width: 0;
-  width: 100%;
-  margin: 0;
-}
-.project-view .workspace-main-bom-editor .component-spec-source {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  color: var(--color-text);
-  font-size: var(--text-small);
-}
-.project-view .workspace-main-bom-editor .component-spec-remove {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 34px;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: transparent;
-  color: var(--color-text-muted);
-  font-size: var(--text-title);
-}
-.project-view .workspace-main-bom-editor .component-spec-remove:hover {
-  background: var(--color-hover);
-  color: var(--color-text);
-}
 .project-view .workspace-main-bom-editor .component-editor-actions {
   display: flex;
   justify-content: space-between;
@@ -784,14 +732,7 @@
   align-items: center;
   margin-left: auto;
 }
-.project-view .workspace-main-bom-editor .component-add-spec {
-  justify-self: auto;
-  padding: 9px 14px;
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  border-radius: var(--radius-medium);
-}
+
 .project-view
   .workspace-main-bom-editor
   .component-editor-primary-actions
@@ -816,17 +757,6 @@
 @media (max-width: 700px) {
   .project-view .workspace-main-bom-editor .historical-price-fields {
     grid-template-columns: 1fr;
-  }
-  .project-view .workspace-main-bom-editor .component-spec-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px;
-  }
-  .project-view .workspace-main-bom-editor .component-spec-source {
-    grid-column: 1 / span 2;
-  }
-  .project-view .workspace-main-bom-editor .component-spec-remove {
-    grid-column: 3;
-    grid-row: 1 / span 2;
-    align-self: center;
   }
 }
 
@@ -1401,26 +1331,7 @@
 .project-account-buttons {
   gap: var(--space-2);
 }
-.project-personal-art {
-  display: grid;
-  place-items: center;
-  font-size: 5rem;
-  font-weight: var(--font-normal);
-  color: var(--color-accent);
-  background: var(--color-surface-muted);
-}
-.project-personal-card {
-  display: flex;
-  flex-direction: column;
-}
-.project-personal-card .project-link {
-  height: auto;
-  flex: 1;
-}
 
-.project-card[hidden] {
-  display: none !important;
-}
 @media (max-width: 600px) {
 }
 
@@ -2794,35 +2705,6 @@
   font-size: var(--text-body);
 }
 
-#home .project-grid {
-  margin-top: 18px;
-  gap: var(--space-5);
-}
-#home .project-card {
-  border-radius: var(--radius-large);
-  box-shadow: 0 3px 15px color-mix(in srgb, var(--color-shadow) 8%, transparent);
-  transition:
-    transform 0.16s,
-    border-color 0.16s,
-    box-shadow 0.16s;
-}
-#home .project-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 9px 26px
-    color-mix(in srgb, var(--color-shadow) 14%, transparent);
-}
-#home .project-copy {
-  padding: 20px 21px 22px;
-}
-#home .project-copy h2 {
-  font-size: var(--text-title);
-  font-weight: var(--font-bold);
-  letter-spacing: -0.018em;
-  line-height: 1.3;
-}
-#home .project-copy p {
-  line-height: 1.5;
-}
 #home .project-tags span {
   border-radius: 20px;
   padding: 4px 9px;
@@ -2948,71 +2830,8 @@
   min-width: 0;
 }
 
-.bs-catalog-main #home .project-grid {
-  margin-top: 12px;
-}
-#home .bs-catalog-layout .project-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-3);
-  margin-top: 14px;
-}
-#home .bs-catalog-layout .project-card {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  box-shadow: none;
-  transform: none;
-  min-width: 0;
-}
-#home .bs-catalog-layout .project-card:hover {
-  transform: none;
-  border-color: var(--color-accent);
-  box-shadow: 0 2px 12px
-    color-mix(in srgb, var(--color-shadow) 10%, transparent);
-}
-#home .bs-catalog-layout .project-link {
-  display: flex;
-  align-items: stretch;
-  min-height: 118px;
-}
-#home .bs-catalog-layout .project-art {
-  width: 170px;
-  flex: 0 0 170px;
-  aspect-ratio: auto;
-  min-height: 118px;
-  border-right: 1px solid var(--color-border);
-}
-#home .bs-catalog-layout .project-art svg {
-  height: 100%;
-  width: 100%;
-  object-fit: cover;
-}
-#home .bs-catalog-layout .project-personal-art {
-  min-height: 118px;
-  font-size: 3rem;
-  background: var(--color-surface-muted);
-}
-#home .bs-catalog-layout .project-copy {
-  flex: 1;
-  min-width: 0;
-  padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-#home .bs-catalog-layout .project-copy h2 {
-  margin: 0;
-  font-size: var(--text-lead);
-}
-#home .bs-catalog-layout .project-copy p {
-  margin: 0;
-  font-size: var(--text-small);
-}
 #home .bs-catalog-layout .project-tags {
   margin-top: auto;
-}
-#home .bs-catalog-layout .project-personal-card .project-link {
-  height: auto;
 }
 
 .calculators-view .bs-catalog-main #tileList.grid.two {
@@ -3067,15 +2886,6 @@
   }
 }
 @media (max-width: 540px) {
-  #home .bs-catalog-layout .project-art {
-    height: 150px;
-
-    border-right: 0;
-    border-bottom: 1px solid var(--color-border);
-  }
-  #home .bs-catalog-layout .project-copy {
-    padding: 14px 16px;
-  }
 }
 
 /* Wide, usable desktop catalog layout shared by the top-level pages.
@@ -3135,37 +2945,10 @@ body > .footer {
   max-width: 820px;
 }
 
-#home .bs-catalog-layout .project-grid {
-  gap: var(--space-4);
-  margin-top: 12px;
-}
-#home .bs-catalog-layout .project-link {
-  min-height: 160px;
-}
-#home .bs-catalog-layout .project-art {
-  width: clamp(185px, 17vw, 270px);
-  flex: 0 0 clamp(185px, 17vw, 270px);
-  min-height: 160px;
-  background: var(--color-surface-muted);
-}
-#home .bs-catalog-layout .project-copy {
-  padding: 22px 26px;
-  gap: var(--space-3);
-}
-#home .bs-catalog-layout .project-copy h2 {
-  font-size: var(--text-title);
-}
-#home .bs-catalog-layout .project-copy p {
-  font-size: var(--text-body);
-  max-width: 770px;
-  line-height: 1.5;
-}
 #home .bs-catalog-layout .project-tags span {
   padding: 5px 9px;
 }
-#home .bs-catalog-layout .project-card {
-  border-radius: var(--radius-large);
-}
+
 .calculators-view .knowledge-header {
   margin: 0;
 }
@@ -3207,10 +2990,7 @@ body > .footer {
     grid-template-columns: 205px minmax(0, 1fr);
     gap: var(--space-5);
   }
-  #home .bs-catalog-layout .project-art {
-    width: 180px;
-    flex-basis: 180px;
-  }
+
   .calculators-view .bs-catalog-main #tileList.grid.two {
     grid-template-columns: 1fr;
   }
@@ -3231,23 +3011,12 @@ body > .footer {
     border: 0;
     margin-bottom: 18px;
   }
-  #home .bs-catalog-layout .project-copy {
-    padding: 16px 18px;
-  }
+
   #commonparts .bs-catalog-main .workshop-standard-list {
     grid-template-columns: 1fr;
   }
 }
 @media (max-width: 540px) {
-  #home .bs-catalog-layout .project-art {
-    width: 100%;
-    height: 175px;
-    min-height: 0;
-  }
-  #home .bs-catalog-layout .project-link {
-    display: block;
-    min-height: 0;
-  }
   .calculators-view .bs-catalog-main #resource-calculators.resource-grid {
     grid-template-columns: 1fr;
   }
@@ -3297,9 +3066,7 @@ body > .footer {
   width: 100%;
   height: 40px;
 }
-.bs-supplier-add {
-  justify-self: start;
-}
+
 .bs-offer-remove {
   padding: 8px 11px;
   white-space: nowrap;
@@ -3694,22 +3461,6 @@ body > .footer {
 }
 
 /* Each project is one complete row, even on wide screens. */
-#home .bs-catalog-main > .project-grid {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) !important;
-  grid-auto-flow: row;
-  gap: var(--space-3);
-  width: 100%;
-}
-#home .bs-catalog-main > .project-grid > .project-card {
-  grid-column: 1/-1;
-  width: 100%;
-  max-width: none;
-  min-width: 0;
-}
-#home .bs-catalog-main > .project-grid > .project-card[hidden] {
-  display: none !important;
-}
 
 /* Compact two-line feature-tree labels: identifier first, purpose below. */
 .assembly-tree-nodes .assembly-name .assembly-tree-description {
@@ -4323,19 +4074,19 @@ body > .footer {
   .workspace-main-bom-editor
   .component-review
   > .part-editor-group
-  > label:not([hidden]),
+  > label,
 .part-editor-dialog
   .workspace-main-bom-editor
   .component-review
   > .part-editor-group
-  .part-project-only-field:not([hidden]),
+  .part-project-only-field,
 .part-editor-dialog
   .workspace-main-bom-editor
   .component-review
   > .part-editor-group
   .historical-price-fields
-  > label:not([hidden]) {
-  display: grid !important;
+  > label {
+  display: grid;
   grid-template-columns: var(--edit-part-label-width) minmax(0, 1fr) !important;
   align-items: center !important;
   column-gap: var(--space-3) !important;
@@ -4628,33 +4379,7 @@ body > .footer {
   opacity: 0.65;
   cursor: progress;
 }
-.part-editor-dialog .component-review .part-editor-specs-disclosure {
-  min-width: 0;
-  margin: 3px 0 0;
-  border: 0;
-  border-top: 1px solid var(--color-border);
-  background: transparent;
-}
-.part-editor-dialog .component-review .part-editor-specs-disclosure > summary {
-  cursor: pointer;
-  padding: 9px 0 5px;
-  color: var(--color-text);
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
-.part-editor-dialog .component-review .part-editor-specs-body {
-  display: grid;
-  gap: var(--space-2);
-  padding: 3px 0 9px;
-}
-.part-editor-dialog
-  .component-review
-  .part-editor-specs-body
-  .component-add-spec {
-  justify-self: start;
-  min-height: 31px;
-  padding: 5px 10px;
-}
+
 .part-editor-dialog .component-review .product-ai-review-list {
   display: grid;
   gap: var(--space-2);

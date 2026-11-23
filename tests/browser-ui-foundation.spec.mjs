@@ -122,7 +122,7 @@ for (const width of [1440, 390]) test("shared section gaps across summary, assem
   await gaps(page.locator("#launcher .project-summary-page"), ["summary-photos", "summary-description", "summary-cost"]);
   await page.screenshot({path: testInfo.outputPath("summary-spacing.png"), fullPage: true});
   await page.goto("/#launcher/workspace/__root__");
-  await gaps(page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)"), ["work-instructions", "helpful-tools", "archived-items", "history", "notes"]);
+  await gaps(page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)"), ["work-instructions", "helpful-tools", "history", "notes"]);
   await page.screenshot({path: testInfo.outputPath("assembly-spacing.png"), fullPage: true});
   const response = await page.request.post("/api/workshop", {headers: {origin: "http://127.0.0.1:4173"}, data: {entity: "use", expectedRevision: null, expectedFamilyRevision: 1, record: {id: crypto.randomUUID(), project_id: "launcher", family_id: "f-resistor", product_id: null, tree_node_id: null, purpose: "Spacing fixture", quantity: 1, unit: "pcs", field_values: {}, notes: ""}}});
   expect(response.ok(), await response.text()).toBe(true);
@@ -197,7 +197,7 @@ test("one project template supports built-in and new project routes without dupl
   expect(response.ok(),await response.text()).toBe(true);
   const {projects}=await response.json(),created=projects.find(project=>project.name==="Shared template fixture");
   await page.goto("/#home");
-  await expect(page.locator(".project-grid > .project-card")).toHaveCount(4);
+  await expect(page.locator(".ui-project-list > .ui-project-card")).toHaveCount(4);
   for(const id of ["launcher","linear","robot",created.id]) {
     await page.goto("/#"+id+"/workspace/__root__");
     await expect(page).toHaveURL(new RegExp("#"+id+"/workspace/__root__$"));
@@ -226,7 +226,7 @@ test("an empty owner catalog does not instantiate hidden built-in projects",asyn
  await page.route("**/api/projects",route=>route.fulfill({json:{projects:[]}}));
  await page.goto("/#home");
  await expect(page.locator(".project-directory-empty")).toBeVisible();
- await expect(page.locator(".project-grid > .project-card")).toHaveCount(0);
+ await expect(page.locator(".ui-project-list > .ui-project-card")).toHaveCount(0);
  await expect(page.locator("#launcher,#linear,#robot")).toHaveCount(0);
 });
 

@@ -1,5 +1,6 @@
+import {captureProjectPart,entryEvidence} from "./project-part-snapshot.js";
 import {commitProjectCommand,canonicalJSON,CommandConflict} from "./project-command.js";
-import {normalizeCustomItem,normalizeOccurrence,allocatePartNumber,diffProjectItems} from "../../assets/project-item-model.js";
+import {normalizeCustomItem,normalizeOccurrence,allocatePartNumber,diffProjectItems,projectNumberKey} from "../../assets/project-item-model.js";
 import {normalizeProjectRecord} from "../../assets/project-record-model.js";
 import {rows,statement,decode,uuid,text,itemContext,itemDetails,buildDetails,storedItem,storedBuild,configurationPlan,currentEngineeringFile,readyFiles,addFileLinks,addEvent,originalPath,ProjectNotFound} from "./project-state.js";
 const same=(a,b)=>canonicalJSON(a)===canonicalJSON(b);
@@ -8,11 +9,11 @@ export async function unchanged(db,project,input){
  if(current?.revision!==input.expectedRevision)throw new CommandConflict();return {ok:true,noop:true,revision:current.revision};
 }
 async function numberAvailable(db,projectId,number,except=null){
- const taken=await statement(db,"SELECT id FROM engine_items WHERE project_id=? AND part_number=? COLLATE NOCASE AND id<>?",projectId,number,except||"").first();
- if(taken)throw new CommandConflict("That part number is reserved by an active or removed item. Choose another number.");
+ const reserved=await rows(db,"SELECT id,part_number FROM engine_items WHERE project_id=?",projectId);
+ if(reserved.some(row=>row.id!==except&&projectNumberKey(row.part_number)===projectNumberKey(number)))throw new CommandConflict("That part number is reserved by an active or archived item. Choose another number.");
 }
 export async function createProject(db,input,data){
- const name=text(data.name,180,"Project name",true),prefix=text(data.prefix===undefined?"NR":data.prefix,10,"Number prefix"),digits=data.digits===undefined?4:data.digits;
+ const name=text(data.name,180,"Project name",true),prefix=text(data.prefix===undefined?"NR":data.prefix,10,"Number prefix"),digits=data.digits===undefined?3:data.digits;
  if(!Number.isInteger(digits)||digits<1||digits>8)throw Error("Choose between 1 and 8 numbering digits.");
  if(input.expectedRevision!==null)throw Error("A new project requires expectedRevision: null.");
  return commitProjectCommand(db,input,w=>{w.insert("engine_projects",{id:input.projectId,owner_id:input.actorId,name,prefix,digits,revision:w.revision,created_at:w.createdAt});return {projectId:input.projectId};});
@@ -43,20 +44,21 @@ export async function editItem(db,input,project,itemId,data,{revision=false}={})
  const context=await itemContext(db,project.id,itemId),before=itemDetails(context.item),oldBuild=buildDetails(context.occurrence);
  const after=normalizeCustomItem(data.details===undefined?before:data.details),build=normalizeOccurrence(data.build===undefined?oldBuild:data.build);
  const changes=diffProjectItems(before,after,oldBuild,build);
- const reason=text(data.reason,2500,"Reason"),label=text(data.label,80,"Revision label");
- if(!changes.length)return unchanged(db,project,input);
+ if(after.part_number!==before.part_number)throw new CommandConflict("Issued part numbers are permanent and cannot be changed or reused.");
+ if(!changes.length&&!revision)return unchanged(db,project,input);
+ const evidence=revision?await entryEvidence(db,project,data):null,snapshot=revision?await captureProjectPart(db,project,context.item,context.occurrence):null,level=context.item.revision_level||1;
  await numberAvailable(db,project.id,after.part_number,itemId);
  const support=revision?await readyFiles(db,project.id,data.fileIds===undefined?[]:data.fileIds):[];
  const file=await currentEngineeringFile(db,project.id,itemId);
  const prior=await configurationPlan(db,project,context.item,context.occurrence,file);
- const next=await configurationPlan(db,project,{...context.item,...after},{...context.occurrence,...build},file);
+ const next=await configurationPlan(db,project,{...context.item,...after,...(revision?{revision_level:level+1}:{})},{...context.occurrence,...build},file);
  return commitProjectCommand(db,input,w=>{
   if(revision)prior.write(w);
-  w.update("engine_items",storedItem(after),{project_id:project.id,id:itemId});
+  w.update("engine_items",{...storedItem(after),...(revision?{revision_level:level+1}:{})},{project_id:project.id,id:itemId});
   w.update("engine_occurrences",storedBuild(build),{project_id:project.id,id:context.occurrence.id,removed_at:null});
   next.write(w);
   let eventId=null;
-  if(revision){eventId=addEvent(w,project.id,itemId,"revision",label?"Revision "+label:"Design revised",{before:prior.id,after:next.id,reason,label,changes,source:{id:itemId,name:before.name,part_number:before.part_number}},reason);addFileLinks(w,project.id,{event_id:eventId},support);}
+  if(revision){eventId=addEvent(w,project.id,itemId,"revision","Revision "+level,{before:prior.id,after:next.id,level,snapshot,entryDetails:evidence.details,changes,source:{id:itemId,name:before.name,part_number:before.part_number}},evidence.details.whatChanged);addFileLinks(w,project.id,{event_id:eventId},[...new Map([...support,...evidence.photos].map(file=>[file.id,file])).values()]);}
   return {itemId,configurationId:next.id,eventId};
  });
 }
@@ -124,17 +126,19 @@ export async function editRecord(db,input,project,id,data){
 export async function restorePreview(db,project,itemId){
  const context=await itemContext(db,project.id,itemId,{active:false}),conflicts=[];
  if(context.occurrence.removed_at===null)conflicts.push("This item is already in the build.");
- const conflict=await statement(db,"SELECT id FROM engine_items WHERE project_id=? AND part_number=? COLLATE NOCASE AND id<>?",project.id,context.item.part_number,itemId).first();if(conflict)conflicts.push("Its part number is reserved by another item.");
+ try{await numberAvailable(db,project.id,context.item.part_number,itemId);}catch(error){conflicts.push(error.message);}
  return {...context,root:{id:project.id,name:project.name},conflicts,revision:project.revision};
 }
-export async function changeItemLife(db,input,project,itemId,restore){
+export async function changeItemLife(db,input,project,itemId,restore,data={}){
  const {item,occurrence}=await itemContext(db,project.id,itemId,{active:false});
  if(restore?occurrence.removed_at===null:occurrence.removed_at!==null)return unchanged(db,project,input);
  if(restore){const preview=await restorePreview(db,project,itemId);if(preview.conflicts.length)throw new CommandConflict(preview.conflicts.join(" "));}
+ const evidence=!restore?await entryEvidence(db,project,data):null,snapshot=!restore?await captureProjectPart(db,project,item,occurrence):null;
  return commitProjectCommand(db,input,w=>{
   const path=restore?occurrence.removed_path:originalPath(project,item);
   w.update("engine_occurrences",{removed_at:restore?null:w.createdAt,...(!restore?{removed_path:JSON.stringify(path)}:{})},{project_id:project.id,id:occurrence.id,removed_at:occurrence.removed_at});
-  const eventId=addEvent(w,project.id,itemId,restore?"restored":"removed",restore?"Restored to build":"Removed from build",{path,occurrence_id:occurrence.id,source:{id:itemId,name:item.name,part_number:item.part_number}});
+  const eventId=addEvent(w,project.id,itemId,restore?"restored":"archived",restore?"Restored to build":"Archived part",{path,...(!restore?{snapshot,entryDetails:evidence.details}:{}),occurrence_id:occurrence.id,source:{id:itemId,name:item.name,part_number:item.part_number}});
+  if(evidence)addFileLinks(w,project.id,{event_id:eventId},evidence.photos);
   return {itemId,eventId};
  });
 }

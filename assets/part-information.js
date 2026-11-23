@@ -8,7 +8,7 @@ const make = (tag, className, text) => {
 };
 const present = value => value !== null && value !== undefined && String(value).trim() !== "";
 
-export function renderPartInformation(target, {part, fields, ui, dialogs, suppliers, editable, linked, knowledge, onChange}) {
+export function renderPartInformation(target, {part, project: projectId, fields, ui, dialogs, suppliers, editable, linked, knowledge, onChange}) {
   target.replaceChildren();
   target.classList.add("ui-section-list");
   const reference = ui.informationPanel(linked ? "Workshop information" : "Part information", "reference");
@@ -32,6 +32,7 @@ export function renderPartInformation(target, {part, fields, ui, dialogs, suppli
     append(reference, "Family", part.familyName);
     append(reference, "Selected product", part.productId ? part.implementationName : "No product selected");
   }
+  append(project, "Revision", part.revisionLevel || 1);
   const projectLabels = new Set(["Status", "Quantity", "Part number", "Value", "Hidden from feature tree", "Feature tree description"]);
   const rows = fields.detailRows(part);
   for (const [title, value] of rows) {
@@ -59,12 +60,19 @@ export function renderPartInformation(target, {part, fields, ui, dialogs, suppli
     reference.body.append(ui.fieldRow("Part order website", link).root);
   }
   suppliers?.renderLinks(reference.body, part);
-  if (functional && !part.familyUse) addFunctionalControls(project.body, {part, ui, onChange, editable});
+  if (editable && functional && part.partType === "purchased" && !linked && projectId) {
+    const copy = ui.button("Copy to Workshop", () => {
+      const query = new URLSearchParams({copyProject: projectId, copyPart: part.id, return: "#" + projectId + "/part/" + part.id});
+      location.href = "workshop.html?" + query;
+    }, {small: true});
+    reference.body.append(copy, make("p", "ui-information-note", "Create a reusable product copy. This project part stays unchanged."));
+  }
+  if (functional && !part.familyUse && part.partType === "purchased") addAlternativeControls(project.body, {part, ui, onChange, editable});
   if (part.familyUse) project.body.append(knowledge(part));
   target.append(reference.root, project.root);
 }
 
-function addFunctionalControls(target, {part, ui, onChange, editable}) {
+function addAlternativeControls(target, {part, ui, onChange, editable}) {
   const feedback = make("p", "ui-information-feedback");
   feedback.setAttribute("role", "status");
   const run = async (button, action, data) => {
@@ -72,17 +80,6 @@ function addFunctionalControls(target, {part, ui, onChange, editable}) {
     try { await onChange(action, data); }
     catch (error) { feedback.textContent = error.message; button.disabled = false; }
   };
-  const form = make("div", "ui-information-form"); form.hidden = true;
-  const purposeInput = make("textarea", "ui-control");
-  purposeInput.value = part.description || ""; purposeInput.maxLength = 2000; purposeInput.rows = 2;
-  purposeInput.setAttribute("aria-label", "Purpose");
-  form.append(ui.fieldRow("Purpose", purposeInput).root);
-  const edit = ui.button("Edit purpose", () => { form.hidden = false; edit.hidden = true; purposeInput.focus(); }, {small: true});
-  edit.hidden = !editable;
-  const save = ui.button("Save", () => void run(save, "requirements", {purpose: purposeInput.value}), {variant: "primary", small: true});
-  const cancel = ui.button("Cancel", () => { form.hidden = true; edit.hidden = false; }, {small: true});
-  ui.sectionActions(form, {primary: save, secondary: [cancel]});
-  target.append(edit, form);
   const candidates = (part.implementations || []).filter(item => !item.retiredAt && item.partType === "purchased");
   if (part.partType === "purchased" && (editable || candidates.length > 1)) {
     const alternatives = ui.section({title: "Alternative purchased parts", role: "part-alternatives"});

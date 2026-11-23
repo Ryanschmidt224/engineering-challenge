@@ -9,7 +9,7 @@ Claude · 2026-11-22 · For Codex/ChatGPT. Companion to Codex's *History Rewrite
 The owner agreed with every point in Claude's review of the History Rewrite Plan:
 
 1. **Direction approved:** D1 for structured project state and History, R2 for immutable file bytes, Cloudflare hosting unchanged.
-2. **Editing:** one details editor with an optional **Save as revision** choice that shows changed fields and an optional reason. **Change selected product** is a separate action (Batch 3).
+2. **Editing (owner refinement, November 23):** **Create a Revision** is a separate action in Revisions at the bottom of the part page. It prompts for What changed, Why did you change it, Notes and optional named photos, then saves the entire currently saved part as historical context with an automatic date. The historical copy retains its revision level and the working part advances to the next numbered revision, starting at Revision 1. It does not open the part-details editor. The revision table lists the working level and saved copies. The details editor also offers Save as revision: preserve the previous saved state and save edits as the next revision, using the same explanation/photo prompt. Standard Save overwrites the working part without creating a copy or advancing its level; both actions have descriptive tooltips. Archiving is a right-click feature-tree action on a part or subassembly. It removes the selected subtree from the build, preserves the complete saved record in the parent’s History → Archive folder and creates no part revision. **Change selected product** remains a separate action (Batch 3).
 3. **Duplicating a part creates an independent item.** Placements share an item only when explicitly intended.
 4. **Fast path at Batch 6:**
    - If the legacy-data inventory confirms nothing needs keeping: export every old project (with restore proven), cut over in one release, then delete legacy code and data.
@@ -30,6 +30,9 @@ Commit Codex's plan as `docs/HISTORY_REWRITE_PLAN.md` with these decisions recor
 ---
 
 ## Part B: Spec for the first complete flow (Batches 1–2)
+
+**November 23 refinement:** Part A.2 refines the original F4 interaction below with both a standalone revision action and Save as revision in the details editor. The D1 custom-part refinement now implements these actions on its isolated branch; verify the exact Cloudflare deployment and owner walkthrough before marking the flow accepted. A separate repair supplies Create a Revision on the existing live R2 part page. The major cutover gate remains unchanged.
+
 
 ### B1. Scope
 
@@ -132,7 +135,7 @@ PATCH items/:id                         Save changes  {expectedRevision, operati
 POST  items/:id/revisions               Save revision {expectedRevision, operationId, fields, reason?, label?, fileIds?}
 POST  steps / PATCH steps/:id / POST steps/:id/retire|restore
 POST  records / PATCH records/:id       records capture configuration server-side
-POST  occurrences/:id/remove | GET …/restore-preview | POST …/restore
+POST  occurrences/:id/archive | GET …/restore-preview | POST …/restore
 GET   projects/:p/history?scope&type&q&cursor
 GET   projects/:p/removed
 GET   configurations/:id                read-only snapshot

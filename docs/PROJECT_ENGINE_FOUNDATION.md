@@ -16,7 +16,7 @@ Status: **Batch 1 real Cloudflare D1 proof passed**, November 22, 2026 (Arizona)
 
 - Custom details validate name/short name/kind/number, optional description/purpose/acceptance/manufacturer/MPN, explicit tool state and stable specification IDs. Empty optional text is omitted. Specification values preserve zero, false, empty text, null and an absent value distinctly; nothing guesses a value or converts units.
 - Occurrence quantity, unit, status, attention/note and tree-hidden state are validated separately. Build information cannot silently become intrinsic engineering data. A disabled attention flag does not erase its note.
-- Automatic numbering uses the project's prefix and minimum digit count (current default NR/4), begins at 100 and takes every reserved number, including removed items. It neither changes old numbers nor establishes database uniqueness by itself; final commands must still use the D1 guard/constraint.
+- Automatic numbering uses the project's prefix and minimum digit count (current default NR/3), begins at 100 and takes every reserved number, including archived items. It neither changes old numbers nor establishes database uniqueness by itself; final commands must still use the D1 guard/constraint.
 - Revision comparisons match specification rows by stable ID. They show changed values with labels and old/new units, added/removed rows, label changes and ordering. Equivalent blank optional fields yield no change. Equal labels do not conflate separate rows.
 - The proof fixture now uses this same model. Its revised configuration matches the saved current fields, retains the unchanged specification rows and leaves the initial configuration at 3 mm. SQLite tests verify this; the actual preview proof passed and its report is retained.
 
@@ -31,7 +31,7 @@ The custom-part preview now adds record/step commands, immutable files, History 
 5. Every header/domain/configuration/event statement contains an `EXISTS` check for this receipt's **fresh attempt ID**. A zero-row admission therefore makes every dependent statement a no-op. An earlier retry receipt cannot authorize them. Updates also require their exact target in admission; identities and receipt/configuration/event updates are unavailable through the writer.
 6. A later SQL failure must roll back the receipt, header and all dependent writes. If admission made zero changes, look up a racing committed receipt for replay; otherwise return 409. An unchanged save must return before this primitive; it must not create a receipt.
 
-All domain IDs and the result are chosen once per admitted command and returned from its receipt on retry. Number uniqueness includes removed items. Composite keys prevent an event/configuration/occurrence from pointing at a different project's item. The custom-part commands now apply domain validation after the passed D1 gate. The foundation proof alone does not establish the complete workflow.
+All domain IDs and the result are chosen once per admitted command and returned from its receipt on retry. Number uniqueness includes archived items. Composite keys prevent an event/configuration/occurrence from pointing at a different project's item. The custom-part commands now apply domain validation after the passed D1 gate. The foundation proof alone does not establish the complete workflow.
 
 ## Preview authentication prerequisite
 

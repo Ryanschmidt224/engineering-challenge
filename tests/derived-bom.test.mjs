@@ -1,3 +1,4 @@
+import {historicalPrice,quantityData} from "../functions/api/component-values.js";
 import {retainHistory,historyKey} from "../functions/api/workspace-history.js";
 // Run with npm test. Cloudflare R2 and admin auth are mocked in memory.
 import test from "node:test";
@@ -12,7 +13,7 @@ import {projectFamilyParts,getFamilyProjectPart,changeFamilyProjectPart} from ".
 function handler(path,name){
  const source=readFileSync(path,"utf8").replace(/^import .*;\s*$/gm,"").replace(/^export /gm,"");
  return runInNewContext(source+"\n"+name+";",{
-  Response,Request,URL,crypto:{randomUUID},retainHistory,historyKey,projectFamilyParts,getFamilyProjectPart,changeFamilyProjectPart,isAdmin:async()=>true,
+  historicalPrice,quantityData,Response,Request,URL,crypto:{randomUUID},retainHistory,historyKey,projectFamilyParts,getFamilyProjectPart,changeFamilyProjectPart,isAdmin:async()=>true,
   projectAllowed:async()=>true,canEditProject:async()=>true,
   linkedWorkshopItem,partPhotoKey,workshopItemLookup,workshopLinkId,workshopDocumentation,workshopSourcing,resolveFunctionalPart,encodeFunctionalPart,changeImplementation,console,Date,JSON,Number,String,Array,Map,Set,RegExp
  });
