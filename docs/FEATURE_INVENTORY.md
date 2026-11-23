@@ -5,7 +5,7 @@ Status: owner decisions recorded 2026-11-22 (baseline from `main` at `f73e021`).
 ## Owner decisions (2026-11-22)
 
 - **Drop:** 1.4 admin-password link · 3.2 Public/Unlisted visibility (all projects private) · 3.3 Allow suggestions · 7.10 suggestion review queue · 11.3 My Build and stuck/confused feedback · all of section 11 (leftovers).
-- **Change:** 7.4 remove the Practice (legacy) record type and convert existing Practice records to Notes · 5.13 rebuild the harness cutting list on Workshop wire products and delete the separate wire library · 6.8 keep AI spec lookup but redesign it around the Workshop; it stays off while paid AI is paused.
+- **Change:** 7.4 remove the Practice (legacy) record type and convert existing Practice records to Notes · 5.13 rebuild the harness cutting list on Workshop wire products and delete the separate wire library · 6.8 keep AI spec lookup but redesign it around the Workshop; the owner subsequently requested restoring part lookup under their reported enforced $5 provider cap (see `AI_LOOKUP.md`).
 - **Keep:** 5.12 DigiKey cart.
 - **Project summary sections:** remember each section's last open/closed state (per browser); first visit uses collapsed.
 - **Dead-CSS check:** strict. A change fails if CSS names a class no page or script produces, except classes on an explicit allowlist of code-built patterns (for example `part-progress-*`) and the curated retired list.
@@ -105,7 +105,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 6.5 | Specifications (from product listing or estimated), project-specific information | `SA`, `part-fields.js` | | ☐ |
 | 6.6 | Part editor: item type (Part/Document/Code), part type (off-the-shelf / custom in-house / custom purchased), number (auto or user, next available lookup), name, short tree name (20 chars), schematic/KiCad info, manufacturer, MPN, description, quantity, "Is a tool?" | `SA` `editBomPart`, `saveBomDraft`, `library-part-picker.js` | | ☐ |
 | 6.7 | Where to buy: up to 10 suppliers (DigiKey, Mouser, McMaster, Newark, Arrow, Amazon ASIN, custom), order code, URL | `part-suppliers.js` | | ☐ |
-| 6.8 | Find part specs with AI: lookup by MPN/name, review suggested specs, apply selected | `product-lookup.js` | **Change**: keep, but redesign around the Workshop (category → family → product); stays off while paid AI is paused | ☐ |
+| 6.8 | Find part specs with AI: lookup by MPN/name, review suggested specs, apply selected | `product-lookup.js` | **Change**: keep, but redesign around the Workshop (category → family → product); owner requested the separate lookup-resume fix under their $5 provider cap | ☐ |
 | 6.9 | Part files: CAD / Parasolid / STL / STEP upload and download (≤20 MB); saved product webpages | `part-files.js`, `/api/part-files` | | ☐ |
 | 6.10 | Drawings (PDF): drop/upload, view, download, replace, delete (first 100) | `drawings.js`, `/api/drawings` | | ☐ |
 | 6.11 | Source code on a part: language, edit, import file, save, previous versions, view/restore, download (≤100 KB) | `part-code.js`, `/api/part-code` | | ☐ |
@@ -190,7 +190,7 @@ Part-details information tiles are covered by the follow-up below. Resizable Wor
 
 ## Implementation interpretation
 
-The owner authorized implementation and production deployment of these decisions. Blank decisions preserve behavior; this is an area-by-area migration, not permission to silently omit Keep items. Stable built-in project IDs remain valid when their duplicated page markup is replaced. Project data and attachments are retained. Paid AI remains disabled; no provider calls are enabled by this cleanup.
+The owner authorized implementation and production deployment of these decisions. Blank decisions preserve behavior; this is an area-by-area migration, not permission to silently omit Keep items. Stable built-in project IDs remain valid when their duplicated page markup is replaced. Project data and attachments are retained. That cleanup did not enable provider calls; the subsequent owner-requested lookup-resume change is separate.
 
 The first implementation batch removes visibility/permission controls and publishing paths, administrator-password linking, the suggestion queue and API, personal My Build / stuck-feedback code and APIs, and unloaded work-tracker/site-components scripts. It adds per-browser, per-project summary disclosure preferences with collapsed first visits. Removed runtime code has corresponding CSS removed in the same batch. Ordinary sign-in/out, private project edits, numbering, backups, DigiKey purchasing and revision history remain.
 
@@ -203,7 +203,7 @@ Practice-to-Notes implementation: existing Practice records become Notes on the 
 Project shell/CSS implementation: all projects instantiate one workspace template and one project-card renderer. Original launcher/linear/robot IDs remain as stable data and link identifiers. They no longer own separate HTML sections or CSS selectors. Template field IDs and label/ARIA references are made unique per project. The strict class-producer check follows loaded browser code and uses an explicit, narrow dynamic-class allowlist; retired positive and boolean-pseudo branches are removed without discarding live selector alternatives.
 
 
-Implementation boundary after the first batches: deleting the old wire API/catalog immediately would violate the inventory's no-reader condition. The current cutting-list renderer still calls /api/wires, and functions/api/workshop-linked-part.js imports the static resources catalog for legacy snapshots, photos and backup dependencies. These are live readers, not unloaded leftovers. Keep them until Workshop-product cutting lists and the source/snapshot reads are replaced and tested together; do not simply delete them. Paid AI stays disabled while its Workshop-specific redesign and spending controls remain separate work. The History decisions remain an area rebuild, not a promise that changing a label rebuilds its process.
+Implementation boundary after the first batches: deleting the old wire API/catalog immediately would violate the inventory's no-reader condition. The current cutting-list renderer still calls /api/wires, and functions/api/workshop-linked-part.js imports the static resources catalog for legacy snapshots, photos and backup dependencies. These are live readers, not unloaded leftovers. Keep them until Workshop-product cutting lists and the source/snapshot reads are replaced and tested together; do not simply delete them. Component extraction stays disabled. The owner-requested part lookup resume uses the existing provider cap and a daily attempt guard; its Workshop-specific redesign remains separate work. The History decisions remain an area rebuild, not a promise that changing a label rebuilds its process.
 
 The old learn view is removed: Calculators now uses #calculators, including links from workspaces and the active header state. The searchable calculator directory is lower priority than the current private/CSS cleanup; the three existing calculation forms are retained.
 
