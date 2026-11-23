@@ -33,6 +33,12 @@ Remaining: the editor, record/step commands, immutable file lifecycle, History/R
 
 All domain IDs and the result are chosen once per admitted command and returned from its receipt on retry. Number uniqueness includes removed items. Composite keys prevent an event/configuration/occurrence from pointing at a different project's item. Domain field validation and all remaining custom-part commands follow after the D1 gate; these tables do not claim those flows are available.
 
+## Preview authentication prerequisite
+
+A fresh preview was created after the owner configured Previews Base bindings and its separate session-signing secret. Its account service now returns the normal signed-out response. The preview R2 bucket contains engineering fixtures but no visible `users/` account folder; production login records are not implicitly shared.
+
+For an empty preview account store, use the one-time operator procedure in `PREVIEW_OWNER_SETUP.md`. The self-contained HTML helper stays under `scripts/`, excluded from deployed assets. It creates no server endpoint and keeps the existing authentication boundary. Account generation/upload is not itself proof of D1 transactions.
+
 ## Proof to run on the actual preview
 
 1. Confirm the deployed branch/version is this exact PR head. In Cloudflare's preview bindings verify `WORKSHOP_DB` targets `building-schmidt-workshop-preview` (`3314f42f-7c04-4798-99dc-b5b97c4fb82f`), `PHOTOS` targets `building-schmidt-photos-preview`, and the flag is present only for previews. Preview authentication secrets/account provisioning may need existing Cloudflare configuration; do not copy production data, expose credentials or reopen registration as a shortcut.

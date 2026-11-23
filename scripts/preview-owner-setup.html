@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+ <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+ <title>BuildingSchmidt preview owner setup</title>
+</head>
+<body>
+ <main>
+  <h1>Set up the preview owner</h1>
+  <p>This saved file runs on your computer and sends no network requests. It creates two JSON account files for the isolated <strong>building-schmidt-photos-preview</strong> R2 bucket.</p>
+  <p>Preview sign-in email: <strong>owner@preview.test</strong></p>
+  <p>Choose a new preview password and save it in your password manager. The downloads contain a salted password hash; they do not contain the password. Keep the downloads private.</p>
+  <form id="setup">
+   <p><label><input type="checkbox" id="confirm-target" required> I checked that this is the preview bucket and it has no users or user-email records.</label></p>
+   <p><label for="password">New preview password (12–256 characters)</label><br><input id="password" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></p>
+   <p><label for="repeat">Repeat password</label><br><input id="repeat" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></p>
+   <button type="submit">Generate account files</button>
+  </form>
+  <p role="status" id="status" aria-live="polite"></p>
+  <section id="downloads" hidden>
+   <h2>Upload these two matching files</h2>
+   <ol>
+    <li>In <strong>building-schmidt-photos-preview</strong>, create/open the <strong>users</strong> folder. <a id="user-download">Download the user record</a> and upload it inside that folder.</li>
+    <li>Return to the bucket root. Create/open the <strong>user-email</strong> folder. <a id="email-download">Download the email index</a> and upload it inside that folder.</li>
+   </ol>
+   <p id="user-path"></p><p id="email-path"></p>
+   <p>Use only the preview bucket. Keep the existing Production account and secret as they are. Once both uploads finish, sign in to the fresh preview using <strong>owner@preview.test</strong> and your new preview password.</p>
+  </section>
+ </main>
+ <script type="module">
+// Operator utility only. This file is excluded from deployed assets by
+// scripts/** in .assetsignore. No registration/bootstrap route is added.
+async function generatePreviewOwnerFiles(password){
+ if(typeof password!=="string"||password.length<12||password.length>256)throw Error("Use a password between 12 and 256 characters.");
+ const email="owner@preview.test",encoder=new TextEncoder();
+ const base64url=bytes=>btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+ const salt=crypto.getRandomValues(new Uint8Array(16));
+ const key=await crypto.subtle.importKey("raw",encoder.encode(password),"PBKDF2",false,["deriveBits"]);
+ const hash=await crypto.subtle.deriveBits({name:"PBKDF2",salt,iterations:100000,hash:"SHA-256"},key,256);
+ const id="u"+crypto.randomUUID().replaceAll("-","");
+ const user={id,email,role:"admin",displayName:"Preview owner",salt:base64url(salt),passwordHash:base64url(hash),sessionVersion:crypto.randomUUID()};
+ const emailHash=base64url(await crypto.subtle.digest("SHA-256",encoder.encode(email)));
+ return [
+  {key:"users/"+id+".json",content:JSON.stringify(user,null,2)+"\n"},
+  {key:"user-email/"+emailHash+".json",content:JSON.stringify({id},null,2)+"\n"}
+ ];
+}
+function initPreviewOwnerSetup(){
+ const form=document.getElementById("setup"),status=document.getElementById("status"),downloads=document.getElementById("downloads");
+ const password=document.getElementById("password"),repeat=document.getElementById("repeat"),button=form.querySelector("button");
+ let urls=[];
+ form.addEventListener("submit",async event=>{
+  event.preventDefault();
+  if(!form.reportValidity())return;
+  if(password.value!==repeat.value){status.textContent="The passwords do not match. Your files have not been generated.";repeat.focus();return;}
+  if(!crypto?.subtle){status.textContent="This browser does not provide Web Crypto here. Open the saved file in current Chrome or Edge.";return;}
+  button.disabled=true;downloads.hidden=true;status.textContent="Generating salted account files on this computer…";
+  try{
+   const files=await generatePreviewOwnerFiles(password.value);
+   for(const url of urls)URL.revokeObjectURL(url);urls=[];
+   for(const [index,prefix] of ["user","email"].entries()){
+    const file=files[index],link=document.getElementById(prefix+"-download");
+    const url=URL.createObjectURL(new Blob([file.content],{type:"application/json"}));urls.push(url);
+    link.href=url;link.download=file.key.split("/").pop();
+    document.getElementById(prefix+"-path").textContent="R2 key: "+file.key;
+   }
+   password.value="";repeat.value="";downloads.hidden=false;
+   status.textContent="Files ready. Download both files and upload each inside its named folder in the preview bucket.";
+  }catch(error){status.textContent="Files were not generated: "+error.message;}
+  finally{button.disabled=false;}
+ });
+}
+if(typeof document!=="undefined")initPreviewOwnerSetup();
+ </script>
+</body>
+</html>
