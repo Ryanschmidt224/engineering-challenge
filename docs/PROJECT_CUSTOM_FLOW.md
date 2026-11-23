@@ -1,6 +1,6 @@
 # Custom-part preview flow
 
-Status: Batch 2 implementation in progress after the actual Cloudflare D1 foundation gate passed. Production continues using the legacy engine. No production flag is enabled, legacy code is deleted, or existing project data is removed by this batch. Feature inventory boxes stay unchecked until the owner preview and later cutover.
+Status: Batch 2 custom-part preview implemented and checked after the actual Cloudflare D1 foundation gate passed. Owner walkthrough/review is the next gate before Batch 3. Production continues using the legacy engine. No production flag is enabled, legacy code is deleted, or existing project data is removed by this batch. Feature inventory boxes stay unchecked until the owner preview and later cutover.
 
 ## API and data
 
@@ -32,7 +32,9 @@ This first preview accepts at most 10,000 metadata rows, a 4 MB manifest and a 2
 
 Local SQL tests cover initial creation/numbering, ordinary edits/no-op, evidence at 3 mm followed by a 5 mm revision, replay and stale rejection, removed/retired work and original paths, independent duplication, 120-step reordering, equal-time History pagination, cross-item foreign-key rollback, immutable replacement and independent byte-verified restore. The original seven-check foundation proof still passes locally. These tests are not a substitute for Cloudflare D1/R2 acceptance.
 
-Remaining gates: real browser workflow checks at 1440/390 px; actual Cloudflare custom-part/file acceptance; export and restore into an empty isolated Cloudflare target; owner walkthrough F1–F11 before Batch 3. The exact foundation proof report remains in `PROJECT_ENGINE_D1_PROOF.json`. This document must be updated with actual evidence before declaring this batch complete.
+Verified: 264 Node tests and 78 browser workflows pass at source `c2f1134e1d77076aa6006da8f0c8e1b042542104`; the browser flow covers 1440/390 px, stale-draft review, attachment-only records, cancellation and paginated History selection/scroll. On actual Cloudflare D1/R2, creation, 3 → 5 mm revision with original test evidence, immutable drawing replacement/download, step retirement/restoration, part removal/undo and export succeeded. The self-contained backup restored into the owner-created empty D1 target `d761ae08-64f2-4130-8cfa-f596e8e89b80`. IDs, all engineering metadata and both file hashes/bytes matched; tokens reset and restored objects use different R2 keys. After returning to the original binding, its exported backup was byte-for-byte unchanged. Exact sources/builds and comparison results are in `PROJECT_CUSTOM_FLOW_PROOF.json`; the primitive proof remains in `PROJECT_ENGINE_D1_PROOF.json`.
+
+These evidence levels are distinct: the full edge-case matrix runs through real SQL/Worker handlers and browser CI; the production-platform manual walkthrough checks the observed Cloudflare flows above. Remaining: owner walkthrough/review before Batch 3, independent code review and the later feature-complete production cutover. No claim is made that this first custom-part slice replaces every retained legacy feature.
 
 ## Rollback
 
