@@ -110,6 +110,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 6.12 | Knowledge tiles linked to this part (and family/product/use) with "New knowledge tile for this part" | `SA` `renderPartKnowledge` | | ☐ |
 | 6.13 | Helpful tools: link calculators, tools and Workshop references to this work | `SA` | | ☐ |
 | 6.14 | Part progress / status save | `SA` `savePartProgress` | | ☐ |
+| 6.15 | Copy a project-only off-the-shelf part to a reviewed Workshop product draft; choose a family, check duplicate MPN, preserve project source | `part-information.js`, `project-product-copy.js`, existing `/api/workshop` | **Keep**: owner requested; no automatic relinking or source modification | ☐ |
 
 ## 7. Work instructions and records
 
