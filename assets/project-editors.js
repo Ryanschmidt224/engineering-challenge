@@ -1,5 +1,5 @@
 import {node,field,checkbox,actions} from "./workshop-ui.js";
-import {normalizeCustomItem,normalizeOccurrence,diffCustomItems,formatRevisionValue,allocatePartNumber} from "./project-item-model.js";
+import {normalizeCustomItem,normalizeOccurrence,diffCustomItems,diffProjectItems,formatRevisionValue,allocatePartNumber} from "./project-item-model.js";
 import {recordLabels,recordPrompts,normalizeProjectRecord} from "./project-record-model.js";
 export const detailsFor=item=>normalizeCustomItem({name:item.name,short_name:item.short_name,part_number:item.part_number,kind:item.kind,source:item.source,is_tool:!!item.is_tool,fields:item.fields});
 export const buildFor=occ=>normalizeOccurrence({quantity:occ.quantity,unit:occ.unit,build_status:occ.build_status,attention:!!occ.attention,attention_note:occ.attention_note,hidden:!!occ.hidden});
@@ -15,7 +15,7 @@ function editable(ctx,title,saveLabel,collect,save,{review=null}={}){
  });reload.hidden=true;
  form.append(fields,error,reload,reviewArea,actions(saveButton,cancel));
  form.onsubmit=async event=>{event.preventDefault();if(busy)return;error.textContent="";try{const data=collect();busy=true;saveButton.disabled=true;cancel.disabled=true;await save(data,revision);dialog.close();await ctx.refresh();}catch(problem){error.textContent=problem.message;reload.hidden=problem.status!==409;}finally{busy=false;saveButton.disabled=false;cancel.disabled=false;}};
- dialog.oncancel=event=>{if(busy)event.preventDefault();};dialog.replaceChildren(node("h2",title),form);dialog.setAttribute("aria-label",title);dialog.showModal();
+ dialog.oncancel=event=>{if(busy)event.preventDefault();};dialog.replaceChildren(node("h2",title),form);dialog.setAttribute("aria-label",title);queueMicrotask(()=>{dialog.showModal();dialog.querySelector("input,textarea,select")?.focus();});
  return {fields,form,saveButton,error,acceptOwnWrites(){revision=ctx.client.state.project.revision;}};
 }
 function changeRows(changes){
@@ -36,7 +36,7 @@ export function editItem(ctx,item=null,occurrence=null){
  const supporting=[],changed=node("div"),revisionFields=node("div");
  const collect=()=>({details:normalizeCustomItem(!item&&assignNumber?{...details,part_number:allocatePartNumber(ctx.client.state.project,ctx.client.state.items.map(row=>row.part_number))}:details),build:normalizeOccurrence(build),...(item?{reason,label,fileIds:[...supporting]}:{assignNumber})});
  const editor=editable(ctx,item?"Edit details":"Add custom part","Save changes",collect,async(data,token)=>{await ctx.client.write(ctx.projectId,item?"/items/"+item.id+(revisionMode?"/revisions":""):"/items",item&&!revisionMode?"PATCH":"POST",data,token);},{review:state=>{const current=state.items.find(row=>row.id===item?.id);return current?changeRows(diffCustomItems(detailsFor(current),details)):node("p","This item is no longer active. Cancel and inspect Removed items.");}});
- const update=()=>{revisionFields.hidden=!revisionMode;editor.saveButton.textContent=item?(revisionMode?"Save revision":"Save changes"):"Add part";if(revisionMode){try{changed.replaceChildren(changeRows(diffCustomItems(before,normalizeCustomItem(details))));}catch(problem){changed.textContent=problem.message;}}};
+ const update=()=>{revisionFields.hidden=!revisionMode;editor.saveButton.textContent=item?(revisionMode?"Save revision":"Save changes"):"Add part";if(revisionMode){try{changed.replaceChildren(changeRows(diffProjectItems(before,normalizeCustomItem(details),buildFor(occurrence),build)));}catch(problem){changed.textContent=problem.message;}}};
  editor.fields.append(field("Name",details.name,value=>{details.name=value;update();},{required:true}),field("Short tree name",details.short_name,value=>{details.short_name=value;update();}));
  if(!item)editor.fields.append(checkbox("Create next sequential part number",true,value=>{assignNumber=value;numberRow.hidden=value;}));
  const numberRow=field("Part number",details.part_number,value=>{details.part_number=value;update();});numberRow.hidden=!item;editor.fields.append(numberRow,field("Kind",details.kind,value=>{details.kind=value;update();},{options:[{value:"part",label:"Part"},{value:"document",label:"Document"},{value:"code",label:"Code"}]}),checkbox("Is a tool",details.is_tool,value=>{details.is_tool=value;update();}));
@@ -44,21 +44,21 @@ export function editItem(ctx,item=null,occurrence=null){
  editor.fields.append(specEditor(details.fields.specs,update),field("Quantity",build.quantity,value=>{build.quantity=value;update();},{type:"number"}),field("Unit",build.unit,value=>{build.unit=value;update();}),field("Status",build.build_status,value=>{build.build_status=value;update();},{options:[{value:"not_started",label:"Not started"},{value:"in_progress",label:"In progress"},{value:"complete",label:"Complete"}]}),checkbox("Needs attention",build.attention,value=>{build.attention=value;update();}),field("Attention note",build.attention_note,value=>{build.attention_note=value;update();},{type:"textarea"}),checkbox("Hide in feature tree",build.hidden,value=>{build.hidden=value;update();}));
  if(item){
   revisionFields.append(node("h3","What will change"),changed,field("Reason (optional)",reason,value=>reason=value,{type:"textarea"}),field("Revision label (optional)",label,value=>label=value));
-  editor.fields.append(checkbox("Save as revision",false,value=>{revisionMode=value;update();}),revisionFields);revisionFields.append(attachmentPicker(ctx,supporting,()=>editor.acceptOwnWrites()));
+  editor.fields.append(checkbox("Save as revision",false,value=>{revisionMode=value;update();}),revisionFields);revisionFields.append(attachmentPicker(ctx,supporting,()=>editor.acceptOwnWrites(),busy=>editor.saveButton.disabled=busy));
  }
  update();
 }
-export function attachmentPicker(ctx,fileIds,onUploaded=()=>{}){
+export function attachmentPicker(ctx,fileIds,onUploaded=()=>{},onBusy=()=>{}){
  const area=node("div"),input=node("input"),list=node("div"),status=node("p","","ui-status");input.type="file";input.multiple=true;input.setAttribute("aria-label","Supporting files");
  const render=()=>{list.replaceChildren();for(const id of fileIds){const file=ctx.client.state.files.find(file=>file.id===id);list.append(actions(node("span",file?.name||"Uploaded attachment"),button("Remove attachment",()=>{fileIds.splice(fileIds.indexOf(id),1);render();},{variant:"quiet"})));}};
- const upload=button("Upload supporting files",async()=>{upload.disabled=true;try{for(const file of input.files){const result=await ctx.client.upload(ctx.projectId,file);fileIds.push(result.fileId);onUploaded();render();}input.value="";status.textContent="Attachments uploaded. Save to attach them to this entry.";}catch(problem){status.textContent=problem.message;}finally{upload.disabled=false;}});
+ const upload=button("Upload supporting files",async()=>{upload.disabled=true;onBusy(true);try{for(const file of input.files){const result=await ctx.client.upload(ctx.projectId,file);fileIds.push(result.fileId);onUploaded();render();}input.value="";status.textContent="Attachments uploaded. Save to attach them to this entry.";}catch(problem){status.textContent=problem.message;}finally{upload.disabled=false;onBusy(false);}});
  area.append(input,upload,list,status);render();return area;
 }
 export function editRecord(ctx,{record=null,stepId=null}={}){
  let draft=record?{type:record.type,title:record.title,fields:structuredClone(record.fields),event_date:record.event_date,fileIds:ctx.client.state.file_links.filter(link=>link.record_id===record.id&&link.active).map(link=>link.file_id)}:{type:"test",title:"",fields:{},event_date:null,fileIds:[]};
  const promptArea=node("div"),render=()=>{promptArea.replaceChildren();for(const [key,title]of Object.entries(recordPrompts[draft.type]))promptArea.append(field(title,draft.fields[key]||"",value=>draft.fields[key]=value,{type:"textarea"}));if(draft.type==="problem")promptArea.append(field("Problem status",draft.fields.status||"open",value=>draft.fields.status=value,{options:[{value:"open",label:"Open"},{value:"resolved",label:"Resolved"}]}));};
  const editor=editable(ctx,record?"Edit record":"Add record","Save record",()=>({record:normalizeProjectRecord(draft),...(stepId?{stepId}:{})}),async(data,token)=>ctx.client.write(ctx.projectId,record?"/records/"+record.id:"/items/"+ctx.itemId+"/records",record?"PATCH":"POST",data,token));
- editor.fields.append(field("Record type",draft.type,value=>{draft.type=value;draft.fields={};render();},{options:Object.entries(recordLabels).map(([value,label])=>({value,label}))}),field("Title (optional)",draft.title,value=>draft.title=value),promptArea,field("Event date (optional)",draft.event_date,value=>draft.event_date=value,{type:"date"}),attachmentPicker(ctx,draft.fileIds,()=>editor.acceptOwnWrites()));render();
+ editor.fields.append(field("Record type",draft.type,value=>{draft.type=value;draft.fields={};render();},{options:Object.entries(recordLabels).map(([value,label])=>({value,label}))}),field("Title (optional)",draft.title,value=>draft.title=value),promptArea,field("Event date (optional)",draft.event_date,value=>draft.event_date=value,{type:"date"}),attachmentPicker(ctx,draft.fileIds,()=>editor.acceptOwnWrites(),busy=>editor.saveButton.disabled=busy));render();
 }
 export function editStep(ctx,step=null){
  const draft={title:step?.title||"",body:step?.body||""},editor=editable(ctx,step?"Edit step":"Add step","Save step",()=>draft,(data,token)=>ctx.client.write(ctx.projectId,step?"/steps/"+step.id:"/items/"+ctx.itemId+"/steps",step?"PATCH":"POST",data,token));

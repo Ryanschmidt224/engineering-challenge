@@ -1,5 +1,5 @@
 import {commitProjectCommand,canonicalJSON,CommandConflict} from "./project-command.js";
-import {normalizeCustomItem,normalizeOccurrence,allocatePartNumber,diffCustomItems} from "../../assets/project-item-model.js";
+import {normalizeCustomItem,normalizeOccurrence,allocatePartNumber,diffProjectItems} from "../../assets/project-item-model.js";
 import {normalizeProjectRecord} from "../../assets/project-record-model.js";
 import {rows,statement,decode,uuid,text,itemContext,itemDetails,buildDetails,storedItem,storedBuild,configurationPlan,currentEngineeringFile,readyFiles,addFileLinks,addEvent,originalPath,ProjectNotFound} from "./project-state.js";
 const same=(a,b)=>canonicalJSON(a)===canonicalJSON(b);
@@ -42,8 +42,7 @@ export async function createItem(db,input,project,data,{from=null}={}){
 export async function editItem(db,input,project,itemId,data,{revision=false}={}){
  const context=await itemContext(db,project.id,itemId),before=itemDetails(context.item),oldBuild=buildDetails(context.occurrence);
  const after=normalizeCustomItem(data.details===undefined?before:data.details),build=normalizeOccurrence(data.build===undefined?oldBuild:data.build);
- const changes=diffCustomItems(before,after);
- for(const key of Object.keys(build))if(!same(oldBuild[key],build[key]))changes.push({key:"build."+key,label:{quantity:"Quantity",unit:"Quantity unit",build_status:"Status",attention:"Needs attention",attention_note:"Attention note",hidden:"Hidden in tree"}[key],before:{present:true,value:oldBuild[key]},after:{present:true,value:build[key]}});
+ const changes=diffProjectItems(before,after,oldBuild,build);
  const reason=text(data.reason,2500,"Reason"),label=text(data.label,80,"Revision label");
  if(!changes.length)return unchanged(db,project,input);
  await numberAvailable(db,project.id,after.part_number,itemId);

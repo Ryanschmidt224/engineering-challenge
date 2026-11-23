@@ -46,7 +46,7 @@ async function showRemoved(ctx,entry,container){
 export function createHistoryView(ctx,memo){
  const root=node("div","","project-stack"),toolbar=node("div","","actions project-toolbar"),panes=node("div","","project-panes project-history-panes"),list=node("div","","project-history-list"),detail=node("div","","project-history-detail");panes.append(list,detail);root.append(toolbar,panes);
  let requestNumber=0;
- const saveScroll=()=>memo.scroll=list.scrollTop;list.addEventListener("scroll",saveScroll);
+ const saveScroll=()=>{if(list.childElementCount)memo.scroll=list.scrollTop;};list.addEventListener("scroll",saveScroll);
  const select=async entry=>{memo.selected=entry.id;try{if(memo.mode==="removed")await showRemoved(ctx,entry,detail);else await showEvent(ctx,entry.id,detail);const back=button("Back to history",()=>{saveScroll();delete panes.dataset.detailOpen;detail.replaceChildren();list.scrollTop=memo.scroll;list.querySelector('[data-event-id="'+memo.selected+'"]')?.focus();});detail.prepend(back);panes.dataset.detailOpen="true";detail.querySelector("h2")?.setAttribute("tabindex","-1");detail.querySelector("h2")?.focus({preventScroll:true});}catch(error){ctx.notify(error.message);}};
  async function load(more=false){
   const generation=++requestNumber;saveScroll();try{
@@ -54,14 +54,14 @@ export function createHistoryView(ctx,memo){
    if(memo.mode==="removed"){
     const state=ctx.client.state;entries=[...state.occurrences.filter(row=>row.removed_at!==null).map(row=>{const item=state.items.find(item=>item.id===row.item_id);return {...row,id:"item-"+item.id,kind:"item",title:item.name,summary:"Removed from build",created_at:row.removed_at};}),...state.steps.filter(row=>row.retired_at).map(row=>({...row,kind:"step",summary:"Retired step",created_at:row.retired_at}))];
     entries=entries.filter(row=>(!memo.scope||row.item_id===memo.scope)&&(!memo.q||(row.title+" "+row.summary).toLowerCase().includes(memo.q.toLowerCase()))).sort((a,b)=>b.created_at.localeCompare(a.created_at)||b.id.localeCompare(a.id));
-   }else{const params=new URLSearchParams({type:memo.type,scope:memo.scope,q:memo.q,limit:"20",...(more&&memo.cursor?{cursor:memo.cursor}:{})});const result=await ctx.client.request("/"+ctx.projectId+"/history?"+params);entries=result.entries;nextCursor=result.nextCursor;}
+   }else{entries=[];const target=more?20:Math.max(20,memo.entries.length);let cursor=more?memo.cursor:null;do{const params=new URLSearchParams({type:memo.type,scope:memo.scope,q:memo.q,limit:"20",...(cursor?{cursor}:{})});const result=await ctx.client.request("/"+ctx.projectId+"/history?"+params);if(generation!==requestNumber)return;entries.push(...result.entries);cursor=result.nextCursor;}while(cursor&&entries.length<target);nextCursor=cursor;}
    if(generation!==requestNumber)return;memo.entries=more?[...memo.entries,...entries]:entries;memo.cursor=nextCursor;list.replaceChildren();
    for(const entry of memo.entries){const row=entryCard(entry,()=>select(entry));row.setAttribute("aria-pressed",String(entry.id===memo.selected));list.append(row);}if(!memo.entries.length)list.append(node("p",memo.mode==="removed"?"Removed parts and retired steps will appear here.":"Add a record or save a revision to start this History."));
    if(nextCursor)list.append(button("Load more",()=>load(true)));list.scrollTop=memo.scroll||0;
    if(memo.selected){const selected=memo.entries.find(entry=>entry.id===memo.selected);if(selected)await select(selected);else {delete panes.dataset.detailOpen;detail.replaceChildren();}}
   }catch(error){ctx.notify(error.message);}
  }
- const reset=()=>{memo.cursor=null;memo.scroll=0;memo.selected=null;delete panes.dataset.detailOpen;detail.replaceChildren();void load();};
+ const reset=()=>{memo.cursor=null;memo.scroll=0;memo.selected=null;memo.entries=[];delete panes.dataset.detailOpen;detail.replaceChildren();list.replaceChildren();void load();};
  toolbar.append(field("View",memo.mode,value=>{memo.mode=value;reset();},{options:[{value:"history",label:"History"},{value:"removed",label:"Removed items"}]}),field("Scope",memo.scope,value=>{memo.scope=value;reset();},{options:[{value:"",label:"Whole project"},...ctx.client.state.items.map(item=>({value:item.id,label:item.name}))]}),field("Type",memo.type,value=>{memo.type=value;reset();},{options:[{value:"all",label:"All"},{value:"tests",label:"Tests"},{value:"problems",label:"Problems"},{value:"changes",label:"Changes"},{value:"notes",label:"Notes"}]}),field("Search history",memo.q,value=>{memo.q=value;reset();},{type:"search"}));
  queueMicrotask(()=>{initSplitPanes(panes,{key:"project-history",panes:[{key:"history",selector:".project-history-list",name:"History"}]});void load();});return root;
 }

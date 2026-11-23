@@ -80,3 +80,9 @@ export function formatRevisionValue(side){
  const value=side.value===null?"Null":side.value===""?"Empty text":side.value===true?"Yes":side.value===false?"No":String(side.value);
  return value+(side.unit?" "+side.unit:"");
 }
+export function diffProjectItems(before,after,beforeBuild,afterBuild){
+ const changes=diffCustomItems(before,after),oldBuild=normalizeOccurrence(beforeBuild),newBuild=normalizeOccurrence(afterBuild);
+ const labels={quantity:"Quantity",unit:"Quantity unit",build_status:"Status",attention:"Needs attention",attention_note:"Attention note",hidden:"Hidden in tree"};
+ for(const [key,label]of Object.entries(labels))if(!Object.is(oldBuild[key],newBuild[key]))changes.push({key:"build."+key,label,before:{present:true,value:oldBuild[key]},after:{present:true,value:newBuild[key]}});
+ return changes;
+}
