@@ -1,5 +1,5 @@
 import {commitProjectCommand,replayProjectCommand,CommandConflict} from "./project-command.js";
-import {statement,uuid} from "./project-state.js";
+import {statement,uuid,text} from "./project-state.js";
 import {bytesHash,MAX_ENGINE_FILE} from "./project-engine-files.js";
 // Explicit export schema: receipts and concurrency tokens are operational, not
 // engineering history. Restore issues a new token and a new import receipt.
@@ -54,14 +54,17 @@ export function validateManifest(manifest,projectId){
  for(const link of manifest.tables.file_links)if(!files.has(link.file_id)||files.get(link.file_id).state!=="ready")throw Error("A file link has no verified file.");
  return manifest;
 }
-export async function restoreProject(request,env,owner,projectId){
- const operationId=request.headers.get("x-operation-id");if(!uuid(operationId)||request.headers.get("x-project-revision")!=="new")throw Error("Restore requires a new-project revision and operation ID.");
+export async function restoreProject(request,env,owner,projectId,{asCopy=false}={}){
+ const operationId=request.headers.get("x-operation-id");if(!uuid(projectId)||!uuid(operationId)||request.headers.get("x-project-revision")!=="new")throw Error("Restore requires a new-project revision and operation ID.");
  const iterator=archiveLines(request),first=await iterator.next();if(first.value?.type!=="manifest")throw Error("Backup is missing its manifest.");
- const manifest=validateManifest(first.value.manifest,projectId),input={projectId,actorId:owner.id,operationId,expectedRevision:null,payload:{action:"restore-project",manifest}};
+ const manifest=validateManifest(first.value.manifest,asCopy?first.value.manifest?.project?.id:projectId);
+ if(asCopy&&manifest.project.id===projectId){await iterator.return();throw new CommandConflict("A recovered copy requires a different project identity. The existing project was not changed.");}
+ const copyName=asCopy?text(new URL(request.url).searchParams.get("name"),180,"New project name",true):null;
+ const input={projectId,actorId:owner.id,operationId,expectedRevision:null,payload:{action:asCopy?"restore-project-copy":"restore-project",manifest,...(asCopy?{copyName}:{})}};
  const replay=await replayProjectCommand(env.WORKSHOP_DB,input);if(replay){await iterator.return();return replay.result;}
- if(await statement(env.WORKSHOP_DB,"SELECT id FROM engine_projects WHERE id=?",projectId).first()){await iterator.return();throw new CommandConflict("This project already exists. Restore into an empty preview target; existing data will not be replaced.");}
+ if(await statement(env.WORKSHOP_DB,"SELECT id FROM engine_projects WHERE id=?",projectId).first()){await iterator.return();throw new CommandConflict("This project already exists. Choose a separate recovered copy; existing data will not be replaced.");}
  const needed=new Map(manifest.tables.files.filter(file=>file.state==="ready").map(file=>[file.id,file])),complete=new Set();let current=null,chunks=[],length=0,finished=false;
- const storageKey=file=>"project-engine/restored/"+operationId+"/"+file.id;
+ const storageKey=file=>"project-engine/restored/"+projectId+"/"+operationId+"/"+file.id;
  for await(const entry of iterator){
   if(finished)throw Error("Backup contains data after its completion marker.");
   if(entry.type==="file"){
@@ -83,10 +86,10 @@ export async function restoreProject(request,env,owner,projectId){
  // Metadata becomes visible in one guarded transaction only after every file
  // hash passes. A failed import leaves only unreachable staging objects.
  return commitProjectCommand(env.WORKSHOP_DB,input,w=>{
-  const p=manifest.project;w.insert("engine_projects",{id:projectId,owner_id:owner.id,name:p.name,prefix:p.prefix,digits:p.digits,revision:w.revision,created_at:p.created_at});
+  const p=manifest.project;w.insert("engine_projects",{id:projectId,owner_id:owner.id,name:asCopy?copyName:p.name,prefix:p.prefix,digits:p.digits,revision:w.revision,created_at:asCopy?w.createdAt:p.created_at});
   for(const name of Object.keys(columns))for(const original of manifest.tables[name]){
-   const row={...original};if(name==="files")row.r2_key=storageKey(row);w.insert("engine_"+name,row);
+   const row={...original,project_id:projectId};if(name==="files")row.r2_key=storageKey(row);w.insert("engine_"+name,row);
   }
-  return {projectId,restored:true,counts:Object.fromEntries(Object.entries(manifest.tables).map(([name,list])=>[name,list.length])),verifiedFiles:complete.size};
+  return {projectId,restored:true,...(asCopy?{asCopy:true,sourceProjectId:manifest.project.id}:{}),counts:Object.fromEntries(Object.entries(manifest.tables).map(([name,list])=>[name,list.length])),verifiedFiles:complete.size};
  });
 }
