@@ -1,0 +1,134 @@
+{
+  "status": "actual Cloudflare assembly/Workshop source proof, independent restore and source-integrity recheck passed",
+  "productionCutover": false,
+  "sourceDeployment": {
+    "sha": "ab030415144136f60d388693ea9a9b459fd8a273",
+    "treeSha": "a23c783c4171a95c523727ee3938db9551c1022d",
+    "build": "724ad48d-98ad-46a6-9c32-faec314b45b2",
+    "buildConclusion": "success",
+    "configuredBindings": {
+      "WORKSHOP_DB": "building-schmidt-workshop-preview",
+      "databaseId": "3314f42f-7c04-4798-99dc-b5b97c4fb82f",
+      "PHOTOS": "building-schmidt-photos-preview",
+      "NEW_PROJECT_ENGINE": "1"
+    }
+  },
+  "restoreDeployment": {
+    "sha": "0e0795adb3320cdea1da326b9cd56fde283c361e",
+    "treeSha": "b7e2868bd3e82d5481c155ab05f20653e6dfc3e7",
+    "build": "cad6c81d-ff44-487a-a1df-42e43512e4b6",
+    "buildConclusion": "success",
+    "configuredBindings": {
+      "WORKSHOP_DB": "building-schmidt-project-restore-preview",
+      "databaseId": "d761ae08-64f2-4130-8cfa-f596e8e89b80",
+      "PHOTOS": "building-schmidt-photos-preview",
+      "NEW_PROJECT_ENGINE": "1"
+    }
+  },
+  "bindingEvidence": {
+    "method": "Reviewed the exact deployed wrangler.jsonc configurations and their successful Cloudflare build checks. Source and restore trees differ only in that configuration: the independent preview D1 target and formatting. The live restore also verified the source project was absent in the target before import.",
+    "dashboardRecheckedForThisRun": false,
+    "priorOwnerEvidence": "Earlier owner screenshots confirmed the full source and restore preview database/bucket names for the migration-3 acceptance. Their pinned reports remain separate and unchanged.",
+    "limitation": "This report records configured binding IDs and live functional isolation; it does not claim a fresh independent read of dashboard bindings for this run."
+  },
+  "reportSource": "Protected deployed proof controls operated through the browser after the owner securely signed into each preview. JSON reports were read directly from the rendered result. No debug endpoint, credential bypass, database reseed or project deletion was used.",
+  "source": {
+    "ok": true,
+    "environment": "https://feature-project-assemblies-workshop-engineering-challenge.ryanschmidt224.workers.dev",
+    "checkedAt": "2026-11-24T00:23:10.865Z",
+    "projectId": "8cfd6c6c-8397-4297-b585-b46695103ed8",
+    "rootItemId": "a6e34e12-2e5d-4bac-93e5-6d00a85682b5",
+    "rootOccurrenceId": "e3ff51f5-04f7-4b40-a25e-796d876384b1",
+    "workshopItemId": "59225133-aa98-438e-a6bb-7a14e93f1506",
+    "familyId": "8bd6e384-c486-4dfa-ac73-b18f2acca38d",
+    "productIds": [
+      "6a394e97-4e66-4b3f-9666-f356ef206581",
+      "3f6c5feb-f02a-40e5-a3f2-d4ef293d0412"
+    ],
+    "counts": {
+      "items": 4,
+      "occurrences": 5,
+      "steps": 0,
+      "configurations": 9,
+      "records": 1,
+      "events": 6,
+      "files": 1,
+      "file_links": 1,
+      "selections": 1,
+      "archive_groups": 2
+    },
+    "files": [
+      {
+        "id": "02b4c3bf-783a-436b-bb7a-e809e3ce27e4",
+        "name": "proof-bearing.png",
+        "size": 68,
+        "sha256": "726074f8da2365cabc1b29e074d630413344a7ce199152eaf81ed800a029ebf2"
+      }
+    ],
+    "backupSha256": "abd604e7cc61d7ae581faf769ffee38a8e70b0dc47cfa835178af5cec3196163",
+    "checks": [
+      "Assembly and part numbers use distinct reserved ranges",
+      "Nested quantities multiply and shared part placements combine in the BOM",
+      "Project requirements remain separate from frozen product specifications",
+      "Assembly test evidence freezes the exact child configuration",
+      "An assembly revision retains the complete earlier component context",
+      "An identical subtree archive retry replays one durable group",
+      "A shared part placement outside the archived subtree remains active",
+      "Archiving does not advance assembly or child revision levels",
+      "Group restore preserves independently archived descendants and original placements",
+      "D1-only subtree archive and restore leave project file metadata unchanged",
+      "Archived component numbers remain consumed across zero-padding aliases",
+      "Editing the Workshop source does not rewrite the project copy",
+      "A stale Workshop source selection is rejected without admitting a part",
+      "Selecting another product preserves requirements and advances the part once",
+      "The earlier product revision retains its original copied photo and source facts",
+      "The mixed assembly backup includes the independently copied Workshop photo bytes"
+    ]
+  },
+  "restore": {
+    "ok": true,
+    "environment": "https://preview-project-restore-proof-engineering-challenge.ryanschmidt224.workers.dev",
+    "checkedAt": "2026-11-24T00:24:59.702Z",
+    "projectId": "8cfd6c6c-8397-4297-b585-b46695103ed8",
+    "targetWasAbsent": true,
+    "revisionReset": true,
+    "counts": {
+      "items": 4,
+      "occurrences": 5,
+      "steps": 0,
+      "configurations": 9,
+      "records": 1,
+      "events": 6,
+      "files": 1,
+      "file_links": 1,
+      "selections": 1,
+      "archive_groups": 2
+    },
+    "files": [
+      {
+        "id": "02b4c3bf-783a-436b-bb7a-e809e3ce27e4",
+        "name": "proof-bearing.png",
+        "size": 68,
+        "sha256": "726074f8da2365cabc1b29e074d630413344a7ce199152eaf81ed800a029ebf2"
+      }
+    ],
+    "sourceBackupSha256": "abd604e7cc61d7ae581faf769ffee38a8e70b0dc47cfa835178af5cec3196163",
+    "checks": [
+      "Target project absent before restore; other projects preserved",
+      "All engineering metadata and stable identities match the source backup",
+      "Revision levels, full historical snapshots and archive explanations match",
+      "Every restored file matches its saved size and SHA-256",
+      "Restored files use independent storage keys",
+      "A fresh project token is issued and an exact restore retry replays"
+    ]
+  },
+  "sourceIntegrity": {
+    "ok": true,
+    "environment": "https://feature-project-assemblies-workshop-engineering-challenge.ryanschmidt224.workers.dev",
+    "projectId": "8cfd6c6c-8397-4297-b585-b46695103ed8",
+    "backupSha256": "abd604e7cc61d7ae581faf769ffee38a8e70b0dc47cfa835178af5cec3196163",
+    "checks": [
+      "Source metadata and exported file bytes are byte-for-byte unchanged after independent restore"
+    ]
+  }
+}

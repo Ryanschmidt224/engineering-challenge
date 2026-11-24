@@ -107,6 +107,8 @@ A check is only relaxed by an explicit, reviewed baseline change in the same PR,
 
 The legacy main page (projects, assembly, part, work instructions, history, photos, files, backups) is rebuilt **area by area on the new system**, the way Workshop and Knowledge were.
 
+During the project-engine rebuild, legacy pages receive bug fixes only. New functionality and owner design refinements go into the new engine once. Review and integrate the existing engine dependency chain incrementally behind the disabled production flag; subsequent feature PRs branch from main after their dependency is integrated. Integration does not authorize production activation or data deletion. See `PREVIEW_ACCEPTANCE.md` for the review order and automated platform check.
+
 - **Order (suggested):** shared dialog and tooltip, then project list and settings, part page, assembly page and feature tree, work instructions and records, History (to the redesign doc), photos and markup, files and drawings, parts management and BOM, backups.
 - Each area: build it new → owner uses it on a preview → tick its items in `FEATURE_INVENTORY.md` → switch over → delete the area's legacy JS, CSS and tests in the same PR.
 - Work on a preview branch when a switch-over can't be done in one step. Previews use the separate preview database.

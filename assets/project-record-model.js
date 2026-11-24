@@ -5,7 +5,7 @@ export const recordPrompts=Object.freeze({
  note:{text:"Note"},
  change_note:{changed:"What changed?",why:"Why?"}
 });
-export const recordLabels=Object.freeze({test:"Test",problem:"Problem",note:"Note",change_note:"Change note"});
+export const recordLabels=Object.freeze({test:"Test",problem:"Problem",note:"Note",change_note:"Change record"});
 export function normalizeProjectRecord(input){
  if(!input||typeof input!=="object"||Array.isArray(input)||!Object.hasOwn(recordPrompts,input.type))throw Error("Choose Test, Problem, Note or Change note.");
  const text=(value,max,label)=>{if(value===undefined)return "";if(typeof value!=="string"||value.length>max||value.includes("\0"))throw Error(label+" is too long or invalid.");return value.trim();};

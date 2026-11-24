@@ -2,6 +2,7 @@ import {information,configurationView,fileLink,savedPartView} from "./project-in
 import {node,field,actions,listCard} from "./workshop-ui.js";
 import {formatRevisionValue} from "./project-item-model.js";
 import {recordLabels,recordPrompts} from "./project-record-model.js";
+import {projectHelp} from "./project-help.js";
 import {initSplitPanes} from "./split-panes.js";
 import {editRecord,confirmAction} from "./project-editors.js";
 const button=(...args)=>window.BSUI.button(...args);
@@ -13,7 +14,7 @@ function entryCard(entry,select){
 export async function showEvent(ctx,id,container){
  const detail=await ctx.client.request("/"+ctx.projectId+"/history/"+id),{event,record,configurations,attachments}=detail,body=node("div","","project-stack");
  body.append(node("h2",record?.title||event.title),node("p",(eventLabels[record?.type||event.type]||event.type)+" · "+(event.payload.source?.name||""),"muted"));
- if(record){body.append(information("Record",Object.entries(recordPrompts[record.type]).map(([key,label])=>[label,record.fields[key]]).concat(record.type==="problem"?[["Status",record.fields.status]]:[]).concat(record.event_date?[["Event date",record.event_date]]:[])));if(record.step_snapshot)body.append(information("Step when recorded",[["Title",record.step_snapshot.title],["Instructions",record.step_snapshot.body]]));
+ if(record){body.append(node("p",projectHelp.testedConfiguration),...(record.type==="change_note"?[node("p",projectHelp.changeRecord)]:[]),information("Record",Object.entries(recordPrompts[record.type]).map(([key,label])=>[label,record.fields[key]]).concat(record.type==="problem"?[["Status",record.fields.status]]:[]).concat(record.event_date?[["Event date",record.event_date]]:[])));if(record.step_snapshot)body.append(information("Step when recorded",[["Title",record.step_snapshot.title],["Instructions",record.step_snapshot.body]]));
   const occurrence=ctx.client.state.occurrences.find(row=>row.item_id===event.item_id);if(occurrence?.removed_at===null)body.append(button("Edit record",()=>editRecord({...ctx,itemId:event.item_id},{record})));
  }
  if(event.payload.snapshot)body.append(savedPartView(ctx,event));

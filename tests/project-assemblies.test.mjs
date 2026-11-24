@@ -79,3 +79,12 @@ test("shared-part writes require an explicit placement instead of guessing anoth
   assert.deepEqual(await state(f),before);assert.equal((await f.call("/items/"+part.itemId+"/records","POST",{occurrenceId:other.result.occurrenceId,record:{type:"test",fields:{result:"Specific build"}}})).status,200);
  }finally{f.db.close();}
 });
+test("a subtree above 100 placements reports the archive limit and makes no partial writes",async()=>{
+ const f=await engineFixture();try{
+  const top=await f.add("Large assembly",{assembly:true}),part=await f.add("Repeated fastener",{parent:top.occurrenceId});
+  const insert=f.db.sqlite.prepare("INSERT INTO engine_occurrences(id,project_id,item_id,parent_id,sort_order) VALUES(?,?,?,?,?)");for(let i=0;i<100;i++)insert.run(crypto.randomUUID(),f.projectId,part.itemId,top.occurrenceId,i+2);
+  const before=JSON.stringify(await state(f)),receipts=f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_operations").get().n,objects=[...f.env.PHOTOS.objects.keys()];
+  for(const [path,method]of [["/archive-preview","GET"],["/archive","POST"]]){const result=await f.call("/occurrences/"+top.occurrenceId+path,method);assert.equal(result.status,400);assert.match(result.result.error,/too large to archive at once.*100 placements/);}
+  assert.equal(JSON.stringify(await state(f)),before);assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_operations").get().n,receipts);assert.deepEqual([...f.env.PHOTOS.objects.keys()],objects);
+ }finally{f.db.close();}
+});
