@@ -43,6 +43,14 @@ test("slow metadata progress refreshes activity even before the first bounded st
  }finally{Date.now=clock;db.close();}
 });
 
+test("an acknowledged edit racing retirement is protected even when it uses a different operation ID",async()=>{
+ const db=new TestD1();try{
+  await initializeProjectEngine(db);const scope=seed(db);db.sqlite.prepare("INSERT INTO engine_projects(id,owner_id,name,revision,created_at,restore_job_id) VALUES(?,?,?,?,?,?)").run(scope.projectId,scope.actorId,"Pending",id(),old,scope.id);const prepare=db.prepare.bind(db);let raced=false;
+  db.prepare=sql=>{const prepared=prepare(sql);if(!sql.startsWith("UPDATE engine_restore_jobs AS j SET cleanup_token="))return prepared;return {bind(...values){const bound=prepared.bind(...values);return {async run(){raced=true;await db.batch([db.prepare("INSERT INTO engine_operations(project_id,actor_id,operation_id,request_hash,attempt_id,result,created_at) VALUES(?,?,?,?,?,'{}',?)").bind(scope.projectId,scope.actorId,id(),"acknowledged-edit",id(),old),db.prepare("UPDATE engine_projects SET name='Acknowledged new work' WHERE id=?").bind(scope.projectId)]);return bound.run();}};}};};
+  await assert.rejects(claim(db,scope),error=>error.status===409);db.prepare=prepare;assert.equal(raced,true);assert.equal(job(db,scope).cleanup_token,null);assert.equal((await db.prepare("SELECT name FROM engine_projects WHERE id=?").bind(scope.projectId).first()).name,"Acknowledged new work");assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM engine_operations WHERE project_id=?").bind(scope.projectId).first()).n,1);
+ }finally{db.close();}
+});
+
 test("a retirement claim is scoped and permanent, blocks resumption and prevents a replacement retry job",async()=>{
  const db=new TestD1();try{
   await initializeProjectEngine(db);const scope=seed(db),receipt=await claim(db,scope);assert.ok(receipt.cleanupToken);assert.deepEqual(await claim(db,scope),receipt);
@@ -68,6 +76,7 @@ test("published targets, foreign owners, completed jobs, stale observations and 
  const f=await fixture();try{
   await assert.rejects(claim(f.db,seed(f.db,{projectId:f.projectId})),error=>error.status===409);const foreign=id();f.db.sqlite.prepare("INSERT INTO engine_projects(id,owner_id,name,revision,created_at) VALUES(?,'another-owner','Private',?,?)").run(foreign,id(),old);
   await assert.rejects(claim(f.db,seed(f.db,{projectId:foreign})),error=>error.status===409);await assert.rejects(claim(f.db,seed(f.db,{state:"complete"})),error=>error.status===409);
+  const acknowledged=seed(f.db);f.db.sqlite.prepare("INSERT INTO engine_projects(id,owner_id,name,revision,created_at,restore_job_id) VALUES(?,?,?,?,?,?)").run(acknowledged.projectId,f.owner.id,"Older acknowledged work",id(),old,acknowledged.id);f.db.sqlite.prepare("INSERT INTO engine_operations(project_id,actor_id,operation_id,request_hash,attempt_id,result,created_at) VALUES(?,?,?,?,?,'{}',?)").run(acknowledged.projectId,f.owner.id,id(),"unrelated-old-edit",id(),old);await assert.rejects(claim(f.db,acknowledged),/committed operation receipt/);assert.equal(job(f.db,acknowledged).cleanup_token,null);
   const scope=seed(f.db);await assert.rejects(claim(f.db,scope,new Date(now-3*RESTORE_INACTIVITY_MS).toISOString()),error=>error.status===409);f.db.sqlite.prepare("INSERT INTO project_engine_migrations(version,applied_at) VALUES(?,'future')").run(PROJECT_ENGINE_SCHEMA_VERSION+1);await assert.rejects(claim(f.db,scope),error=>error.status===409);await assert.rejects(touchRestoreActivity(f.db,scope,now),error=>error.status===409);assert.equal(job(f.db,scope).cleanup_token,null);
  }finally{f.db.close();}
 });
