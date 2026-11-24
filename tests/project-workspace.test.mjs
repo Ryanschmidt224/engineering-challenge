@@ -208,6 +208,6 @@ test("legacy combined snapshots stay unchanged beside design-only captures and r
   const read=async id=>(await(await handleProjectWorkspace(new Request(base+"/history/"+id),target,f.owner)).json());
   assert.equal((await read(eventId)).configurations[0].snapshot.format,1);assert.equal((await read(eventId)).recordContext.legacy,true);
   const restored=await read(fresh.result.eventId);assert.equal(restored.configurations[0].snapshot.format,2);assert.equal(restored.recordContext.occurrence.build_status,"complete");assert.equal(restored.recordContext.project.name,"Bracket build");
-  const restoredLegacy=await target.WORKSHOP_DB.prepare("SELECT snapshot,fingerprint FROM engine_configurations WHERE id=?").bind(row.id).first();assert.deepEqual(restoredLegacy,{snapshot,fingerprint});
+  const restoredLegacy=await target.WORKSHOP_DB.prepare("SELECT snapshot,fingerprint FROM engine_configurations WHERE id=?").bind(row.id).first();assert.equal(restoredLegacy.snapshot,snapshot);assert.equal(restoredLegacy.fingerprint,fingerprint);
  }finally{f.db.close();target.WORKSHOP_DB.close();}
 });
