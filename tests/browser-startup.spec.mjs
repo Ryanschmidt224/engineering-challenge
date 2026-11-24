@@ -306,6 +306,8 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(sidebar.locator(".assembly-remove")).toBeHidden();
  const row=sidebar.locator(".assembly-node",{hasText:"Motor and Motor Control"});
  const name=row.locator(".assembly-name");
+ await expect(name).toBeVisible();
+ await row.click({trial:true});
  const prior=await name.boundingBox();
  // Hovering reveals the context-menu affordance without shifting tree text.
  await row.hover();
