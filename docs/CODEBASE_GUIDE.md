@@ -292,6 +292,8 @@ The normal project backup picker requires a new project name and calls the gated
 
 ### Retired restore storage
 
+Recovery/cleanup is frozen at schema 9. Maintain the existing owners; change only bugs or behavior justified by real-D1 measurement. Do not add cleanup tables, triggers or journals. Future orphan deletion is one explicit owner-pressed action after cutover reusing current inventory/executors, never a schedule. The following module descriptions are the retained implementation boundary, not a queue for more cleanup infrastructure. Save latency with v7–v9 triggers active is a pending real-D1 gate.
+
 `project-retired-object-cleanup.js` is the internal storage companion exported by the common cleanup owner. It handles only journaled, never-published restore destinations after private D1 rows are gone, with exact owner/claim/schema checks and 24-hour retirement/journal/object grace. It atomically journals each observed ETag against fresh roots, then rechecks object metadata before bounded key deletion. `project-storage-references.js` owns the shared JSON-column contract, global live/staged root SQL and migration-9 reference-fence triggers. Operational intents are excluded from engineering backups and retained permanently. New engine/staged references cannot win after intent, while late unlinked writes require future journal rescans. Existing Workshop roots are checked; approved catalogue writers cannot adopt this namespace. The helper has no HTTP/cron caller and has only disposable local/CI testing, not live cleanup/capacity proof. See PREVIEW_ACCEPTANCE.md for conditional-delete limits and remaining sweep scope.
 
 ### Engine numbered revisions and saved evidence
