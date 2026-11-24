@@ -11,5 +11,8 @@ export async function componentPhotoIndex(bucket,project){
   if(!page.cursor||page.cursor===cursor)throw Error("Part photo listing was incomplete. Retry loading the project.");
   cursor=page.cursor;
  }while(true);
- return async(part,source)=>keys.has(partPhotoKey(project,part))||!part.photoRevision&&!!source?.photoKey&&!!await bucket.get(source.photoKey);
+ const hasOwn=part=>keys.has(partPhotoKey(project,part));
+ const present=async(part,source)=>hasOwn(part)||!part.photoRevision&&!!source?.photoKey&&!!await bucket.head(source.photoKey);
+ present.hasOwn=hasOwn;
+ return present;
 }

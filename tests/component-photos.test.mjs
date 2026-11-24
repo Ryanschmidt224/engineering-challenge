@@ -21,3 +21,14 @@ test("thumbnail discovery follows every page and refuses an incomplete listing",
  assert.equal(await(await componentPhotoIndex(bucket,"launcher"))({id:"last"}),true);assert.equal(n,2);
  await assert.rejects(componentPhotoIndex({async list(){return {objects:[],truncated:true};}},"launcher"),/incomplete/);
 });
+
+test("inherited photo existence uses metadata without opening the image body",async()=>{
+ const bucket=new TestR2(),key="workshop-photo";
+ await bucket.put(key,new Uint8Array([1,2,3]));
+ let heads=0;const head=bucket.head.bind(bucket);
+ bucket.head=async photoKey=>{heads++;assert.equal(photoKey,key);return head(photoKey);};
+ bucket.get=async()=>{throw Error("Image bodies must not be fetched by the metadata index");};
+ const present=await componentPhotoIndex(bucket,"launcher");
+ assert.equal(present.hasOwn({id:"inherited"}),false);
+ assert.equal(await present({id:"inherited"},{photoKey:key}),true);assert.equal(heads,1);
+});

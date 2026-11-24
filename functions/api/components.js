@@ -216,11 +216,18 @@ export async function handleComponents(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project");
  if(!await projectAllowed(env,project,request))return json({error:"Invalid project"},400);
  if(request.method==="GET"){
-  const parts=await read(env,project),lookup=workshopItemLookup(request,env),photoPresent=await componentPhotoIndex(env.PHOTOS,project);
+  const parts=await read(env,project),lookup=workshopItemLookup(request,env);
+  let photoPresent=async()=>undefined;
+  try{photoPresent=await componentPhotoIndex(env.PHOTOS,project);}
+  catch(error){console.warn("Part photo index unavailable",error);}
   const components=await Promise.all(parts.map(async part=>{
-   const source=workshopLinkId(part)?await lookup(part).catch(()=>null):null,hasPhoto=await photoPresent(part,source);
-   if(part.partType!=="custom"&&part.itemType!=="document"&&source){
-    if(source)return {...presentPart({...part,workshopSourcing:workshopSourcing(source.item),
+   const needsSourcing=part.partType!=="custom"&&part.itemType!=="document";
+   const mayInheritPhoto=!part.photoRevision&&photoPresent.hasOwn?.(part)===false;
+   let sourceUnavailable=false;
+   const source=workshopLinkId(part)&&(needsSourcing||mayInheritPhoto)?await lookup(part).catch(()=>{sourceUnavailable=true;return null;}):null;
+   const hasPhoto=sourceUnavailable&&mayInheritPhoto?undefined:await photoPresent(part,source).catch(error=>{console.warn("Part photo metadata unavailable",error);return undefined;});
+   if(needsSourcing&&source){
+    return {...presentPart({...part,workshopSourcing:workshopSourcing(source.item),
      workshopDocumentation:workshopDocumentation(source.item),projectDetails:{...(part.projectDetails||{}),workshopTreeDescription:String(source.item.featureTreeDescription||source.item.subtitle||source.item.description||source.item.name||"").trim().slice(0,20)}}),hasPhoto};
    }
    return {...presentPart(part),hasPhoto};

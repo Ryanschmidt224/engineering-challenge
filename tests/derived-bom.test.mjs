@@ -24,6 +24,7 @@ function storage(){
  return {map,env:{PHOTOS:{
   list:async({prefix=""})=>({objects:[...map.keys()].filter(key=>key.startsWith(prefix)).map(key=>({key})),truncated:false}),
   get:async key=>map.has(key)?{text:async()=>map.get(key)}:null,
+  head:async key=>map.has(key)?{key}:null,
   put:async(key,value)=>{map.set(key,value)},
   delete:async key=>{map.delete(key)}
  }}};
