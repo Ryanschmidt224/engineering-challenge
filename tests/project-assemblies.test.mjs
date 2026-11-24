@@ -38,7 +38,7 @@ test("equivalent shared assembly placements reuse design identity while evidence
   assert.equal(second.result.configurationId,first.result.configurationId);
   const a=(await f.call("/history/"+first.result.eventId)).result.event.payload.record_context,b=(await f.call("/history/"+second.result.eventId)).result.event.payload.record_context;
   assert.equal(a.occurrence.id,top.occurrenceId);assert.equal(b.occurrence.id,copied.result.occurrenceId);assert.equal(a.occurrence.quantity,2);assert.equal(b.occurrence.quantity,7);assert.notEqual(a.composition[0].id,b.composition[0].id);assert.equal(a.composition[0].quantity,4);assert.equal(b.composition[0].quantity,4);
-  const state=await state(f);assert.equal(state.items.find(row=>row.id===child.itemId).revision_level,1);
+  const current=await state(f);assert.equal(current.items.find(row=>row.id===child.itemId).revision_level,1);
  }finally{f.db.close();}
 });
 test("group archive and restore preserve earlier archives, other shared placements, identities, numbers, and R2 bytes",async()=>{
