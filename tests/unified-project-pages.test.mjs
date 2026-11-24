@@ -27,7 +27,7 @@ test("One visible New project action with tag filters and sorting",()=>{
  assert.match(manager,/newButton\.hidden=false/);
  assert.match(manager,/newButton\.onclick=openCreate/);
  assert.match(manager,/if\(!user\)\{showAccount\(\)/);
- assert.match(manager,/bs-project-tag-filter/);
+ assert.match(read("assets/directory-filters.js"),/bs-project-tag-filter/);
  assert.doesNotMatch(manager,/categoryNavigation/);
  assert.match(manager,/const sortSelect=element\("select","ui-control project-sort-filter"\)/);
  for(const value of ["name_asc","name_desc","newest","oldest"])
@@ -46,7 +46,7 @@ test("Old mini examples are retired; new category metadata is independent of pro
 
 test("Project discovery supports inclusive multi-select tags without forcing one exclusive category",()=>{
  const manager=read("assets/project-manager.js"),api=read("functions/api/projects.js");
- assert.match(manager,/const activeTags=new Set\(\)/);
+ assert.match(read("assets/directory-filters.js"),/const activeTags=new Set\(\)/);
  assert.match(read("assets/project-directory.js"),/active\.some\(tag=>/);
  assert.match(manager,/chip\.setAttribute\("aria-pressed"/);
  assert.match(manager,/makeTagPicker\(projectTags\(project\)\)/);
@@ -61,10 +61,10 @@ test("Projects use a compact toolbar and optional descriptor filters",()=>{
  const css=read("assets/project-directory.css");
  const directory=read("assets/project-directory.js");
  assert.match(manager,/filters\.append\(newButton,searchLabel,filterMenu,sortLabel/);
- assert.match(manager,/project-selected-descriptors/);
- assert.match(manager,/bs-project-descriptor-search/);
- assert.match(manager,/tagSearch\.oninput=renderTagFilters/);
- assert.match(manager,/activeTags=new Set\(\)/);
+ assert.match(read("assets/directory-filters.js"),/project-selected-descriptors/);
+ assert.match(read("assets/directory-filters.js"),/bs-project-descriptor-search/);
+ assert.match(read("assets/directory-filters.js"),/tagSearch\.oninput=renderTagFilters/);
+ assert.match(read("assets/directory-filters.js"),/activeTags=new Set\(\)/);
  assert.match(manager,/chip\.setAttribute\("aria-pressed"/);
  assert.match(directory,/query\.some\(term=>/);
  assert.match(manager,/projectTags\(project\)/);

@@ -712,7 +712,7 @@ test("owner manages project settings, numbering and removal",async({page})=>{
  });
  await page.goto("/");
  await expect(page.locator(".project-directory-new")).toBeVisible();
- await page.locator(".ui-project-card .ui-project-open").click();
+ await page.locator("#home .ui-project-card .ui-project-open").click();
  const summary=page.locator("#"+id+" .project-summary-page");
  const settings=page.locator("#"+id+" .project-settings-page");
  await expect(settings).toBeHidden();
