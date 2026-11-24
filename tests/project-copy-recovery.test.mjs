@@ -38,3 +38,12 @@ test("copy recovery refuses source identity, invalid name and corrupt bytes",asy
   assert.deepEqual(await counts(f.db),before);assert.equal(await(await handleProjectWorkspace(new Request(base+f.projectId+"/export"),f.env,f.owner)).text(),backup);
  }finally{f.db.close();}
 });
+
+test("recovery cancels the unread backup stream after preflight rejection",async()=>{
+ const f=await fixture();try{
+  const base=origin+"/api/project-engine/projects/",backup=await(await handleProjectWorkspace(new Request(base+f.projectId+"/export"),f.env,f.owner)).text();let cancelled=false;
+  const body=new ReadableStream({start(controller){controller.enqueue(new TextEncoder().encode(backup.split("\n")[0]+"\n"));},cancel(){cancelled=true;}});
+  const response=await handleProjectWorkspace(new Request(base+id()+"/import-copy",{method:"POST",headers:{origin,"x-operation-id":id(),"x-project-revision":"new"},body,duplex:"half"}),f.env,f.owner);
+  assert.equal(response.status,400);assert.equal(cancelled,true);assert.equal((await f.db.prepare("SELECT COUNT(*) AS n FROM engine_projects").first()).n,1);
+ }finally{f.db.close();}
+});
