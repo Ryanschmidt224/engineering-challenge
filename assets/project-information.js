@@ -1,3 +1,4 @@
+import {legacyRecordContext} from "./project-record-context.js";
 import {node} from "./workshop-ui.js";
 import {formatRevisionValue} from "./project-item-model.js";
 import {recordPrompts,recordLabels} from "./project-record-model.js";
@@ -13,7 +14,7 @@ export function fileLink(ctx,file){const link=node("a",file.name);link.href="/ap
 
 export function buildContextView(context,title="Build context when recorded"){
  const build=context.occurrence||{};
- return information(title,[["Quantity",build.quantity===undefined?undefined:[build.quantity,build.unit].filter(value=>value!==undefined).join(" ")],["Status",build.build_status?.replaceAll("_"," ")],["Needs attention",typeof build.attention==="boolean"?(build.attention?"Yes":"No"):undefined],["Attention note",build.attention_note],["Hidden in tree",typeof build.hidden==="boolean"?(build.hidden?"Yes":"No"):undefined],["Project when recorded",context.project?.name]]);
+ return information(title,[["Part revision",context.part?.revision_level],["Quantity",build.quantity===undefined?undefined:[build.quantity,build.unit].filter(value=>value!==undefined).join(" ")],["Status",build.build_status?.replaceAll("_"," ")],["Needs attention",typeof build.attention==="boolean"?(build.attention?"Yes":"No"):undefined],["Attention note",build.attention_note],["Hidden in tree",typeof build.hidden==="boolean"?(build.hidden?"Yes":"No"):undefined],["Project when recorded",context.project?.name]]);
 }
 export function recordVersionView(ctx,value,title,files){
  const ids=value.fileIds,links=node("div","","project-stack");for(const id of ids||[]){const file=files.find(file=>file.id===id);links.append(file?fileLink(ctx,file):node("span","Unavailable attachment "+id));}
@@ -27,8 +28,8 @@ export function savedPartView(ctx,event){
  for(const record of snapshot.records||[]){
   const fileIds=snapshot.file_links?snapshot.file_links.filter(link=>link.record_id===record.id&&link.active).map(link=>link.file_id):undefined;
   body.append(recordVersionView(ctx,{...record,fileIds},record.title,snapshot.files||[]));
-  const captured=snapshot.record_events?.find(entry=>entry.payload.record_id===record.id),config=snapshot.configurations?.find(row=>row.id===record.configuration_id),legacy=config?.snapshot?.format===1?config.snapshot.occurrence:null;
-  const context=captured?.payload.record_context||(legacy?{format:1,project:legacy.root||{},occurrence:legacy,legacy:true}:null);
+  const captured=snapshot.record_events?.find(entry=>entry.payload.record_id===record.id),config=snapshot.configurations?.find(row=>row.id===record.configuration_id);
+  const context=captured?.payload.record_context||legacyRecordContext(config?.snapshot);
   if(context)body.append(buildContextView(context,context.legacy?"Build context from legacy snapshot":"Build context when recorded"));
   if(config){const tested=window.BSUI.section({title:"Configuration when recorded"});tested.body.append(configurationView(config,undefined,{includeBuild:!context}));body.append(tested.root);}
   for(const edit of snapshot.record_events?.filter(entry=>entry.payload.edited_record_id===record.id)||[]){

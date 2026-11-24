@@ -1,3 +1,4 @@
+import {legacyRecordContext} from "../../assets/project-record-context.js";
 import {captureProjectPart,entryEvidence} from "./project-part-snapshot.js";
 import {commitProjectCommand,canonicalJSON,CommandConflict} from "./project-command.js";
 import {normalizeCustomItem,normalizeOccurrence,allocatePartNumber,diffProjectItems,projectNumberKey} from "../../assets/project-item-model.js";
@@ -59,7 +60,7 @@ export async function editItem(db,input,project,itemId,data,{revision=false}={})
   w.update("engine_occurrences",storedBuild(build),{project_id:project.id,id:context.occurrence.id,removed_at:null});
   next.write(w);
   let eventId=null;
-  if(revision){eventId=addEvent(w,project.id,itemId,"revision","Revision "+level,{before:prior.id,after:next.id,level,snapshot,entryDetails:evidence.details,changes,build_context:{before:buildContext(project,context.occurrence),after:buildContext(project,{...context.occurrence,...build})},source:{id:itemId,name:before.name,part_number:before.part_number}},evidence.details.whatChanged);addFileLinks(w,project.id,{event_id:eventId},[...new Map([...support,...evidence.photos].map(file=>[file.id,file])).values()]);}
+  if(revision){eventId=addEvent(w,project.id,itemId,"revision","Revision "+level,{before:prior.id,after:next.id,level,snapshot,entryDetails:evidence.details,changes,build_context:{before:buildContext(project,context.occurrence,context.item),after:buildContext(project,{...context.occurrence,...build},{...context.item,revision_level:level+1})},source:{id:itemId,name:before.name,part_number:before.part_number}},evidence.details.whatChanged);addFileLinks(w,project.id,{event_id:eventId},[...new Map([...support,...evidence.photos].map(file=>[file.id,file])).values()]);}
   return {itemId,configurationId:next.id,eventId};
  });
 }
@@ -106,7 +107,7 @@ export async function createRecord(db,input,project,itemId,data){
   if(step)w.require("EXISTS(SELECT 1 FROM engine_steps WHERE project_id=? AND id=? AND item_id=? AND retired_at IS NULL)",project.id,step.id,itemId);
   w.insert("engine_records",{id,project_id:project.id,item_id:itemId,step_id:step?.id||null,configuration_id:configuration.id,type:record.type,title:record.title,fields:JSON.stringify(record.fields),event_date:record.event_date,step_snapshot:step?JSON.stringify({id:step.id,title:step.title,body:step.body}):null,created_at:w.createdAt,updated_at:w.createdAt});
   addFileLinks(w,project.id,{record_id:id},files);
-  const eventId=addEvent(w,project.id,itemId,record.type,record.title,{record_id:id,configuration_id:configuration.id,record_context:buildContext(project,occurrence),source:{id:itemId,name:item.name,part_number:item.part_number,step_title:step?.title||null}},Object.values(record.fields).filter(value=>typeof value==="string").join(" · ").slice(0,300));
+  const eventId=addEvent(w,project.id,itemId,record.type,record.title,{record_id:id,configuration_id:configuration.id,record_context:buildContext(project,occurrence,item),source:{id:itemId,name:item.name,part_number:item.part_number,step_title:step?.title||null}},Object.values(record.fields).filter(value=>typeof value==="string").join(" · ").slice(0,300));
   return {recordId:id,eventId,configurationId:configuration.id};
  });
 }
@@ -118,8 +119,8 @@ export async function editRecord(db,input,project,id,data){
  const oldValue={type:old.type,title:old.title,fields:old.fields,event_date:old.event_date,fileIds:oldLinks.map(link=>link.file_id).sort()},nextValue={...record,fileIds:[...record.fileIds].sort()};
  if(same(oldValue,nextValue))return unchanged(db,project,input);
  const creation=decode(await statement(db,"SELECT * FROM engine_events WHERE project_id=? AND json_extract(payload,'$.record_id')=? ORDER BY created_at,id LIMIT 1",project.id,id).first());
- const configuration=decode(await statement(db,"SELECT * FROM engine_configurations WHERE project_id=? AND id=?",project.id,old.configuration_id).first()),legacy=configuration?.snapshot?.format===1?configuration.snapshot.occurrence:null;
- const recordContext=creation?.payload.record_context||(legacy?{format:1,project:legacy.root||{},occurrence:legacy,legacy:true}:null);
+ const configuration=decode(await statement(db,"SELECT * FROM engine_configurations WHERE project_id=? AND id=?",project.id,old.configuration_id).first());
+ const recordContext=creation?.payload.record_context||legacyRecordContext(configuration?.snapshot);
  const retained=await readyFiles(db,project.id,oldValue.fileIds),auditFiles=[...new Map([...retained,...files].map(file=>[file.id,file])).values()];
  return commitProjectCommand(db,input,w=>{
   w.update("engine_records",{type:record.type,title:record.title,fields:JSON.stringify(record.fields),event_date:record.event_date,updated_at:w.createdAt},{project_id:project.id,id});

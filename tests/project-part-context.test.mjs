@@ -32,3 +32,16 @@ test("backups without numbered-revision columns restore without rewriting saved 
   assert.equal((await f.db.prepare("SELECT revision_level FROM engine_items WHERE project_id=?").bind(copy).first()).revision_level,1);assert.equal((await f.db.prepare("SELECT snapshot FROM engine_configurations WHERE project_id=?").bind(copy).first()).snapshot,saved);
  }finally{f.db.close();}
 });
+
+test("tests retain their recorded part level while unchanged checkpoints share design identity",async()=>{
+ const f=await fixture();try{
+  const first=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"Revision 1 test"}}});
+  const checkpoint=await f.call("/items/"+f.itemId+"/revisions","POST",{});assert.equal(checkpoint.status,200);
+  const second=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"Revision 2 test"}}});assert.equal(first.result.configurationId,second.result.configurationId);
+  const a=(await f.call("/history/"+first.result.eventId)).result,b=(await f.call("/history/"+second.result.eventId)).result;
+  assert.equal(a.recordContext.part.revision_level,1);assert.equal(b.recordContext.part.revision_level,2);assert.equal(a.recordContext.part.id,f.itemId);
+  assert.equal(a.configurations[0].snapshot.item.revision_level,undefined);assert.equal((await counts(f.db)).configurations,1);
+  const revision=(await f.call("/history/"+checkpoint.result.eventId)).result.event;assert.equal(revision.payload.build_context.before.part.revision_level,1);assert.equal(revision.payload.build_context.after.part.revision_level,2);
+  await f.call("/records/"+first.result.recordId,"PATCH",{record:{type:"test",fields:{result:"Corrected revision 1 test"}}});assert.deepEqual((await f.call("/history/"+first.result.eventId)).result.recordContext,a.recordContext);
+ }finally{f.db.close();}
+});
