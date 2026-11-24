@@ -37,8 +37,12 @@ test("equivalent shared assembly placements reuse design identity while evidence
   const second=await f.call("/items/"+top.itemId+"/records","POST",{occurrenceId:copied.result.occurrenceId,record:{type:"test",fields:{result:"Second placement"}}});assert.equal(second.status,200,JSON.stringify(second));
   assert.equal(second.result.configurationId,first.result.configurationId);
   const a=(await f.call("/history/"+first.result.eventId)).result.event.payload.record_context,b=(await f.call("/history/"+second.result.eventId)).result.event.payload.record_context;
-  assert.equal(a.occurrence.id,top.occurrenceId);assert.equal(b.occurrence.id,copied.result.occurrenceId);assert.equal(a.occurrence.quantity,2);assert.equal(b.occurrence.quantity,7);assert.notEqual(a.composition[0].id,b.composition[0].id);assert.equal(a.composition[0].quantity,4);assert.equal(b.composition[0].quantity,4);
-  const current=await state(f);assert.equal(current.items.find(row=>row.id===child.itemId).revision_level,1);
+  assert.equal(a.occurrence.id,top.occurrenceId);assert.equal(b.occurrence.id,copied.result.occurrenceId);assert.equal(a.occurrence.quantity,2);assert.equal(b.occurrence.quantity,7);assert.equal(b.occurrence.build_status,"complete");assert.equal(b.occurrence.attention,true);assert.equal(b.occurrence.hidden,true);assert.equal(b.project.name,"Mixed assembly");assert.notEqual(a.composition[0].id,b.composition[0].id);assert.equal(a.composition[0].quantity,4);assert.equal(b.composition[0].quantity,4);
+  let current=await state(f);const definition=current.items.find(row=>row.id===child.itemId);assert.equal(definition.revision_level,1);
+  const changed=await f.call("/items/"+child.itemId,"PATCH",{occurrenceId:child.occurrenceId,details:{name:"Bearing v2",part_number:definition.part_number}});assert.equal(changed.status,200,JSON.stringify(changed));
+  const third=await f.call("/items/"+top.itemId+"/records","POST",{occurrenceId:top.occurrenceId,record:{type:"test",fields:{result:"Changed child design"}}});assert.equal(third.status,200,JSON.stringify(third));assert.notEqual(third.result.configurationId,first.result.configurationId);
+  const originalDesign=(await f.call("/history/"+first.result.eventId)).result.configurations[0].snapshot.composition[0].design,newDesign=(await f.call("/history/"+third.result.eventId)).result.configurations[0].snapshot.composition[0].design;assert.equal(originalDesign.item.name,"Bearing");assert.equal(newDesign.item.name,"Bearing v2");
+  current=await state(f);assert.equal(current.items.find(row=>row.id===child.itemId).revision_level,1);
  }finally{f.db.close();}
 });
 test("group archive and restore preserve earlier archives, other shared placements, identities, numbers, and R2 bytes",async()=>{
