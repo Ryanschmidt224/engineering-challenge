@@ -1,6 +1,6 @@
 // One atomic D1 command. Every dependent statement checks this *attempt's*
 // admission receipt, never changes() or a receipt from an earlier retry.
-const insertable=new Set(["engine_projects","engine_items","engine_occurrences","engine_configurations","engine_events","engine_steps","engine_records","engine_files","engine_file_links","engine_selections","engine_archive_groups"]);
+const insertable=new Set(["engine_projects","engine_items","engine_occurrences","engine_configurations","engine_events","engine_steps","engine_records","engine_files","engine_file_links","engine_selections","engine_archive_groups","engine_snapshot_values"]);
 const mutable=new Set(["engine_projects","engine_items","engine_occurrences","engine_steps","engine_records","engine_files","engine_file_links","engine_selections"]);
 const key=value=>{if(!/^[a-z_][a-z0-9_]*$/.test(value))throw Error("Invalid SQL identifier");return value;};
 const uuid=value=>typeof value==="string"&&/^[a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12}$/i.test(value);
@@ -61,8 +61,9 @@ export async function commitProjectCommand(db,input,build){
    writes.push(statement(`UPDATE engine_occurrences SET removed_at=?,archive_group_id=?,removed_path=CASE WHEN ? THEN removed_path ELSE (SELECT json_extract(value,'$.path') FROM json_each(?) WHERE json_extract(value,'$.id')=engine_occurrences.id) END WHERE project_id=? AND id IN(SELECT json_extract(value,'$.id') FROM json_each(?)) AND ${gate}`,[restore?null:createdAt,restore?null:groupId,restore?1:0,serialized,projectId,serialized,...gateValues]));
   },
   reorderOccurrences(parentId,ids){
+   if(parentId!==null&&!uuid(parentId)||!Array.isArray(ids)||ids.some(id=>!uuid(id))||new Set(ids).size!==ids.length)throw Error("Provide the complete ordered placement IDs.");
    const serialized=JSON.stringify(ids);
-   guards.push({sql:"(SELECT COUNT(*) FROM engine_occurrences WHERE project_id=? AND parent_id IS ? AND removed_at IS NULL)=?",values:[projectId,parentId,ids.length]});
+   guards.push({sql:"(SELECT COUNT(*) FROM engine_occurrences WHERE project_id=? AND parent_id IS ? AND removed_at IS NULL)=? AND (SELECT COUNT(*) FROM engine_occurrences WHERE project_id=? AND parent_id IS ? AND removed_at IS NULL AND id IN(SELECT value FROM json_each(?)))=?",values:[projectId,parentId,ids.length,projectId,parentId,serialized,ids.length]});
    writes.push(statement(`UPDATE engine_occurrences SET sort_order=(SELECT key FROM json_each(?) WHERE value=engine_occurrences.id) WHERE project_id=? AND parent_id IS ? AND removed_at IS NULL AND ${gate}`,[serialized,projectId,parentId,...gateValues]));
   },
   update(table,patch,where){

@@ -3,6 +3,12 @@ import assert from "node:assert/strict";
 import {engineFixture} from "./helpers/project-engine.mjs";
 import {projectBOM} from "../assets/project-tree-model.js";
 const state=async f=>(await f.call("/state")).result;
+test("concurrent creates with differently padded part-number aliases admit exactly one item",async()=>{
+ const f=await engineFixture();try{
+  const revision=f.revision(),results=await Promise.all(["MX-01","mx-001"].map((part_number,index)=>f.call("/items","POST",{assignNumber:false,details:{name:"Concurrent part "+index,part_number}},{revision})));
+  assert.deepEqual(results.map(row=>row.status).sort(),[200,409]);const current=await state(f);assert.equal(current.items.length,1);assert.equal(current.occurrences.length,1);
+ }finally{f.db.close();}
+});
 test("nested placements multiply quantities, reserve assembly numbers, and share part definitions without sharing build state",async()=>{
  const f=await engineFixture();try{
   const top=await f.add("Launcher",{assembly:true,quantity:2}),sub=await f.add("Feeder",{assembly:true,parent:top.occurrenceId,quantity:3}),part=await f.add("Bearing",{parent:sub.occurrenceId,quantity:4});

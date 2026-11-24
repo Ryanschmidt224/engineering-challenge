@@ -45,6 +45,8 @@ Required acceptance: exactly two engine types; D1-sourced tools and readable arc
 
 ## Foundation review follow-ups before later batches
 
+Owner storage refinement (November 24): users may keep large engineering files and project backups in their own storage; Dropbox is the planned later provider. The website remains responsible for stable identities, revision history, test evidence and exact external file-version references/hashes. Independent CAD/file revisions stay separate from part levels. Provider integration and unavailable-file feedback belong to the later file batch. External storage must not silently replace retained structured evidence. New checkpoints use deduplicated immutable values and references rather than repeated full histories; keep old readers and complete backup recovery. Archive supports 100 placements per action for now, with smaller child-group actions for larger trees. Actual Cloudflare capacity and cleanup/fencing remain explicit cutover gates.
+
 The foundation was approved for integration while disabled in production; these are retained requirements, not reasons to rewrite its applied schema. Current release state belongs in STATUS.md.
 
 1. In the identity batch, remove short_name from the model, editor and new backup contract, preserving old-format/historical compatibility. Do not expand its use. Keep migration 1's applied column or use an appended migration; do not rewrite migration 1.

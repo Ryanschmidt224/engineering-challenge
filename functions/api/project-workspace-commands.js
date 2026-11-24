@@ -54,7 +54,7 @@ export async function editItem(db,input,project,itemId,data,{revision=false}={})
  if(!!after.is_assembly!==!!before.is_assembly)throw Error("Part and subassembly identities cannot be converted after creation.");
  if(after.part_number!==before.part_number)throw new CommandConflict("Issued part numbers are permanent and cannot be changed or reused.");
  if(!changes.length&&!revision)return unchanged(db,project,input);
- const evidence=revision?await entryEvidence(db,project,data):null,snapshot=revision?await captureProjectPart(db,project,context.item,context.occurrence):null,level=context.item.revision_level||1;
+ const evidence=revision?await entryEvidence(db,project,data):null,capture=revision?await captureProjectPart(db,project,context.item,context.occurrence):null,snapshot=capture?.snapshot,level=context.item.revision_level||1;
  await numberAvailable(db,project.id,after.part_number,itemId);
  const support=revision?await readyFiles(db,project.id,data.fileIds===undefined?[]:data.fileIds):[];
  const file=await currentEngineeringFile(db,project.id,itemId);
@@ -62,6 +62,7 @@ export async function editItem(db,input,project,itemId,data,{revision=false}={})
  let next=await configurationPlan(db,project,{...context.item,...after,...(revision?{revision_level:level+1}:{})},{...context.occurrence,...build},file,{cache:prior.cache});
  if(same(prior.snapshot,next.snapshot))next=prior;
  return commitProjectCommand(db,input,w=>{
+  if(capture)capture.write(w);
   if(revision&&prior.id!==next.id)prior.write(w);
   w.update("engine_items",{...storedItem(after),...(revision?{revision_level:level+1}:{})},{project_id:project.id,id:itemId});
   w.update("engine_occurrences",storedBuild(build),{project_id:project.id,id:context.occurrence.id,removed_at:null});

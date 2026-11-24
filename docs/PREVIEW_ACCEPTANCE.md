@@ -15,8 +15,8 @@ The script checks production's disabled routes, the guarded D1 proof and exact r
 Run with Node 22 or later. Provision secrets through a trusted runner's secret store, never command arguments, Git, chat or printed logs:
 
 - `CLOUDFLARE_API_TOKEN`: read-only Workers Scripts Read (or a supported narrower read permission), scoped to the relevant Cloudflare account/Worker.
-- `PREVIEW_OWNER_EMAIL` and `PREVIEW_OWNER_PASSWORD`: existing disposable preview owner credentials. The script signs in normally to each trusted preview origin and keeps the resulting sessions only in memory.
-- Alternatively, supply `SOURCE_SESSION_COOKIE` and `TARGET_SESSION_COOKIE` through the secret store instead of owner credentials. Sessions are not exported from the browser or written into reports.
+- `SOURCE_SESSION_COOKIE` and `TARGET_SESSION_COOKIE`: sessions for the existing disposable preview owner, supplied securely by the operator through the trusted runner's secret store. Sign in through the normal preview site, use short-lived sessions for the explicit run, and sign out afterward. Session cookies are sensitive credentials: never paste them into chat, command arguments, files or reports.
+- The runner accepts session cookies only. It does not accept owner email/password, perform login, or read password environment variables. Missing either session fails before any network request. The AI does not retrieve or handle the operator's password or browser cookies.
 
 ```sh
 node scripts/preview-acceptance.mjs \

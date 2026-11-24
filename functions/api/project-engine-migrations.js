@@ -99,6 +99,12 @@ const migrations=[{version:1,statements:[
  SELECT RAISE(ABORT,'INVALID_ASSEMBLY_PARENT') WHERE NOT EXISTS(SELECT 1 FROM engine_occurrences p JOIN engine_items i ON i.project_id=p.project_id AND i.id=p.item_id WHERE p.project_id=NEW.project_id AND p.id=NEW.parent_id AND i.is_assembly=1);
  SELECT RAISE(ABORT,'ASSEMBLY_CYCLE') WHERE NEW.parent_id=NEW.id OR EXISTS(WITH RECURSIVE parents(id,parent_id) AS(SELECT id,parent_id FROM engine_occurrences WHERE project_id=NEW.project_id AND id=NEW.parent_id UNION SELECT p.id,p.parent_id FROM engine_occurrences p JOIN parents a ON p.id=a.parent_id WHERE p.project_id=NEW.project_id) SELECT 1 FROM parents WHERE id=NEW.id); END`),
  `CREATE TRIGGER IF NOT EXISTS engine_assembly_contract BEFORE UPDATE OF is_assembly ON engine_items WHEN NEW.is_assembly=0 AND OLD.is_assembly=1 BEGIN SELECT RAISE(ABORT,'ASSEMBLY_HAS_CHILDREN') WHERE EXISTS(SELECT 1 FROM engine_occurrences c JOIN engine_occurrences p ON p.project_id=c.project_id AND p.id=c.parent_id WHERE p.project_id=OLD.project_id AND p.item_id=OLD.id); END`
+]},{version:5,statements:[
+ `CREATE TABLE IF NOT EXISTS engine_snapshot_values (
+ id TEXT NOT NULL,project_id TEXT NOT NULL,kind TEXT NOT NULL,
+ fingerprint TEXT NOT NULL,snapshot TEXT NOT NULL CHECK(json_valid(snapshot)),created_at TEXT NOT NULL,
+ PRIMARY KEY(project_id,id),UNIQUE(project_id,kind,fingerprint),
+ FOREIGN KEY(project_id) REFERENCES engine_projects(id))`
 ]}];
 const pending=new WeakMap();
 export async function initializeProjectEngine(db){

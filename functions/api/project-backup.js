@@ -3,6 +3,8 @@ import {projectTree} from "../../assets/project-tree-model.js";
 import {commitProjectCommand,replayProjectCommand,CommandConflict} from "./project-command.js";
 import {statement,uuid,text} from "./project-state.js";
 import {bytesHash,MAX_ENGINE_FILE} from "./project-engine-files.js";
+import {validateSnapshotReferences,verifySnapshotValues} from "./project-snapshot-values.js";
+import {backupMetadata,readBackupManifest} from "./project-backup-metadata.js";
 // Explicit export schema: receipts and concurrency tokens are operational, not
 // engineering history. Restore issues a new token and a new import receipt.
 const columns={
@@ -15,7 +17,8 @@ const columns={
  files:"id project_id name content_type r2_key state size sha256 created_at",
  file_links:"id project_id file_id item_id record_id event_id configuration_id role active",
  selections:"id project_id family_id product_id family_revision product_revision snapshot requirements",
- archive_groups:"id project_id root_occurrence_id members created_at"
+ archive_groups:"id project_id root_occurrence_id members created_at",
+ snapshot_values:"id project_id kind fingerprint snapshot created_at"
 };
 export async function projectManifest(db,project){
  const names=Object.keys(columns),result=await db.batch([statement(db,"SELECT * FROM engine_projects WHERE id=?",project.id),...names.map(name=>statement(db,`SELECT * FROM engine_${name} WHERE project_id=? ORDER BY id`,project.id))]);
@@ -25,9 +28,10 @@ function base64(bytes){let text="";for(let start=0;start<bytes.length;start+=819
 const line=value=>new TextEncoder().encode(JSON.stringify(value)+"\n");
 export async function exportProject(env,project){
  const manifest=validateManifest(await projectManifest(env.WORKSHOP_DB,project),project.id);
- if(JSON.stringify({type:"manifest",manifest}).length>4*1024*1024)throw Error("Backup metadata exceeds this preview restore limit. Export was stopped before producing an incomplete backup.");
+ await verifySnapshotValues(manifest.tables.snapshot_values);
+ const metadata=backupMetadata(manifest);
  async function* archive(){
-  yield line({type:"manifest",manifest});
+  for(const entry of metadata)yield line(entry);
   for(const file of manifest.tables.files.filter(row=>row.state==="ready")){
    const object=await env.PHOTOS.get(file.r2_key);if(!object||object.size!==file.size||file.size>MAX_ENGINE_FILE)throw Error("A file is missing or too large; backup is incomplete.");
    const bytes=new Uint8Array(await object.arrayBuffer());if(await bytesHash(bytes)!==file.sha256)throw Error("A file failed verification; backup is incomplete.");
@@ -50,7 +54,7 @@ export function validateManifest(manifest,projectId){
  if(Object.keys(manifest.tables).some(name=>!Object.hasOwn(columns,name)))throw Error("Backup contains unknown tables.");
  let count=0;
  for(const [name,allowed] of Object.entries(columns)){
-  if(["selections","archive_groups"].includes(name)&&manifest.tables[name]===undefined)manifest.tables[name]=[];
+  if(["selections","archive_groups","snapshot_values"].includes(name)&&manifest.tables[name]===undefined)manifest.tables[name]=[];
   const list=manifest.tables[name];if(!Array.isArray(list))throw Error("Backup is missing "+name+".");count+=list.length;if(count>10000)throw Error("This preview restore accepts at most 10,000 rows.");
   const ids=new Set();for(const row of list){if(!row||!uuid(row.id)||row.project_id!==projectId||ids.has(row.id)||Object.keys(row).some(key=>!allowed.split(" ").includes(key))||Object.values(row).some(value=>value!==null&&!["string","number"].includes(typeof value)))throw Error("Invalid or duplicate "+name+" row.");ids.add(row.id);}
  }
@@ -66,17 +70,19 @@ export function validateManifest(manifest,projectId){
  const files=new Map(manifest.tables.files.map(file=>[file.id,file]));
  for(const file of files.values())if(!["prepared","ready"].includes(file.state)||file.state==="ready"&&(!Number.isInteger(file.size)||file.size<0||file.size>MAX_ENGINE_FILE||!/^[a-f0-9]{64}$/.test(file.sha256)))throw Error("Invalid file metadata in backup.");
  for(const link of manifest.tables.file_links)if(!files.has(link.file_id)||files.get(link.file_id).state!=="ready")throw Error("A file link has no verified file.");
+ validateSnapshotReferences(manifest.tables);
  return manifest;
 }
 export async function restoreProject(request,env,owner,projectId,{asCopy=false}={}){
  const operationId=request.headers.get("x-operation-id");if(!uuid(projectId)||!uuid(operationId)||request.headers.get("x-project-revision")!=="new")throw Error("Restore requires a new-project revision and operation ID.");
  const iterator=archiveLines(request);try{
- const first=await iterator.next();if(first.value?.type!=="manifest")throw Error("Backup is missing its manifest.");
- const manifest=validateManifest(first.value.manifest,asCopy?first.value.manifest?.project?.id:projectId);
+ const first=await iterator.next(),received=await readBackupManifest(iterator,first.value,Object.keys(columns));
+ const manifest=validateManifest(received,asCopy?received?.project?.id:projectId);
  if(asCopy&&manifest.project.id===projectId){throw new CommandConflict("A recovered copy requires a different project identity. The existing project was not changed.");}
  const copyName=asCopy?text(new URL(request.url).searchParams.get("name"),180,"New project name",true):null;
  const input={projectId,actorId:owner.id,operationId,expectedRevision:null,payload:{action:asCopy?"restore-project-copy":"restore-project",manifest,...(asCopy?{copyName}:{})}};
  const replay=await replayProjectCommand(env.WORKSHOP_DB,input);if(replay)return replay.result;
+ await verifySnapshotValues(manifest.tables.snapshot_values);
  if(await statement(env.WORKSHOP_DB,"SELECT id FROM engine_projects WHERE id=?",projectId).first()){throw new CommandConflict("This project already exists. Choose a separate recovered copy; existing data will not be replaced.");}
  const needed=new Map(manifest.tables.files.filter(file=>file.state==="ready").map(file=>[file.id,file])),complete=new Set();let current=null,chunks=[],length=0,finished=false;
  const storageKey=file=>"project-engine/restored/"+projectId+"/"+operationId+"/"+file.id;

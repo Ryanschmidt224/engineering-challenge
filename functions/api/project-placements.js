@@ -44,8 +44,9 @@ export async function changePlacementLife(db,input,project,id,restore,data={}){
  if(preview.conflicts.length)throw new CommandConflict(preview.conflicts.join(" "));
  const tree=await loadProjectTree(db,project.id),members=preview.members.map(row=>tree.placements.get(row.id));
  if(restore&&members.some(row=>row.removed_at===null||row.archive_group_id!==(group?.id||null)))throw new CommandConflict("The archived group changed. Review it before restoring.");
- const evidence=restore?null:await entryEvidence(db,project,data),snapshot=restore?null:await captureProjectPart(db,project,item,occurrence),groupId=restore?group?.id:crypto.randomUUID();
+ const evidence=restore?null:await entryEvidence(db,project,data),capture=restore?null:await captureProjectPart(db,project,item,occurrence),snapshot=capture?.snapshot,groupId=restore?group?.id:crypto.randomUUID();
  return commitProjectCommand(db,input,w=>{
+  if(capture)capture.write(w);
   if(!restore)w.insert("engine_archive_groups",{id:groupId,project_id:project.id,root_occurrence_id:id,members:JSON.stringify(preview.members),created_at:w.createdAt});
   w.archiveOccurrences(members.map(member=>({...member,path:JSON.stringify({...originalPath(project,tree.definitions.get(member.item_id)),ancestors:tree.path(member).slice(0,-1)})})),{restore,groupId});
   const parent=tree.placements.get(occurrence.parent_id),eventId=addEvent(w,project.id,item.id,restore?"restored":"archived",restore?"Restored to build":item.is_assembly?"Archived subassembly":"Archived part",{path:restore?occurrence.removed_path:{...originalPath(project,item),ancestors:tree.path(occurrence).slice(0,-1)},occurrence_id:id,parent_item_id:parent?.item_id||null,group_id:groupId,members:preview.members,...(!restore?{snapshot,entryDetails:evidence.details}:{}),source:{id:item.id,name:item.name,part_number:item.part_number}});

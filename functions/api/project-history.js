@@ -1,4 +1,5 @@
 import {legacyRecordContext} from "../../assets/project-record-context.js";
+import {expandProjectSnapshot} from "./project-snapshot-values.js";
 import {rows,statement,decode,uuid,ProjectNotFound} from "./project-state.js";
 const effectiveType="COALESCE(r.type,e.type)";
 const searchText=`lower(COALESCE(r.title,e.title)||' '||CASE WHEN r.id IS NULL THEN e.summary ELSE '' END||' '||i.name||' '||i.part_number||' '||COALESCE(json_extract(e.payload,'$.entryDetails.whatChanged'),'')||' '||COALESCE(json_extract(e.payload,'$.entryDetails.whyChanged'),'')||' '||COALESCE(json_extract(e.payload,'$.entryDetails.notes'),'')||' '||COALESCE(json_extract(e.payload,'$.reason'),'')||' '||COALESCE(json_extract(e.payload,'$.label'),'')||' '||COALESCE((SELECT group_concat(value,' ') FROM json_each(r.fields)),'')||' '||COALESCE(json_extract(e.payload,'$.record_edit.before.title'),'')||' '||COALESCE((SELECT group_concat(value,' ') FROM json_each(e.payload,'$.record_edit.before.fields')),'')||' '||COALESCE((SELECT group_concat(value,' ') FROM json_each(e.payload,'$.record_edit.after.fields')),'')||' '||COALESCE((SELECT group_concat(COALESCE(json_extract(value,'$.label'),'')||' '||COALESCE(json_extract(value,'$.before.value'),'')||' '||COALESCE(json_extract(value,'$.after.value'),''),' ') FROM json_each(e.payload,'$.changes')),''))`;
@@ -30,6 +31,7 @@ export async function historyPage(db,projectId,params){
 export async function eventDetail(db,projectId,id){
  if(!uuid(id))throw new ProjectNotFound("History entry not found.");
  const event=decode(await statement(db,"SELECT * FROM engine_events WHERE project_id=? AND id=?",projectId,id).first());if(!event)throw new ProjectNotFound("History entry not found.");
+ if(event.payload.snapshot)event.payload.snapshot=await expandProjectSnapshot(db,projectId,event.payload.snapshot);
  const record=event.payload.record_id?decode(await statement(db,"SELECT * FROM engine_records WHERE project_id=? AND id=?",projectId,event.payload.record_id).first()):null;
  const configIds=[record?.configuration_id,event.payload.configuration_id,event.payload.before,event.payload.after].filter(value=>uuid(value));
  const configurations=[];for(const id of new Set(configIds)){const config=decode(await statement(db,"SELECT * FROM engine_configurations WHERE project_id=? AND id=?",projectId,id).first());if(config)configurations.push(config);}
