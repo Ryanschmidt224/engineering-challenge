@@ -283,7 +283,7 @@
   const chooser=element("div","linked-resource-chooser");
   const typePicker=element("select","field");
   typePicker.setAttribute("aria-label","Resource type");
-  for(const [kind,title] of [["tools","Tool"],["calculators","Calculator"],["parts","Workshop part"]]){
+  for(const [kind,title] of [["tools","Tool"],["calculators","Calculator"]]){
    const option=element("option","",title);option.value=kind;typePicker.append(option);
   }
   const resourcePicker=element("select","field");

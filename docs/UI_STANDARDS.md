@@ -114,6 +114,7 @@ Required engine work, grouped by the relevant feature owner:
 | Part sections (#7–10) | Small supplier/Copy to Workshop actions on one row; keyed help. Alternatives becomes an ordinary expandable field row, without nested frames. Small Add/Create a Revision actions; revision guidance is a tooltip and counts say saved. Preserve What changed/Why/Notes/photos and both Save behaviors. |
 | Parts Management (#14) | Compact, read-only number/name/value/quantity/status list; number/name opens the part. Browse filters sit left. Full columns remain read-only, hide Browse and move category to the toolbar. Explicit Edit enables inputs. Remember compact/full preference; use the shared status marks. No separate tree-name column or redundant Project back button. |
 | Project settings (#15) | One column: General, Part numbering, then a separate danger section. Small Save actions, help in tooltips, no nomenclature list. Do not rebuild project tags; retain existing legacy tags until cutover. |
+| Helpful tools (#17) | Calculator and Tool only. Legacy hides new Workshop-part choices but keeps saved references visible/removable. Engine tools come from D1 Workshop with stable IDs, last-known names and archived-source labels; links never add BOM/cost/tree quantities. See the History plan for recovery/cutover acceptance. |
 
 Do not silently rename, merge or change manufacturer/order codes in existing projects based on the handoff's dated data examples. Those are owner data edits, not this presentation change.
 

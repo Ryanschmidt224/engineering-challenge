@@ -99,7 +99,7 @@ for(const width of [1440,390])for(const project of projects)for(const kind of ["
      expect(metrics.length).toBeGreaterThanOrEqual(4);
      const help=workspaces[1].getByRole("button",{name:"About Helpful tools",exact:true});
      await help.focus();
-     const tip=workspaces[1].getByRole("tooltip").filter({hasText:"Link calculators, tools, and Workshop references"});
+     const tip=workspaces[1].getByRole("tooltip").filter({hasText:"Link calculators and tools."});
      await expect(tip).toBeVisible();
      const bounds=await tip.boundingBox();
      expect(bounds.x).toBeGreaterThanOrEqual(0);expect(bounds.x+bounds.width).toBeLessThanOrEqual(width);
