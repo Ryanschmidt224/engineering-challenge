@@ -4,7 +4,7 @@ import {recordLabels,recordPrompts} from "./project-record-model.js";
 import {initSplitPanes} from "./split-panes.js";
 import {editRecord,confirmAction} from "./project-editors.js";
 const button=(...args)=>window.BSUI.button(...args);
-export const eventLabels={...recordLabels,revision:"Revision",file_replaced:"File change",removed:"Removed",restored:"Restored",step_retired:"Step retired",step_restored:"Step restored"};
+export const eventLabels={...recordLabels,record_edited:"Record edited",revision:"Revision",file_replaced:"File change",removed:"Removed",restored:"Restored",step_retired:"Step retired",step_restored:"Step restored"};
 export function information(title,values){const panel=window.BSUI.informationPanel(title);for(const [label,value]of values)if(value!==undefined&&value!==null&&value!=="")panel.body.append(window.BSUI.fieldRow(label,value).root);return panel.root;}
 export function configurationView(configuration,title="Saved configuration",{includeBuild=true}={}){
  const snapshot=configuration?.snapshot;if(!snapshot?.item)return node("p","The transaction proof has no full item snapshot.");
@@ -17,6 +17,10 @@ function buildContextView(context,title="Build context when recorded"){
  return information(title,[["Quantity",build.quantity===undefined?undefined:[build.quantity,build.unit].filter(value=>value!==undefined).join(" ")],["Status",build.build_status?.replaceAll("_"," ")],["Needs attention",typeof build.attention==="boolean"?(build.attention?"Yes":"No"):undefined],["Attention note",build.attention_note],["Hidden in tree",typeof build.hidden==="boolean"?(build.hidden?"Yes":"No"):undefined],["Project when recorded",context.project?.name]]);
 }
 export function fileLink(ctx,file){const link=node("a",file.name);link.href="/api/project-engine/projects/"+ctx.projectId+"/files/"+file.id;link.download=file.name;return link;}
+function recordVersionView(ctx,value,title,files){
+ const links=node("div","","project-stack");for(const id of value.fileIds){const file=files.find(file=>file.id===id);links.append(file?fileLink(ctx,file):node("span","Unavailable attachment "+id));}
+ return information(title,[["Record type",recordLabels[value.type]||value.type],["Title",value.title],...Object.entries(recordPrompts[value.type]||{}).map(([key,label])=>[label,value.fields[key]]),...(value.type==="problem"?[["Status",value.fields.status]]:[]),["Event date",value.event_date||"Not set"],["Attachments",value.fileIds.length?links:"None"]]);
+}
 function entryCard(entry,select){
  const row=listCard("",select);row.append(node("strong",entry.display_title||entry.title),node("small",(eventLabels[entry.display_type||entry.type]||entry.type)+" · "+(entry.source_name||"")),node("span",entry.outcome||entry.summary||""),node("small",new Date(entry.created_at).toLocaleString()));row.dataset.eventId=entry.id;return row;
 }
@@ -26,6 +30,7 @@ export async function showEvent(ctx,id,container){
  if(record){body.append(information("Record",Object.entries(recordPrompts[record.type]).map(([key,label])=>[label,record.fields[key]]).concat(record.type==="problem"?[["Status",record.fields.status]]:[]).concat(record.event_date?[["Event date",record.event_date]]:[])));if(record.step_snapshot)body.append(information("Step when recorded",[["Title",record.step_snapshot.title],["Instructions",record.step_snapshot.body]]));
   const occurrence=ctx.client.state.occurrences.find(row=>row.item_id===event.item_id);if(occurrence?.removed_at===null)body.append(button("Edit record",()=>editRecord({...ctx,itemId:event.item_id},{record})));
  }
+ if(event.payload.record_edit){const edit=event.payload.record_edit;body.append(recordVersionView(ctx,edit.before,"Before edit",attachments),recordVersionView(ctx,edit.after,"After edit",attachments),information("Edit information",[["Edited by",event.payload.actor_id]]));if(event.payload.step_snapshot)body.append(information("Step when recorded",[["Title",event.payload.step_snapshot.title],["Instructions",event.payload.step_snapshot.body]]));}
  if(recordContext)body.append(buildContextView(recordContext,recordContext.legacy?"Build context from legacy snapshot":"Build context when recorded"));
  const build=event.payload.build_context;
  if(build?.before&&build?.after){if(JSON.stringify(build.before)===JSON.stringify(build.after))body.append(buildContextView(build.after,"Build context at change"));else body.append(buildContextView(build.before,"Build context before revision"),buildContextView(build.after,"Build context after revision"));}
@@ -34,7 +39,7 @@ export async function showEvent(ctx,id,container){
  if(event.payload.reason||event.payload.label)body.append(information("Revision information",[["Reason",event.payload.reason],["Label",event.payload.label]]));
  if(event.payload.path)body.append(information("Original location",[["Project",event.payload.path.root.name],["Item",event.payload.path.item.name],["Step",event.payload.path.step?.title]]));
  for(const config of configurations){const section=window.BSUI.section({title:config.id===event.payload.before&&config.id===event.payload.after?"Design configuration (unchanged)":config.id===event.payload.before?"Before revision":config.id===event.payload.after?"After revision":"Configuration when recorded",open:!!record});section.body.append(configurationView(config,undefined,{includeBuild:!recordContext&&!build}));if(config.snapshot.file){const file=ctx.client.state.files.find(file=>file.id===config.snapshot.file.id);if(file)section.body.append(fileLink(ctx,file));}body.append(section.root);}
- if(attachments.length)body.append(information("Attachments",attachments.map(file=>["File",fileLink(ctx,file)])));
+ if(attachments.length&&!event.payload.record_edit)body.append(information("Attachments",attachments.map(file=>["File",fileLink(ctx,file)])));
  body.append(node("small","Recorded "+new Date(event.created_at).toLocaleString(),"muted"));container.replaceChildren(body);
 }
 function currentSnapshot(ctx,item){const occurrence=ctx.client.state.occurrences.find(row=>row.item_id===item.id);return {snapshot:{item,occurrence:{...occurrence,root:{name:ctx.client.state.project.name}}}};}

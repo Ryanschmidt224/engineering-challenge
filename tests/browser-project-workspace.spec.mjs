@@ -73,3 +73,18 @@ for(const width of [1440,390])test("History separates captured build context fro
  await expect(detail.getByRole("heading",{name:"Build information",exact:true})).toHaveCount(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(0);await page.screenshot({path:testInfo.outputPath("design-context.png"),fullPage:true});
 });
+
+for(const width of [1440,390])test("record edit History keeps before and after evidence at "+width+"px",async({page,request,context},testInfo)=>{
+ await page.setViewportSize({width,height:1000});await login(page,request,context);await createPart(page);
+ await page.locator('[data-section="item-history"] > summary').click();await page.locator('[data-section="item-history"]').getByRole("button",{name:"Add record",exact:true}).click();
+ await page.getByLabel("Title (optional)",{exact:true}).fill("Bracket result");await page.getByLabel("Result",{exact:true}).fill("ok");await page.getByRole("button",{name:"Save record",exact:true}).click();await expect(page.getByRole("dialog")).not.toBeVisible();
+ await page.getByRole("button",{name:"History / Removed items",exact:true}).click();const list=page.locator(".project-history-list"),detail=page.locator(".project-history-detail");
+ await list.getByRole("button").filter({hasText:"Bracket result"}).click();await detail.getByRole("button",{name:"Edit record",exact:true}).click();await page.getByLabel("Result",{exact:true}).fill("FAILED");await page.getByRole("button",{name:"Save record",exact:true}).click();await expect(page.getByRole("dialog")).not.toBeVisible();
+ await page.getByRole("button",{name:"Back to history",exact:true}).click();await page.getByLabel("Type",{exact:true}).selectOption("changes");await list.getByRole("button").filter({hasText:"Record edited: Bracket result"}).click();
+ const before=detail.locator(".ui-information-panel").filter({has:page.getByRole("heading",{name:"Before edit",exact:true})}),after=detail.locator(".ui-information-panel").filter({has:page.getByRole("heading",{name:"After edit",exact:true})});
+ await expect(before).toContainText("ok");await expect(before).not.toContainText("FAILED");await expect(after).toContainText("FAILED");await expect(detail.getByRole("button",{name:"Edit record",exact:true})).toHaveCount(0);
+ const projectId=new URL(page.url()).searchParams.get("project"),base="/api/project-engine/projects/"+projectId,state=await(await context.request.get(base+"/state")).json(),record=state.records[0];
+ const edit=await context.request.patch(base+"/records/"+record.id,{headers:{origin:"http://127.0.0.1:4173"},data:{operationId:crypto.randomUUID(),expectedRevision:state.project.revision,record:{type:"note",title:"Later explanation",fields:{text:"Current explanation"}}}});expect(edit.ok()).toBe(true);
+ await page.getByRole("button",{name:"Back to history",exact:true}).click();await page.getByLabel("Search history",{exact:true}).fill("ok");await list.getByRole("button").filter({hasText:"Record edited: Bracket result"}).click();await expect(before).toContainText("ok");await expect(after).toContainText("FAILED");await expect(detail).not.toContainText("Current explanation");
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(0);await page.screenshot({path:testInfo.outputPath("record-edit-history.png"),fullPage:true});
+});

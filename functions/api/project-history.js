@@ -1,7 +1,7 @@
 import {rows,statement,decode,uuid,ProjectNotFound} from "./project-state.js";
 const effectiveType="COALESCE(r.type,e.type)";
-const searchText=`lower(COALESCE(r.title,e.title)||' '||CASE WHEN r.id IS NULL THEN e.summary ELSE '' END||' '||i.name||' '||i.part_number||' '||COALESCE(json_extract(e.payload,'$.reason'),'')||' '||COALESCE(json_extract(e.payload,'$.label'),'')||' '||COALESCE((SELECT group_concat(value,' ') FROM json_each(r.fields)),'')||' '||COALESCE((SELECT group_concat(COALESCE(json_extract(value,'$.label'),'')||' '||COALESCE(json_extract(value,'$.before.value'),'')||' '||COALESCE(json_extract(value,'$.after.value'),''),' ') FROM json_each(e.payload,'$.changes')),''))`;
-const filterTypes={tests:["test"],problems:["problem"],notes:["note"],changes:["revision","change_note","file_replaced","removed","restored","step_retired","step_restored"]};
+const searchText=`lower(COALESCE(r.title,e.title)||' '||CASE WHEN r.id IS NULL THEN e.summary ELSE '' END||' '||i.name||' '||i.part_number||' '||COALESCE(json_extract(e.payload,'$.reason'),'')||' '||COALESCE(json_extract(e.payload,'$.label'),'')||' '||COALESCE((SELECT group_concat(value,' ') FROM json_each(r.fields)),'')||' '||COALESCE(json_extract(e.payload,'$.record_edit.before.title'),'')||' '||COALESCE((SELECT group_concat(value,' ') FROM json_each(e.payload,'$.record_edit.before.fields')),'')||' '||COALESCE((SELECT group_concat(value,' ') FROM json_each(e.payload,'$.record_edit.after.fields')),'')||' '||COALESCE((SELECT group_concat(COALESCE(json_extract(value,'$.label'),'')||' '||COALESCE(json_extract(value,'$.before.value'),'')||' '||COALESCE(json_extract(value,'$.after.value'),''),' ') FROM json_each(e.payload,'$.changes')),''))`;
+const filterTypes={tests:["test"],problems:["problem"],notes:["note"],changes:["record_edited","revision","change_note","file_replaced","removed","restored","step_retired","step_restored"]};
 function cursorValue(value){
  if(!value)return null;
  try{const parsed=JSON.parse(atob(value.replace(/-/g,"+").replace(/_/g,"/")));if(!uuid(parsed.id)||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(parsed.time))throw Error();return parsed;}catch{throw Error("Invalid History cursor. Start from the first page.");}
@@ -32,6 +32,6 @@ export async function eventDetail(db,projectId,id){
  const configurations=[];for(const id of new Set(configIds)){const config=decode(await statement(db,"SELECT * FROM engine_configurations WHERE project_id=? AND id=?",projectId,id).first());if(config)configurations.push(config);}
  const attachments=await rows(db,"SELECT f.* FROM engine_file_links l JOIN engine_files f ON f.project_id=l.project_id AND f.id=l.file_id WHERE l.project_id=? AND (l.event_id=? OR l.record_id=? AND l.active=1)",projectId,id,record?.id||"");
  const legacy=record?configurations.find(config=>config.id===record.configuration_id&&config.snapshot?.format===1)?.snapshot.occurrence:null;
- const recordContext=record?(event.payload.record_context||(legacy?{format:1,project:legacy.root||{},occurrence:legacy,legacy:true}:null)):null;
+ const recordContext=event.payload.record_context||(legacy?{format:1,project:legacy.root||{},occurrence:legacy,legacy:true}:null);
  return {event,record,configurations,attachments,recordContext};
 }

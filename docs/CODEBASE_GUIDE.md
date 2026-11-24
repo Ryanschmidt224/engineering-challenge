@@ -271,3 +271,7 @@ Record cards now use the shared section/header for active and archived entries, 
 ### Engine versus legacy file APIs
 
 functions/api/project-files.js remains the live legacy project-wide files/download owner used by worker.js. The gated engine uses functions/api/project-engine-files.js for immutable prepare/upload/admit/download, imported only by project-workspace-api.js and project-backup.js. This explicit name avoids two unrelated handlers sharing a module path; the engine file was moved without changing its implementation. The browser legacy assets/project-files.js is also retained. Do not merge the two ownership models or retire either reader before its replacement and recovery coverage exist.
+
+### Engine evidence edit history
+
+The gated workspace editRecord command updates current evidence and inserts its immutable record_edited event in one guarded batch. The payload retains before/after text/type/title/date/attachment IDs, actor, original design/context, step capture and creation-event link. Its edited_record_id intentionally differs from record_id, preserving the unique record-to-creation-event mapping used by record/Knowledge navigation. Event-owned file links retain both attachment sets. project-history.js filters/searches saved audit values under Changes; project-history-view.js renders fixed Before edit/After edit panels without editing controls. Export/restore includes the events and file links through the explicit existing schema. No new migration or production path is introduced.

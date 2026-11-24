@@ -203,6 +203,8 @@ test("legacy combined snapshots stay unchanged beside design-only captures and r
   const fresh=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"New capture"}}});assert.equal(fresh.status,200);assert.equal(fresh.result.configurationId,change.event.payload.after);
   const oldRow=await f.db.prepare("SELECT * FROM engine_configurations WHERE id=?").bind(row.id).first();assert.equal(oldRow.snapshot,snapshot);assert.equal(oldRow.fingerprint,fingerprint);
   const old=(await f.call("/history/"+eventId)).result;assert.equal(old.recordContext.legacy,true);assert.equal(old.recordContext.occurrence.build_status,"not_started");
+  const editedLegacy=await f.call("/records/"+recordId,"PATCH",{record:{type:"test",fields:{result:"Corrected legacy result"}}});assert.equal(editedLegacy.status,200);
+  const legacyAudit=(await f.call("/history/"+editedLegacy.result.eventId)).result;assert.equal(legacyAudit.recordContext.legacy,true);assert.equal(legacyAudit.event.payload.configuration_id,row.id);assert.equal(legacyAudit.event.payload.record_edit.before.fields.result,"Original legacy test");
   const base=origin+"/api/project-engine/projects/"+f.projectId,backup=await(await handleProjectWorkspace(new Request(base+"/export"),f.env,f.owner)).text();
   const response=await handleProjectWorkspace(new Request(base+"/import",{method:"POST",headers:{origin,"x-operation-id":id(),"x-project-revision":"new"},body:backup}),target,f.owner);assert.equal(response.status,200,await response.clone().text());
   const read=async id=>(await(await handleProjectWorkspace(new Request(base+"/history/"+id),target,f.owner)).json());
@@ -210,4 +212,55 @@ test("legacy combined snapshots stay unchanged beside design-only captures and r
   const restored=await read(fresh.result.eventId);assert.equal(restored.configurations[0].snapshot.format,2);assert.equal(restored.recordContext.occurrence.build_status,"complete");assert.equal(restored.recordContext.project.name,"Bracket build");
   const restoredLegacy=await target.WORKSHOP_DB.prepare("SELECT snapshot,fingerprint FROM engine_configurations WHERE id=?").bind(row.id).first();assert.equal(restoredLegacy.snapshot,snapshot);assert.equal(restoredLegacy.fingerprint,fingerprint);
  }finally{f.db.close();target.WORKSHOP_DB.close();}
+});
+
+test("record edit history freezes both versions, evidence context and removed attachments through recovery",async()=>{
+ const f=await fixture(),target={WORKSHOP_DB:new TestD1(),PHOTOS:new TestR2()};try{
+  const a=await upload(f,"before.txt",new TextEncoder().encode("original measurement"),"support"),b=await upload(f,"after.txt",new TextEncoder().encode("corrected measurement"),"support");
+  const before={type:"test",title:"Measured bracket",fields:{checked:"Bracket",result:"ok"},event_date:"2026-11-22",fileIds:[a.fileId]};
+  const created=await f.call("/items/"+f.itemId+"/records","POST",{record:before});assert.equal(created.status,200);
+  const capture=(await f.call("/history/"+created.result.eventId)).result;
+  await f.call("/items/"+f.itemId,"PATCH",{build:{build_status:"complete",quantity:9}});await f.call("","PATCH",{name:"Later project name"});
+  const after={type:"problem",title:"Failed bracket",fields:{happened:"FAILED",status:"open"},event_date:"2026-11-23",fileIds:[b.fileId]};
+  const changed=await f.call("/records/"+created.result.recordId,"PATCH",{record:after});assert.equal(changed.status,200,JSON.stringify(changed));
+  const audit=(await f.call("/history/"+changed.result.eventId)).result,payload=audit.event.payload;
+  assert.equal(audit.event.type,"record_edited");assert.equal(audit.record,null);assert.equal(payload.edited_record_id,created.result.recordId);assert.equal(payload.record_event_id,created.result.eventId);assert.equal(payload.actor_id,f.owner.id);
+  assert.deepEqual(payload.record_edit.before,normalizeProjectRecord(before));assert.deepEqual(payload.record_edit.after,normalizeProjectRecord(after));
+  assert.equal(payload.configuration_id,created.result.configurationId);assert.deepEqual(audit.recordContext,capture.recordContext);assert.equal(audit.recordContext.occurrence.build_status,"not_started");assert.equal(audit.recordContext.project.name,"Bracket build");
+  assert.deepEqual(audit.attachments.map(file=>file.id).sort(),[a.fileId,b.fileId].sort());assert.equal(audit.configurations[0].id,created.result.configurationId);
+  const later=await f.call("/records/"+created.result.recordId,"PATCH",{record:{type:"note",fields:{text:"Later explanation"}}});assert.equal(later.status,200);
+  assert.deepEqual((await f.call("/history/"+changed.result.eventId)).result,audit,"later edits cannot rewrite the audit");
+  const state=(await f.call("/state")).result;assert.deepEqual(state.record_events.filter(row=>row.record_id===created.result.recordId),[{id:created.result.eventId,record_id:created.result.recordId}]);
+  const current=(await f.call("/history/"+created.result.eventId)).result;assert.equal(current.record.type,"note");assert.equal(current.record.id,created.result.recordId);
+  assert.equal((await f.call("/history?type=changes&q=ok")).result.entries.some(row=>row.id===changed.result.eventId),true,"search includes the saved old result");
+  const base=origin+"/api/project-engine/projects/"+f.projectId;
+  for(const [fileId,bytes]of [[a.fileId,"original measurement"],[b.fileId,"corrected measurement"]])assert.equal(await(await handleProjectWorkspace(new Request(base+"/files/"+fileId),f.env,f.owner)).text(),bytes);
+  const backup=await(await handleProjectWorkspace(new Request(base+"/export"),f.env,f.owner)).text();
+  const response=await handleProjectWorkspace(new Request(base+"/import",{method:"POST",headers:{origin,"x-operation-id":id(),"x-project-revision":"new"},body:backup}),target,f.owner);assert.equal(response.status,200,await response.clone().text());
+  const restored=await(await handleProjectWorkspace(new Request(base+"/history/"+changed.result.eventId),target,f.owner)).json();assert.deepEqual({...restored,attachments:restored.attachments.map(({r2_key,...file})=>file)},{...audit,attachments:audit.attachments.map(({r2_key,...file})=>file)});for(const file of restored.attachments)assert.notEqual(file.r2_key,audit.attachments.find(old=>old.id===file.id).r2_key);
+ }finally{f.db.close();target.WORKSHOP_DB.close();}
+});
+test("record audit is absent on no-op or stale save and exact retries replay one saved edit",async()=>{
+ const f=await fixture();try{
+  const before={type:"test",title:"Result",fields:{result:"ok"}},created=await f.call("/items/"+f.itemId+"/records","POST",{record:before});assert.equal(created.status,200);
+  const path="/records/"+created.result.recordId,initial=await counts(f.db),token=f.revision();
+  const noop=await f.call(path,"PATCH",{record:before});assert.equal(noop.result.noop,true);assert.deepEqual(await counts(f.db),initial);assert.equal(f.revision(),token);
+  const operationId=id(),after={...before,fields:{result:"FAILED"}},changed=await f.call(path,"PATCH",{record:after},{operationId,revision:token});assert.equal(changed.status,200);
+  assert.equal((await counts(f.db)).events,initial.events+1);await f.call("","PATCH",{name:"Renamed after edit"});const latest=f.revision(),savedCounts=await counts(f.db);
+  assert.equal((await f.call(path,"PATCH",{record:{...after,title:"Stale draft"}},{revision:token})).status,409);
+  const replay=await f.call(path,"PATCH",{record:after},{operationId,revision:token});assert.deepEqual(replay.result,changed.result);
+  assert.equal((await f.call(path,"PATCH",{record:before},{operationId,revision:token})).status,409);assert.deepEqual(await counts(f.db),savedCounts);
+  const state=(await f.call("/state")).result;assert.equal(state.project.revision,latest);assert.equal(state.records[0].fields.result,"FAILED");
+  assert.equal((await f.call("/history?type=changes")).result.entries.filter(row=>row.type==="record_edited").length,1);
+ }finally{f.db.close();}
+});
+test("record edit and attachment changes roll back when their audit write fails",async()=>{
+ const f=await fixture();try{
+  const a=await upload(f,"original.txt",new TextEncoder().encode("original bytes"),"support"),b=await upload(f,"new.txt",new TextEncoder().encode("new bytes"),"support");
+  const created=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"ok"},fileIds:[a.fileId]}});assert.equal(created.status,200);
+  const state=(await f.call("/state")).result,before=await counts(f.db);
+  f.db.sqlite.exec("CREATE TRIGGER reject_record_audit BEFORE INSERT ON engine_events WHEN NEW.type='record_edited' BEGIN SELECT RAISE(ABORT,'SQLITE forced audit failure'); END");
+  const failed=await f.call("/records/"+created.result.recordId,"PATCH",{record:{type:"test",fields:{result:"FAILED"},fileIds:[b.fileId]}});assert.equal(failed.status,500);
+  assert.deepEqual((await f.call("/state")).result,state);assert.deepEqual(await counts(f.db),before);
+ }finally{f.db.close();}
 });
