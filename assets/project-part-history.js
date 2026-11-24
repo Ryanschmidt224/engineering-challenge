@@ -1,6 +1,7 @@
 import {normalizeCustomItem,normalizeOccurrence,diffProjectItems,formatRevisionValue} from "./project-item-model.js";
 import {openHistoryEntryDialog} from "./history-entry-dialog.js";
 import {partHelp} from "./part-help.js";
+import {projectHelp} from "./project-help.js";
 import {dataTable} from "./data-table.js";
 import {node} from "./workshop-ui.js";
 import {savedPartView,configurationView} from "./project-information.js";
@@ -37,7 +38,7 @@ export function partHistoryPrompt(ctx,item,trigger,{archive=false,changes={},pat
 export async function partRevisions(ctx,item){
  const section=window.BSUI.section({title:"Revisions",role:"part-revisions",count:0,tooltip:partHelp.revisions}),list=node("div"),detail=node("div"),message=node("p");message.setAttribute("role","status");
  const create=window.BSUI.button("Create a Revision",()=>partHistoryPrompt(ctx,item,create));window.BSUI.sectionActions(section.body,{primary:create});section.body.append(node("p",partHelp.revisions),list,detail,message);
- const table=dataTable("Part revision table",["Revision","Date","What changed"]);table.append([String(item.revision_level||1),"Current","Working part"]);list.append(table.root);
+ section.body.insertBefore(node("p",projectHelp.workingRevision),list);const table=dataTable("Part revision table",["Revision","Date","What changed"]);table.append([String(item.revision_level||1)+" (working)","Current","Working draft"]);list.append(table.root);
  let cursor=null,count=0;
  const load=async()=>{try{
   const query=new URLSearchParams({scope:item.id,type:"revisions",limit:"50",...(cursor?{cursor}:{})}),result=await ctx.client.request("/"+ctx.projectId+"/history?"+query);cursor=result.nextCursor;count=result.total;section.setCount(count);

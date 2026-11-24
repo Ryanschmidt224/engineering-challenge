@@ -1,6 +1,6 @@
 # Project engine command foundation
 
-Status: **Batch 1 real Cloudflare D1 proof passed**, November 22, 2026 (Arizona). The initial run and same-proof replay passed all seven checks with unchanged counts. Exact source, binding, build ID and reports are recorded in `PROJECT_ENGINE_D1_PROOF.json`. Batch 2 dependent preview flows may now begin. This is not the completed custom-part application or production cutover.
+Status: **Batch 1 real Cloudflare D1 proof passed**, November 22, 2026 (Arizona). The initial run and same-proof replay passed all seven checks with unchanged counts. Exact source, binding, build ID and reports are recorded in `proofs/PROJECT_ENGINE_D1_PROOF.json`. Batch 2 dependent preview flows may now begin. This is not the completed custom-part application or production cutover.
 
 ## Ownership and boundaries
 
@@ -52,3 +52,7 @@ For an empty preview account store, use the one-time operator procedure in `PREV
 Before merge, keep this branch and its preview separate from the live cleanup. Production's new-engine flag remains absent. A code rollback reverts this foundation PR; do not drop tables, remove proof rows, delete R2, reseed D1 or alter Workshop/account data. To stop preview writes immediately, disable its flag through the reviewed preview configuration and redeploy. Preserve any proof report and rows for diagnosis. A schema correction is a new numbered migration, never an edit to an applied migration.
 
 Cloudflare reference: https://developers.cloudflare.com/workers/previews/configuration/ (preview bindings/vars are independent of production; checked November 22, 2026).
+
+## Automated preview acceptance
+
+`PREVIEW_ACCEPTANCE.md` documents the shared proof runner and protected runtime-version identity. The runner verifies actual control-plane bindings before proof writes and requires existing owner authentication; no production or sign-in bypass is introduced. The single project-wide token remains deliberate: saving anywhere may make another open draft stale, including two tabs on different parts. Drafts remain reviewable after 409. Per-item tokens are deferred until observed contention justifies the extra coordination.
