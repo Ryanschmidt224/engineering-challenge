@@ -2679,27 +2679,6 @@
   min-width: 0;
   margin: 10px 0;
 }
-.investigation-note-photo-gallery {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--space-3);
-  width: 100%;
-}
-.investigation-note-photo,
-.investigation-note-photo-tile {
-  width: 260px;
-  max-width: 100%;
-  box-sizing: border-box;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-}
-.investigation-note-photo {
-  display: block;
-  height: 210px;
-  object-fit: contain;
-  background: var(--color-media-backdrop);
-}
 .investigation-note-photo-tile {
   overflow: hidden;
 }
@@ -3755,20 +3734,6 @@
 }
 
 /* Individual photo names stay directly beneath their thumbnails. */
-.investigation-named-photo {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--space-1);
-  margin: 0;
-  width: 160px;
-  max-width: 100%;
-}
-.investigation-named-photo > .investigation-note-photo {
-  width: 100%;
-  height: 125px;
-  object-fit: contain;
-}
 .investigation-photo-name {
   font-size: var(--text-small);
   line-height: 1.35;

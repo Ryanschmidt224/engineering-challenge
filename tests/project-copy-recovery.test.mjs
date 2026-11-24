@@ -9,7 +9,7 @@ test("restore as a copy preserves source, scoped identities, audit and independe
   const file=await upload(f,"bracket.step",new TextEncoder().encode("drawing"));
   const created=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"ok"},fileIds:[file.fileId]}});
   const edited=await f.call("/records/"+created.result.recordId,"PATCH",{record:{type:"test",fields:{result:"FAILED"}}});assert.equal(edited.status,200);
-  await f.call("/items/"+f.itemId+"/remove","POST");
+  await f.call("/items/"+f.itemId+"/archive","POST");
   const base=origin+"/api/project-engine/projects/",backup=await(await handleProjectWorkspace(new Request(base+f.projectId+"/export"),f.env,f.owner)).text(),copyId=id(),operationId=id(),name="Recovered bracket";
   const request=(title=name)=>new Request(base+copyId+"/import-copy?"+new URLSearchParams({name:title}),{method:"POST",headers:{origin,"x-operation-id":operationId,"x-project-revision":"new"},body:backup});
   const response=await handleProjectWorkspace(request(),f.env,f.owner);assert.equal(response.status,200,await response.clone().text());const result=await response.json();assert.equal(result.asCopy,true);assert.equal(result.sourceProjectId,f.projectId);assert.equal(result.projectId,copyId);

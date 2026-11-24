@@ -50,7 +50,7 @@ export async function admitFile(db,env,input,project,id,data){
    // The sole current link ID is read before the transaction and guarded there.
    if(currentLink)w.update("engine_file_links",{active:0},{project_id:project.id,id:currentLink.id,active:1});
    addFileLinks(w,project.id,{item_id:context.item.id},[ready],"engineering");config.write(w);
-   eventId=addEvent(w,project.id,context.item.id,"file_replaced",old?"Engineering file replaced":"Engineering file added",{before:prior.id,after:config.id,file_id:id,previous_file_id:old?.id||null,build_context:{before:buildContext(project,context.occurrence),after:buildContext(project,context.occurrence)},source:{id:context.item.id,name:context.item.name,part_number:context.item.part_number}},file.name);
+   eventId=addEvent(w,project.id,context.item.id,"file_replaced",old?"Engineering file replaced":"Engineering file added",{before:prior.id,after:config.id,file_id:id,previous_file_id:old?.id||null,build_context:{before:buildContext(project,context.occurrence,context.item),after:buildContext(project,context.occurrence,context.item)},source:{id:context.item.id,name:context.item.name,part_number:context.item.part_number}},file.name);
   }
   return {fileId:id,eventId,configurationId:config?.id||null};
  });

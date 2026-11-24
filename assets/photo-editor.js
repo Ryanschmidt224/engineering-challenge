@@ -68,14 +68,12 @@
   const panel=document.createElement("section");panel.className="bs-upload-panel";panel.hidden=true;
   const heading=document.createElement("div");heading.className="bs-upload-heading";
   const name=document.createElement("strong");name.textContent=title;
-  const close=document.createElement("button");close.type="button";close.className="btn bs-upload-close";close.textContent="Close";
-  close.onclick=()=>{panel.hidden=true};
+  const close=window.BSUI.button("Close",()=>{panel.hidden=true});close.classList.add("bs-upload-close");
   heading.append(name,close);
   const text=document.createElement("p");text.className="bs-upload-hint";
   text.textContent="Drop files in the box, right-click and Paste an image, or choose files from your device.";
   const fileInput=document.createElement("input");fileInput.type="file";fileInput.accept=accept;fileInput.multiple=multiple;fileInput.hidden=true;
-  const choose=document.createElement("button");choose.type="button";choose.className="btn primary bs-upload-choose";choose.textContent=multiple?"Choose files":"Choose file";
-  choose.onclick=()=>fileInput.click();
+  const choose=window.BSUI.button(multiple?"Choose files":"Choose file",()=>fileInput.click(),{variant:"primary"});choose.classList.add("bs-upload-choose");
   const drop=window.BSPhotoMarkup.pasteTarget(files=>onFiles(files));
   drop.classList.add("bs-upload-drop");
   drop.textContent="Drag and drop files here or right-click to paste an image (Ctrl+V)";

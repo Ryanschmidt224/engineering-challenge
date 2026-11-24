@@ -117,7 +117,8 @@ textarea.field {
   border-radius: var(--radius-medium);
   box-shadow: var(--shadow-dialog);
 }
-.context-menu .button {
+.context-menu .button,
+.context-menu .ui-button {
   justify-content: start;
 }
 .status {
@@ -245,4 +246,9 @@ textarea.field {
 .chip--verified {
   border-color: var(--color-accent);
   color: var(--color-accent);
+}
+
+.ui-preformatted {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

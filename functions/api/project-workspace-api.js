@@ -61,7 +61,7 @@ export async function handleProjectWorkspace(request,env,owner){
     if(path.length===4&&method==="POST"){
      if(action==="revisions")return engineJSON(await commands.editItem(db,input,project,id,body,{revision:true}));
      if(action==="duplicate")return engineJSON(await commands.createItem(db,input,project,body,{from:await itemContext(db,projectId,id)}));
-     if(["remove","restore"].includes(action))return engineJSON(await commands.changeItemLife(db,input,project,id,action==="restore"));
+     if(["archive","restore"].includes(action))return engineJSON(await commands.changeItemLife(db,input,project,id,action==="restore",body));
      if(action==="steps")return engineJSON(await commands.createStep(db,input,project,id,body));
      if(action==="records")return engineJSON(await commands.createRecord(db,input,project,id,body));
     }
@@ -69,7 +69,7 @@ export async function handleProjectWorkspace(request,env,owner){
    }
    if(area==="steps"){
     if(path.length===3&&method==="PATCH")return engineJSON(await commands.editStep(db,input,project,id,body));
-    if(path.length===4&&method==="POST"&&["retire","restore"].includes(action))return engineJSON(await commands.changeStepLife(db,input,project,id,action==="restore"));
+    if(path.length===4&&method==="POST"&&["retire","restore"].includes(action))return engineJSON(await commands.changeStepLife(db,input,project,id,action==="restore",body));
    }
    if(area==="records"&&path.length===3&&method==="PATCH")return engineJSON(await commands.editRecord(db,input,project,id,body));
   }

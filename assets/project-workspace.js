@@ -3,17 +3,20 @@ import {createProjectClient} from "./project-client.js";
 import {node,field,checkbox,listCard} from "./workshop-ui.js";
 import {initSplitPanes} from "./split-panes.js";
 import {detailsFor,buildFor,editItem,editRecord,editStep,projectSettings,confirmAction} from "./project-editors.js";
-import {information,configurationView,fileLink,createHistoryView,latestHistory} from "./project-history-view.js";
+import {information,configurationView,fileLink} from "./project-information.js";
+import {createHistoryView,latestHistory} from "./project-history-view.js";
+import {partRevisions,partHistoryPrompt} from "./project-part-history.js";
+import {contextMenu} from "./context-menu.js";
 const button=(...args)=>window.BSUI.button(...args);
 export function initProjectWorkspace(root=document){
  initSiteHeader();const client=createProjectClient(),content=root.querySelector("[data-project-content]"),heading=root.querySelector("[data-page-title]"),pageActions=root.querySelector("[data-page-actions]"),notice=root.querySelector("[data-notice]"),dialog=root.querySelector("[data-project-editor]"),historyMemos=new Map();let projectId=null,itemId=null,renderSequence=0,showHidden=false;
  const notify=(text,extra=null)=>{notice.replaceChildren(node("span",text));if(extra)notice.append(extra);};
- const ctx=()=>({client,projectId,itemId,dialog,notify,refresh,navigate,openHistory});
+ const ctx=()=>({client,projectId,itemId,dialog,notify,refresh,navigate,openHistory,openArchive:()=>openHistory("",null,"archive")});
  async function navigate(id=null,item=null,view="part"){
-  const url=new URL(location.href);url.search="";if(id)url.searchParams.set("project",id);if(item)url.searchParams.set("item",item);if(view==="history")url.searchParams.set("view","history");history.pushState(null,"",url);await refresh();
+  const url=new URL(location.href);url.search="";if(id)url.searchParams.set("project",id);if(item)url.searchParams.set("item",item);if(view==="history")url.searchParams.set("view","history");history.pushState(null,"",url);return refresh();
  }
- async function openHistory(scope="",selected=null){
-  const memo=historyMemos.get(projectId)||{mode:"history",scope:"",type:"all",q:"",entries:[],cursor:null,selected:null,scroll:0};memo.scope=scope;memo.selected=selected;memo.mode="history";historyMemos.set(projectId,memo);await navigate(projectId,scope||null,"history");
+ async function openHistory(scope="",selected=null,mode="history"){
+  const memo=historyMemos.get(projectId)||{mode:"history",scope:"",type:"all",q:"",entries:[],cursor:null,selected:null,scroll:0};memo.scope=scope;memo.selected=selected;memo.mode=mode;historyMemos.set(projectId,memo);return navigate(projectId,scope||null,"history");
  }
  async function action(path,data={},message="Saved.",method="POST",after=null){
   try{await client.write(projectId,path,method,data);await refresh();notify(message,after);}catch(error){notify(error.message);}
@@ -26,7 +29,7 @@ export function initProjectWorkspace(root=document){
   window.BSUI.sectionActions(section.body,{primary:button("Add step",()=>editStep(ctx()))});
   for(const [index,step]of steps.entries()){
    const block=window.BSUI.section({title:step.title,count:state.records.filter(row=>row.step_id===step.id).length,role:"step"}),move=async delta=>{const ids=steps.map(row=>row.id);[ids[index],ids[index+delta]]=[ids[index+delta],ids[index]];await action("/items/"+current.id+"/steps/reorder",{ids},"Step order saved.");};
-   block.body.append(node("p",step.body,"project-instruction-text"));window.BSUI.sectionActions(block.body,{primary:button("Add record",()=>editRecord(ctx(),{stepId:step.id})),secondary:[button("Edit step",()=>editStep(ctx(),step)),...(index?[button("Move up",()=>move(-1))]:[]),...(index<steps.length-1?[button("Move down",()=>move(1))]:[]),button("Retire step",()=>confirmAction(ctx(),"Retire step",'Move "'+step.title+'" to Removed items? Its records stay in History.',"Retire step",token=>client.write(projectId,"/steps/"+step.id+"/retire","POST",{},token)),{variant:"quiet"})]});recordsFor(step,block.body);section.body.append(block.root);
+   block.body.append(node("p",step.body,"project-instruction-text"));window.BSUI.sectionActions(block.body,{primary:button("Add record",()=>editRecord(ctx(),{stepId:step.id})),secondary:[button("Edit step",()=>editStep(ctx(),step)),...(index?[button("Move up",()=>move(-1))]:[]),...(index<steps.length-1?[button("Move down",()=>move(1))]:[]),button("Retire step",()=>confirmAction(ctx(),"Retire step",'Move "'+step.title+'" to History → Archive? Its records stay available.',"Retire step",token=>client.write(projectId,"/steps/"+step.id+"/retire","POST",{},token)),{variant:"quiet"})]});recordsFor(step,block.body);section.body.append(block.root);
   }
   return section.root;
  }
@@ -43,10 +46,9 @@ export function initProjectWorkspace(root=document){
   const updateBuild=async patch=>{if(buildBusy)return;buildBusy=true;for(const control of headerControls.querySelectorAll("input,select"))control.disabled=true;const build={...buildFor(occ),...patch};await action("/items/"+item.id,{details:detailsFor(item),build},"Build information saved.","PATCH");buildBusy=false;for(const control of headerControls.querySelectorAll("input,select"))control.disabled=false;};
   const quantity=field("Quantity",occ.quantity,()=>{},{type:"number"});quantity.querySelector("input").onchange=event=>updateBuild({quantity:event.target.value===""?null:Number(event.target.value)});
   headerControls.append(field("Status",occ.build_status,value=>updateBuild({build_status:value}),{options:[{value:"not_started",label:"Not started"},{value:"in_progress",label:"In progress"},{value:"complete",label:"Complete"}]}),quantity,checkbox("Needs attention",!!occ.attention,value=>updateBuild({attention:value})));container.append(headerControls);
-  const details=window.BSUI.section({title:"Part details",role:"details"}),more=node("select","","ui-control");more.setAttribute("aria-label","More part actions");for(const [value,label]of [["","More…"],["duplicate","Duplicate"],["remove","Remove from build…"]]){const option=node("option",label);option.value=value;more.append(option);}
-  more.onchange=()=>{const selected=more.value;more.value="";if(selected==="duplicate")void action("/items/"+item.id+"/duplicate",{},"Independent copy added.");if(selected==="remove")confirmAction(context,"Remove from build",'Move "'+item.name+'" to Removed items? Its steps, records and files stay available.',"Remove from build",async token=>{await client.write(projectId,"/items/"+item.id+"/remove","POST",{},token);notify("Removed from build.",button("Undo removal",()=>action("/items/"+item.id+"/restore",{},"Restored to build.")));});};
-  window.BSUI.sectionActions(details.body,{primary:button("Edit details",()=>editItem(context,item,occ)),secondary:[more]});details.body.append(configurationView({snapshot:{item,occurrence:{...occ,root:{name:state.project.name}}}},"Engineering details",{includeBuild:false}),information("Project information",[["Short tree name",item.short_name],["Quantity",occ.quantity+" "+occ.unit],["Status",occ.build_status.replaceAll("_"," ")],["Needs attention",occ.attention?"Yes":"No"],["Attention note",occ.attention_note],["Hidden in tree",occ.hidden?"Yes":"No"]]));container.append(details.root,workInstructions(item),fileArea.root);
-  const history=window.BSUI.section({title:"History",role:"item-history"});window.BSUI.sectionActions(history.body,{primary:button("Add record",()=>editRecord(context)),secondary:[button("View all history",()=>openHistory(item.id))]});container.append(history.root);try{const count=await latestHistory(context,history.body);if(sequence===renderSequence)history.setCount(count);}catch(error){if(sequence===renderSequence)notify(error.message);}
+  const details=window.BSUI.section({title:"Part details",role:"details"}),duplicate=button("Duplicate part",()=>action("/items/"+item.id+"/duplicate",{},"Independent copy added."));
+  window.BSUI.sectionActions(details.body,{primary:button("Edit part details",()=>editItem(context,item,occ)),secondary:[duplicate]});details.body.append(configurationView({snapshot:{item,occurrence:{...occ,root:{name:state.project.name}}}},"Engineering details",{includeBuild:false}),information("Project information",[["Short tree name",item.short_name],["Quantity",occ.quantity+" "+occ.unit],["Status",occ.build_status.replaceAll("_"," ")],["Needs attention",occ.attention?"Yes":"No"],["Attention note",occ.attention_note],["Hidden in tree",occ.hidden?"Yes":"No"]]));container.append(details.root,workInstructions(item),fileArea.root);
+  const history=window.BSUI.section({title:"History",role:"item-history"});window.BSUI.sectionActions(history.body,{primary:button("Add record",()=>editRecord(context)),secondary:[button("View all history",()=>openHistory(item.id))]});container.append(history.root);container.append(await partRevisions(context,item));try{const count=await latestHistory(context,history.body);if(sequence===renderSequence)history.setCount(count);}catch(error){if(sequence===renderSequence)notify(error.message);}
  }
  function restorePicker(){
   const input=node("input");input.type="file";input.accept=".bsproject,application/x-ndjson";input.setAttribute("aria-label","Project backup");
@@ -73,18 +75,23 @@ export function initProjectWorkspace(root=document){
    if(!projectId){await projectList();return;}
    const state=await client.load(projectId);if(sequence!==renderSequence)return;heading.textContent=state.project.name;
    const exportLink=node("a","Export project","ui-button");exportLink.href="/api/project-engine/projects/"+projectId+"/export";
-   pageActions.replaceChildren(button("All projects",()=>navigate()),button("Project settings",()=>projectSettings(ctx())),button("History / Removed items",()=>openHistory()),exportLink);
+   pageActions.replaceChildren(button("All projects",()=>navigate()),...(url.searchParams.get("view")==="history"?[button("Back to build",()=>navigate(projectId))]:[]),button("Project settings",()=>projectSettings(ctx())),button("Project history",()=>openHistory()),exportLink);
    if(url.searchParams.get("view")==="history"){
     const memo=historyMemos.get(projectId)||{mode:"history",scope:itemId||"",type:"all",q:"",entries:[],cursor:null,selected:null,scroll:0};historyMemos.set(projectId,memo);content.replaceChildren(createHistoryView(ctx(),memo));return;
    }
    const panes=node("div","","project-panes"),tree=node("nav","","project-tree"),main=node("div","","project-main project-stack");tree.setAttribute("aria-label","Feature tree");panes.append(tree,main);content.replaceChildren(panes);
    tree.append(button("Add custom part",()=>editItem(ctx()),{variant:"primary"}),checkbox("Show hidden parts",showHidden,value=>{showHidden=value;void refresh();}),listCard(state.project.name,()=>navigate(projectId)));
    for(const occurrence of state.occurrences.filter(row=>row.removed_at===null&&(!row.hidden||showHidden)).sort((a,b)=>a.sort_order-b.sort_order||a.id.localeCompare(b.id))){
-    const item=state.items.find(row=>row.id===occurrence.item_id),row=listCard("",()=>navigate(projectId,item.id)),mark=node("span",occurrence.attention?"!":occurrence.build_status==="complete"?"✓":"","ui-status-mark"+(occurrence.attention?" ui-status-mark--attention":occurrence.build_status==="complete"?" ui-status-mark--complete":""));mark.setAttribute("aria-label",occurrence.attention?"Needs attention":occurrence.build_status.replaceAll("_"," "));const title=node("strong");title.append(mark,document.createTextNode((item.short_name||item.name)+(occurrence.quantity>1?" ("+occurrence.quantity+")":"")));row.append(title,node("small",item.part_number));row.setAttribute("aria-current",String(item.id===itemId));tree.append(row);
+    const item=state.items.find(row=>row.id===occurrence.item_id),row=listCard("",()=>navigate(projectId,item.id)),mark=node("span",occurrence.attention?"!":occurrence.build_status==="complete"?"✓":"","ui-status-mark"+(occurrence.attention?" ui-status-mark--attention":occurrence.build_status==="complete"?" ui-status-mark--complete":""));mark.setAttribute("aria-label",occurrence.attention?"Needs attention":occurrence.build_status.replaceAll("_"," "));const title=node("strong");title.append(mark,document.createTextNode((item.short_name||item.name)+(occurrence.quantity>1?" ("+occurrence.quantity+")":"")));row.append(title,node("small",item.part_number));row.setAttribute("aria-current",String(item.id===itemId));const more=button("⋯",()=>menu(),{variant:"quiet",small:true});more.setAttribute("aria-label","Actions for "+item.name);more.setAttribute("aria-haspopup","menu");
+    const menu=event=>contextMenu(more,event,[{label:"Archive part",run:()=>partHistoryPrompt(ctx(),item,more,{archive:true})}]);row.oncontextmenu=event=>{event.preventDefault();menu(event);};row.onkeydown=event=>{if(event.key==="ContextMenu"||event.key==="F10"&&event.shiftKey){event.preventDefault();menu();}};
+    const holder=node("div","","project-tree-row");holder.append(row,more);tree.append(holder);
    }
    initSplitPanes(panes,{key:"project-workspace",panes:[{key:"tree",selector:".project-tree",name:"feature tree"}]});
-   if(itemId)await renderPart(main,itemId);else main.append(information("Project",[["Name",state.project.name],["Active parts",state.occurrences.filter(row=>row.removed_at===null).length],["Number format",state.project.prefix+"0".repeat(state.project.digits)]]),node("p","Choose a part to view its details, work instructions and History."));
-  }catch(error){notify(error.status===401?"Sign in through Account on Projects, then return to this preview.":error.message);}
+   if(itemId)await renderPart(main,itemId);else{
+    main.append(information("Project",[["Name",state.project.name],["Active parts",state.occurrences.filter(row=>row.removed_at===null).length],["Number format",state.project.prefix+"0".repeat(state.project.digits)]]),node("p","Choose a part to view its details, work instructions and History."));
+    const history=window.BSUI.section({title:"History",role:"project-history"}),archived=state.occurrences.filter(row=>row.removed_at!==null),folder=window.BSUI.section({title:"Archive",role:"archive-folder",count:archived.length+state.steps.filter(row=>row.retired_at).length});folder.body.append(button("Open Archive",()=>openHistory("",null,"archive")));history.body.append(folder.root);main.append(history.root);
+   }
+  }catch(error){notify(error.status===401?"Sign in through Account on Projects, then return to this preview.":error.message);return false;}
  }
  addEventListener("popstate",()=>void refresh());addEventListener("beforeunload",event=>{if(dialog.open){event.preventDefault();event.returnValue="";}});void refresh();
 }

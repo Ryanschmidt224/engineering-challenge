@@ -1,3 +1,5 @@
+import {partHistoryPrompt} from "./project-part-history.js";
+import {partHelp} from "./part-help.js";
 import {projectHelp} from "./project-help.js";
 import {node,field,checkbox,actions} from "./workshop-ui.js";
 import {normalizeCustomItem,normalizeOccurrence,diffCustomItems,diffProjectItems,formatRevisionValue,allocatePartNumber} from "./project-item-model.js";
@@ -15,9 +17,9 @@ function editable(ctx,title,saveLabel,collect,save,{review=null}={}){
   }catch(problem){error.textContent=problem.message;}
  });reload.hidden=true;
  form.append(fields,error,reload,reviewArea,actions(saveButton,cancel));
- form.onsubmit=async event=>{event.preventDefault();if(busy)return;error.textContent="";try{const data=collect();busy=true;saveButton.disabled=true;cancel.disabled=true;await save(data,revision);await ctx.refresh();dialog.close();}catch(problem){error.textContent=problem.message;reload.hidden=problem.status!==409;}finally{busy=false;saveButton.disabled=false;cancel.disabled=false;}};
+ form.onsubmit=async event=>{event.preventDefault();if(busy)return;error.textContent="";try{const data=collect();busy=true;saveButton.disabled=true;cancel.disabled=true;await save(data,revision);if(await ctx.refresh()===false)throw Error("Saved, but the part could not be reopened. Retry this same save.");dialog.close();}catch(problem){error.textContent=problem.message;reload.hidden=problem.status!==409;}finally{busy=false;saveButton.disabled=false;cancel.disabled=false;}};
  dialog.oncancel=event=>{if(busy)event.preventDefault();};dialog.replaceChildren(node("h2",title),form);dialog.setAttribute("aria-label",title);queueMicrotask(()=>{dialog.showModal();dialog.querySelector("input,textarea,select")?.focus();});
- return {fields,form,saveButton,error,acceptOwnWrites(){revision=ctx.client.state.project.revision;}};
+ return {fields,form,saveButton,error,get revision(){return revision;},acceptOwnWrites(token=ctx.client.state.project.revision){revision=token;}};
 }
 function changeRows(changes){
  const area=node("div");if(!changes.length)area.append(node("p","No changes."));
@@ -32,21 +34,19 @@ function specEditor(specs,change){
  }};const add=button("Add specification",()=>{specs.push({field_id:crypto.randomUUID(),label:""});render();change();});add.title=projectHelp.specification;add.setAttribute("aria-description",projectHelp.specification);const explanation=node("p",projectHelp.specification,"muted");explanation.hidden=true;const help=button("ⓘ",()=>{explanation.hidden=!explanation.hidden;help.setAttribute("aria-expanded",String(!explanation.hidden));},{variant:"quiet",small:true});help.setAttribute("aria-label","About specifications");help.setAttribute("aria-expanded","false");help.title=projectHelp.specification;area.append(list,actions(add,help),explanation);render();return area;
 }
 export function editItem(ctx,item=null,occurrence=null){
- const before=item?detailsFor(item):null,details=before?structuredClone(before):{name:"",short_name:"",part_number:"",kind:"part",source:"custom",is_tool:false,fields:{specs:[]}},build=occurrence?buildFor(occurrence):normalizeOccurrence({});let revisionMode=false,reason="",label="",assignNumber=true;
+ const before=item?detailsFor(item):null,details=before?structuredClone(before):{name:"",short_name:"",part_number:"",kind:"part",source:"custom",is_tool:false,fields:{specs:[]}},build=occurrence?buildFor(occurrence):normalizeOccurrence({});let assignNumber=true;
  details.fields.specs||=[];
- const supporting=[],changed=node("div"),revisionFields=node("div");
- const collect=()=>({details:normalizeCustomItem(!item&&assignNumber?{...details,part_number:allocatePartNumber(ctx.client.state.project,ctx.client.state.items.map(row=>row.part_number))}:details),build:normalizeOccurrence(build),...(item?{reason,label,fileIds:[...supporting]}:{assignNumber})});
- const editor=editable(ctx,item?"Edit details":"Add custom part","Save changes",collect,async(data,token)=>{await ctx.client.write(ctx.projectId,item?"/items/"+item.id+(revisionMode?"/revisions":""):"/items",item&&!revisionMode?"PATCH":"POST",data,token);},{review:state=>{const current=state.items.find(row=>row.id===item?.id);return current?changeRows(diffCustomItems(detailsFor(current),details)):node("p","This item is no longer active. Cancel and inspect Removed items.");}});
- const update=()=>{revisionFields.hidden=!revisionMode;editor.saveButton.textContent=item?(revisionMode?"Save revision":"Save changes"):"Add part";if(revisionMode){try{changed.replaceChildren(changeRows(diffProjectItems(before,normalizeCustomItem(details),buildFor(occurrence),build)));}catch(problem){changed.textContent=problem.message;}}};
+ const collect=()=>({details:normalizeCustomItem(!item&&assignNumber?{...details,part_number:allocatePartNumber(ctx.client.state.project,ctx.client.state.items.map(row=>row.part_number))}:details),build:normalizeOccurrence(build),...(!item?{assignNumber}:{})});
+ const editor=editable(ctx,item?"Edit part details":"Add custom part",item?"Save":"Add part",collect,async(data,token)=>{await ctx.client.write(ctx.projectId,item?"/items/"+item.id:"/items",item?"PATCH":"POST",data,token);},{review:state=>{const current=state.items.find(row=>row.id===item?.id);return current?changeRows(diffCustomItems(detailsFor(current),details)):node("p","This item is archived. Cancel and inspect History → Archive.");}});
+ const update=()=>{};editor.saveButton.title=item?partHelp.save:"Save this new part to the project.";
  editor.fields.append(field("Name",details.name,value=>{details.name=value;update();},{required:true}),field("Short tree name",details.short_name,value=>{details.short_name=value;update();}));
  if(!item)editor.fields.append(checkbox("Create next sequential part number",true,value=>{assignNumber=value;numberRow.hidden=value;}));
- const numberRow=field("Part number",details.part_number,value=>{details.part_number=value;update();});numberRow.hidden=!item;editor.fields.append(numberRow,field("Kind",details.kind,value=>{details.kind=value;update();},{options:[{value:"part",label:"Part"},{value:"document",label:"Document"},{value:"code",label:"Code"}]}),checkbox("Is a tool",details.is_tool,value=>{details.is_tool=value;update();}));
+ const numberRow=field("Part number",details.part_number,value=>{details.part_number=value;update();});numberRow.hidden=!item;if(item)numberRow.querySelector("input").readOnly=true;editor.fields.append(numberRow,field("Kind",details.kind,value=>{details.kind=value;update();},{options:[{value:"part",label:"Part"},{value:"document",label:"Document"},{value:"code",label:"Code"}]}),checkbox("Is a tool",details.is_tool,value=>{details.is_tool=value;update();}));
  for(const [key,title]of Object.entries({description:"Description",purpose:"Purpose",acceptance:"Acceptance criteria"}))editor.fields.append(field(title,details.fields[key]||"",value=>{details.fields[key]=value;update();},{type:["description","purpose","acceptance"].includes(key)?"textarea":"text"}));
  const manufacturer=window.BSUI.section({title:"Manufacturer details (optional)",role:"manufacturer-details"});for(const [key,title]of [["manufacturer","Manufacturer"],["mpn","Manufacturer part number"]])manufacturer.body.append(field(title,details.fields[key]||"",value=>{details.fields[key]=value;update();}));editor.fields.append(manufacturer.root);
  editor.fields.append(specEditor(details.fields.specs,update),field("Quantity",build.quantity,value=>{build.quantity=value;update();},{type:"number"}),field("Unit",build.unit,value=>{build.unit=value;update();}),field("Status",build.build_status,value=>{build.build_status=value;update();},{options:[{value:"not_started",label:"Not started"},{value:"in_progress",label:"In progress"},{value:"complete",label:"Complete"}]}),checkbox("Needs attention",build.attention,value=>{build.attention=value;update();}),field("Attention note",build.attention_note,value=>{build.attention_note=value;update();},{type:"textarea"}),checkbox("Hide in feature tree",build.hidden,value=>{build.hidden=value;update();}));
  if(item){
-  revisionFields.append(node("h3","What will change"),changed,field("Reason (optional)",reason,value=>reason=value,{type:"textarea"}),field("Revision label (optional)",label,value=>label=value));
-  editor.fields.append(checkbox("Save as revision",false,value=>{revisionMode=value;update();}),revisionFields);revisionFields.append(attachmentPicker(ctx,supporting,()=>editor.acceptOwnWrites(),busy=>editor.saveButton.disabled=busy));
+  const revision=button("Save as revision",()=>{try{if(!editor.form.reportValidity())return;const changes=collect();partHistoryPrompt(ctx,item,revision,{changes,expectedRevision:editor.revision,onOwnUpload:token=>editor.acceptOwnWrites(token),onComplete:()=>ctx.dialog.close()});}catch(problem){editor.error.textContent=problem.message;}});revision.title=partHelp.saveAsRevision;editor.saveButton.after(revision);
  }
  update();
 }
@@ -68,7 +68,7 @@ export function editStep(ctx,step=null){
 }
 export function projectSettings(ctx,{create=false}={}){
  const newProjectId=create?crypto.randomUUID():null;
- const project=create?{name:"",prefix:"NR",digits:4}:ctx.client.state.project,draft={name:project.name,prefix:project.prefix,digits:project.digits};
+ const project=create?{name:"",prefix:"NR",digits:3}:ctx.client.state.project,draft={name:project.name,prefix:project.prefix,digits:project.digits};
  const editor=editable(ctx,create?"New project":"Project settings",create?"Create project":"Save settings",()=>draft,async(data,token)=>{if(create){const projectId=newProjectId;await ctx.client.write(projectId,"","POST",data,null);await ctx.navigate(projectId);}else await ctx.client.write(ctx.projectId,"","PATCH",data,token);});
  editor.fields.append(field("Project name",draft.name,value=>draft.name=value,{required:true}),field("Number prefix",draft.prefix,value=>draft.prefix=value),field("Minimum digits",draft.digits,value=>draft.digits=value,{type:"number"}));
 }

@@ -1,3 +1,4 @@
+import {recordedPart} from "../../assets/project-record-context.js";
 import {canonicalJSON,sha256,CommandConflict} from "./project-command.js";
 import {normalizeCustomItem,normalizeOccurrence} from "../../assets/project-item-model.js";
 export const uuid=value=>typeof value==="string"&&/^[a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12}$/i.test(value);
@@ -26,7 +27,7 @@ export const buildDetails=occurrence=>normalizeOccurrence({quantity:occurrence.q
 export const storedItem=details=>({...details,is_tool:details.is_tool?1:0,fields:JSON.stringify(details.fields)});
 export const storedBuild=build=>({...build,attention:build.attention?1:0,hidden:build.hidden?1:0});
 // Capture operational state with the evidence/event, never in design identity.
-export const buildContext=(project,occurrence)=>({format:1,project:{id:project.id,name:project.name},occurrence:{id:occurrence.id,...buildDetails(occurrence)}});
+export const buildContext=(project,occurrence,item=null)=>{const part=recordedPart(item);return {format:1,project:{id:project.id,name:project.name},occurrence:{id:occurrence.id,...buildDetails(occurrence)},...(part?{part}:{})};};
 export async function currentEngineeringFile(db,projectId,itemId){
  return (await rows(db,"SELECT f.* FROM engine_file_links l JOIN engine_files f ON f.project_id=l.project_id AND f.id=l.file_id WHERE l.project_id=? AND l.item_id=? AND l.active=1 AND f.state='ready'",projectId,itemId))[0]||null;
 }

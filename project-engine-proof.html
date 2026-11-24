@@ -9,12 +9,15 @@
  <header class="ui-site-header" data-site-header="home"></header>
  <main class="ui-information-panel"><div class="ui-information-panel__body">
   <h1>Project command proof</h1>
-  <p>Preview only. This checks the D1 transaction foundation before the new project screens are built. It creates a disposable project in the preview database and leaves its proof rows available for review. It does not touch legacy projects or R2 files.</p>
+  <p>Preview only. This checks the D1 transaction foundation independently of the custom-part workflow. It creates a disposable project in the preview database and leaves its proof rows available for review. The transaction button does not touch legacy projects or R2 files. The separate recovery proof below creates its own synthetic project and small files.</p>
   <p>Sign in through <a href="index.html#home">Account on Projects</a>, then return here.</p>
   <button class="ui-button" type="button" data-run-proof>Run preview D1 proof</button>
   <p class="ui-status" role="status" data-proof-status></p>
   <div class="ui-field-row__value" data-proof-result></div>
+  <div data-recovery-proof></div>
  </div></main>
+ <script src="assets/ui-kit.js"></script>
+ <script type="module">import {initProjectRecoveryProof} from "./assets/project-recovery-proof.js"; initProjectRecoveryProof();</script>
  <script type="module">import {initProjectCommandProof} from "./assets/project-engine-proof.js"; initProjectCommandProof();</script>
 </body>
 </html>

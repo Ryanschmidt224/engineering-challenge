@@ -1,10 +1,11 @@
+import {projectNumberKey} from "../../assets/project-item-model.js";
 import {commitProjectCommand,replayProjectCommand,CommandConflict} from "./project-command.js";
 import {statement,uuid,text} from "./project-state.js";
 import {bytesHash,MAX_ENGINE_FILE} from "./project-engine-files.js";
 // Explicit export schema: receipts and concurrency tokens are operational, not
 // engineering history. Restore issues a new token and a new import receipt.
 const columns={
- items:"id project_id name short_name part_number kind source is_tool fields created_at",
+ items:"id project_id name short_name part_number kind source is_tool fields created_at revision_level",
  occurrences:"id project_id item_id quantity unit build_status attention attention_note hidden sort_order removed_at removed_path",
  steps:"id project_id item_id title body sort_order retired_at retired_path created_at",
  configurations:"id project_id item_id fingerprint snapshot created_at",
@@ -48,6 +49,10 @@ export function validateManifest(manifest,projectId){
  for(const [name,allowed] of Object.entries(columns)){
   const list=manifest.tables[name];if(!Array.isArray(list))throw Error("Backup is missing "+name+".");count+=list.length;if(count>10000)throw Error("This preview restore accepts at most 10,000 rows.");
   const ids=new Set();for(const row of list){if(!row||!uuid(row.id)||row.project_id!==projectId||ids.has(row.id)||Object.keys(row).some(key=>!allowed.split(" ").includes(key))||Object.values(row).some(value=>value!==null&&!["string","number"].includes(typeof value)))throw Error("Invalid or duplicate "+name+" row.");ids.add(row.id);}
+ }
+ const numbers=new Set();for(const item of manifest.tables.items){
+  if(typeof item.part_number!=="string"||!item.part_number.trim()||item.part_number.length>80||numbers.has(projectNumberKey(item.part_number)))throw Error("Backup contains an invalid or reused part number.");numbers.add(projectNumberKey(item.part_number));
+  if(item.revision_level!==undefined&&(!Number.isSafeInteger(item.revision_level)||item.revision_level<1))throw Error("Invalid part revision level in backup.");
  }
  const files=new Map(manifest.tables.files.map(file=>[file.id,file]));
  for(const file of files.values())if(!["prepared","ready"].includes(file.state)||file.state==="ready"&&(!Number.isInteger(file.size)||file.size<0||file.size>MAX_ENGINE_FILE||!/^[a-f0-9]{64}$/.test(file.sha256)))throw Error("Invalid file metadata in backup.");

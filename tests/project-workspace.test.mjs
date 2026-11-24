@@ -9,16 +9,16 @@ import {fixture,upload,counts} from "./helpers/project-workspace.mjs";
 const id=()=>crypto.randomUUID(),origin="https://preview.example.test";
 test("custom project ordinary saves, no-op, revision replay and old evidence retain their actual configuration",async()=>{
  const f=await fixture();try{
-  const {call,itemId,db}=f;let state=(await call("/state")).result;assert.equal(state.items[0].part_number,"NR0100");assert.deepEqual(await counts(db),{configurations:1,events:0,receipts:2});
-  const details={...state.items[0],fields:{...state.items[0].fields,description:"Ordinary edit captured by evidence"}};for(const key of ["id","project_id","created_at"])delete details[key];details.is_tool=!!details.is_tool;
+  const {call,itemId,db}=f;let state=(await call("/state")).result;assert.equal(state.items[0].part_number,"NR100");assert.deepEqual(await counts(db),{configurations:1,events:0,receipts:2});
+  const details={...state.items[0],fields:{...state.items[0].fields,description:"Ordinary edit captured by evidence"}};for(const key of ["id","project_id","created_at","revision_level"])delete details[key];details.is_tool=!!details.is_tool;
   const edit=await call("/items/"+itemId,"PATCH",{details});assert.equal(edit.status,200,JSON.stringify(edit));assert.equal((await counts(db)).events,0);
   const before=await counts(db),rev=f.revision();const noop=await call("/items/"+itemId,"PATCH",{details});assert.equal(noop.result.noop,true);assert.equal(f.revision(),rev);assert.deepEqual(await counts(db),before);
   const record=await call("/items/"+itemId+"/records","POST",{record:{type:"test",fields:{checked:"3 mm bracket",result:"Flexed"}}});assert.equal(record.status,200,JSON.stringify(record));
   const revised=structuredClone(details);revised.fields.specs[0].value=5;
-  const operationId=id(),expectedRevision=f.revision(),save=await call("/items/"+itemId+"/revisions","POST",{details:revised,reason:"Reduce flex",label:"B"},{operationId,revision:expectedRevision});assert.equal(save.status,200,JSON.stringify(save));
+  const operationId=id(),expectedRevision=f.revision(),save=await call("/items/"+itemId+"/revisions","POST",{details:revised,entryDetails:{whatChanged:"5 mm bracket",whyChanged:"Reduce flex"}},{operationId,revision:expectedRevision});assert.equal(save.status,200,JSON.stringify(save));
   const savedCounts=await counts(db);assert.deepEqual(savedCounts,{configurations:3,events:2,receipts:5});
-  const replay=await call("/items/"+itemId+"/revisions","POST",{details:revised,reason:"Reduce flex",label:"B"},{operationId,revision:expectedRevision});assert.deepEqual(replay.result,save.result);assert.deepEqual(await counts(db),savedCounts);
-  assert.equal((await call("/items/"+itemId+"/revisions","POST",{details:revised,reason:"Different"},{operationId,revision:expectedRevision})).status,409);
+  const replay=await call("/items/"+itemId+"/revisions","POST",{details:revised,entryDetails:{whatChanged:"5 mm bracket",whyChanged:"Reduce flex"}},{operationId,revision:expectedRevision});assert.deepEqual(replay.result,save.result);assert.deepEqual(await counts(db),savedCounts);
+  assert.equal((await call("/items/"+itemId+"/revisions","POST",{details:revised,entryDetails:{whyChanged:"Different"}},{operationId,revision:expectedRevision})).status,409);
   assert.equal((await call("/items/"+itemId,"PATCH",{details},{revision:expectedRevision})).status,409);assert.deepEqual(await counts(db),savedCounts);
   const old=(await call("/history/"+record.result.eventId)).result;assert.equal(old.configurations[0].snapshot.item.fields.specs[0].value,3);assert.equal(old.configurations[0].snapshot.item.fields.description,details.fields.description);
   const history=(await call("/history?type=changes&q=Thickness")).result;assert.equal(history.entries.length,1);assert.equal(history.entries[0].id,save.result.eventId);
@@ -28,9 +28,9 @@ test("custom project ordinary saves, no-op, revision replay and old evidence ret
 test("removed item is read-only, reserves its number, restores the same IDs and freezes its original path",async()=>{
  const f=await fixture();try{
   const {call,itemId,db,env}=f;const state=(await call("/state")).result,occurrence=state.occurrences[0];
-  const remove=await call("/items/"+itemId+"/remove","POST");assert.equal(remove.status,200);const keys=[...env.PHOTOS.objects.keys()];
+  const remove=await call("/items/"+itemId+"/archive","POST");assert.equal(remove.status,200);const keys=[...env.PHOTOS.objects.keys()];
   assert.equal((await call("/items/"+itemId,"PATCH",{details:f.details})).status,404);
-  assert.equal((await call("/items","POST",{assignNumber:false,details:{...f.details,part_number:"nr0100"}})).status,409);
+  assert.equal((await call("/items","POST",{assignNumber:false,details:{...f.details,part_number:"nr100"}})).status,409);
   await call("","PATCH",{name:"Renamed root"});
   const preview=(await call("/items/"+itemId+"/restore-preview")).result;assert.equal(preview.root.name,"Renamed root");assert.equal(preview.occurrence.removed_path.root.name,"Bracket build");assert.deepEqual(preview.conflicts,[]);
   const operationId=id(),revision=f.revision(),restore=await call("/items/"+itemId+"/restore","POST",{},{operationId,revision});assert.equal(restore.status,200);assert.deepEqual((await call("/items/"+itemId+"/restore","POST",{},{operationId,revision})).result,restore.result);
@@ -47,7 +47,7 @@ test("steps retire and restore without losing records; independent duplication n
   const evidence=(await call("/history/"+record.result.eventId)).result;assert.equal(evidence.record.step_snapshot.title,"Drill");assert.equal(evidence.record.step_snapshot.body,"Use 3 mm stock");
   await call("/steps/"+step.result.stepId+"/restore","POST");const state=(await call("/state")).result;assert.equal(state.steps[0].id,step.result.stepId);assert.equal(state.steps[0].retired_at,null);
   const duplicate=await call("/items/"+itemId+"/duplicate","POST");assert.equal(duplicate.status,200,JSON.stringify(duplicate));assert.notEqual(duplicate.result.itemId,itemId);
-  await call("/items/"+duplicate.result.itemId,"PATCH",{details:{...f.details,name:"Independent copy",part_number:"NR0101"}});const final=(await call("/state")).result;assert.equal(final.items.find(row=>row.id===itemId).name,"Bracket");assert.equal(final.steps.length,1);assert.equal(final.records.length,1);
+  assert.equal((await call("/items/"+duplicate.result.itemId,"PATCH",{details:{...f.details,name:"Independent copy",part_number:"NR101"}})).status,200);const final=(await call("/state")).result;assert.equal(final.items.find(row=>row.id===itemId).name,"Bracket");assert.equal(final.steps.length,1);assert.equal(final.records.length,1);
  }finally{f.db.close();}
 });
 test("step reordering supports more than 100 steps without exceeding D1 bound parameters",async()=>{
@@ -107,8 +107,8 @@ test("self-contained backup restores IDs, history, configuration values and inde
   const first=await upload(f,"old.step",new TextEncoder().encode("old drawing")),attachment=await upload(f,"measurement.txt",new TextEncoder().encode("Measured 3.00 mm"),"support");
   const step=await f.call("/items/"+f.itemId+"/steps","POST",{title:"Measure",body:"Use calipers"});
   await f.call("/items/"+f.itemId+"/records","POST",{stepId:step.result.stepId,record:{type:"test",fields:{result:"3 mm"},fileIds:[attachment.fileId]}});
-  const next=structuredClone(f.details);next.part_number="NR0100";next.fields.specs[0].value=5;await f.call("/items/"+f.itemId+"/revisions","POST",{details:next,reason:"Stiffen"});
-  await upload(f,"new.step",new TextEncoder().encode("new drawing"));await f.call("/steps/"+step.result.stepId+"/retire","POST");await f.call("/items/"+f.itemId+"/remove","POST");
+  const next=structuredClone(f.details);next.part_number="NR100";next.fields.specs[0].value=5;await f.call("/items/"+f.itemId+"/revisions","POST",{details:next,reason:"Stiffen"});
+  await upload(f,"new.step",new TextEncoder().encode("new drawing"));await f.call("/steps/"+step.result.stepId+"/retire","POST");await f.call("/items/"+f.itemId+"/archive","POST");
   const url=origin+"/api/project-engine/projects/"+f.projectId,backupResponse=await handleProjectWorkspace(new Request(url+"/export"),f.env,f.owner);assert.equal(backupResponse.status,200);const backup=await backupResponse.text();
   const operationId=id(),restore=()=>new Request(url+"/import",{method:"POST",headers:{origin,"x-operation-id":operationId,"x-project-revision":"new"},body:backup});
   const restored=await handleProjectWorkspace(restore(),target,f.owner);assert.equal(restored.status,200,await restored.clone().text());const result=await restored.json();assert.equal(result.verifiedFiles,3);assert.notEqual(result.revision,f.revision());
@@ -144,7 +144,7 @@ test("design configurations ignore build state and project names while each reco
   assert.equal(a.recordContext.project.name,"Bracket build");assert.equal(a.recordContext.occurrence.build_status,"not_started");assert.equal(a.recordContext.occurrence.quantity,1);
   assert.equal(b.recordContext.project.name,"Bracket build");assert.deepEqual({...b.recordContext.occurrence,id:undefined},{...build,id:undefined});
   assert.equal(c.recordContext.project.name,"Renamed project");assert.equal(c.recordContext.occurrence.build_status,"complete");
-  const next=structuredClone(f.details);next.part_number="NR0100";next.fields.specs[0].value=5;
+  const next=structuredClone(f.details);next.part_number="NR100";next.fields.specs[0].value=5;
   assert.equal((await f.call("/items/"+f.itemId,"PATCH",{details:next})).status,200);
   const changed=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"Different design"}}});assert.equal(changed.status,200);assert.notEqual(changed.result.configurationId,first.result.configurationId);assert.equal((await counts(f.db)).configurations,2);
   assert.deepEqual(await read(first.result),a,"later design/build/project changes cannot rewrite an earlier capture");
@@ -241,3 +241,43 @@ test("record edit and attachment changes roll back when their audit write fails"
  }finally{f.db.close();}
 });
 
+
+
+test("numbered revisions preserve the complete previous part and standard Save keeps the working level",async()=>{
+ const f=await fixture();try{
+  const {call,itemId}=f,step=await call("/items/"+itemId+"/steps","POST",{title:"Load test",body:"Use the original fixture"}),record=await call("/items/"+itemId+"/records","POST",{stepId:step.result.stepId,record:{type:"test",title:"Original result",fields:{checked:"3 mm bracket",result:"Held 2 kg"}}});assert.equal(step.status,200);assert.equal(record.status,200);
+  const file=await upload(f,"original.step",new TextEncoder().encode("old immutable drawing"));
+  const first=await call("/items/"+itemId+"/revisions","POST",{entryDetails:{whatChanged:"About to improve the bracket",whyChanged:"Reduce flex",notes:"Retest"}});assert.equal(first.status,200,JSON.stringify(first));
+  let state=(await call("/state")).result;assert.equal(state.items[0].revision_level,2);assert.equal(state.items[0].fields.specs[0].value,3);
+  const saved=(await call("/history/"+first.result.eventId)).result.event;assert.equal(saved.payload.level,1);assert.equal(saved.payload.snapshot.item.revision_level,1);assert.equal(saved.payload.snapshot.steps[0].body,"Use the original fixture");assert.equal(saved.payload.snapshot.records[0].fields.result,"Held 2 kg");assert.ok(saved.payload.snapshot.files.some(row=>row.id===file.fileId));
+  const ordinary={...f.details,part_number:"NR100",fields:{...f.details.fields,specs:[{field_id:"thickness",label:"Thickness",value:5,unit:"mm"}]}};assert.equal((await call("/items/"+itemId,"PATCH",{details:ordinary})).status,200);assert.equal((await call("/state")).result.items[0].revision_level,2);assert.equal((await call("/history?type=revisions")).result.entries.length,1);
+  assert.equal((await call("/steps/"+step.result.stepId,"PATCH",{body:"Later instructions"})).status,200);const revised={...ordinary,fields:{...ordinary.fields,purpose:"Changed purpose"}},operationId=id(),revision=f.revision();const second=await call("/items/"+itemId+"/revisions","POST",{details:revised,entryDetails:{whatChanged:"Changed purpose"}},{operationId,revision});assert.equal(second.status,200,JSON.stringify(second));
+  const repeat=await call("/items/"+itemId+"/revisions","POST",{details:revised,entryDetails:{whatChanged:"Changed purpose"}},{operationId,revision});assert.deepEqual(repeat.result,second.result);state=(await call("/state")).result;assert.equal(state.items[0].revision_level,3);
+  const secondCopy=(await call("/history/"+second.result.eventId)).result.event;assert.equal(secondCopy.payload.level,2);assert.equal(secondCopy.payload.snapshot.item.fields.specs[0].value,5);assert.equal(secondCopy.payload.snapshot.item.fields.purpose,undefined);assert.deepEqual((await call("/history/"+first.result.eventId)).result.event.payload.snapshot,saved.payload.snapshot);
+ }finally{f.db.close();}
+});
+
+test("archive is not a revision, preserves its complete copy and permanently reserves padded number aliases",async()=>{
+ const f=await fixture();try{
+  const {call,itemId}=f;assert.equal((await call("/items/"+itemId+"/revisions","POST",{})).status,200);let state=(await call("/state")).result;const original=state.items[0],occurrence=state.occurrences[0];
+  const archived=await call("/items/"+itemId+"/archive","POST",{entryDetails:{whyChanged:"Replaced this design",notes:"Keep the complete record"}});assert.equal(archived.status,200,JSON.stringify(archived));const entry=(await call("/history/"+archived.result.eventId)).result.event;assert.equal(entry.type,"archived");assert.equal(entry.payload.snapshot.item.revision_level,2);assert.equal(entry.payload.entryDetails.notes,"Keep the complete record");
+  assert.equal((await call("/history?type=revisions")).result.entries.length,1);assert.equal((await call("/state")).result.items[0].revision_level,2);
+  for(const number of ["NR100","nr0100","NR000100"])assert.equal((await call("/items","POST",{assignNumber:false,details:{...f.details,part_number:number}})).status,409);
+  const next=await call("/items","POST",{details:f.details});assert.equal(next.status,200);state=(await call("/state")).result;assert.equal(state.items.find(item=>item.id===next.result.itemId).part_number,"NR101");assert.equal((await call("/items/"+itemId+"/restore","POST")).status,200);state=(await call("/state")).result;assert.equal(state.items.find(item=>item.id===itemId).part_number,original.part_number);assert.equal(state.items.find(item=>item.id===itemId).revision_level,2);assert.equal(state.occurrences.find(row=>row.item_id===itemId).id,occurrence.id);
+  assert.equal((await call("/items/"+itemId,"PATCH",{details:{...f.details,part_number:"NR500"}})).status,409);
+ }finally{f.db.close();}
+});
+
+test("history images are owned by the project and invalid evidence cannot advance a revision",async()=>{
+ const f=await fixture();try{
+  const {call,itemId,db}=f,before=await counts(db),revision=f.revision();for(const entryDetails of [{photos:[id()]},{notes:"x".repeat(5001)},{photos:[],photoNames:{[id()]:"Unowned"}}]){assert.equal((await call("/items/"+itemId+"/revisions","POST",{entryDetails})).status,400);assert.deepEqual(await counts(db),before);assert.equal(f.revision(),revision);assert.equal((await call("/state")).result.items[0].revision_level,1);}
+ }finally{f.db.close();}
+});
+
+test("forged staging metadata cannot substitute corrupt bytes during backup restore",async()=>{
+ const f=await fixture(),target={WORKSHOP_DB:new TestD1(),PHOTOS:new TestR2()};try{
+  const uploaded=await upload(f,"drawing.step",new TextEncoder().encode("original bytes")),backup=await(await handleProjectWorkspace(new Request(origin+"/api/project-engine/projects/"+f.projectId+"/export"),f.env,f.owner)).text(),manifest=JSON.parse(backup.split("\n")[0]).manifest,operationId=id(),file=manifest.tables.files.find(row=>row.id===uploaded.fileId);
+  await target.PHOTOS.put("project-engine/restored/"+f.projectId+"/"+operationId+"/"+file.id,new TextEncoder().encode("corrupt! bytes"),{customMetadata:{sha256:file.sha256}});
+  const response=await handleProjectWorkspace(new Request(origin+"/api/project-engine/projects/"+f.projectId+"/import",{method:"POST",headers:{origin,"x-operation-id":operationId,"x-project-revision":"new"},body:backup}),target,f.owner);assert.equal(response.status,400,await response.clone().text());assert.match((await response.json()).error,/byte verification/);assert.equal((await target.WORKSHOP_DB.prepare("SELECT COUNT(*) AS n FROM engine_projects").first()).n,0);assert.equal((await target.WORKSHOP_DB.prepare("SELECT COUNT(*) AS n FROM engine_operations").first()).n,0);
+ }finally{f.db.close();target.WORKSHOP_DB.close();}
+});

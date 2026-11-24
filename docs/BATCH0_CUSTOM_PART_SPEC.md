@@ -135,7 +135,7 @@ PATCH items/:id                         Save changes  {expectedRevision, operati
 POST  items/:id/revisions               Save revision {expectedRevision, operationId, fields, reason?, label?, fileIds?}
 POST  steps / PATCH steps/:id / POST steps/:id/retire|restore
 POST  records / PATCH records/:id       records capture configuration server-side
-POST  occurrences/:id/remove | GET …/restore-preview | POST …/restore
+POST  occurrences/:id/archive | GET …/restore-preview | POST …/restore
 GET   projects/:p/history?scope&type&q&cursor
 GET   projects/:p/removed
 GET   configurations/:id                read-only snapshot
