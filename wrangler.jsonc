@@ -6,7 +6,8 @@
     "directory": ".",
     "binding": "ASSETS",
     "run_worker_first": [
-      "/api/*"
+      "/api/*",
+      "/project-engine-proof*"
     ]
   },
   "r2_buckets": [
@@ -22,21 +23,22 @@
   },
   "vars": {"AI_LOOKUP_ENABLED": "1"},
   "previews": {
-    "vars": {"AI_LOOKUP_ENABLED": "1"},
     "r2_buckets": [
       {
         "binding": "PHOTOS",
         "bucket_name": "building-schmidt-photos-preview"
       }
     ],
-    // Branch previews use their own empty database, never the production Workshop.
     "d1_databases": [
       {
         "binding": "WORKSHOP_DB",
         "database_name": "building-schmidt-workshop-preview",
         "database_id": "3314f42f-7c04-4798-99dc-b5b97c4fb82f"
       }
-    ]
+    ],
+    "vars": {
+      "NEW_PROJECT_ENGINE": "1"
+    }
   },
   "d1_databases": [
     {

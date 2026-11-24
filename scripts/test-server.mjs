@@ -19,8 +19,9 @@ async function asset(request){
  try{return new Response(await readFile(path),{headers:{"content-type":mime[extname(path)],"cache-control":"no-store"}});}catch{return new Response("Not found",{status:404});}
 }
 let env,cookie;
-async function reset(role="admin"){
+async function reset(role="admin",engine=false){
  env?.WORKSHOP_DB.close();env={PHOTOS:new TestR2(),WORKSHOP_DB:new TestD1(),admin_password:"disposable-test-server-secret",ASSETS:{fetch:asset}};
+ if(engine)env.NEW_PROJECT_ENGINE="1";
  const origin="http://127.0.0.1:"+port;
  const login=await provisionTestAccount(new Request(origin+"/api/accounts",{method:"POST",headers:{origin},body:JSON.stringify({action:"register",email:"owner@example.test",password:"disposable-test-password"})}),env,{role});
  cookie=login.headers.get("set-cookie").split(";")[0];return cookie;
@@ -29,7 +30,7 @@ await reset();
 const server=createServer(async(req,res)=>{
  try{
   const origin="http://127.0.0.1:"+port,url=new URL(req.url,origin);
-  if(url.pathname==="/__test__/reset"&&req.method==="POST"){const token=await reset(url.searchParams.get("role")==="member"?"member":"admin");res.writeHead(200,{"content-type":"application/json"});res.end(JSON.stringify({cookie:token}));return;}
+  if(url.pathname==="/__test__/reset"&&req.method==="POST"){const token=await reset(url.searchParams.get("role")==="member"?"member":"admin",url.searchParams.get("engine")==="1");res.writeHead(200,{"content-type":"application/json"});res.end(JSON.stringify({cookie:token}));return;}
   if(url.pathname==="/__test__/owner"){res.writeHead(302,{"set-cookie":cookie+"; Path=/; HttpOnly; SameSite=Strict",location:"/workshop.html"});res.end();return;}
   const chunks=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>12*1024*1024){res.writeHead(413);res.end("Too large");return;}chunks.push(chunk);}
   const request=new Request(url,{method:req.method,headers:req.headers,...(!["GET","HEAD"].includes(req.method)?{body:Buffer.concat(chunks)}:{})});

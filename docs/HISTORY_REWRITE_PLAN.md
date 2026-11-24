@@ -13,7 +13,7 @@ The owner approved the direction and the accompanying [Batch 0 decisions and cus
 - Do not delete project data before cutover. A later reviewed deletion is separate from code deployment. Preserve Workshop, Knowledge and accounts. Purge is deferred.
 - Ordinary edit / no-op / retry / configuration accuracy / file retention / remove / restore behavior must satisfy F1–F11 in the companion spec.
 
-**Status:** plan approved; implementation proceeds in reviewable batches. The earlier *History Redesign* and *Status and History Rewrite* proposals are superseded by this plan and the companion spec; Git history and the original review artifacts retain their rationale. They are not independent implementation requirements.
+**Foundation evidence:** the historical Batch 1 Cloudflare D1 verification and replay on November 22, 2026 (Arizona) are retained in `PROJECT_ENGINE_D1_PROOF.json`. They prove the pinned runtime, not every later integration head. Targeted review gates foundation integration. The later review approved integrating this unchanged command logic with the production engine disabled; fresh deployed-version/control-plane verification remains required before claiming new preview acceptance or activation. Production activation and data cutover are separate gates. The earlier *History Redesign* and *Status and History Rewrite* proposals are superseded by this plan and the companion spec; Git history and the original review artifacts retain their rationale. They are not independent implementation requirements.
 
 ## Current implementation order and plan refinements
 
@@ -42,6 +42,16 @@ In legacy, hide only creation of Workshop-part references. Keep existing `resour
 At cutover, do not map legacy `resources.parts` IDs to guessed D1 products. Inventory their count per project, retaining enough labels/IDs in the disposition report for the owner to recreate useful links as BOM items or Knowledge links. Delete static catalog/wire readers only after D1 Tool selection and Workshop-wire harness replacements cover all active readers, including linked-part snapshot/photo/export dependencies.
 
 Required acceptance: exactly two engine types; D1-sourced tools and readable archived-source names; reference add/remove leaves BOM/cost/purchasing/tree unchanged; backup/restore round-trips IDs and last-known names; disposition lists legacy part-reference counts per project. Legacy regression verifies the absent creation option, preservation/removal of saved part references and continued Tool/Calculator saves.
+
+## Foundation review follow-ups before later batches
+
+The foundation was approved for integration while disabled in production; these are retained requirements, not reasons to rewrite its applied schema. Current release state belongs in STATUS.md.
+
+1. In the identity batch, remove short_name from the model, editor and new backup contract, preserving old-format/historical compatibility. Do not expand its use. Keep migration 1's applied column or use an appended migration; do not rewrite migration 1.
+2. Before project-owned events/records/steps land, add explicit ownership to the event model. Allow a project-scoped event without item_id, enforce the owning project, and retain item foreign keys for item scope. Review the D1-compatible table/dependent-reference migration, stable IDs, rollback and recovery. A fake item is not a project owner.
+3. New-project UI must show editable prefix and digits; NR/4 is only a schema default. #53 already displays those inputs. Its acceptance must demonstrate an explicit BB/3 or TB/3 configuration and preserve it through restore, with no renumbering of existing items.
+4. Preview vars do not inherit production vars. Remove duplicate config keys while retaining the reviewed normalized object: production AI setting unchanged, preview engine flag explicit, preview AI unset in #52. Confirm actual deployed version bindings later; do not claim a live check from Wrangler alone. Inspect later branches for their own explicit overrides, and do not make a provider call just to diagnose a flag.
+5. Complete the live control-plane run of the acceptance runner already introduced in #66 after its review/integration. Use owner-created read-only Workers version access in a trusted runner secret. That endpoint returns D1 binding IDs; current code needs no D1 API permission. Only add a narrowly justified D1 read permission if a reviewed future runner actually uses that API. No write/R2/zone/global-key permission is needed. Exact token and secret-store steps are in PREVIEW_OWNER_SETUP.md. Historical same-logic proof remains evidence of its pinned runtime, not a fresh binding attestation.
 
 ## Original detailed plan (review version 1)
 

@@ -183,6 +183,12 @@ Outstanding legacy risks to verify during replacement: finite embedded instructi
 
 The family Workshop owns category → family → optional product → project use. Hidden fields keep values; populated field type/unit changes are refused; zero and false are values. Project requirements remain separate from product facts. Seed data is catalog definitions only, not user products or inventory. Its former release/progress documents are superseded by this guide, the architecture and current tests.
 
+The first new-engine foundation is isolated in `project-command.js`, `project-engine-migrations.js`, `project-engine-proof.js` and `project-engine.js`. Its only caller is an owner-only preview proof page. See `PROJECT_ENGINE_FOUNDATION.md` for the exact admission SQL contract, live D1 gate and rollback. No normal project screens use it until that gate passes. The production flag is absent; importing these modules alone does not migrate or write storage.
+
+`assets/project-item-model.js` owns the new custom-detail/build-field validation, automatic-number formatting and revision comparison rules. It is currently exercised only by tests and the existing protected proof fixture. It adds no project API or production write path; real D1 proof still gates the dependent commands and screens.
+
+An isolated preview with an empty account store is provisioned through the one-time operator procedure in `PREVIEW_OWNER_SETUP.md`. Its `scripts/preview-owner-setup.html` runs as a saved browser file, generates canonical hashed account JSON, and is excluded from deployed assets. The owner uploads the two generated files only to the preview bucket. It adds no signup route, production bootstrap, authentication bypass or runtime dependency.
+
 ## Owner AI part lookup
 
 The owner requested restoring the existing owner-only lookup under their reported enforced $5 provider cap. `AI_LOOKUP.md` describes the `AI_LOOKUP_ENABLED` switch, conditional daily attempt reservation and safe provider-limit errors. This is a separate API/configuration change, not part of the new project engine or Workshop-family redesign. It neither changes billing nor enables the unrelated extraction route. A successful real-provider check is required before claiming the deployed lookup works.

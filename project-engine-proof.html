@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+ <title>Project command proof — Building Schmidt</title>
+ <link rel="stylesheet" href="assets/base.css"><link rel="stylesheet" href="assets/theme.css"><link rel="stylesheet" href="assets/ui-kit.css"><link rel="stylesheet" href="assets/components.css">
+</head>
+<body>
+ <header class="ui-site-header" data-site-header="home"></header>
+ <main class="ui-information-panel"><div class="ui-information-panel__body">
+  <h1>Project command proof</h1>
+  <p>Preview only. This checks the D1 transaction foundation before the new project screens are built. It creates a disposable project in the preview database and leaves its proof rows available for review. It does not touch legacy projects or R2 files.</p>
+  <p>Sign in through <a href="index.html#home">Account on Projects</a>, then return here.</p>
+  <button class="ui-button" type="button" data-run-proof>Run preview D1 proof</button>
+  <p class="ui-status" role="status" data-proof-status></p>
+  <div class="ui-field-row__value" data-proof-result></div>
+ </div></main>
+ <script type="module">import {initProjectCommandProof} from "./assets/project-engine-proof.js"; initProjectCommandProof();</script>
+</body>
+</html>

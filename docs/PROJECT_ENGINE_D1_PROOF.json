@@ -1,0 +1,42 @@
+{
+  "environment": "Cloudflare Worker Preview",
+  "preview_url": "https://preview-project-command-proof-engineering-challenge.ryanschmidt224.workers.dev/project-engine-proof",
+  "preview_branch": "preview/project-command-proof",
+  "source_commit": "3b2363b615706c2c1bab96aeb60e46136916132b",
+  "source_tree": "cc9a24608658be2dbe398c776e6e934e8f9be3a9",
+  "cloudflare_build_id": "1e03f05f-239f-4efd-bb1b-e1e8d95188c8",
+  "d1_binding": "WORKSHOP_DB",
+  "d1_database": "building-schmidt-workshop-preview",
+  "d1_database_id": "3314f42f-7c04-4798-99dc-b5b97c4fb82f",
+  "r2_bucket": "building-schmidt-photos-preview",
+  "authentication": "Normal owner-account sign-in; operator-provisioned isolated preview account. No bypass.",
+  "first_checked_at": "2026-11-23T00:20:03.562Z",
+  "replay_checked_at": "2026-11-23T00:22:07.246Z",
+  "ok": true,
+  "projectId": "c686c389-e875-4556-b928-1c590fef4aa7",
+  "checks": [
+    "Initial project, item, occurrence and configuration commit together",
+    "Stale admission leaves header, item, configurations, events and receipts unchanged",
+    "Missing dependent row blocks every write, including the receipt",
+    "Successful revision creates exactly one event and configuration",
+    "Lost-response retry returns the original result without rerunning writes",
+    "Same operation ID with different content returns 409 without writes",
+    "Late foreign-key failure rolls back earlier writes and its receipt"
+  ],
+  "counts_first_run": {
+    "events": 1,
+    "configurations": 2,
+    "receipts": 3
+  },
+  "counts_replay": {
+    "events": 1,
+    "configurations": 2,
+    "receipts": 3
+  },
+  "storage": "D1 binding supplied by the deployment; no R2 objects written by the proof",
+  "limits": [
+    "This proves the Batch 1 command primitive against the actual preview binding.",
+    "It does not prove the complete custom-part editor, records/steps, files, History interaction or export/restore; those are Batch 2.",
+    "The production new-engine flag remains absent and no production project data was changed."
+  ]
+}
