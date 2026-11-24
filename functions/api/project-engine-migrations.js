@@ -105,6 +105,18 @@ const migrations=[{version:1,statements:[
  fingerprint TEXT NOT NULL,snapshot TEXT NOT NULL CHECK(json_valid(snapshot)),created_at TEXT NOT NULL,
  PRIMARY KEY(project_id,id),UNIQUE(project_id,kind,fingerprint),
  FOREIGN KEY(project_id) REFERENCES engine_projects(id))`
+]},{version:6,statements:[
+ `ALTER TABLE engine_projects ADD COLUMN restore_job_id TEXT`,
+ `CREATE TABLE IF NOT EXISTS engine_restore_jobs (
+ id TEXT PRIMARY KEY,project_id TEXT NOT NULL,actor_id TEXT NOT NULL,operation_id TEXT NOT NULL,
+ state TEXT NOT NULL CHECK(state IN('staging','ready','complete')),row_count INTEGER NOT NULL,
+ fingerprint TEXT,created_at TEXT NOT NULL)`,
+ `CREATE TABLE IF NOT EXISTS engine_restore_rows (
+ job_id TEXT NOT NULL,table_name TEXT NOT NULL,row_id TEXT NOT NULL,position INTEGER NOT NULL,
+ data TEXT NOT NULL CHECK(json_valid(data)),PRIMARY KEY(job_id,table_name,row_id),
+ FOREIGN KEY(job_id) REFERENCES engine_restore_jobs(id) ON DELETE CASCADE)`,
+ `CREATE INDEX IF NOT EXISTS engine_restore_rows_order ON engine_restore_rows(job_id,table_name,position,row_id)`,
+ ...["INSERT","UPDATE"].map(action=>`CREATE TRIGGER IF NOT EXISTS engine_restore_rows_${action.toLowerCase()} BEFORE ${action} ON engine_restore_rows BEGIN SELECT RAISE(ABORT,'RESTORE_STAGE_SEALED') WHERE NOT EXISTS(SELECT 1 FROM engine_restore_jobs WHERE id=NEW.job_id AND state='staging'); END`)
 ]}];
 const pending=new WeakMap();
 export async function initializeProjectEngine(db){

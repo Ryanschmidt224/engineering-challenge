@@ -52,8 +52,7 @@ export async function expandProjectSnapshot(db,projectId,snapshot){
 
 // Backup checks run before admission. Missing frozen values must never yield a
 // superficially successful recovery of an unreadable historical checkpoint.
-export function validateSnapshotReferences(tables){
- const values=new Map(tables.snapshot_values.map(row=>[row.id,row]));
+export function validateSnapshotReferences(tables,values=new Map(tables.snapshot_values.map(row=>[row.id,row]))){
  for(const event of tables.events){
   const snapshot=JSON.parse(event.payload).snapshot;if(snapshot?.format!==5)continue;
   for(const part of [snapshot,...(snapshot.parts||[])])for(const {id,kind}of referenceEntries(part))if(!values.has(id)||values.get(id).kind!==kind)throw Error("Backup is missing a saved revision value.");

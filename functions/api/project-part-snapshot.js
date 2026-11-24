@@ -31,7 +31,7 @@ export async function captureProjectPart(db,project,item,occurrence,{shallow=fal
  }
  const snapshot=await capture(item,occurrence);
  if(item.is_assembly&&!shallow){snapshot.composition=placements.slice(1).map(child=>({...child,path:tree.path(child),item:{id:child.item_id,name:tree.definitions.get(child.item_id).name,part_number:tree.definitions.get(child.item_id).part_number,revision_level:tree.definitions.get(child.item_id).revision_level||1}}));const seen=new Set([item.id]);snapshot.parts=[];for(const child of placements.slice(1))if(!seen.has(child.item_id)){snapshot.parts.push(await capture(tree.definitions.get(child.item_id),child));seen.add(child.item_id);}}
- if(new TextEncoder().encode(JSON.stringify(snapshot)).length>1000000)throw Error("This saved revision has too many references for one operation. Save smaller child subassemblies first. Nothing was changed.");
+ if(new TextEncoder().encode(JSON.stringify(snapshot)).length>1000000)throw Error("This revision exceeds the 1 MB history-reference limit. Revising children first will not reduce it. Keep this saved project and contact support before retrying. Nothing was changed.");
  return {snapshot,write:w=>values.write(w)};
 }
 

@@ -27,7 +27,7 @@ export async function handleProjectWorkspace(request,env,owner){
   if(!importing&&!["GET","PUT"].includes(method))body=await commandBody(request);
   if(path.length&&!uuid(path[0]))throw new ProjectNotFound();
   await initializeProjectEngine(db);
-  if(!path.length){if(method!=="GET")return engineJSON({error:"Method not allowed"},405);return engineJSON({projects:await rows(db,"SELECT * FROM engine_projects WHERE owner_id=? ORDER BY name,id",owner.id)});}
+  if(!path.length){if(method!=="GET")return engineJSON({error:"Method not allowed"},405);return engineJSON({projects:await rows(db,"SELECT * FROM engine_projects WHERE owner_id=? AND restore_job_id IS NULL ORDER BY name,id",owner.id)});}
   const projectId=path[0];
   if(importing)return engineJSON(await restoreProject(request,env,owner,projectId,{asCopy:path[1]==="import-copy"}));
   let input;

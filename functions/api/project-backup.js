@@ -1,32 +1,23 @@
 import {projectNumberKey} from "../../assets/project-item-model.js";
 import {projectTree} from "../../assets/project-tree-model.js";
-import {commitProjectCommand,replayProjectCommand,CommandConflict} from "./project-command.js";
+import {commitProjectCommand,replayProjectCommand,CommandConflict,canonicalJSON,sha256} from "./project-command.js";
 import {statement,uuid,text} from "./project-state.js";
 import {bytesHash,MAX_ENGINE_FILE} from "./project-engine-files.js";
 import {validateSnapshotReferences,verifySnapshotValues} from "./project-snapshot-values.js";
 import {backupMetadata,readBackupManifest} from "./project-backup-metadata.js";
+import {backupColumns as columns,backupOutline} from "./project-backup-schema.js";
+import {restoreStaging,stagedRows,pendingRestore,materializeRestore} from "./project-restore-staging.js";
+import {smallBackup,streamedExport} from "./project-backup-stream.js";
 // Explicit export schema: receipts and concurrency tokens are operational, not
 // engineering history. Restore issues a new token and a new import receipt.
-const columns={
- items:"id project_id name short_name part_number kind source is_tool fields created_at revision_level is_assembly",
- occurrences:"id project_id item_id parent_id archive_group_id quantity unit build_status attention attention_note hidden sort_order removed_at removed_path",
- steps:"id project_id item_id title body sort_order retired_at retired_path created_at",
- configurations:"id project_id item_id fingerprint snapshot created_at",
- records:"id project_id item_id step_id configuration_id type title fields event_date step_snapshot created_at updated_at",
- events:"id project_id item_id type title summary payload created_at",
- files:"id project_id name content_type r2_key state size sha256 created_at",
- file_links:"id project_id file_id item_id record_id event_id configuration_id role active",
- selections:"id project_id family_id product_id family_revision product_revision snapshot requirements",
- archive_groups:"id project_id root_occurrence_id members created_at",
- snapshot_values:"id project_id kind fingerprint snapshot created_at"
-};
 export async function projectManifest(db,project){
- const names=Object.keys(columns),result=await db.batch([statement(db,"SELECT * FROM engine_projects WHERE id=?",project.id),...names.map(name=>statement(db,`SELECT * FROM engine_${name} WHERE project_id=? ORDER BY id`,project.id))]);
+ const names=Object.keys(columns),result=await db.batch([statement(db,"SELECT id,owner_id,name,revision,prefix,digits,created_at FROM engine_projects WHERE id=? AND restore_job_id IS NULL",project.id),...names.map(name=>statement(db,`SELECT * FROM engine_${name} WHERE project_id=? ORDER BY id`,project.id))]);
  return {format:"building-schmidt-project",version:1,project:result[0].results[0],tables:Object.fromEntries(names.map((name,index)=>[name,result[index+1].results]))};
 }
 function base64(bytes){let text="";for(let start=0;start<bytes.length;start+=8192)text+=String.fromCharCode(...bytes.subarray(start,start+8192));return btoa(text);}
 const line=value=>new TextEncoder().encode(JSON.stringify(value)+"\n");
 export async function exportProject(env,project){
+ if(!await smallBackup(env.WORKSHOP_DB,project.id))return streamedExport(env,project,manifest=>validateManifest(manifest,project.id));
  const manifest=validateManifest(await projectManifest(env.WORKSHOP_DB,project),project.id);
  await verifySnapshotValues(manifest.tables.snapshot_values);
  const metadata=backupMetadata(manifest);
@@ -55,7 +46,7 @@ export function validateManifest(manifest,projectId){
  let count=0;
  for(const [name,allowed] of Object.entries(columns)){
   if(["selections","archive_groups","snapshot_values"].includes(name)&&manifest.tables[name]===undefined)manifest.tables[name]=[];
-  const list=manifest.tables[name];if(!Array.isArray(list))throw Error("Backup is missing "+name+".");count+=list.length;if(count>10000)throw Error("This preview restore accepts at most 10,000 rows.");
+  const list=manifest.tables[name];if(!Array.isArray(list))throw Error("Backup is missing "+name+".");count+=list.length;if(count>100000)throw Error("This preview recovery supports at most 100,000 metadata rows.");
   const ids=new Set();for(const row of list){if(!row||!uuid(row.id)||row.project_id!==projectId||ids.has(row.id)||Object.keys(row).some(key=>!allowed.split(" ").includes(key))||Object.values(row).some(value=>value!==null&&!["string","number"].includes(typeof value)))throw Error("Invalid or duplicate "+name+" row.");ids.add(row.id);}
  }
  const numbers=new Set();for(const item of manifest.tables.items){
@@ -76,20 +67,34 @@ export function validateManifest(manifest,projectId){
 export async function restoreProject(request,env,owner,projectId,{asCopy=false}={}){
  const operationId=request.headers.get("x-operation-id");if(!uuid(projectId)||!uuid(operationId)||request.headers.get("x-project-revision")!=="new")throw Error("Restore requires a new-project revision and operation ID.");
  const iterator=archiveLines(request);try{
- const first=await iterator.next(),received=await readBackupManifest(iterator,first.value,Object.keys(columns));
- const manifest=validateManifest(received,asCopy?received?.project?.id:projectId);
- if(asCopy&&manifest.project.id===projectId){throw new CommandConflict("A recovered copy requires a different project identity. The existing project was not changed.");}
+ const first=await iterator.next(),header=first.value?.manifest;if(!header?.project||header.format!=="building-schmidt-project"||![1,2].includes(header.version))throw Error("Backup is missing a supported manifest.");
+ if(asCopy&&header.project.id===projectId){throw new CommandConflict("A recovered copy requires a different project identity. The existing project was not changed.");}
  const copyName=asCopy?text(new URL(request.url).searchParams.get("name"),180,"New project name",true):null;
- const input={projectId,actorId:owner.id,operationId,expectedRevision:null,payload:{action:asCopy?"restore-project-copy":"restore-project",manifest,...(asCopy?{copyName}:{})}};
+ const db=env.WORKSHOP_DB,storageKey=file=>"project-engine/restored/"+projectId+"/"+operationId+"/"+file.id;
+ let staging=null,digest=await sha256(canonicalJSON(header)),outline=backupOutline(header.project);
+ const stageRow=async(table,row)=>{
+  outline.collect(table,row);if(table==="snapshot_values")await verifySnapshotValues([row]);digest=await sha256(digest+await sha256(canonicalJSON({table,row})));
+  if(!staging)staging=await restoreStaging(db,projectId,owner.id,operationId,storageKey);
+  if(table!=="occurrences")await staging.add(table,row);
+ };
+ const received=await readBackupManifest(iterator,first.value,Object.keys(columns),header.version===2?stageRow:null);
+ const manifest=validateManifest(header.version===2?outline.manifest:received,asCopy?header.project.id:projectId);
+ const input={projectId,actorId:owner.id,operationId,expectedRevision:null,payload:{action:asCopy?"restore-project-copy":"restore-project",...(header.version===2?{metadataDigest:digest}: {manifest}),...(asCopy?{copyName}:{})}};
  const replay=await replayProjectCommand(env.WORKSHOP_DB,input);if(replay)return replay.result;
- await verifySnapshotValues(manifest.tables.snapshot_values);
- if(await statement(env.WORKSHOP_DB,"SELECT id FROM engine_projects WHERE id=?",projectId).first()){throw new CommandConflict("This project already exists. Choose a separate recovered copy; existing data will not be replaced.");}
+ if(header.version===1){await verifySnapshotValues(manifest.tables.snapshot_values);for(const [table,rows]of Object.entries(manifest.tables))for(const row of rows)await stageRow(table,row);}
+ const requestFingerprint=await sha256(canonicalJSON(input.payload));await pendingRestore(db,projectId,owner.id,operationId,requestFingerprint);
+ if(!staging)staging=await restoreStaging(db,projectId,owner.id,operationId,storageKey);
+ const restoredTree=projectTree(manifest.tables.items,manifest.tables.occurrences);
+ for(const row of [...manifest.tables.occurrences].sort((a,b)=>restoredTree.path(a).length-restoredTree.path(b).length))await staging.add("occurrences",row,restoredTree.path(row).length);
+ await staging.flush();
+ const frozen=new Map(manifest.tables.snapshot_values.map(row=>[row.id,row]));
+ for await(const event of stagedRows(db,staging.id,"events"))validateSnapshotReferences({events:[event]},frozen);
+ const badLinks=await statement(db,"SELECT COUNT(*) AS n FROM engine_restore_rows l LEFT JOIN engine_restore_rows f ON f.job_id=l.job_id AND f.table_name='files' AND f.row_id=json_extract(l.data,'$.file_id') WHERE l.job_id=? AND l.table_name='file_links' AND (f.row_id IS NULL OR json_extract(f.data,'$.state')!='ready')",staging.id).first();if(badLinks.n)throw Error("A file link has no verified file.");
  const needed=new Map(manifest.tables.files.filter(file=>file.state==="ready").map(file=>[file.id,file])),complete=new Set();let current=null,chunks=[],length=0,finished=false;
- const storageKey=file=>"project-engine/restored/"+projectId+"/"+operationId+"/"+file.id;
  for await(const entry of iterator){
   if(finished)throw Error("Backup contains data after its completion marker.");
   if(entry.type==="file"){
-   if(current||!needed.has(entry.id)||complete.has(entry.id))throw Error("Backup contains unexpected or duplicate file bytes.");current=needed.get(entry.id);chunks=[];length=0;
+   if(current||!needed.has(entry.id)||complete.has(entry.id))throw Error("Backup contains unexpected or duplicate file bytes.");const row=await statement(db,"SELECT data FROM engine_restore_rows WHERE job_id=? AND table_name='files' AND row_id=?",staging.id,entry.id).first();if(!row)throw Error("Backup file metadata is missing.");current=JSON.parse(row.data);chunks=[];length=0;
   }else if(entry.type==="bytes"){
    if(!current||typeof entry.data!=="string"||entry.data.length>262144)throw Error("Invalid file chunk.");
    const decoded=atob(entry.data),chunk=Uint8Array.from(decoded,char=>char.charCodeAt(0));length+=chunk.length;if(length>current.size||length>MAX_ENGINE_FILE)throw Error("File bytes exceed the declared size.");chunks.push(chunk);
@@ -106,15 +111,14 @@ export async function restoreProject(request,env,owner,projectId,{asCopy=false}=
   }else throw Error("Unknown backup entry.");
  }
  if(!finished)throw Error("Backup is incomplete: no completion marker.");
- // Metadata becomes visible in one guarded transaction only after every file
- // hash passes. A failed import leaves only unreachable staging objects.
+ const fingerprint=await staging.seal(input.payload);
+ const p=manifest.project,materialized=await materializeRestore(db,staging,projectId,owner.id,operationId,fingerprint,{name:asCopy?copyName:p.name,prefix:p.prefix,digits:p.digits,created_at:asCopy?new Date().toISOString():p.created_at});input.restoreJobId=materialized.id;
+ // Every file and materialized row must match before the publication transaction.
+ // Interrupted loading leaves a hidden copy that the exact operation can resume.
  return await commitProjectCommand(env.WORKSHOP_DB,input,w=>{
-  const p=manifest.project;w.insert("engine_projects",{id:projectId,owner_id:owner.id,name:asCopy?copyName:p.name,prefix:p.prefix,digits:p.digits,revision:w.revision,created_at:asCopy?w.createdAt:p.created_at});
-  const restoredTree=projectTree(manifest.tables.items,manifest.tables.occurrences);
-  for(const name of Object.keys(columns))for(const original of name==="occurrences"?[...manifest.tables[name]].sort((a,b)=>restoredTree.path(a).length-restoredTree.path(b).length):manifest.tables[name]){
-   const row={...original,project_id:projectId};if(name==="files")row.r2_key=storageKey(row);w.insert("engine_"+name,row);
-  }
-  return {projectId,restored:true,...(asCopy?{asCopy:true,sourceProjectId:manifest.project.id}:{}),counts:Object.fromEntries(Object.entries(manifest.tables).map(([name,list])=>[name,list.length])),verifiedFiles:complete.size};
+  w.require("EXISTS(SELECT 1 FROM engine_restore_jobs WHERE id=? AND project_id=? AND actor_id=? AND fingerprint=? AND state='ready' AND row_count=?)",materialized.id,projectId,owner.id,fingerprint,staging.rowCount);
+  w.require("(SELECT COUNT(*) FROM engine_restore_rows WHERE job_id=?)=?",materialized.id,staging.rowCount);w.completeRestore(materialized.id);
+  return {projectId,restored:true,...(asCopy?{asCopy:true,sourceProjectId:manifest.project.id}:{}),counts:staging.counts,verifiedFiles:complete.size,recovery:{stagingBatches:staging.batches,materializationBatches:materialized.batches,publicationStatements:3}};
  });
  }finally{await iterator.return();}
 }

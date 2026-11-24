@@ -10,7 +10,7 @@ export class ProjectNotFound extends Error {constructor(message="Project or item
 export const text=(value,max,label,required=false)=>{if(value===undefined)value="";if(typeof value!=="string"||value.length>max||value.includes("\0")||required&&!value.trim())throw Error(label+" must be valid text"+(required?" (required)":"")+" of at most "+max+" characters.");return value.trim();};
 export async function ownedProject(db,id,actor){
  if(!uuid(id))throw new ProjectNotFound();
- const project=await statement(db,"SELECT * FROM engine_projects WHERE id=? AND owner_id=?",id,actor).first();if(!project)throw new ProjectNotFound();return project;
+ const project=await statement(db,"SELECT * FROM engine_projects WHERE id=? AND owner_id=? AND restore_job_id IS NULL",id,actor).first();if(!project)throw new ProjectNotFound();return project;
 }
 export function expectedProject(project,input){if(project.revision!==input.expectedRevision)throw new CommandConflict();}
 export async function unchangedProject(db,project,input){const row=await statement(db,"SELECT revision FROM engine_projects WHERE id=? AND owner_id=?",project.id,input.actorId).first();if(row?.revision!==input.expectedRevision)throw new CommandConflict();return {ok:true,noop:true,revision:row.revision};}

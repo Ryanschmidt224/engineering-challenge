@@ -30,6 +30,20 @@ This is an explicit operator/CI action; the site never starts it automatically. 
 
 Cloudflare references: [Preview configuration](https://developers.cloudflare.com/workers/previews/configuration/), [Version metadata](https://developers.cloudflare.com/workers/runtime-apis/bindings/version-metadata/), [Get Worker version](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/versions/methods/get/).
 
+## Large-recovery capacity gate
+
+Finding F's local regression now exports over 16 MB of metadata / 10,000 rows from 3,000 revised records plus a drawing and verifies every expanded historical revision in a named copy. Migration 6 uses private sealed staging, bounded actual-row loading under a hidden project marker, and a final three-statement publication transaction. Interrupted or mismatched copies stay hidden and exact retries resume. The remaining 100,000-row/256 MB bounds are implementation resource guards, not measured Cloudflare capacity. Keep source and target on compatible migration-6 readers before any platform run; an old reader must not expose a pending copy.
+
+Actual platform measurements remain unperformed. The current acceptance script runs the functional proofs above; it does not implement this capacity benchmark. A separate reviewed operator/CI measurement must record:
+
+1. Exact source commit/runtime version, checked isolated bindings, database plan and configured invocation limits. Use synthetic projects only; retain source and receipts. No production writes or paid provider calls.
+2. Elapsed time, D1 statement count/returned execution metadata and complete batch duration for 2,000 / 5,000 / 10,000 representative inserts. Include JSON row sizes and FK/index costs, not empty trivial rows alone. Failed limits are results, not successful proofs.
+3. The first revision after a large record import (Finding G), including frozen rows/bytes and its entire guarded batch. That command remains a single batch; do not infer its timing from restore batching.
+4. Full streamed export and copy restore of at least 3,000 revised records plus files, including per-batch rows/bytes/time, final row-comparison/publication time, invocation query count and memory evidence. Verify every historical revision, exact files, hidden interrupted copies, same-operation retry and unchanged source.
+5. A supported production bound with margin below measured D1/Worker limits, enforced before publication; or a reviewed resumable multi-request design if an invocation cannot safely finish. D1's documented 30-second batch limit is not the only gate. Do not advertise the parser bounds as supported capacity without these results.
+
+Abandoned staging/hidden copies are retained. The pending orphan sweep must also cover uploads, failed Workshop copies and unreferenced frozen values; no deletion/sweep is included in this change. The read-only control-plane token cannot run direct D1 write benchmarks, and this runbook does not authorize granting new secret permissions automatically.
+
 ## Evidence
 
 Exact historical reports live under `docs/proofs/`. Moving them does not change their contents, source/build pins, configured-binding evidence or its documented limitations. Current architecture and runbooks link to those reports; evidence is not used as current implementation documentation.

@@ -1,5 +1,6 @@
 // One atomic D1 command. Every dependent statement checks this *attempt's*
 // admission receipt, never changes() or a receipt from an earlier retry.
+import {backupColumns} from "./project-backup-schema.js";
 const insertable=new Set(["engine_projects","engine_items","engine_occurrences","engine_configurations","engine_events","engine_steps","engine_records","engine_files","engine_file_links","engine_selections","engine_archive_groups","engine_snapshot_values"]);
 const mutable=new Set(["engine_projects","engine_items","engine_occurrences","engine_steps","engine_records","engine_files","engine_file_links","engine_selections"]);
 const key=value=>{if(!/^[a-z_][a-z0-9_]*$/.test(value))throw Error("Invalid SQL identifier");return value;};
@@ -15,9 +16,10 @@ export function canonicalJSON(value){
 }
 export async function sha256(value){return [...new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value)))].map(byte=>byte.toString(16).padStart(2,"0")).join("");}
 function commandIdentity(input){
- const {projectId,actorId,operationId,expectedRevision,payload}=input;
+ const {projectId,actorId,operationId,expectedRevision,payload,restoreJobId=null}=input;
  if(!uuid(projectId)||!uuid(operationId)||typeof actorId!=="string"||!actorId||actorId.length>180||expectedRevision!==null&&!uuid(expectedRevision))throw Error("A project ID, owner, operation ID and loaded revision are required.");
- return {projectId,actorId,operationId,expectedRevision,payload};
+ if(restoreJobId!==null&&(!uuid(restoreJobId)||expectedRevision!==null))throw Error("Invalid recovery admission.");
+ return {projectId,actorId,operationId,expectedRevision,payload,restoreJobId};
 }
 const commandHash=({projectId,actorId,expectedRevision,payload})=>sha256(canonicalJSON({projectId,actorId,expectedRevision,payload}));
 export async function replayProjectCommand(db,input){
@@ -28,7 +30,7 @@ export async function replayProjectCommand(db,input){
  return {result:JSON.parse(existing.result)};
 }
 export async function commitProjectCommand(db,input,build){
- const identity=commandIdentity(input),{projectId,actorId,operationId,expectedRevision}=identity;
+ const identity=commandIdentity(input),{projectId,actorId,operationId,expectedRevision,restoreJobId}=identity;
  const requestHash=await commandHash(identity);
  const previous=await replayProjectCommand(db,input);if(previous)return previous.result;
  const attemptId=crypto.randomUUID(),revision=crypto.randomUUID(),createdAt=new Date().toISOString();
@@ -53,6 +55,15 @@ export async function commitProjectCommand(db,input,build){
    const serialized=JSON.stringify(ids);
    guards.push({sql:"(SELECT COUNT(*) FROM engine_steps WHERE project_id=? AND item_id=? AND retired_at IS NULL)=? AND (SELECT COUNT(*) FROM engine_steps WHERE project_id=? AND item_id=? AND retired_at IS NULL AND id IN(SELECT value FROM json_each(?)))=?",values:[projectId,itemId,ids.length,projectId,itemId,serialized,ids.length]});
    writes.push(statement(`UPDATE engine_steps SET sort_order=(SELECT key FROM json_each(?) WHERE value=engine_steps.id) WHERE project_id=? AND item_id=? AND retired_at IS NULL AND ${gate}`,[serialized,projectId,itemId,...gateValues]));
+  },
+  completeRestore(jobId){
+   if(restoreJobId!==jobId||projectInserted)throw Error("A recovery must finalize its own pending project.");projectInserted=true;
+   for(const [name,layout]of Object.entries(backupColumns)){
+    const different=layout.split(" ").map(column=>`e.${column} IS NOT json_extract(s.data,'$.${column}')`).join(" OR ");
+    guards.push({sql:`(SELECT COUNT(*) FROM engine_${name} WHERE project_id=?)=(SELECT COUNT(*) FROM engine_restore_rows WHERE job_id=? AND table_name='${name}') AND NOT EXISTS(SELECT 1 FROM engine_restore_rows s LEFT JOIN engine_${name} e ON e.project_id=? AND e.id=s.row_id WHERE s.job_id=? AND s.table_name='${name}' AND (e.id IS NULL OR ${different}))`,values:[projectId,jobId,projectId,jobId]});
+   }
+   writes.push(statement(`UPDATE engine_projects SET restore_job_id=NULL,revision=? WHERE id=? AND owner_id=? AND restore_job_id=? AND ${gate}`,[revision,projectId,actorId,jobId,...gateValues]));
+   writes.push(statement(`UPDATE engine_restore_jobs SET state='complete' WHERE id=? AND project_id=? AND actor_id=? AND state='ready' AND ${gate}`,[jobId,projectId,actorId,...gateValues]));
   },
   archiveOccurrences(members,{restore,groupId}){
    if(!members.length||members.length>100||members.some(row=>!uuid(row.id)||row.project_id!==projectId))throw Error("Invalid archive placement group.");
@@ -81,9 +92,10 @@ export async function commitProjectCommand(db,input,build){
  if(expectedRevision===null&&!projectInserted)throw Error("Project creation must insert its header.");
  if(!writes.length)throw Error("Do not create receipts for an unchanged save.");
  const response={...result,revision};
- const admission=expectedRevision===null
-  ?{sql:"NOT EXISTS(SELECT 1 FROM engine_projects WHERE id=?)",values:[projectId]}
-  :{sql:"EXISTS(SELECT 1 FROM engine_projects WHERE id=? AND owner_id=? AND revision=?)",values:[projectId,actorId,expectedRevision]};
+ const admission=restoreJobId
+  ?{sql:"EXISTS(SELECT 1 FROM engine_projects p JOIN engine_restore_jobs j ON j.id=p.restore_job_id AND j.project_id=p.id WHERE p.id=? AND p.owner_id=? AND j.id=? AND j.actor_id=? AND j.operation_id=? AND j.state='ready')",values:[projectId,actorId,restoreJobId,actorId,operationId]}
+  :expectedRevision===null?{sql:"NOT EXISTS(SELECT 1 FROM engine_projects WHERE id=?)",values:[projectId]}
+  :{sql:"EXISTS(SELECT 1 FROM engine_projects WHERE id=? AND owner_id=? AND revision=? AND restore_job_id IS NULL)",values:[projectId,actorId,expectedRevision]};
  const conditions=[admission,...guards];
  const admit=statement(`INSERT INTO engine_operations(project_id,actor_id,operation_id,request_hash,attempt_id,result,created_at)
  SELECT ?,?,?,?,?,?,? WHERE ${conditions.map(condition=>"("+condition.sql+")").join(" AND ")} ON CONFLICT(project_id,actor_id,operation_id) DO NOTHING`,
