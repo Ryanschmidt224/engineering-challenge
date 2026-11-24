@@ -24,7 +24,7 @@ export async function streamedExport(env,project,validateManifest){
  if(counts.reduce((sum,result)=>sum+result.results[0].n,0)>100000)throw Error("This preview recovery supports at most 100,000 metadata rows.");
  // The topology/number/selection contract stays validated. Large evidence/value
  // tables are checked one row at a time during the streamed metadata pass.
- for(const table of ["items","occurrences","selections","archive_groups","files","snapshot_values"])for await(const row of backupRows(db,project.id,table))outline.collect(table,row);
+ for(const table of ["items","occurrences","steps","records","selections","archive_groups","files","snapshot_values"])for await(const row of backupRows(db,project.id,table))outline.collect(table,row);
  validateManifest(outline.manifest);
  const frozen=new Map(outline.manifest.tables.snapshot_values.map(row=>[row.id,row]));
  for await(const event of backupRows(db,project.id,"events"))validateSnapshotReferences({events:[event]},frozen);

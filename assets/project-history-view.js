@@ -5,8 +5,9 @@ import {recordLabels,recordPrompts} from "./project-record-model.js";
 import {projectHelp} from "./project-help.js";
 import {initSplitPanes} from "./split-panes.js";
 import {editRecord,confirmAction} from "./project-editors.js";
+import {instructionTree} from "./project-instruction-model.js";
 const button=(...args)=>window.BSUI.button(...args);
-export const eventLabels={...recordLabels,record_edited:"Record edited",revision:"Revision",archived:"Archived",file_replaced:"File change",removed:"Removed",restored:"Restored",step_retired:"Step retired",step_restored:"Step restored"};
+export const eventLabels={...recordLabels,instruction_revision:"Instruction revision",record_edited:"Record edited",revision:"Revision",archived:"Archived",file_replaced:"File change",removed:"Removed",restored:"Restored",step_retired:"Step retired",step_restored:"Step restored"};
 
 function entryCard(entry,select){
  const row=listCard("",select);row.append(node("strong",entry.display_title||entry.title),node("small",(eventLabels[entry.display_type||entry.type]||entry.type)+" · "+(entry.source_name||"")),node("span",entry.outcome||entry.summary||""),node("small",new Date(entry.created_at).toLocaleString()));row.dataset.eventId=entry.id;return row;
@@ -18,6 +19,7 @@ export async function showEvent(ctx,id,container){
   const occurrence=ctx.client.state.occurrences.find(row=>row.item_id===event.item_id);if(occurrence?.removed_at===null)body.append(button("Edit record",()=>editRecord({...ctx,itemId:event.item_id},{record})));
  }
  if(event.payload.record_edit){const edit=event.payload.record_edit;body.append(recordVersionView(ctx,edit.before,"Before edit",attachments),recordVersionView(ctx,edit.after,"After edit",attachments),information("Edit information",[["Edited by",event.payload.actor_id]]));if(event.payload.step_snapshot)body.append(information("Step when recorded",[["Title",event.payload.step_snapshot.title],["Instructions",event.payload.step_snapshot.body]]));}
+ if(event.payload.record_structure){const {before,after}=event.payload.record_structure;body.append(information("Entry location changed",[["Previous parent entry",before.parent_title||"Instruction root"],["New parent entry",after.parent_title||"Instruction root"]]));}
  if(recordContext)body.append(buildContextView(recordContext,recordContext.legacy?"Build context from legacy snapshot":"Build context when recorded"));
  const build=event.payload.build_context;
  if(build?.before&&build?.after){if(JSON.stringify(build.before)===JSON.stringify(build.after))body.append(buildContextView(build.after,"Build context at change"));else body.append(buildContextView(build.before,"Build context before revision"),buildContextView(build.after,"Build context after revision"));}
@@ -36,10 +38,10 @@ async function showRemoved(ctx,entry,container){
  const archived=!step?await ctx.client.request("/"+ctx.projectId+"/history?"+new URLSearchParams({scope:item.id,type:"archives",occurrence:occurrence.id,limit:"1"})):null;
  const frozen=archived?.entries[0]?.payload.snapshot;
  const body=node("div","","project-stack");body.append(node("h2",step?step.title:item.name),information("Original location",[["Project",path?.root.name],["Item",path?.item.name],["Step",path?.step?.title]]),...(frozen?[savedPartView(ctx,archived.entries[0])]:[configurationView(currentSnapshot(ctx,item),"Archived item details")]));
- const steps=step?[step]:state.steps.filter(row=>row.item_id===item.id);for(const row of frozen?[]:steps)body.append(information(row.title,[["Instructions",row.body]]));
- for(const record of frozen?[]:state.records.filter(row=>row.item_id===item.id&&(!step||row.step_id===step.id)))body.append(information(record.title,Object.entries(recordPrompts[record.type]).map(([key,label])=>[label,record.fields[key]])));
+ const instructions=instructionTree(state.steps.filter(row=>row.item_id===item.id)),steps=step?instructions.subtree(step.id):[...instructions.byId.values()],scopedRecords=state.records.filter(row=>row.item_id===item.id&&(!step||steps.some(scope=>scope.id===row.step_id)));for(const row of frozen?[]:steps)body.append(information(row.title,[["Instructions",row.body],["Archive reason",row.archive_reason]]));
+ for(const record of frozen?[]:scopedRecords)body.append(recordVersionView(ctx,{...record,fileIds:state.file_links.filter(link=>link.record_id===record.id&&link.active).map(link=>link.file_id)},record.title,state.files));
  const fileIds=new Set(state.file_links.filter(link=>link.item_id===item.id||state.records.some(record=>record.item_id===item.id&&link.record_id===record.id)).map(link=>link.file_id));for(const file of frozen?[]:state.files.filter(file=>fileIds.has(file.id)))body.append(fileLink(ctx,file));
- const canRestore=!step||occurrence.removed_at===null;
+ const canRestore=!step||occurrence.removed_at===null&&(!step.parent_id||instructions.active(instructions.byId.get(step.parent_id)));
  if(canRestore)body.append(button(step?"Restore step…":"Restore to build…",async()=>{try{
   if(step){confirmAction(ctx,"Restore step",'Restore "'+step.title+'" to '+item.name+"?","Restore step",token=>ctx.client.write(ctx.projectId,"/steps/"+step.id+"/restore","POST",{},token));return;}
   const preview=await ctx.client.request("/"+ctx.projectId+"/occurrences/"+occurrence.id+"/restore-preview");confirmAction(ctx,"Restore to build","Destination: "+preview.root.name+". "+(preview.conflicts.join(" ")||"The item keeps its ID, part number, records and files."),"Restore to build",token=>ctx.client.write(ctx.projectId,"/occurrences/"+occurrence.id+"/restore","POST",{},token));

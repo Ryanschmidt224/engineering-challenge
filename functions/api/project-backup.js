@@ -1,5 +1,6 @@
 import {projectNumberKey} from "../../assets/project-item-model.js";
 import {projectTree} from "../../assets/project-tree-model.js";
+import {instructionTree,recordTree} from "../../assets/project-instruction-model.js";
 import {commitProjectCommand,replayProjectCommand,CommandConflict,canonicalJSON,sha256} from "./project-command.js";
 import {statement,uuid,text} from "./project-state.js";
 import {bytesHash,MAX_ENGINE_FILE} from "./project-engine-files.js";
@@ -61,6 +62,10 @@ export function validateManifest(manifest,projectId){
  for(const group of manifest.tables.archive_groups){if(!tree.placements.has(group.root_occurrence_id))throw Error("Invalid archive group root.");let members;try{members=JSON.parse(group.members);}catch{throw Error("Invalid archive group members.");}if(!Array.isArray(members)||!members.length||members.length>100||new Set(members.map(row=>row.id)).size!==members.length||members.some(row=>!tree.placements.has(row.id)))throw Error("Invalid archive group members.");}
  if(manifest.tables.occurrences.some(row=>row.archive_group_id&&!manifest.tables.archive_groups.some(group=>group.id===row.archive_group_id)))throw Error("An archived placement is missing its group.");
  const files=new Map(manifest.tables.files.map(file=>[file.id,file]));
+ const instructions=instructionTree(manifest.tables.steps);
+ recordTree(manifest.tables.records);
+ for(const step of manifest.tables.steps)if(!tree.definitions.has(step.item_id))throw Error("An instruction has no part in the backup.");
+ for(const record of manifest.tables.records)if(!tree.definitions.has(record.item_id)||record.step_id&&instructions.byId.get(record.step_id)?.item_id!==record.item_id)throw Error("A record has an invalid instruction owner in the backup.");
  for(const file of files.values())if(!["prepared","ready"].includes(file.state)||file.state==="ready"&&(!Number.isInteger(file.size)||file.size<0||file.size>MAX_ENGINE_FILE||!/^[a-f0-9]{64}$/.test(file.sha256)))throw Error("Invalid file metadata in backup.");
  for(const link of manifest.tables.file_links)if(!files.has(link.file_id)||files.get(link.file_id).state!=="ready")throw Error("A file link has no verified file.");
  validateSnapshotReferences(manifest.tables);

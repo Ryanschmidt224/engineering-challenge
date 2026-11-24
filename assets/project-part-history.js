@@ -4,10 +4,10 @@ import {partHelp} from "./part-help.js";
 import {node} from "./workshop-ui.js";
 import {savedPartView,configurationView} from "./project-information.js";
 
-export function partHistoryPrompt(ctx,item,trigger,{archive=false,changes={},path=null,expectedRevision=ctx.client.state.project.revision,onOwnUpload=()=>{},onComplete=()=>{}}={}){
+export function partHistoryPrompt(ctx,item,trigger,{archive=false,changes={},path=null,scope=null,expectedRevision=ctx.client.state.project.revision,onOwnUpload=()=>{},onComplete=()=>{}}={}){
  let token=expectedRevision;const projectId=ctx.projectId;
  const archiveLabel=item.is_assembly?"Archive subassembly":"Archive part";
- const form=openHistoryEntryDialog({trigger,project:projectId,title:archive?archiveLabel:Object.keys(changes).length?"Save as revision":"Create a Revision",description:archive?partHelp.archive:Object.keys(changes).length?partHelp.saveAsRevision:partHelp.revisions,submitLabel:archive?archiveLabel:"Save revision",archive,ui:window.BSUI,photoEditor:window.BSPhotoEditor,
+ const form=openHistoryEntryDialog({trigger,project:projectId,title:archive?archiveLabel:Object.keys(changes).length?"Save as revision":"Create a Revision",description:scope?"Save a historical copy of this "+(scope.is_group?"instruction group and its entire nested subtree":"instruction and its records")+", including order and exact attachments. The saved copy keeps its revision number; this working scope advances once. The part revision stays unchanged.":archive?partHelp.archive:Object.keys(changes).length?partHelp.saveAsRevision:partHelp.revisions,submitLabel:archive?archiveLabel:"Save revision",archive,ui:window.BSUI,photoEditor:window.BSPhotoEditor,
   uploadPhoto:async file=>{const result=await ctx.client.upload(projectId,file,{expectedRevision:token});token=result.revision;onOwnUpload(token);return result.fileId;},
   onSave:async entryDetails=>{
    try{
@@ -21,6 +21,7 @@ export function partHistoryPrompt(ctx,item,trigger,{archive=false,changes={},pat
       const state=await ctx.client.load(projectId),current=state.items.find(row=>row.id===item.id),occurrence=state.occurrences.find(row=>ctx.occurrenceId?row.id===ctx.occurrenceId:row.item_id===item.id);
       if(!current||!occurrence||occurrence.removed_at!==null)throw Error("This part is archived. Cancel and inspect History → Archive.");
       review.replaceChildren(node("p","Your draft and explanation are retained. Review the current saved part before accepting its version."),configurationView({snapshot:{item:current,occurrence:{...occurrence,root:{name:state.project.name}}}},"Current saved part"));
+      if(scope){const saved=state.steps.find(row=>row.id===scope.id),parents=new Map(state.steps.map(row=>[row.id,row]));for(let row=saved;row;row=parents.get(row.parent_id))if(row.retired_at)throw Error("Restore this instruction and its parent groups before saving.");if(!saved)throw Error("Instruction no longer exists.");review.append(node("h3","Current saved instruction"),node("p",saved.title),node("p",saved.body,"project-instruction-text"));if(Object.keys(changes).length)review.append(node("h3","Your instruction draft"),node("p",changes.title),node("p",changes.body,"project-instruction-text"));}
       if(changes.details){
        const details=normalizeCustomItem({name:current.name,short_name:current.short_name,part_number:current.part_number,kind:current.kind,source:current.source,is_tool:!!current.is_tool,is_assembly:!!current.is_assembly,fields:current.fields}),build=normalizeOccurrence({quantity:occurrence.quantity,unit:occurrence.unit,build_status:occurrence.build_status,attention:!!occurrence.attention,attention_note:occurrence.attention_note,hidden:!!occurrence.hidden});
        for(const change of diffProjectItems(details,changes.details,build,changes.build||build))review.append(window.BSUI.fieldRow(change.label,formatRevisionValue(change.before)+" saved → "+formatRevisionValue(change.after)+" in your draft").root);

@@ -43,8 +43,8 @@ export const buildContext=(project,occurrence,item=null,tree=null)=>{
 export async function currentEngineeringFile(db,projectId,itemId){
  return (await rows(db,"SELECT f.* FROM engine_file_links l JOIN engine_files f ON f.project_id=l.project_id AND f.id=l.file_id WHERE l.project_id=? AND l.item_id=? AND l.active=1 AND f.state='ready'",projectId,itemId))[0]||null;
 }
-export async function readyFiles(db,projectId,ids=[]){
- if(!Array.isArray(ids)||ids.length>20||new Set(ids).size!==ids.length||ids.some(id=>!uuid(id)))throw Error("Choose at most 20 distinct uploaded files.");
+export async function readyFiles(db,projectId,ids=[],limit=20){
+ if(!Array.isArray(ids)||ids.length>limit||new Set(ids).size!==ids.length||ids.some(id=>!uuid(id)))throw Error("Choose at most "+limit+" distinct uploaded files.");
  const found=[];for(const id of ids){const file=await statement(db,"SELECT * FROM engine_files WHERE project_id=? AND id=? AND state='ready'",projectId,id).first();if(!file)throw Error("An attachment is missing or has not finished uploading.");found.push(file);}return found;
 }
 export function addFileLinks(w,projectId,owner,files,role="support"){

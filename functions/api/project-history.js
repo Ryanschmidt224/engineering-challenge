@@ -3,7 +3,7 @@ import {expandProjectSnapshot} from "./project-snapshot-values.js";
 import {rows,statement,decode,uuid,ProjectNotFound} from "./project-state.js";
 const effectiveType="COALESCE(r.type,e.type)";
 const searchText=`lower(COALESCE(r.title,e.title)||' '||CASE WHEN r.id IS NULL THEN e.summary ELSE '' END||' '||i.name||' '||i.part_number||' '||COALESCE(json_extract(e.payload,'$.entryDetails.whatChanged'),'')||' '||COALESCE(json_extract(e.payload,'$.entryDetails.whyChanged'),'')||' '||COALESCE(json_extract(e.payload,'$.entryDetails.notes'),'')||' '||COALESCE(json_extract(e.payload,'$.reason'),'')||' '||COALESCE(json_extract(e.payload,'$.label'),'')||' '||COALESCE((SELECT group_concat(value,' ') FROM json_each(r.fields)),'')||' '||COALESCE(json_extract(e.payload,'$.record_edit.before.title'),'')||' '||COALESCE((SELECT group_concat(value,' ') FROM json_each(e.payload,'$.record_edit.before.fields')),'')||' '||COALESCE((SELECT group_concat(value,' ') FROM json_each(e.payload,'$.record_edit.after.fields')),'')||' '||COALESCE((SELECT group_concat(COALESCE(json_extract(value,'$.label'),'')||' '||COALESCE(json_extract(value,'$.before.value'),'')||' '||COALESCE(json_extract(value,'$.after.value'),''),' ') FROM json_each(e.payload,'$.changes')),''))`;
-const filterTypes={revisions:["revision"],archives:["archived","removed"],activity:["record_edited","test","problem","note","change_note","file_replaced","restored","step_retired","step_restored"],tests:["test"],problems:["problem"],notes:["note"],changes:["record_edited","archived","revision","change_note","file_replaced","removed","restored","step_retired","step_restored"]};
+const filterTypes={revisions:["revision"],instruction_revisions:["instruction_revision"],archives:["archived","removed"],activity:["instruction_revision","record_edited","test","problem","note","change_note","file_replaced","restored","step_retired","step_restored"],tests:["test"],problems:["problem"],notes:["note"],changes:["instruction_revision","record_edited","archived","revision","change_note","file_replaced","removed","restored","step_retired","step_restored"]};
 function cursorValue(value){
  if(!value)return null;
  try{const parsed=JSON.parse(atob(value.replace(/-/g,"+").replace(/_/g,"/")));if(!uuid(parsed.id)||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(parsed.time))throw Error();return parsed;}catch{throw Error("Invalid History cursor. Start from the first page.");}
@@ -14,6 +14,8 @@ export async function historyPage(db,projectId,params){
  const type=params.get("type")||"all",scope=params.get("scope")||"",q=(params.get("q")||"").trim().toLowerCase(),limit=Number(params.get("limit")||20),after=cursorValue(params.get("cursor"));
  if(type!=="all"&&!Object.hasOwn(filterTypes,type)||scope&&!uuid(scope)||q.length>180||!Number.isInteger(limit)||limit<1||limit>50)throw Error("Invalid History filter.");
  const conditions=["e.project_id=?"],values=[projectId];
+ const instruction=params.get("instruction")||"";if(instruction&&!uuid(instruction))throw Error("Invalid instruction History scope.");
+ if(instruction){conditions.push("e.type='instruction_revision' AND json_extract(e.payload,'$.step_id')=?");values.push(instruction);}
  if(scope){conditions.push("(e.item_id=? OR json_extract(e.payload,'$.parent_item_id')=?)");values.push(scope,scope);}
  if(type!=="all"){conditions.push(effectiveType+" IN("+filterTypes[type].map(()=>"?").join(",")+")");values.push(...filterTypes[type]);}
  if(q){conditions.push("instr("+searchText+",?)>0");values.push(q);}

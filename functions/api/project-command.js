@@ -52,11 +52,11 @@ export async function commitProjectCommand(db,input,build){
    const keys=Object.keys(row).map(key);
    writes.push(statement(`INSERT INTO ${table}(${keys.join(",")}) SELECT ${keys.map(()=>"?").join(",")} WHERE ${gate}`,[...keys.map(name=>row[name]),...gateValues]));
   },
-  reorderSteps(itemId,ids){
-   if(!uuid(itemId)||!Array.isArray(ids)||ids.some(id=>!uuid(id))||new Set(ids).size!==ids.length)throw Error("Provide the complete ordered step IDs.");
+  reorderSteps(itemId,ids,parentId=null){
+   if(!uuid(itemId)||parentId!==null&&!uuid(parentId)||!Array.isArray(ids)||ids.some(id=>!uuid(id))||new Set(ids).size!==ids.length)throw Error("Provide the complete ordered step IDs.");
    const serialized=JSON.stringify(ids);
-   guards.push({sql:"(SELECT COUNT(*) FROM engine_steps WHERE project_id=? AND item_id=? AND retired_at IS NULL)=? AND (SELECT COUNT(*) FROM engine_steps WHERE project_id=? AND item_id=? AND retired_at IS NULL AND id IN(SELECT value FROM json_each(?)))=?",values:[projectId,itemId,ids.length,projectId,itemId,serialized,ids.length]});
-   writes.push(statement(`UPDATE engine_steps SET sort_order=(SELECT key FROM json_each(?) WHERE value=engine_steps.id) WHERE project_id=? AND item_id=? AND retired_at IS NULL AND ${gate}`,[serialized,projectId,itemId,...gateValues]));
+   guards.push({sql:"(SELECT COUNT(*) FROM engine_steps WHERE project_id=? AND item_id=? AND parent_id IS ? AND retired_at IS NULL)=? AND (SELECT COUNT(*) FROM engine_steps WHERE project_id=? AND item_id=? AND parent_id IS ? AND retired_at IS NULL AND id IN(SELECT value FROM json_each(?)))=?",values:[projectId,itemId,parentId,ids.length,projectId,itemId,parentId,serialized,ids.length]});
+   writes.push(statement(`UPDATE engine_steps SET sort_order=(SELECT key FROM json_each(?) WHERE value=engine_steps.id) WHERE project_id=? AND item_id=? AND parent_id IS ? AND retired_at IS NULL AND ${gate}`,[serialized,projectId,itemId,parentId,...gateValues]));
   },
   completeRestore(jobId){
    if(restoreJobId!==jobId||projectInserted)throw Error("A recovery must finalize its own pending project.");projectInserted=true;

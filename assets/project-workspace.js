@@ -2,7 +2,8 @@ import {initSiteHeader} from "./site-header.js";
 import {createProjectClient} from "./project-client.js";
 import {node,field,checkbox,listCard} from "./workshop-ui.js";
 import {initSplitPanes} from "./split-panes.js";
-import {detailsFor,buildFor,editItem,editRecord,editStep,projectSettings,confirmAction} from "./project-editors.js";
+import {detailsFor,buildFor,editItem,editRecord,projectSettings,confirmAction} from "./project-editors.js";
+import {workInstructions as instructionView} from "./project-instructions.js";
 import {information,configurationView,fileLink} from "./project-information.js";
 import {createHistoryView,latestHistory} from "./project-history-view.js";
 import {partRevisions,partHistoryPrompt} from "./project-part-history.js";
@@ -24,17 +25,8 @@ export function initProjectWorkspace(root=document){
  async function action(path,data={},message="Saved.",method="POST",after=null){
   try{await client.write(projectId,path,method,data);await refresh();notify(message,after);}catch(error){notify(error.message);}
  }
- function recordsFor(step,body){
-  const records=client.state.records.filter(record=>record.step_id===step.id);for(const record of records){const event=client.state.record_events.find(event=>event.record_id===record.id);if(event)body.append(button(record.title,()=>openHistory(itemId,event.id),{variant:"quiet"}));}
- }
  function workInstructions(current){
-  const state=client.state,steps=state.steps.filter(step=>step.item_id===current.id&&!step.retired_at).sort((a,b)=>a.sort_order-b.sort_order||a.id.localeCompare(b.id)),section=window.BSUI.section({title:"Work instructions",count:steps.length,countLabel:["step","steps"],role:"work-instructions"});
-  window.BSUI.sectionActions(section.body,{primary:button("Add step",()=>editStep(ctx()))});
-  for(const [index,step]of steps.entries()){
-   const block=window.BSUI.section({title:step.title,count:state.records.filter(row=>row.step_id===step.id).length,role:"step"}),move=async delta=>{const ids=steps.map(row=>row.id);[ids[index],ids[index+delta]]=[ids[index+delta],ids[index]];await action("/items/"+current.id+"/steps/reorder",{ids},"Step order saved.");};
-   block.body.append(node("p",step.body,"project-instruction-text"));window.BSUI.sectionActions(block.body,{primary:button("Add record",()=>editRecord(ctx(),{stepId:step.id})),secondary:[button("Edit step",()=>editStep(ctx(),step)),...(index?[button("Move up",()=>move(-1))]:[]),...(index<steps.length-1?[button("Move down",()=>move(1))]:[]),button("Retire step",()=>confirmAction(ctx(),"Retire step",'Move "'+step.title+'" to History → Archive? Its records stay available.',"Retire step",token=>client.write(projectId,"/steps/"+step.id+"/retire","POST",{},token)),{variant:"quiet"})]});recordsFor(step,block.body);section.body.append(block.root);
-  }
-  return section.root;
+  return instructionView(ctx(),current);
  }
  function engineeringFile(current){
   const state=client.state,link=state.file_links.find(link=>link.item_id===current.id&&link.active),file=state.files.find(file=>file.id===link?.file_id),section=window.BSUI.section({title:"Engineering file",count:file?1:0,countLabel:["file","files"],role:"engineering-file"}),input=node("input");input.type="file";input.setAttribute("aria-label","Engineering file");
