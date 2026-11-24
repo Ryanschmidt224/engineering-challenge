@@ -1,3 +1,4 @@
+import {componentPhotoIndex} from "./component-photos.js";
 import {historicalPrice,quantityData} from "./component-values.js";
 import {revisionCommand,revisionReplay,prepareRevision} from "./part-revision-save.js";
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
@@ -215,14 +216,14 @@ export async function handleComponents(request,env){
  const url=new URL(request.url),project=url.searchParams.get("project");
  if(!await projectAllowed(env,project,request))return json({error:"Invalid project"},400);
  if(request.method==="GET"){
-  const parts=await read(env,project),lookup=workshopItemLookup(request,env);
+  const parts=await read(env,project),lookup=workshopItemLookup(request,env),photoPresent=await componentPhotoIndex(env.PHOTOS,project);
   const components=await Promise.all(parts.map(async part=>{
-   if(part.partType!=="custom"&&part.itemType!=="document"&&workshopLinkId(part)){
-    const source=await lookup(part).catch(()=>null);
-    if(source)return presentPart({...part,workshopSourcing:workshopSourcing(source.item),
-     workshopDocumentation:workshopDocumentation(source.item),projectDetails:{...(part.projectDetails||{}),workshopTreeDescription:String(source.item.featureTreeDescription||source.item.subtitle||source.item.description||source.item.name||"").trim().slice(0,20)}});
+   const source=workshopLinkId(part)?await lookup(part).catch(()=>null):null,hasPhoto=await photoPresent(part,source);
+   if(part.partType!=="custom"&&part.itemType!=="document"&&source){
+    if(source)return {...presentPart({...part,workshopSourcing:workshopSourcing(source.item),
+     workshopDocumentation:workshopDocumentation(source.item),projectDetails:{...(part.projectDetails||{}),workshopTreeDescription:String(source.item.featureTreeDescription||source.item.subtitle||source.item.description||source.item.name||"").trim().slice(0,20)}}),hasPhoto};
    }
-   return presentPart(part);
+   return {...presentPart(part),hasPhoto};
   }));
   return json({components:[...components,...await projectFamilyParts(env,project)]});
  }

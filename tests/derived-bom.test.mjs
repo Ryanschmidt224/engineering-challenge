@@ -1,3 +1,4 @@
+import {componentPhotoIndex} from "../functions/api/component-photos.js";
 import {historicalPrice,quantityData} from "../functions/api/component-values.js";
 import {retainHistory,historyKey} from "../functions/api/workspace-history.js";
 // Run with npm test. Cloudflare R2 and admin auth are mocked in memory.
@@ -13,7 +14,7 @@ import {projectFamilyParts,getFamilyProjectPart,changeFamilyProjectPart} from ".
 function handler(path,name){
  const source=readFileSync(path,"utf8").replace(/^import .*;\s*$/gm,"").replace(/^export /gm,"");
  return runInNewContext(source+"\n"+name+";",{
-  historicalPrice,quantityData,Response,Request,URL,crypto:{randomUUID},retainHistory,historyKey,projectFamilyParts,getFamilyProjectPart,changeFamilyProjectPart,isAdmin:async()=>true,
+  componentPhotoIndex,historicalPrice,quantityData,Response,Request,URL,crypto:{randomUUID},retainHistory,historyKey,projectFamilyParts,getFamilyProjectPart,changeFamilyProjectPart,isAdmin:async()=>true,
   projectAllowed:async()=>true,canEditProject:async()=>true,
   linkedWorkshopItem,partPhotoKey,workshopItemLookup,workshopLinkId,workshopDocumentation,workshopSourcing,resolveFunctionalPart,encodeFunctionalPart,changeImplementation,console,Date,JSON,Number,String,Array,Map,Set,RegExp
  });
@@ -21,6 +22,7 @@ function handler(path,name){
 function storage(){
  const map=new Map();
  return {map,env:{PHOTOS:{
+  list:async({prefix=""})=>({objects:[...map.keys()].filter(key=>key.startsWith(prefix)).map(key=>({key})),truncated:false}),
   get:async key=>map.has(key)?{text:async()=>map.get(key)}:null,
   put:async(key,value)=>{map.set(key,value)},
   delete:async key=>{map.delete(key)}
