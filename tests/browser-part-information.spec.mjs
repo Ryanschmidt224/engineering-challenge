@@ -37,9 +37,15 @@ for(const width of [1440,390])test("matching information tiles, purpose editing 
  await editor.getByRole("button",{name:"Save",exact:true}).click();await expect(editor).toContainText("Temporary storage failure");await expect(editor.getByLabel("Purpose (optional)",{exact:true})).toHaveValue("Revised project purpose");
  await page.unroute("**/api/components?**");await editor.getByRole("button",{name:"Save",exact:true}).click();await expect(editor).not.toBeVisible();await expect(project).toContainText("Revised project purpose");
  if(await section.getAttribute("open")===null)await section.locator(":scope > summary").click();
+ await expect(project.locator('[data-section="part-alternatives"]')).toHaveClass("ui-field-disclosure");
+ await expect(project.locator('[data-section="part-alternatives"]')).not.toHaveClass(/ui-section/);
  await project.locator('[data-section="part-alternatives"] > summary').click();
- await project.getByRole("button",{name:"Add alternative part",exact:true}).click();await project.getByRole("textbox",{name:"Part name",exact:true}).fill("Replacement switch");await project.getByRole("textbox",{name:"Manufacturer part number",exact:true}).fill("EX-2");await project.getByRole("button",{name:"Add and use part",exact:true}).click();
+ await project.getByRole("button",{name:"Add alternative",exact:true}).click();await project.getByRole("textbox",{name:"Part name",exact:true}).fill("Replacement switch");await project.getByRole("textbox",{name:"Manufacturer part number",exact:true}).fill("EX-2");await project.getByRole("button",{name:"Add and select alternative",exact:true}).click();
  await expect(reference).toContainText("EX-2");await expect(project).toContainText("Revised project purpose");
+ await expect(project.locator('[data-section="part-alternatives"] > summary')).toHaveText("2 parts");
+ await project.locator('[data-section="part-alternatives"] > summary').click();
+ await expect(project.getByRole("combobox",{name:"Select Alternative",exact:true})).toBeVisible();
+ await expect(project.getByRole("combobox",{name:"Use part",exact:true})).toHaveCount(0);
  const stored=(await (await page.request.get("/api/components?project=launcher")).json()).components.find(part=>part.id===component.id);
  expect(stored.projectDetails.notes).toBe("Fit inside the housing");expect(stored.implementations).toHaveLength(2);expect(stored.description).toBe("Revised project purpose");
  await page.screenshot({path:testInfo.outputPath("part-information.png"),fullPage:true});

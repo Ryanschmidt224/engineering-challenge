@@ -125,7 +125,7 @@ for(const width of [1440,390])for(const project of projects)for(const kind of ["
       expect(g.error,g.role).toBeUndefined();expect(g.first,g.role).toBe(true);expect(g.label,g.role).toBe("+ Add entry");
       expect(Math.abs(g.x-g.paddingX),g.role+" horizontal inset").toBeLessThanOrEqual(1);
       expect(Math.abs(g.y-g.paddingY),g.role+" vertical inset").toBeLessThanOrEqual(1);
-      expect(g.height,g.role+" control height").toBe(44);
+      expect(g.height,g.role+" control height").toBe(32);
      }
     }
     const issues=[];
