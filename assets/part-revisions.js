@@ -1,4 +1,3 @@
-import {dataTable} from "./data-table.js";
 import {partHelp} from "./part-help.js";
 import {openHistoryEntryDialog,renderHistoryEntryDetails} from "./history-entry-dialog.js";
 
@@ -8,9 +7,9 @@ const revisionUrl=(project,id,extra={})=>"/api/investigations?"+new URLSearchPar
 // One section and one in-flight command per part page. A failed/lost response
 // retains its operation ID so Retry cannot publish a second historical copy.
 export function initPartRevisions({host,project,ui,dialogs,canEdit,beforeCreate,onSaved}){
- const section=ui.section({title:"Revisions",role:"part-revisions",count:0,tooltip:partHelp.revisions});
+ const section=ui.section({title:"Revisions",role:"part-revisions",count:0,countLabel:["saved","saved"]});
  section.root.hidden=true;
- const explanation=make("p",partHelp.revisions);
+ const working=make("span");working.className="ui-section__meta";section.aside.append(working);
  const list=make("div"),message=make("p");message.setAttribute("role","status");message.setAttribute("aria-live","polite");
  const openRevisions=new Set();let current=null,lastPartId=null;
  const create=ui.button("Create a Revision",()=>{
@@ -24,19 +23,20 @@ export function initPartRevisions({host,project,ui,dialogs,canEdit,beforeCreate,
    if(current?.part.id===part.id)message.textContent="Revision created. The working part has advanced to revision "+(result.component.revisionLevel||1)+". Use Edit part details when you are ready to make changes.";
   }});
  });
- ui.sectionActions(section.body,{primary:create});section.body.append(explanation,list,message);
+ create.title=partHelp.revisions;
+ ui.sectionActions(section.body,{primary:create});section.body.append(list,message);
  const controller={render(state){
   if(state.part&&lastPartId!==state.part.id){message.textContent="";section.root.open=false;lastPartId=state.part.id;}
   current=state.part?state:null;section.root.hidden=!current;
   if(!current)return;
   create.hidden=!canEdit();
   section.setCount(state.records.length);list.replaceChildren();
-  const table=dataTable("Part revision table",["Revision","Date","What changed"]);
-  table.append([String(state.part.revisionLevel||1),"Current","Working part"]);
-  list.append(table.root);
+  working.textContent="Working revision "+(state.part.revisionLevel||1);
   for(const record of [...state.records].reverse()){
    const item=ui.section({title:record.partSnapshot.part.revisionLevel?"Revision "+record.partSnapshot.part.revisionLevel:record.title||"Earlier saved copy",role:"part-revision",open:openRevisions.has(record.id)});
-   const date=make("time",record.date||record.createdAt?.slice(0,10)||record.archivedAt?.slice(0,10)||"");date.className="ui-table-date";date.dateTime=date.textContent;item.count.textContent="";
+   const date=make("time",record.date||record.createdAt?.slice(0,10)||record.archivedAt?.slice(0,10)||"");date.className="ui-revision-date";date.dateTime=date.textContent;
+   const changed=make("span",record.partSnapshot.entryDetails?.whatChanged||record.archiveNote||"");changed.className="ui-revision-change";
+   item.header.classList.add("ui-revision-header");item.header.append(date,changed);
    item.root.addEventListener("toggle",()=>{if(item.root.open)openRevisions.add(record.id);else openRevisions.delete(record.id);});
    renderHistoryEntryDetails(record.partSnapshot.entryDetails,item.body,{ui,imageUrlFor:id=>{const index=record.partSnapshot.assets?.findIndex(asset=>asset.original===id);return index>=0?revisionUrl(project,record.id,{asset:String(index),view:"1"}):"/api/recipe-files?id="+encodeURIComponent(id);}});
    renderRevisionSnapshot(record.partSnapshot,item.body,{project,revisionId:record.id,ui});
@@ -50,9 +50,6 @@ export function initPartRevisions({host,project,ui,dialogs,canEdit,beforeCreate,
     },{variant:"danger"});
     item.body.append(remove);
    }
-   const view=ui.button(record.partSnapshot.part.revisionLevel?"View "+record.partSnapshot.part.revisionLevel:"View copy",()=>{item.root.open=true;item.header.scrollIntoView({block:"center"});item.header.focus({preventScroll:true});},{small:true});
-   view.setAttribute("aria-label",record.partSnapshot.part.revisionLevel?"View revision "+record.partSnapshot.part.revisionLevel:"View earlier copy");
-   table.append([view,date,record.partSnapshot.entryDetails?.whatChanged||record.archiveNote||""]);
    list.append(item.root);
   }
   // Other part sections can mount later; keep revisions at the page bottom.

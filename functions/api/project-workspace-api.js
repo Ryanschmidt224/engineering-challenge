@@ -19,14 +19,14 @@ export async function handleProjectWorkspace(request,env,owner){
  if(!url.pathname.startsWith(base)||url.pathname!==base&&url.pathname[base.length]!=="/")return engineJSON({error:"Not found"},404);
  let body;
  try{
-  const importing=method==="POST"&&path.length===2&&path[1]==="import";
+  const importing=method==="POST"&&path.length===2&&["import","import-copy"].includes(path[1]);
   if(!["GET","POST","PATCH","PUT"].includes(method))return engineJSON({error:"Method not allowed"},405);
   if(!importing&&!["GET","PUT"].includes(method))body=await commandBody(request);
   if(path.length&&!uuid(path[0]))throw new ProjectNotFound();
   await initializeProjectEngine(db);
   if(!path.length){if(method!=="GET")return engineJSON({error:"Method not allowed"},405);return engineJSON({projects:await rows(db,"SELECT * FROM engine_projects WHERE owner_id=? ORDER BY name,id",owner.id)});}
   const projectId=path[0];
-  if(importing)return engineJSON(await restoreProject(request,env,owner,projectId));
+  if(importing)return engineJSON(await restoreProject(request,env,owner,projectId,{asCopy:path[1]==="import-copy"}));
   let input;
   if(body){
    const {operationId,expectedRevision,...data}=body;

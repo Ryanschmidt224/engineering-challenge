@@ -40,8 +40,7 @@
       }
     ],
     "vars": {
-      "NEW_PROJECT_ENGINE": "1",
-      "AI_LOOKUP_ENABLED": "1"
+      "NEW_PROJECT_ENGINE": "1"
     }
   },
   "d1_databases": [

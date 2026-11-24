@@ -468,7 +468,8 @@
    target.append(disclosure);
 
    const renderCard=(record,destination,{historical=false,inherited=false}={})=>{
-    const card=make("details","investigation-card bs-content-card");
+    const frame=window.BSUI.section({title:record.title?.trim()||""});
+    const card=frame.root;card.classList.add("investigation-card","bs-content-card");
     if(categoryOf(record)==="photos")card.classList.add("investigation-photos-entry");
     if(record.parentRecordId)card.classList.add("investigation-nested-card");
     card.dataset.recordId=record.id;
@@ -476,18 +477,9 @@
     const openKey=context.ownerType+":"+context.ownerId+":"+(context.stepId||"")+":"+(historical?"history:":"")+record.id;
     card.open=openCards.has(openKey);
     card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
-    const title=make("summary","investigation-summary bs-content-card-heading");
-    const heading=make("span","investigation-title-actions");
-    const displayTitle=record.title?.trim();
-    if(displayTitle)heading.append(make("strong","",displayTitle));
-    title.append(heading);
-    // An untitled Notes entry is identified by its type, without repeating
-    // a placeholder heading such as "Untitled".
+    const title=frame.header;title.classList.add("ui-record-header");
     title.append(make("span","small muted",categories[categoryOf(record)]?.label||"Entry"));
-    // Record dates are secondary metadata: show them at the end of expanded
-    // content instead of crowding the common header/chevron layout.
-    card.append(title);
-    const body=make("div","investigation-body bs-content-card-body");
+    const body=frame.body;body.classList.add("investigation-body","bs-content-card-body");
     const children=own.filter(child=>child.parentRecordId===record.id);
     const isChild=Boolean(record.parentRecordId);
     if(inherited){
@@ -506,8 +498,8 @@
     let editing=false;
     const edit=btn("Edit",event=>{
      event.preventDefault();event.stopPropagation();card.open=true;editing=true;draw();
-    },"btn investigation-rename");
-    const editActions=make("span","investigation-title-controls");
+    },"ui-button ui-button--small ui-record-edit");
+    const editActions=historical?make("div","ui-section__actions"):frame.aside;
     if(allowEntryEditing&&!inherited){
      if(historical){
       const removeHistory=btn("Delete archived entry",async event=>{
@@ -518,14 +510,15 @@
        removeHistory.disabled=true;
        try{await save({action:"deleteRecord",id:record.id})}
        catch(error){removeHistory.disabled=false;report(error.message,target)}
-      },"btn investigation-history-delete");
+      },"ui-button ui-button--small ui-button--danger ui-record-delete");
       removeHistory.title="Delete this archived entry";
       editActions.append(removeHistory);
      }else editActions.append(edit);
-     title.append(editActions);
+     if(!historical)title.append(editActions);
     }
     const draw=()=>{
      body.replaceChildren();
+     if(historical&&editActions.children.length)body.append(editActions);
      if(historical&&record.archiveNote?.trim())
       body.append(make("p","investigation-archive-reason","Reason: "+record.archiveNote));
      edit.hidden=editing||historical;

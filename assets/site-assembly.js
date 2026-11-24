@@ -8,6 +8,7 @@ const assemblySelections={};
 // Tree snapshots let each assembly BOM roll up all descendant parts.
 const assemblyTreeSnapshots={};
 async function setupAssemblyTrees(){
+ const {createPartPictureLoader}=await import("./part-picture.js");
  const {renderPartInformation}=await import("./part-information.js");
  const {initProjectFiles}=await import("./project-files.js");
  const {initPartSpecifications,specificationRow}=await import("./part-specifications.js");
@@ -16,6 +17,7 @@ async function setupAssemblyTrees(){
  const {attachPartEditorFiles}=await import("./part-editor-attachments.js");
  const {revisionSaveButton,saveRevisionChanges,revisionContext}=await import("./part-revision-editor.js");
  const {partHelp}=await import("./part-help.js");
+ const {interfaceHelp}=await import("./interface-help.js");
  const {initTreeArchive}=await import("./tree-archive.js");
  document.querySelectorAll("[data-assembly-tree]:not([data-tree-ready])").forEach(root=>{
   root.dataset.treeReady="true";
@@ -66,7 +68,7 @@ async function setupAssemblyTrees(){
     partQuantities.set(part.id,part);
     partTreeLabels.set(part.id,{mpn:part.model||"",description:part.description||"",
      implementationName:part.implementationName||"",implementationResolved:part.implementationResolved,
-     details:part.projectDetails||{},defaultPicture:defaultPartPicture(part)});
+     details:part.projectDetails||{},hasPhoto:part.hasPhoto,photoUrl:part.photoUrl,defaultPicture:defaultPartPicture(part)});
     for(const linked of nodes.filter(n=>isPartNode(n)&&n.partId===part.id)){
      if(linked.name!==part.name){linked.name=part.name;changed=true}
      if(part.familyUse){const parent=nodes.some(n=>n.id===part.assemblyId&&!isPartNode(n))?part.assemblyId:null;if(linked.parentId!==parent){linked.parentId=parent;changed=true}}
@@ -836,9 +838,9 @@ async function setupAssemblyTrees(){
    });
    const resourcesPanel=panel.querySelector(".workspace-resources,.part-linked-resources");
    resourcesPanel.classList.add("workspace-resources");
-   const toolsSection=window.BSUI.section({title:"Helpful tools",role:"helpful-tools",tooltip:"Open calculators, tools, and Workshop references linked to this work."});
+   const toolsSection=window.BSUI.section({title:"Helpful tools",role:"helpful-tools",tooltip:interfaceHelp.helpfulTools});
    const tools=toolsSection.root,toolsCount=toolsSection.count;
-   toolsSection.aside.append(window.BSDialogs.tooltip("About Helpful tools","Link calculators, tools, and Workshop references for this work."));
+   toolsSection.aside.append(window.BSDialogs.tooltip("About Helpful tools",interfaceHelp.helpfulTools));
    const toolsControls=window.BSUI.sectionActions(toolsSection.body);
    // Legacy content styles are scoped by this class; it marks the section body only.
    toolsSection.body.classList.add("workspace-resource-disclosure");
@@ -1209,7 +1211,6 @@ async function setupAssemblyTrees(){
   const partPhotoPreview=partPhotoDialog.querySelector(".part-photo-preview");
   const partPhotoPlaceholder=partPhotoDialog.querySelector(".part-photo-placeholder");
   const partPhotoStatus=partPhotoDialog.querySelector(".part-photo-status");
-  let partPictureLoad=0;
   function showPartPictureFallback(){
    const fallback=defaultPartPicture(currentPartInfo);
    if(fallback){
@@ -1218,27 +1219,7 @@ async function setupAssemblyTrees(){
     pictureCover.replaceChildren(image);
    }else pictureCover.replaceChildren(Object.assign(document.createElement("span"),{textContent:"No picture yet"}));
   }
-  function showPartPicture(partId,bust=false){
-   if(currentPartInfo?.familyUse){partPhotoActions.setEnabled(false);if(currentPartInfo.photoUrl){const image=document.createElement("img");image.src=currentPartInfo.photoUrl;image.alt=currentPartInfo.name;pictureCover.replaceChildren(image);}else showPartPictureFallback();return;}
-   if(!partId)return;
-   const load=++partPictureLoad;
-   const src=window.BSPhotoMarkup.displayUrl("part",partId,project)+(bust?"&v="+Date.now():"");
-   const image=document.createElement("img");image.src=src;image.alt=currentPartInfo?.name||"Part image";
-   partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");partPhotoPlaceholder.hidden=false;partPhotoMarkup.disabled=true;partPhotoActions.setPhotoPresent(false);
-   image.onload=()=>{
-    if(load!==partPictureLoad||currentPartInfo?.id!==partId)return;
-    const main=document.createElement("img");main.src=src;main.alt=image.alt;
-    pictureCover.replaceChildren(main);
-    partPhotoPreview.src=src;partPhotoPreview.hidden=false;partPhotoPlaceholder.hidden=true;
-    partPhotoDelete.disabled=false;partPhotoMarkup.disabled=false;partPhotoActions.setPhotoPresent(true);
-   };
-   image.onerror=()=>{
-    if(load!==partPictureLoad||currentPartInfo?.id!==partId)return;
-    showPartPictureFallback();
-    partPhotoPreview.hidden=true;partPhotoPreview.removeAttribute("src");
-    partPhotoPlaceholder.hidden=false;partPhotoDelete.disabled=true;partPhotoMarkup.disabled=true;partPhotoActions.setPhotoPresent(false);
-   };
-  }
+  const showPartPicture=createPartPictureLoader({project,current:()=>currentPartInfo,cover:pictureCover,preview:partPhotoPreview,placeholder:partPhotoPlaceholder,markup:partPhotoMarkup,remove:partPhotoDelete,actions:partPhotoActions,fallback:showPartPictureFallback});
   partPhotoAdd.onclick=()=>partPhotoFile.click();
   partPhotoMarkup.onclick=()=>{if(currentPartInfo&&canEdit())window.BSPhotoMarkup.open({kind:"part",id:currentPartInfo.id,project,onSave:()=>showPartPicture(currentPartInfo.id,true)})};
   window.BSPhotoMarkup.pasteOn(partPhotoDialog,file=>uploadPartPicture(file));
@@ -2662,7 +2643,7 @@ async function setupAssemblyTrees(){
    const sorted=[...children];
    for(const n of sorted){
     const tile=document.createElement("article");tile.className="assembly-tile "+(isPartNode(n)?"assembly-bom-part-tile":"assembly-bom-subassembly-tile");
-    const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);if(isPartNode(n)){const img=document.createElement("img");img.src=partPhotoUrl(n.partId);img.alt="";img.onerror=()=>{img.onerror=null;img.src=partTreeLabels.get(n.partId)?.defaultPicture||missingPicture};cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}
+    const cover=document.createElement("div");cover.className="assembly-tile-cover";cover.textContent="▧";const overlay=document.createElement("span");overlay.className="assembly-tile-overlay";overlay.textContent=n.name;cover.append(overlay);tile.append(cover);if(isPartNode(n)){const meta=partTreeLabels.get(n.partId),src=meta?.photoUrl||(meta?.hasPhoto===false?meta.defaultPicture:partPhotoUrl(n.partId));if(src){const img=document.createElement("img");img.src=src;img.alt="";img.onerror=()=>{img.onerror=null;img.src=partTreeLabels.get(n.partId)?.defaultPicture||missingPicture};cover.replaceChildren(img,overlay)}}
     else fetch("/api/photos?project="+project+"&assembly="+encodeURIComponent(n.id)).then(r=>r.json()).then(data=>{if(!tile.isConnected||!data.photos?.length)return;const img=document.createElement("img");img.src=window.BSPhotoMarkup.displayUrl("gallery",data.photos[0].id);img.alt="";cover.replaceChildren(img,overlay,...[...cover.children].filter(child=>child!==overlay&&child!==img))}).catch(()=>{});
     const openAssembly=()=>{if(isPartNode(n)){openTreePart(n);return}selected=n.id;expanded.add(n.parentId);history.pushState(null,"",workspaceHash(n.id));render();notify();window.scrollTo(0,0)};cover.setAttribute("role","button");cover.tabIndex=0;cover.setAttribute("aria-label","Open "+n.name);cover.onclick=openAssembly;cover.title="Open "+n.name+" workspace";cover.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAssembly()}};
     const part=partQuantities.get(n.partId);

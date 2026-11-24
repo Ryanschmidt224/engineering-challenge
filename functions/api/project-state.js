@@ -25,6 +25,8 @@ export const itemDetails=item=>normalizeCustomItem({name:item.name,short_name:it
 export const buildDetails=occurrence=>normalizeOccurrence({quantity:occurrence.quantity,unit:occurrence.unit,build_status:occurrence.build_status,attention:!!occurrence.attention,attention_note:occurrence.attention_note,hidden:!!occurrence.hidden});
 export const storedItem=details=>({...details,is_tool:details.is_tool?1:0,fields:JSON.stringify(details.fields)});
 export const storedBuild=build=>({...build,attention:build.attention?1:0,hidden:build.hidden?1:0});
+// Capture operational state with the evidence/event, never in design identity.
+export const buildContext=(project,occurrence)=>({format:1,project:{id:project.id,name:project.name},occurrence:{id:occurrence.id,...buildDetails(occurrence)}});
 export async function currentEngineeringFile(db,projectId,itemId){
  return (await rows(db,"SELECT f.* FROM engine_file_links l JOIN engine_files f ON f.project_id=l.project_id AND f.id=l.file_id WHERE l.project_id=? AND l.item_id=? AND l.active=1 AND f.state='ready'",projectId,itemId))[0]||null;
 }
@@ -35,9 +37,11 @@ export async function readyFiles(db,projectId,ids=[]){
 export function addFileLinks(w,projectId,owner,files,role="support"){
  for(const file of files)w.insert("engine_file_links",{id:crypto.randomUUID(),project_id:projectId,file_id:file.id,...owner,role,active:1});
 }
-export async function configurationPlan(db,project,item,occurrence,file){
+export async function configurationPlan(db,project,item,_occurrence,file){
  const projectId=project.id;
- const snapshot={format:1,item:{id:item.id,...itemDetails(item),revision_level:item.revision_level||1},occurrence:{id:occurrence.id,...buildDetails(occurrence),root:{id:project.id,name:project.name}},file:file?{id:file.id,name:file.name,content_type:file.content_type,size:file.size,sha256:file.sha256}:null};
+ // Format 1 rows remain immutable/readable. Format 2 starts a design-only
+ // identity boundary; the occurrence argument is retained for existing callers.
+ const snapshot={format:2,item:{id:item.id,...itemDetails(item)},file:file?{id:file.id,name:file.name,content_type:file.content_type,size:file.size,sha256:file.sha256}:null};
  const fingerprint=await sha256(canonicalJSON(snapshot));
  const existing=await statement(db,"SELECT id FROM engine_configurations WHERE project_id=? AND item_id=? AND fingerprint=?",projectId,item.id,fingerprint).first();
  const id=existing?.id||crypto.randomUUID();
