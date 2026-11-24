@@ -328,6 +328,8 @@ Gate: mixed assembly remove/restore is one guarded command; other placements sta
 
 ### Batch 4 Complete records and History interaction
 
+Deliver this batch as two sequential PRs, each reviewed and merged before the next starts. Batch 4a owns instruction/record editors, ordering, named attachments, instruction revisions and header/subtree revisions. Batch 4b owns History scope/type/search, pagination, comparison and selection/scroll preservation. Start 4a only after #53 → #65 → #66 integrate with production still gated. This split changes delivery order, not the retained requirements below, and must not become another long stacked chain.
+
 Complete the shared step/record editors, existing nested-entry content and ordering, attachment names, explicit event dates, problem resolution and stable links. Finish scope/type/search pagination, readable prior-state comparison, and preservation of selection/scroll on navigation. Keep scratch notes distinct from engineering records.
 
 Introduce optional Make knowledge tile and Add to Project Milestones only through their existing deliberate draft flows. Do not make this batch depend on new speculative Knowledge features. Retired instructions appear in Removed items with their original context.
