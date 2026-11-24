@@ -8,6 +8,7 @@ import {backupMetadata,readBackupManifest} from "./project-backup-metadata.js";
 import {backupColumns as columns,backupOutline} from "./project-backup-schema.js";
 import {restoreStaging,stagedRows,pendingRestore,materializeRestore} from "./project-restore-staging.js";
 import {smallBackup,streamedExport} from "./project-backup-stream.js";
+import {tryCompletedRestoreCleanup} from "./project-orphan-cleanup.js";
 // Explicit export schema: receipts and concurrency tokens are operational, not
 // engineering history. Restore issues a new token and a new import receipt.
 export async function projectManifest(db,project){
@@ -66,24 +67,25 @@ export function validateManifest(manifest,projectId){
 }
 export async function restoreProject(request,env,owner,projectId,{asCopy=false}={}){
  const operationId=request.headers.get("x-operation-id");if(!uuid(projectId)||!uuid(operationId)||request.headers.get("x-project-revision")!=="new")throw Error("Restore requires a new-project revision and operation ID.");
- const iterator=archiveLines(request);try{
+ const iterator=archiveLines(request),cleanup={projectId,actorId:owner.id,operationId};let retryInput=null;try{
  const first=await iterator.next(),header=first.value?.manifest;if(!header?.project||header.format!=="building-schmidt-project"||![1,2].includes(header.version))throw Error("Backup is missing a supported manifest.");
  if(asCopy&&header.project.id===projectId){throw new CommandConflict("A recovered copy requires a different project identity. The existing project was not changed.");}
  const copyName=asCopy?text(new URL(request.url).searchParams.get("name"),180,"New project name",true):null;
- const db=env.WORKSHOP_DB,storageKey=file=>"project-engine/restored/"+projectId+"/"+operationId+"/"+file.id;
+ const db=env.WORKSHOP_DB,storageKey=file=>"project-engine/restored/"+projectId+"/"+operationId+"/"+file.id,requestKey={header,asCopy,copyName};
  let staging=null,digest=await sha256(canonicalJSON(header)),outline=backupOutline(header.project);
  const stageRow=async(table,row)=>{
   outline.collect(table,row);if(table==="snapshot_values")await verifySnapshotValues([row]);digest=await sha256(digest+await sha256(canonicalJSON({table,row})));
-  if(!staging)staging=await restoreStaging(db,projectId,owner.id,operationId,storageKey);
+  if(!staging)staging=await restoreStaging(db,projectId,owner.id,operationId,storageKey,requestKey);
   if(table!=="occurrences")await staging.add(table,row);
  };
  const received=await readBackupManifest(iterator,first.value,Object.keys(columns),header.version===2?stageRow:null);
  const manifest=validateManifest(header.version===2?outline.manifest:received,asCopy?header.project.id:projectId);
  const input={projectId,actorId:owner.id,operationId,expectedRevision:null,payload:{action:asCopy?"restore-project-copy":"restore-project",...(header.version===2?{metadataDigest:digest}: {manifest}),...(asCopy?{copyName}:{})}};
- const replay=await replayProjectCommand(env.WORKSHOP_DB,input);if(replay)return replay.result;
+ retryInput=input;
+ const replay=await replayProjectCommand(env.WORKSHOP_DB,input);if(replay){await tryCompletedRestoreCleanup(db,cleanup);return replay.result;}
  if(header.version===1){await verifySnapshotValues(manifest.tables.snapshot_values);for(const [table,rows]of Object.entries(manifest.tables))for(const row of rows)await stageRow(table,row);}
  const requestFingerprint=await sha256(canonicalJSON(input.payload));await pendingRestore(db,projectId,owner.id,operationId,requestFingerprint);
- if(!staging)staging=await restoreStaging(db,projectId,owner.id,operationId,storageKey);
+ if(!staging)staging=await restoreStaging(db,projectId,owner.id,operationId,storageKey,requestKey);
  const restoredTree=projectTree(manifest.tables.items,manifest.tables.occurrences);
  for(const row of [...manifest.tables.occurrences].sort((a,b)=>restoredTree.path(a).length-restoredTree.path(b).length))await staging.add("occurrences",row,restoredTree.path(row).length);
  await staging.flush();
@@ -115,10 +117,16 @@ export async function restoreProject(request,env,owner,projectId,{asCopy=false}=
  const p=manifest.project,materialized=await materializeRestore(db,staging,projectId,owner.id,operationId,fingerprint,{name:asCopy?copyName:p.name,prefix:p.prefix,digits:p.digits,created_at:asCopy?new Date().toISOString():p.created_at});input.restoreJobId=materialized.id;
  // Every file and materialized row must match before the publication transaction.
  // Interrupted loading leaves a hidden copy that the exact operation can resume.
- return await commitProjectCommand(env.WORKSHOP_DB,input,w=>{
+ const result=await commitProjectCommand(env.WORKSHOP_DB,input,w=>{
   w.require("EXISTS(SELECT 1 FROM engine_restore_jobs WHERE id=? AND project_id=? AND actor_id=? AND fingerprint=? AND state='ready' AND row_count=?)",materialized.id,projectId,owner.id,fingerprint,staging.rowCount);
   w.require("(SELECT COUNT(*) FROM engine_restore_rows WHERE job_id=?)=?",materialized.id,staging.rowCount);w.completeRestore(materialized.id);
   return {projectId,restored:true,...(asCopy?{asCopy:true,sourceProjectId:manifest.project.id}:{}),counts:staging.counts,verifiedFiles:complete.size,recovery:{stagingBatches:staging.batches,materializationBatches:materialized.batches,publicationStatements:3}};
  });
+ await tryCompletedRestoreCleanup(db,cleanup);return result;
+ }catch(error){
+  // Another exact request may publish and clean staging after our initial replay
+  // check. Its receipt wins over a resulting missing-row/conflict error.
+  if(retryInput){const replay=await replayProjectCommand(env.WORKSHOP_DB,retryInput);if(replay){await tryCompletedRestoreCleanup(env.WORKSHOP_DB,cleanup);return replay.result;}}
+  throw error;
  }finally{await iterator.return();}
 }

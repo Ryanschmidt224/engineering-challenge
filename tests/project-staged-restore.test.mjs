@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {fixture,upload} from "./helpers/project-workspace.mjs";
 import {handleProjectWorkspace} from "../functions/api/project-workspace-api.js";
 import {commitProjectCommand,CommandConflict} from "../functions/api/project-command.js";
+import {cleanupCompletedRestore} from "../functions/api/project-orphan-cleanup.js";
 const origin="https://preview.example.test",base=origin+"/api/project-engine/projects/",id=()=>crypto.randomUUID();
 const request=(backup,project,operation,name="Recovered large project")=>new Request(base+project+"/import-copy?"+new URLSearchParams({name}),{method:"POST",headers:{origin,"x-operation-id":operation,"x-project-revision":"new"},body:backup});
 const backupOf=async f=>{const response=await handleProjectWorkspace(new Request(base+f.projectId+"/export"),f.env,f.owner);assert.equal(response.status,200,await response.clone().text());return response.text();};
@@ -24,10 +25,50 @@ test("3000 revised records plus drawings export above the old row/metadata limit
   f.db.batch=async statements=>{maxStatements=Math.max(maxStatements,statements.length);const result=await batch(statements),pending=f.db.sqlite.prepare("SELECT restore_job_id FROM engine_projects WHERE id=?").get(project);if(pending?.restore_job_id){hiddenChecks++;await assertHidden(f,project);}return result;};
   const response=await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner);assert.equal(response.status,200,await response.clone().text());const result=await response.json();f.db.batch=batch;
   assert.ok(Object.values(result.counts).reduce((a,b)=>a+b,0)>10000);assert.ok(result.recovery.stagingBatches>1);assert.ok(result.recovery.materializationBatches>1);assert.equal(result.recovery.publicationStatements,3);assert.equal(maxStatements,3,"Large restores never need thousands of statements in one batch");assert.ok(hiddenChecks>1);
+  assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_restore_rows r JOIN engine_restore_jobs j ON j.id=r.job_id WHERE j.project_id=?").get(project).n,0,"Completed recovery does not retain a second metadata copy");
   const state=await(await handleProjectWorkspace(new Request(base+project+"/state"),f.env,f.owner)).json();assert.equal(state.records.length,3000);assert.equal(state.project.restore_job_id,null);
   for(const revision of revisions){const detail=await(await handleProjectWorkspace(new Request(base+project+"/history/"+revision.event),f.env,f.owner)).json();assert.deepEqual(detail.event.payload.snapshot,revision.snapshot);}
   assert.equal(await(await handleProjectWorkspace(new Request(base+project+"/files/"+file.fileId),f.env,f.owner)).text(),"Original drawing bytes");assert.deepEqual(await(await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner)).json(),result);assert.equal(await backupOf(f),backup);
   const streamed=await handleProjectWorkspace(new Request(base+f.projectId+"/export"),f.env,f.owner),reader=streamed.body.getReader();await reader.read();await f.call("","PATCH",{name:"Changed during export"});await assert.rejects(async()=>{for(;;){const next=await reader.read();if(next.done)break;}},/changed during export/);reader.releaseLock();
+ }finally{f.db.close();}
+});
+
+test("interrupted phase-1 metadata staging reuses its rows; changed retry content cannot poison the original backup",async()=>{
+ const f=await fixture();try{
+  for(let n=0;n<300;n++)assert.equal((await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"note",title:"Observation "+n,fields:{text:"s".repeat(2200)}}})).status,200);
+  const backup=await backupOf(f),lines=backup.trimEnd().split("\n"),end=lines.findIndex(line=>JSON.parse(line).type==="metadata_complete");assert.ok(end>500);
+  const project=id(),operation=id(),truncated=lines.slice(0,Math.floor(end/2)).join("\n")+"\n";
+  assert.equal((await handleProjectWorkspace(request(truncated,project,operation),f.env,f.owner)).status,400);await assertHidden(f,project);
+  const job=f.db.sqlite.prepare("SELECT * FROM engine_restore_jobs WHERE project_id=?").get(project),staged=f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_restore_rows WHERE job_id=?").get(job.id).n;assert.equal(job.state,"staging");assert.ok(staged>0);
+  const altered=lines.map(line=>{const entry=JSON.parse(line);if(entry.type==="row"&&entry.table==="records")entry.row.title="Changed retry";return JSON.stringify(entry)+"\n";}).join("");
+  assert.equal((await handleProjectWorkspace(request(altered,project,operation),f.env,f.owner)).status,409);assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_restore_rows WHERE job_id=?").get(job.id).n,staged,"Conflicting batches add no mixed metadata");
+  const response=await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner);assert.equal(response.status,200,await response.clone().text());const result=await response.json();
+  assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_restore_jobs WHERE project_id=?").get(project).n,1);assert.equal(f.db.sqlite.prepare("SELECT state FROM engine_restore_jobs WHERE id=?").get(job.id).state,"complete");assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_restore_rows WHERE job_id=?").get(job.id).n,0);
+  assert.equal((await(await handleProjectWorkspace(new Request(base+project+"/state"),f.env,f.owner)).json()).records.length,300);
+  f.db.sqlite.prepare("UPDATE engine_restore_jobs SET id=? WHERE id=?").run(id(),job.id); // Previous previews used random job identities.
+  assert.deepEqual(await(await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner)).json(),result);assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_restore_jobs WHERE project_id=?").get(project).n,1);assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_restore_rows").get().n,0);assert.equal(await backupOf(f),backup);
+ }finally{f.db.close();}
+});
+
+test("completed cleanup is scoped, bounded and retryable without changing the recovery receipt or engineering bytes",async()=>{
+ const f=await fixture();try{
+  await upload(f,"drawing.step",new TextEncoder().encode("Exact drawing bytes"));const backup=await backupOf(f),project=id(),operation=id(),prepare=f.db.prepare.bind(f.db);let failed=false;
+  f.db.prepare=sql=>{if(sql.startsWith("DELETE FROM engine_restore_rows")){failed=true;throw Error("SQLITE synthetic cleanup interruption");}return prepare(sql);};
+  const response=await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner);assert.equal(response.status,200,await response.clone().text());const result=await response.json();f.db.prepare=prepare;assert.equal(failed,true);
+  const count=()=>f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_restore_rows r JOIN engine_restore_jobs j ON r.job_id=j.id WHERE j.project_id=?").get(project).n;assert.ok(count()>0);
+  assert.deepEqual(await cleanupCompletedRestore(f.db,{projectId:project,actorId:"another-owner",operationId:operation}),{removed:0});assert.deepEqual(await cleanupCompletedRestore(f.db,{projectId:project,actorId:f.owner.id,operationId:id()}),{removed:0});assert.ok(count()>0);
+  const execute=f.db.prepare.bind(f.db);let deletes=0;f.db.prepare=sql=>{const prepared=execute(sql);if(!sql.startsWith("DELETE FROM engine_restore_rows"))return prepared;return {bind(...values){const bound=prepared.bind(...values);return {async run(){const result=await bound.run();assert.ok(result.meta.changes<=250);deletes++;return result;}};}};};
+  assert.deepEqual(await(await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner)).json(),result);f.db.prepare=execute;assert.ok(deletes>0);assert.equal(count(),0);
+  const state=await(await handleProjectWorkspace(new Request(base+project+"/state"),f.env,f.owner)).json();assert.equal(await(await handleProjectWorkspace(new Request(base+project+"/files/"+state.files[0].id),f.env,f.owner)).text(),"Exact drawing bytes");assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_operations WHERE project_id=?").get(project).n,1);assert.equal(await backupOf(f),backup);
+ }finally{f.db.close();}
+});
+
+test("a racing exact recovery returns the committed receipt even when its peer has already cleaned staging",async()=>{
+ const f=await fixture();try{
+  await upload(f,"drawing.step",new TextEncoder().encode("Shared exact request bytes"));const backup=await backupOf(f),project=id(),operation=id(),prepare=f.db.prepare.bind(f.db);let raced=false,peer;
+  f.db.prepare=sql=>{const prepared=prepare(sql);if(!sql.startsWith("SELECT data FROM engine_restore_rows WHERE job_id=? AND table_name='files'"))return prepared;return {bind(...values){const bound=prepared.bind(...values);return {async first(){if(!raced){raced=true;const response=await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner);assert.equal(response.status,200,await response.clone().text());peer=await response.json();}return bound.first();}};}};};
+  const response=await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner);assert.equal(response.status,200,await response.clone().text());assert.equal(raced,true);assert.deepEqual(await response.json(),peer);f.db.prepare=prepare;
+  assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_operations WHERE project_id=?").get(project).n,1);assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_restore_rows").get().n,0);assert.equal(await backupOf(f),backup);
  }finally{f.db.close();}
 });
 

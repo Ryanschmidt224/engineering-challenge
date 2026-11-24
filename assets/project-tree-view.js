@@ -1,4 +1,4 @@
-import {projectTree} from "./project-tree-model.js";
+import {projectTree,MAX_SUBTREE} from "./project-tree-model.js";
 import {node,checkbox,listCard,actions} from "./workshop-ui.js";
 import {editItem,placementEditor} from "./project-editors.js";
 import {workshopPartEditor} from "./project-workshop-editor.js";
@@ -9,7 +9,7 @@ async function archivePlacement(ctx,item,trigger){
  trigger.disabled=true;try{
   const preview=await ctx.client.request("/"+ctx.projectId+"/occurrences/"+ctx.occurrenceId+"/archive-preview");
   const form=partHistoryPrompt(ctx,item,trigger,{archive:true,expectedRevision:preview.revision}),area=node("div");
-  area.append(node("p","Archive "+preview.members.length+" placement"+(preview.members.length===1?"":"s")+". Earlier archived children stay archived when this group is restored. No part revision is created."));
+  area.append(node("p","Archive "+preview.members.length+" placement"+(preview.members.length===1?"":"s")+". Preview limit: "+MAX_SUBTREE+" placements per Archive action. Earlier archived children stay archived when this group is restored. No part revision is created."));
   if(preview.sharedPlacements)area.append(node("p","Other placements of "+preview.sharedPlacements+" shared part"+(preview.sharedPlacements===1?"":"s")+" remain active."));
   const list=node("ul");for(const member of preview.members)list.append(node("li",member.path.map(row=>row.name).join(" / ")+" · "+member.part_number));area.append(list);form.body.prepend(area);
  }catch(error){ctx.notify(error.message);}finally{trigger.disabled=false;}
@@ -30,7 +30,8 @@ export function renderProjectTree(ctx,{showHidden,onShowHidden,selectedOccurrenc
    mark.setAttribute("aria-label",occurrence.attention?"Needs attention":occurrence.build_status.replaceAll("_"," "));title.append(mark,document.createTextNode((item.short_name||item.name)+(occurrence.quantity>1?" ("+occurrence.quantity+")":"")));row.append(title,node("small",item.part_number));row.setAttribute("aria-current",String(occurrence.id===selectedOccurrence));row.dataset.occurrenceId=occurrence.id;
    const more=button("⋯",()=>menu(),{variant:"quiet",small:true});more.setAttribute("aria-label","Actions for "+item.name);more.setAttribute("aria-haspopup","menu");
    const siblings=(tree.children.get(parentId)||[]).filter(tree.active),index=siblings.findIndex(row=>row.id===occurrence.id);
-   const menu=event=>contextMenu(more,event,[...(item.is_assembly?addActions(occurrence.id):[]),{label:"Move placement",run:()=>placementEditor(local,{occurrence})},...(index>0?[{label:"Move up",run:()=>move(occurrence,-1)}]:[]),...(index<siblings.length-1?[{label:"Move down",run:()=>move(occurrence,1)}]:[]),{label:item.is_assembly?"Archive subassembly":"Archive part",run:()=>archivePlacement(local,item,more)}]);
+   let archiveTooLarge=false;try{tree.subtree(occurrence.id);}catch{archiveTooLarge=true;}
+   const menu=event=>contextMenu(more,event,[...(item.is_assembly?addActions(occurrence.id):[]),{label:"Move placement",run:()=>placementEditor(local,{occurrence})},...(index>0?[{label:"Move up",run:()=>move(occurrence,-1)}]:[]),...(index<siblings.length-1?[{label:"Move down",run:()=>move(occurrence,1)}]:[]),{label:archiveTooLarge?"Archive subassembly (over "+MAX_SUBTREE+" placements)":item.is_assembly?"Archive subassembly":"Archive part",run:()=>archiveTooLarge?ctx.notify("Preview Archive is limited to "+MAX_SUBTREE+" placements per action. Archive smaller child groups first; nothing has changed."):archivePlacement(local,item,more)}]);
    row.oncontextmenu=event=>{event.preventDefault();menu(event);};row.onkeydown=event=>{if(event.key==="ContextMenu"||event.key==="F10"&&event.shiftKey){event.preventDefault();menu();}};const line=node("div","","project-tree-row"),expander=node("span","","project-tree-expander");line.append(expander,row,more);holder.append(line);if(item.is_assembly){const descendants=children(occurrence.id,holder),toggle=button(collapsed.has(occurrence.id)?"›":"⌄",()=>{descendants.hidden=!descendants.hidden;if(descendants.hidden)collapsed.add(occurrence.id);else collapsed.delete(occurrence.id);toggle.textContent=descendants.hidden?"›":"⌄";toggle.setAttribute("aria-expanded",String(!descendants.hidden));toggle.setAttribute("aria-label",(descendants.hidden?"Expand ":"Collapse ")+item.name);},{variant:"quiet",small:true});descendants.hidden=collapsed.has(occurrence.id);toggle.setAttribute("aria-label",(descendants.hidden?"Expand ":"Collapse ")+item.name);toggle.setAttribute("aria-expanded",String(!descendants.hidden));expander.append(toggle);}list.append(holder);
   }host.append(list);return list;
  }children(null,nav);return nav;
