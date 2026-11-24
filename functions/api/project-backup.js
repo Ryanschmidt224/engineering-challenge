@@ -9,6 +9,7 @@ import {backupColumns as columns,backupOutline} from "./project-backup-schema.js
 import {restoreStaging,stagedRows,pendingRestore,materializeRestore} from "./project-restore-staging.js";
 import {smallBackup,streamedExport} from "./project-backup-stream.js";
 import {tryCompletedRestoreCleanup} from "./project-orphan-cleanup.js";
+import {assertStorageKeyWritable} from "./project-storage-fence.js";
 // Explicit export schema: receipts and concurrency tokens are operational, not
 // engineering history. Restore issues a new token and a new import receipt.
 export async function projectManifest(db,project){
@@ -104,7 +105,8 @@ export async function restoreProject(request,env,owner,projectId,{asCopy=false}=
   }else if(entry.type==="end_file"){
    if(!current||entry.id!==current.id||length!==current.size)throw Error("Backup file is incomplete.");const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
    if(await bytesHash(bytes)!==current.sha256)throw Error("A file failed its backup hash check.");
-   await staging.touch({force:true});const key=storageKey(current),stored=await env.PHOTOS.put(key,bytes,{onlyIf:{etagDoesNotMatch:"*"},httpMetadata:{contentType:current.content_type},customMetadata:{sha256:current.sha256}});
+   await staging.touch({force:true});const key=storageKey(current);await assertStorageKeyWritable(db,key);const stored=await env.PHOTOS.put(key,bytes,{onlyIf:{etagDoesNotMatch:"*"},httpMetadata:{contentType:current.content_type},customMetadata:{sha256:current.sha256}});
+   await assertStorageKeyWritable(db,key);
    if(!stored){const existing=await env.PHOTOS.head(key);if(existing?.customMetadata?.sha256!==current.sha256||existing.size!==current.size)throw new CommandConflict("The restore staging file differs. Retry with a new operation ID.");}
    const verified=await env.PHOTOS.get(key);
    if(!verified||verified.size!==current.size||await bytesHash(new Uint8Array(await verified.arrayBuffer()))!==current.sha256)throw Error("A staged restore file failed byte verification. No project was admitted.");

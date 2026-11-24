@@ -1,5 +1,6 @@
 import {unchanged} from "./project-workspace-commands.js";
 import {commitProjectCommand,CommandConflict} from "./project-command.js";
+import {assertStorageKeyWritable} from "./project-storage-fence.js";
 import {statement,uuid,text,itemContext,buildContext,configurationPlan,currentEngineeringFile,addFileLinks,addEvent,ProjectNotFound,expectedProject} from "./project-state.js";
 export const MAX_ENGINE_FILE=20*1024*1024;
 export async function readBounded(request,max){
@@ -23,11 +24,13 @@ export async function uploadFile(request,env,owner,project,id){
  const operationId=request.headers.get("x-operation-id"),expectedRevision=request.headers.get("x-project-revision");
  if(!uuid(operationId)||!uuid(expectedRevision))throw Error("Upload requires an operation ID and loaded project revision.");
  const file=await fileRow(env.WORKSHOP_DB,project.id,id),bytes=await readBounded(request,MAX_ENGINE_FILE),hash=await bytesHash(bytes);
+ await assertStorageKeyWritable(env.WORKSHOP_DB,file.r2_key);
  const previous=await env.PHOTOS.head(file.r2_key);
  const matches=object=>object?.customMetadata?.operation_id===operationId&&object.customMetadata.expected_revision===expectedRevision&&object.customMetadata.actor_id===owner.id&&object.customMetadata.sha256===hash&&object.size===bytes.length;
- if(previous){if(!matches(previous))throw new CommandConflict("This file already contains different bytes. Prepare a new file.");return {fileId:id,size:bytes.length,sha256:hash};}
+ if(previous){if(!matches(previous))throw new CommandConflict("This file already contains different bytes. Prepare a new file.");await assertStorageKeyWritable(env.WORKSHOP_DB,file.r2_key);return {fileId:id,size:bytes.length,sha256:hash};}
  expectedProject(project,{expectedRevision});if(file.state!=="prepared")throw new CommandConflict("Prepare a new file before uploading.");
  const put=await env.PHOTOS.put(file.r2_key,bytes,{onlyIf:{etagDoesNotMatch:"*"},httpMetadata:{contentType:file.content_type},customMetadata:{operation_id:operationId,expected_revision:expectedRevision,actor_id:owner.id,sha256:hash}});
+ await assertStorageKeyWritable(env.WORKSHOP_DB,file.r2_key);
  if(!put&&!matches(await env.PHOTOS.head(file.r2_key)))throw new CommandConflict("Another upload already used this file. Prepare a new file.");
  return {fileId:id,size:bytes.length,sha256:hash};
 }

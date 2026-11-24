@@ -132,6 +132,16 @@ const migrations=[{version:1,statements:[
  ...["INSERT","UPDATE"].map(action=>`CREATE TRIGGER IF NOT EXISTS engine_restore_rows_retired_${action.toLowerCase()} BEFORE ${action} ON engine_restore_rows WHEN EXISTS(SELECT 1 FROM engine_restore_jobs j JOIN engine_restore_jobs closed ON closed.project_id=j.project_id AND closed.actor_id=j.actor_id AND closed.operation_id=j.operation_id WHERE j.id=NEW.job_id AND closed.cleanup_token IS NOT NULL) BEGIN SELECT RAISE(ABORT,'RESTORE_OPERATION_RETIRED'); END`),
  ...["INSERT","UPDATE"].map(action=>`CREATE TRIGGER IF NOT EXISTS engine_restore_header_retired_${action.toLowerCase()} BEFORE ${action} ON engine_projects WHEN EXISTS(SELECT 1 FROM engine_restore_jobs j JOIN engine_restore_jobs closed ON closed.project_id=j.project_id AND closed.actor_id=j.actor_id AND closed.operation_id=j.operation_id WHERE j.id=${action==="INSERT"?"NEW":"OLD"}.restore_job_id AND closed.cleanup_token IS NOT NULL) BEGIN SELECT RAISE(ABORT,'RESTORE_OPERATION_RETIRED'); END`),
  ...["items","occurrences","steps","configurations","records","events","files","file_links","selections","archive_groups","snapshot_values"].flatMap(table=>["INSERT","UPDATE"].map(action=>`CREATE TRIGGER IF NOT EXISTS engine_${table}_restore_retired_${action.toLowerCase()} BEFORE ${action} ON engine_${table} WHEN EXISTS(SELECT 1 FROM engine_projects p JOIN engine_restore_jobs j ON p.restore_job_id=j.id JOIN engine_restore_jobs closed ON closed.project_id=j.project_id AND closed.actor_id=j.actor_id AND closed.operation_id=j.operation_id WHERE p.id=NEW.project_id AND closed.cleanup_token IS NOT NULL) BEGIN SELECT RAISE(ABORT,'RESTORE_OPERATION_RETIRED'); END`))
+]},{version:8,statements:[
+ // Durable key fences survive removal of a retired copy's private metadata.
+ // No object deletion or public maintenance action is introduced here.
+ `CREATE TABLE IF NOT EXISTS engine_retired_file_keys (
+ r2_key TEXT PRIMARY KEY,job_id TEXT NOT NULL,project_id TEXT NOT NULL,actor_id TEXT NOT NULL,
+ operation_id TEXT NOT NULL,cleanup_token TEXT NOT NULL,created_at TEXT NOT NULL,
+ FOREIGN KEY(job_id) REFERENCES engine_restore_jobs(id))`,
+ ...["UPDATE","DELETE"].map(action=>`CREATE TRIGGER IF NOT EXISTS engine_retired_keys_${action.toLowerCase()} BEFORE ${action} ON engine_retired_file_keys BEGIN SELECT RAISE(ABORT,'RETIRED_KEY_IS_PERMANENT'); END`),
+ ...["INSERT","UPDATE"].map(action=>`CREATE TRIGGER IF NOT EXISTS engine_files_key_fence_${action.toLowerCase()} BEFORE ${action} ON engine_files WHEN EXISTS(SELECT 1 FROM engine_retired_file_keys WHERE r2_key=NEW.r2_key) BEGIN SELECT RAISE(ABORT,'ENGINE_STORAGE_KEY_RETIRED'); END`),
+ ...["INSERT","UPDATE"].map(action=>`CREATE TRIGGER IF NOT EXISTS engine_restore_key_fence_${action.toLowerCase()} BEFORE ${action} ON engine_restore_rows WHEN NEW.table_name='files' AND EXISTS(SELECT 1 FROM engine_retired_file_keys WHERE r2_key=json_extract(NEW.data,'$.r2_key')) BEGIN SELECT RAISE(ABORT,'ENGINE_STORAGE_KEY_RETIRED'); END`)
 ]}];
 const pending=new WeakMap();
 export const PROJECT_ENGINE_SCHEMA_VERSION=migrations.at(-1).version;

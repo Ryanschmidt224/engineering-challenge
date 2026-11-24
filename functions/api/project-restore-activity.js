@@ -22,7 +22,8 @@ export async function restoreRetirementStatus(db,job,actorId,{now=Date.now()}={}
  const peer=await statement(db,"SELECT 1 AS present FROM engine_restore_jobs WHERE project_id=? AND actor_id=? AND operation_id=? AND (cleanup_token IS NOT NULL OR state IN('staging','ready') AND (julianday(last_activity_at) IS NULL OR julianday(created_at) IS NULL OR julianday(last_activity_at)>julianday(?) OR julianday(created_at)>julianday(?))) LIMIT 1",job.project_id,actorId,job.operation_id,new Date(cutoff).toISOString(),new Date(cutoff).toISOString()).first();
  return peer?{claimable:false,reason:"A retry is active or this recovery operation is already retired."}:{claimable:true,observedActivity:job.last_activity_at};
 }
-// Internal claim primitive only: no HTTP claim/apply route or deletion executor.
+// Internal claim primitive only: no HTTP claim/apply route. The separate bounded
+// executor requires its exact receipt and never removes storage objects.
 // A durable operation tombstone fences older retries as well as the current job.
 export async function claimInactiveRestore(db,{jobId,actorId,observedActivity},{now=Date.now()}={}){
  if(!uuid(jobId)||typeof actorId!=="string"||!actorId||typeof observedActivity!=="string")throw Error("Provide a scoped observed recovery job.");

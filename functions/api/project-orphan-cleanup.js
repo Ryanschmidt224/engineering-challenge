@@ -1,11 +1,12 @@
 import {statement,uuid} from "./project-state.js";
 export {inventoryProjectOrphans,validateOrphanInventory} from "./project-orphan-inventory.js";
 export {claimInactiveRestore} from "./project-restore-activity.js";
+export {cleanupRetiredRestore} from "./project-retired-restore-cleanup.js";
 import {CURRENT_ENGINE_SCHEMA_SQL,openRestoreOperation} from "./project-restore-guards.js";
 
 // Only operational rows from a completed, receipted recovery are eligible here.
-// This shared cleanup owner will also host the separately reviewed abandoned-job,
-// upload, Workshop-copy and frozen-value sweep. It never deletes engineering rows.
+// The separately exported retired-copy executor removes private D1 rows only.
+// Upload, Workshop-copy, frozen-value and R2-object sweeps remain pending.
 export async function cleanupCompletedRestore(db,{projectId,actorId,operationId}){
  if(!uuid(projectId)||!uuid(operationId)||typeof actorId!=="string"||!actorId)throw Error("Provide a scoped completed recovery.");
  const eligible=`${CURRENT_ENGINE_SCHEMA_SQL} AND EXISTS(SELECT 1 FROM engine_restore_jobs j JOIN engine_operations o ON o.project_id=j.project_id AND o.actor_id=j.actor_id AND o.operation_id=j.operation_id JOIN engine_projects p ON p.id=j.project_id WHERE j.id=? AND j.project_id=? AND j.actor_id=? AND j.operation_id=? AND j.state='complete' AND ${openRestoreOperation()} AND p.owner_id=j.actor_id AND p.restore_job_id IS NULL AND json_extract(o.result,'$.restored')=1)`;

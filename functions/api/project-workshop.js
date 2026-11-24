@@ -5,6 +5,7 @@ import {createItem} from "./project-workspace-commands.js";
 import {statement,rows,itemContext,itemDetails,storedItem,buildContext,configurationPlan,currentEngineeringFile,addFileLinks,addEvent} from "./project-state.js";
 import {captureProjectPart,entryEvidence} from "./project-part-snapshot.js";
 import {bytesHash,MAX_ENGINE_FILE} from "./project-engine-files.js";
+import {assertStorageKeyWritable} from "./project-storage-fence.js";
 export async function workshopChoices(db,params){
  await initializeWorkshop(db);const familyId=params.get("family")||"",q=(params.get("q")||"").trim();if(q.length>180||familyId&&!validId(familyId))throw Error("Invalid Workshop search.");
  const families=await dbRows(db,"SELECT * FROM workshop_families WHERE archived=0 AND (?='' OR id=?) AND (?='' OR instr(lower(name||' '||description),lower(?))>0 OR id IN(SELECT family_id FROM workshop_products WHERE archived=0 AND instr(lower(name||' '||manufacturer||' '||mpn),lower(?))>0)) ORDER BY name,id LIMIT 51",familyId,familyId,familyId?"":q,q,q);
@@ -29,7 +30,9 @@ async function sourcePlan(env,project,input,data,previous=null){
   const object=await env.PHOTOS.get(attachment.r2_key);if(!object||object.size>MAX_ENGINE_FILE)throw Error("A Workshop attachment is missing or exceeds 20 MB. No project part was saved.");
   total+=object.size;if(total>40*1024*1024)throw Error("Workshop attachments exceed the 40 MB preview selection limit.");
   const bytes=new Uint8Array(await object.arrayBuffer()),hash=await bytesHash(bytes),key="project-engine/workshop/"+project.id+"/"+input.operationId+"/"+attachment.id;
+  await assertStorageKeyWritable(db,key);
   await env.PHOTOS.put(key,bytes,{onlyIf:{etagDoesNotMatch:"*"},httpMetadata:{contentType:attachment.media_type||"application/octet-stream"},customMetadata:{sha256:hash}});
+  await assertStorageKeyWritable(db,key);
   const staged=await env.PHOTOS.get(key);if(!staged||staged.size!==bytes.length||await bytesHash(new Uint8Array(await staged.arrayBuffer()))!==hash)throw Error("A copied Workshop file failed verification.");
   const file={id:crypto.randomUUID(),project_id:project.id,name:attachment.title,content_type:attachment.media_type||"application/octet-stream",r2_key:key,state:"ready",size:bytes.length,sha256:hash};files.push(file);documents.push({title:attachment.title,kind:attachment.kind,file_id:file.id});
  }
