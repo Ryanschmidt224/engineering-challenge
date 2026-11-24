@@ -5,7 +5,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-4);
-  padding: var(--space-6);
+  padding-block: var(--space-6);
 }
 .workshop-heading h1 {
   margin-bottom: var(--space-2);
@@ -25,9 +25,7 @@
     var(--pane-families, var(--pane-default-families)) var(--pane-handle-size)
     minmax(0, 1fr);
   gap: var(--space-2);
-  padding: 0 var(--space-6) var(--space-6);
-  max-width: 110rem;
-  margin: auto;
+  padding-bottom: var(--space-6);
 }
 .category-panel,
 .family-panel,
@@ -141,9 +139,7 @@
   margin: var(--space-3) 0;
   min-width: 0;
 }
-.table-scroll {
-  overflow-x: auto;
-}
+
 @media (max-width: 1024px) {
   .workshop-layout {
     --pane-default-families: 16rem;
@@ -162,11 +158,11 @@
 }
 @media (max-width: 640px) {
   .workshop-heading {
-    padding: var(--space-5) var(--space-4);
+    padding-block: var(--space-5);
   }
   .workshop-layout {
     display: block;
-    padding: 0 var(--space-4) var(--space-5);
+    padding-bottom: var(--space-5);
   }
   .category-panel,
   .family-panel {

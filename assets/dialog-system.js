@@ -66,8 +66,7 @@
  const tooltipTarget=node=>{
   const el=node instanceof Element?node.closest("[data-bs-tooltip],[title]"):null;
   // This control already includes an interactive, built-in popover.
-  if(!el||el.closest(".bs-action-input-help"))return null;
-  return el;
+  return el&&!el.closest(".bs-action-input-help")?el:null;
  };
  const dismissTooltip=()=>{
   clearTimeout(tooltipTimer);tooltipTimer=null;pendingTooltip=null;
@@ -128,11 +127,10 @@
   if(event.relatedTarget instanceof Node&&target.contains(event.relatedTarget))return;
   dismissTooltip();
  },true);
- document.addEventListener("focusin",event=>{
-  const target=tooltipTarget(event.target);
-  if(target)showTooltip(target);
-  else dismissTooltip();
- },true);
+ document.addEventListener("focusin",()=>requestAnimationFrame(()=>{
+  const el=tooltipTarget(document.activeElement);
+  el?showTooltip(el):dismissTooltip();
+ }),true);
  document.addEventListener("focusout",event=>{
   if(activeTooltip===event.target)dismissTooltip();
  },true);

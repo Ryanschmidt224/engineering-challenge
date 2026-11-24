@@ -1,3 +1,5 @@
+import {fieldDisclosure} from "./field-disclosure.js";
+import {interfaceHelp} from "./interface-help.js";
 // Part-detail presentation only. Writes stay in the controller's revision-checked
 // onChange callback; displaying project annotations never modifies Workshop.
 const make = (tag, className, text) => {
@@ -67,12 +69,12 @@ export function renderPartInformation(target, {part, project: projectId, fields,
     }, {small: true});
     reference.body.append(copy, make("p", "ui-information-note", "Create a reusable product copy. This project part stays unchanged."));
   }
-  if (functional && !part.familyUse && part.partType === "purchased") addAlternativeControls(project.body, {part, ui, onChange, editable});
+  if (functional && !part.familyUse && part.partType === "purchased") addAlternativeControls(project.body, {part, ui, dialogs, onChange, editable});
   if (part.familyUse) project.body.append(knowledge(part));
   target.append(reference.root, project.root);
 }
 
-function addAlternativeControls(target, {part, ui, onChange, editable}) {
+function addAlternativeControls(target, {part, ui, dialogs, onChange, editable}) {
   const feedback = make("p", "ui-information-feedback");
   feedback.setAttribute("role", "status");
   const run = async (button, action, data) => {
@@ -82,17 +84,19 @@ function addAlternativeControls(target, {part, ui, onChange, editable}) {
   };
   const candidates = (part.implementations || []).filter(item => !item.retiredAt && item.partType === "purchased");
   if (part.partType === "purchased" && (editable || candidates.length > 1)) {
-    const alternatives = ui.section({title: "Alternative purchased parts", role: "part-alternatives"});
-    alternatives.body.append(make("p", "ui-information-note", "Choose another purchased part for this container. Its name and history stay the same."));
+    const alternatives = fieldDisclosure(ui, "Alternatives", candidates.length + (candidates.length === 1 ? " part" : " parts"));
+    alternatives.disclosure.dataset.section = "part-alternatives";
+    const help = dialogs.helpButton("About alternatives", interfaceHelp.partAlternatives);
+    help.setAttribute("aria-label", "About alternatives"); alternatives.label.append(help);
     if (candidates.length > 1) {
-      const select = make("select", "ui-control"); select.setAttribute("aria-label", "Use part");
+      const select = make("select", "ui-control"); select.setAttribute("aria-label", "Select Alternative");
       for (const candidate of candidates) {
         const option = make("option", "", candidate.name + (candidate.model ? " · " + candidate.model : ""));
         option.value = candidate.id; select.append(option);
       }
       select.value = part.selectedImplementationId || ""; select.disabled = !editable;
       select.onchange = () => void run(select, "select", {implementation: {id: select.value}});
-      alternatives.body.append(ui.fieldRow("Use part", select).root);
+      alternatives.body.append(ui.fieldRow("Select Alternative", select).root);
     }
     const newForm = make("div", "ui-information-form"); newForm.hidden = true;
     const shortField = title => {
@@ -100,11 +104,11 @@ function addAlternativeControls(target, {part, ui, onChange, editable}) {
       newForm.append(ui.fieldRow(title, input).root); return input;
     };
     const name = shortField("Part name"), model = shortField("Manufacturer part number"), manufacturer = shortField("Manufacturer");
-    const commit = ui.button("Add and use part", () => {
+    const commit = ui.button("Add and select alternative", () => {
       if (!name.value.trim()) { feedback.textContent = "Enter a part name."; name.focus(); return; }
       void run(commit, "add", {implementation: {name: name.value, partType: "purchased", model: model.value, manufacturer: manufacturer.value}});
     }, {variant: "primary", small: true});
-    const add = ui.button("Add alternative part", () => { newForm.hidden = false; add.hidden = true; name.focus(); }, {small: true});
+    const add = ui.button("Add alternative", () => { newForm.hidden = false; add.hidden = true; name.focus(); }, {small: true});
     add.hidden = !editable;
     const back = ui.button("Cancel", () => { newForm.hidden = true; add.hidden = false; }, {small: true});
     ui.sectionActions(newForm, {primary: commit, secondary: [back]});

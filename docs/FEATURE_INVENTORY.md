@@ -45,8 +45,8 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 2.2 | + New project (name, private by default) | `project-manager.js` | | ☐ |
 | 2.3 | Search projects | `project-manager.js` | | ☐ |
 | 2.4 | Sort: Name A–Z / Z–A, Newest, Oldest | `project-manager.js` | | ☐ |
-| 2.5 | Filters by discipline tags (Mechanical, Electronics, Software, Controls, Woodworking, PCB Design, Machining, Robotics, Measurement, Fabrication) | `project-manager.js` | | ☐ |
-| 2.6 | Descriptor tiles: search, select, clear, add custom tags (comma separated) | `project-manager.js` | | ☐ |
+| 2.5 | Filters by discipline tags (Mechanical, Electronics, Software, Controls, Woodworking, PCB Design, Machining, Robotics, Measurement, Fabrication) | `project-manager.js` | **Drop in new engine**; existing legacy tags remain until cutover. Calculator topics are separate. | ☐ |
+| 2.6 | Descriptor tiles: search, select, clear, add custom tags (comma separated) | `project-manager.js` | **Drop in new engine**; existing legacy tags remain until cutover. Calculator topics are separate. | ☐ |
 | 2.7 | Archived projects list (under More) | `project-manager.js` | | ☐ |
 | 2.8 | Empty / loading / error states ("No projects yet", "Projects could not load") | `project-manager.js` | | ☐ |
 | 2.9 | Explorer-style View choices: Details, List, Tiles; persistent browser preference; thumbnail from summary album | `project-directory.js`, `project-directory.css` | **Keep**: owner requested; same sorting/filtering in every view | ☐ |
@@ -91,7 +91,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 5.11 | Bill of materials for the assembly: list view and picture view; grouped parts; nested assembly quantities; standard shop materials section | `SA` `renderWorkspaceParts`, `bom-model.js` | | ☐ |
 | 5.12 | Purchase parts: select items, "Add selected to DigiKey cart" (1–400 items) | `bom-purchasing.js` | **Keep** | ☐ |
 | 5.13 | Wire harness cutting list | `SA` `showHarnessPreview`, `/api/wires`, `/api/harness` | **Change**: rebuild on Workshop wire products; delete the separate wire library | ☐ |
-| 5.14 | Parts Management table: search, status filter, find/look up number (assigned or reserved), inline edit of name, tree description, quantity, type, status, cost per part/package, attention note; resizable columns | `parts-management.js` | | ☐ |
+| 5.14 | Parts Management: compact read-only number/name/value/quantity/status list with Browse left; full read-only columns hide Browse; explicit Edit enables inputs; search/status/over-limit-name filters, reserved-number lookup and persistent view preference | `parts-management.js`; new engine BOM area pending | **Change**: no separate tree-name column; preserve remaining fields and resizable columns | ☐ |
 | 5.15 | Project files in Parts Management: CAD/drawings across current parts and assemblies; filename/part search, type filters, multi-select, one ZIP for slicer/PDF printing | `project-files.js`, `/api/project-files` | **Keep**: owner requested; current project attachments, not Workshop source or instruction attachments | ☐ |
 
 ## 6. Part page
@@ -101,12 +101,12 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 6.1 | Part header: picture, name, Workshop family, status, needs-attention, quantity | `SA` `showPartWorkspace` | | ☐ |
 | 6.2 | Part picture: add/replace (JPG/PNG/WebP <3 MB), crop/annotate, delete; fallback when missing | `SA` part picture functions | | ☐ |
 | 6.3 | Part details: fields summary, View in Workshop, Documentation, Modify part, Reload Workshop data | `SA` | | ☐ |
-| 6.4 | Container / functional part: purpose ("what does this need to accomplish?"), alternative purchased parts, "Use part", "Add and use part" | `SA`, `/api/workshop-linked-part` | | ☐ |
+| 6.4 | Functional role: purpose/requirements and project-owned alternative specs, notes and files; standard Alternatives row; separate Add alternative and guarded Select confirmation in the engine | `part-information.js`, legacy selection controller; new engine selection relation pending | **Change**: alternative data isolation, instruction review flag, frozen evidence and round-trip recovery per `HISTORY_REWRITE_PLAN.md` | ☐ |
 | 6.5 | Specifications (from product listing or estimated), project-specific information | `SA`, `part-fields.js` | | ☐ |
-| 6.6 | Part editor: item type (Part/Document/Code), part type (off-the-shelf / custom in-house / custom purchased), number (auto or user, next available lookup), name, short tree name (20 chars), schematic/KiCad info, manufacturer, MPN, description, quantity, "Is a tool?" | `SA` `editBomPart`, `saveBomDraft`, `part-create.js` | | ☐ |
+| 6.6 | Part editor: item type (Part/Document/Code), part type (off-the-shelf / custom in-house / custom purchased), number (auto or user, next available lookup), name (one adjustable 20-character engine limit; no separate tree-name field), schematic/KiCad info, manufacturer, MPN, description, quantity, "Is a tool?" | `SA` `editBomPart`, `saveBomDraft`, `part-create.js` | | ☐ |
 | 6.7 | Where to buy: up to 10 suppliers (DigiKey, Mouser, McMaster, Newark, Arrow, Amazon ASIN, custom), order code, URL | `part-suppliers.js` | | ☐ |
 | 6.8 | Find part specs with AI: lookup by MPN/name, review suggested specs, apply selected | `product-lookup.js` | **Change**: keep, but redesign around the Workshop (category → family → product); owner requested the separate lookup-resume fix under their $5 provider cap | ☐ |
-| 6.9 | Part files: CAD / Parasolid / STL / STEP upload and download (≤20 MB); saved product webpages | `part-files.js`, `/api/part-files` | | ☐ |
+| 6.9 | Part files: CAD / Parasolid / STL / STEP upload and download (≤20 MB); saved product webpages; later independent file revision labels and exact version links | `part-files.js`, `/api/part-files` | | ☐ |
 | 6.10 | Drawings (PDF): drop/upload, view, download, replace, delete (first 100) | `drawings.js`, `/api/drawings` | | ☐ |
 | 6.11 | Source code on a part: language, edit, import file, save, previous versions, view/restore, download (≤100 KB) | `part-code.js`, `/api/part-code` | | ☐ |
 | 6.12 | Knowledge tiles linked to this part (and family/product/use) with "New knowledge tile for this part" | `SA` `renderPartKnowledge` | | ☐ |
@@ -125,7 +125,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 7.5 | Record attachments: up to 12 photos/files per field, ≤20 MB each, named photos | `investigations.js`, `attachment-types.js` | | ☐ |
 | 7.6 | Nested entries; drag or Alt+Up/Down to reorder record tiles | `investigations.js` | | ☐ |
 | 7.7 | Read earlier archived entries; archive whole parts/subassemblies through the feature tree instead of individual record controls | `investigations.js`, `tree-archive.js` | **Change**: old records retained; record Archive UI removed | ☐ |
-| 7.8 | Create a Revision at the bottom of a part page: prompt for What changed, Why did you change it, Notes and named photos, then capture the saved part/instructions/records/local bytes; automatic date; preserve previous level and advance the working part to the next numbered revision | `part-revisions.js`, `part-revision-snapshot.js`, `/api/investigations` | **Keep**: revision table and Create a Revision; Edit part details offers Save as revision (copy previous version and advance) or Save (overwrite without advancing). Legacy repair; D1 preview alignment remains pending | ☐ |
+| 7.8 | Create a Revision at the bottom of a part page: prompt for What changed, Why did you change it, Notes and named photos, then capture the saved part/instructions/records/local bytes; automatic date; preserve previous level and advance the working part to the next numbered revision | `part-revisions.js`, `part-revision-snapshot.js`, `/api/investigations` | **Keep**: one dated chevron entry per saved revision and Create a Revision; Edit part details offers Save as revision (copy previous version and advance) or Save (overwrite without advancing). Legacy repair; D1 preview alignment remains pending | ☐ |
 | 7.9 | Open subassembly instructions from a BOM line | `SA` | | ☐ |
 | 7.10 | Suggestion review queue: suggest a Work Instruction name change, owner reviews and rejects/accepts | `project-review.js` | **Drop** | ☐ |
 
@@ -215,3 +215,7 @@ Workshop/Knowledge pane batch: categories/families/details and tiles/details now
 ## Rewrite preparation (Batch 0)
 
 The approved D1 plan and first custom-part acceptance flows are in `HISTORY_REWRITE_PLAN.md` and `BATCH0_CUSTOM_PART_SPEC.md`. No legacy project feature is marked Rebuilt by this preparation. Section 10 legacy Workshop editors for common/purchased parts are no longer called from the browser; current family/product Workshop and the server reference catalogue remain. Current project data is untouched. Preview engine work must pass the real-D1 transaction gate before dependent flows are built.
+
+The current owner UI requirements and stale-handoff reconciliations are maintained in `UI_STANDARDS.md`. Shared gutter/header/help/section-action changes cover Workshop and Knowledge now; summary, identity/name limit, alternatives, compact Parts Management and settings remain engine acceptance work after stack integration. Revisions stays separate, and Calculator topics remain even though engine project tags are dropped. PR #68 owns the renamed Tiles and searchable Calculator implementation; PR #67 owns the photo-read reliability fix. No engine inventory line is marked rebuilt by this shared presentation batch.
+
+Work Instructions revision reuse is proposed in `HISTORY_REWRITE_PLAN.md`: individual steps and header/group subtrees use the shared revision workflow with independent sequences. It remains queued engine work; it is not implemented by the UI presentation corrections.
