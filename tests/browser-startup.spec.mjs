@@ -306,6 +306,8 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(sidebar.locator(".assembly-remove")).toBeHidden();
  const row=sidebar.locator(".assembly-node",{hasText:"Motor and Motor Control"});
  const name=row.locator(".assembly-name");
+ await expect(name).toBeVisible();
+ await row.click({trial:true});
  const prior=await name.boundingBox();
  // Hovering reveals the context-menu affordance without shifting tree text.
  await row.hover();
@@ -712,7 +714,7 @@ test("owner manages project settings, numbering and removal",async({page})=>{
  });
  await page.goto("/");
  await expect(page.locator(".project-directory-new")).toBeVisible();
- await page.locator(".ui-project-card .ui-project-open").click();
+ await page.locator("#home .ui-project-card .ui-project-open").click();
  const summary=page.locator("#"+id+" .project-summary-page");
  const settings=page.locator("#"+id+" .project-settings-page");
  await expect(settings).toBeHidden();

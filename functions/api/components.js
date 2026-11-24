@@ -1,3 +1,4 @@
+import {componentPhotoIndex} from "./component-photos.js";
 import {historicalPrice,quantityData} from "./component-values.js";
 import {revisionCommand,revisionReplay,prepareRevision} from "./part-revision-save.js";
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
@@ -216,13 +217,20 @@ export async function handleComponents(request,env){
  if(!await projectAllowed(env,project,request))return json({error:"Invalid project"},400);
  if(request.method==="GET"){
   const parts=await read(env,project),lookup=workshopItemLookup(request,env);
+  let photoPresent=async()=>undefined;
+  try{photoPresent=await componentPhotoIndex(env.PHOTOS,project);}
+  catch(error){console.warn("Part photo index unavailable",error);}
   const components=await Promise.all(parts.map(async part=>{
-   if(part.partType!=="custom"&&part.itemType!=="document"&&workshopLinkId(part)){
-    const source=await lookup(part).catch(()=>null);
-    if(source)return presentPart({...part,workshopSourcing:workshopSourcing(source.item),
-     workshopDocumentation:workshopDocumentation(source.item),projectDetails:{...(part.projectDetails||{}),workshopTreeDescription:String(source.item.featureTreeDescription||source.item.subtitle||source.item.description||source.item.name||"").trim().slice(0,20)}});
+   const needsSourcing=part.partType!=="custom"&&part.itemType!=="document";
+   const mayInheritPhoto=!part.photoRevision&&photoPresent.hasOwn?.(part)===false;
+   let sourceUnavailable=false;
+   const source=workshopLinkId(part)&&(needsSourcing||mayInheritPhoto)?await lookup(part).catch(()=>{sourceUnavailable=true;return null;}):null;
+   const hasPhoto=sourceUnavailable&&mayInheritPhoto?undefined:await photoPresent(part,source).catch(error=>{console.warn("Part photo metadata unavailable",error);return undefined;});
+   if(needsSourcing&&source){
+    return {...presentPart({...part,workshopSourcing:workshopSourcing(source.item),
+     workshopDocumentation:workshopDocumentation(source.item),projectDetails:{...(part.projectDetails||{}),workshopTreeDescription:String(source.item.featureTreeDescription||source.item.subtitle||source.item.description||source.item.name||"").trim().slice(0,20)}}),hasPhoto};
    }
-   return presentPart(part);
+   return {...presentPart(part),hasPhoto};
   }));
   return json({components:[...components,...await projectFamilyParts(env,project)]});
  }

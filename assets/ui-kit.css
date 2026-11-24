@@ -12,13 +12,14 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: var(--control-height);
+  min-height: var(--action-height, var(--control-height));
   margin: 0;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-medium);
   background: var(--color-surface);
   color: var(--color-accent);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--action-padding-block, var(--space-2))
+    var(--action-padding-inline, var(--space-3));
   font: inherit;
   font-weight: var(--font-semibold);
   font-size: var(--text-small);
@@ -82,6 +83,15 @@ summary.ui-button::-webkit-details-marker {
   line-height: 1.3;
 }
 
+/* One full-width page gutter shared by branding, titles and task columns. */
+.ui-page {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding-inline: var(--space-4);
+}
+
 /* One site header, independent of the page's legacy typography. */
 .ui-site-header {
   position: sticky;
@@ -101,9 +111,7 @@ summary.ui-button::-webkit-details-marker {
   align-items: center;
   gap: var(--space-4);
   min-height: 4rem;
-  max-width: 115rem;
-  margin: auto;
-  padding: var(--space-2) var(--space-5);
+  padding-block: var(--space-2);
 }
 .ui-site-brand {
   color: var(--color-text);
@@ -150,7 +158,6 @@ summary.ui-button::-webkit-details-marker {
   .ui-site-header__inner {
     grid-template-columns: 1fr auto;
     gap: var(--space-2);
-    padding-inline: var(--space-3);
   }
   .ui-site-brand {
     font-size: var(--text-lead);
@@ -292,6 +299,9 @@ summary.ui-button::-webkit-details-marker {
   gap: var(--space-3);
 }
 .ui-section-list > .ui-section {
+  --action-height: var(--control-height-small);
+  --action-padding-block: var(--space-1);
+  --action-padding-inline: var(--space-2);
   margin: 0;
 }
 .ui-section-list > :is(div, p, section, article, span):empty {
@@ -616,6 +626,65 @@ summary.ui-button::-webkit-details-marker {
   overflow-x: auto;
 }
 
-.ui-table-date {
+/* Expand a field value inline; it is a row, not a nested section frame. */
+.ui-field-disclosure {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.ui-field-disclosure__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-accent);
+  cursor: pointer;
+  list-style: none;
+}
+.ui-field-disclosure__toggle::-webkit-details-marker {
+  display: none;
+}
+.ui-field-disclosure__toggle::after {
+  content: "";
+  width: var(--chevron-size);
+  height: var(--chevron-size);
+  border-top: var(--chevron-stroke) solid currentColor;
+  border-right: var(--chevron-stroke) solid currentColor;
+  transform: rotate(45deg);
+}
+.ui-field-disclosure[open] > .ui-field-disclosure__toggle::after {
+  transform: rotate(135deg);
+}
+.ui-field-disclosure__body {
+  margin-top: var(--space-3);
+}
+
+/* Each saved revision is one disclosure with its date and change summary.
+   The 6rem label/date tracks keep their short metadata readable. */
+.ui-revision-header {
+  display: grid;
+  grid-template-columns: minmax(6rem, 1fr) minmax(6rem, 1fr) minmax(0, 3fr);
+}
+.ui-revision-date,
+.ui-revision-change {
+  font-size: var(--text-small);
+  font-weight: var(--font-normal);
+  color: var(--color-text-muted);
+}
+.ui-revision-change {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+.ui-revision-change:empty {
+  display: none;
+}
+@media (max-width: 640px) {
+  .ui-revision-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .ui-revision-change {
+    grid-column: 1 / -1;
+  }
 }

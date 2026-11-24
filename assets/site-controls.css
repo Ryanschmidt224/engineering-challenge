@@ -2752,9 +2752,6 @@
   gap: var(--space-4);
 }
 
-.knowledge-base-page #resource-calculators .resource-card {
-  border-radius: var(--radius-large);
-}
 @media (max-width: 650px) {
   .knowledge-base-page {
     padding-top: 30px;
@@ -2839,10 +2836,6 @@
   gap: var(--space-3);
 }
 
-.calculators-view .bs-catalog-main .resource-grid {
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-}
-
 #commonparts .bs-catalog-main .workshop-standard-list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -2903,12 +2896,6 @@ body > .footer {
   margin-top: auto;
 }
 
-:is(#home, .calculators-view, #commonparts) > .wrap.section {
-  width: min(100%, 1840px);
-  max-width: none;
-  padding: 30px clamp(20px, 2.5vw, 46px) 48px;
-  margin-inline: auto;
-}
 .footer .wrap {
   max-width: 1840px;
   width: 100%;
@@ -2960,11 +2947,6 @@ body > .footer {
   gap: var(--space-4);
 }
 
-.calculators-view .bs-catalog-main #resource-calculators.resource-grid {
-  grid-template-columns: repeat(auto-fit, minmax(335px, 1fr));
-  gap: var(--space-4);
-}
-
 #commonparts .bs-catalog-main .workshop-standard-list {
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: var(--space-3);
@@ -2996,9 +2978,6 @@ body > .footer {
   }
 }
 @media (max-width: 800px) {
-  :is(#home, .calculators-view, #commonparts) > .wrap.section {
-    padding: 22px 16px 36px;
-  }
   :is(#home, .calculators-view, #commonparts) .bs-catalog-layout {
     display: block;
     margin-top: 16px;
@@ -3017,9 +2996,6 @@ body > .footer {
   }
 }
 @media (max-width: 540px) {
-  .calculators-view .bs-catalog-main #resource-calculators.resource-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* Supplier selection is optional, and does not change the component identity. */
@@ -3342,13 +3318,6 @@ body > .footer {
 /* Edge-aligned desktop navigation and near full-width top-level catalogs.
    Assembly/workspace editing pages keep their own constrained layouts. */
 @media (min-width: 801px) {
-  :is(#home, .calculators-view, #commonparts) > .wrap.section {
-    box-sizing: border-box;
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    padding: 20px clamp(12px, 1.35vw, 28px) 42px;
-  }
   :is(#home, .calculators-view, #commonparts) .bs-catalog-layout {
     width: 100%;
     margin-top: 16px;
@@ -3370,9 +3339,6 @@ body > .footer {
   }
 }
 @media (min-width: 1500px) {
-  :is(#home, .calculators-view, #commonparts) > .wrap.section {
-    padding-inline: 20px;
-  }
 }
 
 /* Projects: keep search and clickable descriptor tiles in the left sidebar.

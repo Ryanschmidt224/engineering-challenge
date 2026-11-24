@@ -59,10 +59,22 @@ textarea.field {
 .section-header h3 {
   margin: 0;
 }
-.section-header .actions {
+.section-header .panel-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.panel-heading > :is(h2, h3) {
+  margin: 0;
+}
+.actions {
   margin-left: auto;
 }
 .panel {
+  --action-height: var(--control-height-small);
+  --action-padding-block: var(--space-1);
+  --action-padding-inline: var(--space-2);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-large);

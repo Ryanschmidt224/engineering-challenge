@@ -24,9 +24,21 @@ test("assembly records and revisions freeze child values, placement composition,
   const revision=await f.call("/items/"+top.itemId+"/revisions","POST",{occurrenceId:top.occurrenceId,entryDetails:{whatChanged:"Before a stronger plate"}});assert.equal(revision.status,200,JSON.stringify(revision));
   await f.call("/items/"+part.itemId,"PATCH",{details:{name:"Plate",part_number:"MX100",fields:{specs:[{field_id:"thickness",label:"Thickness",unit:"mm",value:5}]}}});
   await f.call("/occurrences/"+part.occurrenceId,"PATCH",{build:{quantity:4}});
-  const saved=(await f.call("/history/"+record.result.eventId)).result.configurations[0].snapshot.composition[0];assert.equal(saved.snapshot.item.fields.specs[0].value,3);assert.equal(saved.snapshot.occurrence.quantity,2);
+  const evidence=(await f.call("/history/"+record.result.eventId)).result,saved=evidence.configurations[0].snapshot.composition[0];assert.equal(saved.design.item.fields.specs[0].value,3);assert.equal(Object.hasOwn(saved.design,"occurrence"),false);assert.equal(evidence.event.payload.record_context.composition[0].quantity,2);
   const frozen=(await f.call("/history/"+revision.result.eventId)).result.event.payload.snapshot;assert.equal(frozen.composition[0].quantity,2);assert.equal(frozen.parts[0].steps[0].body,"Old fixture");assert.equal(frozen.parts[0].item.fields.specs[0].value,3);
   const s=await state(f);assert.equal(s.items.find(x=>x.id===top.itemId).revision_level,2);assert.equal(s.items.find(x=>x.id===part.itemId).revision_level,1);
+ }finally{f.db.close();}
+});
+test("equivalent shared assembly placements reuse design identity while evidence keeps exact tested placements",async()=>{
+ const f=await engineFixture();try{
+  const top=await f.add("Shared drive",{assembly:true,quantity:2}),child=await f.add("Bearing",{parent:top.occurrenceId,quantity:4});
+  const first=await f.call("/items/"+top.itemId+"/records","POST",{occurrenceId:top.occurrenceId,record:{type:"test",fields:{result:"First placement"}}});assert.equal(first.status,200,JSON.stringify(first));
+  const copied=await f.call("/items/"+top.itemId+"/placements","POST",{build:{quantity:7,build_status:"complete",attention:true,hidden:true}});assert.equal(copied.status,200,JSON.stringify(copied));
+  const second=await f.call("/items/"+top.itemId+"/records","POST",{occurrenceId:copied.result.occurrenceId,record:{type:"test",fields:{result:"Second placement"}}});assert.equal(second.status,200,JSON.stringify(second));
+  assert.equal(second.result.configurationId,first.result.configurationId);
+  const a=(await f.call("/history/"+first.result.eventId)).result.event.payload.record_context,b=(await f.call("/history/"+second.result.eventId)).result.event.payload.record_context;
+  assert.equal(a.occurrence.id,top.occurrenceId);assert.equal(b.occurrence.id,copied.result.occurrenceId);assert.equal(a.occurrence.quantity,2);assert.equal(b.occurrence.quantity,7);assert.notEqual(a.composition[0].id,b.composition[0].id);assert.equal(a.composition[0].quantity,4);assert.equal(b.composition[0].quantity,4);
+  const state=await state(f);assert.equal(state.items.find(row=>row.id===child.itemId).revision_level,1);
  }finally{f.db.close();}
 });
 test("group archive and restore preserve earlier archives, other shared placements, identities, numbers, and R2 bytes",async()=>{

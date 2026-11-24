@@ -19,7 +19,7 @@ test("Projects use tag discovery while Workshop and Parts Management retain cata
  const workshop=read("workshop.html");
  const parts=read("assets/parts-management.js");
  assert.doesNotMatch(projects,/BSCatalogUI\?\.build\(root,catalogSidebar/);
- assert.match(projects,/bs-project-tag-filter/);
+ assert.match(read("assets/directory-filters.js"),/bs-project-tag-filter/);
  assert.match(projects,/activeTags/);
  assert.match(workshop,/aria-label="Workshop categories"/);
  assert.match(workshop,/aria-label="Families"/);

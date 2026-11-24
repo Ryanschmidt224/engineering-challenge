@@ -1,6 +1,6 @@
 import {initSiteHeader} from "./site-header.js";
 import {createProjectClient} from "./project-client.js";
-import {node,actions,field,checkbox,listCard} from "./workshop-ui.js";
+import {node,field,checkbox,listCard} from "./workshop-ui.js";
 import {initSplitPanes} from "./split-panes.js";
 import {detailsFor,buildFor,editItem,editRecord,editStep,projectSettings,confirmAction} from "./project-editors.js";
 import {information,configurationView,fileLink} from "./project-information.js";
@@ -56,13 +56,22 @@ export function initProjectWorkspace(root=document){
  }
  function restorePicker(){
   const input=node("input");input.type="file";input.accept=".bsproject,application/x-ndjson";input.setAttribute("aria-label","Project backup");
-  const attempts=new WeakMap();
-  const restore=button("Restore project backup",async()=>{if(!input.files.length){notify("Choose a project backup first.");return;}restore.disabled=true;try{const file=input.files[0],first=(await file.slice(0,4*1024*1024).text()).split("\n")[0],manifest=JSON.parse(first).manifest,id=manifest?.project?.id;if(!id)throw Error("This file has no project manifest.");let operationId=attempts.get(file);if(!operationId){operationId=crypto.randomUUID();attempts.set(file,operationId);}const result=await client.request("/"+id+"/import",{method:"POST",headers:{"x-operation-id":operationId,"x-project-revision":"new"},body:file});await navigate(result.projectId);notify("Project restored with "+result.verifiedFiles+" verified files.");}catch(error){notify(error.message);}finally{restore.disabled=false;}});return actions(input,restore);
+  let copyName="";const name=field("New project name",copyName,value=>copyName=value,{required:true}),nameInput=name.querySelector("input"),attempts=new WeakMap();
+  const restore=button("Restore project backup",async()=>{
+   if(!input.files.length){notify("Choose a project backup first.");return;}const title=copyName.trim();if(!title||title.length>180){notify("Enter a new project name of at most 180 characters.");nameInput.focus();return;}
+   restore.disabled=true;input.disabled=true;nameInput.disabled=true;
+   try{
+    const file=input.files[0],first=(await file.slice(0,4*1024*1024).text()).split("\n")[0],manifest=JSON.parse(first).manifest;if(!manifest?.project?.id)throw Error("This file has no project manifest.");
+    let attempt=attempts.get(file);if(!attempt||attempt.name!==title){attempt={name:title,projectId:crypto.randomUUID(),operationId:crypto.randomUUID()};attempts.set(file,attempt);}
+    const result=await client.request("/"+attempt.projectId+"/import-copy?"+new URLSearchParams({name:title}),{method:"POST",headers:{"x-operation-id":attempt.operationId,"x-project-revision":"new"},body:file});
+    await navigate(result.projectId);notify("Recovered copy created with "+result.verifiedFiles+" verified files.");
+   }catch(error){notify(error.message);}finally{restore.disabled=false;input.disabled=false;nameInput.disabled=false;}
+  });const body=node("div","","project-stack");body.append(name,input,restore);return body;
  }
  async function projectList(){
   heading.textContent="Projects";pageActions.replaceChildren(button("New project",()=>projectSettings(ctx(),{create:true}),{variant:"primary"}));const area=node("div","","project-stack");content.replaceChildren(area);
   const {projects}=await client.request("");for(const project of projects){const card=listCard("",()=>navigate(project.id));card.append(node("strong",project.name),node("small","Private project"));area.append(card);}if(!projects.length)area.append(node("p","Create a project to start a custom part and its History."));
-  const backup=window.BSUI.section({title:"Restore project backup",quiet:true});backup.body.append(node("p","Restore keeps the original project and item IDs. Use an independent recovery target; existing projects are never replaced."),restorePicker());area.append(backup.root);
+  const backup=window.BSUI.section({title:"Restore project backup",quiet:true});backup.body.append(node("p","Restore creates a separate project with independent files. Existing projects and saved historical context stay unchanged."),restorePicker());area.append(backup.root);
  }
  async function refresh(){
   const sequence=++renderSequence,url=new URL(location.href);projectId=url.searchParams.get("project");itemId=url.searchParams.get("item");occurrenceId=url.searchParams.get("occurrence");

@@ -1,4 +1,4 @@
-import {information,configurationView,fileLink,savedPartView} from "./project-information.js";
+import {information,configurationView,fileLink,savedPartView,buildContextView,recordVersionView} from "./project-information.js";
 import {node,field,actions,listCard} from "./workshop-ui.js";
 import {formatRevisionValue} from "./project-item-model.js";
 import {recordLabels,recordPrompts} from "./project-record-model.js";
@@ -6,24 +6,28 @@ import {projectHelp} from "./project-help.js";
 import {initSplitPanes} from "./split-panes.js";
 import {editRecord,confirmAction} from "./project-editors.js";
 const button=(...args)=>window.BSUI.button(...args);
-export const eventLabels={...recordLabels,revision:"Revision",archived:"Archived",file_replaced:"File change",removed:"Removed",restored:"Restored",step_retired:"Step retired",step_restored:"Step restored"};
+export const eventLabels={...recordLabels,record_edited:"Record edited",revision:"Revision",archived:"Archived",file_replaced:"File change",removed:"Removed",restored:"Restored",step_retired:"Step retired",step_restored:"Step restored"};
 
 function entryCard(entry,select){
  const row=listCard("",select);row.append(node("strong",entry.display_title||entry.title),node("small",(eventLabels[entry.display_type||entry.type]||entry.type)+" · "+(entry.source_name||"")),node("span",entry.outcome||entry.summary||""),node("small",new Date(entry.created_at).toLocaleString()));row.dataset.eventId=entry.id;return row;
 }
 export async function showEvent(ctx,id,container){
- const detail=await ctx.client.request("/"+ctx.projectId+"/history/"+id),{event,record,configurations,attachments}=detail,body=node("div","","project-stack");
+ const detail=await ctx.client.request("/"+ctx.projectId+"/history/"+id),{event,record,configurations,attachments,recordContext}=detail,body=node("div","","project-stack");
  body.append(node("h2",record?.title||event.title),node("p",(eventLabels[record?.type||event.type]||event.type)+" · "+(event.payload.source?.name||""),"muted"));
  if(record){body.append(node("p",projectHelp.testedConfiguration),...(record.type==="change_note"?[node("p",projectHelp.changeRecord)]:[]),information("Record",Object.entries(recordPrompts[record.type]).map(([key,label])=>[label,record.fields[key]]).concat(record.type==="problem"?[["Status",record.fields.status]]:[]).concat(record.event_date?[["Event date",record.event_date]]:[])));if(record.step_snapshot)body.append(information("Step when recorded",[["Title",record.step_snapshot.title],["Instructions",record.step_snapshot.body]]));
   const occurrence=ctx.client.state.occurrences.find(row=>row.item_id===event.item_id);if(occurrence?.removed_at===null)body.append(button("Edit record",()=>editRecord({...ctx,itemId:event.item_id},{record})));
  }
+ if(event.payload.record_edit){const edit=event.payload.record_edit;body.append(recordVersionView(ctx,edit.before,"Before edit",attachments),recordVersionView(ctx,edit.after,"After edit",attachments),information("Edit information",[["Edited by",event.payload.actor_id]]));if(event.payload.step_snapshot)body.append(information("Step when recorded",[["Title",event.payload.step_snapshot.title],["Instructions",event.payload.step_snapshot.body]]));}
+ if(recordContext)body.append(buildContextView(recordContext,recordContext.legacy?"Build context from legacy snapshot":"Build context when recorded"));
+ const build=event.payload.build_context;
+ if(build?.before&&build?.after){if(JSON.stringify(build.before)===JSON.stringify(build.after))body.append(buildContextView(build.after,"Build context at change"));else body.append(buildContextView(build.before,"Build context before revision"),buildContextView(build.after,"Build context after revision"));}
  if(event.payload.snapshot)body.append(savedPartView(ctx,event));
  if(event.payload.file_id){const file=ctx.client.state.files.find(file=>file.id===event.payload.file_id);if(file)body.append(information("Engineering file",[["File",fileLink(ctx,file)]]));}
  if(event.payload.changes?.length)body.append(information("What changed",event.payload.changes.map(change=>[change.label,formatRevisionValue(change.before)+" → "+formatRevisionValue(change.after)])));
  if(event.payload.reason||event.payload.label)body.append(information("Revision information",[["Reason",event.payload.reason],["Label",event.payload.label]]));
  if(event.payload.path)body.append(information("Original location",[["Project",event.payload.path.root.name],["Item",event.payload.path.item.name],["Step",event.payload.path.step?.title]]));
- for(const config of configurations){const section=window.BSUI.section({title:config.id===event.payload.before?"Before revision":config.id===event.payload.after?"After revision":"Configuration when recorded",open:!!record});section.body.append(configurationView(config));if(config.snapshot.file){const file=ctx.client.state.files.find(file=>file.id===config.snapshot.file.id);if(file)section.body.append(fileLink(ctx,file));}body.append(section.root);}
- if(attachments.length)body.append(information("Attachments",attachments.map(file=>["File",fileLink(ctx,file)])));
+ for(const config of configurations){const section=window.BSUI.section({title:config.id===event.payload.before&&config.id===event.payload.after?"Design configuration (unchanged)":config.id===event.payload.before?"Before revision":config.id===event.payload.after?"After revision":"Configuration when recorded",open:!!record});section.body.append(configurationView(config,undefined,{includeBuild:!recordContext&&!build}));if(config.snapshot.file){const file=ctx.client.state.files.find(file=>file.id===config.snapshot.file.id);if(file)section.body.append(fileLink(ctx,file));}body.append(section.root);}
+ if(attachments.length&&!event.payload.record_edit)body.append(information("Attachments",attachments.map(file=>["File",fileLink(ctx,file)])));
  body.append(node("small","Recorded "+new Date(event.created_at).toLocaleString(),"muted"));container.replaceChildren(body);
 }
 function currentSnapshot(ctx,item){const occurrence=ctx.client.state.occurrences.find(row=>row.item_id===item.id);return {snapshot:{item,occurrence:{...occurrence,root:{name:ctx.client.state.project.name}}}};}

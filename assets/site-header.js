@@ -6,7 +6,7 @@ export function initSiteHeader() {
   const make = (tag, className, text) => {
     const el = document.createElement(tag); el.className = className; if (text) el.textContent = text; return el;
   };
-  const inner = make("div", "ui-site-header__inner");
+  const inner = make("div", "ui-site-header__inner ui-page");
   const brand = make("a", "ui-site-brand", "BUILDING "); brand.href = projectPage ? "#home" : "index.html#home";
   if (projectPage) brand.dataset.nav = "home";
   brand.append(make("span", "", "SCHMIDT"));

@@ -1,3 +1,4 @@
+import {recordedPart} from "../../assets/project-record-context.js";
 import {canonicalJSON,sha256,CommandConflict} from "./project-command.js";
 import {normalizeCustomItem,normalizeOccurrence} from "../../assets/project-item-model.js";
 import {projectTree} from "../../assets/project-tree-model.js";
@@ -29,6 +30,16 @@ export const itemDetails=item=>normalizeCustomItem({name:item.name,short_name:it
 export const buildDetails=occurrence=>normalizeOccurrence({quantity:occurrence.quantity,unit:occurrence.unit,build_status:occurrence.build_status,attention:!!occurrence.attention,attention_note:occurrence.attention_note,hidden:!!occurrence.hidden});
 export const storedItem=details=>({...details,is_tool:details.is_tool?1:0,is_assembly:details.is_assembly?1:0,fields:JSON.stringify(details.fields)});
 export const storedBuild=build=>({...build,attention:build.attention?1:0,hidden:build.hidden?1:0});
+// Capture operational state with the evidence/event, never in design identity.
+// Assembly evidence may include the exact tested placement tree; configuration
+// fingerprints intentionally contain only the logical component design.
+export const buildContext=(project,occurrence,item=null,tree=null)=>{
+ const part=recordedPart(item),composition=tree&&item?.is_assembly?tree.subtree(occurrence.id).slice(1).map(row=>{
+  const definition=tree.definitions.get(row.item_id),saved=recordedPart(definition);
+  return {id:row.id,parent_id:row.parent_id,sort_order:row.sort_order,item:{id:definition.id,name:definition.name,part_number:definition.part_number,...(saved?{revision_level:saved.revision_level}:{})},...buildDetails(row)};
+ }):undefined;
+ return {format:1,project:{id:project.id,name:project.name},occurrence:{id:occurrence.id,...buildDetails(occurrence)},...(part?{part}:{}),...(composition?{composition}:{})};
+};
 export async function currentEngineeringFile(db,projectId,itemId){
  return (await rows(db,"SELECT f.* FROM engine_file_links l JOIN engine_files f ON f.project_id=l.project_id AND f.id=l.file_id WHERE l.project_id=? AND l.item_id=? AND l.active=1 AND f.state='ready'",projectId,itemId))[0]||null;
 }
@@ -41,20 +52,30 @@ export function addFileLinks(w,projectId,owner,files,role="support"){
 }
 export async function configurationPlan(db,project,item,occurrence,file,{shallow=false,selection,cache=null}={}){
  const projectId=project.id;
- let tree=null,childRows=[];
+ let tree=null;
  if(item.is_assembly&&!shallow&&!cache){
-  const result=await db.batch([statement(db,"SELECT * FROM engine_items WHERE project_id=?",projectId),statement(db,"SELECT * FROM engine_occurrences WHERE project_id=?",projectId)]);tree=projectTree(result[0].results.map(decode),result[1].results);childRows=tree.placements.has(occurrence.id)?tree.subtree(occurrence.id).slice(1):[];
+  const result=await db.batch([statement(db,"SELECT * FROM engine_items WHERE project_id=?",projectId),statement(db,"SELECT * FROM engine_occurrences WHERE project_id=?",projectId)]);tree=projectTree(result[0].results.map(decode),result[1].results);
+  const childRows=tree.placements.has(occurrence.id)?tree.subtree(occurrence.id).slice(1):[];
   const ids=JSON.stringify([...new Set([item.id,...childRows.map(row=>row.item_id)])]),loaded=await db.batch([
    statement(db,"SELECT * FROM engine_selections WHERE project_id=? AND id IN(SELECT value FROM json_each(?))",projectId,ids),
    statement(db,"SELECT l.item_id,f.* FROM engine_file_links l JOIN engine_files f ON f.project_id=l.project_id AND f.id=l.file_id WHERE l.project_id=? AND l.active=1 AND l.item_id IN(SELECT value FROM json_each(?)) AND f.state='ready'",projectId,ids),
    statement(db,"SELECT id,item_id,fingerprint FROM engine_configurations WHERE project_id=? AND item_id IN(SELECT value FROM json_each(?))",projectId,ids)
   ]);cache={tree,plans:new Map(),selections:new Map(loaded[0].results.map(row=>[row.id,decode(row)])),files:new Map(loaded[1].results.map(row=>[row.item_id,row])),configurations:new Map(loaded[2].results.map(row=>[row.item_id+":"+row.fingerprint,row]))};
  }
- if(item.is_assembly&&!shallow&&cache?.tree){tree=cache.tree;childRows=tree.placements.has(occurrence.id)?tree.subtree(occurrence.id).slice(1):[];}
+ if(item.is_assembly&&cache?.tree)tree=cache.tree;
  const selected=selection===undefined?(cache?cache.selections.get(item.id):decode(await statement(db,"SELECT * FROM engine_selections WHERE project_id=? AND id=?",projectId,item.id).first())):selection;
- const snapshot={format:1,item:{id:item.id,...itemDetails(item),revision_level:item.revision_level||1},occurrence:{id:occurrence.id,...buildDetails(occurrence),root:{id:project.id,name:project.name},...(occurrence.parent_id?{parent_id:occurrence.parent_id}:{})},file:file?{id:file.id,name:file.name,content_type:file.content_type,size:file.size,sha256:file.sha256}:null,...(selected?{selection:selected}: {})};
  const children=[];
- if(tree){snapshot.composition=[];for(const child of childRows){const definition=tree.definitions.get(child.item_id),plan=await configurationPlan(db,project,definition,child,cache.files.get(definition.id)||null,{shallow:true,cache});children.push(plan);snapshot.composition.push({occurrence_id:child.id,parent_id:child.parent_id,configuration_id:plan.id,snapshot:plan.snapshot});}}
+ const composition=[];
+ if(tree)for(const child of (tree.children.get(occurrence.id)||[]).filter(tree.active)){
+  const definition=tree.definitions.get(child.item_id),plan=await configurationPlan(db,project,definition,child,cache.files.get(definition.id)||null,{cache});children.push(plan);
+  composition.push({quantity:child.quantity,unit:child.unit,design:plan.snapshot});
+ }
+ composition.sort((a,b)=>canonicalJSON(a).localeCompare(canonicalJSON(b)));
+ const selectionDesign=selected?{family_id:selected.family_id,product_id:selected.product_id??null,family_revision:selected.family_revision,product_revision:selected.product_revision??null,snapshot:selected.snapshot,requirements:selected.requirements}:null;
+ // Format 1 rows remain immutable/readable. Format 2 is the design-only leaf
+ // boundary. Format 3 adds frozen Workshop product facts and logical assembly
+ // composition without placement IDs, project labels, build state or counters.
+ const snapshot={format:item.is_assembly||selectionDesign?3:2,item:{id:item.id,...itemDetails(item)},file:file?{id:file.id,name:file.name,content_type:file.content_type,size:file.size,sha256:file.sha256}:null,...(selectionDesign?{selection:selectionDesign}:{}),...(item.is_assembly?{composition}: {})};
  if(new TextEncoder().encode(JSON.stringify(snapshot)).length>500000)throw Error("This assembly configuration exceeds the preview snapshot limit. Nothing was changed.");
  const fingerprint=await sha256(canonicalJSON(snapshot));
  const sharedKey=item.id+":"+fingerprint;if(cache?.plans.has(sharedKey))return cache.plans.get(sharedKey);

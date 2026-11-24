@@ -1,9 +1,10 @@
+import {legacyRecordContext} from "../../assets/project-record-context.js";
 import {loadProjectTree,parentPlacement,changePlacementLife,lifePreview} from "./project-placements.js";
 import {captureProjectPart,entryEvidence} from "./project-part-snapshot.js";
 import {commitProjectCommand,canonicalJSON,CommandConflict} from "./project-command.js";
 import {normalizeCustomItem,normalizeOccurrence,allocatePartNumber,diffProjectItems,projectNumberKey} from "../../assets/project-item-model.js";
 import {normalizeProjectRecord} from "../../assets/project-record-model.js";
-import {rows,statement,decode,uuid,text,itemContext,itemDetails,buildDetails,storedItem,storedBuild,configurationPlan,currentEngineeringFile,readyFiles,addFileLinks,addEvent,originalPath,ProjectNotFound} from "./project-state.js";
+import {rows,statement,decode,uuid,text,itemContext,itemDetails,buildDetails,storedItem,storedBuild,buildContext,configurationPlan,currentEngineeringFile,readyFiles,addFileLinks,addEvent,originalPath,ProjectNotFound} from "./project-state.js";
 const same=(a,b)=>canonicalJSON(a)===canonicalJSON(b);
 export async function unchanged(db,project,input){
  const current=await statement(db,"SELECT revision FROM engine_projects WHERE id=? AND owner_id=?",project.id,input.actorId).first();
@@ -58,14 +59,15 @@ export async function editItem(db,input,project,itemId,data,{revision=false}={})
  const support=revision?await readyFiles(db,project.id,data.fileIds===undefined?[]:data.fileIds):[];
  const file=await currentEngineeringFile(db,project.id,itemId);
  const prior=await configurationPlan(db,project,context.item,context.occurrence,file);
- const next=await configurationPlan(db,project,{...context.item,...after,...(revision?{revision_level:level+1}:{})},{...context.occurrence,...build},file,{cache:prior.cache});
+ let next=await configurationPlan(db,project,{...context.item,...after,...(revision?{revision_level:level+1}:{})},{...context.occurrence,...build},file,{cache:prior.cache});
+ if(same(prior.snapshot,next.snapshot))next=prior;
  return commitProjectCommand(db,input,w=>{
-  if(revision)prior.write(w);
+  if(revision&&prior.id!==next.id)prior.write(w);
   w.update("engine_items",{...storedItem(after),...(revision?{revision_level:level+1}:{})},{project_id:project.id,id:itemId});
   w.update("engine_occurrences",storedBuild(build),{project_id:project.id,id:context.occurrence.id,removed_at:null});
   next.write(w);
   let eventId=null;
-  if(revision){eventId=addEvent(w,project.id,itemId,"revision","Revision "+level,{before:prior.id,after:next.id,level,snapshot,entryDetails:evidence.details,changes,source:{id:itemId,name:before.name,part_number:before.part_number}},evidence.details.whatChanged);addFileLinks(w,project.id,{event_id:eventId},[...new Map([...support,...evidence.photos].map(file=>[file.id,file])).values()]);}
+  if(revision){eventId=addEvent(w,project.id,itemId,"revision","Revision "+level,{before:prior.id,after:next.id,level,snapshot,entryDetails:evidence.details,changes,build_context:{before:buildContext(project,context.occurrence,context.item,prior.cache?.tree),after:buildContext(project,{...context.occurrence,...build},{...context.item,revision_level:level+1},prior.cache?.tree)},source:{id:itemId,name:before.name,part_number:before.part_number}},evidence.details.whatChanged);addFileLinks(w,project.id,{event_id:eventId},[...new Map([...support,...evidence.photos].map(file=>[file.id,file])).values()]);}
   return {itemId,configurationId:next.id,eventId};
  });
 }
@@ -112,7 +114,7 @@ export async function createRecord(db,input,project,itemId,data){
   if(step)w.require("EXISTS(SELECT 1 FROM engine_steps WHERE project_id=? AND id=? AND item_id=? AND retired_at IS NULL)",project.id,step.id,itemId);
   w.insert("engine_records",{id,project_id:project.id,item_id:itemId,step_id:step?.id||null,configuration_id:configuration.id,type:record.type,title:record.title,fields:JSON.stringify(record.fields),event_date:record.event_date,step_snapshot:step?JSON.stringify({id:step.id,title:step.title,body:step.body}):null,created_at:w.createdAt,updated_at:w.createdAt});
   addFileLinks(w,project.id,{record_id:id},files);
-  const eventId=addEvent(w,project.id,itemId,record.type,record.title,{record_id:id,configuration_id:configuration.id,occurrence_id:occurrence.id,source:{id:itemId,name:item.name,part_number:item.part_number,step_title:step?.title||null}},Object.values(record.fields).filter(value=>typeof value==="string").join(" · ").slice(0,300));
+  const eventId=addEvent(w,project.id,itemId,record.type,record.title,{record_id:id,configuration_id:configuration.id,occurrence_id:occurrence.id,record_context:buildContext(project,occurrence,item,configuration.cache?.tree),source:{id:itemId,name:item.name,part_number:item.part_number,step_title:step?.title||null}},Object.values(record.fields).filter(value=>typeof value==="string").join(" · ").slice(0,300));
   return {recordId:id,eventId,configurationId:configuration.id};
  });
 }
@@ -121,13 +123,20 @@ export async function editRecord(db,input,project,id,data){
  await itemContext(db,project.id,old.item_id);
  const record=normalizeProjectRecord(data.record);
  const oldLinks=await rows(db,"SELECT * FROM engine_file_links WHERE project_id=? AND record_id=? AND active=1",project.id,id),files=await readyFiles(db,project.id,record.fileIds);
- const oldValue={type:old.type,title:old.title,fields:old.fields,event_date:old.event_date,fileIds:oldLinks.map(link=>link.file_id).sort()};
- if(same(oldValue,{...record,fileIds:[...record.fileIds].sort()}))return unchanged(db,project,input);
+ const oldValue={type:old.type,title:old.title,fields:old.fields,event_date:old.event_date,fileIds:oldLinks.map(link=>link.file_id).sort()},nextValue={...record,fileIds:[...record.fileIds].sort()};
+ if(same(oldValue,nextValue))return unchanged(db,project,input);
+ const creation=decode(await statement(db,"SELECT * FROM engine_events WHERE project_id=? AND json_extract(payload,'$.record_id')=? ORDER BY created_at,id LIMIT 1",project.id,id).first());
+ const configuration=decode(await statement(db,"SELECT * FROM engine_configurations WHERE project_id=? AND id=?",project.id,old.configuration_id).first());
+ const recordContext=creation?.payload.record_context||legacyRecordContext(configuration?.snapshot);
+ const retained=await readyFiles(db,project.id,oldValue.fileIds),auditFiles=[...new Map([...retained,...files].map(file=>[file.id,file])).values()];
  return commitProjectCommand(db,input,w=>{
   w.update("engine_records",{type:record.type,title:record.title,fields:JSON.stringify(record.fields),event_date:record.event_date,updated_at:w.createdAt},{project_id:project.id,id});
   for(const link of oldLinks)if(!record.fileIds.includes(link.file_id))w.update("engine_file_links",{active:0},{project_id:project.id,id:link.id});
   addFileLinks(w,project.id,{record_id:id},files.filter(file=>!oldLinks.some(link=>link.file_id===file.id)));
-  return {recordId:id,configurationId:old.configuration_id};
+  // Use edited_record_id so creation-event/Knowledge mappings stay unique.
+  const eventId=addEvent(w,project.id,old.item_id,"record_edited","Record edited: "+record.title,{edited_record_id:id,record_event_id:creation?.id||null,configuration_id:old.configuration_id,record_context:recordContext,step_snapshot:old.step_snapshot,actor_id:input.actorId,record_edit:{before:oldValue,after:nextValue},source:creation?.payload.source||{id:old.item_id}},record.title);
+  addFileLinks(w,project.id,{event_id:eventId},auditFiles);
+  return {recordId:id,eventId,configurationId:old.configuration_id};
  });
 }
 export async function restorePreview(db,project,itemId,occurrenceId=null){

@@ -1,3 +1,4 @@
+import {interfaceHelp} from "./interface-help.js";
 import {present,isWebUrl} from "./family-model.js";
 
 export const node=(tag,text="",className="")=>{const element=document.createElement(tag);element.className=className;element.textContent=text;return element;};
@@ -5,7 +6,8 @@ export const button=(label,action,variant="")=>{const element=node("button",labe
 // Selectable list rows own their layout; action-button styles must not apply.
 export const listCard=(label,action,variant="")=>{const element=node("button",label,"list-card "+variant);element.type="button";element.onclick=action;return element;};
 export const actions=(...elements)=>{const element=node("div","","actions");element.append(...elements);return element;};
-export const panel=(title,help="")=>{const element=node("section","","panel");element.append(node("h3",title));if(help)element.append(node("p",help,"muted"));return element;};
+export const help=(title,key)=>{const button=window.BSDialogs.helpButton("About "+title,interfaceHelp[key]);button.setAttribute("aria-label","About "+title);return button;};
+export const panel=(title,helpKey="")=>{const element=node("section","","panel"),header=node("div","","panel-heading");header.append(node("h3",title));if(helpKey)header.append(help(title,helpKey));element.append(header);return element;};
 export function field(label,value,update,{type="text",options=null,required=false,placeholder=""}={}) {
  const row=node("div","","field-row"),caption=node("label",label),input=node(options?"select":type==="textarea"?"textarea":"input","","field");
  input.id="field-"+crypto.randomUUID();caption.htmlFor=input.id;

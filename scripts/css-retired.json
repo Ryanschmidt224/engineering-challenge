@@ -385,6 +385,15 @@
     "workspace-photo-meta",
     "workspace-photo-title",
     "workspace-project-settings",
-    "workspace-tool-controls"
+    "workspace-tool-controls",
+    "resource-grid",
+    "investigation-summary",
+    "investigation-title-actions",
+    "investigation-title-controls",
+    "investigation-rename",
+    "investigation-history-delete",
+    "table-scroll",
+    "bs-content-card-heading",
+    "ui-table-date"
   ]
 }

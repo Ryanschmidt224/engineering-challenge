@@ -23,7 +23,7 @@ export async function initProjectProductCopy({params,data,detail,status,onDraft}
   if(!part)throw Error("The source project part was not found. Return to the project and try again.");
   productCopyDraft(part,"");
   const families=data.families.filter(family=>!family.archived);
-  const section=panel("Copy project part to Workshop","Choose a family, then review the product before saving. Project details, photos and files remain in the project. Specifications are copied into Notes for review; no units or field meanings are guessed.");
+  const section=panel("Copy project part to Workshop","projectCopy");
   detail.replaceChildren(section);
   if(!families.length){section.append(node("p","Add a family first, then return to the project and choose Copy to Workshop again.","muted"));return;}
   let familyId="";
