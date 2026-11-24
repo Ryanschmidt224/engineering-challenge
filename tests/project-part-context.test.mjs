@@ -9,11 +9,12 @@ test("part snapshots retain original record context, audit and file ownership th
   const step=await f.call("/items/"+f.itemId+"/steps","POST",{title:"Measure bracket",body:"Original fixture"});
   const record=await f.call("/items/"+f.itemId+"/records","POST",{stepId:step.result.stepId,record:{type:"test",title:"Load test",fields:{result:"ok"},fileIds:[a.fileId]}});
   const edit=await f.call("/records/"+record.result.recordId,"PATCH",{record:{type:"test",title:"Load test",fields:{result:"FAILED"},fileIds:[b.fileId]}});assert.equal(edit.status,200);
+  await f.call("/steps/"+step.result.stepId,"PATCH",{body:"Checkpoint fixture"});
   await f.call("/items/"+f.itemId,"PATCH",{build:{build_status:"complete",quantity:4}});await f.call("","PATCH",{name:"Later root"});
   const before=await counts(f.db),revision=await f.call("/items/"+f.itemId+"/revisions","POST",{entryDetails:{whatChanged:"Preserve the saved evidence"}});assert.equal(revision.status,200,JSON.stringify(revision));
   const detail=(await f.call("/history/"+revision.result.eventId)).result,event=detail.event,snapshot=event.payload.snapshot;
   assert.equal(event.payload.before,event.payload.after,"checkpoint counter is not design identity");assert.equal((await counts(f.db)).configurations,before.configurations);assert.equal(snapshot.format,3);assert.equal(snapshot.item.revision_level,1);assert.equal((await f.call("/state")).result.items[0].revision_level,2);
-  assert.equal(snapshot.occurrence.build_status,"complete");assert.equal(snapshot.records[0].fields.result,"FAILED");assert.equal(snapshot.steps[0].body,"Original fixture");
+  assert.equal(snapshot.occurrence.build_status,"complete");assert.equal(snapshot.records[0].fields.result,"FAILED");assert.equal(snapshot.steps[0].body,"Checkpoint fixture");assert.equal(snapshot.records[0].step_snapshot.body,"Original fixture");
   const creation=snapshot.record_events.find(row=>row.id===record.result.eventId),audit=snapshot.record_events.find(row=>row.id===edit.result.eventId);assert.equal(creation.payload.record_context.occurrence.build_status,"not_started");assert.equal(creation.payload.record_context.project.name,"Bracket build");assert.equal(audit.payload.record_edit.before.fields.result,"ok");assert.equal(audit.payload.record_edit.after.fields.result,"FAILED");
   assert.equal(snapshot.record_events.every(row=>!row.payload.snapshot),true,"record history does not recursively embed full part revisions");
   assert.deepEqual(snapshot.file_links.filter(link=>link.record_id===record.result.recordId&&link.active).map(link=>link.file_id),[b.fileId]);assert.deepEqual(snapshot.file_links.filter(link=>link.event_id===edit.result.eventId).map(link=>link.file_id).sort(),[a.fileId,b.fileId].sort());

@@ -28,6 +28,7 @@ export function savedPartView(ctx,event){
  for(const record of snapshot.records||[]){
   const fileIds=snapshot.file_links?snapshot.file_links.filter(link=>link.record_id===record.id&&link.active).map(link=>link.file_id):undefined;
   body.append(recordVersionView(ctx,{...record,fileIds},record.title,snapshot.files||[]));
+  if(record.step_snapshot)body.append(information("Step when recorded",[["Title",record.step_snapshot.title],["Instructions",record.step_snapshot.body]]));
   const captured=snapshot.record_events?.find(entry=>entry.payload.record_id===record.id),config=snapshot.configurations?.find(row=>row.id===record.configuration_id);
   const context=captured?.payload.record_context||legacyRecordContext(config?.snapshot);
   if(context)body.append(buildContextView(context,context.legacy?"Build context from legacy snapshot":"Build context when recorded"));
