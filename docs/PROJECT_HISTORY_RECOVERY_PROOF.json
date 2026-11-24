@@ -1,5 +1,5 @@
 {
-  "status": "actual Cloudflare source workflow and independent-target restore passed; valid source integrity recheck pending",
+  "status": "actual Cloudflare source workflow, independent-target restore and final source integrity recheck passed",
   "sourceEvidenceFile": "PROJECT_HISTORY_SOURCE_PROOF.json",
   "sourceSha": "5dea81ecbf6429fb714847052602a67ca024fb9a",
   "sourceBuild": "aae7a97b-e25a-4c8b-8b50-107039eaddb1",
@@ -65,8 +65,19 @@
   "invalidSourceRecheck": {
     "environment": "https://preview-project-restore-proof-engineering-challenge.ryanschmidt224.workers.dev",
     "error": "The source backup changed. Inspect the source before claiming recovery passed.",
-    "diagnosis": "Owner screenshot shows Verify source is unchanged was run on the restore preview, not on the source preview. New token and independent file keys necessarily differ there. This is not evidence that the original source changed, and does not satisfy the final source gate."
+    "diagnosis": "Owner screenshot shows Verify source is unchanged was run on the restore preview, not on the source preview. New token and independent file keys necessarily differ there. This is not evidence that the original source changed, and does not satisfy the final source gate.",
+    "resolution": "The subsequent proper source-preview check passed with the exact original backup hash; its report is retained below."
   },
-  "sourceIntegrityRecheckedAfterRestore": false,
-  "productionEngineEnabled": false
+  "sourceIntegrityRecheckedAfterRestore": true,
+  "productionEngineEnabled": false,
+  "sourceIntegrityReport": {
+    "ok": true,
+    "environment": "https://feature-project-history-alignment-engineering-challenge.ryanschmidt224.workers.dev",
+    "projectId": "743a7c75-aa2d-436e-86d1-6f43c3310191",
+    "backupSha256": "2815b36f8a932cead97ac7077b3cb01f26fc8725f83b91ef795818d3539e23ca",
+    "checks": [
+      "Source metadata and exported file bytes are byte-for-byte unchanged after independent restore"
+    ]
+  },
+  "sourceIntegrityReportSource": "Owner ran Verify source is unchanged on the original source preview and pasted this passing report after the independent restore. No checkedAt field was emitted by this action."
 }

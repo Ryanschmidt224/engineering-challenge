@@ -1,5 +1,5 @@
 {
-  "status": "actual Cloudflare source workflow passed; independent-target recovery and source integrity recheck pending",
+  "status": "actual Cloudflare source workflow passed; completed independent recovery and source integrity evidence is in PROJECT_HISTORY_RECOVERY_PROOF.json",
   "sourceSha": "5dea81ecbf6429fb714847052602a67ca024fb9a",
   "sourceTreeSha": "34d86a500965c322b8000f48bc1a9a813345b284",
   "sourceBuild": "aae7a97b-e25a-4c8b-8b50-107039eaddb1",

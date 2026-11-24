@@ -81,6 +81,24 @@ const migrations=[{version:1,statements:[
  `CREATE INDEX IF NOT EXISTS engine_links_record ON engine_file_links(project_id,record_id,active)`
 ]},{version:3,statements:[
  `ALTER TABLE engine_items ADD COLUMN revision_level INTEGER NOT NULL DEFAULT 1 CHECK(revision_level>=1)`
+ ]},{version:4,statements:[
+ `ALTER TABLE engine_items ADD COLUMN is_assembly INTEGER NOT NULL DEFAULT 0 CHECK(is_assembly IN(0,1))`,
+ `ALTER TABLE engine_occurrences ADD COLUMN parent_id TEXT`,
+ `ALTER TABLE engine_occurrences ADD COLUMN archive_group_id TEXT`,
+ `CREATE INDEX IF NOT EXISTS engine_occurrences_parent ON engine_occurrences(project_id,parent_id,removed_at,sort_order,id)`,
+ `CREATE TABLE IF NOT EXISTS engine_selections (
+ id TEXT NOT NULL,project_id TEXT NOT NULL,family_id TEXT NOT NULL,product_id TEXT,
+ family_revision INTEGER NOT NULL,product_revision INTEGER,
+ snapshot TEXT NOT NULL CHECK(json_valid(snapshot)),requirements TEXT NOT NULL CHECK(json_valid(requirements)),
+ PRIMARY KEY(project_id,id),FOREIGN KEY(project_id,id) REFERENCES engine_items(project_id,id))`,
+ `CREATE INDEX IF NOT EXISTS engine_selections_source ON engine_selections(family_id,product_id,project_id)`,
+ `CREATE TABLE IF NOT EXISTS engine_archive_groups (
+ id TEXT NOT NULL,project_id TEXT NOT NULL,root_occurrence_id TEXT NOT NULL,members TEXT NOT NULL CHECK(json_valid(members)),created_at TEXT NOT NULL,
+ PRIMARY KEY(project_id,id),FOREIGN KEY(project_id,root_occurrence_id) REFERENCES engine_occurrences(project_id,id))`,
+ ...["INSERT","UPDATE OF parent_id,item_id,project_id"].map(action=>`CREATE TRIGGER IF NOT EXISTS engine_parent_${action.startsWith("INSERT")?"insert":"update"} BEFORE ${action} ON engine_occurrences WHEN NEW.parent_id IS NOT NULL BEGIN
+ SELECT RAISE(ABORT,'INVALID_ASSEMBLY_PARENT') WHERE NOT EXISTS(SELECT 1 FROM engine_occurrences p JOIN engine_items i ON i.project_id=p.project_id AND i.id=p.item_id WHERE p.project_id=NEW.project_id AND p.id=NEW.parent_id AND i.is_assembly=1);
+ SELECT RAISE(ABORT,'ASSEMBLY_CYCLE') WHERE NEW.parent_id=NEW.id OR EXISTS(WITH RECURSIVE parents(id,parent_id) AS(SELECT id,parent_id FROM engine_occurrences WHERE project_id=NEW.project_id AND id=NEW.parent_id UNION SELECT p.id,p.parent_id FROM engine_occurrences p JOIN parents a ON p.id=a.parent_id WHERE p.project_id=NEW.project_id) SELECT 1 FROM parents WHERE id=NEW.id); END`),
+ `CREATE TRIGGER IF NOT EXISTS engine_assembly_contract BEFORE UPDATE OF is_assembly ON engine_items WHEN NEW.is_assembly=0 AND OLD.is_assembly=1 BEGIN SELECT RAISE(ABORT,'ASSEMBLY_HAS_CHILDREN') WHERE EXISTS(SELECT 1 FROM engine_occurrences c JOIN engine_occurrences p ON p.project_id=c.project_id AND p.id=c.parent_id WHERE p.project_id=OLD.project_id AND p.item_id=OLD.id); END`
 ]}];
 const pending=new WeakMap();
 export async function initializeProjectEngine(db){

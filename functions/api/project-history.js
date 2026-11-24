@@ -8,12 +8,14 @@ function cursorValue(value){
 }
 const cursor=row=>btoa(JSON.stringify({time:row.created_at,id:row.id})).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 export async function historyPage(db,projectId,params){
+ const occurrence=params.get("occurrence")||"";if(occurrence&&!uuid(occurrence))throw Error("Invalid History placement.");
  const type=params.get("type")||"all",scope=params.get("scope")||"",q=(params.get("q")||"").trim().toLowerCase(),limit=Number(params.get("limit")||20),after=cursorValue(params.get("cursor"));
  if(type!=="all"&&!Object.hasOwn(filterTypes,type)||scope&&!uuid(scope)||q.length>180||!Number.isInteger(limit)||limit<1||limit>50)throw Error("Invalid History filter.");
  const conditions=["e.project_id=?"],values=[projectId];
- if(scope){conditions.push("e.item_id=?");values.push(scope);}
+ if(scope){conditions.push("(e.item_id=? OR json_extract(e.payload,'$.parent_item_id')=?)");values.push(scope,scope);}
  if(type!=="all"){conditions.push(effectiveType+" IN("+filterTypes[type].map(()=>"?").join(",")+")");values.push(...filterTypes[type]);}
  if(q){conditions.push("instr("+searchText+",?)>0");values.push(q);}
+ if(occurrence){conditions.push("json_extract(e.payload,'$.occurrence_id')=?");values.push(occurrence);}
  const countConditions=[...conditions],countValues=[...values];
  if(after){conditions.push("(e.created_at<? OR e.created_at=? AND e.id<?)");values.push(after.time,after.time,after.id);}
  const from=`FROM engine_events e JOIN engine_items i ON i.project_id=e.project_id AND i.id=e.item_id LEFT JOIN engine_records r ON r.project_id=e.project_id AND r.id=json_extract(e.payload,'$.record_id')`;
