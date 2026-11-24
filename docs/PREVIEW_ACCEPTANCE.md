@@ -44,6 +44,16 @@ Actual platform measurements remain unperformed. The current acceptance script r
 
 Completed, receipted staging rows are removed after publication and on exact replay, in bounded batches. Interrupted cleanup retains the successful receipt for retry. The common sweep is still pending for staging/ready jobs and hidden copies older than 24 hours, uploads, failed Workshop copies and unreferenced frozen values; active recoveries and every historical reference must be protected. No abandoned-copy or R2 deletion is included here. The read-only control-plane token cannot run direct D1 write benchmarks, and this runbook does not authorize granting new secret permissions automatically.
 
+## Read-only orphan inventory
+
+After checking the exact preview version and isolated bindings, an existing owner session may call `GET /api/project-engine/maintenance/orphans?kind=restores&limit=25`. Other kinds are `files`, `values` and `objects`. Follow each response's `nextCursor` with the same kind/page size until it is null. Metadata cursors include project scope, so restored copies with identical child IDs are not skipped. Object cursors are opaque R2 continuation values. Limits are 1–50, default 25; large-project inventory query/latency limits are not measured capacity.
+
+The response is explicitly `dryRun: true`, `executable: false`. This route has no POST/apply operation and performs no engineering-data or object deletion. It shares the normal preview/owner gate and validated schema entry. Inventory protects file metadata/links, historical JSON references (including escaped IDs), catalogue attachments, recovery-owned objects, recent/unknown object ages and all incomplete restores. A malformed saved JSON field fails the report instead of producing false deletion candidates. A job with no published target/receipt cannot qualify for completed-staging cleanup.
+
+Before implementing the remaining sweep, add activity tracking and atomic cleanup claims, reject publication/file admission against those claims, and revalidate ownership/references with current project/schema tokens. Delete only a claimed, unpublished hidden copy; preserve all source/published project rows, receipts and historical bytes. Journal progress and bound metadata/object batches; never scan/delete outside allowlisted project-owned namespaces. Test restore/upload/revision races, interrupted cleanup and retries. A report older than a concurrent save is not an apply plan. The current inventory deliberately protects old incomplete jobs rather than guessing that age alone means abandonment.
+
+E4's current code now has one migration call site. Workshop reads never migrate, and initialization is not permanently cached after success. A future-schema check at request entry and inside command admission does not retroactively update older deployed versions; compatible readers/writers remain an operator cutover gate. The production engine flag remains absent.
+
 ## Evidence
 
 Exact historical reports live under `docs/proofs/`. Moving them does not change their contents, source/build pins, configured-binding evidence or its documented limitations. Current architecture and runbooks link to those reports; evidence is not used as current implementation documentation.

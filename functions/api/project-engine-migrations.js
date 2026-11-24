@@ -119,17 +119,33 @@ const migrations=[{version:1,statements:[
  ...["INSERT","UPDATE"].map(action=>`CREATE TRIGGER IF NOT EXISTS engine_restore_rows_${action.toLowerCase()} BEFORE ${action} ON engine_restore_rows BEGIN SELECT RAISE(ABORT,'RESTORE_STAGE_SEALED') WHERE NOT EXISTS(SELECT 1 FROM engine_restore_jobs WHERE id=NEW.job_id AND state='staging'); END`)
 ]}];
 const pending=new WeakMap();
+export const PROJECT_ENGINE_SCHEMA_VERSION=migrations.at(-1).version;
+// Read-only consumers never bootstrap/upgrade engineering storage. Do not cache
+// false: the normal owner engine entry may initialize it later in this isolate.
+export async function projectEngineSchemaReady(db){
+ if(!db||!await db.prepare("SELECT 1 AS ready FROM sqlite_master WHERE type='table' AND name='project_engine_migrations'").first())return false;
+ const current=await db.prepare("SELECT COUNT(*) AS count,MAX(version) AS version FROM project_engine_migrations").first();return current?.count===migrations.length&&current.version===PROJECT_ENGINE_SCHEMA_VERSION;
+}
 export async function initializeProjectEngine(db){
  if(!db)throw Error("Preview D1 binding is not configured.");
  if(pending.has(db))return pending.get(db);
  const work=(async()=>{
+  if(await projectEngineSchemaReady(db))return;
   await db.prepare("CREATE TABLE IF NOT EXISTS project_engine_migrations(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)").run();
   const applied=(await db.prepare("SELECT version FROM project_engine_migrations").all()).results;
+  if(applied.some(row=>row.version>PROJECT_ENGINE_SCHEMA_VERSION))throw Error("The project database requires a newer engine version. This engine cannot open it safely.");
   for(const migration of migrations){
    if(applied.some(row=>row.version===migration.version))continue;
-   await db.batch([...migration.statements.map(sql=>db.prepare(sql)),db.prepare("INSERT OR IGNORE INTO project_engine_migrations(version,applied_at) VALUES(?,?)").bind(migration.version,new Date().toISOString())]);
+   try{await db.batch([...migration.statements.map(sql=>db.prepare(sql)),db.prepare("INSERT OR IGNORE INTO project_engine_migrations(version,applied_at) VALUES(?,?)").bind(migration.version,new Date().toISOString())]);}
+   catch(error){
+    // Another isolate can finish an atomic migration after our ledger read.
+    // Its committed ledger admits that result; a real failed migration retries.
+    const completed=await db.prepare("SELECT version FROM project_engine_migrations WHERE version=?").bind(migration.version).first();if(!completed)throw error;
+   }
   }
  })();
  pending.set(db,work);
- try{await work;}catch(error){pending.delete(db);throw error;}
+ // Coalesce in-flight setup only. Each later request rechecks schema readiness;
+ // a completed cache entry must not admit an older writer after another upgrade.
+ try{await work;}finally{pending.delete(db);}
 }

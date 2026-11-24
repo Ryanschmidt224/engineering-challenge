@@ -1,4 +1,5 @@
 import {statement,uuid} from "./project-state.js";
+export {inventoryProjectOrphans,validateOrphanInventory} from "./project-orphan-inventory.js";
 
 // Only operational rows from a completed, receipted recovery are eligible here.
 // This shared cleanup owner will also host the separately reviewed abandoned-job,
