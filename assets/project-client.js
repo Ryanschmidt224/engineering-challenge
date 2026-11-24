@@ -11,12 +11,12 @@ export function createProjectClient(){
   const key=JSON.stringify([projectId,path,method,data,expectedRevision]);let body=pending.get(key);if(!body){body={...data,expectedRevision,operationId:crypto.randomUUID()};pending.set(key,body);}
   const result=await request("/"+projectId+path,{method,headers:{"content-type":"application/json"},body:JSON.stringify(body)});loadSequence++;if(state?.project.id===projectId&&(state.project.revision===expectedRevision||state.project.revision===result.revision))state.project.revision=result.revision;return result;
  }
- async function upload(projectId,file,{itemId=null,expectedRevision=state?.project.revision??null}={}){
+ async function upload(projectId,file,{itemId=null,occurrenceId=null,expectedRevision=state?.project.revision??null}={}){
   const prepared=await write(projectId,"/files/prepare","POST",{name:file.name,content_type:file.type||"application/octet-stream"},expectedRevision);
   const operationId=crypto.randomUUID(),revision=prepared.revision,options={method:"PUT",headers:{"x-operation-id":operationId,"x-project-revision":revision},body:file};
   // Only a transport failure is retried; the immutable key and upload ID stay.
   try{await request("/"+projectId+"/files/"+prepared.fileId+"/bytes",options);}catch(error){if(error.status)throw error;await request("/"+projectId+"/files/"+prepared.fileId+"/bytes",options);}
-  return write(projectId,"/files/"+prepared.fileId+"/admit","POST",{role:itemId?"engineering":"support",...(itemId?{itemId}:{})},revision);
+  return write(projectId,"/files/"+prepared.fileId+"/admit","POST",{role:itemId?"engineering":"support",...(itemId?{itemId,...(occurrenceId?{occurrenceId}:{})}:{})},revision);
  }
  return {request,load,write,upload,get state(){return state;}};
 }

@@ -1,0 +1,53 @@
+# Assemblies and Workshop preview
+
+Status: Batch 3 implementation, authorized after the owner verified the numbered custom-part source, independent restore and unchanged-source proofs. This branch extends that isolated preview. Production still has no `NEW_PROJECT_ENGINE` flag. No production migration, project deletion, account change or storage reseed is included.
+
+## Ownership and user flow
+
+Create a project through `project.html`. Add a subassembly, then right-click it (or use its Actions button) to add a custom part, nested subassembly, Workshop part or existing part placement. Tree rows open the selected placement directly. Subassemblies expand/collapse. Move placement changes its parent; Move up/down reorders its siblings. Cycles, foreign-project parents and archived destinations are rejected.
+
+An item owns the engineering name, part number, current details, revision level, instructions, records and immutable files. An occurrence owns its parent, order, quantity, status, attention and visibility. Adding an existing part shares the definition and number, while keeping build state independent. Adding an existing subassembly creates fresh placements for its active composition, shares its definitions and starts fresh build status. Later placement/composition changes affect the chosen build location; definition edits affect every placement of that definition. The editor states this sharing explicitly. Creating a new custom or Workshop part instead gives it an independent definition and new number.
+
+Subassemblies are project parts with an additive `is_assembly` attribute. Their automatic numbers use the configured prefix/digits and reserved range 1–99; ordinary parts start at 100. Existing numbers are never changed or released. The UI does not offer converting an existing part into another identity type.
+
+The project BOM combines placements of the same item and unit and multiplies every active parent quantity. It includes subassemblies, excludes tools/documents and keeps unlike units separate. A scoped subassembly BOM reports its quantities in the current project build, including ancestors above that selected scope. Zero quantities remain zero. No unit conversion or fit judgment is inferred.
+
+## Workshop selections
+
+The project-owned `engine_selections` row is the sole authority for selected family/product identity, frozen source revisions/display values and project requirements. The earlier `engine_items.source='custom'` column is retained for compatibility with the initial project-local definition schema; catalogue origin is represented by the selection relation, not by rewriting that old constraint or duplicating editable Workshop uses. New project selections never create `workshop_uses` rows.
+
+Selection reads the active family, field definitions, optional product and attachments on the server. The opened family/product revisions are required and guarded in the same D1 admission as the project change. The family revision protects field definitions; the attachment set/count and individual revisions are guarded too. Names, manufacturer/MPN, specification labels/IDs/units/types/values, supplier links and source documents are frozen. Typed requirements remain distinct from product values. A mismatch is displayed for engineering review, not treated as automatic compatibility checking.
+
+Local Workshop photos/documents are copied to new immutable, project-owned R2 keys and read back/hash-verified before the selection is admitted. Their file metadata/links and selected source facts are published atomically. Failed admission can leave unreachable staging bytes, as with an interrupted normal project upload; it never exposes incomplete project metadata and never overwrites source bytes. External URLs are saved references, not claims of immutable external content.
+
+Editing a project part never writes family/product data. Workshop changes do not automatically update a saved selection. Change Workshop selection explicitly refreshes current source choices, preserves project requirements, and uses the standard Save as revision explanation/photo prompt. It retains the old complete part, source facts and copied bytes before advancing that part once. A changed type/unit cannot silently reinterpret an old populated requirement: clear that requirement explicitly or create a new part with the new contract. No numeric conversion is guessed.
+
+Workshop's Project uses reader merges presentation of legacy uses with owner-filtered new project selections. New uses open `project.html` at their exact occurrence; they are edited there. View in Workshop opens the correct family/product and supplies a validated same-origin return link. Existing Workshop editing, legacy use ownership and Knowledge links retain their current owners.
+
+## Snapshots and archive groups
+
+An assembly test/configuration freezes its active composition, occurrence IDs/quantities and child configuration IDs/display snapshots. A deliberate assembly revision also retains the complete previous child details, instructions, records, selected sources and immutable file references. Child revision levels do not advance merely because their parent was revised. Standard Save remains an overwrite at the current level.
+
+Archive first presents the exact selected subtree, original paths and shared definitions with other active placements. One guarded D1 command creates its removal group, marks all currently active members removed, and writes one archive event under the parent's History. It changes no part revision and accesses no R2 mutation API. Other placements stay active. Restoring the group restores exactly its original member IDs/parents/order/numbers. Descendants already archived separately before that group remain archived until separately restored. An archived parent must be restored first; a group cannot be restored from one of its interior members. Source events and group snapshots remain immutable.
+
+## Additive schema and bounds
+
+Project migration 4 adds `is_assembly`, occurrence parent/group columns, parent indexes and integrity triggers, `engine_selections`, and `engine_archive_groups`. Applied migrations 1–3 are unchanged. Existing roots acquire null parents; old revision levels and all row/file IDs stay intact. No table is dropped or rebuilt. Trigger checks enforce same-project assembly parents and cycles; command validation also enforces definition cycles, depth, active membership and explicit loaded tokens.
+
+- At most 1,000 placements per preview project; at most 20 levels; at most 100 placements per assembly snapshot/archive/restore/placement-copy operation.
+- A saved configuration or complete revision/archive snapshot is at most 500,000 UTF-8 bytes. Larger context fails before admission, without truncation.
+- Workshop choices are bounded to 50 families/200 products and explicitly request a narrower search if more match. A selection copies at most 12 source attachments, each at most 20 MB and at most 40 MB total. The existing Workshop uploader has its own smaller upload limit.
+- Archive and reorder use JSON-bound sets, so a 100-member transaction stays below D1's 100-parameter limit. Assembly reads are batched/cached; the 100-member regression asserts fewer than 50 D1 calls per revision/archive, rather than one query per descendant. Current D1 limits were rechecked against https://developers.cloudflare.com/d1/platform/limits/ on November 23, 2026.
+- Workshop's new project-use list is owner-filtered and bounded at 1,001 rows; the reader displays an explicit limit notice rather than claiming exhaustive results.
+
+## Recovery and validation
+
+New backups include selections, occurrence hierarchy and archive groups. Their restore order respects parents; configuration/event IDs and all saved source facts stay unchanged. Recovery does not require the original Workshop catalogue. File metadata points to independent verified restore keys. Older project backups without the added columns/tables still restore with root placements, non-assembly defaults and empty selection/group tables. Existing projects are never replaced by an import.
+
+The gated `project-engine-proof` page adds **Run assembly and Workshop proof**. This explicit normal-owner-API action creates one clearly named synthetic project and its own new synthetic Workshop family/products/photo. It checks nested BOM totals, shared placements, assembly evidence/revisions, grouped archive replay, earlier archived descendants, source revision conflicts, independent copied photos, permanent number reservation and project-only source changes. Its self-contained backup is consumed by the existing independent-target restore comparison, followed by the original-source byte-for-byte check. Copy/download/load controls avoid manually transferring a long backup through chat; after a restore this page disables its source-only check and directs the operator back to the source preview.
+
+Local SQL/browser fixtures exercise those flows, race/rollback cases, the 100-member limit, old backup compatibility, desktop and phone presentation, stale drafts and lost responses. Full regression checks are required before publishing. Prior Cloudflare evidence remains pinned to migration-3 source/builds in `PROJECT_HISTORY_SOURCE_PROOF.json` and `PROJECT_HISTORY_RECOVERY_PROOF.json`; those reports are not evidence that this migration-4 extension has passed its new platform acceptance. Record exact deployed source/restore versions and checked preview bindings before marking that new platform gate passed.
+
+Pre-publication validation on November 23, 2026: `npm run check` passed all 311 tests plus syntax, module-size and CSS guardrails. The complete browser suite passed 111 workflows. After the final tree-indentation adjustment, all four assembly/Workshop browser workflows passed again, including a desktop/phone assertion that child names are indented beyond their parent. Desktop BOM and phone tree screenshots were inspected. The shared context menu now ignores an already-settled queued scroll event and focuses without scrolling; the full suite covers the previously intermittent phone Archive action.
+
+The deletion boundary remains unchanged: no legacy owner is removed until its replacement covers the retained feature set. Rich records/instructions, remaining project media/settings/purchasing features and production cutover are later batches. Rollback after new writes must preserve a migration-4-capable reader/exporter and all immutable history/files; disable the preview flag to stop writes rather than deploying an older exporter that omits hierarchy or selections.

@@ -36,11 +36,11 @@ export async function admitFile(db,env,input,project,id,data){
  if(!head||head.size>MAX_ENGINE_FILE||!/^[a-f0-9]{64}$/.test(head.customMetadata?.sha256||""))throw new CommandConflict("The upload has not finished. Retry uploading before saving.");
  const ready={...file,state:"ready",size:head.size,sha256:head.customMetadata.sha256};
  if(!["support","engineering"].includes(data.role))throw Error("Choose an engineering file or a supporting attachment.");
- const context=data.role==="engineering"?await itemContext(db,project.id,data.itemId):null;
+ const context=data.role==="engineering"?await itemContext(db,project.id,data.itemId,{occurrenceId:data.occurrenceId,requireOccurrence:true}):null;
  const old=context?await currentEngineeringFile(db,project.id,context.item.id):null;
  const config=context?await configurationPlan(db,project,context.item,context.occurrence,ready):null;
  const currentLink=context?await statement(db,"SELECT id FROM engine_file_links WHERE project_id=? AND item_id=? AND active=1",project.id,context.item.id).first():null;
- const prior=context?await configurationPlan(db,project,context.item,context.occurrence,old):null;
+ const prior=context?await configurationPlan(db,project,context.item,context.occurrence,old,{cache:config.cache}):null;
  if(file.state==="ready"&&(!context||old?.id===id))return {...await unchanged(db,project,input),fileId:id};
  return commitProjectCommand(db,input,w=>{
   if(file.state!=="ready")w.update("engine_files",{state:"ready",size:ready.size,sha256:ready.sha256},{project_id:project.id,id,state:"prepared"});

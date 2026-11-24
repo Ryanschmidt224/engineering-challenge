@@ -2,6 +2,7 @@ import {migrateWorkshop} from "./workshop-migrations.js";
 import {validateFamilyFields,validateFamilyValues,validId,isWebUrl,familyUsePart} from "../../assets/family-model.js";
 import {isAdmin} from "./auth.js";
 import {projectAllowed} from "./projects.js";
+import {projectSelectionUses} from "./project-selection-uses.js";
 
 const json = (data,status=200) => Response.json(data,{status,headers:{"cache-control":"private, no-store","x-content-type-options":"nosniff"}});
 const tables = {category:"workshop_categories",family:"workshop_families",product:"workshop_products",use:"workshop_uses",attachment:"workshop_attachments"};
@@ -114,7 +115,7 @@ export async function handleFamilyWorkshop(request,env) {
  if(!["GET","HEAD"].includes(request.method)&&request.headers.get("origin")!==new URL(request.url).origin)return json({error:"Invalid request origin"},403);
  if(!env.WORKSHOP_DB)return json({error:"Workshop database is not configured",code:"WORKSHOP_SETUP_REQUIRED"},503);
  await initializeWorkshop(env.WORKSHOP_DB);
- if(request.method==="GET")return json(await workshopSnapshot(env.WORKSHOP_DB));
+ if(request.method==="GET"){const snapshot=await workshopSnapshot(env.WORKSHOP_DB);if(env.NEW_PROJECT_ENGINE==="1")snapshot.project_uses=await projectSelectionUses(request,env);return json(snapshot);}
  if(!["POST","PATCH"].includes(request.method))return json({error:"Method not allowed"},405);
  let input;
  try{

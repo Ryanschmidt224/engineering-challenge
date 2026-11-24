@@ -2,6 +2,7 @@ import {node,button,listCard,actions,panel,field,checkbox,readValue,valuesEditor
 import {present,resolveFamilyValues,validateFamilyFields,validateFamilyValues,isWebUrl} from "./family-model.js";
 import {tileTypes,tileStatuses,relations,labelFor} from "./knowledge-model.js";
 import {initProjectProductCopy} from "./project-product-copy.js";
+import {renderWorkshopProjectUses,projectReturnLink} from "./workshop-project-uses.js";
 
 const $=selector=>document.querySelector(selector),detail=$("#workshop-detail"),dialog=$("#workshop-dialog");
 const params=new URLSearchParams(location.search);
@@ -209,8 +210,7 @@ function renderFamilyRead(record){
   const duplicate={...copy(record),id:crypto.randomUUID(),name:record.name+" copy",fields:familyFields().map(field=>({...copy(field),id:crypto.randomUUID()}))};delete duplicate.revision;begin("family",duplicate);
  },"button--quiet")));
  renderAttachments(detail,"family",record.id,false);
- const uses=data.uses.filter(use=>use.family_id===record.id&&active(use));
- if(uses.length){const section=panel("Project uses");for(const use of uses)section.append(button((use.purpose||record.name)+" · "+use.project_id,()=>changeSelection({familyId:record.id,useId:use.id,productId:use.product_id||""}),"button--quiet"));detail.append(section);}
+ renderWorkshopProjectUses(detail,data,record.id,null,use=>changeSelection({familyId:record.id,useId:use.id,productId:use.product_id||""}),$("#show-archived").checked);
 }
 function renderInstanceRead(entity,record,selected,selectedProductRecord){
  const product=entity==="product"?record:data.products.find(p=>p.id===record.product_id);
@@ -234,6 +234,7 @@ function renderInstanceRead(entity,record,selected,selectedProductRecord){
  if(entity==="use"){renderAttachments(detail,"family",selected.id,false);if(product)renderAttachments(detail,"product",product.id,false);}
  renderAttachments(detail,entity,record.id,false);
  renderKnowledge(entity,record.id);
+ if(entity==="product")renderWorkshopProjectUses(detail,data,selected.id,record.id,use=>changeSelection({familyId:selected.id,useId:use.id,productId:record.id}),$("#show-archived").checked);
 }
 async function archive(entity,record){
  if(!window.confirm((record.archived?"Restore":"Archive")+" this "+entity+"? Existing project records and stored files are kept."))return;
@@ -285,6 +286,7 @@ $("#category-actions").onclick=event=>{const box=event.currentTarget.getBounding
 document.addEventListener("click",event=>{if(!event.target.closest("#category-menu,#category-actions"))$("#category-menu").hidden=true;});
 document.addEventListener("keydown",event=>{if(event.key==="Escape")$("#category-menu").hidden=true;});
 $("#export-workshop").onclick=()=>{location.href="/api/workshop/export";};
+projectReturnLink(params);
 const returnHash=params.get("return")||"";
 if(/^#[a-z0-9]+(?:\/(?:part|workspace|assembly|bom|parts)(?:\/[a-zA-Z0-9_-]+)?)?$/.test(returnHash)){const link=$("#return-project");link.hidden=false;link.href="index.html"+returnHash;}
 window.addEventListener("beforeunload",event=>{if(dirty){event.preventDefault();event.returnValue="";}});

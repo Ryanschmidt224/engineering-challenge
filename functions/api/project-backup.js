@@ -1,18 +1,21 @@
 import {projectNumberKey} from "../../assets/project-item-model.js";
+import {projectTree} from "../../assets/project-tree-model.js";
 import {commitProjectCommand,replayProjectCommand,CommandConflict} from "./project-command.js";
 import {statement,uuid} from "./project-state.js";
 import {bytesHash,MAX_ENGINE_FILE} from "./project-engine-files.js";
 // Explicit export schema: receipts and concurrency tokens are operational, not
 // engineering history. Restore issues a new token and a new import receipt.
 const columns={
- items:"id project_id name short_name part_number kind source is_tool fields created_at revision_level",
- occurrences:"id project_id item_id quantity unit build_status attention attention_note hidden sort_order removed_at removed_path",
+ items:"id project_id name short_name part_number kind source is_tool fields created_at revision_level is_assembly",
+ occurrences:"id project_id item_id parent_id archive_group_id quantity unit build_status attention attention_note hidden sort_order removed_at removed_path",
  steps:"id project_id item_id title body sort_order retired_at retired_path created_at",
  configurations:"id project_id item_id fingerprint snapshot created_at",
  records:"id project_id item_id step_id configuration_id type title fields event_date step_snapshot created_at updated_at",
  events:"id project_id item_id type title summary payload created_at",
  files:"id project_id name content_type r2_key state size sha256 created_at",
- file_links:"id project_id file_id item_id record_id event_id configuration_id role active"
+ file_links:"id project_id file_id item_id record_id event_id configuration_id role active",
+ selections:"id project_id family_id product_id family_revision product_revision snapshot requirements",
+ archive_groups:"id project_id root_occurrence_id members created_at"
 };
 export async function projectManifest(db,project){
  const names=Object.keys(columns),result=await db.batch([statement(db,"SELECT * FROM engine_projects WHERE id=?",project.id),...names.map(name=>statement(db,`SELECT * FROM engine_${name} WHERE project_id=? ORDER BY id`,project.id))]);
@@ -47,6 +50,7 @@ export function validateManifest(manifest,projectId){
  if(Object.keys(manifest.tables).some(name=>!Object.hasOwn(columns,name)))throw Error("Backup contains unknown tables.");
  let count=0;
  for(const [name,allowed] of Object.entries(columns)){
+  if(["selections","archive_groups"].includes(name)&&manifest.tables[name]===undefined)manifest.tables[name]=[];
   const list=manifest.tables[name];if(!Array.isArray(list))throw Error("Backup is missing "+name+".");count+=list.length;if(count>10000)throw Error("This preview restore accepts at most 10,000 rows.");
   const ids=new Set();for(const row of list){if(!row||!uuid(row.id)||row.project_id!==projectId||ids.has(row.id)||Object.keys(row).some(key=>!allowed.split(" ").includes(key))||Object.values(row).some(value=>value!==null&&!["string","number"].includes(typeof value)))throw Error("Invalid or duplicate "+name+" row.");ids.add(row.id);}
  }
@@ -54,6 +58,11 @@ export function validateManifest(manifest,projectId){
   if(typeof item.part_number!=="string"||!item.part_number.trim()||item.part_number.length>80||numbers.has(projectNumberKey(item.part_number)))throw Error("Backup contains an invalid or reused part number.");numbers.add(projectNumberKey(item.part_number));
   if(item.revision_level!==undefined&&(!Number.isSafeInteger(item.revision_level)||item.revision_level<1))throw Error("Invalid part revision level in backup.");
  }
+ const tree=projectTree(manifest.tables.items,manifest.tables.occurrences);
+ for(const item of manifest.tables.items)if(item.is_assembly!==undefined&&![0,1].includes(item.is_assembly)||item.is_assembly&&(item.kind!=="part"||item.is_tool))throw Error("Invalid subassembly definition in backup.");
+ for(const selection of manifest.tables.selections)if(!tree.definitions.has(selection.id)||tree.definitions.get(selection.id).is_assembly)throw Error("Invalid Workshop selection owner in backup.");
+ for(const group of manifest.tables.archive_groups){if(!tree.placements.has(group.root_occurrence_id))throw Error("Invalid archive group root.");let members;try{members=JSON.parse(group.members);}catch{throw Error("Invalid archive group members.");}if(!Array.isArray(members)||!members.length||members.length>100||new Set(members.map(row=>row.id)).size!==members.length||members.some(row=>!tree.placements.has(row.id)))throw Error("Invalid archive group members.");}
+ if(manifest.tables.occurrences.some(row=>row.archive_group_id&&!manifest.tables.archive_groups.some(group=>group.id===row.archive_group_id)))throw Error("An archived placement is missing its group.");
  const files=new Map(manifest.tables.files.map(file=>[file.id,file]));
  for(const file of files.values())if(!["prepared","ready"].includes(file.state)||file.state==="ready"&&(!Number.isInteger(file.size)||file.size<0||file.size>MAX_ENGINE_FILE||!/^[a-f0-9]{64}$/.test(file.sha256)))throw Error("Invalid file metadata in backup.");
  for(const link of manifest.tables.file_links)if(!files.has(link.file_id)||files.get(link.file_id).state!=="ready")throw Error("A file link has no verified file.");
@@ -91,7 +100,8 @@ export async function restoreProject(request,env,owner,projectId){
  // hash passes. A failed import leaves only unreachable staging objects.
  return commitProjectCommand(env.WORKSHOP_DB,input,w=>{
   const p=manifest.project;w.insert("engine_projects",{id:projectId,owner_id:owner.id,name:p.name,prefix:p.prefix,digits:p.digits,revision:w.revision,created_at:p.created_at});
-  for(const name of Object.keys(columns))for(const original of manifest.tables[name]){
+  const restoredTree=projectTree(manifest.tables.items,manifest.tables.occurrences);
+  for(const name of Object.keys(columns))for(const original of name==="occurrences"?[...manifest.tables[name]].sort((a,b)=>restoredTree.path(a).length-restoredTree.path(b).length):manifest.tables[name]){
    const row={...original};if(name==="files")row.r2_key=storageKey(row);w.insert("engine_"+name,row);
   }
   return {projectId,restored:true,counts:Object.fromEntries(Object.entries(manifest.tables).map(([name,list])=>[name,list.length])),verifiedFiles:complete.size};
