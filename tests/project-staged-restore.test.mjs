@@ -72,6 +72,17 @@ test("a racing exact recovery returns the committed receipt even when its peer h
  }finally{f.db.close();}
 });
 
+test("an older sealed job with different JSON property ordering resumes without replacing its historical values",async()=>{
+ const f=await fixture();try{
+  await upload(f,"drawing.step",new TextEncoder().encode("Earlier preview bytes"));const backup=await backupOf(f),project=id(),operation=id();
+  f.db.sqlite.exec("CREATE TRIGGER pause_old_restore BEFORE UPDATE OF state ON engine_restore_jobs WHEN NEW.state='complete' BEGIN SELECT RAISE(ABORT,'SQLITE simulate earlier interrupted preview'); END");assert.notEqual((await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner)).status,200);f.db.sqlite.exec("DROP TRIGGER pause_old_restore");
+  const job=f.db.sqlite.prepare("SELECT restore_job_id FROM engine_projects WHERE id=?").get(project).restore_job_id,trigger=f.db.sqlite.prepare("SELECT sql FROM sqlite_master WHERE name='engine_restore_rows_update'").get().sql;
+  f.db.sqlite.exec("DROP TRIGGER engine_restore_rows_update");for(const row of f.db.sqlite.prepare("SELECT table_name,row_id,data FROM engine_restore_rows WHERE job_id=?").all(job))f.db.sqlite.prepare("UPDATE engine_restore_rows SET data=? WHERE job_id=? AND table_name=? AND row_id=?").run(JSON.stringify(Object.fromEntries(Object.entries(JSON.parse(row.data)).reverse())),job,row.table_name,row.row_id);f.db.sqlite.exec(trigger);
+  const response=await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner);assert.equal(response.status,200,await response.clone().text());assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_restore_jobs WHERE project_id=?").get(project).n,1);assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_restore_rows WHERE job_id=?").get(job).n,0);
+  const state=await(await handleProjectWorkspace(new Request(base+project+"/state"),f.env,f.owner)).json();assert.equal(await(await handleProjectWorkspace(new Request(base+project+"/files/"+state.files[0].id),f.env,f.owner)).text(),"Earlier preview bytes");assert.equal(await backupOf(f),backup);
+ }finally{f.db.close();}
+});
+
 test("an interrupted materialization stays invisible and resumes with the original operation without touching the source",async()=>{
  const f=await fixture();try{
   await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"note",fields:{text:"Source evidence"}}});await f.call("/items/"+f.itemId+"/revisions","POST",{});const backup=await backupOf(f),project=id(),operation=id(),batch=f.db.batch.bind(f.db);let interrupted=false;
