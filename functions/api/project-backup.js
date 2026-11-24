@@ -77,6 +77,8 @@ export async function restoreProject(request,env,owner,projectId,{asCopy=false}=
    if(await bytesHash(bytes)!==current.sha256)throw Error("A file failed its backup hash check.");
    const key=storageKey(current),stored=await env.PHOTOS.put(key,bytes,{onlyIf:{etagDoesNotMatch:"*"},httpMetadata:{contentType:current.content_type},customMetadata:{sha256:current.sha256}});
    if(!stored){const existing=await env.PHOTOS.head(key);if(existing?.customMetadata?.sha256!==current.sha256||existing.size!==current.size)throw new CommandConflict("The restore staging file differs. Retry with a new operation ID.");}
+   const verified=await env.PHOTOS.get(key);
+   if(!verified||verified.size!==current.size||await bytesHash(new Uint8Array(await verified.arrayBuffer()))!==current.sha256)throw Error("A staged restore file failed byte verification. No project was admitted.");
    complete.add(current.id);current=null;chunks=[];
   }else if(entry.type==="complete"){
    if(current||complete.size!==needed.size)throw Error("Backup is missing file bytes.");finished=true;
