@@ -110,7 +110,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 6.10 | Drawings (PDF): drop/upload, view, download, replace, delete (first 100) | `drawings.js`, `/api/drawings` | | ☐ |
 | 6.11 | Source code on a part: language, edit, import file, save, previous versions, view/restore, download (≤100 KB) | `part-code.js`, `/api/part-code` | | ☐ |
 | 6.12 | Knowledge tiles linked to this part (and family/product/use) with "New knowledge tile for this part" | `SA` `renderPartKnowledge` | | ☐ |
-| 6.13 | Helpful tools: link calculators, tools and Workshop references to this work | `SA` | | ☐ |
+| 6.13 | Helpful tools: Calculator and Tool references only; engine tools use D1 Workshop IDs and last-known names, not the static catalog | `SA`, `resources.js`; engine relation/picker pending | **Change** (owner item #17): no new Workshop-part references. Legacy links remain visible/removable; engine links stay outside BOM quantities/cost/purchasing/tree and round-trip through backup. Archived sources remain readable. | ☐ |
 | 6.14 | Part progress / status save | `SA` `savePartProgress` | | ☐ |
 | 6.15 | Copy a project-only off-the-shelf part to a reviewed Workshop product draft; choose a family, check duplicate MPN, preserve project source | `part-information.js`, `project-product-copy.js`, existing `/api/workshop` | **Keep**: owner requested; no automatic relinking or source modification | ☐ |
 
@@ -135,7 +135,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 |---|---|---|---|---|
 | 8.1 | History includes parent-scoped Archive folder for tree removals; part Revisions stays separate; earlier saved records remain readable | `investigations.js`, `part-revisions.js`, `SA`, `/api/workspace-history` | Later History redesign remains pending; owner requires a separate Create a Revision action at the part-page bottom | ☐ |
 | 8.2 | History → Archive (parts/subassemblies): original location, explanation/photos, children, saved records/files, readable details, Restore to build | `tree-archive.js`, `/api/assembly-archive` | Owner refinement: parent-scoped History → Archive; no new iteration or permanent-delete UI | ☐ |
-| 8.3 | Recent changes: list, load older, "Load this version" (restore a previous version) | `SA`, `/api/workspace` | Fold into History redesign | ☐ |
+| 8.3 | Recent changes: automatic changed-save workspace snapshots, list/load older and partial "Load this version" | `SA`, `/api/workspace`, `workspace-history.js` | **Drop in new engine**: History and deliberate Revisions replace this presentation; no automatic per-save timeline or promised full-part undo. Keep legacy behavior until cutover; any per-save undo is a separate explicit feature. | ☐ |
 | 8.4 | Project backups: download a project backup (JSON) and a readable HTML backup (print to PDF) | `SA`, `project-readable-backup.js`, `/api/project` | | ☐ |
 | 8.5 | Scheduled automatic backups of all projects (cron) | `worker.js` `scheduled`, `automatic-backups.js` | | ☐ |
 | 8.6 | Backup integrity checks (checksums, size limits, project match) | `archive-check.js`, `local-project.js` | | ☐ |
@@ -166,7 +166,7 @@ These exist in code but serve features the owner has removed or never uses. *Sug
 | 11.3 | My Build personal notes and "stuck / confused" feedback | `my-build.js`, `/api/my-build`, `/api/build-confusion`; still called from `SA` (`BSMyBuild.insights`, `reportControl`) | **Drop** |
 | 11.4 | Proposals API | `/api/proposals` | **Drop** |
 | 11.5 | Project tasks API (its only caller is the unloaded `work-tracker.js`) | `/api/project-tasks` | **Drop** |
-| 11.6 | Old Workshop category data in `resources.js` (the D1 Workshop on `workshop.html` replaced it). `BSResources` is still read by `SA` and `site.js`, so move the calculators out first | `resources.js` | **Drop** |
+| 11.6 | Old Workshop category data in `resources.js`. Legacy Helpful tools still reads existing `resources.parts` and offers static tools; linked-part snapshots/photos/export and wire/harness consumers remain. Hiding new Workshop-part choices does not remove these readers. | `resources.js`, `SA`, `site.js`, legacy linked-part readers | **Drop after replacement**: D1 Workshop tools picker and Workshop-wire harness work must replace consumers first. Do not migrate legacy `resources.parts`; report their counts per project at cutover. |
 | 11.7 | The `#learn` view name, now only hosting Calculators | `index.html`, `site.js` | **Drop** |
 | 11.8 | Hard-coded legacy project sections `#launcher`, `#linear`, `#robot` and their 365+ ID-based CSS rules | `index.html`, legacy CSS | **Drop** |
 | 11.9 | Baseline audit: 893 candidate selectors (271 unmatched classes); 359 reviewed selectors removed in CSS batch #45, remaining candidates require review | legacy CSS files, `scripts/css-retired.json` | **Drop** |
