@@ -2752,9 +2752,6 @@
   gap: var(--space-4);
 }
 
-.knowledge-base-page #resource-calculators .resource-card {
-  border-radius: var(--radius-large);
-}
 @media (max-width: 650px) {
   .knowledge-base-page {
     padding-top: 30px;
@@ -2837,10 +2834,6 @@
 .calculators-view .bs-catalog-main #tileList.grid.two {
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
-}
-
-.calculators-view .bs-catalog-main .resource-grid {
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 }
 
 #commonparts .bs-catalog-main .workshop-standard-list {
@@ -2960,11 +2953,6 @@ body > .footer {
   gap: var(--space-4);
 }
 
-.calculators-view .bs-catalog-main #resource-calculators.resource-grid {
-  grid-template-columns: repeat(auto-fit, minmax(335px, 1fr));
-  gap: var(--space-4);
-}
-
 #commonparts .bs-catalog-main .workshop-standard-list {
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: var(--space-3);
@@ -3017,9 +3005,6 @@ body > .footer {
   }
 }
 @media (max-width: 540px) {
-  .calculators-view .bs-catalog-main #resource-calculators.resource-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* Supplier selection is optional, and does not change the component identity. */

@@ -385,6 +385,7 @@
     "workspace-photo-meta",
     "workspace-photo-title",
     "workspace-project-settings",
-    "workspace-tool-controls"
+    "workspace-tool-controls",
+    "resource-grid"
   ]
 }

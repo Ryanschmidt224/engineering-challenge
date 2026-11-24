@@ -49,7 +49,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 2.6 | Descriptor tiles: search, select, clear, add custom tags (comma separated) | `project-manager.js` | | ☐ |
 | 2.7 | Archived projects list (under More) | `project-manager.js` | | ☐ |
 | 2.8 | Empty / loading / error states ("No projects yet", "Projects could not load") | `project-manager.js` | | ☐ |
-| 2.9 | Explorer-style View choices: Details, List, Tiles, Large icons; persistent browser preference; thumbnail from summary album | `project-directory.js`, `project-directory.css` | **Keep**: owner requested; same sorting/filtering in every view | ☐ |
+| 2.9 | Explorer-style View choices: Details, List, Tiles; persistent browser preference; thumbnail from summary album | `project-directory.js`, `project-directory.css` | **Keep**: owner requested; same sorting/filtering in every view | ☐ |
 
 ## 3. Project settings
 
@@ -153,7 +153,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 
 | # | Feature | Code today | Decision | Rebuilt |
 |---|---|---|---|---|
-| 10.1 | Calculators: Ohm's law, surface speed (SFM), wheel surface speed | `resources.js`, `engineering-core.js` | Owner wants a searchable list instead of tiles (low priority) | ☐ |
+| 10.1 | Calculators: Ohm's law, surface speed (SFM), wheel surface speed | `resources.js`, `calculator-directory.js`, shared directory modules | **Keep**: searchable directory with shared descriptor filters, alphabetical sorting and Details/List/Tiles views; existing forms retained | ☐ |
 
 ## 11. Leftovers to remove (no rebuild)
 
@@ -205,7 +205,7 @@ Project shell/CSS implementation: all projects instantiate one workspace templat
 
 Implementation boundary after the first batches: deleting the old wire API/catalog immediately would violate the inventory's no-reader condition. The current cutting-list renderer still calls /api/wires, and functions/api/workshop-linked-part.js imports the static resources catalog for legacy snapshots, photos and backup dependencies. These are live readers, not unloaded leftovers. Keep them until Workshop-product cutting lists and the source/snapshot reads are replaced and tested together; do not simply delete them. Component extraction stays disabled. The owner-requested part lookup resume uses the existing provider cap and a daily attempt guard; its Workshop-specific redesign remains separate work. The History decisions remain an area rebuild, not a promise that changing a label rebuilds its process.
 
-The old learn view is removed: Calculators now uses #calculators, including links from workspaces and the active header state. The searchable calculator directory is lower priority than the current private/CSS cleanup; the three existing calculation forms are retained.
+The old learn view is removed: Calculators now uses #calculators, including links from workspaces and the active header state. The calculator directory shares the project directory renderer and descriptor filters, with search by name, purpose and units; Name A–Z/Z–A sorting; and Details/List/Tiles views. Calculator view preference is separate from Projects. Opening a result shows its existing form; returning to results retains the search, filters and in-page input values. The three existing calculation forms and formulas are retained.
 
 Part information batch (6.3–6.5): reference/selected-product information and project-owned information now use the same static shared tile and field-row helpers. The rendering is extracted from site-assembly.js into part-information.js, loaded through a literal dynamic import. Purpose saves, alternative selection, supplier links and project annotations retain existing API protection. D1 projections expose product facts and project requirements separately; false, zero and hidden stored values are retained. No stored data changes or deletions. Full part-page rebuilding remains incomplete.
 
