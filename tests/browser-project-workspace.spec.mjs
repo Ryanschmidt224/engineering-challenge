@@ -53,3 +53,23 @@ test("revision review includes build values; paginated History preserves selecte
  for(let n=0;n<42;n++){const response=await context.request.post("/api/project-engine/projects/"+projectId+"/items/"+itemId+"/records",{headers:{origin:"http://127.0.0.1:4173"},data:{operationId:crypto.randomUUID(),expectedRevision:revision,record:{type:"note",title:"Measurement "+n,fields:{text:"Run "+n}}}});expect(response.ok()).toBeTruthy();revision=(await response.json()).revision;}
  await page.getByRole("button",{name:"History / Removed items",exact:true}).click();await page.getByRole("button",{name:"Load more",exact:true}).click();const list=page.locator(".project-history-list");await list.evaluate(element=>element.scrollTop=element.scrollHeight);await list.getByRole("button").filter({hasText:"Measurement 4Note"}).click();await page.locator(".project-history-detail").getByRole("button",{name:"Edit record",exact:true}).click();await page.getByLabel("Note",{exact:true}).fill("Reviewed retained test");await page.getByRole("button",{name:"Save record",exact:true}).click();await expect(page.getByRole("dialog")).not.toBeVisible();await expect(page.locator(".project-history-detail")).toContainText("Reviewed retained test");await page.getByRole("button",{name:"Back to history",exact:true}).click();expect(await list.evaluate(element=>element.scrollTop)).toBeGreaterThan(0);expect(await list.getByRole("button").count()).toBeGreaterThan(20);
 });
+
+for(const width of [1440,390])test("History separates captured build context from design identity at "+width+"px",async({page,request,context},testInfo)=>{
+ await page.setViewportSize({width,height:1000});await login(page,request,context);await createPart(page);
+ const projectId=new URL(page.url()).searchParams.get("project"),base="/api/project-engine/projects/"+projectId;
+ let state=await(await context.request.get(base+"/state")).json(),revision=state.project.revision;const itemId=state.items[0].id;
+ async function write(path,data,method="POST"){const response=await context.request.fetch(base+path,{method,headers:{origin:"http://127.0.0.1:4173"},data:{...data,operationId:crypto.randomUUID(),expectedRevision:revision}});expect(response.ok(),await response.text()).toBe(true);const result=await response.json();revision=result.revision;return result;}
+ const first=await write("/items/"+itemId+"/records",{record:{type:"test",title:"Baseline context",fields:{result:"First capture"}}});
+ await write("/items/"+itemId,{build:{quantity:4,build_status:"complete",attention:true,attention_note:"Review fit"}},"PATCH");
+ await write("",{name:"Renamed context project"},"PATCH");
+ const second=await write("/items/"+itemId+"/records",{record:{type:"test",title:"Completed context",fields:{result:"Same design"}}});
+ expect(second.configurationId).toBe(first.configurationId);await page.reload();await page.getByRole("button",{name:"History / Removed items",exact:true}).click();
+ const list=page.locator(".project-history-list"),detail=page.locator(".project-history-detail");
+ await list.getByRole("button").filter({hasText:"Baseline context"}).click();
+ const capture=detail.locator(".ui-information-panel").filter({has:page.getByRole("heading",{name:"Build context when recorded",exact:true})});
+ await expect(capture).toContainText("not started");await expect(capture).toContainText("Bracket project");await expect(capture).not.toContainText("Renamed context project");
+ await page.getByRole("button",{name:"Back to history",exact:true}).click();await list.getByRole("button").filter({hasText:"Completed context"}).click();
+ await expect(capture).toContainText("complete");await expect(capture).toContainText("4 pcs");await expect(capture).toContainText("Review fit");await expect(capture).toContainText("Renamed context project");
+ await expect(detail.getByRole("heading",{name:"Build information",exact:true})).toHaveCount(0);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(0);await page.screenshot({path:testInfo.outputPath("design-context.png"),fullPage:true});
+});

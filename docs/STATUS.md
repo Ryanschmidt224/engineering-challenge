@@ -72,3 +72,13 @@ Manual source/independent-restore/source-unchanged checks passed for custom-part
 The #66 acceptance runner has local Worker/SQL/R2 coverage. Its actual Cloudflare control-plane run remains unperformed until a trusted runner has the read-only secret. Never put secrets in docs/logs. Use the backup stream, not report JSON, to restore; run source-unchanged on the original source host. A prior wrong-host source check was followed by a passing original-source check; it is not unresolved evidence of source corruption.
 
 Retain project/Workshop/Knowledge/account data and historical bytes. Before cutover, inventory exactly what is kept/retired and prove restore. Existing test-data-loss tolerance requires an exact report; it does not authorize silent deletion of newer real projects. Permanent purge remains separately reviewed future work.
+
+## Active review-fix checkpoint
+
+The owner accepted judgment calls from Claude's PR #53 review. The selected implementation is design-only configuration identity plus separately captured per-record build/project context. Format-2 snapshots omit occurrence/project state; record creation payloads retain record_context, and revision/file events retain before/after build_context. Existing format-1 snapshots/IDs/fingerprints remain unchanged and readable. The legacy-to-new boundary is explicit, with no applied migration or destructive conversion.
+
+This patch is on PR #53 and must pass fresh CI. The earlier 300 code checks / 117 browser tests describe the reviewed e341f995 baseline, not new local execution. The coding workspace is unavailable; this run uses GitHub source updates and GitHub CI. Check the PR's exact head/results before claiming validation or merging.
+
+Required coverage includes stable configuration IDs across status/quantity/project-name changes, different IDs after design changes, frozen context on retries/record edits, the first legacy build-only revision without duplicate inserts, and mixed-format recovery. Desktop/phone History must show context separately. Remaining pre-cutover gaps are evidence-edit audit, restore-as-copy, and actual large-restore capacity; they are recorded in the History plan and are not silently treated as done.
+
+The ongoing unattended batch must checkpoint changes here/in Git, preserve replay-before-conflict ordering, keep the production engine disabled, and avoid a second concurrent writer when the scheduled continuation wakes. No additional billing/paid provider action or credential change is authorized by unattended operation.

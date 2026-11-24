@@ -31,5 +31,7 @@ export async function eventDetail(db,projectId,id){
  const configIds=[record?.configuration_id,event.payload.configuration_id,event.payload.before,event.payload.after].filter(value=>uuid(value));
  const configurations=[];for(const id of new Set(configIds)){const config=decode(await statement(db,"SELECT * FROM engine_configurations WHERE project_id=? AND id=?",projectId,id).first());if(config)configurations.push(config);}
  const attachments=await rows(db,"SELECT f.* FROM engine_file_links l JOIN engine_files f ON f.project_id=l.project_id AND f.id=l.file_id WHERE l.project_id=? AND (l.event_id=? OR l.record_id=? AND l.active=1)",projectId,id,record?.id||"");
- return {event,record,configurations,attachments};
+ const legacy=record?configurations.find(config=>config.id===record.configuration_id&&config.snapshot?.format===1)?.snapshot.occurrence:null;
+ const recordContext=record?(event.payload.record_context||(legacy?{format:1,project:legacy.root||{},occurrence:legacy,legacy:true}:null)):null;
+ return {event,record,configurations,attachments,recordContext};
 }

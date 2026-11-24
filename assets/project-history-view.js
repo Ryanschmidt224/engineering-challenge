@@ -10,23 +10,30 @@ export function configurationView(configuration,title="Saved configuration",{inc
  const snapshot=configuration?.snapshot;if(!snapshot?.item)return node("p","The transaction proof has no full item snapshot.");
  const item=snapshot.item,fields=item.fields||{},body=node("div","","project-stack");const panel=information(title,[["Name",item.name],["Part number",item.part_number],["Description",fields.description],["Purpose",fields.purpose],["Acceptance criteria",fields.acceptance],["Manufacturer",fields.manufacturer],["Manufacturer part number",fields.mpn]]);body.append(panel);
  if(fields.specs?.length)for(const row of fields.specs)panel.querySelector(".ui-information-panel__body").append(window.BSUI.fieldRow(row.label,formatRevisionValue({present:Object.hasOwn(row,"value"),value:row.value,label:row.label,unit:row.unit})).root);
- if(includeBuild&&snapshot.occurrence)body.append(information("Build information",[["Quantity",snapshot.occurrence.quantity+" "+snapshot.occurrence.unit],["Status",snapshot.occurrence.build_status.replaceAll("_"," ")],["Original project",snapshot.occurrence.root.name]]));return body;
+ if(includeBuild&&snapshot.occurrence)body.append(information(snapshot.format===1?"Legacy build information":"Build information",[["Quantity",snapshot.occurrence.quantity+" "+snapshot.occurrence.unit],["Status",snapshot.occurrence.build_status?.replaceAll("_"," ")],["Original project",snapshot.occurrence.root?.name]]));return body;
+}
+function buildContextView(context,title="Build context when recorded"){
+ const build=context.occurrence||{};
+ return information(title,[["Quantity",build.quantity===undefined?undefined:[build.quantity,build.unit].filter(value=>value!==undefined).join(" ")],["Status",build.build_status?.replaceAll("_"," ")],["Needs attention",typeof build.attention==="boolean"?(build.attention?"Yes":"No"):undefined],["Attention note",build.attention_note],["Hidden in tree",typeof build.hidden==="boolean"?(build.hidden?"Yes":"No"):undefined],["Project when recorded",context.project?.name]]);
 }
 export function fileLink(ctx,file){const link=node("a",file.name);link.href="/api/project-engine/projects/"+ctx.projectId+"/files/"+file.id;link.download=file.name;return link;}
 function entryCard(entry,select){
  const row=listCard("",select);row.append(node("strong",entry.display_title||entry.title),node("small",(eventLabels[entry.display_type||entry.type]||entry.type)+" · "+(entry.source_name||"")),node("span",entry.outcome||entry.summary||""),node("small",new Date(entry.created_at).toLocaleString()));row.dataset.eventId=entry.id;return row;
 }
 export async function showEvent(ctx,id,container){
- const detail=await ctx.client.request("/"+ctx.projectId+"/history/"+id),{event,record,configurations,attachments}=detail,body=node("div","","project-stack");
+ const detail=await ctx.client.request("/"+ctx.projectId+"/history/"+id),{event,record,configurations,attachments,recordContext}=detail,body=node("div","","project-stack");
  body.append(node("h2",record?.title||event.title),node("p",(eventLabels[record?.type||event.type]||event.type)+" · "+(event.payload.source?.name||""),"muted"));
  if(record){body.append(information("Record",Object.entries(recordPrompts[record.type]).map(([key,label])=>[label,record.fields[key]]).concat(record.type==="problem"?[["Status",record.fields.status]]:[]).concat(record.event_date?[["Event date",record.event_date]]:[])));if(record.step_snapshot)body.append(information("Step when recorded",[["Title",record.step_snapshot.title],["Instructions",record.step_snapshot.body]]));
   const occurrence=ctx.client.state.occurrences.find(row=>row.item_id===event.item_id);if(occurrence?.removed_at===null)body.append(button("Edit record",()=>editRecord({...ctx,itemId:event.item_id},{record})));
  }
+ if(recordContext)body.append(buildContextView(recordContext,recordContext.legacy?"Build context from legacy snapshot":"Build context when recorded"));
+ const build=event.payload.build_context;
+ if(build?.before&&build?.after){if(JSON.stringify(build.before)===JSON.stringify(build.after))body.append(buildContextView(build.after,"Build context at change"));else body.append(buildContextView(build.before,"Build context before revision"),buildContextView(build.after,"Build context after revision"));}
  if(event.payload.file_id){const file=ctx.client.state.files.find(file=>file.id===event.payload.file_id);if(file)body.append(information("Engineering file",[["File",fileLink(ctx,file)]]));}
  if(event.payload.changes?.length)body.append(information("What changed",event.payload.changes.map(change=>[change.label,formatRevisionValue(change.before)+" → "+formatRevisionValue(change.after)])));
  if(event.payload.reason||event.payload.label)body.append(information("Revision information",[["Reason",event.payload.reason],["Label",event.payload.label]]));
  if(event.payload.path)body.append(information("Original location",[["Project",event.payload.path.root.name],["Item",event.payload.path.item.name],["Step",event.payload.path.step?.title]]));
- for(const config of configurations){const section=window.BSUI.section({title:config.id===event.payload.before?"Before revision":config.id===event.payload.after?"After revision":"Configuration when recorded",open:!!record});section.body.append(configurationView(config));if(config.snapshot.file){const file=ctx.client.state.files.find(file=>file.id===config.snapshot.file.id);if(file)section.body.append(fileLink(ctx,file));}body.append(section.root);}
+ for(const config of configurations){const section=window.BSUI.section({title:config.id===event.payload.before&&config.id===event.payload.after?"Design configuration (unchanged)":config.id===event.payload.before?"Before revision":config.id===event.payload.after?"After revision":"Configuration when recorded",open:!!record});section.body.append(configurationView(config,undefined,{includeBuild:!recordContext&&!build}));if(config.snapshot.file){const file=ctx.client.state.files.find(file=>file.id===config.snapshot.file.id);if(file)section.body.append(fileLink(ctx,file));}body.append(section.root);}
  if(attachments.length)body.append(information("Attachments",attachments.map(file=>["File",fileLink(ctx,file)])));
  body.append(node("small","Recorded "+new Date(event.created_at).toLocaleString(),"muted"));container.replaceChildren(body);
 }

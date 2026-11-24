@@ -67,3 +67,11 @@ The new-project form already shows editable Number prefix and Minimum digits. It
 The earlier Cloudflare proof remains historical evidence of its pinned runtime. The current main-alignment head requires targeted Claude review. A fresh control-plane acceptance is pending the later runner and owner-provisioned secret; production activation is not part of this PR.
 
 Integration validation: 300 Node/source/CSS checks and all 117 browser workflows pass locally with main #52/#70 present. Both the old file/ZIP flows and the gated engine upload/history/recovery flows pass. The retired project-copy class was renamed to project-instruction-text at its engine JS/CSS owner; no retirement list, legacy stylesheet budget or specificity guard was relaxed. GitHub checks and targeted Claude review belong to the current published head, not the historical proof commit above.
+
+## Configuration correction after targeted review
+
+New design identity consists of normalized saved part details and its exact engineering file, not occurrence/build or project-label fields. New snapshots use format 2. Build context is frozen with each record in its creation event's record_context; revision/file events keep before/after build_context. The server derives it under the same project guard, never from editable record input. History renders it separately. Replay ordering is unchanged.
+
+Format-1 combined snapshots remain byte-for-byte unchanged. They are readable/exportable/restorable, with legacy context explicitly identified; new captures establish format-2 identity rather than rewriting historical fingerprints. A build-only explicit checkpoint can reference the same design before and after without inserting duplicate configurations.
+
+The record-edit audit trail, recovery as a separate project copy, and measured large Cloudflare restore limits remain required before cutover. This patch does not claim them implemented or claim a new platform proof.

@@ -152,3 +152,62 @@ test("truncated or corrupt backup never admits project metadata",async()=>{
   }
  }finally{f.db.close();target.WORKSHOP_DB.close();}
 });
+
+test("design configurations ignore build state and project names while each record freezes its context",async()=>{
+ const f=await fixture();try{
+  const first=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",title:"Initial bracket test",fields:{result:"Baseline"}}});assert.equal(first.status,200);
+  const build={quantity:4,unit:"pcs",build_status:"complete",attention:true,attention_note:"Inspect fixture",hidden:true};
+  assert.equal((await f.call("/items/"+f.itemId,"PATCH",{build})).status,200);
+  const second=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"Same design after completion"}}});assert.equal(second.status,200);
+  assert.equal((await f.call("","PATCH",{name:"Renamed project"})).status,200);
+  const third=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"Same design after project rename"}}});assert.equal(third.status,200);
+  assert.equal(first.result.configurationId,second.result.configurationId);assert.equal(first.result.configurationId,third.result.configurationId);assert.equal((await counts(f.db)).configurations,1);
+  const read=async result=>(await f.call("/history/"+result.eventId)).result;
+  const a=await read(first.result),b=await read(second.result),c=await read(third.result);
+  assert.equal(a.configurations[0].snapshot.format,2);assert.equal(a.configurations[0].snapshot.occurrence,undefined);
+  assert.equal(a.recordContext.project.name,"Bracket build");assert.equal(a.recordContext.occurrence.build_status,"not_started");assert.equal(a.recordContext.occurrence.quantity,1);
+  assert.equal(b.recordContext.project.name,"Bracket build");assert.deepEqual({...b.recordContext.occurrence,id:undefined},{...build,id:undefined});
+  assert.equal(c.recordContext.project.name,"Renamed project");assert.equal(c.recordContext.occurrence.build_status,"complete");
+  const next=structuredClone(f.details);next.part_number="NR0100";next.fields.specs[0].value=5;
+  assert.equal((await f.call("/items/"+f.itemId,"PATCH",{details:next})).status,200);
+  const changed=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"Different design"}}});assert.equal(changed.status,200);assert.notEqual(changed.result.configurationId,first.result.configurationId);assert.equal((await counts(f.db)).configurations,2);
+  assert.deepEqual(await read(first.result),a,"later design/build/project changes cannot rewrite an earlier capture");
+ }finally{f.db.close();}
+});
+test("record retry replays its original design and context before checking a newer project revision",async()=>{
+ const f=await fixture();try{
+  const operationId=id(),revision=f.revision(),record={type:"test",title:"Captured test",fields:{result:"Initial result"}};
+  const created=await f.call("/items/"+f.itemId+"/records","POST",{record},{operationId,revision});assert.equal(created.status,200);
+  const original=(await f.call("/history/"+created.result.eventId)).result;
+  await f.call("/items/"+f.itemId,"PATCH",{build:{build_status:"complete",quantity:8}});
+  await f.call("","PATCH",{name:"Later project label"});const latest=f.revision(),before=await counts(f.db);
+  const replay=await f.call("/items/"+f.itemId+"/records","POST",{record},{operationId,revision});
+  assert.equal(replay.status,200);assert.deepEqual(replay.result,created.result);assert.deepEqual(await counts(f.db),before);
+  const changed=await f.call("/records/"+created.result.recordId,"PATCH",{record:{...record,fields:{result:"Corrected result"}}},{revision:latest});assert.equal(changed.status,200);
+  const after=(await f.call("/history/"+created.result.eventId)).result;
+  assert.deepEqual(after.recordContext,original.recordContext);assert.equal(after.record.configuration_id,original.record.configuration_id);assert.equal(after.record.fields.result,"Corrected result");
+  assert.equal(after.recordContext.occurrence.build_status,"not_started");assert.equal(after.recordContext.project.name,"Bracket build");
+ }finally{f.db.close();}
+});
+test("legacy combined snapshots stay unchanged beside design-only captures and round-trip through recovery",async()=>{
+ const f=await fixture(),target={WORKSHOP_DB:new TestD1(),PHOTOS:new TestR2()};try{
+  const state=(await f.call("/state")).result,occ=state.occurrences[0],row=await f.db.prepare("SELECT * FROM engine_configurations WHERE project_id=?").bind(f.projectId).first();
+  const legacy={...JSON.parse(row.snapshot),format:1,occurrence:{id:occ.id,quantity:occ.quantity,unit:occ.unit,build_status:occ.build_status,attention:!!occ.attention,attention_note:occ.attention_note,hidden:!!occ.hidden,root:{id:f.projectId,name:state.project.name}}};
+  const snapshot=JSON.stringify(legacy),fingerprint=await sha256(canonicalJSON(legacy)),recordId=id(),eventId=id();
+  await f.db.prepare("UPDATE engine_configurations SET snapshot=?,fingerprint=? WHERE id=?").bind(snapshot,fingerprint,row.id).run();
+  await f.db.prepare("INSERT INTO engine_records(id,project_id,item_id,configuration_id,type,title,fields,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)").bind(recordId,f.projectId,f.itemId,row.id,"test","Legacy evidence",JSON.stringify({result:"Original legacy test"}),row.created_at,row.created_at).run();
+  await f.db.prepare("INSERT INTO engine_events(id,project_id,item_id,type,title,summary,payload,created_at) VALUES(?,?,?,?,?,?,?,?)").bind(eventId,f.projectId,f.itemId,"test","Legacy evidence","",JSON.stringify({record_id:recordId,configuration_id:row.id}),row.created_at).run();
+  const revision=await f.call("/items/"+f.itemId+"/revisions","POST",{build:{build_status:"complete"},reason:"Build checkpoint"});assert.equal(revision.status,200,JSON.stringify(revision));
+  const change=(await f.call("/history/"+revision.result.eventId)).result;assert.equal(change.event.payload.before,change.event.payload.after,"unchanged design uses one configuration even at the legacy boundary");assert.equal((await counts(f.db)).configurations,2);
+  assert.equal(change.event.payload.build_context.before.occurrence.build_status,"not_started");assert.equal(change.event.payload.build_context.after.occurrence.build_status,"complete");
+  const fresh=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"New capture"}}});assert.equal(fresh.status,200);assert.equal(fresh.result.configurationId,change.event.payload.after);
+  const oldRow=await f.db.prepare("SELECT * FROM engine_configurations WHERE id=?").bind(row.id).first();assert.equal(oldRow.snapshot,snapshot);assert.equal(oldRow.fingerprint,fingerprint);
+  const old=(await f.call("/history/"+eventId)).result;assert.equal(old.recordContext.legacy,true);assert.equal(old.recordContext.occurrence.build_status,"not_started");
+  const base=origin+"/api/project-engine/projects/"+f.projectId,backup=await(await handleProjectWorkspace(new Request(base+"/export"),f.env,f.owner)).text();
+  const response=await handleProjectWorkspace(new Request(base+"/import",{method:"POST",headers:{origin,"x-operation-id":id(),"x-project-revision":"new"},body:backup}),target,f.owner);assert.equal(response.status,200,await response.clone().text());
+  const read=async id=>(await(await handleProjectWorkspace(new Request(base+"/history/"+id),target,f.owner)).json());
+  assert.equal((await read(eventId)).configurations[0].snapshot.format,1);assert.equal((await read(eventId)).recordContext.legacy,true);
+  const restored=await read(fresh.result.eventId);assert.equal(restored.configurations[0].snapshot.format,2);assert.equal(restored.recordContext.occurrence.build_status,"complete");assert.equal(restored.recordContext.project.name,"Bracket build");
+  const restoredLegacy=await target.WORKSHOP_DB.prepare("SELECT snapshot,fingerprint FROM engine_configurations WHERE id=?").bind(row.id).first();assert.deepEqual(restoredLegacy,{snapshot,fingerprint});
+ }finally{f.db.close();target.WORKSHOP_DB.close();}
+});

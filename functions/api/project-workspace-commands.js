@@ -1,7 +1,7 @@
 import {commitProjectCommand,canonicalJSON,CommandConflict} from "./project-command.js";
 import {normalizeCustomItem,normalizeOccurrence,allocatePartNumber,diffProjectItems} from "../../assets/project-item-model.js";
 import {normalizeProjectRecord} from "../../assets/project-record-model.js";
-import {rows,statement,decode,uuid,text,itemContext,itemDetails,buildDetails,storedItem,storedBuild,configurationPlan,currentEngineeringFile,readyFiles,addFileLinks,addEvent,originalPath,ProjectNotFound} from "./project-state.js";
+import {rows,statement,decode,uuid,text,itemContext,itemDetails,buildDetails,storedItem,storedBuild,buildContext,configurationPlan,currentEngineeringFile,readyFiles,addFileLinks,addEvent,originalPath,ProjectNotFound} from "./project-state.js";
 const same=(a,b)=>canonicalJSON(a)===canonicalJSON(b);
 export async function unchanged(db,project,input){
  const current=await statement(db,"SELECT revision FROM engine_projects WHERE id=? AND owner_id=?",project.id,input.actorId).first();
@@ -49,14 +49,15 @@ export async function editItem(db,input,project,itemId,data,{revision=false}={})
  const support=revision?await readyFiles(db,project.id,data.fileIds===undefined?[]:data.fileIds):[];
  const file=await currentEngineeringFile(db,project.id,itemId);
  const prior=await configurationPlan(db,project,context.item,context.occurrence,file);
- const next=await configurationPlan(db,project,{...context.item,...after},{...context.occurrence,...build},file);
+ let next=await configurationPlan(db,project,{...context.item,...after},{...context.occurrence,...build},file);
+ if(same(prior.snapshot,next.snapshot))next=prior;
  return commitProjectCommand(db,input,w=>{
-  if(revision)prior.write(w);
+  if(revision&&prior.id!==next.id)prior.write(w);
   w.update("engine_items",storedItem(after),{project_id:project.id,id:itemId});
   w.update("engine_occurrences",storedBuild(build),{project_id:project.id,id:context.occurrence.id,removed_at:null});
   next.write(w);
   let eventId=null;
-  if(revision){eventId=addEvent(w,project.id,itemId,"revision",label?"Revision "+label:"Design revised",{before:prior.id,after:next.id,reason,label,changes,source:{id:itemId,name:before.name,part_number:before.part_number}},reason);addFileLinks(w,project.id,{event_id:eventId},support);}
+  if(revision){eventId=addEvent(w,project.id,itemId,"revision",label?"Revision "+label:"Design revised",{before:prior.id,after:next.id,reason,label,changes,build_context:{before:buildContext(project,context.occurrence),after:buildContext(project,{...context.occurrence,...build})},source:{id:itemId,name:before.name,part_number:before.part_number}},reason);addFileLinks(w,project.id,{event_id:eventId},support);}
   return {itemId,configurationId:next.id,eventId};
  });
 }
@@ -103,7 +104,7 @@ export async function createRecord(db,input,project,itemId,data){
   if(step)w.require("EXISTS(SELECT 1 FROM engine_steps WHERE project_id=? AND id=? AND item_id=? AND retired_at IS NULL)",project.id,step.id,itemId);
   w.insert("engine_records",{id,project_id:project.id,item_id:itemId,step_id:step?.id||null,configuration_id:configuration.id,type:record.type,title:record.title,fields:JSON.stringify(record.fields),event_date:record.event_date,step_snapshot:step?JSON.stringify({id:step.id,title:step.title,body:step.body}):null,created_at:w.createdAt,updated_at:w.createdAt});
   addFileLinks(w,project.id,{record_id:id},files);
-  const eventId=addEvent(w,project.id,itemId,record.type,record.title,{record_id:id,configuration_id:configuration.id,source:{id:itemId,name:item.name,part_number:item.part_number,step_title:step?.title||null}},Object.values(record.fields).filter(value=>typeof value==="string").join(" · ").slice(0,300));
+  const eventId=addEvent(w,project.id,itemId,record.type,record.title,{record_id:id,configuration_id:configuration.id,record_context:buildContext(project,occurrence),source:{id:itemId,name:item.name,part_number:item.part_number,step_title:step?.title||null}},Object.values(record.fields).filter(value=>typeof value==="string").join(" · ").slice(0,300));
   return {recordId:id,eventId,configurationId:configuration.id};
  });
 }
