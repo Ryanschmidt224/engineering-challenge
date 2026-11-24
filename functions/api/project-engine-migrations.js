@@ -1,5 +1,6 @@
 // Separate from Workshop's migration ledger. Only the enabled, authenticated
 // preview handler calls this; importing the module performs no database work.
+import {retiredObjectReferenceTriggers} from "./project-storage-references.js";
 const migrations=[{version:1,statements:[
  `CREATE TABLE IF NOT EXISTS engine_projects (
   id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, name TEXT NOT NULL,
@@ -142,6 +143,17 @@ const migrations=[{version:1,statements:[
  ...["UPDATE","DELETE"].map(action=>`CREATE TRIGGER IF NOT EXISTS engine_retired_keys_${action.toLowerCase()} BEFORE ${action} ON engine_retired_file_keys BEGIN SELECT RAISE(ABORT,'RETIRED_KEY_IS_PERMANENT'); END`),
  ...["INSERT","UPDATE"].map(action=>`CREATE TRIGGER IF NOT EXISTS engine_files_key_fence_${action.toLowerCase()} BEFORE ${action} ON engine_files WHEN EXISTS(SELECT 1 FROM engine_retired_file_keys WHERE r2_key=NEW.r2_key) BEGIN SELECT RAISE(ABORT,'ENGINE_STORAGE_KEY_RETIRED'); END`),
  ...["INSERT","UPDATE"].map(action=>`CREATE TRIGGER IF NOT EXISTS engine_restore_key_fence_${action.toLowerCase()} BEFORE ${action} ON engine_restore_rows WHEN NEW.table_name='files' AND EXISTS(SELECT 1 FROM engine_retired_file_keys WHERE r2_key=json_extract(NEW.data,'$.r2_key')) BEGIN SELECT RAISE(ABORT,'ENGINE_STORAGE_KEY_RETIRED'); END`)
+]},{version:9,statements:[
+ // Append-only deletion intents for never-published recovery storage keys.
+ // Each observed ETag is separately journaled; no terminal "deleted" marker
+ // can hide bytes left later by an already in-flight old writer.
+ `CREATE TABLE IF NOT EXISTS engine_retired_object_attempts (
+ r2_key TEXT NOT NULL,etag TEXT NOT NULL,attempt_id TEXT NOT NULL UNIQUE,created_at TEXT NOT NULL,
+ PRIMARY KEY(r2_key,etag),FOREIGN KEY(r2_key) REFERENCES engine_retired_file_keys(r2_key))`,
+ ...["UPDATE","DELETE"].map(action=>`CREATE TRIGGER IF NOT EXISTS engine_retired_object_attempt_${action.toLowerCase()} BEFORE ${action} ON engine_retired_object_attempts BEGIN SELECT RAISE(ABORT,'RETIRED_OBJECT_INTENT_IS_PERMANENT'); END`),
+ // Atomic intent admission checks all roots first. After it wins, neither a
+ // current nor old SQL writer may introduce a root in the check/delete gap.
+ ...retiredObjectReferenceTriggers()
 ]}];
 const pending=new WeakMap();
 export const PROJECT_ENGINE_SCHEMA_VERSION=migrations.at(-1).version;

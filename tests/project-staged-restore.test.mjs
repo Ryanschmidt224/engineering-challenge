@@ -15,6 +15,13 @@ async function assertHidden(f,project){
 
 test("3000 revised records plus drawings export above the old row/metadata limits and recover every historical revision",async()=>{
  const f=await fixture();try{
+  // Keep migration-9 reference guards active throughout the large-history path,
+  // not only their empty-intent fast path. This unrelated retired destination
+  // was never published and its operational tombstones are not backup content.
+  const retiredJob=id(),retiredProject=id(),retiredOperation=id(),token=id(),old=new Date(Date.now()-3*86400000).toISOString(),retiredKey=`project-engine/restored/${retiredProject}/${retiredOperation}/${id()}`;
+  f.db.sqlite.prepare("INSERT INTO engine_restore_jobs(id,project_id,actor_id,operation_id,state,row_count,created_at,last_activity_at,cleanup_token,cleanup_claimed_at) VALUES(?,?,?,?,'staging',0,?,?,?,?)").run(retiredJob,retiredProject,f.owner.id,retiredOperation,old,old,token,old);
+  f.db.sqlite.prepare("INSERT INTO engine_retired_file_keys(r2_key,job_id,project_id,actor_id,operation_id,cleanup_token,created_at) VALUES(?,?,?,?,?,?,?)").run(retiredKey,retiredJob,retiredProject,f.owner.id,retiredOperation,token,old);
+  f.db.sqlite.prepare("INSERT INTO engine_retired_object_attempts(r2_key,etag,attempt_id,created_at) VALUES(?,'earlier-orphan',?,?)").run(retiredKey,id(),old);
   const file=await upload(f,"source-drawing.step",new TextEncoder().encode("Original drawing bytes")),revisions=[];
   for(let n=0;n<3000;n++){
    const response=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"note",title:"Observation "+n,fields:{text:"Observation "+n+" "+"s".repeat(2200)}}});assert.equal(response.status,200);

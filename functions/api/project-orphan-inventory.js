@@ -1,9 +1,9 @@
 import {statement,uuid} from "./project-state.js";
 import {validId} from "../../assets/family-model.js";
 import {restoreRetirementStatus,RESTORE_INACTIVITY_MS} from "./project-restore-activity.js";
+import {storageJSONColumns as jsonColumns} from "./project-storage-references.js";
 
 export const ORPHAN_MINIMUM_AGE=RESTORE_INACTIVITY_MS;
-const jsonColumns={items:["fields"],occurrences:["removed_path"],steps:["retired_path"],configurations:["snapshot"],records:["fields","step_snapshot"],events:["payload"],selections:["snapshot","requirements"],archive_groups:["members"],snapshot_values:["snapshot"]};
 const page=(rows,limit,kind)=>{const last=rows[limit-1];return {rows:rows.slice(0,limit),nextCursor:rows.length>limit?kind==="restores"?last.id:last.id+":"+last.project_id:null};};
 const oldEnough=(created,cutoff)=>typeof created==="string"&&Number.isFinite(Date.parse(created))&&Date.parse(created)<=cutoff;
 async function references(db,targets,{global=false}={}){
