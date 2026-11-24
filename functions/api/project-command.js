@@ -2,6 +2,7 @@
 // admission receipt, never changes() or a receipt from an earlier retry.
 import {backupColumns} from "./project-backup-schema.js";
 import {PROJECT_ENGINE_SCHEMA_VERSION} from "./project-engine-migrations.js";
+import {openRestoreOperation} from "./project-restore-guards.js";
 const insertable=new Set(["engine_projects","engine_items","engine_occurrences","engine_configurations","engine_events","engine_steps","engine_records","engine_files","engine_file_links","engine_selections","engine_archive_groups","engine_snapshot_values"]);
 const mutable=new Set(["engine_projects","engine_items","engine_occurrences","engine_steps","engine_records","engine_files","engine_file_links","engine_selections"]);
 const key=value=>{if(!/^[a-z_][a-z0-9_]*$/.test(value))throw Error("Invalid SQL identifier");return value;};
@@ -94,10 +95,10 @@ export async function commitProjectCommand(db,input,build){
  if(!writes.length)throw Error("Do not create receipts for an unchanged save.");
  const response={...result,revision};
  const admission=restoreJobId
-  ?{sql:"EXISTS(SELECT 1 FROM engine_projects p JOIN engine_restore_jobs j ON j.id=p.restore_job_id AND j.project_id=p.id WHERE p.id=? AND p.owner_id=? AND j.id=? AND j.actor_id=? AND j.operation_id=? AND j.state='ready')",values:[projectId,actorId,restoreJobId,actorId,operationId]}
+  ?{sql:`EXISTS(SELECT 1 FROM engine_projects p JOIN engine_restore_jobs j ON j.id=p.restore_job_id AND j.project_id=p.id WHERE p.id=? AND p.owner_id=? AND j.id=? AND j.actor_id=? AND j.operation_id=? AND j.state='ready' AND ${openRestoreOperation()})`,values:[projectId,actorId,restoreJobId,actorId,operationId]}
   :expectedRevision===null?{sql:"NOT EXISTS(SELECT 1 FROM engine_projects WHERE id=?)",values:[projectId]}
   :{sql:"EXISTS(SELECT 1 FROM engine_projects WHERE id=? AND owner_id=? AND revision=? AND restore_job_id IS NULL)",values:[projectId,actorId,expectedRevision]};
- const conditions=[{sql:"(SELECT MAX(version) FROM project_engine_migrations)=?",values:[PROJECT_ENGINE_SCHEMA_VERSION]},admission,...guards];
+ const conditions=[{sql:"(SELECT MAX(version) FROM project_engine_migrations)=?",values:[PROJECT_ENGINE_SCHEMA_VERSION]},{sql:"NOT EXISTS(SELECT 1 FROM engine_restore_jobs WHERE project_id=? AND actor_id=? AND operation_id=? AND cleanup_token IS NOT NULL)",values:[projectId,actorId,operationId]},admission,...guards];
  const admit=statement(`INSERT INTO engine_operations(project_id,actor_id,operation_id,request_hash,attempt_id,result,created_at)
  SELECT ?,?,?,?,?,?,? WHERE ${conditions.map(condition=>"("+condition.sql+")").join(" AND ")} ON CONFLICT(project_id,actor_id,operation_id) DO NOTHING`,
  [projectId,actorId,operationId,requestHash,attemptId,JSON.stringify(response),createdAt,...conditions.flatMap(condition=>condition.values)]);

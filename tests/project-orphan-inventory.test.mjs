@@ -36,10 +36,10 @@ test("object inventory is allowlisted, owner-scoped, paginated and protects save
  }finally{f.db.close();}
 });
 
-test("incomplete restores remain protected even after 24 hours; completed staging needs a successful owned receipt",async()=>{
+test("old restore creation dates do not override recent activity; completed staging needs a successful owned receipt",async()=>{
  const f=await fixture();try{
   const pending=id(),finished=id();for(const job of [pending,finished]){f.db.sqlite.prepare("INSERT INTO engine_restore_jobs(id,project_id,actor_id,operation_id,state,row_count,created_at) VALUES(?,?,?,?,'staging',1,?)").run(job,f.projectId,f.owner.id,id(),old);f.db.sqlite.prepare("INSERT INTO engine_restore_rows(job_id,table_name,row_id,position,data) VALUES(?,'items',?,0,'{}')").run(job,id());}f.db.sqlite.prepare("UPDATE engine_restore_jobs SET state='complete' WHERE id=?").run(finished);
-  const report=await inspect(f,"restores");assert.equal(report.candidates.length,0);assert.ok(report.protected.some(row=>row.id===pending&&/Active-job fencing/.test(row.reason)));assert.ok(report.protected.some(row=>row.id===finished&&/successful import receipt/.test(row.reason)));
+  const report=await inspect(f,"restores");assert.equal(report.candidates.length,0);assert.ok(report.protected.some(row=>row.id===pending&&/progress is recent/.test(row.reason)));assert.ok(report.protected.some(row=>row.id===finished&&/successful import receipt/.test(row.reason)));
  }finally{f.db.close();}
 });
 

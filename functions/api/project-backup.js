@@ -94,6 +94,7 @@ export async function restoreProject(request,env,owner,projectId,{asCopy=false}=
  const badLinks=await statement(db,"SELECT COUNT(*) AS n FROM engine_restore_rows l LEFT JOIN engine_restore_rows f ON f.job_id=l.job_id AND f.table_name='files' AND f.row_id=json_extract(l.data,'$.file_id') WHERE l.job_id=? AND l.table_name='file_links' AND (f.row_id IS NULL OR json_extract(f.data,'$.state')!='ready')",staging.id).first();if(badLinks.n)throw Error("A file link has no verified file.");
  const needed=new Map(manifest.tables.files.filter(file=>file.state==="ready").map(file=>[file.id,file])),complete=new Set();let current=null,chunks=[],length=0,finished=false;
  for await(const entry of iterator){
+  await staging.touch();
   if(finished)throw Error("Backup contains data after its completion marker.");
   if(entry.type==="file"){
    if(current||!needed.has(entry.id)||complete.has(entry.id))throw Error("Backup contains unexpected or duplicate file bytes.");const row=await statement(db,"SELECT data FROM engine_restore_rows WHERE job_id=? AND table_name='files' AND row_id=?",staging.id,entry.id).first();if(!row)throw Error("Backup file metadata is missing.");current=JSON.parse(row.data);chunks=[];length=0;
@@ -103,7 +104,7 @@ export async function restoreProject(request,env,owner,projectId,{asCopy=false}=
   }else if(entry.type==="end_file"){
    if(!current||entry.id!==current.id||length!==current.size)throw Error("Backup file is incomplete.");const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
    if(await bytesHash(bytes)!==current.sha256)throw Error("A file failed its backup hash check.");
-   const key=storageKey(current),stored=await env.PHOTOS.put(key,bytes,{onlyIf:{etagDoesNotMatch:"*"},httpMetadata:{contentType:current.content_type},customMetadata:{sha256:current.sha256}});
+   await staging.touch({force:true});const key=storageKey(current),stored=await env.PHOTOS.put(key,bytes,{onlyIf:{etagDoesNotMatch:"*"},httpMetadata:{contentType:current.content_type},customMetadata:{sha256:current.sha256}});
    if(!stored){const existing=await env.PHOTOS.head(key);if(existing?.customMetadata?.sha256!==current.sha256||existing.size!==current.size)throw new CommandConflict("The restore staging file differs. Retry with a new operation ID.");}
    const verified=await env.PHOTOS.get(key);
    if(!verified||verified.size!==current.size||await bytesHash(new Uint8Array(await verified.arrayBuffer()))!==current.sha256)throw Error("A staged restore file failed byte verification. No project was admitted.");

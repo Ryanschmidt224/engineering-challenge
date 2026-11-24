@@ -1,7 +1,8 @@
 import {statement,uuid} from "./project-state.js";
 import {validId} from "../../assets/family-model.js";
+import {restoreRetirementStatus,RESTORE_INACTIVITY_MS} from "./project-restore-activity.js";
 
-export const ORPHAN_MINIMUM_AGE=24*60*60*1000;
+export const ORPHAN_MINIMUM_AGE=RESTORE_INACTIVITY_MS;
 const jsonColumns={items:["fields"],occurrences:["removed_path"],steps:["retired_path"],configurations:["snapshot"],records:["fields","step_snapshot"],events:["payload"],selections:["snapshot","requirements"],archive_groups:["members"],snapshot_values:["snapshot"]};
 const page=(rows,limit,kind)=>{const last=rows[limit-1];return {rows:rows.slice(0,limit),nextCursor:rows.length>limit?kind==="restores"?last.id:last.id+":"+last.project_id:null};};
 const oldEnough=(created,cutoff)=>typeof created==="string"&&Number.isFinite(Date.parse(created))&&Date.parse(created)<=cutoff;
@@ -32,10 +33,10 @@ export async function inventoryProjectOrphans(db,photos,actorId,params,{now=Date
  const roots=kind==="restores"?new Set():await references(db,selected.rows.map(row=>({projectId:row.project_id,value:row.id})));
  const linked=kind==="files"?new Set((await statement(db,"SELECT DISTINCT project_id,file_id FROM engine_file_links WHERE file_id IN(SELECT value FROM json_each(?))",JSON.stringify(selected.rows.map(row=>row.id))).all()).results.map(row=>row.project_id+":"+row.file_id)):new Set();
  for(const row of selected.rows){
-  const entry={id:row.id,projectId:row.project_id,...(row.revision?{expectedRevision:row.revision}:{}),...(row.r2_key?{key:row.r2_key}:{}),...(kind==="restores"?{state:row.state,stagedRows:row.staged_rows}: {})};
-  let reason=!oldEnough(row.created_at,cutoff)?"Younger than 24 hours or age is unknown.":null;
+  const entry={id:row.id,projectId:row.project_id,...(row.revision?{expectedRevision:row.revision}:{}),...(row.r2_key?{key:row.r2_key}:{}),...(kind==="restores"?{state:row.state,stagedRows:row.staged_rows,lastActivityAt:row.last_activity_at,retired:!!row.cleanup_token}: {})};
+  let reason=!oldEnough(row.created_at,cutoff)?"Younger than 24 hours or age is unknown.":null,action=kind==="restores"?"completed_staging":kind==="files"?"prepared_upload_metadata":"unreferenced_frozen_value";
   if(kind==="restores"){
-   if(row.state!=="complete")reason="Active-job fencing is required before an incomplete restore can be swept.";
+   if(row.state!=="complete"){const status=await restoreRetirementStatus(db,row,actorId,{now});reason=status.claimable?null:status.reason;if(status.claimable){action="inactive_restore_claim";entry.observedActivity=status.observedActivity;}}
    else if(row.target_owner!==actorId||row.restore_job_id)reason="The target is not a published project owned by this operator.";
    else if(!row.staged_rows)reason="No completed staging remains.";
    else if(!await statement(db,"SELECT 1 AS present FROM engine_operations WHERE project_id=? AND actor_id=? AND operation_id=? AND json_extract(result,'$.restored')=1",row.project_id,actorId,row.operation_id).first())reason="No successful import receipt protects this cleanup.";
@@ -43,7 +44,7 @@ export async function inventoryProjectOrphans(db,photos,actorId,params,{now=Date
   if(!reason&&kind==="files"){
    const object=await photos.head(row.r2_key);if(object&&!oldEnough(object.uploaded instanceof Date?object.uploaded.toISOString():object.uploaded,cutoff))reason="The upload is recent or its object age is unknown.";
   }
-  if(reason)result.protected.push({...entry,reason});else result.candidates.push({...entry,action:kind==="restores"?"completed_staging":kind==="files"?"prepared_upload_metadata":"unreferenced_frozen_value"});
+  if(reason)result.protected.push({...entry,reason});else result.candidates.push({...entry,action});
  }
  return result;
 }
