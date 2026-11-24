@@ -1,6 +1,6 @@
 # Custom-part preview flow
 
-Status: Batch 2 custom-part preview implemented and checked after the actual Cloudflare D1 foundation gate passed. Owner walkthrough/review is the next gate before Batch 3. Production continues using the legacy engine. No production flag is enabled, legacy code is deleted, or existing project data is removed by this batch. Feature inventory boxes stay unchecked until the owner preview and later cutover.
+Status: Batch 2 custom-part preview implemented and reconciled with the integrated foundation/current production UI. This head awaits targeted Claude review; release state and the dependency sequence are maintained in STATUS.md. Production continues using the legacy engine. This batch enables no production flag, deletes no legacy code and removes no existing project data. Inventory boxes remain unchecked until accepted replacement/cutover.
 
 ## API and data
 
@@ -14,7 +14,7 @@ Migration 2 adds steps, records, files and explicit file links, plus case-insens
 
 ## Immutable files
 
-`project-files.js` uses prepare → bounded immutable upload → admission. Each upload has a new R2 key and create-only condition; its SHA-256 is calculated by the server. The maximum file size is 20 MB. A repeat upload must match the operation, token, owner and actual bytes. Admission publishes the ready metadata, current link, configuration and file-change event in one D1 transaction. Previous configurations retain links to previous bytes.
+`project-engine-files.js` uses prepare → bounded immutable upload → admission. Each upload has a new R2 key and create-only condition; its SHA-256 is calculated by the server. The maximum file size is 20 MB. A repeat upload must match the operation, token, owner and actual bytes. Admission publishes the ready metadata, current link, configuration and file-change event in one D1 transaction. Previous configurations retain links to previous bytes.
 
 Interrupted/stale uploads can leave unreachable staging objects. They cannot create an active broken link, overwrite an earlier object or trigger a deletion. Purge remains out of scope. Downloads are owner-only, private/no-store and attachments by default; only the explicit safe raster image types can be served inline.
 
@@ -34,11 +34,11 @@ Local SQL tests cover initial creation/numbering, ordinary edits/no-op, evidence
 
 Verified: 264 Node tests and 78 browser workflows pass at source `c2f1134e1d77076aa6006da8f0c8e1b042542104`; the browser flow covers 1440/390 px, stale-draft review, attachment-only records, cancellation and paginated History selection/scroll. On actual Cloudflare D1/R2, creation, 3 → 5 mm revision with original test evidence, immutable drawing replacement/download, step retirement/restoration, part removal/undo and export succeeded. The self-contained backup restored into the owner-created empty D1 target `d761ae08-64f2-4130-8cfa-f596e8e89b80`. IDs, all engineering metadata and both file hashes/bytes matched; tokens reset and restored objects use different R2 keys. After returning to the original binding, its exported backup was byte-for-byte unchanged. Exact sources/builds and comparison results are in `PROJECT_CUSTOM_FLOW_PROOF.json`; the primitive proof remains in `PROJECT_ENGINE_D1_PROOF.json`.
 
-These evidence levels are distinct: the full edge-case matrix runs through real SQL/Worker handlers and browser CI; the production-platform manual walkthrough checks the observed Cloudflare flows above. Remaining: owner walkthrough/review before Batch 3, independent code review and the later feature-complete production cutover. No claim is made that this first custom-part slice replaces every retained legacy feature.
+These evidence levels are distinct: the full edge-case matrix runs through real SQL/Worker handlers and browser CI; the production-platform manual walkthrough checks the observed Cloudflare flows above. At that historical evidence point, the next gates were owner walkthrough/review before Batch 3, independent code review and later feature-complete production cutover. Batch 3 now exists as queued PR #66; the current integration still needs its own targeted review and the eventual feature-complete cutover gates. No claim is made that this first custom-part slice replaces every retained legacy feature.
 
 ## Rollback
 
-Before preview deployment, revert this batch's code. After migration 2 has run, leave its tables and bytes intact: roll back code to the preceding proven preview, or disable the preview flag and redeploy. Never edit an applied migration, drop tables, reseed, delete R2 or point preview at production. If a correction needs schema changes after deployment, append migration 3. Production remains on the authenticated main branch; this preview is not a cutover.
+Before preview deployment, revert this batch's code. After migration 2 has run, leave its tables and bytes intact: roll back code to the preceding proven preview, or disable the preview flag and redeploy. Never edit an applied migration, drop tables, reseed, delete R2 or point preview at production. If a correction needs schema changes after deployment, append the next unused migration after all versions already applied to that database. Production remains on the authenticated main branch; this preview is not a cutover.
 
 Cloudflare limits and conditional-write references checked November 22, 2026: https://developers.cloudflare.com/d1/platform/limits/ and https://developers.cloudflare.com/r2/api/workers/workers-api-reference/ . A D1 batch counts as one invocation query, while each statement retains the 100-parameter limit. No new dependency is required.
 
@@ -57,3 +57,13 @@ Owner refinement: custom in-house parts require neither Manufacturer nor MPN. Th
 Owner refinement: in-house parts skip Where to buy / supplier-entry screens. This custom-part preview has no purchasing stage; later purchased-part flows may expose procurement fields. Hiding inapplicable fields must preserve any existing supplier data and historical evidence. The legacy production editor is unchanged until the reviewed cutover.
 
 Owner refinement: Add specification uses the shared content-width 44 px button, with hover help and a keyboard/touch-accessible explanation using the same wording in `project-help.js`. Later Add supplier must use the same button helper and sizing; there is no supplier UI in the in-house flow. History headers count all matching events even while showing only the latest five rows.
+
+## Integration with the current production baseline
+
+The engine attachment module was moved byte-for-byte from functions/api/project-files.js to functions/api/project-engine-files.js because main already uses the former path for the live project-wide file/ZIP API. project-workspace-api.js and project-backup.js import the engine module; worker.js keeps importing the legacy handler from project-files.js. Neither file ownership model is combined with the other or silently removed. Full browser validation covers both existing project files and the engine upload/history/export/restore flow.
+
+The new-project form already shows editable Number prefix and Minimum digits. Its browser flow now explicitly chooses BB / 3 and verifies BB100 rather than relying on the NR / 4 default. This changes no numbering default, stored project or applied migration. The short_name/project-owned History follow-ups remain queued as described in STATUS.md and the History plan; this integration does not claim they are implemented.
+
+The earlier Cloudflare proof remains historical evidence of its pinned runtime. The current main-alignment head requires targeted Claude review. A fresh control-plane acceptance is pending the later runner and owner-provisioned secret; production activation is not part of this PR.
+
+Integration validation: 300 Node/source/CSS checks and all 117 browser workflows pass locally with main #52/#70 present. Both the old file/ZIP flows and the gated engine upload/history/recovery flows pass. The retired project-copy class was renamed to project-instruction-text at its engine JS/CSS owner; no retirement list, legacy stylesheet budget or specificity guard was relaxed. GitHub checks and targeted Claude review belong to the current published head, not the historical proof commit above.

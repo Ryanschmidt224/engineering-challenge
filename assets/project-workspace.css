@@ -52,7 +52,7 @@
 .project-toolbar {
   margin-bottom: var(--space-4);
 }
-.project-copy {
+.project-instruction-text {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }

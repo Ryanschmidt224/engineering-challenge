@@ -14,24 +14,17 @@
  };
  const retiredLabels={revision:{result:"What was the result?"},note:{note:"Notes"}};
  const categoryOf=record=>record.category||(record.partSnapshot?"revision":"failure");
- const sectionTitle="Project Archive";
+ const sectionTitle="Earlier archived entries";
  const acceptedAttachments=globalThis.BSAttachmentTypes.accept;
  const photoExt=/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i;
  const fileUrl=id=>"/api/recipe-files?id="+encodeURIComponent(id);
- const recordDate=record=>record.date||[...(record.entries||[])].reverse().find(entry=>entry.date)?.date||record.createdAt?.slice(0,10)||"";
  const formatTimestamp=savedAt=>{
   const parsed=new Date(savedAt.length===10?savedAt+"T12:00:00":savedAt);
   return Number.isNaN(parsed.getTime())?savedAt:parsed.toLocaleString(undefined,{
    year:"numeric",month:"short",day:"numeric",hour:savedAt.length===10?undefined:"numeric",minute:savedAt.length===10?undefined:"2-digit"
   });
  };
- function dateLabelFor(record){
-  const value=recordDate(record);
-  const label=make("time","investigation-record-date",value);
-  if(value)label.dateTime=value;else label.hidden=true;
-  return label;
- }
- function mount({project,admin,getTree,getPart,getPartList,onReplacePart}){
+ function mount({project,admin,getTree,getPart,getPartList,revisions,getWorkspaceRevision,renderSnapshot}){
   let records=[],revision=null;
   let assemblySlot=null,partSlot=null,stepSlots=new Map(),activeContext=null,loadSerial=0;
   const openCards=new Set();
@@ -109,7 +102,7 @@
    if(!admin())throw Error("Sign in as administrator to save.");
    const r=await fetch(api,{method:"POST",credentials:"same-origin",
     headers:{"content-type":"application/json"},body:JSON.stringify({...change,expectedRevision:revision})});
-   const d=await r.json();if(!r.ok)throw Error(d.error||"Save failed");
+   const d=await r.json();if(!r.ok)throw Object.assign(Error(d.error||"Save failed"),{status:r.status});
    records=d.records;revision=d.revision;if(!deferRender)renderAll();
    return d;
   }
@@ -405,9 +398,6 @@
      })
     );
    }else actions.append(saveBtn,window.BSEntryEditor.action("Cancel",onDone));
-   if(!creating&&!isArchived(record)){
-    actions.append(window.BSEntryEditor.action("Archive",()=>archiveRecord(record),{className:"investigation-archive-button"}));
-   }
    if(!creating)actions.append(window.BSEntryEditor.action("Delete",async()=>{
     const deleteBtn=actions.querySelector(".investigation-delete");
     if(!await window.BSDialogs.danger('Delete "'+(record.title?.trim()||categories[categoryOf(record)]?.label||"Entry")+'"? This removes the record from the project.',{title:"Delete record?"}))return;
@@ -422,26 +412,6 @@
   // without an archive flag remain active; previous part snapshots are history.
   const isArchived=record=>record.lifecycle!=="active"||Boolean(record.archivedAt||record.partSnapshot);
   const archiveDate=record=>(record.archivedAt||record.partSnapshot?.archivedAt||"").slice(0,10);
-  function archiveRecord(record){
-   const dialog=make("dialog","investigation-archive-dialog");
-   dialog.setAttribute("aria-label","Archive "+record.title);
-   dialog.append(make("h3","","Archive entry"),make("p","muted","Move this entry from its current section into Project Archive."));
-   dialog.append(make("p","investigation-archive-today","Archive date: "+new Date().toLocaleDateString()));
-   const label=make("label","investigation-archive-note-label","Why was it archived? (optional)");
-   const note=make("textarea","field");note.rows=3;note.maxLength=2500;note.placeholder="Reason for archiving (optional)";
-   label.append(note);
-   const actions=make("div","investigation-edit-actions");
-   const message=make("p","investigation-feedback muted");message.setAttribute("role","status");
-   const confirm=btn("Archive",async()=>{
-    confirm.disabled=true;confirm.textContent="Archiving…";
-    try{await save({action:"archiveRecord",id:record.id,note:note.value});dialog.close()}
-    catch(error){message.textContent=error.message;confirm.disabled=false;confirm.textContent="Archive"}
-   },"btn primary");
-   actions.append(confirm,btn("Cancel",()=>dialog.close()));
-   dialog.append(label,actions,message);
-   document.body.append(dialog);dialog.addEventListener("close",()=>dialog.remove(),{once:true});
-   dialog.showModal();note.focus();
-  }
   function render(target,context,compact=false){
    if(!target)return;
    const sectionKey=context.ownerType+":"+context.ownerId+":"+(context.stepId||"");
@@ -457,20 +427,17 @@
    const activeOwn=own.filter(record=>!isArchived(record)&&topLevel(record));
    const stepSlot=compact?stepSlots.get(context.stepId):null;
    if(stepSlot)stepSlot.pendingEdits=[];
-   const archivedOwn=own.filter(record=>isArchived(record)&&topLevel(record));
-   const archivedRelated=records.filter(record=>within(record,context)&&!owns(record,context)&&isArchived(record)&&!record.parentRecordId);
+   const archivedOwn=own.filter(record=>isArchived(record)&&!record.partSnapshot&&topLevel(record));
+   const archivedRelated=records.filter(record=>within(record,context)&&!owns(record,context)&&isArchived(record)&&!record.partSnapshot&&!record.parentRecordId);
    // A step has one edit-mode switch: its Work Instruction header.
    // Other workspace pages have no parent editor and retain their own controls.
    const allowEntryEditing=admin()&&(!compact||!stepSlot?.step?.archivedAt);
-   // The step editor has its own Edit mode. Other workspace sections have no
-   // separate editing toggle, so retain their Add entry button.
+   // Step creation follows Edit mode; other sections expose their own action.
    const canCreate=allowEntryEditing&&(!compact||Boolean(stepSlot?.editing));
    const addEntry=canCreate?window.BSUI.button("+ Add entry",event=>{
     event.preventDefault();newRecord(context,target);
    }):null;
-   const canReplace=admin()&&context.ownerType==="part"&&!context.stepId&&getPart?.()?.id===context.ownerId&&typeof onReplacePart==="function";
-   const replace=canReplace?window.BSUI.button("Replace part / save revision",()=>replacePart(context,target),{variant:"quiet"}):null;
-   window.BSUI.sectionActions(target.sectionBody||activeHost,{primary:addEntry,secondary:[replace]});
+   window.BSUI.sectionActions(target.sectionBody||activeHost,{primary:addEntry});
    const activeContent=make("div","investigation-active-content");
    activeHost.append(activeContent);
 
@@ -492,16 +459,17 @@
    }else if(archiveShell){
     const count=archiveShell.querySelector(".workspace-archive-count");
     const total=activeOwn.length+archiveCount;
-    if(count)count.textContent="("+total+(total===1?" record)":" records)");
+    archiveShell.dataset.recordCount=total;const combined=total+Number(archiveShell.dataset.archiveCount||0);
+    if(count)count.textContent="("+combined+(combined===1?" record)":" records)");
    }
    const content=make("div","investigation-collapse-content");
-   // Full workspaces have one shared Archives and Revision History
-   // disclosure. Step-level archive disclosures remain independent.
+   // Part snapshots have their own Revisions section; step archives stay local.
    disclosure.append(content);
    target.append(disclosure);
 
    const renderCard=(record,destination,{historical=false,inherited=false}={})=>{
-    const card=make("details","investigation-card bs-content-card");
+    const frame=window.BSUI.section({title:record.title?.trim()||""});
+    const card=frame.root;card.classList.add("investigation-card","bs-content-card");
     if(categoryOf(record)==="photos")card.classList.add("investigation-photos-entry");
     if(record.parentRecordId)card.classList.add("investigation-nested-card");
     card.dataset.recordId=record.id;
@@ -509,18 +477,9 @@
     const openKey=context.ownerType+":"+context.ownerId+":"+(context.stepId||"")+":"+(historical?"history:":"")+record.id;
     card.open=openCards.has(openKey);
     card.addEventListener("toggle",()=>{if(card.open)openCards.add(openKey);else openCards.delete(openKey)});
-    const title=make("summary","investigation-summary bs-content-card-heading");
-    const heading=make("span","investigation-title-actions");
-    const displayTitle=record.title?.trim();
-    if(displayTitle)heading.append(make("strong","",displayTitle));
-    title.append(heading);
-    // An untitled Notes entry is identified by its type, without repeating
-    // a placeholder heading such as "Untitled".
+    const title=frame.header;title.classList.add("ui-record-header");
     title.append(make("span","small muted",categories[categoryOf(record)]?.label||"Entry"));
-    // Record dates are secondary metadata: show them at the end of expanded
-    // content instead of crowding the common header/chevron layout.
-    card.append(title);
-    const body=make("div","investigation-body bs-content-card-body");
+    const body=frame.body;body.classList.add("investigation-body","bs-content-card-body");
     const children=own.filter(child=>child.parentRecordId===record.id);
     const isChild=Boolean(record.parentRecordId);
     if(inherited){
@@ -539,34 +498,30 @@
     let editing=false;
     const edit=btn("Edit",event=>{
      event.preventDefault();event.stopPropagation();card.open=true;editing=true;draw();
-    },"btn investigation-rename");
-    const editActions=make("span","investigation-title-controls");
-    const archive=btn("Archive",event=>{
-     event.preventDefault();event.stopPropagation();archiveRecord(record);
-    },"btn investigation-archive-button");
+    },"ui-button ui-button--small ui-record-edit");
+    const editActions=historical?make("div","ui-section__actions"):frame.aside;
     if(allowEntryEditing&&!inherited){
      if(historical){
-      const removeHistory=btn("Delete",async event=>{
+      const removeHistory=btn("Delete archived entry",async event=>{
        event.preventDefault();event.stopPropagation();
-       if(!await window.BSDialogs.danger('Delete archived entry "'+record.title+'"? This permanently removes the record from Project Archive.',{
-        title:"Delete history entry?",confirmLabel:"Delete"
+       if(!await window.BSDialogs.danger('Delete archived entry "'+record.title+'"? This permanently removes the historical record.',{
+        title:"Delete archived entry?",confirmLabel:"Delete archived entry"
        }))return;
        removeHistory.disabled=true;
        try{await save({action:"deleteRecord",id:record.id})}
        catch(error){removeHistory.disabled=false;report(error.message,target)}
-      },"btn investigation-history-delete");
-      removeHistory.title="Delete this archived history entry";
+      },"ui-button ui-button--small ui-button--danger ui-record-delete");
+      removeHistory.title="Delete this archived entry";
       editActions.append(removeHistory);
      }else editActions.append(edit);
-     title.append(editActions);
+     if(!historical)title.append(editActions);
     }
     const draw=()=>{
      body.replaceChildren();
-     if(record.partSnapshot)showSnapshot(record.partSnapshot,body);
+     if(historical&&editActions.children.length)body.append(editActions);
      if(historical&&record.archiveNote?.trim())
       body.append(make("p","investigation-archive-reason","Reason: "+record.archiveNote));
      edit.hidden=editing||historical;
-     archive.hidden=true;
      attach(record,body,target,editing,()=>{editing=false;draw()},false,
       null);
      // Nested records sit below their parent entry and may use any existing
@@ -699,7 +654,7 @@
    activeContent.append(make("p","investigation-feedback muted"));
    // The shared action row precedes records, including in step Edit mode. Avoid
    // displaying a blank active-entry wrapper when there are no cards yet.
-   activeHost.hidden=!activeOwn.length&&!stepSlot?.mainTile&&!activeContent.querySelector("button");
+   activeHost.hidden=!activeOwn.length&&!stepSlot?.mainTile&&!activeHost.querySelector("button");
 
    archivedOwn.forEach(record=>renderCard(record,content,{historical:true}));
    if(archivedRelated.length){
@@ -712,41 +667,9 @@
    if(!archiveCount&&compact)content.append(make("p","muted investigation-empty","No archived records yet."));
    if(!compact&&!archiveCount)disclosure.hidden=true;
    if(!compact)target.hidden=!archiveCount;
+   if(context.ownerType==="part"&&!context.stepId)revisions.render({part:getPart(),getSource:()=>({partRevision:getPart()?.revision??null,workspaceRevision:getWorkspaceRevision()??null}),records:own.filter(record=>record.partSnapshot),save});
   }
 
-  function showSnapshot(snapshot,target){
-   const details=make("details","investigation-snapshot");
-   details.append(make("summary","","Archived part and tests (before replacement)"));
-   const part=snapshot.part||{},workspace=snapshot.workspace||{};
-   const content=make("div","investigation-snapshot-content");
-   content.append(make("h4","",part.fullName||part.name||"Original component"));
-   for(const key of ["manufacturer","model","supplier","asin","quantity","quantityUnit","historicalPurchasePrice"]){
-    if(part[key]!==null&&part[key]!==undefined&&String(part[key]))content.append(make("p","",key.replace(/([A-Z])/g," $1")+": "+part[key]));
-   }
-   for(const spec of part.specifications||[])content.append(make("p","",spec.name+": "+spec.value));
-   if(snapshot.thumbnailKey){
-    const picture=make("img","investigation-image");
-    picture.src="/api/investigations?project="+encodeURIComponent(project)+"&thumbnail="+encodeURIComponent(snapshot.thumbnailKey);
-    picture.alt="Previous part photograph";picture.loading="lazy";content.append(picture);
-   }
-   const steps=workspace.recipe||[];
-   if(steps.length){
-    content.append(make("h4","","Archived work instructions and test notes"));
-    for(const step of steps){
-     const block=make("div","investigation-snapshot-step");
-     block.append(make("strong","",step.title||"Step"));
-     for(const note of [step.standard,step.detail,...(step.notes||[])])if(note)block.append(make("p","",note));
-     for(const file of step.photos||[]){
-      const link=make("a","investigation-file",step.photoNames?.[file]||"Saved instruction attachment");
-      link.href=file.startsWith("recipe-files/")?fileUrl(file):"/api/photo?id="+encodeURIComponent(file);
-      link.target="_blank";link.rel="noopener noreferrer";block.append(link);
-     }
-     content.append(block);
-    }
-   }
-   for(const test of workspace.experiments||[])content.append(make("p","",test.text||""));
-   details.append(content);target.append(details);
-  }
   function renameRecord(record,target){
    const box=make("div","investigation-create");
    const input=make("input","field");input.value=record.title;input.maxLength=180;
@@ -758,28 +681,6 @@
    },"btn primary");
    box.append(input,saveBtn,btn("Cancel",()=>box.remove(),"btn"));
    target.querySelector(".investigation-heading")?.after(box);input.focus();input.select();
-  }
-  function replacePart(context,target){
-   const part=getPart();
-   if(!part||part.id!==context.ownerId)return;
-   const form=make("div","investigation-create investigation-replace");
-   form.append(make("p","","Save the current part specifications, work instructions, tests and photograph as a historical revision before editing the replacement. This does not delete the original records."));
-   const field=make("textarea","field");field.rows=2;field.placeholder="Why is this part being replaced? (e.g. 20 A ESC replaced by a smaller-rated ESC)";
-   const date=make("input","field");date.type="date";
-   const now=new Date();date.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
-   const saveBtn=btn("Archive and edit replacement",async()=>{
-    if(!field.value.trim()||!date.value){report("Enter a reason and date.",target);return}
-    saveBtn.disabled=true;
-    try{
-     await save({action:"archivePart",partId:part.id,reason:field.value.trim(),date:date.value});
-     report("Previous revision saved. Opening part editor.",target);
-     onReplacePart(part);
-    }catch(error){report(error.message,target);saveBtn.disabled=false}
-   },"btn primary");
-   form.append(field,date,saveBtn,btn("Cancel",()=>form.remove(),"btn"));
-   if(target.activeEntriesHost)target.activeEntriesHost.hidden=false;
-   (target.activeEntriesHost?.querySelector(".investigation-active-content")||target.querySelector(".investigation-active-content"))?.append(form);
-   field.focus();
   }
   function newRecord(context,target,parentRecordId=""){
    const activeContent=target.activeEntriesHost?.querySelector(".investigation-active-content")||target.querySelector(".investigation-active-content");
@@ -804,7 +705,7 @@
    label.append(select);
    const cancel=btn("Cancel",()=>{
     form.remove();
-    if(!parentRecordId&&context.stepId&&activeHost&&!content.querySelector(".investigation-card"))activeHost.hidden=true;
+    if(!parentRecordId&&context.stepId&&activeHost&&!content.querySelector(".investigation-card"))activeHost.hidden=!activeHost.querySelector("button");
    });
    form.append(label,cancel,fields);
    content.append(form);
@@ -890,13 +791,13 @@
     body.replaceChildren();
     if(!record){heading.textContent="Record unavailable";body.textContent="This record no longer exists. Its Knowledge link keeps the last known name.";return;}
     heading.textContent=record.title||"Untitled record";
-    body.append(make("p","muted",(categories[categoryOf(record)]?.label||"Entry")+(isArchived(record)?" · Archived":"")));
+    body.append(make("p","muted",record.partSnapshot?"Part revision":(categories[categoryOf(record)]?.label||"Entry")+(isArchived(record)?" · Archived":"")));
     const appendRecord=(entry,container)=>{
-     if(entry.partSnapshot)showSnapshot(entry.partSnapshot,container);
-     if(entry.archiveNote?.trim())container.append(make("p","","Archive reason: "+entry.archiveNote));
+     if(entry.partSnapshot)renderSnapshot(entry.partSnapshot,container,entry.id);
+     if(entry.archiveNote?.trim())container.append(make("p","",(entry.partSnapshot?"Reason: ":"Archive reason: ")+entry.archiveNote));
      attach(entry,container,null,false);
      const timestamp=entry.archivedAt||entry.createdAt||entry.date;
-     if(timestamp){const label=make("time","investigation-record-date",(isArchived(entry)?"Archived ":"Created ")+formatTimestamp(timestamp));label.dateTime=timestamp;container.append(label);}
+     if(timestamp){const label=make("time","investigation-record-date",(entry.partSnapshot?"Revision created ":isArchived(entry)?"Archived ":"Created ")+formatTimestamp(timestamp));label.dateTime=timestamp;container.append(label);}
     };
     appendRecord(record,body);
     for(const child of saved.filter(entry=>entry.parentRecordId===record.id)){

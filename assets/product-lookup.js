@@ -107,7 +107,7 @@ window.BSProductLookup=(()=>{
   };
   return {element,inputs,hint,button,message,cost,results,setIdentity,reset};
  }
- function mountPart(root,{canSearch=()=>true,getPartName=()=>""}={}){
+ function mountPart(root,{canSearch=()=>true,getPartName=()=>"",specificationRow}={}){
   if(root.bsProductLookup)return root.bsProductLookup;
   const field=name=>root.querySelector(".component-"+name);
   const panel=el("section","component-lookup-panel product-ai-inline");
@@ -200,15 +200,7 @@ window.BSProductLookup=(()=>{
       let added=0;
       for(const {check,spec} of selected){
        if(!check.checked||existing.has(spec.name.toLowerCase()))continue;
-       const row=el("div","row component-spec-row");
-       const key=el("input","field"),value=el("input","field");
-       const source=el("select","field component-spec-source"),remove=el("button","btn","Remove");
-       key.value=spec.name;key.placeholder="Specification";
-       value.value=spec.value;value.placeholder="Value";
-       const explicit=el("option","","From product listing");explicit.value="explicit";source.append(explicit);
-       const inferred=el("option","","Estimated / inferred");inferred.value="inferred";source.append(inferred);
-       remove.type="button";remove.onclick=()=>row.remove();
-       row.append(key,value,source,remove);specs.append(row);
+       specs.append(specificationRow({name:spec.name,value:spec.value}));
        existing.add(spec.name.toLowerCase());added++;
       }
       if(added){const disclosure=specs.closest(".part-editor-specs-disclosure");if(disclosure){disclosure.hidden=false;disclosure.open=true}}

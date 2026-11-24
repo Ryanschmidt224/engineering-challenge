@@ -64,7 +64,7 @@ test("project feature tree and workspace initialize without browser errors", asy
  await page.goto("/");
  const initialTree=page.locator("#launcher .assembly-tree-nodes");
  await expect(initialTree.locator(".assembly-name")).toHaveCount(2);
- await page.locator('.project-link[data-project="launcher"]').click();
+ await page.locator('.ui-project-open[data-project="launcher"]').click();
  const workspace=page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)");
  const screen=page.locator("#launcher .assembly-bom-screen");
  const tree=page.locator("#launcher .assembly-tree-nodes");
@@ -155,8 +155,9 @@ test("project feature tree and workspace initialize without browser errors", asy
 
 test("new custom part retains explicit project numbering without confusing it with manufacturer MPN",async({page})=>{
  await page.goto("/");
+ await page.evaluate(async()=>{const {openPartCreator}=await import("/assets/part-create.js");void openPartCreator({onCreate:async part=>{window.__testCreatedPart=part}});});
+ await expect(page.locator(".library-part-dialog")).toBeVisible();
  const selection=await page.evaluate(async()=>{
-  const opened=window.BSLibraryPartPicker.open({onCreate:async part=>{window.__testCreatedPart=part}});
   const dialog=document.querySelector(".library-part-dialog");
   dialog.querySelector(".library-field select")?.setAttribute("data-test-picker","mode");
   const classification=[...dialog.querySelectorAll("label")].find(l=>l.textContent.includes("Part type"))?.querySelector("select");
@@ -295,7 +296,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/");
- await page.locator('.project-link[data-project="launcher"]').click();
+ await page.locator('.ui-project-open[data-project="launcher"]').click();
  const sidebar=page.locator("#launcher .assembly-sidebar");
  await expect(sidebar.locator(".assembly-rename")).toBeHidden();
  await expect(sidebar.locator(".assembly-add")).toBeHidden();
@@ -305,6 +306,8 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(sidebar.locator(".assembly-remove")).toBeHidden();
  const row=sidebar.locator(".assembly-node",{hasText:"Motor and Motor Control"});
  const name=row.locator(".assembly-name");
+ await expect(name).toBeVisible();
+ await row.click({trial:true});
  const prior=await name.boundingBox();
  // Hovering reveals the context-menu affordance without shifting tree text.
  await row.hover();
@@ -324,7 +327,8 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(menu.getByRole("menuitem",{name:"Add part"})).toBeVisible();
  await expect(menu.getByRole("menuitem",{name:"Add subassembly"})).toBeVisible();
  await expect(menu.getByRole("menuitem",{name:"Rename"})).toBeVisible();
- await expect(menu.getByRole("menuitem",{name:"Delete",exact:true})).toBeVisible();
+ await expect(menu.getByRole("menuitem",{name:"Archive subassembly",exact:true})).toBeVisible();
+ await expect(menu.getByRole("menuitem",{name:"Delete",exact:true})).toHaveCount(0);
  await expect(menu.getByRole("menuitem",{name:"Move to…"})).toBeVisible();
  await expect(menu.getByRole("menuitem",{name:"Move up"})).toBeVisible();
  await page.keyboard.press("Escape");
@@ -426,6 +430,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  // Add / origin / save / cancel controls form one coherent footer.
  const actions=editor.locator(".component-editor-actions");
  await expect(actions).toBeVisible();
+ await editor.locator('[data-section="part-specifications"] > summary').click();
  await editor.locator(".part-editor-group .component-add-spec").click();
  await expect(editor.locator(".part-editor-specs-disclosure")).toBeVisible();
  await expect(editor.locator(".component-spec-row")).toHaveCount(1);
@@ -469,7 +474,7 @@ test("admin tree right-click menu replaces rename/delete toolbar and main page h
  await expect(resources.locator(".linked-resource-group")).toHaveCount(0);
  await expect(toolsDisclosure.getByRole("button",{name:"+ Add entry",exact:true})).toBeHidden();
  await toolsDisclosure.locator(":scope>.ui-section__header").click();
- await expect(workspace.locator('[data-section="history"]>.ui-section__header')).toContainText("Archives and Revision History");
+ await expect(workspace.locator('[data-section="history"]>.ui-section__header')).toContainText("History");
  await expect(workspace.locator('[data-section="history"]')).not.toHaveAttribute("open","");
  await workspace.locator('[data-section="history"]>.ui-section__header').click();
  await expect(workspace.locator('[data-section="history"]')).toHaveAttribute("open","");
@@ -566,7 +571,7 @@ test("Workshop and Document tree filters operate independently",async({page})=>{
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/");
- await page.locator('.project-link[data-project="launcher"]').click();
+ await page.locator('.ui-project-open[data-project="launcher"]').click();
  const tree=page.locator("#launcher .assembly-tree-nodes");
  const controls=page.locator("#launcher .assembly-tree-filters");
  await expect(controls).toBeVisible();
@@ -617,7 +622,7 @@ test("saving a part closes the moved editor and restores part workspace",async({
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,data))});
  });
  await page.goto("/");
- await page.locator('.project-link[data-project="launcher"]').click();
+ await page.locator('.ui-project-open[data-project="launcher"]').click();
  const motorRow=page.locator("#launcher .assembly-tree-nodes .assembly-node",{hasText:"Motor Control"});
  await expect(motorRow).toBeVisible();
  await motorRow.locator(".assembly-expander").click();
@@ -658,9 +663,9 @@ test("personal project builds a private editable workspace from the shared proje
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(apiResponse(route,value))});
  });
  await page.goto("/");
- const card=page.locator(".project-personal-card",{hasText:"Test Personal Project"});
+ const card=page.locator(".ui-project-card",{hasText:"Test Personal Project"});
  await expect(card).toBeVisible();
- await card.locator(".project-link").click();
+ await card.locator(".ui-project-open").click();
  const section=page.locator("#"+id);
  await expect(section.locator(".project-summary-page")).toBeVisible();
  await section.locator(".assembly-tree-nodes .assembly-name").first().click();
@@ -709,7 +714,7 @@ test("owner manages project settings, numbering and removal",async({page})=>{
  });
  await page.goto("/");
  await expect(page.locator(".project-directory-new")).toBeVisible();
- await page.locator(".project-personal-card .project-link").click();
+ await page.locator("#home .ui-project-card .ui-project-open").click();
  const summary=page.locator("#"+id+" .project-summary-page");
  const settings=page.locator("#"+id+" .project-settings-page");
  await expect(settings).toBeHidden();
@@ -818,7 +823,7 @@ test("Edit Part separates Container, Part details and purchased alternatives",as
  expect(source).not.toContain('retire.textContent="Retire selected implementation"');
  expect(source).not.toContain('addButton.textContent="Add implementation"');
  expect(source).not.toContain('heading.textContent="Function & requirements"');
- expect(source).toContain('className="part-editor-specs-disclosure"');
+ expect(source).toContain("initPartSpecifications");
  expect(source).not.toContain('group("additional","Additional details"');
  expect(source).not.toContain('group("specifications","Specifications"');
  expect(source).toContain('document.createTextNode("Part number")');

@@ -24,6 +24,7 @@
       "0 7 * * SUN"
     ]
   },
+  "vars": {"AI_LOOKUP_ENABLED": "1"},
   "previews": {
     "r2_buckets": [
       {

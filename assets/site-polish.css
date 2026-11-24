@@ -37,18 +37,6 @@
   margin: 8px 0;
   overflow: hidden;
 }
-.investigation-summary {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: 12px 14px;
-  color: var(--color-text);
-}
-.investigation-summary strong {
-  font-size: var(--text-body);
-}
 
 .investigation-body {
   padding: 12px 15px;
@@ -190,52 +178,6 @@
   .investigation-date-field {
     grid-template-columns: 105px minmax(0, 240px);
   }
-}
-.investigation-rename {
-  font-size: var(--text-small);
-  padding: 5px 10px;
-  flex: 0 0 auto;
-}
-.investigation-replace {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-.investigation-replace .field {
-  width: 100%;
-  max-width: 750px;
-  box-sizing: border-box;
-}
-.investigation-replace input[type="date"] {
-  max-width: 240px;
-}
-.investigation-snapshot {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  padding: 10px 13px;
-  margin-bottom: 14px;
-  background: var(--color-surface);
-}
-.investigation-snapshot summary {
-  cursor: pointer;
-  color: var(--color-accent);
-  font-weight: var(--font-semibold);
-}
-.investigation-snapshot-content {
-  padding-top: 12px;
-  display: grid;
-  gap: var(--space-2);
-}
-.investigation-snapshot-content p {
-  margin: 0;
-  color: var(--color-text);
-  overflow-wrap: anywhere;
-}
-.investigation-snapshot-step {
-  padding: 10px 13px;
-  border-left: 3px solid var(--color-accent);
-  background: var(--color-surface);
-  border-radius: var(--radius-small);
 }
 
 /* Assembly overview: BOM parts are a separate, clearly labeled group of child tiles. */
@@ -1681,17 +1623,7 @@
   margin: 10px 0 !important;
   overflow: hidden;
 }
-:is(.investigations-panel, .recipe-step-investigations) .investigation-summary {
-  padding: 12px 15px !important;
-  gap: var(--space-3);
-  min-height: 44px;
-}
-:is(.investigations-panel, .recipe-step-investigations)
-  .investigation-summary
-  strong {
-  flex: 1;
-  min-width: 0;
-}
+
 :is(.investigations-panel, .recipe-step-investigations) .investigation-body {
   border-top: 1px solid var(--color-border) !important;
   padding: 14px 16px !important;
@@ -1857,12 +1789,7 @@
 }
 
 /* Investigation record headers and resolution selector. */
-:is(.investigations-panel, .recipe-step-investigations)
-  .investigation-card
-  > .investigation-summary {
-  background: var(--color-accent-soft) !important;
-  color: var(--color-text) !important;
-}
+
 .investigation-add-controls
   .investigation-fixed-row
   > select.investigation-fixed-select {
@@ -1880,19 +1807,7 @@
 }
 
 /* Investigation cards open in reading mode; editing is an explicit action. */
-.investigation-title-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
-  margin-inline-end: auto;
-}
-.investigation-title-actions strong {
-  overflow-wrap: anywhere;
-}
-.investigation-summary .investigation-rename[hidden] {
-  display: none !important;
-}
+
 .investigation-edit-actions {
   display: flex;
   justify-content: flex-start;
@@ -2025,9 +1940,7 @@
   flex-wrap: wrap;
   gap: var(--space-2) var(--space-4);
 }
-#home .project-grid[hidden] {
-  display: none !important;
-}
+
 @media (max-width: 650px) {
   .investigation-new-record .investigation-record-title {
     flex: 1 1 100%;
@@ -2165,12 +2078,10 @@
   margin: 0 0 20px;
 }
 
-.investigation-collapse > summary.investigation-collapse-heading,
-.investigation-card > summary.investigation-summary {
+.investigation-collapse > summary.investigation-collapse-heading {
   position: relative;
 }
 .investigation-collapse > summary.investigation-collapse-heading::before,
-.investigation-card > summary.investigation-summary::before,
 .bs-unstructured-note-title::before {
   content: "";
   width: var(--chevron-size);
@@ -2183,18 +2094,13 @@
   display: inline-block;
 }
 .investigation-collapse[open] > summary.investigation-collapse-heading::before,
-.investigation-card[open] > summary.investigation-summary::before,
 .bs-unstructured-note-title[aria-expanded="true"]::before {
   transform: rotate(135deg);
 }
 :is(.investigation-collapse).is-empty:not([open]) > summary::before {
   visibility: hidden;
 }
-:is(.investigations-panel, .recipe-step-investigations)
-  .investigation-card
-  > summary.investigation-summary {
-  justify-content: flex-start;
-}
+
 .investigation-collapse > summary.investigation-collapse-heading {
   justify-content: flex-start;
   gap: var(--space-2);
@@ -2227,10 +2133,6 @@
   :is(.investigation-heading-actions)
   > h2 {
   margin: 0;
-}
-
-.investigation-summary::-webkit-details-marker {
-  display: none;
 }
 
 .bs-unstructured-note-title {
@@ -2483,69 +2385,7 @@
 .project-selected-descriptors:empty {
   display: none;
 }
-#home .compact-project-directory > .project-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-2);
-  margin-top: 10px;
-}
-#home .compact-project-directory .project-card[hidden] {
-  display: none;
-}
-#home .compact-project-directory .project-card {
-  border-radius: var(--radius-large);
-}
-#home .compact-project-directory .project-card:hover {
-  transform: none;
-}
-#home .compact-project-directory .project-link {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  align-items: center;
-  gap: var(--space-3);
-  padding: 12px;
-  margin: 0;
-  width: 100%;
-  text-align: left;
-}
-#home .compact-project-directory .project-art {
-  width: 72px;
-  aspect-ratio: 1;
-  border-radius: var(--radius-medium);
-  display: grid;
-  place-items: center;
-  background: var(--color-surface-muted);
-  color: var(--color-text-muted);
-  overflow: hidden;
-}
-#home .compact-project-directory .project-art svg {
-  width: 100%;
-  height: 100%;
-}
-#home .compact-project-directory .project-copy {
-  display: grid;
-  gap: var(--space-1);
-  padding: 0;
-  min-width: 0;
-}
-#home .compact-project-directory .project-copy h2 {
-  font-size: var(--text-body);
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-#home .compact-project-directory .project-copy p {
-  margin: 0;
-  line-height: 1.35;
-}
-#home .compact-project-directory .project-copy p {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  font-size: var(--text-small);
-  overflow-wrap: anywhere;
-}
-#home .compact-project-directory .project-copy p:empty,
+
 #home .compact-project-directory .project-tags:empty {
   display: none;
 }
@@ -2607,14 +2447,6 @@
   font-size: var(--text-small);
 }
 
-.investigation-archive-button {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-  padding: 5px 10px;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
 .investigation-archive-dialog {
   width: min(470px, calc(100vw - 32px));
   max-height: 85vh;
@@ -2631,7 +2463,6 @@
 .investigation-archive-dialog h3 {
   margin: 0 0 8px;
 }
-.investigation-archive-dialog .investigation-archive-note-label,
 .investigation-description-label {
   display: flex;
   flex-direction: column;
@@ -2664,50 +2495,6 @@
 
 /* Entry header controls: read mode shows Edit at the far right;
    Archive appears beside it only while editing. History has its own Delete. */
-:is(.investigations-panel, .recipe-step-investigations)
-  .investigation-card
-  > .investigation-summary {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-:is(.investigations-panel, .recipe-step-investigations)
-  .investigation-card
-  > .investigation-summary
-  > .investigation-title-controls {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-2);
-  flex: 0 0 auto;
-  margin-left: auto;
-}
-:is(.investigations-panel, .recipe-step-investigations)
-  .investigation-card
-  > .investigation-summary
-  .investigation-title-actions {
-  margin-inline-end: 0;
-  min-width: 0;
-}
-.investigation-title-controls .btn[hidden] {
-  display: none !important;
-}
-.investigation-history-delete {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-  padding: 5px 10px;
-  color: var(--color-danger-action);
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
-.investigation-history-delete:hover {
-  background: color-mix(
-    in srgb,
-    var(--color-danger-action) 7%,
-    var(--color-surface)
-  );
-}
 
 /* One shared card language for instructions and their active/archived records.
    The controls are intentionally distinct: the selected instruction stays
@@ -2718,46 +2505,7 @@
   min-width: 0;
   border-radius: var(--radius-large);
 }
-.recipe-compact .recipe-step-detail .bs-content-card > .bs-content-card-heading,
-:is(.investigations-panel, .recipe-step-investigations)
-  .bs-content-card
-  > .bs-content-card-heading {
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: var(--recipe-active-heading-height, 74px);
-  padding: 12px 16px;
-  color: var(--color-text);
-  background: var(--color-accent-soft) !important;
-  border: 0 !important;
-  border-radius: var(--radius-medium) !important;
-  box-shadow: none !important;
-  font-size: var(--text-body);
-  font-weight: var(--font-semibold);
-}
-.recipe-compact
-  .recipe-step-detail
-  .bs-content-card
-  > .bs-content-card-heading
-  > .recipe-step-edit-toggle,
-:is(.investigations-panel, .recipe-step-investigations)
-  .bs-content-card
-  > .bs-content-card-heading
-  > .investigation-title-controls {
-  margin-left: auto !important;
-  flex: 0 0 auto;
-}
-:is(.investigations-panel, .recipe-step-investigations)
-  .bs-content-card
-  > .bs-content-card-heading
-  > .investigation-title-controls
-  .btn {
-  min-height: 38px;
-  padding: 6px 12px;
-  font-size: var(--text-small);
-  border-radius: var(--radius-medium);
-}
+
 .recipe-compact .recipe-step-detail .bs-content-card > .bs-content-card-body,
 :is(.investigations-panel, .recipe-step-investigations)
   .bs-content-card
@@ -2766,42 +2514,13 @@
   color: var(--color-text);
   line-height: 1.5;
 }
-:is(.investigations-panel, .recipe-step-investigations)
-  .bs-content-card
-  > .bs-content-card-heading
-  .investigation-title-actions {
-  flex: 0 1 auto;
-  min-width: 0;
-}
-:is(.investigations-panel, .recipe-step-investigations)
-  .bs-content-card
-  > .bs-content-card-heading
-  .investigation-record-date {
-  margin-left: 0;
-}
-:is(.investigations-panel, .recipe-step-investigations)
-  .bs-content-card[open]
-  > .bs-content-card-heading {
-  border-bottom-left-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
-}
+
 :is(.investigations-panel, .recipe-step-investigations)
   .bs-content-card[open]
   > .bs-content-card-body {
   border-top: 1px solid var(--color-border) !important;
 }
 @media (max-width: 600px) {
-  .recipe-compact
-    .recipe-step-detail
-    .bs-content-card
-    > .bs-content-card-heading,
-  :is(.investigations-panel, .recipe-step-investigations)
-    .bs-content-card
-    > .bs-content-card-heading {
-    min-height: 64px;
-    padding: 10px 12px;
-    flex-wrap: wrap;
-  }
 }
 
 /* Work Instructions: use the same attachment dimensions in edit and read
@@ -2948,17 +2667,6 @@
 
 /* Align Work Instruction and active-entry headings as one visual system.
    Keep Project Archive subdued because it is secondary historical content. */
-
-.recipe-compact
-  .recipe-step-detail
-  .investigation-card
-  > .investigation-summary
-  .investigation-title-actions
-  > strong {
-  font-size: var(--text-body);
-  font-weight: var(--font-bold);
-  line-height: 1.4;
-}
 
 /* Notes: photo attachments belong directly to the note, not an additional
    nested entry. Use the shared uploader and the same card image sizing. */
@@ -3114,10 +2822,6 @@
    Make their direction, weight and title spacing consistent at each level. */
 .recipe-compact
   .recipe-step-investigations
-  .investigation-card
-  > .investigation-summary::before,
-.recipe-compact
-  .recipe-step-investigations
   .investigation-collapse
   > .investigation-collapse-heading::before {
   display: inline-block !important;
@@ -3140,20 +2844,11 @@
 }
 .recipe-compact
   .recipe-step-investigations
-  .investigation-card[open]
-  > .investigation-summary::before,
-.recipe-compact
-  .recipe-step-investigations
   .investigation-collapse[open]
   > .investigation-collapse-heading::before {
   transform: rotate(135deg);
 }
-.recipe-compact
-  .recipe-step-investigations
-  .investigation-card
-  > .investigation-summary {
-  column-gap: var(--space-2) !important;
-}
+
 .recipe-compact .recipe-step-nav-row.is-active {
   min-height: var(--recipe-active-heading-height, 74px);
   align-items: center !important;
@@ -3278,13 +2973,6 @@
     var(--color-border)
   );
   background: var(--color-surface);
-}
-.recipe-compact
-  :is(.investigation-edit-actions)
-  > .investigation-archive-button {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
 }
 
 /* Workspace saves now run automatically. Keep legacy internal buttons hidden,
@@ -4227,106 +3915,10 @@
   border-radius: var(--radius-medium) !important;
   margin: 7px 0 !important;
 }
-.recipe-compact
-  .recipe-step-investigations
-  .investigation-active-content
-  > .investigation-card
-  > summary.investigation-summary {
-  display: flex;
-  align-items: center;
 
-  padding: 7px 12px !important;
-  gap: var(--space-2) !important;
-  border-radius: var(--radius-medium);
-  background: var(--color-surface-muted) !important;
-  color: var(--color-text) !important;
-}
-.recipe-compact
-  .recipe-step-investigations
-  .investigation-active-content
-  > .investigation-card
-  > summary.investigation-summary:hover {
-  background: var(--color-hover) !important;
-}
-.recipe-compact
-  .recipe-step-investigations
-  .investigation-active-content
-  > .investigation-card[open]
-  > summary.investigation-summary {
-  border-radius: 8px 8px 0 0;
-  background: var(--color-surface-muted) !important;
-}
-.recipe-compact
-  .recipe-step-investigations
-  .investigation-active-content
-  > .investigation-card
-  > summary.investigation-summary
-  .investigation-title-actions {
-  gap: var(--space-2);
-  align-items: center;
-  flex-wrap: wrap;
-}
-.recipe-compact
-  .recipe-step-investigations
-  .investigation-active-content
-  > .investigation-card
-  > summary.investigation-summary
-  .investigation-title-actions
-  strong {
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-}
-.recipe-compact
-  .recipe-step-investigations
-  .investigation-active-content
-  > .investigation-card
-  > summary.investigation-summary
-  > .small.muted {
-  font-size: var(--text-small);
-  font-weight: var(--font-normal);
-  color: var(--color-text-muted);
-}
-.recipe-compact
-  .recipe-step-investigations
-  .investigation-active-content
-  > .investigation-card
-  > summary.investigation-summary
-  .investigation-title-controls {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-2);
-}
-.recipe-compact
-  .recipe-step-investigations
-  .investigation-active-content
-  > .investigation-card
-  > summary.investigation-summary
-  .investigation-title-controls
-  .btn {
-  min-height: 32px;
-  padding: 5px 9px;
-  border-radius: var(--radius-medium);
-  font-size: var(--text-small);
-}
-.recipe-compact
-  .recipe-step-investigations
-  .investigation-active-content
-  > .investigation-card
-  > summary.investigation-summary::before {
-  flex: 0 0 6px;
-}
 @media (max-width: 600px) {
   .recipe-compact .recipe-step-detail > .recipe-container-heading {
     padding: 7px 9px;
-  }
-  .recipe-compact
-    .recipe-step-investigations
-    .investigation-active-content
-    > .investigation-card
-    > summary.investigation-summary {
-    padding: 8px 10px !important;
   }
 }
 
@@ -4374,36 +3966,9 @@
 .assembly-archive-dialog ul {
   padding-left: 24px;
 }
-.assembly-archive-json {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  max-height: 300px;
-  overflow: auto;
-  font-size: var(--text-caption);
-  background: var(--color-surface-muted);
-  padding: 12px;
-  border-radius: var(--radius-medium);
-}
-.assembly-archive-actions {
-  display: flex;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-top: 18px;
-}
 
 /* Read-only archive photo gallery and file access. */
-.assembly-archive-media {
-  margin-top: 12px;
-  border-top: 1px solid var(--color-border);
-  padding-top: 10px;
-}
-.assembly-archive-media > summary {
-  cursor: pointer;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  padding: 5px 0;
-}
+
 .assembly-archive-gallery {
   display: flex;
   flex-wrap: wrap;
@@ -4432,11 +3997,6 @@
   font-size: var(--text-caption);
   overflow-wrap: anywhere;
   color: var(--color-text-muted);
-}
-.assembly-archive-media li {
-  margin: 5px 0;
-  overflow-wrap: anywhere;
-  font-size: var(--text-small);
 }
 
 /* Preserve the assembly breadcrumb as visible context for archived items. */
@@ -4491,20 +4051,7 @@
   flex-wrap: wrap;
   justify-content: flex-end;
 }
-.assembly-archived-row .assembly-archive-delete,
-.assembly-archive-actions .assembly-archive-delete {
-  color: var(--color-danger);
-  border-color: var(--color-danger-border);
-  background: var(--color-surface);
-}
-.assembly-archived-row .assembly-archive-delete:hover,
-.assembly-archive-actions .assembly-archive-delete:hover {
-  background: var(--color-danger-soft);
-}
-.assembly-archive-delete-feedback {
-  color: var(--color-danger);
-  font-size: var(--text-small);
-}
+
 @media (max-width: 460px) {
   .assembly-archived-row {
     align-items: flex-start;
@@ -4732,9 +4279,7 @@
 .project-milestone-editor-actions {
   justify-content: flex-start;
 }
-.assembly-archive-milestone-option {
-  margin-left: 8px;
-}
+
 .investigation-milestone-button {
   margin: 6px 0 8px;
   font-size: var(--text-small);
@@ -4804,28 +4349,7 @@
   margin: 4px 0 !important;
   border-radius: var(--radius-medium) !important;
 }
-.recipe-compact
-  .recipe-step-investigations
-  .investigation-active-content
-  > .investigation-card
-  > summary.investigation-summary {
-  min-height: 42px !important;
-  padding: 5px 10px !important;
-  gap: var(--space-2) !important;
-  border-radius: var(--radius-medium);
-  box-sizing: border-box;
-}
-.recipe-compact
-  .recipe-step-investigations
-  .investigation-active-content
-  > .investigation-card
-  > summary.investigation-summary
-  .bs-tile-grip {
-  height: 28px;
-  width: 23px;
-  flex-basis: 23px;
-  padding: 3px;
-}
+
 @media (max-width: 760px) {
   .recipe-compact .recipe-step-browser .recipe-step-list {
     padding: 5px;
@@ -4892,20 +4416,12 @@
   overflow-wrap: anywhere;
 }
 .recipe-compact .recipe-step-detail .investigation-active-content,
-.recipe-compact .recipe-step-detail .investigation-card,
-.recipe-compact .recipe-step-detail .investigation-summary {
+.recipe-compact .recipe-step-detail .investigation-card {
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
 }
-.recipe-compact
-  .recipe-step-detail
-  .investigation-summary
-  .investigation-title-actions {
-  min-width: 0;
-  flex: 1 1 auto;
-  overflow-wrap: anywhere;
-}
+
 @media (max-width: 760px) {
   .recipe-compact .recipe-step-browser {
     grid-template-columns: minmax(0, 1fr);

@@ -59,10 +59,22 @@ textarea.field {
 .section-header h3 {
   margin: 0;
 }
-.section-header .actions {
+.section-header .panel-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.panel-heading > :is(h2, h3) {
+  margin: 0;
+}
+.actions {
   margin-left: auto;
 }
 .panel {
+  --action-height: var(--control-height-small);
+  --action-padding-block: var(--space-1);
+  --action-padding-inline: var(--space-2);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-large);
@@ -82,21 +94,6 @@ textarea.field {
   border-top: 1px solid var(--color-border);
 }
 
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.data-table th,
-.data-table td {
-  padding: var(--space-3) var(--space-2);
-  text-align: left;
-  border-bottom: 1px solid var(--color-border);
-  overflow-wrap: anywhere;
-}
-.data-table th {
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-}
 .dialog {
   max-width: min(42rem, calc(100vw - 2rem));
   max-height: calc(100vh - 2rem);

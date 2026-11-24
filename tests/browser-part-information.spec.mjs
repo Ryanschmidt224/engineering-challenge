@@ -31,14 +31,21 @@ for(const width of [1440,390])test("matching information tiles, purpose editing 
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0);
  const rows=await section.locator(".ui-field-row").evaluateAll(nodes=>nodes.map(node=>{const label=node.querySelector("strong"),value=node.lastElementChild;return {label:getComputedStyle(label).fontSize,value:getComputedStyle(value).fontSize,x:value.getBoundingClientRect().x,labelX:label.getBoundingClientRect().x};}));
  for(const row of rows){expect(row.label).toBe("14px");expect(row.value).toBe("14px");if(width===390)expect(row.x).toBe(row.labelX);}
- await project.getByRole("button",{name:"Edit purpose",exact:true}).click();await project.getByRole("textbox",{name:"Purpose",exact:true}).fill("Revised project purpose");
- await page.route("**/api/components?**",route=>route.request().method()==="PATCH"?route.fulfill({status:503,json:{error:"Temporary storage failure"}}):route.continue());
- await project.getByRole("button",{name:"Save",exact:true}).click();await expect(project.getByRole("status")).toHaveText("Temporary storage failure");await expect(project.getByRole("textbox",{name:"Purpose",exact:true})).toHaveValue("Revised project purpose");
- // Assert the saved state directly: a fast response may already hide the editor.
- await page.unroute("**/api/components?**");await project.getByRole("button",{name:"Save",exact:true}).click();await expect(project.getByRole("textbox",{name:"Purpose",exact:true})).toBeHidden();await expect(project).toContainText("Revised project purpose");
+ await expect(project.getByRole("button",{name:"Edit purpose",exact:true})).toHaveCount(0);
+ await section.getByRole("button",{name:"Edit part details",exact:true}).click();const editor=page.getByRole("dialog",{name:"Part editor",exact:true});await editor.getByLabel("Purpose (optional)",{exact:true}).fill("Revised project purpose");
+ await page.route("**/api/components?**",route=>route.request().method()==="PUT"?route.fulfill({status:503,json:{error:"Temporary storage failure"}}):route.continue());
+ await editor.getByRole("button",{name:"Save",exact:true}).click();await expect(editor).toContainText("Temporary storage failure");await expect(editor.getByLabel("Purpose (optional)",{exact:true})).toHaveValue("Revised project purpose");
+ await page.unroute("**/api/components?**");await editor.getByRole("button",{name:"Save",exact:true}).click();await expect(editor).not.toBeVisible();await expect(project).toContainText("Revised project purpose");
+ if(await section.getAttribute("open")===null)await section.locator(":scope > summary").click();
+ await expect(project.locator('[data-section="part-alternatives"]')).toHaveClass("ui-field-disclosure");
+ await expect(project.locator('[data-section="part-alternatives"]')).not.toHaveClass(/ui-section/);
  await project.locator('[data-section="part-alternatives"] > summary').click();
- await project.getByRole("button",{name:"Add alternative part",exact:true}).click();await project.getByRole("textbox",{name:"Part name",exact:true}).fill("Replacement switch");await project.getByRole("textbox",{name:"Manufacturer part number",exact:true}).fill("EX-2");await project.getByRole("button",{name:"Add and use part",exact:true}).click();
+ await project.getByRole("button",{name:"Add alternative",exact:true}).click();await project.getByRole("textbox",{name:"Part name",exact:true}).fill("Replacement switch");await project.getByRole("textbox",{name:"Manufacturer part number",exact:true}).fill("EX-2");await project.getByRole("button",{name:"Add and select alternative",exact:true}).click();
  await expect(reference).toContainText("EX-2");await expect(project).toContainText("Revised project purpose");
+ await expect(project.locator('[data-section="part-alternatives"] > summary')).toHaveText("2 parts");
+ await project.locator('[data-section="part-alternatives"] > summary').click();
+ await expect(project.getByRole("combobox",{name:"Select Alternative",exact:true})).toBeVisible();
+ await expect(project.getByRole("combobox",{name:"Use part",exact:true})).toHaveCount(0);
  const stored=(await (await page.request.get("/api/components?project=launcher")).json()).components.find(part=>part.id===component.id);
  expect(stored.projectDetails.notes).toBe("Fit inside the housing");expect(stored.implementations).toHaveLength(2);expect(stored.description).toBe("Revised project purpose");
  await page.screenshot({path:testInfo.outputPath("part-information.png"),fullPage:true});

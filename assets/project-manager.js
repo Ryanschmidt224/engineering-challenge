@@ -13,8 +13,8 @@ window.BSProjectManager=(()=>{
   return data;
  };
  const element=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node};
- const init=({setupAssemblyTrees,setupComponents,setupPhotos,navigate})=>{
-  const root=document.querySelector("#home .project-index"),grid=root?.querySelector(".project-grid");if(!grid)return;
+ const init=async({setupAssemblyTrees,setupComponents,setupPhotos,navigate})=>{
+  const root=document.querySelector("#home .project-index"),grid=root?.querySelector(".ui-project-list");if(!grid)return;
   const loading=root.querySelector(".project-catalog-loading");
   const newButton=element("button","ui-button ui-button--primary project-directory-new","+ New project");newButton.type="button";
   const archiveButton=element("button","ui-button","Archived projects");archiveButton.type="button";
@@ -31,65 +31,14 @@ window.BSProjectManager=(()=>{
   sortLabel.append(sortSelect);
   const directoryStatus=element("span","project-directory-count muted ui-toolbar-count");directoryStatus.setAttribute("role","status");
   root.classList.add("compact-project-directory");
-  const filterMenu=element("details","project-filter-menu ui-toolbar-menu");
-  filterMenu.append(element("summary","ui-button","Filters"));
-  const selectedTags=element("div","project-selected-descriptors");
+  let updateDirectory=()=>{};
+  const {createDirectoryFilters}=await import("./directory-filters.js");
+  const {menu:filterMenu,selected:selectedTags,active:activeTags,render:renderTagFilters}=createDirectoryFilters({items:()=>projects,onChange:()=>updateDirectory()});
   filters.append(newButton,searchLabel,filterMenu,sortLabel,directoryStatus,more);
   grid.before(filters,selectedTags);
   const suggestions=["Mechanical","Electronics","Software","Controls","CAD","3D Printing","Woodworking","PCB Design","Machining","Robotics","Measurement","Fabrication"];
   const projectTags=project=>Array.isArray(project?.tags)?project.tags:[];
   const parseTags=text=>[...new Map(String(text||"").split(",").map(x=>x.trim().replace(/\\s+/g," ")).filter(Boolean).map(x=>[x.toLowerCase(),x])).values()].slice(0,20);
-  const tagFilter=element("div","bs-project-tag-filter ui-toolbar-menu__panel");
-  const tagTitle=element("span","bs-project-tag-title","Descriptors");
-  const tagSearchLabel=element("label","bs-project-descriptor-search-label","Find a descriptor");
-  const tagSearch=element("input","field bs-project-descriptor-search");
-  tagSearch.type="search";tagSearch.placeholder="e.g. Electronics or CAD";
-  tagSearch.setAttribute("aria-label","Search descriptor tiles");
-  tagSearchLabel.append(tagSearch);
-  const tagChoices=element("div","bs-project-tag-options");
-  const clearTags=element("button","bs-project-tag-clear","Clear selected");clearTags.type="button";
-  const tagHeader=element("div","bs-project-tag-filter-heading");
-  tagHeader.append(tagTitle,clearTags);
-  tagFilter.append(tagHeader,tagSearchLabel,tagChoices);
-  filterMenu.append(tagFilter);
-  const activeTags=new Set();
-  clearTags.onclick=()=>{activeTags.clear();renderTagFilters();updateDirectory()};
-  const renderTagFilters=()=>{
-   tagChoices.replaceChildren();
-   selectedTags.replaceChildren();
-   const counts=new Map();
-   for(const project of projects)for(const tag of projectTags(project)){
-    const key=tag.toLowerCase();
-    if(!counts.has(key))counts.set(key,{name:tag,count:0});
-    counts.get(key).count++;
-   }
-   const filter=tagSearch.value.trim().toLowerCase();
-   let visibleCount=0;
-   for(const [key,{name,count}] of [...counts].sort((a,b)=>a[1].name.localeCompare(b[1].name))){
-    if(filter&&!key.includes(filter)&&!activeTags.has(key))continue;
-    visibleCount++;
-    const chip=element("button","ui-chip",name);
-    chip.type="button";chip.setAttribute("aria-pressed",String(activeTags.has(key)));
-    chip.append(element("span","bs-project-tag-count",String(count)));
-    chip.onclick=()=>{activeTags.has(key)?activeTags.delete(key):activeTags.add(key);renderTagFilters();updateDirectory()};
-    tagChoices.append(chip);
-   }
-   if(!visibleCount)tagChoices.append(element("p","muted bs-project-tag-empty","No matching descriptors"));
-   filterMenu.hidden=!counts.size;
-   for(const key of activeTags){
-    const name=counts.get(key)?.name;
-    if(!name){activeTags.delete(key);continue}
-    const chip=element("button","ui-chip",name+" ×");
-    chip.type="button";chip.setAttribute("aria-pressed","true");chip.setAttribute("aria-label","Remove "+name+" filter");
-    chip.onclick=()=>{
-     activeTags.delete(key);renderTagFilters();updateDirectory();
-     (selectedTags.querySelector("button")||filterMenu.querySelector("summary")).focus();
-    };
-    selectedTags.append(chip);
-   }
-   clearTags.hidden=!activeTags.size;
-  };
-  tagSearch.oninput=renderTagFilters;
   const makeTagPicker=(initial=[])=>{
    const holder=element("div","bs-project-tag-picker");
    const label=element("label","","Project tags (choose any that apply)");
@@ -114,37 +63,8 @@ window.BSProjectManager=(()=>{
    return {element:holder,getTags:()=>parseTags(input.value)};
   };
   const empty=element("p","project-directory-empty muted");empty.hidden=true;grid.after(empty);
-  const updateDirectory=()=>{
-   const search=searchInput.value.trim().toLowerCase(),terms=search.split(/\s+/).filter(Boolean),
-    byId=new Map(projects.map(project=>[project.id,project]));
-   const cards=[...grid.querySelectorAll(".project-card")];
-   const info=card=>{
-    const link=card.querySelector("[data-project],[data-nav]");
-    return byId.get(link?.dataset.project||link?.dataset.nav);
-   };
-   const title=card=>info(card)?.name||card.querySelector(".project-copy h2")?.textContent||"";
-   const date=card=>Date.parse(info(card)?.createdAt||"")||0;
-   cards.sort((a,b)=>{
-    if(sortSelect.value==="newest")return date(b)-date(a)||title(a).localeCompare(title(b));
-    if(sortSelect.value==="oldest")return date(a)-date(b)||title(a).localeCompare(title(b));
-    return (sortSelect.value==="name_desc"?-1:1)*title(a).localeCompare(title(b),undefined,{numeric:true,sensitivity:"base"});
-   });
-   for(const card of cards){
-    const project=info(card);
-    const description=card.querySelector(".project-copy p");
-    if(project&&description)description.textContent=project.shortSummary||project.description||"";
-    card.hidden=!project||
-     [...activeTags].some(tag=>!projectTags(project).some(value=>value.toLowerCase()===tag))||
-     terms.some(term=>![project.name,project.shortSummary,project.description,...projectTags(project)].join(" ").toLowerCase().includes(term));
-    grid.append(card);
-   }
-   const shown=cards.filter(card=>!card.hidden).length;
-   directoryStatus.textContent=shown+" of "+projects.length+" projects";
-   empty.hidden=shown>0;
-   empty.textContent=projects.length?"No projects match your search or filters.":"No projects yet.";
-  };
-  searchInput.oninput=updateDirectory;
-  sortSelect.onchange=updateDirectory;
+  const {initProjectDirectory}=await import("./project-directory.js");
+  ({render:updateDirectory}=initProjectDirectory({grid,toolbar:filters,projects:()=>projects,tags:()=>activeTags,search:searchInput,sort:sortSelect,status:directoryStatus,empty,photoUrl:id=>window.BSPhotoMarkup.displayUrl("gallery",id)}));
   updateProjectSummary=(id,summary)=>{
    const project=projects.find(item=>item.id===id);
    if(project){Object.assign(project,summary);updateDirectory()}
@@ -263,25 +183,6 @@ window.BSProjectManager=(()=>{
    section.querySelectorAll('[data-nav="home"]').forEach(node=>node.dataset.nav="home");
    const heading=section.querySelector(".assembly-main h1");
    if(heading)heading.textContent=project.name;
-  };
-  const card=project=>{
-   const article=element("article","project-card project-personal-card");article.dataset.catalogId=project.id;
-   const link=element("button","project-link");link.type="button";link.dataset.project=project.id;
-   const art=element("div","project-art project-personal-art");
-   art.setAttribute("aria-hidden","true");
-   art.append(element("span","project-personal-initial",(project.name||"P").trim().charAt(0).toUpperCase()));
-   link.append(art);
-   const copy=element("div","project-copy");copy.append(element("h2","",project.name),element("p","project-row-description",project.description||""));
-   const tags=element("div","project-tags");
-   const descriptors=projectTags(project);
-   for(const tag of descriptors.slice(0,3))tags.append(element("span","",tag));
-   if(descriptors.length>3){
-    const extra=element("span","project-other-tags","+"+(descriptors.length-3));
-    extra.title=descriptors.slice(3).join(", ");tags.append(extra);
-   }
-   copy.append(tags);
-   link.append(copy);article.append(link);
-   return article;
   };
   const manageDialog=element("dialog","project-manage-dialog");document.body.append(manageDialog);
   archiveButton.onclick=async()=>{
@@ -434,10 +335,8 @@ window.BSProjectManager=(()=>{
     const data=await api("GET","/api/projects");if(!Array.isArray(data.projects))throw Error("Project catalog response unavailable");projects=data.projects;currentProjects=projects;
     newButton.hidden=false;more.hidden=!user&&!adminAuthenticated;
 
-    document.querySelectorAll(".project-personal-card").forEach(node=>node.remove());
     for(const project of projects){
      ensureProjectPage(project);
-     grid.append(card(project));
     }
     renderTagFilters();updateDirectory();
     grid.hidden=false;loading.hidden=true;
