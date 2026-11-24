@@ -1,5 +1,6 @@
 // Shared guidance keys. Errors, status and saved engineering text stay visible.
 export const interfaceHelp=Object.freeze({
+ helpfulTools:"Link calculators and tools. Existing Workshop references remain visible and removable.",
  familyFields:"Define a field once. Products and project uses may both have a value. Units do not convert existing numbers.",
  projectUse:"This form changes only this project use. It never edits the family or selected product.",
  projectRequirements:"These values stay in the project when a product is selected or changed. A different product value is shown for review, not automatically judged compatible.",

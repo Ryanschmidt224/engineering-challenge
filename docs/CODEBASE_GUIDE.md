@@ -2,6 +2,8 @@
 
 This document is the starting point for a human developer reading or changing the website.
 
+Read `STATUS.md` for current releases, the next integration step and open verification gates. This guide owns the code map; the History plan owns behavior/acceptance, and the feature inventory owns retention decisions. Keep release state in `STATUS.md`, rather than adding dated status documents.
+
 ## Fast orientation
 
 This is a private single-owner HTML/CSS/JavaScript site hosted on Cloudflare Workers. There is no bundler or desktop/local-server application. `worker.js` dispatches API requests to handlers in `functions/api/`. Projects and attachments use R2; Workshop families/products/uses and Knowledge tiles/links use D1. Git commits do not back up stored application data.
@@ -61,6 +63,7 @@ The shared header reuses the existing Account button on the main page so its aut
 ### Change workshop resources
 - `assets/family-workshop.js` and `functions/api/workshop-db.js` own the current Workshop.
 - `assets/resources.js` still provides calculators and legacy resource links; it is not the D1 Workshop.
+- Helpful tools accepts new Tool/Calculator references only. Saved `resources.parts` remains readable/removable through the legacy catalog until cutover; no migration is performed by hiding its creation option. Engine tools use D1 Workshop identities and last-known names (planned, not this picker change).
 - Current structural changes require numbered D1 migrations, never edits to applied migrations.
 - A reference link is not automatically a new BOM quantity.
 

@@ -17,6 +17,7 @@ async function setupAssemblyTrees(){
  const {attachPartEditorFiles}=await import("./part-editor-attachments.js");
  const {revisionSaveButton,saveRevisionChanges,revisionContext}=await import("./part-revision-editor.js");
  const {partHelp}=await import("./part-help.js");
+ const {interfaceHelp}=await import("./interface-help.js");
  const {initTreeArchive}=await import("./tree-archive.js");
  document.querySelectorAll("[data-assembly-tree]:not([data-tree-ready])").forEach(root=>{
   root.dataset.treeReady="true";
@@ -837,9 +838,9 @@ async function setupAssemblyTrees(){
    });
    const resourcesPanel=panel.querySelector(".workspace-resources,.part-linked-resources");
    resourcesPanel.classList.add("workspace-resources");
-   const toolsSection=window.BSUI.section({title:"Helpful tools",role:"helpful-tools",tooltip:"Open calculators, tools, and Workshop references linked to this work."});
+   const toolsSection=window.BSUI.section({title:"Helpful tools",role:"helpful-tools",tooltip:interfaceHelp.helpfulTools});
    const tools=toolsSection.root,toolsCount=toolsSection.count;
-   toolsSection.aside.append(window.BSDialogs.tooltip("About Helpful tools","Link calculators, tools, and Workshop references for this work."));
+   toolsSection.aside.append(window.BSDialogs.tooltip("About Helpful tools",interfaceHelp.helpfulTools));
    const toolsControls=window.BSUI.sectionActions(toolsSection.body);
    // Legacy content styles are scoped by this class; it marks the section body only.
    toolsSection.body.classList.add("workspace-resource-disclosure");
