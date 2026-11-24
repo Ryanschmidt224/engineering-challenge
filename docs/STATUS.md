@@ -19,14 +19,14 @@ This follow-up passes 268 code checks and 18 relevant local browser cases (16 sh
 ## Next integration sequence
 
 1. Review this narrow Helpful tools follow-up before merging it, per `ENGINEERING_RULES.md` §6.
-2. Reconcile and obtain targeted review of foundation #52 against current main; GitHub reports merge conflicts. Do not force an integration just because older foundation checks passed.
+2. Obtain targeted review of foundation #52 after its main-alignment update. The three documentation/test conflicts were resolved while retaining current production UI; command/migration/model sources are unchanged. The reconciled tree passes 287 code checks and all 109 local browser workflows. Refresh deployment-specific preview verification before integration; historical receipts are not proof of a later runtime.
 3. Review/integrate #52 → #53 → #65 → #66 in order, carrying current UI decisions forward. Broad evaluations are not exact schema/transaction/file-lifetime reviews. No fifth stacked engine feature PR.
 4. Complete the queued Work Instructions/records batch, then identity/alternative ownership, then remaining project parity. Use the History plan and inventory rather than inferring completion from styling.
 5. Demonstrate complete recovery, report exact legacy-data disposition, and obtain the explicit engine activation/cutover decision. Code integration is not activation.
 
 | Open engine PR | Last verified source head / purpose |
 | --- | --- |
-| #52 | `4bfdd0a4c963858b51d54511a90a035d1a6cb9c4` — guarded D1 foundation; reconcile main conflicts before review/integration. |
+| #52 | `dbd9f2d74eadb83ed3c9f35ac0b0622c6796a85a` — guarded D1 foundation, aligned with production #69; targeted review and preview verification remain. |
 | #53 | `c7108a1adb9bd3aa07677e449ddaece073d6accd` — custom-part flow. |
 | #65 | `b0a4c8717812ca77ddce92f07a0a24186ee36083` — numbered revision/history alignment. |
 | #66 | `faec40ecb9284ed50bf09b095a22107998dc3485` — assemblies, frozen Workshop selections, recovery/acceptance tooling. |
