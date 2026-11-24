@@ -77,7 +77,7 @@ async function environment(role="admin"){
 test("production flag denies routes before auth, migrations and static assets",async()=>{
  const unavailable={get(){throw Error("Production storage must not be accessed");}};
  const env={PHOTOS:unavailable,WORKSHOP_DB:unavailable,ASSETS:{fetch(){throw Error("Static proof page must not be served");}}};
- for(const path of ["/api/project-engine","/api/project-engine/proof","/api/project-engine/files/1","/project-engine-proof","/project-engine-proof.html","/project-engine-proof/"]){
+ for(const path of ["/api/project-engine","/api/project-engine/proof","/api/project-engine/files/1","/project-engine-proof","/project-engine-proof.html","/project-engine-proof/","/project","/project/","/project.html"]){
   assert.equal((await worker.fetch(req(path),env,{})).status,404);
  }
  assert.equal((await handleProjectEngine(req("/api/project-engine/proof","POST"),env)).status,404);

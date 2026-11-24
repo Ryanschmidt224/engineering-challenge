@@ -1,0 +1,36 @@
+{
+  "status": "actual Cloudflare restore passed",
+  "sourceSha": "cfacc4dc7c00448f98fa99389ff4506bba611e50",
+  "restoreSha": "c0aa8ef861c84bb65b6d3bac54254b9f371613ab",
+  "restoreBuild": "dea93d73-42f3-4610-ba37-4d34e561139d",
+  "sourceDatabase": "3314f42f-7c04-4798-99dc-b5b97c4fb82f",
+  "restoreDatabase": "d761ae08-64f2-4130-8cfa-f596e8e89b80",
+  "projectId": "1573eff7-4730-4f16-a2c6-6759ee7713a2",
+  "counts": {
+    "items": 1,
+    "occurrences": 1,
+    "steps": 1,
+    "configurations": 4,
+    "records": 1,
+    "events": 8,
+    "files": 2,
+    "file_links": 4
+  },
+  "verifiedFiles": 2,
+  "checks": [
+    "Empty target project list observed before import",
+    "Project, item, occurrence, step, record, configuration, event, file and link IDs preserved",
+    "All engineering metadata unchanged",
+    "New aggregate revision issued",
+    "Both file payloads match saved SHA-256 and size",
+    "Restored objects use independent R2 keys",
+    "Source database and objects retained",
+    "Source backup is byte-for-byte identical after switching back from restore target"
+  ],
+  "initialWorkflowSha": "4448ea804e337c47dba3e6a4b95deb9fa94dffe3",
+  "sourceBuild": "4eb98959-31bd-4be1-afc3-9748bd4926e7",
+  "sourceIntegrityRecheckedAfterRestore": true,
+  "checkedAt": "2026-11-23T01:29:10.541363+00:00",
+  "sourceReturnSha": "c2f1134e1d77076aa6006da8f0c8e1b042542104",
+  "sourceReturnBuild": "10b0b4d2-e99e-49d7-8b1d-67ceb6ed3d43"
+}

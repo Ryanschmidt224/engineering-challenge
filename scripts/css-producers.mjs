@@ -4,6 +4,9 @@ import * as prettier from "prettier";
 
 function walk(node,visit){
  if(!node||typeof node!=="object")return;
+ // Section count nouns are labels, never class producers. Keep this narrow;
+ // ordinary string literals and actual class assignments remain conservative.
+ if(node.type==="ObjectProperty"&&node.key?.name==="countLabel")return;
  visit(node);
  for(const [key,value] of Object.entries(node))if(!["comments","tokens","loc","source","inputs"].includes(key)){
   if(Array.isArray(value))for(const child of value)walk(child,visit);

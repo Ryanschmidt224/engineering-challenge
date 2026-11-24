@@ -1,3 +1,4 @@
+import {handleProjectWorkspace} from "./project-workspace-api.js";
 import {accountUser} from "./accounts.js";
 import {proveProjectCommands} from "./project-engine-proof.js";
 const json=(data,status=200)=>Response.json(data,{status,headers:{"cache-control":"private, no-store","x-content-type-options":"nosniff"}});
@@ -9,7 +10,10 @@ export async function handleProjectEngine(request,env){
  if(owner?.role!=="admin")return json({error:"Owner sign-in required"},401);
  const url=new URL(request.url);
  if(request.headers.get("origin")!==url.origin&&!["GET","HEAD"].includes(request.method))return json({error:"Invalid request origin"},403);
- if(url.pathname!=="/api/project-engine/proof")return json({error:"Not found"},404);
+ if(url.pathname!=="/api/project-engine/proof"){
+  if(!env.WORKSHOP_DB)return json({error:"Preview D1 binding is not configured"},503);
+  return handleProjectWorkspace(request,env,owner);
+ }
  if(request.method!=="POST")return json({error:"Method not allowed"},405);
  if(!env.WORKSHOP_DB)return json({error:"Preview D1 binding is not configured"},503);
  const raw=await request.text();if(raw.length>2048)return json({error:"Request is too large"},413);

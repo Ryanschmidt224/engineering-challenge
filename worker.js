@@ -33,9 +33,10 @@ export default {
   async fetch(request,env,ctx){
     const path=new URL(request.url).pathname;
     try{
-      const engineRoute=path.startsWith("/api/project-engine/")||path==="/api/project-engine"||path.startsWith("/project-engine-proof");
+      const enginePage=["/project","/project/","/project.html"].includes(path);
+      const engineRoute=enginePage||path.startsWith("/api/project-engine/")||path==="/api/project-engine"||path.startsWith("/project-engine-proof");
       if(engineRoute&&!projectEngineEnabled(env))return Response.json({error:"Not found"},{status:404,headers:{"cache-control":"no-store"}});
-      if(path.startsWith("/project-engine-proof")&&!await isAdmin(request,env))return new Response('<a href="/index.html?account=1#home">Sign in with the preview owner account, then return here.</a>',{status:401,headers:{"content-type":"text/html","cache-control":"no-store"}});
+      if((enginePage||path.startsWith("/project-engine-proof"))&&!await isAdmin(request,env))return new Response('<a href="/index.html?account=1#home">Sign in with the preview owner account, then return here.</a>',{status:401,headers:{"content-type":"text/html","cache-control":"no-store"}});
       const denied=await guardPrivateApi(request,env);
       if(denied)return denied;
       if(path.startsWith("/api/project-engine/"))return handleProjectEngine(request,env);
