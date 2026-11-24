@@ -1,6 +1,6 @@
 // Knowledge page: tiles (concept / method / lesson) and their links.
 // All text is inserted as text nodes (textContent); markup is never parsed.
-import {node, button, listCard, actions, panel, field, requestWorkshop} from "./workshop-ui.js";
+import {node, button, listCard, actions, panel, field, requestWorkshop, help} from "./workshop-ui.js";
 import {
   tileTypes,
   tileStatuses,
@@ -120,15 +120,7 @@ function renderDetail() {
     return;
   }
   const tile = tiles.find((entry) => entry.id === selectedTile);
-  if (!tile) {
-    detail.append(
-      panel(
-        "Choose or start a tile",
-        "A tile is one thing you learned: a concept, a method, or a lesson from what happened. Write it once and link it to the parts it applies to.",
-      ),
-    );
-    return;
-  }
+  if (!tile) return;
   const heading = node("div", "", "detail-heading");
   const meta = node("div", "", "tile-meta");
   meta.append(
@@ -267,9 +259,7 @@ function renderEditor() {
     ),
     limit(field("Details", record.body, (value) => set("body", value), {type: "textarea"}), limits.body),
   );
-  identity.append(
-    node("p", "Verified means you tested or confirmed it. New tiles start as Draft.", "muted"),
-  );
+  identity.querySelector(".panel-heading").append(help("Tile status", "knowledgeStatus"));
   form.append(identity);
 
   const sources = panel("Sources");
@@ -528,7 +518,8 @@ try {
   if (params.get("new") === "1") newTile(startingLink());
   else renderDetail();
 } catch (error) {
-  detail.replaceChildren(panel("Knowledge unavailable", error.message), button("Try again", () => location.reload()));
+  const failure=panel("Knowledge unavailable");failure.append(node("p",error.message,"error"));
+  detail.replaceChildren(failure, button("Try again", () => location.reload()));
   const signIn = node("a", "Open Projects to sign in");
   signIn.href = "index.html#home";
   detail.append(signIn);

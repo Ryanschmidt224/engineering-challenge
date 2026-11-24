@@ -1,3 +1,8 @@
+import {partRevisionRecords,mergeRevisionRecords} from "./part-revision-records.js";
+import {resolveFunctionalPart} from "./functional-part-model.js";
+import {reserveProjectNumbers} from "./numbering.js";
+import {historyEntryDetails} from "./history-entry-details.js";
+import {workshopArchiveSources,setWorkshopArchiveState} from "./workshop-tree-archive.js";
 import {projectAllowed,canEditProject,VALID_PROJECT_ID} from "./projects.js";
 import {projectUseTree,getFamilyProjectPart} from "./workshop-db.js";
 
@@ -45,8 +50,14 @@ function referencedProjectKeys(value,project,out){
  const source=JSON.stringify(value);
  for(const match of source.matchAll(pattern))out.add(match[0].replace(/[,}\\]]+$/,""));
 }
-export async function archiveAssets(bucket,project,archiveId,subtree,records,parts){
- const keys=new Set();
+export async function archiveAssets(bucket,project,archiveId,subtree,records,parts,{copyKey=stableKey,verify=false,extraKeys=[],includeHistory=false}={}){
+ const keys=new Set(extraKeys),required=new Set(extraKeys);
+ const references=value=>{
+  // Immutable revision bytes are copied through includeHistory below. Their
+  // original source paths may have been replaced/deleted since that revision.
+  const source=includeHistory?JSON.parse(JSON.stringify(value,(key,value)=>key==="partSnapshot"&&Array.isArray(value?.assets)?undefined:value)):value;
+  const linked=new Set();referencedProjectKeys(source,project,linked);for(const key of linked){keys.add(key);required.add(key);}
+ };
  const sourceIds=subtree.filter(n=>n.kind!=="part").map(n=>n.id);
  const partIds=[...new Set([...subtree.filter(n=>n.kind==="part").map(n=>n.partId),...parts.map(p=>p.id)])];
  for(const id of sourceIds)for(const k of ["workspaces/"+project+"/"+id+".json","assembly-status/"+project+"/"+id+".json","unstructured-notes/"+project+"/workspace/"+id+".json"])keys.add(k);
@@ -54,6 +65,7 @@ export async function archiveAssets(bucket,project,archiveId,subtree,records,par
   for(const k of ["part-workspaces/"+project+"/"+id+".json","harnesses/"+project+"/"+id+".json","component-thumbnails/"+project+"/"+id,"unstructured-notes/"+project+"/part/"+id+".json"])keys.add(k);
   for(const obj of await listAll(bucket,"component-thumbnails/"+project+"/"+id+"/",200))keys.add(obj.key);
   for(const p of ["part-files/"+project+"/"+id+"/","part-pages/"+project+"/"+id+"/","part-code/"+project+"/"+id+"/","drawings/"+project+"/part/"+id+"/"])for(const obj of await listAll(bucket,p,200))keys.add(obj.key);
+  if(includeHistory)for(const obj of await listAll(bucket,"part-revisions/"+project+"/"+id+"/",500))keys.add(obj.key);
  }
  for(const id of sourceIds){
   keys.add("assembly-pages/"+project+"/"+id+".json");
@@ -69,7 +81,7 @@ export async function archiveAssets(bucket,project,archiveId,subtree,records,par
    if(assemblyIds.has(metadata?.customMetadata?.assemblyId))keys.add(item.key);
   }
  }
- referencedProjectKeys({subtree,records,parts},project,keys);
+ references({subtree,records,parts});
  // Linked notes, part code and workspace records may refer to more image or
  // document IDs. Follow those references without modifying the source files.
  const linkedRecords=[];
@@ -80,7 +92,7 @@ export async function archiveAssets(bucket,project,archiveId,subtree,records,par
   try{
    const parsed=JSON.parse(await record.text());
    linkedRecords.push(parsed);
-   referencedProjectKeys(parsed,project,keys);
+   references(parsed);
   }catch{ /* Preserve the original object even if an old record is unparseable. */ }
  }
  // Photos are sometimes referenced directly as project/UUID.ext IDs, rather
@@ -93,16 +105,26 @@ export async function archiveAssets(bucket,project,archiveId,subtree,records,par
   keys.add("photo-annotations/"+key+".json");
   keys.add("photo-renders/"+key+".webp");
  }
- const copied=[];
+ const copied=[];let totalBytes=0;
  for(const original of keys){
   if(original.startsWith("assembly-archives/")||original.length>600)continue;
   const object=await bucket.get(original);
+  if(!object&&verify&&required.has(original))throw Error("An attached source file is missing. Restore it before creating a revision.");
   if(!object)continue;
-  const saved=stableKey(project,archiveId,original);
-  await bucket.put(saved,await object.arrayBuffer(),{httpMetadata:object.httpMetadata,customMetadata:object.customMetadata});
-  copied.push({original,archive:saved,size:object.size});
+  totalBytes+=object.size;
+  if(verify&&(object.size>20*1024*1024||totalBytes>100*1024*1024))throw Error("Revision files exceed 20 MB per file or 100 MB total");
+  const saved=copyKey(project,archiveId,original),bytes=await object.arrayBuffer();
+  const result=await bucket.put(saved,bytes,{httpMetadata:object.httpMetadata,customMetadata:object.customMetadata,...(verify?{onlyIf:{etagDoesNotMatch:"*"}}:{})});
+  if(verify){
+   const copy=await bucket.get(saved);
+   if(!result||!copy||copy.size!==object.size)throw Error("A revision file could not be copied");
+   const digest=async value=>Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",value))).join(",");
+   if(await digest(bytes)!==await digest(await copy.arrayBuffer()))throw Error("A revision file failed verification");
+  }
+  copied.push({original,archive:saved,size:object.size,...(verify?{etag:object.etag,name:object.customMetadata?.filename||original.split("/").pop()}: {})});
   if(copied.length>500)throw Error("Too many referenced files for one archive");
  }
+ if(verify)for(const item of copied)if((await bucket.head(item.original))?.etag!==item.etag)throw Error("A source file changed while creating the revision. Reload and try again.");
  return copied;
 }
 // A snapshot of the path at the exact moment an item leaves the active tree.
@@ -239,7 +261,7 @@ export async function handleAssemblyArchive(request,env){
    }
    const tree=await read(bucket,treeKey(project),[]);
    const settings=await read(bucket,"project-settings/"+project+".json",{});
-   return json({archive:{...value,...archivedLocation(value,tree.value,settings.value?.title||project)}});
+   return json({archive:{...value,displayParts:[...value.parts.map(part=>part.familyUse?part:resolveFunctionalPart(part)),...(value.workshopParts||[])],...archivedLocation(value,tree.value,settings.value?.title||project)}});
   }
   if(parent!==null&&parent!=="__root__"&&!idOK(parent))return json({error:"Invalid parent"},400);
   return json({items:await listArchives(bucket,project,parent)});
@@ -249,6 +271,26 @@ export async function handleAssemblyArchive(request,env){
  if(!body||!["archive","restore"].includes(body.action))return json({error:"Invalid archive action"},400);
  const tree=await read(bucket,treeKey(project),[]);
  const current=await projectUseTree(env,project,tree.value);
+ let entryDetails,operationKey,operationRequest;
+ if(body.action==="archive"){
+  try{entryDetails=historyEntryDetails(body.entryDetails,project);}catch(error){return json({error:error.message},400);}
+  if(body.operationId!==undefined&&!uuid(body.operationId))return json({error:"Invalid archive operation ID"},400);
+  if(body.operationId){
+   operationKey="assembly-archives/"+project+"/operations/"+body.operationId+".json";
+   operationRequest=JSON.stringify({nodeId:body.nodeId,expectedRevision:body.expectedRevision??null,reason:String(body.reason||"").slice(0,2500),entryDetails});
+   let receipt=(await read(bucket,operationKey,null)).value;
+   // A committed manifest is also recovery evidence if saving its index failed.
+   if(!receipt&&!current.some(node=>node.id===body.nodeId))for(const item of await listAll(bucket,"assembly-archives/"+project+"/manifests/",2000)){
+    const record=(await read(bucket,item.key,null)).value;
+    if(record?.operationId===body.operationId&&["archived","restored"].includes(record.state)){receipt={request:record.operationRequest,result:{id:record.id,removedPartIds:record.removedPartIds,count:record.nodes.length}};break;}
+   }
+   if(receipt){
+    if(receipt.request!==operationRequest)return json({error:"This operation ID was used for a different archive request"},409);
+    return json({ok:true,...receipt.result,nodes:current,revision:tree.object?.etag??null});
+   }
+  }
+ }
+
  if(body.expectedRevision!==undefined&&(body.expectedRevision??null)!==(tree.object?.etag??null))
   return json({error:"The feature tree changed. Reload and retry."},409);
  if(body.action==="archive"){
@@ -256,11 +298,6 @@ export async function handleAssemblyArchive(request,env){
   const original=current.find(n=>n.id===body.nodeId);
   if(!original)return json({error:"Node no longer exists"},404);
   const subtree=collectSubtree(current,original.id),ids=nodeIds(subtree);
-  // Do not start a cross-storage archive that could silently recreate a D1 use.
-  // Workshop uses have their own reversible archive; the R2 assembly archive
-  // remains available once those uses have been moved or archived.
-  for(const node of subtree.filter(node=>node.kind==="part"))if(await getFamilyProjectPart(env,project,node.partId))
-   return json({error:"This assembly contains Workshop project uses. Move or archive those uses in Workshop first; their instructions and files are retained."},409);
   const affectedDependents=current.filter(n=>!ids.has(n.id)&&(n.dependsOn||[]).some(dep=>ids.has(dep)))
    .map(n=>({id:n.id,dependsOn:n.dependsOn.filter(dep=>ids.has(dep))}));
   const remaining=current.filter(n=>!ids.has(n.id)).map(n=>({...n,dependsOn:(n.dependsOn||[]).filter(dep=>!ids.has(dep))}));
@@ -279,33 +316,42 @@ export async function handleAssemblyArchive(request,env){
     }
    }
   }
-  const allParts=componentState.value.filter(p=>partIds.has(p.id)||removedIds.has(p.id));
+  let workshop;
+  try{workshop=await workshopArchiveSources(env,project,partIds,removedIds);}catch(error){return json({error:error.message},409);}
+  const allParts=[...componentState.value.filter(p=>partIds.has(p.id)||removedIds.has(p.id)),...workshop.parts];
   if([...partIds].some(id=>!allParts.some(p=>p.id===id)))
    return json({error:"One or more linked parts are missing their saved definitions. Repair the BOM before archiving."},409);
   const remainingParts=componentState.value.filter(p=>!removedIds.has(p.id));
   const investigationState=await read(bucket,investigationKey(project),{records:[]});
-  const entries=relatedRecords(investigationState.value.records||[],subtree);
+  const entries=relatedRecords(mergeRevisionRecords(investigationState.value.records||[],await partRevisionRecords(env,project,allParts)),subtree);
   const settings=await read(bucket,"project-settings/"+project+".json",{});
   const originPath=archiveOriginPath(current,original.id,project,settings.value?.title||project,allParts);
   const id=crypto.randomUUID(),at=new Date().toISOString();
-  const archived={schemaVersion:1,id,project,nodeId:original.id,parentId:original.parentId??"__root__",
+  const archived={schemaVersion:workshop.uses.length?2:1,id,project,nodeId:original.id,parentId:original.parentId??"__root__",
    kind:original.kind||"assembly",name:original.name,partNumber:original.partNumber||"",
    archivedAt:at,reason:String(body.reason||"").slice(0,2500),restoredAt:null,
-   originPath,originPathSource:"snapshot",
-   nodes:clone(subtree),parts:clone(allParts),removedPartIds:[...removedIds],
-   investigations:clone(entries),affectedDependents,assets:[],state:"prepared"};
+   originPath,originPathSource:"snapshot",operationId:body.operationId||null,operationRequest:operationRequest||null,
+   nodes:clone(subtree),parts:clone(allParts.filter(part=>!part.familyUse)),workshopParts:clone(workshop.parts),removedPartIds:[...removedIds],
+   investigations:clone(entries),entryDetails,workshopUses:workshop.uses,affectedDependents,assets:[],state:"prepared"};
+  let usesArchived=false,treeCommitted=false;
   try{
-   archived.assets=await archiveAssets(bucket,project,id,subtree,entries,allParts);
+   await reserveProjectNumbers(env,project,subtree,allParts);
+   archived.assets=await archiveAssets(bucket,project,id,subtree,[...entries,{entryDetails}],allParts,{verify:true,extraKeys:[...workshop.files,...entryDetails.photos],includeHistory:true});
    await bucket.put(manifestKey(project,id),JSON.stringify(archived));
+   await setWorkshopArchiveState(env,project,workshop.uses,0,1,0);usesArchived=true;
    // Write the tree first. Never remove a part definition while the active
    // feature tree still references it. Roll back the tree on a BOM conflict.
    const treeWritten=await bucket.put(treeKey(project),JSON.stringify(remaining),conditional(tree.object));
-   if(treeWritten===null)
+   if(treeWritten===null){
+    await setWorkshopArchiveState(env,project,workshop.uses,1,0,1,{checkSources:false});usesArchived=false;
     return json({error:"Feature tree changed during archiving. No active records were removed.",archiveId:id},409);
-   if(removedIds.size){
+   }
+   treeCommitted=true;
+   if(remainingParts.length!==componentState.value.length){
     const partsWritten=await bucket.put(partKey(project),JSON.stringify(remainingParts),conditional(componentState.object));
     if(partsWritten===null){
      const rolledBack=await bucket.put(treeKey(project),JSON.stringify(current),{onlyIf:{etagMatches:treeWritten.etag}});
+     if(rolledBack){treeCommitted=false;await setWorkshopArchiveState(env,project,workshop.uses,1,0,1,{checkSources:false});usesArchived=false;}
      return json({error:rolledBack
       ?"Components changed during archiving. The tree was restored; reload and retry."
       :"Components changed during archiving. The archive is preserved, but the tree needs reconciliation.",
@@ -315,9 +361,13 @@ export async function handleAssemblyArchive(request,env){
    archived.state="archived";
    try{await bucket.put(manifestKey(project,id),JSON.stringify(archived));}
    catch(error){console.error("Archive manifest state update failed",id,error)}
-   return json({ok:true,id,nodes:remaining,revision:treeWritten.etag??null,
-    removedPartIds:[...removedIds],count:subtree.length});
-  }catch(error){return json({error:error.message||"Could not archive item"},500)}
+   const result={id,removedPartIds:[...removedIds],count:subtree.length};
+   if(operationKey)try{await bucket.put(operationKey,JSON.stringify({request:operationRequest,result}),{onlyIf:{etagDoesNotMatch:"*"}});}catch{ /* The committed manifest supports recovery replay. */ }
+   return json({ok:true,...result,nodes:remaining,revision:treeWritten.etag??null});
+  }catch(error){
+   if(usesArchived&&!treeCommitted){try{await setWorkshopArchiveState(env,project,workshop.uses,1,0,1,{checkSources:false});}catch{archived.state="needs_recovery";await bucket.put(manifestKey(project,id),JSON.stringify(archived));return json({error:"Archive copies were retained, but Workshop flags need reconciliation. No records were deleted.",archiveId:id},503);}}
+   return json({error:error.message||"Could not archive item"},409);
+  }
  }
  if(!uuid(body.id))return json({error:"Invalid archive ID"},400);
  const stored=await read(bucket,manifestKey(project,body.id),null),archive=stored.value;
@@ -339,7 +389,7 @@ export async function handleAssemblyArchive(request,env){
  const conflicts=archive.nodes.filter(n=>current.some(item=>item.id===n.id));
  if(conflicts.length)return json({error:"Some archived node IDs are in use"},409);
  const componentState=await read(bucket,partKey(project),[]);
- const incoming=archive.parts.filter(p=>!componentState.value.some(existing=>existing.id===p.id));
+ const incoming=archive.parts.filter(p=>!p.familyUse&&!componentState.value.some(existing=>existing.id===p.id));
  const changedShared=archive.parts.find(p=>{
   const active=componentState.value.find(existing=>existing.id===p.id);
   return active&&JSON.stringify(active)!==JSON.stringify(p);
@@ -357,11 +407,22 @@ export async function handleAssemblyArchive(request,env){
   ...current.map(n=>({...n,dependsOn:[...new Set([...(n.dependsOn||[]),...(dependencyMap.get(n.id)||[])])]})),
   ...restoredNodes
  ];
+ // Verify every affected Workshop row before restoring R2 membership.
+ // A changed reusable source requires review rather than a silent replacement.
+ const workshopUses=archive.workshopUses||[];
  // Restore all missing file bytes before the tree becomes visible again.
  // If a backup copy is absent, fail without touching the active BOM/tree.
  const missing=[],toRestore=[];
  for(const asset of archive.assets||[]){
-  if(await bucket.head(asset.original))continue;
+  const active=await bucket.head(asset.original);
+  if(active){
+   if(asset.etag&&active.etag!==asset.etag){
+    const currentFile=await bucket.get(asset.original),savedFile=await bucket.get(asset.archive);
+    const hash=async file=>Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",await file.arrayBuffer()))).join(",");
+    if(!currentFile||!savedFile||await hash(currentFile)!==await hash(savedFile))return json({error:"A saved file changed after archiving. Review it before restoring this item."},409);
+   }
+   continue;
+  }
   const copy=await bucket.get(asset.archive);
   if(!copy){missing.push(asset.original);continue}
   toRestore.push({key:asset.original,copy});
@@ -376,15 +437,21 @@ export async function handleAssemblyArchive(request,env){
   partsWritten=await bucket.put(partKey(project),JSON.stringify(nextParts),conditional(componentState.object));
   if(partsWritten===null)return json({error:"Component data changed. Reload and retry."},409);
  }
- const treeWritten=await bucket.put(treeKey(project),JSON.stringify(nextTree),conditional(tree.object));
+ try{await setWorkshopArchiveState(env,project,workshopUses,1,0,1);}catch(error){
+  if(partsWritten)await bucket.put(partKey(project),JSON.stringify(componentState.value),{onlyIf:{etagMatches:partsWritten.etag}});
+  return json({error:error.message},409);
+ }
+ let treeWritten;try{treeWritten=await bucket.put(treeKey(project),JSON.stringify(nextTree),conditional(tree.object));}catch{treeWritten=null;}
  if(treeWritten===null){
+  try{await setWorkshopArchiveState(env,project,workshopUses,0,1,2,{checkSources:false});}catch{return json({error:"Restored bytes were retained, but Workshop flags need reconciliation. No saved archive was deleted."},503);}
+  archive.workshopUses=workshopUses.map(use=>({...use,revision:use.revision+2}));await bucket.put(manifestKey(project,body.id),JSON.stringify(archive),conditional(stored.object));
   if(partsWritten)await bucket.put(partKey(project),JSON.stringify(componentState.value),{onlyIf:{etagMatches:partsWritten.etag}});
   return json({error:"Feature tree changed. Reload and retry."},409);
  }
  // Copies have already been verified and restored before tree activation.
  // Merge only missing investigation records; never overwrite newer ones.
  const investigationState=await read(bucket,investigationKey(project),{records:[],revision:null});
- const missingRecords=(archive.investigations||[]).filter(r=>!(investigationState.value.records||[]).some(existing=>existing.id===r.id));
+ const missingRecords=(archive.investigations||[]).filter(r=>!r.partRevisionRef&&!(investigationState.value.records||[]).some(existing=>existing.id===r.id));
  if(missingRecords.length){
   await bucket.put(investigationKey(project),JSON.stringify({...investigationState.value,records:[...(investigationState.value.records||[]),...missingRecords],revision:crypto.randomUUID()}),conditional(investigationState.object));
  }

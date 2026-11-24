@@ -57,7 +57,8 @@ setupPhotos();
 // Canonical assembly, BOM, part and photo controller is in assets/site-assembly.js.
 setupAssemblyTrees();
 
-function setupComponents(){
+async function setupComponents(){
+ const {specificationRow}=await import("./part-specifications.js");
  document.querySelectorAll("[data-components]:not([data-components-ready])").forEach(root=>{root.dataset.componentsReady="true";
  const project=root.dataset.components,canEditComponent=()=>adminAuthenticated||window.BSProjectManager?.isOwner?.(project),list=root.querySelector(".component-list"),status=root.querySelector(".component-status"),review=root.querySelector(".component-review"),specs=root.querySelector(".component-specs");
 
@@ -88,12 +89,7 @@ function setupComponents(){
  updatePriceControls();
  const say=message=>{status.textContent=message;status.hidden=false;status.style.display="block";status.setAttribute("aria-live","polite");};
  function specRow(name="",value="",source="explicit"){
-  const row=document.createElement("div");row.className="row component-spec-row";
-  const a=document.createElement("input"),b=document.createElement("input"),c=document.createElement("select"),del=document.createElement("button");
-  a.className=b.className="field";a.placeholder="Specification";b.placeholder="Value";a.value=name;b.value=value;
-  c.className="field component-spec-source";c.setAttribute("aria-label","Specification source");
-  for(const opt of ["explicit","inferred"]){const el=document.createElement("option");el.value=opt;el.textContent=opt==="explicit"?"✓ From product listing":"◇ Estimated / inferred";c.append(el)}c.value=source;
-  del.className="btn component-spec-remove";del.type="button";del.textContent="×";del.title="Remove specification";del.setAttribute("aria-label","Remove specification");del.onclick=()=>row.remove();row.append(a,b,c,del);specs.append(row)
+  specs.append(specificationRow({name,value,source}));
  }
  let refreshVersion=0;
  async function refresh(){
@@ -223,7 +219,7 @@ function setupComponents(){
  }
  // Product lookup is optional; the editable fields are always immediately available.
  review.classList.remove("hide");
- window.BSProductLookup.mountPart(root,{canSearch:canEditComponent});
+ window.BSProductLookup.mountPart(root,{canSearch:canEditComponent,specificationRow});
  field("add-spec").onclick=()=>specRow();
  field("save").onclick=async()=>{
   const priceInput=field("historical-price")?.value.trim()||"";

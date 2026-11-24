@@ -122,7 +122,7 @@ for (const width of [1440, 390]) test("shared section gaps across summary, assem
   await gaps(page.locator("#launcher .project-summary-page"), ["summary-photos", "summary-description", "summary-cost"]);
   await page.screenshot({path: testInfo.outputPath("summary-spacing.png"), fullPage: true});
   await page.goto("/#launcher/workspace/__root__");
-  await gaps(page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)"), ["work-instructions", "helpful-tools", "archived-items", "history", "notes"]);
+  await gaps(page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)"), ["work-instructions", "helpful-tools", "history", "notes"]);
   await page.screenshot({path: testInfo.outputPath("assembly-spacing.png"), fullPage: true});
   const response = await page.request.post("/api/workshop", {headers: {origin: "http://127.0.0.1:4173"}, data: {entity: "use", expectedRevision: null, expectedFamilyRevision: 1, record: {id: crypto.randomUUID(), project_id: "launcher", family_id: "f-resistor", product_id: null, tree_node_id: null, purpose: "Spacing fixture", quantity: 1, unit: "pcs", field_values: {}, notes: ""}}});
   expect(response.ok(), await response.text()).toBe(true);
@@ -134,19 +134,19 @@ for (const width of [1440, 390]) test("shared section gaps across summary, assem
   page.on("request", request => { if(request.isNavigationRequest() && request.frame() === page.mainFrame()) navigations++; });
   await page.locator(".ui-site-brand").click();
   await expect(page).toHaveURL(/\/#home$/);
-  await expect(page.locator(".ui-directory-toolbar")).toBeVisible();
+  await expect(page.locator("#home .ui-directory-toolbar")).toBeVisible();
   expect(navigations).toBe(0);
 });
 
 test("project filter chips use the shared component and retain toggle and remove behavior", async ({page}) => {
   await page.goto("/#home");
-  await page.locator(".project-filter-menu > summary").click();
+  await page.locator("#home .project-filter-menu > summary").click();
   const chip = page.locator(".ui-toolbar-menu__panel .ui-chip").first();
   await expect(chip).toBeVisible();
   await expect(chip).toHaveAttribute("aria-pressed", "false");
   await chip.click();
   await expect(chip).toHaveAttribute("aria-pressed", "true");
-  const remove = page.locator(".project-selected-descriptors .ui-chip");
+  const remove = page.locator("#home .project-selected-descriptors .ui-chip");
   await expect(remove).toHaveCount(1);
   await remove.click();
   await expect(remove).toHaveCount(0);
@@ -197,7 +197,7 @@ test("one project template supports built-in and new project routes without dupl
   expect(response.ok(),await response.text()).toBe(true);
   const {projects}=await response.json(),created=projects.find(project=>project.name==="Shared template fixture");
   await page.goto("/#home");
-  await expect(page.locator(".project-grid > .project-card")).toHaveCount(4);
+  await expect(page.locator("#home .ui-project-list > .ui-project-card")).toHaveCount(4);
   for(const id of ["launcher","linear","robot",created.id]) {
     await page.goto("/#"+id+"/workspace/__root__");
     await expect(page).toHaveURL(new RegExp("#"+id+"/workspace/__root__$"));
@@ -214,7 +214,8 @@ test("Calculators uses its own route and preserves the existing calculation form
  await expect(page).toHaveURL(/#calculators$/);
  await expect(page.locator("#calculators")).toBeVisible();
  await expect(page.getByRole("heading",{name:"Calculators",exact:true})).toBeVisible();
- await expect(page.locator("#resource-calculators .resource-card")).toHaveCount(3);
+ await expect(page.locator("#resource-calculators .ui-project-card")).toHaveCount(3);
+ await page.getByRole("button",{name:"Open Ohm's law",exact:true}).click();
  await page.getByLabel("Voltage (V)",{exact:true}).fill("12");
  await page.getByLabel("Resistance (Ω)",{exact:true}).fill("6");
  await expect(page.locator(".calculator-output").filter({hasText:"Current"})).toHaveText("Current 2 A · Power 24 W");
@@ -226,7 +227,7 @@ test("an empty owner catalog does not instantiate hidden built-in projects",asyn
  await page.route("**/api/projects",route=>route.fulfill({json:{projects:[]}}));
  await page.goto("/#home");
  await expect(page.locator(".project-directory-empty")).toBeVisible();
- await expect(page.locator(".project-grid > .project-card")).toHaveCount(0);
+ await expect(page.locator("#home .ui-project-list > .ui-project-card")).toHaveCount(0);
  await expect(page.locator("#launcher,#linear,#robot")).toHaveCount(0);
 });
 
@@ -237,6 +238,6 @@ test("project and calculator pages do not request retired Workshop endpoints",as
  await expect(page.locator("#launcher .project-summary-page")).toBeVisible();
  await page.goto("/index.html#calculators");
  await expect(page.locator("#resource-calculators")).toBeVisible();
- await expect(page.locator("#resource-calculators .resource-card").first()).toBeVisible();
+ await expect(page.locator("#resource-calculators .ui-project-card").first()).toBeVisible();
  expect(retired).toEqual([]);
 });

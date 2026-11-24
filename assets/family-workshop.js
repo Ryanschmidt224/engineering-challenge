@@ -1,6 +1,8 @@
-import {node,button,listCard,actions,panel,field,checkbox,readValue,valuesEditor,requestWorkshop} from "./workshop-ui.js";
+import {dataTable} from "./data-table.js";
+import {node,button,listCard,actions,panel,field,checkbox,readValue,valuesEditor,help,requestWorkshop} from "./workshop-ui.js";
 import {present,resolveFamilyValues,validateFamilyFields,validateFamilyValues,isWebUrl} from "./family-model.js";
 import {tileTypes,tileStatuses,relations,labelFor} from "./knowledge-model.js";
+import {initProjectProductCopy} from "./project-product-copy.js";
 
 const $=selector=>document.querySelector(selector),detail=$("#workshop-detail"),dialog=$("#workshop-dialog");
 const params=new URLSearchParams(location.search);
@@ -113,7 +115,7 @@ async function saveDraft(form){
  draft=null;updateLocation();renderNavigation();renderDetail();status("Saved.");
 }
 function editor(entity,title,record){
- detail.append(node("h2",title));
+ const header=node("div","","panel-heading");header.append(node("h2",title));detail.append(header);
  const form=node("form");form.onsubmit=event=>{event.preventDefault();void run(()=>saveDraft(form));};
  const set=(key,value)=>{record[key]=value;mark();};
  if(entity==="family")renderFamilyEditor(form,record,set);
@@ -122,13 +124,13 @@ function editor(entity,title,record){
  const footer=actions(button("Save "+entity,()=>form.requestSubmit(),"button--primary"),button("Cancel",()=>{if(!mayLeave())return;dirty=false;editing=false;draft=null;renderDetail();}));footer.classList.add("form-actions");
  form.append(footer);detail.append(form);
  if(record.revision)renderAttachments(detail,entity,record.id,true);
- else detail.append(node("p","Save this "+entity+" before adding files or document links.","muted"));
+ else header.append(help("Files & links","saveBeforeFiles"));
 }
 function renderFamilyEditor(form,record,set){
  const identity=panel("Family");
  identity.append(field("Family name",record.name,value=>set("name",value),{required:true}),field("Category",record.category_id||"",value=>set("category_id",value||null),{options:[{value:"",label:"Uncategorized"},...data.categories.filter(c=>!c.archived).map(c=>({value:c.id,label:categoryPath(c.id)}))]}),
   field("Kind",record.kind,value=>set("kind",value),{options:[{value:"part",label:"Part"},{value:"material",label:"Material"},{value:"tool",label:"Tool"}]}),field("Description",record.description,value=>set("description",value),{type:"textarea"}),field("Notes",record.notes,value=>set("notes",value),{type:"textarea"}));form.append(identity);
- const definitions=panel("Family fields","Define a field once. Products and project uses may both have a value. Units do not convert existing numbers.");
+ const definitions=panel("Family fields","familyFields");
  const repaint=()=>{renderDetail();};
  record.fields.forEach((definition,index)=>{
   const row=node("fieldset","","field-definition");row.dataset.fieldId=definition.id;row.append(node("legend",definition.label||"New field"));
@@ -146,7 +148,7 @@ function renderProductEditor(form,record,set){
  const identity=panel("Product identity");
  identity.append(field("Product name",record.name,value=>set("name",value),{required:true}),field("Manufacturer",record.manufacturer,value=>set("manufacturer",value)),field("Manufacturer part number",record.mpn,value=>set("mpn",value)));
  form.append(identity);
- const specs=panel("Specifications",family()?.name||"");
+ const specs=panel("Specifications");
  specs.append(checkbox("Show fields usually filled in for a project",showUseFields,value=>{showUseFields=value;renderDetail();}),valuesEditor(familyFields(),record.field_values,mark,{product:true,showUseFields}));form.append(specs);
  const ordering=panel("Supplier links");
  record.supplier_links.forEach((supplier,index)=>{
@@ -158,7 +160,7 @@ function renderProductEditor(form,record,set){
  const notes=panel("Notes");notes.append(field("Notes",record.notes,value=>set("notes",value),{type:"textarea"}));form.append(notes);
 }
 function renderUseEditor(form,record,set){
- const identity=panel("Project use","This form changes only this project use. It never edits the family or selected product.");
+ const identity=panel("Project use","projectUse");
  identity.append(field("Project",record.project_id,value=>{set("project_id",value);record.tree_node_id=null;void loadAssemblyOptions();},{options:projects.map(p=>({value:p.id,label:p.name}))}),field("Purpose / project name",record.purpose,value=>set("purpose",value),{placeholder:family()?.name||"What is this part used for?"}),field("Quantity",record.quantity,value=>set("quantity",value),{type:"number"}),field("Unit",record.unit,value=>set("unit",value)));
  const assemblyHost=node("div");identity.append(assemblyHost);
  const loadAssemblyOptions=async()=>{
@@ -168,7 +170,7 @@ function renderUseEditor(form,record,set){
   }catch(error){assemblyHost.replaceChildren(node("p",error.message,"error"));}
  };
  identity.append(field("Selected product",record.product_id||"",value=>{set("product_id",value||null);renderDetail();},{options:[{value:"",label:"No product selected — generic"},...data.products.filter(p=>p.family_id===selectedFamily&&(!p.archived||p.id===record.product_id)).map(p=>({value:p.id,label:p.name+(p.archived?" (archived)":"")}))]}));form.append(identity);
- const product=data.products.find(p=>p.id===record.product_id),requirements=panel("Project requirements","These values stay in the project when a product is selected or changed. A different product value is shown for review, not automatically judged compatible.");
+ const product=data.products.find(p=>p.id===record.product_id),requirements=panel("Project requirements","projectRequirements");
  requirements.append(valuesEditor(familyFields(),record.field_values,mark,{productValues:product?.field_values||{}}));form.append(requirements);
  const notes=panel("Use notes");notes.append(field("Notes",record.notes,value=>set("notes",value),{type:"textarea"}));form.append(notes);
  queueMicrotask(()=>void loadAssemblyOptions());
@@ -179,7 +181,7 @@ function renderDetail(){
  detail.replaceChildren();
  if(editing&&draft){editor(draft.entity,"Edit "+draft.entity,draft.record);return;}
  const selected=family();
- if(!selected){detail.append(panel("Choose a family","A family describes a kind of part. Its products and project uses share the same field definitions."));return;}
+ if(!selected)return;
  const product=data.products.find(p=>p.id===selectedProduct),use=data.uses.find(u=>u.id===selectedUse);
  const entity=use?"use":product?"product":"family",record=use||product||selected;
  const heading=node("div","","detail-heading");heading.append(node("p",categoryPath(selected.category_id),"eyebrow"),node("h2",use?use.purpose||selected.name:product?product.name:selected.name));
@@ -196,13 +198,14 @@ function renderDetail(){
 }
 function renderFamilyRead(record){
  const intro=panel("About this family");appendRead(intro,"Kind",record.kind);appendRead(intro,"Description",record.description);appendRead(intro,"Notes",record.notes);detail.append(intro);
- const fields=panel("Fields","Values are entered on a product, a project use, or both.");
- const scroll=node("div","","table-scroll"),table=node("table","","data-table"),head=node("thead"),header=node("tr");for(const label of ["Field","Unit","Type"])header.append(node("th",label));head.append(header);table.append(head);
- const body=node("tbody");for(const definition of familyFields().filter(f=>!f.hidden)){const row=node("tr");row.append(node("td",definition.label+(definition.filled_on_use?" · usually entered in project":"")),node("td",definition.unit),node("td",definition.type));body.append(row);}table.append(body);scroll.append(table);fields.append(scroll);detail.append(fields);
+ const fields=panel("Fields","fieldValues");
+ const table=dataTable("Family fields",["Field","Unit","Type"]);
+ for(const definition of familyFields().filter(f=>!f.hidden))table.append([definition.label+(definition.filled_on_use?" · usually entered in project":""),definition.unit,definition.type]);
+ fields.append(table.root);detail.append(fields);
  renderKnowledge("family",record.id);
  const related=panel("Products");const list=node("div","","product-list");
  for(const product of data.products.filter(p=>p.family_id===record.id&&active(p)))list.append(button(product.name+(product.mpn?" · "+product.mpn:"")+(product.archived?" (archived)":""),()=>changeSelection({familyId:record.id,productId:product.id})));
- if(!list.children.length)list.append(node("p","No specific products yet. This family can still be used in a project.","empty"));
+ if(!list.children.length)list.append(node("p","No products yet.","empty"));
  related.append(list,actions(button("Add product",newProduct,"button--primary"),button("Use in a project",()=>void run(()=>newUse("")))));detail.append(related);
  detail.append(actions(button("Duplicate family",()=>{
   const duplicate={...copy(record),id:crypto.randomUUID(),name:record.name+" copy",fields:familyFields().map(field=>({...copy(field),id:crypto.randomUUID()}))};delete duplicate.revision;begin("family",duplicate);
@@ -293,4 +296,5 @@ try{
  if(use){selectedFamily=use.family_id;selectedProduct=use.product_id||"";}else if(product)selectedFamily=product.family_id;
  renderNavigation();renderDetail();
  if(params.get("edit")==="1"&&use){projects=(await requestWorkshop("/api/projects")).projects||[];begin("use",use);updateLocation();}
-}catch(error){detail.replaceChildren(panel("Workshop unavailable",error.message),button("Try again",()=>location.reload()));const signIn=node("a","Open Projects to sign in");signIn.href="index.html#home";detail.append(signIn);status(error.message,true);}
+ await initProjectProductCopy({params,data,detail,status,onDraft(familyId,record){selectedFamily=familyId;selectedProduct="";selectedUse="";begin("product",record);dirty=true;status("Review the copied product, then Save product. The project part is unchanged.");}});
+}catch(error){const failure=panel("Workshop unavailable");failure.append(node("p",error.message,"error"));detail.replaceChildren(failure,button("Try again",()=>location.reload()));const signIn=node("a","Open Projects to sign in");signIn.href="index.html#home";detail.append(signIn);status(error.message,true);}
