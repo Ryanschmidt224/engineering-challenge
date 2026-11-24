@@ -83,7 +83,7 @@ for(const width of [1440,390])test("History separates captured build context fro
  await write("/items/"+itemId,{build:{quantity:4,build_status:"complete",attention:true,attention_note:"Review fit"}},"PATCH");
  await write("",{name:"Renamed context project"},"PATCH");
  const second=await write("/items/"+itemId+"/records",{record:{type:"test",title:"Completed context",fields:{result:"Same design"}}});
- expect(second.configurationId).toBe(first.configurationId);await page.reload();await page.getByRole("button",{name:"History",exact:true}).click();
+ expect(second.configurationId).toBe(first.configurationId);await page.reload();await page.getByRole("button",{name:"Project history",exact:true}).click();
  const list=page.locator(".project-history-list"),detail=page.locator(".project-history-detail");
  await list.getByRole("button").filter({hasText:"Baseline context"}).click();
  const capture=detail.locator(".ui-information-panel").filter({has:page.getByRole("heading",{name:"Build context when recorded",exact:true})});
@@ -98,7 +98,7 @@ for(const width of [1440,390])test("record edit History keeps before and after e
  await page.setViewportSize({width,height:1000});await login(page,request,context);await createPart(page);
  await page.locator('[data-section="item-history"] > summary').click();await page.locator('[data-section="item-history"]').getByRole("button",{name:"Add record",exact:true}).click();
  await page.getByLabel("Title (optional)",{exact:true}).fill("Bracket result");await page.getByLabel("Result",{exact:true}).fill("ok");await page.getByRole("button",{name:"Save record",exact:true}).click();await expect(page.getByRole("dialog")).not.toBeVisible();
- await page.getByRole("button",{name:"History",exact:true}).click();const list=page.locator(".project-history-list"),detail=page.locator(".project-history-detail");
+ await page.getByRole("button",{name:"Project history",exact:true}).click();const list=page.locator(".project-history-list"),detail=page.locator(".project-history-detail");
  await list.getByRole("button").filter({hasText:"Bracket result"}).click();await detail.getByRole("button",{name:"Edit record",exact:true}).click();await page.getByLabel("Result",{exact:true}).fill("FAILED");await page.getByRole("button",{name:"Save record",exact:true}).click();await expect(page.getByRole("dialog")).not.toBeVisible();
  await page.getByRole("button",{name:"Back to history",exact:true}).click();await page.getByLabel("Type",{exact:true}).selectOption("changes");await list.getByRole("button").filter({hasText:"Record edited: Bracket result"}).click();
  const before=detail.locator(".ui-information-panel").filter({has:page.getByRole("heading",{name:"Before edit",exact:true})}),after=detail.locator(".ui-information-panel").filter({has:page.getByRole("heading",{name:"After edit",exact:true})});
