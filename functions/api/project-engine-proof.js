@@ -1,13 +1,11 @@
 // Owner-only preview acceptance test. No R2 writes, no legacy readers, no purge.
-// This is the sole initial caller of the foundation until real D1 proof passes.
+// The shared engine entry validates the request and initializes the schema first.
 import {normalizeCustomItem,normalizeOccurrence,allocatePartNumber,diffCustomItems} from "../../assets/project-item-model.js";
-import {initializeProjectEngine} from "./project-engine-migrations.js";
 import {commitProjectCommand,canonicalJSON,sha256,CommandConflict} from "./project-command.js";
 const tables=["engine_projects","engine_items","engine_occurrences","engine_configurations","engine_events","engine_operations"];
 const check=(condition,message)=>{if(!condition)throw Error("Preview transaction proof failed: "+message);};
 async function stableId(run,label){const hash=await sha256(run+"/"+label);return hash.slice(0,8)+"-"+hash.slice(8,12)+"-4"+hash.slice(13,16)+"-a"+hash.slice(17,20)+"-"+hash.slice(20,32);}
 export async function proveProjectCommands(db,actorId,runId){
- await initializeProjectEngine(db);
  const projectId=runId,itemId=await stableId(runId,"item"),occurrenceId=await stableId(runId,"occurrence");
  const input=async(label,expectedRevision,payload)=>({projectId,actorId,operationId:await stableId(runId,label),expectedRevision,payload});
  const create=await input("project",null,{action:"create-proof-project"});

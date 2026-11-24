@@ -1,6 +1,6 @@
 # Project engine command foundation
 
-Status: **Batch 1 real Cloudflare D1 proof passed**, November 22, 2026 (Arizona). The initial run and same-proof replay passed all seven checks with unchanged counts. Exact source, binding, build ID and reports are recorded in `PROJECT_ENGINE_D1_PROOF.json`. Batch 2 dependent preview flows may now begin. This is not the completed custom-part application or production cutover.
+Status: **Batch 1 real Cloudflare D1 proof passed**, November 22, 2026 (Arizona). The initial run and same-proof replay passed all seven checks with unchanged counts. Exact source, binding, build ID and reports are recorded in `proofs/PROJECT_ENGINE_D1_PROOF.json`. Batch 2 dependent preview flows may now begin. This is not the completed custom-part application or production cutover.
 
 ## Ownership and boundaries
 
@@ -9,6 +9,10 @@ Status: **Batch 1 real Cloudflare D1 proof passed**, November 22, 2026 (Arizona)
 - `project-engine-proof.js` establishes the foundation gate. After that gate passed, the custom-part API also began using the primitive; see `PROJECT_CUSTOM_FLOW.md`. The proof creates one clearly named disposable project per proof ID and leaves its D1 rows for inspection. It writes no R2 objects and never deletes data.
 - `project-engine.js` requires the preview flag, the existing owner account and same-origin writes. There is no signup, fixture login or authentication bypass. `/project-engine-proof.html` reuses the site header and kit; it has no custom CSS.
 - `NEW_PROJECT_ENGINE=1` exists **only** under `previews.vars`. Production API and proof-page paths return 404 before authentication, migrations or assets. Enabled preview paths require sign-in (401). The production 404 takes precedence over the signed-out 401 described for enabled routes in F11.
+
+The current E4 correction gives schema initialization one application call site, in `project-workspace-api.js`, after request validation. `project-engine.js` retains flag/account/origin checks and delegates both proof and project requests to that entry. `proveProjectCommands` assumes initialization has already completed; direct SQL tests initialize explicitly. Workshop project-use reads call the read-only readiness helper and return no engine uses before the schema is ready; they never create/upgrade engine tables.
+
+Initializer caching covers only in-flight work. Every later request checks the ledger again, so an isolate that opened an earlier schema cannot keep using a completed cached promise after an upgrade. A concurrent isolate's committed ledger admits its atomic migration result; a genuine batch failure remains an error, clears in-flight work and can retry. Unknown future versions are refused. Command admission also checks the compiled schema version in its transaction, preserving receipt replay before that guard. No applied migration is rewritten. This improves current code; compatible-reader/writer fencing of every previously deployed preview remains a separate cutover task.
 
 ## Independent custom-part model preparation
 
@@ -52,3 +56,7 @@ For an empty preview account store, use the one-time operator procedure in `PREV
 Before merge, keep this branch and its preview separate from the live cleanup. Production's new-engine flag remains absent. A code rollback reverts this foundation PR; do not drop tables, remove proof rows, delete R2, reseed D1 or alter Workshop/account data. To stop preview writes immediately, disable its flag through the reviewed preview configuration and redeploy. Preserve any proof report and rows for diagnosis. A schema correction is a new numbered migration, never an edit to an applied migration.
 
 Cloudflare reference: https://developers.cloudflare.com/workers/previews/configuration/ (preview bindings/vars are independent of production; checked November 22, 2026).
+
+## Automated preview acceptance
+
+`PREVIEW_ACCEPTANCE.md` documents the shared proof runner and protected runtime-version identity. The runner verifies actual control-plane bindings before proof writes and requires existing owner authentication; no production or sign-in bypass is introduced. The single project-wide token remains deliberate: saving anywhere may make another open draft stale, including two tabs on different parts. Drafts remain reviewable after 409. Per-item tokens are deferred until observed contention justifies the extra coordination.

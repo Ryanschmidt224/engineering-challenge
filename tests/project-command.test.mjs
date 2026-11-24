@@ -23,6 +23,7 @@ test("canonical request fingerprints preserve JSON type and unset distinctions",
 });
 test("guarded command proof exercises real SQL and can replay its retained dataset",async()=>{
  const db=new TestD1();try{
+  await initializeProjectEngine(db);
   const run=id(),proof=await proveProjectCommands(db,"fixture-owner",run);assert.equal(proof.ok,true);assert.equal(proof.checks.length,7);
   assert.equal((await proveProjectCommands(db,"fixture-owner",run)).ok,true);
   const initial=await db.prepare("SELECT snapshot FROM engine_configurations WHERE project_id=? AND fingerprint='initial'").bind(run).first();
@@ -67,6 +68,19 @@ test("a command cannot accidentally update every item in a project",async()=>{
   assert.equal((await db.prepare("SELECT COUNT(*) AS count FROM engine_operations").first()).count,1);
  }finally{db.close();}
 });
+test("placement reorder admission checks exact sibling membership even with a fresh project token",async()=>{
+ const db=new TestD1();try{
+  const {input,result}=await newProject(db),item=id(),a=id(),b=id();
+  const seeded=await commitProjectCommand(db,{...input,expectedRevision:result.revision,operationId:id(),payload:{action:"seed-placements"}},w=>{
+   w.insert("engine_items",{id:item,project_id:input.projectId,name:"Shared",part_number:"NR100",kind:"part",source:"custom",fields:"{}",created_at:w.createdAt});
+   for(const [index,placement]of [a,b].entries())w.insert("engine_occurrences",{id:placement,project_id:input.projectId,item_id:item,sort_order:index});return {};
+  });
+  const before=(await db.prepare("SELECT id,sort_order FROM engine_occurrences ORDER BY sort_order").all()).results,command={...input,expectedRevision:seeded.revision,operationId:id(),payload:{action:"reorder-placements"}};
+  await assert.rejects(commitProjectCommand(db,command,w=>{w.reorderOccurrences(null,[a,id()]);return {};}),CommandConflict);
+  assert.deepEqual((await db.prepare("SELECT id,sort_order FROM engine_occurrences ORDER BY sort_order").all()).results,before);assert.equal((await db.prepare("SELECT revision FROM engine_projects").first()).revision,seeded.revision);
+  await commitProjectCommand(db,command,w=>{w.reorderOccurrences(null,[b,a]);return {};});assert.deepEqual((await db.prepare("SELECT id FROM engine_occurrences ORDER BY sort_order").all()).results.map(row=>row.id),[b,a]);
+ }finally{db.close();}
+});
 const origin="https://preview.example.test";
 const req=(path,method="GET",cookie,body,requestOrigin=origin)=>new Request(origin+path,{method,headers:{origin:requestOrigin,...(cookie?{cookie}:{}),"content-type":"application/json"},...(body?{body:JSON.stringify(body)}:{})});
 async function environment(role="admin"){
@@ -77,7 +91,7 @@ async function environment(role="admin"){
 test("production flag denies routes before auth, migrations and static assets",async()=>{
  const unavailable={get(){throw Error("Production storage must not be accessed");}};
  const env={PHOTOS:unavailable,WORKSHOP_DB:unavailable,ASSETS:{fetch(){throw Error("Static proof page must not be served");}}};
- for(const path of ["/api/project-engine","/api/project-engine/proof","/api/project-engine/files/1","/project-engine-proof","/project-engine-proof.html","/project-engine-proof/","/project","/project/","/project.html"]){
+ for(const path of ["/api/project-engine","/api/project-engine/proof","/api/project-engine/files/1","/api/project-engine/maintenance/orphans","/project-engine-proof","/project-engine-proof.html","/project-engine-proof/","/project","/project/","/project.html"]){
   assert.equal((await worker.fetch(req(path),env,{})).status,404);
  }
  assert.equal((await handleProjectEngine(req("/api/project-engine/proof","POST"),env)).status,404);
@@ -88,7 +102,7 @@ test("production flag denies routes before auth, migrations and static assets",a
 test("preview proof needs owner, same origin and valid write tokens; no R2 objects change",async()=>{
  const {env,cookie}=await environment();try{
   const payload={expectedRevision:null,operationId:id()};
-  for(const path of ["/api/project-engine/proof","/api/project-engine/files/1","/project-engine-proof.html"])assert.equal((await worker.fetch(req(path),env,{})).status,401);
+  for(const path of ["/api/project-engine/proof","/api/project-engine/files/1","/api/project-engine/maintenance/orphans","/project-engine-proof.html"])assert.equal((await worker.fetch(req(path),env,{})).status,401);
   assert.equal((await worker.fetch(req("/api/project-engine/proof","POST",cookie,payload,"https://other.example.test"),env,{})).status,403);
   assert.equal((await worker.fetch(req("/api/project-engine/proof","POST",cookie,{}),env,{})).status,400);
   assert.equal((await env.WORKSHOP_DB.prepare("SELECT COUNT(*) AS count FROM sqlite_master WHERE name='engine_projects'").first()).count,0);

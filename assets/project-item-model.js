@@ -12,7 +12,7 @@ function text(value,label,max,{required=false,multiline=false}={}){
 const boolean=(value,label,defaultValue=false)=>{if(value===undefined)return defaultValue;if(typeof value!=="boolean")throw Error(label+" must be true or false.");return value;};
 const textFields={description:["Description",5000],purpose:["Purpose",5000],acceptance:["Acceptance criteria",5000],manufacturer:["Manufacturer",180],mpn:["Manufacturer part number",180]};
 export function normalizeCustomItem(input){
- plain(input,"Part details");only(input,["name","short_name","part_number","kind","source","is_tool","fields"],"Part details");
+ plain(input,"Part details");only(input,["name","short_name","part_number","kind","source","is_tool","is_assembly","fields"],"Part details");
  const kind=input.kind===undefined?"part":input.kind,source=input.source===undefined?"custom":input.source;
  if(!["part","document","code"].includes(kind)||source!=="custom")throw Error("Choose a custom part, document or code item.");
  const fields=input.fields===undefined?{}:plain(input.fields,"Engineering fields");only(fields,[...Object.keys(textFields),"specs"],"Engineering fields");
@@ -27,7 +27,7 @@ export function normalizeCustomItem(input){
   normalized.specs=fields.specs.map(spec=>{
    plain(spec,"Specification");only(spec,["field_id","label","value","unit"],"Specification");
    const field_id=text(spec.field_id,"Specification ID",100,{required:true});
-   if(!/^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(field_id)||ids.has(field_id))throw Error("Specification IDs must be unique and stable.");ids.add(field_id);
+   if(!/^[A-Za-z0-9_-][A-Za-z0-9._:-]*$/.test(field_id)||["__proto__","constructor","prototype"].includes(field_id)||ids.has(field_id))throw Error("Specification IDs must be unique and stable.");ids.add(field_id);
    if(spec.field_id!==field_id)throw Error("Specification IDs cannot contain surrounding whitespace.");
    const row={field_id,label:text(spec.label,"Specification label",100,{required:true}),unit:text(spec.unit,"Specification unit",32)};
    if(owns(spec,"value")){
@@ -39,7 +39,8 @@ export function normalizeCustomItem(input){
   });
   if(!normalized.specs.length)delete normalized.specs;
  }
- return {name:text(input.name,"Name",180,{required:true}),short_name:text(input.short_name,"Short tree name",20),part_number:text(input.part_number,"Part number",80,{required:true}),kind,source,is_tool:boolean(input.is_tool,"Is a tool"),fields:normalized};
+ const assembly=boolean(input.is_assembly,"Is a subassembly");if(assembly&&(kind!=="part"||input.is_tool))throw Error("A subassembly must be a part and cannot be a tool.");
+ return {name:text(input.name,"Name",180,{required:true}),short_name:text(input.short_name,"Short tree name",20),part_number:text(input.part_number,"Part number",80,{required:true}),kind,source,is_tool:boolean(input.is_tool,"Is a tool"),...(assembly?{is_assembly:true}:{}),fields:normalized};
 }
 export function normalizeOccurrence(input={}){
  plain(input,"Build information");only(input,["quantity","unit","build_status","attention","attention_note","hidden"],"Build information");
@@ -48,13 +49,13 @@ export function normalizeOccurrence(input={}){
  if(!["not_started","in_progress","complete"].includes(build_status))throw Error("Choose a valid build status.");
  return {quantity:quantity===0?0:quantity,unit:text(input.unit,"Quantity unit",32)||"pcs",build_status,attention:boolean(input.attention,"Needs attention"),attention_note:text(input.attention_note,"Attention note",2500,{multiline:true}),hidden:boolean(input.hidden,"Hidden in tree")};
 }
-export function allocatePartNumber(numbering,reserved){
+export function allocatePartNumber(numbering,reserved,assembly=false){
  plain(numbering,"Numbering");const prefix=text(numbering.prefix===undefined?"NR":numbering.prefix,"Number prefix",10),digits=numbering.digits===undefined?3:numbering.digits;
  if(!Number.isInteger(digits)||digits<1||digits>8)throw Error("Use between 1 and 8 part-number digits.");
  if(!Array.isArray(reserved))throw Error("Supply every reserved number, including removed items.");
  const used=new Set(reserved.map(number=>projectNumberKey(text(number,"Reserved part number",80,{required:true}))));
  // Assemblies reserve 1–99. Search holes without changing any existing number.
- for(let sequence=100;sequence<=100+used.size;sequence++){
+ for(let sequence=assembly?1:100;sequence<=(assembly?99:100+used.size);sequence++){
   const number=prefix+String(sequence).padStart(digits,"0");
   if(!used.has(projectNumberKey(number)))return number;
  }
@@ -65,7 +66,7 @@ const side=(object,key)=>owns(object,key)?{present:true,value:object[key]}:{pres
 export function diffCustomItems(beforeInput,afterInput){
  const before=normalizeCustomItem(beforeInput),after=normalizeCustomItem(afterInput),changes=[];
  const add=(key,label,oldValue,newValue)=>{if(!same(oldValue,newValue))changes.push({key,label,before:oldValue,after:newValue});};
- for(const [key,label] of [["name","Name"],["short_name","Short tree name"],["part_number","Part number"],["kind","Kind"],["is_tool","Is a tool"]])add(key,label,side(before,key),side(after,key));
+ for(const [key,label] of [["name","Name"],["short_name","Short tree name"],["part_number","Part number"],["kind","Kind"],["is_tool","Is a tool"],["is_assembly","Is a subassembly"]])add(key,label,side(before,key),side(after,key));
  for(const [key,[label]] of Object.entries(textFields))add("fields."+key,label,side(before.fields,key),side(after.fields,key));
  const oldSpecs=before.fields.specs||[],newSpecs=after.fields.specs||[],oldMap=new Map(oldSpecs.map(row=>[row.field_id,row])),newMap=new Map(newSpecs.map(row=>[row.field_id,row]));
  const specSide=row=>row?{...side(row,"value"),label:row.label,unit:row.unit}:{present:false};

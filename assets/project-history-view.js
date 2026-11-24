@@ -2,6 +2,7 @@ import {information,configurationView,fileLink,savedPartView,buildContextView,re
 import {node,field,actions,listCard} from "./workshop-ui.js";
 import {formatRevisionValue} from "./project-item-model.js";
 import {recordLabels,recordPrompts} from "./project-record-model.js";
+import {projectHelp} from "./project-help.js";
 import {initSplitPanes} from "./split-panes.js";
 import {editRecord,confirmAction} from "./project-editors.js";
 const button=(...args)=>window.BSUI.button(...args);
@@ -13,7 +14,7 @@ function entryCard(entry,select){
 export async function showEvent(ctx,id,container){
  const detail=await ctx.client.request("/"+ctx.projectId+"/history/"+id),{event,record,configurations,attachments,recordContext}=detail,body=node("div","","project-stack");
  body.append(node("h2",record?.title||event.title),node("p",(eventLabels[record?.type||event.type]||event.type)+" · "+(event.payload.source?.name||""),"muted"));
- if(record){body.append(information("Record",Object.entries(recordPrompts[record.type]).map(([key,label])=>[label,record.fields[key]]).concat(record.type==="problem"?[["Status",record.fields.status]]:[]).concat(record.event_date?[["Event date",record.event_date]]:[])));if(record.step_snapshot)body.append(information("Step when recorded",[["Title",record.step_snapshot.title],["Instructions",record.step_snapshot.body]]));
+ if(record){body.append(node("p",projectHelp.testedConfiguration),...(record.type==="change_note"?[node("p",projectHelp.changeRecord)]:[]),information("Record",Object.entries(recordPrompts[record.type]).map(([key,label])=>[label,record.fields[key]]).concat(record.type==="problem"?[["Status",record.fields.status]]:[]).concat(record.event_date?[["Event date",record.event_date]]:[])));if(record.step_snapshot)body.append(information("Step when recorded",[["Title",record.step_snapshot.title],["Instructions",record.step_snapshot.body]]));
   const occurrence=ctx.client.state.occurrences.find(row=>row.item_id===event.item_id);if(occurrence?.removed_at===null)body.append(button("Edit record",()=>editRecord({...ctx,itemId:event.item_id},{record})));
  }
  if(event.payload.record_edit){const edit=event.payload.record_edit;body.append(recordVersionView(ctx,edit.before,"Before edit",attachments),recordVersionView(ctx,edit.after,"After edit",attachments),information("Edit information",[["Edited by",event.payload.actor_id]]));if(event.payload.step_snapshot)body.append(information("Step when recorded",[["Title",event.payload.step_snapshot.title],["Instructions",event.payload.step_snapshot.body]]));}
@@ -31,8 +32,8 @@ export async function showEvent(ctx,id,container){
 }
 function currentSnapshot(ctx,item){const occurrence=ctx.client.state.occurrences.find(row=>row.item_id===item.id);return {snapshot:{item,occurrence:{...occurrence,root:{name:ctx.client.state.project.name}}}};}
 async function showRemoved(ctx,entry,container){
- const state=ctx.client.state,item=state.items.find(row=>row.id===entry.item_id),step=entry.kind==="step"?entry:null,occurrence=state.occurrences.find(row=>row.item_id===item.id),path=step?.retired_path||occurrence.removed_path;
- const archived=!step?await ctx.client.request("/"+ctx.projectId+"/history?"+new URLSearchParams({scope:item.id,type:"archives",limit:"1"})):null;
+ const state=ctx.client.state,item=state.items.find(row=>row.id===entry.item_id),step=entry.kind==="step"?entry:null,occurrence=state.occurrences.find(row=>entry.occurrenceId?row.id===entry.occurrenceId:row.item_id===item.id),path=step?.retired_path||occurrence.removed_path;
+ const archived=!step?await ctx.client.request("/"+ctx.projectId+"/history?"+new URLSearchParams({scope:item.id,type:"archives",occurrence:occurrence.id,limit:"1"})):null;
  const frozen=archived?.entries[0]?.payload.snapshot;
  const body=node("div","","project-stack");body.append(node("h2",step?step.title:item.name),information("Original location",[["Project",path?.root.name],["Item",path?.item.name],["Step",path?.step?.title]]),...(frozen?[savedPartView(ctx,archived.entries[0])]:[configurationView(currentSnapshot(ctx,item),"Archived item details")]));
  const steps=step?[step]:state.steps.filter(row=>row.item_id===item.id);for(const row of frozen?[]:steps)body.append(information(row.title,[["Instructions",row.body]]));
@@ -41,7 +42,7 @@ async function showRemoved(ctx,entry,container){
  const canRestore=!step||occurrence.removed_at===null;
  if(canRestore)body.append(button(step?"Restore step…":"Restore to build…",async()=>{try{
   if(step){confirmAction(ctx,"Restore step",'Restore "'+step.title+'" to '+item.name+"?","Restore step",token=>ctx.client.write(ctx.projectId,"/steps/"+step.id+"/restore","POST",{},token));return;}
-  const preview=await ctx.client.request("/"+ctx.projectId+"/items/"+item.id+"/restore-preview");confirmAction(ctx,"Restore to build","Destination: "+preview.root.name+". "+(preview.conflicts.join(" ")||"The item keeps its ID, part number, records and files."),"Restore to build",token=>ctx.client.write(ctx.projectId,"/items/"+item.id+"/restore","POST",{},token));
+  const preview=await ctx.client.request("/"+ctx.projectId+"/occurrences/"+occurrence.id+"/restore-preview");confirmAction(ctx,"Restore to build","Destination: "+preview.root.name+". "+(preview.conflicts.join(" ")||"The item keeps its ID, part number, records and files."),"Restore to build",token=>ctx.client.write(ctx.projectId,"/occurrences/"+occurrence.id+"/restore","POST",{},token));
  }catch(error){ctx.notify(error.message);}}));else body.append(node("p","Restore the parent item before restoring this step."));container.replaceChildren(body);
 }
 export function createHistoryView(ctx,memo){
@@ -53,8 +54,8 @@ export function createHistoryView(ctx,memo){
   const generation=++requestNumber;saveScroll();try{
    let entries,nextCursor=null;
    if(memo.mode==="archive"){
-    const state=ctx.client.state;entries=[...state.occurrences.filter(row=>row.removed_at!==null).map(row=>{const item=state.items.find(item=>item.id===row.item_id);return {...row,id:"item-"+item.id,kind:"item",title:item.name,summary:"Archived part",created_at:row.removed_at};}),...state.steps.filter(row=>row.retired_at).map(row=>({...row,kind:"step",summary:"Retired step",created_at:row.retired_at}))];
-    entries=entries.filter(row=>(!memo.scope||row.item_id===memo.scope)&&(!memo.q||(row.title+" "+row.summary).toLowerCase().includes(memo.q.toLowerCase()))).sort((a,b)=>b.created_at.localeCompare(a.created_at)||b.id.localeCompare(a.id));
+    const state=ctx.client.state;entries=[...state.occurrences.filter(row=>row.removed_at!==null&&(!row.archive_group_id||state.archive_groups.find(group=>group.id===row.archive_group_id)?.root_occurrence_id===row.id)).map(row=>{const item=state.items.find(item=>item.id===row.item_id);return {...row,id:"occurrence-"+row.id,occurrenceId:row.id,kind:"item",title:item.name,summary:item.is_assembly?"Archived subassembly":"Archived part",created_at:row.removed_at};}),...state.steps.filter(row=>row.retired_at).map(row=>({...row,kind:"step",summary:"Retired step",created_at:row.retired_at}))];
+    entries=entries.filter(row=>(!memo.scope||row.item_id===memo.scope||state.occurrences.find(parent=>parent.id===row.parent_id)?.item_id===memo.scope)&&(!memo.q||(row.title+" "+row.summary).toLowerCase().includes(memo.q.toLowerCase()))).sort((a,b)=>b.created_at.localeCompare(a.created_at)||b.id.localeCompare(a.id));
    }else{entries=[];const target=more?20:Math.max(20,memo.entries.length);let cursor=more?memo.cursor:null;do{const params=new URLSearchParams({type:memo.type,scope:memo.scope,q:memo.q,limit:"20",...(cursor?{cursor}:{})});const result=await ctx.client.request("/"+ctx.projectId+"/history?"+params);if(generation!==requestNumber)return;entries.push(...result.entries);cursor=result.nextCursor;}while(cursor&&entries.length<target);nextCursor=cursor;}
    if(generation!==requestNumber)return;memo.entries=more?[...memo.entries,...entries]:entries;memo.cursor=nextCursor;list.replaceChildren();
    for(const entry of memo.entries){const row=entryCard(entry,()=>select(entry));row.setAttribute("aria-pressed",String(entry.id===memo.selected));list.append(row);}if(!memo.entries.length)list.append(node("p",memo.mode==="archive"?"Archived parts and retired steps will appear here.":"Add a record or save a revision to start this History."));

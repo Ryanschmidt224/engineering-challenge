@@ -1,4 +1,5 @@
 import {legacyRecordContext} from "../../assets/project-record-context.js";
+import {loadProjectTree,parentPlacement,changePlacementLife,lifePreview} from "./project-placements.js";
 import {captureProjectPart,entryEvidence} from "./project-part-snapshot.js";
 import {commitProjectCommand,canonicalJSON,CommandConflict} from "./project-command.js";
 import {normalizeCustomItem,normalizeOccurrence,allocatePartNumber,diffProjectItems,projectNumberKey} from "../../assets/project-item-model.js";
@@ -25,42 +26,49 @@ export async function editProject(db,input,project,data){
  if(name===project.name&&prefix===project.prefix&&digits===project.digits)return unchanged(db,project,input);
  return commitProjectCommand(db,input,w=>{w.update("engine_projects",{name,prefix,digits},{id:project.id,owner_id:input.actorId});return {projectId:project.id};});
 }
-export async function createItem(db,input,project,data,{from=null}={}){
- const existing=await rows(db,"SELECT part_number FROM engine_items WHERE project_id=?",project.id);
+export async function createItem(db,input,project,data,{from=null,selectionPlan=null}={}){
+ const tree=await loadProjectTree(db,project.id),parent_id=parentPlacement(tree,data.parentId),existing=await rows(db,"SELECT part_number FROM engine_items WHERE project_id=?",project.id);
+ if(tree.placements.size>=1000)throw Error("This preview supports at most 1,000 placements.");
+ if(from?.item.is_assembly)throw Error("Use Add existing part placement to copy a subassembly with its composition.");
  const automatic=data.assignNumber===undefined||data.assignNumber===true||!!from;
  if(data.assignNumber!==undefined&&typeof data.assignNumber!=="boolean")throw Error("Choose automatic numbering or provide a part number.");
- const details=normalizeCustomItem(from?{...itemDetails(from.item),part_number:allocatePartNumber(project,existing.map(row=>row.part_number))}:{...data.details,part_number:automatic?allocatePartNumber(project,existing.map(row=>row.part_number)):data.details?.part_number});
+ const details=normalizeCustomItem(from?{...itemDetails(from.item),part_number:allocatePartNumber(project,existing.map(row=>row.part_number),!!(from?.item.is_assembly||data.details?.is_assembly))}:{...data.details,part_number:automatic?allocatePartNumber(project,existing.map(row=>row.part_number),!!(from?.item.is_assembly||data.details?.is_assembly)):data.details?.part_number});
  const build=normalizeOccurrence(from?{}:data.build),itemId=crypto.randomUUID(),occurrenceId=crypto.randomUUID();
  await numberAvailable(db,project.id,details.part_number);
- const item={id:itemId,...details},occurrence={id:occurrenceId,...build},file=from?await currentEngineeringFile(db,project.id,from.item.id):null;
- const configuration=await configurationPlan(db,project,item,occurrence,file);
+ const item={id:itemId,...details},occurrence={id:occurrenceId,parent_id,...build},file=from?await currentEngineeringFile(db,project.id,from.item.id):null;
+ const copiedSelection=from?decode(await statement(db,"SELECT * FROM engine_selections WHERE project_id=? AND id=?",project.id,from.item.id).first()):null;
+ const selection=selectionPlan?.selection||copiedSelection;
+ const configuration=await configurationPlan(db,project,item,occurrence,file,{selection:selection?{...selection,id:itemId,project_id:project.id}:null});
  return commitProjectCommand(db,input,w=>{
   w.insert("engine_items",{id:itemId,project_id:project.id,...storedItem(details),created_at:w.createdAt});
-  w.insert("engine_occurrences",{id:occurrenceId,project_id:project.id,item_id:itemId,...storedBuild(build),sort_order:existing.length});
+  w.insert("engine_occurrences",{id:occurrenceId,project_id:project.id,item_id:itemId,...storedBuild(build),parent_id,sort_order:tree.placements.size});
   if(file)addFileLinks(w,project.id,{item_id:itemId},[file],"engineering");
-  configuration.write(w);return {itemId,occurrenceId,configurationId:configuration.id};
+  if(selectionPlan)selectionPlan.write(w,itemId);else if(copiedSelection)w.insert("engine_selections",{...copiedSelection,id:itemId,snapshot:JSON.stringify(copiedSelection.snapshot),requirements:JSON.stringify(copiedSelection.requirements)});
+  configuration.write(w);if(selectionPlan)addFileLinks(w,project.id,{configuration_id:configuration.id},selectionPlan.files);return {itemId,occurrenceId,configurationId:configuration.id};
  });
 }
 export async function editItem(db,input,project,itemId,data,{revision=false}={}){
- const context=await itemContext(db,project.id,itemId),before=itemDetails(context.item),oldBuild=buildDetails(context.occurrence);
+ const context=await itemContext(db,project.id,itemId,{occurrenceId:data.occurrenceId,requireOccurrence:true}),before=itemDetails(context.item),oldBuild=buildDetails(context.occurrence);
  const after=normalizeCustomItem(data.details===undefined?before:data.details),build=normalizeOccurrence(data.build===undefined?oldBuild:data.build);
  const changes=diffProjectItems(before,after,oldBuild,build);
+ if(!!after.is_assembly!==!!before.is_assembly)throw Error("Part and subassembly identities cannot be converted after creation.");
  if(after.part_number!==before.part_number)throw new CommandConflict("Issued part numbers are permanent and cannot be changed or reused.");
  if(!changes.length&&!revision)return unchanged(db,project,input);
- const evidence=revision?await entryEvidence(db,project,data):null,snapshot=revision?await captureProjectPart(db,project,context.item,context.occurrence):null,level=context.item.revision_level||1;
+ const evidence=revision?await entryEvidence(db,project,data):null,capture=revision?await captureProjectPart(db,project,context.item,context.occurrence):null,snapshot=capture?.snapshot,level=context.item.revision_level||1;
  await numberAvailable(db,project.id,after.part_number,itemId);
  const support=revision?await readyFiles(db,project.id,data.fileIds===undefined?[]:data.fileIds):[];
  const file=await currentEngineeringFile(db,project.id,itemId);
  const prior=await configurationPlan(db,project,context.item,context.occurrence,file);
- let next=await configurationPlan(db,project,{...context.item,...after,...(revision?{revision_level:level+1}:{})},{...context.occurrence,...build},file);
+ let next=await configurationPlan(db,project,{...context.item,...after,...(revision?{revision_level:level+1}:{})},{...context.occurrence,...build},file,{cache:prior.cache});
  if(same(prior.snapshot,next.snapshot))next=prior;
  return commitProjectCommand(db,input,w=>{
+  if(capture)capture.write(w);
   if(revision&&prior.id!==next.id)prior.write(w);
   w.update("engine_items",{...storedItem(after),...(revision?{revision_level:level+1}:{})},{project_id:project.id,id:itemId});
   w.update("engine_occurrences",storedBuild(build),{project_id:project.id,id:context.occurrence.id,removed_at:null});
   next.write(w);
   let eventId=null;
-  if(revision){eventId=addEvent(w,project.id,itemId,"revision","Revision "+level,{before:prior.id,after:next.id,level,snapshot,entryDetails:evidence.details,changes,build_context:{before:buildContext(project,context.occurrence,context.item),after:buildContext(project,{...context.occurrence,...build},{...context.item,revision_level:level+1})},source:{id:itemId,name:before.name,part_number:before.part_number}},evidence.details.whatChanged);addFileLinks(w,project.id,{event_id:eventId},[...new Map([...support,...evidence.photos].map(file=>[file.id,file])).values()]);}
+  if(revision){eventId=addEvent(w,project.id,itemId,"revision","Revision "+level,{before:prior.id,after:next.id,level,snapshot,entryDetails:evidence.details,changes,build_context:{before:buildContext(project,context.occurrence,context.item,prior.cache?.tree),after:buildContext(project,{...context.occurrence,...build},{...context.item,revision_level:level+1},prior.cache?.tree)},source:{id:itemId,name:before.name,part_number:before.part_number}},evidence.details.whatChanged);addFileLinks(w,project.id,{event_id:eventId},[...new Map([...support,...evidence.photos].map(file=>[file.id,file])).values()]);}
   return {itemId,configurationId:next.id,eventId};
  });
 }
@@ -97,7 +105,7 @@ export async function changeStepLife(db,input,project,id,restore){
  });
 }
 export async function createRecord(db,input,project,itemId,data){
- const {item,occurrence}=await itemContext(db,project.id,itemId),record=normalizeProjectRecord(data.record);
+ const {item,occurrence}=await itemContext(db,project.id,itemId,{occurrenceId:data.occurrenceId,requireOccurrence:true}),record=normalizeProjectRecord(data.record);
  const step=data.stepId?await stepRow(db,project.id,data.stepId):null;
  if(step&&(step.item_id!==itemId||step.retired_at))throw Error("Choose an active step on this item.");
  const files=await readyFiles(db,project.id,record.fileIds),id=crypto.randomUUID();
@@ -107,7 +115,7 @@ export async function createRecord(db,input,project,itemId,data){
   if(step)w.require("EXISTS(SELECT 1 FROM engine_steps WHERE project_id=? AND id=? AND item_id=? AND retired_at IS NULL)",project.id,step.id,itemId);
   w.insert("engine_records",{id,project_id:project.id,item_id:itemId,step_id:step?.id||null,configuration_id:configuration.id,type:record.type,title:record.title,fields:JSON.stringify(record.fields),event_date:record.event_date,step_snapshot:step?JSON.stringify({id:step.id,title:step.title,body:step.body}):null,created_at:w.createdAt,updated_at:w.createdAt});
   addFileLinks(w,project.id,{record_id:id},files);
-  const eventId=addEvent(w,project.id,itemId,record.type,record.title,{record_id:id,configuration_id:configuration.id,record_context:buildContext(project,occurrence,item),source:{id:itemId,name:item.name,part_number:item.part_number,step_title:step?.title||null}},Object.values(record.fields).filter(value=>typeof value==="string").join(" · ").slice(0,300));
+  const eventId=addEvent(w,project.id,itemId,record.type,record.title,{record_id:id,configuration_id:configuration.id,occurrence_id:occurrence.id,record_context:buildContext(project,occurrence,item,configuration.cache?.tree),source:{id:itemId,name:item.name,part_number:item.part_number,step_title:step?.title||null}},Object.values(record.fields).filter(value=>typeof value==="string").join(" · ").slice(0,300));
   return {recordId:id,eventId,configurationId:configuration.id};
  });
 }
@@ -132,22 +140,9 @@ export async function editRecord(db,input,project,id,data){
   return {recordId:id,eventId,configurationId:old.configuration_id};
  });
 }
-export async function restorePreview(db,project,itemId){
- const context=await itemContext(db,project.id,itemId,{active:false}),conflicts=[];
- if(context.occurrence.removed_at===null)conflicts.push("This item is already in the build.");
- try{await numberAvailable(db,project.id,context.item.part_number,itemId);}catch(error){conflicts.push(error.message);}
- return {...context,root:{id:project.id,name:project.name},conflicts,revision:project.revision};
+export async function restorePreview(db,project,itemId,occurrenceId=null){
+ const context=await itemContext(db,project.id,itemId,{active:false,occurrenceId,requireOccurrence:true});return lifePreview(db,project,context.occurrence.id,true);
 }
 export async function changeItemLife(db,input,project,itemId,restore,data={}){
- const {item,occurrence}=await itemContext(db,project.id,itemId,{active:false});
- if(restore?occurrence.removed_at===null:occurrence.removed_at!==null)return unchanged(db,project,input);
- if(restore){const preview=await restorePreview(db,project,itemId);if(preview.conflicts.length)throw new CommandConflict(preview.conflicts.join(" "));}
- const evidence=!restore?await entryEvidence(db,project,data):null,snapshot=!restore?await captureProjectPart(db,project,item,occurrence):null;
- return commitProjectCommand(db,input,w=>{
-  const path=restore?occurrence.removed_path:originalPath(project,item);
-  w.update("engine_occurrences",{removed_at:restore?null:w.createdAt,...(!restore?{removed_path:JSON.stringify(path)}:{})},{project_id:project.id,id:occurrence.id,removed_at:occurrence.removed_at});
-  const eventId=addEvent(w,project.id,itemId,restore?"restored":"archived",restore?"Restored to build":"Archived part",{path,...(!restore?{snapshot,entryDetails:evidence.details}:{}),occurrence_id:occurrence.id,source:{id:itemId,name:item.name,part_number:item.part_number}});
-  if(evidence)addFileLinks(w,project.id,{event_id:eventId},evidence.photos);
-  return {itemId,eventId};
- });
+ const context=await itemContext(db,project.id,itemId,{active:false,occurrenceId:data.occurrenceId,requireOccurrence:true});return changePlacementLife(db,input,project,context.occurrence.id,restore,data);
 }

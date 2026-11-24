@@ -93,3 +93,15 @@
   flex: 1;
   min-width: 0;
 }
+.project-tree-expander {
+  display: flex;
+  flex: 0 0 var(--space-6);
+}
+.project-tree-children {
+  list-style: none;
+  margin: 0;
+  padding-inline-start: var(--space-3);
+}
+.project-tree > .project-tree-children {
+  padding-inline-start: 0;
+}
