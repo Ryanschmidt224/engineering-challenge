@@ -131,6 +131,9 @@ textarea::placeholder {
   --font-bold: 750;
   --radius-pill: 999px;
   --section-label-inset: 1.75rem;
+  /* Label columns stay close to their values even on a wide monitor. */
+  --field-label-width: 9rem;
+  --field-label-gap: var(--space-3);
   --section-chevron-inset: 0.75rem;
   --chevron-size: 0.375rem;
   --chevron-stroke: 1.5px;

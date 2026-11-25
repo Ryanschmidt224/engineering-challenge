@@ -55,3 +55,8 @@ The owner renamed the visible Knowledge area to Bits of information. Navigation,
 ## Project summary overview
 
 The project summary reuses the part overview shell: the first project-gallery photo on the left, summary fields on the right, and the existing responsive stacking on phones. Photo management remains in the full-width gallery below. No separate project-picture storage or media migration is introduced.
+
+
+## Label/value proximity
+
+Shared editable and read-only field rows use one bounded label-width/gap policy from theme.css. The project-only percentage override is removed, so wide part controls, summary fields, settings, Workshop and information forms inherit the same rule and the existing phone stacking. This changes geometry only.

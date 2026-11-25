@@ -133,3 +133,8 @@ Active and archived record cards use `BSUI.section` for identical header typogra
 Use the shared navigation, toolbar and table control-height tokens instead of per-page button sizing. Desktop navigation lists and toolbar/table actions use 32 px targets with 2 px list gaps and 8 px toolbar gaps. Primary form actions retain the standard 44 px target. Small screens and coarse pointers raise navigation/toolbar/table targets to 44 px. Use `ui-navigation-list` for page links, category lists and instruction lists. Toolbar field rows keep label and input together with no form-row margins; stack paragraphs must not add a second vertical gap.
 
 The project tree puts Generic Part Name and issued number on one row. Specific Part Name remains the physical component name. The visible Add menu supports keyboard/touch discovery; right-clicking the project or an assembly offers the same creation choices. Show the first-use right-click hint once per browser, without blocking the editor. Drag/drop uses the existing guarded reorder/move commands and rejects descendant cycles. Keep menu-based move actions available.
+
+
+## Label/value proximity
+
+Both shared field-row components use theme-owned --field-label-width (maximum 9rem) and --field-label-gap (12px). Label columns can shrink in narrow panels but do not grow with a wide screen. Project pages and dialogs inherit these rules instead of imposing percentage widths; phone layouts retain their stacked rows. Pane navigation, image columns, data tables and multi-field calculator groups are not label/value rows and retain their own layout rules. Retained legacy forms already use bounded widths (including 140px record-entry labels); their frozen screen layouts remain separate.
