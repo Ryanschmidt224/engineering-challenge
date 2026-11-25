@@ -16,7 +16,7 @@ export function backupMetadata(manifest){
 export async function readBackupManifest(iterator,first,tableNames,onRow=null){
  const header=first?.manifest;if(first?.type!=="manifest"||!header)throw Error("Backup is missing its manifest.");
  if(header.version!==2)return header;
- if(header.format!=="building-schmidt-project"||!Array.isArray(header.tableNames)||new Set(header.tableNames).size!==header.tableNames.length||header.tableNames.some(name=>!tableNames.includes(name))||tableNames.some(name=>!["selections","archive_groups","snapshot_values"].includes(name)&&!header.tableNames.includes(name)))throw Error("Unsupported streamed backup metadata.");
+ if(header.format!=="building-schmidt-project"||!Array.isArray(header.tableNames)||new Set(header.tableNames).size!==header.tableNames.length||header.tableNames.some(name=>!tableNames.includes(name))||tableNames.some(name=>!["selections","archive_groups","snapshot_values","media"].includes(name)&&!header.tableNames.includes(name)))throw Error("Unsupported streamed backup metadata.");
  const manifest={format:header.format,version:1,project:header.project,tables:Object.fromEntries(header.tableNames.map(name=>[name,[]]))};let total=size(first),count=0;
  for(;;){
   const next=await iterator.next();if(next.done)throw Error("Backup metadata is incomplete.");const entry=next.value;

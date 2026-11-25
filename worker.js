@@ -17,6 +17,7 @@ import {handleRecipeFiles} from "./functions/api/recipe-files.js";
 import {handleProjectArchive} from "./functions/api/project-archive.js";
 import {handleArchiveStaging} from "./functions/api/archive-staging.js";
 import {backupAllProjects,handleAutomaticBackups} from "./functions/api/automatic-backups.js";
+import {backupEngineProjects} from "./functions/api/project-auto-backups.js";
 import {handleDrawings} from "./functions/api/drawings.js";
 import {isAdmin} from "./functions/api/auth.js";
 import {auth} from "./functions/api/auth.js";
@@ -110,7 +111,12 @@ export default {
     }
   },
   async scheduled(event,env,ctx){
-    ctx.waitUntil(backupAllProjects(env,new Date(event.scheduledTime)).then(result=>{
+    const when=new Date(event.scheduledTime);
+    // Daily trigger: engine projects are backed up when changed; legacy full
+    // backups keep their weekly (Sunday UTC) cadence. One failing never skips the other.
+    const legacyRun=when.getUTCDay()===0?backupAllProjects(env,when):Promise.resolve([]);
+    ctx.waitUntil(Promise.allSettled([legacyRun,backupEngineProjects(env,when)]).then(([legacy,engine])=>{
+     const result=[...(legacy.status==="fulfilled"?legacy.value:[{status:"failed",reason:String(legacy.reason)}]),...(engine.status==="fulfilled"?engine.value.map(item=>({...item,engine:true})):[{engine:true,status:"failed",reason:String(engine.reason)}])];
      console.log("Building Schmidt scheduled backup result",JSON.stringify(result));
      if(result.some(item=>item.status==="failed"))throw Error("One or more scheduled project backups failed");
     }));

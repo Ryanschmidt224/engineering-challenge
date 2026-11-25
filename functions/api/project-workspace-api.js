@@ -1,4 +1,5 @@
 import {exportProject,restoreProject} from "./project-backup.js";
+import {automaticBackupsResponse} from "./project-auto-backups.js";
 import {prepareFile,uploadFile,admitFile,downloadFile} from "./project-engine-files.js";
 import {initializeProjectEngine} from "./project-engine-migrations.js";
 import {proveProjectCommands} from "./project-engine-proof.js";
@@ -9,6 +10,7 @@ import * as commands from "./project-workspace-commands.js";
 import {historyPage,eventDetail} from "./project-history.js";
 import {placeExisting,editPlacement,lifePreview,changePlacementLife,reorderPlacements} from "./project-placements.js";
 import {workshopChoices,createWorkshopItem,selectWorkshopProduct} from "./project-workshop.js";
+import {addMedia,editMedia,removeMedia,reorderMedia} from "./project-media.js";
 import {projectBOM} from "../../assets/project-tree-model.js";
 export const engineJSON=(data,status=200)=>Response.json(data,{status,headers:{"cache-control":"private, no-store","x-content-type-options":"nosniff"}});
 export async function commandBody(request,max=256000){
@@ -53,6 +55,7 @@ export async function handleProjectWorkspace(request,env,owner){
    if(area==="bom"&&path.length===2){const state=await workspaceState(db,project);return engineJSON({rows:projectBOM(state.items,state.occurrences,url.searchParams.get("occurrence")||null)});}
    if(area==="occurrences"&&path.length===4&&["archive-preview","restore-preview"].includes(action))return engineJSON(await lifePreview(db,project,id,action==="restore-preview"));
    if(area==="export"&&path.length===2)return await exportProject(env,project);
+   if(area==="automatic-backups"&&path.length===2)return await automaticBackupsResponse(env,project,url.searchParams.get("id"));
    if(area==="files"&&path.length===3)return await downloadFile(env,project,id,url.searchParams.get("inline")==="1");
    if(path.length===2&&area==="state")return engineJSON(await workspaceState(db,project));
    if(area==="history"&&path.length===2)return engineJSON(await historyPage(db,projectId,url.searchParams));
@@ -94,6 +97,12 @@ export async function handleProjectWorkspace(request,env,owner){
     if(path.length===4&&method==="POST"&&["retire","restore"].includes(action))return engineJSON(await commands.changeStepLife(db,input,project,id,action==="restore",body));
    }
    if(area==="records"&&path.length===3&&method==="PATCH")return engineJSON(await commands.editRecord(db,input,project,id,body));
+   if(area==="media"){
+    if(path.length===2&&method==="POST")return engineJSON(await addMedia(db,input,project,body));
+    if(path.length===3&&method==="POST"&&id==="reorder")return engineJSON(await reorderMedia(db,input,project,body));
+    if(path.length===3&&method==="PATCH")return engineJSON(await editMedia(db,input,project,id,body));
+    if(path.length===4&&method==="POST"&&action==="remove")return engineJSON(await removeMedia(db,input,project,id));
+   }
   }
   return engineJSON({error:"Not found"},404);
  }catch(error){

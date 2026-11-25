@@ -135,3 +135,32 @@
   cursor: col-resize;
   touch-action: none;
 }
+/* Photo galleries: compact tiles (owner asked for smaller photos). */
+.project-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-3, 12px);
+}
+.project-media-tile {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+.project-media-image {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--surface-2, #f2f2f2);
+  cursor: zoom-in;
+}
+.project-media-tile figcaption {
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+.project-picture-holder {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+}

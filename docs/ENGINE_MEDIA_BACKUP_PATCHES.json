@@ -1,0 +1,27 @@
+{
+  "sourceIssue": "https://github.com/Ryanschmidt224/engineering-challenge/issues/74",
+  "variant": "v3 base64 comments",
+  "baseMain": "17063202f832a46803a9eb6d820231cf9dd2e4a1",
+  "application": "Decoded as binary, SHA-256 checked against each comment, then applied in order with git am; no conflicts or application source edits.",
+  "patchTree": "4548962ee2ca06c66c6f17e4cbf787ffeb4626d4",
+  "patches": [
+    {
+      "name": "0001-Store-project-and-part-photos-and-one-current-part-p.patch",
+      "comment": "https://github.com/Ryanschmidt224/engineering-challenge/issues/74#issuecomment-7150579225",
+      "bytes": 32369,
+      "sha256": "d85b92689c58e262dbb8eef946b540ddd0979dfdc5a517583f4307bcf7b088db"
+    },
+    {
+      "name": "0002-Show-project-and-part-photo-galleries-and-the-part-p.patch",
+      "comment": "https://github.com/Ryanschmidt224/engineering-challenge/issues/74#issuecomment-7150579434",
+      "bytes": 24331,
+      "sha256": "84a974ddd2fc41dc6b3e79f5ecea6df1e6ed8bead2b56bc275ab808a0a03acf2"
+    },
+    {
+      "name": "0003-Back-up-changed-engine-projects-daily-with-the-exist.patch",
+      "comment": "https://github.com/Ryanschmidt224/engineering-challenge/issues/74#issuecomment-7150579754",
+      "bytes": 21226,
+      "sha256": "be5746ec2e837685a57108dbdac6bba48fd8897ad825aa3d26c9d97d1c9f10e5"
+    }
+  ]
+}

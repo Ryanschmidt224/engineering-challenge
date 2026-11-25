@@ -48,7 +48,7 @@ export function validateManifest(manifest,projectId){
  if(Object.keys(manifest.tables).some(name=>!Object.hasOwn(columns,name)))throw Error("Backup contains unknown tables.");
  let count=0;
  for(const [name,allowed] of Object.entries(columns)){
-  if(["selections","archive_groups","snapshot_values"].includes(name)&&manifest.tables[name]===undefined)manifest.tables[name]=[];
+  if(["selections","archive_groups","snapshot_values","media"].includes(name)&&manifest.tables[name]===undefined)manifest.tables[name]=[];
   const list=manifest.tables[name];if(!Array.isArray(list))throw Error("Backup is missing "+name+".");count+=list.length;if(count>100000)throw Error("This preview recovery supports at most 100,000 metadata rows.");
   const ids=new Set();for(const row of list){if(!row||!uuid(row.id)||row.project_id!==projectId||ids.has(row.id)||Object.keys(row).some(key=>!allowed.split(" ").includes(key))||Object.values(row).some(value=>value!==null&&!["string","number"].includes(typeof value)))throw Error("Invalid or duplicate "+name+" row.");ids.add(row.id);}
  }
@@ -68,6 +68,10 @@ export function validateManifest(manifest,projectId){
  for(const record of manifest.tables.records)if(!tree.definitions.has(record.item_id)||record.step_id&&instructions.byId.get(record.step_id)?.item_id!==record.item_id)throw Error("A record has an invalid instruction owner in the backup.");
  for(const file of files.values())if(!["prepared","ready"].includes(file.state)||file.state==="ready"&&(!Number.isInteger(file.size)||file.size<0||file.size>MAX_ENGINE_FILE||!/^[a-f0-9]{64}$/.test(file.sha256)))throw Error("Invalid file metadata in backup.");
  for(const link of manifest.tables.file_links)if(!files.has(link.file_id)||files.get(link.file_id).state!=="ready")throw Error("A file link has no verified file.");
+ const pictures=new Set();for(const media of manifest.tables.media){
+  if(!["photo","picture","drawing","part_file","webpage","code"].includes(media.role)||![0,1].includes(media.active)||media.item_id!==null&&!tree.definitions.has(media.item_id)||media.role==="picture"&&media.item_id===null||!files.has(media.file_id)||files.get(media.file_id).state!=="ready")throw Error("Invalid photo or file attachment in backup.");
+  if(media.role==="picture"&&media.active){if(pictures.has(media.item_id))throw Error("A part has more than one current picture in the backup.");pictures.add(media.item_id);}
+ }
  validateSnapshotReferences(manifest.tables);
  return manifest;
 }

@@ -4,16 +4,16 @@ Current state and next step only. Keep at most three lines per PR; no dated hand
 
 ## Current
 
-Production follows main; its exact head/build is tracked by GitHub deployment checks. NEW_PROJECT_ENGINE remains off in production and enabled only for previews. No real data, files or backups are deleted or overwritten.
+Production follows main; its exact head/build is tracked by GitHub deployment checks. The owner has approved production switch-over; that approval is retained and must not be requested again. NEW_PROJECT_ENGINE remains off while integration, legacy read-only preservation and required acceptance checks are completed. No real data, files or backups are deleted or overwritten.
 
-- Batch 5a / #73, from main after merged 4b: brief-reconciled directory/sign-in, numbering previews, tree filters, read-only Parts Management with existing editors, BOM/Tools/grouping, instruction-list resizing, reviewed Workshop-copy drafts and readable HTML with a separate Archive heading.
-- Supplied Claude brief, feature map and historical disposition source map are retained in docs; later owner scope overrides their older sequencing. The signed-out page stays 401 with a static sign-in shell; no API owner checks, tables, migrations, backup protocol or save guards change. Exact head/check evidence belongs in #73.
-- Next: finish and merge #73 after checks. Claude owns the nightly-backup and photo patches, including migration 11; rebase those onto #73's final merged main before their separate review-gated PRs. Codex is not implementing either patch.
+- Claude v3 integration / `feature/engine-photos-backups-v3`: the three base64 patches from issue #74 were SHA-256 verified and applied with git am without conflicts to merged #73 main `1706320`. Exact source provenance is in ENGINE_MEDIA_BACKUP_PATCHES.json; no application code was changed beyond those patches.
+- Includes reviewed migration 11, project/part galleries, one current part picture, optional media backup metadata and daily changed-project backups. The issue #74 note is Claude's supplied review; exact local/CI evidence belongs in the integration PR. Production flag remains off in this PR.
+- Next: finish the requested PR/checks, then the automatic-backup Settings UI and legacy read-only/activation preparation under the existing review rules. Preserve the owner's switch-over approval; the real-Cloudflare run and legacy read-only boundary are still required readiness work.
 
 ## Early switch-over policy
 
-- Pre-switch order: 4b (merged) → 5a screens → nightly engine backups → project photos/part pictures. Each PR starts after the previous merges. Later Batch 5 groups wait for the owner's requested order.
-- Nightly: existing cron calls existing engine export; one .bsproject per project under automatic-backups/. No restore/recovery changes. Photos: brief's engine_item_files table, only project_photo, part_picture and photo roles, existing markup/viewer; no files/drawings/code feature work.
+- Pre-switch order: 4b and 5a (merged), then Claude's combined v3 media/backups integration requested in issue #74, then switch-over readiness work. Later Batch 5 groups wait for the owner's requested order; do not create stacked feature PRs.
+- Nightly: the existing cron calls the existing engine export for changed projects; append-only .bsproject objects under automatic-backups/engine/. Claude's reviewed schema uses engine_media with photo/picture roles in the API; later file roles are reserved in its CHECK only. Existing engine_file_links remain unchanged; no files/drawings/code feature work is added.
 - Legacy pages/data stay in place, read-only; new work goes to the engine. No deletion, import or mandatory project migration. Moving individual legacy projects is a separate optional later job. Server-enforced legacy read-only behavior still needs implementation/verification before approval.
 - Screen, wording, layout, editor and History-display changes may self-merge after Node, browser and Cloudflare preview checks pass; data tables/migrations, backup/restore and guarded-save changes still wait for Claude review. Fix later screen-review findings in the next PR.
 - Build the plainest working version. No optional hardening or rare-race work; record a one-line follow-up and move on. Preserve existing tests; add one success test per feature and one main stale-save/duplicate-submit failure case.
@@ -23,4 +23,4 @@ Production follows main; its exact head/build is tracked by GitHub deployment ch
 
 ## Switch-over approval package
 
-After the reduced prerequisites merge, give the owner one list: real-Cloudflare timing/acceptance run; 100-placement Archive rule sign-off; confirmation legacy pages are read-only and nothing was deleted. Prepare the exact activation change for approval; do not enable production beforehand.
+After the reduced prerequisites merge, provide one list: real-Cloudflare timing/acceptance run; 100-placement Archive rule disposition; confirmation legacy pages are read-only and nothing was deleted. Prepare and validate the exact activation change using the owner's already-granted switch-over approval. Do not treat that approval as a waiver of required code reviews or readiness checks.

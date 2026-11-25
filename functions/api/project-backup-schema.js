@@ -11,14 +11,16 @@ export const backupColumns={
  file_links:"id project_id file_id item_id record_id event_id configuration_id role active",
  selections:"id project_id family_id product_id family_revision product_revision snapshot requirements",
  archive_groups:"id project_id root_occurrence_id members created_at",
- snapshot_values:"id project_id kind fingerprint snapshot created_at"
+ snapshot_values:"id project_id kind fingerprint snapshot created_at",
+ media:"id project_id item_id file_id role caption sort_order active created_at removed_at"
 };
 const defaults={
  items:{short_name:"",is_tool:0,revision_level:1,is_assembly:0},
  occurrences:{parent_id:null,archive_group_id:null,quantity:1,unit:"pcs",build_status:"not_started",attention:0,attention_note:"",hidden:0,sort_order:0,removed_at:null,removed_path:null},
  steps:{body:"",sort_order:0,retired_at:null,retired_path:null,parent_id:null,is_group:0,revision_level:1,archive_reason:""},
  records:{step_id:null,event_date:null,step_snapshot:null,sort_order:0,parent_record_id:null},events:{summary:""},files:{size:null,sha256:null},
- file_links:{item_id:null,record_id:null,event_id:null,configuration_id:null,active:1},selections:{product_id:null,product_revision:null}
+ file_links:{item_id:null,record_id:null,event_id:null,configuration_id:null,active:1},selections:{product_id:null,product_revision:null},
+ media:{item_id:null,caption:"",sort_order:0,active:1,removed_at:null}
 };
 export function restoredRow(table,row,projectId,storageKey){
  const result={...defaults[table],...row,project_id:projectId};if(table==="files")result.r2_key=storageKey(result);return result;
@@ -39,6 +41,7 @@ export function backupOutline(project){
    if(table==="records")tables.records.push({...identity,item_id:row.item_id,step_id:row.step_id??null,parent_record_id:row.parent_record_id??null,sort_order:row.sort_order??0,created_at:row.created_at});
    if(table==="files")tables.files.push({...identity,state:row.state,size:row.size,sha256:row.sha256});
    if(table==="selections")tables.selections.push(identity);
+   if(table==="media")tables.media.push({...identity,item_id:row.item_id??null,file_id:row.file_id,role:row.role,active:row.active??1});
    if(table==="snapshot_values")tables.snapshot_values.push({...identity,kind:row.kind});
    if(table==="archive_groups"){const members=JSON.parse(row.members);if(!Array.isArray(members))throw Error("Invalid archive group members.");tables.archive_groups.push({...identity,root_occurrence_id:row.root_occurrence_id,members:JSON.stringify(members.map(member=>({id:member.id})))});}
   }
