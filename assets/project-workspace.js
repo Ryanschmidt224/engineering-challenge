@@ -19,6 +19,7 @@ import {downloadProjectHTML} from "./project-html-export.js";
 import {initProjectSignin} from "./project-signin.js";
 const button=(...args)=>window.BSUI.button(...args);
 export function initProjectWorkspace(root=document){
+ const environment=root.querySelector("[data-project-environment]");if(environment)environment.textContent=["buildingschmidt.com","www.buildingschmidt.com"].includes(location.hostname)?"Private notebook":"Private preview";
  initSiteHeader();let needsSignin=false,signIn;const client=createProjectClient({fetcher:async(...args)=>{const response=await fetch(...args);if(response.status===401){needsSignin=true;notify("Your session has expired. Your draft is retained.");}return response;}}),content=root.querySelector("[data-project-content]"),heading=root.querySelector("[data-page-title]"),pageActions=root.querySelector("[data-page-actions]"),notice=root.querySelector("[data-notice]"),dialog=root.querySelector("[data-project-editor]"),historyMemos=new Map(),collapsedTree=new Set();let projectId=null,itemId=null,occurrenceId=null,renderSequence=0,showHidden=false,showDocuments=true,showWorkshop=true;
  const notify=(text,extra=null)=>{notice.replaceChildren(node("span",text));if(extra)notice.append(extra);if(needsSignin)notice.append(button("Log in again",()=>signIn()));};
  signIn=initProjectSignin({onSignIn:()=>{needsSignin=false;if(dialog.open)notify("Signed in. Your draft is retained. Save again when ready.");else void refresh();},onSignOut:()=>{needsSignin=true;dialog.close();void navigate();}});
@@ -73,7 +74,8 @@ export function initProjectWorkspace(root=document){
   });const body=node("div","","project-stack");body.append(name,input,restore);return body;
  }
  async function projectList(){
-  heading.textContent="Projects";pageActions.replaceChildren(button("New project",()=>projectSettings(ctx(),{create:true}),{variant:"primary"}));const area=node("div","","project-stack");content.replaceChildren(area);
+  const legacy=node("a","Legacy projects","ui-button ui-button--quiet");legacy.href="/index.html?legacy=1#home";legacy.title="Open the previous project pages in read-only mode.";
+  heading.textContent="Projects";pageActions.replaceChildren(button("New project",()=>projectSettings(ctx(),{create:true}),{variant:"primary"}),legacy);const area=node("div","","project-stack");content.replaceChildren(area);
   const sequence=renderSequence;area.append(node("p","Loading projects…","muted"));const {projects}=await client.request("");if(sequence!==renderSequence)return;area.replaceChildren(projectCatalog(ctx(),projects));
   const backup=window.BSUI.section({title:"Restore project backup",quiet:true});backup.body.append(node("p","Restore creates a separate project with independent files. Existing projects and saved historical context stay unchanged."),restorePicker());area.append(backup.root);
  }

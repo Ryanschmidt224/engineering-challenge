@@ -10,6 +10,10 @@ Legacy GET/HEAD behavior remains subject to its existing authorization; history,
 
 Before merging this boundary, require Claude's review and passing Node/browser/preview-build checks. In deployed acceptance, verify a legacy read/export succeeds and a representative old-tab save is refused without changing the source. After that merge, tell the owner when to sign in for the real-Cloudflare run. Activate only after platform acceptance under the existing approval, verify the deployed state, and explicitly tell the owner when the new system is ready for data they want to keep.
 
+### Project entry preparation
+
+The existing owner catalog response's `readOnly: true` switches a signed-in default `/` or `/index.html#home` visit to `/project.html`. This does not enable the engine or change auth/API behavior; the production flag remains separate. Signed-out entry keeps the existing Account sign-in flow. Explicit `?legacy=1` home and `?account=1` entry are preserved, as are project and Calculator hash bookmarks. New Projects includes a Legacy projects link to that explicit read-only directory. Shared non-project headers use the default home entry, while the new engine's own header stays on its Projects page. Canonical production hosts say Private notebook; other hosts retain Private preview. Before activation, browser acceptance covers both engine-enabled routing and the disabled-engine fallback.
+
 Review and merge the existing dependency chain in order: #52 (command foundation), #53 (custom-part workflow), #65 (numbered revisions/history alignment), then #66 (assemblies/Workshop selections). Apply targeted Claude review findings before merging each PR. The broad November 23 evaluation is useful architectural feedback, not a substitute for its requested transaction/schema review. Future feature PRs should branch from main after their dependency has been integrated. The Work Instructions/records batch remains queued while the current stack is prepared for that review; no fifth feature PR is added to the chain.
 
 ## Automated acceptance
@@ -107,5 +111,7 @@ Exact historical reports live under `docs/proofs/`. Moving them does not change 
 The owner-approved revision model distinguishes the current **working draft** from **fixed historical copies**. Standard Save may alter the working state at its current number; records retain the precise configuration when recorded. Narrative **Change records** do not increment a part revision. Complete part revisions and parent-scoped Archive remain separate actions.
 
 ## Current validation
+
+The entry preparation passes 424 code checks and all 166 browser workflows locally, including enabled/disabled routing and preserved legacy, Calculator and Account entry. A separate disposable 10,000-record variant of the capacity runner's local integration scenario passes all three checks (main scenario about 88 seconds): six complete revisions, independent recovery, exact history/file verification and credential-safe failures. Its control-plane responses are simulated and its storage is local; this is a runner rehearsal, not Cloudflare timing or cutover evidence. The permanent integration test retains the 3,000-record scenario to keep routine checks shorter.
 
 The review corrections passed 315 Node/source/CSS checks and all 113 browser workflows locally. After the final saved-record configuration disclosure and help placement change, all 15 affected project browser workflows passed again. Desktop and phone screenshots were inspected. The scripted run uses the real local Worker and SQL/R2 handlers with only Cloudflare control-plane responses simulated; it is not recorded as a new live control-plane acceptance.
