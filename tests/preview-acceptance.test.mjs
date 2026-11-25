@@ -4,7 +4,7 @@ import worker from "../worker.js";
 import {TestD1} from "./helpers/d1.mjs";
 import {TestR2} from "./helpers/r2.mjs";
 import {provisionTestAccount} from "./helpers/accounts.mjs";
-import {runPreviewAcceptance,verifyBindings,previewTransport,previewOrigin} from "../scripts/preview-acceptance.mjs";
+import {runPreviewAcceptance,verifyBindings,previewTransport,previewOrigin,verifyLegacyReadOnly} from "../scripts/preview-acceptance.mjs";
 const source="https://feature-proof-test-engineering-challenge.ryanschmidt224.workers.dev",target="https://preview-proof-test-engineering-challenge.ryanschmidt224.workers.dev",account="a".repeat(32),token="disposable-control-plane-test-token";
 const databases=["3314f42f-7c04-4798-99dc-b5b97c4fb82f","d761ae08-64f2-4130-8cfa-f596e8e89b80"];
 const bindings=id=>[{name:"WORKSHOP_DB",type:"d1",database_id:id},{name:"PHOTOS",type:"r2_bucket",bucket_name:"building-schmidt-photos-preview"},{name:"NEW_PROJECT_ENGINE",type:"plain_text",text:"1"}];
@@ -29,6 +29,14 @@ async function fixture(){
 }
 test("script verifies actual version bindings before running the same foundation, custom and assembly proofs with independent restore",async()=>{
  const f=await fixture();try{const result=await runPreviewAcceptance(f.options);assert.equal(result.ok,true);assert.equal(result.foundation.checks.length,7);assert.equal(result.proofs.length,2);for(const proof of result.proofs){assert.equal(proof.source.ok,true);assert.equal(proof.restore.ok,true);assert.equal(proof.sourceIntegrity.ok,true);assert.equal(proof.restore.targetWasAbsent,true);assert.equal(proof.source.backupSha256,proof.sourceIntegrity.backupSha256);assert.deepEqual(proof.source.counts,proof.restore.counts);}const json=JSON.stringify(result);for(const secret of [token,f.options.sourceCookie,f.options.targetCookie])assert.equal(json.includes(secret),false);}finally{f.close();}
+});
+test("deployed legacy acceptance reads the catalog, rejects a harmless save and detects a missing server boundary",async()=>{
+ const f=await fixture();try{
+  const before=await f.envs[0].PHOTOS.list(),transport=previewTransport(source,f.options.sourceCookie,f.options.fetcher),report=await verifyLegacyReadOnly(transport);
+  assert.equal(report.ok,true);assert.equal(report.rejectedStatus,409);assert.equal(report.code,"LEGACY_READ_ONLY");assert.match(report.catalogSha256,/^[a-f0-9]{64}$/);assert.deepEqual(await f.envs[0].PHOTOS.list(),before);
+  const calls=[];await assert.rejects(verifyLegacyReadOnly(async(path,options={})=>{calls.push({path,...options});return options.method==="PATCH"?Response.json({error:"Invalid project request"},{status:400}):Response.json({readOnly:true,projects:[]});}),/save boundary/);
+  assert.deepEqual(JSON.parse(calls[1].body),{visibility:"public"});assert.equal(calls.length,2);
+ }finally{f.close();}
 });
 test("acceptance requires both session cookies before any network request and never attempts password login",async()=>{
  let calls=0;const fetcher=async()=>{calls++;throw Error("No network request is allowed without both sessions.");};

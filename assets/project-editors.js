@@ -7,6 +7,7 @@ import {normalizeCustomItem,normalizeOccurrence,diffCustomItems,diffProjectItems
 import {recordLabels,recordPrompts,normalizeProjectRecord} from "./project-record-model.js";
 import {instructionTree,recordTree} from "./project-instruction-model.js";
 import {recordAttachments} from "./project-record-attachments.js";
+import {automaticBackupSection} from "./project-backup-settings.js";
 export const detailsFor=item=>normalizeCustomItem({name:item.name,short_name:item.short_name,part_number:item.part_number,kind:item.kind,source:item.source,is_tool:!!item.is_tool,is_assembly:!!item.is_assembly,fields:item.fields});
 export const buildFor=occ=>normalizeOccurrence({quantity:occ.quantity,unit:occ.unit,build_status:occ.build_status,attention:!!occ.attention,attention_note:occ.attention_note,hidden:!!occ.hidden});
 const button=(...args)=>window.BSUI.button(...args);
@@ -84,6 +85,7 @@ export function projectSettings(ctx,{create=false}={}){
  const editor=editable(ctx,create?"New project":"Project settings",create?"Create project":"Save settings",()=>draft,async(data,token)=>{if(create){const projectId=newProjectId;await ctx.client.write(projectId,"","POST",data,null);await ctx.navigate(projectId);}else await ctx.client.write(ctx.projectId,"","PATCH",data,token);});
  const preview=node("p","","muted"),reserved=create?[]:ctx.client.state.items.map(item=>item.part_number),updatePreview=()=>{try{preview.textContent="Next subassembly: "+allocatePartNumber(draft,reserved,true)+" · Next part: "+allocatePartNumber(draft,reserved)+". Existing numbers stay unchanged.";}catch(error){preview.textContent=error.message;}};preview.dataset.numberPreview="";preview.setAttribute("aria-live","polite");
  const name=field("Project name",draft.name,value=>draft.name=value,{required:true}),prefix=field("Number prefix",draft.prefix,value=>{draft.prefix=value;updatePreview();}),digits=field("Minimum digits",draft.digits,value=>{draft.digits=value;updatePreview();},{type:"number"});name.querySelector("input").maxLength=180;prefix.querySelector("input").maxLength=10;digits.querySelector("input").min=1;digits.querySelector("input").max=8;digits.querySelector("input").step=1;editor.fields.append(name,node("p","Project names can contain up to 180 characters.","muted"),prefix,digits,preview);updatePreview();
+ if(!create)editor.fields.append(automaticBackupSection(ctx));
 }
 export function confirmAction(ctx,title,message,label,save){
  const editor=editable(ctx,title,label,()=>({}),(data,token)=>save(token));editor.fields.append(node("p",message));
