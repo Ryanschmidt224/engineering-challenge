@@ -1,6 +1,6 @@
 import {initSiteHeader} from "./site-header.js";
 import {createProjectClient} from "./project-client.js";
-import {node,field,checkbox,listCard} from "./workshop-ui.js";
+import {node,field,checkbox} from "./workshop-ui.js";
 import {initSplitPanes} from "./split-panes.js";
 import {detailsFor,buildFor,editItem,editRecord,projectSettings,confirmAction} from "./project-editors.js";
 import {workInstructions as instructionView} from "./project-instructions.js";
@@ -11,6 +11,10 @@ import {renderProjectTree} from "./project-tree-view.js";
 import {projectTree} from "./project-tree-model.js";
 import {renderProjectBOM} from "./project-bom-view.js";
 import {workshopPartEditor,workshopSourceView} from "./project-workshop-editor.js";
+import {projectCatalog} from "./project-catalog.js";
+import {projectSummary} from "./project-summary.js";
+import {renderProjectParts} from "./project-parts-view.js";
+import {downloadProjectHTML} from "./project-html-export.js";
 const button=(...args)=>window.BSUI.button(...args);
 export function initProjectWorkspace(root=document){
  initSiteHeader();const client=createProjectClient(),content=root.querySelector("[data-project-content]"),heading=root.querySelector("[data-page-title]"),pageActions=root.querySelector("[data-page-actions]"),notice=root.querySelector("[data-notice]"),dialog=root.querySelector("[data-project-editor]"),historyMemos=new Map(),collapsedTree=new Set();let projectId=null,itemId=null,occurrenceId=null,renderSequence=0,showHidden=false;
@@ -66,7 +70,7 @@ export function initProjectWorkspace(root=document){
  }
  async function projectList(){
   heading.textContent="Projects";pageActions.replaceChildren(button("New project",()=>projectSettings(ctx(),{create:true}),{variant:"primary"}));const area=node("div","","project-stack");content.replaceChildren(area);
-  const {projects}=await client.request("");for(const project of projects){const card=listCard("",()=>navigate(project.id));card.append(node("strong",project.name),node("small","Private project"));area.append(card);}if(!projects.length)area.append(node("p","Create a project to start a custom part and its History."));
+  const {projects}=await client.request("");area.append(projectCatalog(ctx(),projects));
   const backup=window.BSUI.section({title:"Restore project backup",quiet:true});backup.body.append(node("p","Restore creates a separate project with independent files. Existing projects and saved historical context stay unchanged."),restorePicker());area.append(backup.root);
  }
  async function refresh(){
@@ -75,15 +79,17 @@ export function initProjectWorkspace(root=document){
    if(!projectId){await projectList();return;}
    const state=await client.load(projectId);if(sequence!==renderSequence)return;heading.textContent=state.project.name;if(itemId&&!occurrenceId)occurrenceId=state.occurrences.find(row=>row.item_id===itemId&&row.removed_at===null)?.id||null;
    const exportLink=node("a","Export project","ui-button");exportLink.href="/api/project-engine/projects/"+projectId+"/export";
-   pageActions.replaceChildren(button("All projects",()=>navigate()),...(["history","bom"].includes(url.searchParams.get("view"))?[button("Back to build",()=>navigate(projectId))]:[]),button("Project settings",()=>projectSettings(ctx())),button("Project history",()=>openHistory()),button("Open BOM",()=>navigate(projectId,null,"bom")),exportLink);
+   const exportHTML=button("Export readable HTML",async()=>{const id=projectId;exportHTML.disabled=true;try{await downloadProjectHTML(id);notify("Readable HTML exported. Keep a .bsproject export for recovery.");}catch(error){notify(error.message);}finally{exportHTML.disabled=false;}});
+   pageActions.replaceChildren(button("All projects",()=>navigate()),...(["history","bom","parts"].includes(url.searchParams.get("view"))?[button("Back to build",()=>navigate(projectId))]:[]),button("Project settings",()=>projectSettings(ctx())),button("Project history",()=>openHistory()),button("Parts Management",()=>navigate(projectId,null,"parts")),button("Open BOM",()=>navigate(projectId,null,"bom")),exportLink,exportHTML);
    if(url.searchParams.get("view")==="history"){
     const memo=historyMemos.get(projectId)||{mode:"history",scope:itemId||"",type:"all",q:"",entries:[],cursor:null,selected:null,scroll:0};historyMemos.set(projectId,memo);content.replaceChildren(createHistoryView(ctx(),memo));return;
    }
    if(url.searchParams.get("view")==="bom"){content.replaceChildren(renderProjectBOM(ctx(),occurrenceId));return;}
+   if(url.searchParams.get("view")==="parts"){content.replaceChildren(renderProjectParts(ctx()));return;}
    const panes=node("div","","project-panes"),tree=renderProjectTree(ctx(),{showHidden,onShowHidden:value=>{showHidden=value;void refresh();},selectedOccurrence:occurrenceId,collapsed:collapsedTree}),main=node("div","","project-main project-stack");panes.append(tree,main);content.replaceChildren(panes);
    initSplitPanes(panes,{key:"project-workspace",panes:[{key:"tree",selector:".project-tree",name:"feature tree"}]});
    if(itemId)await renderPart(main,itemId);else{
-    main.append(information("Project",[["Name",state.project.name],["Active parts",state.occurrences.filter(row=>row.removed_at===null).length],["Number format",state.project.prefix+"0".repeat(state.project.digits)]]),node("p","Choose a part to view its details, work instructions and History."));
+    main.append(information("Project",[["Name",state.project.name],["Active parts",state.occurrences.filter(row=>row.removed_at===null).length],["Number format",state.project.prefix+"0".repeat(state.project.digits)]]),projectSummary(ctx()),node("p","Choose a part to view its details, work instructions and History."));
     const history=window.BSUI.section({title:"History",role:"project-history"}),archived=state.occurrences.filter(row=>row.removed_at!==null),folder=window.BSUI.section({title:"Archive",role:"archive-folder",count:archived.length+state.steps.filter(row=>row.retired_at).length});folder.body.append(button("Open Archive",()=>openHistory("",null,"archive")));history.body.append(folder.root);main.append(history.root);
    }
   }catch(error){notify(error.status===401?"Sign in through Account on Projects, then return to this preview.":error.message);return false;}
