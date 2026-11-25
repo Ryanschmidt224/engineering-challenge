@@ -28,6 +28,17 @@ export function previewTransport(origin,cookie,fetcher=fetch){
  };
 }
 async function readJSON(fetcher,path,options){const response=await fetcher(path,options);requireValue(response.ok,"Preview request failed (HTTP "+response.status+"). No acceptance is claimed.");return response.json();}
+export async function verifyLegacyReadOnly(fetcher){
+ const catalogPath="/api/projects?includeArchived=1",beforeResponse=await fetcher(catalogPath);requireValue(beforeResponse.ok,"Legacy project catalog must remain readable.");
+ const before=await beforeResponse.text(),catalog=JSON.parse(before);requireValue(catalog.readOnly===true&&Array.isArray(catalog.projects),"The legacy catalog must explicitly report read-only mode.");
+ // Deliberately invalid even without the boundary: legacy projects require
+ // private visibility and a valid project identity. No real edit is prepared.
+ const denied=await fetcher("/api/projects",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({visibility:"public"})});
+ requireValue(denied.status===409&&(await denied.json()).code==="LEGACY_READ_ONLY","The deployed legacy save boundary did not refuse the harmless probe.");
+ const after=await fetcher(catalogPath);requireValue(after.ok&&await after.text()===before,"The legacy catalog changed during its read-only check.");
+ const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(before)),catalogSha256=Array.from(new Uint8Array(digest),value=>value.toString(16).padStart(2,"0")).join("");
+ return {ok:true,projectCount:catalog.projects.length,catalogSha256,rejectedStatus:409,code:"LEGACY_READ_ONLY",checks:["Legacy catalog is readable and declares read-only mode","An invalid save probe is refused by the server boundary","Catalog response is byte-for-byte unchanged after the probe"]};
+}
 export async function runPreviewAcceptance({source,target,account,worker="engineering-challenge",token,sourceCookie,targetCookie,fetcher=fetch,progress=()=>{}}){
  const sourceOrigin=previewOrigin(source),targetOrigin=previewOrigin(target);
  requireValue(sourceOrigin!==targetOrigin,"Source and recovery previews must be different.");
@@ -45,6 +56,7 @@ export async function runPreviewAcceptance({source,target,account,worker="engine
  }
  for(const path of ["/api/project-engine/environment","/api/project-engine/proof","/project.html"]){const response=await fetcher("https://buildingschmidt.com"+path,{redirect:"error",signal:AbortSignal.timeout(30000)});requireValue(response.status===404,"Production must keep new-engine routes disabled before this preview proof.");}
  const stable=async index=>{const now=await readJSON(transports[index],"/api/project-engine/environment");requireValue(now.versionId===bindings[index].versionId,"The preview deployment changed during acceptance. Retain the partial evidence and rerun on stable deployments.");};
+ const legacyReadOnly=[];for(let index=0;index<2;index++){progress("Checking deployed legacy read-only preservation…");await stable(index);legacyReadOnly.push({environment:origins[index],...await verifyLegacyReadOnly(transports[index])});await stable(index);}
  progress("Running guarded D1 command proof and identical replay…");await stable(0);
  const proofBody={operationId:crypto.randomUUID(),expectedRevision:null},proofOptions={method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(proofBody)};
  const foundation=await readJSON(transports[0],"/api/project-engine/proof",proofOptions),replayed=await readJSON(transports[0],"/api/project-engine/proof",proofOptions);
@@ -58,7 +70,7 @@ export async function runPreviewAcceptance({source,target,account,worker="engine
   const sourceIntegrity=await verifySourceRecoveryProof(sourceResult.backup,{fetcher:transports[0],environment:sourceOrigin});await stable(0);
   pair.push({name,source:sourceResult.report,restore:restored,sourceIntegrity});
  }
- return {ok:true,checkedAt:new Date().toISOString(),bindingEvidence:"Cloudflare version API checked before proof writes; runtime identities rechecked at each phase.",deployments:bindings,foundation,proofs:pair};
+ return {ok:true,checkedAt:new Date().toISOString(),bindingEvidence:"Cloudflare version API checked before proof writes; runtime identities rechecked at each phase.",deployments:bindings,legacyReadOnly,foundation,proofs:pair};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
  try{

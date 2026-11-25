@@ -6,9 +6,9 @@ Current state and next step only. Keep at most three lines per PR; no dated hand
 
 Production follows main; its exact head/build is tracked by GitHub deployment checks. The owner has approved production switch-over; that approval is retained and must not be requested again. NEW_PROJECT_ENGINE remains off while integration, legacy read-only preservation and required acceptance checks are completed. No real data, files or backups are deleted or overwritten.
 
-- #75–#78 merged under the existing review rules and passing checks; latest main is `14acc73`. The read-only boundary, media/daily backups, operator workflow and Settings backup downloads are integrated. Live capacity execution and production activation have not been performed.
+- #75–#79 merged under the existing review rules and passing checks; latest main is `90b656f`. The read-only boundary, media/daily backups, operator workflow, Settings backup downloads and enabled-engine entry are integrated. Live capacity execution and production activation have not been performed.
 - Manual custom-part source/recovery/unchanged-source checks passed for `8fedb3e8-de11-4f59-b81d-80227372a6a9`; exact reports/builds and owner-checked binding names are in proofs/PROJECT_CUTOVER_ACCEPTANCE.json. Secure operator access and actual scripted capacity/CPU/SQL/trigger-state measurements remain pending; the owner accepted the Archive limit and approved activation.
-- `feature/project-entry-preparation`: signed-in default home follows the enabled engine, with an explicit legacy-directory link and preserved project/Calculator/Account routes. Local checks: 424 code and 166 browser pass; CI is next. The separate 10,000-record/six-revision operator rehearsal passes locally, not on Cloudflare. Then prepare the held activation change; keep production off until readiness passes.
+- `feature/project-legacy-acceptance`: add deployed legacy catalog/read-only/unchanged-response checks to the operator runner using an intentionally invalid save probe. No API/save behavior changes. All 425 code checks pass locally; CI is next. Then align the isolated previews and prepare the held activation change; keep production off until readiness passes.
 
 ## Early switch-over policy
 

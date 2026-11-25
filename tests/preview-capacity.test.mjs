@@ -35,6 +35,7 @@ test("capacity runner measures real handlers, six complete revisions and indepen
  const f=await platform(t),checkpoints=[];
  const report=await runPreviewCapacity(f.options,{recordCounts:[3000],onCheckpoint:async value=>checkpoints.push(value.phase)});
  assert.equal(report.ok,true,JSON.stringify(report.failure));assert.equal(report.functionalAcceptance.ok,true);
+ assert.equal(report.functionalAcceptance.legacyReadOnly.length,2);for(const check of report.functionalAcceptance.legacyReadOnly)assert.equal(check.rejectedStatus,409);
  const sample=report.scenarios[0];assert.equal(sample.ok,true);assert.equal(sample.recordCount,3000);assert.equal(sample.ordinarySaveSamplesMs.length,5);
  assert.equal(sample.revisionSamples.length,6);assert.equal(new Set(sample.revisionSamples.map(row=>row.snapshotSha256)).size,6);
  assert.ok(sample.frozenValueRows>=6000);assert.equal(sample.counts.records,3000);assert.equal(sample.restoreProof.counts.records,3000);
