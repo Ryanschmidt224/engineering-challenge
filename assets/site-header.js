@@ -28,4 +28,16 @@ export function initSiteHeader() {
     for (const item of nav.children) item.dataset.page === current ? item.setAttribute("aria-current", "page") : item.removeAttribute("aria-current");
   };
   update(); window.addEventListener("hashchange", update);
+  // Shared pages must follow the active engine, including an engine rollback.
+  if (header.dataset.siteHeader !== "home") {
+    fetch("/api/projects", {credentials:"same-origin", cache:"no-store"}).then(response => response.ok ? response.json() : null).then(data => {
+      if (data?.readOnly !== true) return;
+      brand.href = "/project.html"; delete brand.dataset.nav;
+      const old = nav.querySelector('[data-page="home"]');
+      const link = make("a", "ui-site-nav__item", "Projects");
+      link.dataset.page = "home"; link.href = "/project.html";
+      if (old.hasAttribute("aria-current")) link.setAttribute("aria-current", "page");
+      old.replaceWith(link);
+    }).catch(() => {});
+  }
 }
