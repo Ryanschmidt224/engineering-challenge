@@ -12,7 +12,7 @@ export function initSiteHeader() {
   if (projectPage) brand.dataset.nav = "home";
   brand.append(make("span", "", "SCHMIDT"));
   const nav = make("nav", "ui-site-nav"); nav.setAttribute("aria-label", "Main navigation");
-  for (const [id, label, href] of [["home", "Projects", projectHref], ["knowledge", "Knowledge", "knowledge.html"], ["commonparts", "The Workshop", "workshop.html"], ["calculators", "Calculators", "calculators.html"]]) {
+  for (const [id, label, href] of [["home", "Projects", projectHref], ["knowledge", "Bits of information", "knowledge.html"], ["commonparts", "The Workshop", "workshop.html"]]) {
     const item = make(projectPage ? "button" : "a", "ui-site-nav__item", label);
     item.dataset.page = id;
     if (projectPage) { item.type = "button"; item.dataset.nav = id; } else item.href = href;
@@ -24,7 +24,7 @@ export function initSiteHeader() {
   inner.append(brand, nav, account); header.append(inner);
   const update = () => {
     const route = location.hash.slice(1);
-    const current = projectPage ? (route === "calculators" ? "calculators" : "home") : header.dataset.siteHeader;
+    const current = projectPage ? (route === "calculators" ? "knowledge" : "home") : header.dataset.siteHeader === "calculators" ? "knowledge" : header.dataset.siteHeader;
     for (const item of nav.children) item.dataset.page === current ? item.setAttribute("aria-current", "page") : item.removeAttribute("aria-current");
   };
   update(); window.addEventListener("hashchange", update);

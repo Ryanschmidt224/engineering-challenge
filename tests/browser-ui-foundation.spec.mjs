@@ -13,7 +13,7 @@ for (const width of [1440, 390]) test("shared headers, controls and collapsed su
   for (const path of ["/index.html#home", "/workshop.html", "/knowledge.html"]) {
     await page.goto(path);
     await expect(page.locator(".ui-site-account")).toBeVisible();
-    await expect(page.locator(".ui-site-nav__item")).toHaveText(["Projects", "Knowledge", "The Workshop", "Calculators"]);
+    await expect(page.locator(".ui-site-nav__item")).toHaveText(["Projects", "Bits of information", "The Workshop"]);
     headers.push(await page.locator(".ui-site-header").evaluate(el => {
       const b = el.getBoundingClientRect(), brand = el.querySelector(".ui-site-brand"), nav = el.querySelector(".ui-site-nav__item");
       return {height: b.height, background: getComputedStyle(el).backgroundColor, logo: getComputedStyle(brand).fontSize, text: getComputedStyle(nav).fontSize};
@@ -210,7 +210,7 @@ test("one project template supports built-in and new project routes without dupl
 
 test("Calculators uses its own route and preserves the existing calculation forms",async({page})=>{
  await page.goto("/#home");
- await page.getByRole("button",{name:"Calculators",exact:true}).click();
+ await page.goto("/index.html#calculators");
  await expect(page).toHaveURL(/#calculators$/);
  await expect(page.locator("#calculators")).toBeVisible();
  await expect(page.getByRole("heading",{name:"Calculators",exact:true})).toBeVisible();
@@ -219,7 +219,7 @@ test("Calculators uses its own route and preserves the existing calculation form
  await page.getByLabel("Voltage (V)",{exact:true}).fill("12");
  await page.getByLabel("Resistance (Ω)",{exact:true}).fill("6");
  await expect(page.locator(".calculator-output").filter({hasText:"Current"})).toHaveText("Current 2 A · Power 24 W");
- await expect(page.locator(".ui-site-nav__item[aria-current=page]")).toHaveText("Calculators");
+ await expect(page.locator(".ui-site-nav__item[aria-current=page]")).toHaveText("Bits of information");
 });
 
 

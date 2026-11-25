@@ -28,11 +28,11 @@ async function refresh(){data=await requestWorkshop();renderNavigation();}
 const knowledgeNoun={family:"family",product:"product",use:"project part"};
 const knowledgeVia={use:"this part",product:"product",family:"family"};
 function renderKnowledge(type,id){
- const section=panel("Knowledge");detail.append(section);
- const create=node("a","New knowledge tile for this "+knowledgeNoun[type],"button");create.href="knowledge.html?new=1&link="+type+":"+encodeURIComponent(id);
+ const section=panel("Bits of information");detail.append(section);
+ const create=node("a","New information tile for this "+knowledgeNoun[type],"button");create.href="knowledge.html?new=1&link="+type+":"+encodeURIComponent(id);
  void requestWorkshop("/api/knowledge?related="+type+"&id="+encodeURIComponent(id)).then(result=>{
   if(!section.isConnected)return;
-  section.querySelector("h3").textContent="Knowledge ("+result.tiles.length+")";
+  section.querySelector("h3").textContent="Bits of information ("+result.tiles.length+")";
   const list=node("div","","knowledge-list");
   for(const tile of result.tiles){
    const entry=node("a","","list-card");entry.href="knowledge.html?tile="+encodeURIComponent(tile.id);
@@ -40,9 +40,9 @@ function renderKnowledge(type,id){
    entry.append(node("strong",tile.title),node("small",[labelFor(tileTypes,tile.type),labelFor(tileStatuses,tile.status),...reasons].join(" · ")),node("small",tile.summary));
    list.append(entry);
   }
-  if(!result.tiles.length)list.append(node("p","No knowledge linked yet. Lessons, methods and concepts about this "+knowledgeNoun[type]+" appear here.","empty"));
+  if(!result.tiles.length)list.append(node("p","No information linked yet. Lessons, methods and concepts about this "+knowledgeNoun[type]+" appear here.","empty"));
   section.append(list,actions(create));
- }).catch(error=>{if(section.isConnected)section.append(node("p","Knowledge could not load: "+error.message,"error"),actions(create));});
+ }).catch(error=>{if(section.isConnected)section.append(node("p","Bits of information could not load: "+error.message,"error"),actions(create));});
 }
 function updateLocation(){
  const url=new URL(location.href);url.searchParams.delete("edit");

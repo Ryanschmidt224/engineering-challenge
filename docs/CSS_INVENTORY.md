@@ -35,4 +35,4 @@ After the owner-approved cleanup, project markup is one inert template and all p
 
 ## Calculator separation
 
-Calculator form rules now live in calculators.css, loaded by calculators.html and the retained index calculator route. Their former site.css rules are removed, rather than overridden. The standalone page loads theme/base/components/ui-kit/project-directory/calculators styles and does not load site*.css or legacy project controllers. Existing inventory totals above describe the earlier measured baseline, not this new page.
+Calculator form rules now live in calculators.css, loaded by the Bits of information calculator section, calculators.html and the retained index calculator route. Their former site.css rules are removed, rather than overridden. The standalone page loads theme/base/components/ui-kit/project-directory/calculators styles and does not load site*.css or legacy project controllers. Existing inventory totals above describe the earlier measured baseline, not this new page.

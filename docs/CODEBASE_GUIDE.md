@@ -16,7 +16,7 @@ This is a private single-owner HTML/CSS/JavaScript site hosted on Cloudflare Wor
 | Project UI owners | `project-tree-view.js`, `project-bom-view.js`, `project-editors.js`, `project-instructions.js`, `project-history-view.js` (in `assets/`) | Tree, BOM, editors, instructions and History; use existing guarded client commands |
 | Active project persistence | `functions/api/project-engine.js`, `project-command.js`, `project-*-commands.js` | Owner guards, atomic command admission and D1 changes; see the detailed engine contracts below |
 | Active project backup/recovery | `functions/api/project-backup.js`, `project-restore-staging.js` and their supporting modules | Complete metadata and immutable files; changes require recovery review |
-| Calculators | `calculators.html`, `assets/calculators.js`, `calculator-catalog.js`, `calculator-directory.js`, `calculators.css` | Independent page and shared definitions/forms; no legacy project bootstrap |
+| Calculators | `knowledge.html#calculators`, `assets/calculators.js`, `calculator-catalog.js`, `calculator-directory.js`, `calculators.css` | Collapsed section inside Bits of information; standalone/legacy URLs remain compatible; no legacy bootstrap for the embedded section |
 | Retained legacy HTML | `index.html` | Legacy project views, account UI and compatibility calculator route; classic script order remains intentional |
 | Shared header | `assets/site-header.js` | ES module; explicit `initSiteHeader()` from each page, one branding/navigation/account structure |
 | Legacy site entrypoint | `assets/site.js` | Main navigation, learning tiles, admin/login, photo setup, controller initialization |

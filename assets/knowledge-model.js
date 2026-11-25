@@ -28,7 +28,7 @@ export const relations = [
 // family (the current project-part model); "record" is a top-level project
 // record (test, problem, note) and is identified together with its project.
 export const targets = [
-  {value: "tile", label: "Knowledge tile"},
+  {value: "tile", label: "Information tile"},
   {value: "family", label: "Workshop family"},
   {value: "product", label: "Workshop product"},
   {value: "use", label: "Project part"},
