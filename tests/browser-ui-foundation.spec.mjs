@@ -31,7 +31,7 @@ for (const width of [1440, 390]) test("shared headers, controls and collapsed su
   await expect(page.getByRole("button", {name: "+ New project", exact: true})).toBeVisible();
   const controls = await page.locator(".ui-directory-toolbar .ui-control, .ui-directory-toolbar > .ui-button, .ui-toolbar-menu > summary").evaluateAll(els => els.filter(el => el.getClientRects().length).map(el => ({height: el.getBoundingClientRect().height, font: getComputedStyle(el).fontSize})));
   expect(controls.length).toBeGreaterThanOrEqual(4);
-  for (const c of controls) { expect(c.height).toBe(44); expect(c.font).toBe("14px"); }
+  for (const c of controls) { expect(c.height).toBe(width===390?44:32); expect(c.font).toBe("14px"); }
   await page.goto("/index.html#launcher");
   const summary = page.locator("#launcher .project-summary-page");
   await expect(summary).toBeVisible();

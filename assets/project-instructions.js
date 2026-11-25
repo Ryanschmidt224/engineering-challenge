@@ -41,7 +41,7 @@ export function workInstructions(ctx,item){
    render(step.id,block.body);block.body.append(revisions(ctx,item,step));holder.append(block.root);
   }
  }
- const panes=node("div","","project-panes project-instruction-panes"),list=node("nav","","project-instruction-list project-stack"),detail=node("div","","project-main project-stack");list.setAttribute("aria-label","Instruction list");panes.append(list,detail);section.body.append(panes);let selected=null;
+ const panes=node("div","","project-panes project-instruction-panes"),list=node("nav","","project-instruction-list project-stack ui-navigation-list"),detail=node("div","","project-main project-stack");list.setAttribute("aria-label","Instruction list");panes.append(list,detail);section.body.append(panes);let selected=null;
  const choose=value=>{selected=value;for(const button of list.querySelectorAll("button"))button.setAttribute("aria-current",String(button.dataset.instruction===(selected||"")));detail.replaceChildren();render(null,detail,selected);};
  const addChoice=(title,id)=>{const entry=button(title,()=>choose(id),{variant:"quiet"});entry.dataset.instruction=id||"";entry.setAttribute("aria-label",id?"Show instruction "+title:title);list.append(entry);};addChoice("All instructions",null);for(const step of tree.children(null).filter(tree.active))addChoice(step.title,step.id);choose(null);initSplitPanes(panes,{key:"project-instructions",panes:[{key:"instructions",selector:".project-instruction-list",name:"instruction list"}]});
  const retired=[...tree.byId.values()].filter(row=>row.retired_at&&(!row.parent_id||tree.active(tree.byId.get(row.parent_id))));

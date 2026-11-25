@@ -49,9 +49,9 @@ for(const width of [1440,390])test("container identity and familiar field groups
  await page.goto("/project.html?"+new URLSearchParams({project:f.id,item:f.part.itemId,occurrence:f.part.occurrenceId}));
  await page.locator('[data-section="details"] > summary').click();await page.getByRole("button",{name:"Edit part details",exact:true}).click();
  const editor=page.getByRole("dialog",{name:"Edit part details",exact:true});
- await expect(editor.locator("legend")).toHaveText(["Container","Part details","Display options"]);
- await expect(editor.getByLabel("Part name",{exact:true})).toHaveValue("A very long mounting bracket");
- await editor.getByLabel("Container (name)",{exact:true}).fill("Mounting bracket");
+ await expect(editor.locator("legend")).toHaveText(["Item identity","Part details","Display options"]);
+ await expect(editor.getByLabel("Specific Part Name",{exact:true})).toHaveValue("A very long mounting bracket");
+ await editor.getByLabel("Generic Part Name",{exact:true}).fill("Mounting bracket");
  await editor.getByLabel("Purpose (optional)",{exact:true}).fill("Hold the controller in place");
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0);
  await page.screenshot({path:testInfo.outputPath("familiar-editor.png"),fullPage:true});
@@ -61,4 +61,26 @@ for(const width of [1440,390])test("container identity and familiar field groups
  const saved=(await f.state()).items.find(item=>item.id===f.part.itemId);expect(saved.name).toBe("A very long mounting bracket");expect(saved.short_name).toBe("Mounting bracket");expect(saved.fields.purpose).toBe("Hold the controller in place");expect(saved.revision_level).toBe(1);
  await page.locator('[data-section="details"] > summary').click();await expect(page.locator('[data-section="details"]')).toContainText("A very long mounting bracket");
  await page.screenshot({path:testInfo.outputPath("familiar-container.png"),fullPage:true});
+});
+
+test("summary is visible before its fresh state read finishes and still receives newer changes",async({page,request,context})=>{
+ const f=await setup(page,request,context);await page.goto("/project.html?"+new URLSearchParams({project:f.id,item:f.part.itemId,occurrence:f.part.occurrenceId}));await expect(page.locator(".project-part-identity")).toBeVisible();
+ let release;const gate=new Promise(resolve=>release=resolve);let reads=0;await page.route("**/api/project-engine/projects/"+f.id+"/state",async route=>{reads++;await gate;await route.continue();});
+ await page.getByRole("button",{name:"Project summary",exact:true}).click();await expect(page.locator(".project-summary-overview")).toBeVisible();await expect(page.locator("[data-notice]")).toContainText("Refreshing project");expect(reads).toBe(1);
+ const before=await f.state(),renamed=await context.request.patch(f.base,{headers:{origin:"http://127.0.0.1:4173"},data:{operationId:crypto.randomUUID(),expectedRevision:before.project.revision,name:"Freshly revalidated notebook"}});expect(renamed.ok()).toBe(true);release();await expect(page.locator("[data-page-title]")).toHaveText("Freshly revalidated notebook");expect((await f.state()).items).toEqual(before.items);
+});
+
+test("compact tree Add menu and contextual creation show the right-click hint once",async({page,request,context})=>{
+ const f=await setup(page,request,context),tree=page.getByRole("navigation",{name:"Feature tree",exact:true});await page.evaluate(()=>localStorage.removeItem("bs-tree-add-hint"));await page.reload();
+ await expect(tree.getByRole("button",{name:"Add item",exact:true})).toBeVisible();await expect(tree.getByRole("button",{name:"Add custom part",exact:true})).toHaveCount(0);
+ await tree.getByRole("button",{name:"Add item",exact:true}).click();await page.getByRole("menuitem",{name:"Add custom part",exact:true}).click();await expect(page.getByRole("tooltip")).toContainText("right-click");await page.getByRole("button",{name:"Cancel",exact:true}).click();
+ await tree.locator('[data-occurrence-id="'+f.assembly.occurrenceId+'"]').click({button:"right"});await page.getByRole("menuitem",{name:"Add subassembly",exact:true}).click();await expect(page.getByRole("tooltip")).toHaveCount(0);await expect(page.getByLabel("Parent subassembly",{exact:true})).toHaveValue(f.assembly.occurrenceId);await page.getByRole("button",{name:"Cancel",exact:true}).click();
+});
+
+test("tree drag changes order and parent through guarded saves and rejects cycles",async({page,request,context})=>{
+ const f=await setup(page,request,context),tree=page.getByRole("navigation",{name:"Feature tree",exact:true}),row=id=>tree.locator('[data-occurrence-id="'+id+'"]');
+ const second=await f.write("/items",{details:{name:"Second assembly",is_assembly:true}});await page.reload();
+ await row(f.part.occurrenceId).dragTo(row(second.occurrenceId));await expect(page.locator("[data-notice]")).toHaveText("Feature tree saved.");expect((await f.state()).occurrences.find(row=>row.id===f.part.occurrenceId).parent_id).toBe(second.occurrenceId);
+ await page.reload();await row(second.occurrenceId).dragTo(row(f.assembly.occurrenceId));await expect(page.locator("[data-notice]")).toHaveText("Feature tree saved.");expect((await f.state()).occurrences.find(row=>row.id===second.occurrenceId).parent_id).toBe(f.assembly.occurrenceId);
+ const before=await f.state();await row(f.assembly.occurrenceId).dragTo(row(second.occurrenceId));expect(await f.state()).toEqual(before);
 });

@@ -126,3 +126,10 @@ The current alternative selector is labeled **Select Alternative**, as explicitl
 The latest revision-display preference supersedes the earlier table request: use one chevron entry per saved copy with date and What changed in the header. Counts say `saved`; the working level is group metadata. Preserve all snapshots and saved numbers; this removes duplicate presentation, not stored records. Align the gated engine preview with this preference when its stack is integrated.
 
 Active and archived record cards use `BSUI.section` for identical header typography, padding and chevrons. Their shared small Edit action stays in the header; the archived record's destructive action sits inside its expanded body so it cannot enlarge the header. No custom archived-header style or extra record shell is retained.
+
+
+### Density by control purpose
+
+Use the shared navigation, toolbar and table control-height tokens instead of per-page button sizing. Desktop navigation lists and toolbar/table actions use 32 px targets with 2 px list gaps and 8 px toolbar gaps. Primary form actions retain the standard 44 px target. Small screens and coarse pointers raise navigation/toolbar/table targets to 44 px. Use `ui-navigation-list` for page links, category lists and instruction lists. Toolbar field rows keep label and input together with no form-row margins; stack paragraphs must not add a second vertical gap.
+
+The project tree puts Generic Part Name and issued number on one row. Specific Part Name remains the physical component name. The visible Add menu supports keyboard/touch discovery; right-clicking the project or an assembly offers the same creation choices. Show the first-use right-click hint once per browser, without blocking the editor. Drag/drop uses the existing guarded reorder/move commands and rejects descendant cycles. Keep menu-based move actions available.

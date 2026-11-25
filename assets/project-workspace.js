@@ -26,7 +26,7 @@ export function initProjectWorkspace(root=document){
  signIn=initProjectSignin({onSignIn:()=>{needsSignin=false;if(dialog.open)notify("Signed in. Your draft is retained. Save again when ready.");else void refresh();},onSignOut:()=>{needsSignin=true;dialog.close();void navigate();}});
  const ctx=()=>({client,projectId,itemId,occurrenceId,dialog,notify,refresh,navigate,signIn:()=>signIn(),openHistory,openArchive:()=>openHistory("",null,"archive")});
  async function navigate(id=null,item=null,view="part",occurrence=null){
-  const url=new URL(location.href);url.search="";if(id)url.searchParams.set("project",id);if(item)url.searchParams.set("item",item);if(occurrence)url.searchParams.set("occurrence",occurrence);if(view!=="part")url.searchParams.set("view",view);history.pushState(null,"",url);return refresh();
+  const url=new URL(location.href);url.search="";if(id)url.searchParams.set("project",id);if(item)url.searchParams.set("item",item);if(occurrence)url.searchParams.set("occurrence",occurrence);if(view!=="part")url.searchParams.set("view",view);history.pushState(null,"",url);return refresh({preview:!item&&view==="part"});
  }
  async function openHistory(scope=undefined,selected=undefined,mode="history"){
   const memo=historyMemos.get(projectId)||{mode:"history",scope:"",type:"all",q:"",entries:[],cursor:null,selected:null,scroll:0};
@@ -60,7 +60,7 @@ export function initProjectWorkspace(root=document){
   headerControls.append(field("Status",occ.build_status,value=>updateBuild({build_status:value}),{options:[{value:"not_started",label:"Not started"},{value:"in_progress",label:"In progress"},{value:"complete",label:"Complete"}]}),quantity,checkbox("Needs attention",!!occ.attention,value=>updateBuild({attention:value})));identity.append(headerControls);
   const details=window.BSUI.section({title:"Part details",role:"details"}),duplicate=button("Duplicate part",()=>action("/items/"+item.id+"/duplicate",{},"Independent copy added."));
   const selected=state.selections.some(row=>row.id===item.id),copy=node("a","Copy to Workshop","ui-button");copy.href="workshop.html?"+new URLSearchParams({copyEngineProject:projectId,copyPart:item.id,returnProject:location.pathname+location.search});
-  window.BSUI.sectionActions(details.body,{primary:button("Edit part details",()=>editItem(context,item,occ)),secondary:[...(!item.is_assembly?[duplicate]:[]),...(selected?[button("Change Workshop selection",()=>workshopPartEditor(context,{item}))]:item.kind==="part"&&!item.is_assembly?[copy]:[])]});details.body.append(information("Container",[["Item type",item.is_assembly?"Subassembly":item.kind],["Container (name)",containerName(item)],["Part number",item.part_number],["Purpose (optional)",item.fields.purpose]]),configurationView({snapshot:{item,occurrence:{...occ,root:{name:state.project.name}}}},"Part details",{includeBuild:false,includeContainer:false}),information("Display options",[["Quantity",occ.quantity+" "+occ.unit],["Status",occ.build_status.replaceAll("_"," ")],["Needs attention",occ.attention?"Yes":"No"],["Attention note",occ.attention_note],["Hide from feature tree?",occ.hidden?"Yes":"No"]]));container.append(details.root);const source=workshopSourceView(context,item);if(source)container.append(source);if(item.is_assembly){const assembly=window.BSUI.section({title:"Subassembly",role:"subassembly"});assembly.body.append(button("Add custom part",()=>editItem(context,null,null,{parentId:occ.id})),button("Add subassembly",()=>editItem(context,null,null,{assembly:true,parentId:occ.id})),button("Add Workshop part",()=>workshopPartEditor(context,{parentId:occ.id})),button("Open subassembly BOM",()=>navigate(projectId,item.id,"bom",occ.id)),button("Open Archive",()=>openHistory(item.id,null,"archive")));container.append(assembly.root);}container.append(mediaGallery(context,{itemId:item.id,title:item.is_assembly?"Subassembly photos":"Part photos"}),workInstructions(item),fileArea.root);
+  window.BSUI.sectionActions(details.body,{primary:button("Edit part details",()=>editItem(context,item,occ)),secondary:[...(!item.is_assembly?[duplicate]:[]),...(selected?[button("Change Workshop selection",()=>workshopPartEditor(context,{item}))]:item.kind==="part"&&!item.is_assembly?[copy]:[])]});details.body.append(information("Item identity",[["Item type",item.is_assembly?"Subassembly":item.kind],["Generic Part Name",containerName(item)],["Part number",item.part_number],["Purpose (optional)",item.fields.purpose]]),configurationView({snapshot:{item,occurrence:{...occ,root:{name:state.project.name}}}},"Part details",{includeBuild:false,includeContainer:false}),information("Display options",[["Quantity",occ.quantity+" "+occ.unit],["Status",occ.build_status.replaceAll("_"," ")],["Needs attention",occ.attention?"Yes":"No"],["Attention note",occ.attention_note],["Hide from feature tree?",occ.hidden?"Yes":"No"]]));container.append(details.root);const source=workshopSourceView(context,item);if(source)container.append(source);if(item.is_assembly){const assembly=window.BSUI.section({title:"Subassembly",role:"subassembly"});assembly.body.append(button("Add custom part",()=>editItem(context,null,null,{parentId:occ.id})),button("Add subassembly",()=>editItem(context,null,null,{assembly:true,parentId:occ.id})),button("Add Workshop part",()=>workshopPartEditor(context,{parentId:occ.id})),button("Open subassembly BOM",()=>navigate(projectId,item.id,"bom",occ.id)),button("Open Archive",()=>openHistory(item.id,null,"archive")));container.append(assembly.root);}container.append(mediaGallery(context,{itemId:item.id,title:item.is_assembly?"Subassembly photos":"Part photos"}),workInstructions(item),fileArea.root);
   const history=window.BSUI.section({title:"History",role:"item-history"});window.BSUI.sectionActions(history.body,{primary:button("Add entry",()=>editRecord(context)),secondary:[button("View all history",()=>openHistory(item.id))]});container.append(history.root);container.append(await partRevisions(context,item));try{const count=await latestHistory(context,history.body);if(sequence===renderSequence)history.setCount(count);}catch(error){if(sequence===renderSequence)notify(error.message);}
  }
  function restorePicker(){
@@ -83,14 +83,12 @@ export function initProjectWorkspace(root=document){
   const sequence=renderSequence;area.append(node("p","Loading projects…","muted"));const {projects}=await client.request("");if(sequence!==renderSequence)return;area.replaceChildren(projectCatalog(ctx(),projects));
   const backup=window.BSUI.section({title:"Restore project backup",quiet:true});backup.body.append(node("p","Restore creates a separate project with independent files. Existing projects and saved historical context stay unchanged."),restorePicker());area.append(backup.root);
  }
- async function refresh(){
-  const sequence=++renderSequence,url=new URL(location.href);projectId=url.searchParams.get("project");itemId=url.searchParams.get("item");occurrenceId=url.searchParams.get("occurrence");
-  try{
-   if(!projectId){await projectList();return;}
-   const state=await client.load(projectId);if(sequence!==renderSequence)return;heading.textContent=state.project.name;if(itemId&&!occurrenceId)occurrenceId=state.occurrences.find(row=>row.item_id===itemId&&row.removed_at===null)?.id||null;
+ async function showWorkspace(state,sequence,url){
+  if(itemId&&!occurrenceId)occurrenceId=state.occurrences.find(row=>row.item_id===itemId&&row.removed_at===null)?.id||null;
+  heading.textContent=state.project.name;
    const exportLink=node("a","Export project","ui-button");exportLink.href="/api/project-engine/projects/"+projectId+"/export";
    const exportHTML=button("Export readable HTML",async()=>{const id=projectId;exportHTML.disabled=true;try{await downloadProjectHTML(id);notify("Readable HTML exported. Keep a .bsproject export for recovery.");}catch(error){notify(error.message);}finally{exportHTML.disabled=false;}});
-   const view=url.searchParams.get("view")||"part",pages=node("nav","","project-navigation");pages.setAttribute("aria-label","Project pages");
+   const view=url.searchParams.get("view")||"part",pages=node("nav","","project-navigation ui-navigation-list");pages.setAttribute("aria-label","Project pages");
    const summary=button("Project summary",()=>navigate(projectId)),parts=button("Parts Management",()=>navigate(projectId,null,"parts")),bom=button("Open BOM",()=>navigate(projectId,null,"bom")),historyButton=button("Project history",()=>openHistory());
    for(const [control,selected]of [[summary,!itemId&&view==="part"],[parts,view==="parts"],[bom,view==="bom"],[historyButton,view==="history"]])if(selected)control.setAttribute("aria-current","page");
    pages.append(summary,parts,bom,historyButton,button("Project settings",()=>projectSettings(ctx())),exportLink,exportHTML);
@@ -107,6 +105,18 @@ export function initProjectWorkspace(root=document){
     main.append(overview,projectSummary(ctx()));
     const history=window.BSUI.section({title:"History",role:"project-history"}),archived=state.occurrences.filter(row=>row.removed_at!==null),folder=window.BSUI.section({title:"Archive",role:"archive-folder",count:archived.length+state.steps.filter(row=>row.retired_at).length});folder.body.append(button("Open Archive",()=>openHistory("",null,"archive")));history.body.append(folder.root);main.append(history.root);
    }
+ }
+ async function refresh({preview=false}={}){
+  const sequence=++renderSequence,url=new URL(location.href);projectId=url.searchParams.get("project");itemId=url.searchParams.get("item");occurrenceId=url.searchParams.get("occurrence");
+  let shownRevision=null;
+  try{
+   if(!projectId){await projectList();return;}
+   if(preview&&client.state?.project.id===projectId){shownRevision=client.state.project.revision;await showWorkspace(client.state,sequence,url);notify("Refreshing project…");}
+   const state=await client.load(projectId);if(sequence!==renderSequence)return;
+   if(notice.textContent==="Refreshing project…")notify("");
+   if(shownRevision===state.project.revision)return;
+   await showWorkspace(state,sequence,url);
+
   }catch(error){if(sequence!==renderSequence)return false;notify(error.status===401?"Sign in with your owner account to open Projects.":error.message);content.replaceChildren(node("p",error.status===401?"Sign in through Account on this page.":"Projects could not be loaded."),button(error.status===401?"Sign in":"Try again",error.status===401?()=>signIn():()=>refresh()));return false;}
  }
  addEventListener("popstate",()=>void refresh());addEventListener("beforeunload",event=>{if(dialog.open){event.preventDefault();event.returnValue="";}});void refresh();

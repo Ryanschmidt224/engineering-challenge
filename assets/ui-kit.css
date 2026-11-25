@@ -186,8 +186,8 @@ summary.ui-button::-webkit-details-marker {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3);
-  margin-bottom: var(--space-3);
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
 }
 .ui-toolbar-search {
   flex: 1 1 14rem;
@@ -203,7 +203,9 @@ summary.ui-button::-webkit-details-marker {
   font-size: var(--text-small);
 }
 .ui-directory-toolbar :is(.ui-button, .ui-control) {
-  height: var(--control-height);
+  height: var(--toolbar-control-height);
+  min-height: var(--toolbar-control-height);
+  padding-block: var(--space-1);
   font-size: var(--text-small);
 }
 .ui-toolbar-count {
@@ -610,7 +612,7 @@ summary.ui-button::-webkit-details-marker {
 }
 .data-table th,
 .data-table td {
-  padding: var(--space-3) var(--space-2);
+  padding: var(--space-1) var(--space-2);
   text-align: left;
   border-bottom: 1px solid var(--color-border);
   overflow-wrap: anywhere;
@@ -687,4 +689,52 @@ summary.ui-button::-webkit-details-marker {
   .ui-revision-change {
     grid-column: 1 / -1;
   }
+}
+
+/* Density belongs to the shared component, never an individual page's buttons. */
+.ui-navigation-list {
+  --stack-gap: var(--navigation-gap);
+  --action-height: var(--navigation-control-height);
+  --action-padding-block: var(--space-1);
+  display: grid;
+  align-content: start;
+  gap: var(--navigation-gap);
+}
+.ui-navigation-list > .ui-button {
+  justify-content: flex-start;
+  text-align: left;
+}
+.ui-directory-toolbar .field-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+}
+.ui-directory-toolbar .field-row > label {
+  padding: 0;
+}
+.ui-directory-toolbar .field-row > .field {
+  width: 12rem;
+  max-width: 100%;
+  min-height: var(--toolbar-control-height);
+  padding-block: var(--space-1);
+}
+.ui-directory-toolbar .checkbox {
+  min-height: var(--toolbar-control-height);
+}
+.data-table .ui-button {
+  --action-height: var(--table-control-height);
+  --action-padding-block: var(--space-1);
+}
+.ui-inline-tip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  background: var(--color-surface-muted);
+  font-size: var(--text-small);
 }
