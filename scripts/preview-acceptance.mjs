@@ -16,7 +16,7 @@ export function previewOrigin(value){
  const url=new URL(value);requireValue(url.protocol==="https:"&&!url.username&&!url.password&&!url.search&&!url.hash&&url.pathname==="/"&&/^(?:feature|preview|fix)-[a-z0-9-]+-engineering-challenge\.ryanschmidt224\.workers\.dev$/.test(url.hostname),"Use a BuildingSchmidt branch preview origin, without a path, query or credentials.");return url.origin;
 }
 export function verifyBindings(version,expectedDatabase){
- const raw=version?.resources?.bindings,list=Array.isArray(raw)?raw:raw&&typeof raw==="object"?Object.entries(raw).map(([name,binding])=>({...binding,name})):[];
+ const raw=version?.env,list=Array.isArray(raw)?raw:raw&&typeof raw==="object"?Object.entries(raw).map(([name,binding])=>({...binding,name})):[];
  const binding=name=>{const found=list.filter(row=>row.name===name);requireValue(found.length===1,"Missing or duplicate preview binding: "+name);return found[0];};
  const db=binding("WORKSHOP_DB"),photos=binding("PHOTOS"),flag=binding("NEW_PROJECT_ENGINE");
  requireValue(db.type==="d1"&&db.database_id===expectedDatabase,"Preview D1 binding does not match the isolated database. No proof may run.");
@@ -71,11 +71,12 @@ export async function runPreviewAcceptance({source,target,account,worker="engine
   const unsigned=await fetcher(origins[index]+"/api/project-engine/environment",{redirect:"error",signal:AbortSignal.timeout(30000)});requireValue(unsigned.status===401,"An unsigned preview environment request must return 401.",unsigned.status);
   progress("Checking " + labels[index] + " owner session.");
   const identity=await readJSON(transports[index],"/api/project-engine/environment");requireValue(/^[a-f0-9-]{36}$/i.test(identity.versionId||""),"The preview did not supply its runtime version identity.");
-  progress("Reading " + labels[index] + " Worker version from Cloudflare.");
-  const response=await fetcher("https://api.cloudflare.com/client/v4/accounts/"+account+"/workers/scripts/"+worker+"/versions/"+identity.versionId,{headers:{authorization:"Bearer "+token},redirect:"error",signal:AbortSignal.timeout(30000)});
-  requireValue(response.ok,"Cloudflare version verification failed. No proof may run.",response.status);
+  progress("Reading " + labels[index] + " Preview deployment from Cloudflare.");
+  const previewSlug=new URL(origins[index]).hostname.slice(0,-("-"+worker+".ryanschmidt224.workers.dev").length);
+  const response=await fetcher("https://api.cloudflare.com/client/v4/accounts/"+account+"/workers/workers/"+worker+"/previews/"+encodeURIComponent(previewSlug)+"/deployments/"+identity.versionId,{headers:{authorization:"Bearer "+token},redirect:"error",signal:AbortSignal.timeout(30000)});
+  requireValue(response.ok,"Cloudflare Preview deployment verification failed. No proof may run.",response.status);
   const body = await response.json();
-  requireValue(body.success===true&&body.result?.id===identity.versionId,"Cloudflare version verification failed. No proof may run.",response.status);
+  requireValue(body.success===true&&body.result?.id===identity.versionId,"Cloudflare Preview deployment verification failed. No proof may run.",response.status);
   progress("Checking " + labels[index] + " database, storage and engine flag bindings.");
   bindings.push({environment:origins[index],versionId:identity.versionId,bindings:verifyBindings(body.result,databases[index])});
  }
@@ -96,7 +97,7 @@ export async function runPreviewAcceptance({source,target,account,worker="engine
   const sourceIntegrity=await verifySourceRecoveryProof(sourceResult.backup,{fetcher:transports[0],environment:sourceOrigin});await stable(0);
   pair.push({name,source:sourceResult.report,restore:restored,sourceIntegrity});
  }
- return {ok:true,checkedAt:new Date().toISOString(),bindingEvidence:"Cloudflare version API checked before proof writes; runtime identities rechecked at each phase.",deployments:bindings,legacyReadOnly,foundation,proofs:pair};
+ return {ok:true,checkedAt:new Date().toISOString(),bindingEvidence:"Cloudflare Preview deployment API checked before proof writes; runtime identities rechecked at each phase.",deployments:bindings,legacyReadOnly,foundation,proofs:pair};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
  try{
