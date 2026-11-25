@@ -154,6 +154,15 @@ const migrations=[{version:1,statements:[
  // Atomic intent admission checks all roots first. After it wins, neither a
  // current nor old SQL writer may introduce a root in the check/delete gap.
  ...retiredObjectReferenceTriggers()
+]},{version:10,statements:[
+ // Product model only: cleanup migrations 1–9 remain unchanged.
+ `ALTER TABLE engine_steps ADD COLUMN parent_id TEXT`,
+ `ALTER TABLE engine_steps ADD COLUMN is_group INTEGER NOT NULL DEFAULT 0 CHECK(is_group IN (0,1))`,
+ `ALTER TABLE engine_steps ADD COLUMN revision_level INTEGER NOT NULL DEFAULT 1 CHECK(revision_level>=1)`,
+ `ALTER TABLE engine_steps ADD COLUMN archive_reason TEXT NOT NULL DEFAULT ''`,
+ `ALTER TABLE engine_records ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0`,
+ `ALTER TABLE engine_records ADD COLUMN parent_record_id TEXT`,
+ `CREATE INDEX IF NOT EXISTS engine_step_siblings ON engine_steps(project_id,item_id,parent_id,sort_order,id)`
 ]}];
 const pending=new WeakMap();
 export const PROJECT_ENGINE_SCHEMA_VERSION=migrations.at(-1).version;

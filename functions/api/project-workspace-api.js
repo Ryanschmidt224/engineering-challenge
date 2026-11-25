@@ -88,6 +88,8 @@ export async function handleProjectWorkspace(request,env,owner){
     if(path.length===5&&method==="POST"&&action==="steps"&&path[4]==="reorder")return engineJSON(await commands.reorderSteps(db,input,project,id,body));
    }
    if(area==="steps"){
+    if(path.length===4&&method==="POST"&&action==="revisions")return engineJSON(await commands.editStep(db,input,project,id,body,{revision:true}));
+    if(path.length===4&&method==="POST"&&action==="reorder-records")return engineJSON(await commands.reorderRecords(db,input,project,id,body));
     if(path.length===3&&method==="PATCH")return engineJSON(await commands.editStep(db,input,project,id,body));
     if(path.length===4&&method==="POST"&&["retire","restore"].includes(action))return engineJSON(await commands.changeStepLife(db,input,project,id,action==="restore",body));
    }

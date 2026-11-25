@@ -4,6 +4,7 @@ import {formatRevisionValue} from "./project-item-model.js";
 import {recordPrompts,recordLabels} from "./project-record-model.js";
 import {projectHelp} from "./project-help.js";
 import {renderHistoryEntryDetails} from "./history-entry-dialog.js";
+import {recordTree} from "./project-instruction-model.js";
 export function information(title,values){const panel=window.BSUI.informationPanel(title);for(const [label,value]of values)if(value!==undefined&&value!==null&&value!=="")panel.body.append(window.BSUI.fieldRow(label,value).root);return panel.root;}
 export function configurationView(configuration,title="Saved configuration",{includeBuild=true}={}){
  const snapshot=configuration?.snapshot;if(!snapshot?.item)return node("p","The transaction proof has no full item snapshot.");
@@ -23,12 +24,21 @@ export function buildContextView(context,title="Build context when recorded"){
 }
 
 export function recordVersionView(ctx,value,title,files){
- const ids=value.fileIds,links=node("div","","project-stack");for(const id of ids||[]){const file=files.find(file=>file.id===id);links.append(file?fileLink(ctx,file):node("span","Unavailable attachment "+id));}
- return information(title,[["Record type",recordLabels[value.type]||value.type],["Title",value.title],...Object.entries(recordPrompts[value.type]||{}).map(([key,label])=>[label,value.fields[key]]),...(value.type==="problem"?[["Status",value.fields.status]]:[]),["Event date",value.event_date||"Not set"],["Attachments",ids?(ids.length?links:"None"):undefined]]);
+ const ids=value.fileIds,links=node("div","","project-stack");
+ for(const id of ids||[]){
+  const file=files.find(file=>file.id===id),named=Object.entries(value.fields.attachments||{}).flatMap(([key,list])=>list.filter(entry=>entry.id===id).map(entry=>({key,...entry}))),item=node("div");
+  if(named.length)item.append(node("span",named.map(entry=>(recordPrompts[value.type]?.[entry.key]||"Supporting file")+": "+(entry.name||file?.name||"Attachment")).join(" · ")+" — "));
+  item.append(file?fileLink(ctx,file):node("span","Unavailable attachment "+id));
+  if(file?.content_type?.startsWith("image/")){const image=node("img");image.src="/api/project-engine/projects/"+ctx.projectId+"/files/"+id+"?inline=1";image.alt=named.find(entry=>entry.name)?.name||file.name;image.loading="lazy";image.className="project-picture";item.append(image);}
+  links.append(item);
+ }
+ return information(title,[["Record type",value.fields.category==="photos"?"Photos":recordLabels[value.type]||value.type],["Title",value.title],...Object.entries(recordPrompts[value.type]||{}).map(([key,label])=>[key==="resolution"&&value.fields.did_fix?(value.fields.did_fix==="no"?"Why?":"How?"):label,value.fields[key]]),...(value.type==="problem"?[["Did you fix it?",value.fields.did_fix],["Status",value.fields.status]]:[]),["Event date",value.event_date],["Attachments",ids?.length?links:undefined],["Created",value.created_at?new Date(value.created_at).toLocaleString():undefined]]);
 }
 
 function appendSavedRecords(ctx,body,snapshot){
- for(const record of snapshot.records||[]){
+ const tree=recordTree(snapshot.records||[]);
+ function render(parent,target){for(const record of tree.children(parent)){
+  const section=window.BSUI.section({title:record.title,open:true,role:"saved-instruction-record"}),body=section.body;
   const fileIds=snapshot.file_links?snapshot.file_links.filter(link=>link.record_id===record.id&&link.active).map(link=>link.file_id):undefined;
   body.append(recordVersionView(ctx,{...record,fileIds},record.title,snapshot.files||[]));
   if(record.step_snapshot)body.append(information("Step when recorded",[["Title",record.step_snapshot.title],["Instructions",record.step_snapshot.body]]));
@@ -39,16 +49,18 @@ function appendSavedRecords(ctx,body,snapshot){
   for(const edit of snapshot.record_events?.filter(entry=>entry.payload.edited_record_id===record.id)||[]){
    const saved=window.BSUI.section({title:edit.title}),versions=edit.payload.record_edit;
    if(versions)saved.body.append(recordVersionView(ctx,versions.before,"Before edit",snapshot.files||[]),recordVersionView(ctx,versions.after,"After edit",snapshot.files||[]),information("Edit information",[["Edited by",edit.payload.actor_id],["Recorded",new Date(edit.created_at).toLocaleString()]]));
+   if(edit.payload.record_structure){const {before,after}=edit.payload.record_structure;saved.body.append(information("Entry location changed",[["Previous parent entry",before.parent_title||"Instruction root"],["New parent entry",after.parent_title||"Instruction root"]]));}
    body.append(saved.root);
   }
- }
+  render(record.id,body);target.append(section.root);
+ }}render(null,body);
 }
 
 export function savedPartView(ctx,event){
  const snapshot=event.payload.snapshot,body=node("div","","project-stack");
  renderHistoryEntryDetails(event.payload.entryDetails,body,{ui:window.BSUI,archive:event.type==="archived",imageUrlFor:id=>"/api/project-engine/projects/"+ctx.projectId+"/files/"+id+"?inline=1"});
- body.append(configurationView({snapshot},"Saved part information"));
- for(const step of snapshot.steps||[])body.append(information(step.title,[["Instructions",step.body],["State",step.retired_at?"Retired":null]]));
+ if(snapshot.scope)body.append(information("Saved "+snapshot.scope.type,[["Title",snapshot.scope.title],["Revision",snapshot.scope.revision_level]]));else body.append(configurationView({snapshot},"Saved part information"));
+ for(const step of snapshot.steps||[])body.append(information(step.title,[["Instruction revision",step.revision_level],["Group",step.is_group?"Yes":null],["Parent instruction",snapshot.steps.find(row=>row.id===step.parent_id)?.title],["Order",step.sort_order+1],["Instructions",step.body],["State",step.retired_at?"Retired":null]]));
  appendSavedRecords(ctx,body,snapshot);
  for(const child of snapshot.parts||[]){const section=window.BSUI.section({title:child.item.name+" · "+child.item.part_number,role:"saved-subassembly-part"});section.body.append(configurationView({snapshot:child},"Saved component"));for(const step of child.steps||[])section.body.append(information(step.title,[["Instructions",step.body],["State",step.retired_at?"Retired":null]]));appendSavedRecords(ctx,section.body,child);for(const file of child.files||[])section.body.append(fileLink(ctx,file));body.append(section.root);}
  for(const file of snapshot.files||[])body.append(fileLink(ctx,file));return body;
