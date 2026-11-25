@@ -54,7 +54,7 @@ The owner renamed the visible Knowledge area to Bits of information. Navigation,
 
 ## Project summary overview
 
-The project summary reuses the part overview shell: the first project-gallery photo on the left, summary fields on the right, and the existing responsive stacking on phones. Photo management remains in the full-width gallery below. No separate project-picture storage or media migration is introduced.
+The project summary reuses the part overview shell: the first project-gallery photo on the left, summary fields on the right, and the existing responsive stacking on phones. Photo management now opens from the shared Edit photo pencil alongside the overview picture. No separate project-picture storage or media migration is introduced.
 
 
 ## Label/value proximity

@@ -63,7 +63,8 @@ export function mediaGallery(ctx,{itemId=null,title="Photos"}={}){
   for(const control of tools.querySelectorAll("button"))if(["←","→"].includes(control.textContent))control.setAttribute("aria-label",control.textContent==="←"?"Move photo earlier":"Move photo later");
   tile.append(thumbnail(ctx,file,row.caption),caption,tools);grid.append(tile);
  });
- section.body.append(node("p",photos.length?"Choose, drop or paste images. Double-click a photo for full size.":"No photos yet. Choose, drop or paste images here.","muted"),choose.input,grid);
+ const paste=window.BSPhotoMarkup.pasteTarget((incoming,event)=>{event?.stopPropagation();void add(incoming);});paste.textContent="Drop photos here or right-click to paste an image (Ctrl+V)";
+ section.body.append(paste,choose.input,grid);
  acceptDrops(section.body,add);return section.root;
 }
 
