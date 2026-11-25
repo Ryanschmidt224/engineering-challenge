@@ -20,7 +20,8 @@ async function platform(t){
   if(parsed.hostname==="api.cloudflare.com"){
    assert.equal(request.headers.get("authorization"),"Bearer "+token);
    const index=envs.findIndex(env=>parsed.pathname.endsWith("/"+env.CF_VERSION_METADATA.id));assert.notEqual(index,-1);
-   return Response.json({success:true,result:{id:envs[index].CF_VERSION_METADATA.id,resources:{bindings:[{name:"WORKSHOP_DB",type:"d1",database_id:unsafe||index===0?"3314f42f-7c04-4798-99dc-b5b97c4fb82f":"d761ae08-64f2-4130-8cfa-f596e8e89b80"},{name:"PHOTOS",type:"r2_bucket",bucket_name:"building-schmidt-photos-preview"},{name:"NEW_PROJECT_ENGINE",type:"plain_text",text:"1"}]}}});
+   assert.equal(parsed.pathname,"/client/v4/accounts/"+account+"/workers/workers/engineering-challenge/previews/"+(index===0?"feature-capacity-test":"preview-capacity-test")+"/deployments/"+envs[index].CF_VERSION_METADATA.id);
+   return Response.json({success:true,result:{id:envs[index].CF_VERSION_METADATA.id,env:Object.fromEntries([{name:"WORKSHOP_DB",type:"d1",database_id:unsafe||index===0?"3314f42f-7c04-4798-99dc-b5b97c4fb82f":"d761ae08-64f2-4130-8cfa-f596e8e89b80"},{name:"PHOTOS",type:"r2_bucket",bucket_name:"building-schmidt-photos-preview"},{name:"NEW_PROJECT_ENGINE",type:"plain_text",text:"1"}].map(({name,...binding})=>[name,binding]))}});
   }
   assert.equal(request.headers.get("authorization"),null);
   if(parsed.hostname==="buildingschmidt.com")return worker.fetch(request,{...envs[0],NEW_PROJECT_ENGINE:undefined},{});
@@ -61,4 +62,24 @@ test("capacity startup failures and untrusted exception text never put credentia
  for(const secret of secrets)assert.equal(JSON.stringify(report).includes(secret),false);
  const invalid=await runPreviewCapacity({source,target,account,fetcher:async()=>{throw Error("Must not call");}},{recordCounts:[10001]});
  assert.equal(invalid.ok,false);assert.equal(invalid.failure.phase,"preflight");
+});
+
+test("preflight failure identifies the rejected owner session and HTTP status without storing credentials", async t => {
+ const fixture = await platform(t);
+ const fetcher = fixture.options.fetcher;
+ fixture.options.fetcher = async (url, options = {}) => {
+  const request = new Request(url, options);
+  if (new URL(url).origin === source && request.headers.has("cookie")) {
+   return Response.json({error: "Owner sign-in required"}, {status: 401});
+  }
+  return fetcher(url, options);
+ };
+ const report = await runPreviewCapacity(fixture.options, {recordCounts: [1000]});
+ assert.equal(report.ok, false);
+ assert.equal(report.acceptanceStep, "Checking source owner session.");
+ assert.equal(report.failure.httpStatus, 401);
+ assert.equal(fixture.writes(), 0);
+ for (const secret of [token, fixture.options.sourceCookie, fixture.options.targetCookie]) {
+  assert.equal(JSON.stringify(report).includes(secret), false);
+ }
 });

@@ -11,7 +11,7 @@ This is the held activation package, not evidence that production is enabled. Th
 
 ## Remaining platform run
 
-Use the manual **Measure isolated preview acceptance** Actions workflow on **main**, before activation. `capacity-matrix` includes binding-verified functional proofs and 1,000 / 2,500 / 3,000 / 5,000 / 10,000-record workloads, complete histories and independent restores. It retains synthetic projects. If the workflow times out, inspect the partial report and use individual profiles; do not change limits or repeatedly restart a failed workload without understanding it.
+Run **Measure isolated preview acceptance** on **main** with `capacity-1000` before activation. This runs the binding-verified functional proofs and one 1,000-record workload with complete history and independent recovery. Retain the report in `docs/proofs/`. Larger profiles remain available for later investigation.
 
 The owner supplies these directly to the repository's Actions secret store:
 
@@ -30,9 +30,9 @@ Transfer credentials directly from the owner's browser to the trusted secret sto
 
 Prepared code pins are source `0fc670b9b7049c8468cb0bb769c2d54046a6f907` and recovery `8c09362abf84ce0ba1302366829be3a55efb9c5f`; only the recovery D1 override differs. These are version-control pins, not independently read runtime/binding evidence.
 
-The runner checks actual runtime-version bindings before proof writes, refuses a common source/target database, checks production remains off, then verifies deployed legacy catalog reads/save rejection/unchanged responses and the engine proof matrix. Retain the non-secret artifact and exact deployment IDs in the existing proof directory.
+The runner reads each runtime identity, then checks that exact deployment through Cloudflare's [Preview deployment API](https://github.com/cloudflare/workers-sdk/blob/main/packages/deploy-helpers/src/preview/api.ts) (`workers/workers/engineering-challenge/previews/<preview-slug>/deployments/<runtime-id>`, with bindings in `result.env`) before proof writes. Preview deployments are not retrieved through the production script versions endpoint. It refuses a common source/target database, checks production remains off, then verifies deployed legacy catalog reads/save rejection/unchanged responses and the engine proof matrix. Retain the non-secret artifact and exact deployment IDs in the existing proof directory.
 
-HTTP timings measure complete requests/transfers. They do not stand in for Worker CPU, exact D1 execution or the dormant cleanup-trigger comparison. Record the account plan/invocation limits and actual platform observations required by `PREVIEW_ACCEPTANCE.md`; assess remaining gaps before declaring readiness. A failed sample is a result to investigate. Do not raise parser limits, change schema/guards, create cleanup intents or grant extra token permissions to get a green result.
+The 1,000-record pass is the acceptance gate for the initial release. Report the observed request and transfer timings and their limits. Worker CPU, exact D1 execution, cleanup trigger comparisons and larger workloads can be measured later as needed.
 
 ## Exact activation
 

@@ -18,7 +18,9 @@ async function fixture(){
   const parsed=new URL(url),request=new Request(url,options);
   if(parsed.hostname==="api.cloudflare.com"){
    assert.equal(request.headers.get("authorization"),"Bearer "+token);const index=envs.findIndex(env=>parsed.pathname.endsWith("/"+env.CF_VERSION_METADATA.id));assert.notEqual(index,-1);
-   return Response.json({success:true,result:{id:envs[index].CF_VERSION_METADATA.id,resources:{bindings:bindings(unsafe&&index===1?databases[0]:databases[index])}}});
+   assert.equal(parsed.pathname,"/client/v4/accounts/"+account+"/workers/workers/engineering-challenge/previews/"+(index===0?"feature-proof-test":"preview-proof-test")+"/deployments/"+envs[index].CF_VERSION_METADATA.id);
+   assert.equal(request.method,"GET");
+   return Response.json({success:true,result:{id:envs[index].CF_VERSION_METADATA.id,env:Object.fromEntries(bindings(unsafe&&index===1?databases[0]:databases[index]).map(({name,...binding})=>[name,binding]))}});
   }
   assert.equal(request.headers.get("authorization"),null);
   if(parsed.hostname==="buildingschmidt.com")return worker.fetch(request,{...envs[0],NEW_PROJECT_ENGINE:undefined});
@@ -49,6 +51,23 @@ test("a same-database recovery binding rejects before any proof writes",async()=
 test("transport and binding checks refuse production destinations, cross-origin credentials, duplicate bindings and non-preview buckets",async()=>{
  assert.throws(()=>previewOrigin("https://buildingschmidt.com"));assert.throws(()=>previewOrigin(source+"/project.html"));
  let called=false;const transport=previewTransport(source,"disposable-cookie",async()=>{called=true;});await assert.rejects(transport(target+"/api/accounts"),/another origin/);assert.equal(called,false);
- const list=bindings(databases[0]);assert.deepEqual(verifyBindings({resources:{bindings:Object.fromEntries(list.map(({name,...binding})=>[name,binding]))}},databases[0]),{WORKSHOP_DB:databases[0],PHOTOS:"building-schmidt-photos-preview",NEW_PROJECT_ENGINE:"1"});
- assert.throws(()=>verifyBindings({resources:{bindings:[...list,list[0]]}},databases[0]),/duplicate/);list[1].bucket_name="building-schmidt-photos";assert.throws(()=>verifyBindings({resources:{bindings:list}},databases[0]),/R2 binding/);
+ const list=bindings(databases[0]);assert.deepEqual(verifyBindings({env:Object.fromEntries(list.map(({name,...binding})=>[name,binding]))},databases[0]),{WORKSHOP_DB:databases[0],PHOTOS:"building-schmidt-photos-preview",NEW_PROJECT_ENGINE:"1"});
+ assert.throws(()=>verifyBindings({env:[...list,list[0]]},databases[0]),/duplicate/);list[1].bucket_name="building-schmidt-photos";assert.throws(()=>verifyBindings({env:list},databases[0]),/R2 binding/);
+});
+
+test("a missing or mismatched Preview deployment stops before proof writes without falling back to production versions",async()=>{
+ for(const mode of ["missing","mismatched"]){
+  const f=await fixture();let lookups=0;
+  try{
+   const fetcher=async(url,options={})=>{
+    if(new URL(url).hostname!=="api.cloudflare.com")return f.options.fetcher(url,options);
+    lookups++;assert.match(new URL(url).pathname,/\/previews\/feature-proof-test\/deployments\//);
+    if(mode==="missing")return Response.json({errors:[{message:token}]},{status:404});
+    const response=await f.options.fetcher(url,options),body=await response.json();
+    body.result.id=crypto.randomUUID();return Response.json(body);
+   };
+   await assert.rejects(runPreviewAcceptance({...f.options,fetcher}),/Preview deployment verification failed/);
+   assert.equal(lookups,1);assert.equal(f.writes(),0);
+  }finally{f.close();}
+ }
 });

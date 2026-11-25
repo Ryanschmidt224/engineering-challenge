@@ -6,12 +6,17 @@ import {runSourceRecoveryProof,runRestoreRecoveryProof,verifySourceRecoveryProof
 import {runAssemblySourceProof} from "../assets/project-assembly-proof.js";
 
 const sourceDatabase="3314f42f-7c04-4798-99dc-b5b97c4fb82f",targetDatabase="d761ae08-64f2-4130-8cfa-f596e8e89b80",bucket="building-schmidt-photos-preview";
-const requireValue=(value,message)=>{if(!value)throw Error(message);return value;};
+const requireValue = (value, message, status) => {
+ if (value) return value;
+ const error = new Error(message);
+ if (Number.isInteger(status)) error.status = status;
+ throw error;
+};
 export function previewOrigin(value){
  const url=new URL(value);requireValue(url.protocol==="https:"&&!url.username&&!url.password&&!url.search&&!url.hash&&url.pathname==="/"&&/^(?:feature|preview|fix)-[a-z0-9-]+-engineering-challenge\.ryanschmidt224\.workers\.dev$/.test(url.hostname),"Use a BuildingSchmidt branch preview origin, without a path, query or credentials.");return url.origin;
 }
 export function verifyBindings(version,expectedDatabase){
- const raw=version?.resources?.bindings,list=Array.isArray(raw)?raw:raw&&typeof raw==="object"?Object.entries(raw).map(([name,binding])=>({...binding,name})):[];
+ const raw=version?.env,list=Array.isArray(raw)?raw:raw&&typeof raw==="object"?Object.entries(raw).map(([name,binding])=>({...binding,name})):[];
  const binding=name=>{const found=list.filter(row=>row.name===name);requireValue(found.length===1,"Missing or duplicate preview binding: "+name);return found[0];};
  const db=binding("WORKSHOP_DB"),photos=binding("PHOTOS"),flag=binding("NEW_PROJECT_ENGINE");
  requireValue(db.type==="d1"&&db.database_id===expectedDatabase,"Preview D1 binding does not match the isolated database. No proof may run.");
@@ -27,7 +32,11 @@ export function previewTransport(origin,cookie,fetcher=fetch){
   return fetcher(url.href,{...options,headers,redirect:"error",signal:AbortSignal.timeout(30000)});
  };
 }
-async function readJSON(fetcher,path,options){const response=await fetcher(path,options);requireValue(response.ok,"Preview request failed (HTTP "+response.status+"). No acceptance is claimed.");return response.json();}
+async function readJSON(fetcher, path, options) {
+ const response = await fetcher(path, options);
+ requireValue(response.ok, "Preview request failed (HTTP " + response.status + "). No acceptance is claimed.", response.status);
+ return response.json();
+}
 export async function verifyLegacyReadOnly(fetcher){
  const catalogPath="/api/projects?includeArchived=1",beforeResponse=await fetcher(catalogPath);requireValue(beforeResponse.ok,"Legacy project catalog must remain readable.");
  const before=await beforeResponse.text(),catalog=JSON.parse(before);requireValue(catalog.readOnly===true&&Array.isArray(catalog.projects),"The legacy catalog must explicitly report read-only mode.");
@@ -40,21 +49,39 @@ export async function verifyLegacyReadOnly(fetcher){
  return {ok:true,projectCount:catalog.projects.length,catalogSha256,rejectedStatus:409,code:"LEGACY_READ_ONLY",checks:["Legacy catalog is readable and declares read-only mode","An invalid save probe is refused by the server boundary","Catalog response is byte-for-byte unchanged after the probe"]};
 }
 export async function runPreviewAcceptance({source,target,account,worker="engineering-challenge",token,sourceCookie,targetCookie,fetcher=fetch,progress=()=>{}}){
+ progress("Checking preview URLs and required credentials.");
  const sourceOrigin=previewOrigin(source),targetOrigin=previewOrigin(target);
  requireValue(sourceOrigin!==targetOrigin,"Source and recovery previews must be different.");
  requireValue(/^[a-f0-9]{32}$/.test(account||"")&&worker==="engineering-challenge","Use this project's Cloudflare account ID and engineering-challenge Worker.");
+ progress("Checking Cloudflare token format.");
  requireValue(typeof token==="string"&&token.length>0&&!/[\r\n]/.test(token),"CLOUDFLARE_API_TOKEN with Workers Scripts Read permission is required to verify actual version bindings.");
- const transports=[previewTransport(sourceOrigin,sourceCookie,fetcher),previewTransport(targetOrigin,targetCookie,fetcher)],origins=[sourceOrigin,targetOrigin],databases=[sourceDatabase,targetDatabase],bindings=[];
+ progress("Checking source owner-session format.");
+ const sourceTransport = previewTransport(sourceOrigin, sourceCookie, fetcher);
+ progress("Checking recovery owner-session format.");
+ const targetTransport = previewTransport(targetOrigin, targetCookie, fetcher);
+ const transports = [sourceTransport, targetTransport];
+ const origins = [sourceOrigin, targetOrigin];
+ const databases = [sourceDatabase, targetDatabase];
+ const bindings = [];
  // Every check in this loop is read-only. No proof write occurs until both
  // deployments' actual control-plane bindings have passed verification.
+ const labels = ["source", "recovery"];
  for(let index=0;index<2;index++){
-  const unsigned=await fetcher(origins[index]+"/api/project-engine/environment",{redirect:"error",signal:AbortSignal.timeout(30000)});requireValue(unsigned.status===401,"An unsigned preview environment request must return 401.");
+  progress("Checking unsigned " + labels[index] + " preview access.");
+  const unsigned=await fetcher(origins[index]+"/api/project-engine/environment",{redirect:"error",signal:AbortSignal.timeout(30000)});requireValue(unsigned.status===401,"An unsigned preview environment request must return 401.",unsigned.status);
+  progress("Checking " + labels[index] + " owner session.");
   const identity=await readJSON(transports[index],"/api/project-engine/environment");requireValue(/^[a-f0-9-]{36}$/i.test(identity.versionId||""),"The preview did not supply its runtime version identity.");
-  const response=await fetcher("https://api.cloudflare.com/client/v4/accounts/"+account+"/workers/scripts/"+worker+"/versions/"+identity.versionId,{headers:{authorization:"Bearer "+token},redirect:"error",signal:AbortSignal.timeout(30000)}),body=await response.json();
-  requireValue(response.ok&&body.success===true&&body.result?.id===identity.versionId,"Cloudflare version verification failed. No proof may run.");
+  progress("Reading " + labels[index] + " Preview deployment from Cloudflare.");
+  const previewSlug=new URL(origins[index]).hostname.slice(0,-("-"+worker+".ryanschmidt224.workers.dev").length);
+  const response=await fetcher("https://api.cloudflare.com/client/v4/accounts/"+account+"/workers/workers/"+worker+"/previews/"+encodeURIComponent(previewSlug)+"/deployments/"+identity.versionId,{headers:{authorization:"Bearer "+token},redirect:"error",signal:AbortSignal.timeout(30000)});
+  requireValue(response.ok,"Cloudflare Preview deployment verification failed. No proof may run.",response.status);
+  const body = await response.json();
+  requireValue(body.success===true&&body.result?.id===identity.versionId,"Cloudflare Preview deployment verification failed. No proof may run.",response.status);
+  progress("Checking " + labels[index] + " database, storage and engine flag bindings.");
   bindings.push({environment:origins[index],versionId:identity.versionId,bindings:verifyBindings(body.result,databases[index])});
  }
- for(const path of ["/api/project-engine/environment","/api/project-engine/proof","/project.html"]){const response=await fetcher("https://buildingschmidt.com"+path,{redirect:"error",signal:AbortSignal.timeout(30000)});requireValue(response.status===404,"Production must keep new-engine routes disabled before this preview proof.");}
+ progress("Checking production remains gated.");
+ for(const path of ["/api/project-engine/environment","/api/project-engine/proof","/project.html"]){const response=await fetcher("https://buildingschmidt.com"+path,{redirect:"error",signal:AbortSignal.timeout(30000)});requireValue(response.status===404,"Production must keep new-engine routes disabled before this preview proof.",response.status);}
  const stable=async index=>{const now=await readJSON(transports[index],"/api/project-engine/environment");requireValue(now.versionId===bindings[index].versionId,"The preview deployment changed during acceptance. Retain the partial evidence and rerun on stable deployments.");};
  const legacyReadOnly=[];for(let index=0;index<2;index++){progress("Checking deployed legacy read-only preservation…");await stable(index);legacyReadOnly.push({environment:origins[index],...await verifyLegacyReadOnly(transports[index])});await stable(index);}
  progress("Running guarded D1 command proof and identical replay…");await stable(0);
@@ -70,7 +97,7 @@ export async function runPreviewAcceptance({source,target,account,worker="engine
   const sourceIntegrity=await verifySourceRecoveryProof(sourceResult.backup,{fetcher:transports[0],environment:sourceOrigin});await stable(0);
   pair.push({name,source:sourceResult.report,restore:restored,sourceIntegrity});
  }
- return {ok:true,checkedAt:new Date().toISOString(),bindingEvidence:"Cloudflare version API checked before proof writes; runtime identities rechecked at each phase.",deployments:bindings,legacyReadOnly,foundation,proofs:pair};
+ return {ok:true,checkedAt:new Date().toISOString(),bindingEvidence:"Cloudflare Preview deployment API checked before proof writes; runtime identities rechecked at each phase.",deployments:bindings,legacyReadOnly,foundation,proofs:pair};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
  try{
