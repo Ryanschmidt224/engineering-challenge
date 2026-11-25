@@ -22,7 +22,7 @@ import {initProjectSignin} from "./project-signin.js";
 const button=(...args)=>window.BSUI.button(...args);
 export function initProjectWorkspace(root=document){
  const environment=root.querySelector("[data-project-environment]");if(environment)environment.textContent=["buildingschmidt.com","www.buildingschmidt.com"].includes(location.hostname)?"Private notebook":"Private preview";
- initSiteHeader();let needsSignin=false,signIn;const client=createProjectClient({fetcher:async(...args)=>{const response=await fetch(...args);if(response.status===401){needsSignin=true;notify("Your session has expired. Your draft is retained.");}return response;}}),content=root.querySelector("[data-project-content]"),heading=root.querySelector("[data-page-title]"),pageActions=root.querySelector("[data-page-actions]"),notice=root.querySelector("[data-notice]"),dialog=root.querySelector("[data-project-editor]"),historyMemos=new Map(),collapsedTree=new Set();let projectId=null,itemId=null,occurrenceId=null,renderSequence=0,showHidden=false,showDocuments=true,showWorkshop=true;
+ initSiteHeader();let needsSignin=false,signIn;const client=createProjectClient({fetcher:async(...args)=>{const response=await fetch(...args);if(response.status===401){needsSignin=true;notify("Your session has expired. Your draft is retained.");}return response;}}),content=root.querySelector("[data-project-content]"),heading=root.querySelector("[data-page-title]"),pageActions=root.querySelector("[data-page-actions]"),notice=root.querySelector("[data-notice]"),dialog=root.querySelector("[data-project-editor]"),historyMemos=new Map(),loadedRevisions=new WeakMap(),collapsedTree=new Set();let projectId=null,itemId=null,occurrenceId=null,renderSequence=0,showHidden=false,showDocuments=true,showWorkshop=true;
  const notify=(text,extra=null)=>{notice.replaceChildren(...(text?[node("span",text)]:[]));if(extra)notice.append(extra);if(needsSignin)notice.append(button("Log in again",()=>signIn()));};
  signIn=initProjectSignin({onSignIn:()=>{needsSignin=false;if(dialog.open)notify("Signed in. Your draft is retained. Save again when ready.");else void refresh();},onSignOut:()=>{needsSignin=true;dialog.close();void navigate();}});
  const ctx=()=>({client,projectId,itemId,occurrenceId,dialog,notify,refresh,navigate,signIn:()=>signIn(),openHistory,openArchive:()=>openHistory("",null,"archive")});
@@ -116,10 +116,10 @@ export function initProjectWorkspace(root=document){
   let shownRevision=null,cachedRender;
   try{
    if(!projectId){await projectList();return;}
-   if(preview&&client.state?.project.id===projectId){shownRevision=client.state.project.revision;cachedRender=showWorkspace(client.state,sequence,url);notify("Refreshing project…");}
-   const [state]=await Promise.all([client.load(projectId),cachedRender]);if(sequence!==renderSequence)return;
+   if(preview&&client.state?.project.id===projectId){shownRevision=loadedRevisions.get(client.state)??null;cachedRender=showWorkspace(client.state,sequence,url);notify("Refreshing project…");}
+   const [state]=await Promise.all([client.load(projectId).then(state=>{loadedRevisions.set(state,state.project.revision);return state;}),cachedRender]);if(sequence!==renderSequence)return;
    if(notice.textContent==="Refreshing project…")notify("");
-   if(shownRevision===state.project.revision)return;
+   if(shownRevision===loadedRevisions.get(state))return;
    await showWorkspace(state,sequence,url);
 
   }catch(error){if(sequence!==renderSequence)return false;notify(error.status===401?"Sign in with your owner account to open Projects.":error.message);content.replaceChildren(node("p",error.status===401?"Sign in through Account on this page.":"Projects could not be loaded."),button(error.status===401?"Sign in":"Try again",error.status===401?()=>signIn():()=>refresh()));return false;}
