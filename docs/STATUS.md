@@ -65,3 +65,12 @@ Shared editable and read-only field rows use one bounded label-width/gap policy 
 ## Info Bits and entry clarity
 
 The information area is named Info Bits. The project name above the tree is a non-interactive title label; Project summary remains the navigation action and the project context menu/root drop destination remain available. Entries use one attachment area, with an optional prompt destination for multi-prompt entries. Existing file names, prompt associations, guarded uploads and retries remain intact. Event date is removed from the editing/display UI while existing saved values and automatic timestamps remain preserved. Parent defaults read Top-level entry and No group.
+
+
+## Project summary root
+
+The project root opens Project summary. A single visible, unit-quantity assembly shares that summary presentation, so its children appear directly under the project; multiple root builds and quantity multipliers remain explicit. Show top assembly restores the separate row, and Add another top-level assembly creates a separate branch. Assembly details, instructions, CAD files, history and numbered revisions remain available on the summary using their original item/placement IDs. This is a reversible view projection, not a migration: parents, quantities, numbers, saved revisions and backups are unchanged. The project root itself has no part number or BOM quantity. Summary assembly History/Revisions load on opening their sections. Visible engineering-file wording is now CAD files; stored event text and file roles stay unchanged.
+
+Photo controls now use the shared bottom-right Edit photo pencil on project, part and assembly overview pictures. It expands picture replacement/removal and gallery upload/caption/reorder/removal tools in place. There are no separate Part photos/Subassembly photos/Project photos sections. Existing pictures, gallery photos and stored files retain their IDs and roles; removing a displayed photo still keeps its stored file. Top assembly photo controls remain available inside the summary photo tools.
+
+The shared record attachment picker has a styled Choose files button and a visible keyboard-focusable drag/drop and right-click image paste target. Arbitrary supported files can be dropped; pasted images use the common photo paste component. Explicit selection/upload, destination groups, limits, guarded saves and immutable file IDs remain unchanged.

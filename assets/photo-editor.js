@@ -3,7 +3,7 @@
  */
 (function(){
  "use strict";
- function actionBar(cover,{onMarkup,onAdd,onPaste,onDelete}={}){
+ function actionBar(cover,{onMarkup,onAdd,onPaste,onDelete,content,expanded=false,onToggle}={}){
   if(!cover)throw Error("Photo actions require a photo element");
   const shell=document.createElement("div");shell.className="bs-photo-control";
   cover.before(shell);shell.append(cover);
@@ -19,7 +19,7 @@
   let uploader=null;
   const add=make("Add",()=>{if(uploader)uploader.open();else onAdd?.()},"bs-photo-add");
   const remove=make("Delete",onDelete,"bs-photo-delete");
-  more.append(markup,add,remove);bar.append(edit,more);shell.append(bar);
+  if(content){more.append(content);shell.classList.add("bs-photo-custom-tools");}else more.append(markup,add,remove);bar.append(edit,more);shell.append(bar);
   if(onPaste){
    uploader=uploadPanel({title:"Add photos",accept:"image/*,.heic,.heif",multiple:false,
     onFiles:files=>{if(files[0])return onPaste(files[0])}});
@@ -36,9 +36,9 @@
   edit.onclick=()=>{
    if(!enabled)return;
    const next=edit.getAttribute("aria-expanded")!=="true";
-   edit.setAttribute("aria-expanded",String(next));sync();
+   edit.setAttribute("aria-expanded",String(next));sync();onToggle?.(next);
   };
-  sync();
+  edit.setAttribute("aria-expanded",String(expanded));sync();
   return {
    shell,edit,markup,add,remove,status,
    setEnabled(value){enabled=!!value;sync()},
@@ -48,8 +48,6 @@
    showActions(){edit.setAttribute("aria-expanded","true");sync()}
   };
  }
- // Kept for older photo-management dialogs while the new inline controls
- // become the default. No photo data is modified by this UI component.
  function dialog({parent,label,className="workspace-photo-dialog",doneClass="",content,contentHtml}){
   if(!parent)throw Error("Photo editor requires a parent");
   const modal=document.createElement("dialog");modal.className=className;modal.setAttribute("aria-label",label);
