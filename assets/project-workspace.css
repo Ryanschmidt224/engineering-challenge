@@ -120,7 +120,7 @@
 .project-tree-children {
   list-style: none;
   margin: 0;
-  padding-inline-start: var(--space-3);
+  padding-inline-start: var(--space-2);
 }
 .project-tree > .project-tree-children {
   padding-inline-start: 0;
@@ -384,8 +384,13 @@
 }
 .project-main [data-section="details"] .ui-information-panel__title {
   margin: 0;
-  padding-block: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-inline-start: 3px solid var(--color-accent);
+  border-radius: var(--radius-small);
+  background: var(--color-surface-muted);
   font-size: var(--text-body);
+  font-weight: var(--font-semibold);
 }
 .project-main
   [data-section="details"]
@@ -424,9 +429,35 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.project-tree-row > .list-card > small {
-  flex: 0 0 auto;
-  font-size: var(--text-caption);
+/* Connector rails stop at the last visible sibling, including collapsed branches. */
+.project-tree-children > li {
+  position: relative;
+  padding-inline-start: var(--space-3);
+}
+.project-tree-children > li::before,
+.project-tree-children > li::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  border-color: var(--color-border-strong);
+  border-style: dotted;
+  border-width: 0;
+}
+.project-tree-children > li::before {
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  border-inline-start-width: 1px;
+}
+.project-tree-children > li:last-child::before {
+  bottom: auto;
+  height: calc(var(--navigation-control-height) / 2);
+}
+.project-tree-children > li::after {
+  inset-inline-start: 0;
+  top: calc(var(--navigation-control-height) / 2);
+  width: var(--space-3);
+  border-top-width: 1px;
 }
 .project-tree-row > .ui-button,
 .project-tree-expander .ui-button {

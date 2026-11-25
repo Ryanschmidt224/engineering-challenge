@@ -1,12 +1,12 @@
 # Building Schmidt — current status
 
-Private single-owner application on Cloudflare Workers Paid. The owner approved switch-over and the 100-placement Archive limit. No legacy data, files or backups have been deleted, imported or moved.
+Private single-owner application on Cloudflare Workers Paid. The owner approved switch-over and the 100-placement Archive limit. Legacy source projects, files and backups remain preserved. The owner-authorized TB001 copy is documented below.
 
 ## Current
 
 - PR #92 makes preview logging and the paid-default 30000 ms CPU budget explicit. Both acceptance previews deployed that budget without backend changes; independent recovery keeps its separate D1 binding.
 - The capacity-1000 gate passed in run 45663128437 attempt 3: functional proofs, six revisions and History checks, export, independent import/retry, restored History, and unchanged-source verification. See docs/proofs/PAID_CAPACITY_1000.json; raw evidence remains in the Actions artifact. Exact CPU/D1 execution and cleanup-trigger comparisons remain deferred under SWITCHOVER.md.
-- PR #82 is refreshed with current main and passing acceptance evidence. Its flag/version metadata behavior retains Claude's reviewed activation; production also explicitly uses the same 30000 ms paid CPU budget that passed on the previews. Merge only after this exact candidate passes checks. Production owner smoke testing and the first scheduled backup remain separate required observations.
+- PR #82 merged at `e9e1f3a45fbaea6321d266ae3d3f270cc8d5ea70`; the new engine is active. Production uses the same 30000 ms paid CPU budget that passed on the previews. The owner has used the new site, and TB001 was copied and export-verified through its UI. The first scheduled backup remains a separate observation; do not infer it from UI or preview checks.
 - Draft #91 is an undeployed retry optimization with 430 passing local tests, awaiting recovery-code review. It is not an activation prerequisite and must not be merged automatically.
 
 ## Boundaries
@@ -23,7 +23,7 @@ The project shell restores a framed green feature tree, persistent project-page 
 
 ## Familiar wording and editor groups
 
-The next UI pass restores Container (name) as the short top-level feature-tree label, with Part name retained separately and used as the fallback when no container label is set. Reading and editing use Container, Part details and Display options groups with compact label/value rows. Written records display Notes, Tests / Measurements, Failures and Change notes; numbered saved Revisions remain separate. Instruction retirement displays Archive step. These changes preserve existing field keys, record types, validation, guarded commands and backup formats.
+The familiar UI pass restored the short top-level feature-tree label, subsequently renamed Generic Part Name by the owner. Specific Part Name remains separate and is the fallback when no generic label is set. Reading and editing use Item identity, Part details and Display options groups with compact label/value rows. Written records display Notes, Tests / Measurements, Failures and Change notes; numbered saved Revisions remain separate. Instruction retirement displays Archive step. These changes preserve existing field keys, record types, validation, guarded commands and backup formats.
 
 The owner separately requested a new-engine copy of the legacy TB001 project. This authorizes that specific non-destructive copy only; it does not authorize blanket migration or deletion. TB001 was copied through the existing owner UI after sign-in succeeded: one TB001 assembly with the three original numbered parts, two instructions, five entries, three project photos and the part/assembly pictures. All 11 exported files passed hash checks, including a lossless source bundle covering all 25 original objects. A second legacy export matched the original object array exactly. Earlier revisions/archive remain legacy references rather than fabricated numbered engine revisions; historical prices/supplier facts are retained as specifications, not active purchasing calculations.
 
@@ -31,3 +31,12 @@ The owner separately requested a new-engine copy of the legacy TB001 project. Th
 ## Compact tree and navigation follow-up
 
 The owner requested Generic Part Name and Specific Part Name terminology, a quieter Add menu with context actions and a one-time right-click hint, tree drag/drop, denser shared controls and faster summary navigation. These remain presentation work: existing field keys, record types, state reads and guarded commands stay intact. A loaded summary can render immediately while its normal state read revalidates; cold opens still require that read. Desktop navigation, toolbar and table actions share density tokens; touch targets remain larger.
+
+
+## Hierarchy and group clarity
+
+Feature-tree labels put the issued part number before the Generic Part Name with matching typography. Dotted connectors follow the rendered placement hierarchy and stop at the last visible sibling. Part detail groups use shaded, accented headings without expanding the label/value rows. Status, selection, context menus, collapse and guarded drag/drop behavior remain intact.
+
+## Cleanup assessment
+
+The active project screen loads its own workspace styles rather than the frozen legacy override cascade. The retained legacy index still owns legacy reading, exports and rollback paths; it is not dead code. The first safe cleanup is keeping the handoff accurate (activation and current wording above) and removing superseded selectors only as their components are replaced. See CSS_INVENTORY.md and UI_STANDARDS.md for existing ownership and guardrails. A larger legacy extraction/removal must first map those live dependencies, preserve export/history access and verify production backup behavior. Do not combine that work with screen polish or merge held recovery PR #91 as cleanup.
