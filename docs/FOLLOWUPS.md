@@ -2,7 +2,6 @@
 
 One line per deferred item. This is not permission to expand scope; Batch 5 remains limited to FEATURE_INVENTORY Keep/Rebuild items.
 
-- Owner-reported: the legacy feature-tree pane cannot be scrolled. Restore independent vertical scrolling when its content exceeds the available height; explicitly deferred while switch-over readiness work continues.
 - Optional, Claude #76: Knowledge can still link to legacy project targets; this only writes Knowledge data. Hide legacy targets from that picker only if the owner later requests it.
 - Optional, Claude #77: if the 60-minute capacity-matrix job times out, run the single capacity profiles; preserve its phase checkpoint instead of increasing the deadline speculatively.
 - Operational note, Claude #77: retained synthetic matrix projects add tens of MB to both preview D1s; include them in the owner's separately scoped post-handoff clean-out, with no automatic deletion.

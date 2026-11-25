@@ -104,7 +104,7 @@
 .assembly-sidebar > .feature-tree-frame {
   width: 100%;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
+  border-radius: var(--radius-medium);
   background: var(--color-sidebar);
   overflow: auto;
   min-height: 0;
@@ -122,6 +122,11 @@
 
 .assembly-sidebar > .feature-tree-frame {
   order: 0;
+}
+@media (max-width: 1099px) {
+  .assembly-sidebar > .feature-tree-frame {
+    max-height: 340px;
+  }
 }
 @media (max-width: 680px) {
   .bs-unstructured-photo,
