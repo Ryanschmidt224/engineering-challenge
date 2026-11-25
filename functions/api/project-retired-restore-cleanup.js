@@ -3,7 +3,7 @@ import {CommandConflict} from "./project-command.js";
 import {backupColumns} from "./project-backup-schema.js";
 import {CURRENT_ENGINE_SCHEMA_SQL} from "./project-restore-guards.js";
 
-const order=["file_links","archive_groups","selections","records","events","configurations","steps","occurrences","items","files","snapshot_values"];
+const order=["media","file_links","archive_groups","selections","records","events","configurations","steps","occurrences","items","files","snapshot_values"];
 const invalid=()=>new CommandConflict("Retired recovery cleanup no longer matches its private target. Nothing further was removed.");
 // Internal, bounded and resumable. There is deliberately no HTTP/cron caller.
 // This removes private D1 rows only; R2 deletion needs a separate reviewed sweep

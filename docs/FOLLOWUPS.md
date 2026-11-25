@@ -2,6 +2,10 @@
 
 One line per deferred item. This is not permission to expand scope; Batch 5 remains limited to FEATURE_INVENTORY Keep/Rebuild items.
 
+- Claude issue #74: engine photo markup/annotation is deferred; reuse the existing viewer now and preserve original files, without growing the frozen legacy photo-markup module.
+- Claude issue #74: current galleries/picture membership are not captured in saved part revisions; removed media rows and original bytes are retained in whole-project backups. Keep this limitation explicit rather than claiming full gallery revision history.
+- Claude issue #74: add an Automatic backups list/download section in Project settings through the supplied owner-only GET route after the integration merges.
+
 - Post-switch, 5.11: shop-material grouping uses legacy assumedOnHand; the engine has no equivalent saved field. Do not guess by name or mutate schemas in screen-only 5a; picture views follow the reviewed photo role table.
 - Required inventory parity, 4.5/4.6/6.12: retain deliberate Milestone/Knowledge draft entry points when their listed area is rebuilt; no automatic entries or new Knowledge system.
 - Post-switch only: any individual legacy project migration/Practice-to-Notes conversion is optional later work; keep legacy pages read-only, delete/import nothing for the early switch-over.

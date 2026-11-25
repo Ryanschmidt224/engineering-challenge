@@ -163,6 +163,23 @@ const migrations=[{version:1,statements:[
  `ALTER TABLE engine_records ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0`,
  `ALTER TABLE engine_records ADD COLUMN parent_record_id TEXT`,
  `CREATE INDEX IF NOT EXISTS engine_step_siblings ON engine_steps(project_id,item_id,parent_id,sort_order,id)`
+]},{version:11,statements:[
+ // Product model only: project/part photo galleries and one part picture.
+ // Later file roles are reserved now so the CHECK never needs a table rebuild.
+ // Removing media clears active; file bytes and rows are retained.
+ `CREATE TABLE IF NOT EXISTS engine_media (
+  id TEXT NOT NULL, project_id TEXT NOT NULL, item_id TEXT, file_id TEXT NOT NULL,
+  role TEXT NOT NULL CHECK(role IN ('photo','picture','drawing','part_file','webpage','code')),
+  caption TEXT NOT NULL DEFAULT '', sort_order INTEGER NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0,1)), created_at TEXT NOT NULL, removed_at TEXT,
+  PRIMARY KEY(project_id,id),
+  FOREIGN KEY(project_id) REFERENCES engine_projects(id),
+  FOREIGN KEY(project_id,file_id) REFERENCES engine_files(project_id,id),
+  CHECK(role!='picture' OR item_id IS NOT NULL))`,
+ `CREATE UNIQUE INDEX IF NOT EXISTS engine_current_picture ON engine_media(project_id,item_id) WHERE role='picture' AND active=1`,
+ `CREATE INDEX IF NOT EXISTS engine_media_owner ON engine_media(project_id,item_id,role,active,sort_order,id)`,
+ // Same retired-restore guard every other engineering table received in v7.
+ ...["INSERT","UPDATE"].map(action=>`CREATE TRIGGER IF NOT EXISTS engine_media_restore_retired_${action.toLowerCase()} BEFORE ${action} ON engine_media WHEN EXISTS(SELECT 1 FROM engine_projects p JOIN engine_restore_jobs j ON p.restore_job_id=j.id JOIN engine_restore_jobs closed ON closed.project_id=j.project_id AND closed.actor_id=j.actor_id AND closed.operation_id=j.operation_id WHERE p.id=NEW.project_id AND closed.cleanup_token IS NOT NULL) BEGIN SELECT RAISE(ABORT,'RESTORE_OPERATION_RETIRED'); END`)
 ]}];
 const pending=new WeakMap();
 export const PROJECT_ENGINE_SCHEMA_VERSION=migrations.at(-1).version;

@@ -21,7 +21,7 @@
   ],
   "triggers": {
     "crons": [
-      "0 7 * * SUN"
+      "17 9 * * *"
     ]
   },
   "vars": {"AI_LOOKUP_ENABLED": "1"},

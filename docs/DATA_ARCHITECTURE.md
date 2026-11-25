@@ -106,7 +106,7 @@ The restored folder includes original record bytes under `records/` and the orig
 
 **Automatic snapshots**
 
-A weekly Cloudflare Worker cron (`0 7 * * SUN`, UTC) creates append-only recovery archives under `automatic-backups/<project>/` for non-empty projects. The authenticated `GET /api/project/backups?project=...` endpoint lists them; `GET` with `id=` downloads a snapshot. No automatic deletion/retention pruning is configured. These backups consume Cloudflare storage, share the same failure domain as the application, and may not be point-in-time consistent during simultaneous writes.
+A daily Cloudflare Worker cron (`17 9 * * *`, UTC) runs two independent jobs. On Sundays (UTC) it creates the legacy append-only recovery archives under `automatic-backups/<project>/` for non-empty projects. Every day, when the project engine is enabled and its schema is current, it streams each engine project's normal `.bsproject` export to `automatic-backups/engine/<project>/` if the project revision changed since its latest backup, then verifies size, manifest and completion marker. Engine backups are append-only, listed and downloaded owner-only at `GET /api/project-engine/projects/<id>/automatic-backups[?id=]`, and restored only through the normal Restore project backup copy flow. The authenticated `GET /api/project/backups?project=...` endpoint lists them; `GET` with `id=` downloads a snapshot. No automatic deletion/retention pruning is configured. These backups consume Cloudflare storage, share the same failure domain as the application, and may not be point-in-time consistent during simultaneous writes.
 
 **Data conflict protection**
 
