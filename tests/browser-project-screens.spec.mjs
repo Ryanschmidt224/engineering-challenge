@@ -27,3 +27,19 @@ test("readable HTML retains instructions, records, frozen revisions and exact of
 test("an interrupted readable export shows an error and never downloads a partial notebook",async({page,request,context})=>{
  await setup(page,request,context);let downloads=0;page.on("download",()=>downloads++);await page.route("**/api/project-engine/projects/*/export",route=>route.fulfill({contentType:"application/x-ndjson",body:'{"type":"manifest","manifest":{"version":2,"project":{"name":"Broken"},"tableNames":["items"]}}\n'}));await page.getByRole("button",{name:"Export readable HTML",exact:true}).click();await expect(page.getByRole("status")).toContainText("export was interrupted");expect(downloads).toBe(0);await expect(page.getByRole("button",{name:"Export readable HTML",exact:true})).toBeEnabled();
 });
+
+for(const width of [1440,900,390])test("familiar project shell keeps tree and page navigation while preserving saved data at "+width+"px",async({page,request,context},testInfo)=>{
+ await page.setViewportSize({width,height:1000});const f=await setup(page,request,context),before=await f.state();let writes=0;
+ page.on("request",r=>{if(r.url().includes("/api/project-engine/")&&r.method()!=="GET")writes++;});
+ const sidebar=page.locator(".project-sidebar"),pages=page.getByRole("navigation",{name:"Project pages",exact:true});
+ await expect(sidebar.getByRole("heading",{name:"Feature tree",exact:true})).toBeVisible();await expect(pages.getByRole("button",{name:"Project summary",exact:true})).toHaveAttribute("aria-current","page");
+ await sidebar.locator('[data-occurrence-id="'+f.part.occurrenceId+'"]').click();
+ const overview=page.locator(".project-part-overview");await expect(overview.getByRole("heading",{name:"A very long mounting bracket",exact:true})).toBeVisible();await expect(overview.getByLabel("Quantity",{exact:true})).toHaveValue("3");
+ await expect(sidebar.locator('[data-occurrence-id="'+f.part.occurrenceId+'"]')).toHaveAttribute("aria-current","true");
+ await pages.getByRole("button",{name:"Project history",exact:true}).click();await expect(sidebar).toBeVisible();await expect(pages.getByRole("button",{name:"Project history",exact:true})).toHaveAttribute("aria-current","page");
+ await pages.getByRole("button",{name:"Parts Management",exact:true}).click();await expect(page.getByRole("table",{name:"Parts Management",exact:true})).toBeVisible();await expect(sidebar).toBeVisible();
+ await pages.getByRole("button",{name:"Project summary",exact:true}).click();await expect(page.locator(".project-summary-overview")).toBeVisible();
+ expect(await f.state()).toEqual(before);expect(writes).toBe(0);expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0);
+ await page.screenshot({path:testInfo.outputPath("familiar-summary.png"),fullPage:true});
+ await sidebar.locator('[data-occurrence-id="'+f.part.occurrenceId+'"]').click();await page.screenshot({path:testInfo.outputPath("familiar-part.png"),fullPage:true});
+});
