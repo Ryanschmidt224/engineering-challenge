@@ -4,7 +4,12 @@ export function createProjectClient({fetcher=fetch}={}){
  let state=null,loadSequence=0;const pending=new Map(),uploads=new WeakMap();
  async function request(path,options={}){
   const response=await fetcher("/api/project-engine/projects"+path,{credentials:"same-origin",cache:"no-store",...options});
-  const result=await response.json().catch(()=>({}));if(!response.ok){const error=Error(result.error||"Request failed. Your draft is retained.");error.status=response.status;throw error;}return result;
+  let result;
+  try{result=await response.json();}catch{
+   const error=Error("The server response could not be read. Your draft is retained; retry the same save.");
+   error.status=response.status;error.code="PROJECT_RESPONSE_UNREADABLE";throw error;
+  }
+  if(!response.ok){const error=Error(result.error||"Request failed. Your draft is retained.");error.status=response.status;throw error;}return result;
  }
  async function load(projectId){const sequence=++loadSequence,result=await request("/"+projectId+"/state");if(sequence===loadSequence)state=result;return result;}
  async function write(projectId,path,method,data={},expectedRevision=state?.project.revision??null){

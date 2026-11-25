@@ -26,3 +26,7 @@ Production follows main; its exact head/build is tracked by GitHub deployment ch
 ## Switch-over approval package
 
 After the reduced prerequisites merge, provide one list: real-Cloudflare timing/acceptance run; the accepted 100-placement Archive rule; confirmation legacy pages are read-only and nothing was deleted. Tell the owner when to sign in for that run. Prepare and validate the exact activation change using the owner's already-granted switch-over approval. Do not request the Archive decision or activation approval again, and do not treat approval as a waiver of required code reviews or readiness checks.
+
+## Capacity failure investigation
+
+Run 45625755567 remains failed: attempt 1 returned 503 during revision 3; attempt 2 returned 200 headers for revision 4, replay and History but never retained a verified fourth sample. A 200 header alone does not prove a complete JSON body or intact snapshot. The client previously swallowed JSON/body errors into an empty object, and the runner discarded the resulting exception. Response-read failures now reject explicitly, preserve the exact retry operation and loaded token, and produce an allowlisted diagnostic code; separate save/replay/History phases distinguish the next failure without recording response bodies or credentials. Six revisions, record counts and recovery checks remain unchanged. No backend data-integrity cause is confirmed yet; activation #82 stays held pending actual passing platform evidence and required reviews.

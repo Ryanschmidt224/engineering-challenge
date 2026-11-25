@@ -9,7 +9,7 @@ import {previewOrigin,previewTransport,runPreviewAcceptance} from "./preview-acc
 import {makeCapacityFixture} from "./preview-capacity-fixture.mjs";
 
 export const CAPACITY_COUNTS=[1000,2500,3000,5000,10000];
-const check=(value,message)=>{if(!value)throw Error(message);};
+const check=(value,message,code)=>{if(!value)throw Object.assign(Error(message),{code});};
 const hash=value=>digest(new TextEncoder().encode(typeof value==="string"?value:canonicalJSON(value)));
 const median=values=>{const sorted=[...values].sort((a,b)=>a-b);return sorted[Math.floor(sorted.length/2)];};
 
@@ -79,10 +79,12 @@ export async function runPreviewCapacity(options,{recordCounts=[3000,10000],onCh
    for(let index=0;index<6;index++){
     const data={entryDetails:{whatChanged:"Synthetic capacity checkpoint "+(index+1),whyChanged:"Measure retained history at "+recordCount+" records"}},expected=sourceClient.state.project.revision;
     const saved=await timed("revision-"+recordCount+"-"+(index+1),()=>sourceClient.write(seed.projectId,"/items/"+seed.itemId+"/revisions","POST",data,expected));
+    await phase("revision-retry-"+recordCount+"-"+(index+1));
     const retry=await sourceClient.write(seed.projectId,"/items/"+seed.itemId+"/revisions","POST",data,expected);
-    check(retry.eventId===saved.value.eventId&&retry.revision===saved.value.revision,"Revision retry did not replay.");
+    check(retry.eventId===saved.value.eventId&&retry.revision===saved.value.revision,"Revision retry did not replay.","REVISION_REPLAY_MISMATCH");
+    await phase("revision-history-"+recordCount+"-"+(index+1));
     const detail=await sourceClient.request("/"+seed.projectId+"/history/"+saved.value.eventId);
-    check(detail.event.payload.snapshot.records.length===recordCount,"Historical revision is incomplete.");
+    check(detail?.event?.payload?.snapshot?.records?.length===recordCount,"Historical revision is incomplete.","REVISION_HISTORY_INCOMPLETE");
     scenario.revisionSamples.push({eventId:saved.value.eventId,elapsedMs:saved.elapsedMs,snapshotSha256:await hash(detail.event.payload.snapshot)});
    }
    scenario.firstRevisionRequestUpperBoundMs=scenario.revisionSamples[0].elapsedMs;
@@ -109,7 +111,7 @@ export async function runPreviewCapacity(options,{recordCounts=[3000,10000],onCh
   report.ok=true;report.status="measured-samples-passed";report.phase="complete";
   report.productionReadiness="Not decided. Review these samples and the listed CPU/trigger-state measurement gaps before activation.";
  }catch(error){
-  report.status="failed";report.failure={phase:report.phase,httpStatus:Number.isInteger(error.status)?error.status:null,message:"Measurement did not pass. Retained phase/project/operation IDs are for inspection; no project was deleted and no production acceptance is claimed."};
+  report.status="failed";report.failure={phase:report.phase,httpStatus:Number.isInteger(error.status)?error.status:null,code:["PROJECT_RESPONSE_UNREADABLE","REVISION_REPLAY_MISMATCH","REVISION_HISTORY_INCOMPLETE"].includes(error.code)?error.code:null,message:"Measurement did not pass. Retained phase/project/operation IDs are for inspection; no project was deleted and no production acceptance is claimed."};
  }
  report.finishedAt=new Date().toISOString();await onCheckpoint(report);return report;
 }
