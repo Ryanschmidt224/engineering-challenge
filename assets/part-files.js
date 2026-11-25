@@ -1,4 +1,4 @@
-/* Private per-part engineering files. File versions are additive, not overwritten. */
+/* Private per-part CAD files. File versions are additive, not overwritten. */
 (function(){
  "use strict";
  const node=(tag,cls,content)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(content!==undefined)e.textContent=content;return e};
@@ -6,7 +6,7 @@
  function mount(target,isAdmin=()=>false){
   if(!target)return null;
   const title=node("h3","","Part files (CAD, Parasolid, STL, STEP)");
-  const description=node("p","muted","Keep native engineering files with the part, including SOLIDWORKS .sldprt files. Uploads are private and stored as separate revisions.");
+  const description=node("p","muted","Keep native CAD files with the part, including SOLIDWORKS .sldprt files. Uploads are private and stored as separate revisions.");
   const cadNote=node("p","muted part-file-cad-note","SOLIDWORKS files can be attached here. Part-number/custom-property and preview extraction are not yet automatic; add an image using Edit part image.");
   const list=node("div","part-file-list"),controls=node("div","part-file-controls");
   const upload=node("button","btn","+ Add part files");upload.type="button";
@@ -25,7 +25,7 @@
   async function load(project,id,implementation=null){
    location={project,id,implementation};const version=++token;list.replaceChildren(node("p","muted","Loading saved files…"));
    controls.classList.toggle("hide",!isAdmin());status.textContent="";
-   if(!isAdmin()){list.replaceChildren(node("p","muted","Sign in as administrator to view private engineering files."));return}
+   if(!isAdmin()){list.replaceChildren(node("p","muted","Sign in as administrator to view private CAD files."));return}
    try{
     const response=await fetch(url(),{cache:"no-store",credentials:"same-origin"});
     const data=await response.json();if(!response.ok)throw Error(data.error||"Could not list files");
@@ -65,7 +65,7 @@
      const result=await fetch(url(),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/octet-stream","x-file-name":encodeURIComponent(file.name)},body:file});
      const data=await result.json();if(!result.ok)throw Error(data.error||"File upload failed");
     }
-    await load(from.project,from.id,from.implementation);status.textContent="Engineering files saved.";
+    await load(from.project,from.id,from.implementation);status.textContent="CAD files saved.";
    }catch(error){status.textContent=error.message}finally{upload.disabled=false}
   };
   return {load};

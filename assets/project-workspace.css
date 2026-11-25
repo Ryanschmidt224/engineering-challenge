@@ -468,12 +468,48 @@
   min-height: var(--navigation-control-height);
 }
 
-.project-tree-project-name {
-  flex: 1;
-  min-width: 0;
-  margin: var(--space-2) 0;
-  font-size: var(--text-small);
-  font-weight: var(--font-semibold);
-  color: var(--color-text);
+/* The project root is the summary navigation action, not a numbered part. */
+.project-tree-row > .project-tree-root {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  white-space: normal;
+}
+.project-tree-row > .project-tree-root > strong {
+  white-space: normal;
   overflow-wrap: anywhere;
+}
+.project-tree-root-caption {
+  font-size: var(--text-caption);
+  color: var(--color-text-muted);
+}
+
+/* Shared photo editing disclosure: pencil below the image at its right edge. */
+.project-picture-holder > .bs-photo-control {
+  width: 100%;
+  min-width: 0;
+}
+.bs-photo-custom-tools > .bs-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+}
+.bs-photo-custom-tools > .bs-photo-actions > .bs-photo-more:not([hidden]) {
+  flex-basis: 100%;
+  display: block;
+}
+.project-picture-tools,
+.project-photo-tools {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.project-photo-tools > p {
+  font-size: var(--text-small);
+}
+.project-photo-tools .project-media-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+.project-assembly-photo-tools {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
 }

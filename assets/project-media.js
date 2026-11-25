@@ -51,10 +51,9 @@ function editCaption(ctx,row){
 }
 
 export function mediaGallery(ctx,{itemId=null,title="Photos"}={}){
- const photos=photosFor(ctx.client.state,itemId),memory=ctx.projectId+":"+(itemId||""),section=window.BSUI.section({title,role:itemId?"part-photos":"project-photos",count:photos.length,countLabel:["photo","photos"],open:opened.has(memory)});
- section.root.addEventListener("toggle",()=>{if(section.root.open)opened.add(memory);else opened.delete(memory);});
+ const photos=photosFor(ctx.client.state,itemId),body=node("div","","project-photo-tools"),section={body,root:body};body.dataset.section=itemId?"part-photos":"project-photos";
  const add=files=>addFiles(ctx,files,{itemId}),choose=picker(add,{label:title+" files"});
- window.BSUI.sectionActions(section.body,{primary:button("Add photos",choose.open)});
+ section.body.append(button("Add photos",choose.open,{variant:"quiet",small:true}));
  const grid=node("div","","project-media-grid");
  const move=async(index,delta)=>{const ids=photos.map(row=>row.id);[ids[index],ids[index+delta]]=[ids[index+delta],ids[index]];await send(ctx,"/media/reorder","POST",{ids,...(itemId?{itemId}:{})},"Photo order saved.");};
  photos.forEach((row,index)=>{
@@ -64,24 +63,37 @@ export function mediaGallery(ctx,{itemId=null,title="Photos"}={}){
   for(const control of tools.querySelectorAll("button"))if(["←","→"].includes(control.textContent))control.setAttribute("aria-label",control.textContent==="←"?"Move photo earlier":"Move photo later");
   tile.append(thumbnail(ctx,file,row.caption),caption,tools);grid.append(tile);
  });
- section.body.append(node("p",photos.length?"Choose, drop or paste images. Double-click a photo for full size.":"No photos yet. Choose, drop or paste images here.","muted"),choose.input,grid);
+ const paste=window.BSPhotoMarkup.pasteTarget((incoming,event)=>{event?.stopPropagation();void add(incoming);});paste.textContent="Drop photos here or right-click to paste an image (Ctrl+V)";
+ section.body.append(paste,choose.input,grid);
  acceptDrops(section.body,add);return section.root;
 }
 
-// The part header picture. Falls back to an image engineering file, as before.
-export function partPicture(ctx,item,engineeringFile=null){
- const holder=node("div","","project-picture-holder"),current=pictureFor(ctx.client.state,item.id),file=current?fileOf(ctx,current):engineeringFile&&SHOWN.test(engineeringFile.content_type)?engineeringFile:null;
- if(file){const img=thumbnail(ctx,file,item.name);if(img.tagName==="IMG")img.className="project-picture";holder.append(img);}else holder.append(node("p","No picture yet","muted"));
- const choose=picker(files=>addFiles(ctx,files,{itemId:item.id,role:"picture"}),{multiple:false,label:"Part picture"});choose.input.accept="image/jpeg,image/png,image/webp";
- const controls=[button(current?"Replace picture":"Add picture",choose.open,{variant:"quiet",small:true})];
- if(current)controls.push(button("Remove picture",()=>confirmAction(ctx,"Remove picture","Remove this part's picture? The stored file is kept.","Remove picture",token=>ctx.client.write(ctx.projectId,"/media/"+current.id+"/remove","POST",{},token)),{variant:"quiet",small:true}));
- holder.append(choose.input,actions(...controls));acceptDrops(holder,files=>addFiles(ctx,files.slice(0,1),{itemId:item.id,role:"picture"}));return holder;
+// Every overview uses the shared bottom-right pencil. All management tools
+// live inside its disclosure; no separate photo field or gallery section.
+function photoControl(ctx,cover,tools,key){
+ const holder=node("div","","project-picture-holder");holder.append(cover);
+ window.BSPhotoEditor.actionBar(cover,{content:tools,expanded:opened.has(key),onToggle:open=>{if(open)opened.add(key);else opened.delete(key);}});
+ return holder;
 }
 
-// The same first gallery photo used by the project directory, without a second picture record.
-export function projectPicture(ctx,onManage){
- const holder=node("div","","project-picture-holder"),photo=photosFor(ctx.client.state)[0],file=photo?fileOf(ctx,photo):null;
- if(file){const image=thumbnail(ctx,file,photo.caption||ctx.client.state.project.name);if(image.tagName==="IMG")image.className="project-picture";holder.append(image);}else holder.append(node("p","No picture yet","muted"));
- const choose=picker(files=>addFiles(ctx,files.slice(0,1)),{multiple:false,label:"Project picture"});
- holder.append(choose.input,actions(button(photo?"Manage photos":"Add picture",photo?onManage:choose.open,{variant:"quiet",small:true})));return holder;
+// Falls back to an image CAD file without changing that file's stored role.
+export function partPicture(ctx,item,engineeringFile=null){
+ const current=pictureFor(ctx.client.state,item.id),file=current?fileOf(ctx,current):engineeringFile&&SHOWN.test(engineeringFile.content_type)?engineeringFile:null;
+ const cover=file?thumbnail(ctx,file,item.name):node("p","No picture yet","muted");if(cover.tagName==="IMG")cover.className="project-picture";
+ const tools=node("div","","project-picture-tools"),choose=picker(files=>addFiles(ctx,files,{itemId:item.id,role:"picture"}),{multiple:false,label:"Part picture"});choose.input.accept="image/jpeg,image/png,image/webp";
+ const controls=[button(current?"Replace picture":"Add picture",choose.open,{variant:"quiet",small:true})];
+ if(current)controls.push(button("Remove picture",()=>confirmAction(ctx,"Remove picture","Remove this part's picture? The stored file is kept.","Remove picture",token=>ctx.client.write(ctx.projectId,"/media/"+current.id+"/remove","POST",{},token)),{variant:"quiet",small:true}));
+ tools.append(choose.input,actions(...controls),mediaGallery(ctx,{itemId:item.id,title:"Additional photos"}));
+ return photoControl(ctx,cover,tools,ctx.projectId+":"+item.id);
+}
+
+// The same first gallery photo used by the project directory.
+export function projectPicture(ctx,{assembly=null}={}){
+ const photo=photosFor(ctx.client.state)[0],file=photo?fileOf(ctx,photo):null;
+ const cover=file?thumbnail(ctx,file,photo.caption||ctx.client.state.project.name):node("p","No picture yet","muted");if(cover.tagName==="IMG")cover.className="project-picture";
+ const tools=node("div","","project-picture-tools");tools.append(mediaGallery(ctx,{title:"Project photos"}));
+ // Keep the original top assembly's pictures accessible when its row is folded
+ // into Project summary. They retain their original item and file IDs.
+ if(assembly){const group=node("div","","project-assembly-photo-tools");group.append(node("strong","Top assembly · "+assembly.part_number),partPicture(ctx,assembly));tools.append(group);}
+ return photoControl(ctx,cover,tools,ctx.projectId+":");
 }

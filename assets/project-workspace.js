@@ -1,3 +1,4 @@
+import {summaryAssembly} from "./project-root-view.js";
 import {containerName} from "./project-presentation.js";
 import {initSiteHeader} from "./site-header.js";
 import {createProjectClient} from "./project-client.js";
@@ -11,7 +12,7 @@ import {partRevisions,partHistoryPrompt} from "./project-part-history.js";
 import {renderProjectTree} from "./project-tree-view.js";
 import {projectTree} from "./project-tree-model.js";
 import {renderProjectBOM} from "./project-bom-view.js";
-import {mediaGallery,partPicture,projectPicture} from "./project-media.js";
+import {partPicture,projectPicture} from "./project-media.js";
 import {workshopPartEditor,workshopSourceView} from "./project-workshop-editor.js";
 import {projectCatalog} from "./project-catalog.js";
 import {projectSummary} from "./project-summary.js";
@@ -38,17 +39,18 @@ export function initProjectWorkspace(root=document){
  async function action(path,data={},message="Saved.",method="POST",after=null){
   try{await client.write(projectId,path,method,data);await refresh();notify(message,after);}catch(error){notify(error.message);}
  }
- function workInstructions(current){
-  return instructionView(ctx(),current);
+ function workInstructions(current,context=ctx()){
+  return instructionView(context,current);
  }
- function engineeringFile(current){
-  const state=client.state,link=state.file_links.find(link=>link.item_id===current.id&&link.active),file=state.files.find(file=>file.id===link?.file_id),section=window.BSUI.section({title:"Engineering file",count:file?1:0,countLabel:["file","files"],role:"engineering-file"}),input=node("input");input.type="file";input.setAttribute("aria-label","Engineering file");
-  const upload=button(file?"Replace engineering file":"Upload engineering file",async()=>{if(!input.files.length){notify("Choose a file first.");return;}upload.disabled=true;try{await client.upload(projectId,input.files[0],{itemId:current.id,occurrenceId});await refresh();notify("Engineering file saved. Earlier History keeps the earlier file.");}catch(error){notify(error.message);}finally{upload.disabled=false;}});
-  window.BSUI.sectionActions(section.body,{primary:upload});section.body.append(input);if(file)section.body.append(fileLink(ctx(),file));return {root:section.root,file};
+ function engineeringFile(current,context=ctx()){
+  const state=client.state,link=state.file_links.find(link=>link.item_id===current.id&&link.active),file=state.files.find(file=>file.id===link?.file_id),section=window.BSUI.section({title:"CAD files",count:file?1:0,countLabel:["file","files"],role:"engineering-file"}),input=node("input");input.type="file";input.setAttribute("aria-label","CAD file");
+  const upload=button(file?"Replace CAD file":"Upload CAD file",async()=>{if(!input.files.length){notify("Choose a file first.");return;}upload.disabled=true;try{await client.upload(projectId,input.files[0],{itemId:current.id,occurrenceId:context.occurrenceId});await refresh();notify("CAD file saved. Earlier History keeps the earlier file.");}catch(error){notify(error.message);}finally{upload.disabled=false;}});
+  window.BSUI.sectionActions(section.body,{primary:upload});section.body.append(input);if(file)section.body.append(fileLink(context,file));return {root:section.root,file};
  }
- async function renderPart(container,id){
-  const sequence=renderSequence,state=client.state,item=state.items.find(row=>row.id===id),occ=state.occurrences.find(row=>row.item_id===id&&(occurrenceId?row.id===occurrenceId:row.removed_at===null));if(!item||!occ||occ.removed_at!==null){container.append(node("p","Choose an item from the feature tree, or find removed work in History."));return;}
-  const context=ctx(),fileArea=engineeringFile(item),picture=partPicture(context,item,fileArea.file);
+ async function renderPart(container,id,{placement=null,summary=false}={}){
+  const sequence=renderSequence,state=client.state,item=state.items.find(row=>row.id===id),occ=state.occurrences.find(row=>row.item_id===id&&((placement||occurrenceId)?row.id===(placement||occurrenceId):row.removed_at===null));if(!item||!occ||occ.removed_at!==null){container.append(node("p","Choose an item from the feature tree, or find removed work in History."));return;}
+  const context={...ctx(),itemId:item.id,occurrenceId:occ.id},fileArea=engineeringFile(item,context);
+  if(!summary){const picture=partPicture(context,item,fileArea.file);
   const overview=node("section","","project-part-overview"),identity=node("div","","project-part-identity");
   identity.append(node("h2",containerName(item)),node("p",item.part_number+" · Revision "+(item.revision_level||1)+" (working draft)","muted"));
   if(item.short_name&&item.short_name!==item.name)identity.append(node("p",item.name,"project-part-subtitle"));
@@ -57,11 +59,11 @@ export function initProjectWorkspace(root=document){
   const headerControls=node("div","","project-build-controls");let buildBusy=false;
   const updateBuild=async patch=>{if(buildBusy)return;buildBusy=true;for(const control of headerControls.querySelectorAll("input,select"))control.disabled=true;const build={...buildFor(occ),...patch};await action("/occurrences/"+occ.id,{build},"Build information saved.","PATCH");buildBusy=false;for(const control of headerControls.querySelectorAll("input,select"))control.disabled=false;};
   const quantity=field("Quantity",occ.quantity,()=>{},{type:"number"});quantity.querySelector("input").onchange=event=>updateBuild({quantity:event.target.value===""?null:Number(event.target.value)});
-  headerControls.append(field("Status",occ.build_status,value=>updateBuild({build_status:value}),{options:[{value:"not_started",label:"Not started"},{value:"in_progress",label:"In progress"},{value:"complete",label:"Complete"}]}),quantity,checkbox("Needs attention",!!occ.attention,value=>updateBuild({attention:value})));identity.append(headerControls);
-  const details=window.BSUI.section({title:"Part details",role:"details"}),duplicate=button("Duplicate part",()=>action("/items/"+item.id+"/duplicate",{},"Independent copy added."));
+  headerControls.append(field("Status",occ.build_status,value=>updateBuild({build_status:value}),{options:[{value:"not_started",label:"Not started"},{value:"in_progress",label:"In progress"},{value:"complete",label:"Complete"}]}),quantity,checkbox("Needs attention",!!occ.attention,value=>updateBuild({attention:value})));identity.append(headerControls);}
+  const details=window.BSUI.section({title:summary?"Assembly details · "+item.part_number:"Part details",role:"details"}),duplicate=button("Duplicate part",()=>action("/items/"+item.id+"/duplicate",{},"Independent copy added."));
   const selected=state.selections.some(row=>row.id===item.id),copy=node("a","Copy to Workshop","ui-button");copy.href="workshop.html?"+new URLSearchParams({copyEngineProject:projectId,copyPart:item.id,returnProject:location.pathname+location.search});
-  window.BSUI.sectionActions(details.body,{primary:button("Edit part details",()=>editItem(context,item,occ)),secondary:[...(!item.is_assembly?[duplicate]:[]),...(selected?[button("Change Workshop selection",()=>workshopPartEditor(context,{item}))]:item.kind==="part"&&!item.is_assembly?[copy]:[])]});details.body.append(information("Item identity",[["Item type",item.is_assembly?"Subassembly":item.kind],["Generic Part Name",containerName(item)],["Part number",item.part_number],["Purpose (optional)",item.fields.purpose]]),configurationView({snapshot:{item,occurrence:{...occ,root:{name:state.project.name}}}},"Part details",{includeBuild:false,includeContainer:false}),information("Display options",[["Quantity",occ.quantity+" "+occ.unit],["Status",occ.build_status.replaceAll("_"," ")],["Needs attention",occ.attention?"Yes":"No"],["Attention note",occ.attention_note],["Hide from feature tree?",occ.hidden?"Yes":"No"]]));container.append(details.root);const source=workshopSourceView(context,item);if(source)container.append(source);if(item.is_assembly){const assembly=window.BSUI.section({title:"Subassembly",role:"subassembly"});assembly.body.append(button("Add custom part",()=>editItem(context,null,null,{parentId:occ.id})),button("Add subassembly",()=>editItem(context,null,null,{assembly:true,parentId:occ.id})),button("Add Workshop part",()=>workshopPartEditor(context,{parentId:occ.id})),button("Open subassembly BOM",()=>navigate(projectId,item.id,"bom",occ.id)),button("Open Archive",()=>openHistory(item.id,null,"archive")));container.append(assembly.root);}container.append(mediaGallery(context,{itemId:item.id,title:item.is_assembly?"Subassembly photos":"Part photos"}),workInstructions(item),fileArea.root);
-  const history=window.BSUI.section({title:"History",role:"item-history"});window.BSUI.sectionActions(history.body,{primary:button("Add entry",()=>editRecord(context)),secondary:[button("View all history",()=>openHistory(item.id))]});container.append(history.root);container.append(await partRevisions(context,item));try{const count=await latestHistory(context,history.body);if(sequence===renderSequence)history.setCount(count);}catch(error){if(sequence===renderSequence)notify(error.message);}
+  window.BSUI.sectionActions(details.body,{primary:button("Edit part details",()=>editItem(context,item,occ)),secondary:[...(!item.is_assembly?[duplicate]:[]),...(selected?[button("Change Workshop selection",()=>workshopPartEditor(context,{item}))]:item.kind==="part"&&!item.is_assembly?[copy]:[])]});details.body.append(information("Item identity",[["Item type",item.is_assembly?"Subassembly":item.kind],["Generic Part Name",containerName(item)],["Part number",item.part_number],["Purpose (optional)",item.fields.purpose]]),configurationView({snapshot:{item,occurrence:{...occ,root:{name:state.project.name}}}},"Part details",{includeBuild:false,includeContainer:false}),information("Display options",[["Quantity",occ.quantity+" "+occ.unit],["Status",occ.build_status.replaceAll("_"," ")],["Needs attention",occ.attention?"Yes":"No"],["Attention note",occ.attention_note],["Hide from feature tree?",occ.hidden?"Yes":"No"]]));container.append(details.root);const source=workshopSourceView(context,item);if(source)container.append(source);if(item.is_assembly&&!summary){const assembly=window.BSUI.section({title:"Subassembly",role:"subassembly"});assembly.body.append(button("Add custom part",()=>editItem(context,null,null,{parentId:occ.id})),button("Add subassembly",()=>editItem(context,null,null,{assembly:true,parentId:occ.id})),button("Add Workshop part",()=>workshopPartEditor(context,{parentId:occ.id})),button("Open subassembly BOM",()=>navigate(projectId,item.id,"bom",occ.id)),button("Open Archive",()=>openHistory(item.id,null,"archive")));container.append(assembly.root);}container.append(workInstructions(item,context),fileArea.root);
+  const history=window.BSUI.section({title:summary?"Assembly history":"History",role:"item-history"});window.BSUI.sectionActions(history.body,{primary:button("Add entry",()=>editRecord(context)),secondary:[button("View all history",()=>openHistory(item.id))]});container.append(history.root);container.append(await partRevisions(context,item,{title:summary?"Assembly revisions":"Revisions",lazy:summary}));const loadHistory=async()=>{try{const count=await latestHistory(context,history.body);if(sequence===renderSequence)history.setCount(count);return true;}catch(error){if(sequence===renderSequence)notify(error.message);return false;}};if(summary){let loaded=false,busy=false;history.root.addEventListener("toggle",async()=>{if(!history.root.open||loaded||busy)return;busy=true;loaded=await loadHistory();busy=false;});}else await loadHistory();
  }
  function restorePicker(){
   const input=node("input");input.type="file";input.accept=".bsproject,application/x-ndjson";input.setAttribute("aria-label","Project backup");
@@ -93,7 +95,7 @@ export function initProjectWorkspace(root=document){
    for(const [control,selected]of [[summary,!itemId&&view==="part"],[parts,view==="parts"],[bom,view==="bom"],[historyButton,view==="history"]])if(selected)control.setAttribute("aria-current","page");
    pages.append(summary,parts,bom,historyButton,button("Project settings",()=>projectSettings(ctx())),exportLink,exportHTML);
    pageActions.replaceChildren(button("All projects",()=>navigate()),...(["history","bom","parts"].includes(view)?[button("Back to build",()=>navigate(projectId))]:[]));
-   const panes=node("div","","project-panes"),sidebar=node("aside","","project-sidebar"),tree=renderProjectTree(ctx(),{showHidden,onShowHidden:value=>{showHidden=value;void refresh();},showDocuments,onShowDocuments:value=>{showDocuments=value;void refresh();},showWorkshop,onShowWorkshop:value=>{showWorkshop=value;void refresh();},selectedOccurrence:occurrenceId,collapsed:collapsedTree}),main=node("div","","project-main project-stack");sidebar.append(tree,pages);panes.append(sidebar,main);content.replaceChildren(panes);
+   const panes=node("div","","project-panes"),sidebar=node("aside","","project-sidebar"),tree=renderProjectTree(ctx(),{showHidden,onShowHidden:value=>{showHidden=value;void refresh();},showDocuments,onShowDocuments:value=>{showDocuments=value;void refresh();},showWorkshop,onShowWorkshop:value=>{showWorkshop=value;void refresh();},selectedOccurrence:occurrenceId,summarySelected:!itemId&&view==="part",collapsed:collapsedTree}),main=node("div","","project-main project-stack");sidebar.append(tree,pages);panes.append(sidebar,main);content.replaceChildren(panes);
    initSplitPanes(panes,{key:"project-workspace",panes:[{key:"tree",selector:".project-sidebar",name:"feature tree"}]});
    if(view==="history"){
     const memo=historyMemos.get(projectId)||{mode:"history",scope:itemId||"",type:"all",q:"",entries:[],cursor:null,selected:null,scroll:0};historyMemos.set(projectId,memo);main.append(createHistoryView(ctx(),memo));return;
@@ -101,10 +103,11 @@ export function initProjectWorkspace(root=document){
    if(view==="bom"){main.append(renderProjectBOM(ctx(),occurrenceId));return;}
    if(view==="parts"){main.append(renderProjectParts(ctx()));return;}
    if(itemId)await renderPart(main,itemId);else{
-    const overview=node("section","","project-part-overview project-summary-overview"),identity=node("div","","project-part-identity"),photos=mediaGallery(ctx(),{title:"Project photos"});identity.append(node("h2","Project summary"));
+    const rootAssembly=summaryAssembly(projectTree(state.items,state.occurrences)),overview=node("section","","project-part-overview project-summary-overview"),identity=node("div","","project-part-identity");identity.append(node("h2","Project summary"));
     for(const [label,value]of [["Name",state.project.name],["Active parts",state.occurrences.filter(row=>row.removed_at===null).length],["Number format",state.project.prefix+"0".repeat(state.project.digits)]])identity.append(window.BSUI.fieldRow(label,String(value)).root);
-    overview.append(projectPicture(ctx(),()=>{photos.open=true;photos.scrollIntoView({block:"nearest"});}),identity);
-    main.append(overview,photos,projectSummary(ctx()));
+    if(rootAssembly)identity.append(window.BSUI.fieldRow("Top assembly",rootAssembly.item.part_number+" · "+rootAssembly.item.name).root);
+    overview.append(projectPicture(ctx(),{assembly:rootAssembly?.item}),identity);
+    main.append(overview);if(rootAssembly)await renderPart(main,rootAssembly.item.id,{placement:rootAssembly.occurrence.id,summary:true});main.append(projectSummary(ctx()));
     const history=window.BSUI.section({title:"History",role:"project-history"}),archived=state.occurrences.filter(row=>row.removed_at!==null),folder=window.BSUI.section({title:"Archive",role:"archive-folder",count:archived.length+state.steps.filter(row=>row.retired_at).length});folder.body.append(button("Open Archive",()=>openHistory("",null,"archive")));history.body.append(folder.root);main.append(history.root);
    }
  }
