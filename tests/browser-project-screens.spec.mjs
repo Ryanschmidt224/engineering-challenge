@@ -65,8 +65,9 @@ for(const width of [1440,390])test("container identity and familiar field groups
 
 test("summary is visible before its fresh state read finishes and still receives newer changes",async({page,request,context})=>{
  const f=await setup(page,request,context);await page.goto("/project.html?"+new URLSearchParams({project:f.id,item:f.part.itemId,occurrence:f.part.occurrenceId}));await expect(page.locator(".project-part-identity")).toBeVisible();
+ const workspaceTop=(await page.locator(".project-panes").boundingBox()).y;
  let release;const gate=new Promise(resolve=>release=resolve);let reads=0;await page.route("**/api/project-engine/projects/"+f.id+"/state",async route=>{reads++;await gate;await route.continue();});
- await page.getByRole("button",{name:"Project summary",exact:true}).click();await expect(page.locator(".project-summary-overview")).toBeVisible();await expect(page.locator("[data-notice]")).toContainText("Refreshing project");expect(reads).toBe(1);
+ await page.getByRole("button",{name:"Project summary",exact:true}).click();await expect(page.locator(".project-summary-overview")).toBeVisible();await expect(page.locator("[data-notice]")).toContainText("Refreshing project");expect(reads).toBe(1);expect((await page.locator(".project-panes").boundingBox()).y).toBe(workspaceTop);await expect(page.locator("[data-notice]")).toHaveCSS("position","fixed");
  const before=await f.state(),renamed=await context.request.patch(f.base,{headers:{origin:"http://127.0.0.1:4173"},data:{operationId:crypto.randomUUID(),expectedRevision:before.project.revision,name:"Freshly revalidated notebook"}});expect(renamed.ok()).toBe(true);release();await expect(page.locator("[data-page-title]")).toHaveText("Freshly revalidated notebook");expect((await f.state()).items).toEqual(before.items);
 });
 

@@ -16,9 +16,6 @@
 .project-heading p {
   margin-bottom: var(--space-2);
 }
-.project-notice {
-  margin-bottom: var(--space-3);
-}
 .project-panes {
   min-width: 0;
   --pane-default-tree: 17rem; /* Initial engineering tree width. */

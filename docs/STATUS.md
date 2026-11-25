@@ -76,3 +76,5 @@ Photo controls now use the shared bottom-right Edit photo pencil on project, par
 The shared record attachment picker has a styled Choose files button and a visible keyboard-focusable drag/drop and right-click image paste target. Arbitrary supported files can be dropped; pasted images use the common photo paste component. Explicit selection/upload, destination groups, limits, guarded saves and immutable file IDs remain unchanged.
 
 Project summary tree navigation keeps a neutral outlined frame without selected/hover background changes; keyboard focus remains visible. Workspace section header styling now reaches nested shared sections as well as direct children, so summary BOM/Tools and other section headers use the same surface tokens and open-state corners.
+
+Refresh/save feedback now uses the shared ui-status-toast outside document flow, so inserting or clearing Refreshing project does not push the workspace down/up. Empty notifications contain no empty span or visible box. The delayed-summary revalidation browser check also asserts workspace position stays fixed while the refresh message is visible.
