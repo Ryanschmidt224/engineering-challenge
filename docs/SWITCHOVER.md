@@ -30,7 +30,7 @@ Transfer credentials directly from the owner's browser to the trusted secret sto
 
 Prepared code pins are source `0fc670b9b7049c8468cb0bb769c2d54046a6f907` and recovery `8c09362abf84ce0ba1302366829be3a55efb9c5f`; only the recovery D1 override differs. These are version-control pins, not independently read runtime/binding evidence.
 
-The runner checks actual runtime-version bindings before proof writes, refuses a common source/target database, checks production remains off, then verifies deployed legacy catalog reads/save rejection/unchanged responses and the engine proof matrix. Retain the non-secret artifact and exact deployment IDs in the existing proof directory.
+The runner reads each runtime identity, then checks that exact deployment through Cloudflare's [Preview deployment API](https://github.com/cloudflare/workers-sdk/blob/main/packages/deploy-helpers/src/preview/api.ts) (`workers/workers/engineering-challenge/previews/<preview-slug>/deployments/<runtime-id>`, with bindings in `result.env`) before proof writes. Preview deployments are not retrieved through the production script versions endpoint. It refuses a common source/target database, checks production remains off, then verifies deployed legacy catalog reads/save rejection/unchanged responses and the engine proof matrix. Retain the non-secret artifact and exact deployment IDs in the existing proof directory.
 
 The 1,000-record pass is the acceptance gate for the initial release. Report the observed request and transfer timings and their limits. Worker CPU, exact D1 execution, cleanup trigger comparisons and larger workloads can be measured later as needed.
 
