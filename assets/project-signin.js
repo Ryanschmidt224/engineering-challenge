@@ -1,0 +1,14 @@
+import {node,field,actions} from "./workshop-ui.js";
+
+// Uses the existing owner-account endpoints. No registration or credentials
+// persistence; this separate dialog leaves an open project editor untouched.
+export function initProjectSignin({onSignIn,onSignOut}){
+ const dialog=node("dialog","","dialog"),heading=node("h2"),form=node("form"),message=node("p","","error"),identity=node("p"),email=field("Email","",()=>{},{type:"email",required:true}),password=field("Password","",()=>{},{type:"password",required:true}),submit=window.BSUI.button("Sign in",()=>form.requestSubmit(),{variant:"primary"}),cancel=window.BSUI.button("Cancel",()=>dialog.close()),signout=window.BSUI.button("Sign out",async()=>{await run(async()=>{await account("DELETE");dialog.close();onSignOut();});});
+ const address=email.querySelector("input"),secret=password.querySelector("input");address.autocomplete="email";secret.autocomplete="current-password";secret.minLength=12;secret.maxLength=256;message.setAttribute("role","alert");form.append(email,password,actions(submit));dialog.append(heading,identity,form,message,actions(signout,cancel));document.body.append(dialog);let busy=false;
+ async function account(method="GET",body){const response=await fetch("/api/accounts",{method,credentials:"same-origin",cache:"no-store",...(body?{headers:{"content-type":"application/json"},body:JSON.stringify(body)}:{})}),result=await response.json();if(!response.ok)throw Error(response.status===401?"Email or password not recognized. Use the existing owner account.":result.error||"Account service unavailable. Try again.");return result;}
+ async function run(work){if(busy)return;busy=true;message.textContent="";submit.disabled=signout.disabled=cancel.disabled=true;try{await work();}catch(error){message.textContent=error.message;}finally{busy=false;submit.disabled=signout.disabled=cancel.disabled=false;}}
+ form.onsubmit=event=>{event.preventDefault();void run(async()=>{await account("POST",{action:"login",email:address.value.trim(),password:secret.value});secret.value="";dialog.close();onSignIn();});};
+ dialog.oncancel=event=>{if(busy)event.preventDefault();};dialog.addEventListener("close",()=>{secret.value="";});
+ async function open(){if(dialog.open)return;heading.textContent="Account";dialog.setAttribute("aria-label","Owner account");identity.textContent="Checking account…";message.textContent="";form.hidden=signout.hidden=true;dialog.showModal();try{const {user}=await account();heading.textContent=user?"Owner account":"Sign in";identity.textContent=user?user.email:"Sign in with the existing owner account. Public registration is closed.";form.hidden=!!user;signout.hidden=!user;if(!user)address.focus();}catch(error){identity.textContent="";form.hidden=false;message.textContent=error.message;}}
+ const trigger=document.querySelector(".ui-site-account");if(trigger)trigger.onclick=event=>{event.preventDefault();void open();};return open;
+}

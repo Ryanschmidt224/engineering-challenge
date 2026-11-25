@@ -8,13 +8,14 @@ export function partHistoryPrompt(ctx,item,trigger,{archive=false,changes={},pat
  let token=expectedRevision;const projectId=ctx.projectId;
  const archiveLabel=item.is_assembly?"Archive subassembly":"Archive part";
  const form=openHistoryEntryDialog({trigger,project:projectId,title:archive?archiveLabel:Object.keys(changes).length?"Save as revision":"Create a Revision",description:scope?"Save a historical copy of this "+(scope.is_group?"instruction group and its entire nested subtree":"instruction and its records")+", including order and exact attachments. The saved copy keeps its revision number; this working scope advances once. The part revision stays unchanged.":archive?partHelp.archive:Object.keys(changes).length?partHelp.saveAsRevision:partHelp.revisions,submitLabel:archive?archiveLabel:"Save revision",archive,ui:window.BSUI,photoEditor:window.BSPhotoEditor,
-  uploadPhoto:async file=>{const result=await ctx.client.upload(projectId,file,{expectedRevision:token});token=result.revision;onOwnUpload(token);return result.fileId;},
+  uploadPhoto:async file=>{try{const result=await ctx.client.upload(projectId,file,{expectedRevision:token});token=result.revision;onOwnUpload(token);return result.fileId;}catch(error){offerSignin(error);throw error;}},
   onSave:async entryDetails=>{
    try{
     await ctx.client.write(projectId,path||(archive&&ctx.occurrenceId?"/occurrences/"+ctx.occurrenceId+"/archive":"/items/"+item.id+(archive?"/archive":"/revisions")),"POST",{...changes,...(ctx.occurrenceId?{occurrenceId:ctx.occurrenceId}:{}),entryDetails},token);
     const refreshed=archive?await ctx.openArchive():await ctx.refresh();
     if(refreshed===false)throw Error("The change was saved but could not be reopened. Retry this same save to reopen it without creating another copy.");onComplete();
    }catch(error){
+    offerSignin(error);
     if(error.status===409&&!form.body.querySelector("[data-revision-review]")){
      const review=node("div");review.dataset.revisionReview="";
      review.append(window.BSUI.button("Review newer changes",async()=>{try{
@@ -31,7 +32,9 @@ export function partHistoryPrompt(ctx,item,trigger,{archive=false,changes={},pat
     }
     throw error;
    }
-  }});return form;
+  }});
+ function offerSignin(error){if(error.status!==401||!ctx.signIn||form.body.querySelector("[data-session-signin]"))return;const login=window.BSUI.button("Log in again",()=>ctx.signIn());login.dataset.sessionSignin="";form.body.append(login);}
+ return form;
 }
 
 export async function partRevisions(ctx,item){

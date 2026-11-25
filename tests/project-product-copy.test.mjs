@@ -1,6 +1,11 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
-import {productCopyDraft,matchingProduct} from "../assets/project-product-copy.js";
+import {productCopyDraft,matchingProduct,engineProductSource} from "../assets/project-product-copy.js";
+
+test("engine product draft copies physical fields and units without project context",()=>{
+ const item={id:"part",kind:"part",name:"Power module",part_number:"BB100",fields:{manufacturer:"Acme",mpn:"AC12",purpose:"Private purpose",specs:[{label:"Voltage",value:12,unit:"V"}]},revision_level:4},before=structuredClone(item),draft=productCopyDraft(engineProductSource(item),"family","new");
+ assert.equal(draft.name,"AC12");assert.equal(draft.manufacturer,"Acme");assert.match(draft.notes,/Voltage: 12 V/);assert.doesNotMatch(JSON.stringify(draft),/Private purpose|BB100|revision/);assert.deepEqual(item,before);assert.throws(()=>engineProductSource({...item,is_assembly:1}),/off-the-shelf/);
+});
 
 test("catalog copy includes physical identity and sourcing without project data or guessed field mapping",()=>{
  const part={id:"source",itemType:"part",partType:"purchased",name:"Project role",implementationName:"Physical resistor",model:"EX-10K",manufacturer:"Example",description:"Fit inside housing",quantity:12,partNumber:"NR100",projectDetails:{notes:"Private project notes"},specifications:[{name:"Resistance",value:"10k Ω"},{name:"Tolerance",value:0,source:"inferred"}],supplierOffers:[{vendor:"digikey",sku:"EX-ND",url:"https://www.digikey.com/example"}],photoRevision:"photo",implementations:[{name:"Old alternative"}]};

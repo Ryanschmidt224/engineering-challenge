@@ -14,10 +14,10 @@ async function archivePlacement(ctx,item,trigger){
   const list=node("ul");for(const member of preview.members)list.append(node("li",member.path.map(row=>row.name).join(" / ")+" · "+member.part_number));area.append(list);form.body.prepend(area);
  }catch(error){ctx.notify(error.message);}finally{trigger.disabled=false;}
 }
-export function renderProjectTree(ctx,{showHidden,onShowHidden,selectedOccurrence,collapsed=new Set()}){
+export function renderProjectTree(ctx,{showHidden,onShowHidden,showDocuments=true,onShowDocuments=()=>{},showWorkshop=true,onShowWorkshop=()=>{},selectedOccurrence,collapsed=new Set()}){
  const state=ctx.client.state,tree=projectTree(state.items,state.occurrences),nav=node("nav","","project-tree");nav.setAttribute("aria-label","Feature tree");
  const addActions=parentId=>[{label:"Add custom part",run:()=>editItem(ctx,null,null,{parentId})},{label:"Add subassembly",run:()=>editItem(ctx,null,null,{assembly:true,parentId})},{label:"Add Workshop part",run:()=>workshopPartEditor(ctx,{parentId})},{label:"Add existing part placement",run:()=>placementEditor(ctx,{parentId})}];
- nav.append(actions(button("Add custom part",()=>editItem(ctx),{variant:"primary"}),button("Add subassembly",()=>editItem(ctx,null,null,{assembly:true})),button("Add Workshop part",()=>workshopPartEditor(ctx))),checkbox("Show hidden parts",showHidden,onShowHidden));
+ nav.append(actions(button("Add custom part",()=>editItem(ctx),{variant:"primary"}),button("Add subassembly",()=>editItem(ctx,null,null,{assembly:true})),button("Add Workshop part",()=>workshopPartEditor(ctx))),checkbox("Show hidden parts",showHidden,onShowHidden),checkbox("Show documents",showDocuments,onShowDocuments),checkbox("Show Workshop items",showWorkshop,onShowWorkshop));
  const root=listCard(state.project.name,()=>ctx.navigate(ctx.projectId)),rootMore=button("⋯",()=>contextMenu(rootMore,null,addActions(null)),{variant:"quiet",small:true});rootMore.setAttribute("aria-label","Project tree actions");const rootRow=node("div","","project-tree-row");rootRow.append(root,rootMore);nav.append(rootRow);root.oncontextmenu=event=>{event.preventDefault();contextMenu(rootMore,event,addActions(null));};
  async function move(occurrence,delta){
   const siblings=(tree.children.get(occurrence.parent_id||null)||[]).filter(tree.active),index=siblings.findIndex(row=>row.id===occurrence.id),ids=siblings.map(row=>row.id);[ids[index],ids[index+delta]]=[ids[index+delta],ids[index]];
@@ -25,7 +25,7 @@ export function renderProjectTree(ctx,{showHidden,onShowHidden,selectedOccurrenc
  }
  function children(parentId,host){
   const list=node("ul","","project-tree-children");for(const occurrence of tree.children.get(parentId)||[]){
-   if(!tree.active(occurrence)||occurrence.hidden&&!showHidden)continue;
+   if(!tree.active(occurrence)||occurrence.hidden&&!showHidden)continue;const definition=tree.definitions.get(occurrence.item_id);if(!showDocuments&&definition.kind==="document"||!showWorkshop&&state.selections.some(selection=>selection.id===definition.id))continue;
    const item=tree.definitions.get(occurrence.item_id),local={...ctx,itemId:item.id,occurrenceId:occurrence.id},holder=node("li"),row=listCard("",()=>ctx.navigate(ctx.projectId,item.id,"part",occurrence.id)),title=node("strong"),mark=node("span",occurrence.attention?"!":occurrence.build_status==="complete"?"✓":"","ui-status-mark"+(occurrence.attention?" ui-status-mark--attention":occurrence.build_status==="complete"?" ui-status-mark--complete":""));
    mark.setAttribute("aria-label",occurrence.attention?"Needs attention":occurrence.build_status.replaceAll("_"," "));title.append(mark,document.createTextNode((item.short_name||item.name)+(occurrence.quantity>1?" ("+occurrence.quantity+")":"")));row.append(title,node("small",item.part_number));row.setAttribute("aria-current",String(occurrence.id===selectedOccurrence));row.dataset.occurrenceId=occurrence.id;
    const more=button("⋯",()=>menu(),{variant:"quiet",small:true});more.setAttribute("aria-label","Actions for "+item.name);more.setAttribute("aria-haspopup","menu");

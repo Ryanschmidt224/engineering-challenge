@@ -10,6 +10,10 @@ import {handleProjectEngine} from "../functions/api/project-engine.js";
 import worker from "../worker.js";
 import {readFileSync} from "node:fs";
 const id=()=>crypto.randomUUID();
+test("signed-out engine page keeps its 401 and serves only the sign-in shell",async()=>{
+ let assets=0;const env={NEW_PROJECT_ENGINE:"1",PHOTOS:new TestR2(),admin_password:"synthetic-test-only",WORKSHOP_DB:{prepare(){throw Error("No schema or project reads before sign-in");}},ASSETS:{async fetch(request){assets++;assert.equal(new URL(request.url).pathname,"/project-signin.html");return new Response("Sign in on this page");}}};
+ const response=await worker.fetch(new Request("https://preview.test/project.html"),env,{});assert.equal(response.status,401);assert.equal(response.headers.get("cache-control"),"no-store");assert.match(await response.text(),/Sign in on this page/);assert.equal(assets,1);assert.equal((await worker.fetch(new Request("https://preview.test/api/project-engine/projects"),env,{})).status,401);assert.equal(assets,1);
+});
 const newProject=async db=>{
  await initializeProjectEngine(db);
  const projectId=id(),actorId="fixture-owner",input={projectId,actorId,operationId:id(),expectedRevision:null,payload:{action:"create"}};
@@ -91,7 +95,7 @@ async function environment(role="admin"){
 test("production flag denies routes before auth, migrations and static assets",async()=>{
  const unavailable={get(){throw Error("Production storage must not be accessed");}};
  const env={PHOTOS:unavailable,WORKSHOP_DB:unavailable,ASSETS:{fetch(){throw Error("Static proof page must not be served");}}};
- for(const path of ["/api/project-engine","/api/project-engine/proof","/api/project-engine/files/1","/api/project-engine/maintenance/orphans","/project-engine-proof","/project-engine-proof.html","/project-engine-proof/","/project","/project/","/project.html"]){
+ for(const path of ["/api/project-engine","/api/project-engine/proof","/api/project-engine/files/1","/api/project-engine/maintenance/orphans","/project-engine-proof","/project-engine-proof.html","/project-engine-proof/","/project","/project/","/project.html","/project-signin.html"]){
   assert.equal((await worker.fetch(req(path),env,{})).status,404);
  }
  assert.equal((await handleProjectEngine(req("/api/project-engine/proof","POST"),env)).status,404);
