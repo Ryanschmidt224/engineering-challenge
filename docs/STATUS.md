@@ -6,9 +6,9 @@ Current state and next step only. Keep at most three lines per PR; no dated hand
 
 Production follows main; its exact head/build is tracked by GitHub deployment checks. The owner has approved production switch-over; that approval is retained and must not be requested again. NEW_PROJECT_ENGINE remains off while integration, legacy read-only preservation and required acceptance checks are completed. No real data, files or backups are deleted or overwritten.
 
-- #75–#80 merged under the existing review rules and passing checks; tested main is `0fc670b` (425 code checks, 166 browser workflows). Read-only preservation, media/daily backups, operator checks, Settings downloads and project entry are integrated. Production remains off; no live capacity execution or activation is claimed.
-- Manual source/independent-recovery/unchanged-source reports are retained in proofs/PROJECT_CUTOVER_ACCEPTANCE.json. Actual scripted capacity and platform CPU/SQL/trigger-state observations still require secure operator access. Activation and the 100-placement Archive limit are already approved; do not ask again.
-- Isolated previews now share tested main code: source `0fc670b`, recovery `8c09362` (only its independent D1 override differs). Confirm builds/runtime bindings before the live run. SWITCHOVER.md contains the exact access, acceptance and held activation steps; the coding workspace became unavailable, so subsequent source preparation relies on GitHub/CI.
+- Integrated #75–#81 and the #83 rollback note. Claude's late reviews approved #78–#81 without fixes; #82's configuration review has no blocking code issue. The activation draft stays held, and production remains off.
+- Manual source/recovery/unchanged-source reports remain in proofs/PROJECT_CUTOVER_ACCEPTANCE.json. Source `0fc670b` and recovery `8c09362` builds pass; only the recovery D1 override differs. Actual platform timing/acceptance still needs secure operator access. Activation and the Archive limit are already approved; SWITCHOVER.md records the remaining steps.
+- Feature-tree scrolling repair removes the obsolete clipping rule and bounds long trees on narrow screens. Desktop/phone regressions fail before and pass after the repair; local checks pass (425 code, 168 browser). Require green CI before merging; no backend, save-guard or production-gate changes. Next: the secure real-platform run and held activation.
 
 ## Early switch-over policy
 
