@@ -4,7 +4,8 @@ const make=(tag,text="",cls="")=>{const node=document.createElement(tag);node.te
 
 // One explanation/photo draft per trigger. Uploaded photo IDs survive failed
 // saves; identical retries retain their operation ID, edited payloads get a new one.
-export function openHistoryEntryDialog({trigger,project,title,description,submitLabel,archive=false,ui,photoEditor,onSave,uploadPhoto}){
+export function openHistoryEntryDialog({trigger,title,description,submitLabel,archive=false,ui,photoEditor,onSave,uploadPhoto}){
+ if(typeof uploadPhoto!=="function")throw Error("History dialog requires a photo upload adapter.");
  const existing=openPrompts.get(trigger);if(existing?.dialog.open){existing.dialog.focus();return existing;}
  const fields={},photos=[];let dirty=false,operation=null,previousPayload=null;
  const warn=event=>{if(form.dialog.open&&(dirty||form.isBusy())){event.preventDefault();event.returnValue="";}};
@@ -13,9 +14,7 @@ export function openHistoryEntryDialog({trigger,project,title,description,submit
  },onSubmit:async()=>{
   for(const photo of photos){
    if(photo.id)continue;
-   if(uploadPhoto)photo.id=await uploadPhoto(photo.file);
-   else{const response=await fetch("/api/recipe-files?project="+encodeURIComponent(project),{method:"POST",credentials:"same-origin",headers:{"content-type":"application/octet-stream","x-file-name":encodeURIComponent(photo.file.name)},body:photo.file});
-    const data=await response.json();if(!response.ok||!data.id)throw Error(data.error||"Photo upload failed. Your draft is preserved.");photo.id=data.id;}
+   photo.id=await uploadPhoto(photo.file);
   }
   const details={whatChanged:fields.whatChanged?.value||"",whyChanged:fields.whyChanged.value,notes:fields.notes.value,photos:photos.map(photo=>photo.id),photoNames:Object.fromEntries(photos.filter(photo=>photo.name.trim()).map(photo=>[photo.id,photo.name.trim()]))};
   const fingerprint=JSON.stringify(details);if(previousPayload!==fingerprint){operation=crypto.randomUUID();previousPayload=fingerprint;}

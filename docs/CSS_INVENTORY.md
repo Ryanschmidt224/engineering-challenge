@@ -28,7 +28,11 @@ The isolated dead-rule commit removes 359 selectors and 49,202 bytes. Its curate
 
 Additional superseded header, toolbar and section-frame selectors are removed when the shared definition takes ownership. Legacy freeze hashes and specificity ceilings are updated downwards in scripts/css-baseline.json. No new !important rules or project-ID selectors are introduced.
 
-See FEATURE_INVENTORY.md for feature-preservation scope and CSS_MIGRATION.md for pending screenshot requests and rollback. Claude reviewed the foundation batch; the owner subsequently authorized deployment of the evaluated feature-inventory cleanup.
+See FEATURE_INVENTORY.md for feature-preservation scope and UI_STANDARDS.md for component ownership, regression evidence and rollback. Claude reviewed the foundation batch; the owner subsequently authorized deployment of the evaluated feature-inventory cleanup.
 
 
 After the owner-approved cleanup, project markup is one inert template and all project layout scopes use project-view. CSS contains no launcher/linear/robot ID selectors. The strict class-producer CI check follows loaded scripts and imports; its two narrow patterns cover computed button variants and status markers. The subsequent reviewed retirement pass removes or simplifies 677 selectors, including dead branches inside boolean pseudos, saving 75,889 bytes after project-scope consolidation. Existing live alternatives and attribute selectors are retained. Full class/mode lists are in scripts/css-retired.json and scripts/css-dynamic-classes.json.
+
+## Calculator separation
+
+Calculator form rules now live in calculators.css, loaded by calculators.html and the retained index calculator route. Their former site.css rules are removed, rather than overridden. The standalone page loads theme/base/components/ui-kit/project-directory/calculators styles and does not load site*.css or legacy project controllers. Existing inventory totals above describe the earlier measured baseline, not this new page.

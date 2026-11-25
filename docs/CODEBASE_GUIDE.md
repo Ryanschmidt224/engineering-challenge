@@ -6,27 +6,32 @@ Read `STATUS.md` for current releases, the next integration step and open verifi
 
 ## Fast orientation
 
-This is a private single-owner HTML/CSS/JavaScript site hosted on Cloudflare Workers. There is no bundler or desktop/local-server application. `worker.js` dispatches API requests to handlers in `functions/api/`. Projects and attachments use R2; Workshop families/products/uses and Knowledge tiles/links use D1. Git commits do not back up stored application data.
+This is a private single-owner HTML/CSS/JavaScript site hosted on Cloudflare Workers. There is no bundler or desktop/local-server application. `worker.js` dispatches API requests to handlers in `functions/api/`. Active project metadata, Workshop families/products/uses and Knowledge tiles/links use D1; immutable project files and backups use R2. Retained legacy project metadata and attachments remain in their existing R2 namespaces. Git commits do not back up stored application data.
 
 ### What lives where
 
 | Area | File | Responsibility |
 | --- | --- | --- |
-| HTML and load order | `index.html` | Navigation and page scaffolding; includes browser scripts |
+| Active project entry | `project.html`, `assets/project-workspace.js` | Current D1-backed project directory, shell, navigation and state revalidation |
+| Project UI owners | `project-tree-view.js`, `project-bom-view.js`, `project-editors.js`, `project-instructions.js`, `project-history-view.js` (in `assets/`) | Tree, BOM, editors, instructions and History; use existing guarded client commands |
+| Active project persistence | `functions/api/project-engine.js`, `project-command.js`, `project-*-commands.js` | Owner guards, atomic command admission and D1 changes; see the detailed engine contracts below |
+| Active project backup/recovery | `functions/api/project-backup.js`, `project-restore-staging.js` and their supporting modules | Complete metadata and immutable files; changes require recovery review |
+| Calculators | `calculators.html`, `assets/calculators.js`, `calculator-catalog.js`, `calculator-directory.js`, `calculators.css` | Independent page and shared definitions/forms; no legacy project bootstrap |
+| Retained legacy HTML | `index.html` | Legacy project views, account UI and compatibility calculator route; classic script order remains intentional |
 | Shared header | `assets/site-header.js` | ES module; explicit `initSiteHeader()` from each page, one branding/navigation/account structure |
-| Site entrypoint | `assets/site.js` | Main navigation, learning tiles, admin/login, photo setup, controller initialization |
-| Assembly and workspace | `assets/site-assembly.js` | Canonical assembly tree, workspace, BOM, part-detail and photo-storage workflows |
-| Part/component editor | `assets/site-assembly.js` | BOM component editor, review/save flow and component API integration |
+| Legacy site entrypoint | `assets/site.js` | Main navigation, learning tiles, admin/login, photo setup, controller initialization |
+| Legacy assembly and workspace | `assets/site-assembly.js` | Canonical assembly tree, workspace, BOM, part-detail and photo-storage workflows |
+| Legacy part/component editor | `assets/site-assembly.js` | BOM component editor, review/save flow and component API integration |
 | Shared photo controls | `assets/photo-editor.js` | Pencil launcher and modal dialog shell reused for parts and assemblies |
 | Pure BOM selector | `assets/bom-model.js` | Assembly descendants, visible purchased parts vs shop stock, quantity/assembly display labels; no browser or storage dependencies |
-| Recipes / work instructions | `assets/recipe-editor.js` | Discrete instruction steps, editing, local recipe UI state |
+| Legacy recipes / work instructions | `assets/recipe-editor.js` | Discrete instruction steps, editing, local recipe UI state |
 | Workshop | `assets/family-workshop.js`, `assets/workshop-ui.js`, `functions/api/workshop-db.js` | D1 families/products/uses and related Knowledge |
 | Legacy resource linking/calculators | `assets/resources.js` | Still used by workspace references and calculators; do not delete before auditing readers |
 | Knowledge | `assets/knowledge.js`, `assets/knowledge-model.js`, `functions/api/knowledge.js` | Plain-text tiles, explicit links and related knowledge |
-| Project item creation | `assets/part-create.js` | Project-only parts, documents and code; Workshop family/product selection stays on Workshop |
+| Legacy project item creation | `assets/part-create.js` | Project-only parts, documents and code; Workshop family/product selection stays on Workshop |
 | Drawings and part files | `assets/drawings.js`, `assets/part-files.js` | Drawing attachments and files |
 | Shared calculation rules | `assets/engineering-core.js` | Pure domain functions, portable outside browser |
-| Local project and recovery | `assets/local-project.js`, `assets/archive-check.js` | Local project support and archive validation |
+| Legacy local project and recovery | `assets/local-project.js`, `assets/archive-check.js` | Local project support and archive validation |
 | Shared styles | `assets/theme.css`, `assets/ui-kit.css`, `assets/components.css` | Tokens; site header, controls, sections and cards. Detailed contract: `UI_STANDARDS.md` |
 | Legacy styles | Ordered `site*.css` files | Frozen except reviewed removals; migrate ownership rather than add patches |
 | API controllers | `functions/api/*.js` | Cloudflare-backed data reads, writes, and archive endpoints |
@@ -35,26 +40,30 @@ This is a private single-owner HTML/CSS/JavaScript site hosted on Cloudflare Wor
 
 ## How browser code connects
 
-Workshop and Knowledge use ES module entry points. Every page calls the shared header module's explicit initializer. The main page still loads the existing classic feature controllers before `site.js`; their global lexical dependencies require the current order. `window.BSUI` remains the deliberate shared-kit bridge during migration. New modules must not add globals or execute application initialization implicitly at import.
+Projects, Workshop, Knowledge and the standalone Calculators page use ES module entry points. Every page calls the shared header module's explicit initializer. The retained legacy index still loads its classic feature controllers before `site.js`; their global lexical dependencies require the current order. `window.BSUI` remains the deliberate shared-kit bridge during migration. New modules must not add globals or execute application initialization implicitly at import.
 
 The shared header reuses the existing Account button on the main page so its authentication handler survives initialization. Standalone-page Account links open the same existing account UI. No separate sign-in implementation is introduced.
 
 ## Common change paths
 
-### Change BOM list layout or behavior
+### Change active project screens
+
+Start in `assets/project-workspace.js` and the feature owners in the table above. Tree drop planning stays in `project-tree-drag.js`; item presentation stays separate from `project-item-model.js` validation. Screen refactors must preserve guarded commands, revision/save semantics and frozen history. Use the legacy paths below only for retained legacy screens.
+
+### Change retained legacy BOM list layout or behavior
 1. Start in `assets/site-assembly.js` and find `renderWorkspaceParts` or the BOM rendering code.
 2. Use shared components and a feature-owned layout file; delete replaced legacy rules in the same batch. Edit `assets/theme.css` for shared values.
 3. Change filtering/quantity labels in `assets/bom-model.js`, then run `tests/bom-model.test.mjs`.
 4. Confirm both thumbnail and list views, nested assembly quantities, and the standard shop-materials section.
 5. Do not alter quantities or persistent records for a purely visual change.
 
-### Change part details or part editing
+### Change retained legacy part details or part editing
 - Workspace part detail display: `assets/site-assembly.js`.
 - Component edit/review/save controller: `assets/site-assembly.js`.
 - Server writes/validation: `functions/api/components.js`; workspace data: `functions/api/workspace.js`.
 - Always distinguish display-only values from saved data and generated BOM entries.
 
-### Change work-instruction steps
+### Change retained legacy work-instruction steps
 - Main editable recipe UI: `assets/recipe-editor.js`.
 - Workspace mounting and data loading: `assets/site-assembly.js`.
 - Data structure contract: `docs/DATA_ARCHITECTURE.md`.
@@ -101,9 +110,9 @@ This includes syntax checking of the site scripts and Node's test suite. A separ
 7. Put new pure calculations in `engineering-core.js` (or another testable pure domain module), not inline in DOM handlers.
 8. New tests should assert observable behavior where practical, not only that source text contains a phrase.
 
-## Current architecture and remaining debt
+## Retained legacy architecture and remaining debt
 
-Assembly and part management now lives in `assets/site-assembly.js`, loaded after
+Retained legacy assembly and part management lives in `assets/site-assembly.js`, loaded after
 `assets/photo-editor.js` and before `assets/site.js`. This is one canonical
 controller, not two copies. Its large closure remains intact because its
 callbacks share state; the Playwright browser test guards its initialization.
@@ -165,7 +174,7 @@ Workshop and Knowledge explicitly initialize assets/split-panes.js from their pa
 
 ## Approved project-engine replacement
 
-The current production project engine remains R2-backed. `HISTORY_REWRITE_PLAN.md` and `BATCH0_CUSTOM_PART_SPEC.md` define the approved D1 replacement and its gates; they do not claim it is implemented. Initial scope is one project root and custom parts. Workshop integration, nested assemblies, purchasing, markup, code and harness follow later. The preview flag must never be set in production until the owner approves cutover.
+The owner-approved D1 project engine is active in production. `STATUS.md` owns release and verification state; `HISTORY_REWRITE_PLAN.md` and `BATCH0_CUSTOM_PART_SPEC.md` retain design/acceptance context. Legacy reading and exports remain supported. A flag reversal is not a data rollback; retain the documented compatibility and recovery boundaries.
 
 The legacy `resources.js` server import still supplies reference definitions and link IDs. Its browser no longer calls the retired common-parts or purchased-parts routes, or mounts their abandoned editors. Wire/harness and calculator/reference readers remain until their planned replacement. The legacy JS size baseline prevents adding more features to frozen controllers; rebuilt modules stay below 40,000 bytes. The declarative Workshop seed is an explicit data-file exception.
 
@@ -173,7 +182,7 @@ The legacy functional-part model remains in `functions/api/functional-part-model
 
 ## Recovery and release operations
 
-Production uses `WORKSHOP_DB` for Workshop/Knowledge and `PHOTOS` for project data/files. Branch previews must use `building-schmidt-workshop-preview` and `building-schmidt-photos-preview`. Never point QA at production. D1 migrations are append-only; retain databases and R2 bytes across code rollbacks.
+Production uses `WORKSHOP_DB` for active project metadata and Workshop/Knowledge, and `PHOTOS` for immutable files, backups and retained legacy project objects. Branch previews must use `building-schmidt-workshop-preview` and `building-schmidt-photos-preview`. Never point QA at production. D1 migrations are append-only; retain databases and R2 bytes across code rollbacks.
 
 Export Workshop to NDJSON and verify with `node scripts/workshop-backup.mjs <file>`. The verifier checks bytes and checksums, not just record counts. A project export must also include its linked dependencies and newer namespaces. Neither Git nor a same-bucket weekly snapshot is independent data recovery. Scheduled success, edge throttling and Cloudflare Access require separate infrastructure verification; passing local tests does not establish any of them.
 
@@ -183,9 +192,9 @@ Outstanding legacy risks to verify during replacement: finite embedded instructi
 
 The family Workshop owns category → family → optional product → project use. Hidden fields keep values; populated field type/unit changes are refused; zero and false are values. Project requirements remain separate from product facts. Seed data is catalog definitions only, not user products or inventory. Its former release/progress documents are superseded by this guide, the architecture and current tests.
 
-The first new-engine foundation is isolated in `project-command.js`, `project-engine-migrations.js`, `project-engine-proof.js` and `project-engine.js`. The real Cloudflare proof passed; the custom-part preview API now also uses its guarded commands. See `PROJECT_ENGINE_FOUNDATION.md` for the exact admission SQL contract, live D1 gate and rollback. The normal production project screens still use the legacy engine. The production flag is absent; importing these modules alone does not migrate or write storage.
+The first new-engine foundation is isolated in `project-command.js`, `project-engine-migrations.js`, `project-engine-proof.js` and `project-engine.js`. The real Cloudflare proof passed; the custom-part preview API now also uses its guarded commands. See `PROJECT_ENGINE_FOUNDATION.md` for the exact admission SQL contract, live D1 gate and rollback. These modules now support the active production engine. Importing them alone does not migrate or write storage.
 
-`assets/project-item-model.js` owns the new custom-detail/build-field validation, automatic-number formatting and revision comparison rules. The custom-part preview API shares these rules. See `PROJECT_CUSTOM_FLOW.md` for its data, files, restore, acceptance status and rollback. It adds no production write path.
+`assets/project-item-model.js` owns the new custom-detail/build-field validation, automatic-number formatting and revision comparison rules. The custom-part preview API shares these rules. See `PROJECT_CUSTOM_FLOW.md` for its data, files, restore, acceptance status and rollback. It is shared by the active engine; do not infer rollout state from the historical preview specification.
 
 An isolated preview with an empty account store is provisioned through the one-time operator procedure in `PREVIEW_OWNER_SETUP.md`. Its `scripts/preview-owner-setup.html` runs as a saved browser file, generates canonical hashed account JSON, and is excluded from deployed assets. The owner uploads the two generated files only to the preview bucket. It adds no signup route, production bootstrap, authentication bypass or runtime dependency.
 
@@ -302,7 +311,7 @@ Recovery/cleanup is frozen at schema 9. Maintain the existing owners; change onl
 
 project-part-snapshot.js owns bounded full-part captures and named explanation/photo validation; migration 3 adds the working revision counter. project-part-history.js owns the shared prompt, retry/review and single-copy disclosures with guarded pagination. project-information.js is the shared information/configuration/context/record renderer for working History and full saved copies. Snapshot format 3 includes record creation/edit events and file links without recursively copying previous full revision events. The tested design fingerprint remains independent of the working counter.
 
-context-menu.js supplies the transient keyboard/touch/right-click menu reused by the engine tree. history-entry-dialog.js accepts the engine upload callback while its legacy default stays unchanged. The named gallery's five base rule blocks move from site-polish.css to history-photos.css at identical values; index.html and project.html load that shared owner. Existing upload-panel styles remain in photo-markup.css. BSUI supplies the reused upload buttons; no alternate uploader or dialog shell is added. Independent SolidWorks/STL file revision labels remain deferred.
+context-menu.js supplies the transient keyboard/touch/right-click menu reused by the engine tree. history-entry-dialog.js is storage-independent and requires an upload callback. Engine callers supply their guarded file client; legacy-history-dialog.js supplies the retained recipe-file adapter for legacy callers. Shared dialogs cannot fall back to legacy storage. The named gallery's five base rule blocks move from site-polish.css to history-photos.css at identical values; index.html and project.html load that shared owner. Existing upload-panel styles remain in photo-markup.css. BSUI supplies the reused upload buttons; no alternate uploader or dialog shell is added. Independent SolidWorks/STL file revision labels remain deferred.
 
 project-record-context.js owns the shared read-only historical context projection. The server captures an available tested level in record_context.part; API, current History and full-copy readers use the same known-level legacy rule. No level is fabricated when an earlier snapshot lacks one.
 
@@ -312,11 +321,11 @@ project-record-context.js owns the shared read-only historical context projectio
 
 `project-history-view.js` owns History/Archive presentation, per-view type filters, paged reads, loading/retry/empty states and selection tickets so a late read cannot replace the user's newer selection. `project-workspace.js` retains one History memo per project for filters, selection, loaded pages and scroll; direct record links fetch their detail independently of the visible page. `project-history-comparison.js` renders read-only saved/working differences using existing part normalization and explicit instruction/record identities, without writing or altering frozen snapshots. No new API, event, save guard or backup contract is introduced by these screens.
 
-The project-history-alignment branch synchronizes the current production code into the earlier custom-part preview and applies the owner’s numbered revisions, Save / Save as revision, named-photo explanation prompt and tree Archive flow. The preview’s immutable file module is now project-engine-files.js, avoiding the independently shipped legacy project-files.js index. The production NEW_PROJECT_ENGINE flag remains absent. See PROJECT_CUSTOM_FLOW.md for migration 3, full immutable snapshots, guarded counter/event admission, number reservation, recovery limits and the repeatable source/independent-target proof. The proof page uses normal owner APIs and synthetic data only. Prior Cloudflare reports apply to their pinned source; current refinement acceptance must record fresh exact builds and bindings. No new-engine production cutover, nested-assembly claim or data deletion is implied.
+The project-history-alignment branch synchronizes the current production code into the earlier custom-part preview and applies the owner’s numbered revisions, Save / Save as revision, named-photo explanation prompt and tree Archive flow. The preview’s immutable file module is now project-engine-files.js, avoiding the independently shipped legacy project-files.js index. Production activation is recorded in STATUS.md. See PROJECT_CUSTOM_FLOW.md for migration 3, full immutable snapshots, guarded counter/event admission, number reservation, recovery limits and the repeatable source/independent-target proof. The proof page uses normal owner APIs and synthetic data only. Prior Cloudflare reports apply to their pinned source; current refinement acceptance must record fresh exact builds and bindings. Historical proof notes describe their pinned candidates; current activation and verification state is recorded in STATUS.md. No data deletion is implied.
 
 
-### Nested project and Workshop preview
+### Nested project and Workshop integration
 
-`project-tree-model.js` owns pure hierarchy/quantity rules; `project-placements.js` owns guarded placement and archive-group commands. `project-workshop.js` freezes server-resolved source facts and copies immutable catalogue files into project ownership; `project-selection-uses.js` is the owner-filtered reverse reader. These do not dual-write legacy Workshop uses. The UI separates tree/context actions (`project-tree-view.js`), BOM (`project-bom-view.js`), source selection (`project-workshop-editor.js`) and the shared detail/history editors. `project-assembly-proof.js` exercises the normal owner API path from the gated proof page. Migration 4 and backward-compatible backup handling are described in `PROJECT_ASSEMBLIES_WORKSHOP.md`. Production remains flag-disabled.
+`project-tree-model.js` owns pure hierarchy/quantity rules; `project-placements.js` owns guarded placement and archive-group commands. `project-workshop.js` freezes server-resolved source facts and copies immutable catalogue files into project ownership; `project-selection-uses.js` is the owner-filtered reverse reader. These do not dual-write legacy Workshop uses. The UI separates tree/context actions (`project-tree-view.js`), BOM (`project-bom-view.js`), source selection (`project-workshop-editor.js`) and the shared detail/history editors. `project-assembly-proof.js` exercises the normal owner API path from the gated proof page. Migration 4 and backward-compatible backup handling are described in `PROJECT_ASSEMBLIES_WORKSHOP.md`. The active engine uses this integration; release state is recorded in STATUS.md.
 
 Preview operations: `scripts/preview-acceptance.mjs` invokes the same browser proof functions with an injected HTTP transport, checks runtime version bindings through the Cloudflare read API, and uses ordinary owner authentication. `docs/PREVIEW_ACCEPTANCE.md` owns this runbook; exact immutable evidence is under `docs/proofs/`.

@@ -1,4 +1,4 @@
-import {openHistoryEntryDialog} from "./history-entry-dialog.js";
+import {openLegacyHistoryEntryDialog as openHistoryEntryDialog} from "./legacy-history-dialog.js";
 import {partHelp} from "./part-help.js";
 
 export function revisionSaveButton({project,ui,prepare,onSave,onError}){

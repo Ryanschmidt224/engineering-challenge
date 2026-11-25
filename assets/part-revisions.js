@@ -1,5 +1,6 @@
 import {partHelp} from "./part-help.js";
-import {openHistoryEntryDialog,renderHistoryEntryDetails} from "./history-entry-dialog.js";
+import {renderHistoryEntryDetails} from "./history-entry-dialog.js";
+import {openLegacyHistoryEntryDialog as openHistoryEntryDialog} from "./legacy-history-dialog.js";
 
 const make=(tag,text)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;return node;};
 const revisionUrl=(project,id,extra={})=>"/api/investigations?"+new URLSearchParams({project,revision:id,...extra});
