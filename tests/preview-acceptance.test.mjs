@@ -20,7 +20,7 @@ async function fixture(){
    assert.equal(request.headers.get("authorization"),"Bearer "+token);const index=envs.findIndex(env=>parsed.pathname.endsWith("/"+env.CF_VERSION_METADATA.id));assert.notEqual(index,-1);
    assert.equal(parsed.pathname,"/client/v4/accounts/"+account+"/workers/workers/engineering-challenge/previews/"+(index===0?"feature-proof-test":"preview-proof-test")+"/deployments/"+envs[index].CF_VERSION_METADATA.id);
    assert.equal(request.method,"GET");
-   return Response.json({success:true,result:{id:envs[index].CF_VERSION_METADATA.id,env:Object.fromEntries(bindings(unsafe&&index===1?databases[0]:databases[index]).map(({name,...binding})=>[name,binding]))}});
+   return Response.json({success:true,result:{id:envs[index].CF_VERSION_METADATA.id,limits:{cpu_ms:30000},env:Object.fromEntries(bindings(unsafe&&index===1?databases[0]:databases[index]).map(({name,...binding})=>[name,binding]))}});
   }
   assert.equal(request.headers.get("authorization"),null);
   if(parsed.hostname==="buildingschmidt.com")return worker.fetch(request,{...envs[0],NEW_PROJECT_ENGINE:undefined});
@@ -30,7 +30,7 @@ async function fixture(){
  return {envs,options:{source,target,account,token,sourceCookie:cookies[0],targetCookie:cookies[1],fetcher},unsafe:()=>unsafe=true,writes:()=>writes,close:()=>envs.forEach(env=>env.WORKSHOP_DB.close())};
 }
 test("script verifies actual version bindings before running the same foundation, custom and assembly proofs with independent restore",async()=>{
- const f=await fixture();try{const result=await runPreviewAcceptance(f.options);assert.equal(result.ok,true);assert.equal(result.foundation.checks.length,7);assert.equal(result.proofs.length,2);for(const proof of result.proofs){assert.equal(proof.source.ok,true);assert.equal(proof.restore.ok,true);assert.equal(proof.sourceIntegrity.ok,true);assert.equal(proof.restore.targetWasAbsent,true);assert.equal(proof.source.backupSha256,proof.sourceIntegrity.backupSha256);assert.deepEqual(proof.source.counts,proof.restore.counts);}const json=JSON.stringify(result);for(const secret of [token,f.options.sourceCookie,f.options.targetCookie])assert.equal(json.includes(secret),false);}finally{f.close();}
+ const f=await fixture();try{const result=await runPreviewAcceptance(f.options);assert.equal(result.ok,true);assert.deepEqual(result.deployments.map(row=>row.cpuLimitMs),[30000,30000]);assert.equal(result.foundation.checks.length,7);assert.equal(result.proofs.length,2);for(const proof of result.proofs){assert.equal(proof.source.ok,true);assert.equal(proof.restore.ok,true);assert.equal(proof.sourceIntegrity.ok,true);assert.equal(proof.restore.targetWasAbsent,true);assert.equal(proof.source.backupSha256,proof.sourceIntegrity.backupSha256);assert.deepEqual(proof.source.counts,proof.restore.counts);}const json=JSON.stringify(result);for(const secret of [token,f.options.sourceCookie,f.options.targetCookie])assert.equal(json.includes(secret),false);}finally{f.close();}
 });
 test("deployed legacy acceptance reads the catalog, rejects a harmless save and detects a missing server boundary",async()=>{
  const f=await fixture();try{

@@ -78,7 +78,7 @@ export async function runPreviewAcceptance({source,target,account,worker="engine
   const body = await response.json();
   requireValue(body.success===true&&body.result?.id===identity.versionId,"Cloudflare Preview deployment verification failed. No proof may run.",response.status);
   progress("Checking " + labels[index] + " database, storage and engine flag bindings.");
-  bindings.push({environment:origins[index],versionId:identity.versionId,bindings:verifyBindings(body.result,databases[index])});
+  bindings.push({environment:origins[index],versionId:identity.versionId,cpuLimitMs:Number.isSafeInteger(body.result.limits?.cpu_ms)&&body.result.limits.cpu_ms>0?body.result.limits.cpu_ms:null,bindings:verifyBindings(body.result,databases[index])});
  }
  progress("Checking production remains gated.");
  for(const path of ["/api/project-engine/environment","/api/project-engine/proof","/project.html"]){const response=await fetcher("https://buildingschmidt.com"+path,{redirect:"error",signal:AbortSignal.timeout(30000)});requireValue(response.status===404,"Production must keep new-engine routes disabled before this preview proof.",response.status);}

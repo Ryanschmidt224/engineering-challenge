@@ -129,3 +129,21 @@ test("export refuses the remaining row bound and streamed recovery requires ever
   const refused=await handleProjectWorkspace(new Request(base+f.projectId+"/export"),f.env,f.owner);assert.equal(refused.status,400);assert.match(await refused.text(),/100,000 metadata rows/);
  }finally{f.db.close();}
 });
+
+test("completed streamed retries verify metadata without rebuilding staging; changed content still conflicts",async()=>{
+ const f=await fixture();try{
+  const manifest=JSON.parse((await backupOf(f)).split("\n")[0]).manifest;
+  const entries=[{type:"manifest",manifest:{format:manifest.format,version:2,project:manifest.project,tableNames:Object.keys(manifest.tables)}},...Object.entries(manifest.tables).flatMap(([table,rows])=>rows.map(row=>({type:"row",table,row}))),{type:"metadata_complete"},{type:"complete"}];
+  const serialize=()=>entries.map(entry=>JSON.stringify(entry)+"\n").join("");
+  const originalName=manifest.tables.items[0].name,backup=serialize(),project=id(),operation=id();
+  const admitted=await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner);assert.equal(admitted.status,200,await admitted.clone().text());const expected=await admitted.json();
+  const prepare=f.db.prepare.bind(f.db);let stagingWrites=0;
+  f.db.prepare=sql=>{if(/INSERT INTO engine_restore_(jobs|rows)/.test(sql))stagingWrites++;return prepare(sql);};
+  const replay=await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner);assert.equal(replay.status,200,await replay.clone().text());assert.deepEqual(await replay.json(),expected);
+  assert.equal(stagingWrites,0,"A completed replay must not rebuild private metadata batches");
+  const item=entries.find(entry=>entry.table==="items");item.row.name="Changed retry content";
+  const conflict=await handleProjectWorkspace(request(serialize(),project,operation),f.env,f.owner);assert.equal(conflict.status,409);assert.equal(stagingWrites,0);
+  assert.equal(f.db.sqlite.prepare("SELECT name FROM engine_items WHERE project_id=?").get(project).name,originalName);
+  assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_operations WHERE project_id=?").get(project).n,1);
+ }finally{f.db.close();}
+});

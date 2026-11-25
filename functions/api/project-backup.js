@@ -82,9 +82,13 @@ export async function restoreProject(request,env,owner,projectId,{asCopy=false}=
  if(asCopy&&header.project.id===projectId){throw new CommandConflict("A recovered copy requires a different project identity. The existing project was not changed.");}
  const copyName=asCopy?text(new URL(request.url).searchParams.get("name"),180,"New project name",true):null;
  const db=env.WORKSHOP_DB,storageKey=file=>"project-engine/restored/"+projectId+"/"+operationId+"/"+file.id,requestKey={header,asCopy,copyName};
+ // A published receipt is only a hint to avoid staging work. The full metadata
+ // digest and replayProjectCommand below still reject changed retry content.
+ const completed=header.version===2&&await statement(db,"SELECT 1 AS present FROM engine_operations WHERE project_id=? AND actor_id=? AND operation_id=?",projectId,owner.id,operationId).first();
  let staging=null,digest=await sha256(canonicalJSON(header)),outline=backupOutline(header.project);
  const stageRow=async(table,row)=>{
   outline.collect(table,row);if(table==="snapshot_values")await verifySnapshotValues([row]);digest=await sha256(digest+await sha256(canonicalJSON({table,row})));
+  if(completed)return;
   if(!staging)staging=await restoreStaging(db,projectId,owner.id,operationId,storageKey,requestKey);
   if(table!=="occurrences")await staging.add(table,row);
  };
