@@ -6,9 +6,9 @@ Current state and next step only. Keep at most three lines per PR; no dated hand
 
 Production follows main; its exact head/build is tracked by GitHub deployment checks. The owner has approved production switch-over; that approval is retained and must not be requested again. NEW_PROJECT_ENGINE remains off while integration, legacy read-only preservation and required acceptance checks are completed. No real data, files or backups are deleted or overwritten.
 
-- #75–#79 merged under the existing review rules and passing checks; latest main is `90b656f`. The read-only boundary, media/daily backups, operator workflow, Settings backup downloads and enabled-engine entry are integrated. Live capacity execution and production activation have not been performed.
-- Manual custom-part source/recovery/unchanged-source checks passed for `8fedb3e8-de11-4f59-b81d-80227372a6a9`; exact reports/builds and owner-checked binding names are in proofs/PROJECT_CUTOVER_ACCEPTANCE.json. Secure operator access and actual scripted capacity/CPU/SQL/trigger-state measurements remain pending; the owner accepted the Archive limit and approved activation.
-- `feature/project-legacy-acceptance`: add deployed legacy catalog/read-only/unchanged-response checks to the operator runner using an intentionally invalid save probe. No API/save behavior changes. All 425 code checks pass locally; CI is next. Then align the isolated previews and prepare the held activation change; keep production off until readiness passes.
+- #75–#80 merged under the existing review rules and passing checks; tested main is `0fc670b` (425 code checks, 166 browser workflows). Read-only preservation, media/daily backups, operator checks, Settings downloads and project entry are integrated. Production remains off; no live capacity execution or activation is claimed.
+- Manual source/independent-recovery/unchanged-source reports are retained in proofs/PROJECT_CUTOVER_ACCEPTANCE.json. Actual scripted capacity and platform CPU/SQL/trigger-state observations still require secure operator access. Activation and the 100-placement Archive limit are already approved; do not ask again.
+- Isolated previews now share tested main code: source `0fc670b`, recovery `8c09362` (only its independent D1 override differs). Confirm builds/runtime bindings before the live run. SWITCHOVER.md contains the exact access, acceptance and held activation steps; the coding workspace became unavailable, so subsequent source preparation relies on GitHub/CI.
 
 ## Early switch-over policy
 
