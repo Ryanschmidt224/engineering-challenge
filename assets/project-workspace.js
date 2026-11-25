@@ -19,8 +19,12 @@ export function initProjectWorkspace(root=document){
  async function navigate(id=null,item=null,view="part",occurrence=null){
   const url=new URL(location.href);url.search="";if(id)url.searchParams.set("project",id);if(item)url.searchParams.set("item",item);if(occurrence)url.searchParams.set("occurrence",occurrence);if(view!=="part")url.searchParams.set("view",view);history.pushState(null,"",url);return refresh();
  }
- async function openHistory(scope="",selected=null,mode="history"){
-  const memo=historyMemos.get(projectId)||{mode:"history",scope:"",type:"all",q:"",entries:[],cursor:null,selected:null,scroll:0};memo.scope=scope;memo.selected=selected;memo.mode=mode;historyMemos.set(projectId,memo);return navigate(projectId,scope||null,"history");
+ async function openHistory(scope=undefined,selected=undefined,mode="history"){
+  const memo=historyMemos.get(projectId)||{mode:"history",scope:"",type:"all",q:"",entries:[],cursor:null,selected:null,scroll:0};
+  if(scope!==undefined&&scope!==memo.scope||mode!==undefined&&mode!==memo.mode){memo.entries=[];memo.cursor=null;memo.scroll=0;memo.pageScroll=0;memo.selected=null;memo.detailOpen=false;}
+  if(scope!==undefined)memo.scope=scope;if(mode!==undefined)memo.mode=mode;
+  if(selected!==undefined){memo.selected=selected;memo.detailOpen=!!selected;if(selected){memo.type="all";memo.q="";}}
+  historyMemos.set(projectId,memo);return navigate(projectId,memo.scope||null,"history");
  }
  async function action(path,data={},message="Saved.",method="POST",after=null){
   try{await client.write(projectId,path,method,data);await refresh();notify(message,after);}catch(error){notify(error.message);}
