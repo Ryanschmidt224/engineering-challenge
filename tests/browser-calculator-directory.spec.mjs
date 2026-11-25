@@ -1,6 +1,6 @@
 import {test,expect} from "@playwright/test";
 test.describe.configure({mode:"serial"});
-test.beforeEach(async({request,context})=>{const {cookie}=await(await request.post("/__test__/reset")).json(),at=cookie.indexOf("=");await context.addCookies([{name:cookie.slice(0,at),value:cookie.slice(at+1),url:"http://127.0.0.1:4173",httpOnly:true,sameSite:"Strict"}]);});
+test.beforeEach(async({request,context})=>{const {cookie}=await(await request.post("/__test__/reset?engine=1")).json(),at=cookie.indexOf("=");await context.addCookies([{name:cookie.slice(0,at),value:cookie.slice(at+1),url:"http://127.0.0.1:4173",httpOnly:true,sameSite:"Strict"}]);});
 for(const width of [1440,390])test("Calculator discovery shares project views and retains calculations at "+width+"px",async({page},testInfo)=>{
  await page.setViewportSize({width,height:1000});await page.goto("/index.html#calculators");
  const root=page.locator("#resource-calculators"),grid=root.locator(".ui-project-list"),view=root.getByRole("combobox",{name:"Calculator view"}),search=root.getByRole("searchbox",{name:"Search calculators",exact:true});
