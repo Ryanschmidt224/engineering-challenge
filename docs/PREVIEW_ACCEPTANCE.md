@@ -22,7 +22,9 @@ Review and merge the existing dependency chain in order: #52 (command foundation
 
 Before proof writes, the script verifies the actual version's bindings with the read-only Cloudflare control-plane API. It requires source D1 `3314f42f-7c04-4798-99dc-b5b97c4fb82f`, independent target D1 `d761ae08-64f2-4130-8cfa-f596e8e89b80`, R2 `building-schmidt-photos-preview`, and the preview flag on both. A missing runtime identity, Cloudflare authorization error, unexpected binding, common source/target database or unsigned preview access fails before creating proof projects. A response that merely repeats configured binding variables is not accepted as binding verification.
 
-The script checks production's disabled routes, the guarded D1 proof and exact replay, custom-part and assembly/Workshop source proofs, independent recovery, file hashes/keys, and the final byte-for-byte unchanged-source check. Runtime version IDs are rechecked at phase boundaries. It retains synthetic projects and source files for inspection. It never deletes projects, modifies real engineering records, reseeds a database, or changes account/catalog permissions. The assembly proof creates its own clearly named Workshop family and two synthetic products.
+The script checks production's disabled routes, deployed legacy read-only preservation on both previews, the guarded D1 proof and exact replay, custom-part and assembly/Workshop source proofs, independent recovery, file hashes/keys, and the final byte-for-byte unchanged-source check. Runtime version IDs are rechecked at phase boundaries. It retains synthetic projects and source files for inspection. It never deletes projects, modifies real engineering records, reseeds a database, or changes account/catalog permissions. The assembly proof creates its own clearly named Workshop family and two synthetic products.
+
+The legacy check reads the owner catalog including archived entries, requires its explicit read-only flag, and sends `PATCH /api/projects` with only `{"visibility":"public"}`. That body is deliberately invalid even without the boundary (private visibility and a valid identity are required), so no real project edit is prepared. Acceptance requires `409 LEGACY_READ_ONLY`, then a byte-for-byte identical catalog response. Reports contain its SHA-256 and project count, not catalog contents. This verifies deployed catalog reads and save rejection; it does not claim a live download of every legacy project's export.
 
 Run with Node 22 or later. Provision secrets through a trusted runner's secret store, never command arguments, Git, chat or printed logs:
 
@@ -44,7 +46,7 @@ Cloudflare references: [Preview configuration](https://developers.cloudflare.com
 
 ## Large-recovery capacity gate
 
-### Operator runner awaiting review
+### Reviewed operator runner
 
 The manual custom-part source/independent-recovery/unchanged-source reports are retained in `proofs/PROJECT_CUTOVER_ACCEPTANCE.json`. They are small functional proofs, not a large-project benchmark or the scripted control-plane run.
 
@@ -56,7 +58,7 @@ The workflow requires three owner-provisioned GitHub Actions secrets: `CF_PREVIE
 
 **Measurement limits:** these are complete HTTP request/transfer times, not exact SQL execution or Worker CPU times. A successful first-revision request is an upper bound on its complete guarded batch duration. Source/target import responses retain their existing staging/materialization/publication counts. Cloudflare Ray IDs and request paths are retained for the operator to correlate with platform metrics; cookies, tokens, request bodies and other headers are not recorded. The runner does not create a cleanup intent, so it does not establish the before/after trigger-overhead comparison. Successful samples remain subject to review of actual platform CPU/limits and those stated gaps; `ok: true` means the chosen samples passed, not that cutover is approved or capacity limits have changed. Keep the pre-cutover requirements below explicit; do not relabel local results as Cloudflare measurements.
 
-The new operator code requires review before the live workload. It adds no Worker routes, schema, migration, backup format, save guard or recovery mechanism; the production engine remains off.
+Claude approved the operator runner at #77 head `c90c3cdf00baf6aeb772f2f50e25ff9490e9eaa2` (comment 7152860872). The deployed legacy boundary extension changes only the runner and its tests/documentation. Neither adds Worker routes, schema, migrations, backup formats, save guards or recovery mechanisms; production remains off pending the actual run and readiness review.
 
 Recovery/cleanup design is frozen at schema 9: only bug fixes or real-D1-measurement-driven corrections may change it. No additional cleanup tables, triggers or journals. Any future orphan deletion must be one owner-pressed action after cutover, reusing the current inventory/executors; never schedule it. The detailed safeguards below describe retained code, not a request to build more infrastructure. Deferred upload/Workshop/frozen-value cleanup does not block integration or Batch 4.
 
