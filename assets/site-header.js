@@ -3,19 +3,18 @@ export function initSiteHeader() {
   const header = document.querySelector("[data-site-header]");
   if (!header) return;
   const projectPage = header.dataset.siteHeader === "projects";
-  const projectHref = header.dataset.siteHeader === "home" ? "project.html" : "/";
+  const projectHref = "/project.html";
   const make = (tag, className, text) => {
     const el = document.createElement(tag); el.className = className; if (text) el.textContent = text; return el;
   };
   const inner = make("div", "ui-site-header__inner ui-page");
-  const brand = make("a", "ui-site-brand", "BUILDING "); brand.href = projectPage ? "#home" : projectHref;
-  if (projectPage) brand.dataset.nav = "home";
+  const brand = make("a", "ui-site-brand", "BUILDING "); brand.href = projectHref;
   brand.append(make("span", "", "SCHMIDT"));
   const nav = make("nav", "ui-site-nav"); nav.setAttribute("aria-label", "Main navigation");
   for (const [id, label, href] of [["home", "Projects", projectHref], ["knowledge", "Knowledge", "knowledge.html"], ["commonparts", "The Workshop", "workshop.html"], ["calculators", "Calculators", "index.html#calculators"]]) {
-    const item = make(projectPage ? "button" : "a", "ui-site-nav__item", label);
+    const item = make(projectPage && id !== "home" ? "button" : "a", "ui-site-nav__item", label);
     item.dataset.page = id;
-    if (projectPage) { item.type = "button"; item.dataset.nav = id; } else item.href = href;
+    if (projectPage && id !== "home") { item.type = "button"; item.dataset.nav = id; } else item.href = href;
     nav.append(item);
   }
   const account = header.querySelector(".ui-site-account") || make(projectPage ? "button" : "a", "ui-button ui-site-account", "Account");
