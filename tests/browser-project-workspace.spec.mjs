@@ -119,7 +119,7 @@ for(const width of [1440,390])test("backup recovery creates an independent copy 
  await page.getByRole("button",{name:"Restore project backup",exact:true}).click();await expect(page.getByRole("status")).toContainText("Enter a new project name");await page.getByLabel("New project name",{exact:true}).fill("Recovered bracket");
  await page.getByRole("button",{name:"Restore project backup",exact:true}).click();await expect(page.getByRole("heading",{name:"Recovered bracket",exact:true})).toBeVisible();await expect(page.getByRole("status")).toContainText("Recovered copy created");
  const copyId=new URL(page.url()).searchParams.get("project");expect(copyId).not.toBe(sourceId);const state=await(await context.request.get(base+copyId+"/state")).json();expect(state.items[0].name).toBe("Bracket");
- expect(await(await context.request.get(base+sourceId+"/export")).text()).toBe(source);await page.getByRole("button",{name:"All projects",exact:true}).click();await expect(page.getByRole("button").filter({hasText:"Bracket projectPrivate project"})).toBeVisible();await expect(page.getByRole("button").filter({hasText:"Recovered bracketPrivate project"})).toBeVisible();
+ expect(await(await context.request.get(base+sourceId+"/export")).text()).toBe(source);await page.getByRole("button",{name:"All projects",exact:true}).click();await expect(page.getByRole("button",{name:"Open Bracket project",exact:true})).toBeVisible();await expect(page.getByRole("button",{name:"Open Recovered bracket",exact:true})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(0);await page.screenshot({path:testInfo.outputPath("recovered-project-copy.png"),fullPage:true});
 });
 
