@@ -16,6 +16,11 @@ window.BSProjectManager=(()=>{
  const init=async({setupAssemblyTrees,setupComponents,setupPhotos,navigate})=>{
   const root=document.querySelector("#home .project-index"),grid=root?.querySelector(".ui-project-list");if(!grid)return;
   const loading=root.querySelector(".project-catalog-loading");
+  let legacyReadOnly=false;
+  const readOnlyNotice=element("p","ui-page muted");readOnlyNotice.hidden=true;readOnlyNotice.setAttribute("role","status");
+  const engineLink=element("a","","Open new Projects");engineLink.href="/project.html";
+  readOnlyNotice.append("Legacy projects are read-only. Saved data, files and exports remain available. ",engineLink);
+  document.querySelector("main").prepend(readOnlyNotice);
   const newButton=element("button","ui-button ui-button--primary project-directory-new","+ New project");newButton.type="button";
   const archiveButton=element("button","ui-button","Archived projects");archiveButton.type="button";
   const more=element("details","project-directory-menu ui-toolbar-menu");
@@ -208,8 +213,8 @@ window.BSProjectManager=(()=>{
    const section=document.getElementById(project.id)?.querySelector(".project-summary-owner-settings");
    if(!section)return;
    section.replaceChildren();
-   section.hidden=!project.isOwner;
-   if(!project.isOwner)return;
+   section.hidden=legacyReadOnly||!project.isOwner;
+   if(legacyReadOnly||!project.isOwner)return;
    section.append(element("h2","","General"));
    const intro=element("p","muted","Rename this project, manage its descriptors, or delete it.");
    section.append(intro);
@@ -333,7 +338,8 @@ window.BSProjectManager=(()=>{
     if(grid.hidden)loading.textContent="Loading projects…";
     user=(await api("GET","/api/accounts")).user;
     const data=await api("GET","/api/projects");if(!Array.isArray(data.projects))throw Error("Project catalog response unavailable");projects=data.projects;currentProjects=projects;
-    newButton.hidden=false;more.hidden=!user&&!adminAuthenticated;
+    legacyReadOnly=data.readOnly===true;readOnlyNotice.hidden=!legacyReadOnly;
+    newButton.hidden=legacyReadOnly;more.hidden=legacyReadOnly||!user&&!adminAuthenticated;
 
     for(const project of projects){
      ensureProjectPage(project);

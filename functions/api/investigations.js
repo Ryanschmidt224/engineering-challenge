@@ -1,5 +1,6 @@
 import {historyEntryDetails} from "./history-entry-details.js";
 import {upgradePracticeRecords} from "./record-upgrades.js";
+import {legacyProjectsReadOnly} from "./legacy-projects.js";
 import {getFamilyProjectPart} from "./workshop-db.js";
 import {createRevision,removeReferencedRevision,revisionResponse} from "./part-revision-save.js";
 import {resolveFunctionalPart} from "./functional-part-model.js";
@@ -65,7 +66,7 @@ export async function handleInvestigations(request,env){
  let object=await env.PHOTOS.get(key);
  const original=object?await object.text():null;
  let saved=original?JSON.parse(original):{records:[],revision:null};
- if(object&&["GET","POST"].includes(request.method)){
+ if(object&&!legacyProjectsReadOnly(env)&&["GET","POST"].includes(request.method)){
   try{({object,saved}=await upgradePracticeRecords(env,project,object,saved,original));}
   catch{return json({error:"Old records could not be upgraded safely. Retry before editing.",code:"RECORD_UPGRADE_RETRY"},503);}
  }

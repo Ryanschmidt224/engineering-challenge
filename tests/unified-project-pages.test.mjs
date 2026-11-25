@@ -21,10 +21,10 @@ test("A single Projects page and common workspace controller are used for every 
  assert.doesNotMatch(manager,/miniGrid|newMiniButton|groupGrid/);
 });
 
-test("One visible New project action with tag filters and sorting",()=>{
+test("One New project action with tag filters and sorting, hidden in legacy read-only mode",()=>{
  const manager=read("assets/project-manager.js");
  assert.match(manager,/const newButton=element\("button","ui-button ui-button--primary project-directory-new","\+ New project"\)/);
- assert.match(manager,/newButton\.hidden=false/);
+ assert.match(manager,/newButton\.hidden=legacyReadOnly/);
  assert.match(manager,/newButton\.onclick=openCreate/);
  assert.match(manager,/if\(!user\)\{showAccount\(\)/);
  assert.match(read("assets/directory-filters.js"),/bs-project-tag-filter/);
