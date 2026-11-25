@@ -44,4 +44,19 @@ The active project screen loads its own workspace styles rather than the frozen 
 
 ## Shared UI dependency separation
 
-Calculators now have an independent calculators.html entrypoint, reusing the canonical calculator catalogue and form renderer. Shared navigation links there; the legacy hash route remains compatible and imports the same catalogue. Calculator rules move out of site.css into their shared feature owner, with no duplicate cascade. The standalone page does not bootstrap legacy projects, wires or accounts. Shared history dialogs require a supplied photo uploader; only legacy-history-dialog.js knows the recipe-file upload API. Active engine uploads retain their guarded client/retry/version handling. No API, storage, authentication, migration or backup contract changes. The code guide now distinguishes active engine owners from retained legacy owners.
+Calculators now have an independent calculators.html entrypoint, reusing the canonical calculator catalogue and form renderer. The owner subsequently moved the navigation entry into Bits of information; standalone and legacy hash routes remain compatible and import the same catalogue. Calculator rules move out of site.css into their shared feature owner, with no duplicate cascade. The standalone page does not bootstrap legacy projects, wires or accounts. Shared history dialogs require a supplied photo uploader; only legacy-history-dialog.js knows the recipe-file upload API. Active engine uploads retain their guarded client/retry/version handling. No API, storage, authentication, migration or backup contract changes. The code guide now distinguishes active engine owners from retained legacy owners.
+
+
+## Information area naming
+
+The owner renamed the visible Knowledge area to Bits of information. Navigation, page headings, related-information sections and tile-link labels use the new wording. Calculators live in a collapsed shared section on this page; there is no separate main navigation tab. Existing standalone and legacy calculator links remain compatible. Existing knowledge.html links, API paths, IDs, stored tiles and backups retain their established contracts.
+
+
+## Project summary overview
+
+The project summary reuses the part overview shell: the first project-gallery photo on the left, summary fields on the right, and the existing responsive stacking on phones. Photo management remains in the full-width gallery below. No separate project-picture storage or media migration is introduced.
+
+
+## Label/value proximity
+
+Shared editable and read-only field rows use one bounded label-width/gap policy from theme.css. The project-only percentage override is removed, so wide part controls, summary fields, settings, Workshop and information forms inherit the same rule and the existing phone stacking. This changes geometry only.

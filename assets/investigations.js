@@ -789,7 +789,7 @@
     if(!dialog.isConnected)return;
     const saved=Array.isArray(data.records)?data.records:[],record=saved.find(entry=>entry.id===id);
     body.replaceChildren();
-    if(!record){heading.textContent="Record unavailable";body.textContent="This record no longer exists. Its Knowledge link keeps the last known name.";return;}
+    if(!record){heading.textContent="Record unavailable";body.textContent="This record no longer exists. Its information link keeps the last known name.";return;}
     heading.textContent=record.title||"Untitled record";
     body.append(make("p","muted",record.partSnapshot?"Part revision":(categories[categoryOf(record)]?.label||"Entry")+(isArchived(record)?" · Archived":"")));
     const appendRecord=(entry,container)=>{

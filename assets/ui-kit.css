@@ -498,8 +498,11 @@ summary.ui-button::-webkit-details-marker {
 }
 .ui-field-row {
   display: grid;
-  grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
-  gap: var(--space-2) var(--space-4);
+  grid-template-columns: minmax(0, min(35%, var(--field-label-width))) minmax(
+      0,
+      1fr
+    );
+  gap: var(--space-2) var(--field-label-gap);
   padding: var(--space-3) 0;
   border-bottom: 1px solid var(--color-border);
   font-size: var(--text-small);

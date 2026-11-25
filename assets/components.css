@@ -15,8 +15,11 @@ textarea.field {
 }
 .field-row {
   display: grid;
-  grid-template-columns: minmax(8rem, 34%) minmax(0, 1fr);
-  gap: var(--space-3);
+  grid-template-columns: minmax(0, min(35%, var(--field-label-width))) minmax(
+      0,
+      1fr
+    );
+  gap: var(--field-label-gap);
   align-items: start;
   margin: var(--space-3) 0;
 }

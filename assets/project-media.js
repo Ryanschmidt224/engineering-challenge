@@ -77,3 +77,11 @@ export function partPicture(ctx,item,engineeringFile=null){
  if(current)controls.push(button("Remove picture",()=>confirmAction(ctx,"Remove picture","Remove this part's picture? The stored file is kept.","Remove picture",token=>ctx.client.write(ctx.projectId,"/media/"+current.id+"/remove","POST",{},token)),{variant:"quiet",small:true}));
  holder.append(choose.input,actions(...controls));acceptDrops(holder,files=>addFiles(ctx,files.slice(0,1),{itemId:item.id,role:"picture"}));return holder;
 }
+
+// The same first gallery photo used by the project directory, without a second picture record.
+export function projectPicture(ctx,onManage){
+ const holder=node("div","","project-picture-holder"),photo=photosFor(ctx.client.state)[0],file=photo?fileOf(ctx,photo):null;
+ if(file){const image=thumbnail(ctx,file,photo.caption||ctx.client.state.project.name);if(image.tagName==="IMG")image.className="project-picture";holder.append(image);}else holder.append(node("p","No picture yet","muted"));
+ const choose=picker(files=>addFiles(ctx,files.slice(0,1)),{multiple:false,label:"Project picture"});
+ holder.append(choose.input,actions(button(photo?"Manage photos":"Add picture",photo?onManage:choose.open,{variant:"quiet",small:true})));return holder;
+}

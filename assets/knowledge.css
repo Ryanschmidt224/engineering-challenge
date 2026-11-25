@@ -120,3 +120,7 @@
     max-height: 18rem;
   }
 }
+
+.information-calculators {
+  margin-bottom: var(--space-4);
+}

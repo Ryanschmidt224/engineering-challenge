@@ -31,7 +31,7 @@ async function expectHeaderLabels(page) {
     const box = element.getBoundingClientRect();
     return {whiteSpace: getComputedStyle(element).whiteSpace, left: box.left, right: box.right, viewport: document.documentElement.clientWidth};
   }));
-  expect(layout).toHaveLength(4);
+  expect(layout).toHaveLength(3);
   for (const link of layout) {
     expect(link.whiteSpace).toBe("nowrap");
     expect(link.left).toBeGreaterThanOrEqual(0);
@@ -59,15 +59,15 @@ for (const width of [1440, 390]) test("selectable Knowledge and Workshop cards s
   await family.focus();
   await expect(family).toBeFocused();
   await family.press("Enter");
-  await expect(page.locator("#workshop-detail").getByRole("heading", {name: "Knowledge (1)", exact: true})).toBeVisible();
+  await expect(page.locator("#workshop-detail").getByRole("heading", {name: "Bits of information (1)", exact: true})).toBeVisible();
   await expectStackedCard(page.locator("#workshop-detail .knowledge-list > a").first());
   await page.screenshot({path: testInfo.outputPath("workshop-cards.png"), fullPage: true});
 });
 
 async function createTileFromFamily(page, title) {
   await page.goto("/workshop.html?family=f-buck-converter");
-  await expect(page.locator("#workshop-detail").getByRole("heading", {name: "Knowledge (0)", exact: true})).toBeVisible();
-  await page.getByRole("link", {name: "New knowledge tile for this family", exact: true}).click();
+  await expect(page.locator("#workshop-detail").getByRole("heading", {name: "Bits of information (0)", exact: true})).toBeVisible();
+  await page.getByRole("link", {name: "New information tile for this family", exact: true}).click();
   await expect(page).toHaveURL(/knowledge\.html\?new=1&link=family:f-buck-converter/);
   await page.getByLabel("Title", {exact: true}).fill(title);
   await page.getByLabel("Summary", {exact: true}).fill("Switching 24 V on through a switch can ring above the converter's rating.");
@@ -84,7 +84,7 @@ test("a tile started from a family is linked to it and shows on the family page"
 
   await expect(page).toHaveURL(/workshop\.html\?family=f-buck-converter/);
   const workshop = page.locator("#workshop-detail");
-  await expect(workshop.getByRole("heading", {name: "Knowledge (1)", exact: true})).toBeVisible();
+  await expect(workshop.getByRole("heading", {name: "Bits of information (1)", exact: true})).toBeVisible();
   await workshop.getByRole("link", {name: /Hot-plug ringing/}).click();
   await expect(detail(page).getByRole("heading", {name: "Hot-plug ringing", exact: true})).toBeVisible();
 });
@@ -159,13 +159,13 @@ test("products and project parts show knowledge from their family, and tiles lin
 
   await page.goto("/workshop.html?product=" + product.id);
   const workshop = page.locator("#workshop-detail");
-  await expect(workshop.getByRole("heading", {name: "Knowledge (2)", exact: true})).toBeVisible();
+  await expect(workshop.getByRole("heading", {name: "Bits of information (2)", exact: true})).toBeVisible();
   await expect(workshop.getByRole("link", {name: /Hot-plug ringing.*via family/})).toBeVisible();
 
   await page.goto("/index.html#launcher/part/" + use.id);
   const workspace = page.locator("#launcher .bom-part-workspace");
   await workspace.getByText("Part details", {exact: true}).click();
-  await expect(workspace.getByText("Knowledge (2)", {exact: true})).toBeVisible();
+  await expect(workspace.getByText("Bits of information (2)", {exact: true})).toBeVisible();
   // The part page may re-render once its data arrives; follow the link's target
   // rather than racing that re-render with a click.
   const tileLink = workspace.getByRole("link", {name: "Hot-plug ringing", exact: true});
