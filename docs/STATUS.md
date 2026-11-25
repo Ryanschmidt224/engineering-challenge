@@ -20,3 +20,9 @@ Validate the refreshed activation candidate, deploy using the existing approval,
 ## Familiar project layout
 
 The project shell restores a framed green feature tree, persistent project-page links below the tree, compact part/photo/build panels, paired label/value fields, and responsive summary cards. Existing editors, guarded save handlers, History, backups and storage remain the active engine implementation. Desktop, tablet and phone navigation checks assert no browse-time writes or saved-data changes. UI-only release follows the existing code/browser/Cloudflare checks.
+
+## Familiar wording and editor groups
+
+The next UI pass restores Container (name) as the short top-level feature-tree label, with Part name retained separately and used as the fallback when no container label is set. Reading and editing use Container, Part details and Display options groups with compact label/value rows. Written records display Notes, Tests / Measurements, Failures and Change notes; numbered saved Revisions remain separate. Instruction retirement displays Archive step. These changes preserve existing field keys, record types, validation, guarded commands and backup formats.
+
+The owner separately requested a new-engine copy of the legacy TB001 project. This authorizes that specific non-destructive copy only; it does not authorize blanket migration or deletion. TB001 has not been copied: owner access to the legacy source is still required. Keep the original and its files/history intact and report any fields that cannot map faithfully before calling the copy complete.

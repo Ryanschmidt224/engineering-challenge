@@ -1,14 +1,15 @@
+import {recordLabels,containerName} from "./project-presentation.js";
 import {legacyRecordContext} from "./project-record-context.js";
 import {node} from "./workshop-ui.js";
 import {formatRevisionValue} from "./project-item-model.js";
-import {recordPrompts,recordLabels} from "./project-record-model.js";
+import {recordPrompts} from "./project-record-model.js";
 import {projectHelp} from "./project-help.js";
 import {renderHistoryEntryDetails} from "./history-entry-dialog.js";
 import {recordTree} from "./project-instruction-model.js";
 export function information(title,values){const panel=window.BSUI.informationPanel(title);for(const [label,value]of values)if(value!==undefined&&value!==null&&value!=="")panel.body.append(window.BSUI.fieldRow(label,value).root);return panel.root;}
-export function configurationView(configuration,title="Saved configuration",{includeBuild=true}={}){
+export function configurationView(configuration,title="Saved configuration",{includeBuild=true,includeContainer=true}={}){
  const snapshot=configuration?.snapshot;if(!snapshot?.item)return node("p","The transaction proof has no full item snapshot.");
- const item=snapshot.item,fields=item.fields||{},body=node("div","","project-stack");const panel=information(title,[["Revision",item.revision_level],["Name",item.name],["Part number",item.part_number],["Description",fields.description],["Purpose",fields.purpose],["Acceptance criteria",fields.acceptance],["Manufacturer",fields.manufacturer],["Manufacturer part number",fields.mpn]]);body.append(panel);
+ const item=snapshot.item,fields=item.fields||{},body=node("div","","project-stack");const panel=information(title,[...(includeContainer?[["Revision",item.revision_level],["Container (name)",containerName(item)],["Part number",item.part_number]]:[["Is a tool?",item.is_tool?"Yes":"No"]]),["Part name",item.name],["Description",fields.description],...(includeContainer?[["Purpose",fields.purpose]]:[]),["Acceptance criteria",fields.acceptance],["Manufacturer",fields.manufacturer],["Mfg part number",fields.mpn]]);body.append(panel);
  if(fields.specs?.length)for(const row of fields.specs)panel.querySelector(".ui-information-panel__body").append(window.BSUI.fieldRow(row.label,formatRevisionValue({present:Object.hasOwn(row,"value"),value:row.value,label:row.label,unit:row.unit})).root);
  if(includeBuild&&snapshot.occurrence)body.append(information(snapshot.format===1?"Legacy build information":"Build information",[["Quantity",snapshot.occurrence.quantity+" "+snapshot.occurrence.unit],["Status",snapshot.occurrence.build_status?.replaceAll("_"," ")],["Original project",snapshot.occurrence.root?.name]]));
  if(snapshot.selection)body.append(information("Frozen Workshop selection",[["Family",snapshot.selection.snapshot.family.name],["Product",snapshot.selection.snapshot.product?.name||"Generic family"],["Family revision",snapshot.selection.family_revision],["Product source revision",snapshot.selection.product_revision]]));
@@ -32,7 +33,7 @@ export function recordVersionView(ctx,value,title,files){
   if(file?.content_type?.startsWith("image/")){const image=node("img");image.src="/api/project-engine/projects/"+ctx.projectId+"/files/"+id+"?inline=1";image.alt=named.find(entry=>entry.name)?.name||file.name;image.loading="lazy";image.className="project-picture";item.append(image);}
   links.append(item);
  }
- return information(title,[["Record type",value.fields.category==="photos"?"Photos":recordLabels[value.type]||value.type],["Title",value.title],...Object.entries(recordPrompts[value.type]||{}).map(([key,label])=>[key==="resolution"&&value.fields.did_fix?(value.fields.did_fix==="no"?"Why?":"How?"):label,value.fields[key]]),...(value.type==="problem"?[["Did you fix it?",value.fields.did_fix],["Status",value.fields.status]]:[]),["Event date",value.event_date],["Attachments",ids?.length?links:undefined],["Created",value.created_at?new Date(value.created_at).toLocaleString():undefined]]);
+ return information(title,[["Entry type",value.fields.category==="photos"?"Photos":recordLabels[value.type]||value.type],["Title",value.title],...Object.entries(recordPrompts[value.type]||{}).map(([key,label])=>[key==="resolution"&&value.fields.did_fix?(value.fields.did_fix==="no"?"Why?":"How?"):label,value.fields[key]]),...(value.type==="problem"?[["Did you fix it?",value.fields.did_fix],["Status",value.fields.status]]:[]),["Event date",value.event_date],["Attachments",ids?.length?links:undefined],["Created",value.created_at?new Date(value.created_at).toLocaleString():undefined]]);
 }
 
 function appendSavedRecords(ctx,body,snapshot){

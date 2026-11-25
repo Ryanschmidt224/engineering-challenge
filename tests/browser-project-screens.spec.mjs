@@ -43,3 +43,22 @@ for(const width of [1440,900,390])test("familiar project shell keeps tree and pa
  await page.screenshot({path:testInfo.outputPath("familiar-summary.png"),fullPage:true});
  await sidebar.locator('[data-occurrence-id="'+f.part.occurrenceId+'"]').click();await page.screenshot({path:testInfo.outputPath("familiar-part.png"),fullPage:true});
 });
+
+for(const width of [1440,390])test("container identity and familiar field groups survive save and reload at "+width+"px",async({page,request,context},testInfo)=>{
+ await page.setViewportSize({width,height:1000});const f=await setup(page,request,context);
+ await page.goto("/project.html?"+new URLSearchParams({project:f.id,item:f.part.itemId,occurrence:f.part.occurrenceId}));
+ await page.locator('[data-section="details"] > summary').click();await page.getByRole("button",{name:"Edit part details",exact:true}).click();
+ const editor=page.getByRole("dialog",{name:"Edit part details",exact:true});
+ await expect(editor.locator("legend")).toHaveText(["Container","Part details","Display options"]);
+ await expect(editor.getByLabel("Part name",{exact:true})).toHaveValue("A very long mounting bracket");
+ await editor.getByLabel("Container (name)",{exact:true}).fill("Mounting bracket");
+ await editor.getByLabel("Purpose (optional)",{exact:true}).fill("Hold the controller in place");
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0);
+ await page.screenshot({path:testInfo.outputPath("familiar-editor.png"),fullPage:true});
+ await editor.getByRole("button",{name:"Save",exact:true}).click();await expect(editor).not.toBeVisible();await page.reload();
+ await expect(page.locator(".project-part-identity h2")).toHaveText("Mounting bracket");
+ await expect(page.locator('[data-occurrence-id="'+f.part.occurrenceId+'"] strong')).toContainText("Mounting bracket");
+ const saved=(await f.state()).items.find(item=>item.id===f.part.itemId);expect(saved.name).toBe("A very long mounting bracket");expect(saved.short_name).toBe("Mounting bracket");expect(saved.fields.purpose).toBe("Hold the controller in place");expect(saved.revision_level).toBe(1);
+ await page.locator('[data-section="details"] > summary').click();await expect(page.locator('[data-section="details"]')).toContainText("A very long mounting bracket");
+ await page.screenshot({path:testInfo.outputPath("familiar-container.png"),fullPage:true});
+});
