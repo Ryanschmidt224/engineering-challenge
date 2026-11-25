@@ -3,6 +3,7 @@ import {initializeWorkshop,workshopSnapshot} from "./workshop-db.js";
 import {validId} from "../../assets/family-model.js";
 import {encodeBytes,sha256} from "./project-archive.js";
 import {knowledgeSnapshot} from "./knowledge.js";
+import {legacyProjectsReadOnly,legacyReadOnlyResponse} from "./legacy-projects.js";
 
 const prefix="workshop-v2/files/",maxBytes=10*1024*1024;
 const json=(data,status=200)=>Response.json(data,{status,headers:{"cache-control":"private, no-store","x-content-type-options":"nosniff"}});
@@ -37,6 +38,7 @@ export async function handleFamilyWorkshopFile(request,env){
  }
  if(request.method!=="POST")return json({error:"Method not allowed"},405);
  const owner=url.searchParams.get("owner");
+ if(owner==="use"&&legacyProjectsReadOnly(env))return legacyReadOnlyResponse();
  if(!ownerTables[owner])return json({error:"Choose a family, product or use"},400);
  if(!await env.WORKSHOP_DB.prepare("SELECT id FROM "+ownerTables[owner]+" WHERE id=? AND archived=0").bind(id).first())return json({error:"Save the record before uploading files"},404);
  let name,bytes;

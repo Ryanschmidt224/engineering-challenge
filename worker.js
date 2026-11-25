@@ -27,6 +27,7 @@ import {onRequestGet as getPhoto} from "./functions/api/photo.js";
 import {handlePhotoAnnotations} from "./functions/api/photo-annotations.js";
 import {handlePartCode} from "./functions/api/part-code.js";
 import {guardPrivateApi} from "./functions/api/private-access.js";
+import {guardLegacyProjectWrite} from "./functions/api/legacy-projects.js";
 import {handleFamilyWorkshop} from "./functions/api/workshop-db.js";
 import {handleFamilyWorkshopFile,handleWorkshopExport} from "./functions/api/family-workshop-files.js";
 import {handleKnowledge} from "./functions/api/knowledge.js";
@@ -41,6 +42,8 @@ export default {
       if(path.startsWith("/project-engine-proof")&&!await isAdmin(request,env))return new Response('<a href="/index.html?account=1#home">Sign in with the preview owner account, then return here.</a>',{status:401,headers:{"content-type":"text/html","cache-control":"no-store"}});
       const denied=await guardPrivateApi(request,env);
       if(denied)return denied;
+      const legacyDenied=guardLegacyProjectWrite(request,env);
+      if(legacyDenied)return legacyDenied;
       if(path.startsWith("/api/project-engine/"))return handleProjectEngine(request,env);
       if(path==="/api/accounts")return await handleAccounts(request,env);
       if(path==="/api/workshop")return handleFamilyWorkshop(request,env);

@@ -3,6 +3,7 @@ import {validateFamilyFields,validateFamilyValues,validId,isWebUrl,familyUsePart
 import {isAdmin} from "./auth.js";
 import {projectAllowed} from "./projects.js";
 import {projectSelectionUses} from "./project-selection-uses.js";
+import {legacyProjectsReadOnly,legacyReadOnlyResponse} from "./legacy-projects.js";
 
 const json = (data,status=200) => Response.json(data,{status,headers:{"cache-control":"private, no-store","x-content-type-options":"nosniff"}});
 const tables = {category:"workshop_categories",family:"workshop_families",product:"workshop_products",use:"workshop_uses",attachment:"workshop_attachments"};
@@ -120,6 +121,13 @@ export async function handleFamilyWorkshop(request,env) {
  let input;
  try{
   const raw=await request.text();if(raw.length>128*1024)return json({error:"Record is too large"},413);input=JSON.parse(raw);
+  // Workshop families/products remain editable. Uses and their attachments
+  // belong to the preserved legacy projects, including edits of existing links.
+  if(legacyProjectsReadOnly(env)){
+   if(input.entity==="use"||input.entity==="attachment"&&input.record?.owner_type==="use")return legacyReadOnlyResponse();
+   const attachmentId=request.method==="PATCH"?input.id:input.record?.id;
+   if(input.entity==="attachment"&&validId(attachmentId)&&await stmt(env.WORKSHOP_DB,"SELECT id FROM workshop_attachments WHERE id=? AND use_id IS NOT NULL",attachmentId).first())return legacyReadOnlyResponse();
+  }
   if(request.method==="PATCH"){
    revision(input);if(!tables[input.entity]||!validId(input.id)||typeof input.archived!=="boolean")throw Error("Invalid archive request.");
    if(input.entity==="category"&&input.archived){

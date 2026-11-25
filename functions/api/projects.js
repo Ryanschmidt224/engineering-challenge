@@ -2,6 +2,7 @@
 import {isAdmin} from "./auth.js";
 import {accountUser} from "./accounts.js";
 import {CORE_PROJECTS} from "./project-seed.js";
+import {legacyProjectsReadOnly} from "./legacy-projects.js";
 export {CORE_PROJECTS} from "./project-seed.js";
 export const CATALOG_KEY="project-catalog/v1.json";
 export const VALID_PROJECT_ID=/^(?:launcher|linear|robot|p[a-f0-9]{32})$/;
@@ -70,7 +71,7 @@ export async function onRequest({request,env}){
  if(method==="GET"){
   const includeArchived=new URL(request.url).searchParams.has("includeArchived");
   const {projects}=await readCatalog(env),user=await accountUser(request,env),admin=await isAdmin(request,env);
-  return json({projects:projects.filter(p=>(!p.archived||includeArchived&&(p.ownerId===user?.id||admin))&&(p.ownerId===user?.id||admin)).map(p=>({...p,isOwner:p.ownerId===user?.id||admin}))});
+  return json({readOnly:legacyProjectsReadOnly(env),projects:projects.filter(p=>(!p.archived||includeArchived&&(p.ownerId===user?.id||admin))&&(p.ownerId===user?.id||admin)).map(p=>({...p,isOwner:p.ownerId===user?.id||admin}))});
 
  }
  if(!["POST","DELETE","PATCH"].includes(method))return json({error:"Method not allowed"},405);
