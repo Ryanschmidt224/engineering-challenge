@@ -25,3 +25,17 @@ test("a failed refresh after an admitted revision reuses its command and cannot 
   failLoad=false;revision="newer";await client.load("project");await client.write("project","/items/id/revisions","POST",{entryDetails:{notes:"Save once"}},"start");assert.equal(client.state.project.revision,"newer");assert.deepEqual(bodies[1],bodies[2]);
  }finally{globalThis.fetch=original;}
 });
+
+test("an unreadable successful response retains the loaded revision and exact retry identity",async()=>{
+ const bodies=[];let broken=true;
+ const client=createProjectClient({fetcher:async(url,options)=>{
+  if(!options.method)return Response.json({project:{id:"project",revision:"loaded"}});
+  bodies.push(JSON.parse(options.body));
+  return broken?new Response('{"revision":', {status:200}):Response.json({revision:"saved"});
+ }});
+ await client.load("project");
+ await assert.rejects(client.write("project","/items","POST",{name:"Draft"}),error=>error.code==="PROJECT_RESPONSE_UNREADABLE"&&error.status===200);
+ assert.equal(client.state.project.revision,"loaded");broken=false;
+ await client.write("project","/items","POST",{name:"Draft"});
+ assert.deepEqual(bodies[0],bodies[1]);assert.equal(client.state.project.revision,"saved");
+});
