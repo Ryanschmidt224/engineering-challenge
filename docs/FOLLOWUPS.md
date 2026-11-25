@@ -2,7 +2,7 @@
 
 One line per deferred item. This is not permission to expand scope; Batch 5 remains limited to FEATURE_INVENTORY Keep/Rebuild items.
 
-- Required inventory parity, 7.1: finish dedicated instruction-list resizing in the remaining Batch 5 UI work; do not mark it rebuilt yet.
+- Post-switch, 5.11: shop-material grouping uses legacy assumedOnHand; the engine has no equivalent saved field. Do not guess by name or mutate schemas in screen-only 5a; picture views follow the reviewed photo role table.
 - Required inventory parity, 4.5/4.6/6.12: retain deliberate Milestone/Knowledge draft entry points when their listed area is rebuilt; no automatic entries or new Knowledge system.
 - Post-switch only: any individual legacy project migration/Practice-to-Notes conversion is optional later work; keep legacy pages read-only, delete/import nothing for the early switch-over.
 - Deferred by owner: independent CAD/STL/file revision labels; keep exact file identities and bytes now, without relabeling files when a part revision advances.

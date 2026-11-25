@@ -3,6 +3,7 @@ import {instructionTree,recordTree} from "./project-instruction-model.js";
 import {editStep,editRecord,retireInstruction} from "./project-editors.js";
 import {partHistoryPrompt} from "./project-part-history.js";
 import {recordVersionView,savedPartView} from "./project-information.js";
+import {initSplitPanes} from "./split-panes.js";
 
 const button=(...args)=>window.BSUI.button(...args);
 function ordering(header,id,ids,index,save,type){
@@ -25,9 +26,10 @@ export function workInstructions(ctx,item){
  const state=ctx.client.state,tree=instructionTree(state.steps.filter(row=>row.item_id===item.id)),active=[...tree.byId.values()].filter(tree.active),section=window.BSUI.section({title:"Work instructions",count:active.length,countLabel:["scope","scopes"],role:"work-instructions"});
  const action=async(path,data)=>{try{await ctx.client.write(ctx.projectId,path,"POST",data);await ctx.refresh();ctx.notify("Saved.");}catch(error){ctx.notify(error.message);}};
  window.BSUI.sectionActions(section.body,{primary:button("Add step",()=>editStep(ctx)),secondary:[button("Add instruction group",()=>editStep(ctx,null,{isGroup:true}))]});
- function render(parentId,holder){
+ function render(parentId,holder,only=null){
   const siblings=tree.children(parentId).filter(tree.active),ids=siblings.map(row=>row.id);
   for(const [index,step]of siblings.entries()){
+   if(only&&step.id!==only)continue;
    const block=window.BSUI.section({title:step.title,role:step.is_group?"instruction-group":"step"}),save=ids=>action("/items/"+item.id+"/steps/reorder",{ids,parentId}),order=ordering(block.header,step.id,ids,index,save,"application/x-bs-instruction");
    const records=state.records.filter(row=>row.step_id===step.id).sort((a,b)=>a.sort_order-b.sort_order||a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));block.setCount(records.length);block.body.append(node("p",step.body,"project-instruction-text"));
    window.BSUI.sectionActions(block.body,{primary:button("Add record",()=>editRecord(ctx,{stepId:step.id})),secondary:[button("Edit step",()=>editStep(ctx,step)),...(step.is_group?[button("Add child instruction",()=>editStep(ctx,null,{parentId:step.id})),button("Add child group",()=>editStep(ctx,null,{parentId:step.id,isGroup:true}))]:[]),...order,button("Retire step",()=>retireInstruction(ctx,step),{variant:"quiet"})]});
@@ -39,7 +41,9 @@ export function workInstructions(ctx,item){
    render(step.id,block.body);block.body.append(revisions(ctx,item,step));holder.append(block.root);
   }
  }
- render(null,section.body);
+ const panes=node("div","","project-panes project-instruction-panes"),list=node("nav","","project-instruction-list project-stack"),detail=node("div","","project-main project-stack");list.setAttribute("aria-label","Instruction list");panes.append(list,detail);section.body.append(panes);let selected=null;
+ const choose=value=>{selected=value;for(const button of list.querySelectorAll("button"))button.setAttribute("aria-current",String(button.dataset.instruction===(selected||"")));detail.replaceChildren();render(null,detail,selected);};
+ const addChoice=(title,id)=>{const entry=button(title,()=>choose(id),{variant:"quiet"});entry.dataset.instruction=id||"";entry.setAttribute("aria-label",id?"Show instruction "+title:title);list.append(entry);};addChoice("All instructions",null);for(const step of tree.children(null).filter(tree.active))addChoice(step.title,step.id);choose(null);initSplitPanes(panes,{key:"project-instructions",panes:[{key:"instructions",selector:".project-instruction-list",name:"instruction list"}]});
  const retired=[...tree.byId.values()].filter(row=>row.retired_at&&(!row.parent_id||tree.active(tree.byId.get(row.parent_id))));
  if(retired.length){const archive=window.BSUI.section({title:"Archived instructions",role:"instruction-archive",count:retired.length});for(const step of retired)archive.body.append(node("p",step.title),node("p",step.archive_reason||"","project-instruction-text"),button("Restore "+step.title,()=>action("/steps/"+step.id+"/restore",{})),revisions(ctx,item,step));section.body.append(archive.root);}
  return section.root;

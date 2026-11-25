@@ -6,9 +6,9 @@ Current state and next step only. Keep at most three lines per PR; no dated hand
 
 Production follows main; its exact head/build is tracked by GitHub deployment checks. NEW_PROJECT_ENGINE remains off in production and enabled only for previews. No real data, files or backups are deleted or overwritten.
 
-- Batch 5a / `feature/project-5a-screens`, from main after merged 4b (#72): directory search/sort/Details/List/Tiles, read-only placement-based Parts Management, summary BOM/Tools and readable HTML through the existing export/renderer. No API, table, migration, backup protocol or guarded-save changes.
-- Local/CI evidence belongs in the single 5a PR. BATCH5_IMPLEMENTATION_BRIEF.md is not present in the repository or supplied files; its exact 5a rows and engine_item_files definition are requested for scope reconciliation before merge/photos.
-- Next: finish 5a checks and brief reconciliation, then separate latest-main PRs for nightly engine backups (Claude review) and photos only (Claude review). No stacked feature PR.
+- Batch 5a / #73, from main after merged 4b: brief-reconciled directory/sign-in, numbering previews, tree filters, read-only Parts Management with existing editors, BOM/Tools/grouping, instruction-list resizing, reviewed Workshop-copy drafts and readable HTML with a separate Archive heading.
+- Supplied Claude brief, feature map and historical disposition source map are retained in docs; later owner scope overrides their older sequencing. The signed-out page stays 401 with a static sign-in shell; no API owner checks, tables, migrations, backup protocol or save guards change. Exact head/check evidence belongs in #73.
+- Next: finish #73 checks, then separate latest-main PRs for nightly engine backups (Claude review) and project/part photos only (Claude review). No stacked feature PR.
 
 ## Early switch-over policy
 

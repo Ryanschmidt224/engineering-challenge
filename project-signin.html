@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+ <title>Sign in — Building Schmidt</title>
+ <link rel="stylesheet" href="assets/dialog-system.css"><link rel="stylesheet" href="assets/base.css"><link rel="stylesheet" href="assets/theme.css"><link rel="stylesheet" href="assets/ui-kit.css"><link rel="stylesheet" href="assets/components.css"><link rel="stylesheet" href="assets/project-workspace.css">
+</head>
+<body>
+ <header class="ui-site-header" data-site-header="home"></header>
+ <main class="project-workspace"><h1>Projects</h1><div data-project-content><p>Sign in with your owner account on this page.</p><button type="button" class="ui-button" data-signin>Sign in</button></div></main>
+ <script src="assets/ui-kit.js"></script>
+ <script type="module">
+  import {initSiteHeader} from "./assets/site-header.js";
+  import {initProjectSignin} from "./assets/project-signin.js";
+  initSiteHeader();const open=initProjectSignin({onSignIn:()=>location.reload(),onSignOut:()=>location.reload()});document.querySelector("[data-signin]").onclick=()=>open();
+ </script>
+</body>
+</html>

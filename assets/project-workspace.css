@@ -35,6 +35,16 @@
     var(--pane-history, var(--pane-default-history)) var(--pane-handle-size)
     minmax(0, 1fr);
 }
+.project-instruction-panes {
+  --pane-default-instructions: 14rem; /* A short instruction-title list. */
+  grid-template-columns:
+    var(--pane-instructions, var(--pane-default-instructions))
+    var(--pane-handle-size) minmax(0, 1fr);
+}
+.project-instruction-list {
+  min-width: 0;
+  align-content: start;
+}
 .project-tree,
 .project-main,
 .project-history-list,
