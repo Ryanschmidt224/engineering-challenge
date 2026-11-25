@@ -21,7 +21,7 @@ export async function showEvent(ctx,id,container){
   const occurrence=ctx.client.state.occurrences.find(row=>row.item_id===event.item_id);if(occurrence?.removed_at===null)body.append(button("Edit entry",()=>editRecord({...ctx,itemId:event.item_id},{record})));
  }
  if(event.payload.record_edit){const edit=event.payload.record_edit;body.append(recordVersionView(ctx,edit.before,"Before edit",attachments),recordVersionView(ctx,edit.after,"After edit",attachments),information("Edit information",[["Edited by",event.payload.actor_id]]));if(event.payload.step_snapshot)body.append(information("Step when recorded",[["Title",event.payload.step_snapshot.title],["Instructions",event.payload.step_snapshot.body]]));}
- if(event.payload.record_structure){const {before,after}=event.payload.record_structure;body.append(information("Entry location changed",[["Previous parent entry",before.parent_title||"Instruction root"],["New parent entry",after.parent_title||"Instruction root"]]));}
+ if(event.payload.record_structure){const {before,after}=event.payload.record_structure;body.append(information("Entry location changed",[["Previous parent entry",before.parent_title||"Top-level entry"],["New parent entry",after.parent_title||"Top-level entry"]]));}
  if(recordContext)body.append(buildContextView(recordContext,recordContext.legacy?"Build context from legacy snapshot":"Build context when recorded"));
  const build=event.payload.build_context;
  if(build?.before&&build?.after){if(JSON.stringify(build.before)===JSON.stringify(build.after))body.append(buildContextView(build.after,"Build context at change"));else body.append(buildContextView(build.before,"Build context before revision"),buildContextView(build.after,"Build context after revision"));}

@@ -3,7 +3,7 @@ test.describe.configure({mode:"serial"});
 test.beforeEach(async({request,context})=>{const {cookie}=await(await request.post("/__test__/reset")).json(),at=cookie.indexOf("=");await context.addCookies([{name:cookie.slice(0,at),value:cookie.slice(at+1),url:"http://127.0.0.1:4173",httpOnly:true,sameSite:"Strict"}]);});
 for(const width of [1440,2560,390])test("Shared page gutters, title-only headers and blank detail panels at "+width+"px",async({page},testInfo)=>{
  await page.setViewportSize({width,height:1100});const lefts=[];
- for(const [path,title,column,heading]of [["/index.html#home","Projects","#home .ui-project-list","#home .project-directory-heading"],["/workshop.html","The Workshop",".category-panel",".workshop-heading"],["/knowledge.html","Bits of information",".tile-panel",".knowledge-heading"]]){
+ for(const [path,title,column,heading]of [["/index.html#home","Projects","#home .ui-project-list","#home .project-directory-heading"],["/workshop.html","The Workshop",".category-panel",".workshop-heading"],["/knowledge.html","Info Bits",".tile-panel",".knowledge-heading"]]){
   await page.goto(path);await expect(page.getByRole("heading",{name:title,exact:true})).toBeVisible();await expect(page.locator(column)).toBeVisible();
   const edge=await page.locator(column).evaluate(el=>el.getBoundingClientRect().left),brand=await page.locator(".ui-site-brand").evaluate(el=>el.getBoundingClientRect().left),titleEdge=await page.getByRole("heading",{name:title,exact:true}).evaluate(el=>el.getBoundingClientRect().left);
   expect(Math.abs(edge-brand)).toBeLessThanOrEqual(1);expect(Math.abs(titleEdge-brand)).toBeLessThanOrEqual(1);lefts.push(brand);

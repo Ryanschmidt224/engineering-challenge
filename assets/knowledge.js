@@ -518,7 +518,7 @@ try {
   if (params.get("new") === "1") newTile(startingLink());
   else renderDetail();
 } catch (error) {
-  const failure=panel("Bits of information unavailable");failure.append(node("p",error.message,"error"));
+  const failure=panel("Info Bits unavailable");failure.append(node("p",error.message,"error"));
   detail.replaceChildren(failure, button("Try again", () => location.reload()));
   const signIn = node("a", "Open Projects to sign in");
   signIn.href = "index.html#home";

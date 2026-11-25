@@ -467,3 +467,13 @@
 .project-tree-tools .ui-button {
   min-height: var(--navigation-control-height);
 }
+
+.project-tree-project-name {
+  flex: 1;
+  min-width: 0;
+  margin: var(--space-2) 0;
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}

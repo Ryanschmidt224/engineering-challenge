@@ -13,7 +13,7 @@ for (const width of [1440, 390]) test("shared headers, controls and collapsed su
   for (const path of ["/index.html#home", "/workshop.html", "/knowledge.html"]) {
     await page.goto(path);
     await expect(page.locator(".ui-site-account")).toBeVisible();
-    await expect(page.locator(".ui-site-nav__item")).toHaveText(["Projects", "Bits of information", "The Workshop"]);
+    await expect(page.locator(".ui-site-nav__item")).toHaveText(["Projects", "Info Bits", "The Workshop"]);
     headers.push(await page.locator(".ui-site-header").evaluate(el => {
       const b = el.getBoundingClientRect(), brand = el.querySelector(".ui-site-brand"), nav = el.querySelector(".ui-site-nav__item");
       return {height: b.height, background: getComputedStyle(el).backgroundColor, logo: getComputedStyle(brand).fontSize, text: getComputedStyle(nav).fontSize};
@@ -219,7 +219,7 @@ test("Calculators uses its own route and preserves the existing calculation form
  await page.getByLabel("Voltage (V)",{exact:true}).fill("12");
  await page.getByLabel("Resistance (Ω)",{exact:true}).fill("6");
  await expect(page.locator(".calculator-output").filter({hasText:"Current"})).toHaveText("Current 2 A · Power 24 W");
- await expect(page.locator(".ui-site-nav__item[aria-current=page]")).toHaveText("Bits of information");
+ await expect(page.locator(".ui-site-nav__item[aria-current=page]")).toHaveText("Info Bits");
 });
 
 

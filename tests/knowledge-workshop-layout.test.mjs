@@ -5,7 +5,7 @@ import {readFileSync} from "node:fs";
 const file=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 test("Knowledge opens the D1 Knowledge page; Calculators has its own route",()=>{
  const html=file("index.html"),site=file("assets/site.js"),resources=file("assets/resources.js"),knowledge=file("knowledge.html");
- assert.match(file("assets/site-header.js"),/"knowledge", "Bits of information", "knowledge.html"/);
+ assert.match(file("assets/site-header.js"),/"knowledge", "Info Bits", "knowledge.html"/);
  assert.match(site,/page==="knowledge"\|\|page==="community"\)\{location\.href="knowledge\.html"/);
  assert.doesNotMatch(html,/Knowledge Base|knowledgeTypeFilter|topic-contributions|logForm|proposalForm/);
  assert.equal((html.match(/id="resource-calculators"/g)||[]).length,1);

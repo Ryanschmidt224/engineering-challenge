@@ -36,5 +36,5 @@ test("catalog layout remains CSS responsive and doesn't change storage schemas",
  assert.match(css,/@media\s*\(max-width:\s*800px\)/);
  assert.match(html,/data-site-header="projects"/);
  const header=read("assets/site-header.js");
- for(const name of ["Projects","Bits of information","The Workshop"])assert.ok(header.includes(name));
+ for(const name of ["Projects","Info Bits","The Workshop"])assert.ok(header.includes(name));
 });
