@@ -8,7 +8,7 @@ Production follows main; its exact head/build is tracked by GitHub deployment ch
 
 - Batch 5a / #73, from main after merged 4b: brief-reconciled directory/sign-in, numbering previews, tree filters, read-only Parts Management with existing editors, BOM/Tools/grouping, instruction-list resizing, reviewed Workshop-copy drafts and readable HTML with a separate Archive heading.
 - Supplied Claude brief, feature map and historical disposition source map are retained in docs; later owner scope overrides their older sequencing. The signed-out page stays 401 with a static sign-in shell; no API owner checks, tables, migrations, backup protocol or save guards change. Exact head/check evidence belongs in #73.
-- Next: finish #73 checks, then separate latest-main PRs for nightly engine backups (Claude review) and project/part photos only (Claude review). No stacked feature PR.
+- Next: finish and merge #73 after checks. Claude owns the nightly-backup and photo patches, including migration 11; rebase those onto #73's final merged main before their separate review-gated PRs. Codex is not implementing either patch.
 
 ## Early switch-over policy
 
