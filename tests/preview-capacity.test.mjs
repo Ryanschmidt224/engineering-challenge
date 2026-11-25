@@ -62,3 +62,23 @@ test("capacity startup failures and untrusted exception text never put credentia
  const invalid=await runPreviewCapacity({source,target,account,fetcher:async()=>{throw Error("Must not call");}},{recordCounts:[10001]});
  assert.equal(invalid.ok,false);assert.equal(invalid.failure.phase,"preflight");
 });
+
+test("preflight failure identifies the rejected owner session and HTTP status without storing credentials", async t => {
+ const fixture = await platform(t);
+ const fetcher = fixture.options.fetcher;
+ fixture.options.fetcher = async (url, options = {}) => {
+  const request = new Request(url, options);
+  if (new URL(url).origin === source && request.headers.has("cookie")) {
+   return Response.json({error: "Owner sign-in required"}, {status: 401});
+  }
+  return fetcher(url, options);
+ };
+ const report = await runPreviewCapacity(fixture.options, {recordCounts: [1000]});
+ assert.equal(report.ok, false);
+ assert.equal(report.acceptanceStep, "Checking source owner session.");
+ assert.equal(report.failure.httpStatus, 401);
+ assert.equal(fixture.writes(), 0);
+ for (const secret of [token, fixture.options.sourceCookie, fixture.options.targetCookie]) {
+  assert.equal(JSON.stringify(report).includes(secret), false);
+ }
+});

@@ -33,7 +33,13 @@ export async function runPreviewCapacity(options,{recordCounts=[3000,10000],onCh
   check(recordCounts.length>0&&new Set(recordCounts).size===recordCounts.length&&recordCounts.every(value=>CAPACITY_COUNTS.includes(value)),"Choose a supported capacity profile.");
   // Includes cookie presence, both actual runtime versions/control-plane
   // bindings, production-off checks and the full functional proof matrix.
-  report.functionalAcceptance=await runPreviewAcceptance(options);
+  report.functionalAcceptance = await runPreviewAcceptance({
+   ...options,
+   progress: message => {
+    report.acceptanceStep = message;
+    options.progress?.(message);
+   }
+  });
   await phase("functional-acceptance-passed");
   const source=previewOrigin(options.source),target=previewOrigin(options.target),fetcher=options.fetcher||fetch;
   // Large request deadline is an operator transport setting, not a Worker or
@@ -114,7 +120,16 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   check(values.report,"Provide a protected report destination.");
   const profiles={"capacity-1000":[1000],"capacity-3000":[3000],"capacity-10000":[10000],"capacity-matrix":CAPACITY_COUNTS};check(Object.hasOwn(profiles,values.profile),"Choose a supported capacity profile.");
   await mkdir(dirname(values.report),{recursive:true});
-  const result=await runPreviewCapacity({...values,token:process.env.CLOUDFLARE_API_TOKEN,sourceCookie:process.env.SOURCE_SESSION_COOKIE,targetCookie:process.env.TARGET_SESSION_COOKIE},{recordCounts:profiles[values.profile],onCheckpoint:report=>writeFile(values.report,JSON.stringify(report,null,2)+"\n",{mode:0o600})});
+  const result = await runPreviewCapacity({
+   ...values,
+   token: process.env.CLOUDFLARE_API_TOKEN,
+   sourceCookie: process.env.SOURCE_SESSION_COOKIE,
+   targetCookie: process.env.TARGET_SESSION_COOKIE,
+   progress: message => process.stderr.write(message + "\n")
+  }, {
+   recordCounts: profiles[values.profile],
+   onCheckpoint: report => writeFile(values.report, JSON.stringify(report, null, 2) + "\n", {mode: 0o600})
+  });
   process.stderr.write(result.ok?"Measured capacity samples passed; review the recorded limitations before activation.\n":"Capacity measurement did not pass; inspect its non-secret report.\n");if(!result.ok)process.exitCode=1;
  }catch{process.stderr.write("Capacity runner could not start. Check its profile, protected report path and securely supplied preview credentials.\n");process.exitCode=1;}
 }
