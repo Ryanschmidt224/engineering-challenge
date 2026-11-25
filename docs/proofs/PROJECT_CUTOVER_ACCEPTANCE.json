@@ -1,5 +1,5 @@
 {
-  "status": "Owner-run source functional proof passed. Independent recovery, unchanged-source verification and large-project capacity measurements are pending. This is not scripted control-plane acceptance or production readiness.",
+  "status": "Owner-run source and independent recovery functional proofs passed. Unchanged-source verification and large-project capacity measurements are pending. This is not scripted control-plane acceptance or production readiness.",
   "sourceDeployment": {
     "gitCommit": "8a5638575b5a107932ec444eecf48524b8be6bcd",
     "gitTree": "bf0386803f25b8c5f641a8384f507e431879e652",
@@ -104,11 +104,70 @@
     "method": "Local read-only validation of the owner-uploaded backup text: complete trailer, project identity, table counts, all three file IDs, sizes and SHA-256 values match the source report. No live restore or unchanged-source verification is inferred from this validation."
   },
   "remaining": {
-    "independentRecovery": "pending",
+    "independentRecovery": "passed in owner-run protected preview proof",
     "sourceUnchangedAfterRecovery": "pending",
     "assemblyWorkshopFunctionalProof": "pending current run",
     "scriptedAcceptance": "not run",
     "largeSaveRestoreTimings": "separate operator benchmark still needs implementation/execution",
     "productionActivation": "not performed"
+  },
+  "recoveryReport": {
+    "ok": true,
+    "environment": "https://preview-project-restore-proof-engineering-challenge.ryanschmidt224.workers.dev",
+    "checkedAt": "2026-11-25T03:45:47.557Z",
+    "projectId": "8fedb3e8-de11-4f59-b81d-80227372a6a9",
+    "targetWasAbsent": true,
+    "revisionReset": true,
+    "counts": {
+      "items": 2,
+      "occurrences": 2,
+      "steps": 1,
+      "configurations": 6,
+      "records": 1,
+      "events": 8,
+      "files": 3,
+      "file_links": 8,
+      "selections": 0,
+      "archive_groups": 1,
+      "snapshot_values": 20,
+      "media": 0
+    },
+    "files": [
+      {
+        "id": "187cd53b-e33e-4131-9484-bd9d8dae1e53",
+        "name": "proof-photo.png",
+        "size": 68,
+        "sha256": "726074f8da2365cabc1b29e074d630413344a7ce199152eaf81ed800a029ebf2"
+      },
+      {
+        "id": "7aa03bb2-c743-4c0c-a0be-feafe99c1b0f",
+        "name": "proof-a.step",
+        "size": 19,
+        "sha256": "df391f9b128c87f473cdc8d4f0fec0b0df4983b1785bc99993b270366d70db10"
+      },
+      {
+        "id": "f6b060b8-0b09-4283-b28f-a9286c23465c",
+        "name": "proof-b.step",
+        "size": 19,
+        "sha256": "a1add889b82f890cff65584ac15824cf6b799eae43f18e036a513cd0b16239c8"
+      }
+    ],
+    "sourceBackupSha256": "d7e132399b3e3adc9636c0952ce2844e1ec630ad3ead6dc77d9ea143a252f8af",
+    "checks": [
+      "Target project absent before restore; other projects preserved",
+      "All engineering metadata and stable identities match the source backup",
+      "Revision levels, full historical snapshots and archive explanations match",
+      "Every restored file matches its saved size and SHA-256",
+      "Restored files use independent storage keys",
+      "A fresh project token is issued and an exact restore retry replays"
+    ]
+  },
+  "recoveryDeployment": {
+    "gitCommit": "dea5c529e4d786e2968b29dd8383225727f58c8e",
+    "gitTree": "5419cf8036a99bb6b5df82b926a326ec6904bef1",
+    "reviewedMain": "dfd3aa125b1749b0fda99611e0b0a6a76d1d0563",
+    "cloudflareBuildId": "03ee634c-713b-4502-8707-d9e447420739",
+    "buildRecord": "https://dash.cloudflare.com/7b76f55fb2e5395e57f8320ce4b1fd4a/workers/services/view/engineering-challenge/production/previews/preview-project-restore-proof/builds/03ee634c-713b-4502-8707-d9e447420739",
+    "verification": "GitHub branch head and successful Cloudflare build checked. Application sources match reviewed main; only the preview D1 configuration differs. The owner ran the protected restore after checking the recovery binding names. Runtime version identity and actual database UUID were not independently queried through the Cloudflare control-plane API."
   }
 }
