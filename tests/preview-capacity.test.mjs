@@ -83,3 +83,20 @@ test("preflight failure identifies the rejected owner session and HTTP status wi
   assert.equal(JSON.stringify(report).includes(secret), false);
  }
 });
+
+test("capacity report identifies unreadable history bodies without retaining response text",async t=>{
+ const fixture=await platform(t),fetcher=fixture.options.fetcher;
+ const sensitive="untrusted-response-secret";
+ fixture.options.fetcher=async(url,options)=>{
+  const response=await fetcher(url,options);
+  if(new URL(url).pathname.includes("/history/")&&new URL(url).origin===source){
+   const detail=await response.clone().json();
+   if(detail.event?.payload?.snapshot?.records?.length===1000)return new Response(sensitive,{status:200});
+  }
+  return response;
+ };
+ const report=await runPreviewCapacity(fixture.options,{recordCounts:[1000]});
+ assert.equal(report.ok,false);assert.equal(report.failure.phase,"revision-history-1000-1");
+ assert.equal(report.failure.httpStatus,200);assert.equal(report.failure.code,"PROJECT_RESPONSE_UNREADABLE");
+ assert.equal(JSON.stringify(report).includes(sensitive),false);
+});

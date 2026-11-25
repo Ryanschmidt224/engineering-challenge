@@ -24,10 +24,23 @@
       "17 9 * * *"
     ]
   },
-  "version_metadata": {"binding":"CF_VERSION_METADATA"},
-  "vars": {"AI_LOOKUP_ENABLED": "1", "NEW_PROJECT_ENGINE": "1"},
+  "vars": {
+    "AI_LOOKUP_ENABLED": "1",
+    "NEW_PROJECT_ENGINE": "1"
+  },
   "previews": {
-    "version_metadata": {"binding":"CF_VERSION_METADATA"},
+    "observability": {
+      "enabled": true,
+      "logs": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "invocation_logs": true,
+        "persist": true
+      }
+    },
+    "version_metadata": {
+      "binding": "CF_VERSION_METADATA"
+    },
     "r2_buckets": [
       {
         "binding": "PHOTOS",
@@ -43,6 +56,9 @@
     ],
     "vars": {
       "NEW_PROJECT_ENGINE": "1"
+    },
+    "limits": {
+      "cpu_ms": 30000
     }
   },
   "d1_databases": [
@@ -50,5 +66,8 @@
       "binding": "WORKSHOP_DB",
       "database_name": "building-schmidt-workshop"
     }
-  ]
+  ],
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA"
+  }
 }

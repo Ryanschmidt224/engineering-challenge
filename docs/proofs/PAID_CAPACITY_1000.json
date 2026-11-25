@@ -1,0 +1,30 @@
+{
+  "ok": true,
+  "profile": "capacity-1000",
+  "runUrl": "https://github.com/Ryanschmidt224/engineering-challenge/actions/runs/45663128437",
+  "attempt": 3,
+  "runnerCommit": "601a33da7de45c54c4cc5c15c4697768faa5c0d7",
+  "finishedAt": "2026-11-25T18:03:39.102Z",
+  "functionalAcceptancePassed": true,
+  "recordCount": 1000,
+  "revisionSamples": 6,
+  "ordinarySaveMedianMs": 1368.25,
+  "sourceImportMs": 22528.9,
+  "sourceExportMs": 7894.99,
+  "recoveryRequestMs": [
+    29502.33,
+    5280.26
+  ],
+  "restoredHistoryVerified": true,
+  "unchangedSourceVerified": true,
+  "previewCpuLimitConfiguredMs": 30000,
+  "sourceCodeCommit": "1903c29e31fdbe5f13ba9b4b4bf14e8bd17793df",
+  "recoveryCodeCommit": "204a95d147ae951fb2025635babaf2f8f7ae463a",
+  "limits": [
+    "HTTP timings include transport, authentication and application work; they are not exact D1 SQL execution or Worker CPU measurements.",
+    "A successful revision request bounds its complete guarded batch by the measured request duration; no exact per-statement CPU/SQL duration is claimed.",
+    "No cleanup intent is created. Trigger-state comparison and Worker CPU/limit evidence still require the separately reviewed operator measurement.",
+    "Successful samples do not change production bounds or authorize activation by themselves."
+  ],
+  "assessment": "Passes the initial-release capacity-1000 gate in SWITCHOVER.md. Exact CPU/D1 execution and cleanup-trigger comparisons remain deferred measurements under that runbook. Recovery optimization PR91 was not deployed. Production activation and signed-in production verification are separate pending steps."
+}
