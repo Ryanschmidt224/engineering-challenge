@@ -4,11 +4,11 @@ Current state and next step only. Keep at most three lines per PR; no release hi
 
 ## Current
 
-Production main: `fe3a10788b3896d37e663494a1c223c58014ed54`. NEW_PROJECT_ENGINE remains off in production and enabled only for previews. No real data, files or backups are deleted or overwritten.
+Production follows main; its exact head/build is tracked by GitHub deployment checks. NEW_PROJECT_ENGINE remains off in production and enabled only for previews. No real data, files or backups are deleted or overwritten.
 
-- PR #71 / Batch 4a: independent instruction/group revisions, nested records, named attachments and archive reasons; feature migration 10 and backup-metadata/save changes require Claude review before merge.
-- Code head `bb22779`: 404 local Node checks and 142/142 local browser workflows pass; preview build and hosted Node checks pass. Exact-head hosted results are maintained in PR #71; this follow-up changes docs only.
-- Next: complete Claude review and green checks for #71, then merge under the owner's batch approval; start one Batch 4b PR from the resulting latest main. Do not start a stacked PR.
+- Batch 4b / `feature/project-history-screens`: History filters, paging, saved/working comparisons, navigation/selection/scroll and read retries; Claude's Q flaky wait is corrected. Frontend/display/test/docs only; no table, migration, backup or save-guard changes.
+- Focused History/workspace flows pass; exact full local/CI results and merge head belong in the single Batch 4b PR. Source starts directly from current main; no stacked PR.
+- Next: merge 4b once Node, browser and preview checks pass under the owner's screen-only policy; coordinate sole Batch 5 writer ownership with Claude's feature map before implementing its Keep/Rebuild scope.
 
 ## Owner delivery policy
 
@@ -18,7 +18,7 @@ Production main: `fe3a10788b3896d37e663494a1c223c58014ed54`. NEW_PROJECT_ENGINE 
 - Build the plainest working version. No optional hardening or rare-race work; record a one-line follow-up and move on. Preserve existing tests; add one success test per feature and one main stale-save/duplicate-submit failure case.
 - If a task runs about two hours beyond expectation, stop and report the blocker, simplest route and what that route gives up; do not design around it without the owner.
 - Batch 5 is limited to FEATURE_INVENTORY Keep/Rebuild scope. Ask before adding anything unlisted.
-- Backup/recovery design stays frozen at schema 9: bug fixes only. PR #71's required new-feature metadata compatibility remains review-gated; it adds no recovery or cleanup mechanism. Never expose passwords, cookies or tokens in chat, files or logs.
+- Backup/recovery design stays frozen at schema 9: bug fixes only. Claude approved the additive instruction metadata compatibility in merged 4a; it adds no recovery or cleanup mechanism. Never expose passwords, cookies or tokens in chat, files or logs.
 
 ## After 4a, 4b and 5 merge
 

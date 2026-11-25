@@ -6,6 +6,7 @@ import {projectHelp} from "./project-help.js";
 import {initSplitPanes} from "./split-panes.js";
 import {editRecord,confirmAction} from "./project-editors.js";
 import {instructionTree} from "./project-instruction-model.js";
+import {savedComparison} from "./project-history-comparison.js";
 const button=(...args)=>window.BSUI.button(...args);
 export const eventLabels={...recordLabels,instruction_revision:"Instruction revision",record_edited:"Record edited",revision:"Revision",archived:"Archived",file_replaced:"File change",removed:"Removed",restored:"Restored",step_retired:"Step retired",step_restored:"Step restored"};
 
@@ -15,7 +16,7 @@ function entryCard(entry,select){
 export async function showEvent(ctx,id,container){
  const detail=await ctx.client.request("/"+ctx.projectId+"/history/"+id),{event,record,configurations,attachments,recordContext}=detail,body=node("div","","project-stack");
  body.append(node("h2",record?.title||event.title),node("p",(eventLabels[record?.type||event.type]||event.type)+" · "+(event.payload.source?.name||""),"muted"));
- if(record){body.append(node("p",projectHelp.testedConfiguration),...(record.type==="change_note"?[node("p",projectHelp.changeRecord)]:[]),information("Record",Object.entries(recordPrompts[record.type]).map(([key,label])=>[label,record.fields[key]]).concat(record.type==="problem"?[["Status",record.fields.status]]:[]).concat(record.event_date?[["Event date",record.event_date]]:[])));if(record.step_snapshot)body.append(information("Step when recorded",[["Title",record.step_snapshot.title],["Instructions",record.step_snapshot.body]]));
+ if(record){body.append(node("p",projectHelp.testedConfiguration),...(record.type==="change_note"?[node("p",projectHelp.changeRecord)]:[]),recordVersionView(ctx,{...record,fileIds:[...new Set(attachments.map(file=>file.id))]},"Record",attachments));if(record.step_snapshot)body.append(information("Step when recorded",[["Title",record.step_snapshot.title],["Instructions",record.step_snapshot.body]]));
   const occurrence=ctx.client.state.occurrences.find(row=>row.item_id===event.item_id);if(occurrence?.removed_at===null)body.append(button("Edit record",()=>editRecord({...ctx,itemId:event.item_id},{record})));
  }
  if(event.payload.record_edit){const edit=event.payload.record_edit;body.append(recordVersionView(ctx,edit.before,"Before edit",attachments),recordVersionView(ctx,edit.after,"After edit",attachments),information("Edit information",[["Edited by",event.payload.actor_id]]));if(event.payload.step_snapshot)body.append(information("Step when recorded",[["Title",event.payload.step_snapshot.title],["Instructions",event.payload.step_snapshot.body]]));}
@@ -23,14 +24,14 @@ export async function showEvent(ctx,id,container){
  if(recordContext)body.append(buildContextView(recordContext,recordContext.legacy?"Build context from legacy snapshot":"Build context when recorded"));
  const build=event.payload.build_context;
  if(build?.before&&build?.after){if(JSON.stringify(build.before)===JSON.stringify(build.after))body.append(buildContextView(build.after,"Build context at change"));else body.append(buildContextView(build.before,"Build context before revision"),buildContextView(build.after,"Build context after revision"));}
- if(event.payload.snapshot)body.append(savedPartView(ctx,event));
+ if(event.payload.snapshot){const comparison=savedComparison(ctx,event);if(comparison)body.append(comparison);body.append(savedPartView(ctx,event));}
  if(event.payload.file_id){const file=ctx.client.state.files.find(file=>file.id===event.payload.file_id);if(file)body.append(information("Engineering file",[["File",fileLink(ctx,file)]]));}
  if(event.payload.changes?.length)body.append(information("What changed",event.payload.changes.map(change=>[change.label,formatRevisionValue(change.before)+" → "+formatRevisionValue(change.after)])));
  if(event.payload.reason||event.payload.label)body.append(information("Revision information",[["Reason",event.payload.reason],["Label",event.payload.label]]));
  if(event.payload.path)body.append(information("Original location",[["Project",event.payload.path.root.name],["Item",event.payload.path.item.name],["Step",event.payload.path.step?.title]]));
  for(const config of configurations){const section=window.BSUI.section({title:config.id===event.payload.before&&config.id===event.payload.after?"Design configuration (unchanged)":config.id===event.payload.before?"Before revision":config.id===event.payload.after?"After revision":"Configuration when recorded",open:!!record});section.body.append(configurationView(config,undefined,{includeBuild:!recordContext&&!build}));if(config.snapshot.file){const file=ctx.client.state.files.find(file=>file.id===config.snapshot.file.id);if(file)section.body.append(fileLink(ctx,file));}body.append(section.root);}
- if(attachments.length&&!event.payload.record_edit)body.append(information("Attachments",attachments.map(file=>["File",fileLink(ctx,file)])));
- body.append(node("small","Recorded "+new Date(event.created_at).toLocaleString(),"muted"));container.replaceChildren(body);
+ if(attachments.length&&!event.payload.record_edit&&!record)body.append(information("Attachments",attachments.map(file=>["File",fileLink(ctx,file)])));
+ body.append(node("small","Recorded "+new Date(event.created_at).toLocaleString(),"muted"));container.replaceChildren(body);return detail;
 }
 function currentSnapshot(ctx,item){const occurrence=ctx.client.state.occurrences.find(row=>row.item_id===item.id);return {snapshot:{item,occurrence:{...occurrence,root:{name:ctx.client.state.project.name}}}};}
 async function showRemoved(ctx,entry,container){
@@ -48,26 +49,62 @@ async function showRemoved(ctx,entry,container){
  }catch(error){ctx.notify(error.message);}}));else body.append(node("p","Restore the parent item before restoring this step."));container.replaceChildren(body);
 }
 export function createHistoryView(ctx,memo){
- const root=node("div","","project-stack"),toolbar=node("div","","actions project-toolbar"),panes=node("div","","project-panes project-history-panes"),list=node("div","","project-history-list"),detail=node("div","","project-history-detail");panes.append(list,detail);root.append(toolbar,panes);
- let requestNumber=0;
- const saveScroll=()=>{if(list.childElementCount)memo.scroll=list.scrollTop;};list.addEventListener("scroll",saveScroll);
- const select=async entry=>{memo.selected=entry.id;try{if(memo.mode==="archive")await showRemoved(ctx,entry,detail);else await showEvent(ctx,entry.id,detail);const back=button("Back to history",()=>{saveScroll();delete panes.dataset.detailOpen;detail.replaceChildren();list.scrollTop=memo.scroll;list.querySelector('[data-event-id="'+memo.selected+'"]')?.focus();});detail.prepend(back);panes.dataset.detailOpen="true";detail.querySelector("h2")?.setAttribute("tabindex","-1");detail.querySelector("h2")?.focus({preventScroll:true});}catch(error){ctx.notify(error.message);}};
- async function load(more=false){
-  const generation=++requestNumber;saveScroll();try{
-   let entries,nextCursor=null;
-   if(memo.mode==="archive"){
-    const state=ctx.client.state;entries=[...state.occurrences.filter(row=>row.removed_at!==null&&(!row.archive_group_id||state.archive_groups.find(group=>group.id===row.archive_group_id)?.root_occurrence_id===row.id)).map(row=>{const item=state.items.find(item=>item.id===row.item_id);return {...row,id:"occurrence-"+row.id,occurrenceId:row.id,kind:"item",title:item.name,summary:item.is_assembly?"Archived subassembly":"Archived part",created_at:row.removed_at};}),...state.steps.filter(row=>row.retired_at).map(row=>({...row,kind:"step",summary:"Retired step",created_at:row.retired_at}))];
-    entries=entries.filter(row=>(!memo.scope||row.item_id===memo.scope||state.occurrences.find(parent=>parent.id===row.parent_id)?.item_id===memo.scope)&&(!memo.q||(row.title+" "+row.summary).toLowerCase().includes(memo.q.toLowerCase()))).sort((a,b)=>b.created_at.localeCompare(a.created_at)||b.id.localeCompare(a.id));
-   }else{entries=[];const target=more?20:Math.max(20,memo.entries.length);let cursor=more?memo.cursor:null;do{const params=new URLSearchParams({type:memo.type,scope:memo.scope,q:memo.q,limit:"20",...(cursor?{cursor}:{})});const result=await ctx.client.request("/"+ctx.projectId+"/history?"+params);if(generation!==requestNumber)return;entries.push(...result.entries);cursor=result.nextCursor;}while(cursor&&entries.length<target);nextCursor=cursor;}
-   if(generation!==requestNumber)return;memo.entries=more?[...memo.entries,...entries]:entries;memo.cursor=nextCursor;list.replaceChildren();
-   for(const entry of memo.entries){const row=entryCard(entry,()=>select(entry));row.setAttribute("aria-pressed",String(entry.id===memo.selected));list.append(row);}if(!memo.entries.length)list.append(node("p",memo.mode==="archive"?"Archived parts and retired steps will appear here.":"Add a record or save a revision to start this History."));
-   if(nextCursor)list.append(button("Load more",()=>load(true)));list.scrollTop=memo.scroll||0;
-   if(memo.selected){const selected=memo.entries.find(entry=>entry.id===memo.selected);if(selected)await select(selected);else {delete panes.dataset.detailOpen;detail.replaceChildren();}}
-  }catch(error){ctx.notify(error.message);}
+ memo.archiveType||="all";memo.detailOpen??=!!memo.selected;
+ const root=node("div","","project-stack"),toolbar=node("div","","actions project-toolbar"),status=node("p","","ui-status"),retry=button("Retry history",()=>load(retryMore)),panes=node("div","","project-panes project-history-panes"),list=node("div","","project-history-list"),detail=node("div","","project-history-detail");
+ status.setAttribute("role","status");status.dataset.historyStatus="";retry.hidden=true;list.setAttribute("role","region");list.setAttribute("aria-label","History entries");detail.setAttribute("role","region");detail.setAttribute("aria-label","History entry");panes.append(list,detail);root.append(toolbar,status,retry,panes);
+ let requestNumber=0,selectionNumber=0,retryMore=false;
+ const visible=()=>list.offsetParent!==null;
+ const saveScroll=()=>{if(visible()&&list.childElementCount)memo.scroll=list.scrollTop;};list.addEventListener("scroll",saveScroll);
+ const markSelection=()=>{for(const row of list.querySelectorAll("[data-event-id]"))row.setAttribute("aria-pressed",String(row.dataset.eventId===memo.selected));};
+ const restoreScroll=()=>requestAnimationFrame(()=>{if(root.isConnected&&!memo.detailOpen){list.scrollTop=memo.scroll||0;window.scrollTo(0,memo.pageScroll||0);}});
+ const back=()=>{++selectionNumber;memo.detailOpen=false;delete panes.dataset.detailOpen;detail.replaceChildren();list.scrollTop=memo.scroll||0;list.querySelector('[data-event-id="'+memo.selected+'"]')?.focus({preventScroll:true});restoreScroll();};
+ const select=async(entry,{focus=true,capture=true}={})=>{
+  const id=typeof entry==="string"?entry:entry.id,ticket=++selectionNumber;
+  if(capture&&visible()){saveScroll();memo.pageScroll=window.scrollY;}memo.selected=id;memo.detailOpen=true;markSelection();panes.dataset.detailOpen="true";detail.replaceChildren(node("p","Loading entry…"));
+  try{
+   const pending=node("div"),loaded=memo.mode==="archive"?(await showRemoved(ctx,entry,pending),null):await showEvent(ctx,id,pending);
+   if(ticket!==selectionNumber||memo.selected!==id||!root.isConnected)return;
+   const controls=actions(button("Back to history",back)),item=loaded?.event.item_id||entry.item_id;
+   if(item)controls.append(button("Open part",()=>ctx.navigate(ctx.projectId,item),{variant:"quiet"}));
+   detail.replaceChildren(controls,...pending.childNodes);detail.dataset.eventId=id;
+   const heading=detail.querySelector("h2");heading?.setAttribute("tabindex","-1");if(focus)heading?.focus({preventScroll:true});
+  }catch(error){if(ticket!==selectionNumber||!root.isConnected)return;const message=node("p",error.message);message.setAttribute("role","alert");detail.replaceChildren(button("Back to history",back),message,button("Retry entry",()=>select(entry)));}
+ };
+ const more=button("Load more",()=>load(true));
+ function archivedEntries(){
+  const state=ctx.client.state;
+  let entries=[...state.occurrences.filter(row=>row.removed_at!==null&&(!row.archive_group_id||state.archive_groups.find(group=>group.id===row.archive_group_id)?.root_occurrence_id===row.id)).map(row=>{const item=state.items.find(item=>item.id===row.item_id);return {...row,id:"occurrence-"+row.id,occurrenceId:row.id,kind:"item",title:item.name,summary:item.is_assembly?"Archived subassembly":"Archived part",created_at:row.removed_at};}),...state.steps.filter(row=>row.retired_at).map(row=>({...row,kind:"step",summary:"Retired step",created_at:row.retired_at}))];
+  return entries.filter(row=>(!memo.scope||row.item_id===memo.scope||state.occurrences.find(parent=>parent.id===row.parent_id)?.item_id===memo.scope)&&(!memo.q||(row.title+" "+row.summary+" "+(row.archive_reason||"")).toLowerCase().includes(memo.q.toLowerCase()))&&(memo.archiveType==="all"||row.kind===(memo.archiveType==="instructions"?"step":"item"))).sort((a,b)=>b.created_at.localeCompare(a.created_at)||b.id.localeCompare(a.id));
  }
- const reset=()=>{memo.cursor=null;memo.scroll=0;memo.selected=null;memo.entries=[];delete panes.dataset.detailOpen;detail.replaceChildren();list.replaceChildren();void load();};
- toolbar.append(field("View",memo.mode,value=>{memo.mode=value;reset();},{options:[{value:"history",label:"History"},{value:"archive",label:"Archive"}]}),field("Scope",memo.scope,value=>{memo.scope=value;reset();},{options:[{value:"",label:"Whole project"},...ctx.client.state.items.map(item=>({value:item.id,label:item.name}))]}),field("Type",memo.type,value=>{memo.type=value;reset();},{options:[{value:"all",label:"All"},{value:"tests",label:"Tests"},{value:"problems",label:"Problems"},{value:"changes",label:"Changes"},{value:"notes",label:"Notes"}]}),field("Search history",memo.q,value=>{memo.q=value;reset();},{type:"search"}));
- queueMicrotask(()=>{initSplitPanes(panes,{key:"project-history",panes:[{key:"history",selector:".project-history-list",name:"History"}]});void load();});return root;
+ async function load(append=false){
+  const generation=++requestNumber;saveScroll();retry.hidden=true;more.disabled=true;status.textContent="Loading history…";
+  try{
+   let entries=[],nextCursor=null,total=0;
+   if(memo.mode==="archive"){const all=archivedEntries(),target=append?memo.entries.length+20:Math.max(20,memo.entries.length);entries=all.slice(0,target);total=all.length;nextCursor=entries.length<total?String(entries.length):null;}
+   else{
+    const target=append?20:Math.max(20,memo.entries.length);let cursor=append?memo.cursor:null;
+    do{const params=new URLSearchParams({type:memo.type,scope:memo.scope,q:memo.q,limit:"20",...(cursor?{cursor}:{})}),page=await ctx.client.request("/"+ctx.projectId+"/history?"+params);if(generation!==requestNumber||!root.isConnected)return;entries.push(...page.entries);total=page.total;cursor=page.nextCursor;}while(cursor&&entries.length<target);nextCursor=cursor;
+    if(append)entries=[...memo.entries,...entries];
+   }
+   if(generation!==requestNumber||!root.isConnected)return;
+   memo.entries=entries;memo.cursor=nextCursor;list.replaceChildren();
+   for(const entry of entries)list.append(entryCard(entry,()=>select(entry)));markSelection();
+   if(nextCursor)list.append(more);list.scrollTop=memo.scroll||0;
+   status.textContent=entries.length?entries.length+" of "+total+" entries":memo.q||memo.scope||memo.type!=="all"?"No entries match these filters.":memo.mode==="archive"?"Archived parts and retired instructions will appear here.":"Add a record or save a revision to start this History.";
+   if(!entries.length)list.append(node("p",status.textContent));
+   if(memo.selected&&memo.detailOpen&&(!append||!detail.childElementCount)){
+    const selected=entries.find(entry=>entry.id===memo.selected);if(selected||memo.mode!=="archive")await select(selected||memo.selected,{focus:false,capture:false});else{memo.detailOpen=false;delete panes.dataset.detailOpen;detail.replaceChildren();}
+   }else if(!memo.detailOpen)restoreScroll();
+  }catch(error){if(generation!==requestNumber||!root.isConnected)return;status.textContent=error.message;retryMore=append;retry.hidden=false;}
+  finally{if(generation===requestNumber)more.disabled=false;}
+ }
+ const reset=()=>{++selectionNumber;memo.cursor=null;memo.scroll=0;memo.pageScroll=0;memo.selected=null;memo.detailOpen=false;memo.entries=[];delete panes.dataset.detailOpen;detail.replaceChildren();list.replaceChildren();void load();};
+ function renderToolbar(){
+  toolbar.replaceChildren(field("View",memo.mode,value=>{memo.mode=value;renderToolbar();reset();},{options:[{value:"history",label:"History"},{value:"archive",label:"Archive"}]}),field("Scope",memo.scope,value=>{memo.scope=value;reset();},{options:[{value:"",label:"Whole project"},...ctx.client.state.items.map(item=>({value:item.id,label:item.name+" · "+item.part_number}))]}),
+   field("Type",memo.mode==="archive"?memo.archiveType:memo.type,value=>{if(memo.mode==="archive")memo.archiveType=value;else memo.type=value;reset();},{options:memo.mode==="archive"?[{value:"all",label:"All archived items"},{value:"parts",label:"Parts and subassemblies"},{value:"instructions",label:"Instructions and groups"}]:[{value:"all",label:"All"},{value:"tests",label:"Tests"},{value:"problems",label:"Problems"},{value:"changes",label:"Changes"},{value:"notes",label:"Notes and photos"},{value:"revisions",label:"Part revisions"},{value:"instruction_revisions",label:"Instruction revisions"}]}),
+   field("Search history",memo.q,value=>{memo.q=value;reset();},{type:"search"}),button("Clear Filters",()=>{memo.scope="";memo.type="all";memo.archiveType="all";memo.q="";renderToolbar();reset();},{variant:"quiet"}));
+ }
+ renderToolbar();queueMicrotask(()=>{initSplitPanes(panes,{key:"project-history",panes:[{key:"history",selector:".project-history-list",name:"History"}]});void load();});return root;
 }
 export async function latestHistory(ctx,container){
  const result=await ctx.client.request("/"+ctx.projectId+"/history?"+new URLSearchParams({scope:ctx.itemId,type:"activity",limit:"5"}));
