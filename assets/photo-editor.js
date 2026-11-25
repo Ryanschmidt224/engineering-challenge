@@ -40,7 +40,7 @@
   };
   edit.setAttribute("aria-expanded",String(expanded));sync();
   return {
-   shell,edit,markup,add,remove,status,
+   shell,edit,markup,add,remove,status,panel:more,
    setEnabled(value){enabled=!!value;sync()},
    setPhotoPresent(value){present=!!value;sync()},
    setStatus(message){status.textContent=message||""},

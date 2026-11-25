@@ -54,7 +54,7 @@ export function initProjectWorkspace(root=document){
   const overview=node("section","","project-part-overview"),identity=node("div","","project-part-identity");
   identity.append(node("h2",containerName(item)),node("p",item.part_number+" · Revision "+(item.revision_level||1)+" (working draft)","muted"));
   if(item.short_name&&item.short_name!==item.name)identity.append(node("p",item.name,"project-part-subtitle"));
-  overview.append(picture,identity);container.append(overview);
+  overview.append(picture,identity,picture.editorPanel);container.append(overview);
   const placementTree=projectTree(state.items,state.occurrences),shared=state.occurrences.filter(row=>row.item_id===item.id&&placementTree.active(row));identity.append(node("p",state.project.name+" / "+placementTree.path(occ).map(row=>row.name).join(" / "),"muted"));if(shared.length>1)identity.append(node("p","This part has "+shared.length+" active placements. Engineering details are shared; quantity and status belong to this location."));
   const headerControls=node("div","","project-build-controls");let buildBusy=false;
   const updateBuild=async patch=>{if(buildBusy)return;buildBusy=true;for(const control of headerControls.querySelectorAll("input,select"))control.disabled=true;const build={...buildFor(occ),...patch};await action("/occurrences/"+occ.id,{build},"Build information saved.","PATCH");buildBusy=false;for(const control of headerControls.querySelectorAll("input,select"))control.disabled=false;};
@@ -106,7 +106,7 @@ export function initProjectWorkspace(root=document){
     const rootAssembly=summaryAssembly(projectTree(state.items,state.occurrences)),overview=node("section","","project-part-overview project-summary-overview"),identity=node("div","","project-part-identity");identity.append(node("h2","Project summary"));
     for(const [label,value]of [["Name",state.project.name],["Active parts",state.occurrences.filter(row=>row.removed_at===null).length],["Number format",state.project.prefix+"0".repeat(state.project.digits)]])identity.append(window.BSUI.fieldRow(label,String(value)).root);
     if(rootAssembly)identity.append(window.BSUI.fieldRow("Top assembly",rootAssembly.item.part_number+" · "+rootAssembly.item.name).root);
-    overview.append(projectPicture(ctx(),{assembly:rootAssembly?.item}),identity);
+    const picture=projectPicture(ctx(),{assembly:rootAssembly?.item});overview.append(picture,identity,picture.editorPanel);
     main.append(overview);if(rootAssembly)await renderPart(main,rootAssembly.item.id,{placement:rootAssembly.occurrence.id,summary:true});main.append(projectSummary(ctx()));
     const history=window.BSUI.section({title:"History",role:"project-history"}),archived=state.occurrences.filter(row=>row.removed_at!==null),folder=window.BSUI.section({title:"Archive",role:"archive-folder",count:archived.length+state.steps.filter(row=>row.retired_at).length});folder.body.append(button("Open Archive",()=>openHistory("",null,"archive")));history.body.append(folder.root);main.append(history.root);
    }

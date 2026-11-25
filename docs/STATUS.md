@@ -78,3 +78,7 @@ The shared record attachment picker has a styled Choose files button and a visib
 Project summary tree navigation keeps a neutral outlined frame without selected/hover background changes; keyboard focus remains visible. Workspace section header styling now reaches nested shared sections as well as direct children, so summary BOM/Tools and other section headers use the same surface tokens and open-state corners.
 
 Refresh/save feedback now uses the shared ui-status-toast outside document flow, so inserting or clearing Refreshing project does not push the workspace down/up. Empty notifications contain no empty span or visible box. The delayed-summary revalidation browser check also asserts workspace position stays fixed while the refresh message is visible.
+
+Expanded overview photo tools span the full content width. Multiple gallery photos default to a responsive Tiles grid, with Details/List alternatives supplied by the same view-mode control as the project directory. Details shows captions, names and sizes; modes are a display preference only and preserve file order/IDs.
+
+Shared section action rows now keep their standard following gap even when empty/hidden content lies before the next visible block. Parts Management groups filters, keeps secondary filters collapsed, uses a horizontal category strip instead of a second side rail, and shows expandable compact specifications. Full columns, searching all saved fields, column resizing, item edits and stored specifications remain unchanged.

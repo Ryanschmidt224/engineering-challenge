@@ -8,12 +8,13 @@ async function setup(page,request,context){
  const current=await state(),r=await context.request.post(base+"/items",{headers:{origin:"http://127.0.0.1:4173"},data:{operationId:crypto.randomUUID(),expectedRevision:current.project.revision,details:{name:"Bracket"}}});expect(r.ok(),await r.text()).toBe(true);
  await page.reload();return {id,base,state,itemId:(await r.json()).itemId};
 }
-test("project photos upload, caption, reorder and remove; a part gets one picture",async({page,request,context})=>{
+test("project photos upload, caption, reorder and remove; a part gets one picture",async({page,request,context},testInfo)=>{
  const f=await setup(page,request,context),photos=page.locator('[data-section="project-photos"]');
  await page.getByRole("button",{name:"Edit photo",exact:true}).click();
  await expect(page.getByText("Part photos",{exact:true})).toHaveCount(0);
  await photos.locator('input[type="file"]').setInputFiles([{name:"one.png",mimeType:"image/png",buffer:PNG},{name:"two.png",mimeType:"image/png",buffer:PNG}]);
  await expect(photos.locator("img")).toHaveCount(2);
+ const photoView=photos.getByLabel("Photo view",{exact:true});await expect(photoView).toHaveValue("tiles");const tiles=photos.locator("figure"),first=await tiles.nth(0).boundingBox(),second=await tiles.nth(1).boundingBox();expect(Math.abs(first.y-second.y)).toBeLessThan(2);expect(second.x).toBeGreaterThan(first.x);const beforeViews=await f.state();await photoView.selectOption("details");await expect(photos.locator(".project-media-meta").first()).toContainText("one.png");await photoView.selectOption("list");await expect(photos.locator(".project-media-meta").first()).toBeHidden();await photoView.selectOption("tiles");expect(await f.state()).toEqual(beforeViews);await page.screenshot({path:testInfo.outputPath("photo-grid-tiles.png"),fullPage:true});
  await photos.getByRole("button",{name:"Caption",exact:true}).first().click();await page.getByLabel("Caption",{exact:true}).fill("Bench setup");await page.getByRole("button",{name:"Save caption",exact:true}).click();
  await expect(photos.locator("figcaption").first()).toHaveText("Bench setup");await expect(page.locator(".project-summary-overview img.project-picture")).toHaveAttribute("alt","Bench setup");
  await photos.getByRole("button",{name:"Move photo later",exact:true}).first().click();await expect(photos.locator("figcaption").nth(1)).toHaveText("Bench setup");
