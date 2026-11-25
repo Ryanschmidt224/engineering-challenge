@@ -6,8 +6,8 @@ on:
         description: Functional proofs or a synthetic capacity workload
         type: choice
         required: true
-        default: functional
-        options: [functional, capacity-3000, capacity-10000, capacity-matrix]
+        default: capacity-1000
+        options: [functional, capacity-1000, capacity-3000, capacity-10000, capacity-matrix]
       source:
         description: Isolated source preview origin
         type: string
