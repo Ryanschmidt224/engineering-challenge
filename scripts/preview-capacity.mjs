@@ -112,7 +112,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
  try{
   const {values}=parseArgs({options:{source:{type:"string"},target:{type:"string"},account:{type:"string"},report:{type:"string"},profile:{type:"string",default:"capacity-3000"}}});
   check(values.report,"Provide a protected report destination.");
-  const profiles={"capacity-3000":[3000],"capacity-10000":[10000],"capacity-matrix":CAPACITY_COUNTS};check(Object.hasOwn(profiles,values.profile),"Choose a supported capacity profile.");
+  const profiles={"capacity-1000":[1000],"capacity-3000":[3000],"capacity-10000":[10000],"capacity-matrix":CAPACITY_COUNTS};check(Object.hasOwn(profiles,values.profile),"Choose a supported capacity profile.");
   await mkdir(dirname(values.report),{recursive:true});
   const result=await runPreviewCapacity({...values,token:process.env.CLOUDFLARE_API_TOKEN,sourceCookie:process.env.SOURCE_SESSION_COOKIE,targetCookie:process.env.TARGET_SESSION_COOKIE},{recordCounts:profiles[values.profile],onCheckpoint:report=>writeFile(values.report,JSON.stringify(report,null,2)+"\n",{mode:0o600})});
   process.stderr.write(result.ok?"Measured capacity samples passed; review the recorded limitations before activation.\n":"Capacity measurement did not pass; inspect its non-secret report.\n");if(!result.ok)process.exitCode=1;
