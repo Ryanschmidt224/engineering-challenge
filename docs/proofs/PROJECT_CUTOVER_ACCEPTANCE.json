@@ -1,5 +1,5 @@
 {
-  "status": "Owner-run source and independent recovery functional proofs passed. Unchanged-source verification and large-project capacity measurements are pending. This is not scripted control-plane acceptance or production readiness.",
+  "status": "Owner-run custom-part source, independent recovery and unchanged-source functional checks passed. Assembly/Workshop current-run proof, scripted control-plane acceptance and large-project capacity measurements remain pending. This is not production readiness.",
   "sourceDeployment": {
     "gitCommit": "8a5638575b5a107932ec444eecf48524b8be6bcd",
     "gitTree": "bf0386803f25b8c5f641a8384f507e431879e652",
@@ -105,7 +105,7 @@
   },
   "remaining": {
     "independentRecovery": "passed in owner-run protected preview proof",
-    "sourceUnchangedAfterRecovery": "pending",
+    "sourceUnchangedAfterRecovery": "passed in owner-run protected source preview proof",
     "assemblyWorkshopFunctionalProof": "pending current run",
     "scriptedAcceptance": "not run",
     "largeSaveRestoreTimings": "separate operator benchmark still needs implementation/execution",
@@ -169,5 +169,14 @@
     "cloudflareBuildId": "03ee634c-713b-4502-8707-d9e447420739",
     "buildRecord": "https://dash.cloudflare.com/7b76f55fb2e5395e57f8320ce4b1fd4a/workers/services/view/engineering-challenge/production/previews/preview-project-restore-proof/builds/03ee634c-713b-4502-8707-d9e447420739",
     "verification": "GitHub branch head and successful Cloudflare build checked. Application sources match reviewed main; only the preview D1 configuration differs. The owner ran the protected restore after checking the recovery binding names. Runtime version identity and actual database UUID were not independently queried through the Cloudflare control-plane API."
+  },
+  "sourceIntegrityReport": {
+    "ok": true,
+    "environment": "https://feature-legacy-project-readonly-engineering-challenge.ryanschmidt224.workers.dev",
+    "projectId": "8fedb3e8-de11-4f59-b81d-80227372a6a9",
+    "backupSha256": "d7e132399b3e3adc9636c0952ce2844e1ec630ad3ead6dc77d9ea143a252f8af",
+    "checks": [
+      "Source metadata and exported file bytes are byte-for-byte unchanged after independent restore"
+    ]
   }
 }
