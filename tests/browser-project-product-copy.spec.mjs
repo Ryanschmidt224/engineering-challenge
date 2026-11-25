@@ -11,7 +11,7 @@ for(const width of [1440,390])test("project part copies into a reviewed Workshop
  await page.locator('#launcher .bom-part-workspace [data-section="part-details"] > .ui-section__header').click();
  await page.getByRole("button",{name:"Copy to Workshop",exact:true}).click();await expect(page.getByRole("heading",{name:"Copy project part to Workshop",exact:true})).toBeVisible();
  await page.getByLabel("Workshop family",{exact:true}).selectOption("f-resistor");await page.getByRole("button",{name:"Review product copy",exact:true}).click();
- await expect(page.getByLabel("Product name",{exact:true})).toHaveValue("Example resistor");await expect(page.getByLabel("Mfg part number",{exact:true})).toHaveValue("EX-10K");await expect(page.getByLabel("Notes",{exact:true})).toHaveValue(/Resistance: 10k Ω/);
+ await expect(page.getByLabel("Product name",{exact:true})).toHaveValue("Example resistor");await expect(page.getByLabel("Manufacturer part number",{exact:true})).toHaveValue("EX-10K");await expect(page.getByLabel("Notes",{exact:true})).toHaveValue(/Resistance: 10k Ω/);
  await page.getByLabel("Show fields usually filled in for a project",{exact:true}).check();await page.getByLabel("Resistance (Ω)",{exact:true}).fill("10000");
  await page.route("**/api/workshop",route=>route.request().method()==="POST"?route.fulfill({status:503,json:{error:"Temporary storage failure"}}):route.continue());
  await page.getByRole("button",{name:"Save product",exact:true}).click();await expect(page.locator("#workshop-status")).toContainText("Temporary storage failure");await expect(page.getByLabel("Product name",{exact:true})).toHaveValue("Example resistor");await page.unroute("**/api/workshop");
