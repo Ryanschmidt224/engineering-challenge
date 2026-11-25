@@ -16,9 +16,6 @@
 .project-heading p {
   margin-bottom: var(--space-2);
 }
-.project-notice {
-  margin-bottom: var(--space-3);
-}
 .project-panes {
   min-width: 0;
   --pane-default-tree: 17rem; /* Initial engineering tree width. */
@@ -132,14 +129,28 @@
   display: none;
 }
 .project-parts-browse {
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-2);
+}
+.project-parts-browse > [aria-pressed="true"] {
+  background: var(--color-selected);
+  border-color: var(--color-border-strong);
 }
 .project-parts-browse[hidden] {
   display: none;
 }
 .project-column-resizer {
-  margin-inline-start: var(--space-2);
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 10px;
+  min-width: 10px;
+  padding: 0;
+  border-radius: 0;
+  border-inline-end: 1px solid var(--color-border);
   cursor: col-resize;
   touch-action: none;
 }
@@ -211,7 +222,7 @@
   font-size: var(--text-small);
 }
 
-.project-tree-row > .list-card[aria-current="true"] {
+.project-tree-row > .list-card[aria-current="true"]:not(.project-tree-root) {
   background: var(--color-selected);
   border-color: var(--color-accent);
 }
@@ -244,11 +255,11 @@
 .project-main .project-stack > .ui-section {
   margin-bottom: 0;
 }
-.project-main > .ui-section > .ui-section__header {
+.project-main .ui-section > .ui-section__header {
   background: var(--color-surface-muted);
   border-radius: var(--radius-large);
 }
-.project-main > .ui-section[open] > .ui-section__header {
+.project-main .ui-section[open] > .ui-section__header {
   border-radius: var(--radius-large) var(--radius-large) 0 0;
 }
 .project-part-overview {
@@ -279,6 +290,8 @@
   background: var(--color-surface-muted);
 }
 .project-part-overview .project-picture {
+  width: 100%;
+  height: 12rem;
   max-height: 12rem;
   margin: 0;
 }
@@ -390,7 +403,7 @@
   border-top: 1px solid var(--color-border);
 }
 
-.project-tree-row > .list-card:hover {
+.project-tree-row > .list-card:not(.project-tree-root):hover {
   background: var(--color-surface);
 }
 .project-part-overview {
@@ -470,6 +483,7 @@
 
 /* The project root is the summary navigation action, not a numbered part. */
 .project-tree-row > .project-tree-root {
+  border-color: var(--color-border-strong);
   flex-direction: column;
   align-items: stretch;
   gap: 0;
@@ -506,10 +520,85 @@
 .project-photo-tools > p {
   font-size: var(--text-small);
 }
-.project-photo-tools .project-media-grid {
-  grid-template-columns: minmax(0, 1fr);
-}
 .project-assembly-photo-tools {
   padding-top: var(--space-2);
   border-top: 1px solid var(--color-border);
+}
+
+.project-photo-editor {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+.project-photo-editor:not([hidden]) {
+  display: block;
+}
+.project-media-grid[data-view="tiles"] {
+  grid-template-columns: repeat(auto-fill, minmax(min(9rem, 100%), 1fr));
+}
+.project-media-grid[data-view="details"],
+.project-media-grid[data-view="list"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.project-media-grid:not([data-view="tiles"]) .project-media-tile {
+  grid-template-columns: 5rem minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-2);
+}
+.project-media-grid:not([data-view="tiles"]) .project-media-image {
+  grid-row: 1 / 4;
+}
+.project-media-grid:not([data-view="tiles"]) .project-media-tile > .actions {
+  grid-column: 2;
+}
+.project-media-grid[data-view="list"] .project-media-tile {
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+}
+.project-media-meta {
+  overflow-wrap: anywhere;
+  color: var(--color-text-muted);
+}
+.project-media-grid:not([data-view="details"]) .project-media-meta {
+  display: none;
+}
+
+.project-parts-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr));
+  align-items: start;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+}
+.project-parts-controls .field-row {
+  margin: 0;
+}
+.project-parts-filters {
+  grid-column: 1 / -1;
+}
+.project-parts-filters > summary {
+  cursor: pointer;
+  color: var(--color-accent);
+}
+.project-parts-filters .checkbox {
+  margin-block: var(--space-2);
+}
+.project-parts-panes th {
+  position: relative;
+  padding-inline-end: var(--space-4);
+}
+
+.project-parts-panes {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.project-photo-tools > .ui-button {
+  justify-self: start;
 }

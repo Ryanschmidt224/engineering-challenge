@@ -461,8 +461,8 @@ summary.ui-button::-webkit-details-marker {
 .ui-section__actions:last-child {
   margin-bottom: 0;
 }
-.ui-section__actions + :not(:empty):not([hidden]) {
-  margin-top: var(--space-3);
+.ui-section__actions:has(~ :not(:empty):not([hidden])) {
+  margin-bottom: var(--space-3);
 }
 .ui-section__body > :is(div, p, section, article, span):empty,
 .ui-section__body > [hidden] {
@@ -740,4 +740,46 @@ summary.ui-button::-webkit-details-marker {
   border-radius: var(--radius-small);
   background: var(--color-surface-muted);
   font-size: var(--text-small);
+}
+
+/* Status feedback stays outside document flow, including during revalidation. */
+.ui-status-toast {
+  pointer-events: none;
+  position: fixed;
+  inset: auto var(--space-3) var(--space-3) auto;
+  z-index: 100;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: min(32rem, calc(100vw - 2 * var(--space-3)));
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 2px 8px #0002;
+  overflow-wrap: anywhere;
+}
+.ui-status-toast :is(button, a) {
+  pointer-events: auto;
+}
+.ui-status-toast:empty {
+  display: none;
+}
+
+/* Long table values expand on request instead of stretching every row. */
+.ui-table-details > summary {
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.ui-table-details:not([open]) > summary {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ui-table-details > p {
+  margin-block: var(--space-2);
+  overflow-wrap: anywhere;
 }

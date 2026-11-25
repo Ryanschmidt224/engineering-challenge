@@ -23,7 +23,7 @@ const button=(...args)=>window.BSUI.button(...args);
 export function initProjectWorkspace(root=document){
  const environment=root.querySelector("[data-project-environment]");if(environment)environment.textContent=["buildingschmidt.com","www.buildingschmidt.com"].includes(location.hostname)?"Private notebook":"Private preview";
  initSiteHeader();let needsSignin=false,signIn;const client=createProjectClient({fetcher:async(...args)=>{const response=await fetch(...args);if(response.status===401){needsSignin=true;notify("Your session has expired. Your draft is retained.");}return response;}}),content=root.querySelector("[data-project-content]"),heading=root.querySelector("[data-page-title]"),pageActions=root.querySelector("[data-page-actions]"),notice=root.querySelector("[data-notice]"),dialog=root.querySelector("[data-project-editor]"),historyMemos=new Map(),collapsedTree=new Set();let projectId=null,itemId=null,occurrenceId=null,renderSequence=0,showHidden=false,showDocuments=true,showWorkshop=true;
- const notify=(text,extra=null)=>{notice.replaceChildren(node("span",text));if(extra)notice.append(extra);if(needsSignin)notice.append(button("Log in again",()=>signIn()));};
+ const notify=(text,extra=null)=>{notice.replaceChildren(...(text?[node("span",text)]:[]));if(extra)notice.append(extra);if(needsSignin)notice.append(button("Log in again",()=>signIn()));};
  signIn=initProjectSignin({onSignIn:()=>{needsSignin=false;if(dialog.open)notify("Signed in. Your draft is retained. Save again when ready.");else void refresh();},onSignOut:()=>{needsSignin=true;dialog.close();void navigate();}});
  const ctx=()=>({client,projectId,itemId,occurrenceId,dialog,notify,refresh,navigate,signIn:()=>signIn(),openHistory,openArchive:()=>openHistory("",null,"archive")});
  async function navigate(id=null,item=null,view="part",occurrence=null){
@@ -54,7 +54,7 @@ export function initProjectWorkspace(root=document){
   const overview=node("section","","project-part-overview"),identity=node("div","","project-part-identity");
   identity.append(node("h2",containerName(item)),node("p",item.part_number+" · Revision "+(item.revision_level||1)+" (working draft)","muted"));
   if(item.short_name&&item.short_name!==item.name)identity.append(node("p",item.name,"project-part-subtitle"));
-  overview.append(picture,identity);container.append(overview);
+  overview.append(picture,identity,picture.editorPanel);container.append(overview);
   const placementTree=projectTree(state.items,state.occurrences),shared=state.occurrences.filter(row=>row.item_id===item.id&&placementTree.active(row));identity.append(node("p",state.project.name+" / "+placementTree.path(occ).map(row=>row.name).join(" / "),"muted"));if(shared.length>1)identity.append(node("p","This part has "+shared.length+" active placements. Engineering details are shared; quantity and status belong to this location."));
   const headerControls=node("div","","project-build-controls");let buildBusy=false;
   const updateBuild=async patch=>{if(buildBusy)return;buildBusy=true;for(const control of headerControls.querySelectorAll("input,select"))control.disabled=true;const build={...buildFor(occ),...patch};await action("/occurrences/"+occ.id,{build},"Build information saved.","PATCH");buildBusy=false;for(const control of headerControls.querySelectorAll("input,select"))control.disabled=false;};
@@ -106,7 +106,7 @@ export function initProjectWorkspace(root=document){
     const rootAssembly=summaryAssembly(projectTree(state.items,state.occurrences)),overview=node("section","","project-part-overview project-summary-overview"),identity=node("div","","project-part-identity");identity.append(node("h2","Project summary"));
     for(const [label,value]of [["Name",state.project.name],["Active parts",state.occurrences.filter(row=>row.removed_at===null).length],["Number format",state.project.prefix+"0".repeat(state.project.digits)]])identity.append(window.BSUI.fieldRow(label,String(value)).root);
     if(rootAssembly)identity.append(window.BSUI.fieldRow("Top assembly",rootAssembly.item.part_number+" · "+rootAssembly.item.name).root);
-    overview.append(projectPicture(ctx(),{assembly:rootAssembly?.item}),identity);
+    const picture=projectPicture(ctx(),{assembly:rootAssembly?.item});overview.append(picture,identity,picture.editorPanel);
     main.append(overview);if(rootAssembly)await renderPart(main,rootAssembly.item.id,{placement:rootAssembly.occurrence.id,summary:true});main.append(projectSummary(ctx()));
     const history=window.BSUI.section({title:"History",role:"project-history"}),archived=state.occurrences.filter(row=>row.removed_at!==null),folder=window.BSUI.section({title:"Archive",role:"archive-folder",count:archived.length+state.steps.filter(row=>row.retired_at).length});folder.body.append(button("Open Archive",()=>openHistory("",null,"archive")));history.body.append(folder.root);main.append(history.root);
    }

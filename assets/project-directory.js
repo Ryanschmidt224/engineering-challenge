@@ -1,12 +1,8 @@
+import {viewMode} from "./view-mode.js";
 const make=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node;};
-const modes=[["details","Details"],["list","List"],["tiles","Tiles"]];
 export function initProjectDirectory(options) {return initDirectory(options);}
 export function initDirectory({grid,toolbar,projects,tags,search,sort,status,empty,photoUrl,noun="projects",viewLabel="Project view",storageKey="bs-project-view",onOpen}) {
- const photos=new Map();let view="details";
- try{const previous=localStorage.getItem(storageKey),saved=previous==="icons"?"tiles":previous;if(modes.some(([mode])=>mode===saved))view=saved;}catch{}
- grid.className="ui-project-list";
- const label=make("label","ui-toolbar-field","View"),select=make("select","ui-control");select.setAttribute("aria-label",viewLabel);
- for(const [value,title]of modes){const option=make("option","",title);option.value=value;select.append(option);}select.value=view;label.append(select);toolbar.insertBefore(label,status);
+ const photos=new Map(),mode=viewMode({label:viewLabel,storageKey,onChange:value=>{view=value;render();}});let view=mode.value;grid.className="ui-project-list";toolbar.insertBefore(mode.root,status);
  const cover=async(id,art)=>{
   if(!photos.has(id))photos.set(id,fetch("/api/photos?project="+encodeURIComponent(id)+"&assembly=project-summary",{credentials:"same-origin",cache:"no-store"}).then(async response=>{
    if(!response.ok)throw Error("Project photo unavailable");const data=await response.json();return (data.photos||[]).find(photo=>photo.assembly==="project-summary"||!photo.assembly)?.id||null;
@@ -33,7 +29,6 @@ export function initDirectory({grid,toolbar,projects,tags,search,sort,status,emp
   }
   status.textContent=visible.length+" of "+all.length+" "+noun;empty.hidden=visible.length>0;empty.textContent=all.length?"No "+noun+" match your search or filters.":"No "+noun+" yet.";
  }
- select.onchange=()=>{view=select.value;try{localStorage.setItem(storageKey,view);}catch{}render();};
  search.oninput=render;sort.onchange=render;
  if(photoUrl)window.addEventListener("projectphotoschanged",event=>{photos.delete(event.detail);render();});
  return {render};
