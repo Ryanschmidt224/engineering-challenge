@@ -343,3 +343,77 @@
     display: none;
   }
 }
+
+/* Keep the old label/value rhythm in both reading and editing. */
+.project-editor-group {
+  min-width: 0;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2) 0 var(--space-3);
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.project-editor-group > legend {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-small);
+  background: var(--color-surface-muted);
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
+}
+.project-editor-group .checkbox {
+  min-height: var(--control-height-small);
+  margin-block: var(--space-2);
+}
+[data-project-editor]:has(.project-editor-group) {
+  width: min(48rem, calc(100vw - 2rem));
+  max-width: min(48rem, calc(100vw - 2rem));
+}
+.project-container-field > label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.project-container-field > label > button {
+  padding: 0;
+  min-height: 1.5rem;
+}
+.project-main [data-section="details"] .ui-information-panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.project-main [data-section="details"] .ui-information-panel__title {
+  margin: 0;
+  padding-block: var(--space-2);
+  font-size: var(--text-body);
+}
+.project-main
+  [data-section="details"]
+  .ui-information-panel
+  + .ui-information-panel {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+.project-tree-row > .list-card {
+  border-color: transparent;
+  background: transparent;
+  padding-block: var(--space-1);
+}
+.project-tree-row > .list-card:hover {
+  background: var(--color-surface);
+}
+.project-part-overview {
+  padding: var(--space-3);
+  gap: var(--space-3);
+}
+.project-part-overview .project-picture-holder {
+  padding: var(--space-2);
+  background: transparent;
+}
+.project-field-help {
+  grid-column: 1 / -1;
+  margin: var(--space-1) 0;
+  font-size: var(--text-small);
+}

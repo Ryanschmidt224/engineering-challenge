@@ -1,6 +1,7 @@
+import {recordLabels} from "./project-presentation.js";
 import {node} from "./workshop-ui.js";
 import {diffCustomItems,formatRevisionValue} from "./project-item-model.js";
-import {recordPrompts,recordLabels} from "./project-record-model.js";
+import {recordPrompts} from "./project-record-model.js";
 import {instructionTree} from "./project-instruction-model.js";
 import {detailsFor} from "./project-editors.js";
 

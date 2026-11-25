@@ -1,14 +1,15 @@
+import {recordLabels} from "./project-presentation.js";
 import {information,configurationView,fileLink,savedPartView,buildContextView,recordVersionView} from "./project-information.js";
 import {node,field,actions,listCard} from "./workshop-ui.js";
 import {formatRevisionValue} from "./project-item-model.js";
-import {recordLabels,recordPrompts} from "./project-record-model.js";
+import {recordPrompts} from "./project-record-model.js";
 import {projectHelp} from "./project-help.js";
 import {initSplitPanes} from "./split-panes.js";
 import {editRecord,confirmAction} from "./project-editors.js";
 import {instructionTree} from "./project-instruction-model.js";
 import {savedComparison} from "./project-history-comparison.js";
 const button=(...args)=>window.BSUI.button(...args);
-export const eventLabels={...recordLabels,instruction_revision:"Instruction revision",record_edited:"Record edited",revision:"Revision",archived:"Archived",file_replaced:"File change",removed:"Removed",restored:"Restored",step_retired:"Step retired",step_restored:"Step restored"};
+export const eventLabels={...recordLabels,instruction_revision:"Instruction revision",record_edited:"Record edited",revision:"Revision",archived:"Archived",file_replaced:"File change",removed:"Removed",restored:"Restored",step_retired:"Step archived",step_restored:"Step restored"};
 
 function entryCard(entry,select){
  const row=listCard("",select);row.append(node("strong",entry.display_title||entry.title),node("small",(eventLabels[entry.display_type||entry.type]||entry.type)+" · "+(entry.source_name||"")),node("span",entry.outcome||entry.summary||""),node("small",new Date(entry.created_at).toLocaleString()));row.dataset.eventId=entry.id;return row;
@@ -17,7 +18,7 @@ export async function showEvent(ctx,id,container){
  const detail=await ctx.client.request("/"+ctx.projectId+"/history/"+id),{event,record,configurations,attachments,recordContext}=detail,body=node("div","","project-stack");
  body.append(node("h2",record?.title||event.title),node("p",(eventLabels[record?.type||event.type]||event.type)+" · "+(event.payload.source?.name||""),"muted"));
  if(record){body.append(node("p",projectHelp.testedConfiguration),...(record.type==="change_note"?[node("p",projectHelp.changeRecord)]:[]),recordVersionView(ctx,{...record,fileIds:[...new Set(attachments.map(file=>file.id))]},"Record",attachments));if(record.step_snapshot)body.append(information("Step when recorded",[["Title",record.step_snapshot.title],["Instructions",record.step_snapshot.body]]));
-  const occurrence=ctx.client.state.occurrences.find(row=>row.item_id===event.item_id);if(occurrence?.removed_at===null)body.append(button("Edit record",()=>editRecord({...ctx,itemId:event.item_id},{record})));
+  const occurrence=ctx.client.state.occurrences.find(row=>row.item_id===event.item_id);if(occurrence?.removed_at===null)body.append(button("Edit entry",()=>editRecord({...ctx,itemId:event.item_id},{record})));
  }
  if(event.payload.record_edit){const edit=event.payload.record_edit;body.append(recordVersionView(ctx,edit.before,"Before edit",attachments),recordVersionView(ctx,edit.after,"After edit",attachments),information("Edit information",[["Edited by",event.payload.actor_id]]));if(event.payload.step_snapshot)body.append(information("Step when recorded",[["Title",event.payload.step_snapshot.title],["Instructions",event.payload.step_snapshot.body]]));}
  if(event.payload.record_structure){const {before,after}=event.payload.record_structure;body.append(information("Entry location changed",[["Previous parent entry",before.parent_title||"Instruction root"],["New parent entry",after.parent_title||"Instruction root"]]));}
@@ -101,7 +102,7 @@ export function createHistoryView(ctx,memo){
  const reset=()=>{++selectionNumber;memo.cursor=null;memo.scroll=0;memo.pageScroll=0;memo.selected=null;memo.detailOpen=false;memo.entries=[];delete panes.dataset.detailOpen;detail.replaceChildren();list.replaceChildren();void load();};
  function renderToolbar(){
   toolbar.replaceChildren(field("View",memo.mode,value=>{memo.mode=value;renderToolbar();reset();},{options:[{value:"history",label:"History"},{value:"archive",label:"Archive"}]}),field("Scope",memo.scope,value=>{memo.scope=value;reset();},{options:[{value:"",label:"Whole project"},...ctx.client.state.items.map(item=>({value:item.id,label:item.name+" · "+item.part_number}))]}),
-   field("Type",memo.mode==="archive"?memo.archiveType:memo.type,value=>{if(memo.mode==="archive")memo.archiveType=value;else memo.type=value;reset();},{options:memo.mode==="archive"?[{value:"all",label:"All archived items"},{value:"parts",label:"Parts and subassemblies"},{value:"instructions",label:"Instructions and groups"}]:[{value:"all",label:"All"},{value:"tests",label:"Tests"},{value:"problems",label:"Problems"},{value:"changes",label:"Changes"},{value:"notes",label:"Notes and photos"},{value:"revisions",label:"Part revisions"},{value:"instruction_revisions",label:"Instruction revisions"}]}),
+   field("Type",memo.mode==="archive"?memo.archiveType:memo.type,value=>{if(memo.mode==="archive")memo.archiveType=value;else memo.type=value;reset();},{options:memo.mode==="archive"?[{value:"all",label:"All archived items"},{value:"parts",label:"Parts and subassemblies"},{value:"instructions",label:"Instructions and groups"}]:[{value:"all",label:"All"},{value:"tests",label:"Tests / Measurements"},{value:"problems",label:"Failures"},{value:"changes",label:"Change notes and file changes"},{value:"notes",label:"Notes and photos"},{value:"revisions",label:"Part revisions"},{value:"instruction_revisions",label:"Instruction revisions"}]}),
    field("Search history",memo.q,value=>{memo.q=value;reset();},{type:"search"}),button("Clear Filters",()=>{memo.scope="";memo.type="all";memo.archiveType="all";memo.q="";renderToolbar();reset();},{variant:"quiet"}));
  }
  renderToolbar();queueMicrotask(()=>{initSplitPanes(panes,{key:"project-history",panes:[{key:"history",selector:".project-history-list",name:"History"}]});void load();});return root;
