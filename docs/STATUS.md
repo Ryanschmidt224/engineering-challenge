@@ -8,7 +8,7 @@ Production follows main; its exact head/build is tracked by GitHub deployment ch
 
 - #75 and #76 merged after Claude review and passing Node/browser/Cloudflare checks; main is `dfd3aa1`. Engine media/daily backups and the legacy read-only boundary are integrated; production activation has not been performed.
 - Manual Cloudflare custom-part acceptance passed: source, independent recovery and byte-for-byte unchanged-source checks for project `8fedb3e8-de11-4f59-b81d-80227372a6a9`. Reports/builds and owner-checked binding names are retained in proofs/PROJECT_CUTOVER_ACCEPTANCE.json. This does not complete scripted control-plane acceptance or large-project timing.
-- Next: independent restore and unchanged-source check, remaining functional/platform checks, automatic-backup Settings list, and the separate large-save/restore measurement (not implemented by the current functional runner). Owner accepted the 100-placement Archive limit and approved activation; retain those decisions. Keep production off until readiness passes, then explicitly tell the owner when it is ready for data they want to keep.
+- `feature/project-preview-capacity`: manual trusted-runner workflow and synthetic capacity profiles are implemented using unchanged owner APIs; 424 local Node checks pass, including six complete 3,000-record revision snapshots and independent recovery. Browser/CI and required operator review are next; live CPU/SQL and trigger-state gaps remain explicit. Then: secure operator setup, actual platform measurements and the automatic-backup Settings list. Owner decisions are retained; production stays off until readiness passes.
 
 ## Early switch-over policy
 

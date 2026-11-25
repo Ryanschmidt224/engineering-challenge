@@ -108,7 +108,7 @@
     "sourceUnchangedAfterRecovery": "passed in owner-run protected source preview proof",
     "assemblyWorkshopFunctionalProof": "pending current run",
     "scriptedAcceptance": "not run",
-    "largeSaveRestoreTimings": "separate operator benchmark still needs implementation/execution",
+    "largeSaveRestoreTimings": "operator runner prepared for review; live workloads, CPU/SQL and trigger-state evidence remain unperformed",
     "productionActivation": "not performed"
   },
   "recoveryReport": {
