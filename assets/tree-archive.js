@@ -1,4 +1,5 @@
-import {openHistoryEntryDialog,renderHistoryEntryDetails} from "./history-entry-dialog.js";
+import {renderHistoryEntryDetails} from "./history-entry-dialog.js";
+import {openLegacyHistoryEntryDialog as openHistoryEntryDialog} from "./legacy-history-dialog.js";
 import {dialogForm} from "./dialog-form.js";
 import {partHelp} from "./part-help.js";
 import {renderRevisionSnapshot} from "./part-revisions.js";

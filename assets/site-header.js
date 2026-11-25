@@ -12,7 +12,7 @@ export function initSiteHeader() {
   if (projectPage) brand.dataset.nav = "home";
   brand.append(make("span", "", "SCHMIDT"));
   const nav = make("nav", "ui-site-nav"); nav.setAttribute("aria-label", "Main navigation");
-  for (const [id, label, href] of [["home", "Projects", projectHref], ["knowledge", "Knowledge", "knowledge.html"], ["commonparts", "The Workshop", "workshop.html"], ["calculators", "Calculators", "index.html#calculators"]]) {
+  for (const [id, label, href] of [["home", "Projects", projectHref], ["knowledge", "Knowledge", "knowledge.html"], ["commonparts", "The Workshop", "workshop.html"], ["calculators", "Calculators", "calculators.html"]]) {
     const item = make(projectPage ? "button" : "a", "ui-site-nav__item", label);
     item.dataset.page = id;
     if (projectPage) { item.type = "button"; item.dataset.nav = id; } else item.href = href;

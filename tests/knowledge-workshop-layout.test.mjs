@@ -13,9 +13,9 @@ test("Knowledge opens the D1 Knowledge page; Calculators has its own route",()=>
  assert.match(html,/id="calculators" class="view calculators-view"/);
  assert.doesNotMatch(html,/id="learn"/);
  assert.match(resources,/const target=kind==="calculators"\?"calculators":"commonparts"/);
- assert.match(resources,/id:"wheel-speed"/);
+ assert.match(file("assets/calculator-catalog.js"),/id:"wheel-speed"/);
  assert.ok(knowledge.includes("assets/site-header.js"));
- assert.ok(file("assets/site-header.js").includes("index.html#calculators"));
+ assert.ok(file("assets/site-header.js").includes("calculators.html"));
 });
 test("Account sign-in is unified; admin access requires a role",()=>{
  const html=file("index.html"),site=file("assets/site.js"),auth=file("functions/api/auth.js"),accounts=file("functions/api/accounts.js");

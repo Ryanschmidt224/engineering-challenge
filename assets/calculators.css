@@ -1,0 +1,35 @@
+/* Calculator layout is shared by the standalone and retained legacy routes. */
+.calculators-page {
+  padding-block: var(--space-4);
+}
+.calculator-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: var(--space-3);
+  margin-top: auto;
+  padding-top: 10px;
+}
+.calculator-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-small);
+  color: var(--color-text-muted);
+}
+.calculator-fields input {
+  width: 100%;
+  min-width: 0;
+}
+.calculator-output {
+  grid-column: 1/-1;
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+  font-size: var(--text-body);
+  color: var(--color-text-muted);
+  font-weight: var(--font-semibold);
+}
+
+.calculator-note {
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+}

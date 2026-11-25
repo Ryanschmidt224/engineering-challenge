@@ -6,11 +6,7 @@
   {id:"multimeter",name:"Digital multimeter",subtitle:"Voltage, resistance and current",detail:"Check power rails, continuity, resistance and steady current. Confirm probe jack selection and meter category ratings before measuring.",caution:"Resistance and continuity measurements require an unpowered circuit; never measure voltage with leads in a current jack."},
   {id:"soldering-iron",name:"Soldering iron",subtitle:"Electronic assembly",detail:"Use temperature control, a suitable tip, flux and clean joints. Provide ventilation and strain relief. Inspect solder wetting and avoid overheating components.",caution:"The tip and recent joints remain hot; use an iron stand."}
  ];
- const calculators=[
-  {id:"ohms-law",tags:["Electronics","Power"],keywords:["volts","voltage","amps","amperes","watts","ohms","resistance","resistor","Ω"],name:"Ohm's law",subtitle:"Current, voltage and resistance",detail:"Calculate I = V / R and power P = V × I for a simple resistive load."},
-  {id:"surface-footage",tags:["Machining"],keywords:["cutting","spindle","diameter","RPM","SFM","inches","feet","ft/min"],name:"Surface speed / SFM",subtitle:"Machining surface feet per minute",detail:"Calculate SFM from tool/work diameter in inches and RPM, or RPM from desired SFM."},
-  {id:"wheel-speed",tags:["Mechanical","Motion"],keywords:["flywheel","RPM","diameter","mm","millimeters","meters per second","m/s"],name:"Wheel surface speed",subtitle:"Flywheel or wheel rim speed",detail:"Calculate the rim speed of a wheel from its diameter in mm and its RPM. This is wheel surface speed only, not dart speed or range."}
- ];
+ const calculators=[];
  const baseParts=[
   {id:"common-wire",name:"Wire and cable",subtitle:"Wire gauge, conductor, insulation and color",detail:"Use the shared wire material records below for exact wire sizes, colors, manufacturer and part numbers. Link a specific wire to harness cut lists."},
   {id:"common-screws",name:"Screws / fasteners",subtitle:"Machine screws and threaded hardware",detail:"Reusable fastener reference. Document thread standard, diameter, pitch, length, head style, material and finish in each build."},
@@ -535,7 +531,7 @@
   initialized=true;
   try{
    // Legacy tool references are now rendered inside The Workshop.
-   void import("./calculator-directory.js").then(({initCalculatorDirectory})=>initCalculatorDirectory({root:document.getElementById("resource-calculators"),calculators})).catch(error=>{const panel=document.getElementById("resource-calculators");if(panel)panel.textContent="Calculators could not load. Refresh the page to try again.";console.error("Calculator directory unavailable",error);});
+   void Promise.all([import("./calculator-catalog.js"),import("./calculator-directory.js")]).then(([catalog,{initCalculatorDirectory}])=>{calculators.splice(0,calculators.length,...catalog.calculators);notify();initCalculatorDirectory({root:document.getElementById("resource-calculators"),calculators});}).catch(error=>{const panel=document.getElementById("resource-calculators");if(panel)panel.textContent="Calculators could not load. Refresh the page to try again.";console.error("Calculator directory unavailable",error);});
    renderCommonParts();
    initWireForm();
    setAdmin(admin);

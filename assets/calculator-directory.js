@@ -51,7 +51,7 @@ export function initCalculatorDirectory({root,calculators}) {
    controls.append(rpm.label,diameter.label,result);
    [rpm.input,diameter.input].forEach(input=>input.addEventListener("input",calculate));
    calculate();
-   card.append(element("p","resource-footnote","Speed = π × diameter × RPM ÷ 60. The dart usually leaves slower because of slip and deformation."));
+   card.append(element("p","calculator-note","Speed = π × diameter × RPM ÷ 60. The dart usually leaves slower because of slip and deformation."));
   }else{
    const diameter=makeNum("Diameter (in)",0.5,0.001),rpm=makeNum("RPM",4000,1),sfm=makeNum("SFM",523.599,0.01);
    const result=element("output","calculator-output");
@@ -68,7 +68,7 @@ export function initCalculatorDirectory({root,calculators}) {
    controls.append(diameter.label,rpm.label,sfm.label,result);
    diameter.input.addEventListener("input",computeSpeed);rpm.input.addEventListener("input",computeSpeed);sfm.input.addEventListener("input",computeRpm);
    computeSpeed();
-   card.append(element("p","resource-footnote","SFM = π × diameter (in) × RPM ÷ 12. Calculator is for cutting surface speed, not feed rate."));
+   card.append(element("p","calculator-note","SFM = π × diameter (in) × RPM ÷ 12. Calculator is for cutting surface speed, not feed rate."));
   }
   card.append(controls);
   mount.append(card);
