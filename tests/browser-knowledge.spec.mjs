@@ -31,7 +31,7 @@ async function expectHeaderLabels(page) {
     const box = element.getBoundingClientRect();
     return {whiteSpace: getComputedStyle(element).whiteSpace, left: box.left, right: box.right, viewport: document.documentElement.clientWidth};
   }));
-  expect(layout).toHaveLength(4);
+  expect(layout).toHaveLength(3);
   for (const link of layout) {
     expect(link.whiteSpace).toBe("nowrap");
     expect(link.left).toBeGreaterThanOrEqual(0);

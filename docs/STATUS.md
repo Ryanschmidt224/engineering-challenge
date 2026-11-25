@@ -50,3 +50,8 @@ Calculators now have an independent calculators.html entrypoint, reusing the can
 ## Information area naming
 
 The owner renamed the visible Knowledge area to Bits of information. Navigation, page headings, related-information sections and tile-link labels use the new wording. Calculators live in a collapsed shared section on this page; there is no separate main navigation tab. Existing standalone and legacy calculator links remain compatible. Existing knowledge.html links, API paths, IDs, stored tiles and backups retain their established contracts.
+
+
+## Project summary overview
+
+The project summary reuses the part overview shell: the first project-gallery photo on the left, summary fields on the right, and the existing responsive stacking on phones. Photo management remains in the full-width gallery below. No separate project-picture storage or media migration is introduced.

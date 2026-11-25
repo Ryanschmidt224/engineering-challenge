@@ -291,12 +291,6 @@
 .project-build-controls .field-row {
   margin-block: var(--space-1);
 }
-.project-summary-overview {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-  align-items: start;
-}
 .project-main .ui-field-row,
 .project-build-controls .field-row,
 [data-project-editor] .field-row {

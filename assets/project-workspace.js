@@ -11,7 +11,7 @@ import {partRevisions,partHistoryPrompt} from "./project-part-history.js";
 import {renderProjectTree} from "./project-tree-view.js";
 import {projectTree} from "./project-tree-model.js";
 import {renderProjectBOM} from "./project-bom-view.js";
-import {mediaGallery,partPicture} from "./project-media.js";
+import {mediaGallery,partPicture,projectPicture} from "./project-media.js";
 import {workshopPartEditor,workshopSourceView} from "./project-workshop-editor.js";
 import {projectCatalog} from "./project-catalog.js";
 import {projectSummary} from "./project-summary.js";
@@ -101,8 +101,10 @@ export function initProjectWorkspace(root=document){
    if(view==="bom"){main.append(renderProjectBOM(ctx(),occurrenceId));return;}
    if(view==="parts"){main.append(renderProjectParts(ctx()));return;}
    if(itemId)await renderPart(main,itemId);else{
-    const overview=node("div","","project-summary-overview");overview.append(information("Project summary",[["Name",state.project.name],["Active parts",state.occurrences.filter(row=>row.removed_at===null).length],["Number format",state.project.prefix+"0".repeat(state.project.digits)]]),mediaGallery(ctx(),{title:"Project photos"}));
-    main.append(overview,projectSummary(ctx()));
+    const overview=node("section","","project-part-overview project-summary-overview"),identity=node("div","","project-part-identity"),photos=mediaGallery(ctx(),{title:"Project photos"});identity.append(node("h2","Project summary"));
+    for(const [label,value]of [["Name",state.project.name],["Active parts",state.occurrences.filter(row=>row.removed_at===null).length],["Number format",state.project.prefix+"0".repeat(state.project.digits)]])identity.append(window.BSUI.fieldRow(label,String(value)).root);
+    overview.append(projectPicture(ctx(),()=>{photos.open=true;photos.scrollIntoView({block:"nearest"});}),identity);
+    main.append(overview,photos,projectSummary(ctx()));
     const history=window.BSUI.section({title:"History",role:"project-history"}),archived=state.occurrences.filter(row=>row.removed_at!==null),folder=window.BSUI.section({title:"Archive",role:"archive-folder",count:archived.length+state.steps.filter(row=>row.retired_at).length});folder.body.append(button("Open Archive",()=>openHistory("",null,"archive")));history.body.append(folder.root);main.append(history.root);
    }
  }
