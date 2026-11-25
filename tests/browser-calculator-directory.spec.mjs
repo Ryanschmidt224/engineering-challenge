@@ -18,3 +18,17 @@ for(const width of [1440,390])test("Calculator discovery shares project views an
  await root.getByRole("button",{name:"Back to calculators",exact:true}).click();await search.fill("wheel");await root.getByRole("button",{name:"Open Wheel surface speed",exact:true}).click();await expect(root.locator(".calculator-output")).toHaveText("Surface speed 26.1799 m/s");
  await page.reload();await expect(view).toHaveValue("tiles");await page.getByRole("navigation",{name:"Main navigation"}).getByRole("link",{name:"Projects",exact:true}).click();await expect(page).toHaveURL(/\/project\.html$/);await expect(page.locator("[data-page-title]")).toHaveText("Projects");
 });
+
+test("Workshop and Knowledge return to current Projects",async({page})=>{
+ for(const path of ["/workshop.html","/knowledge.html"]){
+  await page.goto(path);
+  const projects=page.getByRole("navigation",{name:"Main navigation"}).getByRole("link",{name:"Projects",exact:true});
+  await expect(projects).toHaveAttribute("href","/project.html");
+  await projects.click();
+  await expect(page).toHaveURL(/\/project\.html$/);
+  await expect(page.locator("[data-page-title]")).toHaveText("Projects");
+  await page.goto(path);
+  await page.locator(".ui-site-brand").click();
+  await expect(page).toHaveURL(/\/project\.html$/);
+ }
+});
