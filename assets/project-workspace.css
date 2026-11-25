@@ -59,7 +59,7 @@
 .project-stack {
   min-width: 0;
   display: grid;
-  gap: var(--space-4);
+  gap: var(--stack-gap, var(--space-3));
 }
 .project-toolbar {
   margin-bottom: var(--space-4);
@@ -102,12 +102,20 @@
   gap: var(--space-1);
 }
 .project-tree-row > .list-card {
+  display: flex;
   flex: 1;
   min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--navigation-control-height);
+  padding: var(--space-1) var(--space-2);
+  border-color: transparent;
+  border-radius: var(--radius-small);
+  background: transparent;
 }
 .project-tree-expander {
   display: flex;
-  flex: 0 0 var(--space-6);
+  flex: 0 0 1rem;
 }
 .project-tree-children {
   list-style: none;
@@ -186,32 +194,23 @@
   font-weight: var(--font-semibold);
 }
 .project-tree-tools {
-  display: grid;
+  display: flex;
+  align-items: start;
   gap: var(--space-1);
-  padding: var(--space-2);
+  padding-block: var(--space-1);
   border-bottom: 1px solid var(--color-border);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
 }
-.project-tree-tools > .actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-1);
+.project-tree-filters {
+  flex: 1;
+  min-width: 0;
 }
-.project-tree-tools > .actions > :first-child {
-  grid-column: 1 / -1;
-}
-.project-tree-tools .ui-button {
-  padding-inline: var(--space-2);
+.project-tree-filters .checkbox {
+  display: flex;
+  min-height: var(--navigation-control-height);
   font-size: var(--text-small);
-  white-space: normal;
 }
-.project-tree-tools .checkbox {
-  min-height: var(--control-height-small);
-}
-.project-tree-row > .list-card {
-  padding: var(--space-2);
-  border-radius: var(--radius-small);
-}
+
 .project-tree-row > .list-card[aria-current="true"] {
   background: var(--color-selected);
   border-color: var(--color-accent);
@@ -222,7 +221,7 @@
 }
 .project-navigation {
   display: grid;
-  gap: var(--space-1);
+  gap: var(--navigation-gap);
   padding: var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-large);
@@ -396,11 +395,7 @@
   padding-top: var(--space-2);
   border-top: 1px solid var(--color-border);
 }
-.project-tree-row > .list-card {
-  border-color: transparent;
-  background: transparent;
-  padding-block: var(--space-1);
-}
+
 .project-tree-row > .list-card:hover {
   background: var(--color-surface);
 }
@@ -416,4 +411,39 @@
   grid-column: 1 / -1;
   margin: var(--space-1) 0;
   font-size: var(--text-small);
+}
+
+.project-stack > p {
+  margin: 0;
+}
+
+.project-tree-row > .list-card > strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.project-tree-row > .list-card > small {
+  flex: 0 0 auto;
+  font-size: var(--text-caption);
+}
+.project-tree-row > .ui-button,
+.project-tree-expander .ui-button {
+  min-height: var(--navigation-control-height);
+  padding-inline: var(--space-1);
+}
+.project-tree-row > [data-drop-position="inside"] {
+  outline: 2px solid var(--color-accent);
+  background: var(--color-selected);
+}
+.project-tree-row > [data-drop-position="before"] {
+  box-shadow: 0 -2px var(--color-accent);
+}
+.project-tree-row > [data-drop-position="after"] {
+  box-shadow: 0 2px var(--color-accent);
+}
+
+.project-tree-tools .ui-button {
+  min-height: var(--navigation-control-height);
 }

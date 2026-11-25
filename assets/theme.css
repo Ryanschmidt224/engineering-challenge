@@ -112,6 +112,10 @@ textarea::placeholder {
   --radius-large: 0.75rem;
   --control-height: 2.75rem;
   --control-height-small: 2rem;
+  --navigation-control-height: 2rem;
+  --toolbar-control-height: 2rem;
+  --table-control-height: 2rem;
+  --navigation-gap: 0.125rem;
   --section-height: 3rem;
   --shadow-dialog: 0 1rem 4rem
     color-mix(in srgb, var(--color-shadow) 25%, transparent);
@@ -138,4 +142,13 @@ textarea::placeholder {
   --pane-list-min: 12rem;
   --pane-list-max: 32rem;
   --pane-detail-min: 16rem;
+}
+
+/* Dense desktop controls keep generous targets on touch screens. */
+@media (max-width: 640px), (pointer: coarse) {
+  :root {
+    --navigation-control-height: 2.75rem;
+    --toolbar-control-height: 2.75rem;
+    --table-control-height: 2.75rem;
+  }
 }
