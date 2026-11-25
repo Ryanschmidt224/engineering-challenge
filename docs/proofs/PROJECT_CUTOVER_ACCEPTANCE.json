@@ -1,0 +1,114 @@
+{
+  "status": "Owner-run source functional proof passed. Independent recovery, unchanged-source verification and large-project capacity measurements are pending. This is not scripted control-plane acceptance or production readiness.",
+  "sourceDeployment": {
+    "gitCommit": "8a5638575b5a107932ec444eecf48524b8be6bcd",
+    "gitTree": "bf0386803f25b8c5f641a8384f507e431879e652",
+    "cloudflareBuildId": "d99f5003-b4ed-42d8-a558-7cb61593fc0d",
+    "cloudflareDeploymentIdFromBotRecord": "dec5d9ec-dd0b-420d-8930-93d4036b23ff",
+    "deploymentRecord": "https://github.com/Ryanschmidt224/engineering-challenge/pull/76#issuecomment-7151634205",
+    "verification": "GitHub branch head and successful Cloudflare build/deployment record checked. The protected proof was run by the owner. Runtime version identity and actual database UUID were not independently queried through the Cloudflare control-plane API."
+  },
+  "bindingEvidence": {
+    "method": "Owner-provided Cloudflare screenshots of Production, Previews Base, the recovery branch and the actual feature/legacy-project-readonly source branch. Names were visually checked; configured UUIDs below come from the reviewed branch configs, not a control-plane response.",
+    "source": {
+      "branch": "feature/legacy-project-readonly",
+      "PHOTOS": "building-schmidt-photos-preview",
+      "WORKSHOP_DB": "building-schmidt-workshop-preview",
+      "configuredDatabaseId": "3314f42f-7c04-4798-99dc-b5b97c4fb82f",
+      "screenshotLibraryFileId": "libfile_176b47e259988191a96599ce4148d0d4"
+    },
+    "recovery": {
+      "branch": "preview/project-restore-proof",
+      "gitCommit": "dea5c529e4d786e2968b29dd8383225727f58c8e",
+      "PHOTOS": "building-schmidt-photos-preview",
+      "configuredDatabaseName": "building-schmidt-project-restore-preview",
+      "observedDatabaseNamePrefix": "building-schmidt-project-restore-previ",
+      "configuredDatabaseId": "d761ae08-64f2-4130-8cfa-f596e8e89b80",
+      "screenshotLibraryFileId": "libfile_1d7a593d109c8191b8cb702f4ef02ceb"
+    },
+    "production": {
+      "PHOTOS": "building-schmidt-photos",
+      "WORKSHOP_DB": "building-schmidt-workshop",
+      "screenshotLibraryFileId": "libfile_5da5772363f48191bf8d26f09cf2d8bf"
+    }
+  },
+  "sourceReport": {
+    "ok": true,
+    "environment": "https://feature-legacy-project-readonly-engineering-challenge.ryanschmidt224.workers.dev",
+    "checkedAt": "2026-11-25T03:36:03.521Z",
+    "projectId": "8fedb3e8-de11-4f59-b81d-80227372a6a9",
+    "itemId": "9d61965c-5df7-4a2a-8d7b-1de69a57f952",
+    "revisionEvents": [
+      "1c7cf1c2-680c-49f6-a286-8afb9b2cc23e",
+      "b7346971-ff4b-48fe-8b06-3e264ea6d377"
+    ],
+    "archiveEvent": "e8714057-42b9-4370-850f-219a3305fd6d",
+    "revisionLevel": 3,
+    "counts": {
+      "items": 2,
+      "occurrences": 2,
+      "steps": 1,
+      "configurations": 6,
+      "records": 1,
+      "events": 8,
+      "files": 3,
+      "file_links": 8,
+      "selections": 0,
+      "archive_groups": 1,
+      "snapshot_values": 20,
+      "media": 0
+    },
+    "files": [
+      {
+        "id": "187cd53b-e33e-4131-9484-bd9d8dae1e53",
+        "name": "proof-photo.png",
+        "size": 68,
+        "sha256": "726074f8da2365cabc1b29e074d630413344a7ce199152eaf81ed800a029ebf2"
+      },
+      {
+        "id": "7aa03bb2-c743-4c0c-a0be-feafe99c1b0f",
+        "name": "proof-a.step",
+        "size": 19,
+        "sha256": "df391f9b128c87f473cdc8d4f0fec0b0df4983b1785bc99993b270366d70db10"
+      },
+      {
+        "id": "f6b060b8-0b09-4283-b28f-a9286c23465c",
+        "name": "proof-b.step",
+        "size": 19,
+        "sha256": "a1add889b82f890cff65584ac15824cf6b799eae43f18e036a513cd0b16239c8"
+      }
+    ],
+    "backupSha256": "d7e132399b3e3adc9636c0952ce2844e1ec630ad3ead6dc77d9ea143a252f8af",
+    "checks": [
+      "Standalone revision advances the working part exactly once",
+      "Revision 1 retains the complete old part, steps and records",
+      "Standard Save overwrites without advancing the revision",
+      "An identical revision retry replays the original receipt",
+      "Save as revision commits the edited part as Revision 3",
+      "Revision 2 retains the previous saved value and named photo explanation",
+      "Replacing a drawing leaves its historical file bytes intact",
+      "Later instruction and record edits leave the old full snapshot unchanged",
+      "Archiving removes active membership without creating a new revision",
+      "The archived number remains reserved with different zero padding",
+      "Automatic numbering skips the archived part number",
+      "Restore retains part and occurrence identities, number and revision level",
+      "The archive retains its complete saved context and explanation",
+      "The self-contained source backup retains both drawings and the named photo"
+    ]
+  },
+  "uploadedBackupVerification": {
+    "libraryFileId": "libfile_a4838622229c819194f941fad6c4109a",
+    "sha256OfBackupTextWithLfLineEndings": "d7e132399b3e3adc9636c0952ce2844e1ec630ad3ead6dc77d9ea143a252f8af",
+    "uploadedFileSha256": "962c7c6ae628813bed06e92d79d5dacaa9eb65dfc882728d63ccc5671ccec526",
+    "lineEndingEvidence": "The uploaded text file has 11 CRLF line endings. Its UTF-8 text with LF line endings matches the browser proof backupSha256. The original uploaded file is retained separately; all embedded file bytes match without modification.",
+    "method": "Local read-only validation of the owner-uploaded backup text: complete trailer, project identity, table counts, all three file IDs, sizes and SHA-256 values match the source report. No live restore or unchanged-source verification is inferred from this validation."
+  },
+  "remaining": {
+    "independentRecovery": "pending",
+    "sourceUnchangedAfterRecovery": "pending",
+    "assemblyWorkshopFunctionalProof": "pending current run",
+    "scriptedAcceptance": "not run",
+    "largeSaveRestoreTimings": "separate operator benchmark still needs implementation/execution",
+    "productionActivation": "not performed"
+  }
+}
