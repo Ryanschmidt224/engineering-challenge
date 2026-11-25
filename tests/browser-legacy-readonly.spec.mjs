@@ -2,7 +2,7 @@ import {test,expect} from "@playwright/test";
 test("legacy pages show their read-only state and reject old-tab saves while new work uses the engine",async({page,request,context})=>{
  const origin="http://127.0.0.1:4173",{cookie}=await(await request.post("/__test__/reset?engine=1")).json(),at=cookie.indexOf("=");
  await context.addCookies([{name:cookie.slice(0,at),value:cookie.slice(at+1),url:origin,httpOnly:true,sameSite:"Strict"}]);
- await page.goto("/index.html#home");
+ await page.goto("/index.html?legacy=1#home");
  const notice=page.getByRole("status").filter({hasText:"Legacy projects are read-only"});await expect(notice).toBeVisible();
  await expect(page.getByRole("button",{name:"+ New project",exact:true})).toBeHidden();
  const catalog=await(await page.request.get("/api/projects")).json(),original=catalog.projects.find(p=>p.id==="launcher").name;

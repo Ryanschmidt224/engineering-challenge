@@ -6,9 +6,9 @@ Current state and next step only. Keep at most three lines per PR; no dated hand
 
 Production follows main; its exact head/build is tracked by GitHub deployment checks. The owner has approved production switch-over; that approval is retained and must not be requested again. NEW_PROJECT_ENGINE remains off while integration, legacy read-only preservation and required acceptance checks are completed. No real data, files or backups are deleted or overwritten.
 
-- #75, #76 and #77 merged after Claude review and passing checks; latest main is `f1a4eb7`. The read-only boundary, media/daily backups and manual operator workflow are integrated. Live capacity execution and production activation have not been performed.
+- #75–#78 merged under the existing review rules and passing checks; latest main is `14acc73`. The read-only boundary, media/daily backups, operator workflow and Settings backup downloads are integrated. Live capacity execution and production activation have not been performed.
 - Manual custom-part source/recovery/unchanged-source checks passed for `8fedb3e8-de11-4f59-b81d-80227372a6a9`; exact reports/builds and owner-checked binding names are in proofs/PROJECT_CUTOVER_ACCEPTANCE.json. Secure operator access and actual scripted capacity/CPU/SQL/trigger-state measurements remain pending; the owner accepted the Archive limit and approved activation.
-- `feature/project-backup-settings`: collapsed Automatic backups list/downloads, empty/loading/error states and retry are implemented; downloading preserves the settings draft. UI validation passed 421 Node and 164 browser checks before integrating #77; combined checks/CI are next. Merge under the screen-only rule once green; production stays off until readiness passes.
+- `feature/project-entry-preparation`: signed-in default home follows the enabled engine, with an explicit legacy-directory link and preserved project/Calculator/Account routes. Local checks: 424 code and 166 browser pass; CI is next. The separate 10,000-record/six-revision operator rehearsal passes locally, not on Cloudflare. Then prepare the held activation change; keep production off until readiness passes.
 
 ## Early switch-over policy
 
@@ -18,6 +18,7 @@ Production follows main; its exact head/build is tracked by GitHub deployment ch
 - The owner plans a project-data clean-out after handoff. Treat that as a separate later operation with exact projects/storage/backups scope confirmed then; retain all current source/proof data during acceptance.
 - Screen, wording, layout, editor and History-display changes may self-merge after Node, browser and Cloudflare preview checks pass; data tables/migrations, backup/restore and guarded-save changes still wait for Claude review. Fix later screen-review findings in the next PR.
 - Build the plainest working version. No optional hardening or rare-race work; record a one-line follow-up and move on. Preserve existing tests; add one success test per feature and one main stale-save/duplicate-submit failure case.
+- The owner's overnight direction favors autonomous implementation and fixing review findings over waiting for routine approval, within the approved switch-over scope. Existing gates for production readiness, destructive actions and secure credentials still apply.
 - If a task runs about two hours beyond expectation, stop and report the blocker, simplest route and what that route gives up; do not design around it without the owner.
 - Batch 5 is limited to FEATURE_INVENTORY Keep/Rebuild scope. Ask before adding anything unlisted.
 - Backup/recovery design stays frozen at schema 9: bug fixes only. Claude approved the additive instruction metadata compatibility in merged 4a; it adds no recovery or cleanup mechanism. Never expose passwords, cookies or tokens in chat, files or logs.

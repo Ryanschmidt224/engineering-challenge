@@ -15,6 +15,7 @@ window.BSProjectManager=(()=>{
  const element=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node};
  const init=async({setupAssemblyTrees,setupComponents,setupPhotos,navigate})=>{
   const root=document.querySelector("#home .project-index"),grid=root?.querySelector(".ui-project-list");if(!grid)return;
+  const entryURL=new URL(location.href),keepLegacyHome=entryURL.searchParams.has("legacy")||entryURL.searchParams.has("account");
   const loading=root.querySelector(".project-catalog-loading");
   let legacyReadOnly=false;
   const readOnlyNotice=element("p","ui-page muted");readOnlyNotice.hidden=true;readOnlyNotice.setAttribute("role","status");
@@ -340,6 +341,10 @@ window.BSProjectManager=(()=>{
     const data=await api("GET","/api/projects");if(!Array.isArray(data.projects))throw Error("Project catalog response unavailable");projects=data.projects;currentProjects=projects;
     legacyReadOnly=data.readOnly===true;readOnlyNotice.hidden=!legacyReadOnly;
     newButton.hidden=legacyReadOnly;more.hidden=legacyReadOnly||!user&&!adminAuthenticated;
+    const landingRoute=location.hash.slice(1);
+    if(legacyReadOnly&&!keepLegacyHome&&["/","/index.html"].includes(location.pathname)&&(!landingRoute||landingRoute==="home")){
+     location.replace("/project.html");return;
+    }
 
     for(const project of projects){
      ensureProjectPage(project);
