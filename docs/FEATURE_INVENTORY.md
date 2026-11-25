@@ -45,11 +45,11 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 2.2 | + New project (name, private by default) | `project-manager.js` | | ☐ |
 | 2.3 | Search projects | `project-manager.js` | | ☐ |
 | 2.4 | Sort: Name A–Z / Z–A, Newest, Oldest | `project-manager.js` | | ☐ |
-| 2.5 | Filters by discipline tags (Mechanical, Electronics, Software, Controls, Woodworking, PCB Design, Machining, Robotics, Measurement, Fabrication) | `project-manager.js` | | ☐ |
-| 2.6 | Descriptor tiles: search, select, clear, add custom tags (comma separated) | `project-manager.js` | | ☐ |
+| 2.5 | Filters by discipline tags (Mechanical, Electronics, Software, Controls, Woodworking, PCB Design, Machining, Robotics, Measurement, Fabrication) | `project-manager.js` | **Drop in new engine**; existing legacy tags remain until cutover. Calculator topics are separate. | ☐ |
+| 2.6 | Descriptor tiles: search, select, clear, add custom tags (comma separated) | `project-manager.js` | **Drop in new engine**; existing legacy tags remain until cutover. Calculator topics are separate. | ☐ |
 | 2.7 | Archived projects list (under More) | `project-manager.js` | | ☐ |
 | 2.8 | Empty / loading / error states ("No projects yet", "Projects could not load") | `project-manager.js` | | ☐ |
-| 2.9 | Explorer-style View choices: Details, List, Tiles, Large icons; persistent browser preference; thumbnail from summary album | `project-directory.js`, `project-directory.css` | **Keep**: owner requested; same sorting/filtering in every view | ☐ |
+| 2.9 | Explorer-style View choices: Details, List, Tiles; persistent browser preference; thumbnail from summary album | `project-directory.js`, `project-directory.css` | **Keep**: owner requested; same sorting/filtering in every view | ☐ |
 
 ## 3. Project settings
 
@@ -91,7 +91,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 5.11 | Bill of materials for the assembly: list view and picture view; grouped parts; nested assembly quantities; standard shop materials section | `SA` `renderWorkspaceParts`, `bom-model.js` | | ☐ |
 | 5.12 | Purchase parts: select items, "Add selected to DigiKey cart" (1–400 items) | `bom-purchasing.js` | **Keep** | ☐ |
 | 5.13 | Wire harness cutting list | `SA` `showHarnessPreview`, `/api/wires`, `/api/harness` | **Change**: rebuild on Workshop wire products; delete the separate wire library | ☐ |
-| 5.14 | Parts Management table: search, status filter, find/look up number (assigned or reserved), inline edit of name, tree description, quantity, type, status, cost per part/package, attention note; resizable columns | `parts-management.js` | | ☐ |
+| 5.14 | Parts Management: compact read-only number/name/value/quantity/status list with Browse left; full read-only columns hide Browse; explicit Edit enables inputs; search/status/over-limit-name filters, reserved-number lookup and persistent view preference | `parts-management.js`; new engine BOM area pending | **Change**: no separate tree-name column; preserve remaining fields and resizable columns | ☐ |
 | 5.15 | Project files in Parts Management: CAD/drawings across current parts and assemblies; filename/part search, type filters, multi-select, one ZIP for slicer/PDF printing | `project-files.js`, `/api/project-files` | **Keep**: owner requested; current project attachments, not Workshop source or instruction attachments | ☐ |
 
 ## 6. Part page
@@ -101,16 +101,16 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 6.1 | Part header: picture, name, Workshop family, status, needs-attention, quantity | `SA` `showPartWorkspace` | | ☐ |
 | 6.2 | Part picture: add/replace (JPG/PNG/WebP <3 MB), crop/annotate, delete; fallback when missing | `SA` part picture functions | | ☐ |
 | 6.3 | Part details: fields summary, View in Workshop, Documentation, Modify part, Reload Workshop data | `SA` | | ☐ |
-| 6.4 | Container / functional part: purpose ("what does this need to accomplish?"), alternative purchased parts, "Use part", "Add and use part" | `SA`, `/api/workshop-linked-part` | | ☐ |
+| 6.4 | Functional role: purpose/requirements and project-owned alternative specs, notes and files; standard Alternatives row; separate Add alternative and guarded Select confirmation in the engine | `part-information.js`, legacy selection controller; new engine selection relation pending | **Change**: alternative data isolation, instruction review flag, frozen evidence and round-trip recovery per `HISTORY_REWRITE_PLAN.md` | ☐ |
 | 6.5 | Specifications (from product listing or estimated), project-specific information | `SA`, `part-fields.js` | | ☐ |
-| 6.6 | Part editor: item type (Part/Document/Code), part type (off-the-shelf / custom in-house / custom purchased), number (auto or user, next available lookup), name, short tree name (20 chars), schematic/KiCad info, manufacturer, MPN, description, quantity, "Is a tool?" | `SA` `editBomPart`, `saveBomDraft`, `part-create.js` | | ☐ |
+| 6.6 | Part editor: item type (Part/Document/Code), part type (off-the-shelf / custom in-house / custom purchased), number (auto or user, next available lookup), name (one adjustable 20-character engine limit; no separate tree-name field), schematic/KiCad info, manufacturer, MPN, description, quantity, "Is a tool?" | `SA` `editBomPart`, `saveBomDraft`, `part-create.js` | | ☐ |
 | 6.7 | Where to buy: up to 10 suppliers (DigiKey, Mouser, McMaster, Newark, Arrow, Amazon ASIN, custom), order code, URL | `part-suppliers.js` | | ☐ |
 | 6.8 | Find part specs with AI: lookup by MPN/name, review suggested specs, apply selected | `product-lookup.js` | **Change**: keep, but redesign around the Workshop (category → family → product); owner requested the separate lookup-resume fix under their $5 provider cap | ☐ |
-| 6.9 | Part files: CAD / Parasolid / STL / STEP upload and download (≤20 MB); saved product webpages | `part-files.js`, `/api/part-files` | | ☐ |
+| 6.9 | Part files: CAD / Parasolid / STL / STEP upload and download (≤20 MB); saved product webpages; later independent file revision labels and exact version links | `part-files.js`, `/api/part-files` | | ☐ |
 | 6.10 | Drawings (PDF): drop/upload, view, download, replace, delete (first 100) | `drawings.js`, `/api/drawings` | | ☐ |
 | 6.11 | Source code on a part: language, edit, import file, save, previous versions, view/restore, download (≤100 KB) | `part-code.js`, `/api/part-code` | | ☐ |
 | 6.12 | Knowledge tiles linked to this part (and family/product/use) with "New knowledge tile for this part" | `SA` `renderPartKnowledge` | | ☐ |
-| 6.13 | Helpful tools: link calculators, tools and Workshop references to this work | `SA` | | ☐ |
+| 6.13 | Helpful tools: Calculator and Tool references only; engine tools use D1 Workshop IDs and last-known names, not the static catalog | `SA`, `resources.js`; engine relation/picker pending | **Change** (owner item #17): no new Workshop-part references. Legacy links remain visible/removable; engine links stay outside BOM quantities/cost/purchasing/tree and round-trip through backup. Archived sources remain readable. | ☐ |
 | 6.14 | Part progress / status save | `SA` `savePartProgress` | | ☐ |
 | 6.15 | Copy a project-only off-the-shelf part to a reviewed Workshop product draft; choose a family, check duplicate MPN, preserve project source | `part-information.js`, `project-product-copy.js`, existing `/api/workshop` | **Keep**: owner requested; no automatic relinking or source modification | ☐ |
 
@@ -125,7 +125,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 | 7.5 | Record attachments: up to 12 photos/files per field, ≤20 MB each, named photos | `investigations.js`, `attachment-types.js` | | ☐ |
 | 7.6 | Nested entries; drag or Alt+Up/Down to reorder record tiles | `investigations.js` | | ☐ |
 | 7.7 | Read earlier archived entries; archive whole parts/subassemblies through the feature tree instead of individual record controls | `investigations.js`, `tree-archive.js` | **Change**: old records retained; record Archive UI removed | ☐ |
-| 7.8 | Create a Revision at the bottom of a part page: prompt for What changed, Why did you change it, Notes and named photos, then capture the saved part/instructions/records/local bytes; automatic date; preserve previous level and advance the working part to the next numbered revision | `part-revisions.js`, `part-revision-snapshot.js`, `/api/investigations` | **Keep**: revision table and Create a Revision; Edit part details offers Save as revision (copy previous version and advance) or Save (overwrite without advancing). Legacy repair; custom-part D1 preview refined; exact deployment and owner acceptance remain separate | ☐ |
+| 7.8 | Create a Revision at the bottom of a part page: prompt for What changed, Why did you change it, Notes and named photos, then capture the saved part/instructions/records/local bytes; automatic date; preserve previous level and advance the working part to the next numbered revision | `part-revisions.js`, `part-revision-snapshot.js`, `/api/investigations` | **Keep**: one dated chevron entry per saved revision and Create a Revision; Edit part details offers Save as revision (copy previous version and advance) or Save (overwrite without advancing). Legacy repair; D1 preview alignment remains pending | ☐ |
 | 7.9 | Open subassembly instructions from a BOM line | `SA` | | ☐ |
 | 7.10 | Suggestion review queue: suggest a Work Instruction name change, owner reviews and rejects/accepts | `project-review.js` | **Drop** | ☐ |
 
@@ -135,7 +135,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 |---|---|---|---|---|
 | 8.1 | History includes parent-scoped Archive folder for tree removals; part Revisions stays separate; earlier saved records remain readable | `investigations.js`, `part-revisions.js`, `SA`, `/api/workspace-history` | Later History redesign remains pending; owner requires a separate Create a Revision action at the part-page bottom | ☐ |
 | 8.2 | History → Archive (parts/subassemblies): original location, explanation/photos, children, saved records/files, readable details, Restore to build | `tree-archive.js`, `/api/assembly-archive` | Owner refinement: parent-scoped History → Archive; no new iteration or permanent-delete UI | ☐ |
-| 8.3 | Recent changes: list, load older, "Load this version" (restore a previous version) | `SA`, `/api/workspace` | Fold into History redesign | ☐ |
+| 8.3 | Recent changes: automatic changed-save workspace snapshots, list/load older and partial "Load this version" | `SA`, `/api/workspace`, `workspace-history.js` | **Drop in new engine**: History and deliberate Revisions replace this presentation; no automatic per-save timeline or promised full-part undo. Keep legacy behavior until cutover; any per-save undo is a separate explicit feature. | ☐ |
 | 8.4 | Project backups: download a project backup (JSON) and a readable HTML backup (print to PDF) | `SA`, `project-readable-backup.js`, `/api/project` | | ☐ |
 | 8.5 | Scheduled automatic backups of all projects (cron) | `worker.js` `scheduled`, `automatic-backups.js` | | ☐ |
 | 8.6 | Backup integrity checks (checksums, size limits, project match) | `archive-check.js`, `local-project.js` | | ☐ |
@@ -153,7 +153,7 @@ Legend: `SA` = `assets/site-assembly.js`.
 
 | # | Feature | Code today | Decision | Rebuilt |
 |---|---|---|---|---|
-| 10.1 | Calculators: Ohm's law, surface speed (SFM), wheel surface speed | `resources.js`, `engineering-core.js` | Owner wants a searchable list instead of tiles (low priority) | ☐ |
+| 10.1 | Calculators: Ohm's law, surface speed (SFM), wheel surface speed | `resources.js`, `calculator-directory.js`, shared directory modules | **Keep**: searchable directory with shared descriptor filters, alphabetical sorting and Details/List/Tiles views; existing forms retained | ☐ |
 
 ## 11. Leftovers to remove (no rebuild)
 
@@ -166,7 +166,7 @@ These exist in code but serve features the owner has removed or never uses. *Sug
 | 11.3 | My Build personal notes and "stuck / confused" feedback | `my-build.js`, `/api/my-build`, `/api/build-confusion`; still called from `SA` (`BSMyBuild.insights`, `reportControl`) | **Drop** |
 | 11.4 | Proposals API | `/api/proposals` | **Drop** |
 | 11.5 | Project tasks API (its only caller is the unloaded `work-tracker.js`) | `/api/project-tasks` | **Drop** |
-| 11.6 | Old Workshop category data in `resources.js` (the D1 Workshop on `workshop.html` replaced it). `BSResources` is still read by `SA` and `site.js`, so move the calculators out first | `resources.js` | **Drop** |
+| 11.6 | Old Workshop category data in `resources.js`. Legacy Helpful tools still reads existing `resources.parts` and offers static tools; linked-part snapshots/photos/export and wire/harness consumers remain. Hiding new Workshop-part choices does not remove these readers. | `resources.js`, `SA`, `site.js`, legacy linked-part readers | **Drop after replacement**: D1 Workshop tools picker and Workshop-wire harness work must replace consumers first. Do not migrate legacy `resources.parts`; report their counts per project at cutover. |
 | 11.7 | The `#learn` view name, now only hosting Calculators | `index.html`, `site.js` | **Drop** |
 | 11.8 | Hard-coded legacy project sections `#launcher`, `#linear`, `#robot` and their 365+ ID-based CSS rules | `index.html`, legacy CSS | **Drop** |
 | 11.9 | Baseline audit: 893 candidate selectors (271 unmatched classes); 359 reviewed selectors removed in CSS batch #45, remaining candidates require review | legacy CSS files, `scripts/css-retired.json` | **Drop** |
@@ -205,7 +205,7 @@ Project shell/CSS implementation: all projects instantiate one workspace templat
 
 Implementation boundary after the first batches: deleting the old wire API/catalog immediately would violate the inventory's no-reader condition. The current cutting-list renderer still calls /api/wires, and functions/api/workshop-linked-part.js imports the static resources catalog for legacy snapshots, photos and backup dependencies. These are live readers, not unloaded leftovers. Keep them until Workshop-product cutting lists and the source/snapshot reads are replaced and tested together; do not simply delete them. Component extraction stays disabled. The owner-requested part lookup resume uses the existing provider cap and a daily attempt guard; its Workshop-specific redesign remains separate work. The History decisions remain an area rebuild, not a promise that changing a label rebuilds its process.
 
-The old learn view is removed: Calculators now uses #calculators, including links from workspaces and the active header state. The searchable calculator directory is lower priority than the current private/CSS cleanup; the three existing calculation forms are retained.
+The old learn view is removed: Calculators now uses #calculators, including links from workspaces and the active header state. The calculator directory shares the project directory renderer and descriptor filters, with search by name, purpose and units; Name A–Z/Z–A sorting; and Details/List/Tiles views. Calculator view preference is separate from Projects. Opening a result shows its existing form; returning to results retains the search, filters and in-page input values. The three existing calculation forms and formulas are retained.
 
 Part information batch (6.3–6.5): reference/selected-product information and project-owned information now use the same static shared tile and field-row helpers. The rendering is extracted from site-assembly.js into part-information.js, loaded through a literal dynamic import. Purpose saves, alternative selection, supplier links and project annotations retain existing API protection. D1 projections expose product facts and project requirements separately; false, zero and hidden stored values are retained. No stored data changes or deletions. Full part-page rebuilding remains incomplete.
 
@@ -218,11 +218,22 @@ The approved D1 plan and first custom-part acceptance flows are in `HISTORY_REWR
 
 Independent preparation for 6.6/6.14 and History: the pure custom-part model validates separated detail/build fields, stable specification IDs, numbering and typed before/after comparison. It is used by the existing transaction proof fixture, not the production editor. No feature is marked Rebuilt and the real-D1 gate is unchanged.
 
-Batch 1 gate passed on actual preview D1: seven command checks plus same-proof replay, with one event/two configurations/three receipts retained. Evidence is in `proofs/PROJECT_ENGINE_D1_PROOF.json`. This unlocks Batch 2 preview implementation; it does not mark any legacy UI feature Rebuilt or activate the engine in production.
+Historical Batch 1 evidence: seven actual preview-D1 command checks plus same-proof replay, with one event/two configurations/three receipts retained in `PROJECT_ENGINE_D1_PROOF.json`. The receipt identifies its proven runtime; later main-alignment heads still need targeted review and deployment-specific verification. This marks no legacy UI feature Rebuilt and does not activate production.
 
-Custom-part preview status: `PROJECT_CUSTOM_FLOW.md` and `proofs/PROJECT_CUSTOM_FLOW_PROOF.json` record the new single-root/custom-part flow, full CI checks and actual Cloudflare restore into an independent empty D1 database. All Rebuilt boxes stay unchecked: this slice has not replaced the production engine or the retained rich Work Instructions, purchasing, nested assemblies, Knowledge and media features. The numbered-revision/Archive refinement also passed owner-run source, independent-target restore and final unchanged-source checks; the pinned current evidence is in `proofs/PROJECT_HISTORY_SOURCE_PROOF.json` and `proofs/PROJECT_HISTORY_RECOVERY_PROOF.json`. The next gate is owner preview review.
+The current owner UI requirements and stale-handoff reconciliations are maintained in `UI_STANDARDS.md`. Shared gutter/header/help/section-action changes cover Workshop and Knowledge now; summary, identity/name limit, alternatives, compact Parts Management and settings remain engine acceptance work after stack integration. Revisions stays separate, and Calculator topics remain even though engine project tags are dropped. PR #68 owns the renamed Tiles and searchable Calculator implementation; PR #67 owns the photo-read reliability fix. No engine inventory line is marked rebuilt by this shared presentation batch.
 
+Work Instructions revision reuse is implemented for gated Batch 4a review in `HISTORY_REWRITE_PLAN.md`: individual instructions and header/group subtrees share the existing explanation/commit/snapshot mechanisms with independent counters and complete recovery. New coverage touches 7.1/7.3–7.8: nested group/record membership and sibling order, named per-prompt attachments, Photos/problem resolution, original record context/audits and instruction archive reasons/restore. No Rebuilt box is checked: dedicated instruction-list resizing, legacy conversion, Knowledge/Milestone draft actions, full History interaction (4b), real-D1 measurement and owner acceptance remain outstanding. These changes do not replace the production engine.
 
-Batch 3 preview: nested subassemblies/ordered placements, project-owned frozen Workshop selections, separate requirements, nested BOM totals, assembly evidence/revisions, grouped mixed Archive/restore and the Workshop project-use reader are implemented in the isolated preview. See `PROJECT_ASSEMBLIES_WORKSHOP.md` for the ownership contract, limits, validation and the separately retained passing actual-platform proof. No production Rebuilt box is checked and no legacy project/Workshop owner is deleted by this extension.
+Custom-part preview status: `PROJECT_CUSTOM_FLOW.md` and `PROJECT_CUSTOM_FLOW_PROOF.json` record the new single-root/custom-part flow, full CI checks and actual Cloudflare restore into an independent empty D1 database. All Rebuilt boxes stay unchecked: this slice has not replaced the production engine or the retained rich Work Instructions, purchasing, nested assemblies, Knowledge and media features. The next gate is owner preview review.
+
+PR #53 evidence-integrity follow-up touches 7.4/7.5 and 8.1: editing a record retains an immutable before/after History event with original tested design/build context and both attachment sets. Current record and Knowledge identities stay stable, retries do not duplicate edits, and failed audit writes roll back the edit. Legacy captures remain unchanged and recovery includes the audit. No Rebuilt box is checked and no production engine activation is claimed.
+
+Batch 4b touches 8.1/8.2 presentation: explicit part/instruction revision types, scope/search/counts/paging, read-only saved/working comparisons, original context and named record attachments, Archive type/reason filters, and selection/scroll retained across edit and part navigation. It uses the existing read and guarded restore APIs unchanged. No schema/backup/save behavior or owner Rebuilt box changes; full legacy parity and real-D1 acceptance remain pending.
+
+The same PR's recovery follow-up touches 8.1/8.2 and project backup/restore: the normal engine picker restores a named separate project beside an existing source, with independent files, exact retry and fixed original evidence context. Original-identity import still refuses existing targets. Platform capacity/live acceptance and production cutover remain pending; no Rebuilt box is checked.
+
+PR #65 reconciles 5.8, 7.8 and 8.1/8.2 on the gated engine: numbered full-part checkpoints, standard Save versus Save as revision, a single dated/change-labeled disclosure per saved copy, and tree Archive/restore with consumed zero-padding aliases. Full copies retain original test context, immutable record edits and attachment ownership; design identity excludes the checkpoint counter. No production parity box is checked and independent file revisions remain deferred.
+
+Batch 3 reconciliation: nested subassemblies/ordered placements, project-owned frozen Workshop selections, separate requirements, nested BOM totals, full assembly evidence, grouped Archive/restore and the Workshop project-use reader remain isolated preview work in #66. Assembly configuration identity is design-only; exact placements, quantity/build state, visibility, attention and tested part levels are retained separately with evidence. Historical proof files stay pinned to their tested runtimes. Exact-head CI, targeted review and fresh binding/capacity acceptance are still required; no production Rebuilt box is checked.
 
 Review and proof workflow: `PREVIEW_ACCEPTANCE.md` records the bug-fix-only legacy policy, review order and explicit scripted acceptance action. Current revision numbers are labeled working drafts; saved copies stay fixed, and narrative Change records do not create numbered part revisions. Full Work Instructions/records parity remains queued pending integration of the reviewed foundation stack.

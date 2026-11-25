@@ -31,7 +31,7 @@ Commit Codex's plan as `docs/HISTORY_REWRITE_PLAN.md` with these decisions recor
 
 ## Part B: Spec for the first complete flow (Batches 1–2)
 
-**November 23 refinement:** Part A.2 refines the original F4 interaction below with both a standalone revision action and Save as revision in the details editor. The D1 custom-part refinement now implements these actions on its isolated branch; verify the exact Cloudflare deployment and owner walkthrough before marking the flow accepted. A separate repair supplies Create a Revision on the existing live R2 part page. The major cutover gate remains unchanged.
+**November 23 refinement:** Part A.2 refines the original F4 interaction below with both a standalone revision action and Save as revision in the details editor. The existing D1 preview still implements that earlier interaction; align it in a focused preview refinement before marking the new flow accepted. A separate repair supplies Create a Revision on the existing live R2 part page. The major cutover gate remains unchanged.
 
 
 ### B1. Scope

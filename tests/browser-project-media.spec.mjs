@@ -1,0 +1,29 @@
+import {test,expect} from "@playwright/test";
+// 1x1 PNG.
+const PNG=Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==","base64");
+async function setup(page,request,context){
+ const {cookie}=await(await request.post("/__test__/reset?engine=1")).json(),at=cookie.indexOf("=");await context.addCookies([{name:cookie.slice(0,at),value:cookie.slice(at+1),url:"http://127.0.0.1:4173",httpOnly:true,sameSite:"Strict"}]);
+ await page.goto("/project.html");await page.getByRole("button",{name:"New project",exact:true}).click();await page.getByLabel("Project name",{exact:true}).fill("Photo notebook");await page.getByRole("button",{name:"Create project",exact:true}).click();await expect(page.getByRole("dialog")).not.toBeVisible();
+ const id=new URL(page.url()).searchParams.get("project"),base="/api/project-engine/projects/"+id,state=async()=>(await(await context.request.get(base+"/state")).json());
+ const current=await state(),r=await context.request.post(base+"/items",{headers:{origin:"http://127.0.0.1:4173"},data:{operationId:crypto.randomUUID(),expectedRevision:current.project.revision,details:{name:"Bracket"}}});expect(r.ok(),await r.text()).toBe(true);
+ await page.reload();return {id,base,state,itemId:(await r.json()).itemId};
+}
+test("project photos upload, caption, reorder and remove; a part gets one picture",async({page,request,context})=>{
+ const f=await setup(page,request,context),photos=page.locator('[data-section="project-photos"]');
+ await photos.evaluate(node=>node.open=true);
+ await photos.locator('input[type="file"]').setInputFiles([{name:"one.png",mimeType:"image/png",buffer:PNG},{name:"two.png",mimeType:"image/png",buffer:PNG}]);
+ await expect(photos.locator("img")).toHaveCount(2);
+ await photos.getByRole("button",{name:"Caption",exact:true}).first().click();await page.getByLabel("Caption",{exact:true}).fill("Bench setup");await page.getByRole("button",{name:"Save caption",exact:true}).click();
+ await expect(photos.locator("figcaption").first()).toHaveText("Bench setup");
+ await photos.getByRole("button",{name:"Move photo later",exact:true}).first().click();await expect(photos.locator("figcaption").nth(1)).toHaveText("Bench setup");
+ await photos.getByRole("button",{name:"Remove",exact:true}).first().click();await page.getByRole("button",{name:"Remove photo",exact:true}).click();
+ await expect(photos.locator("img")).toHaveCount(1);
+ let s=await f.state();expect(s.media.filter(row=>row.active).length).toBe(1);expect(s.files.length).toBe(2);
+ await page.goto("/project.html?project="+f.id+"&item="+f.itemId);
+ await page.getByRole("button",{name:"Add picture",exact:true}).waitFor();
+ await page.locator('input[aria-label="Part picture"]').setInputFiles({name:"front.png",mimeType:"image/png",buffer:PNG});
+ await expect(page.locator(".project-picture-holder img")).toHaveCount(1);await expect(page.getByRole("button",{name:"Replace picture",exact:true})).toBeVisible();
+ await page.locator('input[aria-label="Part picture"]').setInputFiles({name:"side.png",mimeType:"image/png",buffer:PNG});
+ await expect(page.getByRole("status").or(page.locator("[data-notice]"))).toContainText("Picture saved");
+ s=await f.state();expect(s.media.filter(row=>row.role==="picture").length).toBe(2);expect(s.media.filter(row=>row.role==="picture"&&row.active).length).toBe(1);
+});

@@ -28,17 +28,11 @@ export function previewTransport(origin,cookie,fetcher=fetch){
  };
 }
 async function readJSON(fetcher,path,options){const response=await fetcher(path,options);requireValue(response.ok,"Preview request failed (HTTP "+response.status+"). No acceptance is claimed.");return response.json();}
-async function signIn(origin,email,password,fetcher){
- requireValue(typeof email==="string"&&typeof password==="string"&&email&&password,"Provide owner sessions or preview owner credentials through the runner's secret environment.");
- const response=await fetcher(origin+"/api/accounts",{method:"POST",headers:{origin,"content-type":"application/json"},body:JSON.stringify({action:"login",email,password}),redirect:"error",signal:AbortSignal.timeout(30000)}),result=await response.json();
- requireValue(response.ok&&result.user?.role==="admin","Preview owner sign-in failed.");return requireValue(response.headers.get("set-cookie")?.split(";")[0],"Preview sign-in issued no session.");
-}
-export async function runPreviewAcceptance({source,target,account,worker="engineering-challenge",token,sourceCookie,targetCookie,ownerEmail,ownerPassword,fetcher=fetch,progress=()=>{}}){
+export async function runPreviewAcceptance({source,target,account,worker="engineering-challenge",token,sourceCookie,targetCookie,fetcher=fetch,progress=()=>{}}){
  const sourceOrigin=previewOrigin(source),targetOrigin=previewOrigin(target);
  requireValue(sourceOrigin!==targetOrigin,"Source and recovery previews must be different.");
  requireValue(/^[a-f0-9]{32}$/.test(account||"")&&worker==="engineering-challenge","Use this project's Cloudflare account ID and engineering-challenge Worker.");
  requireValue(typeof token==="string"&&token.length>0&&!/[\r\n]/.test(token),"CLOUDFLARE_API_TOKEN with Workers Scripts Read permission is required to verify actual version bindings.");
- sourceCookie||=await signIn(sourceOrigin,ownerEmail,ownerPassword,fetcher);targetCookie||=await signIn(targetOrigin,ownerEmail,ownerPassword,fetcher);
  const transports=[previewTransport(sourceOrigin,sourceCookie,fetcher),previewTransport(targetOrigin,targetCookie,fetcher)],origins=[sourceOrigin,targetOrigin],databases=[sourceDatabase,targetDatabase],bindings=[];
  // Every check in this loop is read-only. No proof write occurs until both
  // deployments' actual control-plane bindings have passed verification.
@@ -69,7 +63,7 @@ export async function runPreviewAcceptance({source,target,account,worker="engine
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
  try{
   const {values}=parseArgs({options:{source:{type:"string"},target:{type:"string"},account:{type:"string"},report:{type:"string"}}});
-  const report=await runPreviewAcceptance({...values,token:process.env.CLOUDFLARE_API_TOKEN,sourceCookie:process.env.SOURCE_SESSION_COOKIE,targetCookie:process.env.TARGET_SESSION_COOKIE,ownerEmail:process.env.PREVIEW_OWNER_EMAIL,ownerPassword:process.env.PREVIEW_OWNER_PASSWORD,progress:message=>process.stderr.write(message+"\n")});
+  const report=await runPreviewAcceptance({...values,token:process.env.CLOUDFLARE_API_TOKEN,sourceCookie:process.env.SOURCE_SESSION_COOKIE,targetCookie:process.env.TARGET_SESSION_COOKIE,progress:message=>process.stderr.write(message+"\n")});
   const output=JSON.stringify(report,null,2)+"\n";if(values.report)await writeFile(values.report,output,{mode:0o600});else process.stdout.write(output);
  }catch{process.stderr.write("Preview acceptance did not pass. Check preview URLs, owner-session secrets, read-only Cloudflare access and bindings. No success report was produced.\n");process.exitCode=1;}
 }

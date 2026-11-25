@@ -1,10 +1,15 @@
+import {legacyRecordContext} from "../../assets/project-record-context.js";
 import {loadProjectTree,parentPlacement,changePlacementLife,lifePreview} from "./project-placements.js";
 import {captureProjectPart,entryEvidence} from "./project-part-snapshot.js";
 import {commitProjectCommand,canonicalJSON,CommandConflict} from "./project-command.js";
 import {normalizeCustomItem,normalizeOccurrence,allocatePartNumber,diffProjectItems,projectNumberKey} from "../../assets/project-item-model.js";
-import {normalizeProjectRecord} from "../../assets/project-record-model.js";
-import {rows,statement,decode,uuid,text,itemContext,itemDetails,buildDetails,storedItem,storedBuild,configurationPlan,currentEngineeringFile,readyFiles,addFileLinks,addEvent,originalPath,ProjectNotFound} from "./project-state.js";
+import {normalizeProjectRecord,MAX_RECORD_FILES} from "../../assets/project-record-model.js";
+import {stepRow,instructionState} from "./project-instruction-commands.js";
+import {recordTree} from "../../assets/project-instruction-model.js";
+export {createStep,stepRow,editStep,reorderSteps,changeStepLife,reorderRecords} from "./project-instruction-commands.js";
+import {rows,statement,decode,uuid,text,itemContext,itemDetails,buildDetails,storedItem,storedBuild,buildContext,configurationPlan,currentEngineeringFile,readyFiles,addFileLinks,addEvent,originalPath,ProjectNotFound} from "./project-state.js";
 const same=(a,b)=>canonicalJSON(a)===canonicalJSON(b);
+function photoRecordFiles(record,files){if(record.fields.category==="photos"&&files.some(file=>!/^image\/(jpeg|png|webp|gif|avif|heic|heif)$/.test(file.content_type)))throw Error("Photos entries accept images only. Use a Note for other files.");}
 export async function unchanged(db,project,input){
  const current=await statement(db,"SELECT revision FROM engine_projects WHERE id=? AND owner_id=?",project.id,input.actorId).first();
  if(current?.revision!==input.expectedRevision)throw new CommandConflict();return {ok:true,noop:true,revision:current.revision};
@@ -53,81 +58,67 @@ export async function editItem(db,input,project,itemId,data,{revision=false}={})
  if(!!after.is_assembly!==!!before.is_assembly)throw Error("Part and subassembly identities cannot be converted after creation.");
  if(after.part_number!==before.part_number)throw new CommandConflict("Issued part numbers are permanent and cannot be changed or reused.");
  if(!changes.length&&!revision)return unchanged(db,project,input);
- const evidence=revision?await entryEvidence(db,project,data):null,snapshot=revision?await captureProjectPart(db,project,context.item,context.occurrence):null,level=context.item.revision_level||1;
+ const evidence=revision?await entryEvidence(db,project,data):null,capture=revision?await captureProjectPart(db,project,context.item,context.occurrence):null,snapshot=capture?.snapshot,level=context.item.revision_level||1;
  await numberAvailable(db,project.id,after.part_number,itemId);
  const support=revision?await readyFiles(db,project.id,data.fileIds===undefined?[]:data.fileIds):[];
  const file=await currentEngineeringFile(db,project.id,itemId);
  const prior=await configurationPlan(db,project,context.item,context.occurrence,file);
- const next=await configurationPlan(db,project,{...context.item,...after,...(revision?{revision_level:level+1}:{})},{...context.occurrence,...build},file,{cache:prior.cache});
+ let next=await configurationPlan(db,project,{...context.item,...after,...(revision?{revision_level:level+1}:{})},{...context.occurrence,...build},file,{cache:prior.cache});
+ if(same(prior.snapshot,next.snapshot))next=prior;
  return commitProjectCommand(db,input,w=>{
-  if(revision)prior.write(w);
+  if(capture)capture.write(w);
+  if(revision&&prior.id!==next.id)prior.write(w);
   w.update("engine_items",{...storedItem(after),...(revision?{revision_level:level+1}:{})},{project_id:project.id,id:itemId});
   w.update("engine_occurrences",storedBuild(build),{project_id:project.id,id:context.occurrence.id,removed_at:null});
   next.write(w);
   let eventId=null;
-  if(revision){eventId=addEvent(w,project.id,itemId,"revision","Revision "+level,{before:prior.id,after:next.id,level,snapshot,entryDetails:evidence.details,changes,source:{id:itemId,name:before.name,part_number:before.part_number}},evidence.details.whatChanged);addFileLinks(w,project.id,{event_id:eventId},[...new Map([...support,...evidence.photos].map(file=>[file.id,file])).values()]);}
+  if(revision){eventId=addEvent(w,project.id,itemId,"revision","Revision "+level,{before:prior.id,after:next.id,level,snapshot,entryDetails:evidence.details,changes,build_context:{before:buildContext(project,context.occurrence,context.item,prior.cache?.tree),after:buildContext(project,{...context.occurrence,...build},{...context.item,revision_level:level+1},prior.cache?.tree)},source:{id:itemId,name:before.name,part_number:before.part_number}},evidence.details.whatChanged);addFileLinks(w,project.id,{event_id:eventId},[...new Map([...support,...evidence.photos].map(file=>[file.id,file])).values()]);}
   return {itemId,configurationId:next.id,eventId};
- });
-}
-export async function createStep(db,input,project,itemId,data){
- await itemContext(db,project.id,itemId);
- const title=text(data.title,180,"Step title",true),body=text(data.body,12000,"Instructions"),id=crypto.randomUUID();
- const order=(await statement(db,"SELECT COALESCE(MAX(sort_order),-1)+1 AS next FROM engine_steps WHERE project_id=? AND item_id=?",project.id,itemId).first()).next;
- return commitProjectCommand(db,input,w=>{w.insert("engine_steps",{id,project_id:project.id,item_id:itemId,title,body,sort_order:order,created_at:w.createdAt});return {stepId:id};});
-}
-export async function stepRow(db,projectId,id){
- if(!uuid(id))throw new ProjectNotFound("Step not found.");
- const step=decode(await statement(db,"SELECT * FROM engine_steps WHERE project_id=? AND id=?",projectId,id).first());if(!step)throw new ProjectNotFound("Step not found.");return step;
-}
-export async function editStep(db,input,project,id,data){
- const step=await stepRow(db,project.id,id);await itemContext(db,project.id,step.item_id);if(step.retired_at)throw Error("Restore the step before editing it.");
- const title=data.title===undefined?step.title:text(data.title,180,"Step title",true),body=data.body===undefined?step.body:text(data.body,12000,"Instructions");
- if(title===step.title&&body===step.body)return unchanged(db,project,input);
- return commitProjectCommand(db,input,w=>{w.update("engine_steps",{title,body},{project_id:project.id,id,retired_at:null});return {stepId:id};});
-}
-export async function reorderSteps(db,input,project,itemId,data){
- await itemContext(db,project.id,itemId);
- const existing=await rows(db,"SELECT id FROM engine_steps WHERE project_id=? AND item_id=? AND retired_at IS NULL ORDER BY sort_order,id",project.id,itemId);
- if(!Array.isArray(data.ids)||data.ids.length!==existing.length||new Set(data.ids).size!==data.ids.length||data.ids.some(id=>!existing.some(row=>row.id===id)))throw Error("Provide each active step exactly once.");
- if(existing.every((row,index)=>row.id===data.ids[index]))return unchanged(db,project,input);
- return commitProjectCommand(db,input,w=>{w.reorderSteps(itemId,data.ids);return {itemId};});
-}
-export async function changeStepLife(db,input,project,id,restore){
- const step=await stepRow(db,project.id,id),{item}=await itemContext(db,project.id,step.item_id);
- if(restore?!step.retired_at:!!step.retired_at)return unchanged(db,project,input);
- return commitProjectCommand(db,input,w=>{
-  w.update("engine_steps",{retired_at:restore?null:w.createdAt,...(!restore?{retired_path:JSON.stringify(originalPath(project,item,step))}:{})},{project_id:project.id,id,retired_at:step.retired_at});
-  const eventId=addEvent(w,project.id,item.id,restore?"step_restored":"step_retired",restore?"Step restored":"Step retired",{step_id:id,path:restore?step.retired_path:originalPath(project,item,step),source:{id:item.id,name:item.name,part_number:item.part_number,step_title:step.title}},step.title);
-  return {stepId:id,eventId};
  });
 }
 export async function createRecord(db,input,project,itemId,data){
  const {item,occurrence}=await itemContext(db,project.id,itemId,{occurrenceId:data.occurrenceId,requireOccurrence:true}),record=normalizeProjectRecord(data.record);
  const step=data.stepId?await stepRow(db,project.id,data.stepId):null;
- if(step&&(step.item_id!==itemId||step.retired_at))throw Error("Choose an active step on this item.");
- const files=await readyFiles(db,project.id,record.fileIds),id=crypto.randomUUID();
- const file=await currentEngineeringFile(db,project.id,itemId),configuration=await configurationPlan(db,project,item,occurrence,file);
+ if(step&&(step.item_id!==itemId||!(await instructionState(db,project.id,itemId)).active(step)))throw Error("Choose an active step on this item.");
+ const files=await readyFiles(db,project.id,record.fileIds,MAX_RECORD_FILES),id=crypto.randomUUID();
+ photoRecordFiles(record,files);
+ const parent_record_id=data.parentRecordId??null;
+ if(parent_record_id!==null){const existing=await rows(db,"SELECT id,project_id,item_id,step_id,parent_record_id FROM engine_records WHERE project_id=? AND item_id=?",project.id,itemId);recordTree([...existing,{id,project_id:project.id,item_id:itemId,step_id:step?.id||null,parent_record_id}]);}
+ const file=await currentEngineeringFile(db,project.id,itemId),configuration=await configurationPlan(db,project,item,occurrence,file),sort_order=(await statement(db,"SELECT COALESCE(MAX(sort_order),-1)+1 AS next FROM engine_records WHERE project_id=? AND item_id=? AND step_id IS ? AND parent_record_id IS ?",project.id,itemId,step?.id||null,parent_record_id).first()).next;
  return commitProjectCommand(db,input,w=>{
   configuration.write(w);
   if(step)w.require("EXISTS(SELECT 1 FROM engine_steps WHERE project_id=? AND id=? AND item_id=? AND retired_at IS NULL)",project.id,step.id,itemId);
-  w.insert("engine_records",{id,project_id:project.id,item_id:itemId,step_id:step?.id||null,configuration_id:configuration.id,type:record.type,title:record.title,fields:JSON.stringify(record.fields),event_date:record.event_date,step_snapshot:step?JSON.stringify({id:step.id,title:step.title,body:step.body}):null,created_at:w.createdAt,updated_at:w.createdAt});
+  w.insert("engine_records",{id,project_id:project.id,item_id:itemId,step_id:step?.id||null,parent_record_id,configuration_id:configuration.id,type:record.type,title:record.title,fields:JSON.stringify(record.fields),event_date:record.event_date,step_snapshot:step?JSON.stringify({id:step.id,title:step.title,body:step.body,revision_level:step.revision_level,parent_id:step.parent_id}):null,sort_order,created_at:w.createdAt,updated_at:w.createdAt});
   addFileLinks(w,project.id,{record_id:id},files);
-  const eventId=addEvent(w,project.id,itemId,record.type,record.title,{record_id:id,configuration_id:configuration.id,occurrence_id:occurrence.id,source:{id:itemId,name:item.name,part_number:item.part_number,step_title:step?.title||null}},Object.values(record.fields).filter(value=>typeof value==="string").join(" · ").slice(0,300));
+  const eventId=addEvent(w,project.id,itemId,record.type,record.title,{record_id:id,configuration_id:configuration.id,occurrence_id:occurrence.id,record_context:buildContext(project,occurrence,item,configuration.cache?.tree),source:{id:itemId,name:item.name,part_number:item.part_number,step_title:step?.title||null}},Object.values(record.fields).filter(value=>typeof value==="string").join(" · ").slice(0,300));
   return {recordId:id,eventId,configurationId:configuration.id};
  });
 }
 export async function editRecord(db,input,project,id,data){
  const old=decode(await statement(db,"SELECT * FROM engine_records WHERE project_id=? AND id=?",project.id,id).first());if(!old)throw new ProjectNotFound("Record not found.");
  await itemContext(db,project.id,old.item_id);
+ if(old.step_id&&!(await instructionState(db,project.id,old.item_id)).active(await stepRow(db,project.id,old.step_id)))throw Error("Restore this instruction and its parent groups before editing its records.");
  const record=normalizeProjectRecord(data.record);
- const oldLinks=await rows(db,"SELECT * FROM engine_file_links WHERE project_id=? AND record_id=? AND active=1",project.id,id),files=await readyFiles(db,project.id,record.fileIds);
- const oldValue={type:old.type,title:old.title,fields:old.fields,event_date:old.event_date,fileIds:oldLinks.map(link=>link.file_id).sort()};
- if(same(oldValue,{...record,fileIds:[...record.fileIds].sort()}))return unchanged(db,project,input);
+ const oldLinks=await rows(db,"SELECT * FROM engine_file_links WHERE project_id=? AND record_id=? AND active=1",project.id,id),files=await readyFiles(db,project.id,record.fileIds,MAX_RECORD_FILES);
+ photoRecordFiles(record,files);
+ const oldValue={type:old.type,title:old.title,fields:old.fields,event_date:old.event_date,fileIds:oldLinks.map(link=>link.file_id).sort()},nextValue={...record,fileIds:[...record.fileIds].sort()};
+ const parent_record_id=data.parentRecordId===undefined?old.parent_record_id:data.parentRecordId;
+ const sort_order=parent_record_id===old.parent_record_id?old.sort_order:(await statement(db,"SELECT COALESCE(MAX(sort_order),-1)+1 AS next FROM engine_records WHERE project_id=? AND item_id=? AND step_id IS ? AND parent_record_id IS ?",project.id,old.item_id,old.step_id,parent_record_id).first()).next;
+ let structure=null;
+ if(parent_record_id!==old.parent_record_id){const existing=await rows(db,"SELECT id,project_id,item_id,step_id,parent_record_id,title FROM engine_records WHERE project_id=? AND item_id=?",project.id,old.item_id);recordTree(existing.map(row=>row.id===id?{...row,parent_record_id}:row));structure={before:{parent_record_id:old.parent_record_id,parent_title:existing.find(row=>row.id===old.parent_record_id)?.title||null,sort_order:old.sort_order},after:{parent_record_id,parent_title:existing.find(row=>row.id===parent_record_id)?.title||null,sort_order}};}
+ if(same(oldValue,nextValue)&&parent_record_id===old.parent_record_id)return unchanged(db,project,input);
+ const creation=decode(await statement(db,"SELECT * FROM engine_events WHERE project_id=? AND json_extract(payload,'$.record_id')=? ORDER BY created_at,id LIMIT 1",project.id,id).first());
+ const configuration=decode(await statement(db,"SELECT * FROM engine_configurations WHERE project_id=? AND id=?",project.id,old.configuration_id).first());
+ const recordContext=creation?.payload.record_context||legacyRecordContext(configuration?.snapshot);
+ const retained=await readyFiles(db,project.id,oldValue.fileIds,MAX_RECORD_FILES),auditFiles=[...new Map([...retained,...files].map(file=>[file.id,file])).values()];
  return commitProjectCommand(db,input,w=>{
-  w.update("engine_records",{type:record.type,title:record.title,fields:JSON.stringify(record.fields),event_date:record.event_date,updated_at:w.createdAt},{project_id:project.id,id});
+  w.update("engine_records",{type:record.type,title:record.title,fields:JSON.stringify(record.fields),event_date:record.event_date,parent_record_id,sort_order,updated_at:w.createdAt},{project_id:project.id,id});
   for(const link of oldLinks)if(!record.fileIds.includes(link.file_id))w.update("engine_file_links",{active:0},{project_id:project.id,id:link.id});
   addFileLinks(w,project.id,{record_id:id},files.filter(file=>!oldLinks.some(link=>link.file_id===file.id)));
-  return {recordId:id,configurationId:old.configuration_id};
+  // Use edited_record_id so creation-event/Knowledge mappings stay unique.
+  const eventId=addEvent(w,project.id,old.item_id,"record_edited","Record edited: "+record.title,{edited_record_id:id,record_event_id:creation?.id||null,configuration_id:old.configuration_id,record_context:recordContext,step_snapshot:old.step_snapshot,actor_id:input.actorId,record_edit:{before:oldValue,after:nextValue},...(structure?{record_structure:structure}:{}),source:creation?.payload.source||{id:old.item_id}},record.title);
+  addFileLinks(w,project.id,{event_id:eventId},auditFiles);
+  return {recordId:id,eventId,configurationId:old.configuration_id};
  });
 }
 export async function restorePreview(db,project,itemId,occurrenceId=null){

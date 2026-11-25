@@ -5,22 +5,8 @@ import {TestR2} from "./helpers/r2.mjs";
 import {handleProjectWorkspace} from "../functions/api/project-workspace-api.js";
 import {commitProjectCommand,replayProjectCommand,canonicalJSON,sha256} from "../functions/api/project-command.js";
 import {normalizeProjectRecord} from "../assets/project-record-model.js";
+import {fixture,upload,counts} from "./helpers/project-workspace.mjs";
 const id=()=>crypto.randomUUID(),origin="https://preview.example.test";
-export async function fixture(){
- const db=new TestD1(),env={WORKSHOP_DB:db,PHOTOS:new TestR2()},owner={id:"fixture-owner"},projectId=id();let revision=null;
- async function call(path="",method="GET",data={},options={}){
-  const operationId=options.operationId||id(),expectedRevision=Object.hasOwn(options,"revision")?options.revision:revision;
-  const body={...data,expectedRevision,operationId};
-  const response=await handleProjectWorkspace(new Request(origin+"/api/project-engine/projects/"+projectId+path,{method,headers:{origin,"content-type":"application/json"},...(method!=="GET"?{body:JSON.stringify(body)}:{})}),env,options.owner||owner);
-  const result=await response.json();if(response.ok&&result.revision)revision=result.revision;
-  return {status:response.status,result,body};
- }
- const creation=await call("","POST",{name:"Bracket build"});assert.equal(creation.status,200);
- const details={name:"Bracket",fields:{specs:[{field_id:"thickness",label:"Thickness",value:3,unit:"mm"},{field_id:"zero",label:"Offset",value:0},{field_id:"false",label:"Coated",value:false},{field_id:"empty",label:"Finish",value:""},{field_id:"unset",label:"Tolerance"}]}};
- const part=await call("/items","POST",{details});assert.equal(part.status,200,JSON.stringify(part));
- return {db,env,owner,projectId,call,itemId:part.result.itemId,details,revision:()=>revision};
-}
-const counts=async db=>({...await db.prepare("SELECT (SELECT COUNT(*) FROM engine_configurations) AS configurations,(SELECT COUNT(*) FROM engine_events) AS events,(SELECT COUNT(*) FROM engine_operations) AS receipts").first()});
 test("custom project ordinary saves, no-op, revision replay and old evidence retain their actual configuration",async()=>{
  const f=await fixture();try{
   const {call,itemId,db}=f;let state=(await call("/state")).result;assert.equal(state.items[0].part_number,"NR100");assert.deepEqual(await counts(db),{configurations:1,events:0,receipts:2});
@@ -61,7 +47,7 @@ test("steps retire and restore without losing records; independent duplication n
   const evidence=(await call("/history/"+record.result.eventId)).result;assert.equal(evidence.record.step_snapshot.title,"Drill");assert.equal(evidence.record.step_snapshot.body,"Use 3 mm stock");
   await call("/steps/"+step.result.stepId+"/restore","POST");const state=(await call("/state")).result;assert.equal(state.steps[0].id,step.result.stepId);assert.equal(state.steps[0].retired_at,null);
   const duplicate=await call("/items/"+itemId+"/duplicate","POST");assert.equal(duplicate.status,200,JSON.stringify(duplicate));assert.notEqual(duplicate.result.itemId,itemId);
-  await call("/items/"+duplicate.result.itemId,"PATCH",{details:{...f.details,name:"Independent copy",part_number:"NR0101"}});const final=(await call("/state")).result;assert.equal(final.items.find(row=>row.id===itemId).name,"Bracket");assert.equal(final.steps.length,1);assert.equal(final.records.length,1);
+  assert.equal((await call("/items/"+duplicate.result.itemId,"PATCH",{details:{...f.details,name:"Independent copy",part_number:"NR101"}})).status,200);const final=(await call("/state")).result;assert.equal(final.items.find(row=>row.id===itemId).name,"Bracket");assert.equal(final.steps.length,1);assert.equal(final.records.length,1);
  }finally{f.db.close();}
 });
 test("step reordering supports more than 100 steps without exceeding D1 bound parameters",async()=>{
@@ -101,16 +87,6 @@ test("record validation requires substance, preserves explicit event date and re
  const attached=normalizeProjectRecord({type:"note",fileIds:[id()]});assert.equal(attached.title,"Note with attachments");assert.deepEqual(normalizeProjectRecord(attached),attached);
 });
 
-async function upload(f,name,bytes,role="engineering",options={}){
- const prepared=await f.call("/files/prepare","POST",{name,content_type:"application/octet-stream"});assert.equal(prepared.status,200,JSON.stringify(prepared));
- const fileId=prepared.result.fileId,operationId=id(),revision=f.revision();
- const raw=()=>new Request(origin+"/api/project-engine/projects/"+f.projectId+"/files/"+fileId+"/bytes",{method:"PUT",headers:{origin,"x-operation-id":operationId,"x-project-revision":revision},body:bytes});
- const send=()=>handleProjectWorkspace(raw(),f.env,f.owner),response=await send();assert.equal(response.status,200,await response.clone().text());
- assert.equal((await send()).status,200);
- if(options.stop)return {fileId,send,revision};
- const admitted=await f.call("/files/"+fileId+"/admit","POST",{role,...(role==="engineering"?{itemId:f.itemId}:{})});assert.equal(admitted.status,200,JSON.stringify(admitted));
- return {fileId,send,admitted};
-}
 test("file replacement never overwrites old bytes and interrupted upload cannot publish a broken link",async()=>{
  const f=await fixture();try{
   const first=await upload(f,"drawing-a.step",new TextEncoder().encode("3 mm drawing"));
@@ -153,6 +129,120 @@ test("truncated or corrupt backup never admits project metadata",async()=>{
  }finally{f.db.close();target.WORKSHOP_DB.close();}
 });
 
+test("design configurations ignore build state and project names while each record freezes its context",async()=>{
+ const f=await fixture();try{
+  const first=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",title:"Initial bracket test",fields:{result:"Baseline"}}});assert.equal(first.status,200);
+  const build={quantity:4,unit:"pcs",build_status:"complete",attention:true,attention_note:"Inspect fixture",hidden:true};
+  assert.equal((await f.call("/items/"+f.itemId,"PATCH",{build})).status,200);
+  const second=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"Same design after completion"}}});assert.equal(second.status,200);
+  assert.equal((await f.call("","PATCH",{name:"Renamed project"})).status,200);
+  const third=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"Same design after project rename"}}});assert.equal(third.status,200);
+  assert.equal(first.result.configurationId,second.result.configurationId);assert.equal(first.result.configurationId,third.result.configurationId);assert.equal((await counts(f.db)).configurations,1);
+  const read=async result=>(await f.call("/history/"+result.eventId)).result;
+  const a=await read(first.result),b=await read(second.result),c=await read(third.result);
+  assert.equal(a.configurations[0].snapshot.format,2);assert.equal(a.configurations[0].snapshot.occurrence,undefined);
+  assert.equal(a.recordContext.project.name,"Bracket build");assert.equal(a.recordContext.occurrence.build_status,"not_started");assert.equal(a.recordContext.occurrence.quantity,1);
+  assert.equal(b.recordContext.project.name,"Bracket build");assert.deepEqual({...b.recordContext.occurrence,id:undefined},{...build,id:undefined});
+  assert.equal(c.recordContext.project.name,"Renamed project");assert.equal(c.recordContext.occurrence.build_status,"complete");
+  const next=structuredClone(f.details);next.part_number="NR100";next.fields.specs[0].value=5;
+  assert.equal((await f.call("/items/"+f.itemId,"PATCH",{details:next})).status,200);
+  const changed=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"Different design"}}});assert.equal(changed.status,200);assert.notEqual(changed.result.configurationId,first.result.configurationId);assert.equal((await counts(f.db)).configurations,2);
+  assert.deepEqual(await read(first.result),a,"later design/build/project changes cannot rewrite an earlier capture");
+ }finally{f.db.close();}
+});
+test("record retry replays its original design and context before checking a newer project revision",async()=>{
+ const f=await fixture();try{
+  const operationId=id(),revision=f.revision(),record={type:"test",title:"Captured test",fields:{result:"Initial result"}};
+  const created=await f.call("/items/"+f.itemId+"/records","POST",{record},{operationId,revision});assert.equal(created.status,200);
+  const original=(await f.call("/history/"+created.result.eventId)).result;
+  await f.call("/items/"+f.itemId,"PATCH",{build:{build_status:"complete",quantity:8}});
+  await f.call("","PATCH",{name:"Later project label"});const latest=f.revision(),before=await counts(f.db);
+  const replay=await f.call("/items/"+f.itemId+"/records","POST",{record},{operationId,revision});
+  assert.equal(replay.status,200);assert.deepEqual(replay.result,created.result);assert.deepEqual(await counts(f.db),before);
+  const changed=await f.call("/records/"+created.result.recordId,"PATCH",{record:{...record,fields:{result:"Corrected result"}}},{revision:latest});assert.equal(changed.status,200);
+  const after=(await f.call("/history/"+created.result.eventId)).result;
+  assert.deepEqual(after.recordContext,original.recordContext);assert.equal(after.record.configuration_id,original.record.configuration_id);assert.equal(after.record.fields.result,"Corrected result");
+  assert.equal(after.recordContext.occurrence.build_status,"not_started");assert.equal(after.recordContext.project.name,"Bracket build");
+ }finally{f.db.close();}
+});
+test("legacy combined snapshots stay unchanged beside design-only captures and round-trip through recovery",async()=>{
+ const f=await fixture(),target={WORKSHOP_DB:new TestD1(),PHOTOS:new TestR2()};try{
+  const state=(await f.call("/state")).result,occ=state.occurrences[0],row=await f.db.prepare("SELECT * FROM engine_configurations WHERE project_id=?").bind(f.projectId).first();
+  const legacy={...JSON.parse(row.snapshot),format:1,occurrence:{id:occ.id,quantity:occ.quantity,unit:occ.unit,build_status:occ.build_status,attention:!!occ.attention,attention_note:occ.attention_note,hidden:!!occ.hidden,root:{id:f.projectId,name:state.project.name}}};
+  const snapshot=JSON.stringify(legacy),fingerprint=await sha256(canonicalJSON(legacy)),recordId=id(),eventId=id();
+  await f.db.prepare("UPDATE engine_configurations SET snapshot=?,fingerprint=? WHERE id=?").bind(snapshot,fingerprint,row.id).run();
+  await f.db.prepare("INSERT INTO engine_records(id,project_id,item_id,configuration_id,type,title,fields,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)").bind(recordId,f.projectId,f.itemId,row.id,"test","Legacy evidence",JSON.stringify({result:"Original legacy test"}),row.created_at,row.created_at).run();
+  await f.db.prepare("INSERT INTO engine_events(id,project_id,item_id,type,title,summary,payload,created_at) VALUES(?,?,?,?,?,?,?,?)").bind(eventId,f.projectId,f.itemId,"test","Legacy evidence","",JSON.stringify({record_id:recordId,configuration_id:row.id}),row.created_at).run();
+  const revision=await f.call("/items/"+f.itemId+"/revisions","POST",{build:{build_status:"complete"},reason:"Build checkpoint"});assert.equal(revision.status,200,JSON.stringify(revision));
+  const change=(await f.call("/history/"+revision.result.eventId)).result;assert.equal(change.event.payload.before,change.event.payload.after,"unchanged design uses one configuration even at the legacy boundary");assert.equal((await counts(f.db)).configurations,2);
+  assert.equal(change.event.payload.build_context.before.occurrence.build_status,"not_started");assert.equal(change.event.payload.build_context.after.occurrence.build_status,"complete");
+  const fresh=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"New capture"}}});assert.equal(fresh.status,200);assert.equal(fresh.result.configurationId,change.event.payload.after);
+  const oldRow=await f.db.prepare("SELECT * FROM engine_configurations WHERE id=?").bind(row.id).first();assert.equal(oldRow.snapshot,snapshot);assert.equal(oldRow.fingerprint,fingerprint);
+  const old=(await f.call("/history/"+eventId)).result;assert.equal(old.recordContext.legacy,true);assert.equal(old.recordContext.occurrence.build_status,"not_started");
+  const editedLegacy=await f.call("/records/"+recordId,"PATCH",{record:{type:"test",fields:{result:"Corrected legacy result"}}});assert.equal(editedLegacy.status,200);
+  const legacyAudit=(await f.call("/history/"+editedLegacy.result.eventId)).result;assert.equal(legacyAudit.recordContext.legacy,true);assert.equal(legacyAudit.event.payload.configuration_id,row.id);assert.equal(legacyAudit.event.payload.record_edit.before.fields.result,"Original legacy test");
+  const base=origin+"/api/project-engine/projects/"+f.projectId,backup=await(await handleProjectWorkspace(new Request(base+"/export"),f.env,f.owner)).text();
+  const response=await handleProjectWorkspace(new Request(base+"/import",{method:"POST",headers:{origin,"x-operation-id":id(),"x-project-revision":"new"},body:backup}),target,f.owner);assert.equal(response.status,200,await response.clone().text());
+  const read=async id=>(await(await handleProjectWorkspace(new Request(base+"/history/"+id),target,f.owner)).json());
+  assert.equal((await read(eventId)).configurations[0].snapshot.format,1);assert.equal((await read(eventId)).recordContext.legacy,true);
+  const restored=await read(fresh.result.eventId);assert.equal(restored.configurations[0].snapshot.format,2);assert.equal(restored.recordContext.occurrence.build_status,"complete");assert.equal(restored.recordContext.project.name,"Bracket build");
+  const restoredLegacy=await target.WORKSHOP_DB.prepare("SELECT snapshot,fingerprint FROM engine_configurations WHERE id=?").bind(row.id).first();assert.equal(restoredLegacy.snapshot,snapshot);assert.equal(restoredLegacy.fingerprint,fingerprint);
+ }finally{f.db.close();target.WORKSHOP_DB.close();}
+});
+
+test("record edit history freezes both versions, evidence context and removed attachments through recovery",async()=>{
+ const f=await fixture(),target={WORKSHOP_DB:new TestD1(),PHOTOS:new TestR2()};try{
+  const a=await upload(f,"before.txt",new TextEncoder().encode("original measurement"),"support"),b=await upload(f,"after.txt",new TextEncoder().encode("corrected measurement"),"support");
+  const before={type:"test",title:"Measured bracket",fields:{checked:"Bracket",result:"ok"},event_date:"2026-11-22",fileIds:[a.fileId]};
+  const created=await f.call("/items/"+f.itemId+"/records","POST",{record:before});assert.equal(created.status,200);
+  const capture=(await f.call("/history/"+created.result.eventId)).result;
+  await f.call("/items/"+f.itemId,"PATCH",{build:{build_status:"complete",quantity:9}});await f.call("","PATCH",{name:"Later project name"});
+  const after={type:"problem",title:"Failed bracket",fields:{happened:"FAILED",status:"open"},event_date:"2026-11-23",fileIds:[b.fileId]};
+  const changed=await f.call("/records/"+created.result.recordId,"PATCH",{record:after});assert.equal(changed.status,200,JSON.stringify(changed));
+  const audit=(await f.call("/history/"+changed.result.eventId)).result,payload=audit.event.payload;
+  assert.equal(audit.event.type,"record_edited");assert.equal(audit.record,null);assert.equal(payload.edited_record_id,created.result.recordId);assert.equal(payload.record_event_id,created.result.eventId);assert.equal(payload.actor_id,f.owner.id);
+  assert.deepEqual(payload.record_edit.before,normalizeProjectRecord(before));assert.deepEqual(payload.record_edit.after,normalizeProjectRecord(after));
+  assert.equal(payload.configuration_id,created.result.configurationId);assert.deepEqual(audit.recordContext,capture.recordContext);assert.equal(audit.recordContext.occurrence.build_status,"not_started");assert.equal(audit.recordContext.project.name,"Bracket build");
+  assert.deepEqual(audit.attachments.map(file=>file.id).sort(),[a.fileId,b.fileId].sort());assert.equal(audit.configurations[0].id,created.result.configurationId);
+  const later=await f.call("/records/"+created.result.recordId,"PATCH",{record:{type:"note",fields:{text:"Later explanation"}}});assert.equal(later.status,200);
+  assert.deepEqual((await f.call("/history/"+changed.result.eventId)).result,audit,"later edits cannot rewrite the audit");
+  const state=(await f.call("/state")).result;assert.deepEqual(state.record_events.filter(row=>row.record_id===created.result.recordId),[{id:created.result.eventId,record_id:created.result.recordId}]);
+  const current=(await f.call("/history/"+created.result.eventId)).result;assert.equal(current.record.type,"note");assert.equal(current.record.id,created.result.recordId);
+  assert.equal((await f.call("/history?type=changes&q=ok")).result.entries.some(row=>row.id===changed.result.eventId),true,"search includes the saved old result");
+  const base=origin+"/api/project-engine/projects/"+f.projectId;
+  for(const [fileId,bytes]of [[a.fileId,"original measurement"],[b.fileId,"corrected measurement"]])assert.equal(await(await handleProjectWorkspace(new Request(base+"/files/"+fileId),f.env,f.owner)).text(),bytes);
+  const backup=await(await handleProjectWorkspace(new Request(base+"/export"),f.env,f.owner)).text();
+  const response=await handleProjectWorkspace(new Request(base+"/import",{method:"POST",headers:{origin,"x-operation-id":id(),"x-project-revision":"new"},body:backup}),target,f.owner);assert.equal(response.status,200,await response.clone().text());
+  const restored=await(await handleProjectWorkspace(new Request(base+"/history/"+changed.result.eventId),target,f.owner)).json();assert.deepEqual({...restored,attachments:restored.attachments.map(({r2_key,...file})=>file)},{...audit,attachments:audit.attachments.map(({r2_key,...file})=>file)});for(const file of restored.attachments)assert.notEqual(file.r2_key,audit.attachments.find(old=>old.id===file.id).r2_key);
+ }finally{f.db.close();target.WORKSHOP_DB.close();}
+});
+test("record audit is absent on no-op or stale save and exact retries replay one saved edit",async()=>{
+ const f=await fixture();try{
+  const before={type:"test",title:"Result",fields:{result:"ok"}},created=await f.call("/items/"+f.itemId+"/records","POST",{record:before});assert.equal(created.status,200);
+  const path="/records/"+created.result.recordId,initial=await counts(f.db),token=f.revision();
+  const noop=await f.call(path,"PATCH",{record:before});assert.equal(noop.result.noop,true);assert.deepEqual(await counts(f.db),initial);assert.equal(f.revision(),token);
+  const operationId=id(),after={...before,fields:{result:"FAILED"}},changed=await f.call(path,"PATCH",{record:after},{operationId,revision:token});assert.equal(changed.status,200);
+  assert.equal((await counts(f.db)).events,initial.events+1);await f.call("","PATCH",{name:"Renamed after edit"});const latest=f.revision(),savedCounts=await counts(f.db);
+  assert.equal((await f.call(path,"PATCH",{record:{...after,title:"Stale draft"}},{revision:token})).status,409);
+  const replay=await f.call(path,"PATCH",{record:after},{operationId,revision:token});assert.deepEqual(replay.result,changed.result);
+  assert.equal((await f.call(path,"PATCH",{record:before},{operationId,revision:token})).status,409);assert.deepEqual(await counts(f.db),savedCounts);
+  const state=(await f.call("/state")).result;assert.equal(state.project.revision,latest);assert.equal(state.records[0].fields.result,"FAILED");
+  assert.equal((await f.call("/history?type=changes")).result.entries.filter(row=>row.type==="record_edited").length,1);
+ }finally{f.db.close();}
+});
+test("record edit and attachment changes roll back when their audit write fails",async()=>{
+ const f=await fixture();try{
+  const a=await upload(f,"original.txt",new TextEncoder().encode("original bytes"),"support"),b=await upload(f,"new.txt",new TextEncoder().encode("new bytes"),"support");
+  const created=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"ok"},fileIds:[a.fileId]}});assert.equal(created.status,200);
+  const state=(await f.call("/state")).result,before=await counts(f.db);
+  f.db.sqlite.exec("CREATE TRIGGER reject_record_audit BEFORE INSERT ON engine_events WHEN NEW.type='record_edited' BEGIN SELECT RAISE(ABORT,'SQLITE forced audit failure'); END");
+  const failed=await f.call("/records/"+created.result.recordId,"PATCH",{record:{type:"test",fields:{result:"FAILED"},fileIds:[b.fileId]}});assert.equal(failed.status,500);
+  assert.deepEqual((await f.call("/state")).result,state);assert.deepEqual(await counts(f.db),before);
+ }finally{f.db.close();}
+});
+
+
+
 test("numbered revisions preserve the complete previous part and standard Save keeps the working level",async()=>{
  const f=await fixture();try{
   const {call,itemId}=f,step=await call("/items/"+itemId+"/steps","POST",{title:"Load test",body:"Use the original fixture"}),record=await call("/items/"+itemId+"/records","POST",{stepId:step.result.stepId,record:{type:"test",title:"Original result",fields:{checked:"3 mm bracket",result:"Held 2 kg"}}});assert.equal(step.status,200);assert.equal(record.status,200);
@@ -187,7 +277,7 @@ test("history images are owned by the project and invalid evidence cannot advanc
 test("forged staging metadata cannot substitute corrupt bytes during backup restore",async()=>{
  const f=await fixture(),target={WORKSHOP_DB:new TestD1(),PHOTOS:new TestR2()};try{
   const uploaded=await upload(f,"drawing.step",new TextEncoder().encode("original bytes")),backup=await(await handleProjectWorkspace(new Request(origin+"/api/project-engine/projects/"+f.projectId+"/export"),f.env,f.owner)).text(),manifest=JSON.parse(backup.split("\n")[0]).manifest,operationId=id(),file=manifest.tables.files.find(row=>row.id===uploaded.fileId);
-  await target.PHOTOS.put("project-engine/restored/"+operationId+"/"+file.id,new TextEncoder().encode("corrupt! bytes"),{customMetadata:{sha256:file.sha256}});
+  await target.PHOTOS.put("project-engine/restored/"+f.projectId+"/"+operationId+"/"+file.id,new TextEncoder().encode("corrupt! bytes"),{customMetadata:{sha256:file.sha256}});
   const response=await handleProjectWorkspace(new Request(origin+"/api/project-engine/projects/"+f.projectId+"/import",{method:"POST",headers:{origin,"x-operation-id":operationId,"x-project-revision":"new"},body:backup}),target,f.owner);assert.equal(response.status,400,await response.clone().text());assert.match((await response.json()).error,/byte verification/);assert.equal((await target.WORKSHOP_DB.prepare("SELECT COUNT(*) AS n FROM engine_projects").first()).n,0);assert.equal((await target.WORKSHOP_DB.prepare("SELECT COUNT(*) AS n FROM engine_operations").first()).n,0);
  }finally{f.db.close();target.WORKSHOP_DB.close();}
 });

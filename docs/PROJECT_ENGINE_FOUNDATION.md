@@ -10,13 +10,17 @@ Status: **Batch 1 real Cloudflare D1 proof passed**, November 22, 2026 (Arizona)
 - `project-engine.js` requires the preview flag, the existing owner account and same-origin writes. There is no signup, fixture login or authentication bypass. `/project-engine-proof.html` reuses the site header and kit; it has no custom CSS.
 - `NEW_PROJECT_ENGINE=1` exists **only** under `previews.vars`. Production API and proof-page paths return 404 before authentication, migrations or assets. Enabled preview paths require sign-in (401). The production 404 takes precedence over the signed-out 401 described for enabled routes in F11.
 
+The current E4 correction gives schema initialization one application call site, in `project-workspace-api.js`, after request validation. `project-engine.js` retains flag/account/origin checks and delegates both proof and project requests to that entry. `proveProjectCommands` assumes initialization has already completed; direct SQL tests initialize explicitly. Workshop project-use reads call the read-only readiness helper and return no engine uses before the schema is ready; they never create/upgrade engine tables.
+
+Initializer caching covers only in-flight work. Every later request checks the ledger again, so an isolate that opened an earlier schema cannot keep using a completed cached promise after an upgrade. A concurrent isolate's committed ledger admits its atomic migration result; a genuine batch failure remains an error, clears in-flight work and can retry. Unknown future versions are refused. Command admission also checks the compiled schema version in its transaction, preserving receipt replay before that guard. No applied migration is rewritten. This improves current code; compatible-reader/writer fencing of every previously deployed preview remains a separate cutover task.
+
 ## Independent custom-part model preparation
 
 `assets/project-item-model.js` is pure validation/comparison code, used by the existing proof fixture. It has no DOM, network or storage access and introduces no new caller of the transaction primitive. The real D1 gate has passed. The model is now shared by the dependent custom-part commands; their separate acceptance status is recorded in `PROJECT_CUSTOM_FLOW.md`.
 
 - Custom details validate name/short name/kind/number, optional description/purpose/acceptance/manufacturer/MPN, explicit tool state and stable specification IDs. Empty optional text is omitted. Specification values preserve zero, false, empty text, null and an absent value distinctly; nothing guesses a value or converts units.
 - Occurrence quantity, unit, status, attention/note and tree-hidden state are validated separately. Build information cannot silently become intrinsic engineering data. A disabled attention flag does not erase its note.
-- Automatic numbering uses the project's prefix and minimum digit count (current default NR/3), begins at 100 and takes every reserved number, including archived items. It neither changes old numbers nor establishes database uniqueness by itself; final commands must still use the D1 guard/constraint.
+- Automatic numbering uses the project's prefix and minimum digit count (current default NR/4), begins at 100 and takes every reserved number, including removed items. It neither changes old numbers nor establishes database uniqueness by itself; final commands must still use the D1 guard/constraint.
 - Revision comparisons match specification rows by stable ID. They show changed values with labels and old/new units, added/removed rows, label changes and ordering. Equivalent blank optional fields yield no change. Equal labels do not conflate separate rows.
 - The proof fixture now uses this same model. Its revised configuration matches the saved current fields, retains the unchanged specification rows and leaves the initial configuration at 3 mm. SQLite tests verify this; the actual preview proof passed and its report is retained.
 
@@ -31,7 +35,7 @@ The custom-part preview now adds record/step commands, immutable files, History 
 5. Every header/domain/configuration/event statement contains an `EXISTS` check for this receipt's **fresh attempt ID**. A zero-row admission therefore makes every dependent statement a no-op. An earlier retry receipt cannot authorize them. Updates also require their exact target in admission; identities and receipt/configuration/event updates are unavailable through the writer.
 6. A later SQL failure must roll back the receipt, header and all dependent writes. If admission made zero changes, look up a racing committed receipt for replay; otherwise return 409. An unchanged save must return before this primitive; it must not create a receipt.
 
-All domain IDs and the result are chosen once per admitted command and returned from its receipt on retry. Number uniqueness includes archived items. Composite keys prevent an event/configuration/occurrence from pointing at a different project's item. The custom-part commands now apply domain validation after the passed D1 gate. The foundation proof alone does not establish the complete workflow.
+All domain IDs and the result are chosen once per admitted command and returned from its receipt on retry. Number uniqueness includes removed items. Composite keys prevent an event/configuration/occurrence from pointing at a different project's item. The custom-part commands now apply domain validation after the passed D1 gate. The foundation proof alone does not establish the complete workflow.
 
 ## Preview authentication prerequisite
 

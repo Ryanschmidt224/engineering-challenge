@@ -20,6 +20,7 @@
   margin-bottom: var(--space-3);
 }
 .project-panes {
+  min-width: 0;
   --pane-default-tree: 17rem; /* Initial engineering tree width. */
   --pane-default-history: 24rem; /* History rows need room for title and outcome. */
   display: grid;
@@ -34,6 +35,16 @@
     var(--pane-history, var(--pane-default-history)) var(--pane-handle-size)
     minmax(0, 1fr);
 }
+.project-instruction-panes {
+  --pane-default-instructions: 14rem; /* A short instruction-title list. */
+  grid-template-columns:
+    var(--pane-instructions, var(--pane-default-instructions))
+    var(--pane-handle-size) minmax(0, 1fr);
+}
+.project-instruction-list {
+  min-width: 0;
+  align-content: start;
+}
 .project-tree,
 .project-main,
 .project-history-list,
@@ -46,6 +57,7 @@
   overflow-y: auto;
 }
 .project-stack {
+  min-width: 0;
   display: grid;
   gap: var(--space-4);
 }
@@ -104,4 +116,51 @@
 }
 .project-tree > .project-tree-children {
   padding-inline-start: 0;
+}
+.project-parts-panes[data-parts-view="full"] {
+  display: block;
+}
+.project-parts-panes[data-parts-view="full"] > .ui-pane-resizer {
+  display: none;
+}
+.project-parts-browse {
+  display: grid;
+  align-content: start;
+}
+.project-parts-browse[hidden] {
+  display: none;
+}
+.project-column-resizer {
+  margin-inline-start: var(--space-2);
+  cursor: col-resize;
+  touch-action: none;
+}
+/* Photo galleries: compact tiles (owner asked for smaller photos). */
+.project-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-3, 12px);
+}
+.project-media-tile {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+.project-media-image {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--surface-2, #f2f2f2);
+  cursor: zoom-in;
+}
+.project-media-tile figcaption {
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+.project-picture-holder {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
 }

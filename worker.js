@@ -17,6 +17,7 @@ import {handleRecipeFiles} from "./functions/api/recipe-files.js";
 import {handleProjectArchive} from "./functions/api/project-archive.js";
 import {handleArchiveStaging} from "./functions/api/archive-staging.js";
 import {backupAllProjects,handleAutomaticBackups} from "./functions/api/automatic-backups.js";
+import {backupEngineProjects} from "./functions/api/project-auto-backups.js";
 import {handleDrawings} from "./functions/api/drawings.js";
 import {isAdmin} from "./functions/api/auth.js";
 import {auth} from "./functions/api/auth.js";
@@ -26,6 +27,7 @@ import {onRequestGet as getPhoto} from "./functions/api/photo.js";
 import {handlePhotoAnnotations} from "./functions/api/photo-annotations.js";
 import {handlePartCode} from "./functions/api/part-code.js";
 import {guardPrivateApi} from "./functions/api/private-access.js";
+import {guardLegacyProjectWrite} from "./functions/api/legacy-projects.js";
 import {handleFamilyWorkshop} from "./functions/api/workshop-db.js";
 import {handleFamilyWorkshopFile,handleWorkshopExport} from "./functions/api/family-workshop-files.js";
 import {handleKnowledge} from "./functions/api/knowledge.js";
@@ -33,12 +35,15 @@ export default {
   async fetch(request,env,ctx){
     const path=new URL(request.url).pathname;
     try{
-      const enginePage=["/project","/project/","/project.html"].includes(path);
+      const enginePage=["/project","/project/","/project.html","/project-signin.html"].includes(path);
       const engineRoute=enginePage||path.startsWith("/api/project-engine/")||path==="/api/project-engine"||path.startsWith("/project-engine-proof");
       if(engineRoute&&!projectEngineEnabled(env))return Response.json({error:"Not found"},{status:404,headers:{"cache-control":"no-store"}});
-      if((enginePage||path.startsWith("/project-engine-proof"))&&!await isAdmin(request,env))return new Response('<a href="/index.html?account=1#home">Sign in with the preview owner account, then return here.</a>',{status:401,headers:{"content-type":"text/html","cache-control":"no-store"}});
+      if(enginePage&&!await isAdmin(request,env)){const url=new URL(request.url);url.pathname="/project-signin.html";url.search="";const page=await env.ASSETS.fetch(new Request(url,{method:"GET"}));return new Response(page.body,{status:401,headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});}
+      if(path.startsWith("/project-engine-proof")&&!await isAdmin(request,env))return new Response('<a href="/index.html?account=1#home">Sign in with the preview owner account, then return here.</a>',{status:401,headers:{"content-type":"text/html","cache-control":"no-store"}});
       const denied=await guardPrivateApi(request,env);
       if(denied)return denied;
+      const legacyDenied=guardLegacyProjectWrite(request,env);
+      if(legacyDenied)return legacyDenied;
       if(path.startsWith("/api/project-engine/"))return handleProjectEngine(request,env);
       if(path==="/api/accounts")return await handleAccounts(request,env);
       if(path==="/api/workshop")return handleFamilyWorkshop(request,env);
@@ -109,7 +114,12 @@ export default {
     }
   },
   async scheduled(event,env,ctx){
-    ctx.waitUntil(backupAllProjects(env,new Date(event.scheduledTime)).then(result=>{
+    const when=new Date(event.scheduledTime);
+    // Daily trigger: engine projects are backed up when changed; legacy full
+    // backups keep their weekly (Sunday UTC) cadence. One failing never skips the other.
+    const legacyRun=when.getUTCDay()===0?backupAllProjects(env,when):Promise.resolve([]);
+    ctx.waitUntil(Promise.allSettled([legacyRun,backupEngineProjects(env,when)]).then(([legacy,engine])=>{
+     const result=[...(legacy.status==="fulfilled"?legacy.value:[{status:"failed",reason:String(legacy.reason)}]),...(engine.status==="fulfilled"?engine.value.map(item=>({...item,engine:true})):[{engine:true,status:"failed",reason:String(engine.reason)}])];
      console.log("Building Schmidt scheduled backup result",JSON.stringify(result));
      if(result.some(item=>item.status==="failed"))throw Error("One or more scheduled project backups failed");
     }));

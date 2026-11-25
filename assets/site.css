@@ -2267,11 +2267,6 @@ label {
 
 /* Global reference-library tabs and calculators. */
 
-.resource-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: var(--space-4);
-}
 .resource-card {
   border: 1px solid var(--color-border);
   background: var(--color-surface);
@@ -2396,7 +2391,6 @@ label {
 @media (max-width: 850px) {
 }
 @media (max-width: 570px) {
-  .resource-grid,
   .linked-resource-groups {
     grid-template-columns: 1fr;
   }

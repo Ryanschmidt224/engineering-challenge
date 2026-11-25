@@ -2,9 +2,10 @@ import {initializeWorkshop,dbRows} from "./workshop-db.js";
 import {validateFamilyValues,resolveFamilyValues,validId,present} from "../../assets/family-model.js";
 import {commitProjectCommand,CommandConflict} from "./project-command.js";
 import {createItem} from "./project-workspace-commands.js";
-import {statement,rows,itemContext,itemDetails,storedItem,configurationPlan,currentEngineeringFile,addFileLinks,addEvent} from "./project-state.js";
+import {statement,rows,itemContext,itemDetails,storedItem,buildContext,configurationPlan,currentEngineeringFile,addFileLinks,addEvent} from "./project-state.js";
 import {captureProjectPart,entryEvidence} from "./project-part-snapshot.js";
 import {bytesHash,MAX_ENGINE_FILE} from "./project-engine-files.js";
+import {assertStorageKeyWritable} from "./project-storage-fence.js";
 export async function workshopChoices(db,params){
  await initializeWorkshop(db);const familyId=params.get("family")||"",q=(params.get("q")||"").trim();if(q.length>180||familyId&&!validId(familyId))throw Error("Invalid Workshop search.");
  const families=await dbRows(db,"SELECT * FROM workshop_families WHERE archived=0 AND (?='' OR id=?) AND (?='' OR instr(lower(name||' '||description),lower(?))>0 OR id IN(SELECT family_id FROM workshop_products WHERE archived=0 AND instr(lower(name||' '||manufacturer||' '||mpn),lower(?))>0)) ORDER BY name,id LIMIT 51",familyId,familyId,familyId?"":q,q,q);
@@ -29,7 +30,9 @@ async function sourcePlan(env,project,input,data,previous=null){
   const object=await env.PHOTOS.get(attachment.r2_key);if(!object||object.size>MAX_ENGINE_FILE)throw Error("A Workshop attachment is missing or exceeds 20 MB. No project part was saved.");
   total+=object.size;if(total>40*1024*1024)throw Error("Workshop attachments exceed the 40 MB preview selection limit.");
   const bytes=new Uint8Array(await object.arrayBuffer()),hash=await bytesHash(bytes),key="project-engine/workshop/"+project.id+"/"+input.operationId+"/"+attachment.id;
+  await assertStorageKeyWritable(db,key);
   await env.PHOTOS.put(key,bytes,{onlyIf:{etagDoesNotMatch:"*"},httpMetadata:{contentType:attachment.media_type||"application/octet-stream"},customMetadata:{sha256:hash}});
+  await assertStorageKeyWritable(db,key);
   const staged=await env.PHOTOS.get(key);if(!staged||staged.size!==bytes.length||await bytesHash(new Uint8Array(await staged.arrayBuffer()))!==hash)throw Error("A copied Workshop file failed verification.");
   const file={id:crypto.randomUUID(),project_id:project.id,name:attachment.title,content_type:attachment.media_type||"application/octet-stream",r2_key:key,state:"ready",size:bytes.length,sha256:hash};files.push(file);documents.push({title:attachment.title,kind:attachment.kind,file_id:file.id});
  }
@@ -50,7 +53,7 @@ export async function createWorkshopItem(env,input,project,data){const plan=awai
 export async function selectWorkshopProduct(env,input,project,itemId,data){
  const db=env.WORKSHOP_DB,{item,occurrence}=await itemContext(db,project.id,itemId,{occurrenceId:data.occurrenceId,requireOccurrence:true}),raw=await statement(db,"SELECT * FROM engine_selections WHERE project_id=? AND id=?",project.id,itemId).first();
  if(!raw)throw Error("This part has no Workshop family selection.");
- const previous={...raw,snapshot:JSON.parse(raw.snapshot),requirements:JSON.parse(raw.requirements)},plan=await sourcePlan(env,project,input,data,previous),old=itemDetails(item),details={...old,is_tool:plan.details.is_tool,fields:{...old.fields,...plan.details.fields,purpose:old.fields.purpose||""}},level=item.revision_level||1,evidence=await entryEvidence(db,project,data),snapshot=await captureProjectPart(db,project,item,occurrence);
- const file=await currentEngineeringFile(db,project.id,itemId),before=await configurationPlan(db,project,item,occurrence,file),after=await configurationPlan(db,project,{...item,...details,revision_level:level+1},occurrence,file,{selection:{...plan.selection,id:itemId,project_id:project.id}});
- return commitProjectCommand(db,input,w=>{before.write(w);plan.write(w,itemId);w.update("engine_items",{...storedItem(details),revision_level:level+1},{project_id:project.id,id:itemId});after.write(w);addFileLinks(w,project.id,{configuration_id:after.id},plan.files);const eventId=addEvent(w,project.id,itemId,"revision","Revision "+level,{level,before:before.id,after:after.id,snapshot,entryDetails:evidence.details,source:{id:itemId,name:item.name,part_number:item.part_number},selectionChange:true});addFileLinks(w,project.id,{event_id:eventId},evidence.photos);return {itemId,occurrenceId:occurrence.id,eventId,configurationId:after.id};});
+ const previous={...raw,snapshot:JSON.parse(raw.snapshot),requirements:JSON.parse(raw.requirements)},plan=await sourcePlan(env,project,input,data,previous),old=itemDetails(item),details={...old,is_tool:plan.details.is_tool,fields:{...old.fields,...plan.details.fields,purpose:old.fields.purpose||""}},level=item.revision_level||1,evidence=await entryEvidence(db,project,data),capture=await captureProjectPart(db,project,item,occurrence),snapshot=capture.snapshot;
+ const file=await currentEngineeringFile(db,project.id,itemId),before=await configurationPlan(db,project,item,occurrence,file),after=await configurationPlan(db,project,{...item,...details,revision_level:level+1},occurrence,file,{selection:{...plan.selection,id:itemId,project_id:project.id},cache:before.cache});
+ return commitProjectCommand(db,input,w=>{capture.write(w);before.write(w);plan.write(w,itemId);w.update("engine_items",{...storedItem(details),revision_level:level+1},{project_id:project.id,id:itemId});after.write(w);addFileLinks(w,project.id,{configuration_id:after.id},plan.files);const eventId=addEvent(w,project.id,itemId,"revision","Revision "+level,{level,before:before.id,after:after.id,snapshot,entryDetails:evidence.details,build_context:{before:buildContext(project,occurrence,item),after:buildContext(project,occurrence,{...item,revision_level:level+1})},source:{id:itemId,name:item.name,part_number:item.part_number},selectionChange:true});addFileLinks(w,project.id,{event_id:eventId},evidence.photos);return {itemId,occurrenceId:occurrence.id,eventId,configurationId:after.id};});
 }
