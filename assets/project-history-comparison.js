@@ -24,7 +24,7 @@ function stepChanges(saved,current,changes){
   row(changes,label+"in this scope",before?"Included":undefined,after?"Included":undefined);if(!before||!after)continue;
   for(const [key,title]of [["title","Title"],["body","Instructions"],["revision_level","Revision"],["sort_order","Order"]])row(changes,label+title,key==="sort_order"?before[key]+1:before[key],key==="sort_order"?after[key]+1:after[key]);
   // Compare stable parent identities; names are display values, never identity.
-  if(before.parent_id!==after.parent_id)row(changes,label+"Parent group",oldSteps.get(before.parent_id)?.title||(before.parent_id?"Saved parent outside this scope":"Work instructions root"),newSteps.get(after.parent_id)?.title||(after.parent_id?"New parent outside this scope":"Work instructions root"));
+  if(before.parent_id!==after.parent_id)row(changes,label+"Parent group",oldSteps.get(before.parent_id)?.title||(before.parent_id?"Saved parent outside this scope":"No group"),newSteps.get(after.parent_id)?.title||(after.parent_id?"New parent outside this scope":"No group"));
   row(changes,label+"State",before.retired_at?"Archived":"Active",after.retired_at?"Archived":"Active");
  }
 }
@@ -33,10 +33,10 @@ function recordChanges(saved,current,snapshot,state,changes){
  for(const id of new Set([...beforeMap.keys(),...afterMap.keys()])){
   const before=beforeMap.get(id),after=afterMap.get(id),label=(after?.title||before.title)+" — ";
   row(changes,label+"in this scope",before?"Included":undefined,after?"Included":undefined);if(!before||!after)continue;
-  row(changes,label+"Title",before.title,after.title);row(changes,label+"Type",before.fields.category==="photos"?"Photos":recordLabels[before.type],after.fields.category==="photos"?"Photos":recordLabels[after.type]);row(changes,label+"Event date",before.event_date??undefined,after.event_date??undefined);
+  row(changes,label+"Title",before.title,after.title);row(changes,label+"Type",before.fields.category==="photos"?"Photos":recordLabels[before.type],after.fields.category==="photos"?"Photos":recordLabels[after.type]);
   const prompts={...recordPrompts[before.type],...recordPrompts[after.type],status:"Status",did_fix:"Did you fix it?"};
   for(const [key,title]of Object.entries(prompts))row(changes,label+title,before.fields[key],after.fields[key]);
-  if(before.parent_record_id!==after.parent_record_id)row(changes,label+"Parent entry",beforeMap.get(before.parent_record_id)?.title||"Instruction root",afterMap.get(after.parent_record_id)?.title||"Instruction root");
+  if(before.parent_record_id!==after.parent_record_id)row(changes,label+"Parent entry",beforeMap.get(before.parent_record_id)?.title||"Top-level entry",afterMap.get(after.parent_record_id)?.title||"Top-level entry");
   if(before.step_id!==after.step_id)row(changes,label+"Instruction",snapshot.steps.find(step=>step.id===before.step_id)?.title,state.steps.find(step=>step.id===after.step_id)?.title);
   row(changes,label+"Order",before.sort_order===undefined?undefined:before.sort_order+1,after.sort_order===undefined?undefined:after.sort_order+1);
   if(snapshot.file_links&&snapshot.files){const oldFiles=filesFor(before,snapshot.file_links,snapshot.files),newFiles=filesFor(after,state.file_links,state.files);if(!same(oldFiles,newFiles))changes.push({label:label+"Attachments (file or name changed)",before:side(oldFiles.map(file=>file.name).join(" · ")||"None"),after:side(newFiles.map(file=>file.name).join(" · ")||"None")});}

@@ -60,3 +60,8 @@ The project summary reuses the part overview shell: the first project-gallery ph
 ## Label/value proximity
 
 Shared editable and read-only field rows use one bounded label-width/gap policy from theme.css. The project-only percentage override is removed, so wide part controls, summary fields, settings, Workshop and information forms inherit the same rule and the existing phone stacking. This changes geometry only.
+
+
+## Info Bits and entry clarity
+
+The information area is named Info Bits. The project name above the tree is a non-interactive heading; Project summary remains the navigation action and the project context menu/root drop destination remain available. Entries use one attachment area, with an optional prompt destination for multi-prompt entries. Existing file names, prompt associations, guarded uploads and retries remain intact. Event date is removed from the editing/display UI while existing saved values and automatic timestamps remain preserved. Parent defaults read Top-level entry and No group.

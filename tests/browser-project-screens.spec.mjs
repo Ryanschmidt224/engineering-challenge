@@ -32,7 +32,7 @@ for(const width of [1440,900,390])test("familiar project shell keeps tree and pa
  await page.setViewportSize({width,height:1000});const f=await setup(page,request,context),before=await f.state();let writes=0;
  page.on("request",r=>{if(r.url().includes("/api/project-engine/")&&r.method()!=="GET")writes++;});
  const sidebar=page.locator(".project-sidebar"),pages=page.getByRole("navigation",{name:"Project pages",exact:true});
- await expect(sidebar.getByRole("heading",{name:"Feature tree",exact:true})).toBeVisible();await expect(pages.getByRole("button",{name:"Project summary",exact:true})).toHaveAttribute("aria-current","page");
+ await expect(sidebar.getByRole("heading",{name:"Feature tree",exact:true})).toBeVisible();await expect(sidebar.getByRole("heading",{name:"Notebook screens",exact:true})).toBeVisible();await expect(sidebar.getByRole("button",{name:"Notebook screens",exact:true})).toHaveCount(0);await expect(pages.getByRole("button",{name:"Project summary",exact:true})).toHaveAttribute("aria-current","page");
  await sidebar.locator('[data-occurrence-id="'+f.part.occurrenceId+'"]').click();
  const overview=page.locator(".project-part-overview");await expect(overview.getByRole("heading",{name:"A very long mounting bracket",exact:true})).toBeVisible();await expect(overview.getByLabel("Quantity",{exact:true})).toHaveValue("3");
  await expect(sidebar.locator('[data-occurrence-id="'+f.part.occurrenceId+'"]')).toHaveAttribute("aria-current","true");

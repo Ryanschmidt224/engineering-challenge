@@ -1117,17 +1117,17 @@ async function setupAssemblyTrees(){
   // Text only; failures leave the rest of the part page untouched.
   const renderPartKnowledge=part=>{
    const box=document.createElement("div");box.className="part-knowledge";
-   const heading=document.createElement("p");heading.className="part-knowledge-heading";heading.textContent="Bits of information";box.append(heading);
+   const heading=document.createElement("p");heading.className="part-knowledge-heading";heading.textContent="Info Bits";box.append(heading);
    const list=document.createElement("ul");box.append(list);
    const add=document.createElement("a");add.textContent="New information tile for this part";add.href="knowledge.html?new=1&link=use:"+encodeURIComponent(part.id);box.append(add);
    fetch("/api/knowledge?related=use&id="+encodeURIComponent(part.id),{credentials:"same-origin",cache:"no-store"}).then(response=>response.ok?response.json():Promise.reject(Error("HTTP "+response.status))).then(result=>{
-    heading.textContent="Bits of information ("+result.tiles.length+")";
+    heading.textContent="Info Bits ("+result.tiles.length+")";
     const via={use:"this part",product:"product",family:"family"};
     for(const tile of result.tiles){
      const item=document.createElement("li"),link=document.createElement("a");link.href="knowledge.html?tile="+encodeURIComponent(tile.id);link.textContent=tile.title;
      item.append(link,document.createTextNode(" — "+tile.summary+" ("+[...new Set(tile.via.map(entry=>"via "+via[entry.target_type]))].join(", ")+")"));list.append(item);
     }
-   }).catch(()=>{heading.textContent="Bits of information (could not load)";});
+   }).catch(()=>{heading.textContent="Info Bits (could not load)";});
    return box;
   };
   const renderPartDetails=part=>{

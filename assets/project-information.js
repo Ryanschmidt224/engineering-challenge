@@ -33,7 +33,7 @@ export function recordVersionView(ctx,value,title,files){
   if(file?.content_type?.startsWith("image/")){const image=node("img");image.src="/api/project-engine/projects/"+ctx.projectId+"/files/"+id+"?inline=1";image.alt=named.find(entry=>entry.name)?.name||file.name;image.loading="lazy";image.className="project-picture";item.append(image);}
   links.append(item);
  }
- return information(title,[["Entry type",value.fields.category==="photos"?"Photos":recordLabels[value.type]||value.type],["Title",value.title],...Object.entries(recordPrompts[value.type]||{}).map(([key,label])=>[key==="resolution"&&value.fields.did_fix?(value.fields.did_fix==="no"?"Why?":"How?"):label,value.fields[key]]),...(value.type==="problem"?[["Did you fix it?",value.fields.did_fix],["Status",value.fields.status]]:[]),["Event date",value.event_date],["Attachments",ids?.length?links:undefined],["Created",value.created_at?new Date(value.created_at).toLocaleString():undefined]]);
+ return information(title,[["Entry type",value.fields.category==="photos"?"Photos":recordLabels[value.type]||value.type],["Title",value.title],...Object.entries(recordPrompts[value.type]||{}).map(([key,label])=>[key==="resolution"&&value.fields.did_fix?(value.fields.did_fix==="no"?"Why?":"How?"):label,value.fields[key]]),...(value.type==="problem"?[["Did you fix it?",value.fields.did_fix],["Status",value.fields.status]]:[]),["Attachments",ids?.length?links:undefined],["Created",value.created_at?new Date(value.created_at).toLocaleString():undefined]]);
 }
 
 function appendSavedRecords(ctx,body,snapshot){
@@ -50,7 +50,7 @@ function appendSavedRecords(ctx,body,snapshot){
   for(const edit of snapshot.record_events?.filter(entry=>entry.payload.edited_record_id===record.id)||[]){
    const saved=window.BSUI.section({title:edit.title}),versions=edit.payload.record_edit;
    if(versions)saved.body.append(recordVersionView(ctx,versions.before,"Before edit",snapshot.files||[]),recordVersionView(ctx,versions.after,"After edit",snapshot.files||[]),information("Edit information",[["Edited by",edit.payload.actor_id],["Recorded",new Date(edit.created_at).toLocaleString()]]));
-   if(edit.payload.record_structure){const {before,after}=edit.payload.record_structure;saved.body.append(information("Entry location changed",[["Previous parent entry",before.parent_title||"Instruction root"],["New parent entry",after.parent_title||"Instruction root"]]));}
+   if(edit.payload.record_structure){const {before,after}=edit.payload.record_structure;saved.body.append(information("Entry location changed",[["Previous parent entry",before.parent_title||"Top-level entry"],["New parent entry",after.parent_title||"Top-level entry"]]));}
    body.append(saved.root);
   }
   render(record.id,body);target.append(section.root);

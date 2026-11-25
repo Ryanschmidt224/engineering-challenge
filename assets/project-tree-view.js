@@ -37,7 +37,7 @@ export function renderProjectTree(ctx,{showHidden,onShowHidden,showDocuments=tru
  }
  nav.oncontextmenu=event=>{if(event.target.closest("button,input,label,summary"))return;event.preventDefault();contextMenu(add,event,addActions(null));};
 
- const root=listCard(state.project.name,()=>ctx.navigate(ctx.projectId)),rootMore=button("⋯",()=>contextMenu(rootMore,null,addActions(null)),{variant:"quiet",small:true});rootMore.setAttribute("aria-label","Project tree actions");const rootRow=node("div","","project-tree-row");rootRow.append(root,rootMore);nav.append(rootRow);dropTarget(root,null,true);root.oncontextmenu=event=>{event.preventDefault();event.stopPropagation();contextMenu(rootMore,event,addActions(null));};
+ const root=node("h3",state.project.name,"project-tree-project-name"),rootMore=button("⋯",()=>contextMenu(rootMore,null,addActions(null)),{variant:"quiet",small:true});rootMore.setAttribute("aria-label","Project tree actions");const rootRow=node("div","","project-tree-row");rootRow.append(root,rootMore);nav.append(rootRow);dropTarget(root,null,true);root.oncontextmenu=event=>{event.preventDefault();event.stopPropagation();contextMenu(rootMore,event,addActions(null));};
  async function move(occurrence,delta){
   const siblings=(tree.children.get(occurrence.parent_id||null)||[]).filter(tree.active),index=siblings.findIndex(row=>row.id===occurrence.id),ids=siblings.map(row=>row.id);[ids[index],ids[index+delta]]=[ids[index+delta],ids[index]];
   try{await ctx.client.write(ctx.projectId,"/occurrences/"+occurrence.id+"/reorder","POST",{ids});await ctx.refresh();}catch(error){ctx.notify(error.message);}
