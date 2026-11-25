@@ -92,14 +92,19 @@ async function environment(role="admin"){
  const response=await provisionTestAccount(req("/api/accounts","POST",null,{action:"register",email:role+"@example.test",password:"synthetic-preview-password"}),env,{role});
  return {env,cookie:response.headers.get("set-cookie").split(";")[0]};
 }
-test("production flag denies routes before auth, migrations and static assets",async()=>{
+test("a disabled engine flag denies routes before auth, migrations and static assets",async()=>{
  const unavailable={get(){throw Error("Production storage must not be accessed");}};
  const env={PHOTOS:unavailable,WORKSHOP_DB:unavailable,ASSETS:{fetch(){throw Error("Static proof page must not be served");}}};
  for(const path of ["/api/project-engine","/api/project-engine/proof","/api/project-engine/files/1","/api/project-engine/maintenance/orphans","/project-engine-proof","/project-engine-proof.html","/project-engine-proof/","/project","/project/","/project.html","/project-signin.html"]){
   assert.equal((await worker.fetch(req(path),env,{})).status,404);
  }
  assert.equal((await handleProjectEngine(req("/api/project-engine/proof","POST"),env)).status,404);
- const config=JSON.parse(readFileSync("wrangler.jsonc","utf8"));assert.equal(config.vars?.NEW_PROJECT_ENGINE,undefined);assert.equal(config.previews.vars.NEW_PROJECT_ENGINE,"1");
+});
+test("cutover configuration enables the engine while retaining isolated preview storage and runtime identity",()=>{
+ const config=JSON.parse(readFileSync("wrangler.jsonc","utf8"));assert.equal(config.vars.NEW_PROJECT_ENGINE,"1");assert.equal(config.previews.vars.NEW_PROJECT_ENGINE,"1");
+ assert.deepEqual(config.version_metadata,{binding:"CF_VERSION_METADATA"});assert.deepEqual(config.previews.version_metadata,{binding:"CF_VERSION_METADATA"});
+ assert.equal(config.d1_databases[0].database_name,"building-schmidt-workshop");assert.equal(config.r2_buckets[0].bucket_name,"building-schmidt-photos");
+ assert.match(config.previews.d1_databases[0].database_id,/^[a-f0-9-]{36}$/);assert.equal(config.previews.r2_buckets[0].bucket_name,"building-schmidt-photos-preview");
  assert.notEqual(config.previews.d1_databases[0].database_name,config.d1_databases[0].database_name);
  assert.ok(config.assets.run_worker_first.includes("/project-engine-proof*"));
 });
