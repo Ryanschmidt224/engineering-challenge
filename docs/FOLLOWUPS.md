@@ -3,6 +3,7 @@
 One line per deferred item. This is not permission to expand scope; Batch 5 remains limited to FEATURE_INVENTORY Keep/Rebuild items.
 
 - Owner-reported: the legacy feature-tree pane cannot be scrolled. Restore independent vertical scrolling when its content exceeds the available height; explicitly deferred while switch-over readiness work continues.
+- Optional, Claude #76: Knowledge can still link to legacy project targets; this only writes Knowledge data. Hide legacy targets from that picker only if the owner later requests it.
 
 - Claude issue #74: engine photo markup/annotation is deferred; reuse the existing viewer now and preserve original files, without growing the frozen legacy photo-markup module.
 - Claude issue #74: current galleries/picture membership are not captured in saved part revisions; removed media rows and original bytes are retained in whole-project backups. Keep this limitation explicit rather than claiming full gallery revision history.

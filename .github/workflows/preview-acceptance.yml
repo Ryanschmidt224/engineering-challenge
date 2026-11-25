@@ -1,0 +1,60 @@
+name: Measure isolated preview acceptance
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Functional proofs or a synthetic capacity workload
+        type: choice
+        required: true
+        default: functional
+        options: [functional, capacity-3000, capacity-10000, capacity-matrix]
+      source:
+        description: Isolated source preview origin
+        type: string
+        required: true
+        default: https://feature-legacy-project-readonly-engineering-challenge.ryanschmidt224.workers.dev
+      target:
+        description: Independent recovery preview origin
+        type: string
+        required: true
+        default: https://preview-project-restore-proof-engineering-challenge.ryanschmidt224.workers.dev
+permissions:
+  contents: read
+concurrency:
+  group: isolated-preview-acceptance
+  cancel-in-progress: false
+jobs:
+  acceptance:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: npm ci
+      - name: Run reviewed proofs against checked isolated bindings
+        env:
+          PROFILE: ${{ inputs.profile }}
+          SOURCE: ${{ inputs.source }}
+          TARGET: ${{ inputs.target }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_PREVIEW_BINDINGS_READ_TOKEN }}
+          SOURCE_SESSION_COOKIE: ${{ secrets.BS_SOURCE_PREVIEW_SESSION }}
+          TARGET_SESSION_COOKIE: ${{ secrets.BS_TARGET_PREVIEW_SESSION }}
+          REPORT_PATH: ${{ runner.temp }}/preview-evidence/acceptance.json
+        run: |
+          mkdir -p "$(dirname "$REPORT_PATH")"
+          if [ "$PROFILE" = functional ]; then
+            node scripts/preview-acceptance.mjs --source "$SOURCE" --target "$TARGET" --account 7b76f55fb2e5395e57f8320ce4b1fd4a --report "$REPORT_PATH"
+          else
+            node scripts/preview-capacity.mjs --source "$SOURCE" --target "$TARGET" --account 7b76f55fb2e5395e57f8320ce4b1fd4a --profile "$PROFILE" --report "$REPORT_PATH"
+          fi
+      - name: Retain non-secret acceptance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: isolated-preview-acceptance
+          path: ${{ runner.temp }}/preview-evidence/*.json
+          if-no-files-found: warn
+          retention-days: 30
