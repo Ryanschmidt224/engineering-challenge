@@ -24,7 +24,9 @@
       "17 9 * * *"
     ]
   },
-  "vars": {"AI_LOOKUP_ENABLED": "1"},
+  "vars": {
+    "AI_LOOKUP_ENABLED": "1"
+  },
   "previews": {
     "observability": {
       "enabled": true,
@@ -35,7 +37,9 @@
         "persist": true
       }
     },
-    "version_metadata": {"binding":"CF_VERSION_METADATA"},
+    "version_metadata": {
+      "binding": "CF_VERSION_METADATA"
+    },
     "r2_buckets": [
       {
         "binding": "PHOTOS",
@@ -51,6 +55,9 @@
     ],
     "vars": {
       "NEW_PROJECT_ENGINE": "1"
+    },
+    "limits": {
+      "cpu_ms": 30000
     }
   },
   "d1_databases": [
