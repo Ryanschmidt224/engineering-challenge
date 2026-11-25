@@ -101,7 +101,7 @@ test("a disabled engine flag denies routes before auth, migrations and static as
  assert.equal((await handleProjectEngine(req("/api/project-engine/proof","POST"),env)).status,404);
 });
 test("cutover configuration enables the engine while retaining isolated preview storage and runtime identity",()=>{
- const config=JSON.parse(readFileSync("wrangler.jsonc","utf8"));assert.equal(config.vars.NEW_PROJECT_ENGINE,"1");assert.equal(config.previews.vars.NEW_PROJECT_ENGINE,"1");
+ const config=JSON.parse(readFileSync("wrangler.jsonc","utf8"));assert.equal(config.vars.NEW_PROJECT_ENGINE,"1");assert.equal(config.limits.cpu_ms,30000);assert.equal(config.previews.limits.cpu_ms,30000);assert.equal(config.previews.vars.NEW_PROJECT_ENGINE,"1");
  assert.deepEqual(config.version_metadata,{binding:"CF_VERSION_METADATA"});assert.deepEqual(config.previews.version_metadata,{binding:"CF_VERSION_METADATA"});
  assert.equal(config.d1_databases[0].database_name,"building-schmidt-workshop");assert.equal(config.r2_buckets[0].bucket_name,"building-schmidt-photos");
  assert.match(config.previews.d1_databases[0].database_id,/^[a-f0-9-]{36}$/);assert.equal(config.previews.r2_buckets[0].bucket_name,"building-schmidt-photos-preview");

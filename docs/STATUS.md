@@ -6,7 +6,7 @@ Private single-owner application on Cloudflare Workers Paid. The owner approved 
 
 - PR #92 makes preview logging and the paid-default 30000 ms CPU budget explicit. Both acceptance previews deployed that budget without backend changes; independent recovery keeps its separate D1 binding.
 - The capacity-1000 gate passed in run 45663128437 attempt 3: functional proofs, six revisions and History checks, export, independent import/retry, restored History, and unchanged-source verification. See docs/proofs/PAID_CAPACITY_1000.json; raw evidence remains in the Actions artifact. Exact CPU/D1 execution and cleanup-trigger comparisons remain deferred under SWITCHOVER.md.
-- PR #82 is refreshed with current main and passing acceptance evidence. Its production flag/version metadata change is unchanged in behavior from Claude's reviewed activation. Merge only after this exact candidate passes checks. Production owner smoke testing and the first scheduled backup remain separate required observations.
+- PR #82 is refreshed with current main and passing acceptance evidence. Its flag/version metadata behavior retains Claude's reviewed activation; production also explicitly uses the same 30000 ms paid CPU budget that passed on the previews. Merge only after this exact candidate passes checks. Production owner smoke testing and the first scheduled backup remain separate required observations.
 - Draft #91 is an undeployed retry optimization with 430 passing local tests, awaiting recovery-code review. It is not an activation prerequisite and must not be merged automatically.
 
 ## Boundaries
