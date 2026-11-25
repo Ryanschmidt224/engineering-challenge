@@ -30,3 +30,11 @@ After the reduced prerequisites merge, provide one list: real-Cloudflare timing/
 ## Capacity failure investigation
 
 Run 45625755567 remains failed: attempt 1 returned 503 during revision 3; attempt 2 returned 200 headers for revision 4, replay and History but never retained a verified fourth sample. A 200 header alone does not prove a complete JSON body or intact snapshot. The client previously swallowed JSON/body errors into an empty object, and the runner discarded the resulting exception. Response-read failures now reject explicitly, preserve the exact retry operation and loaded token, and produce an allowlisted diagnostic code; separate save/replay/History phases distinguish the next failure without recording response bodies or credentials. Six revisions, record counts and recovery checks remain unchanged. No backend data-integrity cause is confirmed yet; activation #82 stays held pending actual passing platform evidence and required reviews.
+
+## Preview logging investigation
+
+The acceptance source branch has no explicit observability setting in Wrangler. Enabling Previews Base does not demonstrate that an existing preview deployment records logs. Cloudflare supports per-preview dashboard observability settings, but no invocation was visible after the owner enabled them and made an unauthenticated API request. The deployed logging state is still unverified; no claim is made that redeployment alone fixes the platform issue.
+
+Add explicit persisted invocation logging at full sampling under previews.observability only, with production configuration and all bindings unchanged. After review, apply the same configuration to the pinned source and recovery branches while preserving the recovery D1 override, deploy, and verify an unsigned environment request appears in that individual preview's logs before another capacity run. Retain runtime deployment identities and assess new evidence; #82 remains held. No cookies, request bodies or credentials should be added to application logging.
+
+References: https://developers.cloudflare.com/workers/previews/configuration/ and https://developers.cloudflare.com/workers/previews/test-and-debug/ .
