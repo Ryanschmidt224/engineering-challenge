@@ -290,6 +290,8 @@
   background: var(--color-surface-muted);
 }
 .project-part-overview .project-picture {
+  width: 100%;
+  height: 12rem;
   max-height: 12rem;
   margin: 0;
 }
