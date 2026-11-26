@@ -89,12 +89,13 @@ export function partPicture(ctx,item,engineeringFile=null){
 }
 
 // The same first gallery photo used by the project directory.
-export function projectPicture(ctx,{assembly=null}={}){
+export function projectPicture(ctx,{assembly=null,gallery=false}={}){
  const photo=photosFor(ctx.client.state)[0],file=photo?fileOf(ctx,photo):null;
  const cover=file?thumbnail(ctx,file,photo.caption||ctx.client.state.project.name):node("p","No picture yet","muted");if(cover.tagName==="IMG")cover.className="project-picture";
  const tools=node("div","","project-picture-tools");tools.append(mediaGallery(ctx,{title:"Project photos"}));
  // Keep the original top assembly's pictures accessible when its row is folded
  // into Project summary. They retain their original item and file IDs.
  if(assembly){const group=node("div","","project-assembly-photo-tools");group.append(node("strong","Top assembly · "+assembly.part_number),partPicture(ctx,assembly));tools.append(group);}
+ if(gallery){const images=node("div","","project-summary-photo-grid");for(const photo of photosFor(ctx.client.state)){const img=thumbnail(ctx,fileOf(ctx,photo),photo.caption||ctx.client.state.project.name);img.className="project-summary-photo";images.append(img);}if(!images.childElementCount)images.append(cover);return photoControl(ctx,images,tools,ctx.projectId+":");}
  return photoControl(ctx,cover,tools,ctx.projectId+":");
 }

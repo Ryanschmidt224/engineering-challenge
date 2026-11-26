@@ -10,7 +10,7 @@ async function setup(page,request,context){
 }
 test("project photos upload, caption, reorder and remove; a part gets one picture",async({page,request,context},testInfo)=>{
  const f=await setup(page,request,context),photos=page.locator('[data-section="project-photos"]');
- await page.getByRole("button",{name:"Edit photo",exact:true}).click();
+ await page.locator('[data-section="summary-photos"] > summary').click();await page.getByRole("button",{name:"Edit photo",exact:true}).click();
  await expect(page.getByText("Part photos",{exact:true})).toHaveCount(0);
  await photos.locator('input[type="file"]').setInputFiles([{name:"one.png",mimeType:"image/png",buffer:PNG},{name:"two.png",mimeType:"image/png",buffer:PNG}]);
  await expect(photos.locator("img")).toHaveCount(2);
@@ -18,11 +18,11 @@ test("project photos upload, caption, reorder and remove; a part gets one pictur
  const photoView=photos.getByLabel("Photo view",{exact:true});await expect(photoView).toHaveValue("tiles");const tiles=photos.locator("figure"),first=await tiles.nth(0).boundingBox(),second=await tiles.nth(1).boundingBox();expect(Math.abs(first.y-second.y)).toBeLessThan(2);expect(second.x).toBeGreaterThan(first.x);const beforeViews=await f.state();await photoView.selectOption("details");await expect(photos.locator(".project-media-meta").first()).toContainText("one.png");await photoView.selectOption("list");await expect(photos.locator(".project-media-meta").first()).toBeHidden();await photoView.selectOption("tiles");expect(await f.state()).toEqual(beforeViews);await page.screenshot({path:testInfo.outputPath("photo-grid-tiles.png"),fullPage:true});
  await photos.locator("figure").first().getByRole("button",{name:"Edit photo",exact:true}).click();
  await photos.getByRole("button",{name:"Caption",exact:true}).first().click();await page.getByLabel("Caption",{exact:true}).fill("Bench setup");await page.getByRole("button",{name:"Save caption",exact:true}).click();
- await expect(photos.locator("figcaption").first()).toHaveText("Bench setup");await expect(page.locator(".project-summary-overview img.project-picture")).toHaveAttribute("alt","Bench setup");
+ await expect(photos.locator("figcaption").first()).toHaveText("Bench setup");await expect(page.locator(".project-summary-photo-grid img").first()).toHaveAttribute("alt","Bench setup");
  await photos.getByRole("button",{name:"Move photo later",exact:true}).first().click();await expect(photos.locator("figcaption").nth(1)).toHaveText("Bench setup");
  await photos.locator("figure").first().getByRole("button",{name:"Edit photo",exact:true}).click();
  await photos.locator("figure").first().getByRole("button",{name:"Remove",exact:true}).click();await page.getByRole("button",{name:"Remove photo",exact:true}).click();
- await expect(photos.locator("img")).toHaveCount(1);await expect(page.locator(".project-summary-overview img.project-picture")).toHaveAttribute("alt","Bench setup");
+ await expect(photos.locator("img")).toHaveCount(1);await expect(page.locator(".project-summary-photo-grid img").first()).toHaveAttribute("alt","Bench setup");
  let s=await f.state();expect(s.media.filter(row=>row.active).length).toBe(1);expect(s.files.length).toBe(2);
  await page.goto("/project.html?project="+f.id+"&item="+f.itemId);
  await expect(page.getByRole("button",{name:"Add picture",exact:true})).not.toBeVisible();
