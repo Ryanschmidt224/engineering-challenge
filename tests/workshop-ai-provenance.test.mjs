@@ -1,3 +1,6 @@
+import { handleProjectWorkspace } from "../functions/api/project-workspace-api.js";
+import { TestR2 } from "./helpers/r2.mjs";
+import { engineOrigin } from "./helpers/project-engine.mjs";
 import { normalizeLookupProvenance } from "../assets/workshop-lookup-provenance.js";
 import { DatabaseSync } from "node:sqlite";
 import { restoreCatalog } from "../scripts/workshop-backup.mjs";
@@ -282,6 +285,71 @@ test("project copy freezes source conditions and source-document bytes independe
     assert.equal(copy.conditions, "20°C");
     assert.equal(copy.document.fileId, state.files[0].id);
     assert.equal(copy.document.id, undefined);
+    const targetDb = new TestD1(),
+      target = { WORKSHOP_DB: targetDb, PHOTOS: new TestR2() };
+    try {
+      const exported = await handleProjectWorkspace(
+        new Request(
+          engineOrigin +
+            "/api/project-engine/projects/" +
+            f.projectId +
+            "/export",
+        ),
+        f.env,
+        f.owner,
+      );
+      const restored = await handleProjectWorkspace(
+        new Request(
+          engineOrigin +
+            "/api/project-engine/projects/" +
+            f.projectId +
+            "/import",
+          {
+            method: "POST",
+            headers: {
+              origin: engineOrigin,
+              "x-operation-id": crypto.randomUUID(),
+              "x-project-revision": "new",
+            },
+            body: await exported.text(),
+          },
+        ),
+        target,
+        f.owner,
+      );
+      assert.equal(restored.status, 200, await restored.clone().text());
+      const recovered = await (
+          await handleProjectWorkspace(
+            new Request(
+              engineOrigin +
+                "/api/project-engine/projects/" +
+                f.projectId +
+                "/state",
+            ),
+            target,
+            f.owner,
+          )
+        ).json(),
+        evidence = recovered.selections[0].snapshot.fields.find(
+          (row) => row.id === "bore",
+        ).evidence;
+      assert.deepEqual(evidence, copy);
+      const file = recovered.files.find(
+        (file) => file.id === evidence.document.fileId,
+      );
+      assert.ok(file);
+      assert.equal(
+        await hashBytes(
+          new Uint8Array(
+            await (await target.PHOTOS.get(file.r2_key)).arrayBuffer(),
+          ),
+        ),
+        evidence.document.sha256,
+      );
+    } finally {
+      targetDb.close();
+    }
+
     await f.db
       .prepare("UPDATE workshop_products SET lookup_provenance=? WHERE id=?")
       .bind("{}", "bearing-a")
