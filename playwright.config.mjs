@@ -8,7 +8,7 @@ export default defineConfig({
  use:{baseURL:"http://127.0.0.1:4173",browserName:"chromium",headless:true},
  webServer:{
   command:"node scripts/test-server.mjs",
-  url:"http://127.0.0.1:4173/",
+  url:"http://127.0.0.1:4173/__test__/ready",
   reuseExistingServer:!process.env.CI,
   timeout:30000
  }

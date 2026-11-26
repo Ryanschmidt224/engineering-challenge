@@ -1,4 +1,3 @@
-import "./photo-markup.js";
 import { node, actions, button } from "./workshop-ui.js";
 import { fileDropTarget } from "./file-selection.js";
 export { requireLookupIdentity } from "./workshop-lookup-provenance.js";

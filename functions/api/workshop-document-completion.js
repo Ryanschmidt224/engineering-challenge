@@ -1,4 +1,4 @@
-import { sha256 } from "./project-archive.js";
+import { sha256 } from "./binary-data.js";
 // Only a newly confirmed completion needs a byte read. Ordinary later product
 // saves keep the immutable attachment reference without downloading it again.
 export async function verifyDocumentCompletion(env, productId, next, previous) {

@@ -36,7 +36,7 @@ export const targets = [
   {value: "record", label: "Project record"},
 ];
 export const targetTypes = targets.map((target) => target.value);
-const projectId = /^(?:launcher|linear|robot|p[a-f0-9]{32})$/;
+const projectId = /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i;
 
 export const limits = {title: 160, summary: 400, body: 20000, sources: 20, sourceTitle: 160, note: 300};
 
@@ -81,7 +81,7 @@ export function validateLink(record) {
   if (!targetTypes.includes(record.target_type)) throw Error("This kind of link target is not supported yet.");
   if (!validId(record.target_id)) throw Error("Choose what this tile links to.");
   if (record.target_type === "tile" && record.target_id === record.tile_id) throw Error("A tile cannot link to itself.");
-  const needsProject = record.target_type === "record";
+  const needsProject = ["use","record"].includes(record.target_type);
   if (needsProject && !projectId.test(String(record.target_project_id || ""))) throw Error("Choose the project of this record.");
   const relation = record.relation || "see_also";
   if (!relations.some((entry) => entry.value === relation)) throw Error("Choose a listed relation.");
@@ -116,11 +116,11 @@ export function targetHref(link) {
     case "product":
       return "workshop.html?product=" + id;
     case "use":
-      return project ? "index.html#" + project + "/part/" + id : "workshop.html?use=" + id;
+      return project ? "project.html?"+new URLSearchParams({project:link.target_project_id,item:link.target_id}) : "";
     case "project":
-      return "index.html#" + id;
+      return "project.html?project="+id;
     case "record":
-      return "index.html?record=" + id + "#" + project;
+      return project ? "project.html?"+new URLSearchParams({project:link.target_project_id,...(link.target_item_id?{item:link.target_item_id}:{}),record:link.target_id}) : "";
     default:
       return "";
   }

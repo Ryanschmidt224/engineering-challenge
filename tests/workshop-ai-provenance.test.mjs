@@ -4,7 +4,7 @@ import { engineOrigin } from "./helpers/project-engine.mjs";
 import { normalizeLookupProvenance } from "../assets/workshop-lookup-provenance.js";
 import { DatabaseSync } from "node:sqlite";
 import { restoreCatalog } from "../scripts/workshop-backup.mjs";
-import { sha256 as hashBytes } from "../functions/api/project-archive.js";
+import { sha256 as hashBytes } from "../functions/api/binary-data.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { TestD1 } from "./helpers/d1.mjs";

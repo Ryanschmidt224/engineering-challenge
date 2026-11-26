@@ -75,15 +75,15 @@ test("owner reads are allowed, mutation origins are checked, and unknown APIs st
   assert.match(unknown.headers.get("content-type"), /application\/json/);
 });
 
-test("both paid AI routes are paused even for the owner and never contact a provider", async t => {
+test("paused lookup and retired extraction never contact a provider", async t => {
   const {env, cookie} = await fixture();
   env.OPENAI_API_KEY = "synthetic-test-key";
   let providerCalls = 0;
   t.mock.method(globalThis, "fetch", async () => { providerCalls++; throw Error("Unexpected provider call"); });
   for (const path of ["/api/workshop-lookup", "/api/components/extract"]) {
     const response = await worker.fetch(request(path, {method: "POST", cookie, body: {partNumber: "ABC"}}), env, {});
-    assert.equal(response.status, 503);
-    assert.equal((await response.json()).code, "AI_PAUSED");
+    assert.equal(response.status, path==="/api/workshop-lookup"?503:410);
+    assert.equal((await response.json()).code, path==="/api/workshop-lookup"?"AI_PAUSED":"LEGACY_RETIRED");
   }
   assert.equal(providerCalls, 0);
 });

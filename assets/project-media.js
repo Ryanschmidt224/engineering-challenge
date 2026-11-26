@@ -1,3 +1,4 @@
+import { actionBar } from "./photo-editor.js";
 import { fileDropTarget } from "./file-selection.js";
 import { viewMode } from "./view-mode.js";
 import { node, field, actions } from "./workshop-ui.js";
@@ -275,7 +276,7 @@ export function mediaGallery(ctx, { itemId = null, title = "Photos" } = {}) {
       image = thumbnail(ctx, file, row.caption),
       key = "media:" + ctx.projectId + ":" + row.id;
     tile.append(image);
-    const controls = window.BSPhotoEditor.actionBar(image, {
+    const controls = actionBar(image, {
       content: tools,
       expanded: opened.has(key),
       onToggle: (open) => {
@@ -302,7 +303,7 @@ export function mediaGallery(ctx, { itemId = null, title = "Photos" } = {}) {
 function photoControl(ctx, cover, tools, key) {
   const holder = node("div", "", "project-picture-holder");
   holder.append(cover);
-  const controls = window.BSPhotoEditor.actionBar(cover, {
+  const controls = actionBar(cover, {
     content: tools,
     expanded: opened.has(key),
     onToggle: (open) => {

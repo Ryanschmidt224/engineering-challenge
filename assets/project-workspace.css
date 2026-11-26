@@ -149,7 +149,7 @@
   aspect-ratio: 4/3;
   object-fit: cover;
   border-radius: 6px;
-  background: var(--surface-2, #f2f2f2);
+  background: var(--color-surface-muted);
   cursor: zoom-in;
 }
 .project-media-tile figcaption {

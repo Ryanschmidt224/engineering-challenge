@@ -25,11 +25,7 @@
    labelEl.append(field);holder.append(labelEl);dialog.append(holder);
   }
   const actions=document.createElement("div");actions.className="bs-dialog-actions";
-  const cancel=document.createElement("button"),confirm=document.createElement("button");
-  for(const button of [cancel,confirm])button.type="button";
-  cancel.className="btn";cancel.textContent="Cancel";
-  confirm.className=danger?"btn bs-dialog-danger":"btn primary";
-  confirm.textContent=confirmLabel;
+  const cancel=window.BSUI.button("Cancel"),confirm=window.BSUI.button(confirmLabel,undefined,{variant:danger?"danger":"primary",className:danger?"bs-dialog-danger":""});
   actions.append(cancel,confirm);dialog.append(actions);document.body.append(dialog);
   let finished=false;
   const finish=ok=>{

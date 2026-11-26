@@ -1,13 +1,12 @@
 import {isAdmin} from "./auth.js";
 import {initializeWorkshop,workshopSnapshot} from "./workshop-db.js";
 import {validId} from "../../assets/family-model.js";
-import {encodeBytes,sha256} from "./project-archive.js";
+import {encodeBytes,sha256} from "./binary-data.js";
 import {knowledgeSnapshot} from "./knowledge.js";
-import {legacyProjectsReadOnly,legacyReadOnlyResponse} from "./legacy-projects.js";
 
 const prefix="workshop-v2/files/",maxBytes=10*1024*1024;
 const json=(data,status=200)=>Response.json(data,{status,headers:{"cache-control":"private, no-store","x-content-type-options":"nosniff"}});
-const ownerTables={family:"workshop_families",product:"workshop_products",use:"workshop_uses"};
+const ownerTables={family:"workshop_families",product:"workshop_products"};
 const extensions=new Set(["jpg","jpeg","png","gif","webp","heic","heif","pdf","dwg","dxf","sldprt","sldasm","step","stp","stl","iges","igs","3mf","zip","csv","txt"]);
 async function access(request,env){
  if(!await isAdmin(request,env))return json({error:"Owner sign-in required"},401);
@@ -38,8 +37,7 @@ export async function handleFamilyWorkshopFile(request,env){
  }
  if(request.method!=="POST")return json({error:"Method not allowed"},405);
  const owner=url.searchParams.get("owner");
- if(owner==="use"&&legacyProjectsReadOnly(env))return legacyReadOnlyResponse();
- if(!ownerTables[owner])return json({error:"Choose a family, product or use"},400);
+ if(!ownerTables[owner])return json({error:"Choose a family or product"},400);
  if(!await env.WORKSHOP_DB.prepare("SELECT id FROM "+ownerTables[owner]+" WHERE id=? AND archived=0").bind(id).first())return json({error:"Save the record before uploading files"},404);
  let name,bytes;
  try{name=decodeURIComponent(request.headers.get("x-file-name")||"");}catch{return json({error:"Invalid filename"},400);}

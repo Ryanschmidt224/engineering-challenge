@@ -6,12 +6,11 @@ import {fileURLToPath} from "node:url";
 const root=resolve(dirname(fileURLToPath(import.meta.url)),"..");
 const source=path=>readFileSync(resolve(root,path),"utf8");
 
-test("every local script and stylesheet loaded by the website exists",()=>{
- const html=source("index.html");
- const paths=[...html.matchAll(/(?:src|href)=["'](\/assets\/[^"']+\.(?:js|css)(?:\?[^"']*)?)["']/g)]
-  .map(match=>match[1].split("?")[0].slice(1));
- assert.ok(paths.length>=10,"Expected site entrypoint assets");
- for(const path of paths)assert.equal(existsSync(resolve(root,path)),true,"Missing site asset: "+path);
+test("current entry pages reference existing local scripts and stylesheets",()=>{
+ for(const page of ["project.html","project-signin.html","website-settings.html","workshop.html","knowledge.html","calculators.html"]){
+  const html=source(page),paths=[...html.matchAll(/(?:src|href)=["']((?:\/)?assets\/[^"']+\.(?:js|css)(?:\?[^"']*)?)["']/g)].map(m=>m[1].split("?")[0].replace(/^\//,""));
+  assert.ok(paths.length>3);for(const path of paths)assert.ok(existsSync(resolve(root,path)),page+": "+path);
+ }
 });
 
 test("Worker imports resolve to real files and have no duplicate API dispatch paths",()=>{
@@ -24,15 +23,19 @@ test("Worker imports resolve to real files and have no duplicate API dispatch pa
  assert.equal(new Set(paths).size,paths.length,"Duplicate API route dispatch");
 });
 
-test("Workshop and Knowledge Base data live outside the main page controllers",()=>{
- const workshop=source("assets/family-workshop.js");
- const site=source("assets/site.js");
- const html=source("index.html");
- assert.equal(workshop.includes('const styles=\x60'),false,"Workshop styles should not be injected by JavaScript");
- assert.ok(source("workshop.html").includes("assets/family-workshop.css"),"Load dedicated Workshop layout stylesheet");
- assert.ok(source("workshop.html").includes("assets/components.css"));
- for(const retired of ["personal-workshop.js","workshop-template-manager.js","workshop-product-builder.js"])assert.equal(html.includes(retired),false);
- assert.equal(html.includes("/assets/knowledge-seed.js"),false,"The retired generic Knowledge Base seed is not loaded");
- assert.equal(site.includes("BSKnowledgeSeed"),false,"Knowledge tiles live in D1, not in a seeded browser module");
- assert.ok(existsSync(resolve(root,"functions/api/project-seed.js")),"Project defaults must be a separate module");
+test("retired browser application is absent from the deployed source",()=>{
+ for(const path of ["assets/site.js","assets/site-assembly.js","assets/resources.js","assets/site-polish.css","functions/api/projects.js"])assert.equal(existsSync(resolve(root,path)),false,path);
+ assert.doesNotMatch(source("index.html"),/<script/);assert.match(source("index.html"),/project.html/);
+});
+
+test('every shipped JavaScript module belongs to a current browser entry or the Worker',async()=>{
+ const {build}=await import('esbuild'),{readdirSync}=await import('node:fs'),entries=['worker.js'];
+ for(const page of ['project.html','project-signin.html','website-settings.html','workshop.html','knowledge.html','calculators.html','project-engine-proof.html']){
+  const html=source(page);
+  for(const match of html.matchAll(/<script[^>]*src="([^"]+)"/g))entries.push(match[1].replace(/^\//,'').split('?')[0]);
+  for(const match of html.matchAll(/(?:from\s*|import\s*)["'](\.?\/?assets\/[^"']+)["']/g))entries.push(match[1].replace(/^\.\//,'').replace(/^\//,'').split('?')[0]);
+ }
+ const result=await build({entryPoints:[...new Set(entries)],bundle:true,write:false,outdir:'unused-build-output',metafile:true,format:'esm',platform:'browser',logLevel:'silent'}),used=new Set(Object.keys(result.metafile.inputs));
+ const files=['assets','functions/api'].flatMap(dir=>readdirSync(resolve(root,dir)).filter(name=>name.endsWith('.js')).map(name=>dir+'/'+name));
+ assert.deepEqual(files.filter(file=>!used.has(file)),[],'Unreferenced application module: wire it to its owner or remove it.');
 });

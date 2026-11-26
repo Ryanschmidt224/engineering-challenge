@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {TestD1} from "./helpers/d1.mjs";
 import {provisionTestAccount} from "./helpers/accounts.mjs";
-import {initializeWorkshop,workshopSnapshot,saveFamily,handleFamilyWorkshop,projectFamilyParts} from "../functions/api/workshop-db.js";
+import {initializeWorkshop,workshopSnapshot,saveFamily,handleFamilyWorkshop} from "../functions/api/workshop-db.js";
 import {resolveFamilyValues} from "../assets/family-model.js";
 
 class Bucket {
@@ -38,20 +38,6 @@ test("stale family writes cannot rename or hide definitions through a successful
  assert.equal(current.families.find(f=>f.id==="f-resistor").name,"Resistor");
  assert.equal(current.fields.find(f=>f.id===first.fields[0].id).label,"Required resistance");
  assert.equal(current.fields.filter(f=>f.family_id==="f-resistor"&&f.hidden).length,0);
-});
-test("product values can populate every field and update live uses without overwriting requirements",async t=>{
- const {env,call}=await setup(t);const initial=await (await call()).json();
- const family=initial.families.find(f=>f.id==="f-dc-power-supply"),fields=initial.fields.filter(f=>f.family_id===family.id);
- const voltage=fields.find(f=>f.label==="Output voltage"),current=fields.find(f=>f.label==="Output current");
- const product={id:crypto.randomUUID(),family_id:family.id,name:"Sample supply",manufacturer:"",mpn:"",supplier_links:[],notes:"",field_values:{[voltage.id]:12,[current.id]:12.5}};
- assert.equal((await call("POST",{entity:"product",record:product,expectedRevision:null,expectedFamilyRevision:1})).status,200);
- const use={id:crypto.randomUUID(),project_id:"launcher",tree_node_id:null,family_id:family.id,product_id:product.id,purpose:"Main supply",quantity:1,unit:"pcs",field_values:{[voltage.id]:12,[current.id]:5},notes:""};
- assert.equal((await call("POST",{entity:"use",record:use,expectedRevision:null,expectedFamilyRevision:1})).status,200);
- let part=(await projectFamilyParts(env,"launcher"))[0];assert.match(part.specifications.find(s=>s.name==="Output current").value,/12.5 A.*5 A.*review/);
- product.field_values[current.id]=10;
- assert.equal((await call("POST",{entity:"product",record:product,expectedRevision:1,expectedFamilyRevision:1})).status,200);
- part=(await projectFamilyParts(env,"launcher"))[0];assert.match(part.specifications.find(s=>s.name==="Output current").value,/10 A.*5 A/);
- const stored=(await workshopSnapshot(env.WORKSHOP_DB)).uses[0];assert.equal(stored.field_values[current.id],5);assert.equal(stored.revision,1);
 });
 test("populated field contract failures roll back the family revision and all prior field changes",async t=>{
  const {env,call}=await setup(t);const initial=await (await call()).json(),family=familyDraft(initial,"f-resistor"),field=family.fields[0];

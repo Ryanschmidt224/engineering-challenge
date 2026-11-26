@@ -1,7 +1,7 @@
 import {test,expect} from "@playwright/test";
 test.describe.configure({mode:"serial"});
 test.beforeEach(async({request,context})=>{const {cookie}=await(await request.post("/__test__/reset?engine=1")).json(),at=cookie.indexOf("=");await context.addCookies([{name:cookie.slice(0,at),value:cookie.slice(at+1),url:"http://127.0.0.1:4173",httpOnly:true,sameSite:"Strict"}]);});
-for(const path of ["/index.html#calculators","/calculators.html","/knowledge.html#calculators"])for(const width of [1440,390])test("Calculator discovery shares project views and retains calculations at "+width+"px on "+path,async({page},testInfo)=>{
+for(const path of ["/calculators.html","/knowledge.html#calculators"])for(const width of [1440,390])test("Calculator discovery shares project views and retains calculations at "+width+"px on "+path,async({page},testInfo)=>{
  const loaded=[];page.on("request",request=>loaded.push(new URL(request.url()).pathname));
  await page.setViewportSize({width,height:1000});await page.goto(path);
  const root=page.locator("#resource-calculators"),grid=root.locator(".ui-project-list"),view=root.getByRole("combobox",{name:"Calculator view"}),search=root.getByRole("searchbox",{name:"Search calculators",exact:true});
@@ -32,10 +32,6 @@ test("Workshop and Knowledge return to current Projects",async({page})=>{
   await page.locator(".ui-site-brand").click();
   await expect(page).toHaveURL(/\/project\.html$/);
  }
-});
-
-for(const engine of [0,1])test("standalone calculator navigation follows the active project engine "+engine,async({page,request,context})=>{
- const {cookie}=await(await request.post("/__test__/reset?engine="+engine)).json(),at=cookie.indexOf("=");await context.addCookies([{name:cookie.slice(0,at),value:cookie.slice(at+1),url:"http://127.0.0.1:4173",httpOnly:true,sameSite:"Strict"}]);await page.goto("/calculators.html");const projects=page.getByRole("navigation",{name:"Main navigation"}).getByRole("link",{name:"Projects",exact:true});await expect(projects).toHaveAttribute("href",engine?"/project.html":"/");await page.getByRole("button",{name:"Open Ohm's law",exact:true}).click();await expect(page.locator(".calculator-output")).toHaveText("Current 2 A · Power 24 W");
 });
 
 for(const width of [390,1440])test("Info Bits contains collapsed calculators without a main navigation tab at "+width,async({page})=>{
