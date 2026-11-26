@@ -1,3 +1,4 @@
+import {handleSiteDataBackup} from "./functions/api/site-data-backup.js";
 import {handleProjectEngine,projectEngineEnabled} from "./functions/api/project-engine.js";
 import {onRequest as numberingApi} from "./functions/api/numbering.js";
 import {onRequest as projectsApi,projectAllowed,canEditProject} from "./functions/api/projects.js";
@@ -45,6 +46,7 @@ export default {
       const legacyDenied=guardLegacyProjectWrite(request,env);
       if(legacyDenied)return legacyDenied;
       if(path.startsWith("/api/project-engine/"))return handleProjectEngine(request,env);
+      if(path==="/api/site-data-backup")return handleSiteDataBackup(request,env);
       if(path==="/api/accounts")return await handleAccounts(request,env);
       if(path==="/api/workshop")return handleFamilyWorkshop(request,env);
       if(path==="/api/workshop/file")return handleFamilyWorkshopFile(request,env);
