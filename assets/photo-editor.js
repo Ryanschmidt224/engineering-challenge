@@ -1,12 +1,10 @@
-/* Shared photo editing controls for projects, assemblies and parts.
- * Only the markup, add, paste, and delete callbacks differ by photo source.
- */
+/* Shared photo controls. */
 (function(){
  "use strict";
  function actionBar(cover,{onMarkup,onAdd,onPaste,onDelete,content,expanded=false,onToggle}={}){
   if(!cover)throw Error("Photo actions require a photo element");
   const shell=document.createElement("div");shell.className="bs-photo-control";
-  cover.before(shell);shell.append(cover);
+  const stage=document.createElement("div");stage.className="bs-photo-stage";cover.before(shell);shell.append(stage);stage.append(cover);
   const bar=document.createElement("div");bar.className="bs-photo-actions";
   const edit=document.createElement("button");edit.type="button";edit.className="btn bs-photo-toggle";
   edit.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L9 17l-4 1 1-4Z"/></svg>';edit.title="Edit photo";edit.setAttribute("aria-label","Edit photo");edit.setAttribute("aria-expanded","false");
@@ -19,7 +17,7 @@
   let uploader=null;
   const add=make("Add",()=>{if(uploader)uploader.open();else onAdd?.()},"bs-photo-add");
   const remove=make("Delete",onDelete,"bs-photo-delete");
-  if(content){more.append(content);shell.classList.add("bs-photo-custom-tools");}else more.append(markup,add,remove);bar.append(edit,more);shell.append(bar);
+  if(content){more.append(content);shell.classList.add("bs-photo-custom-tools");}else more.append(markup,add,remove);stage.append(edit);bar.append(more);shell.append(bar);
   if(onPaste){
    uploader=uploadPanel({title:"Add photos",accept:"image/*,.heic,.heif",multiple:false,
     onFiles:files=>{if(files[0])return onPaste(files[0])}});
@@ -71,12 +69,10 @@
   const text=document.createElement("p");text.className="bs-upload-hint";
   text.textContent="Drop files in the box, right-click and Paste an image, or choose files from your device.";
   const fileInput=document.createElement("input");fileInput.type="file";fileInput.accept=accept;fileInput.multiple=multiple;fileInput.hidden=true;
-  const choose=window.BSUI.button(multiple?"Choose files":"Choose file",()=>fileInput.click(),{variant:"primary"});choose.classList.add("bs-upload-choose");
+  const choose=window.BSUI.button(multiple?"Choose files":"Choose file",()=>fileInput.click());choose.classList.add("bs-upload-choose");
   const drop=window.BSPhotoMarkup.pasteTarget(files=>onFiles(files));
   drop.classList.add("bs-upload-drop");
   drop.textContent="Drag and drop files here or right-click to paste an image (Ctrl+V)";
-  // Capture drops before pasteTarget, which only accepts images; document
-  // uploaders also need PDF/CAD files to reach their normal validation.
   drop.addEventListener("drop",event=>{
    if(!event.dataTransfer?.files?.length)return;
    event.preventDefault();event.stopImmediatePropagation();drop.classList.remove("is-dragover");
@@ -86,7 +82,7 @@
    const files=[...(fileInput.files||[])];fileInput.value="";
    if(files.length)void onFiles(files);
   };
-  panel.append(heading,text,drop,choose,fileInput);
+  const row=document.createElement("div");row.className="bs-photo-upload-row";row.append(choose,drop);panel.append(heading,text,row,fileInput);
   if(hint){const note=document.createElement("p");note.className="bs-upload-hint";note.textContent=hint;panel.append(note)}
   return {panel,open(nextTitle){name.textContent=nextTitle||title;panel.hidden=false;drop.focus()},close(){panel.hidden=true},choose,drop,fileInput};
  }

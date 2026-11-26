@@ -24,13 +24,13 @@ export function buildContextView(context,title="Build context when recorded"){
  return body;
 }
 
-export function recordVersionView(ctx,value,title,files){
+export function recordVersionView(ctx,value,title,files,{onEdit}={}){
  const ids=value.fileIds,links=node("div","","project-stack");
  for(const id of ids||[]){
   const file=files.find(file=>file.id===id),named=Object.entries(value.fields.attachments||{}).flatMap(([key,list])=>list.filter(entry=>entry.id===id).map(entry=>({key,...entry}))),item=node("div");
   if(named.length)item.append(node("span",named.map(entry=>(recordPrompts[value.type]?.[entry.key]||"Supporting file")+": "+(entry.name||file?.name||"Attachment")).join(" · ")+" — "));
   item.append(file?fileLink(ctx,file):node("span","Unavailable attachment "+id));
-  if(file?.content_type?.startsWith("image/")){const image=node("img");image.src="/api/project-engine/projects/"+ctx.projectId+"/files/"+id+"?inline=1";image.alt=named.find(entry=>entry.name)?.name||file.name;image.loading="lazy";image.className="project-picture";item.append(image);}
+  if(file?.content_type?.startsWith("image/")){const image=node("img");image.src="/api/project-engine/projects/"+ctx.projectId+"/files/"+id+"?inline=1";image.alt=named.find(entry=>entry.name)?.name||file.name;image.loading="lazy";image.className="project-picture";item.append(image);if(onEdit)window.BSPhotoEditor.actionBar(image,{content:window.BSUI.button("Edit entry",onEdit)});}
   links.append(item);
  }
  return information(title,[["Entry type",value.fields.category==="photos"?"Photos":recordLabels[value.type]||value.type],["Title",value.title],...Object.entries(recordPrompts[value.type]||{}).map(([key,label])=>[key==="resolution"&&value.fields.did_fix?(value.fields.did_fix==="no"?"Why?":"How?"):label,value.fields[key]]),...(value.type==="problem"?[["Did you fix it?",value.fields.did_fix],["Status",value.fields.status]]:[]),["Attachments",ids?.length?links:undefined],["Created",value.created_at?new Date(value.created_at).toLocaleString():undefined]]);
