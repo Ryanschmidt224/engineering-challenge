@@ -260,10 +260,15 @@ with tempfile.TemporaryDirectory() as temp:
             for item in schema:
                 if item["type"] == "table":
                     out.write(item["sql"] + ";\n")
+            # D1 cannot disable foreign keys: referenced UNIQUE indexes must
+            # exist before loading rows, even with deferred foreign-key checks.
+            for item in schema:
+                if item["type"] == "index":
+                    out.write(item["sql"] + ";\n")
             with open(root / "rows.sql", encoding="utf8") as sql:
                 shutil.copyfileobj(sql, out)
             for item in schema:
-                if item["type"] != "table":
+                if item["type"] not in ("table", "index"):
                     out.write(item["sql"] + ";\n")
             out.write("COMMIT;\nPRAGMA foreign_keys=ON;\n")
         (root / "rows.sql").unlink()
