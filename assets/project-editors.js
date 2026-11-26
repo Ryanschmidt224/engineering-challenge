@@ -10,7 +10,7 @@ import {recordPrompts,normalizeProjectRecord} from "./project-record-model.js";
 import {instructionTree,recordTree} from "./project-instruction-model.js";
 import {recordAttachments} from "./project-record-attachments.js";
 import {automaticBackupSection} from "./project-backup-settings.js";
-import {projectOwners} from "./project-owners.js";
+import {websiteSettings,ownerChoices} from "./website-settings-client.js";
 export const detailsFor=item=>normalizeCustomItem({name:item.name,short_name:item.short_name,part_number:item.part_number,kind:item.kind,source:item.source,is_tool:!!item.is_tool,is_assembly:!!item.is_assembly,fields:item.fields});
 export const buildFor=occ=>normalizeOccurrence({quantity:occ.quantity,unit:occ.unit,build_status:occ.build_status,attention:!!occ.attention,attention_note:occ.attention_note,hidden:!!occ.hidden});
 const button=(...args)=>window.BSUI.button(...args);
@@ -93,13 +93,13 @@ export function retireInstruction(ctx,step){
 const settingsDrafts=new WeakMap();
 export function projectSettings(ctx,{create=false,mount=null}={}){
  const newProjectId=create?crypto.randomUUID():null;
- const project=create?{name:"",prefix:"NR",digits:3,owner_name:"Ryan"}:ctx.client.state.project,draft={name:project.name,prefix:project.prefix,digits:project.digits,owner_name:project.owner_name||"Ryan"};
+ const project=create?{name:"",prefix:"NR",digits:3,owner_name:websiteSettings().defaultOwner}:ctx.client.state.project,draft={name:project.name,prefix:project.prefix,digits:project.digits,owner_name:project.owner_name||"Ryan"};
  let saved=settingsDrafts.get(ctx.client);if(mount&&saved?.projectId===ctx.projectId)Object.assign(draft,saved.draft);else saved={projectId:ctx.projectId,draft,revision:project.revision};if(mount)settingsDrafts.set(ctx.client,{...saved,draft});
  const editor=editable(ctx,create?"New project":"Project settings",create?"Create project":"Save settings",()=>draft,async(data,token)=>{if(create){const projectId=newProjectId;await ctx.client.write(projectId,"","POST",data,null);await ctx.navigate(projectId);}else{await ctx.client.write(ctx.projectId,"","PATCH",data,token);settingsDrafts.delete(ctx.client);}},{mount,initialRevision:mount?saved.revision:ctx.client.state?.project.revision??null});
  if(mount)editor.form.querySelectorAll("button").forEach(control=>{if(control.textContent==="Cancel")control.addEventListener("click",()=>settingsDrafts.delete(ctx.client),{capture:true});});
  const preview=node("p","","muted"),reserved=create?[]:ctx.client.state.items.map(item=>item.part_number),updatePreview=()=>{try{preview.textContent="Next subassembly: "+allocatePartNumber(draft,reserved,true)+" · Next part: "+allocatePartNumber(draft,reserved)+". Existing numbers stay unchanged.";}catch(error){preview.textContent=error.message;}};preview.dataset.numberPreview="";preview.setAttribute("aria-live","polite");
  const name=field("Project name",draft.name,value=>draft.name=value,{required:true}),prefix=field("Number prefix",draft.prefix,value=>{draft.prefix=value;updatePreview();}),digits=field("Minimum digits",draft.digits,value=>{draft.digits=value;updatePreview();},{type:"number"});name.querySelector("input").maxLength=180;prefix.querySelector("input").maxLength=10;digits.querySelector("input").min=1;digits.querySelector("input").max=8;digits.querySelector("input").step=1;editor.fields.append(name,node("p","Project names can contain up to 180 characters.","muted"),prefix,digits,preview);updatePreview();
- prefix.before(field("Project owner",draft.owner_name,value=>draft.owner_name=value,{options:projectOwners.map(value=>({value,label:value}))}));
+ prefix.before(field("Project owner",draft.owner_name,value=>draft.owner_name=value,{options:ownerChoices([draft.owner_name]).map(value=>({value,label:value}))}));
  if(!create)editor.fields.append(automaticBackupSection(ctx),projectDeletionSection(ctx,project));
 }
 export function confirmAction(ctx,title,message,label,save){

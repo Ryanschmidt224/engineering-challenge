@@ -138,3 +138,11 @@ The project tree puts Generic Part Name and issued number on one row. Specific P
 ## Label/value proximity
 
 Both shared field-row components use theme-owned --field-label-width (maximum 9rem) and --field-label-gap (12px). Label columns can shrink in narrow panels but do not grow with a wide screen. Project pages and dialogs inherit these rules instead of imposing percentage widths; phone layouts retain their stacked rows. Pane navigation, image columns, data tables and multi-field calculator groups are not label/value rows and retain their own layout rules. Retained legacy forms already use bounded widths (including 140px record-entry labels); their frozen screen layouts remain separate.
+
+## Shared photo completion and section edits
+
+Photo tools include an explicit Save action that closes the tools. Uploads still save through each owning component's guarded upload flow; closing tools does not cancel or re-upload files. The unfilled pencil stays below the photo and aligns with the displayed image/gallery's right edge. Shared geometry tracking releases controls when their page/dialog is removed.
+
+Disclosure-section edit actions use `sectionEdit` in the header's right-hand action slot and are visible only while the section is expanded. Creating a new record remains an action within the body. Summary, cost estimates and existing original intent use this shared helper.
+
+Project tags are selected from discrete choices managed in Website settings. Project owner labels and the default for new projects live there too; neither is an authorization role. Removing or renaming a choice preserves the labels on existing projects and historical copies. Original intent asks for the goal and success criterion; the redundant plan input is removed while saved plan text remains available in intent versions.

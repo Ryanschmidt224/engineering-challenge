@@ -90,5 +90,5 @@ export function originalPath(project,item,step){return {root:{id:project.id,name
 export async function workspaceState(db,project){
  const tables=["engine_items","engine_occurrences","engine_steps","engine_records","engine_files","engine_file_links","engine_selections","engine_archive_groups","engine_media"];
  const result=await db.batch([statement(db,"SELECT * FROM engine_projects WHERE id=?",project.id),...tables.map(table=>statement(db,`SELECT * FROM ${table} WHERE project_id=? ORDER BY ${table==="engine_steps"||table==="engine_media"?"sort_order,id":"id"}`,project.id)),statement(db,"SELECT id,json_extract(payload,'$.record_id') AS record_id FROM engine_events WHERE project_id=? AND json_type(payload,'$.record_id')='text'",project.id)]);
- return {record_events:result.at(-1).results,project:result[0].results[0],...Object.fromEntries(tables.map((name,index)=>[name.replace("engine_",""),result[index+1].results.map(decode)]))};
+ const {legacy_owner_name,...publicProject}=result[0].results[0];return {record_events:result.at(-1).results,project:publicProject,...Object.fromEntries(tables.map((name,index)=>[name.replace("engine_",""),result[index+1].results.map(decode)]))};
 }

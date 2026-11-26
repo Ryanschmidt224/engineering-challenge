@@ -21,7 +21,9 @@ export function initSiteHeader() {
   const account = header.querySelector(".ui-site-account") || make(projectPage ? "button" : "a", "ui-button ui-site-account", "Account");
   if (projectPage) { account.type = "button"; account.id = "accountMenuButton"; }
   else account.href = "index.html?account=1#home";
-  inner.append(brand, nav, account); header.append(inner);
+  const settings=make("a","ui-site-nav__item ui-site-settings","Website settings");settings.href="website-settings.html";if(header.dataset.siteHeader==="settings")settings.setAttribute("aria-current","page");
+  const accountActions=make("div","ui-site-account-actions");accountActions.append(settings,account);
+  inner.append(brand, nav, accountActions); header.append(inner);
   const update = () => {
     const route = location.hash.slice(1);
     const current = projectPage ? (route === "calculators" ? "knowledge" : "home") : header.dataset.siteHeader === "calculators" ? "knowledge" : header.dataset.siteHeader;
