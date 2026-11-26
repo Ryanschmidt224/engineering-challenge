@@ -23,7 +23,7 @@ for(const width of [1440,390])test("project part copies into a reviewed Workshop
 });
 test("copy is cancellable and warns about an existing product; custom parts do not offer it",async({page})=>{
  const {component}=await post(page,"/api/components?project=launcher",sourceInput);
- const {record:product}=await post(page,"/api/workshop",{entity:"product",expectedRevision:null,expectedFamilyRevision:1,record:{id:crypto.randomUUID(),family_id:"f-resistor",name:"Existing resistor",manufacturer:"Example",mpn:"EX-10K",field_values:{},supplier_links:[],notes:""}});
+ const {record:product}=await post(page,"/api/workshop",{entity:"product",expectedRevision:null,expectedFamilyRevision:2,record:{id:crypto.randomUUID(),family_id:"f-resistor",name:"Existing resistor",manufacturer:"Example",mpn:"EX-10K",field_values:{},supplier_links:[],notes:""}});
  const query=new URLSearchParams({copyProject:"launcher",copyPart:component.id});await page.goto("/workshop.html?"+query);await page.getByLabel("Workshop family",{exact:true}).selectOption("f-resistor");await page.getByRole("button",{name:"Review product copy",exact:true}).click();await expect(page.getByRole("link",{name:"Open existing product",exact:true})).toHaveAttribute("href",/product=/);
  expect((await(await page.request.get("/api/workshop")).json()).products.map(product=>product.id)).toEqual([product.id]);
  await page.getByRole("button",{name:"Create another copy",exact:true}).click();page.once("dialog",dialog=>dialog.accept());await page.getByRole("button",{name:"Cancel",exact:true}).click();expect((await(await page.request.get("/api/workshop")).json()).products).toHaveLength(1);

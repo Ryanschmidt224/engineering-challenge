@@ -17,6 +17,7 @@
 // existed (schema = '1') are adopted without changing any row.
 import {workshopSchema} from "./workshop-schema.js";
 import {starterCategories, starterFamilies, starterFields} from "./workshop-seed.js";
+import {electronicsTemplateStatements} from "./workshop-electronics-migration.js";
 
 export const migrations = [
   {
@@ -66,6 +67,11 @@ export const migrations = [
       `CREATE UNIQUE INDEX IF NOT EXISTS knowledge_links_active_unique
  ON knowledge_links(tile_id,target_type,target_id,COALESCE(target_project_id,''),relation) WHERE archived=0`,
     ],
+  },
+  {
+    version: 3,
+    name: "electronics-template-terminology",
+    statements: electronicsTemplateStatements,
   },
 ];
 

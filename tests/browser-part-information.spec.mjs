@@ -53,8 +53,8 @@ for(const width of [1440,390])test("matching information tiles, purpose editing 
 
 test("Workshop product values and project requirements remain distinct in matching tiles",async({page},testInfo)=>{
  const product={id:crypto.randomUUID(),family_id:"f-resistor",name:"12k resistor",manufacturer:"Example",mpn:"EX-12K",field_values:{"f-resistor-resistance":12000},supplier_links:[],notes:""};
- await post(page,"/api/workshop",{entity:"product",expectedRevision:null,expectedFamilyRevision:1,record:product});
- const {record:use}=await post(page,"/api/workshop",{entity:"use",expectedRevision:null,expectedFamilyRevision:1,record:{id:crypto.randomUUID(),family_id:product.family_id,product_id:product.id,project_id:"launcher",tree_node_id:null,purpose:"Pull-up resistor",quantity:1,unit:"pcs",notes:"Test the threshold",field_values:{"f-resistor-resistance":10000}}});
+ await post(page,"/api/workshop",{entity:"product",expectedRevision:null,expectedFamilyRevision:2,record:product});
+ const {record:use}=await post(page,"/api/workshop",{entity:"use",expectedRevision:null,expectedFamilyRevision:2,record:{id:crypto.randomUUID(),family_id:product.family_id,product_id:product.id,project_id:"launcher",tree_node_id:null,purpose:"Pull-up resistor",quantity:1,unit:"pcs",notes:"Test the threshold",field_values:{"f-resistor-resistance":10000}}});
  const section=await openPart(page,use.id),reference=section.locator('[data-information="reference"]'),project=section.locator('[data-information="project"]');
  await expect(reference.getByRole("heading",{name:"Workshop information",exact:true})).toBeVisible();
  await expect(reference).toContainText("12000 Ω");await expect(reference).not.toContainText("10000 Ω");await expect(reference).not.toContainText("Test the threshold");

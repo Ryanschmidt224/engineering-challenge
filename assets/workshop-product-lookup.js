@@ -63,7 +63,7 @@ export function workshopProductLookup({record,family,fields,showUseFields=false,
    try{validateFamilyValues(fields,next.field_values);}catch(error){message.textContent=error.message;return;}
    Object.assign(record,next);onApply();
   },"button--primary");
-  results.append(node("p","Only compatible types and identical units can be mapped. No units are converted. Selecting a filled field replaces its current value. Unmatched suggestions do not add family fields.","muted"),actions(apply,button("Discard suggestions",()=>{results.replaceChildren();message.textContent="Suggestions discarded. Your draft is unchanged.";})));
+  results.append(node("p","Numeric fields require identical units. Text fields without a fixed unit retain the source units and test conditions. No units are converted. Selecting a filled field replaces its current value. Unmatched suggestions do not add template fields.","muted"),actions(apply,button("Discard suggestions",()=>{results.replaceChildren();message.textContent="Suggestions discarded. Your draft is unchanged.";})));
  }
  return root;
 }

@@ -189,7 +189,7 @@ test("products and project parts show knowledge from their family, and tiles lin
 test("a tile can be started from a project part and links to it", async ({page}) => {
   await page.goto("/workshop.html");
   const use = {id: crypto.randomUUID(), project_id: "launcher", tree_node_id: null, family_id: "f-resistor", product_id: null, purpose: "Pull-up", quantity: 1, unit: "pcs", field_values: {}, notes: ""};
-  await api(page, "/api/workshop", {entity: "use", record: use, expectedRevision: null, expectedFamilyRevision: 1});
+  await api(page, "/api/workshop", {entity: "use", record: use, expectedRevision: null, expectedFamilyRevision: 2});
   await page.goto("/knowledge.html?new=1&link=use:" + use.id);
   await page.getByLabel("Title", {exact: true}).fill("Choosing pull-up values");
   await page.getByLabel("Summary", {exact: true}).fill("Why 10 k was used here.");
