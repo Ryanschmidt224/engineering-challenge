@@ -1,8 +1,11 @@
+import {backupAllDataButton} from "./site-data-backup.js";
 import {node,field,actions} from './workshop-ui.js';
 import {initSiteHeader} from './site-header.js';
 import {normalizeWebsiteSettings} from './website-settings-model.js';
 initSiteHeader();
 const root=document.querySelector('[data-website-settings]'),notice=document.querySelector('[data-notice]'),button=(...args)=>window.BSUI.button(...args);let draft,revision,dirty=false;
+const backup=window.BSUI.section({title:'Data backup',role:'website-backup',open:true});
+backup.body.append(node('p','Download the website database and stored files to a backup file on your device.','muted'),backupAllDataButton());root.after(backup.root);
 const report=message=>{notice.textContent=message;};
 async function read(){const response=await fetch('/api/project-engine/settings',{credentials:'same-origin',cache:'no-store'}),data=await response.json();if(!response.ok)throw Error(data.error||'Settings could not be loaded.');draft=normalizeWebsiteSettings(data);revision=data.revision;dirty=false;render();}
 function render(){

@@ -1,5 +1,4 @@
 import {loadWebsiteSettings} from './website-settings-client.js';
-import {backupAllDataButton} from "./site-data-backup.js";
 import {summaryAssembly} from "./project-root-view.js";
 import {containerName} from "./project-presentation.js";
 import {initSiteHeader} from "./site-header.js";
@@ -87,7 +86,7 @@ export function initProjectWorkspace(root=document){
   const legacy=node("a","Legacy projects","ui-button ui-button--quiet");legacy.href="/index.html?legacy=1#home";legacy.title="Open the previous project pages in read-only mode.";
   const create=button("New project",()=>projectSettings(ctx(),{create:true}),{variant:"primary"});heading.textContent="Projects";pageActions.replaceChildren(legacy);const area=node("div","","project-stack");content.replaceChildren(area);
   const sequence=renderSequence,loading=node("div","","ui-directory-toolbar");create.disabled=true;loading.append(create,node("p","Loading projects…","muted"));area.append(loading);const [{projects}]=await pendingDirectory;if(sequence!==renderSequence)return;create.disabled=false;area.replaceChildren(projectCatalog(ctx(),projects,create));
-  const backup=window.BSUI.section({title:"Restore project backup",quiet:true});backup.body.append(node("p","Restore creates a separate project with independent files. Existing projects and saved historical context stay unchanged."),restorePicker());area.append(backup.root,backupAllDataButton());
+  const backup=window.BSUI.section({title:"Restore project backup",quiet:true});backup.body.append(node("p","Restore creates a separate project with independent files. Existing projects and saved historical context stay unchanged."),restorePicker());area.append(backup.root);
  }
  async function showWorkspace(state,sequence,url){
   if(itemId&&!occurrenceId)occurrenceId=state.occurrences.find(row=>row.item_id===itemId&&row.removed_at===null)?.id||null;
