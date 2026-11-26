@@ -120,7 +120,7 @@ export async function onRequest({request,env}){
    })).filter(pin=>pin.number&&pin.name),
    applications:(Array.isArray(data.applications)?data.applications:[]).slice(0,10).map(x=>text(x,200)).filter(Boolean)
   };
-  if(template){research.pins=[];research.applications=[];}
+  if(template){research.package="";research.pinoutOrientation="";research.pins=[];research.applications=[];}
   if(template)research.specs=research.specs.flatMap(spec=>{const field=template.fields.find(f=>spec.fieldId?f.id===spec.fieldId:f.label.toLowerCase()===spec.name.toLowerCase());return field?[{...spec,name:field.label,fieldId:field.id}]:[];});
   const isEndMill=/\bend[\s-]*mills?\b/i.test([data.typeName,data.familyName,data.name,data.subtitle,featureTreeDescription].join(" "));
   const missingSpecs=isEndMill?END_MILL_SPECS.filter(label=>
@@ -142,6 +142,8 @@ export async function onRequest({request,env}){
    supplierUrl:validUrl(data.supplierUrl),documentationUrl:validUrl(data.documentationUrl),
    notes:([pinout,text(data.notes,2400),sources.length?"Research sources (verify against manufacturer datasheet):\n"+sources.join("\n"):""].filter(Boolean).join("\n\n")).slice(0,5000)
   };
+  if(template){draft.use="";if(!engineeringSpecs)draft.spec="";}
+  if(template&&manufacturer&&draft.manufacturer.toLowerCase().replace(/[^a-z0-9]/g,"")!==manufacturer.toLowerCase().replace(/[^a-z0-9]/g,""))return json({error:"The requested manufacturer could not be confirmed. Check its name or the document before using these ratings.",lookupUsage},422);
   if(template&&(!draft.name||!draft.manufacturer||!draft.partNumber||!draft.supplierUrl))return json({error:"The lookup could not verify all product identity fields and an HTTPS supplier URL. Refine the identity or add a datasheet, then try again.",lookupUsage},422);
   // A generated answer is not a verified identity: require an exact part-number match.
   if(partNumber&&draft.partNumber.toUpperCase()!==partNumber.toUpperCase())
