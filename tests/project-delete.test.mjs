@@ -1,0 +1,59 @@
+import {test} from "node:test";
+import assert from "node:assert/strict";
+import {fixture,upload} from "./helpers/project-workspace.mjs";
+import {handleProjectWorkspace} from "../functions/api/project-workspace-api.js";
+import {backupColumns} from "../functions/api/project-backup-schema.js";
+import {backupEngineProjects} from "../functions/api/project-auto-backups.js";
+import {sweepProjectDeletions,advanceProjectDeletion} from "../functions/api/project-delete.js";
+import {deletionJob,projectDeletionPrefixes} from "../functions/api/project-delete-status.js";
+import worker from "../worker.js";
+const origin="https://preview.example.test",base=origin+"/api/project-engine/projects",id=()=>crypto.randomUUID();
+const ok=reply=>{assert.equal(reply.status,200,JSON.stringify(reply.result));return reply.result;};
+async function api(f,project,path="/state",method="GET",data=null,headers={}){return handleProjectWorkspace(new Request(base+"/"+project+path,{method,headers:{origin,...headers},...(data!==null?{body:typeof data==='string'?data:JSON.stringify(data)}:{})}),f.env,f.owner);}
+async function finish(f,options,data={name:"Bracket build"}){for(let step=0;step<20;step++){const reply=await f.call('/delete','POST',data,options);ok(reply);if(reply.result.deleted)return reply;}throw Error('Deletion did not finish');}
+function contentGone(f){for(const table of Object.keys(backupColumns))assert.equal(f.db.sqlite.prepare('SELECT count(*) n FROM engine_'+table+' WHERE project_id=?').get(f.projectId).n,0,table);assert.equal(f.db.sqlite.prepare('SELECT count(*) n FROM engine_projects WHERE id=?').get(f.projectId).n,0);assert.equal(f.db.sqlite.prepare('SELECT count(*) n FROM engine_operations WHERE project_id=?').get(f.projectId).n,0);}
+test('permanent deletion removes project content, originals, restored-file namespaces and automatic backups only',async t=>{
+ const f=await fixture();t.after(()=>f.db.close());await upload(f,'part.step',new TextEncoder().encode('part bytes'));ok(await f.call('/items/'+f.itemId+'/records','POST',{record:{type:'note',fields:{text:'Project history'}}}));
+ const prefixes=projectDeletionPrefixes(f.projectId);for(const prefix of prefixes)for(let i=0;i<105;i++)await f.env.PHOTOS.put(prefix+id(),'owned bytes');const other='project-engine/files/'+id()+'/'+id(),workshop='workshop-v2/files/'+id(),legacy='components/original.json';for(const key of [other,workshop,legacy])await f.env.PHOTOS.put(key,'keep');
+ const options={operationId:id(),revision:f.revision()};await finish(f,options);contentGone(f);for(const key of f.env.PHOTOS.objects.keys())assert.ok(!prefixes.some(prefix=>key.startsWith(prefix)));for(const key of [other,workshop,legacy])assert.equal(await(await f.env.PHOTOS.get(key)).text(),'keep');assert.equal((await f.call('/state')).status,404);assert.equal((await f.call('/items','POST',{details:{name:'Must not save'}})).status,404);ok(await f.call('/delete','POST',{name:'Bracket build'},options));assert.equal((await deletionJob(f.db,f.projectId)).state,'complete');
+ // The tombstone contains hashes/IDs and completion metadata, not project content.
+ assert.ok(!JSON.stringify(await deletionJob(f.db,f.projectId)).includes('Bracket build'));
+ assert.equal((await api(f,f.projectId,'','POST',{name:'Recreate',operationId:id(),expectedRevision:null})).status,404);
+});
+test('wrong name, stale version and another actor cannot admit deletion',async t=>{
+ const f=await fixture();t.after(()=>f.db.close());const before=f.revision();assert.equal((await f.call('/delete','POST',{name:'wrong'})).status,400);ok(await f.call('','PATCH',{owner_name:'Wyatt'}));assert.equal((await f.call('/delete','POST',{name:'Bracket build'},{revision:before})).status,409);assert.equal((await f.call('/delete','POST',{name:'Bracket build'},{owner:{id:'other-owner'}})).status,404);assert.equal(await deletionJob(f.db,f.projectId),null);assert.equal(ok(await f.call('/state')).project.owner_name,'Wyatt');
+ const signedOut=await worker.fetch(new Request(base+'/'+f.projectId+'/delete',{method:'POST',headers:{origin},body:JSON.stringify({name:'Bracket build',operationId:id(),expectedRevision:f.revision()})}),{...f.env,NEW_PROJECT_ENGINE:'1'},{});assert.equal(signedOut.status,401);assert.equal(await deletionJob(f.db,f.projectId),null);
+});
+test('partial R2 failure leaves a resumable job, blocks edits, and preserves unrelated data',async t=>{
+ const f=await fixture();t.after(()=>f.db.close());await upload(f,'part.step',new Uint8Array([1,2,3]));const options={operationId:id(),revision:f.revision()},remove=f.env.PHOTOS.delete.bind(f.env.PHOTOS),items=f.db.sqlite.prepare('SELECT * FROM engine_items').all();let fail=true;f.env.PHOTOS.delete=async keys=>{await remove(keys);if(fail){fail=false;throw Error('Synthetic partial R2 failure');}};
+ assert.equal((await f.call('/delete','POST',{name:'Bracket build'},options)).status,503);assert.deepEqual(f.db.sqlite.prepare('SELECT * FROM engine_items').all(),items);assert.equal((await f.call('/state')).status,404);assert.equal((await f.call('/delete','POST',{name:'Bracket build'},{...options,operationId:id()})).status,409);
+ const listing=await handleProjectWorkspace(new Request(base),f.env,f.owner),project=(await listing.json()).projects.find(p=>p.id===f.projectId);assert.equal(project.deletion_operation_id,options.operationId);assert.equal(project.deletion_expected_revision,options.revision);
+ await finish(f,options);contentGone(f);
+});
+test('metadata purge failure rolls its entire batch back; the same deletion retries safely',async t=>{
+ const f=await fixture();t.after(()=>f.db.close());const options={operationId:id(),revision:f.revision()},batch=f.db.batch.bind(f.db);let fail=true;f.db.batch=async statements=>{if(fail&&statements[0]?.execute){const result=await batch(statements.map((statement,index)=>index===1&&statements.length===16?(fail=false,f.db.prepare('SELECT missing FROM missing_table')):statement));return result;}return batch(statements);};
+ // Admit but pause before metadata cleanup using one owned object.
+ await f.env.PHOTOS.put(projectDeletionPrefixes(f.projectId)[0]+id(),'bytes');ok(await f.call('/delete','POST',{name:'Bracket build'},options));
+ const before=f.db.sqlite.prepare('SELECT * FROM engine_items').all();assert.equal((await f.call('/delete','POST',{name:'Bracket build'},options)).status,503);assert.deepEqual(f.db.sqlite.prepare('SELECT * FROM engine_items').all(),before);assert.equal((await deletionJob(f.db,f.projectId)).state,'deleting');f.db.batch=batch;await finish(f,options);contentGone(f);
+});
+test('a PUT already in flight cannot publish or retain bytes after project deletion',async t=>{
+ const f=await fixture();t.after(()=>f.db.close());const prepared=ok(await f.call('/files/prepare','POST',{name:'late.bin',content_type:'application/octet-stream'})),revision=f.revision(),put=f.env.PHOTOS.put.bind(f.env.PHOTOS);f.env.PHOTOS.put=async(key,value,options)=>{await finish(f,{operationId:id(),revision});return put(key,value,options);};
+ const reply=await handleProjectWorkspace(new Request(base+'/'+f.projectId+'/files/'+prepared.fileId+'/bytes',{method:'PUT',headers:{origin,'x-operation-id':id(),'x-project-revision':revision},body:new Uint8Array([1,2,3])}),f.env,f.owner);assert.equal(reply.status,409,await reply.clone().text());assert.equal(f.env.PHOTOS.objects.size,0);contentGone(f);
+});
+test('late backup objects are removed and scheduled sweeps only advance explicitly admitted deletions',async t=>{
+ const f=await fixture();t.after(()=>f.db.close());const put=f.env.PHOTOS.put.bind(f.env.PHOTOS);f.env.PHOTOS.put=async(key,value,options)=>{if(key.startsWith('automatic-backups/'))await finish(f,{operationId:id(),revision:f.revision()});return put(key,value,options);};
+ const summary=await backupEngineProjects({...f.env,NEW_PROJECT_ENGINE:'1'});assert.equal(summary[0].status,'deleted');assert.equal(f.env.PHOTOS.objects.size,0);contentGone(f);
+ const late=projectDeletionPrefixes(f.projectId)[1]+id(),unrelated='project-engine/files/'+id()+'/'+id();await put(late,'late writer');await put(unrelated,'keep');await sweepProjectDeletions(f.env);assert.equal(await f.env.PHOTOS.head(late),null);assert.ok(await f.env.PHOTOS.head(unrelated));assert.equal((await deletionJob(f.db,f.projectId)).state,'complete');
+});
+test('deleting a restored project clears staged content and keeps its independent source intact',async t=>{
+ const f=await fixture();t.after(()=>f.db.close());await upload(f,'source.step',new TextEncoder().encode('independent source'));const original=ok(await f.call('/state')),backup=await(await api(f,f.projectId,'/export')).text(),copy=id();const restored=await api(f,copy,'/import-copy?name=Recovered','POST',backup,{'x-operation-id':id(),'x-project-revision':'new'});assert.equal(restored.status,200,await restored.clone().text());const state=await(await api(f,copy)).json(),operationId=id();let done=false;
+ for(let step=0;step<10&&!done;step++){const response=await api(f,copy,'/delete','POST',{name:'Recovered',operationId,expectedRevision:state.project.revision});assert.equal(response.status,200,await response.clone().text());done=(await response.json()).deleted===true;}assert.equal(done,true);assert.deepEqual(ok(await f.call('/state')),original);for(const prefix of projectDeletionPrefixes(copy))assert.ok(![...f.env.PHOTOS.objects.keys()].some(key=>key.startsWith(prefix)));assert.equal(f.db.sqlite.prepare('SELECT count(*) n FROM engine_restore_rows r JOIN engine_restore_jobs j ON j.id=r.job_id WHERE j.project_id=?').get(copy).n,0);assert.ok(f.db.sqlite.prepare('SELECT count(*) n FROM engine_restore_jobs WHERE project_id=?').get(copy).n>0,'technical restore/retirement fences remain, without staged project content');
+});
+
+test('forged cleanup jobs cannot delete objects and completed tombstones cannot be removed or reset',async t=>{
+ const f=await fixture();t.after(()=>f.db.close());const key=projectDeletionPrefixes(f.projectId)[0]+id();await f.env.PHOTOS.put(key,'keep until confirmed');await assert.rejects(advanceProjectDeletion(f.env,{id:id(),project_id:f.projectId,actor_id:f.owner.id}),/No admitted/);assert.ok(await f.env.PHOTOS.head(key));await finish(f,{operationId:id(),revision:f.revision()});assert.throws(()=>f.db.sqlite.prepare('DELETE FROM engine_project_deletions WHERE project_id=?').run(f.projectId),/PROJECT_DELETE_FENCE_PERMANENT/);assert.throws(()=>f.db.sqlite.prepare("UPDATE engine_project_deletions SET state='deleting',completed_at=NULL WHERE project_id=?").run(f.projectId),/PROJECT_DELETE_FENCE_PERMANENT/);
+});
+
+test('copied Workshop attachment is deleted with the project while its catalog original stays intact',async t=>{
+ const f=await fixture();t.after(()=>f.db.close());await f.call('/catalog?family=f-resistor');const attachment=id(),key='workshop-v2/files/'+attachment,bytes=new TextEncoder().encode('Synthetic datasheet');await f.env.PHOTOS.put(key,bytes);await f.db.prepare('INSERT INTO workshop_attachments(id,family_id,title,r2_key,media_type,size) VALUES(?,?,?,?,?,?)').bind(attachment,'f-resistor','proof.txt',key,'text/plain',bytes.length).run();const family=await f.db.prepare('SELECT revision FROM workshop_families WHERE id=?').bind('f-resistor').first();ok(await f.call('/workshop-items','POST',{selection:{familyId:'f-resistor',productId:null,expectedFamilyRevision:family.revision}}));const state=ok(await f.call('/state')),copy=state.files.find(v=>v.r2_key.startsWith('project-engine/workshop/'+f.projectId+'/'));assert.ok(copy);assert.ok(await f.env.PHOTOS.get(copy.r2_key));await finish(f,{operationId:id(),revision:f.revision()});assert.equal(await f.env.PHOTOS.get(copy.r2_key),null);assert.equal(await(await f.env.PHOTOS.get(key)).text(),'Synthetic datasheet');assert.ok(await f.db.prepare('SELECT id FROM workshop_attachments WHERE id=?').bind(attachment).first());contentGone(f);
+});

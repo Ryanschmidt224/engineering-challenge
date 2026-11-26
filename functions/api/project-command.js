@@ -3,7 +3,7 @@
 import {backupColumns} from "./project-backup-schema.js";
 import {PROJECT_ENGINE_SCHEMA_VERSION} from "./project-engine-migrations.js";
 import {openRestoreOperation} from "./project-restore-guards.js";
-const insertable=new Set(["engine_projects","engine_items","engine_occurrences","engine_configurations","engine_events","engine_steps","engine_records","engine_files","engine_file_links","engine_selections","engine_archive_groups","engine_snapshot_values","engine_media"]);
+const insertable=new Set(["engine_projects","engine_items","engine_occurrences","engine_configurations","engine_events","engine_steps","engine_records","engine_files","engine_file_links","engine_selections","engine_archive_groups","engine_snapshot_values","engine_media","engine_project_deletions"]);
 const mutable=new Set(["engine_projects","engine_items","engine_occurrences","engine_steps","engine_records","engine_files","engine_file_links","engine_selections","engine_media"]);
 const key=value=>{if(!/^[a-z_][a-z0-9_]*$/.test(value))throw Error("Invalid SQL identifier");return value;};
 const uuid=value=>typeof value==="string"&&/^[a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12}$/i.test(value);

@@ -1,3 +1,4 @@
+import {projectDeletionSection} from "./project-delete.js";
 import {recordLabels,containerHelp} from "./project-presentation.js";
 import {projectTree} from "./project-tree-model.js";
 import {partHistoryPrompt} from "./project-part-history.js";
@@ -99,7 +100,7 @@ export function projectSettings(ctx,{create=false,mount=null}={}){
  const preview=node("p","","muted"),reserved=create?[]:ctx.client.state.items.map(item=>item.part_number),updatePreview=()=>{try{preview.textContent="Next subassembly: "+allocatePartNumber(draft,reserved,true)+" · Next part: "+allocatePartNumber(draft,reserved)+". Existing numbers stay unchanged.";}catch(error){preview.textContent=error.message;}};preview.dataset.numberPreview="";preview.setAttribute("aria-live","polite");
  const name=field("Project name",draft.name,value=>draft.name=value,{required:true}),prefix=field("Number prefix",draft.prefix,value=>{draft.prefix=value;updatePreview();}),digits=field("Minimum digits",draft.digits,value=>{draft.digits=value;updatePreview();},{type:"number"});name.querySelector("input").maxLength=180;prefix.querySelector("input").maxLength=10;digits.querySelector("input").min=1;digits.querySelector("input").max=8;digits.querySelector("input").step=1;editor.fields.append(name,node("p","Project names can contain up to 180 characters.","muted"),prefix,digits,preview);updatePreview();
  prefix.before(field("Project owner",draft.owner_name,value=>draft.owner_name=value,{options:projectOwners.map(value=>({value,label:value}))}));
- if(!create)editor.fields.append(automaticBackupSection(ctx));
+ if(!create)editor.fields.append(automaticBackupSection(ctx),projectDeletionSection(ctx,project));
 }
 export function confirmAction(ctx,title,message,label,save){
  const editor=editable(ctx,title,label,()=>({}),(data,token)=>save(token));editor.fields.append(node("p",message));

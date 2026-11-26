@@ -1,0 +1,36 @@
+name: Verify isolated permanent deletion
+on:
+  pull_request:
+    paths:
+      - 'functions/api/project-delete*.js'
+      - 'functions/api/project-workshop.js'
+      - 'functions/api/project-storage-fence.js'
+      - 'scripts/preview-delete-proof.mjs'
+      - '.github/workflows/preview-delete-proof.yml'
+permissions:
+  contents: read
+concurrency:
+  group: isolated-preview-deletion-proof
+  cancel-in-progress: false
+jobs:
+  proof:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/project-permanent-delete-review'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Prove deletion only on verified isolated bindings and fresh synthetic IDs
+        env:
+          SOURCE_SESSION_COOKIE: ${{ secrets.BS_SOURCE_PREVIEW_SESSION }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_PREVIEW_BINDINGS_READ_TOKEN }}
+          REPORT_PATH: ${{ runner.temp }}/deletion-proof.json
+        run: node scripts/preview-delete-proof.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: isolated-deletion-proof
+          path: ${{ runner.temp }}/deletion-proof.json
+          if-no-files-found: warn
