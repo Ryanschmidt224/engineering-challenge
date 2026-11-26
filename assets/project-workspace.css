@@ -222,11 +222,6 @@
   font-size: var(--text-small);
 }
 
-.project-tree-row > .list-card[aria-current="true"],
-.project-navigation > [aria-current="page"] {
-  background: var(--color-selected);
-  border-color: var(--color-accent);
-}
 .project-tree-row strong {
   font-size: var(--text-small);
   font-weight: var(--font-semibold);
@@ -246,6 +241,11 @@
   border-color: transparent;
   background: transparent;
   white-space: normal;
+}
+.project-tree-row > .list-card[aria-current="true"],
+.project-navigation > [aria-current="page"] {
+  background: var(--color-selected);
+  border-color: var(--color-accent);
 }
 .project-navigation > [aria-current="page"] {
   font-weight: var(--font-semibold);
