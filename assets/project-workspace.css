@@ -222,10 +222,6 @@
   font-size: var(--text-small);
 }
 
-.project-tree-row > .list-card[aria-current="true"]:not(.project-tree-root) {
-  background: var(--color-selected);
-  border-color: var(--color-accent);
-}
 .project-tree-row strong {
   font-size: var(--text-small);
   font-weight: var(--font-semibold);
@@ -246,9 +242,12 @@
   background: transparent;
   white-space: normal;
 }
+.project-tree-row > .list-card[aria-current="true"],
 .project-navigation > [aria-current="page"] {
-  background: var(--color-surface);
-  border-color: var(--color-border-strong);
+  background: var(--color-selected);
+  border-color: var(--color-accent);
+}
+.project-navigation > [aria-current="page"] {
   font-weight: var(--font-semibold);
 }
 .project-main > .ui-section,
@@ -403,7 +402,7 @@
   border-top: 1px solid var(--color-border);
 }
 
-.project-tree-row > .list-card:not(.project-tree-root):hover {
+.project-tree-row > .list-card:not([aria-current="true"]):hover {
   background: var(--color-surface);
 }
 .project-part-overview {

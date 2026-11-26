@@ -3,7 +3,7 @@ import {dataTable} from "./data-table.js";
 
 const fileSize=bytes=>!Number.isFinite(bytes)||bytes<0?"Unknown":bytes>=1048576?(bytes/1048576).toFixed(1)+" MiB":bytes>=1024?(bytes/1024).toFixed(1)+" KiB":bytes+" B";
 export function automaticBackupSection({client,projectId}){
- const section=window.BSUI.section({title:"Automatic backups",role:"automatic-backups",countLabel:["backup","backups"],tooltip:"Download nightly snapshots of this project. Backups are stored in the same Cloudflare R2 bucket."});
+ const section=window.BSUI.section({title:"Automatic backups",role:"automatic-backups",countLabel:["backup","backups"],tooltip:"Download saved nightly copies of this project. These copies use the website’s Cloudflare storage; they are not an independent off-site backup."});
  const list=node("div");list.setAttribute("aria-live","polite");let loaded=false,busy=false;
  const refresh=window.BSUI.button("Refresh backups",load,{variant:"quiet"});
  async function load(){
@@ -12,7 +12,7 @@ export function automaticBackupSection({client,projectId}){
    const data=await client.request("/"+projectId+"/automatic-backups");
    if(!Array.isArray(data.backups))throw Error("The backup list was not returned.");
    loaded=true;refresh.textContent="Refresh backups";section.setCount(data.backups.length);
-   if(!data.backups.length){list.replaceChildren(node("p","No automatic backups have been saved for this project yet."));return;}
+   if(!data.backups.length){list.replaceChildren(node("p","No automatic backup is available for this project yet."));return;}
    const table=dataTable("Automatic project backups",["Saved","Size","Download"]);
    for(const backup of data.backups){
     const date=new Date(backup.date),validDate=!!backup.date&&Number.isFinite(date.getTime()),label=validDate?date.toLocaleString():"Date unavailable",time=node("time",label);
@@ -24,7 +24,7 @@ export function automaticBackupSection({client,projectId}){
   }catch(error){list.replaceChildren(node("p","Could not load automatic backups. "+error.message));refresh.textContent="Retry backups";}
   finally{busy=false;refresh.disabled=false;}
  }
- section.body.append(node("p","Changed projects are saved by the nightly backup job. These copies use the same Cloudflare R2 bucket.","muted"),list);
+ section.body.append(node("p","Projects with changes are backed up nightly. Backups are stored separately from your working project, in the website’s Cloudflare storage.","muted"),list);
  window.BSUI.sectionActions(section.body,{secondary:[refresh]});
  section.root.addEventListener("toggle",()=>{if(section.root.open&&!loaded)void load();});
  return section.root;
