@@ -11,7 +11,7 @@ Private single-owner application on Cloudflare Workers Paid. The owner approved 
 
 ## Boundaries
 
-Preserve every existing project and backup. No cleanup or real-project import is authorized by this switch-over. Keep production building-schmidt-workshop D1 and building-schmidt-photos R2, preview isolation, AI settings and cron unchanged. Recovery/schema/save-guard changes require Claude review; screen-only changes follow the existing green-check policy. The owner's activation approval persists, but does not waive checks or deployed verification.
+Preserve every existing project and backup. No cleanup or real-project import is authorized by this switch-over. Keep production building-schmidt-workshop D1 and building-schmidt-photos R2, preview isolation, AI settings and cron unchanged. Owner update Nov 25: automatic/mandatory Claude review is discontinued; proceed with approved work after tests and deployed verification. Prompt the owner for particularly sensitive releases, including permanent deletion or changes that risk losing saved data. The owner's activation approval persists, but does not waive checks or deployed verification.
 
 ## Next
 
@@ -90,3 +90,9 @@ Editable photo controls now share an unfilled pencil over the image’s bottom-r
 The top-level parent choice displays its project name in shared part/placement selectors and Workshop project-use selectors. Overview pages group assembly/part History, numbered Revisions and project History inside one Revisions / History disclosure. Existing scope IDs, controls, immutable snapshots and history APIs are retained; history/revision lists load when their inner group opens.
 
 The owner restored the pencil position below each photo at the right edge, retaining the unfilled silhouette. The shared action row applies that placement consistently to overview, gallery, Workshop and current instruction photos; the compact tinted upload row is unchanged.
+
+## Electronics template review
+
+- PR #106 restores reviewed Workshop AI lookup and Edit template wording; the production build and served modules were verified.
+- The Electronics template update covers 22 shipped families, with DigiKey terminology, conditional ratings and preserved values/customizations; see ELECTRONICS_TEMPLATES_REVIEW.md.
+- Owner ended routine Claude-review gating. Its data-only Workshop migration 3 preserves saved values and customizations and may proceed after green exact-head checks; it performs no project/file deletion.

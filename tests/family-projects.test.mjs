@@ -15,7 +15,7 @@ async function fixture(t){
  const call=(path,method="GET",body)=>worker.fetch(new Request(origin+path,{method,headers:{origin,cookie},...(body===undefined?{}:{body:JSON.stringify(body)})}),env,{});
  const catalog=await(await call("/api/workshop")).json();
  const use={id:crypto.randomUUID(),project_id:"launcher",tree_node_id:null,family_id:"f-resistor",product_id:null,purpose:"Pull-up resistor",quantity:2,unit:"pcs",field_values:{"f-resistor-resistance":10000},notes:""};
- const save=(entity,record,expectedRevision=null)=>call("/api/workshop","POST",{entity,record,expectedRevision,expectedFamilyRevision:1});
+ const save=(entity,record,expectedRevision=null)=>call("/api/workshop","POST",{entity,record,expectedRevision,expectedFamilyRevision:catalog.families.find(family=>family.id===record.family_id).revision});
  return {env,call,catalog,use,save};
 }
 test("D1 uses retain instructions, history and engineering files when selecting and editing products",async t=>{

@@ -56,10 +56,10 @@ test("a fresh database migrates to the latest version and is seeded once", async
   assert.equal(meta(db).seed, "1");
   assert.equal(count(db, "workshop_categories"), 33);
   assert.equal(count(db, "workshop_families"), 60);
-  assert.equal(count(db, "workshop_fields"), 233);
+  assert.equal(count(db, "workshop_fields"), 432);
 });
 
-test("an existing schema=1 database is adopted without changing any row", async (t) => {
+test("schema=1 adoption preserves custom templates and records while updating default Electronics definitions", async (t) => {
   const db = new TestD1();
   t.after(() => db.close());
   legacyBootstrap(db);
@@ -70,9 +70,13 @@ test("an existing schema=1 database is adopted without changing any row", async 
 
   assert.equal(await migrateWorkshop(db), latestSchemaVersion);
 
-  for (const table of tables) {
+  for (const table of tables.filter(table=>!["workshop_families","workshop_fields"].includes(table))) {
     assert.deepEqual(db.sqlite.prepare("SELECT * FROM " + table + " ORDER BY id").all(), before[table], table + " unchanged");
   }
+  assert.deepEqual(db.sqlite.prepare("SELECT * FROM workshop_families WHERE id='f-resistor'").get(),before.workshop_families.find(row=>row.id==='f-resistor'));
+  assert.deepEqual(db.sqlite.prepare("SELECT * FROM workshop_fields WHERE family_id='f-resistor' ORDER BY id").all(),before.workshop_fields.filter(row=>row.family_id==='f-resistor'));
+  const missing=starterFields.find(row=>row.family_id==='f-led'&&!before.workshop_fields.some(field=>field.id===row.id));
+  assert.equal(db.sqlite.prepare("SELECT * FROM workshop_fields WHERE id=?").get(missing.id),undefined);
   assert.equal(meta(db).seed, "1");
   assert.equal(meta(db).schema, String(latestSchemaVersion));
 });

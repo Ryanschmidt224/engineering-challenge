@@ -58,7 +58,7 @@ for (const width of [1440, 390]) test("shared headers, controls and collapsed su
 });
 
 test("empty section bodies share geometry and tooltip help does not cover the tree while browsing", async ({page}, testInfo) => {
-  const response = await page.request.post("/api/workshop", {headers: {origin: "http://127.0.0.1:4173"}, data: {entity: "use", expectedRevision: null, expectedFamilyRevision: 1, record: {id: crypto.randomUUID(), project_id: "launcher", family_id: "f-resistor", product_id: null, tree_node_id: null, purpose: "Test resistor", quantity: 1, unit: "pcs", field_values: {}, notes: ""}}});
+  const response = await page.request.post("/api/workshop", {headers: {origin: "http://127.0.0.1:4173"}, data: {entity: "use", expectedRevision: null, expectedFamilyRevision: 2, record: {id: crypto.randomUUID(), project_id: "launcher", family_id: "f-resistor", product_id: null, tree_node_id: null, purpose: "Test resistor", quantity: 1, unit: "pcs", field_values: {}, notes: ""}}});
   expect(response.ok(), await response.text()).toBe(true);
   const {record} = await response.json();
   const components = await (await page.request.get("/api/components?project=launcher")).json();
@@ -124,7 +124,7 @@ for (const width of [1440, 390]) test("shared section gaps across summary, assem
   await page.goto("/#launcher/workspace/__root__");
   await gaps(page.locator("#launcher .assembly-workspace-page:not(.bom-part-workspace)"), ["work-instructions", "helpful-tools", "history", "notes"]);
   await page.screenshot({path: testInfo.outputPath("assembly-spacing.png"), fullPage: true});
-  const response = await page.request.post("/api/workshop", {headers: {origin: "http://127.0.0.1:4173"}, data: {entity: "use", expectedRevision: null, expectedFamilyRevision: 1, record: {id: crypto.randomUUID(), project_id: "launcher", family_id: "f-resistor", product_id: null, tree_node_id: null, purpose: "Spacing fixture", quantity: 1, unit: "pcs", field_values: {}, notes: ""}}});
+  const response = await page.request.post("/api/workshop", {headers: {origin: "http://127.0.0.1:4173"}, data: {entity: "use", expectedRevision: null, expectedFamilyRevision: 2, record: {id: crypto.randomUUID(), project_id: "launcher", family_id: "f-resistor", product_id: null, tree_node_id: null, purpose: "Spacing fixture", quantity: 1, unit: "pcs", field_values: {}, notes: ""}}});
   expect(response.ok(), await response.text()).toBe(true);
   const {record} = await response.json();
   await page.goto("/#launcher/part/" + record.id);

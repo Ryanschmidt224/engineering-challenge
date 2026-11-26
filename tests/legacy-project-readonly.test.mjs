@@ -61,11 +61,11 @@ test("Workshop remains editable while legacy uses and use-owned attachments cann
  const {env,call}=await fixture(t);await call("/api/workshop");
  const use={id:crypto.randomUUID(),project_id:"launcher",family_id:"f-resistor",purpose:"Original use",quantity:1,unit:"pcs",field_values:{}};
  const attachment={id:crypto.randomUUID(),owner_type:"use",owner_id:use.id,title:"Original link",url:"https://example.test/reference"};
- assert.equal((await call("/api/workshop","POST",{entity:"use",record:use,expectedRevision:null,expectedFamilyRevision:1})).status,200);
+ assert.equal((await call("/api/workshop","POST",{entity:"use",record:use,expectedRevision:null,expectedFamilyRevision:2})).status,200);
  assert.equal((await call("/api/workshop","POST",{entity:"attachment",record:attachment,expectedRevision:null})).status,200);
  const before=await workshopSnapshot(env.WORKSHOP_DB),bytes=storedBytes(env);env.NEW_PROJECT_ENGINE="1";
  for(const [method,input] of [
-  ["POST",{entity:"use",record:{...use,purpose:"Must not save"},expectedRevision:1,expectedFamilyRevision:1}],
+  ["POST",{entity:"use",record:{...use,purpose:"Must not save"},expectedRevision:1,expectedFamilyRevision:2}],
   ["PATCH",{entity:"use",id:use.id,archived:true,expectedRevision:1}],
   ["POST",{entity:"attachment",record:{...attachment,id:crypto.randomUUID()},expectedRevision:null}],
   ["POST",{entity:"attachment",record:{...attachment,owner_type:"family",owner_id:"f-resistor"},expectedRevision:1}],
@@ -76,7 +76,7 @@ test("Workshop remains editable while legacy uses and use-owned attachments cann
  const deniedUpload=await call("/api/workshop/file?owner=use&id="+use.id,"POST","bytes",{"x-file-name":"notes.txt"});
  assert.equal(deniedUpload.status,409);assert.deepEqual(await workshopSnapshot(env.WORKSHOP_DB),before);assert.deepEqual(storedBytes(env),bytes);
  assert.equal((await call("/api/workshop/file?id="+attachment.id)).status,302,"existing use links remain readable");
- assert.equal((await call("/api/workshop","POST",{entity:"product",record:{id:crypto.randomUUID(),family_id:"f-resistor",name:"New catalog product",field_values:{}},expectedRevision:null,expectedFamilyRevision:1})).status,200);
+ assert.equal((await call("/api/workshop","POST",{entity:"product",record:{id:crypto.randomUUID(),family_id:"f-resistor",name:"New catalog product",field_values:{}},expectedRevision:null,expectedFamilyRevision:2})).status,200);
  assert.equal((await call("/api/workshop/file?owner=family&id=f-resistor","POST","catalog bytes",{"x-file-name":"notes.txt"})).status,201);
  assert.deepEqual((await workshopSnapshot(env.WORKSHOP_DB)).uses,before.uses);
 });

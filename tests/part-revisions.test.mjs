@@ -42,9 +42,9 @@ test("revision freezes the saved part, instructions, tests and file bytes while 
 test("Workshop-backed revisions freeze resolved facts and locally stored Workshop files without changing the reusable source",async t=>{
  const f=await fixture();f.env.WORKSHOP_DB=new TestD1();t.after(()=>f.env.WORKSHOP_DB.close());
  const product={id:id(),family_id:"f-resistor",name:"Zero-ohm link",manufacturer:"Example",mpn:"EX-0",field_values:{"f-resistor-resistance":0},supplier_links:[]};
- assert.equal((await f.call("/api/workshop",{entity:"product",record:product,expectedRevision:null,expectedFamilyRevision:1})).status,200);
+ assert.equal((await f.call("/api/workshop",{entity:"product",record:product,expectedRevision:null,expectedFamilyRevision:2})).status,200);
  const use={id:id(),project_id:project,family_id:product.family_id,product_id:product.id,purpose:"Jumper",quantity:1,unit:"pcs",field_values:{},notes:"Keep the test points accessible"};
- assert.equal((await f.call("/api/workshop",{entity:"use",record:use,expectedRevision:null,expectedFamilyRevision:1})).status,200);
+ assert.equal((await f.call("/api/workshop",{entity:"use",record:use,expectedRevision:null,expectedFamilyRevision:2})).status,200);
  const attachment=id(),key="workshop-v2/files/"+attachment;
  await f.env.PHOTOS.put(key,"original-data",{customMetadata:{filename:"datasheet.pdf"}});
  await f.env.WORKSHOP_DB.prepare("INSERT INTO workshop_attachments(id,product_id,kind,title,r2_key,media_type,size) VALUES(?,?,?,?,?,?,?)").bind(attachment,product.id,"document","datasheet.pdf",key,"application/octet-stream",13).run();
@@ -129,7 +129,7 @@ test("tree archive and restore preserve revision references, immutable records, 
 test("a Workshop source change after copying cannot advance a project use or publish its staged revision",async t=>{
  for(const entity of ["workshop_families","workshop_products"]){
   const f=await fixture();f.env.WORKSHOP_DB=new TestD1();t.after(()=>f.env.WORKSHOP_DB.close());const product={id:id(),family_id:"f-resistor",name:"Link",field_values:{},supplier_links:[]};
-  assert.equal((await f.call("/api/workshop",{entity:"product",record:product,expectedRevision:null,expectedFamilyRevision:1})).status,200);const use={id:id(),family_id:product.family_id,product_id:product.id,project_id:project,purpose:"Project link",quantity:1,unit:"pcs",field_values:{}};assert.equal((await f.call("/api/workshop",{entity:"use",record:use,expectedRevision:null,expectedFamilyRevision:1})).status,200);
+  assert.equal((await f.call("/api/workshop",{entity:"product",record:product,expectedRevision:null,expectedFamilyRevision:2})).status,200);const use={id:id(),family_id:product.family_id,product_id:product.id,project_id:project,purpose:"Project link",quantity:1,unit:"pcs",field_values:{}};assert.equal((await f.call("/api/workshop",{entity:"use",record:use,expectedRevision:null,expectedFamilyRevision:2})).status,200);
   const put=f.env.PHOTOS.put.bind(f.env.PHOTOS);f.env.PHOTOS.put=async(key,value,options)=>{const result=await put(key,value,options);if(key.endsWith("/record.json"))await f.env.WORKSHOP_DB.prepare("UPDATE "+entity+" SET revision=revision+1 WHERE id=?").bind(entity==="workshop_families"?product.family_id:product.id).run();return result;};
   const response=await f.call("/api/investigations?project=launcher",{...f.command,partId:use.id,expectedPartRevision:"1",expectedWorkspaceRevision:null});assert.equal(response.status,409,await response.text());const row=await f.env.WORKSHOP_DB.prepare("SELECT revision,project_state FROM workshop_uses WHERE id=?").bind(use.id).first();assert.equal(row.revision,1);assert.equal(JSON.parse(row.project_state).revisionLevel,undefined);assert.equal((await history(f)).length,0);
  }

@@ -12,7 +12,7 @@ test.beforeEach(async({request,context})=>{
 const detail=page=>page.locator("#workshop-detail");
 async function save(page,entity){await page.getByRole("button",{name:"Save "+entity,exact:true}).click();await expect(page.locator("#workshop-status")).toHaveText("Saved.");await expect(detail(page).getByRole("button",{name:entity==="family"?"Edit template":"Edit "+entity,exact:true})).toBeVisible();}
 async function snapshot(page){const response=await page.request.get("/api/workshop");expect(response.ok()).toBe(true);return response.json();}
-async function post(page,entity,record,expectedRevision=null){const response=await page.request.post("/api/workshop",{headers:{origin:"http://127.0.0.1:4173"},data:{entity,record,expectedRevision,expectedFamilyRevision:1}});expect(response.ok(),await response.text()).toBe(true);return (await response.json()).record;}
+async function post(page,entity,record,expectedRevision=null){const response=await page.request.post("/api/workshop",{headers:{origin:"http://127.0.0.1:4173"},data:{entity,record,expectedRevision,expectedFamilyRevision:(await snapshot(page)).families.find(f=>f.id===record.family_id)?.revision}});expect(response.ok(),await response.text()).toBe(true);return (await response.json()).record;}
 const productRecord=()=>({id:crypto.randomUUID(),family_id:"f-resistor",name:"Example 10k resistor",manufacturer:"Example",mpn:"EX-10K",field_values:{"f-resistor-resistance":10000},supplier_links:[],notes:""});
 
 test("family and name-only product work without templates, stock or a manufacturer number",async({page},testInfo)=>{
@@ -53,7 +53,7 @@ test("field renaming, reordering, hiding and duplication retain values by stable
  await page.getByRole("button",{name:"Edit template",exact:true}).click();definition=page.locator('[data-field-id="f-resistor-resistance"]');await definition.getByRole("button",{name:"Hide field",exact:true}).click();await save(page,"family");
  let data=await snapshot(page);expect(data.products[0].field_values["f-resistor-resistance"]).toBe(10000);expect(data.fields.find(field=>field.id==="f-resistor-resistance").hidden).toBe(1);
  await page.getByRole("button",{name:"Duplicate family",exact:true}).click();await save(page,"family");data=await snapshot(page);
- const duplicate=data.families.find(family=>family.name==="Resistor copy");expect(data.fields.filter(field=>field.family_id===duplicate.id)).toHaveLength(4);expect(data.products.filter(record=>record.family_id===duplicate.id)).toHaveLength(0);expect(data.products[0].id).toBe(product.id);
+ const duplicate=data.families.find(family=>family.name==="Resistor copy");expect(data.fields.filter(field=>field.family_id===duplicate.id)).toHaveLength(10);expect(data.products.filter(record=>record.family_id===duplicate.id)).toHaveLength(0);expect(data.products[0].id).toBe(product.id);
 });
 test("multiple documents export with verified bytes and archiving stays reversible",async({page})=>{
  await page.goto("/workshop.html?family=f-resistor");await page.getByRole("button",{name:"Edit template",exact:true}).click();
