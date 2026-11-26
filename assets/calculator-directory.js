@@ -1,3 +1,4 @@
+import {renderWireCalculator} from "./wire-resistance-ui.js";
 import {initDirectory} from "./project-directory.js";
 import {createDirectoryFilters} from "./directory-filters.js";
 const element=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node;};
@@ -28,6 +29,7 @@ export function initCalculatorDirectory({root,calculators}) {
 }
  function renderCalculator(mount,item){
   mount.replaceChildren();
+  if(item.id==="wire-resistance"){renderWireCalculator(mount);return;}
   const card=element("div","");
   card.append(element("p","",item.detail));
   const controls=element("div","calculator-fields");

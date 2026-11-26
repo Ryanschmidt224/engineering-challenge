@@ -5,9 +5,9 @@ for(const path of ["/index.html#calculators","/calculators.html","/knowledge.htm
  const loaded=[];page.on("request",request=>loaded.push(new URL(request.url()).pathname));
  await page.setViewportSize({width,height:1000});await page.goto(path);
  const root=page.locator("#resource-calculators"),grid=root.locator(".ui-project-list"),view=root.getByRole("combobox",{name:"Calculator view"}),search=root.getByRole("searchbox",{name:"Search calculators",exact:true});
- await expect(grid.locator(".ui-project-card")).toHaveCount(3);await expect(view.locator("option")).toHaveText(["Details","List","Tiles"]);
+ await expect(grid.locator(".ui-project-card")).toHaveCount(4);await expect(view.locator("option")).toHaveText(["Details","List","Tiles"]);
  for(const mode of ["list","tiles","details"]){await view.selectOption(mode);await expect(grid).toHaveAttribute("data-view",mode);expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0);await page.screenshot({path:testInfo.outputPath("calculators-"+mode+".png"),fullPage:true});}
- await root.getByRole("combobox",{name:"Calculator sort order"}).selectOption("name_desc");await expect(grid.locator(".ui-project-name")).toHaveText(["Wheel surface speed","Surface speed / SFM","Ohm's law"]);
+ await root.getByRole("combobox",{name:"Calculator sort order"}).selectOption("name_desc");await expect(grid.locator(".ui-project-name")).toHaveText(["Wire resistance","Wheel surface speed","Surface speed / SFM","Ohm's law"]);
  await search.fill("watts");await expect(grid.locator(".ui-project-name")).toHaveText(["Ohm's law"]);await search.fill("does-not-exist");await expect(root.getByText("No calculators match your search or filters.",{exact:true})).toBeVisible();await search.fill("");
  await root.locator(".project-filter-menu > summary").click();await root.getByRole("button",{name:"Machining 1",exact:true}).click();await expect(grid.locator(".ui-project-name")).toHaveText(["Surface speed / SFM"]);
  await root.getByRole("searchbox",{name:"Search descriptor tiles"}).fill("no topic");await expect(root.getByRole("button",{name:"Machining 1",exact:true})).toBeVisible();await root.getByRole("button",{name:"Clear selected",exact:true}).click();await root.getByRole("searchbox",{name:"Search descriptor tiles"}).fill("");await root.locator(".project-filter-menu > summary").click();
