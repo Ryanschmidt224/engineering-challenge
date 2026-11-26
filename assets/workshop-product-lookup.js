@@ -28,7 +28,7 @@ export function workshopProductLookup({record,family,fields,showUseFields=false,
   for(const [key,source,label] of [["name","name","Product name"],["manufacturer","manufacturer","Manufacturer"],["mpn","partNumber","Manufacturer part number"]]){
    const value=proposed[source];if(typeof value!=="string"||!value||value===record[key])continue;
    const choice={key,value,selected:!present(record[key])};identity.push(choice);
-   results.append(checkbox(label+": "+value+(present(record[key])?" (replaces “"+record[key]+"”)":""),choice.selected,value=>choice.selected=value));
+   const row=node("div");row.append(checkbox(label+": "+value+(present(record[key])?" (replaces “"+record[key]+"”)":""),choice.selected,value=>choice.selected=value));results.append(row);
   }
   if(proposed.caution)results.append(node("p",proposed.caution,"notice"));
   if(data.research.package)results.append(node("p","Package: "+data.research.package));
