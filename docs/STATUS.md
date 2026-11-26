@@ -4,12 +4,14 @@ Private single-owner application on Cloudflare Workers Paid. The new project eng
 
 ## Current
 
-- The deployed application release commit after PR #113 is `93964ab9aa78bfe255bdf49d6a2d503bb6880350`. Its exact-head Node and browser checks passed, and Cloudflare production build `e1fe47a8-6b87-47b7-9267-396b11fde4ae` deployed version `506b1f52-1eeb-4c7e-9ee2-cf4385477e71`.
+- Production main is `d9dc54d2421b9d70ec656f1074e8c4daed5b7cc1` after PR #119. Exact-main Node and browser checks passed, and Cloudflare production build `dafc6545-e40d-415a-9df3-33bf0393ccc3` succeeded.
+- PR #119 removes database-initialization promise caches that could outlive their originating Worker request and prevent Projects from loading. The repair changes no schema, project data, authorization, retention or compatibility flag.
+- PR #113's project-engine release commit is `93964ab9aa78bfe255bdf49d6a2d503bb6880350`. Its exact-head Node and browser checks passed, and Cloudflare production build `e1fe47a8-6b87-47b7-9267-396b11fde4ae` deployed version `506b1f52-1eeb-4c7e-9ee2-cf4385477e71`.
 - PR #113 completes guarded cross-assembly Undo and bounded whole-site backup paging/ranged object reads. Exact-candidate run 45763261883 exported and offline-verified 34,326 database rows and 122 stored objects on isolated Cloudflare D1/R2; the proof did not mutate stored data.
 - PR #110 adds the owner-selected, separately confirmed permanent-delete action, including project-scoped Workshop copies and automatic backups. Exact-candidate deletion proof 45762047463 passed on isolated synthetic storage; no production project was deleted by testing.
 - PRs #107, #108, #109, #111 and #112 are integrated: reviewed Electronics template metadata, CSS consolidation, project owners/full Settings, the legacy-style summary with reasoned intent versions, and the one-click whole-site backup.
 - The capacity-1000 release gate passed in run 45663128437 attempt 3 before activation. The owner has used the active site, and TB001 was copied and export-verified through its UI.
-- The first scheduled production backup at 02:17 Arizona remains an observation, not a fixture result. Do not claim it until authenticated production evidence and a verified download exist.
+- The first 02:17 Arizona production-backup window has occurred, but authenticated owner listing/download verification remains pending. Do not claim success from fixture or CI results.
 - Draft #91 is a deferred, undeployed retry optimization. It was unnecessary for the passing capacity gate and is not a release prerequisite.
 
 ## Boundaries
