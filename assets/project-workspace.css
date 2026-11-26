@@ -53,11 +53,6 @@
   max-height: 75vh;
   overflow-y: auto;
 }
-.project-stack {
-  min-width: 0;
-  display: grid;
-  gap: var(--stack-gap, var(--space-3));
-}
 .project-toolbar {
   margin-bottom: var(--space-4);
 }

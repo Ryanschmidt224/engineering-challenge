@@ -826,3 +826,11 @@ summary.ui-button::-webkit-details-marker {
 .ui-settings-list + .ui-button {
   margin-block: var(--space-2);
 }
+
+/* Shared vertical layout, available outside project-specific pages. */
+.ui-stack,
+.project-stack {
+  min-width: 0;
+  display: grid;
+  gap: var(--stack-gap, var(--space-3));
+}

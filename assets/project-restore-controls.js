@@ -66,7 +66,7 @@ export function projectRestorePicker({ client, notify, onRestored }) {
       nameInput.disabled = false;
     }
   });
-  const body = node("div", "", "project-stack");
+  const body = node("div", "", "ui-stack");
   body.append(name, input, restore);
   return body;
 }
