@@ -186,6 +186,28 @@ export function lookupDocumentField(
       "button--quiet",
     ),
   );
+  if (record.lookup_provenance?.documentUpload?.status === "pending") {
+    const forget = button(
+      "Forget unconfirmed document",
+      () => {
+        pending.delete(id);
+        input.value = "";
+        record.lookup_provenance.documentUpload = null;
+        forget.hidden = true;
+        describe();
+        onChange({ forgotten: true });
+      },
+      "button--quiet",
+    );
+    controls.append(forget);
+    root.append(
+      node(
+        "p",
+        "Forgetting clears the unfinished upload requirement when you Save product. It does not delete saved files or AI source evidence.",
+        "muted",
+      ),
+    );
+  }
   controls.classList.add("bs-photo-upload-row");
   root.append(label, controls, input, status);
   describe();

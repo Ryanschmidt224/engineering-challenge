@@ -364,3 +364,57 @@ test("project copy freezes source conditions and source-document bytes independe
     f.db.close();
   }
 });
+
+test("only an explicit pending-document removal clears its descriptor and preserves source evidence", () => {
+  const document = {
+    id: crypto.randomUUID(),
+    name: "lost.pdf",
+    sha256: "a".repeat(64),
+    status: "pending",
+  };
+  const record = {
+    name: "Resistor",
+    manufacturer: "Example",
+    mpn: "EX1",
+    supplier_links: [{ url: "https://example.com/product" }],
+    field_values: { power: 1 },
+    lookup_provenance: {
+      identityRequired: true,
+      appliedAt: new Date().toISOString(),
+      fields: {
+        power: {
+          label: "Power rating",
+          unit: "W",
+          value: 1,
+          conditions: "25°C",
+          sourceUrl: "https://example.com/ds",
+        },
+      },
+      documentUpload: document,
+    },
+  };
+  const prior = structuredClone(record),
+    forgotten = structuredClone(record);
+  forgotten.lookup_provenance.documentUpload = null;
+  const normalized = normalizeLookupProvenance(forgotten, [field], prior);
+  assert.equal(normalized.documentUpload, undefined);
+  assert.deepEqual(
+    normalized.fields.power,
+    normalizeLookupProvenance(prior, [field]).fields.power,
+  );
+  const omitted = structuredClone(record);
+  delete omitted.lookup_provenance.documentUpload;
+  assert.deepEqual(
+    normalizeLookupProvenance(omitted, [field], prior).documentUpload,
+    document,
+  );
+  prior.lookup_provenance.documentUpload.status = "saved";
+  assert.throws(
+    () => normalizeLookupProvenance(forgotten, [field], prior),
+    /Only an unconfirmed/,
+  );
+  assert.throws(
+    () => normalizeLookupProvenance(forgotten, [field], {}),
+    /Only an unconfirmed/,
+  );
+});

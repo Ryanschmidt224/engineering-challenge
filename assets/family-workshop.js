@@ -174,7 +174,7 @@ function renderFamilyEditor(form,record,set){
 function renderProductEditor(form,record,set){
  const identity=panel("Product identity");
  identity.append(field("Product name",record.name,value=>set("name",value),{required:true}),field("Manufacturer",record.manufacturer,value=>set("manufacturer",value)),field("Manufacturer part number",record.mpn,value=>set("mpn",value)));
- form.append(identity,workshopProductLookup({record,family:family(),fields:familyFields(),showUseFields,onDocumentChange:mark,documents:data.attachments.filter(f=>!f.archived&&f.product_id===record.id&&!f.url&&/\.(pdf|txt|csv|png|jpe?g|webp)$/i.test(f.title)),onApply(){mark();renderDetail();status("Suggestions applied to your draft. Review the values, then Save product.");}}));
+ form.append(identity,workshopProductLookup({record,family:family(),fields:familyFields(),showUseFields,onDocumentChange(change){mark();if(change?.forgotten){draft.documentRetry=false;renderDetail();status("Unconfirmed document forgotten in draft. Save product to keep this change.");}},documents:data.attachments.filter(f=>!f.archived&&f.product_id===record.id&&!f.url&&/\.(pdf|txt|csv|png|jpe?g|webp)$/i.test(f.title)),onApply(){mark();renderDetail();status("Suggestions applied to your draft. Review the values, then Save product.");}}));
  const specs=panel("Specifications");
  specs.append(checkbox("Show fields usually filled in for a project",showUseFields,value=>{showUseFields=value;renderDetail();}),valuesEditor(familyFields(),record.field_values,mark,{product:true,showUseFields}));form.append(specs);
  const ordering=panel("Supplier links");

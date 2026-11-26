@@ -31,6 +31,12 @@ export function normalizeLookupProvenance(record, fields, previous = {}) {
     throw Error("Invalid AI lookup provenance.");
   const raw = incoming ?? prior,
     required = !!(raw.identityRequired || prior.identityRequired);
+  const forget =
+    Object.hasOwn(raw, "documentUpload") && raw.documentUpload === null;
+  if (forget && prior.documentUpload?.status !== "pending")
+    throw Error(
+      "Only an unconfirmed document can be forgotten. Saved documents are retained.",
+    );
   if (!required && !raw.documentUpload && !prior.documentUpload) return {};
   if (required) requireLookupIdentity(record);
   if (!object(raw.fields ?? {}) || Object.keys(raw.fields ?? {}).length > 80)
@@ -79,7 +85,9 @@ export function normalizeLookupProvenance(record, fields, previous = {}) {
       document,
     };
   }
-  const upload = raw.documentUpload ?? prior.documentUpload;
+  const upload = forget
+    ? undefined
+    : (raw.documentUpload ?? prior.documentUpload);
   if (upload) {
     if (
       !object(upload) ||

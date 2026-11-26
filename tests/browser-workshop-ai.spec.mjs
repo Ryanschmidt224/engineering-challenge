@@ -1,7 +1,12 @@
 import { test, expect } from "@playwright/test";
 test.describe.configure({ mode: "serial" });
-test.beforeEach(async ({ request, context, page }) => {
-  const { cookie } = await (await request.post("/__test__/reset")).json(),
+test.beforeEach(async ({ request, context, page }, testInfo) => {
+  const { cookie } = await (
+      await request.post(
+        "/__test__/reset" +
+          (testInfo.title.startsWith("forgetting") ? "?engine=1" : ""),
+      )
+    ).json(),
     at = cookie.indexOf("=");
   await context.addCookies([
     {
@@ -720,3 +725,97 @@ test("an uploaded document can finish a pending save after reload without resele
   );
   expect(done.attachments).toHaveLength(1);
 });
+
+for (const reload of [false, true])
+  test(
+    "forgetting an unconfirmed document unblocks project copy" +
+      (reload ? " after reopening" : ""),
+    async ({ page }) => {
+      await page
+        .getByLabel("Datasheet or technical document", { exact: true })
+        .setInputFiles({
+          name: "never-uploaded.pdf",
+          mimeType: "application/pdf",
+          buffer: Buffer.from("%PDF-1.7\nLost file fixture"),
+        });
+      await page.route("**/api/workshop/file?owner=product*", (route) =>
+        route.fulfill({
+          status: 503,
+          json: { error: "Fixture upload unavailable" },
+        }),
+      );
+      await page
+        .getByRole("button", { name: "Save product", exact: true })
+        .click();
+      await expect(
+        page.getByRole("button", {
+          name: "Retry document upload",
+          exact: true,
+        }),
+      ).toBeVisible();
+      if (reload) {
+        page.once("dialog", (d) => d.accept());
+        await page.reload();
+        await page
+          .getByRole("button", { name: "Edit product", exact: true })
+          .first()
+          .click();
+      }
+      await page
+        .getByRole("button", {
+          name: "Forget unconfirmed document",
+          exact: true,
+        })
+        .click();
+      await expect(
+        page.getByRole("button", {
+          name: "Retry document upload",
+          exact: true,
+        }),
+      ).toHaveCount(0);
+      await page
+        .getByRole("button", { name: "Save product", exact: true })
+        .click();
+      await expect(page.locator("#workshop-status")).toHaveText("Saved.");
+      const data = await (await page.request.get("/api/workshop")).json(),
+        product = data.products[0],
+        family = data.families.find((f) => f.id === product.family_id);
+      expect(product.lookup_provenance.documentUpload).toBeUndefined();
+      expect(data.attachments).toHaveLength(0);
+      const projectId = crypto.randomUUID(),
+        origin = "http://127.0.0.1:4173",
+        create = await page.request.post(
+          "/api/project-engine/projects/" + projectId,
+          {
+            headers: { origin },
+            data: {
+              operationId: crypto.randomUUID(),
+              expectedRevision: null,
+              name: "Forget document proof",
+            },
+          },
+        );
+      expect(create.ok(), await create.text()).toBe(true);
+      const project = await create.json(),
+        admit = await page.request.post(
+          "/api/project-engine/projects/" + projectId + "/workshop-items",
+          {
+            headers: { origin },
+            data: {
+              operationId: crypto.randomUUID(),
+              expectedRevision: project.revision,
+              name: "Usable resistor",
+              parentId: null,
+              selection: {
+                familyId: family.id,
+                productId: product.id,
+                expectedFamilyRevision: family.revision,
+                expectedProductRevision: product.revision,
+              },
+              requirements: {},
+            },
+          },
+        );
+      expect(admit.ok(), await admit.text()).toBe(true);
+    },
+  );
