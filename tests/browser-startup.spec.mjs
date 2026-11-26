@@ -1,3 +1,4 @@
+import {openAccount} from "./browser-navigation-helpers.mjs";
 // Browser regression: a script-load error must never silently empty the feature tree.
 // No production data or credentials are used; every /api request is mocked.
 import {test,expect} from "@playwright/test";
@@ -17,7 +18,7 @@ function apiResponse(route, data) {
 test("owner sign-in remains available without public registration controls",async({page})=>{
  await page.route("**/api/**",route=>route.fulfill({json:apiResponse(route,{})}));
  await page.goto("/");
- await page.locator("#accountMenuButton").click();
+ await openAccount(page);
  const account=page.locator(".project-account-dialog");
  await expect(account).toBeVisible();
  await expect(account).toContainText("Public registration is closed");
