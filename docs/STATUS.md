@@ -4,7 +4,7 @@ Private single-owner application on Cloudflare Workers Paid. The new project eng
 
 ## Current
 
-- Main is `93964ab9aa78bfe255bdf49d6a2d503bb6880350` after PR #113. Exact-main Node and browser checks passed, and Cloudflare production build `e1fe47a8-6b87-47b7-9267-396b11fde4ae` deployed version `506b1f52-1eeb-4c7e-9ee2-cf4385477e71`.
+- The deployed application release commit after PR #113 is `93964ab9aa78bfe255bdf49d6a2d503bb6880350`. Its exact-head Node and browser checks passed, and Cloudflare production build `e1fe47a8-6b87-47b7-9267-396b11fde4ae` deployed version `506b1f52-1eeb-4c7e-9ee2-cf4385477e71`.
 - PR #113 completes guarded cross-assembly Undo and bounded whole-site backup paging/ranged object reads. Exact-candidate run 45763261883 exported and offline-verified 34,326 database rows and 122 stored objects on isolated Cloudflare D1/R2; the proof did not mutate stored data.
 - PR #110 adds the owner-selected, separately confirmed permanent-delete action, including project-scoped Workshop copies and automatic backups. Exact-candidate deletion proof 45762047463 passed on isolated synthetic storage; no production project was deleted by testing.
 - PRs #107, #108, #109, #111 and #112 are integrated: reviewed Electronics template metadata, CSS consolidation, project owners/full Settings, the legacy-style summary with reasoned intent versions, and the one-click whole-site backup.
