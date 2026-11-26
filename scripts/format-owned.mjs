@@ -8,6 +8,8 @@ export const ownedModules = [
   "assets/project-media.js",
   "assets/project-record-attachments.js",
   "assets/project-workshop-editor.js",
+  "assets/site-header.js",
+  "assets/website-settings-client.js",
   "assets/workshop-lookup-documents.js",
   "assets/workshop-lookup-evidence-view.js",
   "assets/workshop-lookup-model.js",

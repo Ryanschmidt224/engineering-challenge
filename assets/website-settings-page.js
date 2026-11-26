@@ -3,6 +3,7 @@ import {createProjectClient} from "./project-client.js";
 import {backupAllDataButton} from "./site-data-backup.js";
 import {node,field,actions} from './workshop-ui.js';
 import {initSiteHeader} from './site-header.js';
+import {settingsSaved} from "./website-settings-client.js";
 import {normalizeWebsiteSettings} from './website-settings-model.js';
 initSiteHeader();
 const root=document.querySelector('[data-website-settings]'),notice=document.querySelector('[data-notice]'),button=(...args)=>window.BSUI.button(...args);let draft,revision,dirty=false;
@@ -21,7 +22,7 @@ function render(){
  list('owners',owners,'Owner',80);owners.body.append(defaultField,node('p','Names label projects; they do not grant access. New projects start with the default owner.','muted'));list('tags',tags,'Tag',60);
  const save=button('Save settings',()=>form.requestSubmit(),{variant:'primary'}),reload=button('Reload settings',()=>{if(!dirty||confirm('Discard unsaved settings and reload?'))void read().catch(error=>report(error.message));});
  form.append(node('p','Manage the choices available across the website. Removing or renaming a choice does not change existing projects.','muted'),owners.root,tags.root,actions(save,reload));
- form.onsubmit=async event=>{event.preventDefault();if(!form.reportValidity())return;save.disabled=true;try{const value=normalizeWebsiteSettings(draft),response=await fetch('/api/project-engine/settings',{method:'PATCH',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({expectedRevision:revision,value})}),data=await response.json();if(!response.ok)throw Error(data.error||'Settings could not be saved.');draft=normalizeWebsiteSettings(data);revision=data.revision;dirty=false;render();report('Website settings saved.');}catch(error){report(error.message);}finally{save.disabled=false;}};root.append(form);
+ form.onsubmit=async event=>{event.preventDefault();if(!form.reportValidity())return;save.disabled=true;try{const value=normalizeWebsiteSettings(draft),response=await fetch('/api/project-engine/settings',{method:'PATCH',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({expectedRevision:revision,value})}),data=await response.json();if(!response.ok)throw Error(data.error||'Settings could not be saved.');settingsSaved(data);draft=normalizeWebsiteSettings(data);revision=data.revision;dirty=false;render();report('Website settings saved.');}catch(error){report(error.message);}finally{save.disabled=false;}};root.append(form);
 }
 addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
 void read().catch(error=>{report(error.message);root.replaceChildren(button('Try again',()=>void read().catch(error=>report(error.message))));});

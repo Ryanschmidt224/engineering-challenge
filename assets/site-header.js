@@ -47,19 +47,27 @@ export function initSiteHeader() {
   menuButton.type = "button";
   menuButton.setAttribute("aria-haspopup", "menu");
   menuButton.setAttribute("aria-expanded", "false");
+  let modeReady = Promise.resolve();
   let closeMenu = null;
-  menuButton.onclick = () => {
+  let engineActive = header.dataset.siteHeader === "home";
+  menuButton.onclick = async () => {
     if (closeMenu) {
       closeMenu();
       return;
     }
+    menuButton.disabled = true;
+    await modeReady;
+    menuButton.disabled = false;
+    if (!menuButton.isConnected) return;
     menuButton.setAttribute("aria-expanded", "true");
     closeMenu = contextMenu(
       menuButton,
       null,
       [
         { label: account.textContent || "Account", run: () => account.click() },
-        { label: "Website settings", href: "website-settings.html" },
+        ...(engineActive
+          ? [{ label: "Website settings", href: "website-settings.html" }]
+          : []),
       ],
       {
         label: "Account menu",
@@ -97,11 +105,15 @@ export function initSiteHeader() {
   update();
   window.addEventListener("hashchange", update);
   // Shared pages must follow the active engine, including an engine rollback.
-  if (header.dataset.siteHeader !== "home") {
-    fetch("/api/projects", { credentials: "same-origin", cache: "no-store" })
+  {
+    modeReady = fetch("/api/application-mode", {
+      credentials: "same-origin",
+      cache: "no-store",
+    })
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
-        if (data?.readOnly !== true) return;
+        engineActive = data?.projectEngine === true;
+        if (!engineActive || header.dataset.siteHeader === "home") return;
         brand.href = "/project.html";
         delete brand.dataset.nav;
         const old = nav.querySelector('[data-page="home"]');
