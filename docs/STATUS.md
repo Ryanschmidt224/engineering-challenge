@@ -24,7 +24,7 @@ Owner update Nov 25: routine or mandatory Claude review is discontinued; proceed
 
 ## Next
 
-Continue bounded code readability and shared-component cleanup while preserving behavior. Measure navigation rereads before optimizing; invalidate settings caches without losing drafts. Verify actual nightly backup download and a separate-project restore through the owner workflow when access is available. Do not repeat completed capacity/destructive production proofs or turn future ideas into approved features.
+Continue bounded code readability and shared-component cleanup while preserving behavior. Measure project-navigation rereads before optimizing. Settings choices now refresh across tabs and on focus without replacing drafts; shared navigation uses explicit application mode rather than the legacy project list. Verify actual nightly backup download and a separate-project restore through the owner workflow when access is available. Do not repeat completed capacity/destructive production proofs or turn future ideas into approved features.
 
 ## Historical implementation notes
 

@@ -19,3 +19,32 @@ test('identity-name shortcut defaults on, can be disabled, and never links manuf
  // Equal text must not silently re-enable an explicitly unchecked link.
  await specific.fill('Bench power');await dialog.getByRole('button',{name:'Save',exact:true}).click();await expect(dialog).not.toBeVisible();await page.reload();await page.locator('[data-section="details"] > summary').click();await page.getByRole('button',{name:'Edit part details',exact:true}).click();await expect(linked).not.toBeChecked();await dialog.getByLabel('Generic Part Name',{exact:true}).fill('Power supply');await expect(specific).toHaveValue('Bench power');await specific.fill('DHEN1112');await dialog.getByRole('button',{name:'Save',exact:true}).click();await expect(dialog).not.toBeVisible();expect((await state()).items[0].fields.name_linked).toBe(false);expect((await state()).items[0].name).toBe('DHEN1112');
 });
+
+test('settings refresh across tabs without replacing an open project draft',async({page,request,context})=>{
+ const {cookie}=await(await request.post('/__test__/reset?engine=1')).json(),at=cookie.indexOf('=');
+ await context.addCookies([{name:cookie.slice(0,at),value:cookie.slice(at+1),url:origin,httpOnly:true,sameSite:'Strict'}]);
+ await page.goto('/project.html');
+ await page.getByRole('button',{name:'New project',exact:true}).click();
+ await page.getByLabel('Project name',{exact:true}).fill('Unsent project draft');
+ const settingsPage=await context.newPage();await settingsPage.goto('/website-settings.html');
+ await settingsPage.getByRole('button',{name:'Add owner',exact:true}).click();
+ await settingsPage.getByLabel('Owner 4',{exact:true}).fill('Alex');
+ await settingsPage.getByLabel('Default project owner',{exact:true}).selectOption('Alex');
+ await settingsPage.getByRole('button',{name:'Add tag',exact:true}).click();
+ await settingsPage.getByLabel('Tag 6',{exact:true}).fill('Bench test');
+ const refreshed=page.waitForResponse(response=>response.url().endsWith('/api/project-engine/settings')&&response.ok());
+ await settingsPage.getByRole('button',{name:'Save settings',exact:true}).click();
+ await expect(settingsPage.getByRole('status')).toHaveText('Website settings saved.');await refreshed;
+ await expect(page.getByLabel('Project name',{exact:true})).toHaveValue('Unsent project draft');
+ await expect(page.getByLabel('Project owner',{exact:true})).toHaveValue('Ryan');
+ await page.getByRole('dialog').getByRole('button',{name:'Cancel',exact:true}).click();
+ await page.getByRole('button',{name:'New project',exact:true}).click();
+ await expect(page.getByLabel('Project owner',{exact:true})).toHaveValue('Alex');
+ await page.getByLabel('Project name',{exact:true}).fill('Fresh choices');
+ await page.getByRole('button',{name:'Create project',exact:true}).click();
+ await expect(page.getByRole('dialog')).not.toBeVisible();
+ const summary=page.locator('[data-section="summary-description"]');
+ await summary.locator(':scope > summary').click();await summary.getByRole('button',{name:'Edit summary',exact:true}).click();
+ await expect(page.getByRole('dialog').getByRole('checkbox',{name:'Bench test',exact:true})).toBeVisible();
+ await settingsPage.close();
+});

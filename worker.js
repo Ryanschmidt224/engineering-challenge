@@ -45,6 +45,9 @@ export default {
       if(denied)return denied;
       const legacyDenied=guardLegacyProjectWrite(request,env);
       if(legacyDenied)return legacyDenied;
+      if(path==="/api/application-mode")return request.method==="GET"
+        ? Response.json({projectEngine:projectEngineEnabled(env)},{headers:{"cache-control":"private, no-store","x-content-type-options":"nosniff"}})
+        : Response.json({error:"Method not allowed"},{status:405,headers:{allow:"GET","cache-control":"no-store"}});
       if(path.startsWith("/api/project-engine/"))return handleProjectEngine(request,env);
       if(path==="/api/site-data-backup")return handleSiteDataBackup(request,env);
       if(path==="/api/accounts")return await handleAccounts(request,env);
