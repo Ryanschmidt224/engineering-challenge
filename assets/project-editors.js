@@ -1,3 +1,4 @@
+import {identityNameLink} from './project-identity-link.js';
 import {projectDeletionSection} from "./project-delete.js";
 import {recordLabels,containerHelp} from "./project-presentation.js";
 import {projectTree} from "./project-tree-model.js";
@@ -10,7 +11,7 @@ import {recordPrompts,normalizeProjectRecord} from "./project-record-model.js";
 import {instructionTree,recordTree} from "./project-instruction-model.js";
 import {recordAttachments} from "./project-record-attachments.js";
 import {automaticBackupSection} from "./project-backup-settings.js";
-import {projectOwners} from "./project-owners.js";
+import {websiteSettings,ownerChoices} from "./website-settings-client.js";
 export const detailsFor=item=>normalizeCustomItem({name:item.name,short_name:item.short_name,part_number:item.part_number,kind:item.kind,source:item.source,is_tool:!!item.is_tool,is_assembly:!!item.is_assembly,fields:item.fields});
 export const buildFor=occ=>normalizeOccurrence({quantity:occ.quantity,unit:occ.unit,build_status:occ.build_status,attention:!!occ.attention,attention_note:occ.attention_note,hidden:!!occ.hidden});
 const button=(...args)=>window.BSUI.button(...args);
@@ -57,8 +58,8 @@ export function editItem(ctx,item=null,occurrence=null,{assembly=false,parentId=
  const numberRow=field("Part number",details.part_number,value=>{details.part_number=value;update();});numberRow.hidden=!item;if(item)numberRow.querySelector("input").readOnly=true;container.append(numberRow,field("Purpose (optional)",details.fields.purpose||"",value=>{details.fields.purpose=value;update();},{type:"textarea",placeholder:"What does this part or assembly need to accomplish?"}));
  if(!details.is_assembly)container.prepend(field("Item type",details.kind,value=>{details.kind=value;update();},{options:[{value:"part",label:"Part"},{value:"document",label:"Document"},{value:"code",label:"Code"}]}));
  if(!details.is_assembly)part.append(checkbox("Is a tool?",details.is_tool,value=>{details.is_tool=value;update();}));
- part.append(field("Specific Part Name",details.name,value=>{details.name=value;update();},{required:true}),field("Description",details.fields.description||"",value=>{details.fields.description=value;update();},{type:"textarea"}));
- const manufacturer=window.BSUI.section({title:"Manufacturer details (optional)",role:"manufacturer-details"});for(const [key,title]of [["manufacturer","Manufacturer"],["mpn","Mfg part number"]])manufacturer.body.append(field(title,details.fields[key]||"",value=>{details.fields[key]=value;update();}));part.append(manufacturer.root,specEditor(details.fields.specs,update),field("Acceptance criteria",details.fields.acceptance||"",value=>{details.fields.acceptance=value;update();},{type:"textarea"}));
+ const specific=field("Specific Part Name",details.name,value=>{details.name=value;update();},{required:true});part.append(identityNameLink(details,container.querySelector('input[aria-label="Generic Part Name"]'),specific.querySelector("input"),{creating:!item}),specific,field("Description",details.fields.description||"",value=>{details.fields.description=value;update();},{type:"textarea"}));
+ for(const [key,title]of [["manufacturer","Manufacturer"],["mpn","Mfg part number"]])part.append(field(title,details.fields[key]||"",value=>{details.fields[key]=value;update();}));part.append(specEditor(details.fields.specs,update),field("Acceptance criteria",details.fields.acceptance||"",value=>{details.fields.acceptance=value;update();},{type:"textarea"}));
  display.append(field("Quantity",build.quantity,value=>{build.quantity=value;update();},{type:"number"}),field("Unit",build.unit,value=>{build.unit=value;update();}),field("Status",build.build_status,value=>{build.build_status=value;update();},{options:[{value:"not_started",label:"Not started"},{value:"in_progress",label:"In progress"},{value:"complete",label:"Complete"}]}),checkbox("Needs attention",build.attention,value=>{build.attention=value;update();}),field("Attention note",build.attention_note,value=>{build.attention_note=value;update();},{type:"textarea"}),checkbox("Hide from feature tree?",build.hidden,value=>{build.hidden=value;update();}));
  editor.fields.append(container,part,display);
  if(item){
@@ -93,13 +94,13 @@ export function retireInstruction(ctx,step){
 const settingsDrafts=new WeakMap();
 export function projectSettings(ctx,{create=false,mount=null}={}){
  const newProjectId=create?crypto.randomUUID():null;
- const project=create?{name:"",prefix:"NR",digits:3,owner_name:"Ryan"}:ctx.client.state.project,draft={name:project.name,prefix:project.prefix,digits:project.digits,owner_name:project.owner_name||"Ryan"};
+ const project=create?{name:"",prefix:"NR",digits:3,owner_name:websiteSettings().defaultOwner}:ctx.client.state.project,draft={name:project.name,prefix:project.prefix,digits:project.digits,owner_name:project.owner_name||"Ryan"};
  let saved=settingsDrafts.get(ctx.client);if(mount&&saved?.projectId===ctx.projectId)Object.assign(draft,saved.draft);else saved={projectId:ctx.projectId,draft,revision:project.revision};if(mount)settingsDrafts.set(ctx.client,{...saved,draft});
  const editor=editable(ctx,create?"New project":"Project settings",create?"Create project":"Save settings",()=>draft,async(data,token)=>{if(create){const projectId=newProjectId;await ctx.client.write(projectId,"","POST",data,null);await ctx.navigate(projectId);}else{await ctx.client.write(ctx.projectId,"","PATCH",data,token);settingsDrafts.delete(ctx.client);}},{mount,initialRevision:mount?saved.revision:ctx.client.state?.project.revision??null});
  if(mount)editor.form.querySelectorAll("button").forEach(control=>{if(control.textContent==="Cancel")control.addEventListener("click",()=>settingsDrafts.delete(ctx.client),{capture:true});});
  const preview=node("p","","muted"),reserved=create?[]:ctx.client.state.items.map(item=>item.part_number),updatePreview=()=>{try{preview.textContent="Next subassembly: "+allocatePartNumber(draft,reserved,true)+" · Next part: "+allocatePartNumber(draft,reserved)+". Existing numbers stay unchanged.";}catch(error){preview.textContent=error.message;}};preview.dataset.numberPreview="";preview.setAttribute("aria-live","polite");
  const name=field("Project name",draft.name,value=>draft.name=value,{required:true}),prefix=field("Number prefix",draft.prefix,value=>{draft.prefix=value;updatePreview();}),digits=field("Minimum digits",draft.digits,value=>{draft.digits=value;updatePreview();},{type:"number"});name.querySelector("input").maxLength=180;prefix.querySelector("input").maxLength=10;digits.querySelector("input").min=1;digits.querySelector("input").max=8;digits.querySelector("input").step=1;editor.fields.append(name,node("p","Project names can contain up to 180 characters.","muted"),prefix,digits,preview);updatePreview();
- prefix.before(field("Project owner",draft.owner_name,value=>draft.owner_name=value,{options:projectOwners.map(value=>({value,label:value}))}));
+ prefix.before(field("Project owner",draft.owner_name,value=>draft.owner_name=value,{options:ownerChoices([draft.owner_name]).map(value=>({value,label:value}))}));
  if(!create)editor.fields.append(automaticBackupSection(ctx),projectDeletionSection(ctx,project));
 }
 export function confirmAction(ctx,title,message,label,save){

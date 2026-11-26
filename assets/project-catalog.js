@@ -1,9 +1,10 @@
 import {node} from "./workshop-ui.js";
 import {initDirectory} from "./project-directory.js";
-import {projectOwners} from "./project-owners.js";
+import {ownerChoices} from "./website-settings-client.js";
 import {showProjectDeletion} from "./project-delete.js";
 
 export function projectCatalog(ctx,projects,create=null){
+ const projectOwners=ownerChoices(projects.map(project=>project.owner_name));
  const root=node("div","","project-stack"),toolbar=node("div","","ui-directory-toolbar"),searchLabel=node("label","","ui-toolbar-search"),search=node("input","","ui-control"),sortLabel=node("label","Sort by","ui-toolbar-field"),sort=node("select","","ui-control"),status=node("span","","muted ui-toolbar-count"),grid=node("div"),empty=node("p","","muted");
  root.dataset.projectCatalog="";search.type="search";search.placeholder="Search projects…";search.setAttribute("aria-label","Search projects");searchLabel.append(search);sort.setAttribute("aria-label","Project sort order");
  const ownerLabel=node("label","Owner","ui-toolbar-field"),owner=node("select","","ui-control");owner.setAttribute("aria-label","Filter projects by owner");for(const value of ["",...projectOwners]){const option=node("option",value||"All owners");option.value=value;owner.append(option);}ownerLabel.append(owner);

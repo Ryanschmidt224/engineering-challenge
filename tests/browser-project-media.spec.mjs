@@ -23,6 +23,8 @@ test("project photos upload, caption, reorder and remove; a part gets one pictur
  await photos.locator("figure").first().getByRole("button",{name:"Edit photo",exact:true}).click();
  await photos.locator("figure").first().getByRole("button",{name:"Remove",exact:true}).click();await page.getByRole("button",{name:"Remove photo",exact:true}).click();
  await expect(photos.locator("img")).toHaveCount(1);await expect(page.locator(".project-summary-photo-grid img").first()).toHaveAttribute("alt","Bench setup");
+ const editor=page.locator('[data-section="summary-photos"] > .ui-section__body > .project-photo-editor'),save=editor.locator(':scope > .bs-photo-save');await expect(save).toBeVisible();await save.click();await expect(editor).toBeHidden();const pencil=page.locator('[data-section="summary-photos"] .project-picture-holder > .bs-photo-control > .bs-photo-actions > .bs-photo-toggle');await expect(pencil).toHaveAttribute('aria-expanded','false');await expect.poll(async()=>{const image=await page.locator('.project-summary-photo-grid img').first().boundingBox(),icon=await pencil.boundingBox();return Math.abs(image.x+image.width-icon.x-icon.width);}).toBeLessThan(2);await pencil.click();await expect(editor).toBeVisible();
+
  let s=await f.state();expect(s.media.filter(row=>row.active).length).toBe(1);expect(s.files.length).toBe(2);
  await page.goto("/project.html?project="+f.id+"&item="+f.itemId);
  await expect(page.getByRole("button",{name:"Add picture",exact:true})).not.toBeVisible();

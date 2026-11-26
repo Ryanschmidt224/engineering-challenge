@@ -1,3 +1,4 @@
+import {loadWebsiteSettings} from './website-settings-client.js';
 import {backupAllDataButton} from "./site-data-backup.js";
 import {summaryAssembly} from "./project-root-view.js";
 import {containerName} from "./project-presentation.js";
@@ -82,9 +83,10 @@ export function initProjectWorkspace(root=document){
   });const body=node("div","","project-stack");body.append(name,input,restore);return body;
  }
  async function projectList(){
+  const pendingDirectory=Promise.all([client.request(""),loadWebsiteSettings()]);pendingDirectory.catch(()=>{});
   const legacy=node("a","Legacy projects","ui-button ui-button--quiet");legacy.href="/index.html?legacy=1#home";legacy.title="Open the previous project pages in read-only mode.";
   const create=button("New project",()=>projectSettings(ctx(),{create:true}),{variant:"primary"});heading.textContent="Projects";pageActions.replaceChildren(legacy);const area=node("div","","project-stack");content.replaceChildren(area);
-  const sequence=renderSequence,loading=node("div","","ui-directory-toolbar");loading.append(create,node("p","Loading projects…","muted"));area.append(loading);const {projects}=await client.request("");if(sequence!==renderSequence)return;area.replaceChildren(projectCatalog(ctx(),projects,create));
+  const sequence=renderSequence,loading=node("div","","ui-directory-toolbar");create.disabled=true;loading.append(create,node("p","Loading projects…","muted"));area.append(loading);const [{projects}]=await pendingDirectory;if(sequence!==renderSequence)return;create.disabled=false;area.replaceChildren(projectCatalog(ctx(),projects,create));
   const backup=window.BSUI.section({title:"Restore project backup",quiet:true});backup.body.append(node("p","Restore creates a separate project with independent files. Existing projects and saved historical context stay unchanged."),restorePicker());area.append(backup.root,backupAllDataButton());
  }
  async function showWorkspace(state,sequence,url){
@@ -119,7 +121,7 @@ export function initProjectWorkspace(root=document){
   try{
    if(!projectId){await projectList();return;}
    if(preview&&client.state?.project.id===projectId){shownRevision=loadedRevisions.get(client.state)??null;cachedRender=showWorkspace(client.state,sequence,url);notify("Refreshing project…");}
-   const [state]=await Promise.all([client.load(projectId).then(state=>{loadedRevisions.set(state,state.project.revision);return state;}),cachedRender]);if(sequence!==renderSequence)return;
+   const [state]=await Promise.all([client.load(projectId).then(state=>{loadedRevisions.set(state,state.project.revision);return state;}),cachedRender,loadWebsiteSettings()]);if(sequence!==renderSequence)return;
    if(notice.textContent==="Refreshing project…")notify("");
    if(shownRevision===loadedRevisions.get(state))return;
    await showWorkspace(state,sequence,url);

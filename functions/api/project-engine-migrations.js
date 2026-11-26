@@ -183,7 +183,13 @@ const migrations=[{version:1,statements:[
  ...["INSERT","UPDATE"].map(action=>`CREATE TRIGGER IF NOT EXISTS engine_media_restore_retired_${action.toLowerCase()} BEFORE ${action} ON engine_media WHEN EXISTS(SELECT 1 FROM engine_projects p JOIN engine_restore_jobs j ON p.restore_job_id=j.id JOIN engine_restore_jobs closed ON closed.project_id=j.project_id AND closed.actor_id=j.actor_id AND closed.operation_id=j.operation_id WHERE p.id=NEW.project_id AND closed.cleanup_token IS NOT NULL) BEGIN SELECT RAISE(ABORT,'RESTORE_OPERATION_RETIRED'); END`)
 ]},{version:12,statements:[
  `ALTER TABLE engine_projects ADD COLUMN owner_name TEXT NOT NULL DEFAULT 'Ryan' CHECK(owner_name IN('Ryan','Wes','Wyatt'))`
-]},{version:13,statements:[`ALTER TABLE engine_projects ADD COLUMN overview TEXT NOT NULL DEFAULT '{}' CHECK(json_valid(overview))`]},{version:14,statements:[...projectDeleteSchema]}];
+]},{version:13,statements:[`ALTER TABLE engine_projects ADD COLUMN overview TEXT NOT NULL DEFAULT '{}' CHECK(json_valid(overview))` ]},{version:14,statements:[...projectDeleteSchema]},{version:15,statements:[
+ `ALTER TABLE engine_projects RENAME COLUMN owner_name TO legacy_owner_name`,
+ `ALTER TABLE engine_projects ADD COLUMN owner_name TEXT NOT NULL DEFAULT 'Ryan' CHECK(typeof(owner_name)='text' AND length(trim(owner_name)) BETWEEN 1 AND 80)`,
+ `UPDATE engine_projects SET owner_name=legacy_owner_name WHERE NOT EXISTS(SELECT 1 FROM engine_project_deletions d WHERE d.project_id=engine_projects.id) AND NOT EXISTS(SELECT 1 FROM engine_restore_jobs j JOIN engine_restore_jobs closed ON closed.project_id=j.project_id AND closed.actor_id=j.actor_id AND closed.operation_id=j.operation_id WHERE j.id=engine_projects.restore_job_id AND closed.cleanup_token IS NOT NULL)`,
+ `CREATE TABLE website_settings(id TEXT PRIMARY KEY CHECK(id='global'),revision TEXT NOT NULL,value TEXT NOT NULL CHECK(json_valid(value)))`,
+ `INSERT INTO website_settings(id,revision,value) SELECT 'global',lower(hex(randomblob(16))),json_object('tags',json((SELECT json_group_array(tag) FROM(SELECT min(trim(tag)) tag FROM(SELECT 'Electronics' tag UNION SELECT 'PCB Design' UNION SELECT '3D Printing' UNION SELECT 'Mechanical' UNION SELECT 'Software' UNION SELECT trim(value) tag FROM engine_projects,json_each(engine_projects.overview,'$.tags') WHERE type='text' AND length(trim(value)) BETWEEN 1 AND 60 AND value NOT GLOB '*['||char(1)||'-'||char(31)||char(127)||']*') GROUP BY lower(trim(tag)) ORDER BY lower(trim(tag)) LIMIT 100))),'owners',json((SELECT json_group_array(name) FROM(SELECT 'Ryan' name UNION SELECT 'Wes' UNION SELECT 'Wyatt' UNION SELECT owner_name FROM engine_projects))),'defaultOwner','Ryan')`
+]}];
 const pending=new WeakMap();
 export const PROJECT_ENGINE_SCHEMA_VERSION=migrations.at(-1).version;
 // Read-only consumers never bootstrap/upgrade engineering storage. Do not cache

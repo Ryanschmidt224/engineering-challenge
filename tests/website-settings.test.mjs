@@ -1,0 +1,46 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {TestD1} from './helpers/d1.mjs';
+import {TestR2} from './helpers/r2.mjs';
+import {fixture} from './helpers/project-workspace.mjs';
+import {initializeProjectEngine} from '../functions/api/project-engine-migrations.js';
+import {handleProjectWorkspace} from '../functions/api/project-workspace-api.js';
+import {handleProjectEngine} from '../functions/api/project-engine.js';
+import {provisionTestAccount} from './helpers/accounts.mjs';
+const origin='https://preview.example.test',id=()=>crypto.randomUUID();
+const settingsRequest=(method='GET',data,headers={})=>new Request(origin+'/api/project-engine/settings',{method,headers:{origin,...headers},...(data?{body:JSON.stringify(data)}:{})});
+test('global choices require owner/origin, reject duplicates and stale writes, and replay a lost save',async t=>{
+ const env={NEW_PROJECT_ENGINE:'1',WORKSHOP_DB:new TestD1(),PHOTOS:new TestR2(),admin_password:'synthetic-settings-secret'};t.after(()=>env.WORKSHOP_DB.close());
+ assert.equal((await handleProjectEngine(settingsRequest(),env)).status,401);
+ const login=await provisionTestAccount(new Request(origin+'/api/accounts',{method:'POST',headers:{origin},body:JSON.stringify({action:'register',email:'settings-owner@example.test',password:'synthetic-password'})}),env,{role:'admin'}),cookie=login.headers.get('set-cookie').split(';')[0],call=(method,data,headers={})=>handleProjectEngine(settingsRequest(method,data,{cookie,...headers}),env);
+ const initial=await(await call('GET')).json(),value={tags:['Electronics','Custom tag'],owners:['Ryan','Wes','Wyatt','Alex'],defaultOwner:'Alex'},body={expectedRevision:initial.revision,value};
+ assert.equal((await call('PATCH',body,{origin:'https://outside.test'})).status,403);
+ assert.equal((await call('PATCH',{...body,value:{...value,tags:['Same','same']}})).status,400);
+ const saved=await(await call('PATCH',body)).json();assert.equal(saved.defaultOwner,'Alex');assert.notEqual(saved.revision,initial.revision);assert.deepEqual(await(await call('PATCH',body)).json(),saved);
+ assert.equal((await call('PATCH',{...body,value:{...value,tags:[]}})).status,409);
+ assert.equal((await call('PATCH',{...body,value:{...value,owners:[]}})).status,400);
+ const keys=[...env.PHOTOS.objects.keys()];assert.ok(keys.every(key=>key.startsWith('users/')||key.startsWith('user-email/')||key.startsWith('sessions/')));
+});
+test('configured owners and tags apply to projects, preserve removed choices and round trip backups',async t=>{
+ const f=await fixture();t.after(()=>f.db.close());const call=(method,data)=>handleProjectWorkspace(settingsRequest(method,data),f.env,f.owner),initial=await(await call('GET')).json();let value={tags:['Electronics','Custom'],owners:['Ryan','Wes','Wyatt','Alex'],defaultOwner:'Alex'};
+ let response=await call('PATCH',{expectedRevision:initial.revision,value});assert.equal(response.status,200,await response.clone().text());let settings=await response.json();
+ assert.equal((await f.call('','PATCH',{owner_name:'Alex'})).status,200);assert.equal((await f.call('/overview','PATCH',{action:'summary',shortSummary:'Selected tags',description:'',tags:['Custom']})).status,200);
+ assert.equal((await f.call('/overview','PATCH',{action:'summary',shortSummary:'Invalid',description:'',tags:['Typed arbitrary tag']})).status,400);
+ value={tags:[],owners:['Ryan'],defaultOwner:'Ryan'};assert.equal((await call('PATCH',{expectedRevision:settings.revision,value})).status,200);
+ assert.equal((await f.call('','PATCH',{owner_name:'Alex',name:'Historic owner stays'})).status,200);assert.equal((await f.call('/overview','PATCH',{action:'summary',shortSummary:'Retained tag',description:'',tags:['Custom']})).status,200);
+ assert.equal((await f.call('','PATCH',{owner_name:'Other'})).status,400);
+ const backup=await(await handleProjectWorkspace(new Request(origin+'/api/project-engine/projects/'+f.projectId+'/export'),f.env,f.owner)).text(),target=id(),restored=await handleProjectWorkspace(new Request(origin+'/api/project-engine/projects/'+target+'/import-copy?name=Recovered',{method:'POST',headers:{origin,'x-operation-id':id(),'x-project-revision':'new'},body:backup}),f.env,f.owner);assert.equal(restored.status,200,await restored.clone().text());
+ const state=await(await handleProjectWorkspace(new Request(origin+'/api/project-engine/projects/'+target+'/state'),f.env,f.owner)).json();assert.equal(state.project.owner_name,'Alex');assert.equal(Object.hasOwn(state.project,'legacy_owner_name'),false);assert.deepEqual(JSON.parse(state.project.overview).tags,['Custom']);
+ const newId=id(),created=await handleProjectWorkspace(new Request(origin+'/api/project-engine/projects/'+newId,{method:'POST',headers:{origin},body:JSON.stringify({operationId:id(),expectedRevision:null,name:'Default owner'})}),f.env,f.owner);assert.equal(created.status,200);assert.equal((await f.db.prepare('SELECT owner_name FROM engine_projects WHERE id=?').bind(newId).first()).owner_name,'Ryan');
+});
+test('v15 preserves existing owners and tags without rebuilding parent tables or weakening deletion fences',async t=>{
+ const db=new TestD1();t.after(()=>db.close());const batch=db.batch.bind(db);let batches=0;db.batch=async statements=>{if(++batches===15)throw Error('Stop before settings migration');return batch(statements);};await assert.rejects(initializeProjectEngine(db),/Stop before/);db.batch=batch;
+ const active=id(),deleting=id(),retired=id(),pending=id(),retiredJob=id(),pendingJob=id(),now=new Date().toISOString();for(const [project,owner]of [[active,'Wes'],[deleting,'Wyatt']])await db.prepare('INSERT INTO engine_projects(id,owner_id,name,revision,created_at,owner_name,overview) VALUES(?,?,?,?,?,?,?)').bind(project,'fixture-owner','Existing',id(),now,owner,JSON.stringify({tags:['Custom legacy','electronics']})).run();
+ for(const [project,job,owner]of [[retired,retiredJob,'Wyatt'],[pending,pendingJob,'Wes']]){await db.prepare('INSERT INTO engine_restore_jobs(id,project_id,actor_id,operation_id,state,row_count,created_at) VALUES(?,?,?,?,?,?,?)').bind(job,project,'fixture-owner',id(),'staging',0,now).run();await db.prepare('INSERT INTO engine_projects(id,owner_id,name,revision,created_at,owner_name,restore_job_id) VALUES(?,?,?,?,?,?,?)').bind(project,'fixture-owner','Pending',id(),now,owner,job).run();}await db.prepare('UPDATE engine_restore_jobs SET cleanup_token=? WHERE id=?').bind(id(),retiredJob).run();
+ await db.prepare('INSERT INTO engine_project_deletions(id,project_id,actor_id,expected_revision,request_hash,created_at) VALUES(?,?,?,?,?,?)').bind(id(),deleting,'fixture-owner',id(),'a'.repeat(64),now).run();
+ await initializeProjectEngine(db);assert.equal((await db.prepare('SELECT owner_name FROM engine_projects WHERE id=?').bind(active).first()).owner_name,'Wes');assert.equal((await db.prepare('SELECT legacy_owner_name FROM engine_projects WHERE id=?').bind(deleting).first()).legacy_owner_name,'Wyatt');
+ assert.equal((await db.prepare('SELECT owner_name FROM engine_projects WHERE id=?').bind(pending).first()).owner_name,'Wes');assert.equal((await db.prepare('SELECT legacy_owner_name FROM engine_projects WHERE id=?').bind(retired).first()).legacy_owner_name,'Wyatt');await assert.rejects(db.prepare('UPDATE engine_projects SET owner_name=? WHERE id=?').bind('Alex',retired).run(),/RESTORE_OPERATION_RETIRED/);
+ const settings=JSON.parse((await db.prepare("SELECT value FROM website_settings WHERE id='global'").first()).value);assert.ok(settings.tags.includes('Custom legacy'));assert.equal(settings.tags.filter(tag=>tag.toLowerCase()==='electronics').length,1);
+ assert.deepEqual((await db.prepare('PRAGMA foreign_key_check').all()).results,[]);await assert.rejects(db.prepare('UPDATE engine_projects SET owner_name=? WHERE id=?').bind('Alex',deleting).run(),/PROJECT_DELETING/);
+ await db.prepare('UPDATE engine_projects SET owner_name=? WHERE id=?').bind('Alex',active).run();assert.equal((await db.prepare('SELECT owner_name FROM engine_projects WHERE id=?').bind(active).first()).owner_name,'Alex');
+});
