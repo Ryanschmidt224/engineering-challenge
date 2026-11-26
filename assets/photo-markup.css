@@ -80,10 +80,11 @@
   }
 }
 
-/* Shared photo shell: pencil over the image, tools below. */
+/* Shared photo shell: unfilled pencil below the image, tools below. */
 .bs-photo-control {
   position: relative;
   display: flex;
+  width: fit-content;
   flex-direction: column;
   align-items: stretch;
   min-width: 0;
@@ -192,17 +193,15 @@
   max-width: none;
 }
 .workspace-heading > .bs-photo-control .bs-photo-actions {
-  position: absolute;
-  left: 0;
-  top: 100%;
-  margin-top: 7px;
-  justify-content: flex-start;
-  width: max-content;
-  max-width: calc(100vw - 50px);
+  position: static;
+  margin-top: 4px;
+  justify-content: flex-end;
+  width: 100%;
+  max-width: 100%;
   z-index: 2;
 }
 .workspace-heading > .bs-photo-control .bs-photo-more {
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
 }
 .workspace-heading > .bs-photo-control .bs-photo-status {
   position: absolute;
@@ -214,7 +213,7 @@
 }
 .assembly-workspace-page .workspace-heading:has(> .bs-photo-control),
 .bom-part-workspace .workspace-heading:has(> .bs-photo-control) {
-  margin-bottom: 76px;
+  margin-bottom: var(--space-3);
 }
 @media (max-width: 700px) {
   .workspace-heading > .bs-photo-control {
@@ -229,7 +228,7 @@
   }
   .assembly-workspace-page .workspace-heading:has(> .bs-photo-control),
   .bom-part-workspace .workspace-heading:has(> .bs-photo-control) {
-    margin-bottom: 105px;
+    margin-bottom: var(--space-3);
   }
   .bs-photo-actions .btn {
     padding: 6px 9px;
@@ -331,21 +330,16 @@
   justify-content: flex-end;
 }
 
-/* Project summary: place the pencil at the lower-left inside the photo card
-   (the location indicated on the screenshot), with actions expanding right. */
+/* Project summary uses the same below-photo action row. */
 .project-summary-gallery > .bs-photo-control {
   position: relative;
 }
 .project-summary-gallery > .bs-photo-control .bs-photo-actions {
-  position: absolute;
-  bottom: 12px;
-  left: 14px;
-
-  z-index: 4;
-  width: max-content;
-  max-width: calc(100% - 28px);
-
-  margin: 0;
+  position: static;
+  width: 100%;
+  max-width: 100%;
+  margin: 4px 0 0;
+  justify-content: flex-end;
 }
 .project-summary-gallery > .bs-photo-control .bs-photo-more:not([hidden]) {
   gap: var(--space-2);
@@ -660,102 +654,7 @@
   }
 }
 
-/* Expanded photo controls grow rightward from the pencil instead of being
-   constrained to the thumbnail's 190/245px column. The row stays in normal
-   flow, so the content underneath remains clear of the buttons. */
-.bom-part-workspace
-  > .workspace-heading
-  > .bs-photo-control
-  > .bs-photo-actions,
-.assembly-workspace-page:not(.bom-part-workspace)
-  > .workspace-heading
-  > .bs-photo-control
-  > .bs-photo-actions {
-  width: max-content !important;
-  max-width: none !important;
-  flex-wrap: nowrap !important;
-  white-space: nowrap;
-}
-.bom-part-workspace
-  > .workspace-heading
-  > .bs-photo-control
-  .bs-photo-more:not([hidden]),
-.assembly-workspace-page:not(.bom-part-workspace)
-  > .workspace-heading
-  > .bs-photo-control
-  .bs-photo-more:not([hidden]) {
-  flex-wrap: nowrap !important;
-  white-space: nowrap;
-}
-@media (max-width: 650px) {
-  .bom-part-workspace
-    > .workspace-heading
-    > .bs-photo-control
-    > .bs-photo-actions,
-  .assembly-workspace-page:not(.bom-part-workspace)
-    > .workspace-heading
-    > .bs-photo-control
-    > .bs-photo-actions {
-    max-width: calc(100vw - 48px) !important;
-    flex-wrap: wrap !important;
-    white-space: normal;
-  }
-  .bom-part-workspace
-    > .workspace-heading
-    > .bs-photo-control
-    .bs-photo-more:not([hidden]),
-  .assembly-workspace-page:not(.bom-part-workspace)
-    > .workspace-heading
-    > .bs-photo-control
-    .bs-photo-more:not([hidden]) {
-    flex-wrap: wrap !important;
-    white-space: normal;
-  }
-}
-
-/* The pencil shares the image grid cell. Its menu and paste target stay below. */
-.assembly-workspace-page > .workspace-heading > .bs-photo-control {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-}
-.assembly-workspace-page
-  > .workspace-heading
-  > .bs-photo-control
-  > :is(.workspace-cover, .part-workspace-cover),
-.assembly-workspace-page
-  > .workspace-heading
-  > .bs-photo-control
-  > .bs-photo-actions
-  > .bs-photo-toggle {
-  grid-area: 1 / 1;
-}
-.assembly-workspace-page
-  > .workspace-heading
-  > .bs-photo-control
-  > .bs-photo-actions {
-  display: contents !important;
-}
-.assembly-workspace-page
-  > .workspace-heading
-  > .bs-photo-control
-  .bs-photo-toggle {
-  z-index: 2;
-  place-self: end end;
-  margin: 7px;
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-.assembly-workspace-page
-  > .workspace-heading
-  > .bs-photo-control
-  .bs-photo-more:not([hidden]) {
-  margin-top: 6px;
-  flex-wrap: wrap !important;
-  white-space: normal;
-}
-
-/* Project summary: keep photo edit controls outside the image and the
-   summary text. The compact pencil overlays the picture only while closed. */
+/* Project summary shares the below-photo action row. */
 .project-summary-gallery > .bs-photo-control .bs-photo-actions {
   position: relative;
   inset: auto;
@@ -770,7 +669,7 @@
   padding: 0;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: flex-end;
   flex-wrap: wrap;
   gap: var(--space-2);
 }
@@ -906,25 +805,20 @@
   min-height: 32px;
   max-width: 100%;
 }
-.bs-photo-control .bs-photo-stage > .bs-photo-toggle {
-  position: absolute;
-  inset: auto 2px 2px auto;
-  z-index: 2;
+.bs-photo-control .bs-photo-toggle {
   margin: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
   opacity: 0.8;
 }
-.bs-photo-control .bs-photo-stage > .bs-photo-toggle:hover,
-.bs-photo-control .bs-photo-stage > .bs-photo-toggle:focus-visible {
+.bs-photo-control .bs-photo-toggle:hover,
+.bs-photo-control .bs-photo-toggle:focus-visible {
   opacity: 1;
 }
-.bs-photo-actions:empty,
-.bs-photo-actions:has(> .bs-photo-more[hidden]) {
+.bs-photo-actions:empty {
   display: none;
 }
-
 .bs-photo-upload-row {
   display: flex;
   flex-wrap: wrap;

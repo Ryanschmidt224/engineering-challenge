@@ -17,7 +17,7 @@
   let uploader=null;
   const add=make("Add",()=>{if(uploader)uploader.open();else onAdd?.()},"bs-photo-add");
   const remove=make("Delete",onDelete,"bs-photo-delete");
-  if(content){more.append(content);shell.classList.add("bs-photo-custom-tools");}else more.append(markup,add,remove);stage.append(edit);bar.append(more);shell.append(bar);
+  if(content){more.append(content);shell.classList.add("bs-photo-custom-tools");}else more.append(markup,add,remove);bar.append(edit,more);shell.append(bar);
   if(onPaste){
    uploader=uploadPanel({title:"Add photos",accept:"image/*,.heic,.heif",multiple:false,
     onFiles:files=>{if(files[0])return onPaste(files[0])}});
