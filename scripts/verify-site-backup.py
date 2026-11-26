@@ -35,6 +35,10 @@ def unique_json_object(pairs):
     return result
 
 
+def reject_json_constant(value):
+    raise ValueError("Non-finite JSON value: " + value)
+
+
 with tempfile.TemporaryDirectory() as temp:
     root = pathlib.Path(temp)
     (root / "objects").mkdir()
@@ -64,9 +68,7 @@ with tempfile.TemporaryDirectory() as temp:
             entry = json.loads(
                 line,
                 object_pairs_hook=unique_json_object,
-                parse_constant=lambda value: (_ for _ in ()).throw(
-                    ValueError("Non-finite JSON value")
-                ),
+                parse_constant=reject_json_constant,
             )
             if not isinstance(entry, dict) or not isinstance(entry.get("type"), str):
                 raise ValueError("Backup records must have a type")
