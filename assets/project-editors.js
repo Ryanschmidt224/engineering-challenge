@@ -102,7 +102,7 @@ export function confirmAction(ctx,title,message,label,save){
 
 export function parentPicker(ctx,value,change,excluded=[]){
  const state=ctx.client.state,tree=projectTree(state.items,state.occurrences);
- return field("Parent subassembly",value||"",value=>change(value||null),{options:[{value:"",label:"Project root"},...state.occurrences.filter(row=>tree.active(row)&&tree.definitions.get(row.item_id).is_assembly&&!excluded.includes(row.id)).map(row=>({value:row.id,label:tree.path(row).map(part=>part.name).join(" / ")}))]});
+ return field("Parent subassembly",value||"",value=>change(value||null),{options:[{value:"",label:state.project.name},...state.occurrences.filter(row=>tree.active(row)&&tree.definitions.get(row.item_id).is_assembly&&!excluded.includes(row.id)).map(row=>({value:row.id,label:tree.path(row).map(part=>part.name).join(" / ")}))]});
 }
 export function placementEditor(ctx,{occurrence=null,parentId=null}={}){
  const state=ctx.client.state,tree=projectTree(state.items,state.occurrences),candidates=[...tree.placements.values()].filter(tree.active),draft={sourceOccurrenceId:candidates[0]?.id||"",parentId:occurrence?.parent_id||parentId,build:occurrence?buildFor(occurrence):normalizeOccurrence({})};
