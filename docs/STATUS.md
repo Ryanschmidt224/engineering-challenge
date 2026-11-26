@@ -4,18 +4,16 @@ Private single-owner application on Cloudflare Workers Paid. The new project eng
 
 ## Current
 
-- Finding-by-finding audit completion is tracked in [AUDIT-FOLLOWUPS-2026-11-26.md](AUDIT-FOLLOWUPS-2026-11-26.md). Most findings remain open or intentionally retained; do not describe the audit as completed.
-- Nov 26 incident: production reports initialization failure and its ledger ends at v14. The v15 settings seed used six compound SELECT terms; Cloudflare D1 rejects this with `too many terms in compound SELECT`, while Node SQLite accepts it. The correction represents the five default tags as JSON rows plus one UNION, preserving the same seed values. Failed upgrades remain atomic and retry through the existing ledger; no project deletion or restore is part of this repair. PR #121 is deployed as Worker version `ec22af4f-efcf-4884-a09f-b08a0705b5a0` (production build `b4c3fe44-6194-4363-b890-8105ae53c829`). Exact-candidate 469 Node checks and 219 browser checks passed. The owner confirmed production Projects loads normally after refreshing. No project deletion was established from the failed directory request.
-- `tests/project-d1-runtime.test.mjs` now exercises the v14 upgrade, existing owners/tags, new-project creation and persisted project listing across a workerd restart using actual local D1 bindings. Migration failures explicitly log version/message/nested cause rather than relying on Error serialization. The wider objective audit corrections remain unfinished.
-- Production main is `785cbe8e3d38fcfe0a9af79fd730d93e5efdf9a1` after PR #122. Its exact candidate passed 470 Node checks and the browser workflows; Cloudflare production build `7b67ade1-901e-45bb-80c6-14c23cc1c395` deployed version `ffe3b407-83c8-41ae-9f3e-c4a92fe0cd65`. PR #122 persists the explicit linked-name choice and labels immediately saved photo tools Done. PR #119 was an earlier independent request-lifetime repair; it did not resolve the v15 D1 query-limit failure.
-- PR #119 removes database-initialization promise caches that could outlive their originating Worker request and prevent Projects from loading. The repair changes no schema, project data, authorization, retention or compatibility flag.
-- PR #113's project-engine release commit is `93964ab9aa78bfe255bdf49d6a2d503bb6880350`. Its exact-head Node and browser checks passed, and Cloudflare production build `e1fe47a8-6b87-47b7-9267-396b11fde4ae` deployed version `506b1f52-1eeb-4c7e-9ee2-cf4385477e71`.
-- PR #113 completes guarded cross-assembly Undo and bounded whole-site backup paging/ranged object reads. Exact-candidate run 45763261883 exported and offline-verified 34,326 database rows and 122 stored objects on isolated Cloudflare D1/R2; the proof did not mutate stored data.
-- PR #110 adds the owner-selected, separately confirmed permanent-delete action, including project-scoped Workshop copies and automatic backups. Exact-candidate deletion proof 45762047463 passed on isolated synthetic storage; no production project was deleted by testing.
-- PRs #107, #108, #109, #111 and #112 are integrated: reviewed Electronics template metadata, CSS consolidation, project owners/full Settings, the legacy-style summary with reasoned intent versions, and the one-click whole-site backup.
-- The capacity-1000 release gate passed in run 45663128437 attempt 3 before activation. The owner has used the active site, and TB001 was copied and export-verified through its UI.
-- The first 02:17 Arizona production-backup window has occurred, but authenticated owner listing/download verification remains pending. Do not claim success from fixture or CI results.
-- Draft #91 is a deferred, undeployed retry optimization. It was unnecessary for the passing capacity gate and is not a release prerequisite.
+- Latest application main is `ecd6f41510dc64ada02df37021498f952c1a8085` after PR #126. PR #125's production build succeeded (Worker `5c521a1d-de3a-40a4-ad64-1348d79fcdb2`); PR #126 production build `67c8f21e-747d-4705-831a-d5902f93e986` succeeded and deployed Worker `16003546-72c3-4a2e-a4d9-f3a702b34a6d`.
+- The owner confirmed Projects loads normally after PR #121 corrected the v15 settings seed's D1 compound-SELECT limit. The failed initializer prevented listing projects; it did not establish deletion. The request-lifetime promise fix in #119 is a separate earlier repair.
+- The normal Node checks now include a real local workerd/D1 v14 upgrade, retained project/owner/tag checks, new-project creation, and listing both projects after a persisted Worker restart. Migration errors log explicit version/message/cause.
+- PR #122 persists the linked-name checkbox in the existing fields JSON and labels immediately saved photo tools Done. PR #123 moves Backup all data to Website settings. PR #124 uses the first active Project Summary gallery photo on home cards without loading every full project.
+- PR #125 is released after Claude's core approval and implementation of its optional content-checksum and descriptive-error recommendations. Its updated candidate passed 499 Node checks, browser workflows and Cloudflare preview; production build `f208f3af-210f-45ab-9f11-bbdf7c1bbf55` succeeded. Offline verification is not a full application-recovery rehearsal.
+- PR #126 removes the unreliable UI fallback to the long-request exporter. Supported direct-save browsers keep the bounded paged exporter; unsupported browsers receive desktop Chrome/Edge guidance. Wider cross-browser backup support remains unimplemented.
+- The owner reaffirmed Nov 26 that permanent project deletion removes the project's stored data and automatic backups. The Workshop-copy namespace fix is already released and has a regression test preserving the original catalog attachment. No production project was deleted in this testing.
+- Finding-by-finding completion is tracked in [AUDIT-FOLLOWUPS-2026-11-26.md](AUDIT-FOLLOWUPS-2026-11-26.md). Most findings remain open or intentionally retained; do not describe the audit as completed.
+- The first 02:17 Arizona backup window has occurred, but authenticated owner listing/download verification remains pending. Do not claim success from fixtures or CI. A separate whole-site application recovery rehearsal also remains pending.
+- The capacity-1000 activation gate passed in run 45663128437 attempt 3. PR #113's isolated export proof verified 34,326 D1 rows and 122 objects; PR #110's isolated deletion proof passed in run 45762047463. These completed gates must not be reopened merely for routine cleanup. Draft #91 remains a deferred optimization.
 
 ## Boundaries
 
@@ -25,59 +23,63 @@ Owner update Nov 25: routine or mandatory Claude review is discontinued; proceed
 
 ## Next
 
-Observe the first actual 02:17 Arizona production backup after it occurs, download and verify it through the authenticated owner workflow, and record the result without exposing project contents or credentials. During the trial, verify one separate-project restore. Do not reopen the completed activation/capacity gate, repeat destructive proofs, or start unapproved feature/layout work.
+Continue the approved objective audit corrections, starting with an isolated whole-site application recovery rehearsal and the remaining AI field/evidence requirements. Verify an actual nightly backup download and a separate-project restore through the owner workflow when access is available. Keep the completed activation/capacity gate closed; do not repeat destructive production proofs or start unapproved feature work.
 
-## Familiar project layout
+## Historical implementation notes
+
+The sections below describe earlier implementation states and subsequent requests. Use Current, Boundaries and the audit tracker for active status; earlier layout descriptions are not current specifications.
+
+### Familiar project layout
 
 The project shell restores a framed green feature tree, persistent project-page links below the tree, compact part/photo/build panels, paired label/value fields, and responsive summary cards. Existing editors, guarded save handlers, History, backups and storage remain the active engine implementation. Desktop, tablet and phone navigation checks assert no browse-time writes or saved-data changes. UI-only release follows the existing code/browser/Cloudflare checks.
 
-## Familiar wording and editor groups
+### Familiar wording and editor groups
 
 The familiar UI pass restored the short top-level feature-tree label, subsequently renamed Generic Part Name by the owner. Specific Part Name remains separate and is the fallback when no generic label is set. Reading and editing use Item identity, Part details and Display options groups with compact label/value rows. Written records display Notes, Tests / Measurements, Failures and Change notes; numbered saved Revisions remain separate. Instruction retirement displays Archive step. These changes preserve existing field keys, record types, validation, guarded commands and backup formats.
 
 The owner separately requested a new-engine copy of the legacy TB001 project. This authorizes that specific non-destructive copy only; it does not authorize blanket migration or deletion. TB001 was copied through the existing owner UI after sign-in succeeded: one TB001 assembly with the three original numbered parts, two instructions, five entries, three project photos and the part/assembly pictures. All 11 exported files passed hash checks, including a lossless source bundle covering all 25 original objects. A second legacy export matched the original object array exactly. Earlier revisions/archive remain legacy references rather than fabricated numbered engine revisions; historical prices/supplier facts are retained as specifications, not active purchasing calculations.
 
 
-## Compact tree and navigation follow-up
+### Compact tree and navigation follow-up
 
 The owner requested Generic Part Name and Specific Part Name terminology, a quieter Add menu with context actions and a one-time right-click hint, tree drag/drop, denser shared controls and faster summary navigation. These remain presentation work: existing field keys, record types, state reads and guarded commands stay intact. A loaded summary can render immediately while its normal state read revalidates; cold opens still require that read. Desktop navigation, toolbar and table actions share density tokens; touch targets remain larger.
 
 
-## Hierarchy and group clarity
+### Hierarchy and group clarity
 
 Feature-tree labels put the issued part number before the Generic Part Name with matching typography. Dotted connectors follow the rendered placement hierarchy and stop at the last visible sibling. Part detail groups use shaded, accented headings without expanding the label/value rows. Status, selection, context menus, collapse and guarded drag/drop behavior remain intact.
 
-## Cleanup assessment
+### Cleanup assessment
 
 The active project screen loads its own workspace styles rather than the frozen legacy override cascade. The retained legacy index still owns legacy reading, exports and rollback paths; it is not dead code. The first safe cleanup is keeping the handoff accurate (activation and current wording above) and removing superseded selectors only as their components are replaced. See CSS_INVENTORY.md and UI_STANDARDS.md for existing ownership and guardrails. A larger legacy extraction/removal must first map those live dependencies, preserve export/history access and verify production backup behavior. Do not combine that work with screen polish or merge held recovery PR #91 as cleanup.
 
 
-## Shared UI dependency separation
+### Shared UI dependency separation
 
 Calculators now have an independent calculators.html entrypoint, reusing the canonical calculator catalogue and form renderer. The owner subsequently moved the navigation entry into Bits of information; standalone and legacy hash routes remain compatible and import the same catalogue. Calculator rules move out of site.css into their shared feature owner, with no duplicate cascade. The standalone page does not bootstrap legacy projects, wires or accounts. Shared history dialogs require a supplied photo uploader; only legacy-history-dialog.js knows the recipe-file upload API. Active engine uploads retain their guarded client/retry/version handling. No API, storage, authentication, migration or backup contract changes. The code guide now distinguishes active engine owners from retained legacy owners.
 
 
-## Information area naming
+### Information area naming
 
 The owner renamed the visible Knowledge area to Bits of information. Navigation, page headings, related-information sections and tile-link labels use the new wording. Calculators live in a collapsed shared section on this page; there is no separate main navigation tab. Existing standalone and legacy calculator links remain compatible. Existing knowledge.html links, API paths, IDs, stored tiles and backups retain their established contracts.
 
 
-## Project summary overview
+### Project summary overview
 
 The project summary reuses the part overview shell: the first project-gallery photo on the left, summary fields on the right, and the existing responsive stacking on phones. Photo management now opens from the shared Edit photo pencil alongside the overview picture. No separate project-picture storage or media migration is introduced.
 
 
-## Label/value proximity
+### Label/value proximity
 
 Shared editable and read-only field rows use one bounded label-width/gap policy from theme.css. The project-only percentage override is removed, so wide part controls, summary fields, settings, Workshop and information forms inherit the same rule and the existing phone stacking. This changes geometry only.
 
 
-## Info Bits and entry clarity
+### Info Bits and entry clarity
 
 The information area is named Info Bits. The project name above the tree is a non-interactive title label; Project summary remains the navigation action and the project context menu/root drop destination remain available. Entries use one attachment area, with an optional prompt destination for multi-prompt entries. Existing file names, prompt associations, guarded uploads and retries remain intact. Event date is removed from the editing/display UI while existing saved values and automatic timestamps remain preserved. Parent defaults read Top-level entry and No group.
 
 
-## Project summary root
+### Project summary root
 
 The project root opens Project summary. A single visible, unit-quantity assembly shares that summary presentation, so its children appear directly under the project; multiple root builds and quantity multipliers remain explicit. Show top assembly restores the separate row, and Add another top-level assembly creates a separate branch. Assembly details, instructions, CAD files, history and numbered revisions remain available on the summary using their original item/placement IDs. This is a reversible view projection, not a migration: parents, quantities, numbers, saved revisions and backups are unchanged. The project root itself has no part number or BOM quantity. Summary assembly History/Revisions load on opening their sections. Visible engineering-file wording is now CAD files; stored event text and file roles stay unchanged.
 
@@ -101,13 +103,13 @@ The top-level parent choice displays its project name in shared part/placement s
 
 The owner restored the pencil position below each photo at the right edge, retaining the unfilled silhouette. The shared action row applies that placement consistently to overview, gallery, Workshop and current instruction photos; the compact tinted upload row is unchanged.
 
-## Electronics template review
+### Electronics template review
 
 - PR #106 restores reviewed Workshop AI lookup and Edit template wording; the production build and served modules were verified.
 - The Electronics template update covers 22 shipped families, with DigiKey terminology, conditional ratings and preserved values/customizations; see ELECTRONICS_TEMPLATES_REVIEW.md.
 - Owner ended routine Claude-review gating. Its data-only Workshop migration 3 preserves saved values and customizations and may proceed after green exact-head checks; it performs no project/file deletion.
 
-## Nov25 summary, whole-site backup and deletion continuation
+### Nov25 summary, whole-site backup and deletion continuation
 
 - #111 restores the legacy summary section stack, including full-width Tools, summary/tags, cost estimates, editable intent with mandatory reasons and retained versions, milestones and project notes. Migration 13 adds capped overview content; small/streamed/readable backups preserve it and older backups remain readable. 445 Node checks and browser/Cloudflare checks passed before merge.
 - #112 adds one-click Backup all data with a native save picker, Arizona-date filename, streaming all application D1 data and R2 objects, completion/hash verification and non-destructive offline recovery extraction. 448 Node checks and browser/Cloudflare checks passed before merge. No automatic download or change to backup retention.
@@ -116,7 +118,7 @@ The owner restored the pencil position below each photo at the right edge, retai
 - Claude #97 tree-drag follow-up: cross-assembly moves offer revision-guarded Undo move; immediate undo succeeds and an intervening save rejects stale undo without modifying saved state. CSS consolidation was completed in #108.
 
 
-## Website settings and editing controls (next release)
+### Website settings and editing controls (next release)
 
 - #115 template-scoped AI lookup is merged; exact-head Node, browser and Cloudflare checks passed. Lookup sits between identity/specifications, requires complete reviewed identity and supplier URL, uses only current template terms, accepts an optional technical document and saves it into the Workshop. Maker mismatches are rejected. Actual paid calls were not used in validation.
 - Website settings manages discrete tag choices and project-owner labels/default. Engine migration 15 preserves existing owner data without rebuilding parent tables, keeps deletion/retired-restore fences and leaves access IDs unchanged. Custom owner/tag backups restore independently of global choices.
