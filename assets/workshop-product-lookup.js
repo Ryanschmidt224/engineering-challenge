@@ -12,7 +12,7 @@ export function workshopProductLookup({record,family,fields,showUseFields=false,
   if(!record.mpn.trim()&&!record.name.trim()){message.textContent="Enter a product name or manufacturer part number first.";return;}
    const stamp=JSON.stringify(record),submittedHint=hint,documentTag=lookupDocument(record.id)?.tag;searching=true;search.disabled=true;results.replaceChildren();message.textContent="Looking up product details…";
   try{
-   const response=await fetch("/api/workshop-lookup",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({partNumber:record.mpn,manufacturer:record.manufacturer,partName:record.name||family.name,searchHint:hint,familyId:family.id,expectedFamilyRevision:family.revision,templateFieldIds:fields.filter(f=>!f.hidden&&(!f.filled_on_use||showUseFields)).map(f=>f.id),productId:record.id,document:await documentPayload(record.id)})});
+   const response=await fetch("/api/workshop-lookup",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify({partNumber:record.mpn,manufacturer:record.manufacturer,partName:record.name||family.name,searchHint:hint,familyId:family.id,expectedFamilyRevision:family.revision,templateFieldIds:fields.filter(f=>!f.hidden).map(f=>f.id),productId:record.id,document:await documentPayload(record.id)})});
    const data=await response.json();if(!root.isConnected)return;
    const cost=Number.isFinite(data.lookupUsage?.estimatedUsd)?" Estimated API cost: $"+data.lookupUsage.estimatedUsd.toFixed(4)+".":"";
    if(!response.ok)throw Error((data.error||"Product lookup failed. Try again.")+cost);
@@ -33,7 +33,7 @@ export function workshopProductLookup({record,family,fields,showUseFields=false,
   }
   if(proposed.caution)results.append(node("p",proposed.caution,"notice"));
   if(data.research.package)results.append(node("p","Package: "+data.research.package));
-  const available=fields.filter(f=>!f.hidden&&(!f.filled_on_use||showUseFields)),mappings=[],used=new Set(),table=dataTable("AI specification suggestions",["Suggested specification","Use in field","Current value"]);
+  const available=fields.filter(f=>!f.hidden),mappings=[],used=new Set(),table=dataTable("AI specification suggestions",["Suggested specification","Use in field","Current value"]);
   for(const spec of data.research.specs){
    const candidates=available.filter(f=>lookupValue(f,spec)!==undefined),matches=candidates.filter(f=>lookupLabel(f.label)===lookupLabel(spec.name));
    const unique=data.research.specs.filter(row=>lookupLabel(row.name)===lookupLabel(spec.name)).length===1;
