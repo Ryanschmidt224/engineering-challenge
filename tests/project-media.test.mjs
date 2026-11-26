@@ -17,17 +17,24 @@ const gallery=(s,itemId=null)=>s.media.filter(row=>row.active&&row.role==="photo
 test("project and part photo galleries keep order and captions, and removal keeps the file",async()=>{
  const f=await fixture();try{
   const a=await image(f,"a.png"),b=await image(f,"b.png"),c=await image(f,"c.png");
+  const cover=async()=>{const response=await handleProjectWorkspace(new Request(base.slice(0,-1)),f.env,f.owner);assert.equal(response.status,200);return (await response.json()).projects.find(project=>project.id===f.projectId).cover_file_id;};
+  assert.equal(await cover(),null);
   const added=ok(await f.call("/media","POST",{fileIds:[a,b],caption:"Bench setup"}));assert.equal(added.mediaIds.length,2);
   ok(await f.call("/media","POST",{fileId:c,itemId:f.itemId}));
+  assert.equal(await cover(),a);
   let s=await state(f);assert.deepEqual(gallery(s).map(row=>row.file_id),[a,b]);assert.deepEqual(gallery(s,f.itemId).map(row=>row.file_id),[c]);
   ok(await f.call("/media/reorder","POST",{ids:[...added.mediaIds].reverse()}));
   ok(await f.call("/media/"+added.mediaIds[0],"PATCH",{caption:"First fit"}));
+  assert.equal(await cover(),b);
   s=await state(f);assert.deepEqual(gallery(s).map(row=>row.file_id),[b,a]);assert.equal(gallery(s).find(row=>row.file_id===a).caption,"First fit");
   ok(await f.call("/media/"+added.mediaIds[1]+"/remove","POST"));
+  assert.equal(await cover(),a);
   s=await state(f);assert.deepEqual(gallery(s).map(row=>row.file_id),[a]);
   assert.ok(s.files.some(file=>file.id===b&&file.state==="ready"),"the removed photo's file is retained");
   assert.equal((await f.call("/media/reorder","POST",{ids:[added.mediaIds[0],added.mediaIds[1]]})).status,400,"a removed photo cannot be reordered back");
   assert.equal((await f.call("/media","POST",{fileId:a})).status,400,"the same photo is not added twice");
+  ok(await f.call("/media/"+added.mediaIds[0]+"/remove","POST"));assert.equal(await cover(),null);
+  const other=await handleProjectWorkspace(new Request(base.slice(0,-1)),f.env,{id:"other-owner"});assert.deepEqual((await other.json()).projects,[]);
  }finally{f.db.close();}
 });
 
