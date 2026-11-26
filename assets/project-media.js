@@ -401,7 +401,12 @@ export function projectPicture(ctx, { assembly = null, gallery = false } = {}) {
       images.append(img);
     }
     if (!images.childElementCount) images.append(cover);
-    return photoControl(ctx, images, tools, ctx.projectId + ":");
+    const holder = photoControl(ctx, images, tools, ctx.projectId + ":");
+    holder.style.setProperty(
+      "--photo-count",
+      String(Math.max(1, images.childElementCount)),
+    );
+    return holder;
   }
   return photoControl(ctx, cover, tools, ctx.projectId + ":");
 }

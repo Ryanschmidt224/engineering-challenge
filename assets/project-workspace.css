@@ -623,3 +623,10 @@
   max-width: 28rem;
   font-weight: var(--font-semibold);
 }
+
+/* Bound the gallery by the same maximum width as its visible image columns. */
+.project-picture-holder:has(.project-summary-photo-grid) .bs-photo-stage {
+  max-width: calc(
+    var(--photo-count, 1) * 38rem + (var(--photo-count, 1) - 1) * var(--space-3)
+  );
+}
