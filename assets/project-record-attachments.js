@@ -1,3 +1,4 @@
+import {fileDropTarget} from "./file-selection.js";
 import {node,field,actions} from "./workshop-ui.js";
 import {recordPrompts} from "./project-record-model.js";
 
@@ -18,12 +19,8 @@ export function recordAttachments(ctx,draft,editor){
   try{while(pending.length){const {file,key}=pending[0];if(file.size>20*1024*1024)throw Error("Choose files of at most 20 MB each.");if(draft.fields.category==="photos"&&!file.type.startsWith("image/"))throw Error("Photos entries accept images only.");const result=await ctx.client.upload(ctx.projectId,file,{expectedRevision:editor.revision});editor.acceptOwnWrites(result.revision);(groups[key]||=[]).push({id:result.fileId,name:file.name.slice(0,120)});pending.shift();sync();render();}input.value="";selection.textContent="No files selected";status.textContent="Attachments uploaded. Save the record to attach them.";}catch(error){status.textContent=error.message;editor.handleError(error);}finally{busy=false;editor.fields.inert=false;editor.uploadBusy(false);}
  };
  const upload=window.BSUI.button("Upload attachments",()=>send()),choose=window.BSUI.button("Choose files",()=>input.click());
- const drop=window.BSPhotoMarkup.pasteTarget((incoming,event)=>{event?.stopPropagation();void send(incoming);},{onEmpty:()=>{status.textContent="Copy an image, then right-click here and choose Paste, or press Ctrl+V.";}});
- drop.setAttribute("aria-label","Drop attachments or paste an image");drop.textContent="Drop files here or right-click to paste an image (Ctrl+V)";
- // The shared image paste target gives the browser a genuine editable paste
- // surface. This uploader also accepts CAD/PDF/text drops, not just images.
- drop.addEventListener("drop",event=>{if(!event.dataTransfer?.files?.length)return;event.preventDefault();event.stopImmediatePropagation();drop.classList.remove("is-dragover");void send([...event.dataTransfer.files]);},true);
+ const drop=fileDropTarget(incoming=>send(incoming),{label:"Drop attachments or paste an image",text:"Drop files here or right-click to paste an image (Ctrl+V)",onEmpty:()=>{status.textContent="Copy an image or file, then right-click here and choose Paste, or press Ctrl+V.";}});
  section.body.addEventListener("paste",event=>{const incoming=Array.from(event.clipboardData?.files||[]);if(incoming.length){event.preventDefault();void send(incoming);}});
  section.body.addEventListener("dragover",event=>{if([...event.dataTransfer.types].includes("Files"))event.preventDefault();});section.body.addEventListener("drop",event=>{const incoming=Array.from(event.dataTransfer.files);if(incoming.length){event.preventDefault();event.stopPropagation();void send(incoming);}});
- section.body.append(node("p","Up to 12 files per destination, 20 MB each.","muted"),drop,actions(choose,selection,upload),input,files,status);render();sync();return section.root;
+ const controls=actions(choose,drop,selection,upload);controls.classList.add("bs-photo-upload-row");section.body.append(node("p","Up to 12 files per destination, 20 MB each.","muted"),controls,input,files,status);render();sync();return section.root;
 }

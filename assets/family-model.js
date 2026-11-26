@@ -33,7 +33,7 @@ export function familyUsePart(use, family, product, fields, attachments = []) {
   const values = resolveFamilyValues(fields, product?.field_values || {}, use.field_values);
   const specifications = values.filter(field => present(field.value)).map(field => ({name: field.label,
     value: [typeof field.value === "boolean" ? field.value ? "Yes" : "No" : String(field.value), field.unit,
-      field.different ? "(project requirement: " + use.field_values[field.id] + (field.unit ? " " + field.unit : "") + "; review)" : ""].filter(Boolean).join(" "), source: "explicit"}));
+      field.different ? "(project requirement: " + use.field_values[field.id] + (field.unit ? " " + field.unit : "") + "; review)" : ""].filter(Boolean).join(" "), source: "explicit",...(product?.lookup_provenance?.fields?.[field.id]&&Object.is(product.lookup_provenance.fields[field.id].value,field.product)?{evidence:product.lookup_provenance.fields[field.id]}:{})}));
   return {id: use.id, name: use.purpose || family.name, implementationName: product?.name || family.name, description: use.notes || "",
     familyId: family.id, familyName: family.name, familyUse: true, productId: product?.id || null, implementationResolved: !!product,
     familyValues: use.field_values,

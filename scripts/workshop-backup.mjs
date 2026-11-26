@@ -10,7 +10,7 @@ import {validateFamilyFields,validateFamilyValues,isWebUrl} from "../assets/fami
 import {validateTile,validateLink} from "../assets/knowledge-model.js";
 
 const names=["categories","families","fields","products","uses","attachments"];
-const jsonColumns=new Set(["choices","supplier_links","field_values","project_state","sources"]);
+const jsonColumns=new Set(["choices","supplier_links","field_values","project_state","sources","lookup_provenance"]);
 // Export format 2 adds Knowledge. Format 1 files (no Knowledge) still restore.
 const knowledgeNames=["knowledge_tiles","knowledge_links"];
 export const supportedVersions=[1,2];

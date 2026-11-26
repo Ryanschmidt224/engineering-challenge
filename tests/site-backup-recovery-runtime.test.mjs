@@ -129,9 +129,23 @@ test(
           name: "Recovery supply",
           manufacturer: "Fixture maker",
           mpn: "RESTORE-24",
-          supplier_links: [],
+          supplier_links: [{ url: "https://example.com/recovery-supply" }],
           notes: "Synthetic catalog record",
           field_values: { [voltage.id]: 24 },
+          lookup_provenance: {
+            version: 1,
+            identityRequired: true,
+            appliedAt: new Date().toISOString(),
+            fields: {
+              [voltage.id]: {
+                value: 24,
+                label: voltage.label,
+                unit: voltage.unit,
+                conditions: "25°C, no load",
+                sourceUrl: "https://example.com/recovery-supply-datasheet",
+              },
+            },
+          },
         },
       });
       const documentBytes = new TextEncoder().encode(
