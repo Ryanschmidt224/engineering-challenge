@@ -222,7 +222,8 @@
   font-size: var(--text-small);
 }
 
-.project-tree-row > .list-card[aria-current="true"] {
+.project-tree-row > .list-card[aria-current="true"],
+.project-navigation > [aria-current="page"] {
   background: var(--color-selected);
   border-color: var(--color-accent);
 }
@@ -247,8 +248,6 @@
   white-space: normal;
 }
 .project-navigation > [aria-current="page"] {
-  background: var(--color-surface);
-  border-color: var(--color-border-strong);
   font-weight: var(--font-semibold);
 }
 .project-main > .ui-section,
