@@ -4,6 +4,8 @@ Private single-owner application on Cloudflare Workers Paid. The new project eng
 
 ## Current
 
+- Nov 26 incident: production reports initialization failure and its ledger ends at v14. The v15 settings seed used six compound SELECT terms; Cloudflare D1 rejects this with `too many terms in compound SELECT`, while Node SQLite accepts it. The correction represents the five default tags as JSON rows plus one UNION, preserving the same seed values. Failed upgrades remain atomic and retry through the existing ledger; no project deletion or restore is part of this repair. Deployment/production verification remains pending until recorded.
+- `tests/project-d1-runtime.test.mjs` now exercises the v14 upgrade, existing owners/tags, new-project creation and persisted project listing across a workerd restart using actual local D1 bindings. Migration failures explicitly log version/message/nested cause rather than relying on Error serialization. The wider objective audit corrections remain unfinished.
 - Production main is `d9dc54d2421b9d70ec656f1074e8c4daed5b7cc1` after PR #119. Exact-main Node and browser checks passed, and Cloudflare production build `dafc6545-e40d-415a-9df3-33bf0393ccc3` succeeded.
 - PR #119 removes database-initialization promise caches that could outlive their originating Worker request and prevent Projects from loading. The repair changes no schema, project data, authorization, retention or compatibility flag.
 - PR #113's project-engine release commit is `93964ab9aa78bfe255bdf49d6a2d503bb6880350`. Its exact-head Node and browser checks passed, and Cloudflare production build `e1fe47a8-6b87-47b7-9267-396b11fde4ae` deployed version `506b1f52-1eeb-4c7e-9ee2-cf4385477e71`.
