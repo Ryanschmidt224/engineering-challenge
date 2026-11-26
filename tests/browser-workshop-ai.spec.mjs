@@ -673,3 +673,50 @@ test("pending document status survives reload and a lost completion response is 
     id,
   );
 });
+
+test("an uploaded document can finish a pending save after reload without reselecting local bytes", async ({
+  page,
+}) => {
+  const bytes = Buffer.from("%PDF-1.7\nSaved retry source");
+  await page
+    .getByLabel("Datasheet or technical document", { exact: true })
+    .setInputFiles({
+      name: "saved-retry.pdf",
+      mimeType: "application/pdf",
+      buffer: bytes,
+    });
+  let uploads = 0;
+  await page.route("**/api/workshop/file?owner=product*", async (route) => {
+    uploads++;
+    const response = await route.fetch();
+    expect(response.ok()).toBe(true);
+    return route.fulfill({
+      status: 503,
+      json: { error: "Lost upload response" },
+    });
+  });
+  await page.getByRole("button", { name: "Save product", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Retry document upload", exact: true }),
+  ).toBeVisible();
+  const first = await (await page.request.get("/api/workshop")).json(),
+    id = first.products[0].lookup_provenance.documentUpload.id;
+  expect(first.attachments[0].id).toBe(id);
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.reload();
+  await page
+    .getByRole("button", { name: "Edit product", exact: true })
+    .first()
+    .click();
+  await page
+    .getByLabel("Use saved technical document", { exact: true })
+    .selectOption(id);
+  await page.getByRole("button", { name: "Save product", exact: true }).click();
+  await expect(page.locator("#workshop-status")).toHaveText("Saved.");
+  expect(uploads).toBe(1);
+  const done = await (await page.request.get("/api/workshop")).json();
+  expect(done.products[0].lookup_provenance.documentUpload.status).toBe(
+    "saved",
+  );
+  expect(done.attachments).toHaveLength(1);
+});

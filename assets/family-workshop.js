@@ -132,7 +132,7 @@ async function saveDraft(form){
     Object.assign(draft.record,result.record);draft.expectedRevision=result.record.revision;
    }
    clearLookupDocuments(result.record.id);
-  }catch(error){draft.documentRetry=true;renderDetail();throw Error(error.message.startsWith("Product saved")?error.message:"Product saved and the document upload completed, but its final status could not be saved. Retry document upload to confirm completion. "+error.message);}
+  }catch(error){draft.documentRetry=true;renderDetail();if(error.status===409)throw Error("The product or template changed while the document was uploading. Reopen the product, then select the uploaded document to confirm completion. Your other edits were not overwritten.");throw Error(error.message.startsWith("Product saved")?error.message:"Product saved and the document upload completed, but its final status could not be saved. Retry document upload to confirm completion. "+error.message);}
  }
  dirty=false;editing=false;draft=null;
  await refresh();

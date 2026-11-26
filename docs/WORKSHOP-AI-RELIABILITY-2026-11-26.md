@@ -10,7 +10,7 @@ This implements audit findings 4, 12, 13 and 14. The Workshop visual redesign is
 - Conditions/sources display beside saved specifications. A manually changed value loses its old AI attribution, while unchanged facts retain theirs. Renaming a template label retains evidence under the stable field ID. This is user-reviewed AI provenance, not a signature or a claim that a source is authentic.
 - Project admission freezes evidence into the existing Workshop selection snapshot, alongside copied file references. Later Workshop edits cannot rewrite project evidence. Copied document references resolve to project-owned file IDs; the source document's name and hash remain. Existing custom-part storage is unchanged. Projects with an unconfirmed Workshop source upload wait for that upload to complete before copying that product.
 - Datasheets have a durable pending/saved descriptor and stable upload ID. Product save, byte upload and final status confirmation are explicitly separate. A lost upload response is retried with the same ID; a lost final-status response is reconciled by reading the committed record. Pending state survives a page reload, with instructions to reselect the same file. A new partial save updates the page URL to its saved product. The file must exist on that product and match its hash before completion is accepted.
-- The complete file bytes are not cached in a browser database: after a reload a pending file needs reselection. Already uploaded bytes are reusable through the existing saved-document selector. No background retry or automatic AI request is added.
+- The complete file bytes are not cached in a browser database: after a reload a pending file needs reselection. Already uploaded bytes can confirm the pending save through the existing saved-document selector, without another file upload. No background retry or automatic AI request is added.
 
 ## Shared-control cleanup
 
@@ -26,4 +26,4 @@ Native local workerd/D1 tests upgrade a populated Workshop v3 database, cold-res
 
 The tests are synthetic/local and CI checks. No production migration, destructive action, real-user lookup or paid OpenAI call has been run for this candidate. A passing preview build alone does not imply a real hosted AI research acceptance test.
 
-Local candidate validation: 509 code checks passed, plus 14 focused browser workflows. The final-head GitHub code/browser checks and Cloudflare preview results are recorded on PR #131.
+Local candidate validation: 509 code checks passed, plus 15 focused browser workflows. The final-head GitHub code/browser checks and Cloudflare preview results are recorded on PR #131.

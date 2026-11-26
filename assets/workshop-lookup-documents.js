@@ -34,7 +34,13 @@ export async function documentPayload(id) {
 }
 export async function prepareLookupDocument(record) {
   const entry = pending.get(record.id);
-  if (!entry || entry.savedId) return;
+  if (!entry) return;
+  if (entry.savedId) {
+    const upload = record.lookup_provenance?.documentUpload;
+    if (upload?.status === "pending" && upload.id === entry.savedId)
+      upload.status = "saved";
+    return;
+  }
   const sha256 = await digest(entry.file),
     prior = record.lookup_provenance?.documentUpload;
   if (
@@ -44,7 +50,8 @@ export async function prepareLookupDocument(record) {
   )
     entry.uploadId = prior.id;
   for (const evidence of Object.values(record.lookup_provenance?.fields || {}))
-    if (evidence.document?.sha256 === sha256) evidence.document.id = entry.uploadId;
+    if (evidence.document?.sha256 === sha256)
+      evidence.document.id = entry.uploadId;
   record.lookup_provenance = {
     ...(record.lookup_provenance || {}),
     documentUpload: {
