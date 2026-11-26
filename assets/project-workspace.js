@@ -107,11 +107,8 @@ export function initProjectWorkspace(root=document){
    if(view==="bom"){main.append(renderProjectBOM(ctx(),occurrenceId));return;}
    if(view==="parts"){main.append(renderProjectParts(ctx()));return;}
    if(itemId)await renderPart(main,itemId);else{
-    const rootAssembly=summaryAssembly(projectTree(state.items,state.occurrences)),overview=node("section","","project-part-overview project-summary-overview"),identity=node("div","","project-part-identity");identity.append(node("h2","Project summary"));
-    for(const [label,value]of [["Name",state.project.name],["Active parts",state.occurrences.filter(row=>row.removed_at===null).length],["Number format",state.project.prefix+"0".repeat(state.project.digits)]])identity.append(window.BSUI.fieldRow(label,String(value)).root);
-    if(rootAssembly)identity.append(window.BSUI.fieldRow("Top assembly",rootAssembly.item.part_number+" · "+rootAssembly.item.name).root);
-    const picture=projectPicture(ctx(),{assembly:rootAssembly?.item});overview.append(picture,identity,picture.editorPanel);
-    const historyPanel=revisionsHistory();main.append(overview);if(rootAssembly)await renderPart(main,rootAssembly.item.id,{placement:rootAssembly.occurrence.id,summary:true,historyPanel});main.append(projectSummary(ctx()));
+    const rootAssembly=summaryAssembly(projectTree(state.items,state.occurrences)),photos=window.BSUI.section({title:"Project photos",role:"summary-photos"}),picture=projectPicture(ctx(),{assembly:rootAssembly?.item,gallery:true});photos.root.classList.add("project-summary-overview");photos.body.append(picture,picture.editorPanel);main.append(photos.root,projectSummary(ctx()));
+    const historyPanel=revisionsHistory();if(rootAssembly){const assembly=window.BSUI.section({title:"Top assembly · "+rootAssembly.item.part_number,role:"summary-assembly"});main.append(assembly.root);await renderPart(assembly.body,rootAssembly.item.id,{placement:rootAssembly.occurrence.id,summary:true,historyPanel});}
     const history=window.BSUI.section({title:"Project history",role:"project-history"}),archived=state.occurrences.filter(row=>row.removed_at!==null),folder=window.BSUI.section({title:"Archive",role:"archive-folder",count:archived.length+state.steps.filter(row=>row.retired_at).length});folder.body.append(button("Open Archive",()=>openHistory("",null,"archive")));history.body.append(folder.root);historyPanel.body.append(history.root);main.append(historyPanel.root);
    }
  }

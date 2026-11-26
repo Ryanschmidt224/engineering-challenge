@@ -1,3 +1,4 @@
+import {editOverview} from "./project-overview.js";
 import {exportProject,restoreProject} from "./project-backup.js";
 import {automaticBackupsResponse} from "./project-auto-backups.js";
 import {prepareFile,uploadFile,admitFile,downloadFile} from "./project-engine-files.js";
@@ -35,7 +36,7 @@ export async function handleProjectWorkspace(request,env,owner){
   await initializeProjectEngine(db);
   if(proof)return engineJSON(await proveProjectCommands(db,owner.id,body.operationId));
   if(maintenance)return engineJSON(await inventoryProjectOrphans(db,env.PHOTOS,owner.id,url.searchParams));
-  if(!path.length){if(method!=="GET")return engineJSON({error:"Method not allowed"},405);return engineJSON({projects:await rows(db,"SELECT * FROM engine_projects WHERE owner_id=? AND restore_job_id IS NULL ORDER BY name,id",owner.id)});}
+  if(!path.length){if(method!=="GET")return engineJSON({error:"Method not allowed"},405);return engineJSON({projects:await rows(db,"SELECT id,owner_id,owner_name,name,revision,prefix,digits,created_at,json_extract(overview,'$.shortSummary') AS short_summary,json_extract(overview,'$.description') AS description FROM engine_projects WHERE owner_id=? AND restore_job_id IS NULL ORDER BY name,id",owner.id)});}
   const projectId=path[0];
   if(importing)return engineJSON(await restoreProject(request,env,owner,projectId,{asCopy:path[1]==="import-copy"}));
   let input;
@@ -65,6 +66,7 @@ export async function handleProjectWorkspace(request,env,owner){
    }
    if(area==="items"&&path.length===4&&action==="restore-preview")return engineJSON(await commands.restorePreview(db,project,id,url.searchParams.get("occurrence")));
   }else{
+   if(area==="overview"&&path.length===2&&method==="PATCH")return engineJSON(await editOverview(db,input,project,body));
    if(area==="workshop-items"&&path.length===2&&method==="POST")return engineJSON(await createWorkshopItem(env,input,project,body));
    if(area==="occurrences"){
     if(path.length===4&&method==="POST"&&action==="reorder")return engineJSON(await reorderPlacements(db,input,project,id,body));

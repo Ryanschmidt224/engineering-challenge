@@ -182,7 +182,7 @@ const migrations=[{version:1,statements:[
  ...["INSERT","UPDATE"].map(action=>`CREATE TRIGGER IF NOT EXISTS engine_media_restore_retired_${action.toLowerCase()} BEFORE ${action} ON engine_media WHEN EXISTS(SELECT 1 FROM engine_projects p JOIN engine_restore_jobs j ON p.restore_job_id=j.id JOIN engine_restore_jobs closed ON closed.project_id=j.project_id AND closed.actor_id=j.actor_id AND closed.operation_id=j.operation_id WHERE p.id=NEW.project_id AND closed.cleanup_token IS NOT NULL) BEGIN SELECT RAISE(ABORT,'RESTORE_OPERATION_RETIRED'); END`)
 ]},{version:12,statements:[
  `ALTER TABLE engine_projects ADD COLUMN owner_name TEXT NOT NULL DEFAULT 'Ryan' CHECK(owner_name IN('Ryan','Wes','Wyatt'))`
-]}];
+]},{version:13,statements:[`ALTER TABLE engine_projects ADD COLUMN overview TEXT NOT NULL DEFAULT '{}' CHECK(json_valid(overview))`]}];
 const pending=new WeakMap();
 export const PROJECT_ENGINE_SCHEMA_VERSION=migrations.at(-1).version;
 // Read-only consumers never bootstrap/upgrade engineering storage. Do not cache
