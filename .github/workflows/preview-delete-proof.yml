@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   proof:
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/project-permanent-delete-review'
+    if: github.event.pull_request.head.repo.full_name == github.repository && (github.head_ref == 'feat/project-permanent-delete-review' || github.head_ref == 'feat/tree-move-undo')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -27,7 +27,12 @@ jobs:
           SOURCE_SESSION_COOKIE: ${{ secrets.BS_SOURCE_PREVIEW_SESSION }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_PREVIEW_BINDINGS_READ_TOKEN }}
           REPORT_PATH: ${{ runner.temp }}/deletion-proof.json
-        run: node scripts/preview-delete-proof.mjs
+        run: |
+          if [ "${{ github.head_ref }}" = feat/tree-move-undo ]; then
+            node scripts/preview-delete-proof.mjs --backup-only
+          else
+            node scripts/preview-delete-proof.mjs
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
