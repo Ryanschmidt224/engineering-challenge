@@ -54,18 +54,18 @@ function editCaption(ctx,row){
 export function mediaGallery(ctx,{itemId=null,title="Photos"}={}){
  const photos=photosFor(ctx.client.state,itemId),body=node("div","","project-photo-tools"),section={body,root:body};body.dataset.section=itemId?"part-photos":"project-photos";
  const add=files=>addFiles(ctx,files,{itemId}),choose=picker(add,{label:title+" files"});
- section.body.append(button("Add photos",choose.open,{variant:"quiet",small:true}));
- const grid=node("div","","project-media-grid"),mode=viewMode({label:"Photo view",storageKey:"bs-photo-view",initial:"tiles",onChange:value=>grid.dataset.view=value});grid.dataset.view=mode.value;section.body.append(mode.root);
+ const uploadRow=node("div","","bs-photo-upload-row"),addButton=button("Add photos",choose.open);
+ const grid=node("div","","project-media-grid"),mode=viewMode({label:"Photo view",storageKey:"bs-photo-view",initial:"tiles",onChange:value=>grid.dataset.view=value});grid.dataset.view=mode.value;
  const move=async(index,delta)=>{const ids=photos.map(row=>row.id);[ids[index],ids[index+delta]]=[ids[index+delta],ids[index]];await send(ctx,"/media/reorder","POST",{ids,...(itemId?{itemId}:{})},"Photo order saved.");};
  photos.forEach((row,index)=>{
   const file=fileOf(ctx,row),tile=node("figure","","project-media-tile"),caption=node("figcaption",row.caption||file?.name||"Unavailable photo");
   const remove=button("Remove",()=>confirmAction(ctx,"Remove photo","Remove this photo from the gallery? The stored file is kept.","Remove photo",token=>ctx.client.write(ctx.projectId,"/media/"+row.id+"/remove","POST",{},token)),{variant:"quiet",small:true});
   const tools=actions(button("Caption",()=>editCaption(ctx,row),{variant:"quiet",small:true}),...(index>0?[button("←",()=>move(index,-1),{variant:"quiet",small:true})]:[]),...(index<photos.length-1?[button("→",()=>move(index,1),{variant:"quiet",small:true})]:[]),remove);
   for(const control of tools.querySelectorAll("button"))if(["←","→"].includes(control.textContent))control.setAttribute("aria-label",control.textContent==="←"?"Move photo earlier":"Move photo later");
-  const meta=node("small",file?(file.name+" · "+Math.ceil(file.size/1024)+" KB"):"Unavailable file","project-media-meta");tile.append(thumbnail(ctx,file,row.caption),caption,meta,tools);grid.append(tile);
+  const meta=node("small",file?(file.name+" · "+Math.ceil(file.size/1024)+" KB"):"Unavailable file","project-media-meta"),image=thumbnail(ctx,file,row.caption),key="media:"+ctx.projectId+":"+row.id;tile.append(image);const controls=window.BSPhotoEditor.actionBar(image,{content:tools,expanded:opened.has(key),onToggle:open=>{if(open)opened.add(key);else opened.delete(key);}});controls.panel.classList.add("project-photo-editor");tile.append(caption,meta,controls.panel);grid.append(tile);
  });
- const paste=window.BSPhotoMarkup.pasteTarget((incoming,event)=>{event?.stopPropagation();void add(incoming);});paste.textContent="Drop photos here or right-click to paste an image (Ctrl+V)";
- section.body.append(paste,choose.input,grid);
+ const paste=window.BSPhotoMarkup.pasteTarget((incoming,event)=>{event?.stopPropagation();void add(incoming);});paste.textContent="Drop photos or paste an image";paste.title="Right-click and choose Paste, or press Ctrl+V.";
+ uploadRow.append(addButton,paste,mode.root);section.body.append(uploadRow,choose.input,grid);
  acceptDrops(section.body,add);return section.root;
 }
 

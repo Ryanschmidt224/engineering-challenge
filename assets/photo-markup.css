@@ -80,7 +80,7 @@
   }
 }
 
-/* Shared photo action row — placed below the photo, never over its image. */
+/* Shared photo shell: pencil over the image, tools below. */
 .bs-photo-control {
   position: relative;
   display: flex;
@@ -114,8 +114,8 @@
   white-space: nowrap;
 }
 .bs-photo-actions .bs-photo-toggle[aria-expanded="true"] {
-  border-color: var(--color-accent);
-  background: var(--color-accent-soft);
+  border-color: transparent;
+  background: transparent;
   color: var(--color-text);
 }
 .bs-photo-actions button:disabled {
@@ -129,8 +129,8 @@
   padding: 9px 11px;
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-medium);
-  background: var(--color-surface);
-  color: var(--color-text-muted);
+  background: var(--color-accent-soft);
+  color: var(--color-text);
   font-size: var(--text-small);
   line-height: 1.4;
   cursor: text;
@@ -311,8 +311,8 @@
   gap: var(--space-2);
 }
 .bs-photo-control .bs-photo-toggle[aria-expanded="true"] {
-  background: var(--color-accent-soft);
-  border-color: var(--color-accent);
+  background: transparent;
+  border-color: transparent;
 }
 .bs-photo-control .bs-photo-toggle:focus-visible {
   outline: 2px solid var(--color-focus);
@@ -895,4 +895,47 @@
     min-height: 125px;
     padding: 14px;
   }
+}
+
+.bs-photo-stage {
+  position: relative;
+  display: inline-grid;
+  justify-self: start;
+  width: fit-content;
+  min-width: 32px;
+  min-height: 32px;
+  max-width: 100%;
+}
+.bs-photo-control .bs-photo-stage > .bs-photo-toggle {
+  position: absolute;
+  inset: auto 2px 2px auto;
+  z-index: 2;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  opacity: 0.8;
+}
+.bs-photo-control .bs-photo-stage > .bs-photo-toggle:hover,
+.bs-photo-control .bs-photo-stage > .bs-photo-toggle:focus-visible {
+  opacity: 1;
+}
+.bs-photo-actions:empty,
+.bs-photo-actions:has(> .bs-photo-more[hidden]) {
+  display: none;
+}
+
+.bs-photo-upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.bs-photo-upload-row > .bs-photo-paste {
+  flex: 0 1 25%;
+  width: auto;
+  min-width: min(14rem, 100%);
+  margin: 0;
+  border-color: var(--color-accent);
 }

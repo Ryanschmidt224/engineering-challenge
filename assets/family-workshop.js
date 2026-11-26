@@ -1,3 +1,4 @@
+import "./photo-editor.js";
 import {dataTable} from "./data-table.js";
 import {node,button,listCard,actions,panel,field,checkbox,readValue,valuesEditor,help,requestWorkshop} from "./workshop-ui.js";
 import {present,resolveFamilyValues,validateFamilyFields,validateFamilyValues,isWebUrl} from "./family-model.js";
@@ -186,10 +187,7 @@ function renderDetail(){
  const product=data.products.find(p=>p.id===selectedProduct),use=data.uses.find(u=>u.id===selectedUse);
  const entity=use?"use":product?"product":"family",record=use||product||selected;
  const heading=node("div","","detail-heading");heading.append(node("p",categoryPath(selected.category_id),"eyebrow"),node("h2",use?use.purpose||selected.name:product?product.name:selected.name));
- const edit=()=>{
-  const next=copy(record);if(entity==="family")next.fields=copy(familyFields());
-  if(entity==="use"&&!projects.length){void run(async()=>{projects=(await requestWorkshop("/api/projects")).projects||[];begin(entity,next);});}else begin(entity,next);
- };
+ const edit=()=>editOwner(entity,record);
  heading.append(actions(button("Edit "+entity,edit),button(record.archived?"Restore "+entity:"Archive "+entity,()=>void archive(entity,record),"button--quiet")));
  if(entity!=="family")heading.append(button("Family: "+selected.name,()=>changeSelection({familyId:selectedFamily}),"button--quiet"));
  if(record.archived)heading.append(node("p","Archived. Existing project references and file bytes are retained.","notice"));
@@ -258,13 +256,17 @@ function categoryDialog(rename=false){
  if(old)form.append(button(old.archived?"Restore category":"Archive category",()=>{dialog.close();void archive("category",old);},"button--quiet"));
  dialog.append(form);dialog.showModal();
 }
+function editOwner(entity,record){
+ const next=copy(record);if(entity==="family")next.fields=copy(familyFields());
+ if(entity==="use"&&!projects.length){void run(async()=>{projects=(await requestWorkshop("/api/projects")).projects||[];begin(entity,next);});}else begin(entity,next);
+}
 function renderAttachments(host,ownerType,ownerId,canEdit){
  const files=data.attachments.filter(file=>!file.archived&&file[ownerType+"_id"]===ownerId);
  if(!files.length&&!canEdit)return;
  const section=panel("Files & links"),list=node("ul","","attachment-list");
  for(const file of files){const row=node("li"),link=node("a",file.title);link.href=file.url||"/api/workshop/file?id="+file.id;link.target="_blank";link.rel="noopener noreferrer";row.append(link);
-  if(file.kind==="photo"){const image=node("img","","photo-thumb");image.src=link.href;image.alt=file.title;row.prepend(image);}
-  if(canEdit)row.append(button("Archive reference",()=>void run(async()=>{await requestWorkshop("/api/workshop","PATCH",{entity:"attachment",id:file.id,expectedRevision:file.revision,archived:true});await refresh();renderDetail();}),"button--quiet"));list.append(row);
+  let image;if(file.kind==="photo"){image=node("img","","photo-thumb");image.src=link.href;image.alt=file.title;row.prepend(image);}
+  if(canEdit){const archiveButton=button("Archive reference",()=>void run(async()=>{await requestWorkshop("/api/workshop","PATCH",{entity:"attachment",id:file.id,expectedRevision:file.revision,archived:true});await refresh();renderDetail();}),"button--quiet");if(image)window.BSPhotoEditor.actionBar(image,{content:archiveButton});else row.append(archiveButton);}else if(image){const owner=(ownerType==="family"?data.families:ownerType==="product"?data.products:data.uses).find(record=>record.id===ownerId);if(owner)window.BSPhotoEditor.actionBar(image,{content:button("Edit "+ownerType,()=>editOwner(ownerType,owner))});}list.append(row);
  }
  section.append(list);
  if(canEdit){
