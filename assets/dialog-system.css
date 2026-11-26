@@ -9,19 +9,7 @@
   --bs-dialog-shadow: 0 24px 72px rgba(16, 29, 22, 0.25);
   --bs-dialog-radius: 14px;
 }
-dialog:is(
-    .bs-dialog,
-    .project-account-dialog,
-    .project-create-dialog,
-    .project-manage-dialog,
-    .project-delete-dialog,
-    .assembly-create-dialog,
-    .library-part-dialog,
-    .part-editor-dialog,
-    .workspace-photo-dialog,
-    .workspace-photo-dialog,
-    .bs-markup-modal
-  ):modal {
+dialog:is(.bs-dialog):modal {
   position: fixed;
   inset: 0;
   margin: auto;
@@ -34,86 +22,19 @@ dialog:is(
   max-height: calc(100dvh - 36px);
   overflow: auto;
 }
-dialog:is(
-    .bs-dialog,
-    .project-account-dialog,
-    .project-create-dialog,
-    .project-manage-dialog,
-    .project-delete-dialog,
-    .assembly-create-dialog,
-    .library-part-dialog,
-    .part-editor-dialog,
-    .workspace-photo-dialog,
-    .bs-markup-modal
-  )::backdrop {
+dialog:is(.bs-dialog)::backdrop {
   background: var(--bs-dialog-backdrop);
 }
-dialog:is(
-    .bs-dialog,
-    .project-account-dialog,
-    .project-create-dialog,
-    .project-manage-dialog,
-    .project-delete-dialog,
-    .assembly-create-dialog,
-    .library-part-dialog,
-    .part-editor-dialog,
-    .workspace-photo-dialog,
-    .bs-markup-modal
-  )
-  :is(input.field, textarea.field, select.field) {
+dialog:is(.bs-dialog) :is(input.field, textarea.field, select.field) {
   border: 1px solid var(--bs-dialog-border);
   border-radius: var(--radius-medium);
   background: #fff;
   color: var(--bs-dialog-fg);
 }
-dialog:is(
-    .bs-dialog,
-    .project-account-dialog,
-    .project-create-dialog,
-    .project-manage-dialog,
-    .project-delete-dialog,
-    .assembly-create-dialog,
-    .library-part-dialog,
-    .part-editor-dialog,
-    .workspace-photo-dialog,
-    .bs-markup-modal
-  )
-  :is(h2, h3) {
+dialog:is(.bs-dialog) :is(h2, h3) {
   color: var(--bs-dialog-fg);
 }
-dialog:is(
-    .bs-dialog,
-    .project-account-dialog,
-    .project-create-dialog,
-    .project-manage-dialog,
-    .project-delete-dialog,
-    .assembly-create-dialog,
-    .library-part-dialog,
-    .part-editor-dialog,
-    .workspace-photo-dialog,
-    .bs-markup-modal
-  )
-  .btn:not(.primary):not(.bs-dialog-danger) {
-  background: #f4f7f5;
-  border: 1px solid var(--bs-dialog-border);
-  color: var(--bs-dialog-fg);
-}
-dialog:is(
-    .bs-dialog,
-    .project-account-dialog,
-    .project-create-dialog,
-    .project-manage-dialog,
-    .project-delete-dialog,
-    .assembly-create-dialog,
-    .library-part-dialog,
-    .part-editor-dialog,
-    .workspace-photo-dialog,
-    .bs-markup-modal
-  )
-  .btn:focus-visible {
-  outline: 3px solid #a9d6c1;
-  outline-offset: 2px;
-}
+
 dialog.bs-dialog {
   width: min(460px, calc(100vw - 32px));
   padding: 24px;
@@ -163,18 +84,7 @@ dialog.bs-dialog {
   gap: var(--space-3);
   margin-top: 24px;
 }
-.bs-dialog .bs-dialog-actions .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 93px;
-  min-height: 39px;
-  margin: 0;
-  border-radius: var(--radius-medium);
-  padding: 8px 15px;
-  font-size: var(--text-body);
-  font-weight: var(--font-semibold);
-}
+
 .bs-dialog .bs-dialog-actions .bs-dialog-danger,
 dialog .bs-dialog-danger {
   background: #a52a32 !important;
@@ -190,97 +100,19 @@ dialog.bs-dialog:not([open]) {
   display: none !important;
 }
 /* Larger editors use the same surfaces, but keep their existing width. */
-dialog:is(.library-part-dialog, .part-editor-dialog, .bs-markup-modal):modal {
-  max-height: calc(100dvh - 24px);
-}
-dialog.workspace-photo-dialog:modal {
-  background: #fff;
-  color: var(--bs-dialog-fg);
-}
-dialog.workspace-photo-dialog .part-photo-placeholder {
-  color: var(--bs-dialog-muted);
-}
-dialog.workspace-photo-dialog
-  :is(.workspace-photos-editor, .workspace-photo-tools) {
-  background: #fff;
-  color: var(--bs-dialog-fg);
-}
 
 @media (max-width: 550px) {
   dialog.bs-dialog {
     padding: 18px;
     width: calc(100vw - 22px);
   }
-  .bs-dialog .bs-dialog-actions .btn {
-    flex: 1 1 auto;
-  }
 }
 
 /* Larger part forms: the fields, descriptions and project-only sections need
    room to breathe. This overrides the original 680px/760px dialog widths,
    without enlarging brief confirmation dialogs or photo viewers. */
-dialog.library-part-dialog:modal {
-  width: min(980px, calc(100vw - 44px));
-  max-width: calc(100vw - 44px);
-  height: min(92dvh, 1020px);
-  max-height: calc(100dvh - 30px);
-  margin: auto;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-dialog.part-editor-dialog:modal {
-  width: min(1100px, calc(100vw - 44px));
-  max-width: calc(100vw - 44px);
-  height: min(94dvh, 1080px);
-  max-height: calc(100dvh - 24px);
-  margin: auto;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-dialog.library-part-dialog .library-part-form {
-  padding: 26px 30px;
-}
-dialog.part-editor-dialog .workspace-main-bom-editor {
-  padding-left: 32px !important;
-  padding-right: 32px !important;
-}
-@media (max-width: 700px) {
-  dialog.library-part-dialog:modal,
-  dialog.part-editor-dialog:modal {
-    width: calc(100vw - 16px);
-    max-width: calc(100vw - 16px);
-    height: calc(100dvh - 16px);
-    max-height: calc(100dvh - 16px);
-    border-radius: var(--radius-large);
-  }
-  dialog.library-part-dialog .library-part-form {
-    padding: 17px;
-  }
-  dialog.part-editor-dialog .workspace-main-bom-editor {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-  }
-}
 
-dialog.bs-edit-conflict {
-  width: min(640px, calc(100vw - 32px));
-  max-height: 85dvh;
-  overflow: auto;
-}
-.bs-edit-conflict fieldset {
-  min-width: 0;
-  margin: 1rem 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-}
-.bs-edit-conflict legend {
-  font-weight: var(--font-semibold);
-}
-.bs-edit-conflict pre {
-  font: inherit;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  margin: 0.2rem 0 0.7rem;
+@media (max-width: 700px) {
 }
 
 /* Shared tooltip surface across Project, Workshop, and part editors.
@@ -295,8 +127,7 @@ dialog.bs-edit-conflict {
   --bs-tooltip-shadow: 0 10px 28px rgba(16, 29, 22, 0.16);
 }
 .bs-global-tooltip,
-.bs-section-tooltip-content,
-.bs-action-input-tooltip {
+.bs-section-tooltip-content {
   box-sizing: border-box;
   width: max-content;
   max-width: min(var(--bs-tooltip-width), calc(100vw - 28px));
@@ -328,16 +159,8 @@ dialog.bs-edit-conflict {
   left: 0;
 }
 
-.bs-action-input-tooltip {
-  z-index: 500;
-  bottom: calc(100% + 8px);
-  right: 0;
-}
-
 /* Shared interactive help: hover for a short explanation, double-click for examples. */
-.bs-help-button,
-.library-part-dialog button.library-function-tip,
-.library-part-dialog button.library-auto-number-tip {
+.bs-help-button {
   display: inline-grid;
   place-items: center;
   flex: none;

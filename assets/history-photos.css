@@ -7,8 +7,7 @@
   width: 100%;
 }
 
-.investigation-note-photo,
-.investigation-note-photo-tile {
+.investigation-note-photo {
   width: var(--history-photo-width);
   max-width: 100%;
   box-sizing: border-box;

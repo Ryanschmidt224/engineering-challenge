@@ -10,7 +10,10 @@
       "/project-engine-proof*",
       "/project",
       "/project/",
-      "/project.html"
+      "/project.html",
+      "/",
+      "/index.html",
+      "/website-settings.html"
     ]
   },
   "r2_buckets": [

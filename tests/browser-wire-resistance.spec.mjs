@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 for (const path of [
   "/calculators.html",
   "/knowledge.html#calculators",
-  "/index.html#calculators",
+
 ])
   for (const width of [390, 1440])
     test(

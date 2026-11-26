@@ -1,38 +1,6 @@
 {
-  "frozen": {
-    "assets/site-polish.css": "827912d27a1bde97fab8011e65d8360de2864f62b98e9c2e96d5212fb175a79e",
-    "assets/site-controls.css": "bbd9259c0d1ddb20c3b8bb932bc37a8d5150b728fe9d5901b11f767efec503cf",
-    "assets/site-workspaces.css": "daea144948dfbf6f26b170b4c20806a243dc1a40c99ca4df3618e80f37cee52e"
-  },
+  "frozen": {},
   "limits": {
-    "assets/site.css": {
-      "important": 54,
-      "projectIds": 0
-    },
-    "assets/parts-management.css": {
-      "important": 16,
-      "projectIds": 0
-    },
-    "assets/site-workspaces.css": {
-      "important": 8,
-      "projectIds": 0
-    },
-    "assets/product-lookup.css": {
-      "important": 1,
-      "projectIds": 0
-    },
-    "assets/site-polish.css": {
-      "important": 307,
-      "projectIds": 0
-    },
-    "assets/photo-markup.css": {
-      "important": 51,
-      "projectIds": 0
-    },
-    "assets/site-controls.css": {
-      "important": 137,
-      "projectIds": 0
-    },
     "assets/theme.css": {
       "important": 0,
       "projectIds": 0
@@ -53,8 +21,8 @@
       "important": 11,
       "projectIds": 0
     },
-    "assets/unstructured-notes.css": {
-      "important": 5,
+    "assets/photo-controls.css": {
+      "important": 51,
       "projectIds": 0
     }
   }

@@ -22,22 +22,6 @@ test("family and name-only product work without templates, stock or a manufactur
  await expect(detail(page)).not.toContainText(/Inventory|In stock|Master template|Product Builder/);
  const data=await snapshot(page);expect(data.products).toHaveLength(1);expect(data.products[0].mpn).toBe("");expect(data.uses).toHaveLength(0);await page.screenshot({path:testInfo.outputPath("workshop-desktop.png"),fullPage:true});
 });
-test("generic use opens its project; selecting and editing a product preserves requirements and instructions",async({page})=>{
- await page.goto("/workshop.html?family=f-resistor&project=launcher&return=%23launcher");
- await page.getByRole("button",{name:"Use in a project",exact:true}).click();
- await page.getByLabel("Purpose / project name",{exact:true}).fill("Hall input pull-up");await page.getByLabel("Resistance (Ω)",{exact:true}).fill("10000");await page.getByLabel("Power rating (W)",{exact:true}).fill("0.25");await page.getByLabel("Quantity",{exact:true}).fill("2");await save(page,"use");
- const use=(await snapshot(page)).uses[0];await page.getByRole("link",{name:"Open project part",exact:true}).click();
- const workspace=page.locator("#launcher .bom-part-workspace");await expect(workspace.getByRole("heading",{name:"Hall input pull-up",exact:true})).toBeVisible();
- await expect(workspace).not.toContainText("Part not found");await workspace.getByText("Part details",{exact:true}).click();
- const product=await post(page,"product",productRecord());
- await workspace.getByRole("button",{name:"Edit project use",exact:true}).click();await expect(page.getByLabel("Purpose / project name",{exact:true})).toHaveValue("Hall input pull-up");
- const recipe=[{id:"measure",title:"Measure before installing",tileOrder:[]}];const response=await page.request.put("/api/workspace?project=launcher&part="+use.id,{headers:{origin:"http://127.0.0.1:4173"},data:{recipe,expectedRevision:null}});expect(response.ok()).toBe(true);
- await page.getByLabel("Selected product",{exact:true}).selectOption(product.id);await save(page,"use");
- product.field_values["f-resistor-resistance"]=12000;await post(page,"product",product,1);await page.reload();
- await expect(detail(page)).toContainText("12000");await expect(detail(page)).toContainText("Project requirement: 10000 Ω");
- const stored=await snapshot(page);expect(stored.uses[0].field_values["f-resistor-resistance"]).toBe(10000);
- const instructions=await(await page.request.get("/api/workspace?project=launcher&part="+use.id)).json();expect(instructions.workspace.recipe[0].title).toBe("Measure before installing");
-});
 test("two tabs reject stale product saves and keep the losing draft",async({page,context})=>{
  const product=await post(page,"product",productRecord()),other=await context.newPage();
  for(const tab of [page,other]){await tab.goto("/workshop.html?product="+product.id);await tab.getByRole("button",{name:"Edit product",exact:true}).click();}

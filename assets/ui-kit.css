@@ -32,14 +32,12 @@
 .ui-button:hover {
   background: var(--color-hover);
 }
-.button--primary,
-.ui-button--primary {
+.button--primary {
   background: var(--color-accent);
   color: var(--color-on-accent);
   border-color: var(--color-accent);
 }
-.button--primary:hover,
-.ui-button--primary:hover {
+.button--primary:hover {
   background: var(--color-accent-hover);
 }
 .button--quiet,
@@ -228,19 +226,7 @@ summary.ui-button::-webkit-details-marker {
   right: 0;
   white-space: nowrap;
 }
-.ui-summary-content {
-  min-width: 0;
-  font-size: var(--text-body);
-}
-.ui-summary-content > :is(div, p, section, article, span):empty {
-  display: none;
-}
-.ui-summary-content > :first-child {
-  margin-top: 0;
-}
-.ui-summary-content > :last-child {
-  margin-bottom: 0;
-}
+
 .ui-status-mark {
   display: inline-block;
   margin-inline-end: var(--space-1);
@@ -295,27 +281,8 @@ summary.ui-button::-webkit-details-marker {
 }
 
 /* The list owns separation, so nested layout groups never add section margins. */
-.ui-section-list {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3);
-}
-.ui-section-list > .ui-section {
-  --action-height: var(--control-height-small);
-  --action-padding-block: var(--space-1);
-  --action-padding-inline: var(--space-2);
-  margin: 0;
-}
-.ui-section-list > :is(div, p, section, article, span):empty {
-  display: none;
-}
-.ui-section-list--columns {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
+
 @media (max-width: 640px) {
-  .ui-section-list--columns {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 /* Section: every collapsible block on project, assembly and part pages. */
@@ -427,14 +394,7 @@ summary.ui-button::-webkit-details-marker {
   }
 }
 /* Short summary shown in a collapsed header, e.g. "Qty 1 pcs". */
-.ui-section__meta {
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-  font-weight: var(--font-normal);
-}
-.ui-section__meta:empty {
-  display: none;
-}
+
 /* The hidden attribute always wins over a component's display value. */
 .ui-button[hidden],
 .button[hidden],
@@ -490,12 +450,7 @@ summary.ui-button::-webkit-details-marker {
   padding: var(--space-4);
   min-width: 0;
 }
-.ui-information-panel .ui-information-note {
-  margin: 0 0 var(--space-3);
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-  line-height: 1.5;
-}
+
 .ui-field-row {
   display: grid;
   grid-template-columns: minmax(0, min(35%, var(--field-label-width))) minmax(
@@ -526,19 +481,7 @@ summary.ui-button::-webkit-details-marker {
   max-width: 100%;
   resize: vertical;
 }
-.ui-information-form {
-  margin-block: var(--space-3);
-}
-.ui-information-form[hidden] {
-  display: none;
-}
-.ui-information-feedback {
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-}
-.ui-information-feedback:empty {
-  display: none;
-}
+
 @media (max-width: 640px) {
   .ui-field-row {
     grid-template-columns: minmax(0, 1fr);
@@ -583,30 +526,8 @@ summary.ui-button::-webkit-details-marker {
 }
 
 /* Property/value/source rows share one responsive layout in every part editor. */
-.component-specs {
-  display: grid;
-  gap: var(--space-2);
-  min-width: 0;
-}
-.component-spec-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr) auto;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-  margin: 0;
-}
-.component-spec-row > .ui-control {
-  min-width: 0;
-  width: 100%;
-}
+
 @media (max-width: 640px) {
-  .component-spec-row {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .component-spec-row > .ui-button {
-    justify-self: start;
-  }
 }
 
 .data-table {
@@ -632,37 +553,6 @@ summary.ui-button::-webkit-details-marker {
 }
 
 /* Expand a field value inline; it is a row, not a nested section frame. */
-.ui-field-disclosure {
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-.ui-field-disclosure__toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-accent);
-  cursor: pointer;
-  list-style: none;
-}
-.ui-field-disclosure__toggle::-webkit-details-marker {
-  display: none;
-}
-.ui-field-disclosure__toggle::after {
-  content: "";
-  width: var(--chevron-size);
-  height: var(--chevron-size);
-  border-top: var(--chevron-stroke) solid currentColor;
-  border-right: var(--chevron-stroke) solid currentColor;
-  transform: rotate(45deg);
-}
-.ui-field-disclosure[open] > .ui-field-disclosure__toggle::after {
-  transform: rotate(135deg);
-}
-.ui-field-disclosure__body {
-  margin-top: var(--space-3);
-}
 
 /* Each saved revision is one disclosure with its date and change summary.
    The 6rem label/date tracks keep their short metadata readable. */
@@ -758,7 +648,8 @@ summary.ui-button::-webkit-details-marker {
   border-radius: var(--radius-medium);
   background: var(--color-surface);
   color: var(--color-text);
-  box-shadow: 0 2px 8px #0002;
+  box-shadow: 0 2px 8px
+    color-mix(in srgb, var(--color-shadow-base) 13.333333%, transparent);
   overflow-wrap: anywhere;
 }
 .ui-status-toast :is(button, a) {

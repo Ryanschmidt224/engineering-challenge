@@ -1,0 +1,211 @@
+@media (max-width: 600px) {
+}
+
+/* Shared photo shell: unfilled pencil below the image, tools below. */
+.bs-photo-control {
+  position: relative;
+  display: flex;
+  width: fit-content;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  max-width: 100%;
+}
+.bs-photo-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.bs-photo-more {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.bs-photo-more[hidden],
+.bs-photo-toggle[hidden] {
+  display: none !important;
+}
+
+.bs-photo-actions button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+.bs-photo-paste:not([hidden]) {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px 11px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+  font-size: var(--text-small);
+  line-height: 1.4;
+  cursor: text;
+}
+.bs-photo-paste.is-dragover,
+.bs-photo-paste:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+}
+
+/* Type directly onto the image while the text tool is selected. */
+
+/* Discreet pencil at the photo's bottom-right; click expands its actions. */
+.bs-photo-control .bs-photo-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 5px;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  opacity: 0.8;
+  border-radius: var(--radius-medium);
+  color: var(--color-text);
+  line-height: 1;
+}
+.bs-photo-control .bs-photo-toggle svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  pointer-events: none;
+}
+.bs-photo-control .bs-photo-actions {
+  gap: var(--space-2);
+  margin-top: 4px;
+  justify-content: flex-end;
+}
+.bs-photo-control .bs-photo-more:not([hidden]) {
+  gap: var(--space-2);
+}
+.bs-photo-control .bs-photo-toggle[aria-expanded="true"] {
+  background: transparent;
+  border-color: transparent;
+}
+.bs-photo-control .bs-photo-toggle:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Project summary uses the same below-photo action row. */
+
+/* Assembly photo header: larger preview and all editor controls in normal flow.
+   The expanded buttons must not cover the status or heading. */
+
+@media (max-width: 760px) {
+}
+
+/* Compact part-page header. Keep the image, title and status related instead
+   of reserving an invisible 405px-wide column for photo edit actions. */
+
+@media (max-width: 600px) {
+}
+
+/* Assembly header: the photo's editor should not reserve 405px of empty width.
+   Keep the title within a short, predictable gap of the visible thumbnail. */
+
+@media (max-width: 640px) {
+}
+
+/* Project summary shares the below-photo action row. */
+
+@media (max-width: 600px) {
+}
+
+/* Text and arrow sizing options in the shared photo markup toolbar. */
+
+/* Shared, on-demand upload panel for photos and attachments site-wide. */
+.bs-upload-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: stretch;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 12px 0 16px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+}
+.bs-upload-panel[hidden] {
+  display: none !important;
+}
+.bs-upload-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.bs-upload-heading strong {
+  font-size: var(--text-body);
+  font-weight: var(--font-bold);
+}
+.bs-upload-hint {
+  margin: 0;
+  font-size: var(--text-small);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+.bs-upload-choose {
+  align-self: flex-start;
+}
+@media (max-width: 550px) {
+  .bs-upload-panel {
+    padding: 12px;
+  }
+}
+
+.bs-photo-stage {
+  position: relative;
+  display: inline-grid;
+  justify-self: start;
+  width: fit-content;
+  min-width: 32px;
+  min-height: 32px;
+  max-width: 100%;
+}
+.bs-photo-control .bs-photo-toggle:hover,
+.bs-photo-control .bs-photo-toggle:focus-visible {
+  opacity: 1;
+}
+.bs-photo-actions:empty {
+  display: none;
+}
+.bs-photo-upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.bs-photo-upload-row > .bs-photo-paste {
+  flex: 0 1 25%;
+  width: auto;
+  min-width: min(14rem, 100%);
+  margin: 0;
+  border-color: var(--color-accent);
+}
+
+/* The pencil belongs to the image stage. Expanded tools cannot widen its row. */
+.bs-photo-stage > .bs-photo-toggle {
+  justify-self: end;
+  margin-block-start: 4px;
+}
+.bs-photo-control > .bs-photo-actions:has(> .bs-photo-more[hidden]) {
+  display: none;
+}

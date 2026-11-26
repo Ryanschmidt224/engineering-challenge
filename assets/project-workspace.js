@@ -1,116 +1,773 @@
-import {loadWebsiteSettings} from './website-settings-client.js';
-import {summaryAssembly} from "./project-root-view.js";
-import {containerName} from "./project-presentation.js";
-import {initSiteHeader} from "./site-header.js";
-import {createProjectClient} from "./project-client.js";
-import {node,field,checkbox} from "./workshop-ui.js";
-import {initSplitPanes} from "./split-panes.js";
-import {detailsFor,buildFor,editItem,editRecord,projectSettings,confirmAction} from "./project-editors.js";
-import {workInstructions as instructionView} from "./project-instructions.js";
-import {information,configurationView,fileLink} from "./project-information.js";
-import {createHistoryView,latestHistory} from "./project-history-view.js";
-import {partRevisions,partHistoryPrompt} from "./project-part-history.js";
-import {renderProjectTree} from "./project-tree-view.js";
-import {projectTree} from "./project-tree-model.js";
-import {renderProjectBOM} from "./project-bom-view.js";
-import {partPicture,projectPicture} from "./project-media.js";
-import {workshopPartEditor,workshopSourceView} from "./project-workshop-editor.js";
-import {projectCatalog} from "./project-catalog.js";
-import {projectSummary} from "./project-summary.js";
-import {renderProjectParts} from "./project-parts-view.js";
-import {downloadProjectHTML} from "./project-html-export.js";
-import {initProjectSignin} from "./project-signin.js";
-const button=(...args)=>window.BSUI.button(...args);
-export function initProjectWorkspace(root=document){
- const environment=root.querySelector("[data-project-environment]");if(environment)environment.textContent=["buildingschmidt.com","www.buildingschmidt.com"].includes(location.hostname)?"Private notebook":"Private preview";
- initSiteHeader();let needsSignin=false,signIn;const client=createProjectClient({fetcher:async(...args)=>{const response=await fetch(...args);if(response.status===401){needsSignin=true;notify("Your session has expired. Your draft is retained.");}return response;}}),content=root.querySelector("[data-project-content]"),heading=root.querySelector("[data-page-title]"),pageActions=root.querySelector("[data-page-actions]"),notice=root.querySelector("[data-notice]"),dialog=root.querySelector("[data-project-editor]"),historyMemos=new Map(),loadedRevisions=new WeakMap(),collapsedTree=new Set(),summaryPhotoState=new Map();let projectId=null,itemId=null,occurrenceId=null,renderSequence=0,showHidden=false,showDocuments=true,showWorkshop=true;
- const notify=(text,extra=null)=>{notice.replaceChildren(...(text?[node("span",text)]:[]));if(extra)notice.append(extra);if(needsSignin)notice.append(button("Log in again",()=>signIn()));};
- signIn=initProjectSignin({onSignIn:()=>{needsSignin=false;if(dialog.open)notify("Signed in. Your draft is retained. Save again when ready.");else void refresh();},onSignOut:()=>{needsSignin=true;dialog.close();void navigate();}});
- const ctx=()=>({client,projectId,itemId,occurrenceId,dialog,notify,refresh,navigate,signIn:()=>signIn(),openHistory,openArchive:()=>openHistory("",null,"archive")});
- async function navigate(id=null,item=null,view="part",occurrence=null){
-  const url=new URL(location.href);url.search="";if(id)url.searchParams.set("project",id);if(item)url.searchParams.set("item",item);if(occurrence)url.searchParams.set("occurrence",occurrence);if(view!=="part")url.searchParams.set("view",view);history.pushState(null,"",url);return refresh({preview:true});
- }
- async function openHistory(scope=undefined,selected=undefined,mode="history"){
-  const memo=historyMemos.get(projectId)||{mode:"history",scope:"",type:"all",q:"",entries:[],cursor:null,selected:null,scroll:0};
-  if(scope!==undefined&&scope!==memo.scope||mode!==undefined&&mode!==memo.mode){memo.entries=[];memo.cursor=null;memo.scroll=0;memo.pageScroll=0;memo.selected=null;memo.detailOpen=false;}
-  if(scope!==undefined)memo.scope=scope;if(mode!==undefined)memo.mode=mode;
-  if(selected!==undefined){memo.selected=selected;memo.detailOpen=!!selected;if(selected){memo.type="all";memo.q="";}}
-  historyMemos.set(projectId,memo);return navigate(projectId,memo.scope||null,"history");
- }
- async function action(path,data={},message="Saved.",method="POST",after=null){
-  try{await client.write(projectId,path,method,data);await refresh();notify(message,after);}catch(error){notify(error.message);}
- }
- function workInstructions(current,context=ctx()){
-  return instructionView(context,current);
- }
- function engineeringFile(current,context=ctx()){
-  const state=client.state,link=state.file_links.find(link=>link.item_id===current.id&&link.active),file=state.files.find(file=>file.id===link?.file_id),section=window.BSUI.section({title:"CAD files",count:file?1:0,countLabel:["file","files"],role:"engineering-file"}),input=node("input");input.type="file";input.setAttribute("aria-label","CAD file");
-  const upload=button(file?"Replace CAD file":"Upload CAD file",async()=>{if(!input.files.length){notify("Choose a file first.");return;}upload.disabled=true;try{await client.upload(projectId,input.files[0],{itemId:current.id,occurrenceId:context.occurrenceId});await refresh();notify("CAD file saved. Earlier History keeps the earlier file.");}catch(error){notify(error.message);}finally{upload.disabled=false;}});
-  window.BSUI.sectionActions(section.body,{primary:upload});section.body.append(input);if(file)section.body.append(fileLink(context,file));return {root:section.root,file};
- }
- function revisionsHistory(){return window.BSUI.section({title:"Revisions / History",role:"revisions-history"});}
- async function renderPart(container,id,{placement=null,summary=false,historyPanel=null}={}){
-  const sequence=renderSequence,state=client.state,item=state.items.find(row=>row.id===id),occ=state.occurrences.find(row=>row.item_id===id&&((placement||occurrenceId)?row.id===(placement||occurrenceId):row.removed_at===null));if(!item||!occ||occ.removed_at!==null){container.append(node("p","Choose an item from the feature tree, or find removed work in History."));return;}
-  const context={...ctx(),itemId:item.id,occurrenceId:occ.id},fileArea=engineeringFile(item,context);
-  if(!summary){const picture=partPicture(context,item,fileArea.file);
-  const overview=node("section","","project-part-overview"),identity=node("div","","project-part-identity");
-  identity.append(node("h2",containerName(item)),node("p",item.part_number+" · Revision "+(item.revision_level||1)+" (working draft)","muted"));
-  if(item.short_name&&item.short_name!==item.name)identity.append(node("p",item.name,"project-part-subtitle"));
-  overview.append(picture,identity,picture.editorPanel);container.append(overview);
-  const placementTree=projectTree(state.items,state.occurrences),shared=state.occurrences.filter(row=>row.item_id===item.id&&placementTree.active(row));identity.append(node("p",state.project.name+" / "+placementTree.path(occ).map(row=>row.name).join(" / "),"muted"));if(shared.length>1)identity.append(node("p","This part has "+shared.length+" active placements. Engineering details are shared; quantity and status belong to this location."));
-  const headerControls=node("div","","project-build-controls");let buildBusy=false;
-  const updateBuild=async patch=>{if(buildBusy)return;buildBusy=true;for(const control of headerControls.querySelectorAll("input,select"))control.disabled=true;const build={...buildFor(occ),...patch};await action("/occurrences/"+occ.id,{build},"Build information saved.","PATCH");buildBusy=false;for(const control of headerControls.querySelectorAll("input,select"))control.disabled=false;};
-  const quantity=field("Quantity",occ.quantity,()=>{},{type:"number"});quantity.querySelector("input").onchange=event=>updateBuild({quantity:event.target.value===""?null:Number(event.target.value)});
-  headerControls.append(field("Status",occ.build_status,value=>updateBuild({build_status:value}),{options:[{value:"not_started",label:"Not started"},{value:"in_progress",label:"In progress"},{value:"complete",label:"Complete"}]}),quantity,checkbox("Needs attention",!!occ.attention,value=>updateBuild({attention:value})));identity.append(headerControls);}
-  const details=window.BSUI.section({title:summary?"Assembly details · "+item.part_number:"Part details",role:"details"}),duplicate=button("Duplicate part",()=>action("/items/"+item.id+"/duplicate",{},"Independent copy added."));
-  const selected=state.selections.some(row=>row.id===item.id),copy=node("a","Copy to Workshop","ui-button");copy.href="workshop.html?"+new URLSearchParams({copyEngineProject:projectId,copyPart:item.id,returnProject:location.pathname+location.search});
-  window.BSUI.sectionActions(details.body,{primary:button("Edit part details",()=>editItem(context,item,occ)),secondary:[...(!item.is_assembly?[duplicate]:[]),...(selected?[button("Change Workshop selection",()=>workshopPartEditor(context,{item}))]:item.kind==="part"&&!item.is_assembly?[copy]:[])]});details.body.append(information("Item identity",[["Item type",item.is_assembly?"Subassembly":item.kind],["Generic Part Name",containerName(item)],["Part number",item.part_number],["Purpose (optional)",item.fields.purpose]]),configurationView({snapshot:{item,occurrence:{...occ,root:{name:state.project.name}}}},"Part details",{includeBuild:false,includeContainer:false}),information("Display options",[["Quantity",occ.quantity+" "+occ.unit],["Status",occ.build_status.replaceAll("_"," ")],["Needs attention",occ.attention?"Yes":"No"],["Attention note",occ.attention_note],["Hide from feature tree?",occ.hidden?"Yes":"No"]]));container.append(details.root);const source=workshopSourceView(context,item);if(source)container.append(source);if(item.is_assembly&&!summary){const assembly=window.BSUI.section({title:"Subassembly",role:"subassembly"});assembly.body.append(button("Add custom part",()=>editItem(context,null,null,{parentId:occ.id})),button("Add subassembly",()=>editItem(context,null,null,{assembly:true,parentId:occ.id})),button("Add Workshop part",()=>workshopPartEditor(context,{parentId:occ.id})),button("Open subassembly BOM",()=>navigate(projectId,item.id,"bom",occ.id)),button("Open Archive",()=>openHistory(item.id,null,"archive")));container.append(assembly.root);}container.append(workInstructions(item,context),fileArea.root);
-  const history=window.BSUI.section({title:summary?"Assembly history":"History",role:"item-history"});window.BSUI.sectionActions(history.body,{primary:button("Add entry",()=>editRecord(context)),secondary:[button("View all history",()=>openHistory(item.id))]});const panel=historyPanel||revisionsHistory();panel.body.append(history.root);if(!historyPanel)container.append(panel.root);panel.body.append(await partRevisions(context,item,{title:summary?"Assembly revisions":"Revisions",lazy:true}));const loadHistory=async()=>{try{const count=await latestHistory(context,history.body);if(sequence===renderSequence)history.setCount(count);return true;}catch(error){if(sequence===renderSequence)notify(error.message);return false;}};{let loaded=false,busy=false;history.root.addEventListener("toggle",async()=>{if(!history.root.open||loaded||busy)return;busy=true;loaded=await loadHistory();busy=false;});}
- }
- async function projectList(){
-  const pendingDirectory=Promise.all([client.request(""),loadWebsiteSettings()]);pendingDirectory.catch(()=>{});
-  const legacy=node("a","Legacy projects","ui-button ui-button--quiet");legacy.href="/index.html?legacy=1#home";legacy.title="Open the previous project pages in read-only mode.";
-  const create=button("New project",()=>projectSettings(ctx(),{create:true}),{variant:"primary"});heading.textContent="Projects";pageActions.replaceChildren(legacy);const area=node("div","","project-stack");content.replaceChildren(area);
-  const sequence=renderSequence,loading=node("div","","ui-directory-toolbar");create.disabled=true;loading.append(create,node("p","Loading projects…","muted"));area.append(loading);const [{projects}]=await pendingDirectory;if(sequence!==renderSequence)return;create.disabled=false;area.replaceChildren(projectCatalog(ctx(),projects,create));
- }
- async function showWorkspace(state,sequence,url){
-  if(itemId&&!occurrenceId)occurrenceId=state.occurrences.find(row=>row.item_id===itemId&&row.removed_at===null)?.id||null;
-  heading.textContent=state.project.name;
-   const exportLink=node("a","Export project","ui-button");exportLink.href="/api/project-engine/projects/"+projectId+"/export";
-   const exportHTML=button("Export readable HTML",async()=>{const id=projectId;exportHTML.disabled=true;try{await downloadProjectHTML(id);notify("Readable HTML exported. Keep a .bsproject export for recovery.");}catch(error){notify(error.message);}finally{exportHTML.disabled=false;}});
-   const view=url.searchParams.get("view")||"part",pages=node("nav","","project-navigation ui-navigation-list");pages.setAttribute("aria-label","Project pages");
-   const summary=button("Project summary",()=>navigate(projectId)),parts=button("Parts Management",()=>navigate(projectId,null,"parts")),bom=button("Open BOM",()=>navigate(projectId,null,"bom")),historyButton=button("Project history",()=>openHistory()),settings=button("Project settings",()=>navigate(projectId,null,"settings"));
-   for(const [control,selected]of [[summary,!itemId&&view==="part"],[parts,view==="parts"],[bom,view==="bom"],[historyButton,view==="history"],[settings,view==="settings"]])if(selected)control.setAttribute("aria-current","page");
-   pages.append(summary,parts,bom,historyButton,settings);
-   pageActions.replaceChildren(button("All projects",()=>navigate()),...(["history","bom","parts","settings"].includes(view)?[button("Back to build",()=>navigate(projectId))]:[]));
-   const panes=node("div","","project-panes"),sidebar=node("aside","","project-sidebar"),tree=renderProjectTree(ctx(),{showHidden,onShowHidden:value=>{showHidden=value;void refresh();},showDocuments,onShowDocuments:value=>{showDocuments=value;void refresh();},showWorkshop,onShowWorkshop:value=>{showWorkshop=value;void refresh();},selectedOccurrence:occurrenceId,summarySelected:!itemId&&view==="part",collapsed:collapsedTree}),main=node("div","","project-main project-stack");sidebar.append(tree,pages);panes.append(sidebar,main);content.replaceChildren(panes);
-   initSplitPanes(panes,{key:"project-workspace",panes:[{key:"tree",selector:".project-sidebar",name:"feature tree"}]});
-   if(view==="history"){
-    const memo=historyMemos.get(projectId)||{mode:"history",scope:itemId||"",type:"all",q:"",entries:[],cursor:null,selected:null,scroll:0};historyMemos.set(projectId,memo);main.append(createHistoryView(ctx(),memo));return;
-   }
-   if(view==="settings"){
-    projectSettings(ctx(),{mount:main});const exports=node("section","","project-stack");exports.append(node("h3","Export project"),node("p","Download a project backup for recovery, or readable HTML for viewing outside the website.","muted"));const actions=node("div","","ui-actions");actions.append(exportLink,exportHTML);exports.append(actions);main.append(exports);return;
-   }
-   if(view==="bom"){main.append(renderProjectBOM(ctx(),occurrenceId));return;}
-   if(view==="parts"){main.append(renderProjectParts(ctx()));return;}
-   if(itemId)await renderPart(main,itemId);else{
-    const rootAssembly=summaryAssembly(projectTree(state.items,state.occurrences)),photos=window.BSUI.section({title:"Project photos",role:"summary-photos",open:summaryPhotoState.get(projectId)||false}),picture=projectPicture(ctx(),{assembly:rootAssembly?.item,gallery:true});const photoProjectId=projectId;photos.root.addEventListener("toggle",()=>summaryPhotoState.set(photoProjectId,photos.root.open));photos.root.classList.add("project-summary-overview");photos.body.append(picture,picture.editorPanel);main.append(photos.root,projectSummary(ctx()));
-    const historyPanel=revisionsHistory();if(rootAssembly){const assembly=window.BSUI.section({title:"Top assembly · "+rootAssembly.item.part_number,role:"summary-assembly"});main.append(assembly.root);await renderPart(assembly.body,rootAssembly.item.id,{placement:rootAssembly.occurrence.id,summary:true,historyPanel});}
-    const history=window.BSUI.section({title:"Project history",role:"project-history"}),archived=state.occurrences.filter(row=>row.removed_at!==null),folder=window.BSUI.section({title:"Archive",role:"archive-folder",count:archived.length+state.steps.filter(row=>row.retired_at).length});folder.body.append(button("Open Archive",()=>openHistory("",null,"archive")));history.body.append(folder.root);historyPanel.body.append(history.root);main.append(historyPanel.root);
-   }
- }
- async function refresh({preview=false}={}){
-  const sequence=++renderSequence,url=new URL(location.href);projectId=url.searchParams.get("project");itemId=url.searchParams.get("item");occurrenceId=url.searchParams.get("occurrence");
-  let shownRevision=null,cachedRender;
-  try{
-   if(!projectId){await projectList();return;}
-   if(preview&&client.state?.project.id===projectId){shownRevision=loadedRevisions.get(client.state)??null;cachedRender=showWorkspace(client.state,sequence,url);notify("Refreshing project…");}
-   const [state]=await Promise.all([client.load(projectId).then(state=>{loadedRevisions.set(state,state.project.revision);return state;}),cachedRender,loadWebsiteSettings()]);if(sequence!==renderSequence)return;
-   if(notice.textContent==="Refreshing project…")notify("");
-   if(shownRevision===loadedRevisions.get(state))return;
-   await showWorkspace(state,sequence,url);
-
-  }catch(error){if(sequence!==renderSequence)return false;notify(error.status===401?"Sign in with your owner account to open Projects.":error.message);content.replaceChildren(node("p",error.status===401?"Sign in through Account on this page.":"Projects could not be loaded."),button(error.status===401?"Sign in":"Try again",error.status===401?()=>signIn():()=>refresh()));return false;}
- }
- addEventListener("popstate",()=>void refresh({preview:true}));addEventListener("beforeunload",event=>{if(dialog.open){event.preventDefault();event.returnValue="";}});void refresh();
+import { loadWebsiteSettings } from "./website-settings-client.js";
+import { summaryAssembly } from "./project-root-view.js";
+import { containerName } from "./project-presentation.js";
+import { initSiteHeader } from "./site-header.js";
+import { createProjectClient } from "./project-client.js";
+import { node, field, checkbox } from "./workshop-ui.js";
+import { initSplitPanes } from "./split-panes.js";
+import {
+  detailsFor,
+  buildFor,
+  editItem,
+  editRecord,
+  projectSettings,
+  confirmAction,
+} from "./project-editors.js";
+import { workInstructions as instructionView } from "./project-instructions.js";
+import {
+  information,
+  configurationView,
+  recordVersionView,
+  fileLink,
+} from "./project-information.js";
+import { createHistoryView, latestHistory } from "./project-history-view.js";
+import { partRevisions, partHistoryPrompt } from "./project-part-history.js";
+import { renderProjectTree } from "./project-tree-view.js";
+import { projectTree } from "./project-tree-model.js";
+import { renderProjectBOM } from "./project-bom-view.js";
+import { partPicture, projectPicture } from "./project-media.js";
+import {
+  workshopPartEditor,
+  workshopSourceView,
+} from "./project-workshop-editor.js";
+import { projectCatalog } from "./project-catalog.js";
+import { projectSummary } from "./project-summary.js";
+import { renderProjectParts } from "./project-parts-view.js";
+import { downloadProjectHTML } from "./project-html-export.js";
+import { initProjectSignin } from "./project-signin.js";
+const button = (...args) => window.BSUI.button(...args);
+export function initProjectWorkspace(root = document) {
+  const environment = root.querySelector("[data-project-environment]");
+  if (environment)
+    environment.textContent = [
+      "buildingschmidt.com",
+      "www.buildingschmidt.com",
+    ].includes(location.hostname)
+      ? "Private notebook"
+      : "Private preview";
+  initSiteHeader();
+  let needsSignin = false,
+    signIn;
+  const client = createProjectClient({
+      fetcher: async (...args) => {
+        const response = await fetch(...args);
+        if (response.status === 401) {
+          needsSignin = true;
+          notify("Your session has expired. Your draft is retained.");
+        }
+        return response;
+      },
+    }),
+    content = root.querySelector("[data-project-content]"),
+    heading = root.querySelector("[data-page-title]"),
+    pageActions = root.querySelector("[data-page-actions]"),
+    notice = root.querySelector("[data-notice]"),
+    dialog = root.querySelector("[data-project-editor]"),
+    historyMemos = new Map(),
+    loadedRevisions = new WeakMap(),
+    collapsedTree = new Set(),
+    summaryPhotoState = new Map();
+  let projectId = null,
+    itemId = null,
+    occurrenceId = null,
+    renderSequence = 0,
+    showHidden = false,
+    showDocuments = true,
+    showWorkshop = true;
+  const notify = (text, extra = null) => {
+    notice.replaceChildren(...(text ? [node("span", text)] : []));
+    if (extra) notice.append(extra);
+    if (needsSignin) notice.append(button("Log in again", () => signIn()));
+  };
+  signIn = initProjectSignin({
+    onSignIn: () => {
+      needsSignin = false;
+      if (dialog.open)
+        notify("Signed in. Your draft is retained. Save again when ready.");
+      else void refresh();
+    },
+    onSignOut: () => {
+      needsSignin = true;
+      dialog.close();
+      void navigate();
+    },
+  });
+  const ctx = () => ({
+    client,
+    projectId,
+    itemId,
+    occurrenceId,
+    dialog,
+    notify,
+    refresh,
+    navigate,
+    signIn: () => signIn(),
+    openHistory,
+    openArchive: () => openHistory("", null, "archive"),
+  });
+  async function navigate(
+    id = null,
+    item = null,
+    view = "part",
+    occurrence = null,
+  ) {
+    const url = new URL(location.href);
+    url.search = "";
+    if (id) url.searchParams.set("project", id);
+    if (item) url.searchParams.set("item", item);
+    if (occurrence) url.searchParams.set("occurrence", occurrence);
+    if (view !== "part") url.searchParams.set("view", view);
+    history.pushState(null, "", url);
+    return refresh({ preview: true });
+  }
+  async function openHistory(
+    scope = undefined,
+    selected = undefined,
+    mode = "history",
+  ) {
+    const memo = historyMemos.get(projectId) || {
+      mode: "history",
+      scope: "",
+      type: "all",
+      q: "",
+      entries: [],
+      cursor: null,
+      selected: null,
+      scroll: 0,
+    };
+    if (
+      (scope !== undefined && scope !== memo.scope) ||
+      (mode !== undefined && mode !== memo.mode)
+    ) {
+      memo.entries = [];
+      memo.cursor = null;
+      memo.scroll = 0;
+      memo.pageScroll = 0;
+      memo.selected = null;
+      memo.detailOpen = false;
+    }
+    if (scope !== undefined) memo.scope = scope;
+    if (mode !== undefined) memo.mode = mode;
+    if (selected !== undefined) {
+      memo.selected = selected;
+      memo.detailOpen = !!selected;
+      if (selected) {
+        memo.type = "all";
+        memo.q = "";
+      }
+    }
+    historyMemos.set(projectId, memo);
+    return navigate(projectId, memo.scope || null, "history");
+  }
+  async function action(
+    path,
+    data = {},
+    message = "Saved.",
+    method = "POST",
+    after = null,
+  ) {
+    try {
+      await client.write(projectId, path, method, data);
+      await refresh();
+      notify(message, after);
+    } catch (error) {
+      notify(error.message);
+    }
+  }
+  function workInstructions(current, context = ctx()) {
+    return instructionView(context, current);
+  }
+  function engineeringFile(current, context = ctx()) {
+    const state = client.state,
+      link = state.file_links.find(
+        (link) => link.item_id === current.id && link.active,
+      ),
+      file = state.files.find((file) => file.id === link?.file_id),
+      section = window.BSUI.section({
+        title: "CAD files",
+        count: file ? 1 : 0,
+        countLabel: ["file", "files"],
+        role: "engineering-file",
+      }),
+      input = node("input");
+    input.type = "file";
+    input.setAttribute("aria-label", "CAD file");
+    const upload = button(
+      file ? "Replace CAD file" : "Upload CAD file",
+      async () => {
+        if (!input.files.length) {
+          notify("Choose a file first.");
+          return;
+        }
+        upload.disabled = true;
+        try {
+          await client.upload(projectId, input.files[0], {
+            itemId: current.id,
+            occurrenceId: context.occurrenceId,
+          });
+          await refresh();
+          notify("CAD file saved. Earlier History keeps the earlier file.");
+        } catch (error) {
+          notify(error.message);
+        } finally {
+          upload.disabled = false;
+        }
+      },
+    );
+    window.BSUI.sectionActions(section.body, { primary: upload });
+    section.body.append(input);
+    if (file) section.body.append(fileLink(context, file));
+    return { root: section.root, file };
+  }
+  function revisionsHistory() {
+    return window.BSUI.section({
+      title: "Revisions / History",
+      role: "revisions-history",
+    });
+  }
+  async function renderPart(
+    container,
+    id,
+    { placement = null, summary = false, historyPanel = null } = {},
+  ) {
+    const sequence = renderSequence,
+      state = client.state,
+      item = state.items.find((row) => row.id === id),
+      occ = state.occurrences.find(
+        (row) =>
+          row.item_id === id &&
+          (placement || occurrenceId
+            ? row.id === (placement || occurrenceId)
+            : row.removed_at === null),
+      );
+    if (!item || !occ || occ.removed_at !== null) {
+      container.append(
+        node(
+          "p",
+          "Choose an item from the feature tree, or find removed work in History.",
+        ),
+      );
+      return;
+    }
+    const context = { ...ctx(), itemId: item.id, occurrenceId: occ.id },
+      fileArea = engineeringFile(item, context);
+    if (!summary) {
+      const picture = partPicture(context, item, fileArea.file);
+      const overview = node("section", "", "project-part-overview"),
+        identity = node("div", "", "project-part-identity");
+      identity.append(
+        node("h2", containerName(item)),
+        node(
+          "p",
+          item.part_number +
+            " · Revision " +
+            (item.revision_level || 1) +
+            " (working draft)",
+          "muted",
+        ),
+      );
+      if (item.short_name && item.short_name !== item.name)
+        identity.append(node("p", item.name, "project-part-subtitle"));
+      overview.append(picture, identity, picture.editorPanel);
+      container.append(overview);
+      const placementTree = projectTree(state.items, state.occurrences),
+        shared = state.occurrences.filter(
+          (row) => row.item_id === item.id && placementTree.active(row),
+        );
+      identity.append(
+        node(
+          "p",
+          state.project.name +
+            " / " +
+            placementTree
+              .path(occ)
+              .map((row) => row.name)
+              .join(" / "),
+          "muted",
+        ),
+      );
+      if (shared.length > 1)
+        identity.append(
+          node(
+            "p",
+            "This part has " +
+              shared.length +
+              " active placements. Engineering details are shared; quantity and status belong to this location.",
+          ),
+        );
+      const headerControls = node("div", "", "project-build-controls");
+      let buildBusy = false;
+      const updateBuild = async (patch) => {
+        if (buildBusy) return;
+        buildBusy = true;
+        for (const control of headerControls.querySelectorAll("input,select"))
+          control.disabled = true;
+        const build = { ...buildFor(occ), ...patch };
+        await action(
+          "/occurrences/" + occ.id,
+          { build },
+          "Build information saved.",
+          "PATCH",
+        );
+        buildBusy = false;
+        for (const control of headerControls.querySelectorAll("input,select"))
+          control.disabled = false;
+      };
+      const quantity = field("Quantity", occ.quantity, () => {}, {
+        type: "number",
+      });
+      quantity.querySelector("input").onchange = (event) =>
+        updateBuild({
+          quantity:
+            event.target.value === "" ? null : Number(event.target.value),
+        });
+      headerControls.append(
+        field(
+          "Status",
+          occ.build_status,
+          (value) => updateBuild({ build_status: value }),
+          {
+            options: [
+              { value: "not_started", label: "Not started" },
+              { value: "in_progress", label: "In progress" },
+              { value: "complete", label: "Complete" },
+            ],
+          },
+        ),
+        quantity,
+        checkbox("Needs attention", !!occ.attention, (value) =>
+          updateBuild({ attention: value }),
+        ),
+      );
+      identity.append(headerControls);
+    }
+    const details = window.BSUI.section({
+        title: summary
+          ? "Assembly details · " + item.part_number
+          : "Part details",
+        role: "details",
+      }),
+      duplicate = button("Duplicate part", () =>
+        action(
+          "/items/" + item.id + "/duplicate",
+          {},
+          "Independent copy added.",
+        ),
+      );
+    const selected = state.selections.some((row) => row.id === item.id),
+      copy = node("a", "Copy to Workshop", "ui-button");
+    copy.href =
+      "workshop.html?" +
+      new URLSearchParams({
+        copyEngineProject: projectId,
+        copyPart: item.id,
+        returnProject: location.pathname + location.search,
+      });
+    window.BSUI.sectionActions(details.body, {
+      primary: button("Edit part details", () => editItem(context, item, occ)),
+      secondary: [
+        ...(!item.is_assembly ? [duplicate] : []),
+        ...(selected
+          ? [
+              button("Change Workshop selection", () =>
+                workshopPartEditor(context, { item }),
+              ),
+            ]
+          : item.kind === "part" && !item.is_assembly
+            ? [copy]
+            : []),
+      ],
+    });
+    details.body.append(
+      information("Item identity", [
+        ["Item type", item.is_assembly ? "Subassembly" : item.kind],
+        ["Generic Part Name", containerName(item)],
+        ["Part number", item.part_number],
+        ["Purpose (optional)", item.fields.purpose],
+      ]),
+      configurationView(
+        {
+          snapshot: {
+            item,
+            occurrence: { ...occ, root: { name: state.project.name } },
+          },
+        },
+        "Part details",
+        { includeBuild: false, includeContainer: false },
+      ),
+      information("Display options", [
+        ["Quantity", occ.quantity + " " + occ.unit],
+        ["Status", occ.build_status.replaceAll("_", " ")],
+        ["Needs attention", occ.attention ? "Yes" : "No"],
+        ["Attention note", occ.attention_note],
+        ["Hide from feature tree?", occ.hidden ? "Yes" : "No"],
+      ]),
+    );
+    container.append(details.root);
+    const source = workshopSourceView(context, item);
+    if (source) container.append(source);
+    if (item.is_assembly && !summary) {
+      const assembly = window.BSUI.section({
+        title: "Subassembly",
+        role: "subassembly",
+      });
+      assembly.body.append(
+        button("Add custom part", () =>
+          editItem(context, null, null, { parentId: occ.id }),
+        ),
+        button("Add subassembly", () =>
+          editItem(context, null, null, { assembly: true, parentId: occ.id }),
+        ),
+        button("Add Workshop part", () =>
+          workshopPartEditor(context, { parentId: occ.id }),
+        ),
+        button("Open subassembly BOM", () =>
+          navigate(projectId, item.id, "bom", occ.id),
+        ),
+        button("Open Archive", () => openHistory(item.id, null, "archive")),
+      );
+      container.append(assembly.root);
+    }
+    container.append(workInstructions(item, context), fileArea.root);
+    const history = window.BSUI.section({
+      title: summary ? "Assembly history" : "History",
+      role: "item-history",
+    });
+    window.BSUI.sectionActions(history.body, {
+      primary: button("Add entry", () => editRecord(context)),
+      secondary: [button("View all history", () => openHistory(item.id))],
+    });
+    const panel = historyPanel || revisionsHistory();
+    panel.body.append(history.root);
+    if (!historyPanel) container.append(panel.root);
+    panel.body.append(
+      await partRevisions(context, item, {
+        title: summary ? "Assembly revisions" : "Revisions",
+        lazy: true,
+      }),
+    );
+    const loadHistory = async () => {
+      try {
+        const count = await latestHistory(context, history.body);
+        if (sequence === renderSequence) history.setCount(count);
+        return true;
+      } catch (error) {
+        if (sequence === renderSequence) notify(error.message);
+        return false;
+      }
+    };
+    {
+      let loaded = false,
+        busy = false;
+      history.root.addEventListener("toggle", async () => {
+        if (!history.root.open || loaded || busy) return;
+        busy = true;
+        loaded = await loadHistory();
+        busy = false;
+      });
+    }
+  }
+  async function projectList() {
+    const pendingDirectory = Promise.all([
+      client.request(""),
+      loadWebsiteSettings(),
+    ]);
+    pendingDirectory.catch(() => {});
+    const create = button(
+      "New project",
+      () => projectSettings(ctx(), { create: true }),
+      { variant: "primary" },
+    );
+    heading.textContent = "Projects";
+    pageActions.replaceChildren();
+    const area = node("div", "", "project-stack");
+    content.replaceChildren(area);
+    const sequence = renderSequence,
+      loading = node("div", "", "ui-directory-toolbar");
+    create.disabled = true;
+    loading.append(create, node("p", "Loading projects…", "muted"));
+    area.append(loading);
+    const [{ projects }] = await pendingDirectory;
+    if (sequence !== renderSequence) return;
+    create.disabled = false;
+    area.replaceChildren(projectCatalog(ctx(), projects, create));
+  }
+  async function showWorkspace(state, sequence, url) {
+    if (itemId && !occurrenceId)
+      occurrenceId =
+        state.occurrences.find(
+          (row) => row.item_id === itemId && row.removed_at === null,
+        )?.id || null;
+    heading.textContent = state.project.name;
+    const exportLink = node("a", "Export project", "ui-button");
+    exportLink.href = "/api/project-engine/projects/" + projectId + "/export";
+    const exportHTML = button("Export readable HTML", async () => {
+      const id = projectId;
+      exportHTML.disabled = true;
+      try {
+        await downloadProjectHTML(id);
+        notify(
+          "Readable HTML exported. Keep a .bsproject export for recovery.",
+        );
+      } catch (error) {
+        notify(error.message);
+      } finally {
+        exportHTML.disabled = false;
+      }
+    });
+    const view = url.searchParams.get("view") || "part",
+      pages = node("nav", "", "project-navigation ui-navigation-list");
+    pages.setAttribute("aria-label", "Project pages");
+    const summary = button("Project summary", () => navigate(projectId)),
+      parts = button("Parts Management", () =>
+        navigate(projectId, null, "parts"),
+      ),
+      bom = button("Open BOM", () => navigate(projectId, null, "bom")),
+      historyButton = button("Project history", () => openHistory()),
+      settings = button("Project settings", () =>
+        navigate(projectId, null, "settings"),
+      );
+    for (const [control, selected] of [
+      [summary, !itemId && view === "part"],
+      [parts, view === "parts"],
+      [bom, view === "bom"],
+      [historyButton, view === "history"],
+      [settings, view === "settings"],
+    ])
+      if (selected) control.setAttribute("aria-current", "page");
+    pages.append(summary, parts, bom, historyButton, settings);
+    pageActions.replaceChildren(
+      button("All projects", () => navigate()),
+      ...(["history", "bom", "parts", "settings"].includes(view)
+        ? [button("Back to build", () => navigate(projectId))]
+        : []),
+    );
+    const panes = node("div", "", "project-panes"),
+      sidebar = node("aside", "", "project-sidebar"),
+      tree = renderProjectTree(ctx(), {
+        showHidden,
+        onShowHidden: (value) => {
+          showHidden = value;
+          void refresh();
+        },
+        showDocuments,
+        onShowDocuments: (value) => {
+          showDocuments = value;
+          void refresh();
+        },
+        showWorkshop,
+        onShowWorkshop: (value) => {
+          showWorkshop = value;
+          void refresh();
+        },
+        selectedOccurrence: occurrenceId,
+        summarySelected: !itemId && view === "part",
+        collapsed: collapsedTree,
+      }),
+      main = node("div", "", "project-main project-stack");
+    sidebar.append(tree, pages);
+    panes.append(sidebar, main);
+    content.replaceChildren(panes);
+    initSplitPanes(panes, {
+      key: "project-workspace",
+      panes: [
+        { key: "tree", selector: ".project-sidebar", name: "feature tree" },
+      ],
+    });
+    if (view === "history") {
+      const memo = historyMemos.get(projectId) || {
+        mode: "history",
+        scope: itemId || "",
+        type: "all",
+        q: "",
+        entries: [],
+        cursor: null,
+        selected: null,
+        scroll: 0,
+      };
+      historyMemos.set(projectId, memo);
+      main.append(createHistoryView(ctx(), memo));
+      return;
+    }
+    if (view === "settings") {
+      projectSettings(ctx(), { mount: main });
+      const exports = node("section", "", "project-stack");
+      exports.append(
+        node("h3", "Export project"),
+        node(
+          "p",
+          "Download a project backup for recovery, or readable HTML for viewing outside the website.",
+          "muted",
+        ),
+      );
+      const actions = node("div", "", "ui-actions");
+      actions.append(exportLink, exportHTML);
+      exports.append(actions);
+      main.append(exports);
+      return;
+    }
+    if (view === "bom") {
+      main.append(renderProjectBOM(ctx(), occurrenceId));
+      return;
+    }
+    if (view === "parts") {
+      main.append(renderProjectParts(ctx()));
+      return;
+    }
+    if (itemId) await renderPart(main, itemId);
+    else {
+      const rootAssembly = summaryAssembly(
+          projectTree(state.items, state.occurrences),
+        ),
+        photos = window.BSUI.section({
+          title: "Project photos",
+          role: "summary-photos",
+          open: summaryPhotoState.get(projectId) || false,
+        }),
+        picture = projectPicture(ctx(), {
+          assembly: rootAssembly?.item,
+          gallery: true,
+        });
+      const photoProjectId = projectId;
+      photos.root.addEventListener("toggle", () =>
+        summaryPhotoState.set(photoProjectId, photos.root.open),
+      );
+      photos.root.classList.add("project-summary-overview");
+      photos.body.append(picture, picture.editorPanel);
+      main.append(photos.root, projectSummary(ctx()));
+      const historyPanel = revisionsHistory();
+      if (rootAssembly) {
+        const assembly = window.BSUI.section({
+          title: "Top assembly · " + rootAssembly.item.part_number,
+          role: "summary-assembly",
+        });
+        main.append(assembly.root);
+        await renderPart(assembly.body, rootAssembly.item.id, {
+          placement: rootAssembly.occurrence.id,
+          summary: true,
+          historyPanel,
+        });
+      }
+      const history = window.BSUI.section({
+          title: "Project history",
+          role: "project-history",
+        }),
+        archived = state.occurrences.filter((row) => row.removed_at !== null),
+        folder = window.BSUI.section({
+          title: "Archive",
+          role: "archive-folder",
+          count:
+            archived.length +
+            state.steps.filter((row) => row.retired_at).length,
+        });
+      folder.body.append(
+        button("Open Archive", () => openHistory("", null, "archive")),
+      );
+      history.body.append(folder.root);
+      historyPanel.body.append(history.root);
+      main.append(historyPanel.root);
+    }
+  }
+  function revealLinkedRecord(state, url) {
+    const recordId = url.searchParams.get("record"),
+      record = state.records.find(
+        (row) => row.id === recordId && row.item_id === itemId,
+      );
+    if (!record) return;
+    let entry = content.querySelector(
+      '[data-record-id="' + CSS.escape(recordId) + '"]',
+    );
+    if (!entry) {
+      const section = window.BSUI.section({
+          title: record.title || "Linked record",
+          role: "linked-record",
+          open: true,
+        }),
+        files = state.file_links
+          .filter((link) => link.record_id === record.id && link.active)
+          .map((link) => link.file_id);
+      section.body.append(
+        recordVersionView(
+          ctx(),
+          { ...record, fileIds: files },
+          "Record",
+          state.files,
+          { onEdit: () => editRecord(ctx(), { record }) },
+        ),
+      );
+      (content.querySelector(".project-main") || content).prepend(section.root);
+      entry = section.root;
+    }
+    for (
+      let parent = entry;
+      parent && parent !== content;
+      parent = parent.parentElement
+    )
+      if (parent.tagName === "DETAILS") parent.open = true;
+    entry.scrollIntoView({ block: "nearest" });
+  }
+  async function refresh({ preview = false } = {}) {
+    const sequence = ++renderSequence,
+      url = new URL(location.href);
+    projectId = url.searchParams.get("project");
+    itemId = url.searchParams.get("item");
+    occurrenceId = url.searchParams.get("occurrence");
+    let shownRevision = null,
+      cachedRender;
+    try {
+      if (!projectId) {
+        await projectList();
+        return;
+      }
+      if (preview && client.state?.project.id === projectId) {
+        shownRevision = loadedRevisions.get(client.state) ?? null;
+        cachedRender = showWorkspace(client.state, sequence, url);
+        notify("Refreshing project…");
+      }
+      const [state] = await Promise.all([
+        client.load(projectId).then((state) => {
+          loadedRevisions.set(state, state.project.revision);
+          return state;
+        }),
+        cachedRender,
+        loadWebsiteSettings(),
+      ]);
+      if (sequence !== renderSequence) return;
+      if (notice.textContent === "Refreshing project…") notify("");
+      if (shownRevision === loadedRevisions.get(state)) {
+        revealLinkedRecord(state, url);
+        return;
+      }
+      await showWorkspace(state, sequence, url);
+      revealLinkedRecord(state, url);
+    } catch (error) {
+      if (sequence !== renderSequence) return false;
+      notify(
+        error.status === 401
+          ? "Sign in with your owner account to open Projects."
+          : error.message,
+      );
+      content.replaceChildren(
+        node(
+          "p",
+          error.status === 401
+            ? "Sign in through Account on this page."
+            : "Projects could not be loaded.",
+        ),
+        button(
+          error.status === 401 ? "Sign in" : "Try again",
+          error.status === 401 ? () => signIn() : () => refresh(),
+        ),
+      );
+      return false;
+    }
+  }
+  addEventListener("popstate", () => void refresh({ preview: true }));
+  addEventListener("beforeunload", (event) => {
+    if (dialog.open) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+  });
+  void refresh();
 }

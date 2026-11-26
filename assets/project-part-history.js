@@ -1,3 +1,4 @@
+import {uploadPanel} from "./photo-editor.js";
 import {normalizeCustomItem,normalizeOccurrence,diffProjectItems,formatRevisionValue} from "./project-item-model.js";
 import {openHistoryEntryDialog} from "./history-entry-dialog.js";
 import {partHelp} from "./part-help.js";
@@ -7,7 +8,7 @@ import {savedPartView,configurationView} from "./project-information.js";
 export function partHistoryPrompt(ctx,item,trigger,{archive=false,changes={},path=null,scope=null,expectedRevision=ctx.client.state.project.revision,onOwnUpload=()=>{},onComplete=()=>{}}={}){
  let token=expectedRevision;const projectId=ctx.projectId;
  const archiveLabel=item.is_assembly?"Archive subassembly":"Archive part";
- const form=openHistoryEntryDialog({trigger,title:archive?archiveLabel:Object.keys(changes).length?"Save as revision":"Create a Revision",description:scope?"Save a historical copy of this "+(scope.is_group?"instruction group and its entire nested subtree":"instruction and its records")+", including order and exact attachments. The saved copy keeps its revision number; this working scope advances once. The part revision stays unchanged.":archive?partHelp.archive:Object.keys(changes).length?partHelp.saveAsRevision:partHelp.revisions,submitLabel:archive?archiveLabel:"Save revision",archive,ui:window.BSUI,photoEditor:window.BSPhotoEditor,
+ const form=openHistoryEntryDialog({trigger,title:archive?archiveLabel:Object.keys(changes).length?"Save as revision":"Create a Revision",description:scope?"Save a historical copy of this "+(scope.is_group?"instruction group and its entire nested subtree":"instruction and its records")+", including order and exact attachments. The saved copy keeps its revision number; this working scope advances once. The part revision stays unchanged.":archive?partHelp.archive:Object.keys(changes).length?partHelp.saveAsRevision:partHelp.revisions,submitLabel:archive?archiveLabel:"Save revision",archive,ui:window.BSUI,photoEditor:{uploadPanel},
   uploadPhoto:async file=>{try{const result=await ctx.client.upload(projectId,file,{expectedRevision:token});token=result.revision;onOwnUpload(token);return result.fileId;}catch(error){offerSignin(error);throw error;}},
   onSave:async entryDetails=>{
    try{

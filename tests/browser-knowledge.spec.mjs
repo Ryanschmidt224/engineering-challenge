@@ -3,7 +3,7 @@ import {test, expect} from "@playwright/test";
 
 test.describe.configure({mode: "serial"});
 test.beforeEach(async ({request, context}) => {
-  const response = await request.post("/__test__/reset");
+  const response = await request.post("/__test__/reset?engine=1");
   const {cookie} = await response.json();
   const separator = cookie.indexOf("=");
   await context.addCookies([
@@ -148,92 +148,16 @@ async function tileFor(page, title, target_type, target_id) {
   return id;
 }
 
-test("products and project parts show knowledge from their family, and tiles link between each other", async ({page}) => {
-  await page.goto("/workshop.html");
-  const product = {id: crypto.randomUUID(), family_id: "f-buck-converter", name: "Test buck module", manufacturer: "", mpn: "", supplier_links: [], notes: "", field_values: {}};
-  await api(page, "/api/workshop", {entity: "product", record: product, expectedRevision: null, expectedFamilyRevision: 1});
-  const use = {id: crypto.randomUUID(), project_id: "launcher", tree_node_id: null, family_id: "f-buck-converter", product_id: product.id, purpose: "Logic supply", quantity: 1, unit: "pcs", field_values: {}, notes: ""};
-  await api(page, "/api/workshop", {entity: "use", record: use, expectedRevision: null, expectedFamilyRevision: 1});
-  await tileFor(page, "Hot-plug ringing", "family", "f-buck-converter");
-  await tileFor(page, "Module input limits", "product", product.id);
-
-  await page.goto("/workshop.html?product=" + product.id);
-  const workshop = page.locator("#workshop-detail");
-  await expect(workshop.getByRole("heading", {name: "Info Bits (2)", exact: true})).toBeVisible();
-  await expect(workshop.getByRole("link", {name: /Hot-plug ringing.*via family/})).toBeVisible();
-
-  await page.goto("/index.html#launcher/part/" + use.id);
-  const workspace = page.locator("#launcher .bom-part-workspace");
-  await workspace.getByText("Part details", {exact: true}).click();
-  await expect(workspace.getByText("Info Bits (2)", {exact: true})).toBeVisible();
-  // The part page may re-render once its data arrives; follow the link's target
-  // rather than racing that re-render with a click.
-  const tileLink = workspace.getByRole("link", {name: "Hot-plug ringing", exact: true});
-  await expect(tileLink).toHaveAttribute("href", /knowledge\.html\?tile=/);
-  await page.goto("/" + (await tileLink.getAttribute("href")));
-  await expect(detail(page).getByRole("heading", {name: "Hot-plug ringing", exact: true})).toBeVisible();
-
-  // Link this tile to the other tile; the other tile lists it under "Linked from".
-  page.on("dialog", (dialog) => dialog.accept());
-  await detail(page).getByRole("button", {name: "Add link", exact: true}).click();
-  const dialog = page.locator("#knowledge-dialog");
-  await dialog.getByLabel("Link to", {exact: true}).selectOption("tile");
-  await dialog.getByRole("button", {name: "Module input limits", exact: true}).click();
-  await dialog.getByLabel("Relation", {exact: true}).selectOption("see_also");
-  await dialog.getByRole("button", {name: "Add link", exact: true}).click();
-  await expect(detail(page).getByRole("heading", {name: "Links (2)", exact: true})).toBeVisible();
-  await detail(page).getByRole("link", {name: "Module input limits", exact: true}).click();
-  await expect(detail(page).getByRole("heading", {name: "Linked from (1)", exact: true})).toBeVisible();
-});
-
-test("a tile can be started from a project part and links to it", async ({page}) => {
-  await page.goto("/workshop.html");
-  const use = {id: crypto.randomUUID(), project_id: "launcher", tree_node_id: null, family_id: "f-resistor", product_id: null, purpose: "Pull-up", quantity: 1, unit: "pcs", field_values: {}, notes: ""};
-  await api(page, "/api/workshop", {entity: "use", record: use, expectedRevision: null, expectedFamilyRevision: 2});
-  await page.goto("/knowledge.html?new=1&link=use:" + use.id);
-  await page.getByLabel("Title", {exact: true}).fill("Choosing pull-up values");
-  await page.getByLabel("Summary", {exact: true}).fill("Why 10 k was used here.");
-  await page.getByRole("button", {name: "Save tile", exact: true}).click();
-  await expect(page.locator("#knowledge-status")).toHaveText("Saved.");
-  await expect(detail(page).getByText(/Applies to project part:/)).toBeVisible();
-  await expect(detail(page).getByRole("link", {name: "Pull-up", exact: true})).toHaveAttribute("href", "index.html#launcher/part/" + use.id);
-});
-
-for (const width of [1440, 390]) test("Knowledge opens the exact project record, including archived and missing records, at " + width + "px", async ({page}, testInfo) => {
-  await page.setViewportSize({width, height: 900});
-  const created = await api(page, "/api/investigations?project=launcher", {
-    action: "create", expectedRevision: null, scope: "assembly", ownerType: "assembly", ownerId: "__root__",
-    category: "failure", title: "MCU power-on failure", entries: [{type: "observation", text: "The MCU failed immediately after switching on 24 V.", date: "2026-11-22", files: []}],
-  });
-  const id = crypto.randomUUID();
-  await api(page, "/api/knowledge", {entity: "tile", expectedRevision: null, record: {id, type: "lesson", status: "draft", title: "Power-on lesson", summary: "An unconfirmed cause needs a measurement.", body: "", sources: []}});
-  await api(page, "/api/knowledge", {entity: "link", expectedRevision: null, record: {id: crypto.randomUUID(), tile_id: id, target_type: "record", target_id: created.createdId, target_project_id: "launcher", relation: "see_also", note: ""}});
-  await page.goto("/knowledge.html?tile=" + id);
-  await detail(page).getByRole("link", {name: "MCU power-on failure", exact: true}).click();
-  const reader = page.getByRole("dialog", {name: "MCU power-on failure", exact: true});
-  await expect(reader).toBeVisible();
-  await expect(reader.getByText("The MCU failed immediately after switching on 24 V.", {exact: true})).toBeVisible();
-  await expect(reader.getByRole("button", {name: /Edit|Save|Archive/})).toHaveCount(0);
-  await expect(page).toHaveURL(new RegExp("record=" + created.createdId + "#launcher$"));
-  await page.reload();
-  await expect(reader).toBeVisible();
-  await page.screenshot({path: testInfo.outputPath("linked-record.png")});
-  expect(await reader.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(0);
-  await reader.getByRole("button", {name: "Close", exact: true}).click();
-  await expect(page).not.toHaveURL(/record=/);
-
-  const archived = await api(page, "/api/investigations?project=launcher", {action: "archiveRecord", id: created.createdId, expectedRevision: created.revision, note: "Retained as evidence."});
-  await page.goto("/knowledge.html?tile=" + id);
-  await expect(detail(page).getByText(/\(archived\)/)).toBeVisible();
-  await detail(page).getByRole("link", {name: "MCU power-on failure", exact: true}).click();
-  await expect(reader.getByText("Failures · Archived", {exact: true})).toBeVisible();
-  await expect(reader.getByText("Archive reason: Retained as evidence.", {exact: true})).toBeVisible();
-  await reader.getByRole("button", {name: "Close", exact: true}).click();
-
-  await api(page, "/api/investigations?project=launcher", {action: "deleteRecord", id: created.createdId, expectedRevision: archived.revision});
-  await page.goto("/knowledge.html?tile=" + id);
-  await expect(detail(page).getByText(/no longer exists; last known name/)).toBeVisible();
-  await expect(detail(page).locator("a.link-target")).not.toHaveAttribute("href");
-  await page.goto("/index.html?record=" + created.createdId + "#launcher");
-  await expect(page.getByRole("dialog", {name: "Record unavailable", exact: true})).toContainText("no longer exists");
+test('Info Bits links to current project parts and exact records without legacy APIs',async({page,context})=>{
+ const project=crypto.randomUUID(),origin='http://127.0.0.1:4173',base='/api/project-engine/projects/'+project;
+ let revision=null;
+ const post=async(path,value)=>{const response=await context.request.post(path,{headers:{origin},data:{...value,operationId:crypto.randomUUID(),expectedRevision:revision}});expect(response.ok(),await response.text()).toBe(true);const data=await response.json();if(data.revision)revision=data.revision;return data;};
+ await post(base,{name:'Linked project'});const item=await post(base+'/items',{details:{name:'Bench module'}});
+ await post(base+'/items/'+item.itemId+'/records',{record:{type:'note',title:'Bench evidence',fields:{text:'Verified result'}}});
+ const tile=crypto.randomUUID(),saved=await context.request.post('/api/knowledge',{headers:{origin},data:{entity:'tile',expectedRevision:null,record:{id:tile,title:'Linked lesson',summary:'A current project result',body:'',sources:[],type:'lesson',status:'draft'}}});expect(saved.ok(),await saved.text()).toBe(true);
+ const retired=[];page.on('request',r=>{if(['/api/projects','/api/investigations','/api/components'].includes(new URL(r.url()).pathname))retired.push(r.url());});
+ await page.goto('/knowledge.html?tile='+tile);await page.getByRole('button',{name:'Add link',exact:true}).click();
+ await page.getByLabel('Link to',{exact:true}).selectOption('record');await page.getByLabel('Project',{exact:true}).selectOption(project);await page.getByRole('dialog').getByRole('button',{name:'Bench evidence',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'Add link',exact:true}).click();
+ await expect(page.getByRole('dialog')).not.toBeVisible();const link=page.locator('#knowledge-detail').getByRole('link',{name:'Bench evidence',exact:true});await expect(link).toHaveAttribute('href',new RegExp('project.html\\?project='+project));await link.click();
+ await expect(page).toHaveURL(new RegExp('item='+item.itemId));await expect(page.locator('[data-record-id]').filter({hasText:'Verified result'}).first()).toBeVisible();expect(retired).toEqual([]);
 });

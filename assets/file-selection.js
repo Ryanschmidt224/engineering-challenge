@@ -1,3 +1,4 @@
+import { pasteTarget } from "./clipboard-files.js";
 export function fileDropTarget(
   onFiles,
   {
@@ -14,10 +15,9 @@ export function fileDropTarget(
     if (chosen.length) void onFiles(chosen, event);
     else onEmpty();
   };
-  const target = window.BSPhotoMarkup.pasteTarget(
-    (files, event) => deliver(files, event),
-    { onEmpty },
-  );
+  const target = pasteTarget((files, event) => deliver(files, event), {
+    onEmpty,
+  });
   target.textContent = text;
   target.setAttribute("aria-label", label);
   target.title = "Right-click and choose Paste, or press Ctrl+V.";

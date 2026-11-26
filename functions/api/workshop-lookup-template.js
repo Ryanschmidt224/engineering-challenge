@@ -1,6 +1,7 @@
 import { initializeWorkshop } from "./workshop-db.js";
 export async function lookupTemplate(env, body) {
-  if (!body?.familyId) return null;
+  if (!body?.familyId)
+    throw Error("Choose a current Workshop template before searching.");
   if (!env.WORKSHOP_DB) throw Error("Workshop templates are unavailable.");
   await initializeWorkshop(env.WORKSHOP_DB);
   const family = await env.WORKSHOP_DB.prepare(

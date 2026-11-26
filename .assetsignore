@@ -1,7 +1,6 @@
 worker.js
 wrangler.jsonc
 functions/**
-PHOTO_SETUP.md
 .assetsignore
 .git/**
 .github/**
@@ -11,5 +10,5 @@ package.json
 package-lock.json
 scripts/**
 docs/**
-STATUS.md
-ARCHITECTURE.md
+*.md
+migrations/**
