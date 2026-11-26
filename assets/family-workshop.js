@@ -5,6 +5,7 @@ import {present,resolveFamilyValues,validateFamilyFields,validateFamilyValues,is
 import {tileTypes,tileStatuses,relations,labelFor} from "./knowledge-model.js";
 import {initProjectProductCopy} from "./project-product-copy.js";
 import {renderWorkshopProjectUses,projectReturnLink} from "./workshop-project-uses.js";
+import {workshopProductLookup} from "./workshop-product-lookup.js";
 
 const $=selector=>document.querySelector(selector),detail=$("#workshop-detail"),dialog=$("#workshop-dialog");
 const params=new URLSearchParams(location.search);
@@ -160,6 +161,7 @@ function renderProductEditor(form,record,set){
  });
  ordering.append(button("Add supplier link",()=>{record.supplier_links.push({supplier:"",part_number:"",url:""});mark();renderDetail();}));form.append(ordering);
  const notes=panel("Notes");notes.append(field("Notes",record.notes,value=>set("notes",value),{type:"textarea"}));form.append(notes);
+ form.append(workshopProductLookup({record,family:family(),fields:familyFields(),showUseFields,onApply(){mark();renderDetail();status("Suggestions applied to your draft. Review the values, then Save product.");}}));
 }
 function renderUseEditor(form,record,set){
  const identity=panel("Project use","projectUse");
