@@ -33,3 +33,115 @@
   color: var(--color-text-muted);
   font-size: var(--text-small);
 }
+
+/* Wire calculator uses the shared controls and theme on every calculator route. */
+.wire-calculator {
+  min-width: 0;
+}
+.wire-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+.wire-form fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--space-3);
+}
+.wire-form legend {
+  margin-bottom: var(--space-2);
+}
+.wire-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.wire-modes [aria-pressed="true"],
+.wire-gauge-button[aria-pressed="true"] {
+  background: var(--color-selected);
+  color: var(--color-text);
+}
+.wire-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.wire-form label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-small);
+}
+.wire-form input,
+.wire-form select {
+  width: 100%;
+  min-width: 0;
+}
+.wire-result {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  padding: var(--space-3);
+}
+.wire-big {
+  font-size: 2rem;
+  font-weight: var(--font-semibold);
+  margin-block: var(--space-2);
+}
+.wire-result meter {
+  width: 100%;
+}
+.wire-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.wire-facts dt {
+  font-size: var(--text-small);
+  color: var(--color-text-muted);
+}
+.wire-facts dd {
+  margin: 0;
+  font-weight: var(--font-semibold);
+  overflow-wrap: anywhere;
+}
+.wire-table-scroll {
+  overflow-x: auto;
+}
+.wire-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-small);
+}
+.wire-table th,
+.wire-table td {
+  padding: var(--space-2);
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--color-border);
+}
+.wire-gauge-button {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+}
+@media (max-width: 760px) {
+  .wire-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 420px) {
+  .wire-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.wire-calculator [hidden] {
+  display: none;
+}
