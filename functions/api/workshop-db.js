@@ -7,17 +7,14 @@ import {legacyProjectsReadOnly,legacyReadOnlyResponse} from "./legacy-projects.j
 
 const json = (data,status=200) => Response.json(data,{status,headers:{"cache-control":"private, no-store","x-content-type-options":"nosniff"}});
 const tables = {category:"workshop_categories",family:"workshop_families",product:"workshop_products",use:"workshop_uses",attachment:"workshop_attachments"};
-const bootstraps = new WeakMap();
 const stmt = (db,sql,...values) => db.prepare(sql).bind(...values);
 const parseRow = row => row && Object.fromEntries(Object.entries(row).map(([key,value])=>[key,["choices","field_values","supplier_links","project_state"].includes(key)?JSON.parse(value):value]));
 export const dbRows = async (db,sql,...values) => (await stmt(db,sql,...values).all()).results.map(parseRow);
 export async function initializeWorkshop(db) {
  if(!db)throw Error("The Workshop database is not bound to this deployment.");
- if(bootstraps.has(db))return bootstraps.get(db);
- // Numbered migrations (workshop-migrations.js) run once per isolate.
- const setup=migrateWorkshop(db);
- bootstraps.set(db,setup);
- try{await setup;}catch(error){bootstraps.delete(db);throw error;}
+ // A binding can outlive the request that created a promise. Keep setup local
+ // to this request; the database ledger already makes migrations race-safe.
+ await migrateWorkshop(db);
 }
 export async function workshopSnapshot(db) {
  const names=["categories","families","fields","products","uses","attachments"];

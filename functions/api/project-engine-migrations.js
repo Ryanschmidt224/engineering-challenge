@@ -190,7 +190,6 @@ const migrations=[{version:1,statements:[
  `CREATE TABLE website_settings(id TEXT PRIMARY KEY CHECK(id='global'),revision TEXT NOT NULL,value TEXT NOT NULL CHECK(json_valid(value)))`,
  `INSERT INTO website_settings(id,revision,value) SELECT 'global',lower(hex(randomblob(16))),json_object('tags',json((SELECT json_group_array(tag) FROM(SELECT min(trim(tag)) tag FROM(SELECT 'Electronics' tag UNION SELECT 'PCB Design' UNION SELECT '3D Printing' UNION SELECT 'Mechanical' UNION SELECT 'Software' UNION SELECT trim(value) tag FROM engine_projects,json_each(engine_projects.overview,'$.tags') WHERE type='text' AND length(trim(value)) BETWEEN 1 AND 60 AND value NOT GLOB '*['||char(1)||'-'||char(31)||char(127)||']*') GROUP BY lower(trim(tag)) ORDER BY lower(trim(tag)) LIMIT 100))),'owners',json((SELECT json_group_array(name) FROM(SELECT 'Ryan' name UNION SELECT 'Wes' UNION SELECT 'Wyatt' UNION SELECT owner_name FROM engine_projects))),'defaultOwner','Ryan')`
 ]}];
-const pending=new WeakMap();
 export const PROJECT_ENGINE_SCHEMA_VERSION=migrations.at(-1).version;
 // Read-only consumers never bootstrap/upgrade engineering storage. Do not cache
 // false: the normal owner engine entry may initialize it later in this isolate.
@@ -198,10 +197,10 @@ export async function projectEngineSchemaReady(db){
  if(!db||!await db.prepare("SELECT 1 AS ready FROM sqlite_master WHERE type='table' AND name='project_engine_migrations'").first())return false;
  const current=await db.prepare("SELECT COUNT(*) AS count,MAX(version) AS version FROM project_engine_migrations").first();return current?.count===migrations.length&&current.version===PROJECT_ENGINE_SCHEMA_VERSION;
 }
+// Database I/O stays within its request. The atomic migration ledger resolves
+// concurrent setup; never share a pending promise between Worker requests.
 export async function initializeProjectEngine(db){
  if(!db)throw Error("Preview D1 binding is not configured.");
- if(pending.has(db))return pending.get(db);
- const work=(async()=>{
   if(await projectEngineSchemaReady(db))return;
   await db.prepare("CREATE TABLE IF NOT EXISTS project_engine_migrations(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)").run();
   const applied=(await db.prepare("SELECT version FROM project_engine_migrations").all()).results;
@@ -215,9 +214,4 @@ export async function initializeProjectEngine(db){
     const completed=await db.prepare("SELECT version FROM project_engine_migrations WHERE version=?").bind(migration.version).first();if(!completed)throw error;
    }
   }
- })();
- pending.set(db,work);
- // Coalesce in-flight setup only. Each later request rechecks schema readiness;
- // a completed cache entry must not admit an older writer after another upgrade.
- try{await work;}finally{pending.delete(db);}
 }
