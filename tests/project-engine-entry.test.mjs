@@ -56,3 +56,12 @@ test("a schema upgrade after entry validation blocks old command admission but a
   assert.equal((await db.prepare("SELECT name FROM engine_projects WHERE id=?").bind(projectId).first()).name,"Preserved");assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM engine_operations").first()).n,1);
  }finally{db.close();}
 });
+
+
+test("failed migrations expose D1 message and nested cause in server logs without changing the error",async t=>{
+ const db=new TestD1();t.after(()=>db.close());const failure=new Error("D1_ERROR: migration rejected",{cause:new Error("SQLITE_ERROR: synthetic cause")});
+ db.batch=async()=>{throw failure;};const logged=[];t.mock.method(console,"error",(...args)=>logged.push(args));
+ await assert.rejects(initializeProjectEngine(db),error=>error===failure);
+ assert.deepEqual(logged,[["Project engine migration failed",JSON.stringify({version:1,message:failure.message,cause:failure.cause.message})]]);
+ assert.equal((await db.prepare("SELECT COUNT(*) AS count FROM project_engine_migrations").first()).count,0);
+});
