@@ -52,9 +52,12 @@ export async function handleFamilyWorkshopFile(request,env){
  else if(extension==="gif"&&/^GIF8[79]a/.test(signature))mediaType="image/gif";
  else if(extension==="webp"&&signature.startsWith("RIFF")&&signature.slice(8)==="WEBP")mediaType="image/webp";
  else if(["jpg","jpeg","png","gif","webp"].includes(extension))return json({error:"Image contents do not match its filename"},415);
- const attachmentId=crypto.randomUUID(),key=prefix+attachmentId;
+ const uploadId=request.headers.get("x-upload-id");if(uploadId&&!/^[a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12}$/i.test(uploadId))return json({error:"Invalid upload ID"},400);
+ const attachmentId=uploadId||crypto.randomUUID(),key=prefix+attachmentId;
+ const prior=uploadId?await env.WORKSHOP_DB.prepare("SELECT * FROM workshop_attachments WHERE id=?").bind(attachmentId).first():null;
+ if(prior){const original=prior.r2_key===key?await env.PHOTOS.get(key):null;if(prior.archived||prior[owner+"_id"]!==id||prior.title!==name||!original||original.size!==bytes.length||await sha256(new Uint8Array(await original.arrayBuffer()))!==await sha256(bytes))return json({error:"This upload ID belongs to different content or another record"},409);return json({id:attachmentId,title:name},201);}
  const saved=await env.PHOTOS.put(key,bytes,{onlyIf:{etagDoesNotMatch:"*"},httpMetadata:{contentType:mediaType},customMetadata:{filename:name}});
- if(saved===null)return json({error:"Upload ID collision. Try again."},409);
+ if(saved===null){const original=uploadId?await env.PHOTOS.get(key):null;if(!original||original.size!==bytes.length||await sha256(new Uint8Array(await original.arrayBuffer()))!==await sha256(bytes))return json({error:"Upload ID collision. Try again."},409);}
  // The immutable bytes are written first. A metadata failure leaves a recoverable
  // orphan included in Workshop exports, never a record pointing at missing bytes.
  await env.WORKSHOP_DB.prepare("INSERT INTO workshop_attachments(id,"+owner+"_id,kind,title,r2_key,media_type,size) VALUES(?,?,?,?,?,?,?)").bind(attachmentId,id,mediaType.startsWith("image/")?"photo":"document",name,key,mediaType,bytes.length).run();

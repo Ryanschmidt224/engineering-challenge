@@ -1,3 +1,4 @@
+import {saveLookupDocument,identityRequired,requireLookupIdentity,clearLookupDocuments} from "./workshop-lookup-documents.js";
 import "./photo-editor.js";
 import {dataTable} from "./data-table.js";
 import {node,button,listCard,actions,panel,field,checkbox,readValue,valuesEditor,help,requestWorkshop} from "./workshop-ui.js";
@@ -54,6 +55,7 @@ function updateLocation(){
 }
 function changeSelection({category=selectedCategory,familyId="",productId="",useId=""}={}){
  if(!mayLeave())return;
+ if(draft?.entity==="product")clearLookupDocuments(draft.record.id);
  selectedCategory=category;selectedFamily=familyId;selectedProduct=productId;selectedUse=useId;draft=null;editing=false;dirty=false;showUseFields=false;
  updateLocation();
  renderNavigation();renderDetail();
@@ -87,6 +89,7 @@ function renderNavigation(){
 }
 function begin(entity,record){
  if(!mayLeave())return;
+ if(draft?.entity==="product"&&draft.record.id!==record.id)clearLookupDocuments(draft.record.id);
  editing=true;dirty=false;showUseFields=false;
  draft={entity,record:copy(record),expectedRevision:record.revision??null,expectedFamilyRevision:family()?.revision};
  renderDetail();
@@ -109,8 +112,10 @@ async function saveDraft(form){
  if(!form.reportValidity())return;
  if(draft.entity==="family")validateFamilyFields(draft.record.fields);
  if(["product","use"].includes(draft.entity))validateFamilyValues(familyFields(),draft.record.field_values);
+ if(draft.entity==="product"&&identityRequired(draft.record.id))requireLookupIdentity(draft.record);
  const payload=copy(draft);status("Saving…");
  const result=await requestWorkshop("/api/workshop","POST",payload);
+ if(payload.entity==="product"){draft.expectedRevision=result.record.revision;draft.record.revision=result.record.revision;await saveLookupDocument(result.record.id);clearLookupDocuments(result.record.id);}
  dirty=false;editing=false;draft=null;
  await refresh();
  if(payload.entity==="family"){selectedFamily=result.record.id;selectedProduct="";selectedUse="";}
@@ -125,7 +130,7 @@ function editor(entity,title,record){
  if(entity==="family")renderFamilyEditor(form,record,set);
  if(entity==="product")renderProductEditor(form,record,set);
  if(entity==="use")renderUseEditor(form,record,set);
- const footer=actions(button("Save "+entity,()=>form.requestSubmit(),"button--primary"),button("Cancel",()=>{if(!mayLeave())return;dirty=false;editing=false;draft=null;renderDetail();}));footer.classList.add("form-actions");
+ const footer=actions(button("Save "+entity,()=>form.requestSubmit(),"button--primary"),button("Cancel",()=>{if(!mayLeave())return;if(draft?.entity==="product")clearLookupDocuments(draft.record.id);dirty=false;editing=false;draft=null;renderDetail();}));footer.classList.add("form-actions");
  form.append(footer);detail.append(form);
  if(record.revision)renderAttachments(detail,entity,record.id,true);
  else header.append(help("Files & links","saveBeforeFiles"));
@@ -151,7 +156,7 @@ function renderFamilyEditor(form,record,set){
 function renderProductEditor(form,record,set){
  const identity=panel("Product identity");
  identity.append(field("Product name",record.name,value=>set("name",value),{required:true}),field("Manufacturer",record.manufacturer,value=>set("manufacturer",value)),field("Manufacturer part number",record.mpn,value=>set("mpn",value)));
- form.append(identity);
+ form.append(identity,workshopProductLookup({record,family:family(),fields:familyFields(),showUseFields,onDocumentChange:mark,documents:data.attachments.filter(f=>!f.archived&&f.product_id===record.id&&!f.url&&/\.(pdf|txt|csv|png|jpe?g|webp)$/i.test(f.title)),onApply(){mark();renderDetail();status("Suggestions applied to your draft. Review the values, then Save product.");}}));
  const specs=panel("Specifications");
  specs.append(checkbox("Show fields usually filled in for a project",showUseFields,value=>{showUseFields=value;renderDetail();}),valuesEditor(familyFields(),record.field_values,mark,{product:true,showUseFields}));form.append(specs);
  const ordering=panel("Supplier links");
@@ -162,7 +167,7 @@ function renderProductEditor(form,record,set){
  });
  ordering.append(button("Add supplier link",()=>{record.supplier_links.push({supplier:"",part_number:"",url:""});mark();renderDetail();}));form.append(ordering);
  const notes=panel("Notes");notes.append(field("Notes",record.notes,value=>set("notes",value),{type:"textarea"}));form.append(notes);
- form.append(workshopProductLookup({record,family:family(),fields:familyFields(),showUseFields,onApply(){mark();renderDetail();status("Suggestions applied to your draft. Review the values, then Save product.");}}));
+ 
 }
 function renderUseEditor(form,record,set){
  const identity=panel("Project use","projectUse");
