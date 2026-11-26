@@ -20,5 +20,7 @@ One line per deferred item. This is not permission to expand scope; Batch 5 rema
 - Optional, Claude #71 note: record-order membership guards could match step-order guards; the current project token already protects saves, so leave this outside the UI batch.
 - Optional build-tool polish: CSS producer auditing can mistake plain UI captions for class names; refine that distinction without weakening real class checks.
 
-- Claude #97: add a confirm or undo when a feature-tree drag moves an item into a different assembly; retain current guarded move behavior until that follow-up is implemented.
+- Claude #97 completed: a cross-assembly feature-tree move offers Undo move, guarded by the move result revision so intervening changes are never silently overwritten. Ordinary sibling reordering remains immediate.
 - Claude #97, CSS consolidation completed Nov 25: duplicate overview rules and phone breakpoints merged; responsive rules grouped after base rules; computed styles and geometry matched across 15 project views at desktop/tablet/phone widths. Keep later layout rules consolidated.
+
+- Claude #110: keep completed deletion tombstone sweeps for late bytes from older in-flight writers; do not switch to deleting-only jobs without an equivalent bounded late-write recovery policy. The isolated capacity-1000 deletion proof records total deletion duration.
