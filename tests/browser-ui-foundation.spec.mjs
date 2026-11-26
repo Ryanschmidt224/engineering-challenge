@@ -1,3 +1,4 @@
+import {openAccount} from "./browser-navigation-helpers.mjs";
 import {test, expect} from "@playwright/test";
 
 test.describe.configure({mode: "serial"});
@@ -101,7 +102,7 @@ test("empty section bodies share geometry and tooltip help does not cover the tr
 
 test("Account is reachable from the shared Workshop header", async ({page}) => {
   await page.goto("/workshop.html");
-  await page.locator(".ui-site-account").click();
+  await openAccount(page);
   await expect(page.locator(".project-account-dialog")).toBeVisible();
   await expect(page).not.toHaveURL(/account=1/);
 });
@@ -187,7 +188,7 @@ test("private project controls omit publishing, suggestion and feedback UI", asy
   await page.goto("/#launcher/workspace/__root__");
   await expect(page.locator(".assembly-workspace-page:not(.bom-part-workspace)").first()).toBeVisible();
   await expect(page.getByRole("button", {name:"Report: stuck or confused", exact:true})).toHaveCount(0);
-  await page.locator(".ui-site-account").click();
+  await openAccount(page);
   await expect(page.locator(".project-account-dialog")).toBeVisible();
   await expect(page.getByRole("button",{name:"Link administrator access",exact:true})).toHaveCount(0);
 });

@@ -823,36 +823,6 @@ summary.ui-button::-webkit-details-marker {
   align-items: center;
   gap: var(--space-2);
 }
-.ui-site-settings {
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-  text-decoration: none;
-}
-.ui-site-settings:hover,
-.ui-site-settings[aria-current="page"] {
-  color: var(--color-text);
-}
-
 .ui-settings-list + .ui-button {
   margin-block: var(--space-2);
-}
-
-.ui-site-settings__icon {
-  display: none;
-}
-@media (max-width: 640px) {
-  .ui-site-settings {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 44px;
-    min-height: 44px;
-  }
-  .ui-site-settings__label {
-    display: none;
-  }
-  .ui-site-settings__icon {
-    display: inline;
-    font-size: var(--text-title);
-  }
 }

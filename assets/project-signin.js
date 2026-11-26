@@ -10,5 +10,5 @@ export function initProjectSignin({onSignIn,onSignOut}){
  form.onsubmit=event=>{event.preventDefault();void run(async()=>{await account("POST",{action:"login",email:address.value.trim(),password:secret.value});secret.value="";dialog.close();onSignIn();});};
  dialog.oncancel=event=>{if(busy)event.preventDefault();};dialog.addEventListener("close",()=>{secret.value="";});
  async function open(){if(dialog.open)return;heading.textContent="Account";dialog.setAttribute("aria-label","Owner account");identity.textContent="Checking account…";message.textContent="";form.hidden=signout.hidden=true;dialog.showModal();try{const {user}=await account();heading.textContent=user?"Owner account":"Sign in";identity.textContent=user?user.email:"Sign in with the existing owner account. Public registration is closed.";form.hidden=!!user;signout.hidden=!user;if(!user)address.focus();}catch(error){identity.textContent="";form.hidden=false;message.textContent=error.message;}}
- const trigger=document.querySelector(".ui-site-account");if(trigger)trigger.onclick=event=>{event.preventDefault();void open();};return open;
+ const trigger=document.querySelector(".ui-site-account-action");if(trigger)trigger.onclick=event=>{event.preventDefault();void open();};return open;
 }

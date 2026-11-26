@@ -1,3 +1,5 @@
+import {projectRestorePicker} from "./project-restore-controls.js";
+import {createProjectClient} from "./project-client.js";
 import {backupAllDataButton} from "./site-data-backup.js";
 import {node,field,actions} from './workshop-ui.js';
 import {initSiteHeader} from './site-header.js';
@@ -7,6 +9,9 @@ const root=document.querySelector('[data-website-settings]'),notice=document.que
 const backup=window.BSUI.section({title:'Data backup',role:'website-backup',open:true});
 const backupButton=backupAllDataButton();backup.body.append(node('p','Download the website database and stored files to a backup file on your device.','muted'),backupButton);if(backupButton.disabled)backup.body.append(node('p',backupButton.title,'muted'));root.after(backup.root);
 const report=message=>{notice.textContent=message;};
+const restore=window.BSUI.section({title:'Restore project backup',role:'website-project-restore'});
+restore.body.append(node('p','Restore a .bsproject backup as a separate project with independent files. Existing projects stay unchanged.','muted'),projectRestorePicker({client:createProjectClient(),notify:report,onRestored:result=>{report('Recovered copy created with '+result.verifiedFiles+' verified files. ');const link=node('a','Open restored project','ui-button');link.href='project.html?project='+encodeURIComponent(result.projectId);notice.append(link);}}));backup.root.after(restore.root);
+
 async function read(){const response=await fetch('/api/project-engine/settings',{credentials:'same-origin',cache:'no-store'}),data=await response.json();if(!response.ok)throw Error(data.error||'Settings could not be loaded.');draft=normalizeWebsiteSettings(data);revision=data.revision;dirty=false;render();}
 function render(){
  root.replaceChildren();const form=node('form'),owners=window.BSUI.section({title:'Project owners',role:'website-owners',open:true}),tags=window.BSUI.section({title:'Tags',role:'website-tags',open:true});
