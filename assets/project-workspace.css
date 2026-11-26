@@ -222,7 +222,7 @@
   font-size: var(--text-small);
 }
 
-.project-tree-row > .list-card[aria-current="true"]:not(.project-tree-root) {
+.project-tree-row > .list-card[aria-current="true"] {
   background: var(--color-selected);
   border-color: var(--color-accent);
 }
@@ -403,7 +403,7 @@
   border-top: 1px solid var(--color-border);
 }
 
-.project-tree-row > .list-card:not(.project-tree-root):hover {
+.project-tree-row > .list-card:not([aria-current="true"]):hover {
   background: var(--color-surface);
 }
 .project-part-overview {
