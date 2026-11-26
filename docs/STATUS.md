@@ -2,18 +2,19 @@
 
 Private single-owner application on Cloudflare Workers Paid. The new project engine is active. The owner approved switch-over, permanent owner-confirmed project deletion, and the 100-placement Archive limit. Legacy source projects, files and backups remain preserved except when the owner explicitly uses the confirmed permanent-delete action. The owner-authorized TB001 copy is documented below.
 
-## Current
+## Current checkpoint — November 26, 2026
 
-- Latest application main is `ecd6f41510dc64ada02df37021498f952c1a8085` after PR #126. PR #125's production build succeeded (Worker `5c521a1d-de3a-40a4-ad64-1348d79fcdb2`); PR #126 production build `67c8f21e-747d-4705-831a-d5902f93e986` succeeded and deployed Worker `16003546-72c3-4a2e-a4d9-f3a702b34a6d`.
-- The owner confirmed Projects loads normally after PR #121 corrected the v15 settings seed's D1 compound-SELECT limit. The failed initializer prevented listing projects; it did not establish deletion. The request-lifetime promise fix in #119 is a separate earlier repair.
-- The normal Node checks now include a real local workerd/D1 v14 upgrade, retained project/owner/tag checks, new-project creation, and listing both projects after a persisted Worker restart. Migration errors log explicit version/message/cause.
-- PR #122 persists the linked-name checkbox in the existing fields JSON and labels immediately saved photo tools Done. PR #123 moves Backup all data to Website settings. PR #124 uses the first active Project Summary gallery photo on home cards without loading every full project.
-- PR #125 is released after Claude's core approval and implementation of its optional content-checksum and descriptive-error recommendations. Its updated candidate passed 499 Node checks, browser workflows and Cloudflare preview; production build `f208f3af-210f-45ab-9f11-bbdf7c1bbf55` succeeded. Offline verification is not a full application-recovery rehearsal.
-- PR #126 removes the unreliable UI fallback to the long-request exporter. Supported direct-save browsers keep the bounded paged exporter; unsupported browsers receive desktop Chrome/Edge guidance. Wider cross-browser backup support remains unimplemented.
-- The owner reaffirmed Nov 26 that permanent project deletion removes the project's stored data and automatic backups. The Workshop-copy namespace fix is already released and has a regression test preserving the original catalog attachment. No production project was deleted in this testing.
-- Finding-by-finding completion is tracked in [AUDIT-FOLLOWUPS-2026-11-26.md](AUDIT-FOLLOWUPS-2026-11-26.md). Most findings remain open or intentionally retained; do not describe the audit as completed.
-- The first 02:17 Arizona backup window has occurred, but authenticated owner listing/download verification remains pending. Do not claim success from fixtures or CI. A separate whole-site application recovery rehearsal also remains pending.
-- The capacity-1000 activation gate passed in run 45663128437 attempt 3. PR #113's isolated export proof verified 34,326 D1 rows and 122 objects; PR #110's isolated deletion proof passed in run 45762047463. These completed gates must not be reopened merely for routine cleanup. Draft #91 remains a deferred optimization.
+This is the authoritative project checkpoint. `STATUS.md` at the repository root points here. Deployment evidence is recorded on each release PR; this file is a dated summary, not a promise that a historical commit is forever the branch tip.
+
+- PRs #123–#130 are released and reviewed: Website settings owns both backup actions, one Account menu is shared across pages, directory cards use the first summary photo, and the Wire resistance calculator is available in Info Bits.
+- PR #131 implements audit findings 4, 12, 13 and 14: exact template AI fields, persistent per-value evidence and identity validation, frozen project copies, and recoverable document saves. Claude approved after adding the pending-only **Forget unconfirmed document** correction. Release evidence is on [PR #131](https://github.com/Ryanschmidt224/engineering-challenge/pull/131).
+- **Release checkpoint:** PR #131 merged at `274f454437821c8155d341a44fd395e4fd05c3b1` after 510 code checks, 233 browser workflows and the preview build passed. Production build `4a8afe59-1717-41e7-8100-8936c9c01916` succeeded and deployed Worker `3e8237d6-ea7e-4249-8084-ad179c9d9425`.
+- The full isolated local Cloudflare runtime restore passed: 31 tables, 570 rows, all 6 objects, 9 authenticated routes, a cold restart, foreign keys and independent writes. The proof now includes AI provenance; project and Workshop catalog backup/import also preserve evidence. This is synthetic local-runtime evidence, not a production or separate hosted-account restoration. See [restore report](ISOLATED-SITE-RESTORE-2026-11-26.md).
+- Projects loads normally after PR #121 corrected the D1 limit in the v15 settings seed. The earlier failed initializer blocked the list; it did not establish project deletion. PR #119 separately removed cross-request pending initialization promises.
+- Permanent project deletion includes its stored data and automatic backups. Workshop originals remain separate. No production project was deleted during these checks.
+- Actual nightly-backup listing/download verification and the longer real-use trial remain owner-workflow checks. Do not replace those with fixture/CI claims. The completed capacity/activation gate and deletion proof remain closed; draft #91 is a deferred optimization.
+- The first formatting pass expands the recently changed Workshop/project modules and adds an incremental formatting check. The remaining compressed controller and frozen legacy bundles still need gradual extraction. The previous small CSS pass removed duplicate/obsolete photo rules; broad legacy CSS consolidation is not complete.
+- See the [audit tracker](AUDIT-FOLLOWUPS-2026-11-26.md) for each finding. The audit is not wholly complete. The Workshop-wide layout redesign is a future upgrade; independent hosted URLs are a late-priority future idea, not current implementation work.
 
 ## Boundaries
 
@@ -23,7 +24,7 @@ Owner update Nov 25: routine or mandatory Claude review is discontinued; proceed
 
 ## Next
 
-Continue the approved objective audit corrections, starting with an isolated whole-site application recovery rehearsal and the remaining AI field/evidence requirements. Verify an actual nightly backup download and a separate-project restore through the owner workflow when access is available. Keep the completed activation/capacity gate closed; do not repeat destructive production proofs or start unapproved feature work.
+Continue bounded code readability and shared-component cleanup while preserving behavior. Measure navigation rereads before optimizing; invalidate settings caches without losing drafts. Verify actual nightly backup download and a separate-project restore through the owner workflow when access is available. Do not repeat completed capacity/destructive production proofs or turn future ideas into approved features.
 
 ## Historical implementation notes
 
