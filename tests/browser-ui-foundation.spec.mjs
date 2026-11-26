@@ -215,7 +215,7 @@ test("Calculators uses its own route and preserves the existing calculation form
  await expect(page).toHaveURL(/#calculators$/);
  await expect(page.locator("#calculators")).toBeVisible();
  await expect(page.getByRole("heading",{name:"Calculators",exact:true})).toBeVisible();
- await expect(page.locator("#resource-calculators .ui-project-card")).toHaveCount(3);
+ await expect(page.locator("#resource-calculators .ui-project-card")).toHaveCount(4);
  await page.getByRole("button",{name:"Open Ohm's law",exact:true}).click();
  await page.getByLabel("Voltage (V)",{exact:true}).fill("12");
  await page.getByLabel("Resistance (Ω)",{exact:true}).fill("6");
