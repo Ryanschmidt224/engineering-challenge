@@ -18,6 +18,7 @@ const active=record=>!record.archived||$("#show-archived").checked;
 const family=()=>data.families.find(f=>f.id===selectedFamily);
 const familyFields=()=>data.fields.filter(f=>f.family_id===selectedFamily).sort((a,b)=>a.sort_order-b.sort_order);
 const copy=value=>structuredClone(value);
+const editLabel=entity=>entity==="family"?"Edit template":"Edit "+entity;
 function mayLeave(){return !dirty||window.confirm("Discard the unsaved changes to this form?");}
 async function run(operation){
  if(busy)return;busy=true;detail.inert=true;$("#family-list").inert=true;$("#category-tree").inert=true;
@@ -183,14 +184,14 @@ function categoryPath(id){const parts=[],seen=new Set();let current=data.categor
 function appendRead(host,label,value,options){const row=readValue(label,value,options);if(row)host.append(row);}
 function renderDetail(){
  detail.replaceChildren();
- if(editing&&draft){editor(draft.entity,"Edit "+draft.entity,draft.record);return;}
+ if(editing&&draft){editor(draft.entity,editLabel(draft.entity),draft.record);return;}
  const selected=family();
  if(!selected)return;
  const product=data.products.find(p=>p.id===selectedProduct),use=data.uses.find(u=>u.id===selectedUse);
  const entity=use?"use":product?"product":"family",record=use||product||selected;
  const heading=node("div","","detail-heading");heading.append(node("p",categoryPath(selected.category_id),"eyebrow"),node("h2",use?use.purpose||selected.name:product?product.name:selected.name));
  const edit=()=>editOwner(entity,record);
- heading.append(actions(button("Edit "+entity,edit),button(record.archived?"Restore "+entity:"Archive "+entity,()=>void archive(entity,record),"button--quiet")));
+ heading.append(actions(button(editLabel(entity),edit),button(record.archived?"Restore "+entity:"Archive "+entity,()=>void archive(entity,record),"button--quiet")));
  if(entity!=="family")heading.append(button("Family: "+selected.name,()=>changeSelection({familyId:selectedFamily}),"button--quiet"));
  if(record.archived)heading.append(node("p","Archived. Existing project references and file bytes are retained.","notice"));
  detail.append(heading);
@@ -268,7 +269,7 @@ function renderAttachments(host,ownerType,ownerId,canEdit){
  const section=panel("Files & links"),list=node("ul","","attachment-list");
  for(const file of files){const row=node("li"),link=node("a",file.title);link.href=file.url||"/api/workshop/file?id="+file.id;link.target="_blank";link.rel="noopener noreferrer";row.append(link);
   let image;if(file.kind==="photo"){image=node("img","","photo-thumb");image.src=link.href;image.alt=file.title;row.prepend(image);}
-  if(canEdit){const archiveButton=button("Archive reference",()=>void run(async()=>{await requestWorkshop("/api/workshop","PATCH",{entity:"attachment",id:file.id,expectedRevision:file.revision,archived:true});await refresh();renderDetail();}),"button--quiet");if(image)window.BSPhotoEditor.actionBar(image,{content:archiveButton});else row.append(archiveButton);}else if(image){const owner=(ownerType==="family"?data.families:ownerType==="product"?data.products:data.uses).find(record=>record.id===ownerId);if(owner)window.BSPhotoEditor.actionBar(image,{content:button("Edit "+ownerType,()=>editOwner(ownerType,owner))});}list.append(row);
+  if(canEdit){const archiveButton=button("Archive reference",()=>void run(async()=>{await requestWorkshop("/api/workshop","PATCH",{entity:"attachment",id:file.id,expectedRevision:file.revision,archived:true});await refresh();renderDetail();}),"button--quiet");if(image)window.BSPhotoEditor.actionBar(image,{content:archiveButton});else row.append(archiveButton);}else if(image){const owner=(ownerType==="family"?data.families:ownerType==="product"?data.products:data.uses).find(record=>record.id===ownerId);if(owner)window.BSPhotoEditor.actionBar(image,{content:button(editLabel(ownerType),()=>editOwner(ownerType,owner))});}list.append(row);
  }
  section.append(list);
  if(canEdit){
