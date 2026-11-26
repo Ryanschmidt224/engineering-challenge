@@ -604,3 +604,7 @@
 .project-media-tile .bs-photo-stage {
   width: 100%;
 }
+
+.project-media-tile > .bs-photo-control {
+  width: 100%;
+}

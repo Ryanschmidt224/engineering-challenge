@@ -168,7 +168,7 @@ function renderUseEditor(form,record,set){
  const loadAssemblyOptions=async()=>{
   const project=record.project_id;assemblyHost.replaceChildren(node("p","Loading assemblies…","muted"));
   try{const tree=await requestWorkshop("/api/tree?project="+encodeURIComponent(project));if(project!==record.project_id||!assemblyHost.isConnected)return;
-   assemblyHost.replaceChildren(field("Assembly",record.tree_node_id||"",value=>set("tree_node_id",value||null),{options:[{value:"",label:"Project root"},...(tree.nodes||[]).filter(n=>n.kind!=="part").map(n=>({value:n.id,label:n.name}))]}));
+   assemblyHost.replaceChildren(field("Assembly",record.tree_node_id||"",value=>set("tree_node_id",value||null),{options:[{value:"",label:projects.find(row=>row.id===project)?.name||"Project"},...(tree.nodes||[]).filter(n=>n.kind!=="part").map(n=>({value:n.id,label:n.name}))]}));
   }catch(error){assemblyHost.replaceChildren(node("p",error.message,"error"));}
  };
  identity.append(field("Selected product",record.product_id||"",value=>{set("product_id",value||null);renderDetail();},{options:[{value:"",label:"No product selected — generic"},...data.products.filter(p=>p.family_id===selectedFamily&&(!p.archived||p.id===record.product_id)).map(p=>({value:p.id,label:p.name+(p.archived?" (archived)":"")}))]}));form.append(identity);
