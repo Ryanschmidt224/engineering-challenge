@@ -1,21 +1,26 @@
 # Building Schmidt — current status
 
-Private single-owner application on Cloudflare Workers Paid. The owner approved switch-over and the 100-placement Archive limit. Legacy source projects, files and backups remain preserved. The owner-authorized TB001 copy is documented below.
+Private single-owner application on Cloudflare Workers Paid. The new project engine is active. The owner approved switch-over, permanent owner-confirmed project deletion, and the 100-placement Archive limit. Legacy source projects, files and backups remain preserved except when the owner explicitly uses the confirmed permanent-delete action. The owner-authorized TB001 copy is documented below.
 
 ## Current
 
-- PR #92 makes preview logging and the paid-default 30000 ms CPU budget explicit. Both acceptance previews deployed that budget without backend changes; independent recovery keeps its separate D1 binding.
-- The capacity-1000 gate passed in run 45663128437 attempt 3: functional proofs, six revisions and History checks, export, independent import/retry, restored History, and unchanged-source verification. See docs/proofs/PAID_CAPACITY_1000.json; raw evidence remains in the Actions artifact. Exact CPU/D1 execution and cleanup-trigger comparisons remain deferred under SWITCHOVER.md.
-- PR #82 merged at `e9e1f3a45fbaea6321d266ae3d3f270cc8d5ea70`; the new engine is active. Production uses the same 30000 ms paid CPU budget that passed on the previews. The owner has used the new site, and TB001 was copied and export-verified through its UI. The first scheduled backup remains a separate observation; do not infer it from UI or preview checks.
-- Draft #91 is an undeployed retry optimization with 430 passing local tests, awaiting recovery-code review. It is not an activation prerequisite and must not be merged automatically.
+- Main is `93964ab9aa78bfe255bdf49d6a2d503bb6880350` after PR #113. Exact-main Node and browser checks passed, and Cloudflare production build `e1fe47a8-6b87-47b7-9267-396b11fde4ae` deployed version `506b1f52-1eeb-4c7e-9ee2-cf4385477e71`.
+- PR #113 completes guarded cross-assembly Undo and bounded whole-site backup paging/ranged object reads. Exact-candidate run 45763261883 exported and offline-verified 34,326 database rows and 122 stored objects on isolated Cloudflare D1/R2; the proof did not mutate stored data.
+- PR #110 adds the owner-selected, separately confirmed permanent-delete action, including project-scoped Workshop copies and automatic backups. Exact-candidate deletion proof 45762047463 passed on isolated synthetic storage; no production project was deleted by testing.
+- PRs #107, #108, #109, #111 and #112 are integrated: reviewed Electronics template metadata, CSS consolidation, project owners/full Settings, the legacy-style summary with reasoned intent versions, and the one-click whole-site backup.
+- The capacity-1000 release gate passed in run 45663128437 attempt 3 before activation. The owner has used the active site, and TB001 was copied and export-verified through its UI.
+- The first scheduled production backup at 02:17 Arizona remains an observation, not a fixture result. Do not claim it until authenticated production evidence and a verified download exist.
+- Draft #91 is a deferred, undeployed retry optimization. It was unnecessary for the passing capacity gate and is not a release prerequisite.
 
 ## Boundaries
 
-Preserve every existing project and backup. No cleanup or real-project import is authorized by this switch-over. Keep production building-schmidt-workshop D1 and building-schmidt-photos R2, preview isolation, AI settings and cron unchanged. Owner update Nov 25: automatic/mandatory Claude review is discontinued; proceed with approved work after tests and deployed verification. Prompt the owner for particularly sensitive releases, including permanent deletion or changes that risk losing saved data. The owner's activation approval persists, but does not waive checks or deployed verification.
+Preserve existing projects, files, downloaded proofs and backups. Automated tests must not delete production projects, restore/import data, modify accounts or secrets, or make paid AI calls. Permanent deletion remains an explicit owner action in the UI; code cleanup does not authorize data deletion. Keep production `building-schmidt-workshop` D1, `building-schmidt-photos` R2, preview isolation, AI settings and cron unchanged.
+
+Owner update Nov 25: routine or mandatory Claude review is discontinued; proceed with approved work after relevant Node/browser/Cloudflare checks and deployed verification. Prompt the owner only for a new particularly sensitive change after implementation is concrete and tested. The 1–2 week real-use trial, first nightly backup download and separate-project restore remain prerequisites for later owner-scoped legacy-code removal.
 
 ## Next
 
-Validate the refreshed activation candidate, deploy using the existing approval, then complete the owner-only UI/API smoke checks in SWITCHOVER.md. Do not declare the system ready for valuable data until those observations pass. The first scheduled production backup at 02:17 Phoenix remains pending until actually observed.
+Observe the first actual 02:17 Arizona production backup after it occurs, download and verify it through the authenticated owner workflow, and record the result without exposing project contents or credentials. During the trial, verify one separate-project restore. Do not reopen the completed activation/capacity gate, repeat destructive proofs, or start unapproved feature/layout work.
 
 ## Familiar project layout
 
