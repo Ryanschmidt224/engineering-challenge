@@ -10,7 +10,7 @@ PR #122 has merged after 470 Node checks, full browser workflows and the Cloudfl
 | --- | --- | --- |
 | 1. Cross-request initialization promises | Fixed, released #119 | Database initialization no longer shares pending promises across requests. |
 | 2. Runtime test coverage and error handling | Partly fixed #121 | Real local D1/workerd upgrade and persistence test now runs in normal checks; explicit migration message/cause logging added. Friendly operation-specific frontend errors and broader runtime coverage remain. |
-| 3. Backup verifier accepts invalid archives | Open, high priority | Enforce manifest, record order, counts, verification records and hashes; reject malformed or incomplete input. |
+| 3. Backup verifier accepts invalid archives | Implemented; draft review pending | Strict protocol/manifest/order, table declarations, duplicate records/JSON properties, object sizes, verification hashes/counts and completion checks are covered by malformed-archive tests. This offline checker correction does not complete the separate whole-site recovery rehearsal. |
 | 4. AI specification conditions/evidence | Open | Preserve source and operating conditions alongside the exact field/value, through save and project copies. |
 | 5. Browser fallback uses long backup request | Open, high priority | Use bounded backup transport for supported fallback browsers; do not claim the old stream is reliable. |
 | 6. Whole-site recovery rehearsal | Open, high priority | Reconstruct an isolated database/file store and exercise the restored application. Export verification alone is insufficient. |
