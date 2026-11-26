@@ -92,14 +92,17 @@ export function initProjectWorkspace(root=document){
    const exportLink=node("a","Export project","ui-button");exportLink.href="/api/project-engine/projects/"+projectId+"/export";
    const exportHTML=button("Export readable HTML",async()=>{const id=projectId;exportHTML.disabled=true;try{await downloadProjectHTML(id);notify("Readable HTML exported. Keep a .bsproject export for recovery.");}catch(error){notify(error.message);}finally{exportHTML.disabled=false;}});
    const view=url.searchParams.get("view")||"part",pages=node("nav","","project-navigation ui-navigation-list");pages.setAttribute("aria-label","Project pages");
-   const summary=button("Project summary",()=>navigate(projectId)),parts=button("Parts Management",()=>navigate(projectId,null,"parts")),bom=button("Open BOM",()=>navigate(projectId,null,"bom")),historyButton=button("Project history",()=>openHistory());
-   for(const [control,selected]of [[summary,!itemId&&view==="part"],[parts,view==="parts"],[bom,view==="bom"],[historyButton,view==="history"]])if(selected)control.setAttribute("aria-current","page");
-   pages.append(summary,parts,bom,historyButton,button("Project settings",()=>projectSettings(ctx())),exportLink,exportHTML);
-   pageActions.replaceChildren(button("All projects",()=>navigate()),...(["history","bom","parts"].includes(view)?[button("Back to build",()=>navigate(projectId))]:[]));
+   const summary=button("Project summary",()=>navigate(projectId)),parts=button("Parts Management",()=>navigate(projectId,null,"parts")),bom=button("Open BOM",()=>navigate(projectId,null,"bom")),historyButton=button("Project history",()=>openHistory()),settings=button("Project settings",()=>navigate(projectId,null,"settings"));
+   for(const [control,selected]of [[summary,!itemId&&view==="part"],[parts,view==="parts"],[bom,view==="bom"],[historyButton,view==="history"],[settings,view==="settings"]])if(selected)control.setAttribute("aria-current","page");
+   pages.append(summary,parts,bom,historyButton,settings);
+   pageActions.replaceChildren(button("All projects",()=>navigate()),...(["history","bom","parts","settings"].includes(view)?[button("Back to build",()=>navigate(projectId))]:[]));
    const panes=node("div","","project-panes"),sidebar=node("aside","","project-sidebar"),tree=renderProjectTree(ctx(),{showHidden,onShowHidden:value=>{showHidden=value;void refresh();},showDocuments,onShowDocuments:value=>{showDocuments=value;void refresh();},showWorkshop,onShowWorkshop:value=>{showWorkshop=value;void refresh();},selectedOccurrence:occurrenceId,summarySelected:!itemId&&view==="part",collapsed:collapsedTree}),main=node("div","","project-main project-stack");sidebar.append(tree,pages);panes.append(sidebar,main);content.replaceChildren(panes);
    initSplitPanes(panes,{key:"project-workspace",panes:[{key:"tree",selector:".project-sidebar",name:"feature tree"}]});
    if(view==="history"){
     const memo=historyMemos.get(projectId)||{mode:"history",scope:itemId||"",type:"all",q:"",entries:[],cursor:null,selected:null,scroll:0};historyMemos.set(projectId,memo);main.append(createHistoryView(ctx(),memo));return;
+   }
+   if(view==="settings"){
+    projectSettings(ctx(),{mount:main});const exports=node("section","","project-stack");exports.append(node("h3","Export project"),node("p","Download a project backup for recovery, or readable HTML for viewing outside the website.","muted"));const actions=node("div","","ui-actions");actions.append(exportLink,exportHTML);exports.append(actions);main.append(exports);return;
    }
    if(view==="bom"){main.append(renderProjectBOM(ctx(),occurrenceId));return;}
    if(view==="parts"){main.append(renderProjectParts(ctx()));return;}

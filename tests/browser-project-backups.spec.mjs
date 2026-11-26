@@ -7,7 +7,7 @@ test("Project settings lists downloadable automatic backups and retries a failed
  await expect(page.locator('[data-section="automatic-backups"]')).toHaveCount(0);
  await page.getByLabel("Project name",{exact:true}).fill("Backup notebook");await page.getByRole("button",{name:"Create project",exact:true}).click();await expect(page.getByRole("dialog")).not.toBeVisible();
  const projectId=new URL(page.url()).searchParams.get("project"),endpoint="/api/project-engine/projects/"+projectId+"/automatic-backups",before=await(await page.request.get("/api/project-engine/projects/"+projectId+"/state")).json();
- await page.getByRole("button",{name:"Project settings",exact:true}).click();const dialog=page.getByRole("dialog",{name:"Project settings",exact:true}),section=dialog.locator('[data-section="automatic-backups"]');
+ await page.getByRole("button",{name:"Project settings",exact:true}).click();const dialog=page.locator(".project-main"),section=dialog.locator('[data-section="automatic-backups"]');
  await expect(section).not.toHaveAttribute("open");await section.locator(":scope > summary").click();await expect(section).toContainText("No automatic backup is available");
  await dialog.getByLabel("Project name",{exact:true}).fill("Unsaved name stays here");
  let fail=true;

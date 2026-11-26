@@ -53,7 +53,7 @@ export async function materializeRestore(db,staging,projectId,actorId,operationI
  let job=await pendingRestore(db,projectId,actorId,operationId,fingerprint);
  if(!job){
   await staging.touch({force:true});
-  const token=crypto.randomUUID();await db.batch([statement(db,`INSERT INTO engine_projects(id,owner_id,name,prefix,digits,revision,created_at,restore_job_id) SELECT ?,?,?,?,?,?,?,? WHERE ${CURRENT_ENGINE_SCHEMA_SQL} AND NOT EXISTS(SELECT 1 FROM engine_projects WHERE id=?) AND EXISTS(SELECT 1 FROM engine_restore_jobs j WHERE id=? AND project_id=? AND actor_id=? AND operation_id=? AND fingerprint=? AND state='ready' AND ${openRestoreOperation()})`,projectId,actorId,header.name,header.prefix,header.digits,token,header.created_at,staging.id,projectId,staging.id,projectId,actorId,operationId,fingerprint)]);
+  const token=crypto.randomUUID();await db.batch([statement(db,`INSERT INTO engine_projects(id,owner_id,owner_name,name,prefix,digits,revision,created_at,restore_job_id) SELECT ?,?,?,?,?,?,?,?,? WHERE ${CURRENT_ENGINE_SCHEMA_SQL} AND NOT EXISTS(SELECT 1 FROM engine_projects WHERE id=?) AND EXISTS(SELECT 1 FROM engine_restore_jobs j WHERE id=? AND project_id=? AND actor_id=? AND operation_id=? AND fingerprint=? AND state='ready' AND ${openRestoreOperation()})`,projectId,actorId,header.owner_name||"Ryan",header.name,header.prefix,header.digits,token,header.created_at,staging.id,projectId,staging.id,projectId,actorId,operationId,fingerprint)]);
   job=await pendingRestore(db,projectId,actorId,operationId,fingerprint);if(!job)throw new CommandConflict("The pending recovery could not be opened. Retry the same backup.");
  }
  let batches=0;
