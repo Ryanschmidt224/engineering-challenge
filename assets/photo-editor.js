@@ -10,14 +10,13 @@
   edit.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L9 17l-4 1 1-4Z"/></svg>';edit.title="Edit photo";edit.setAttribute("aria-label","Edit photo");edit.setAttribute("aria-expanded","false");
   const more=document.createElement("div");more.className="bs-photo-more";more.hidden=true;more.style.flexBasis="100%";
   const make=(name,fn,className)=>{
-   const button=document.createElement("button");button.type="button";button.className="btn "+className;
-   button.textContent=name;button.onclick=()=>fn?.();return button;
+   return window.BSUI.button(name,()=>fn?.(),{small:true,className});
   };
   const markup=make("Markup / annotate",onMarkup,"bs-photo-markup");
   let uploader=null;
   const add=make("Add",()=>{if(uploader)uploader.open();else onAdd?.()},"bs-photo-add");
   const remove=make("Delete",onDelete,"bs-photo-delete");
-  if(content){more.append(content);shell.classList.add("bs-photo-custom-tools");}else more.append(markup,add,remove);bar.append(edit,more);shell.append(bar);
+  if(content){more.append(content);shell.classList.add("bs-photo-custom-tools");}else more.append(markup,add,remove);stage.append(edit);bar.append(more);shell.append(bar);
   if(onPaste){
    uploader=uploadPanel({title:"Add photos",accept:"image/*,.heic,.heif",multiple:false,
     onFiles:files=>{if(files[0])return onPaste(files[0])}});
@@ -34,7 +33,6 @@
   const setExpanded=next=>{edit.setAttribute("aria-expanded",String(next));sync();onToggle?.(next);};
   edit.onclick=()=>{if(enabled)setExpanded(edit.getAttribute("aria-expanded")!=="true");};
   const save=make("Done",()=>setExpanded(false),"bs-photo-save");save.title="Close photo tools";more.append(save);
-  import("./photo-controls-layout.js").then(({alignPhotoControl})=>alignPhotoControl({cover,shell,bar,edit}));
   edit.setAttribute("aria-expanded",String(expanded));sync();
   return {
    shell,edit,markup,add,remove,status,panel:more,

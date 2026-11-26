@@ -1,6 +1,7 @@
 import {fieldLookupEvidence} from "./workshop-lookup-provenance.js";
 import {lookupEvidenceView} from "./workshop-lookup-evidence-view.js";
 import {saveLookupDocument,prepareLookupDocument,identityRequired,requireLookupIdentity,clearLookupDocuments} from "./workshop-lookup-documents.js";
+import "./ui-kit.js";
 import "./photo-editor.js";
 import {dataTable} from "./data-table.js";
 import {node,button,listCard,actions,panel,field,checkbox,readValue,valuesEditor,help,requestWorkshop} from "./workshop-ui.js";

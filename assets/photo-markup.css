@@ -114,11 +114,6 @@
   font-size: var(--text-small);
   white-space: nowrap;
 }
-.bs-photo-actions .bs-photo-toggle[aria-expanded="true"] {
-  border-color: transparent;
-  background: transparent;
-  color: var(--color-text);
-}
 .bs-photo-actions button:disabled {
   opacity: 0.48;
   cursor: not-allowed;
@@ -235,14 +230,6 @@
     font-size: var(--text-small);
   }
 }
-
-/* Attachment controls match project, assembly and part photo controls. */
-
-.workspace-heading
-  > .bs-photo-control
-  .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="false"]) {
-  width: 100%;
-}
 .bs-photo-control .bs-photo-previous,
 .bs-photo-control .bs-photo-next {
   top: 50%;
@@ -328,11 +315,6 @@
 }
 .workspace-heading > .bs-photo-control .bs-photo-actions {
   margin-top: 4px;
-}
-.workspace-heading
-  > .bs-photo-control
-  .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="false"]) {
-  justify-content: flex-end;
 }
 
 /* Project summary uses the same below-photo action row. */
@@ -685,14 +667,6 @@
   flex-wrap: wrap;
   min-width: 0;
 }
-.project-summary-gallery
-  > .bs-photo-control
-  .bs-photo-actions:has(.bs-photo-toggle[aria-expanded="true"]) {
-  padding: 9px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  background: var(--color-surface);
-}
 .project-summary-gallery > .bs-photo-control .bs-photo-status:not(:empty) {
   position: static;
   margin: 6px 0 0;
@@ -703,9 +677,6 @@
     min-height: 36px;
   }
 }
-
-/* Work Instructions photo edit: pencil overlays the lower-right of the image.
-   Expanded actions stay on a single line below the framed image/caption. */
 
 /* Text and arrow sizing options in the shared photo markup toolbar. */
 .bs-markup-toolbar .bs-markup-size-control {
@@ -803,4 +774,13 @@
   min-width: min(14rem, 100%);
   margin: 0;
   border-color: var(--color-accent);
+}
+
+/* The pencil belongs to the image stage. Expanded tools cannot widen its row. */
+.bs-photo-stage > .bs-photo-toggle {
+  justify-self: end;
+  margin-block-start: 4px;
+}
+.bs-photo-control > .bs-photo-actions:has(> .bs-photo-more[hidden]) {
+  display: none;
 }
