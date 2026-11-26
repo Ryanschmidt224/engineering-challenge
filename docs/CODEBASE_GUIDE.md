@@ -329,3 +329,12 @@ The project-history-alignment branch synchronizes the current production code in
 `project-tree-model.js` owns pure hierarchy/quantity rules; `project-placements.js` owns guarded placement and archive-group commands. `project-workshop.js` freezes server-resolved source facts and copies immutable catalogue files into project ownership; `project-selection-uses.js` is the owner-filtered reverse reader. These do not dual-write legacy Workshop uses. The UI separates tree/context actions (`project-tree-view.js`), BOM (`project-bom-view.js`), source selection (`project-workshop-editor.js`) and the shared detail/history editors. `project-assembly-proof.js` exercises the normal owner API path from the gated proof page. Migration 4 and backward-compatible backup handling are described in `PROJECT_ASSEMBLIES_WORKSHOP.md`. The active engine uses this integration; release state is recorded in STATUS.md.
 
 Preview operations: `scripts/preview-acceptance.mjs` invokes the same browser proof functions with an injected HTTP transport, checks runtime version bindings through the Cloudflare read API, and uses ordinary owner authentication. `docs/PREVIEW_ACCEPTANCE.md` owns this runbook; exact immutable evidence is under `docs/proofs/`.
+
+
+## Incremental JavaScript formatting
+
+`npm run check` checks the 19 owned modules listed in `scripts/format-owned.mjs`. Use `npm run format:js` to format that set. Add modern modules to this set as they are cleaned up; new owned source should use readable formatting rather than packed single lines.
+
+The first batch is formatting only: normalized esbuild output for all eleven changed existing modules matches the prior source. Existing JavaScript size budgets stay enforced. Frozen legacy bundles are not reformatted into larger blobs; extract a bounded responsibility before adding it to the formatting set. This policy does not claim the whole codebase is already formatted.
+
+Current deployment/task status lives in `docs/STATUS.md`; root `STATUS.md` is a pointer, and dated implementation reports are historical evidence.

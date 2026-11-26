@@ -15,9 +15,13 @@
 // The current version is stored in workshop_meta under key 'schema'. Version 1
 // is the original one-time bootstrap, so databases created before migrations
 // existed (schema = '1') are adopted without changing any row.
-import {workshopSchema} from "./workshop-schema.js";
-import {starterCategories, starterFamilies, starterFields} from "./workshop-seed.js";
-import {electronicsTemplateStatements} from "./workshop-electronics-migration.js";
+import { workshopSchema } from "./workshop-schema.js";
+import {
+  starterCategories,
+  starterFamilies,
+  starterFields,
+} from "./workshop-seed.js";
+import { electronicsTemplateStatements } from "./workshop-electronics-migration.js";
 
 export const migrations = [
   {
@@ -76,24 +80,42 @@ export const migrations = [
   {
     version: 4,
     name: "workshop-lookup-provenance",
-    statements: ["ALTER TABLE workshop_products ADD COLUMN lookup_provenance TEXT NOT NULL DEFAULT '{}' CHECK(json_valid(lookup_provenance))"],
+    statements: [
+      "ALTER TABLE workshop_products ADD COLUMN lookup_provenance TEXT NOT NULL DEFAULT '{}' CHECK(json_valid(lookup_provenance))",
+    ],
   },
 ];
 
 export const latestSchemaVersion = migrations.at(-1).version;
 
 const seedSpecs = [
-  ["workshop_categories", ["id", "parent_id", "name", "sort_order"], starterCategories],
+  [
+    "workshop_categories",
+    ["id", "parent_id", "name", "sort_order"],
+    starterCategories,
+  ],
   ["workshop_families", ["id", "category_id", "name", "kind"], starterFamilies],
   [
     "workshop_fields",
-    ["id", "family_id", "label", "unit", "type", "choices", "sort_order", "hidden", "filled_on_use"],
+    [
+      "id",
+      "family_id",
+      "label",
+      "unit",
+      "type",
+      "choices",
+      "sort_order",
+      "hidden",
+      "filled_on_use",
+    ],
     starterFields,
   ],
 ];
 
 function seedSql(table, columns) {
-  const select = columns.map((key) => `json_extract(value,'$.${key}')`).join(",");
+  const select = columns
+    .map((key) => `json_extract(value,'$.${key}')`)
+    .join(",");
   return `INSERT OR IGNORE INTO ${table} (${columns.join(",")}) SELECT ${select} FROM json_each(?)
  WHERE NOT EXISTS(SELECT 1 FROM workshop_meta WHERE key='seed')`;
 }
@@ -111,7 +133,9 @@ export function allSchemaStatements(list = migrations) {
 export async function readSchemaVersion(db) {
   let row;
   try {
-    row = await db.prepare("SELECT value FROM workshop_meta WHERE key='schema'").first();
+    row = await db
+      .prepare("SELECT value FROM workshop_meta WHERE key='schema'")
+      .first();
   } catch {
     return 0; // No workshop_meta table yet: a brand-new database.
   }
@@ -127,9 +151,15 @@ function migrationStatements(db, migration) {
   const statements = migration.statements.map((sql) => db.prepare(sql));
   if (migration.seed) {
     for (const [table, columns, rows] of seedSpecs) {
-      statements.push(db.prepare(seedSql(table, columns)).bind(JSON.stringify(rows)));
+      statements.push(
+        db.prepare(seedSql(table, columns)).bind(JSON.stringify(rows)),
+      );
     }
-    statements.push(db.prepare("INSERT OR IGNORE INTO workshop_meta(key,value) VALUES('seed','1')"));
+    statements.push(
+      db.prepare(
+        "INSERT OR IGNORE INTO workshop_meta(key,value) VALUES('seed','1')",
+      ),
+    );
   }
   statements.push(db.prepare(setVersionSql).bind(String(migration.version)));
   return statements;

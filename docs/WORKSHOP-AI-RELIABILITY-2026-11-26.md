@@ -1,6 +1,6 @@
-# Workshop AI reliability candidate — November 26, 2026
+# Workshop AI reliability release — November 26, 2026
 
-This implements audit findings 4, 12, 13 and 14. The Workshop visual redesign is recorded separately as a future upgrade. Routine Claude reviews remain off. Claude approved this candidate after one required correction: an unconfirmed document must be forgettable. That correction is implemented; release still requires exact-head checks.
+Released in PR #131 after the pending-only forget fix and passing checks. This implements audit findings 4, 12, 13 and 14. The Workshop visual redesign is recorded separately as a future upgrade. Routine Claude reviews remain off. Claude approved this candidate after one required correction: an unconfirmed document must be forgettable. That correction is implemented and the release evidence is recorded on PR #131.
 
 ## Result
 
@@ -25,6 +25,8 @@ Review the metadata migration and preservation behavior, identity-marker persist
 
 Native local workerd/D1 tests upgrade a populated Workshop v3 database, cold-restart it and check evidence and foreign keys. The full isolated D1/R2 recovery proof now includes AI provenance; Workshop catalog recovery also round-trips the new JSON column, and project backup/import checks the frozen evidence and copied document hash. Older backups without provenance restore with the empty-column default; exports with the new column require the current Workshop restore tool (older tools fail closed on unknown columns). Browser regressions cover current lookups, stale results, duplicate ratings, conditions after reload, required identity, lost upload and completion responses, saved document reuse, gallery controls and phone layout.
 
-The tests are synthetic/local and CI checks. No production migration, destructive action, real-user lookup or paid OpenAI call has been run for this candidate. A passing preview build alone does not imply a real hosted AI research acceptance test.
+The tests are synthetic/local and CI checks. No manual production migration, destructive action, real-user lookup or paid OpenAI call was used in validation. The released application retains its normal additive initialization on use. A passing preview build alone does not imply a real hosted AI research acceptance test.
 
 Local candidate validation: 510 code checks passed. Browser regressions also cover forgetting a pending document in the current editor and after reopening, then admitting the product to a project. The final-head GitHub code/browser checks and Cloudflare preview results are recorded on PR #131.
+
+Release evidence: #131 merged at `274f454437821c8155d341a44fd395e4fd05c3b1`; 510 Node checks and 233 browser workflows passed. Production build `4a8afe59-1717-41e7-8100-8936c9c01916` succeeded, deploying Worker `3e8237d6-ea7e-4249-8084-ad179c9d9425`.
