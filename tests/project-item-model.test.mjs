@@ -65,3 +65,17 @@ test("specification order uses stable IDs even with duplicate labels",()=>{
  const changes=diffCustomItems(before,after);assert.equal(changes.length,1);assert.equal(changes[0].key,"spec-order");assert.notEqual(changes[0].before.value,changes[0].after.value);
  after.fields.specs[0].value=4;assert.deepEqual(diffCustomItems(before,after).map(change=>change.key),["spec:b","spec-order"]);
 });
+
+
+test("linked names persist an explicit choice and derive from Generic Part Name without a second saved source",()=>{
+ const linked=normalizeCustomItem(part({name:"Stale specific text",short_name:"Power supply",fields:{name_linked:true}}));
+ assert.equal(linked.name,"Power supply");assert.equal(linked.fields.name_linked,true);
+ const separate=normalizeCustomItem(part({name:"DHEN1112",short_name:"Power supply",fields:{name_linked:false}}));
+ assert.equal(separate.name,"DHEN1112");assert.equal(separate.fields.name_linked,false);
+ assert.equal(normalizeCustomItem(part({name:"Same",short_name:"Same",fields:{name_linked:false}})).fields.name_linked,false);
+ assert.throws(()=>normalizeCustomItem(part({fields:{name_linked:"false"}})),/true or false/);
+ assert.throws(()=>normalizeCustomItem(part({short_name:"",fields:{name_linked:true}})),/Generic Part Name is required/);
+ assert.equal(Object.hasOwn(normalizeCustomItem(part()).fields,"name_linked"),false);
+ const before=part({name:"Same",short_name:"Same",fields:{name_linked:true}}),after={...before,fields:{name_linked:false}};
+ assert.deepEqual(diffCustomItems(before,after).map(change=>change.key),["fields.name_linked"]);
+});

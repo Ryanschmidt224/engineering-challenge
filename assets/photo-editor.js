@@ -33,7 +33,7 @@
   };
   const setExpanded=next=>{edit.setAttribute("aria-expanded",String(next));sync();onToggle?.(next);};
   edit.onclick=()=>{if(enabled)setExpanded(edit.getAttribute("aria-expanded")!=="true");};
-  const save=make("Save",()=>setExpanded(false),"bs-photo-save");save.title="Save and close photo tools";more.append(save);
+  const save=make("Done",()=>setExpanded(false),"bs-photo-save");save.title="Close photo tools";more.append(save);
   import("./photo-controls-layout.js").then(({alignPhotoControl})=>alignPhotoControl({cover,shell,bar,edit}));
   edit.setAttribute("aria-expanded",String(expanded));sync();
   return {
@@ -62,7 +62,7 @@
   const panel=document.createElement("section");panel.className="bs-upload-panel";panel.hidden=true;
   const heading=document.createElement("div");heading.className="bs-upload-heading";
   const name=document.createElement("strong");name.textContent=title;
-  const close=window.BSUI.button("Save",()=>{panel.hidden=true});close.classList.add("bs-upload-close");
+  const close=window.BSUI.button("Done",()=>{panel.hidden=true});close.classList.add("bs-upload-close");
   heading.append(name,close);
   const text=document.createElement("p");text.className="bs-upload-hint";
   text.textContent="Drop files in the box, right-click and Paste an image, or choose files from your device.";
