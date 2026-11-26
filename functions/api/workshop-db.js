@@ -1,3 +1,5 @@
+import {verifyDocumentCompletion} from "./workshop-document-completion.js";
+import {normalizeLookupProvenance} from "../../assets/workshop-lookup-provenance.js";
 import {migrateWorkshop} from "./workshop-migrations.js";
 import {validateFamilyFields,validateFamilyValues,validId,isWebUrl,familyUsePart} from "../../assets/family-model.js";
 import {isAdmin} from "./auth.js";
@@ -8,7 +10,7 @@ import {legacyProjectsReadOnly,legacyReadOnlyResponse} from "./legacy-projects.j
 const json = (data,status=200) => Response.json(data,{status,headers:{"cache-control":"private, no-store","x-content-type-options":"nosniff"}});
 const tables = {category:"workshop_categories",family:"workshop_families",product:"workshop_products",use:"workshop_uses",attachment:"workshop_attachments"};
 const stmt = (db,sql,...values) => db.prepare(sql).bind(...values);
-const parseRow = row => row && Object.fromEntries(Object.entries(row).map(([key,value])=>[key,["choices","field_values","supplier_links","project_state"].includes(key)?JSON.parse(value):value]));
+const parseRow = row => row && Object.fromEntries(Object.entries(row).map(([key,value])=>[key,["choices","field_values","supplier_links","project_state","lookup_provenance"].includes(key)?JSON.parse(value):value]));
 export const dbRows = async (db,sql,...values) => (await stmt(db,sql,...values).all()).results.map(parseRow);
 export async function initializeWorkshop(db) {
  if(!db)throw Error("The Workshop database is not bound to this deployment.");
@@ -90,7 +92,8 @@ export async function saveWorkshopEntity(request,env,input) {
     const url=text(supplier.url,1200);if(url&&!isWebUrl(url))throw Error("Supplier links need an http or https URL.");
     return {supplier:text(supplier.supplier,120),part_number:text(supplier.part_number,160),url};
    });
-   return writeSimple(db,tables.product,{id:record.id,family_id:family.id,name:text(record.name,180,true),manufacturer:text(record.manufacturer),mpn:text(record.mpn),supplier_links:JSON.stringify(suppliers),notes:text(record.notes,12000),field_values:JSON.stringify(record.field_values)},input.expectedRevision,family);
+   const provenance=normalizeLookupProvenance(record,fields,parseRow(previous)||{});await verifyDocumentCompletion(env,record.id,provenance,parseRow(previous)?.lookup_provenance);
+   return writeSimple(db,tables.product,{id:record.id,family_id:family.id,name:text(record.name,180,true),manufacturer:text(record.manufacturer),mpn:text(record.mpn),supplier_links:JSON.stringify(suppliers),notes:text(record.notes,12000),field_values:JSON.stringify(record.field_values),lookup_provenance:JSON.stringify(provenance)},input.expectedRevision,family);
   }
   if(!await projectAllowed(env,record.project_id,request))throw Error("Project not found.");
   if(!/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(record.id))throw Error("Project uses require UUID identifiers.");

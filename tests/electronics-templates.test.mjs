@@ -24,7 +24,7 @@ test("populated legacy ratings (including zero/false), uses and owner edits are 
  db.sqlite.prepare("INSERT INTO workshop_products(id,family_id,name,field_values) VALUES('real-product','f-n-channel-mosfet','Saved MOSFET',?)").run(JSON.stringify(values));
  db.sqlite.prepare("INSERT INTO workshop_uses(id,project_id,family_id,product_id,field_values) VALUES('real-use','project','f-n-channel-mosfet','real-product',?)").run(JSON.stringify(values));
  db.sqlite.exec("UPDATE workshop_fields SET label='Owner voltage label' WHERE id='f-n-channel-mosfet-vds-max'; UPDATE workshop_families SET notes='Owner notes',description='Owner description',revision=7 WHERE id='f-n-channel-mosfet'");
- const products=rows(db,'products'),uses=rows(db,'uses');await migrateWorkshop(db);assert.deepEqual(rows(db,'products'),products);assert.deepEqual(rows(db,'uses'),uses);
+ const products=rows(db,'products'),uses=rows(db,'uses');await migrateWorkshop(db);assert.deepEqual(rows(db,'products').map(row=>({...row})),products.map(row=>({...row,lookup_provenance:'{}'})));assert.deepEqual(rows(db,'uses'),uses);
  for(const id of Object.keys(values)){const field=rows(db,'fields').find(row=>row.id===id);assert.equal(field.hidden,0);assert.match(field.label,/Legacy/);}
  assert.equal(rows(db,'fields').find(row=>row.id==='f-n-channel-mosfet-vds-max').label,'Owner voltage label');
  const family=rows(db,'families').find(row=>row.id==='f-n-channel-mosfet');assert.equal(family.notes,'Owner notes');assert.equal(family.description,'Owner description');assert.equal(family.revision,8);

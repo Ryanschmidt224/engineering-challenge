@@ -73,6 +73,11 @@ export const migrations = [
     name: "electronics-template-terminology",
     statements: electronicsTemplateStatements,
   },
+  {
+    version: 4,
+    name: "workshop-lookup-provenance",
+    statements: ["ALTER TABLE workshop_products ADD COLUMN lookup_provenance TEXT NOT NULL DEFAULT '{}' CHECK(json_valid(lookup_provenance))"],
+  },
 ];
 
 export const latestSchemaVersion = migrations.at(-1).version;

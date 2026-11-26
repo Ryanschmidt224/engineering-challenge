@@ -1,4 +1,6 @@
-import {saveLookupDocument,identityRequired,requireLookupIdentity,clearLookupDocuments} from "./workshop-lookup-documents.js";
+import {fieldLookupEvidence} from "./workshop-lookup-provenance.js";
+import {lookupEvidenceView} from "./workshop-lookup-evidence-view.js";
+import {saveLookupDocument,prepareLookupDocument,identityRequired,requireLookupIdentity,clearLookupDocuments} from "./workshop-lookup-documents.js";
 import "./photo-editor.js";
 import {dataTable} from "./data-table.js";
 import {node,button,listCard,actions,panel,field,checkbox,readValue,valuesEditor,help,requestWorkshop} from "./workshop-ui.js";
@@ -112,16 +114,32 @@ async function saveDraft(form){
  if(!form.reportValidity())return;
  if(draft.entity==="family")validateFamilyFields(draft.record.fields);
  if(["product","use"].includes(draft.entity))validateFamilyValues(familyFields(),draft.record.field_values);
- if(draft.entity==="product"&&identityRequired(draft.record.id))requireLookupIdentity(draft.record);
+ if(draft.entity==="product"&&identityRequired(draft.record))requireLookupIdentity(draft.record);
+ if(draft.entity==="product")await prepareLookupDocument(draft.record);
  const payload=copy(draft);status("Saving…");
- const result=await requestWorkshop("/api/workshop","POST",payload);
- if(payload.entity==="product"){draft.expectedRevision=result.record.revision;draft.record.revision=result.record.revision;await saveLookupDocument(result.record.id);clearLookupDocuments(result.record.id);}
+ let result;
+ if(draft.documentRetry&&draft.savedDocumentStamp===JSON.stringify(draft.record))result={record:copy(draft.record)};
+ else result=await requestWorkshop("/api/workshop","POST",payload);
+ if(payload.entity==="product"){
+  draft.expectedRevision=result.record.revision;draft.record.revision=result.record.revision;
+  selectedProduct=result.record.id;selectedUse="";updateLocation();
+  draft.savedDocumentStamp=JSON.stringify(draft.record);
+  try{
+   if(await saveLookupDocument(result.record.id)){
+    const final=copy(draft.record);final.lookup_provenance.documentUpload.status="saved";
+    try{result=await requestWorkshop("/api/workshop","POST",{entity:"product",record:final,expectedRevision:draft.expectedRevision,expectedFamilyRevision:draft.expectedFamilyRevision});}
+    catch(error){const current=(await requestWorkshop("/api/workshop")).products.find(p=>p.id===final.id),upload=current?.lookup_provenance?.documentUpload;if(upload?.status!=="saved"||upload.id!==final.lookup_provenance.documentUpload.id||upload.sha256!==final.lookup_provenance.documentUpload.sha256)throw error;result={record:current};}
+    Object.assign(draft.record,result.record);draft.expectedRevision=result.record.revision;
+   }
+   clearLookupDocuments(result.record.id);
+  }catch(error){draft.documentRetry=true;renderDetail();throw Error(error.message.startsWith("Product saved")?error.message:"Product saved and the document upload completed, but its final status could not be saved. Retry document upload to confirm completion. "+error.message);}
+ }
  dirty=false;editing=false;draft=null;
  await refresh();
  if(payload.entity==="family"){selectedFamily=result.record.id;selectedProduct="";selectedUse="";}
  if(payload.entity==="product"){selectedProduct=result.record.id;selectedUse="";}
  if(payload.entity==="use"){selectedUse=result.record.id;selectedProduct=result.record.product_id||"";}
- draft=null;updateLocation();renderNavigation();renderDetail();status("Saved.");
+ draft=null;updateLocation();renderNavigation();renderDetail();status(result.record.lookup_provenance?.documentUpload?.status==="pending"?"Product saved; document upload remains unconfirmed. Reselect the document in Edit product to finish.":"Saved.");
 }
 function editor(entity,title,record){
  const header=node("div","","panel-heading");header.append(node("h2",title));detail.append(header);
@@ -130,7 +148,7 @@ function editor(entity,title,record){
  if(entity==="family")renderFamilyEditor(form,record,set);
  if(entity==="product")renderProductEditor(form,record,set);
  if(entity==="use")renderUseEditor(form,record,set);
- const footer=actions(button("Save "+entity,()=>form.requestSubmit(),"button--primary"),button("Cancel",()=>{if(!mayLeave())return;if(draft?.entity==="product")clearLookupDocuments(draft.record.id);dirty=false;editing=false;draft=null;renderDetail();}));footer.classList.add("form-actions");
+ const footer=actions(button(entity==="product"&&draft.documentRetry?"Retry document upload":"Save "+entity,()=>form.requestSubmit(),"button--primary"),button("Cancel",()=>{if(!mayLeave())return;if(draft?.entity==="product")clearLookupDocuments(draft.record.id);dirty=false;editing=false;draft=null;renderDetail();}));footer.classList.add("form-actions");
  form.append(footer);detail.append(form);
  if(record.revision)renderAttachments(detail,entity,record.id,true);
  else header.append(help("Files & links","saveBeforeFiles"));
@@ -228,12 +246,14 @@ function renderInstanceRead(entity,record,selected,selectedProductRecord){
   const open=node("a","Open project part","button");open.href="index.html#"+record.project_id+"/part/"+record.id;identity.append(open);
  }else{appendRead(identity,"Manufacturer",record.manufacturer);appendRead(identity,"Manufacturer part number",record.mpn);identity.append(button("Use in a project",()=>void run(()=>newUse(record.id)),"button--primary"));}
  detail.append(identity);
+ if(product?.lookup_provenance?.documentUpload?.status==="pending")detail.append(node("p","Product saved; document upload is unconfirmed. Edit product and reselect "+product.lookup_provenance.documentUpload.name+" to finish the upload.","notice"));
  const specs=panel(entity==="use"?"Product specifications & project requirements":"Specifications");
  let count=0;
  for(const resolved of resolveFamilyValues(familyFields(),product?.field_values||{},entity==="use"?record.field_values:{})){
   if(!present(resolved.value))continue;count++;
   const label=resolved.label+(resolved.unit?" ("+resolved.unit+")":""),row=readValue(label,resolved.value);
   if(resolved.different)row.lastChild.append(node("small","Project requirement: "+record.field_values[resolved.id]+(resolved.unit?" "+resolved.unit:"")+". Different values — review.","specification-note"));
+  const evidence=fieldLookupEvidence(product,resolved.id);if(evidence)row.lastChild.append(lookupEvidenceView(evidence));
   specs.append(row);
  }
  if(count)detail.append(specs);

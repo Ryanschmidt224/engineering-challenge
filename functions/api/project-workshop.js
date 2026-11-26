@@ -1,3 +1,4 @@
+import {fieldLookupEvidence} from "../../assets/workshop-lookup-provenance.js";
 import {initializeWorkshop,dbRows} from "./workshop-db.js";
 import {validateFamilyValues,resolveFamilyValues,validId,present} from "../../assets/family-model.js";
 import {commitProjectCommand,CommandConflict} from "./project-command.js";
@@ -17,6 +18,7 @@ async function sourcePlan(env,project,input,data,previous=null){
  const db=env.WORKSHOP_DB;await initializeWorkshop(db);
  const selection=data.selection;if(!selection||!validId(selection.familyId)||selection.productId!==null&&!validId(selection.productId))throw Error("Choose a Workshop family and optional product.");
  const family=(await dbRows(db,"SELECT * FROM workshop_families WHERE id=? AND archived=0",selection.familyId))[0],product=selection.productId?(await dbRows(db,"SELECT * FROM workshop_products WHERE id=? AND family_id=? AND archived=0",selection.productId,selection.familyId))[0]:null;
+ if(product?.lookup_provenance?.documentUpload?.status==="pending")throw Error("Finish the unconfirmed Workshop document upload before copying this product.");
  if(!family||selection.productId&&!product)throw Error("Choose an active family and product from the same family.");
  if(selection.expectedFamilyRevision!==family.revision||(selection.expectedProductRevision??null)!==(product?.revision??null))throw new CommandConflict("The Workshop source changed. Refresh the choices and review the new specifications before saving.");
  if(previous&&previous.family_id!==family.id)throw Error("Choose a product in the same family to preserve requirement identities. Add a separate part for a different family.");
@@ -34,9 +36,13 @@ async function sourcePlan(env,project,input,data,previous=null){
   await env.PHOTOS.put(key,bytes,{onlyIf:{etagDoesNotMatch:"*"},httpMetadata:{contentType:attachment.media_type||"application/octet-stream"},customMetadata:{sha256:hash}});
   try{await assertStorageKeyWritable(db,key);}catch(error){await env.PHOTOS.delete(key).catch(()=>{});throw error;}
   const staged=await env.PHOTOS.get(key);if(!staged||staged.size!==bytes.length||await bytesHash(new Uint8Array(await staged.arrayBuffer()))!==hash)throw Error("A copied Workshop file failed verification.");
-  const file={id:crypto.randomUUID(),project_id:project.id,name:attachment.title,content_type:attachment.media_type||"application/octet-stream",r2_key:key,state:"ready",size:bytes.length,sha256:hash};files.push(file);documents.push({title:attachment.title,kind:attachment.kind,file_id:file.id});
+  const file={id:crypto.randomUUID(),project_id:project.id,name:attachment.title,content_type:attachment.media_type||"application/octet-stream",r2_key:key,state:"ready",size:bytes.length,sha256:hash};files.push(file);documents.push({title:attachment.title,kind:attachment.kind,file_id:file.id,source_attachment_id:attachment.id});
  }
- const resolved=resolveFamilyValues(fields,product?.field_values||{},requirements),snapshot={family:{id:family.id,name:family.name,kind:family.kind,description:family.description,revision:family.revision},product:product?{id:product.id,name:product.name,manufacturer:product.manufacturer,mpn:product.mpn,revision:product.revision,supplier_links:product.supplier_links,notes:product.notes}:null,fields:resolved.map(row=>Object.fromEntries(Object.entries(row).filter(([,value])=>value!==undefined))),documents};
+ const resolved=resolveFamilyValues(fields,product?.field_values||{},requirements).map(row=>{
+  const original=fieldLookupEvidence(product,row.id);if(!original)return row;const evidence=structuredClone(original);
+  if(evidence.document?.id){const copied=documents.find(d=>d.source_attachment_id===evidence.document.id);if(copied)evidence.document.fileId=copied.file_id;delete evidence.document.id;}
+  return {...row,evidence};
+ }),snapshot={family:{id:family.id,name:family.name,kind:family.kind,description:family.description,revision:family.revision},product:product?{id:product.id,name:product.name,manufacturer:product.manufacturer,mpn:product.mpn,revision:product.revision,supplier_links:product.supplier_links,notes:product.notes,lookup_provenance:product.lookup_provenance}:null,fields:resolved.map(row=>Object.fromEntries(Object.entries(row).filter(([,value])=>value!==undefined))),documents};
  const frozen={family_id:family.id,product_id:product?.id||null,family_revision:family.revision,product_revision:product?.revision||null,snapshot,requirements};
  const details={name:product?.name||family.name,is_tool:family.kind==="tool",fields:{description:family.description,manufacturer:product?.manufacturer||"",mpn:product?.mpn||"",specs:resolved.map(row=>({field_id:row.id,label:row.label,unit:row.unit,...(row.value!==undefined?{value:row.value}:{})}))}};
  return {selection:frozen,details,files,write(w,itemId){

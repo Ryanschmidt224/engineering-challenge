@@ -1,3 +1,4 @@
+import {lookupEvidenceView} from "./workshop-lookup-evidence-view.js";
 import {node,field,actions,valuesEditor} from "./workshop-ui.js";
 import {editable,parentPicker} from "./project-editors.js";
 import {partHistoryPrompt} from "./project-part-history.js";
@@ -48,6 +49,7 @@ export function workshopSourceView(ctx,item){
  section.body.append(node("p","These source values and copied files belong to this project. Workshop changes do not update this part automatically."),information("Selected source",[["Family",frozen.family.name],["Family revision",selection.family_revision],["Product",frozen.product?.name||"Generic family"],["Product source revision",selection.product_revision]]));
  const link=node("a","View in Workshop","ui-button"),url=new URL("workshop.html",location.href);url.searchParams.set("family",selection.family_id);if(selection.product_id)url.searchParams.set("product",selection.product_id);url.searchParams.set("returnProject",location.pathname+location.search);link.href=url.href;section.body.append(link);
  for(const row of frozen.fields){const value=selection.requirements[row.id];if(present(value))section.body.append(information("Project requirement",[[row.label,String(value)+(row.unit?" "+row.unit:"")],["Review",row.different?"Different from the selected product value":null]]));}
+ for(const row of frozen.fields)if(row.evidence){const group=node('div');group.append(node('strong',row.label),lookupEvidenceView(row.evidence,{documentUrl:row.evidence.document?.fileId?'/api/project-engine/projects/'+ctx.projectId+'/files/'+row.evidence.document.fileId:undefined}));section.body.append(group);}
  for(const document of frozen.documents||[]){const file=document.file_id?ctx.client.state.files.find(row=>row.id===document.file_id):null;if(file){const a=node("a",document.title);a.href="/api/project-engine/projects/"+ctx.projectId+"/files/"+file.id;section.body.append(a);if(document.kind==="photo"&&/^image\/(png|jpeg|gif|webp|avif)$/.test(file.content_type)){const image=node("img","","project-picture");image.alt=document.title;image.src=a.href+"?inline=1";section.body.append(image);}}else if(isWebUrl(document.url)){const a=node("a",document.title);a.href=document.url;a.target="_blank";a.rel="noopener noreferrer";section.body.append(a);}}
  for(const supplier of frozen.product?.supplier_links||[])if(isWebUrl(supplier.url)){const a=node("a",supplier.supplier||"Order website");a.href=supplier.url;a.target="_blank";a.rel="noopener noreferrer";section.body.append(a);}return section.root;
 }

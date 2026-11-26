@@ -1,3 +1,4 @@
+import {templateLookupResult} from "./workshop-template-result.js";
 import {lookupTemplate,lookupDocumentInput,templatePrompt,savedLookupDocument} from "./workshop-lookup-template.js";
 // AI-assisted Workshop product lookup. This endpoint creates a draft only.
 import {reserveLookupAttempt} from "./ai-lookup-quota.js";
@@ -34,7 +35,7 @@ export async function onRequest({request,env}){
  if(env.AI_LOOKUP_ENABLED!=="1")return json({error:"AI lookup is paused. You can still enter details manually.",code:"AI_PAUSED"},503);
  if(!env.OPENAI_API_KEY)return json({error:"AI lookup is not configured for this environment.",code:"AI_NOT_CONFIGURED"},503);
  const body=await request.json().catch(()=>null);
- let template,documentInput;try{template=await lookupTemplate(env,body);documentInput=lookupDocumentInput(await savedLookupDocument(env,body?.productId,body?.document));}catch(error){return json({error:error.message},400);}
+ let template,documentInput,sourceDocument;try{template=await lookupTemplate(env,body);sourceDocument=await savedLookupDocument(env,body?.productId,body?.document);documentInput=lookupDocumentInput(sourceDocument);}catch(error){return json({error:error.message},400);}
  const enteredPartNumber=text(body?.partNumber,160);
  const featureTreeDescription=text(body?.featureTreeDescription,20);
  const partName=text(body?.partName,180);
@@ -108,10 +109,11 @@ export async function onRequest({request,env}){
   let data;
   try{data=JSON.parse(stripped)}catch{return json({error:"The lookup did not return usable product details. Try again or enter the item manually.",lookupUsage},502)}
   if(!data||typeof data!=="object"||Array.isArray(data))return json({error:"Product lookup returned invalid details",lookupUsage},502);
+  if(template){try{return json(await templateLookupResult(data,template,{partNumber,manufacturer,document:sourceDocument},lookupUsage));}catch(error){return json({error:error.message,lookupUsage},422);}}
   const sources=(Array.isArray(data.sources)?data.sources:[]).map(validUrl).filter(Boolean).slice(0,6);
   const research={
    package:text(data.package,120),pinoutOrientation:text(data.pinoutOrientation,240),
-   specs:(Array.isArray(data.specs)?data.specs:[]).slice(0,template?80:24).map(row=>({
+   specs:(Array.isArray(data.specs)?data.specs:[]).slice(0,24).map(row=>({
     name:text(row?.name,100),...(typeof row?.fieldId==="string"?{fieldId:text(row.fieldId,100)}:{}),value:typeof row?.value==="number"&&Number.isFinite(row.value)||typeof row?.value==="boolean"?String(row.value):text(row?.value,180),unit:text(row?.unit,32),
     conditions:text(row?.conditions,240),sourceUrl:validUrl(row?.sourceUrl)
    })).filter(row=>row.name&&row.value),
@@ -120,8 +122,6 @@ export async function onRequest({request,env}){
    })).filter(pin=>pin.number&&pin.name),
    applications:(Array.isArray(data.applications)?data.applications:[]).slice(0,10).map(x=>text(x,200)).filter(Boolean)
   };
-  if(template){research.package="";research.pinoutOrientation="";research.pins=[];research.applications=[];}
-  if(template)research.specs=research.specs.flatMap(spec=>{const field=template.fields.find(f=>spec.fieldId?f.id===spec.fieldId:f.label.toLowerCase()===spec.name.toLowerCase());return field?[{...spec,name:field.label,fieldId:field.id}]:[];});
   const isEndMill=/\bend[\s-]*mills?\b/i.test([data.typeName,data.familyName,data.name,data.subtitle,featureTreeDescription].join(" "));
   const missingSpecs=isEndMill?END_MILL_SPECS.filter(label=>
    !research.specs.some(spec=>spec.name.toLowerCase()===label.toLowerCase())):[];
@@ -142,9 +142,6 @@ export async function onRequest({request,env}){
    supplierUrl:validUrl(data.supplierUrl),documentationUrl:validUrl(data.documentationUrl),
    notes:([pinout,text(data.notes,2400),sources.length?"Research sources (verify against manufacturer datasheet):\n"+sources.join("\n"):""].filter(Boolean).join("\n\n")).slice(0,5000)
   };
-  if(template){draft.use="";if(!engineeringSpecs)draft.spec="";}
-  if(template&&manufacturer&&draft.manufacturer.toLowerCase().replace(/[^a-z0-9]/g,"")!==manufacturer.toLowerCase().replace(/[^a-z0-9]/g,""))return json({error:"The requested manufacturer could not be confirmed. Check its name or the document before using these ratings.",lookupUsage},422);
-  if(template&&(!draft.name||!draft.manufacturer||!draft.partNumber||!draft.supplierUrl))return json({error:"The lookup could not verify all product identity fields and an HTTPS supplier URL. Refine the identity or add a datasheet, then try again.",lookupUsage},422);
   // A generated answer is not a verified identity: require an exact part-number match.
   if(partNumber&&draft.partNumber.toUpperCase()!==partNumber.toUpperCase())
    return json({error:"The exact manufacturer part number could not be confirmed. Check the number, try a manufacturer or product link as a search hint, or search by description alone.",lookupUsage},422);
