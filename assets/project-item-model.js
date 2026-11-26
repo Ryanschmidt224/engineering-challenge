@@ -15,8 +15,9 @@ export function normalizeCustomItem(input){
  plain(input,"Part details");only(input,["name","short_name","part_number","kind","source","is_tool","is_assembly","fields"],"Part details");
  const kind=input.kind===undefined?"part":input.kind,source=input.source===undefined?"custom":input.source;
  if(!["part","document","code"].includes(kind)||source!=="custom")throw Error("Choose a custom part, document or code item.");
- const fields=input.fields===undefined?{}:plain(input.fields,"Engineering fields");only(fields,[...Object.keys(textFields),"specs"],"Engineering fields");
+ const fields=input.fields===undefined?{}:plain(input.fields,"Engineering fields");only(fields,[...Object.keys(textFields),"specs","name_linked"],"Engineering fields");
  const normalized={};
+ if(owns(fields,"name_linked"))normalized.name_linked=boolean(fields.name_linked,"Linked part names");
  for(const [key,[label,max]] of Object.entries(textFields))if(owns(fields,key)){
   const value=text(fields[key],label,max,{multiline:["description","purpose","acceptance"].includes(key)});
   if(value)normalized[key]=value; // Empty optional text is absent, not another saved field.
@@ -40,7 +41,8 @@ export function normalizeCustomItem(input){
   if(!normalized.specs.length)delete normalized.specs;
  }
  const assembly=boolean(input.is_assembly,"Is a subassembly");if(assembly&&(kind!=="part"||input.is_tool))throw Error("A subassembly must be a part and cannot be a tool.");
- return {name:text(input.name,"Name",180,{required:true}),short_name:text(input.short_name,"Short tree name",20),part_number:text(input.part_number,"Part number",80,{required:true}),kind,source,is_tool:boolean(input.is_tool,"Is a tool"),...(assembly?{is_assembly:true}:{}),fields:normalized};
+ const short_name=text(input.short_name,"Generic Part Name",20,{required:normalized.name_linked===true});
+ return {name:normalized.name_linked?short_name:text(input.name,"Specific Part Name",180,{required:true}),short_name,part_number:text(input.part_number,"Part number",80,{required:true}),kind,source,is_tool:boolean(input.is_tool,"Is a tool"),...(assembly?{is_assembly:true}:{}),fields:normalized};
 }
 export function normalizeOccurrence(input={}){
  plain(input,"Build information");only(input,["quantity","unit","build_status","attention","attention_note","hidden"],"Build information");
@@ -68,6 +70,7 @@ export function diffCustomItems(beforeInput,afterInput){
  const add=(key,label,oldValue,newValue)=>{if(!same(oldValue,newValue))changes.push({key,label,before:oldValue,after:newValue});};
  for(const [key,label] of [["name","Name"],["short_name","Short tree name"],["part_number","Part number"],["kind","Kind"],["is_tool","Is a tool"],["is_assembly","Is a subassembly"]])add(key,label,side(before,key),side(after,key));
  for(const [key,[label]] of Object.entries(textFields))add("fields."+key,label,side(before.fields,key),side(after.fields,key));
+ add("fields.name_linked","Linked part names",side(before.fields,"name_linked"),side(after.fields,"name_linked"));
  const oldSpecs=before.fields.specs||[],newSpecs=after.fields.specs||[],oldMap=new Map(oldSpecs.map(row=>[row.field_id,row])),newMap=new Map(newSpecs.map(row=>[row.field_id,row]));
  const specSide=row=>row?{...side(row,"value"),label:row.label,unit:row.unit}:{present:false};
  for(const id of new Set([...oldMap.keys(),...newMap.keys()]))add("spec:"+id,newMap.get(id)?.label||oldMap.get(id).label,specSide(oldMap.get(id)),specSide(newMap.get(id)));
