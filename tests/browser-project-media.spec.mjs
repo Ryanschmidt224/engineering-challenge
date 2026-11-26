@@ -35,4 +35,9 @@ test("project photos upload, caption, reorder and remove; a part gets one pictur
  await page.locator('input[aria-label="Part picture"]').setInputFiles({name:"side.png",mimeType:"image/png",buffer:PNG});
  await expect(page.getByRole("status").or(page.locator("[data-notice]"))).toContainText("Picture saved");
  s=await f.state();expect(s.media.filter(row=>row.role==="picture").length).toBe(2);expect(s.media.filter(row=>row.role==="picture"&&row.active).length).toBe(1);
+ const firstPhoto=s.media.filter(row=>row.active&&row.role==='photo'&&!row.item_id).sort((a,b)=>a.sort_order-b.sort_order||a.id.localeCompare(b.id))[0];
+ await page.getByRole('button',{name:'All projects',exact:true}).click();
+ const card=page.locator('[data-catalog-id="'+f.id+'"]'),cover=card.locator('img');await expect(cover).toHaveAttribute('src',f.base+'/files/'+firstPhoto.file_id+'?inline=1');await expect(cover).toHaveJSProperty('naturalWidth',1);
+ await page.getByLabel('Project view',{exact:true}).selectOption('tiles');await expect(card.locator('img')).toHaveAttribute('src',f.base+'/files/'+firstPhoto.file_id+'?inline=1');
+
 });
