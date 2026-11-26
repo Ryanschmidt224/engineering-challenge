@@ -64,7 +64,7 @@ export function mediaGallery(ctx,{itemId=null,title="Photos"}={}){
   for(const control of tools.querySelectorAll("button"))if(["←","→"].includes(control.textContent))control.setAttribute("aria-label",control.textContent==="←"?"Move photo earlier":"Move photo later");
   const meta=node("small",file?(file.name+" · "+Math.ceil(file.size/1024)+" KB"):"Unavailable file","project-media-meta"),image=thumbnail(ctx,file,row.caption),key="media:"+ctx.projectId+":"+row.id;tile.append(image);const controls=window.BSPhotoEditor.actionBar(image,{content:tools,expanded:opened.has(key),onToggle:open=>{if(open)opened.add(key);else opened.delete(key);}});controls.panel.classList.add("project-photo-editor");tile.append(caption,meta,controls.panel);grid.append(tile);
  });
- const paste=window.BSPhotoMarkup.pasteTarget((incoming,event)=>{event?.stopPropagation();void add(incoming);});paste.textContent="Drop photos here or right-click to paste an image (Ctrl+V)";
+ const paste=window.BSPhotoMarkup.pasteTarget((incoming,event)=>{event?.stopPropagation();void add(incoming);});paste.textContent="Drop photos or paste an image";paste.title="Right-click and choose Paste, or press Ctrl+V.";
  uploadRow.append(addButton,paste,mode.root);section.body.append(uploadRow,choose.input,grid);
  acceptDrops(section.body,add);return section.root;
 }

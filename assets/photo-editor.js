@@ -72,7 +72,7 @@
   const choose=window.BSUI.button(multiple?"Choose files":"Choose file",()=>fileInput.click());choose.classList.add("bs-upload-choose");
   const drop=window.BSPhotoMarkup.pasteTarget(files=>onFiles(files));
   drop.classList.add("bs-upload-drop");
-  drop.textContent="Drag and drop files here or right-click to paste an image (Ctrl+V)";
+  drop.textContent="Drop files or paste an image";drop.title="Right-click and choose Paste, or press Ctrl+V.";
   drop.addEventListener("drop",event=>{
    if(!event.dataTransfer?.files?.length)return;
    event.preventDefault();event.stopImmediatePropagation();drop.classList.remove("is-dragover");
