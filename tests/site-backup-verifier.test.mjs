@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, writeFile, rm, access } from "node:fs/promises";
@@ -35,6 +36,8 @@ test("offline verifier rejects invalid archive protocols even when the outer che
     .run();
   await PHOTOS.put("photos/Ω.png", "sample bytes");
   await PHOTOS.put("empty-file", new Uint8Array());
+  for (const object of PHOTOS.objects.values())
+    object.etag = createHash("md5").update(object.bytes).digest("hex");
   const entries = [];
   for await (const entry of siteBackupEntries({ WORKSHOP_DB: db, PHOTOS }))
     entries.push(entry);
@@ -91,6 +94,13 @@ test("offline verifier rejects invalid archive protocols even when the outer che
     ],
     ["negative-size", edit("object", { size: -1 })],
     [
+      "same-size-content-corruption",
+      edit("bytes", { data: Buffer.from("tamper bytes").toString("base64") }),
+    ],
+    ["missing-bytes-data", edit("bytes", { data: undefined })],
+    ["missing-end-key", edit("end_object", { key: undefined })],
+    ["missing-end-size", edit("end_object", { size: undefined })],
+    [
       "object-overrun",
       [
         ...entries.slice(0, index("object") + 1),
@@ -120,8 +130,28 @@ test("offline verifier rejects invalid archive protocols even when the outer che
     await t.test(name, async () => {
       const result = await verify(await archive(records), name);
       assert.notEqual(result.status, 0, "Accepted " + name);
+      if (name === "same-size-content-corruption")
+        assert.match(result.stderr, /Object content checksum mismatch/);
       await assert.rejects(access(result.extract));
     });
+  const missing = await verify(
+    await archive(edit("bytes", { data: undefined })),
+    "missing-field-message",
+  );
+  assert.match(missing.stderr, /Object bytes require a base64 data string/);
+  assert.doesNotMatch(missing.stderr, /KeyError/);
+  for (const etag of ["0".repeat(32) + "-2", "legacy-opaque-etag"]) {
+    const copy = structuredClone(entries);
+    copy[index("object")].etag = etag;
+    let inventoryHash = "";
+    for (const record of copy.filter((record) => record.type === "object")) {
+      const { type, ...meta } = record;
+      inventoryHash = await backupHash(inventoryHash, JSON.stringify(meta));
+    }
+    copy.at(-1).objectInventoryHash = inventoryHash;
+    const result = await verify(await archive(copy), "non-md5-" + etag);
+    assert.equal(result.status, 0, result.stderr);
+  }
   const duplicate = (await archive(entries)).replace(
     '\"version\":1',
     '\"version\":1,\"version\":1',

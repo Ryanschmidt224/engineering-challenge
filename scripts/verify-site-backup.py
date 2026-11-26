@@ -2,7 +2,7 @@
 No network, credentials, database writes or live-site restore operations.
 """
 
-import argparse, base64, hashlib, json, math, pathlib, shutil, tempfile
+import argparse, base64, binascii, hashlib, json, math, pathlib, re, shutil, tempfile
 
 p = argparse.ArgumentParser()
 p.add_argument("backup")
@@ -126,7 +126,8 @@ with tempfile.TemporaryDirectory() as temp:
                 if (
                     not schema_seen
                     or object_phase
-                    or entry.get("table") not in tables
+                    or not isinstance(entry.get("table"), str)
+                    or entry["table"] not in tables
                     or not isinstance(entry.get("value"), dict)
                     or not entry["value"]
                 ):
@@ -185,16 +186,38 @@ with tempfile.TemporaryDirectory() as temp:
                 }
                 current.pop("type")
                 current["readSize"] = 0
+                # R2 single-PUT etags are MD5; multipart/opaque etags are not.
+                current["contentDigest"] = (
+                    hashlib.md5(usedforsecurity=False)
+                    if re.fullmatch(r"[0-9a-fA-F]{32}", current["etag"])
+                    else None
+                )
                 current["handle"] = open(root / current["localFile"], "wb")
             elif kind == "bytes":
                 if current is None:
                     raise ValueError("Object bytes without metadata")
-                data = base64.b64decode(entry["data"], validate=True)
+                if not isinstance(entry.get("data"), str):
+                    raise ValueError("Object bytes require a base64 data string")
+                try:
+                    data = base64.b64decode(entry["data"], validate=True)
+                except (binascii.Error, ValueError) as error:
+                    raise ValueError(
+                        "Object bytes contain invalid base64 data"
+                    ) from error
                 if current["readSize"] + len(data) > current["size"]:
                     raise ValueError("Object exceeds declared size")
+                if current["contentDigest"] is not None:
+                    current["contentDigest"].update(data)
                 current["handle"].write(data)
                 current["readSize"] += len(data)
             elif kind == "end_object":
+                if (
+                    not isinstance(entry.get("key"), str)
+                    or type(entry.get("size")) is not int
+                ):
+                    raise ValueError(
+                        "Object end record requires a key and integer size"
+                    )
                 if (
                     current is None
                     or entry["key"] != current["key"]
@@ -204,6 +227,14 @@ with tempfile.TemporaryDirectory() as temp:
                     raise ValueError("Object size mismatch")
                 current.pop("handle").close()
                 current.pop("readSize")
+                content_digest = current.pop("contentDigest")
+                if (
+                    content_digest is not None
+                    and content_digest.hexdigest() != current["etag"].lower()
+                ):
+                    raise ValueError(
+                        "Object content checksum mismatch: " + current["key"]
+                    )
                 objects.append(current)
                 current = None
             elif kind == "verified":
