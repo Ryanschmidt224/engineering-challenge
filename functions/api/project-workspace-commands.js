@@ -1,4 +1,5 @@
 import {legacyRecordContext} from "../../assets/project-record-context.js";
+import {projectOwner} from "../../assets/project-owners.js";
 import {loadProjectTree,parentPlacement,changePlacementLife,lifePreview} from "./project-placements.js";
 import {captureProjectPart,entryEvidence} from "./project-part-snapshot.js";
 import {commitProjectCommand,canonicalJSON,CommandConflict} from "./project-command.js";
@@ -19,16 +20,16 @@ async function numberAvailable(db,projectId,number,except=null){
  if(reserved.some(row=>row.id!==except&&projectNumberKey(row.part_number)===projectNumberKey(number)))throw new CommandConflict("That part number is reserved by an active or archived item. Choose another number.");
 }
 export async function createProject(db,input,data){
- const name=text(data.name,180,"Project name",true),prefix=text(data.prefix===undefined?"NR":data.prefix,10,"Number prefix"),digits=data.digits===undefined?3:data.digits;
+ const name=text(data.name,180,"Project name",true),prefix=text(data.prefix===undefined?"NR":data.prefix,10,"Number prefix"),digits=data.digits===undefined?3:data.digits,owner_name=projectOwner(data.owner_name);
  if(!Number.isInteger(digits)||digits<1||digits>8)throw Error("Choose between 1 and 8 numbering digits.");
  if(input.expectedRevision!==null)throw Error("A new project requires expectedRevision: null.");
- return commitProjectCommand(db,input,w=>{w.insert("engine_projects",{id:input.projectId,owner_id:input.actorId,name,prefix,digits,revision:w.revision,created_at:w.createdAt});return {projectId:input.projectId};});
+ return commitProjectCommand(db,input,w=>{w.insert("engine_projects",{id:input.projectId,owner_id:input.actorId,name,prefix,digits,owner_name,revision:w.revision,created_at:w.createdAt});return {projectId:input.projectId};});
 }
 export async function editProject(db,input,project,data){
- const name=data.name===undefined?project.name:text(data.name,180,"Project name",true),prefix=data.prefix===undefined?project.prefix:text(data.prefix,10,"Number prefix"),digits=data.digits===undefined?project.digits:data.digits;
+ const name=data.name===undefined?project.name:text(data.name,180,"Project name",true),prefix=data.prefix===undefined?project.prefix:text(data.prefix,10,"Number prefix"),digits=data.digits===undefined?project.digits:data.digits,owner_name=projectOwner(data.owner_name===undefined?project.owner_name:data.owner_name);
  if(!Number.isInteger(digits)||digits<1||digits>8)throw Error("Choose between 1 and 8 numbering digits.");
- if(name===project.name&&prefix===project.prefix&&digits===project.digits)return unchanged(db,project,input);
- return commitProjectCommand(db,input,w=>{w.update("engine_projects",{name,prefix,digits},{id:project.id,owner_id:input.actorId});return {projectId:project.id};});
+ if(name===project.name&&prefix===project.prefix&&digits===project.digits&&owner_name===project.owner_name)return unchanged(db,project,input);
+ return commitProjectCommand(db,input,w=>{w.update("engine_projects",{name,prefix,digits,owner_name},{id:project.id,owner_id:input.actorId});return {projectId:project.id};});
 }
 export async function createItem(db,input,project,data,{from=null,selectionPlan=null}={}){
  const tree=await loadProjectTree(db,project.id),parent_id=parentPlacement(tree,data.parentId),existing=await rows(db,"SELECT part_number FROM engine_items WHERE project_id=?",project.id);

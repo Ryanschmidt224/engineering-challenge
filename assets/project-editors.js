@@ -9,6 +9,7 @@ import {recordPrompts,normalizeProjectRecord} from "./project-record-model.js";
 import {instructionTree,recordTree} from "./project-instruction-model.js";
 import {recordAttachments} from "./project-record-attachments.js";
 import {automaticBackupSection} from "./project-backup-settings.js";
+import {projectOwners} from "./project-owners.js";
 export const detailsFor=item=>normalizeCustomItem({name:item.name,short_name:item.short_name,part_number:item.part_number,kind:item.kind,source:item.source,is_tool:!!item.is_tool,is_assembly:!!item.is_assembly,fields:item.fields});
 export const buildFor=occ=>normalizeOccurrence({quantity:occ.quantity,unit:occ.unit,build_status:occ.build_status,attention:!!occ.attention,attention_note:occ.attention_note,hidden:!!occ.hidden});
 const button=(...args)=>window.BSUI.button(...args);
@@ -17,18 +18,18 @@ function containerField(details,update){
  const row=field("Generic Part Name",details.short_name,value=>{details.short_name=value;update();},{placeholder:"e.g. Power supply"}),input=row.querySelector("input");input.maxLength=20;
  const explanation=node("p",containerHelp,"project-field-help muted");explanation.hidden=true;explanation.id=input.id+"-help";input.setAttribute("aria-describedby",explanation.id);const help=button("ⓘ",()=>{explanation.hidden=!explanation.hidden;help.setAttribute("aria-expanded",String(!explanation.hidden));},{variant:"quiet",small:true});help.setAttribute("aria-label","About Generic Part Name");help.setAttribute("aria-expanded","false");const caption=row.querySelector("label");caption.textContent="Generic Part Name";caption.append(help);input.setAttribute("aria-label","Generic Part Name");row.append(explanation);row.classList.add("project-container-field");input.title=containerHelp;return row;
 }
-export function editable(ctx,title,saveLabel,collect,save,{review=null}={}){
+export function editable(ctx,title,saveLabel,collect,save,{review=null,mount=null,initialRevision=ctx.client.state?.project.revision??null}={}){
  const dialog=ctx.dialog,form=node("form"),fields=node("div"),error=node("p","","error"),reviewArea=node("div"),saveButton=button(saveLabel,()=>form.requestSubmit(),{variant:"primary"});
- error.setAttribute("role","alert");let revision=ctx.client.state?.project.revision??null,busy=false,uploading=false;
- const close=()=>{if(!busy&&!uploading)dialog.close();};
+ error.setAttribute("role","alert");let revision=initialRevision,busy=false,uploading=false;
+ const close=()=>{if(!busy&&!uploading)if(mount)void ctx.navigate(ctx.projectId);else dialog.close();};
  const cancel=button("Cancel",close),reload=button("Review newer changes",async()=>{
   try{const state=await ctx.client.load(ctx.projectId);reviewArea.replaceChildren(node("h3","Current saved version and your draft"));if(review)reviewArea.append(review(state));else reviewArea.append(node("p","The project now uses a newer saved version. Review your fields before saving."));
    const latest=state.project.revision;reviewArea.append(button("Use newer version after review",()=>{revision=latest;error.textContent="Your draft is retained. Save when your review is complete.";saveButton.textContent="Save reviewed changes";reload.hidden=true;reviewArea.replaceChildren();}));
   }catch(problem){error.textContent=problem.message;}
  });reload.hidden=true;
  form.append(fields,error,reload,reviewArea,actions(saveButton,cancel));
- form.onsubmit=async event=>{event.preventDefault();if(busy||uploading)return;error.textContent="";try{const data=collect();busy=true;saveButton.disabled=true;cancel.disabled=true;await save(data,revision);if(await ctx.refresh()===false)throw Error("Saved, but the part could not be reopened. Retry this same save.");dialog.close();}catch(problem){error.textContent=problem.message;if(problem.status===401&&ctx.signIn)error.append(button("Log in again",()=>ctx.signIn()));reload.hidden=problem.status!==409;}finally{busy=false;saveButton.disabled=uploading;cancel.disabled=uploading;}};
- dialog.oncancel=event=>{if(busy||uploading)event.preventDefault();};dialog.replaceChildren(node("h2",title),form);dialog.setAttribute("aria-label",title);queueMicrotask(()=>{dialog.showModal();dialog.querySelector("input,textarea,select")?.focus();});
+ form.onsubmit=async event=>{event.preventDefault();if(busy||uploading)return;error.textContent="";try{const data=collect();busy=true;saveButton.disabled=true;cancel.disabled=true;await save(data,revision);if(await ctx.refresh()===false)throw Error("Saved, but the part could not be reopened. Retry this same save.");if(!mount)dialog.close();}catch(problem){error.textContent=problem.message;if(problem.status===401&&ctx.signIn)error.append(button("Log in again",()=>ctx.signIn()));reload.hidden=problem.status!==409;}finally{busy=false;saveButton.disabled=uploading;cancel.disabled=uploading;}};
+ if(mount){mount.replaceChildren(node("h2",title),form);}else{dialog.oncancel=event=>{if(busy||uploading)event.preventDefault();};dialog.replaceChildren(node("h2",title),form);dialog.setAttribute("aria-label",title);queueMicrotask(()=>{dialog.showModal();dialog.querySelector("input,textarea,select")?.focus();});}
  return {fields,form,saveButton,error,get revision(){return revision;},acceptOwnWrites(token=ctx.client.state.project.revision){revision=token;},uploadBusy(value){uploading=value;saveButton.disabled=busy||uploading;cancel.disabled=busy||uploading;},handleError(problem){error.textContent=problem.message;if(problem.status===401&&ctx.signIn)error.append(button("Log in again",()=>ctx.signIn()));reload.hidden=problem.status!==409;}};
 }
 function changeRows(changes){
@@ -88,12 +89,16 @@ export function editStep(ctx,step=null,{parentId=null,isGroup=false}={}){
 export function retireInstruction(ctx,step){
  let reason="";const editor=editable(ctx,"Archive step","Archive step",()=>({reason}),(data,token)=>ctx.client.write(ctx.projectId,"/steps/"+step.id+"/retire","POST",data,token));editor.fields.append(node("p",'Archive "'+step.title+'"'+(step.is_group?" and its nested instructions":"")+"? Its records, files and revisions remain available."),field("Archive reason (optional)",reason,value=>reason=value,{type:"textarea"}));
 }
-export function projectSettings(ctx,{create=false}={}){
+const settingsDrafts=new WeakMap();
+export function projectSettings(ctx,{create=false,mount=null}={}){
  const newProjectId=create?crypto.randomUUID():null;
- const project=create?{name:"",prefix:"NR",digits:3}:ctx.client.state.project,draft={name:project.name,prefix:project.prefix,digits:project.digits};
- const editor=editable(ctx,create?"New project":"Project settings",create?"Create project":"Save settings",()=>draft,async(data,token)=>{if(create){const projectId=newProjectId;await ctx.client.write(projectId,"","POST",data,null);await ctx.navigate(projectId);}else await ctx.client.write(ctx.projectId,"","PATCH",data,token);});
+ const project=create?{name:"",prefix:"NR",digits:3,owner_name:"Ryan"}:ctx.client.state.project,draft={name:project.name,prefix:project.prefix,digits:project.digits,owner_name:project.owner_name||"Ryan"};
+ let saved=settingsDrafts.get(ctx.client);if(mount&&saved?.projectId===ctx.projectId)Object.assign(draft,saved.draft);else saved={projectId:ctx.projectId,draft,revision:project.revision};if(mount)settingsDrafts.set(ctx.client,{...saved,draft});
+ const editor=editable(ctx,create?"New project":"Project settings",create?"Create project":"Save settings",()=>draft,async(data,token)=>{if(create){const projectId=newProjectId;await ctx.client.write(projectId,"","POST",data,null);await ctx.navigate(projectId);}else{await ctx.client.write(ctx.projectId,"","PATCH",data,token);settingsDrafts.delete(ctx.client);}},{mount,initialRevision:mount?saved.revision:ctx.client.state?.project.revision??null});
+ if(mount)editor.form.querySelectorAll("button").forEach(control=>{if(control.textContent==="Cancel")control.addEventListener("click",()=>settingsDrafts.delete(ctx.client),{capture:true});});
  const preview=node("p","","muted"),reserved=create?[]:ctx.client.state.items.map(item=>item.part_number),updatePreview=()=>{try{preview.textContent="Next subassembly: "+allocatePartNumber(draft,reserved,true)+" · Next part: "+allocatePartNumber(draft,reserved)+". Existing numbers stay unchanged.";}catch(error){preview.textContent=error.message;}};preview.dataset.numberPreview="";preview.setAttribute("aria-live","polite");
  const name=field("Project name",draft.name,value=>draft.name=value,{required:true}),prefix=field("Number prefix",draft.prefix,value=>{draft.prefix=value;updatePreview();}),digits=field("Minimum digits",draft.digits,value=>{draft.digits=value;updatePreview();},{type:"number"});name.querySelector("input").maxLength=180;prefix.querySelector("input").maxLength=10;digits.querySelector("input").min=1;digits.querySelector("input").max=8;digits.querySelector("input").step=1;editor.fields.append(name,node("p","Project names can contain up to 180 characters.","muted"),prefix,digits,preview);updatePreview();
+ prefix.before(field("Project owner",draft.owner_name,value=>draft.owner_name=value,{options:projectOwners.map(value=>({value,label:value}))}));
  if(!create)editor.fields.append(automaticBackupSection(ctx));
 }
 export function confirmAction(ctx,title,message,label,save){

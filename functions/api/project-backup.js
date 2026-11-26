@@ -1,4 +1,5 @@
 import {projectNumberKey} from "../../assets/project-item-model.js";
+import {projectOwner} from "../../assets/project-owners.js";
 import {projectTree} from "../../assets/project-tree-model.js";
 import {instructionTree,recordTree} from "../../assets/project-instruction-model.js";
 import {commitProjectCommand,replayProjectCommand,CommandConflict,canonicalJSON,sha256} from "./project-command.js";
@@ -14,7 +15,7 @@ import {assertStorageKeyWritable} from "./project-storage-fence.js";
 // Explicit export schema: receipts and concurrency tokens are operational, not
 // engineering history. Restore issues a new token and a new import receipt.
 export async function projectManifest(db,project){
- const names=Object.keys(columns),result=await db.batch([statement(db,"SELECT id,owner_id,name,revision,prefix,digits,created_at FROM engine_projects WHERE id=? AND restore_job_id IS NULL",project.id),...names.map(name=>statement(db,`SELECT * FROM engine_${name} WHERE project_id=? ORDER BY id`,project.id))]);
+ const names=Object.keys(columns),result=await db.batch([statement(db,"SELECT id,owner_id,owner_name,name,revision,prefix,digits,created_at FROM engine_projects WHERE id=? AND restore_job_id IS NULL",project.id),...names.map(name=>statement(db,`SELECT * FROM engine_${name} WHERE project_id=? ORDER BY id`,project.id))]);
  return {format:"building-schmidt-project",version:1,project:result[0].results[0],tables:Object.fromEntries(names.map((name,index)=>[name,result[index+1].results]))};
 }
 function base64(bytes){let text="";for(let start=0;start<bytes.length;start+=8192)text+=String.fromCharCode(...bytes.subarray(start,start+8192));return btoa(text);}
@@ -44,7 +45,7 @@ async function* archiveLines(request){
 }
 export function validateManifest(manifest,projectId){
  if(manifest?.format!=="building-schmidt-project"||manifest.version!==1||manifest.project?.id!==projectId||!uuid(projectId)||!manifest.tables||typeof manifest.tables!=="object")throw Error("This is not a supported project backup.");
- const project=manifest.project;if(typeof project.name!=="string"||!project.name.trim()||project.name.length>180||typeof project.prefix!=="string"||project.prefix.length>10||!Number.isInteger(project.digits)||project.digits<1||project.digits>8)throw Error("Invalid project settings in backup.");
+ const project=manifest.project;if(typeof project.name!=="string"||!project.name.trim()||project.name.length>180||typeof project.prefix!=="string"||project.prefix.length>10||!Number.isInteger(project.digits)||project.digits<1||project.digits>8)throw Error("Invalid project settings in backup.");projectOwner(project.owner_name);
  if(Object.keys(manifest.tables).some(name=>!Object.hasOwn(columns,name)))throw Error("Backup contains unknown tables.");
  let count=0;
  for(const [name,allowed] of Object.entries(columns)){
@@ -126,7 +127,7 @@ export async function restoreProject(request,env,owner,projectId,{asCopy=false}=
  }
  if(!finished)throw Error("Backup is incomplete: no completion marker.");
  const fingerprint=await staging.seal(input.payload);
- const p=manifest.project,materialized=await materializeRestore(db,staging,projectId,owner.id,operationId,fingerprint,{name:asCopy?copyName:p.name,prefix:p.prefix,digits:p.digits,created_at:asCopy?new Date().toISOString():p.created_at});input.restoreJobId=materialized.id;
+ const p=manifest.project,materialized=await materializeRestore(db,staging,projectId,owner.id,operationId,fingerprint,{name:asCopy?copyName:p.name,owner_name:projectOwner(p.owner_name),prefix:p.prefix,digits:p.digits,created_at:asCopy?new Date().toISOString():p.created_at});input.restoreJobId=materialized.id;
  // Every file and materialized row must match before the publication transaction.
  // Interrupted loading leaves a hidden copy that the exact operation can resume.
  const result=await commitProjectCommand(env.WORKSHOP_DB,input,w=>{
