@@ -1,9 +1,11 @@
 import {exportProject} from "./project-backup.js";
 import {projectEngineSchemaReady} from "./project-engine-migrations.js";
+import {deletionJob} from "./project-delete-status.js";
+import {sweepProjectDeletions} from "./project-delete.js";
 
-// Scheduled engine backups reuse the normal export stream unchanged. They are
-// append-only: never overwritten, rotated or deleted here, and restored only
-// through the normal "Restore project backup" copy flow.
+// Backup creation is append-only and reuses the normal export stream. Explicit
+// project-deletion jobs are advanced separately in this scheduled invocation;
+// no retention rotation or generic orphan deletion is introduced.
 export const ENGINE_BACKUP_PREFIX="automatic-backups/engine/";
 const PART=8*1024*1024; // R2 multipart parts must be ≥5 MiB except the last.
 const key=(projectId,date)=>ENGINE_BACKUP_PREFIX+projectId+"/"+date.toISOString().slice(0,19).replace(/:/g,"-")+"Z-"+crypto.randomUUID()+".bsproject";
@@ -78,13 +80,15 @@ export async function backupEngineProjects(env,date=new Date()){
  // Dormant until the engine is enabled for this deployment and its schema is
  // current. Read-only check: a scheduled run never migrates storage.
  if(env.NEW_PROJECT_ENGINE!=="1"||!env.PHOTOS||!await projectEngineSchemaReady(env.WORKSHOP_DB))return [];
- const projects=(await env.WORKSHOP_DB.prepare("SELECT * FROM engine_projects WHERE restore_job_id IS NULL ORDER BY created_at,id").all()).results,summary=[];
+ await sweepProjectDeletions(env);
+ const projects=(await env.WORKSHOP_DB.prepare("SELECT * FROM engine_projects WHERE restore_job_id IS NULL AND NOT EXISTS(SELECT 1 FROM engine_project_deletions WHERE project_id=engine_projects.id) ORDER BY created_at,id").all()).results,summary=[];
  for(const project of projects){
   try{
    const previous=await latestBackup(env.PHOTOS,project.id);
    if(previous?.customMetadata?.revision===project.revision){summary.push({project:project.id,status:"unchanged",key:previous.key});continue;}
    const objectKey=key(project.id,date),response=await exportProject(env,project);
    const size=await storeStream(env.PHOTOS,objectKey,response.body,{project:project.id,revision:project.revision,backupDate:date.toISOString(),format:"bsproject"});
+   if(await deletionJob(env.WORKSHOP_DB,project.id)){await env.PHOTOS.delete(objectKey);summary.push({project:project.id,status:"deleted"});continue;}
    await verifyStored(env.PHOTOS,objectKey,project.id,size);
    summary.push({project:project.id,status:"saved",key:objectKey,bytes:size});
   }catch(error){
@@ -96,7 +100,8 @@ export async function backupEngineProjects(env,date=new Date()){
 }
 
 // Owner-only list and download, routed from the engine API (already behind
-// the engine gate and owner sign-in). No delete or overwrite endpoint exists.
+// the engine gate and owner sign-in). This endpoint only lists/downloads;
+// permanent project deletion separately removes that project's backup objects.
 export async function automaticBackupsResponse(env,project,backupId=null){
  const prefix=ENGINE_BACKUP_PREFIX+project.id+"/";
  if(backupId!==null){

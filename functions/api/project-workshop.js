@@ -32,7 +32,7 @@ async function sourcePlan(env,project,input,data,previous=null){
   const bytes=new Uint8Array(await object.arrayBuffer()),hash=await bytesHash(bytes),key="project-engine/workshop/"+project.id+"/"+input.operationId+"/"+attachment.id;
   await assertStorageKeyWritable(db,key);
   await env.PHOTOS.put(key,bytes,{onlyIf:{etagDoesNotMatch:"*"},httpMetadata:{contentType:attachment.media_type||"application/octet-stream"},customMetadata:{sha256:hash}});
-  await assertStorageKeyWritable(db,key);
+  try{await assertStorageKeyWritable(db,key);}catch(error){await env.PHOTOS.delete(key).catch(()=>{});throw error;}
   const staged=await env.PHOTOS.get(key);if(!staged||staged.size!==bytes.length||await bytesHash(new Uint8Array(await staged.arrayBuffer()))!==hash)throw Error("A copied Workshop file failed verification.");
   const file={id:crypto.randomUUID(),project_id:project.id,name:attachment.title,content_type:attachment.media_type||"application/octet-stream",r2_key:key,state:"ready",size:bytes.length,sha256:hash};files.push(file);documents.push({title:attachment.title,kind:attachment.kind,file_id:file.id});
  }

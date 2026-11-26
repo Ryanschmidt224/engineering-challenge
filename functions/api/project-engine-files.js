@@ -1,6 +1,7 @@
 import {unchanged} from "./project-workspace-commands.js";
 import {commitProjectCommand,CommandConflict} from "./project-command.js";
 import {assertStorageKeyWritable} from "./project-storage-fence.js";
+import {deletionJob} from "./project-delete-status.js";
 import {statement,uuid,text,itemContext,buildContext,configurationPlan,currentEngineeringFile,addFileLinks,addEvent,ProjectNotFound,expectedProject} from "./project-state.js";
 export const MAX_ENGINE_FILE=20*1024*1024;
 export async function readBounded(request,max){
@@ -30,7 +31,7 @@ export async function uploadFile(request,env,owner,project,id){
  if(previous){if(!matches(previous))throw new CommandConflict("This file already contains different bytes. Prepare a new file.");await assertStorageKeyWritable(env.WORKSHOP_DB,file.r2_key);return {fileId:id,size:bytes.length,sha256:hash};}
  expectedProject(project,{expectedRevision});if(file.state!=="prepared")throw new CommandConflict("Prepare a new file before uploading.");
  const put=await env.PHOTOS.put(file.r2_key,bytes,{onlyIf:{etagDoesNotMatch:"*"},httpMetadata:{contentType:file.content_type},customMetadata:{operation_id:operationId,expected_revision:expectedRevision,actor_id:owner.id,sha256:hash}});
- await assertStorageKeyWritable(env.WORKSHOP_DB,file.r2_key);
+ try{await assertStorageKeyWritable(env.WORKSHOP_DB,file.r2_key);}catch(error){if(await deletionJob(env.WORKSHOP_DB,project.id))await env.PHOTOS.delete(file.r2_key);throw error;}
  if(!put&&!matches(await env.PHOTOS.head(file.r2_key)))throw new CommandConflict("Another upload already used this file. Prepare a new file.");
  return {fileId:id,size:bytes.length,sha256:hash};
 }

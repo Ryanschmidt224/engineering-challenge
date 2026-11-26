@@ -13,6 +13,8 @@ import {placeExisting,editPlacement,lifePreview,changePlacementLife,reorderPlace
 import {workshopChoices,createWorkshopItem,selectWorkshopProduct} from "./project-workshop.js";
 import {addMedia,editMedia,removeMedia,reorderMedia} from "./project-media.js";
 import {projectBOM} from "../../assets/project-tree-model.js";
+import {deleteProjectStep} from "./project-delete.js";
+import {deletionJob} from "./project-delete-status.js";
 export const engineJSON=(data,status=200)=>Response.json(data,{status,headers:{"cache-control":"private, no-store","x-content-type-options":"nosniff"}});
 export async function commandBody(request,max=256000){
  const raw=await request.text();if(raw.length>max)throw Object.assign(Error("Request is too large."),{status:413});
@@ -36,13 +38,15 @@ export async function handleProjectWorkspace(request,env,owner){
   await initializeProjectEngine(db);
   if(proof)return engineJSON(await proveProjectCommands(db,owner.id,body.operationId));
   if(maintenance)return engineJSON(await inventoryProjectOrphans(db,env.PHOTOS,owner.id,url.searchParams));
-  if(!path.length){if(method!=="GET")return engineJSON({error:"Method not allowed"},405);return engineJSON({projects:await rows(db,"SELECT id,owner_id,owner_name,name,revision,prefix,digits,created_at,json_extract(overview,'$.shortSummary') AS short_summary,json_extract(overview,'$.description') AS description FROM engine_projects WHERE owner_id=? AND restore_job_id IS NULL ORDER BY name,id",owner.id)});}
+  if(!path.length){if(method!=="GET")return engineJSON({error:"Method not allowed"},405);return engineJSON({projects:await rows(db,"SELECT p.id,p.owner_id,p.owner_name,p.name,p.revision,p.prefix,p.digits,p.created_at,json_extract(p.overview,'$.shortSummary') AS short_summary,json_extract(p.overview,'$.description') AS description,d.id AS deletion_operation_id,d.expected_revision AS deletion_expected_revision,d.state AS deletion_state FROM engine_projects p LEFT JOIN engine_project_deletions d ON d.project_id=p.id AND d.actor_id=p.owner_id WHERE p.owner_id=? AND p.restore_job_id IS NULL ORDER BY p.name,p.id",owner.id)});}
   const projectId=path[0];
-  if(importing)return engineJSON(await restoreProject(request,env,owner,projectId,{asCopy:path[1]==="import-copy"}));
+  if(importing){if(await deletionJob(db,projectId))throw new ProjectNotFound("This project ID was permanently deleted. Restore a backup as a new project instead.");return engineJSON(await restoreProject(request,env,owner,projectId,{asCopy:path[1]==="import-copy"}));}
   let input;
   if(body){
    const {operationId,expectedRevision,...data}=body;
    input={projectId,actorId:owner.id,operationId,expectedRevision,payload:{method,path:url.pathname,data}};
+   if(path.length===2&&path[1]==="delete"&&method==="POST")return engineJSON(await deleteProjectStep(env,owner,input,data));
+   if(await deletionJob(db,projectId))throw new ProjectNotFound("This project is being permanently deleted.");
    const replay=await replayProjectCommand(db,input);if(replay)return engineJSON(replay.result);
    body=data;
    if(path.length===1&&method==="POST")return engineJSON(await commands.createProject(db,input,body));
@@ -108,6 +112,7 @@ export async function handleProjectWorkspace(request,env,owner){
   }
   return engineJSON({error:"Not found"},404);
  }catch(error){
+  if(/PROJECT_DELETING/.test(error.message))return engineJSON({error:"This project is being permanently deleted. Return to Projects to continue its deletion."},409);
   if(error.status)return engineJSON({error:error.message},error.status);
   if(proof){console.error("Project command preview proof failed",error);return engineJSON({error:"The preview transaction proof failed. Inspect Worker logs; dependent engine work must remain paused."},500);}
   // D1/internal failures never disclose queries, bindings or file keys.
