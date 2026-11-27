@@ -1,4 +1,5 @@
 // Exact API dispatch is declared once, independent of source formatting.
+import { handleAutomaticSiteBackups } from "./automatic-site-backups.js";
 import { handleAutomaticBackupStatus } from "./automatic-backup-status.js";
 import { handleSiteDataBackup } from "./site-data-backup.js";
 import { handleAccounts } from "./accounts.js";
@@ -12,6 +13,7 @@ import { handleLessons, handleLessonPhoto } from "./lessons-learned.js";
 import { auth } from "./auth.js";
 
 export const apiRoutes = [
+  ["/api/automatic-site-backups", handleAutomaticSiteBackups],
   ["/api/backup-status", handleAutomaticBackupStatus],
   ["/api/site-data-backup", handleSiteDataBackup],
   ["/api/accounts", handleAccounts],

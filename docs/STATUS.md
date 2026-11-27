@@ -1,6 +1,6 @@
 # BuildingSchmidt — current status
 
-November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. The confirmed release baseline is #153 (`35e09f4531cd66ef51269c8e1778015ee9cf0dcd`): the compact Workshop product read view, shared confirmation template (#152), default-collapsed family fields (#151), and the earlier Lessons/photo/lookup updates. Its 290 code tests, 143 browser workflows and dependency check passed. Release PRs record exact source and Cloudflare deployment evidence.
+November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. The confirmed release baseline is #154 (`550d3fb12c48c9947ee0e63435b6ee33002c21bc`): the compact Workshop product read view, shared confirmation template (#152), default-collapsed family fields (#151), and the earlier Lessons/photo/lookup updates. Its 299 code tests, 146 browser workflows and dependency check passed. Release PRs record exact source and Cloudflare deployment evidence.
 
 ## Current behavior
 
@@ -9,13 +9,15 @@ November 27, 2026. One private owner application on Cloudflare Workers, D1 and R
 - Lessons Learned supports autosave, rename-safe links, archive/restore and step photos. Its editor and read view share the framed field layout. The old Info Bits runtime is retired, with old rows retained in exports.
 - Projects use ordered photo galleries with immediate reorder feedback and full-screen cycling. Workshop keeps a single cover, and lesson steps have no cover slot.
 - Archive, restore, discard, guarded save and permanent-delete confirmations share the centered template. Existing revision, retry and typed-name safeguards remain.
-- The nightly job backs up changed Projects to the same R2 bucket. Whole-site export/recovery includes Projects, Workshop, Lessons, account data and stored files; that complete export is currently manual. Native local Cloudflare recovery is tested; hosted production-snapshot recovery has not been performed.
+- The nightly job retains per-project archives and now has a whole-site recovery writer, covering Projects, Workshop, Lessons, account data and stored files without recursively copying earlier backups. It keeps seven verified copies, with bounded streaming and tracked interrupted-upload cleanup. Manual whole-site download remains available. Native local Cloudflare recovery is tested; hosted production-snapshot recovery has not been performed.
 
 ## Reliability work
 
-The backup-monitoring candidate adds a bounded, conditionally written status record for the existing nightly job. Website settings shows the last attempt, last successful check, failures, interrupted runs and overdue checks. Unchanged project archives are checked for completeness before being reported successful. The page and Workshop export help explicitly distinguish project-only, Workshop-only and whole-site coverage. The candidate's release PR owns validation and publication evidence; it does not claim that a production cron has already fired.
+Backup monitoring (#154) adds a bounded, conditionally written status record for the existing nightly job. Website settings shows the last attempt, last successful check, failures, interrupted runs and overdue checks. Unchanged project archives are checked for completeness before being reported successful. The page and Workshop export help explicitly distinguish project-only, Workshop-only and whole-site coverage. Its release PR records publication evidence; it does not claim that a production cron has already fired.
 
-Next is automatic whole-site recovery coverage: bounded, nonrecursive storage, verified content and restore behavior after Workshop-only or lesson-only changes. An independently stored recovery copy and deployment configuration remain separate requirements. Then durable login-attempt limiting, consistent save/upload/error lifecycle rules, and tested browser security headers. Optimize photos and larger collection reads after measurement.
+The [automatic whole-site backup implementation](AUTOMATIC-SITE-BACKUPS.md) follows: verified download list, seven-copy retention, consistency checks, bounded streaming, recovery from terminated multipart uploads, and an independent native restore after Workshop-only/notebook-only changes. Its release PR owns validation/deployment evidence. Owner-independent storage and hosted production-snapshot recovery have not been performed.
+
+Next: durable login-attempt limiting. Then consistent save/upload/error lifecycle rules and tested browser security headers. Optimize photos and larger collection reads after measurement.
 
 The complete finding/action list is in [the combined review and work plan](WHOLE-SITE-REVIEW-2026-11-27.md). Cleanup #143, toolchain maintenance #144 and photo/lesson feedback #145 are released. Dependency advisories are checked in CI; automatic dependency PRs require normal review and tests.
 

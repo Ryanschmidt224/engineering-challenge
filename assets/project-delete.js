@@ -35,7 +35,7 @@ export function showProjectDeletion(ctx, project) {
       "p",
       "Permanently delete “" +
         project.name +
-        "”? This removes its parts, files, instructions, history and automatic backups from this website. It cannot be undone.",
+        "”? This removes its parts, files, instructions, history and project backups from this website. It cannot be undone. Whole-site and downloaded backups may retain earlier copies until those backups are replaced.",
     ),
     node(
       "p",
@@ -123,12 +123,12 @@ export function projectDeletionSection(ctx, project) {
     title: "Delete project",
     role: "delete-project",
     tooltip:
-      "Permanently remove this project's website data and automatic backups.",
+      "Permanently remove this project's website data and project backups. Whole-site copies can retain earlier data.",
   });
   section.body.append(
     node(
       "p",
-      "Permanently remove this project and its automatic backups. A typed-name confirmation is required.",
+      "Permanently remove this project and its project backups. Whole-site and downloaded copies may retain earlier data. A typed-name confirmation is required.",
     ),
     button("Delete project", () => showProjectDeletion(ctx, project), {
       variant: "danger",

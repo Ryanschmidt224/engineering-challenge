@@ -9,7 +9,7 @@ const messages = {
   interrupted: "Nightly project backup did not finish",
   skipped: "Nightly project backup was skipped",
 };
-const dateLabel = (value) =>
+export const backupDateLabel = (value) =>
   value
     ? new Intl.DateTimeFormat("en-US", {
         timeZone: "America/Phoenix",
@@ -43,10 +43,10 @@ export function automaticBackupStatus() {
       if (["failed", "stale", "interrupted", "skipped"].includes(data.health))
         headline.classList.add("status--error");
       rows.append(
-        readValue("Last attempt", dateLabel(data.lastAttempt?.startedAt)),
+        readValue("Last attempt", backupDateLabel(data.lastAttempt?.startedAt)),
         readValue(
           "Last successful check",
-          dateLabel(data.lastSuccess?.finishedAt),
+          backupDateLabel(data.lastSuccess?.finishedAt),
         ),
       );
       const description = {

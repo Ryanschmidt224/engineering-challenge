@@ -16,6 +16,7 @@ Private owner application on Cloudflare Workers with D1 metadata and immutable R
 | Project commands | `project-workspace-api.js`, `project-command.js`, `project-*-commands.js` | Owner checks, revision/operation IDs, atomic admission and data changes |
 | Project files and recovery | `project-engine-files.js`, `project-backup*.js`, `project-restore-*.js` | Immutable uploads, full metadata/files and independent restores |
 | Nightly monitoring | `functions/api/automatic-backup-status.js`, `assets/automatic-backup-status.js` | Conditional durable run status, missed/interrupted/failure reporting, explicit project-only coverage |
+| Automatic whole-site backups | `site-auto-backups.js`, `site-backup-state.js`, `site-backup-storage.js`, `automatic-site-backups.js` | Leased, bounded, verified whole-site snapshots, retention and owner download list |
 | Whole-site recovery | `site-data-backup.js`, `scripts/verify-site-backup.py` | Consistency-checked D1/R2 archive and offline validation/reconstruction |
 | Shared visual rules | `theme.css`, `ui-kit.css`, `components.css` | Tokens, controls, field rows, section headers and cards; shared `.ui-editor-group` / `.ui-editor-fields` styling for project and lesson editors |
 
