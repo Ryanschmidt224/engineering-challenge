@@ -4,7 +4,7 @@ for(const width of [390,1440])test('approved New part workflow persists tool, so
  const {cookie}=await(await request.post('/__test__/reset?engine=1')).json(),at=cookie.indexOf('=');
  await context.addCookies([{name:cookie.slice(0,at),value:cookie.slice(at+1),url:'http://127.0.0.1:4173',httpOnly:true,sameSite:'Strict'}]);
  await page.goto('/project.html');await page.getByRole('button',{name:'New project',exact:true}).click();await page.getByLabel('Project name',{exact:true}).fill('New part trial');await page.getByRole('button',{name:'Create project',exact:true}).click();await expect(page.getByRole('dialog')).not.toBeVisible();
- await page.getByRole('button',{name:'Add item',exact:true}).click();await page.getByRole('menuitem',{name:'New part',exact:true}).click();
+ await page.getByRole("button",{name:"New part",exact:true}).click();
  const editor=page.getByRole('dialog',{name:'New part',exact:true});await expect(editor).toBeVisible();
  await editor.getByLabel('Item type',{exact:true}).selectOption('code');await expect(editor.getByLabel('Part source',{exact:true})).not.toBeVisible();
  await editor.getByLabel('Item type',{exact:true}).selectOption('document');await expect(editor.getByLabel('Part source',{exact:true})).not.toBeVisible();

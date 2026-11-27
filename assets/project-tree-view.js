@@ -10,7 +10,7 @@ let addHintShown=false;const filterMemory=new Set();
 function addWithHint(ctx,run){
  run();let seen=addHintShown;try{seen||=localStorage.getItem("bs-tree-add-hint")==="1";}catch{}
  if(seen)return;addHintShown=true;try{localStorage.setItem("bs-tree-add-hint","1");}catch{}
- const hint=node("div","","ui-inline-tip"),text=node("span","Tip: right-click the project or an assembly in the feature tree to add items there. The Add menu also works with a keyboard or touch.");hint.setAttribute("role","tooltip");hint.append(text,button("Got it",()=>hint.remove(),{variant:"quiet",small:true}));ctx.dialog.querySelector("form")?.prepend(hint);
+ const hint=node("div","","ui-inline-tip"),text=node("span","Tip: right-click the project or an assembly in the feature tree to add items there. New part also works with a keyboard or touch.");hint.setAttribute("role","tooltip");hint.append(text,button("Got it",()=>hint.remove(),{variant:"quiet",small:true}));ctx.dialog.querySelector("form")?.prepend(hint);
 }
 async function archivePlacement(ctx,item,trigger){
  trigger.disabled=true;try{
@@ -26,7 +26,7 @@ export function renderProjectTree(ctx,{showHidden,onShowHidden,showDocuments=tru
  const assembly=summaryAssembly(tree),showTopAssembly=showAssemblyRow(ctx.projectId),combined=assembly&&!showTopAssembly,rootParent=combined?assembly.occurrence.id:null;
  const addActions=parentId=>[{label:"New part",run:()=>addWithHint(ctx,()=>editItem(ctx,null,null,{parentId}))},{label:"Add subassembly",run:()=>addWithHint(ctx,()=>editItem(ctx,null,null,{assembly:true,parentId}))}];
  nav.append(node("h2","Feature tree","project-tree-heading"));
- const tools=node("div","","project-tree-tools"),add=button("Add",()=>contextMenu(add,null,rootActions()),{variant:"quiet",small:true}),filters=node("details","","project-tree-filters"),filterTitle=node("summary","Show / hide","ui-button ui-button--quiet ui-button--small");add.setAttribute("aria-label","Add item");add.setAttribute("aria-haspopup","menu");filterTitle.setAttribute("aria-label","Tree display options");filterTitle.setAttribute("role","button");
+ const tools=node("div","","project-tree-tools"),add=button("New part",()=>addWithHint(ctx,()=>editItem(ctx,null,null,{parentId:rootParent})),{variant:"quiet",small:true}),filters=node("details","","project-tree-filters"),filterTitle=node("summary","Show / hide","ui-button ui-button--quiet ui-button--small");filterTitle.setAttribute("aria-label","Tree display options");filterTitle.setAttribute("role","button");
  filters.open=filterMemory.has(ctx.projectId);filterTitle.setAttribute("aria-expanded",String(filters.open));filters.addEventListener("toggle",()=>{filterTitle.setAttribute("aria-expanded",String(filters.open));if(filters.open)filterMemory.add(ctx.projectId);else filterMemory.delete(ctx.projectId);});filters.append(filterTitle,checkbox("Show hidden parts",showHidden,onShowHidden),checkbox("Show documents",showDocuments,onShowDocuments),checkbox("Show Workshop items",showWorkshop,onShowWorkshop));if(assembly)filters.append(checkbox("Show top assembly",showTopAssembly,value=>{setShowAssemblyRow(ctx.projectId,value);void ctx.refresh();}));tools.append(add,filters);nav.append(tools);
  let dragging=null,busy=false;
  const clearDrop=()=>{for(const row of nav.querySelectorAll("[data-drop-position]"))delete row.dataset.dropPosition;};
