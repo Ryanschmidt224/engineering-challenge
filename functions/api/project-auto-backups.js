@@ -84,7 +84,7 @@ export async function backupEngineProjects(env,date=new Date()){
  for(const project of projects){
   try{
    const previous=await latestBackup(env.PHOTOS,project.id);
-   if(previous?.customMetadata?.revision===project.revision){summary.push({project:project.id,status:"unchanged",key:previous.key});continue;}
+   if(previous?.customMetadata?.revision===project.revision){await verifyStored(env.PHOTOS,previous.key,project.id,previous.size);summary.push({project:project.id,status:"unchanged",key:previous.key});continue;}
    const objectKey=key(project.id,date),response=await exportProject(env,project);
    const size=await storeStream(env.PHOTOS,objectKey,response.body,{project:project.id,revision:project.revision,backupDate:date.toISOString(),format:"bsproject"});
    if(await deletionJob(env.WORKSHOP_DB,project.id)){await env.PHOTOS.delete(objectKey);summary.push({project:project.id,status:"deleted"});continue;}
