@@ -195,7 +195,16 @@ export function orderedPhotoGallery(
     library = node("section", "", "part-photo-library"),
     navigation = node("div", "", "part-photo-navigation"),
     position = node("span"),
-    grid = node("div", "", "project-media-grid");
+    grid = node("div", "", "project-media-grid"),
+    orderStatus = node("div", "", "project-upload-feedback"),
+    orderProgress = node("progress"),
+    orderMessage = node("span");
+  const tiles = new Map();
+  orderStatus.hidden = true;
+  orderStatus.setAttribute("role", "status");
+  orderStatus.setAttribute("aria-live", "polite");
+  orderProgress.setAttribute("aria-label", "Saving photo order");
+  orderStatus.append(orderProgress, orderMessage);
   root.dataset.photoOwner = itemId || "project";
   library.dataset.section = itemId ? "part-photos" : "project-photos";
   slot.setAttribute("role", "region");
@@ -257,21 +266,66 @@ export function orderedPhotoGallery(
   });
   async function reorder(ids) {
     if (busy || ids.every((id, i) => id === photos[i].id)) return;
+    const before = ctx.client.state;
     busy = true;
-    root.inert = true;
+    layout.inert = true;
+    layout.setAttribute("aria-busy", "true");
+    toggle.disabled = true;
+    orderStatus.hidden = false;
+    orderProgress.hidden = false;
+    orderMessage.textContent = "Saving photo order…";
     try {
-      await ctx.client.write(ctx.projectId, "/media/reorder", "POST", {
-        ids,
-        ...(itemId ? { itemId } : {}),
-      });
-      if ((await ctx.refresh()) === false)
-        throw Error("Order saved. Reload to see the new order.");
+      const result = await ctx.client.write(
+        ctx.projectId,
+        "/media/reorder",
+        "POST",
+        {
+          ids,
+          ...(itemId ? { itemId } : {}),
+        },
+      );
+      if (
+        root.isConnected &&
+        ctx.client.state === before &&
+        before.project.revision === result.revision
+      ) {
+        // The command confirms only order/role changes. Reuse the loaded rows and
+        // thumbnail nodes instead of fetching/rebuilding the entire workspace.
+        const byId = new Map(photos.map((photo) => [photo.id, photo]));
+        photos.splice(0, photos.length, ...ids.map((id) => byId.get(id)));
+        for (const [i, photo] of photos.entries()) {
+          photo.sort_order = i;
+          photo.role = "photo";
+          const { tile, earlier, later, label } = tiles.get(photo.id);
+          tile.classList.toggle("project-library-main", i === 0);
+          label.textContent = i === 0 ? "1 · Main" : String(i + 1);
+          earlier.disabled = i === 0;
+          later.disabled = i === photos.length - 1;
+          earlier.setAttribute(
+            "aria-label",
+            "Move photo " + (i + 1) + " earlier",
+          );
+          later.setAttribute("aria-label", "Move photo " + (i + 1) + " later");
+          grid.append(tile);
+        }
+        index = 0;
+        renderView();
+      } else {
+        orderMessage.textContent = "Order saved. Loading updated photos…";
+        if ((await ctx.refresh()) === false)
+          throw Error("Order saved. Reload to see the new order.");
+      }
+      orderStatus.hidden = true;
       ctx.notify("Photo order saved.");
     } catch (error) {
+      orderMessage.textContent = error.message;
       ctx.notify(error.message);
     } finally {
       busy = false;
-      root.inert = false;
+      layout.inert = false;
+      layout.setAttribute("aria-busy", "false");
+      toggle.disabled = false;
+      orderProgress.hidden = true;
     }
   }
   const move = (from, to) => {
@@ -329,16 +383,34 @@ export function orderedPhotoGallery(
       }
       if (data.projectId !== ctx.projectId || data.itemId !== itemId) return;
       const from = photos.findIndex((row) => row.id === data.mediaId);
-      if (from >= 0) void move(from, i);
+      if (from >= 0)
+        void move(
+          from,
+          photos.findIndex((row) => row.id === photo.id),
+        );
     });
-    const earlier = button("←", () => move(i, i - 1), {
-        variant: "quiet",
-        small: true,
-      }),
-      later = button("→", () => move(i, i + 1), {
-        variant: "quiet",
-        small: true,
-      }),
+    const earlier = button(
+        "←",
+        () => {
+          const at = photos.indexOf(photo);
+          return move(at, at - 1);
+        },
+        {
+          variant: "quiet",
+          small: true,
+        },
+      ),
+      later = button(
+        "→",
+        () => {
+          const at = photos.indexOf(photo);
+          return move(at, at + 1);
+        },
+        {
+          variant: "quiet",
+          small: true,
+        },
+      ),
       remove = button(
         "×",
         () =>
@@ -366,16 +438,13 @@ export function orderedPhotoGallery(
       "aria-label",
       "Remove " + (photo.caption || file?.name || "photo"),
     );
-    tile.append(
-      image,
-      name,
-      node(
-        "strong",
-        i === 0 ? "1 · Main" : String(i + 1),
-        "project-library-main-label",
-      ),
-      actions(earlier, later, remove),
+    const label = node(
+      "strong",
+      i === 0 ? "1 · Main" : String(i + 1),
+      "project-library-main-label",
     );
+    tiles.set(photo.id, { tile, earlier, later, label });
+    tile.append(image, name, label, actions(earlier, later, remove));
     grid.append(tile);
   });
   const feedback = mediaUploadFeedback(),
@@ -393,7 +462,7 @@ export function orderedPhotoGallery(
   header.append(node("strong", title), toggle);
   main.append(slot, navigation);
   layout.append(main, library);
-  root.append(header, layout);
+  root.append(header, orderStatus, layout);
   setExpanded();
   renderView();
   return root;
