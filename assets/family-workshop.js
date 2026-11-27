@@ -891,7 +891,9 @@ async function archive(entity, record) {
             ? "Restore this " +
                 entity +
                 " to the active Workshop? Products archived separately will remain archived."
-            : "This hides this product from the active Workshop. Its specifications, attached files, and existing project records are kept.\n\nTo bring it back, enable Show archived, select the product, and choose Restore product.\n\nNothing is permanently deleted.",
+            : entity === "category"
+              ? "This hides the category from the active Workshop. Move or archive its active child categories and families first. Existing records and stored files are kept. Use Show archived to restore it."
+              : "This hides this product from the active Workshop. Its specifications, attached files, and existing project records are kept.\n\nTo bring it back, enable Show archived, select the product, and choose Restore product.\n\nNothing is permanently deleted.",
           {
             title:
               (record.archived ? "Restore" : "Archive") +
