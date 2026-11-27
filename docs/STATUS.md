@@ -1,6 +1,6 @@
 # BuildingSchmidt — current status
 
-November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. Cleanup #143 is merged as `b53f97f8fea15c8874859056bf0dfb44157c9556`, after 289 code checks, 133 browser workflows and Cloudflare preview passed. Production build `de192935-ee43-468d-927f-56c31c8347f5` succeeded; Worker version `9ebabf2e-6675-435e-ad8b-26a8fc0bf60c`. The live project-client asset matches the release. #142 remains the Lessons Learned/ordered-gallery feature baseline.
+November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. The latest confirmed deployed baseline is #145 (`10a2a2cfbd09299bd106fa9e71c51c1362ab88f8`), after cleanup #143 and tooling #144. Production build `187de214-96e4-4213-b2c2-6d7f8c2d1cc3` deployed Worker `fdc13ca5-cbb3-41c6-8cfb-5e620fb5bcbc`; live page/API checks and exact updated asset bytes were verified. The candidate passed 289 code checks, 137 browser workflows and dependency audit with zero known vulnerabilities.
 
 ## Current behavior
 
@@ -16,7 +16,7 @@ Ryan authorized combining the two whole-site reviews and starting implementation
 
 Batch 1 in [PR #143](https://github.com/Ryanschmidt224/engineering-challenge/pull/143) formats compressed project modules, retires the unused tile runtime and live proof tools, removes the obsolete Projects variable and unused helpers, replaces the empty route-regex guard with a declared dispatch registry, and reconciles documentation. Proof/recovery workflows remain in the disposable test environment. The release PR records exact-head validation, merge and production deployment evidence; use that checkpoint to distinguish checked source from a confirmed live release. Local validation passed all 289 code checks and native D1/R2 recovery; all 133 browser workflows and Cloudflare preview also passed on the final head. The batch is released with the owner’s explicit approval.
 
-The [photo/lesson feedback change](PHOTO-LESSON-FEEDBACK-2026-11-27.md) implements the three owner additions: immediate reorder feedback with an in-place confirmed update, a framed What happened field, and no persistent idle Saved strip. Its PR records validation and publication state; the confirmed deployed baseline above remains distinct from prepared work.
+The [photo/lesson feedback change](PHOTO-LESSON-FEEDBACK-2026-11-27.md) implements the three owner additions: immediate reorder feedback with an in-place confirmed update, a framed What happened field, and no persistent idle Saved strip. It is released as #145. The owner’s next styling request aligns the Lessons Learned editor with Edit part details: shared shaded section bands, compact paired labels and bordered inputs, stacking on phones. The styling PR records its validation/publication checkpoint; persistence and autosave rules stay the same.
 
 [Toolchain maintenance](TOOLCHAIN-MAINTENANCE-2026-11-27.md) addresses the two reviewed transitive advisory ranges, maintained CI actions and weekly dependency update PRs. The owner authorized full npm audit; the updated lockfile reports zero known vulnerabilities, and CI explicitly rejects high/critical advisories. Release evidence is recorded on its PR.
 

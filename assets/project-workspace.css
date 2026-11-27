@@ -280,31 +280,7 @@
 .project-main .ui-field-row {
   padding-block: var(--space-2);
 }
-[data-project-editor] .field-row {
-  margin-block: var(--space-2);
-}
-
-/* Keep the old label/value rhythm in both reading and editing. */
-.project-editor-group {
-  min-width: 0;
-  margin: 0 0 var(--space-4);
-  padding: var(--space-2) 0 var(--space-3);
-  border: 0;
-  border-bottom: 1px solid var(--color-border);
-}
-.project-editor-group > legend {
-  width: 100%;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-small);
-  background: var(--color-surface-muted);
-  font-size: var(--text-body);
-  font-weight: var(--font-semibold);
-}
-.project-editor-group .checkbox {
-  min-height: var(--control-height-small);
-  margin-block: var(--space-2);
-}
-[data-project-editor]:has(.project-editor-group) {
+[data-project-editor]:has(.ui-editor-group) {
   width: min(48rem, calc(100vw - 2rem));
   max-width: min(48rem, calc(100vw - 2rem));
 }

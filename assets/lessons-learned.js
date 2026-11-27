@@ -719,17 +719,20 @@ export function initLessons(root) {
   function field(
     label,
     value,
-    { multiline = false, rows = 3, placeholder = "", onInput, className = "" },
+    { multiline = false, rows = 3, placeholder = "", onInput },
   ) {
+    const id = "lesson-field-" + newId();
     const control = multiline
       ? h("textarea", {
-          class: "ib-field__control " + className,
+          class: "field",
+          id,
           rows,
           placeholder,
           value,
         })
       : h("input", {
-          class: "ib-field__control " + className,
+          class: "field",
+          id,
           placeholder,
           value,
         });
@@ -738,9 +741,9 @@ export function initLessons(root) {
       mark();
     });
     return h(
-      "label",
-      { class: "ib-field" },
-      h("span", { class: "ib-field__label", text: label }),
+      "div",
+      { class: "field-row" },
+      h("label", { for: id, text: label }),
       control,
     );
   }
@@ -751,7 +754,7 @@ export function initLessons(root) {
       { class: "ib-divider" },
       h("button", {
         type: "button",
-        class: "ib-text-button",
+        class: "button",
         text: "+ Add a step",
         onclick,
       }),
@@ -767,11 +770,11 @@ export function initLessons(root) {
     const parts = [
       h(
         "section",
-        { class: "ib-step ib-step--edit", "aria-label": "Lesson introduction" },
+        { class: "ui-editor-group", "aria-label": "Lesson introduction" },
+        h("h2", { class: "ui-editor-group__heading", text: "Lesson details" }),
         field("What happened?", record.happened, {
           multiline: true,
           rows: 2,
-          className: "ib-field__control--lead",
           placeholder:
             "e.g. My 28 V buck converter blew up when I switched on a 24 V supply.",
           onInput: (v) => (record.happened = v),
@@ -807,14 +810,17 @@ export function initLessons(root) {
       parts.push(
         h(
           "section",
-          { class: "ib-step ib-step--edit", "aria-label": "Step " + (i + 1) },
+          { class: "ui-editor-group", "aria-label": "Step " + (i + 1) },
           h(
             "div",
-            { class: "ib-step__tools" },
-            h("span", { class: "ib-step__label", text: "Step " + (i + 1) }),
+            { class: "ui-editor-group__heading ib-step__tools" },
+            h("h2", {
+              class: "ui-editor-group__title",
+              text: "Step " + (i + 1),
+            }),
             h("button", {
               type: "button",
-              class: "ib-icon-button",
+              class: "button ib-icon-button",
               "aria-label": "Move step " + (i + 1) + " up",
               text: "↑",
               disabled: i === 0,
@@ -825,7 +831,7 @@ export function initLessons(root) {
             }),
             h("button", {
               type: "button",
-              class: "ib-icon-button",
+              class: "button ib-icon-button",
               "aria-label": "Move step " + (i + 1) + " down",
               text: "↓",
               disabled: i === record.steps.length - 1,
@@ -911,13 +917,13 @@ export function initLessons(root) {
         h(
           "section",
           {
-            class: "ib-resolution ib-resolution--edit",
+            class: "ui-editor-group",
             "aria-label": "Resolution",
           },
           h(
             "div",
-            { class: "ib-step__tools" },
-            h("span", { class: "ib-step__label", text: "Resolution" }),
+            { class: "ui-editor-group__heading ib-step__tools" },
+            h("h2", { class: "ui-editor-group__title", text: "Resolution" }),
             h("button", {
               type: "button",
               class: "ib-text-button ib-text-button--quiet",
@@ -955,7 +961,7 @@ export function initLessons(root) {
       parts.push(
         h("button", {
           type: "button",
-          class: "ib-text-button ib-add-resolution",
+          class: "button ib-add-resolution",
           text: "+ Resolution",
           onclick: () =>
             restructure(
@@ -1033,7 +1039,10 @@ export function initLessons(root) {
     );
     return h(
       "form",
-      { class: "ib-form", onsubmit: (e) => e.preventDefault() },
+      {
+        class: "ib-form ui-editor-fields",
+        onsubmit: (e) => e.preventDefault(),
+      },
       parts,
     );
   }
