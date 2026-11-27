@@ -133,6 +133,7 @@ export function initLessons(root) {
   const mainPane = h("main", { class: "ib-main" });
   const statusLine = h("p", {
     class: "ib-status",
+    hidden: true,
     role: "status",
     "aria-live": "polite",
   });
@@ -143,6 +144,7 @@ export function initLessons(root) {
 
   const say = (message, error = false) => {
     statusLine.textContent = message;
+    statusLine.hidden = !message;
     statusLine.classList.toggle("ib-status--error", error);
   };
   const current = () => state.bits.find((b) => b.id === state.selected);
@@ -237,6 +239,7 @@ export function initLessons(root) {
   function startEditing() {
     const bit = current();
     if (!bit) return;
+    say("");
     state.draft = {
       record: {
         id: bit.id,
@@ -268,6 +271,7 @@ export function initLessons(root) {
       state.selected = record.id;
       state.archiveView = false;
       state.paused = false;
+      say("");
       rememberLocation();
       persistDraft();
       render();
@@ -317,7 +321,7 @@ export function initLessons(root) {
       draft.pending = null;
       draft.dirty = (draft.version || 0) !== pending.version;
       persistDraft();
-      say(draft.dirty ? "Saving…" : "Saved");
+      say(draft.dirty ? "Saving…" : "");
     })();
     saving = task;
     try {
@@ -359,7 +363,7 @@ export function initLessons(root) {
       state.draft = null;
       persistDraft();
       rememberLocation();
-      say("Saved.");
+      say("");
       render();
     });
 
@@ -428,9 +432,11 @@ export function initLessons(root) {
           mark();
           renderMain();
         }
-        uploadFeedback.update({ phase: "complete" });
+        uploadFeedback.update({ phase: "saving" });
         await save();
-        say("Photos saved.");
+        uploadFeedback.update({ phase: "complete" });
+        uploadFeedback.root.hidden = true;
+        say("");
       } catch (error) {
         uploadFeedback.update({ phase: "error", message: error.message });
         throw error;
@@ -759,14 +765,18 @@ export function initLessons(root) {
       renderMain();
     };
     const parts = [
-      field("What happened?", record.happened, {
-        multiline: true,
-        rows: 2,
-        className: "ib-field__control--lead",
-        placeholder:
-          "e.g. My 28 V buck converter blew up when I switched on a 24 V supply.",
-        onInput: (v) => (record.happened = v),
-      }),
+      h(
+        "section",
+        { class: "ib-step ib-step--edit", "aria-label": "Lesson introduction" },
+        field("What happened?", record.happened, {
+          multiline: true,
+          rows: 2,
+          className: "ib-field__control--lead",
+          placeholder:
+            "e.g. My 28 V buck converter blew up when I switched on a 24 V supply.",
+          onInput: (v) => (record.happened = v),
+        }),
+      ),
     ];
     record.steps.forEach((step, i) => {
       if (i > 0)
@@ -996,6 +1006,7 @@ export function initLessons(root) {
                 state.draft = null;
                 state.paused = false;
                 persistDraft();
+                say("");
                 await load();
               }),
           }),
@@ -1011,6 +1022,7 @@ export function initLessons(root) {
           text: "Archive",
           onclick: removeBit,
         }),
+        statusLine,
         h("button", {
           type: "button",
           class: "button button--primary",
@@ -1034,6 +1046,7 @@ export function initLessons(root) {
       window.scrollTo(0, y);
       return;
     }
+    root.prepend(statusLine);
     const bit = current();
     mainPane.replaceChildren(
       bit

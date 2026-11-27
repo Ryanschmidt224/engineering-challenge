@@ -35,3 +35,34 @@ for(const width of [390,1440])test('ordered gallery upload feedback and failed a
  let release;const paused=new Promise(r=>release=r);await page.route('**/files/prepare',async route=>{await paused;await route.continue();});const upload=root.getByLabel('Photo library files').setInputFiles({name:'pending.png',mimeType:'image/png',buffer:PNG});await expect(page.getByRole('img',{name:'Uploading photo — not saved yet'})).toBeVisible();await expect(page.getByRole('progressbar',{name:'Photo upload in progress'})).toBeVisible();release();await upload;await expect(root.locator('figure')).toHaveCount(1);const before=await f.state();
  await page.unroute('**/files/prepare');await page.route('**/media',route=>route.request().method()==='POST'?route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Photo save temporarily unavailable'})}):route.continue());await root.getByLabel('Photo library files').setInputFiles({name:'failed.png',mimeType:'image/png',buffer:PNG});await expect(page.locator('.project-upload-feedback:visible')).toContainText('Photo save temporarily unavailable');expect((await f.state()).media).toEqual(before.media);
 });
+
+for(const width of [390,1440])test('photo reorder gives immediate feedback and reuses thumbnails after a lost reply at '+width,async({page,request,context},testInfo)=>{
+ await page.setViewportSize({width,height:1100});const f=await setup(page,request,context);await page.goto('/project.html?project='+f.id+'&item='+f.itemId);
+ const root=page.locator('.project-photo-gallery'),library=root.locator('.part-photo-library'),tiles=library.locator('figure');
+ await root.getByRole('button',{name:'Edit photos',exact:true}).click();await root.getByLabel('Photo library files').setInputFiles(['assets/default-code-photo.webp','assets/default-document-photo.webp']);await expect(tiles).toHaveCount(2);
+ const initial=await tiles.evaluateAll(nodes=>nodes.map(n=>n.dataset.mediaId));
+ await tiles.evaluateAll(nodes=>{nodes.forEach((node,i)=>{node.dataset.retainedTile=String(i);node.querySelector('img').dataset.retainedImage=String(i);});});
+ let release,requests=[],stateReads=0;const held=new Promise(resolve=>release=resolve);
+ page.on('request',r=>{if(new URL(r.url()).pathname===f.base+'/state')stateReads++;});
+ await page.route('**/media/reorder',async route=>{
+  requests.push(route.request().postDataJSON());
+  if(requests.length===1){await held;await route.fetch();await route.fulfill({status:503,json:{error:'Order reply was lost'}});}
+  else await route.continue();
+ });
+ await root.getByRole('button',{name:'Move photo 2 earlier',exact:true}).click();
+ await expect(root.getByRole('progressbar',{name:'Saving photo order',exact:true})).toBeVisible();
+ await expect(root.getByRole('status').filter({hasText:'Saving photo order…'})).toBeVisible();
+ await expect(root.getByRole('button',{name:'Done',exact:true})).toBeDisabled();expect(await tiles.evaluateAll(nodes=>nodes.map(n=>n.dataset.mediaId))).toEqual(initial);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0);await root.screenshot({path:testInfo.outputPath('photo-order-saving.png')});
+ release();await expect(root.getByRole('status').filter({hasText:'Order reply was lost'})).toBeVisible();await expect(root.getByRole('progressbar',{name:'Saving photo order',exact:true})).toBeHidden();
+ expect(await tiles.evaluateAll(nodes=>nodes.map(n=>n.dataset.mediaId))).toEqual(initial);
+ await root.getByRole('button',{name:'Move photo 2 earlier',exact:true}).click();
+ await expect(tiles.first()).toHaveAttribute('data-media-id',initial[1]);await expect(root.getByRole('button',{name:'Done',exact:true})).toBeEnabled();
+ expect(requests[1]).toEqual(requests[0]);expect(stateReads).toBe(0);
+ expect(await tiles.evaluateAll(nodes=>nodes.map(n=>[n.dataset.retainedTile,n.querySelector('img').dataset.retainedImage]))).toEqual([['1','1'],['0','0']]);
+ // Repeated controls use their current positions after nodes move in place.
+ await root.getByRole('button',{name:'Move photo 1 later',exact:true}).click();await expect(tiles.first()).toHaveAttribute('data-media-id',initial[0]);
+ const current=await f.state();const changed=await context.request.patch(f.base,{headers:{origin:'http://127.0.0.1:4173'},data:{operationId:crypto.randomUUID(),expectedRevision:current.project.revision,name:'Edited elsewhere'}});expect(changed.ok()).toBe(true);
+ await root.getByRole('button',{name:'Move photo 2 earlier',exact:true}).click();await expect(root.getByRole('status').filter({hasText:/changed/i})).toBeVisible();expect(await tiles.evaluateAll(nodes=>nodes.map(n=>n.dataset.mediaId))).toEqual(initial);
+ await page.reload();await expect(root.getByRole('region',{name:'Photo viewer'}).locator('img')).toHaveAttribute('alt','default-code-photo.webp');
+});

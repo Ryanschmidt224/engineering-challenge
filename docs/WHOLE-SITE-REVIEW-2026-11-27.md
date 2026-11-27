@@ -70,11 +70,12 @@ These are approved follow-ups, with no required order or immediate implementatio
 | “What happened?” looks separate from the lesson | Place it in a clearly related frame with label/input spacing consistent with the lesson's step segments. Retain its role as the lesson's opening description/title. | New and reopened lessons visibly group the opening field with their content on desktop and phone; autosave/focus behavior remains intact. |
 | Persistent “Saved” strip is unclear | Remove the idle Saved field/strip shown beneath Calculators. Retain concise feedback while saving and actionable errors/retry/conflict states. | The idle editor has no persistent Saved banner or empty banner gap; pending work and failures remain obvious. |
 
-The supplied screenshot illustrates the last two issues. These additions stay on the plan while Batch 1 validation completes; this candidate does not claim their UI has changed.
+The supplied screenshot illustrates the last two issues. The [photo/lesson feedback change](PHOTO-LESSON-FEEDBACK-2026-11-27.md) implements these additions with targeted browser acceptance; its PR records validation/publication state.
 
 ## Implementation checkpoints
 
 - Cleanup #143 is merged and deployed: compressed project browser modules, retired tile/proof runtime, obsolete Projects flag, unused helpers, declared route guard and current documentation. Stored legacy data remains. All 289 code checks and 133 browser workflows passed on the final candidate.
+- The [photo/lesson feedback change](PHOTO-LESSON-FEEDBACK-2026-11-27.md) implements the three owner additions without altering server save/restore or file-ownership rules.
 - The [toolchain maintenance change](TOOLCHAIN-MAINTENANCE-2026-11-27.md) keeps stable Miniflare with narrowly scoped patched library versions, maintained pinned CI actions and weekly dependency PRs. The owner authorized full npm audit; it reports zero known vulnerabilities, and CI explicitly gates high/critical advisories. Native recovery and browser checks remain independent acceptance evidence.
 
 ## Work that stays out of this cycle
