@@ -18,6 +18,8 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --no-audit --no-fund
+      - name: Check published dependency advisories
+        run: npm run check:dependencies
       - name: Check source syntax and run regression tests
         run: npm run check
   browser:

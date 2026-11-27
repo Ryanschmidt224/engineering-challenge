@@ -75,7 +75,7 @@ The supplied screenshot illustrates the last two issues. These additions stay on
 ## Implementation checkpoints
 
 - Cleanup #143 is merged and deployed: compressed project browser modules, retired tile/proof runtime, obsolete Projects flag, unused helpers, declared route guard and current documentation. Stored legacy data remains. All 289 code checks and 133 browser workflows passed on the final candidate.
-- The [toolchain maintenance change](TOOLCHAIN-MAINTENANCE-2026-11-27.md) keeps stable Miniflare with narrowly scoped patched library versions, maintained pinned CI actions and weekly dependency PRs. Full npm audit remains held pending explicit authorization; targeted primary advisory checks and native recovery tests are separate evidence.
+- The [toolchain maintenance change](TOOLCHAIN-MAINTENANCE-2026-11-27.md) keeps stable Miniflare with narrowly scoped patched library versions, maintained pinned CI actions and weekly dependency PRs. The owner authorized full npm audit; it reports zero known vulnerabilities, and CI explicitly gates high/critical advisories. Native recovery and browser checks remain independent acceptance evidence.
 
 ## Work that stays out of this cycle
 

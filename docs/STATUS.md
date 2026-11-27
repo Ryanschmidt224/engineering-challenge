@@ -18,7 +18,7 @@ Batch 1 in [PR #143](https://github.com/Ryanschmidt224/engineering-challenge/pul
 
 Queued owner UI additions: faster photo reordering with immediate activity feedback, a visually grouped What happened field, and removal of the persistent idle Saved strip. Details and acceptance are in the combined plan. These do not interrupt the cleanup candidate.
 
-[Toolchain maintenance](TOOLCHAIN-MAINTENANCE-2026-11-27.md) addresses the two reviewed transitive advisory ranges, maintained CI actions and weekly dependency update PRs. Full npm audit transmission is held by automatic approval review pending explicit authorization. Release evidence is recorded on its PR.
+[Toolchain maintenance](TOOLCHAIN-MAINTENANCE-2026-11-27.md) addresses the two reviewed transitive advisory ranges, maintained CI actions and weekly dependency update PRs. The owner authorized full npm audit; the updated lockfile reports zero known vulnerabilities, and CI explicitly rejects high/critical advisories. Release evidence is recorded on its PR.
 
 Next: automatic whole-site recovery coverage and visible failure status; login attempt limiting. Then consistent errors/save/upload lifecycle rules and tested browser headers. Image/read optimization follows measurements.
 

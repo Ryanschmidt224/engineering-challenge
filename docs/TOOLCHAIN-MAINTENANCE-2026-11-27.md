@@ -11,7 +11,7 @@ Keep the published stable Miniflare API and workerd combination and update only 
 | Sharp | 0.35.2 | 0.35.5 |
 | Undici | 7.28.0 | 7.30.2 |
 
-The reviewed Sharp advisory marks versions below 0.35.4 affected. The reviewed Undici advisory marks 7.x below 7.30.1 affected. These selected versions clear those affected ranges. This is a targeted advisory correction, not a claim that a full vulnerability scan found no other issues.
+The reviewed Sharp advisory marks versions below 0.35.4 affected. The reviewed Undici advisory marks 7.x below 7.30.1 affected. These selected versions clear those affected ranges. The owner subsequently authorized a full npm audit; the updated lockfile reports zero known vulnerabilities across all 88 dependency entries, including optional platform packages. This is a dated advisory-database result, not a claim that all security defects are known.
 
 Overrides apply only to `miniflare@4.20260730.0`. Remove them when a supported stable Miniflare release selects patched versions itself, after native migration/recovery and browser checks pass. Do not broaden the overrides globally or downgrade Miniflare through an automatic audit fix.
 
@@ -23,7 +23,9 @@ Dependabot checks npm packages and GitHub Actions weekly and opens bounded revie
 
 A fresh lockfile/install must show exactly the selected Sharp/Undici versions under stable Miniflare. Run the full code suite, native D1/workerd migrations and restart/recovery tests, browser workflows, and a Worker build. Inspect the installed tree, lockfile and exact-head CI results; record release evidence on the PR. Application Worker bytes must remain identical because this change concerns development tools and CI only.
 
-Automatic approval review rejected `npm audit` because the command sends dependency metadata to the public npm registry. It was not run through another service or environment. Local/CI installs explicitly omit that implicit audit transmission. The previous CI installation printed advisories but did not enforce an audit gate; all actual regression/build checks remain. Full npm vulnerability scanning remains an explicitly recorded verification limit pending the owner's authorization.
+Automatic approval review initially held `npm audit` because it sends dependency names/versions to the public npm registry. Ryan explicitly approved that transmission on November 27. The authorized scan completed with zero informational, low, moderate, high or critical findings. No source code or project records were sent.
+
+Local/CI installation omits the duplicate implicit audit. The Node CI job now runs the explicit `npm run check:dependencies` step, which fails on high or critical advisories. Weekly Dependabot PRs also exercise that gate. Code/browser/recovery checks remain separate and mandatory.
 
 ## Primary evidence
 
