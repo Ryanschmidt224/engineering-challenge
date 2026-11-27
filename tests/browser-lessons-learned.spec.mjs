@@ -96,7 +96,7 @@ test("write an lesson with steps, a photo, a link and a rated resolution", async
     "What does the scope show?",
   );
   await expect(
-    main.getByText("Hypothesis: Input overshoot at switch-on"),
+    main.locator(".ib-step__hypothesis").filter({ hasText: "Input overshoot at switch-on" }),
   ).toBeVisible();
   await expect(main.locator(".ib-quality")).toContainText("Meh");
   await expect(main.locator(".ib-step img")).toHaveCount(1);
