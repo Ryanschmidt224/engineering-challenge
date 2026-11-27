@@ -1,3 +1,4 @@
+import { mediaUploadFeedback } from "./media-upload-feedback.js";
 import { actionBar } from "./photo-editor.js";
 import { fileDropTarget } from "./file-selection.js";
 import { viewMode } from "./view-mode.js";
@@ -63,7 +64,11 @@ async function send(ctx, path, method, data, message) {
   }
 }
 // Upload images as supporting files, then attach them in one guarded save.
-async function addFiles(ctx, files, { itemId = null, role = "photo" } = {}) {
+async function addFiles(
+  ctx,
+  files,
+  { itemId = null, role = "photo", onProgress = () => {} } = {},
+) {
   const images = files.filter(
     (file) => file.type.startsWith("image/") || /\.hei[cf]$/i.test(file.name),
   );
@@ -86,6 +91,7 @@ async function addFiles(ctx, files, { itemId = null, role = "photo" } = {}) {
     );
     return;
   }
+  onProgress({ phase: "uploading", images });
   ctx.notify(
     "Uploading " +
       images.length +
@@ -97,12 +103,18 @@ async function addFiles(ctx, files, { itemId = null, role = "photo" } = {}) {
     const fileIds = [];
     for (const file of images.slice(0, 20))
       fileIds.push((await ctx.client.upload(ctx.projectId, file)).fileId);
+    onProgress({ phase: "saving" });
     await ctx.client.write(ctx.projectId, "/media", "POST", {
       fileIds,
       role,
       ...(itemId ? { itemId } : {}),
     });
-    await ctx.refresh();
+    onProgress({ phase: "refreshing" });
+    if ((await ctx.refresh()) === false)
+      throw Error(
+        "Photo saved, but the page could not refresh. Reload to see it.",
+      );
+    onProgress({ phase: "complete" });
     ctx.notify(
       role === "picture"
         ? "Picture saved. The earlier picture is kept in storage."
@@ -115,6 +127,7 @@ async function addFiles(ctx, files, { itemId = null, role = "photo" } = {}) {
               : ""),
     );
   } catch (error) {
+    onProgress({ phase: "error", message: error.message });
     ctx.notify(error.message);
   }
 }
@@ -194,7 +207,9 @@ export function mediaGallery(
     body = node("div", "", "project-photo-tools"),
     section = { body, root: body };
   body.dataset.section = itemId ? "part-photos" : "project-photos";
-  const add = (files) => addFiles(ctx, files, { itemId }),
+  const feedback = mediaUploadFeedback();
+  const add = (files) =>
+      addFiles(ctx, files, { itemId, onProgress: feedback.update }),
     choose = picker(add, { label: title + " files" });
   const uploadRow = node("div", "", "bs-photo-upload-row"),
     addButton = button(
@@ -301,7 +316,7 @@ export function mediaGallery(
       : "Drop photos or paste an image",
   });
   uploadRow.append(addButton, paste, mode.root);
-  section.body.append(uploadRow, choose.input, grid);
+  section.body.append(uploadRow, feedback.root, choose.input, grid);
   acceptDrops(section.body, add);
   return section.root;
 }
@@ -336,13 +351,20 @@ export function partPicture(ctx, item, engineeringFile = null) {
     ? thumbnail(ctx, file, item.name)
     : node("p", "No picture yet", "muted");
   if (cover.tagName === "IMG") cover.className = "project-picture";
+  const feedback = mediaUploadFeedback(cover);
+  if (cover.tagName === "IMG") cover.loading = "eager";
   let uploading = false;
   const savePicture = async (files) => {
     if (uploading) return;
     uploading = true;
     try {
-      await addFiles(ctx, files, { itemId: item.id, role: "picture" });
+      await addFiles(ctx, files, {
+        itemId: item.id,
+        role: "picture",
+        onProgress: feedback.update,
+      });
     } finally {
+      feedback.finish();
       uploading = false;
     }
   };
@@ -379,6 +401,7 @@ export function partPicture(ctx, item, engineeringFile = null) {
     );
   tools.append(
     choose.input,
+    feedback.root,
     actions(
       ...controls,
       fileDropTarget(savePicture, {
