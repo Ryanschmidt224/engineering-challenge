@@ -9,8 +9,9 @@ Private owner application on Cloudflare Workers with D1 metadata and immutable R
 | Owner account | `site-header.js`, `project-signin.js`, `functions/api/accounts.js` | One Account menu and current-page owner dialog; existing account/session format |
 | Global settings | `website-settings-page.js`, `website-settings-client.js` | Tags, owner labels, refresh without replacing drafts, backup/restore entry points |
 | Workshop | `family-workshop.js`, `workshop-db.js` | Current families/products, evidence and current project-use projection |
-| Info Bits | `knowledge.js`, `knowledge-targets.js` | Tiles and explicit current-project/catalog links; owner-scoped target resolution |
+| Lessons Learned | `lessons-learned.js`, `lessons-model.js`, `functions/api/lessons-learned.js` | Notebook steps, autosave with revisions and retry identity, title links, archive/restore and photo ownership |
 | Calculators | `calculators.js`, `calculator-directory.js`, `calculator-catalog.js` | Independent calculators embedded in Info Bits or opened standalone |
+| Project photos | `project-media.js`, `functions/api/project-media.js` | One ordered component for summaries/parts/assemblies; first photo is main; old standalone pictures remain readable |
 | Photo tools | `photo-editor.js`, `clipboard-files.js`, `file-selection.js`, `photo-controls.css` | Image-stage disclosure and native choose/drop/paste; no storage API inference |
 | Project commands | `project-workspace-api.js`, `project-command.js`, `project-*-commands.js` | Owner checks, revision/operation IDs, atomic admission and data changes |
 | Project files and recovery | `project-engine-files.js`, `project-backup*.js`, `project-restore-*.js` | Immutable uploads, full metadata/files and independent restores |

@@ -1,16 +1,12 @@
-import { wireMainPhotoSlot } from "./part-photo-selection.js";
 import { mediaUploadFeedback } from "./media-upload-feedback.js";
-import { actionBar } from "./photo-editor.js";
 import { fileDropTarget } from "./file-selection.js";
-import { viewMode } from "./view-mode.js";
 import { node, field, actions } from "./workshop-ui.js";
 import { confirmAction } from "./project-editors.js";
 
 // Project/part photo galleries and the part picture. Removing a photo hides it;
 // the stored file and its row are kept. Double-click a photo for full size.
 const button = (...args) => window.BSUI.button(...args);
-const SHOWN = /^image\/(jpeg|png|webp|gif|avif)$/,
-  PICTURE = /^image\/(jpeg|png|webp)$/;
+const SHOWN = /^image\/(jpeg|png|webp|gif|avif)$/;
 const src = (ctx, file) =>
   "/api/project-engine/projects/" +
   ctx.projectId +
@@ -21,18 +17,22 @@ const fileOf = (ctx, row) =>
   ctx.client.state.files.find((file) => file.id === row.file_id);
 // Keep a gallery open across the page refresh that follows each save.
 const opened = new Set();
-const viewed = new Map();
-export const photosFor = (state, itemId = null) =>
-  (state.media || [])
+// Ordered photo rows are authoritative. Old standalone pictures remain visible
+// until their next reorder converts that same row into a gallery member.
+export function photosFor(state, itemId = null) {
+  const photos = (state.media || [])
     .filter(
       (row) =>
         row.active && row.role === "photo" && (row.item_id || null) === itemId,
     )
     .sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id));
-export const pictureFor = (state, itemId) =>
-  (state.media || []).find(
+  const legacy = (state.media || []).find(
     (row) => row.active && row.role === "picture" && row.item_id === itemId,
-  ) || null;
+  );
+  if (legacy && !photos.some((row) => row.file_id === legacy.file_id))
+    photos.push(legacy);
+  return photos;
+}
 
 function thumbnail(ctx, file, alt) {
   if (!file) return node("p", "Unavailable photo", "muted");
@@ -56,23 +56,11 @@ function thumbnail(ctx, file, alt) {
   img.title = "Double-click for full size";
   return img;
 }
-async function send(ctx, path, method, data, message) {
-  try {
-    await ctx.client.write(ctx.projectId, path, method, data);
-    if ((await ctx.refresh()) === false)
-      throw Error(
-        "Change saved, but the page could not refresh. Reload to see it.",
-      );
-    ctx.notify(message);
-  } catch (error) {
-    ctx.notify(error.message);
-  }
-}
 // Upload images as supporting files, then attach them in one guarded save.
 async function addFiles(
   ctx,
   files,
-  { itemId = null, role = "photo", onProgress = () => {} } = {},
+  { itemId = null, onProgress = () => {} } = {},
 ) {
   const images = files.filter(
     (file) => file.type.startsWith("image/") || /\.hei[cf]$/i.test(file.name),
@@ -83,17 +71,6 @@ async function addFiles(
   }
   if (images.some((file) => file.size > 20 * 1024 * 1024)) {
     ctx.notify("Choose images of at most 20 MB each.");
-    return;
-  }
-  if (
-    role === "picture" &&
-    (images.length !== 1 ||
-      !PICTURE.test(images[0].type) ||
-      images[0].size >= 3 * 1024 * 1024)
-  ) {
-    ctx.notify(
-      "A part picture must be one JPG, PNG or WebP image smaller than 3 MB.",
-    );
     return;
   }
   onProgress({ phase: "uploading", images });
@@ -111,7 +88,7 @@ async function addFiles(
     onProgress({ phase: "saving" });
     await ctx.client.write(ctx.projectId, "/media", "POST", {
       fileIds,
-      role,
+      role: "photo",
       ...(itemId ? { itemId } : {}),
     });
     onProgress({ phase: "refreshing" });
@@ -121,15 +98,13 @@ async function addFiles(
       );
     onProgress({ phase: "complete" });
     ctx.notify(
-      role === "picture"
-        ? "Picture saved. The earlier picture is kept in storage."
-        : fileIds.length +
-            " photo" +
-            (fileIds.length === 1 ? "" : "s") +
-            " added." +
-            (images.length > 20
-              ? " Add the rest in another batch of up to 20."
-              : ""),
+      fileIds.length +
+        " photo" +
+        (fileIds.length === 1 ? "" : "s") +
+        " added." +
+        (images.length > 20
+          ? " Add the rest in another batch of up to 20."
+          : ""),
     );
   } catch (error) {
     onProgress({ phase: "error", message: error.message });
@@ -204,244 +179,31 @@ function editCaption(ctx, row) {
   form.querySelector("input")?.focus();
 }
 
-export function mediaGallery(
+// Shared ordered gallery for project summaries, parts and subassemblies.
+// Viewer position belongs to this mounted component, never a cross-page cache.
+export function orderedPhotoGallery(
   ctx,
-  {
-    itemId = null,
-    title = "Photos",
-    partLibrary = false,
-    selectMain = null,
-  } = {},
+  { itemId = null, title = "Photos" } = {},
 ) {
-  const current = partLibrary ? pictureFor(ctx.client.state, itemId) : null,
+  const key = ctx.projectId + ":" + (itemId || "project"),
     photos = photosFor(ctx.client.state, itemId);
-  if (current && !photos.some((row) => row.file_id === current.file_id))
-    photos.push(current);
-  const body = node("div", "", "project-photo-tools"),
-    section = { body, root: body };
-  body.dataset.section = itemId ? "part-photos" : "project-photos";
-  const feedback = mediaUploadFeedback();
-  const add = (files) =>
-      addFiles(ctx, files, { itemId, onProgress: feedback.update }),
-    choose = picker(add, { label: title + " files" });
-  const uploadRow = node("div", "", "bs-photo-upload-row"),
-    addButton = button("Add photos", choose.open);
-  const grid = node("div", "", "project-media-grid"),
-    mode = viewMode({
-      label: "Photo view",
-      storageKey: "bs-photo-view",
-      initial: "tiles",
-      onChange: (value) => (grid.dataset.view = value),
-    });
-  grid.dataset.view = partLibrary ? "tiles" : mode.value;
-  const move = async (index, delta) => {
-    const ids = photos.map((row) => row.id);
-    [ids[index], ids[index + delta]] = [ids[index + delta], ids[index]];
-    await send(
-      ctx,
-      "/media/reorder",
-      "POST",
-      { ids, ...(itemId ? { itemId } : {}) },
-      "Photo order saved.",
-    );
-  };
-  photos.forEach((row, index) => {
-    const file = fileOf(ctx, row),
-      tile = node("figure", "", "project-media-tile"),
-      caption = node(
-        "figcaption",
-        row.caption || file?.name || "Unavailable photo",
-      );
-    const remove = button(
-      "Remove",
-      () =>
-        confirmAction(
-          ctx,
-          "Remove photo",
-          partLibrary && current?.file_id === row.file_id
-            ? "Remove this photo from the library and clear the main photo? The stored file is kept."
-            : "Remove this photo from the gallery? The stored file is kept.",
-          "Remove photo",
-          (token) =>
-            ctx.client.write(
-              ctx.projectId,
-              "/media/" + row.id + "/remove",
-              "POST",
-              partLibrary ? { fromLibrary: true } : {},
-              token,
-            ),
-        ),
-      { variant: "quiet", small: true },
-    );
-    const tools = actions(
-      button("Caption", () => editCaption(ctx, row), {
-        variant: "quiet",
-        small: true,
-      }),
-      ...(!partLibrary && index > 0
-        ? [
-            button("←", () => move(index, -1), {
-              variant: "quiet",
-              small: true,
-            }),
-          ]
-        : []),
-      ...(!partLibrary && index < photos.length - 1
-        ? [button("→", () => move(index, 1), { variant: "quiet", small: true })]
-        : []),
-      remove,
-    );
-    for (const control of tools.querySelectorAll("button"))
-      if (["←", "→"].includes(control.textContent))
-        control.setAttribute(
-          "aria-label",
-          control.textContent === "←"
-            ? "Move photo earlier"
-            : "Move photo later",
-        );
-    const meta = node(
-        "small",
-        file
-          ? file.name + " · " + Math.ceil(file.size / 1024) + " KB"
-          : "Unavailable file",
-        "project-media-meta",
-      ),
-      image = thumbnail(ctx, file, row.caption),
-      key = "media:" + ctx.projectId + ":" + row.id;
-    if (partLibrary) {
-      const isMain = current?.file_id === row.file_id;
-      tile.classList.toggle("project-library-main", isMain);
-      tile.dataset.mediaId = row.id;
-      const canMain =
-        file && PICTURE.test(file.content_type) && file.size <= 3 * 1024 * 1024;
-      tile.draggable = !!canMain;
-      tile.addEventListener("dragstart", (event) => {
-        event.dataTransfer.setData(
-          "application/x-bs-part-photo",
-          JSON.stringify({ projectId: ctx.projectId, itemId, mediaId: row.id }),
-        );
-        event.dataTransfer.effectAllowed = "copy";
-      });
-      const use = button("Use as main", () => selectMain(row), { small: true });
-      use.disabled = !canMain;
-      use.setAttribute(
-        "aria-label",
-        "Use " + (row.caption || file?.name || "photo") + " as main",
-      );
-      if (!canMain)
-        use.title =
-          "Main photos require a JPG, PNG or WebP image of at most 3 MB.";
-      const designation = isMain
-        ? node("strong", "Main photo", "project-library-main-label")
-        : use;
-      const controls = actions(designation, remove);
-      controls.classList.add("part-library-actions");
-      remove.textContent = "×";
-      remove.setAttribute(
-        "aria-label",
-        "Remove " + (row.caption || file?.name || "photo"),
-      );
-      const editName = button(
-        row.caption || file?.name || "Unavailable photo",
-        () => editCaption(ctx, row),
-        { variant: "quiet", small: true },
-      );
-      editName.classList.add("part-library-name");
-      editName.setAttribute(
-        "aria-label",
-        "Edit caption for " + (row.caption || file?.name || "photo"),
-      );
-      tile.append(image, editName, controls);
-      grid.append(tile);
-      return;
-    }
-    tile.append(image);
-    const controls = actionBar(image, {
-      content: tools,
-      expanded: opened.has(key),
-      onToggle: (open) => {
-        if (open) opened.add(key);
-        else opened.delete(key);
-      },
-    });
-    controls.panel.classList.add("project-photo-editor");
-    tile.append(caption, meta, controls.panel);
-    grid.append(tile);
-  });
-  const paste = fileDropTarget((incoming) => add(incoming), {
-    label: "Paste a copied photo",
-    text: "Drop photos or paste an image",
-  });
-  uploadRow.append(addButton, paste, ...(!partLibrary ? [mode.root] : []));
-  section.body.append(uploadRow, feedback.root, choose.input, grid);
-  acceptDrops(section.body, add);
-  return section.root;
-}
-
-// Project summary galleries retain the shared photo disclosure.
-function photoControl(ctx, cover, tools, key) {
-  const holder = node("div", "", "project-picture-holder");
-  holder.append(cover);
-  const controls = actionBar(cover, {
-    content: tools,
-    expanded: opened.has(key),
-    onToggle: (open) => {
-      if (open) opened.add(key);
-      else opened.delete(key);
-    },
-  });
-  holder.editorPanel = controls.panel;
-  controls.panel.classList.add("project-photo-editor");
-  return holder;
-}
-
-// The approved part-photo component owns one layout in both disclosure states.
-// Browsing is transient; only explicit selection writes the saved main photo.
-export function partPicture(ctx, item) {
-  const key = ctx.projectId + ":" + item.id,
-    current = pictureFor(ctx.client.state, item.id),
-    photos = photosFor(ctx.client.state, item.id);
-  if (current && !photos.some((row) => row.file_id === current.file_id))
-    photos.push(current);
-  const holder = node("section", "", "project-part-photos"),
+  const root = node("section", "", "project-photo-gallery"),
     header = node("div", "", "part-photo-heading"),
     layout = node("div", "", "part-photo-layout"),
     main = node("section", "", "part-photo-main"),
-    mainHeader = node("div", "", "part-photo-heading"),
     slot = node("div", "", "part-photo-slot"),
     library = node("section", "", "part-photo-library"),
     navigation = node("div", "", "part-photo-navigation"),
     position = node("span"),
-    caption = node("p", "", "part-photo-caption");
+    grid = node("div", "", "project-media-grid");
+  root.dataset.photoOwner = itemId || "project";
+  library.dataset.section = itemId ? "part-photos" : "project-photos";
+  slot.setAttribute("role", "region");
+  slot.setAttribute("aria-label", "Photo viewer");
+  slot.tabIndex = 0;
   let open = opened.has(key),
-    busy = false,
-    viewId = viewed.has(key) ? viewed.get(key) : current?.file_id || null;
-  const clear = button(
-    "Clear main",
-    async () => {
-      if (busy) return;
-      busy = true;
-      try {
-        await ctx.client.write(
-          ctx.projectId,
-          "/media/" + current.id + "/remove",
-          "POST",
-          {},
-        );
-        viewed.set(key, null);
-        if ((await ctx.refresh()) === false)
-          throw Error(
-            "Main photo cleared, but refresh failed. Reload the page.",
-          );
-        ctx.notify("Main photo cleared. All photos remain in the library.");
-      } catch (error) {
-        ctx.notify(error.message);
-      } finally {
-        busy = false;
-      }
-    },
-    { variant: "quiet", small: true },
-  );
+    index = 0,
+    busy = false;
   const toggle = button(
     open ? "Done" : "Edit photos",
     () => {
@@ -449,68 +211,36 @@ export function partPicture(ctx, item) {
       open ? opened.add(key) : opened.delete(key);
       setExpanded();
     },
-    { variant: "quiet", small: true },
+    { variant: open ? "primary" : "", small: true },
   );
   toggle.classList.add("part-photo-toggle");
   function setExpanded() {
     toggle.textContent = open ? "Done" : "Edit photos";
     toggle.setAttribute("aria-expanded", String(open));
+    toggle.classList.toggle("ui-button--primary", open);
     library.hidden = !open;
-    clear.hidden = !open || !current;
     layout.classList.toggle("part-photo-layout--collapsed", !open);
   }
-  const selectMain = async (row) => {
-    if (busy) return;
-    busy = true;
-    ctx.notify("Setting main photo…");
-    try {
-      await ctx.client.write(ctx.projectId, "/media/main-picture", "POST", {
-        itemId: item.id,
-        mediaId: row.id,
-      });
-      viewed.set(key, row.file_id);
-      if ((await ctx.refresh()) === false)
-        throw Error("Main photo saved, but refresh failed. Reload the page.");
-      ctx.notify("Main photo saved. All photos remain in the library.");
-    } catch (error) {
-      ctx.notify(error.message);
-    } finally {
-      busy = false;
-    }
-  };
   function renderView() {
-    const row = photos.find((row) => row.file_id === viewId),
-      file = row ? fileOf(ctx, row) : null;
+    const photo = photos[index],
+      file = photo && fileOf(ctx, photo);
     slot.replaceChildren(
       file
-        ? thumbnail(ctx, file, file.name)
-        : node("p", "Drag a photo here from the library.", "muted"),
+        ? thumbnail(ctx, file, photo.caption || file.name)
+        : node("span", "No photos yet", "muted"),
     );
-    const img = slot.querySelector("img");
-    if (img) {
-      img.className = "project-picture";
-      img.loading = "eager";
+    const image = slot.querySelector("img");
+    if (image) {
+      image.className = "project-picture";
+      image.loading = "eager";
     }
-    caption.textContent = file
-      ? (row.caption || file.name) +
-        (row.file_id === current?.file_id ? " · Main photo" : " · Preview")
-      : "No main photo selected";
     position.textContent =
-      (row ? photos.indexOf(row) + 1 : 0) + " / " + photos.length;
+      (photos.length ? index + 1 : 0) + " / " + photos.length;
     navigation.hidden = photos.length < 2;
   }
   function cycle(delta) {
     if (!photos.length) return;
-    const index = photos.findIndex((row) => row.file_id === viewId);
-    viewId =
-      photos[
-        index < 0
-          ? delta > 0
-            ? 0
-            : photos.length - 1
-          : (index + delta + photos.length) % photos.length
-      ].file_id;
-    viewed.set(key, viewId);
+    index = (index + delta + photos.length) % photos.length;
     renderView();
   }
   const previous = button("‹", () => cycle(-1), { small: true }),
@@ -518,89 +248,171 @@ export function partPicture(ctx, item) {
   previous.setAttribute("aria-label", "Previous photo");
   next.setAttribute("aria-label", "Next photo");
   position.setAttribute("aria-live", "polite");
-  caption.setAttribute("aria-live", "polite");
   navigation.append(previous, position, next);
-  header.append(node("strong", "Part photos"), toggle);
-  mainHeader.append(node("h3", "Main photo"), clear);
-  main.append(
-    mainHeader,
-    slot,
-    navigation,
-    caption,
-    node(
-      "p",
-      "Choose Use as main on a library photo to change the saved main picture.",
-      "part-photo-hint",
-    ),
-  );
-  const libraryHeader = node("div", "", "part-photo-heading");
-  libraryHeader.append(
-    node("h3", "Photo library"),
-    node("span", photos.length + " photos", "muted"),
-  );
-  library.append(
-    libraryHeader,
-    mediaGallery(ctx, {
-      itemId: item.id,
-      title: "Photo library",
-      partLibrary: true,
-      selectMain,
-    }),
-  );
-  layout.append(main, library);
-  holder.append(header, layout);
-  wireMainPhotoSlot(slot, ctx, item.id, selectMain);
   slot.addEventListener("keydown", (event) => {
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
       cycle(event.key === "ArrowLeft" ? -1 : 1);
     }
   });
-  if (viewId && !photos.some((row) => row.file_id === viewId))
-    viewId = current?.file_id || null;
+  async function reorder(ids) {
+    if (busy || ids.every((id, i) => id === photos[i].id)) return;
+    busy = true;
+    root.inert = true;
+    try {
+      await ctx.client.write(ctx.projectId, "/media/reorder", "POST", {
+        ids,
+        ...(itemId ? { itemId } : {}),
+      });
+      if ((await ctx.refresh()) === false)
+        throw Error("Order saved. Reload to see the new order.");
+      ctx.notify("Photo order saved.");
+    } catch (error) {
+      ctx.notify(error.message);
+    } finally {
+      busy = false;
+      root.inert = false;
+    }
+  }
+  const move = (from, to) => {
+    const ids = photos.map((photo) => photo.id);
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    return reorder(ids);
+  };
+  grid.dataset.view = "tiles";
+  photos.forEach((photo, i) => {
+    const file = fileOf(ctx, photo),
+      tile = node("figure", "", "project-media-tile"),
+      image = thumbnail(ctx, file, photo.caption || file?.name),
+      name = button(
+        photo.caption || file?.name || "Photo",
+        () => editCaption(ctx, photo),
+        { variant: "quiet", small: true },
+      );
+    name.classList.add("part-library-name");
+    name.setAttribute(
+      "aria-label",
+      "Edit caption for " + (photo.caption || file?.name || "photo"),
+    );
+    tile.classList.toggle("project-library-main", i === 0);
+    tile.dataset.mediaId = photo.id;
+    tile.draggable = true;
+    tile.addEventListener("dragstart", (event) => {
+      event.dataTransfer.setData(
+        "application/x-bs-photo-order",
+        JSON.stringify({ projectId: ctx.projectId, itemId, mediaId: photo.id }),
+      );
+      event.dataTransfer.effectAllowed = "move";
+    });
+    tile.addEventListener("dragover", (event) => {
+      if (
+        [...event.dataTransfer.types].includes("application/x-bs-photo-order")
+      ) {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+      }
+    });
+    tile.addEventListener("drop", (event) => {
+      if (
+        ![...event.dataTransfer.types].includes("application/x-bs-photo-order")
+      )
+        return;
+      event.preventDefault();
+      event.stopPropagation();
+      let data;
+      try {
+        data = JSON.parse(
+          event.dataTransfer.getData("application/x-bs-photo-order"),
+        );
+      } catch {
+        return;
+      }
+      if (data.projectId !== ctx.projectId || data.itemId !== itemId) return;
+      const from = photos.findIndex((row) => row.id === data.mediaId);
+      if (from >= 0) void move(from, i);
+    });
+    const earlier = button("←", () => move(i, i - 1), {
+        variant: "quiet",
+        small: true,
+      }),
+      later = button("→", () => move(i, i + 1), {
+        variant: "quiet",
+        small: true,
+      }),
+      remove = button(
+        "×",
+        () =>
+          confirmAction(
+            ctx,
+            "Remove photo",
+            "Remove this photo? Its stored file is kept.",
+            "Remove photo",
+            (token) =>
+              ctx.client.write(
+                ctx.projectId,
+                "/media/" + photo.id + "/remove",
+                "POST",
+                { fromLibrary: true },
+                token,
+              ),
+          ),
+        { variant: "quiet", small: true },
+      );
+    earlier.disabled = i === 0;
+    later.disabled = i === photos.length - 1;
+    earlier.setAttribute("aria-label", "Move photo " + (i + 1) + " earlier");
+    later.setAttribute("aria-label", "Move photo " + (i + 1) + " later");
+    remove.setAttribute(
+      "aria-label",
+      "Remove " + (photo.caption || file?.name || "photo"),
+    );
+    tile.append(
+      image,
+      name,
+      node(
+        "strong",
+        i === 0 ? "1 · Main" : String(i + 1),
+        "project-library-main-label",
+      ),
+      actions(earlier, later, remove),
+    );
+    grid.append(tile);
+  });
+  const feedback = mediaUploadFeedback(),
+    add = (files) =>
+      addFiles(ctx, files, { itemId, onProgress: feedback.update }),
+    choose = picker(add, { label: "Photo library files" }),
+    upload = node("div", "", "bs-photo-upload-row"),
+    paste = fileDropTarget(add, {
+      label: "Paste a copied photo",
+      text: "Drop photos or paste an image",
+    });
+  upload.append(button("Add photos", choose.open), paste, choose.input);
+  library.append(grid, upload, feedback.root);
+  acceptDrops(library, add);
+  header.append(node("strong", title), toggle);
+  main.append(slot, navigation);
+  layout.append(main, library);
+  root.append(header, layout);
   setExpanded();
   renderView();
-  return holder;
+  return root;
 }
-
-// The same first gallery photo used by the project directory.
-export function projectPicture(ctx, { assembly = null, gallery = false } = {}) {
-  const photo = photosFor(ctx.client.state)[0],
-    file = photo ? fileOf(ctx, photo) : null;
-  const cover = file
-    ? thumbnail(ctx, file, photo.caption || ctx.client.state.project.name)
-    : node("p", "No picture yet", "muted");
-  if (cover.tagName === "IMG") cover.className = "project-picture";
-  const tools = node("div", "", "project-picture-tools");
-  tools.append(mediaGallery(ctx, { title: "Project photos" }));
-  // Keep the original top assembly's pictures accessible when its row is folded
-  // into Project summary. They retain their original item and file IDs.
-  if (assembly) {
-    const group = node("div", "", "project-assembly-photo-tools");
-    group.append(
-      node("strong", "Top assembly · " + assembly.part_number),
-      partPicture(ctx, assembly),
+export function partPicture(ctx, item) {
+  return orderedPhotoGallery(ctx, {
+    itemId: item.id,
+    title: item.is_assembly ? "Subassembly photos" : "Part photos",
+  });
+}
+export function projectPicture(ctx, { assembly = null } = {}) {
+  const holder = node("div", "", "project-photos");
+  holder.append(orderedPhotoGallery(ctx, { title: "Project photos" }));
+  if (assembly)
+    holder.append(
+      orderedPhotoGallery(ctx, {
+        itemId: assembly.id,
+        title: "Top assembly · " + assembly.part_number,
+      }),
     );
-    tools.append(group);
-  }
-  if (gallery) {
-    const images = node("div", "", "project-summary-photo-grid");
-    for (const photo of photosFor(ctx.client.state)) {
-      const img = thumbnail(
-        ctx,
-        fileOf(ctx, photo),
-        photo.caption || ctx.client.state.project.name,
-      );
-      img.className = "project-summary-photo";
-      images.append(img);
-    }
-    if (!images.childElementCount) images.append(cover);
-    const holder = photoControl(ctx, images, tools, ctx.projectId + ":");
-    holder.style.setProperty(
-      "--photo-count",
-      String(Math.max(1, images.childElementCount)),
-    );
-    return holder;
-  }
-  return photoControl(ctx, cover, tools, ctx.projectId + ":");
+  return holder;
 }

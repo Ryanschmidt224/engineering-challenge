@@ -84,6 +84,39 @@ export const migrations = [
       "ALTER TABLE workshop_products ADD COLUMN lookup_provenance TEXT NOT NULL DEFAULT '{}' CHECK(json_valid(lookup_provenance))",
     ],
   },
+  {
+    version: 5,
+    name: "lessons-learned",
+    statements: [
+      `CREATE TABLE IF NOT EXISTS lessons (
+   id TEXT PRIMARY KEY,
+   happened TEXT NOT NULL DEFAULT '' CHECK(length(happened) <= 2000),
+   steps TEXT NOT NULL DEFAULT '[]' CHECK(json_valid(steps) AND json_type(steps)='array'),
+   resolution TEXT CHECK(resolution IS NULL OR length(resolution) <= 8000),
+   quality TEXT CHECK(quality IS NULL OR quality IN ('yes','meh','no')),
+   search_text TEXT NOT NULL DEFAULT '',
+   revision INTEGER NOT NULL DEFAULT 1,
+   archived INTEGER NOT NULL DEFAULT 0 CHECK(archived IN (0,1)),
+   created_at TEXT NOT NULL,
+   updated_at TEXT NOT NULL,
+   aliases TEXT NOT NULL DEFAULT '[]' CHECK(json_valid(aliases)),
+   last_operation_id TEXT,
+   last_operation_hash TEXT,
+   CHECK(quality IS NULL OR resolution IS NOT NULL))`,
+      `CREATE TABLE IF NOT EXISTS lesson_photos (
+   id TEXT PRIMARY KEY,
+   bit_id TEXT NOT NULL REFERENCES lessons(id) ON DELETE RESTRICT,
+   title TEXT NOT NULL,
+   r2_key TEXT NOT NULL UNIQUE,
+   media_type TEXT NOT NULL CHECK(media_type IN ('image/jpeg','image/png','image/gif','image/webp')),
+   size INTEGER NOT NULL CHECK(size > 0),
+   sha256 TEXT NOT NULL,
+   archived INTEGER NOT NULL DEFAULT 0 CHECK(archived IN (0,1)),
+   created_at TEXT NOT NULL)`,
+      `CREATE INDEX IF NOT EXISTS lessons_live ON lessons(archived,updated_at)`,
+      `CREATE INDEX IF NOT EXISTS lesson_photos_bit ON lesson_photos(bit_id,archived)`,
+    ],
+  },
 ];
 
 export const latestSchemaVersion = migrations.at(-1).version;

@@ -218,7 +218,7 @@ test("the previous Worker version still starts against the migrated database", a
 });
 
 test("Knowledge pages render text safely and use the shared components", () => {
-  const script = readFileSync("assets/knowledge.js", "utf8");
+  const script = readFileSync("assets/lessons-learned.js", "utf8");
   const workshop = readFileSync("assets/family-workshop.js", "utf8");
   assert.doesNotMatch(script, /innerHTML|outerHTML|insertAdjacentHTML|document\.write/);
   assert.doesNotMatch(workshop, /innerHTML|insertAdjacentHTML/);

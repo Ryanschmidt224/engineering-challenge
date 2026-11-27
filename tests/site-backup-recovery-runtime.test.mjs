@@ -178,6 +178,14 @@ test(
           sources: [],
         },
       });
+      const lessonId=crypto.randomUUID(),lessonPhotoId=crypto.randomUUID();
+      const lesson={id:lessonId,happened:"Recovery lesson",steps:[],resolution:{text:"Verified recovery",quality:"yes"}};
+      await json(source,"/api/lessons-learned","POST",{record:lesson,expectedRevision:null,operationId:crypto.randomUUID()});
+      const lessonBytes=new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,13,1,2,3]);
+      const photo=await raw(source,"/api/lessons-learned/photo?bit="+lessonId,{method:"POST",headers:{"x-file-name":"lesson.png","x-upload-id":lessonPhotoId},body:lessonBytes});
+      assert.equal(photo.status,201,await photo.clone().text());
+      lesson.steps=[{id:crypto.randomUUID(),question:"Can it be restored?",hypothesis:"Exact bytes",result:"Save all storage namespaces.",photos:[lessonPhotoId]}];
+      await json(source,"/api/lessons-learned","POST",{record:lesson,expectedRevision:1,operationId:crypto.randomUUID()});
       const projectId = crypto.randomUUID(),
         base = "/api/project-engine/projects/" + projectId;
       let revision = null;
@@ -284,6 +292,7 @@ test(
         "/api/accounts",
         "/api/workshop",
         "/api/knowledge",
+        "/api/lessons-learned",
         "/api/project-engine/settings",
         "/api/project-engine/projects",
         base + "/state",
@@ -391,6 +400,9 @@ test(
           comparable(path, value),
           path,
         );
+      const restoredLessonPhoto=await raw(target,"/api/lessons-learned/photo?id="+lessonPhotoId);
+      assert.equal(restoredLessonPhoto.status,200);
+      assert.deepEqual(new Uint8Array(await restoredLessonPhoto.arrayBuffer()),lessonBytes);
       assert.equal(
         (
           await raw(target, "/api/project-engine/projects", {

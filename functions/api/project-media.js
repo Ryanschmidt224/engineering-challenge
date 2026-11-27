@@ -75,12 +75,14 @@ export async function removeMedia(db,input,project,id,data={}){
 }
 export async function reorderMedia(db,input,project,data){
  const itemId=await owner(db,project,data.itemId??null),existing=await gallery(db,project.id,itemId);
+ const legacy=itemId?await statement(db,"SELECT * FROM engine_media WHERE project_id=? AND item_id=? AND role='picture' AND active=1",project.id,itemId).first():null;
+ if(legacy&&!existing.some(row=>row.file_id===legacy.file_id))existing.push(legacy);
  if(!Array.isArray(data.ids)||data.ids.length!==existing.length||new Set(data.ids).size!==data.ids.length||data.ids.some(id=>!existing.some(row=>row.id===id)))throw Error("Provide each photo in this gallery exactly once.");
- if(existing.every((row,index)=>row.id===data.ids[index]))return unchangedProject(db,project,input);
+ if(existing.every((row,index)=>row.id===data.ids[index]&&row.role==="photo"))return unchangedProject(db,project,input);
  return commitProjectCommand(db,input,w=>{
   // Membership and count are guarded together, like steps and placements.
-  w.require("(SELECT COUNT(*) FROM engine_media WHERE project_id=? AND item_id IS ? AND role='photo' AND active=1)=? AND (SELECT COUNT(*) FROM engine_media WHERE project_id=? AND item_id IS ? AND role='photo' AND active=1 AND id IN(SELECT value FROM json_each(?)))=?",project.id,itemId,existing.length,project.id,itemId,JSON.stringify(data.ids),existing.length);
-  for(const [sort_order,id]of data.ids.entries())w.update("engine_media",{sort_order},{project_id:project.id,id,active:1});
+  w.require("(SELECT COUNT(*) FROM engine_media WHERE project_id=? AND item_id IS ? AND role='photo' AND active=1)=? AND (SELECT COUNT(*) FROM engine_media WHERE project_id=? AND item_id IS ? AND role='photo' AND active=1 AND id IN(SELECT value FROM json_each(?)))=?",project.id,itemId,existing.filter(row=>row.role==="photo").length,project.id,itemId,JSON.stringify(data.ids),existing.filter(row=>row.role==="photo").length);
+  for(const [sort_order,id]of data.ids.entries())w.update("engine_media",{sort_order,role:"photo"},{project_id:project.id,id,active:1});
   return {itemId};
  });
 }

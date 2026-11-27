@@ -30,12 +30,6 @@ import {
   validateFamilyValues,
   isWebUrl,
 } from "./family-model.js";
-import {
-  tileTypes,
-  tileStatuses,
-  relations,
-  labelFor,
-} from "./knowledge-model.js";
 import { initProjectProductCopy } from "./project-product-copy.js";
 import {
   renderWorkshopProjectUses,
@@ -103,79 +97,6 @@ async function run(operation) {
 async function refresh() {
   data = await requestWorkshop();
   renderNavigation();
-}
-// Knowledge that applies here: for a family its own tiles; for a product also
-// its family's; for a project use also its product's and family's. The server
-// applies that one rule. Optional context: a failure never blocks the Workshop.
-const knowledgeNoun = {
-  family: "family",
-  product: "product",
-  use: "project part",
-};
-const knowledgeVia = { use: "this part", product: "product", family: "family" };
-function renderKnowledge(type, id) {
-  const section = panel("Info Bits");
-  detail.append(section);
-  const create = node(
-    "a",
-    "New information tile for this " + knowledgeNoun[type],
-    "button",
-  );
-  create.href =
-    "knowledge.html?new=1&link=" + type + ":" + encodeURIComponent(id);
-  void requestWorkshop(
-    "/api/knowledge?related=" + type + "&id=" + encodeURIComponent(id),
-  )
-    .then((result) => {
-      if (!section.isConnected) return;
-      section.querySelector("h3").textContent =
-        "Info Bits (" + result.tiles.length + ")";
-      const list = node("div", "", "knowledge-list");
-      for (const tile of result.tiles) {
-        const entry = node("a", "", "list-card");
-        entry.href = "knowledge.html?tile=" + encodeURIComponent(tile.id);
-        const reasons = [
-          ...new Set(
-            tile.via.map((via) =>
-              type === "family"
-                ? labelFor(relations, via.relation) + " this family"
-                : "via " + knowledgeVia[via.target_type],
-            ),
-          ),
-        ];
-        entry.append(
-          node("strong", tile.title),
-          node(
-            "small",
-            [
-              labelFor(tileTypes, tile.type),
-              labelFor(tileStatuses, tile.status),
-              ...reasons,
-            ].join(" · "),
-          ),
-          node("small", tile.summary),
-        );
-        list.append(entry);
-      }
-      if (!result.tiles.length)
-        list.append(
-          node(
-            "p",
-            "No information linked yet. Lessons, methods and concepts about this " +
-              knowledgeNoun[type] +
-              " appear here.",
-            "empty",
-          ),
-        );
-      section.append(list, actions(create));
-    })
-    .catch((error) => {
-      if (section.isConnected)
-        section.append(
-          node("p", "Info Bits could not load: " + error.message, "error"),
-          actions(create),
-        );
-    });
 }
 function updateLocation() {
   const url = new URL(location.href);
@@ -835,7 +756,6 @@ function renderFamilyRead(record) {
     ]);
   fields.append(table.root);
   detail.append(fields);
-  renderKnowledge("family", record.id);
   const related = panel("Products");
   const list = node("div", "", "product-list");
   for (const product of data.products.filter(
@@ -933,7 +853,6 @@ function renderInstanceRead(entity, record, selected) {
     detail.append(notes);
   }
   renderAttachments(detail, "product", record.id, false);
-  renderKnowledge("product", record.id);
   renderWorkshopProjectUses(
     detail,
     data,

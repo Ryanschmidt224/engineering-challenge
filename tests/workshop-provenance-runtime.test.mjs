@@ -4,6 +4,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { build } from "esbuild";
+import {latestSchemaVersion} from "../functions/api/workshop-migrations.js";
 import { Miniflare, Log, LogLevel } from "miniflare";
 test(
   "native D1 upgrades Workshop v3 once, preserves existing products, and retains evidence across cold restarts",
@@ -95,7 +96,7 @@ test(
             .prepare("SELECT value FROM workshop_meta WHERE key='schema'")
             .first()
         ).value,
-        "4",
+        String(latestSchemaVersion),
       );
       assert.equal(
         (await db.prepare("PRAGMA foreign_key_check").all()).results.length,

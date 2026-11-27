@@ -14,6 +14,10 @@ import {
   handleWorkshopExport,
 } from "./functions/api/family-workshop-files.js";
 import { handleKnowledge } from "./functions/api/knowledge.js";
+import {
+  handleLessons,
+  handleLessonPhoto,
+} from "./functions/api/lessons-learned.js";
 const retired = new Set([
   "/api/projects",
   "/api/numbering",
@@ -122,6 +126,9 @@ export default {
       if (path === "/api/workshop-lookup")
         return workshopLookupApi({ request, env, ctx });
       if (path === "/api/knowledge") return handleKnowledge(request, env);
+      if (path === "/api/lessons-learned") return handleLessons(request, env);
+      if (path === "/api/lessons-learned/photo")
+        return handleLessonPhoto(request, env);
       if (path === "/api/auth") return auth(request, env);
       if (path.startsWith("/api/"))
         return Response.json(

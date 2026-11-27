@@ -4,7 +4,7 @@ test.beforeEach(async({request,context})=>{
  const {cookie}=await(await request.post("/__test__/reset")).json(),at=cookie.indexOf("=");
  await context.addCookies([{name:cookie.slice(0,at),value:cookie.slice(at+1),url:"http://127.0.0.1:4173",httpOnly:true,sameSite:"Strict"}]);
 });
-for(const [name,path,labels] of [["workshop","/workshop.html",["categories","families"]],["knowledge","/knowledge.html",["tiles"]]])test(name+" columns support drag, keyboard, remembered widths, reset and phone stacking",async({page},testInfo)=>{
+for(const [name,path,labels] of [["workshop","/workshop.html",["categories","families"]]])test(name+" columns support drag, keyboard, remembered widths, reset and phone stacking",async({page},testInfo)=>{
  await page.setViewportSize({width:1440,height:1000});await page.goto(path);
  const handles=page.getByRole("separator");await expect(handles).toHaveCount(labels.length);
  for(const label of labels){
