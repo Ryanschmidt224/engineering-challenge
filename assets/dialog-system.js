@@ -139,7 +139,7 @@
   if(!target)return;
   // Help icons are keyboard focusable and tappable; do not intercept the
   // underlying radio, checkbox or page-navigation interaction.
-  if(target.matches(".library-function-tip,.library-auto-number-tip,.library-workshop-scope-tip,.library-workshop-search-tip"))
+  if(target.matches(".library-function-tip,.library-auto-number-tip,.library-workshop-scope-tip,.library-workshop-search-tip,.bs-help-button"))
    activeTooltip===target?dismissTooltip():showTooltip(target);
  },true);
  window.addEventListener("scroll",dismissTooltip,true);

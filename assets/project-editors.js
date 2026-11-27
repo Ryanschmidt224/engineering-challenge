@@ -1,12 +1,14 @@
+import {workshopPartEditor} from './project-workshop-editor.js';
+import {customFields,purchaseFields,fieldHelp,sourceChoices,statusChoices} from "./project-item-fields.js";
 import {identityNameLink} from './project-identity-link.js';
 import {projectDeletionSection} from "./project-delete.js";
-import {recordLabels,containerHelp} from "./project-presentation.js";
+import {recordLabels} from "./project-presentation.js";
 import {projectTree} from "./project-tree-model.js";
 import {partHistoryPrompt} from "./project-part-history.js";
 import {partHelp} from "./part-help.js";
 import {projectHelp} from "./project-help.js";
 import {node,field,checkbox,actions} from "./workshop-ui.js";
-import {normalizeCustomItem,normalizeOccurrence,diffCustomItems,diffProjectItems,formatRevisionValue,allocatePartNumber} from "./project-item-model.js";
+import {normalizeCustomItem,normalizeOccurrence,diffCustomItems,formatRevisionValue,allocatePartNumber} from "./project-item-model.js";
 import {recordPrompts,normalizeProjectRecord} from "./project-record-model.js";
 import {instructionTree,recordTree} from "./project-instruction-model.js";
 import {recordAttachments} from "./project-record-attachments.js";
@@ -17,8 +19,8 @@ export const buildFor=occ=>normalizeOccurrence({quantity:occ.quantity,unit:occ.u
 const button=(...args)=>window.BSUI.button(...args);
 function editorGroup(title,...rows){const group=node("fieldset","","project-editor-group");group.append(node("legend",title),...rows);return group;}
 function containerField(details,update){
- const row=field("Generic Part Name",details.short_name,value=>{details.short_name=value;update();},{placeholder:"e.g. Power supply"}),input=row.querySelector("input");input.maxLength=20;
- const explanation=node("p",containerHelp,"project-field-help muted");explanation.hidden=true;explanation.id=input.id+"-help";input.setAttribute("aria-describedby",explanation.id);const help=button("ⓘ",()=>{explanation.hidden=!explanation.hidden;help.setAttribute("aria-expanded",String(!explanation.hidden));},{variant:"quiet",small:true});help.setAttribute("aria-label","About Generic Part Name");help.setAttribute("aria-expanded","false");const caption=row.querySelector("label");caption.textContent="Generic Part Name";caption.append(help);input.setAttribute("aria-label","Generic Part Name");row.append(explanation);row.classList.add("project-container-field");input.title=containerHelp;return row;
+ const row=field("Part Name (Generic)",details.short_name,value=>{details.short_name=value;update();},{placeholder:"e.g. Power supply"});row.querySelector("input").maxLength=20;
+ fieldHelp(row,"Part Name (Generic)","Use a category-style name, such as Power supply or Motor mounting plate. Use up to 20 characters. The specific name identifies a particular model or version.");return row;
 }
 export function editable(ctx,title,saveLabel,collect,save,{review=null,mount=null,initialRevision=ctx.client.state?.project.revision??null}={}){
  const dialog=ctx.dialog,form=node("form"),fields=node("div"),error=node("p","","error"),reviewArea=node("div"),saveButton=button(saveLabel,()=>form.requestSubmit(),{variant:"primary"});
@@ -29,39 +31,41 @@ export function editable(ctx,title,saveLabel,collect,save,{review=null,mount=nul
    const latest=state.project.revision;reviewArea.append(button("Use newer version after review",()=>{revision=latest;error.textContent="Your draft is retained. Save when your review is complete.";saveButton.textContent="Save reviewed changes";reload.hidden=true;reviewArea.replaceChildren();}));
   }catch(problem){error.textContent=problem.message;}
  });reload.hidden=true;
- form.append(fields,error,reload,reviewArea,actions(saveButton,cancel));
+ const scroll=node("div","","project-editor-scroll"),footer=actions(saveButton,cancel);footer.classList.add("project-editor-actions");scroll.append(fields,error,reload,reviewArea);form.append(scroll,footer);form.classList.add("project-editor-form");
  form.onsubmit=async event=>{event.preventDefault();if(busy||uploading)return;error.textContent="";try{const data=collect();busy=true;saveButton.disabled=true;cancel.disabled=true;await save(data,revision);if(await ctx.refresh()===false)throw Error("Saved, but the part could not be reopened. Retry this same save.");if(!mount)dialog.close();}catch(problem){error.textContent=problem.message;if(problem.status===401&&ctx.signIn)error.append(button("Log in again",()=>ctx.signIn()));reload.hidden=problem.status!==409;}finally{busy=false;saveButton.disabled=uploading;cancel.disabled=uploading;}};
- if(mount){if(!dialog.open)dialog.replaceChildren();mount.replaceChildren(node("h2",title),form);}else{dialog.oncancel=event=>{if(busy||uploading)event.preventDefault();};dialog.replaceChildren(node("h2",title),form);dialog.setAttribute("aria-label",title);queueMicrotask(()=>{dialog.showModal();dialog.querySelector("input,textarea,select")?.focus();});}
+ if(mount){if(!dialog.open)dialog.replaceChildren();mount.replaceChildren(node("h2",title),form);}else{dialog.classList.add("project-editor-dialog");dialog.oncancel=event=>{if(busy||uploading)event.preventDefault();};dialog.replaceChildren(node("h2",title),form);dialog.setAttribute("aria-label",title);queueMicrotask(()=>{dialog.showModal();dialog.querySelector("input,textarea,select")?.focus();});}
  return {fields,form,saveButton,error,get revision(){return revision;},acceptOwnWrites(token=ctx.client.state.project.revision){revision=token;},uploadBusy(value){uploading=value;saveButton.disabled=busy||uploading;cancel.disabled=busy||uploading;},handleError(problem){error.textContent=problem.message;if(problem.status===401&&ctx.signIn)error.append(button("Log in again",()=>ctx.signIn()));reload.hidden=problem.status!==409;}};
 }
 function changeRows(changes){
  const area=node("div");if(!changes.length)area.append(node("p","No changes."));
  for(const change of changes)area.append(window.BSUI.fieldRow(change.label,formatRevisionValue(change.before)+" → "+formatRevisionValue(change.after)).root);return area;
 }
-function specEditor(specs,change){
- const area=node("div"),list=node("div"),render=()=>{list.replaceChildren();for(const spec of specs){
-  const panel=window.BSUI.informationPanel(spec.label||"Specification"),holder=node("div"),valueHolder=node("div");
-  let type=Object.hasOwn(spec,"value")?spec.value===null?"null":typeof spec.value:"unset";
-  const renderValue=()=>{valueHolder.replaceChildren();if(type==="unset"||type==="null")return;valueHolder.append(field("Value",spec.value,value=>{spec.value=value;change();},{type:type==="number"?"number":"text",options:type==="boolean"?[{value:"true",label:"Yes"},{value:"false",label:"No"}]:null}));if(type==="boolean"){const input=valueHolder.querySelector("select");input.value=String(spec.value);input.onchange=()=>{spec.value=input.value==="true";change();};}};
-  holder.append(field("Label",spec.label,value=>{spec.label=value;panel.heading.textContent=value||"Specification";change();}),field("Value type",type,value=>{type=value;if(type==="unset")delete spec.value;else spec.value=type==="null"?null:type==="boolean"?false:type==="number"?0:"";renderValue();change();},{options:[{value:"unset",label:"Not set"},{value:"number",label:"Number"},{value:"string",label:"Text (may be empty)"},{value:"boolean",label:"Yes / No"},{value:"null",label:"Explicit null"}]}),valueHolder,field("Unit",spec.unit||"",value=>{spec.unit=value;change();}),button("Remove specification",()=>{specs.splice(specs.indexOf(spec),1);render();change();},{variant:"quiet"}));renderValue();panel.body.append(holder);list.append(panel.root);
- }};const add=button("Add specification",()=>{specs.push({field_id:crypto.randomUUID(),label:""});render();change();});add.title=projectHelp.specification;add.setAttribute("aria-description",projectHelp.specification);const explanation=node("p",projectHelp.specification,"muted");explanation.hidden=true;const help=button("ⓘ",()=>{explanation.hidden=!explanation.hidden;help.setAttribute("aria-expanded",String(!explanation.hidden));},{variant:"quiet",small:true});help.setAttribute("aria-label","About specifications");help.setAttribute("aria-expanded","false");help.title=projectHelp.specification;area.append(list,actions(add,help),explanation);render();return area;
-}
 export function editItem(ctx,item=null,occurrence=null,{assembly=false,parentId=null}={}){
  const before=item?detailsFor(item):null,details=before?structuredClone(before):{name:"",short_name:"",part_number:"",kind:"part",source:"custom",is_tool:false,...(assembly?{is_assembly:true}:{}),fields:{specs:[]}},build=occurrence?buildFor(occurrence):normalizeOccurrence({});let assignNumber=true;
- details.fields.specs||=[];
+ details.fields.specs||=[];if(!item&&!assembly)details.fields.supply="made";
  const collect=()=>({details:normalizeCustomItem(!item&&assignNumber?{...details,part_number:allocatePartNumber(ctx.client.state.project,ctx.client.state.items.map(row=>row.part_number),!!details.is_assembly)}:details),build:normalizeOccurrence(build),...(!item?{assignNumber,parentId}:{occurrenceId:occurrence.id})});
- const editor=editable(ctx,item?"Edit part details":assembly?"Add subassembly":"Add custom part",item?"Save":assembly?"Add subassembly":"Add part",collect,async(data,token)=>{await ctx.client.write(ctx.projectId,item?"/items/"+item.id:"/items",item?"PATCH":"POST",data,token);},{review:state=>{const current=state.items.find(row=>row.id===item?.id);return current?changeRows(diffCustomItems(detailsFor(current),details)):node("p","This item is archived. Cancel and inspect History → Archive.");}});
- if(!item)editor.fields.append(parentPicker(ctx,parentId,value=>parentId=value));
+ const editor=editable(ctx,item?"Edit part details":assembly?"Add subassembly":"New part",item?"Save":assembly?"Add subassembly":"Add part",collect,async(data,token)=>{await ctx.client.write(ctx.projectId,item?"/items/"+item.id:"/items",item?"PATCH":"POST",data,token);},{review:state=>{const current=state.items.find(row=>row.id===item?.id);return current?changeRows(diffCustomItems(detailsFor(current),details)):node("p","This item is archived. Cancel and inspect History → Archive.");}});
+
  const update=()=>{};editor.saveButton.title=item?partHelp.save:"Save this new part to the project.";
- const container=editorGroup("Item identity",containerField(details,update)),part=editorGroup("Part details"),display=editorGroup("Display options");
- if(!item)container.append(checkbox("Auto assign part number",true,value=>{assignNumber=value;numberRow.hidden=value;}));
- const numberRow=field("Part number",details.part_number,value=>{details.part_number=value;update();});numberRow.hidden=!item;if(item)numberRow.querySelector("input").readOnly=true;container.append(numberRow,field("Purpose (optional)",details.fields.purpose||"",value=>{details.fields.purpose=value;update();},{type:"textarea",placeholder:"What does this part or assembly need to accomplish?"}));
- if(!details.is_assembly)container.prepend(field("Item type",details.kind,value=>{details.kind=value;update();},{options:[{value:"part",label:"Part"},{value:"document",label:"Document"},{value:"code",label:"Code"}]}));
- if(!details.is_assembly)part.append(checkbox("Is a tool?",details.is_tool,value=>{details.is_tool=value;update();}));
- const specific=field("Specific Part Name",details.name,value=>{details.name=value;update();},{required:true});part.append(identityNameLink(details,container.querySelector('input[aria-label="Generic Part Name"]'),specific.querySelector("input"),{creating:!item}),specific,field("Description",details.fields.description||"",value=>{details.fields.description=value;update();},{type:"textarea"}));
- for(const [key,title]of [["manufacturer","Manufacturer"],["mpn","Mfg part number"]])part.append(field(title,details.fields[key]||"",value=>{details.fields[key]=value;update();}));part.append(specEditor(details.fields.specs,update),field("Acceptance criteria",details.fields.acceptance||"",value=>{details.fields.acceptance=value;update();},{type:"textarea"}));
- display.append(field("Quantity",build.quantity,value=>{build.quantity=value;update();},{type:"number"}),field("Unit",build.unit,value=>{build.unit=value;update();}),field("Status",build.build_status,value=>{build.build_status=value;update();},{options:[{value:"not_started",label:"Not started"},{value:"in_progress",label:"In progress"},{value:"complete",label:"Complete"}]}),checkbox("Needs attention",build.attention,value=>{build.attention=value;update();}),field("Attention note",build.attention_note,value=>{build.attention_note=value;update();},{type:"textarea"}),checkbox("Hide from feature tree?",build.hidden,value=>{build.hidden=value;update();}));
- editor.fields.append(container,part,display);
+ const container=editorGroup("Part identity"),part=editorGroup("Part details"),display=editorGroup("Display options");
+ if(!item)container.append(parentPicker(ctx,parentId,value=>parentId=value));
+ const source=field("Part source",details.fields.supply||"made",value=>{details.fields.supply=value;updateSource();},{options:sourceChoices});
+ const purchase=editorGroup("Purchasing",purchaseFields(details.fields));
+ if(!item)purchase.append(button("Choose from Workshop",()=>workshopPartEditor(ctx,{parentId})));
+ const updateSource=()=>{const physical=details.kind==="part"&&!details.is_assembly;source.hidden=!physical;purchase.hidden=!physical||(details.fields.supply||"made")!=="purchased";for(const input of purchase.querySelectorAll("input"))input.disabled=purchase.hidden;};
+ if(!details.is_assembly)container.append(field("Item type",details.is_tool?"tool":details.kind,value=>{details.kind=value==="tool"?"part":value;details.is_tool=value==="tool";updateSource();},{options:[{value:"part",label:"Part"},{value:"tool",label:"Tool"},{value:"document",label:"Document"},{value:"code",label:"Code"}]}),source);
+ const generic=containerField(details,update);container.append(generic,field("Purpose (optional)",details.fields.purpose||"",value=>{details.fields.purpose=value;},{type:"textarea",placeholder:"What does this item need to accomplish?"}));
+ const numberRow=field("Part number",details.part_number,value=>details.part_number=value);numberRow.hidden=!item;if(item)numberRow.querySelector("input").readOnly=true;
+ if(!item){const auto=checkbox("Auto assign part number",true,value=>{assignNumber=value;numberRow.hidden=value;});fieldHelp(auto,"Auto assign part number","Assigns the next available project part number. Uncheck to enter your own unused number.");container.append(auto);}container.append(numberRow);
+ const specific=field("Part Name (Specific)",details.name,value=>details.name=value,{required:true}),description=field("Description",details.fields.description||"",value=>details.fields.description=value,{type:"textarea"});
+ part.append(identityNameLink(details,generic.querySelector("input"),specific.querySelector("input"),{creating:!item,rows:[specific,description]}),specific,description);
+ for(const [key,title]of [["manufacturer","Manufacturer"],["mpn","Mfg part number"]])part.append(field(title,details.fields[key]||"",value=>details.fields[key]=value));
+ part.append(customFields(details.fields.specs));
+ const attentionNote=field("Attention note",build.attention_note,value=>build.attention_note=value,{type:"textarea"});attentionNote.hidden=!build.attention;
+ const hidden=checkbox("Hide from feature tree?",build.hidden,value=>build.hidden=value);fieldHelp(hidden,"Hide from feature tree","Hides this item from the normal feature tree without deleting it. Show hidden items to find it again.");
+ display.append(field("Quantity",build.quantity,value=>build.quantity=value,{type:"number"}),field("Unit",build.unit,value=>build.unit=value),field("Status",build.build_status,value=>build.build_status=value,{options:statusChoices}),checkbox("Needs attention",build.attention,value=>{build.attention=value;attentionNote.hidden=!value;}),attentionNote,hidden);
+ updateSource();
+ editor.fields.append(container,part,purchase,display);
  if(item){
   const revision=button("Save as revision",()=>{try{if(!editor.form.reportValidity())return;const changes=collect();partHistoryPrompt(ctx,item,revision,{changes,expectedRevision:editor.revision,onOwnUpload:token=>editor.acceptOwnWrites(token),onComplete:()=>ctx.dialog.close()});}catch(problem){editor.error.textContent=problem.message;}});revision.title=partHelp.saveAsRevision;editor.saveButton.after(revision);
  }

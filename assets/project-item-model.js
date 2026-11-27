@@ -1,3 +1,4 @@
+export const projectStatusChoices=[['not_started','Not started'],['ordered','Ordered'],['in_progress','In progress'],['complete','Complete']].map(([value,label])=>({value,label}));
 export const projectNumberKey=value=>String(value).toUpperCase().replace(/(\d+)$/,digits=>digits.replace(/^0+(?=\d)/,""));
 // Pure custom-part rules. No DOM, globals, API calls or persistence.
 // Occurrence/build fields are deliberately separate from engineering details.
@@ -10,18 +11,21 @@ function text(value,label,max,{required=false,multiline=false}={}){
  value=value.trim();if(required&&!value)throw Error(label+" is required.");return value;
 }
 const boolean=(value,label,defaultValue=false)=>{if(value===undefined)return defaultValue;if(typeof value!=="boolean")throw Error(label+" must be true or false.");return value;};
-const textFields={description:["Description",5000],purpose:["Purpose",5000],acceptance:["Acceptance criteria",5000],manufacturer:["Manufacturer",180],mpn:["Manufacturer part number",180]};
+const textFields={description:["Description",5000],purpose:["Purpose",5000],acceptance:["Acceptance criteria",5000],manufacturer:["Manufacturer",180],mpn:["Manufacturer part number",180],supply:["Part source",20],vendor:["Outside vendor",180],supplier_number:["Supplier part number",180],order_url:["Order website",2048]};
 export function normalizeCustomItem(input){
  plain(input,"Part details");only(input,["name","short_name","part_number","kind","source","is_tool","is_assembly","fields"],"Part details");
  const kind=input.kind===undefined?"part":input.kind,source=input.source===undefined?"custom":input.source;
  if(!["part","document","code"].includes(kind)||source!=="custom")throw Error("Choose a custom part, document or code item.");
- const fields=input.fields===undefined?{}:plain(input.fields,"Engineering fields");only(fields,[...Object.keys(textFields),"specs","name_linked"],"Engineering fields");
+ const fields=input.fields===undefined?{}:plain(input.fields,"Engineering fields");only(fields,[...Object.keys(textFields),"specs","name_linked","individual_cost","bulk_cost","package_quantity"],"Engineering fields");
  const normalized={};
  if(owns(fields,"name_linked"))normalized.name_linked=boolean(fields.name_linked,"Linked part names");
  for(const [key,[label,max]] of Object.entries(textFields))if(owns(fields,key)){
   const value=text(fields[key],label,max,{multiline:["description","purpose","acceptance"].includes(key)});
   if(value)normalized[key]=value; // Empty optional text is absent, not another saved field.
  }
+ if(normalized.supply&&!['made','purchased'].includes(normalized.supply))throw Error('Choose a valid part source.');
+ if(normalized.order_url){let url;try{url=new URL(normalized.order_url);}catch{throw Error('Use a valid order website URL.');}if(!['https:','http:'].includes(url.protocol))throw Error('Use an HTTP or HTTPS order website.');}
+ for(const key of ['individual_cost','bulk_cost','package_quantity'])if(owns(fields,key)&&fields[key]!==null){const value=fields[key];if(typeof value!=='number'||!Number.isFinite(value)||value<0||key==='package_quantity'&&(!Number.isInteger(value)||value<1))throw Error('Use a valid '+key.replaceAll('_',' ')+'.');normalized[key]=value;}
  if(owns(fields,"specs")){
   if(!Array.isArray(fields.specs)||fields.specs.length>100)throw Error("Use at most 100 specification rows.");
   const ids=new Set();
@@ -41,14 +45,14 @@ export function normalizeCustomItem(input){
   if(!normalized.specs.length)delete normalized.specs;
  }
  const assembly=boolean(input.is_assembly,"Is a subassembly");if(assembly&&(kind!=="part"||input.is_tool))throw Error("A subassembly must be a part and cannot be a tool.");
- const short_name=text(input.short_name,"Generic Part Name",20,{required:normalized.name_linked===true});
- return {name:normalized.name_linked?short_name:text(input.name,"Specific Part Name",180,{required:true}),short_name,part_number:text(input.part_number,"Part number",80,{required:true}),kind,source,is_tool:boolean(input.is_tool,"Is a tool"),...(assembly?{is_assembly:true}:{}),fields:normalized};
+ const short_name=text(input.short_name,"Part Name (Generic)",20,{required:normalized.name_linked===true});
+ return {name:normalized.name_linked?short_name:text(input.name,"Part Name (Specific)",180,{required:true}),short_name,part_number:text(input.part_number,"Part number",80,{required:true}),kind,source,is_tool:boolean(input.is_tool,"Is a tool"),...(assembly?{is_assembly:true}:{}),fields:normalized};
 }
 export function normalizeOccurrence(input={}){
  plain(input,"Build information");only(input,["quantity","unit","build_status","attention","attention_note","hidden"],"Build information");
  const quantity=input.quantity===undefined?1:input.quantity,build_status=input.build_status===undefined?"not_started":input.build_status;
  if(typeof quantity!=="number"||!Number.isFinite(quantity)||quantity<0)throw Error("Quantity must be zero or greater.");
- if(!["not_started","in_progress","complete"].includes(build_status))throw Error("Choose a valid build status.");
+ if(!projectStatusChoices.some(choice=>choice.value===build_status))throw Error("Choose a valid build status.");
  return {quantity:quantity===0?0:quantity,unit:text(input.unit,"Quantity unit",32)||"pcs",build_status,attention:boolean(input.attention,"Needs attention"),attention_note:text(input.attention_note,"Attention note",2500,{multiline:true}),hidden:boolean(input.hidden,"Hidden in tree")};
 }
 export function allocatePartNumber(numbering,reserved,assembly=false){
@@ -71,6 +75,7 @@ export function diffCustomItems(beforeInput,afterInput){
  for(const [key,label] of [["name","Name"],["short_name","Short tree name"],["part_number","Part number"],["kind","Kind"],["is_tool","Is a tool"],["is_assembly","Is a subassembly"]])add(key,label,side(before,key),side(after,key));
  for(const [key,[label]] of Object.entries(textFields))add("fields."+key,label,side(before.fields,key),side(after.fields,key));
  add("fields.name_linked","Linked part names",side(before.fields,"name_linked"),side(after.fields,"name_linked"));
+ for(const key of ["individual_cost","bulk_cost","package_quantity"])add("fields."+key,key.replaceAll("_"," "),side(before.fields,key),side(after.fields,key));
  const oldSpecs=before.fields.specs||[],newSpecs=after.fields.specs||[],oldMap=new Map(oldSpecs.map(row=>[row.field_id,row])),newMap=new Map(newSpecs.map(row=>[row.field_id,row]));
  const specSide=row=>row?{...side(row,"value"),label:row.label,unit:row.unit}:{present:false};
  for(const id of new Set([...oldMap.keys(),...newMap.keys()]))add("spec:"+id,newMap.get(id)?.label||oldMap.get(id).label,specSide(oldMap.get(id)),specSide(newMap.get(id)));
