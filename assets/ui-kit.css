@@ -32,12 +32,14 @@
 .ui-button:hover {
   background: var(--color-hover);
 }
-.button--primary {
+.button--primary,
+.ui-button--primary {
   background: var(--color-accent);
   color: var(--color-on-accent);
   border-color: var(--color-accent);
 }
-.button--primary:hover {
+.button--primary:hover,
+.ui-button--primary:hover {
   background: var(--color-accent-hover);
 }
 .button--quiet,

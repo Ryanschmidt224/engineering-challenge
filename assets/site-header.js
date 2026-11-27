@@ -21,7 +21,7 @@ export function initSiteHeader() {
   nav.setAttribute("aria-label", "Main navigation");
   for (const [id, label, href] of [
     ["home", "Projects", projectHref],
-    ["knowledge", "Info Bits", "knowledge.html"],
+    ["knowledge", "Lessons Learned", "knowledge.html"],
     ["commonparts", "The Workshop", "workshop.html"],
   ]) {
     const item = make("a", "ui-site-nav__item", label);
@@ -73,6 +73,15 @@ export function initSiteHeader() {
   accountActions.append(menuButton, account);
   inner.append(brand, nav, accountActions);
   header.append(inner);
+  // Sticky page controls follow the actual responsive header height.
+  const sizeHeader = () =>
+    document.documentElement.style.setProperty(
+      "--site-header-height",
+      Math.ceil(header.getBoundingClientRect().height) + "px",
+    );
+  sizeHeader();
+  if (typeof ResizeObserver !== "undefined")
+    new ResizeObserver(sizeHeader).observe(header);
   const update = () => {
     const current = ["calculators", "knowledge"].includes(
       header.dataset.siteHeader,

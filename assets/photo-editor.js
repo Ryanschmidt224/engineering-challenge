@@ -36,6 +36,7 @@ export function actionBar(cover, { content, expanded = false, onToggle } = {}) {
   }
   const done = window.BSUI.button("Done", () => setExpanded(false), {
     small: true,
+    variant: "primary",
     className: "bs-photo-save",
   });
   done.title = "Close photo tools";

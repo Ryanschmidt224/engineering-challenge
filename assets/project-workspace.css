@@ -156,11 +156,6 @@
   font-size: 0.875rem;
   overflow-wrap: anywhere;
 }
-.project-picture-holder {
-  display: grid;
-  gap: 4px;
-  justify-items: start;
-}
 
 /* Familiar project shell: framed tree, compact page links and one working area. */
 .project-sidebar {
@@ -419,10 +414,7 @@
 }
 
 /* Shared photo editing disclosure: pencil below the image at its right edge. */
-.project-picture-holder > .bs-photo-control {
-  width: 100%;
-  min-width: 0;
-}
+
 .bs-photo-custom-tools > .bs-photo-actions {
   display: flex;
   flex-wrap: wrap;
@@ -431,29 +423,7 @@
   flex-basis: 100%;
   display: block;
 }
-.project-picture-tools,
-.project-photo-tools {
-  display: grid;
-  gap: var(--space-2);
-  min-width: 0;
-}
-.project-photo-tools > p {
-  font-size: var(--text-small);
-}
-.project-assembly-photo-tools {
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--color-border);
-}
 
-.project-photo-editor {
-  grid-column: 1 / -1;
-  min-width: 0;
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--color-border);
-}
-.project-photo-editor:not([hidden]) {
-  display: block;
-}
 .project-media-grid[data-view="tiles"] {
   grid-template-columns: repeat(auto-fill, minmax(min(9rem, 100%), 1fr));
 }
@@ -478,13 +448,6 @@
 }
 .project-media-grid[data-view="list"] .project-media-tile {
   grid-template-columns: 2.5rem minmax(0, 1fr);
-}
-.project-media-meta {
-  overflow-wrap: anywhere;
-  color: var(--color-text-muted);
-}
-.project-media-grid:not([data-view="details"]) .project-media-meta {
-  display: none;
 }
 
 .project-parts-controls {
@@ -521,7 +484,6 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-.project-picture-holder .bs-photo-stage,
 .project-media-tile .bs-photo-stage {
   width: 100%;
 }
@@ -576,12 +538,7 @@
 }
 
 /* Summary follows one full-width section stack, including tools. */
-.project-summary-photo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-  gap: var(--space-3);
-  width: 100%;
-}
+
 .project-summary-photo {
   display: block;
   width: 100%;
@@ -589,10 +546,7 @@
   max-height: 32rem;
   object-fit: contain;
 }
-[data-section="summary-photos"] .project-picture-holder {
-  width: 100%;
-  max-width: none;
-}
+
 .project-summary-short,
 .project-summary-description {
   padding: var(--space-3);
@@ -607,11 +561,6 @@
 }
 
 /* Bound the gallery by the same maximum width as its visible image columns. */
-.project-picture-holder:has(.project-summary-photo-grid) .bs-photo-stage {
-  max-width: calc(
-    var(--photo-count, 1) * 38rem + (var(--photo-count, 1) - 1) * var(--space-3)
-  );
-}
 
 /* Dialog content scrolls independently of its shared action bar. */
 .project-editor-dialog[open] {
@@ -650,23 +599,6 @@
   min-width: 0;
 }
 
-.project-upload-feedback:not([hidden]) {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-block: var(--space-2);
-}
-
-.project-main-photo-slot {
-  border: 2px dashed var(--color-border);
-  border-radius: var(--radius-small);
-  padding: var(--space-2);
-}
-.project-main-photo-slot.is-dragover {
-  border-color: var(--color-accent);
-  background: var(--color-accent-soft);
-}
 .project-library-main {
   outline: 2px solid var(--color-accent);
 }
@@ -674,21 +606,19 @@
   color: var(--color-accent);
   font-size: var(--text-small);
 }
-.project-upload-feedback img {
-  width: 5rem;
-  height: 4rem;
-  object-fit: contain;
-}
 
-/* Part photo layout follows the approved mockup; controls remain below it. */
+/* Shared photo component; build controls have a separate owner and frame. */
 .project-part-identity {
   padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--color-border);
 }
-.project-part-photos {
+.project-photo-gallery {
   max-width: 1050px;
   width: 100%;
-  padding-block: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  margin-block: var(--space-3);
 }
 .part-photo-heading {
   display: flex;
@@ -714,6 +644,8 @@
   min-width: 0;
 }
 .part-photo-slot {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
   height: 252px;
   display: flex;
   align-items: center;
@@ -739,15 +671,7 @@
   line-height: 24px;
   padding: 4px 12px;
 }
-.part-photo-caption,
-.part-photo-hint {
-  overflow-wrap: anywhere;
-  font-size: var(--text-small);
-  margin-block: var(--space-2);
-}
-.part-photo-hint {
-  color: var(--color-text-muted);
-}
+
 .part-photo-library .project-media-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
@@ -778,17 +702,7 @@
   display: block;
   max-width: 100%;
 }
-.part-library-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-.part-library-actions .ui-button {
-  font-size: var(--text-small);
-  padding: 5px 7px;
-}
+
 .part-photo-library .bs-photo-upload-row {
   order: 1;
   margin-top: var(--space-2);
@@ -818,4 +732,24 @@
     grid-template-columns: 90px minmax(0, 1fr);
     width: 100%;
   }
+}
+
+.part-photo-library .actions {
+  margin: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 0;
+}
+.part-photo-library .actions .ui-button {
+  flex: 1;
+  min-width: 0;
+  min-height: 36px;
+  font-size: 18px;
+  padding: 0;
+}
+.part-photo-library .project-library-main-label {
+  min-height: 18px;
+  font-size: 12px;
 }

@@ -3,12 +3,14 @@
 import { readFile, writeFile } from "node:fs/promises";
 import * as prettier from "prettier";
 export const ownedModules = [
+  "assets/lessons-model.js",
+  "assets/lessons-learned.js",
+  "functions/api/lessons-learned.js",
   "assets/project-directory.js",
   "assets/clipboard-files.js",
   "assets/photo-editor.js",
   "scripts/test-server.mjs",
   "assets/family-workshop.js",
-  "assets/knowledge.js",
   "assets/project-workspace.js",
   "assets/project-instructions.js",
   "assets/project-information.js",

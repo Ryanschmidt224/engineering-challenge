@@ -2,32 +2,17 @@
 <html lang="en">
 <head>
  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">
- <title>Info Bits · BuildingSchmidt</title>
- <link rel="stylesheet" href="assets/theme.css?v=split-panes-20261122"><link rel="stylesheet" href="assets/base.css"><link rel="stylesheet" href="assets/components.css?v=css-foundation-20261122"><link rel="stylesheet" href="assets/dialog-system.css"><link rel="stylesheet" href="assets/ui-kit.css?v=split-panes-20261122"><link rel="stylesheet" href="assets/knowledge.css?v=split-panes-20261122"><link rel="stylesheet" href="assets/project-directory.css"><link rel="stylesheet" href="assets/calculators.css">
+ <title>Lessons Learned · BuildingSchmidt</title>
+ <link rel="stylesheet" href="assets/theme.css?v=split-panes-20261122"><link rel="stylesheet" href="assets/base.css"><link rel="stylesheet" href="assets/components.css?v=css-foundation-20261122"><link rel="stylesheet" href="assets/dialog-system.css"><link rel="stylesheet" href="assets/ui-kit.css?v=split-panes-20261122"><link rel="stylesheet" href="assets/knowledge.css?v=split-panes-20261122"><link rel="stylesheet" href="assets/photo-controls.css"><link rel="stylesheet" href="assets/lessons-learned.css?v=lessons-20261127"><link rel="stylesheet" href="assets/project-directory.css"><link rel="stylesheet" href="assets/calculators.css">
  <script src="assets/dialog-system.js" defer></script>
- <script type="module" src="assets/knowledge.js?v=knowledge-review-20261122"></script>
+ <script type="module">import {initLessons} from "/assets/lessons-learned.js?v=lessons-20261127"; initLessons(document.getElementById("lessons-learned"));</script>
 </head>
 <body class="knowledge-app">
  <header class="ui-site-header" data-site-header="knowledge"></header>
 <script type="module">import {initSiteHeader} from "/assets/site-header.js?v=css-foundation-20261122"; initSiteHeader();</script>
- <div class="knowledge-heading ui-page"><div><h1>Info Bits</h1></div></div>
+ <div class="knowledge-heading ui-page"><div><h1>Lessons Learned</h1></div></div>
  <div id="calculators" class="ui-page information-calculators"></div>
- <div class="knowledge-layout ui-page">
-  <section class="tile-panel" aria-label="Information tiles">
-   <label class="search-label" for="tile-search">Search tiles</label>
-   <input id="tile-search" class="field" type="search" placeholder="Title, summary or text">
-   <div class="tile-filters">
-    <label class="search-label" for="type-filter">Type</label><select id="type-filter" class="field"></select>
-    <label class="search-label" for="status-filter">Status</label><select id="status-filter" class="field"></select>
-   </div>
-   <div class="actions catalog-actions"><button id="new-tile" class="button button--primary" type="button">New tile</button><label class="checkbox"><input id="show-archived" type="checkbox"> Show archived</label></div>
-   <div id="tile-list"></div>
-  </section>
-  <main id="knowledge-detail" class="detail-panel"><div class="empty">Loading your Info Bits…</div></main>
- </div>
- <div id="knowledge-status" class="status" role="status" aria-live="polite"></div>
- <dialog id="knowledge-dialog" class="dialog"></dialog>
-<script type="module">import {initSplitPanes} from "/assets/split-panes.js?v=split-panes-20261122"; initSplitPanes(document.querySelector(".knowledge-layout"),{key:"knowledge",panes:[{key:"tiles",name:"tiles",selector:".tile-panel"}]});</script>
+ <div id="lessons-learned" class="ui-page"></div>
 <script src="assets/ui-kit.js"></script>
 <script type="module">import {initInformationCalculators} from "./assets/calculators.js"; initInformationCalculators(document.getElementById("calculators"));</script>
 </body>

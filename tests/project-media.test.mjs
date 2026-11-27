@@ -114,3 +114,10 @@ test('main selection reuses scoped library files, keeps prior photos and clears 
 test('clearing a legacy main picture keeps it available once in the library',async()=>{
  const f=await fixture();try{const file=await image(f,'old.png'),main=ok(await f.call('/media','POST',{role:'picture',itemId:f.itemId,fileId:file}));ok(await f.call('/media/'+main.mediaIds[0]+'/remove','POST'));const s=await state(f);assert.deepEqual(gallery(s,f.itemId).map(r=>r.file_id),[file]);assert.equal(s.files.length,1);}finally{f.db.close();}
 });
+
+test('ordered gallery adopts an existing standalone picture without duplicate files or missing history',async()=>{
+ const f=await fixture();try{
+ const old=await image(f,'legacy.png'),next=await image(f,'new.png'),legacy=ok(await f.call('/media','POST',{role:'picture',itemId:f.itemId,fileId:old})),added=ok(await f.call('/media','POST',{itemId:f.itemId,fileId:next}));
+ ok(await f.call('/media/reorder','POST',{itemId:f.itemId,ids:[legacy.mediaIds[0],added.mediaIds[0]]}));const s=await state(f);assert.deepEqual(gallery(s,f.itemId).map(r=>r.file_id),[old,next]);assert.equal(s.files.length,2);assert.equal(s.media.filter(r=>r.active&&r.role==='picture').length,0);
+ }finally{f.db.close();}
+});

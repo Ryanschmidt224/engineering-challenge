@@ -269,7 +269,7 @@ export function initProjectWorkspace(root = document) {
       );
       if (item.short_name && item.short_name !== item.name)
         identity.append(node("p", item.name, "project-part-subtitle"));
-      overview.append(identity, picture);
+      overview.append(identity);
       container.append(overview);
       const placementTree = projectTree(state.items, state.occurrences),
         shared = state.occurrences.filter(
@@ -337,6 +337,7 @@ export function initProjectWorkspace(root = document) {
         ),
       );
       overview.append(headerControls);
+      container.append(picture);
     }
     const details = window.BSUI.section({
         title: summary
@@ -627,7 +628,7 @@ export function initProjectWorkspace(root = document) {
         summaryPhotoState.set(photoProjectId, photos.root.open),
       );
       photos.root.classList.add("project-summary-overview");
-      photos.body.append(picture, picture.editorPanel);
+      photos.body.append(picture);
       main.append(photos.root, projectSummary(ctx()));
       const historyPanel = revisionsHistory();
       if (rootAssembly) {
