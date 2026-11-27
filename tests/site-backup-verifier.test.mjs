@@ -65,6 +65,7 @@ test("offline verifier rejects invalid archive protocols even when the outer che
     ["no-manifest", entries.slice(1)],
     ["unsupported-version", edit("manifest", { version: 2 })],
     ["wrong-format", edit("manifest", { format: "other-backup" })],
+    ["unsafe-exclusion", edit("manifest", { excludedPrefixes: ["users/"] })],
     ["duplicate-manifest", [entries[0], ...entries]],
     ["missing-schema", entries.filter((entry) => entry.type !== "schema")],
     [

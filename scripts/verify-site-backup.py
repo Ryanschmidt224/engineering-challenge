@@ -48,6 +48,7 @@ with tempfile.TemporaryDirectory() as temp:
     current = None
     digest = ""
     complete = False
+    manifest_data = None
     manifest = False
     schema_seen = False
     verified = False
@@ -94,6 +95,9 @@ with tempfile.TemporaryDirectory() as temp:
                     or not isinstance(entry.get("createdAt"), str)
                 ):
                     raise ValueError("Invalid or unsupported backup manifest")
+                if "excludedPrefixes" in entry and entry["excludedPrefixes"] not in (["automatic-backups/"], ["automatic-backups/site/"]):
+                    raise ValueError("Unsupported backup exclusion policy")
+                manifest_data = entry
                 manifest = True
             elif kind == "schema":
                 if (
@@ -272,6 +276,7 @@ with tempfile.TemporaryDirectory() as temp:
                     out.write(item["sql"] + ";\n")
             out.write("COMMIT;\nPRAGMA foreign_keys=ON;\n")
         (root / "rows.sql").unlink()
+        (root / "backup-info.json").write_text(json.dumps(manifest_data, indent=2), encoding="utf8")
         (root / "objects.json").write_text(
             json.dumps(objects, indent=2), encoding="utf8"
         )

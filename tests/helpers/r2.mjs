@@ -14,13 +14,15 @@ export class TestR2 {
  // Minimal multipart model: parts are stored separately and only become a
  // visible object on complete(); abort() discards them.
  uploads=new Map();
+ multipartHandles=new Map();
+ resumeMultipartUpload(key,uploadId){const handle=this.multipartHandles.get(uploadId);if(handle?.key===key)return handle;return {async abort(){throw Error('NoSuchUpload (10024)');}};}
  async createMultipartUpload(key,options={}){
   const uploadId=crypto.randomUUID(),parts=new Map();this.uploads.set(uploadId,parts);const r2=this;
-  return {key,uploadId,
+  const handle={key,uploadId,
    async uploadPart(number,value){if(!r2.uploads.has(uploadId))throw Error("Upload aborted.");const bytes=new Uint8Array(value);parts.set(number,bytes);return {partNumber:number,etag:crypto.randomUUID()};},
-   async complete(list){if(!r2.uploads.has(uploadId))throw Error("Upload aborted.");const chunks=list.map(part=>parts.get(part.partNumber));if(chunks.slice(0,-1).some(chunk=>chunk.length<5*1024*1024))throw Error("Multipart parts must be at least 5 MiB except the last.");const size=chunks.reduce((sum,chunk)=>sum+chunk.length,0),bytes=new Uint8Array(size);let at=0;for(const chunk of chunks){bytes.set(chunk,at);at+=chunk.length;}r2.uploads.delete(uploadId);return r2.put(key,bytes,options);},
-   async abort(){r2.uploads.delete(uploadId);}
-  };
+   async complete(list){if(!r2.uploads.has(uploadId))throw Error("Upload aborted.");const chunks=list.map(part=>parts.get(part.partNumber));if(chunks.slice(0,-1).some(chunk=>chunk.length<5*1024*1024))throw Error("Multipart parts must be at least 5 MiB except the last.");const size=chunks.reduce((sum,chunk)=>sum+chunk.length,0),bytes=new Uint8Array(size);let at=0;for(const chunk of chunks){bytes.set(chunk,at);at+=chunk.length;}r2.uploads.delete(uploadId);r2.multipartHandles.delete(uploadId);return r2.put(key,bytes,options);},
+   async abort(){r2.uploads.delete(uploadId);r2.multipartHandles.delete(uploadId);}
+  };this.multipartHandles.set(uploadId,handle);return handle;
  }
  async delete(key){for(const entry of Array.isArray(key)?key:[key])this.objects.delete(entry);}
 }

@@ -1,5 +1,6 @@
 import { projectRestorePicker } from "./project-restore-controls.js";
 import { createProjectClient } from "./project-client.js";
+import { automaticSiteBackupStatus } from "./automatic-site-backups.js";
 import { automaticBackupStatus } from "./automatic-backup-status.js";
 import { backupAllDataButton } from "./site-data-backup.js";
 import { node, field, actions } from "./workshop-ui.js";
@@ -19,13 +20,26 @@ const backup = window.BSUI.section({
   open: true,
 });
 const backupButton = backupAllDataButton();
-backup.body.append(
+const projectChecks = window.BSUI.section({
+  title: "Project backup checks",
+  role: "project-backup-checks",
+});
+projectChecks.body.append(
   node(
     "p",
-    "Nightly backups run daily at 2:17 am Arizona time. They cover Projects only and are stored in the same Cloudflare account as the website.",
+    "Separate per-project backups cover Projects only. They supplement the whole-site copies above.",
     "muted",
   ),
   automaticBackupStatus(),
+);
+backup.body.append(
+  node(
+    "p",
+    "Nightly backups run daily at 2:17 am Arizona time and cover Projects, Workshop, Lessons Learned, account data and stored files. The seven latest verified copies are kept in the same Cloudflare account. Backup copies are excluded to prevent recursive growth.",
+    "muted",
+  ),
+  automaticSiteBackupStatus(),
+  projectChecks.root,
   node(
     "p",
     "Backup all data downloads Projects, Workshop, Lessons Learned, account data and stored files to your device. Keep a checked copy outside Cloudflare. A Workshop export covers Workshop only.",

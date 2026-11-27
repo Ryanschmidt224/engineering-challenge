@@ -99,3 +99,8 @@ M1 is implemented by durable status for the existing nightly Project job: last a
 M2 is addressed by scope guidance in Website settings and the Workshop export tooltip. Workshop export retains its Workshop scope; the manual whole-site format remains the complete archive. No production files are purged and the daily schedule is unchanged. The release PR records candidate and live verification; fixture execution is not evidence that the production cron fired.
 
 Automatic whole-site recovery remains next. Its acceptance boundary is still lesson-only and Workshop-only changes, original files, nonrecursive inventory, bounded growth, interruption/restart, consistency under edits, and a complete independent restore. An R2 copy in the same account is not an independent recovery copy. Keep the current manual format/reader and immutable source data while designing that writer.
+
+
+## Automatic whole-site recovery implementation — November 27
+
+[Automatic whole-site backups](AUTOMATIC-SITE-BACKUPS.md) implement scheduled coverage for Projects, Workshop, Lessons, account data and original stored files, with seven verified copies, a 512 MiB archive limit, nonrecursive inventory, fenced publication and interrupted multipart cleanup. Native independent restore covers subsequent notebook-only and Workshop-only changes, photos, documents, history and cold restart. Source data and project archive retention are preserved. The release PR records validation/deployment; no production cron or production recovery is claimed before it happens. Independent/offsite storage still requires an owner-held checked copy. Login-attempt limiting is next.

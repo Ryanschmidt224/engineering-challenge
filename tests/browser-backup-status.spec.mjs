@@ -14,9 +14,10 @@ test("settings show the real nightly result with explicit coverage and Workshop 
   const run = await page.request.post("/__test__/nightly-backup"); expect(run.ok(), await run.text()).toBe(true);
   await page.goto("/website-settings.html");
   const backup = page.locator('[data-section="website-backup"]');
+  await backup.locator('[data-section="project-backup-checks"] > summary').click();
   await expect(backup.getByText("Nightly project backup: OK", { exact: true })).toBeVisible();
   await expect(backup).toContainText("1 saved · 0 unchanged · 0 failed");
-  await expect(backup).toContainText("They cover Projects only");
+  await expect(backup).toContainText("backups cover Projects only");
   await expect(backup).toContainText("Lessons Learned");
   await expect(backup).toContainText("same Cloudflare account");
   const status = await (await page.request.get("/api/backup-status")).json();
@@ -36,6 +37,7 @@ for (const width of [390, 1440]) test("unavailable or failed backup status canno
   await page.route("**/api/backup-status", route => route.fulfill(unavailable ? { status: 503, json: { error: "Storage unavailable" } } : { json: { health: "failed", lastAttempt: { ...success, id: crypto.randomUUID(), state: "failed", startedAt: "2026-11-27T09:17:00.000Z", finishedAt: "2026-11-27T09:18:00.000Z", counts: { saved: 0, unchanged: 0, failed: 1, deleted: 0 } }, lastSuccess: success } }));
   await page.goto("/website-settings.html");
   const backup = page.locator('[data-section="website-backup"]');
+  await backup.locator('[data-section="project-backup-checks"] > summary').click();
   await expect(backup).toContainText("Protection is unconfirmed");
   const owner = page.getByLabel("Owner 1", { exact: true }); await owner.fill("Unsent owner name");
   unavailable = false;

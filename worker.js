@@ -1,5 +1,5 @@
 import { handleProjectEngine } from "./functions/api/project-engine.js";
-import { runScheduledProjectBackups } from "./functions/api/automatic-backup-status.js";
+import { runNightlyBackups } from "./functions/api/scheduled-backups.js";
 import { isAdmin } from "./functions/api/auth.js";
 import { guardPrivateApi } from "./functions/api/private-access.js";
 import { apiDispatch } from "./functions/api/api-routes.js";
@@ -110,15 +110,6 @@ export default {
     }
   },
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(
-      runScheduledProjectBackups(env, new Date(event.scheduledTime)).then(
-        (result) => {
-          console.log(
-            "Building Schmidt scheduled backup result",
-            JSON.stringify(result),
-          );
-        },
-      ),
-    );
+    ctx.waitUntil(runNightlyBackups(env, new Date(event.scheduledTime)));
   },
 };
