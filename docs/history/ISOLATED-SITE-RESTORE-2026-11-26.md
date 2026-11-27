@@ -1,3 +1,5 @@
+> Historical checkpoint. See [current status](../STATUS.md) and the [combined review plan](../WHOLE-SITE-REVIEW-2026-11-27.md). Earlier rollout gates and retired feature instructions do not apply.
+
 # Whole-site isolated restore rehearsal — November 26, 2026
 
 The full data-restore rehearsal passed in two independent local Cloudflare workerd environments using native D1 and R2 bindings. Production was untouched. The source and target used different database IDs, bucket IDs and persistence directories; the target began empty.

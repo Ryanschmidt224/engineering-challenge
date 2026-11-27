@@ -4,7 +4,6 @@ import {exportProject,restoreProject} from "./project-backup.js";
 import {automaticBackupsResponse} from "./project-auto-backups.js";
 import {prepareFile,uploadFile,admitFile,downloadFile} from "./project-engine-files.js";
 import {initializeProjectEngine} from "./project-engine-migrations.js";
-import {proveProjectCommands} from "./project-engine-proof.js";
 import {inventoryProjectOrphans,validateOrphanInventory} from "./project-orphan-cleanup.js";
 import {replayProjectCommand} from "./project-command.js";
 import {uuid,rows,statement,decode,ownedProject,expectedProject,itemContext,workspaceState,ProjectNotFound} from "./project-state.js";
@@ -26,20 +25,18 @@ export async function commandBody(request,max=256000){
 // A replay is resolved before domain reads (including number allocation). The
 // route and target are fingerprinted so another action cannot reuse a receipt.
 export async function handleProjectWorkspace(request,env,owner){
- const url=new URL(request.url),base="/api/project-engine/projects",settings=url.pathname==="/api/project-engine/settings",proof=url.pathname==="/api/project-engine/proof",maintenance=url.pathname==="/api/project-engine/maintenance/orphans",path=settings||proof||maintenance?[]:url.pathname.slice(base.length).split("/").filter(Boolean),method=request.method,db=env.WORKSHOP_DB;
- if(!settings&&!proof&&!maintenance&&(!url.pathname.startsWith(base)||url.pathname!==base&&url.pathname[base.length]!=="/"))return engineJSON({error:"Not found"},404);
+ const url=new URL(request.url),base="/api/project-engine/projects",settings=url.pathname==="/api/project-engine/settings",maintenance=url.pathname==="/api/project-engine/maintenance/orphans",path=settings||maintenance?[]:url.pathname.slice(base.length).split("/").filter(Boolean),method=request.method,db=env.WORKSHOP_DB;
+ if(!settings&&!maintenance&&(!url.pathname.startsWith(base)||url.pathname!==base&&url.pathname[base.length]!=="/"))return engineJSON({error:"Not found"},404);
  let body;
  try{
   const importing=method==="POST"&&path.length===2&&["import","import-copy"].includes(path[1]);
-  if(settings? !["GET","PATCH"].includes(method):maintenance?method!=="GET":proof?method!=="POST":!["GET","POST","PATCH","PUT"].includes(method))return engineJSON({error:"Method not allowed"},405);
+  if(settings? !["GET","PATCH"].includes(method):maintenance?method!=="GET":!["GET","POST","PATCH","PUT"].includes(method))return engineJSON({error:"Method not allowed"},405);
   if(maintenance)validateOrphanInventory(url.searchParams);
   if(settings&&method==="PATCH")body=await websiteSettingsBody(request);
-  if(!settings&&!importing&&!["GET","PUT"].includes(method))body=await commandBody(request,proof?2048:256000);
-  if(proof&&body.expectedRevision!==null)throw Object.assign(Error("A new proof requires expectedRevision: null."),{status:400});
+  if(!settings&&!importing&&!["GET","PUT"].includes(method))body=await commandBody(request);
   if(path.length&&!uuid(path[0]))throw new ProjectNotFound();
   await initializeProjectEngine(db);
   if(settings)return engineJSON(await websiteSettingsResponse(db,body));
-  if(proof)return engineJSON(await proveProjectCommands(db,owner.id,body.operationId));
   if(maintenance)return engineJSON(await inventoryProjectOrphans(db,env.PHOTOS,owner.id,url.searchParams));
   if(!path.length){if(method!=="GET")return engineJSON({error:"Method not allowed"},405);return engineJSON({projects:await rows(db,"SELECT p.id,p.owner_id,p.owner_name,p.name,p.revision,p.prefix,p.digits,p.created_at,json_extract(p.overview,'$.shortSummary') AS short_summary,json_extract(p.overview,'$.description') AS description,(SELECT m.file_id FROM engine_media m WHERE m.project_id=p.id AND m.item_id IS NULL AND m.role='photo' AND m.active=1 ORDER BY m.sort_order,m.id LIMIT 1) AS cover_file_id,d.id AS deletion_operation_id,d.expected_revision AS deletion_expected_revision,d.state AS deletion_state FROM engine_projects p LEFT JOIN engine_project_deletions d ON d.project_id=p.id AND d.actor_id=p.owner_id WHERE p.owner_id=? AND p.restore_job_id IS NULL ORDER BY p.name,p.id",owner.id)});}
   const projectId=path[0];
@@ -118,7 +115,6 @@ export async function handleProjectWorkspace(request,env,owner){
  }catch(error){
   if(/PROJECT_DELETING/.test(error.message))return engineJSON({error:"This project is being permanently deleted. Return to Projects to continue its deletion."},409);
   if(error.status)return engineJSON({error:error.message},error.status);
-  if(proof){console.error("Project command preview proof failed",error);return engineJSON({error:"The preview transaction proof failed. Inspect Worker logs; dependent engine work must remain paused."},500);}
   // D1/internal failures never disclose queries, bindings or file keys.
   if(/D1_|SQLITE|constraint|FOREIGN KEY|database|no such|syntax error/i.test(error.message)){console.error("Project workspace command failed",error);return engineJSON({error:"The save failed. Your draft is retained; retry the same save."},500);}
   return engineJSON({error:error.message},400);

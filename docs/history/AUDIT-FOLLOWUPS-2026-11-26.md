@@ -1,3 +1,5 @@
+> Historical checkpoint. See [current status](../STATUS.md) and the [combined review plan](../WHOLE-SITE-REVIEW-2026-11-27.md). Earlier rollout gates and retired feature instructions do not apply.
+
 # November 26 audit follow-up status
 
 This tracks the 33 findings in `BuildingSchmidt_Workarounds_and_Design_Debt_2026-11-26.md`. A finding is not automatically a defect. “Keep” identifies a deliberate design choice; it does not imply a cleanup was implemented. This document records completion, not authorization to add features or remove historical data.

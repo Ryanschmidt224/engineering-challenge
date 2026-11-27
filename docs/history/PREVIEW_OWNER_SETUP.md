@@ -1,3 +1,5 @@
+> Historical checkpoint. See [current status](../STATUS.md) and the [combined review plan](../WHOLE-SITE-REVIEW-2026-11-27.md). Earlier rollout gates and retired feature instructions do not apply.
+
 # Isolated preview owner setup
 
 The private application has no public registration route. A separate R2 preview bucket needs its own owner account; production accounts are not automatically copied there. This is an operator step after the preview's PHOTOS binding and admin_password session-signing secret are configured.

@@ -1,3 +1,5 @@
+> Historical checkpoint. See [current status](../STATUS.md) and the [combined review plan](../WHOLE-SITE-REVIEW-2026-11-27.md). Earlier rollout gates and retired feature instructions do not apply.
+
 # Custom-part preview flow
 
 Status: Batch 2 custom-part preview implemented and reconciled with the integrated foundation/current production UI. This head awaits targeted Claude review; release state and the dependency sequence are maintained in STATUS.md. Production continues using the legacy engine. This batch enables no production flag, deletes no legacy code and removes no existing project data. Inventory boxes remain unchecked until accepted replacement/cutover.

@@ -77,9 +77,8 @@ async function verifyStored(photos,objectKey,projectId,expectedSize){
 }
 
 export async function backupEngineProjects(env,date=new Date()){
- // Dormant until the engine is enabled for this deployment and its schema is
- // current. Read-only check: a scheduled run never migrates storage.
- if(env.NEW_PROJECT_ENGINE!=="1"||!env.PHOTOS||!await projectEngineSchemaReady(env.WORKSHOP_DB))return [];
+ // Read-only readiness check: a scheduled run never migrates storage.
+ if(!env.PHOTOS||!await projectEngineSchemaReady(env.WORKSHOP_DB))return [];
  await sweepProjectDeletions(env);
  const projects=(await env.WORKSHOP_DB.prepare("SELECT * FROM engine_projects WHERE restore_job_id IS NULL AND NOT EXISTS(SELECT 1 FROM engine_project_deletions WHERE project_id=engine_projects.id) ORDER BY created_at,id").all()).results,summary=[];
  for(const project of projects){

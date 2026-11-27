@@ -1,3 +1,5 @@
+> Historical checkpoint. See [current status](../STATUS.md) and the [combined review plan](../WHOLE-SITE-REVIEW-2026-11-27.md). Earlier rollout gates and retired feature instructions do not apply.
+
 # Project owners and permanent deletion — Claude review required
 
 Owner requests (Nov 25): add full Delete project to Project settings; select Ryan/Wes/Wyatt when creating a project (Ryan default); allow the Projects screen to filter by owner. No existing production project is selected or authorized for deletion by this implementation task.

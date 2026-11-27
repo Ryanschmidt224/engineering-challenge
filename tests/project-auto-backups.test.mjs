@@ -8,9 +8,14 @@ const enabled=f=>({...f.env,NEW_PROJECT_ENGINE:"1"});
 const stored=f=>[...f.env.PHOTOS.objects.keys()].filter(key=>key.startsWith(ENGINE_BACKUP_PREFIX));
 const pattern=(size,seed)=>{const bytes=new Uint8Array(size);let x=seed;for(let i=0;i<size;i++){x=(x*1103515245+12345)>>>0;bytes[i]=x>>>24;}return bytes;};
 
-test("scheduled engine backups stay dormant unless the engine is enabled",async()=>{
+test("nightly backups work without a rollout flag and skip an uninitialized database",async()=>{
  const f=await fixture();try{
-  assert.deepEqual(await backupEngineProjects(f.env),[]);assert.equal(stored(f).length,0);
+  const result=await backupEngineProjects(f.env);
+  assert.equal(result[0].status,"saved");assert.equal(stored(f).length,1);
+  const {TestD1}=await import("./helpers/d1.mjs");const db=new TestD1();
+  try{assert.deepEqual(await backupEngineProjects({...f.env,WORKSHOP_DB:db}),[]);
+   assert.equal((await db.prepare("SELECT count(*) AS n FROM sqlite_master WHERE name='engine_projects'").first()).n,0);
+  }finally{db.close();}
  }finally{f.db.close();}
 });
 

@@ -1,3 +1,5 @@
+> Historical checkpoint. See [current status](../STATUS.md) and the [combined review plan](../WHOLE-SITE-REVIEW-2026-11-27.md). Earlier rollout gates and retired feature instructions do not apply.
+
 # Shared photo-control cleanup — November 26, 2026
 
 Audit finding 25 identified a layout workaround: a lazily imported global ResizeObserver/MutationObserver registry measured every photo and translated its pencil to compensate for toolbar width. It is removed. The shared photo helper now places the pencil in the image stage, with expanded tools in a separate row. CSS aligns the pencil below the stage at the right edge. No observer registry, DOM-bound measurement or transform is needed.

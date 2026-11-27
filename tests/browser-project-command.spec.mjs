@@ -5,7 +5,8 @@ for(const width of [1440,390])test("protected preview transaction proof at "+wid
  const {cookie}=await(await request.post("/__test__/reset?engine=1")).json(),at=cookie.indexOf("=");
  await context.addCookies([{name:cookie.slice(0,at),value:cookie.slice(at+1),url:"http://127.0.0.1:4173",httpOnly:true,sameSite:"Strict"}]);
  await page.setViewportSize({width,height:1000});
- await page.goto("/project-engine-proof.html");
+ expect((await request.get("/project-engine-proof.html")).status()).toBe(404);
+ await page.goto("/__test__/proof/project-engine-proof.html");
  await expect(page.locator(".ui-site-account")).toBeVisible();
  const run=page.getByRole("button",{name:"Run preview D1 proof"});
  await run.focus();await page.keyboard.press("Enter");

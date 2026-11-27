@@ -1,3 +1,5 @@
+> Historical checkpoint. See [current status](../STATUS.md) and the [combined review plan](../WHOLE-SITE-REVIEW-2026-11-27.md). Earlier rollout gates and retired feature instructions do not apply.
+
 # Workshop AI reliability release — November 26, 2026
 
 Released in PR #131 after the pending-only forget fix and passing checks. This implements audit findings 4, 12, 13 and 14. The Workshop visual redesign is recorded separately as a future upgrade. Routine Claude reviews remain off. Claude approved this candidate after one required correction: an unconfirmed document must be forgettable. That correction is implemented and the release evidence is recorded on PR #131.

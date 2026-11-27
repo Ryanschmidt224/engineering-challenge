@@ -10,7 +10,7 @@ Private owner application on Cloudflare Workers with D1 metadata and immutable R
 | Global settings | `website-settings-page.js`, `website-settings-client.js` | Tags, owner labels, refresh without replacing drafts, backup/restore entry points |
 | Workshop | `family-workshop.js`, `workshop-db.js` | Current families/products, evidence and current project-use projection |
 | Lessons Learned | `lessons-learned.js`, `lessons-model.js`, `functions/api/lessons-learned.js` | Notebook steps, autosave with revisions and retry identity, title links, archive/restore and photo ownership |
-| Calculators | `calculators.js`, `calculator-directory.js`, `calculator-catalog.js` | Independent calculators embedded in Info Bits or opened standalone |
+| Calculators | `calculators.js`, `calculator-directory.js`, `calculator-catalog.js` | Independent calculators embedded in Lessons Learned or opened standalone |
 | Project photos | `project-media.js`, `functions/api/project-media.js` | One ordered component for summaries/parts/assemblies; first photo is main; old standalone pictures remain readable |
 | Photo tools | `photo-editor.js`, `clipboard-files.js`, `file-selection.js`, `photo-controls.css` | Image-stage disclosure and native choose/drop/paste; no storage API inference |
 | Project commands | `project-workspace-api.js`, `project-command.js`, `project-*-commands.js` | Owner checks, revision/operation IDs, atomic admission and data changes |
@@ -25,9 +25,10 @@ Browser modules should declare dependencies and initialize explicitly. DOM helpe
 - Project item identity is separate from placements. Quantities, status and assembly membership belong to placements. Workshop selections freeze data into the project; editing a project never updates the catalog.
 - A command carries its original operation ID and expected revision. A transport retry replays that command. A conflict requires review, preserving the losing draft.
 - Uploaded file IDs/bytes and captured historical evidence are immutable. Preserve deletion tombstones, retired-operation fences and restore staging/publication checks.
-- Only authenticated validated project entry initializes the project schema. Workshop/Info Bits reads can check readiness without creating project tables. Applied migrations are historical upgrade steps: add a new migration for a schema change; do not edit old ones.
+- Only authenticated validated project entry initializes the project schema. Workshop/Lessons reads can check readiness without creating project tables. Applied migrations are historical upgrade steps: add a new migration for a schema change; do not edit old ones.
 - Current project archives and whole-site archives keep their existing formats. Older current-engine snapshot formats and downloaded readable exports remain supported. Stored archival bytes are data, not a reason to keep retired application controllers.
-- The remaining availability flag disables Projects without reactivating the old system. Retired API names have a small protected 410 boundary and no handler dependencies.
+- Projects is the only project implementation and has no rollout variable. Retired API names have a small protected 410 boundary and no handler dependencies. Exact current API routes belong to `functions/api/api-routes.js`; prefix project routing remains in the Worker.
+- Historical tile/link rows are export-only through `knowledge-archive.js`. The offline Workshop archive validator/restore retains old formats. Proof UI and synthetic commands live under `tests/`, excluded from production assets and imports.
 
 ## Checks and maintenance
 

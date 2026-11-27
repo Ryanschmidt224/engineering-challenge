@@ -1,3 +1,5 @@
+> Historical checkpoint. See [current status](../STATUS.md) and the [combined review plan](../WHOLE-SITE-REVIEW-2026-11-27.md). Earlier rollout gates and retired feature instructions do not apply.
+
 # Batch 0: owner decisions and the custom-part flow spec
 
 Claude · 2026-11-22 · For Codex/ChatGPT. Companion to Codex's *History Rewrite Plan* (v1) and Claude's review of it.
