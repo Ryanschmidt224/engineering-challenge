@@ -74,8 +74,14 @@ test("linked names persist an explicit choice and derive from Generic Part Name 
  assert.equal(separate.name,"DHEN1112");assert.equal(separate.fields.name_linked,false);
  assert.equal(normalizeCustomItem(part({name:"Same",short_name:"Same",fields:{name_linked:false}})).fields.name_linked,false);
  assert.throws(()=>normalizeCustomItem(part({fields:{name_linked:"false"}})),/true or false/);
- assert.throws(()=>normalizeCustomItem(part({short_name:"",fields:{name_linked:true}})),/Generic Part Name is required/);
+ assert.throws(()=>normalizeCustomItem(part({short_name:"",fields:{name_linked:true}})),/Part Name \(Generic\) is required/);
  assert.equal(Object.hasOwn(normalizeCustomItem(part()).fields,"name_linked"),false);
  const before=part({name:"Same",short_name:"Same",fields:{name_linked:true}}),after={...before,fields:{name_linked:false}};
  assert.deepEqual(diffCustomItems(before,after).map(change=>change.key),["fields.name_linked"]);
+});
+
+test('purchased tool fields and Ordered status persist with strict validation',()=>{
+ const fields={supply:'purchased',vendor:'DigiKey',supplier_number:'A-1',order_url:'https://example.com/part',individual_cost:0,bulk_cost:12,package_quantity:10};
+ const value=normalizeCustomItem(part({is_tool:true,fields}));assert.equal(value.is_tool,true);assert.deepEqual(value.fields,fields);assert.equal(normalizeOccurrence({build_status:'ordered'}).build_status,'ordered');
+ for(const patch of [{supply:'unknown'},{order_url:'javascript:alert(1)'},{individual_cost:-1},{bulk_cost:'12'},{package_quantity:0},{package_quantity:1.5}])assert.throws(()=>normalizeCustomItem(part({fields:{...fields,...patch}})));
 });

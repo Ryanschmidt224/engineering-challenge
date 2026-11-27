@@ -3,7 +3,6 @@ import {treeDropPlan} from "./project-tree-drag.js";
 import {projectTree,MAX_SUBTREE} from "./project-tree-model.js";
 import {node,checkbox,listCard,actions} from "./workshop-ui.js";
 import {editItem,placementEditor} from "./project-editors.js";
-import {workshopPartEditor} from "./project-workshop-editor.js";
 import {partHistoryPrompt} from "./project-part-history.js";
 import {contextMenu} from "./context-menu.js";
 const button=(...args)=>window.BSUI.button(...args);
@@ -25,7 +24,7 @@ async function archivePlacement(ctx,item,trigger){
 export function renderProjectTree(ctx,{showHidden,onShowHidden,showDocuments=true,onShowDocuments=()=>{},showWorkshop=true,onShowWorkshop=()=>{},selectedOccurrence,summarySelected=false,collapsed=new Set()}){
  const state=ctx.client.state,tree=projectTree(state.items,state.occurrences),nav=node("nav","","project-tree");nav.setAttribute("aria-label","Feature tree");
  const assembly=summaryAssembly(tree),showTopAssembly=showAssemblyRow(ctx.projectId),combined=assembly&&!showTopAssembly,rootParent=combined?assembly.occurrence.id:null;
- const addActions=parentId=>[{label:"Add custom part",run:()=>addWithHint(ctx,()=>editItem(ctx,null,null,{parentId}))},{label:"Add subassembly",run:()=>addWithHint(ctx,()=>editItem(ctx,null,null,{assembly:true,parentId}))},{label:"Add Workshop part",run:()=>addWithHint(ctx,()=>workshopPartEditor(ctx,{parentId}))},{label:"Add existing part placement",run:()=>addWithHint(ctx,()=>placementEditor(ctx,{parentId}))}];
+ const addActions=parentId=>[{label:"New part",run:()=>addWithHint(ctx,()=>editItem(ctx,null,null,{parentId}))},{label:"Add subassembly",run:()=>addWithHint(ctx,()=>editItem(ctx,null,null,{assembly:true,parentId}))}];
  nav.append(node("h2","Feature tree","project-tree-heading"));
  const tools=node("div","","project-tree-tools"),add=button("Add",()=>contextMenu(add,null,rootActions()),{variant:"quiet",small:true}),filters=node("details","","project-tree-filters"),filterTitle=node("summary","Show / hide","ui-button ui-button--quiet ui-button--small");add.setAttribute("aria-label","Add item");add.setAttribute("aria-haspopup","menu");filterTitle.setAttribute("aria-label","Tree display options");filterTitle.setAttribute("role","button");
  filters.open=filterMemory.has(ctx.projectId);filterTitle.setAttribute("aria-expanded",String(filters.open));filters.addEventListener("toggle",()=>{filterTitle.setAttribute("aria-expanded",String(filters.open));if(filters.open)filterMemory.add(ctx.projectId);else filterMemory.delete(ctx.projectId);});filters.append(filterTitle,checkbox("Show hidden parts",showHidden,onShowHidden),checkbox("Show documents",showDocuments,onShowDocuments),checkbox("Show Workshop items",showWorkshop,onShowWorkshop));if(assembly)filters.append(checkbox("Show top assembly",showTopAssembly,value=>{setShowAssemblyRow(ctx.projectId,value);void ctx.refresh();}));tools.append(add,filters);nav.append(tools);

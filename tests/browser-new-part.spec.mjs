@@ -1,0 +1,22 @@
+import {test,expect} from '@playwright/test';
+for(const width of [390,1440])test('approved New part workflow persists tool, source, fields and Ordered at '+width,async({page,request,context})=>{
+ await page.setViewportSize({width,height:900});
+ const {cookie}=await(await request.post('/__test__/reset?engine=1')).json(),at=cookie.indexOf('=');
+ await context.addCookies([{name:cookie.slice(0,at),value:cookie.slice(at+1),url:'http://127.0.0.1:4173',httpOnly:true,sameSite:'Strict'}]);
+ await page.goto('/project.html');await page.getByRole('button',{name:'New project',exact:true}).click();await page.getByLabel('Project name',{exact:true}).fill('New part trial');await page.getByRole('button',{name:'Create project',exact:true}).click();await expect(page.getByRole('dialog')).not.toBeVisible();
+ await page.getByRole('button',{name:'Add item',exact:true}).click();await page.getByRole('menuitem',{name:'New part',exact:true}).click();
+ const editor=page.getByRole('dialog',{name:'New part',exact:true});await expect(editor).toBeVisible();
+ await editor.getByLabel('Item type',{exact:true}).selectOption('code');await expect(editor.getByLabel('Part source',{exact:true})).not.toBeVisible();
+ await editor.getByLabel('Item type',{exact:true}).selectOption('document');await expect(editor.getByLabel('Part source',{exact:true})).not.toBeVisible();
+ await editor.getByLabel('Item type',{exact:true}).selectOption('tool');await editor.getByLabel('Part source',{exact:true}).selectOption('purchased');
+ await editor.getByLabel('Part Name (Generic)',{exact:true}).fill('Hex key');
+ const linked=editor.getByRole('checkbox',{name:'Part Name (Generic) and Part Name (Specific) are the same.',exact:true});
+ await expect(editor.getByLabel('Part Name (Specific)',{exact:true})).not.toBeVisible();await expect(editor.getByLabel('Description',{exact:true})).not.toBeVisible();
+ await linked.uncheck();await editor.getByLabel('Part Name (Specific)',{exact:true}).fill('4 mm hex key');await editor.getByLabel('Description',{exact:true}).fill('Retained description');await linked.check();await linked.uncheck();await expect(editor.getByLabel('Description',{exact:true})).toHaveValue('Retained description');
+ await editor.getByRole('button',{name:'Add field',exact:true}).click();await expect(editor.getByLabel('Field prompt',{exact:true})).toHaveValue('');await expect(editor.getByLabel('Field details',{exact:true})).toHaveValue('');await editor.getByLabel('Field prompt',{exact:true}).fill('Size');await editor.getByLabel('Size',{exact:true}).fill('4 mm');
+ await editor.getByLabel('Outside vendor',{exact:true}).fill('Example vendor');await editor.getByLabel('Part Cost (individual)',{exact:true}).fill('0');await editor.getByLabel('Package quantity',{exact:true}).fill('1');await editor.getByLabel('Status',{exact:true}).selectOption('ordered');
+ await expect(editor.getByRole('button',{name:'Cancel',exact:true})).toBeInViewport();await expect(editor.getByRole('button',{name:'Add part',exact:true})).toBeInViewport();
+ await editor.getByRole('button',{name:'Add part',exact:true}).click();await expect(editor).not.toBeVisible();
+ const id=new URL(page.url()).searchParams.get('project'),state=await(await context.request.get('/api/project-engine/projects/'+id+'/state')).json(),item=state.items[0];expect(item.is_tool).toBe(1);expect(item.fields.supply).toBe('purchased');expect(item.fields.vendor).toBe('Example vendor');expect(item.fields.individual_cost).toBe(0);expect(item.fields.specs[0].value).toBe('4 mm');expect(state.occurrences[0].build_status).toBe('ordered');
+ await page.goto('/project.html?project='+id+'&item='+item.id);await page.locator('[data-section="details"] > summary').click();await page.getByRole('button',{name:'Edit part details',exact:true}).click();await expect(page.getByLabel('Item type',{exact:true})).toHaveValue('tool');await expect(page.getByRole('dialog').getByLabel('Status',{exact:true})).toHaveValue('ordered');await expect(page.getByLabel('Outside vendor',{exact:true})).toHaveValue('Example vendor');await expect(page.getByLabel('Size',{exact:true})).toHaveValue('4 mm');
+});

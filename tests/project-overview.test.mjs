@@ -16,3 +16,10 @@ test('project overview guards drafts, preserves every intent version and survive
 test('project cost separates used quantity from packages, excludes assemblies, preserves zero and missing prices',()=>{
  const part={id:'a',is_assembly:false},assembly={id:'b',is_assembly:true},missing={id:'c',is_assembly:false},free={id:'d',is_assembly:false};const cost=projectCosts([{item:part,quantity:23},{item:assembly,quantity:5},{item:missing,quantity:2},{item:free,quantity:1}],{prices:{a:{price:10,packageQuantity:20,basis:'per_package'},d:{price:0,packageQuantity:1,basis:'per_part'}}});assert.deepEqual(cost,{individual:11.5,bulk:20,priced:2,total:3});
 });
+
+test('purchased item prices honor separate individual and full-package amounts including free units',()=>{
+ const item={id:'priced',fields:{supply:'purchased',individual_cost:0,bulk_cost:12,package_quantity:10}};
+ assert.deepEqual(projectCosts([{item,quantity:11}],{prices:{}}),{individual:0,bulk:24,priced:1,total:1});
+ const override={prices:{priced:{price:5,basis:'per_part',packageQuantity:1}}};
+ assert.deepEqual(projectCosts([{item,quantity:2}],override),{individual:10,bulk:10,priced:1,total:1});
+});

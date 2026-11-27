@@ -21,3 +21,11 @@ Keep the current project data paths, private owner boundary, project/Workshop is
 The broader audit remains tracked in [AUDIT-FOLLOWUPS-2026-11-26.md](AUDIT-FOLLOWUPS-2026-11-26.md). The Workshop layout redesign is a future upgrade; independently hosted URLs remain late priority. Deferred optimization PR #91 requires reevaluation against the retired codebase before any later work. Do not automatically merge it.
 
 See [CODEBASE_GUIDE.md](CODEBASE_GUIDE.md), [LEGACY-RETIREMENT-2026-11-26.md](LEGACY-RETIREMENT-2026-11-26.md) and the clearly labeled historical documents under `docs/history/`. Historical checkpoints do not override the current owner instruction.
+
+## Approved New part editor — release candidate
+
+The approved mockup replaces competing custom/placement creation choices with New part. Identity orders Parent subassembly, Item type, Part source, Part Name (Generic), Purpose, then automatic numbering. Tool uses the existing part/tool contract; documents and code hide sourcing. Purchased records retain supplier/ordering and separate USD individual/package costs. Workshop copying remains available under Purchased; Duplicate part still creates an independent copy. Existing shared placements are not silently converted or deleted.
+
+Specific-name and description rows hide when names are linked, preserving draft values and stored descriptions. Blank prompt/details rows use stable specification IDs without presets or panels; existing typed specification evidence and units remain compatible. Acceptance criteria is removed from the working editor, while stored historical data remains readable through archives. Ordered is supported by model, API, status controls, filters, backups and an atomic v16 occurrence-constraint migration preserving rows, foreign keys, indexes and triggers. Shared editors scroll their content above a persistent action bar. The four approved help controls use the shared tooltip owner.
+
+Validation and deployment evidence will be recorded on the release PR. No production data purge or paid AI lookup is part of this release.

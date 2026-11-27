@@ -66,7 +66,7 @@ export function workshopPartEditor(ctx, { item = null, parentId = null } = {}) {
         : "This creates a project-owned part with frozen Workshop specifications and copies of its documents/photos. Further edits affect this project only.",
     ),
   );
-  const name = field("Specific Part Name", draft.name, (value) => {
+  const name = field("Part Name (Specific)", draft.name, (value) => {
     draft.name = value;
     editedName = true;
   });

@@ -312,16 +312,6 @@
   width: min(48rem, calc(100vw - 2rem));
   max-width: min(48rem, calc(100vw - 2rem));
 }
-.project-container-field > label {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
-.project-container-field > label > button {
-  padding: 0;
-  min-height: 1.5rem;
-}
 .project-main [data-section="details"] .ui-information-panel {
   padding: 0;
   border: 0;
@@ -348,11 +338,6 @@
 
 .project-tree-row > .list-card:not([aria-current="true"]):hover {
   background: var(--color-surface);
-}
-.project-field-help {
-  grid-column: 1 / -1;
-  margin: var(--space-1) 0;
-  font-size: var(--text-small);
 }
 
 .project-stack > p {
@@ -629,4 +614,41 @@
   max-width: calc(
     var(--photo-count, 1) * 38rem + (var(--photo-count, 1) - 1) * var(--space-3)
   );
+}
+
+/* Dialog content scrolls independently of its shared action bar. */
+.project-editor-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 94dvh;
+}
+.project-editor-dialog > h2 {
+  flex-shrink: 0;
+}
+.project-editor-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.project-editor-scroll {
+  overflow-y: auto;
+  min-height: 0;
+  padding-inline: var(--space-2);
+}
+.project-editor-actions {
+  flex-shrink: 0;
+  padding-block: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+.project-custom-prompt {
+  border: 0;
+  background: transparent;
+  padding-inline: 0;
+}
+.project-custom-value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
 }

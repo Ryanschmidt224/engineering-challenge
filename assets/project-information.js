@@ -29,16 +29,30 @@ export function configurationView(
     ...(includeContainer
       ? [
           ["Revision", item.revision_level],
-          ["Generic Part Name", containerName(item)],
+          ["Part Name (Generic)", containerName(item)],
           ["Part number", item.part_number],
         ]
       : [["Is a tool?", item.is_tool ? "Yes" : "No"]]),
-    ["Specific Part Name", item.name],
+    ["Part Name (Specific)", item.name],
     ["Description", fields.description],
     ...(includeContainer ? [["Purpose", fields.purpose]] : []),
-    ["Acceptance criteria", fields.acceptance],
+
     ["Manufacturer", fields.manufacturer],
     ["Mfg part number", fields.mpn],
+    [
+      "Part source",
+      fields.supply === "purchased"
+        ? "Purchased from outside vendor"
+        : fields.supply === "made"
+          ? "Made in house"
+          : null,
+    ],
+    ["Outside vendor", fields.vendor],
+    ["Supplier part number", fields.supplier_number],
+    ["Order website", fields.order_url],
+    ["Part Cost (individual)", fields.individual_cost],
+    ["Part Cost (bulk)", fields.bulk_cost],
+    ["Package quantity", fields.package_quantity],
   ]);
   body.append(panel);
   if (fields.specs?.length)

@@ -1,3 +1,4 @@
+import { projectStatusChoices } from "./project-item-model.js";
 import { loadWebsiteSettings } from "./website-settings-client.js";
 import { summaryAssembly } from "./project-root-view.js";
 import { containerName } from "./project-presentation.js";
@@ -327,11 +328,7 @@ export function initProjectWorkspace(root = document) {
           occ.build_status,
           (value) => updateBuild({ build_status: value }),
           {
-            options: [
-              { value: "not_started", label: "Not started" },
-              { value: "in_progress", label: "In progress" },
-              { value: "complete", label: "Complete" },
-            ],
+            options: projectStatusChoices,
           },
         ),
         quantity,
@@ -379,9 +376,9 @@ export function initProjectWorkspace(root = document) {
       ],
     });
     details.body.append(
-      information("Item identity", [
+      information("Part identity", [
         ["Item type", item.is_assembly ? "Subassembly" : item.kind],
-        ["Generic Part Name", containerName(item)],
+        ["Part Name (Generic)", containerName(item)],
         ["Part number", item.part_number],
         ["Purpose (optional)", item.fields.purpose],
       ]),
@@ -412,14 +409,11 @@ export function initProjectWorkspace(root = document) {
         role: "subassembly",
       });
       assembly.body.append(
-        button("Add custom part", () =>
+        button("New part", () =>
           editItem(context, null, null, { parentId: occ.id }),
         ),
         button("Add subassembly", () =>
           editItem(context, null, null, { assembly: true, parentId: occ.id }),
-        ),
-        button("Add Workshop part", () =>
-          workshopPartEditor(context, { parentId: occ.id }),
         ),
         button("Open subassembly BOM", () =>
           navigate(projectId, item.id, "bom", occ.id),
