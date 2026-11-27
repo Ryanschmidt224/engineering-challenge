@@ -1,6 +1,8 @@
 # BuildingSchmidt — current status
 
-November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. The latest confirmed deployed baseline is #145 (`10a2a2cfbd09299bd106fa9e71c51c1362ab88f8`), after cleanup #143 and tooling #144. Production build `187de214-96e4-4213-b2c2-6d7f8c2d1cc3` deployed Worker `fdc13ca5-cbb3-41c6-8cfb-5e620fb5bcbc`; live page/API checks and exact updated asset bytes were verified. The candidate passed 289 code checks, 137 browser workflows and dependency audit with zero known vulnerabilities.
+November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. Latest confirmed deployed baseline: #150 (`d0b00de575cc3cd2f7b7c9cad23ac1031ce846b1`), including the Lessons editor/view frames (#147–149), automatic-attachment AI lookup, summary details expansion and full-screen photo navigation. Production build `dbfc60bc-d9ab-4bb0-9489-9d7cb3b06957`, Worker `d24b74a0-988b-4158-a581-9d9fc18efaef`, and exact live browser assets were verified. The candidate passed 290 code tests, 137 browser workflows and dependency audit with zero known vulnerabilities.
+
+The approved Workshop follow-up groups About this family and Fields inside a default-collapsed Family and fields section and adds the named archive dialog with the approved explanation, explicit Archive family confirmation and Cancel focus. Its PR records validation and publication state. Existing columns, product buttons and archive storage semantics stay intact.
 
 ## Current behavior
 
