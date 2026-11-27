@@ -219,7 +219,7 @@
   margin: var(--space-1) 0 0;
   padding: 0;
   border: 0;
-  align-items: center;
+  align-items: start;
 }
 .workshop-product-read .field-row--read > dt {
   padding-inline: var(--space-3) 0;
