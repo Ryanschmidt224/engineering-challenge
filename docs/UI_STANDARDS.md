@@ -16,3 +16,5 @@ Current page layout owners are `project-workspace.css`, `family-workshop.css`, `
 ## Action confirmations
 
 Archive, restore, discard, guarded save actions and permanent project deletion use `BSConfirmation` (`confirmation-dialog.js` and `.css`). The shared frame centers in the viewport, gives the title a muted band, contains readable consequences, and puts Cancel before the action in a separated footer. Cancel starts focused for confirmations. Prompt inputs may receive focus for entry. Permanent project deletion retains typed-name admission, operation identity, retry behavior and red action styling. General edit forms and full-screen photo viewers retain their layouts; browser-generated unload warnings remain browser-owned.
+
+Workshop product identity and specifications use compact, content-height read rows with shaded section bands and labels beside bordered values. Small AI source disclosures sit at the right of a value; opening one reveals the full source, conditions and document evidence. Long values wrap and phone layouts stack labels without clipping content.

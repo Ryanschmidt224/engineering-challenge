@@ -75,3 +75,20 @@ for(const width of [390,1440])test("family fields start collapsed and products k
 for(const width of [390,1440])test("shared product confirmation is centered and cancelling preserves records at "+width,async({page},testInfo)=>{
  await page.setViewportSize({width,height:900});const product=await post(page,"product",productRecord());await page.goto("/workshop.html?family=f-resistor&product="+product.id);const before=await snapshot(page);await page.getByRole("button",{name:"Archive product",exact:true}).click();const modal=page.getByRole("dialog",{name:'Archive “Example 10k resistor”?',exact:true});await expect(modal).toBeVisible();await expect(modal.getByRole("button",{name:"Cancel",exact:true})).toBeFocused();await expect(modal).toContainText("Nothing is permanently deleted.");const box=await modal.boundingBox();expect(Math.abs(box.x+box.width/2-width/2)).toBeLessThan(2);expect(Math.abs(box.y+box.height/2-450)).toBeLessThan(2);expect(await snapshot(page)).toEqual(before);await page.screenshot({path:testInfo.outputPath("shared-confirmation.png"),fullPage:true});await modal.getByRole("button",{name:"Cancel",exact:true}).press("Enter");await expect(modal).not.toBeVisible();expect(await snapshot(page)).toEqual(before);await page.getByRole("button",{name:"Archive product",exact:true}).click();await modal.getByRole("button",{name:"Archive product",exact:true}).click();await expect(page.locator("#workshop-status")).toContainText("Archived.");
 });
+
+for(const width of [390,1440])test("compact product values keep source evidence accessible at "+width,async({page},testInfo)=>{
+ await page.setViewportSize({width,height:950});
+ const longValue="Through-hole precision package with a long manufacturer description ".repeat(4).trim();
+ const product=await post(page,"product",{...productRecord(),field_values:{"f-resistor-resistance":10000,"f-resistor-power-rating":0.25,"f-resistor-package":longValue},supplier_links:[{supplier:"Example",part_number:"EX-10K",url:"https://example.com/product"}],lookup_provenance:{version:1,identityRequired:true,appliedAt:"2026-11-27T21:00:00Z",fields:{"f-resistor-resistance":{value:10000,label:"Resistance",unit:"Ω",conditions:"25°C",sourceUrl:"https://example.com/datasheet",document:{name:"resistor.pdf",sha256:"a".repeat(64)}}}}});
+ await page.goto("/workshop.html?family=f-resistor&product="+product.id);
+ const panels=detail(page).locator(".workshop-product-read");await expect(panels).toHaveCount(2);
+ const value=panels.locator(".workshop-sourced-value"),source=value.locator("summary");
+ await expect(source).toHaveText("AI source");await expect(value.locator("details")).not.toHaveAttribute("open");await expect(value.getByText("Conditions: 25°C",{exact:true})).not.toBeVisible();
+ const textBox=await value.locator(":scope > span").boundingBox(),sourceBox=await source.boundingBox();expect(sourceBox.x).toBeGreaterThan(textBox.x+textBox.width);expect(Math.abs(sourceBox.y-textBox.y)).toBeLessThan(8);
+ if(width===1440)expect((await value.boundingBox()).height).toBeLessThan(32);
+ await source.focus();await source.press("Enter");await expect(value.getByText("Conditions: 25°C",{exact:true})).toBeVisible();if(width>640)expect(Math.abs((await value.locator("..").locator("dt").boundingBox()).y-(await value.boundingBox()).y)).toBeLessThan(3);await expect(value.getByRole("link",{name:"Source",exact:true})).toHaveAttribute("href","https://example.com/datasheet");await expect(value.getByText("Technical document: resistor.pdf",{exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await source.press("Enter");await expect(value.locator("details")).not.toHaveAttribute("open");await expect(panels.getByText(longValue.trim(),{exact:true})).toBeVisible();
+ const before=await snapshot(page);expect(before.products[0].field_values["f-resistor-package"]).toBe(longValue.trim());
+ await panels.first().scrollIntoViewIfNeeded();await page.screenshot({path:testInfo.outputPath("compact-product-read.png"),fullPage:true});
+});

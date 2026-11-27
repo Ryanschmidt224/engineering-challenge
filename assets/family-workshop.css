@@ -180,7 +180,8 @@
   }
 }
 
-.workshop-product-editor .panel-heading {
+.workshop-product-editor .panel-heading,
+.workshop-product-read .panel-heading {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -204,6 +205,79 @@
   }
 }
 
-.workshop-product-editor .panel-heading h3 {
+.workshop-product-editor .panel-heading h3,
+.workshop-product-read .panel-heading h3 {
   margin: 0;
+}
+
+/* Product read rows fit their content; source details expand only on request. */
+.workshop-product-read {
+  --field-label-width: 18rem;
+  padding: var(--space-2);
+}
+.workshop-product-read .field-row--read {
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  border: 0;
+  align-items: start;
+}
+.workshop-product-read .field-row--read > dt {
+  padding-inline: var(--space-3) 0;
+  color: var(--color-text);
+  font-size: var(--text-body);
+}
+.workshop-product-read .field-row--read > dd {
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+}
+.workshop-product-read .workshop-sourced-value {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0 var(--space-3);
+  white-space: normal;
+}
+.workshop-sourced-value > span {
+  white-space: pre-wrap;
+}
+.workshop-source {
+  min-width: 0;
+  font-size: var(--text-small);
+}
+.workshop-source > summary {
+  width: max-content;
+  margin-left: auto;
+  list-style: none;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.workshop-source > summary::-webkit-details-marker {
+  display: none;
+}
+.workshop-source > summary::after {
+  content: " ›";
+}
+.workshop-source[open] {
+  grid-column: 1 / -1;
+}
+.workshop-source[open] > summary::after {
+  content: " ▾";
+}
+.workshop-source p {
+  margin: var(--space-2) 0 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .workshop-product-read .field-row--read {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+    margin-top: var(--space-2);
+  }
+  .workshop-source > summary {
+    min-height: var(--control-height-small);
+    display: flex;
+    align-items: center;
+  }
 }

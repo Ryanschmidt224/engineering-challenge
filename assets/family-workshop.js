@@ -823,6 +823,7 @@ function renderFamilyRead(record) {
 function renderInstanceRead(entity, record, selected) {
   const product = record,
     identity = panel("Product identity");
+  identity.classList.add("workshop-product-read");
   appendRead(identity, "Manufacturer", record.manufacturer);
   appendRead(identity, "Manufacturer part number", record.mpn);
   detail.append(identity);
@@ -835,6 +836,7 @@ function renderInstanceRead(entity, record, selected) {
       ),
     );
   const specs = panel("Specifications");
+  specs.classList.add("workshop-product-read");
   let count = 0;
   for (const resolved of resolveFamilyValues(
     familyFields(),
@@ -848,7 +850,14 @@ function renderInstanceRead(entity, record, selected) {
         resolved.value,
       ),
       evidence = fieldLookupEvidence(product, resolved.id);
-    if (evidence) row.lastChild.append(lookupEvidenceView(evidence));
+    if (evidence) {
+      const value = row.lastChild;
+      value.replaceChildren(
+        node("span", value.textContent),
+        lookupEvidenceView(evidence, { compact: true }),
+      );
+      value.classList.add("workshop-sourced-value");
+    }
     specs.append(row);
   }
   if (count) detail.append(specs);
