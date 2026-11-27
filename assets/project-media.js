@@ -186,7 +186,10 @@ function editCaption(ctx, row) {
   form.querySelector("input")?.focus();
 }
 
-export function mediaGallery(ctx, { itemId = null, title = "Photos" } = {}) {
+export function mediaGallery(
+  ctx,
+  { itemId = null, title = "Photos", additional = false } = {},
+) {
   const photos = photosFor(ctx.client.state, itemId),
     body = node("div", "", "project-photo-tools"),
     section = { body, root: body };
@@ -194,7 +197,10 @@ export function mediaGallery(ctx, { itemId = null, title = "Photos" } = {}) {
   const add = (files) => addFiles(ctx, files, { itemId }),
     choose = picker(add, { label: title + " files" });
   const uploadRow = node("div", "", "bs-photo-upload-row"),
-    addButton = button("Add photos", choose.open);
+    addButton = button(
+      additional ? "Add additional photos" : "Add photos",
+      choose.open,
+    );
   const grid = node("div", "", "project-media-grid"),
     mode = viewMode({
       label: "Photo view",
@@ -289,8 +295,10 @@ export function mediaGallery(ctx, { itemId = null, title = "Photos" } = {}) {
     grid.append(tile);
   });
   const paste = fileDropTarget((incoming) => add(incoming), {
-    label: "Paste a copied photo",
-    text: "Drop photos or paste an image",
+    label: additional ? "Paste an additional photo" : "Paste a copied photo",
+    text: additional
+      ? "Drop or paste additional photos"
+      : "Drop photos or paste an image",
   });
   uploadRow.append(addButton, paste, mode.root);
   section.body.append(uploadRow, choose.input, grid);
@@ -328,11 +336,18 @@ export function partPicture(ctx, item, engineeringFile = null) {
     ? thumbnail(ctx, file, item.name)
     : node("p", "No picture yet", "muted");
   if (cover.tagName === "IMG") cover.className = "project-picture";
+  let uploading = false;
+  const savePicture = async (files) => {
+    if (uploading) return;
+    uploading = true;
+    try {
+      await addFiles(ctx, files, { itemId: item.id, role: "picture" });
+    } finally {
+      uploading = false;
+    }
+  };
   const tools = node("div", "", "project-picture-tools"),
-    choose = picker(
-      (files) => addFiles(ctx, files, { itemId: item.id, role: "picture" }),
-      { multiple: false, label: "Part picture" },
-    );
+    choose = picker(savePicture, { multiple: false, label: "Part picture" });
   choose.input.accept = "image/jpeg,image/png,image/webp";
   const controls = [
     button(current ? "Replace picture" : "Add picture", choose.open, {
@@ -364,8 +379,18 @@ export function partPicture(ctx, item, engineeringFile = null) {
     );
   tools.append(
     choose.input,
-    actions(...controls),
-    mediaGallery(ctx, { itemId: item.id, title: "Additional photos" }),
+    actions(
+      ...controls,
+      fileDropTarget(savePicture, {
+        label: "Paste a copied photo",
+        text: "Drop or paste the main picture",
+      }),
+    ),
+    mediaGallery(ctx, {
+      itemId: item.id,
+      title: "Additional photos",
+      additional: true,
+    }),
   );
   return photoControl(ctx, cover, tools, ctx.projectId + ":" + item.id);
 }
