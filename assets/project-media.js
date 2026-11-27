@@ -1,3 +1,4 @@
+import { wireMainPhotoSlot } from "./part-photo-selection.js";
 import { mediaUploadFeedback } from "./media-upload-feedback.js";
 import { actionBar } from "./photo-editor.js";
 import { fileDropTarget } from "./file-selection.js";
@@ -57,7 +58,10 @@ function thumbnail(ctx, file, alt) {
 async function send(ctx, path, method, data, message) {
   try {
     await ctx.client.write(ctx.projectId, path, method, data);
-    await ctx.refresh();
+    if ((await ctx.refresh()) === false)
+      throw Error(
+        "Change saved, but the page could not refresh. Reload to see it.",
+      );
     ctx.notify(message);
   } catch (error) {
     ctx.notify(error.message);
@@ -201,10 +205,18 @@ function editCaption(ctx, row) {
 
 export function mediaGallery(
   ctx,
-  { itemId = null, title = "Photos", additional = false } = {},
+  {
+    itemId = null,
+    title = "Photos",
+    partLibrary = false,
+    selectMain = null,
+  } = {},
 ) {
-  const photos = photosFor(ctx.client.state, itemId),
-    body = node("div", "", "project-photo-tools"),
+  const current = partLibrary ? pictureFor(ctx.client.state, itemId) : null,
+    photos = photosFor(ctx.client.state, itemId);
+  if (current && !photos.some((row) => row.file_id === current.file_id))
+    photos.push(current);
+  const body = node("div", "", "project-photo-tools"),
     section = { body, root: body };
   body.dataset.section = itemId ? "part-photos" : "project-photos";
   const feedback = mediaUploadFeedback();
@@ -212,10 +224,7 @@ export function mediaGallery(
       addFiles(ctx, files, { itemId, onProgress: feedback.update }),
     choose = picker(add, { label: title + " files" });
   const uploadRow = node("div", "", "bs-photo-upload-row"),
-    addButton = button(
-      additional ? "Add additional photos" : "Add photos",
-      choose.open,
-    );
+    addButton = button("Add photos", choose.open);
   const grid = node("div", "", "project-media-grid"),
     mode = viewMode({
       label: "Photo view",
@@ -248,14 +257,16 @@ export function mediaGallery(
         confirmAction(
           ctx,
           "Remove photo",
-          "Remove this photo from the gallery? The stored file is kept.",
+          partLibrary && current?.file_id === row.file_id
+            ? "Remove this photo from the library and clear the main photo? The stored file is kept."
+            : "Remove this photo from the gallery? The stored file is kept.",
           "Remove photo",
           (token) =>
             ctx.client.write(
               ctx.projectId,
               "/media/" + row.id + "/remove",
               "POST",
-              {},
+              partLibrary ? { fromLibrary: true } : {},
               token,
             ),
         ),
@@ -266,7 +277,7 @@ export function mediaGallery(
         variant: "quiet",
         small: true,
       }),
-      ...(index > 0
+      ...(!partLibrary && index > 0
         ? [
             button("←", () => move(index, -1), {
               variant: "quiet",
@@ -274,7 +285,7 @@ export function mediaGallery(
             }),
           ]
         : []),
-      ...(index < photos.length - 1
+      ...(!partLibrary && index < photos.length - 1
         ? [button("→", () => move(index, 1), { variant: "quiet", small: true })]
         : []),
       remove,
@@ -296,6 +307,35 @@ export function mediaGallery(
       ),
       image = thumbnail(ctx, file, row.caption),
       key = "media:" + ctx.projectId + ":" + row.id;
+    if (partLibrary) {
+      const isMain = current?.file_id === row.file_id;
+      tile.classList.toggle("project-library-main", isMain);
+      tile.dataset.mediaId = row.id;
+      const canMain =
+        file && PICTURE.test(file.content_type) && file.size <= 3 * 1024 * 1024;
+      tile.draggable = !!canMain;
+      tile.addEventListener("dragstart", (event) => {
+        event.dataTransfer.setData(
+          "application/x-bs-part-photo",
+          JSON.stringify({ projectId: ctx.projectId, itemId, mediaId: row.id }),
+        );
+        event.dataTransfer.effectAllowed = "copy";
+      });
+      const use = button("Use as main", () => selectMain(row), { small: true });
+      use.disabled = !canMain;
+      use.setAttribute(
+        "aria-label",
+        "Use " + (row.caption || file?.name || "photo") + " as main",
+      );
+      if (!canMain)
+        use.title =
+          "Main photos require a JPG, PNG or WebP image of at most 3 MB.";
+      tile.append(
+        isMain
+          ? node("strong", "Main photo", "project-library-main-label")
+          : use,
+      );
+    }
     tile.append(image);
     const controls = actionBar(image, {
       content: tools,
@@ -310,10 +350,8 @@ export function mediaGallery(
     grid.append(tile);
   });
   const paste = fileDropTarget((incoming) => add(incoming), {
-    label: additional ? "Paste an additional photo" : "Paste a copied photo",
-    text: additional
-      ? "Drop or paste additional photos"
-      : "Drop photos or paste an image",
+    label: "Paste a copied photo",
+    text: "Drop photos or paste an image",
   });
   uploadRow.append(addButton, paste, mode.root);
   section.body.append(uploadRow, feedback.root, choose.input, grid);
@@ -339,83 +377,78 @@ function photoControl(ctx, cover, tools, key) {
   return holder;
 }
 
-// Falls back to an image CAD file without changing that file's stored role.
-export function partPicture(ctx, item, engineeringFile = null) {
+// The main slot selects a saved library image; it has no independent uploader.
+export function partPicture(ctx, item) {
   const current = pictureFor(ctx.client.state, item.id),
-    file = current
-      ? fileOf(ctx, current)
-      : engineeringFile && SHOWN.test(engineeringFile.content_type)
-        ? engineeringFile
-        : null;
+    file = current ? fileOf(ctx, current) : null;
   const cover = file
     ? thumbnail(ctx, file, item.name)
-    : node("p", "No picture yet", "muted");
-  if (cover.tagName === "IMG") cover.className = "project-picture";
-  const feedback = mediaUploadFeedback(cover);
-  if (cover.tagName === "IMG") cover.loading = "eager";
-  let uploading = false;
-  const savePicture = async (files) => {
-    if (uploading) return;
-    uploading = true;
+    : node("p", "Drag a library photo here, or choose Use as main.", "muted");
+  if (cover.tagName === "IMG") {
+    cover.className = "project-picture";
+    cover.loading = "eager";
+  }
+  let busy = false;
+  const selectMain = async (row) => {
+    if (busy) return;
+    busy = true;
+    ctx.notify("Setting main photo…");
     try {
-      await addFiles(ctx, files, {
+      await ctx.client.write(ctx.projectId, "/media/main-picture", "POST", {
         itemId: item.id,
-        role: "picture",
-        onProgress: feedback.update,
+        mediaId: row.id,
       });
+      if ((await ctx.refresh()) === false)
+        throw Error(
+          "Main photo saved, but the page could not refresh. Reload to see it.",
+        );
+      ctx.notify("Main photo saved. All photos remain in the library.");
+    } catch (error) {
+      ctx.notify(error.message);
     } finally {
-      feedback.finish();
-      uploading = false;
+      busy = false;
     }
   };
-  const tools = node("div", "", "project-picture-tools"),
-    choose = picker(savePicture, { multiple: false, label: "Part picture" });
-  choose.input.accept = "image/jpeg,image/png,image/webp";
-  const controls = [
-    button(current ? "Replace picture" : "Add picture", choose.open, {
-      variant: "quiet",
-      small: true,
-    }),
-  ];
+  const tools = node("div", "", "project-picture-tools");
+  tools.append(
+    node("h3", "Photo library"),
+    node(
+      "p",
+      "Add photos here, then drag one onto the main picture or choose Use as main.",
+      "muted",
+    ),
+  );
   if (current)
-    controls.push(
+    tools.append(
       button(
-        "Remove picture",
+        "Clear main",
         () =>
-          confirmAction(
+          send(
             ctx,
-            "Remove picture",
-            "Remove this part's picture? The stored file is kept.",
-            "Remove picture",
-            (token) =>
-              ctx.client.write(
-                ctx.projectId,
-                "/media/" + current.id + "/remove",
-                "POST",
-                {},
-                token,
-              ),
+            "/media/" + current.id + "/remove",
+            "POST",
+            {},
+            "Main photo cleared. The photo remains in the library.",
           ),
         { variant: "quiet", small: true },
       ),
     );
   tools.append(
-    choose.input,
-    feedback.root,
-    actions(
-      ...controls,
-      fileDropTarget(savePicture, {
-        label: "Paste a copied photo",
-        text: "Drop or paste the main picture",
-      }),
-    ),
     mediaGallery(ctx, {
       itemId: item.id,
-      title: "Additional photos",
-      additional: true,
+      title: "Photo library",
+      partLibrary: true,
+      selectMain,
     }),
   );
-  return photoControl(ctx, cover, tools, ctx.projectId + ":" + item.id);
+  const holder = photoControl(ctx, cover, tools, ctx.projectId + ":" + item.id);
+  wireMainPhotoSlot(
+    holder.querySelector(".bs-photo-stage"),
+    ctx,
+    item.id,
+    selectMain,
+  );
+  return holder;
 }
 
 // The same first gallery photo used by the project directory.

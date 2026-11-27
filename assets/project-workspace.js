@@ -253,7 +253,7 @@ export function initProjectWorkspace(root = document) {
     const context = { ...ctx(), itemId: item.id, occurrenceId: occ.id },
       fileArea = engineeringFile(item, context);
     if (!summary) {
-      const picture = partPicture(context, item, fileArea.file);
+      const picture = partPicture(context, item);
       const overview = node("section", "", "project-part-overview"),
         identity = node("div", "", "project-part-identity");
       identity.append(

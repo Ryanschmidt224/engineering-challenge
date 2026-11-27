@@ -95,3 +95,22 @@ test("an abandoned restore holding photo rows is still fully cleaned up",async()
   assert.equal((await state(f)).media.filter(row=>row.active).length,2,"the source project is untouched");
  }finally{f.db.close();}
 });
+
+test('main selection reuses scoped library files, keeps prior photos and clears without loss',async()=>{
+ const f=await fixture();try{
+  const old=await image(f,'legacy-main.png'),next=await image(f,'library.png');
+  ok(await f.call('/media','POST',{role:'picture',itemId:f.itemId,fileId:old}));
+  const added=ok(await f.call('/media','POST',{itemId:f.itemId,fileId:next})),before=await state(f),revision=f.revision(),operationId=crypto.randomUUID();
+  const selected=ok(await f.call('/media/main-picture','POST',{itemId:f.itemId,mediaId:added.mediaIds[0]},{operationId}));
+  ok(await f.call('/media/main-picture','POST',{itemId:f.itemId,mediaId:added.mediaIds[0]},{operationId,revision}));
+  let s=await state(f);assert.equal(s.files.length,before.files.length);assert.deepEqual(new Set(gallery(s,f.itemId).map(r=>r.file_id)),new Set([old,next]));assert.deepEqual(s.media.filter(r=>r.active&&r.role==='picture').map(r=>r.file_id),[next]);
+  assert.equal((await f.call('/media/main-picture','POST',{itemId:f.itemId,mediaId:added.mediaIds[0]},{revision})).status,409);
+  const other=ok(await f.call('/items','POST',{details:{name:'Other part'}}));assert.equal((await f.call('/media/main-picture','POST',{itemId:other.itemId,mediaId:added.mediaIds[0]})).status,400);
+  ok(await f.call('/media/'+selected.mediaIds[0]+'/remove','POST'));s=await state(f);assert.equal(s.media.filter(r=>r.active&&r.role==='picture').length,0);assert.equal(gallery(s,f.itemId).length,2);
+  ok(await f.call('/media/main-picture','POST',{itemId:f.itemId,mediaId:added.mediaIds[0]}));ok(await f.call('/media/'+added.mediaIds[0]+'/remove','POST',{fromLibrary:true}));s=await state(f);assert.equal(s.media.filter(r=>r.active&&r.role==='picture').length,0);assert.equal(gallery(s,f.itemId).length,1);assert.equal(s.files.length,2);assert.equal((await f.call('/media/main-picture','POST',{itemId:f.itemId,mediaId:added.mediaIds[0]})).status,404);
+ }finally{f.db.close();}
+});
+
+test('clearing a legacy main picture keeps it available once in the library',async()=>{
+ const f=await fixture();try{const file=await image(f,'old.png'),main=ok(await f.call('/media','POST',{role:'picture',itemId:f.itemId,fileId:file}));ok(await f.call('/media/'+main.mediaIds[0]+'/remove','POST'));const s=await state(f);assert.deepEqual(gallery(s,f.itemId).map(r=>r.file_id),[file]);assert.equal(s.files.length,1);}finally{f.db.close();}
+});

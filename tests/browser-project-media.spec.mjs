@@ -13,7 +13,7 @@ test("project photos upload, caption, reorder and remove; a part gets one pictur
  await page.locator('[data-section="summary-photos"] > summary').click();await page.getByRole("button",{name:"Edit photo",exact:true}).click();
  await expect(page.getByText("Part photos",{exact:true})).toHaveCount(0);
  await photos.locator('input[type="file"]').setInputFiles([{name:"one.png",mimeType:"image/png",buffer:PNG},{name:"two.png",mimeType:"image/png",buffer:PNG}]);
- await expect(photos.locator("img")).toHaveCount(2);
+ await expect(photos.locator("figure img")).toHaveCount(2);
  for(const width of [1600,390,1280]) {
   await page.setViewportSize({width,height:1000});
   const geometry=await page.locator(".bs-photo-toggle:visible").evaluateAll(buttons=>buttons.map(button=>{const icon=button.getBoundingClientRect(),images=[...button.closest(".bs-photo-control").querySelector(".bs-photo-stage").querySelectorAll("img")].map(image=>image.getBoundingClientRect()),style=getComputedStyle(button);return {below:icon.top>=Math.max(...images.map(image=>image.bottom))&&Math.abs(icon.right-Math.max(...images.map(image=>image.right)))<=2,background:style.backgroundColor,border:style.borderTopWidth,transform:style.transform};}));
@@ -28,19 +28,16 @@ test("project photos upload, caption, reorder and remove; a part gets one pictur
  await photos.getByRole("button",{name:"Move photo later",exact:true}).first().click();await expect(photos.locator("figcaption").nth(1)).toHaveText("Bench setup");
  await photos.locator("figure").first().getByRole("button",{name:"Edit photo",exact:true}).click();
  await photos.locator("figure").first().getByRole("button",{name:"Remove",exact:true}).click();await page.getByRole("button",{name:"Remove photo",exact:true}).click();
- await expect(photos.locator("img")).toHaveCount(1);await expect(page.locator(".project-summary-photo-grid img").first()).toHaveAttribute("alt","Bench setup");
+ await expect(photos.locator("figure img")).toHaveCount(1);await expect(page.locator(".project-summary-photo-grid img").first()).toHaveAttribute("alt","Bench setup");
  const editor=page.locator('[data-section="summary-photos"] > .ui-section__body > .project-photo-editor'),save=editor.locator(':scope > .bs-photo-save');await expect(save).toBeVisible();await expect(save).toHaveClass(/ui-button/);await expect(save).toHaveCSS("border-top-style","solid");await save.click();await expect(editor).toBeHidden();const pencil=page.locator('[data-section="summary-photos"] .project-picture-holder > .bs-photo-control > .bs-photo-stage > .bs-photo-toggle');await expect(pencil).toHaveAttribute('aria-expanded','false');await expect.poll(async()=>{const image=await page.locator('.project-summary-photo-grid img').first().boundingBox(),icon=await pencil.boundingBox();return Math.abs(image.x+image.width-icon.x-icon.width);}).toBeLessThan(2);await pencil.click();await expect(editor).toBeVisible();
 
  let s=await f.state();expect(s.media.filter(row=>row.active).length).toBe(1);expect(s.files.length).toBe(2);
  await page.goto("/project.html?project="+f.id+"&item="+f.itemId);
- await expect(page.getByRole("button",{name:"Add picture",exact:true})).not.toBeVisible();
  await page.getByRole("button",{name:"Edit photo",exact:true}).click();
- await page.getByRole("button",{name:"Add picture",exact:true}).waitFor();
- await page.locator('input[aria-label="Part picture"]').setInputFiles({name:"front.png",mimeType:"image/png",buffer:PNG});
- await expect(page.locator(".project-picture-holder img.project-picture")).toHaveCount(1);await expect(page.getByRole("button",{name:"Replace picture",exact:true})).toBeVisible();
- await page.locator('input[aria-label="Part picture"]').setInputFiles({name:"side.png",mimeType:"image/png",buffer:PNG});
- await expect(page.locator("[data-notice]")).toContainText("Picture saved");
- s=await f.state();expect(s.media.filter(row=>row.role==="picture").length).toBe(2);expect(s.media.filter(row=>row.role==="picture"&&row.active).length).toBe(1);
+ await page.getByLabel('Photo library files',{exact:true}).setInputFiles([{name:'front.png',mimeType:'image/png',buffer:PNG},{name:'side.png',mimeType:'image/png',buffer:PNG}]);
+ await expect(page.getByRole('button',{name:'Use front.png as main',exact:true})).toBeVisible();await page.getByRole('button',{name:'Use front.png as main',exact:true}).click();
+ await expect(page.locator('.project-picture-holder img.project-picture')).toHaveCount(1);await page.getByRole('button',{name:'Use side.png as main',exact:true}).click();await expect(page.locator('[data-notice]')).toContainText('Main photo saved');
+ s=await f.state();expect(s.media.filter(row=>row.role==='picture').length).toBe(2);expect(s.media.filter(row=>row.role==='picture'&&row.active).length).toBe(1);expect(s.media.filter(row=>row.item_id===f.itemId&&row.role==='photo'&&row.active)).toHaveLength(2);
  const firstPhoto=s.media.filter(row=>row.active&&row.role==='photo'&&!row.item_id).sort((a,b)=>a.sort_order-b.sort_order||a.id.localeCompare(b.id))[0];
  await page.getByRole('button',{name:'All projects',exact:true}).click();
  const card=page.locator('[data-catalog-id="'+f.id+'"]'),cover=card.locator('img');await expect(cover).toHaveAttribute('src',f.base+'/files/'+firstPhoto.file_id+'?inline=1');await expect(cover).toHaveJSProperty('naturalWidth',1);
@@ -48,42 +45,27 @@ test("project photos upload, caption, reorder and remove; a part gets one pictur
 
 });
 
-for(const width of [390,1440])test('main part picture chooser, paste and drop share destination at '+width,async({page,request,context})=>{
- await page.setViewportSize({width,height:1000});const f=await setup(page,request,context);
- await page.goto('/project.html?project='+f.id+'&item='+f.itemId);
- await page.getByRole('button',{name:'Edit photo',exact:true}).click();
- const image=page.locator('.project-picture-holder img.project-picture');
- const transfer=async(kind,name)=>page.getByRole('textbox',{name:'Paste a copied photo',exact:true}).evaluate((el,{kind,name,bytes})=>{
-  const data=new DataTransfer();data.items.add(new File([Uint8Array.from(bytes)],name,{type:'image/png'}));
-  el.dispatchEvent(kind==='paste'?new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}):new DragEvent('drop',{dataTransfer:data,bubbles:true,cancelable:true}));
- },{kind,name,bytes:[...PNG]});
- const verify=async(name,count)=>{
-  await expect.poll(async()=>{const s=await f.state();return s.media.filter(r=>r.active&&r.role==='picture'&&r.item_id===f.itemId).map(r=>s.files.find(file=>file.id===r.file_id).name)}).toEqual([name]);
-  const s=await f.state(),active=s.media.find(r=>r.active&&r.role==='picture'&&r.item_id===f.itemId);
-  await expect(image).toHaveAttribute('src',f.base+'/files/'+active.file_id+'?inline=1');await expect(image).toHaveJSProperty('naturalWidth',1);
-  expect(s.files).toHaveLength(count);expect(s.media.filter(r=>r.role==='photo'&&r.item_id===f.itemId)).toHaveLength(0);
- };
- // Native context-menu paste delivers the same ClipboardEvent as keyboard paste.
- await transfer('paste','pasted.png');await verify('pasted.png',1);
- const chooser=page.waitForEvent('filechooser');await page.getByRole('button',{name:'Replace picture',exact:true}).click();await(await chooser).setFiles({name:'chosen.png',mimeType:'image/png',buffer:PNG});await verify('chosen.png',2);
- await transfer('drop','dropped.png');await verify('dropped.png',3);
- await page.reload();await expect(image).toHaveJSProperty('naturalWidth',1);
- await page.getByRole('button',{name:'Edit photo',exact:true}).click();await expect(page.getByRole('textbox',{name:'Paste an additional photo',exact:true})).toBeVisible();
- const before=await f.state();await page.getByRole('textbox',{name:'Paste a copied photo',exact:true}).evaluate(el=>{const data=new DataTransfer();data.items.add(new File(['gif'],'invalid.gif',{type:'image/gif'}));el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}));});
- await expect(page.locator('[data-notice]')).toContainText('A part picture must be');expect(await f.state()).toEqual(before);
+for(const width of [390,1440])test('one photo library accepts chooser paste drop and selects a main without reupload at '+width,async({page,request,context})=>{
+ await page.setViewportSize({width,height:1000});const f=await setup(page,request,context);await page.goto('/project.html?project='+f.id+'&item='+f.itemId);await page.getByRole('button',{name:'Edit photo',exact:true}).click();
+ const library=page.locator('[data-section="part-photos"]'),slot=page.getByRole('region',{name:'Main photo slot',exact:true});
+ await expect(page.locator('input[type="file"][accept="image/*"]')).toHaveCount(1);await expect(page.getByRole('textbox',{name:'Paste a copied photo',exact:true})).toHaveCount(1);
+ const transfer=async(kind,name)=>page.getByRole('textbox',{name:'Paste a copied photo',exact:true}).evaluate((el,{kind,name,bytes})=>{const data=new DataTransfer();data.items.add(new File([Uint8Array.from(bytes)],name,{type:'image/png'}));el.dispatchEvent(kind==='paste'?new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}):new DragEvent('drop',{dataTransfer:data,bubbles:true,cancelable:true}));},{kind,name,bytes:[...PNG]});
+ await transfer('paste','pasted.png');await expect(library.getByRole('button',{name:'Use pasted.png as main',exact:true})).toBeVisible();
+ let s=await f.state();expect(s.media.filter(r=>r.role==='picture'&&r.active)).toHaveLength(0);expect(s.files).toHaveLength(1);
+ const chooser=page.waitForEvent('filechooser');await library.getByRole('button',{name:'Add photos',exact:true}).click();await(await chooser).setFiles({name:'chosen.png',mimeType:'image/png',buffer:PNG});await expect(library.getByRole('button',{name:'Use chosen.png as main',exact:true})).toBeVisible();
+ await transfer('drop','dropped.png');await expect(library.getByRole('button',{name:'Use dropped.png as main',exact:true})).toBeVisible();
+ await library.getByRole('button',{name:'Use pasted.png as main',exact:true}).click();await expect(slot.locator('img')).toHaveCount(1);
+ const drag=library.locator('figure').filter({has:page.getByRole('img',{name:'chosen.png',exact:true})});if(width===390)await library.getByRole('button',{name:'Use chosen.png as main',exact:true}).click();else await drag.dragTo(slot);
+ await expect.poll(async()=>{const state=await f.state(),main=state.media.find(r=>r.active&&r.role==='picture');return state.files.find(file=>file.id===main?.file_id)?.name}).toBe('chosen.png');
+ s=await f.state();expect(s.files).toHaveLength(3);expect(s.media.filter(r=>r.role==='photo'&&r.active)).toHaveLength(3);await expect(library.locator('.project-library-main-label')).toHaveCount(1);
+ await page.reload();await expect(slot.locator('img')).toHaveJSProperty('naturalWidth',1);await page.getByRole('button',{name:'Edit photo',exact:true}).click();await page.getByRole('button',{name:'Clear main',exact:true}).click();await expect(slot.locator('img')).toHaveCount(0);s=await f.state();expect(s.media.filter(r=>r.role==='photo'&&r.active)).toHaveLength(3);expect(s.files).toHaveLength(3);
 });
 
-for(const width of [390,1440])test('picture paste shows immediate pending preview, saved state and honest failure at '+width,async({page,request,context})=>{
- await page.setViewportSize({width,height:1000});const f=await setup(page,request,context);
- await page.goto('/project.html?project='+f.id+'&item='+f.itemId);await page.getByRole('button',{name:'Edit photo',exact:true}).click();
- const original=(await f.state()).files.length;
- let releaseUpload;const paused=new Promise(resolve=>releaseUpload=resolve);
- await page.route('**/files/prepare',async route=>{await paused;await route.continue();});
+for(const width of [390,1440])test('library upload has immediate feedback and failure keeps main photo at '+width,async({page,request,context})=>{
+ await page.setViewportSize({width,height:1000});const f=await setup(page,request,context);await page.goto('/project.html?project='+f.id+'&item='+f.itemId);await page.getByRole('button',{name:'Edit photo',exact:true}).click();
+ let releaseUpload;const paused=new Promise(resolve=>releaseUpload=resolve);await page.route('**/files/prepare',async route=>{await paused;await route.continue();});
  const paste=async(name)=>page.getByRole('textbox',{name:'Paste a copied photo',exact:true}).evaluate((el,{name,bytes})=>{const data=new DataTransfer();data.items.add(new File([Uint8Array.from(bytes)],name,{type:'image/png'}));el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}));},{name,bytes:[...PNG]});
- await paste('pending.png');
- const preview=page.getByRole('img',{name:'Uploading picture — not saved yet',exact:true});await expect(preview).toBeVisible();await expect(preview).toHaveAttribute('src',/^blob:/);await expect(page.locator('.project-upload-feedback:visible')).toContainText('Uploading photo');await expect(page.getByRole('progressbar',{name:'Photo upload in progress'})).toBeVisible();expect((await f.state()).files).toHaveLength(original);
- releaseUpload();await expect(preview).toHaveCount(0);await expect(page.locator('.project-picture-holder img.project-picture')).toHaveAttribute('src',/\/files\/.+inline=1/);const before=await f.state(),savedSrc=await page.locator('.project-picture-holder img.project-picture').getAttribute('src');
- await page.unroute('**/files/prepare');
- await page.route('**/media',route=>route.request().method()==='POST'?route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Photo save temporarily unavailable'})}):route.continue());
- await paste('failed.png');await expect(page.locator('.project-upload-feedback:visible')).toContainText('Photo save temporarily unavailable');await expect(preview).toHaveCount(0);await expect(page.locator('.project-picture-holder img.project-picture')).toHaveAttribute('src',savedSrc);expect((await f.state()).media).toEqual(before.media);
+ await paste('pending.png');const preview=page.getByRole('img',{name:'Uploading photo — not saved yet',exact:true});await expect(preview).toBeVisible();await expect(page.getByRole('progressbar',{name:'Photo upload in progress'})).toBeVisible();expect((await f.state()).files).toHaveLength(0);releaseUpload();await expect(preview).toHaveCount(0);await page.getByRole('button',{name:'Use pending.png as main',exact:true}).click();await expect(page.locator('[data-notice]')).toContainText('Main photo saved');const before=await f.state();
+ await page.unroute('**/files/prepare');await page.route('**/media',route=>route.request().method()==='POST'?route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Photo save temporarily unavailable'})}):route.continue());
+ await paste('failed.png');await expect(page.locator('.project-upload-feedback:visible')).toContainText('Photo save temporarily unavailable');await expect(preview).toHaveCount(0);expect((await f.state()).media).toEqual(before.media);
 });
