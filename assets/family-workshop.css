@@ -179,3 +179,24 @@
     max-height: 18rem;
   }
 }
+
+.workshop-product-editor .panel-heading {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-small);
+}
+.workshop-lookup > .actions,
+.workshop-lookup > .actions + .muted {
+  margin-left: calc(var(--field-label-width) + var(--field-label-gap));
+}
+.workshop-lookup .field-row > span {
+  padding-top: var(--space-2);
+  font-size: var(--text-small);
+  font-weight: var(--font-semibold);
+}
+@media (max-width: 640px) {
+  .workshop-lookup > .actions,
+  .workshop-lookup > .actions + .muted {
+    margin-left: 0;
+  }
+}

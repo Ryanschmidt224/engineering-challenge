@@ -569,6 +569,7 @@ function renderFamilyEditor(form, record, set) {
   form.append(definitions);
 }
 function renderProductEditor(form, record, set) {
+  form.classList.add("workshop-product-editor", "ui-editor-fields");
   const identity = panel("Product identity");
   identity.append(
     field("Product name", record.name, (value) => set("name", value), {

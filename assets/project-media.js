@@ -230,6 +230,15 @@ export function orderedPhotoGallery(
     library.hidden = !open;
     layout.classList.toggle("part-photo-layout--collapsed", !open);
   }
+  root.bsPhotoGallery = () =>
+    photos
+      .map((photo) => {
+        const file = fileOf(ctx, photo);
+        return file && SHOWN.test(file.content_type)
+          ? { src: src(ctx, file), alt: photo.caption || file.name }
+          : null;
+      })
+      .filter(Boolean);
   function renderView() {
     const photo = photos[index],
       file = photo && fileOf(ctx, photo);

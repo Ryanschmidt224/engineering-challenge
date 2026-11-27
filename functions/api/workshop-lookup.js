@@ -3,7 +3,7 @@ import {
   lookupTemplate,
   lookupDocumentInput,
   templatePrompt,
-  savedLookupDocument,
+  lookupDocuments,
 } from "./workshop-lookup-template.js";
 // AI-assisted Workshop product lookup. This endpoint creates a draft only.
 import { reserveLookupAttempt } from "./ai-lookup-quota.js";
@@ -79,15 +79,15 @@ export async function onRequest({ request, env }) {
       503,
     );
   const body = await request.json().catch(() => null);
-  let template, documentInput, sourceDocument;
+  let template, documentInputs, sourceDocuments;
   try {
     template = await lookupTemplate(env, body);
-    sourceDocument = await savedLookupDocument(
+    sourceDocuments = await lookupDocuments(
       env,
       body?.productId,
       body?.document,
     );
-    documentInput = lookupDocumentInput(sourceDocument);
+    documentInputs = sourceDocuments.map(lookupDocumentInput);
   } catch (error) {
     return json({ error: error.message }, 400);
   }
@@ -95,6 +95,11 @@ export async function onRequest({ request, env }) {
     partName = text(body?.partName, 180),
     manufacturer = text(body?.manufacturer, 160),
     searchHint = text(body?.searchHint, 500);
+  if (!searchHint)
+    return json(
+      { error: "Enter a search hint before looking up product specs." },
+      400,
+    );
   if (!partNumber && !partName)
     return json(
       { error: "Enter a part name or manufacturer part number." },
@@ -134,11 +139,25 @@ export async function onRequest({ request, env }) {
         max_output_tokens: 6000,
         tools: [{ type: "web_search", search_context_size: "low" }],
         tool_choice: "required",
-        input: documentInput
+        input: documentInputs.length
           ? [
               {
                 role: "user",
-                content: [{ type: "input_text", text: prompt }, documentInput],
+                content: [
+                  {
+                    type: "input_text",
+                    text:
+                      prompt +
+                      "\nDocument sources: " +
+                      JSON.stringify(
+                        sourceDocuments.map((d) => ({
+                          id: d.id,
+                          name: d.name,
+                        })),
+                      ),
+                  },
+                  ...documentInputs,
+                ],
               },
             ]
           : prompt,
@@ -228,7 +247,7 @@ export async function onRequest({ request, env }) {
         await templateLookupResult(
           data,
           template,
-          { partNumber, manufacturer, document: sourceDocument },
+          { partNumber, manufacturer, documents: sourceDocuments },
           lookupUsage,
         ),
       );

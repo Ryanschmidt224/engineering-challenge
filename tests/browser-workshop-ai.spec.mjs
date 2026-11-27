@@ -95,6 +95,9 @@ function contract(data, body) {
 test("AI suggestions map to stable family fields, preserve filled values, and save only on explicit Save", async ({
   page,
 }) => {
+  await expect(page.getByRole("button", {name:"Find with AI",exact:true})).toBeDisabled();
+  await page.getByLabel("Search hint",{exact:true}).fill("   ");
+  await expect(page.getByRole("button", {name:"Find with AI",exact:true})).toBeDisabled();
   await page.getByLabel("Resistance (Ω)", { exact: true }).fill("12000");
   let calls = 0;
   await page.route("**/api/workshop-lookup", (route) => {
@@ -107,6 +110,7 @@ test("AI suggestions map to stable family fields, preserve filled values, and sa
       json: contract(suggestion, route.request().postDataJSON()),
     });
   });
+  await page.getByLabel("Search hint", {exact:true}).fill("Exact manufacturer datasheet");
   await page.getByRole("button", { name: "Find with AI", exact: true }).click();
   await expect(
     page.getByRole("button", {
@@ -161,6 +165,7 @@ test("failed and stale lookup results leave the draft intact and allow retry", a
   await page.route("**/api/workshop-lookup", (route) =>
     route.fulfill({ status: 503, json: { error: "AI lookup is paused." } }),
   );
+  await page.getByLabel("Search hint", {exact:true}).fill("Exact manufacturer datasheet");
   await page.getByRole("button", { name: "Find with AI", exact: true }).click();
   await expect(
     page.getByRole("status").filter({ hasText: "AI lookup is paused." }),
@@ -174,6 +179,7 @@ test("failed and stale lookup results leave the draft intact and allow retry", a
       json: contract(suggestion, route.request().postDataJSON()),
     }),
   );
+  await page.getByLabel("Search hint", {exact:true}).fill("Exact manufacturer datasheet");
   await page.getByRole("button", { name: "Find with AI", exact: true }).click();
   await expect(
     page.getByRole("button", {
@@ -207,6 +213,7 @@ test("duplicate ratings require a choice; explicit replacement and discard are c
   await page.route("**/api/workshop-lookup", (route) =>
     route.fulfill({ json: contract(response, route.request().postDataJSON()) }),
   );
+  await page.getByLabel("Search hint", {exact:true}).fill("Exact manufacturer datasheet");
   await page.getByRole("button", { name: "Find with AI", exact: true }).click();
   const destinations = page.getByLabel("Destination for Resistance", {
     exact: true,
@@ -231,6 +238,7 @@ test("duplicate ratings require a choice; explicit replacement and discard are c
   await expect(page.getByLabel("Resistance (Ω)", { exact: true })).toHaveValue(
     "12000",
   );
+  await page.getByLabel("Search hint", {exact:true}).fill("Exact manufacturer datasheet");
   await page.getByRole("button", { name: "Find with AI", exact: true }).click();
   await destinations.first().selectOption("f-resistor-resistance");
   await page
@@ -286,6 +294,7 @@ test("MOSFET template keeps source units and test conditions with conditional ra
   await page.route("**/api/workshop-lookup", (route) =>
     route.fulfill({ json: contract(response, route.request().postDataJSON()) }),
   );
+  await page.getByLabel("Search hint", {exact:true}).fill("Exact manufacturer datasheet");
   await page.getByRole("button", { name: "Find with AI", exact: true }).click();
   await page
     .getByRole("button", { name: "Apply selected suggestions", exact: true })
@@ -310,16 +319,17 @@ test("MOSFET template keeps source units and test conditions with conditional ra
 
 test("lookup sits between identity/specifications, saves an optional document and can reuse it", async ({
   page,
-}) => {
+}, testInfo) => {
+  await page.screenshot({path:testInfo.outputPath("lookup-layout.png"),fullPage:true});
   const panels = await page
     .locator("#workshop-detail form > .panel")
     .evaluateAll((nodes) =>
       nodes.map((n) => n.querySelector("h3")?.textContent),
     );
-  expect(panels.indexOf("Product lookup")).toBeGreaterThan(
+  expect(panels.indexOf("Find product specs with AI")).toBeGreaterThan(
     panels.indexOf("Product identity"),
   );
-  expect(panels.indexOf("Product lookup")).toBeLessThan(
+  expect(panels.indexOf("Find product specs with AI")).toBeLessThan(
     panels.indexOf("Specifications"),
   );
   const bytes = Buffer.from("%PDF-1.7\nSynthetic datasheet");
@@ -337,6 +347,7 @@ test("lookup sits between identity/specifications, saves an optional document an
       json: contract(suggestion, route.request().postDataJSON()),
     });
   });
+  await page.getByLabel("Search hint", {exact:true}).fill("Exact manufacturer datasheet");
   await page.getByRole("button", { name: "Find with AI", exact: true }).click();
   await page
     .getByRole("button", { name: "Apply selected suggestions", exact: true })
@@ -359,11 +370,11 @@ test("lookup sits between identity/specifications, saves an optional document an
     .getByRole("button", { name: "Edit product", exact: true })
     .first()
     .click();
-  await page
-    .getByLabel("Use saved technical document", { exact: true })
-    .selectOption(attachment.id);
+  await expect(page.getByLabel("Use saved technical document", {exact:true})).toHaveCount(0);
+  await page.getByLabel("Search hint", {exact:true}).fill("Exact manufacturer datasheet");
   await page.getByRole("button", { name: "Find with AI", exact: true }).click();
-  await expect.poll(() => payload.document.attachmentId).toBe(attachment.id);
+  expect(payload.productId).toBe(attachment.product_id);
+  expect(payload.document).toBeNull();
 });
 test("incomplete AI identity cannot be applied", async ({ page }) => {
   await page.route("**/api/workshop-lookup", (route) =>
@@ -377,6 +388,7 @@ test("incomplete AI identity cannot be applied", async ({ page }) => {
       ),
     }),
   );
+  await page.getByLabel("Search hint", {exact:true}).fill("Exact manufacturer datasheet");
   await page.getByRole("button", { name: "Find with AI", exact: true }).click();
   await page
     .getByRole("button", { name: "Apply selected suggestions", exact: true })
@@ -474,6 +486,7 @@ test("replacing a source document invalidates earlier AI suggestions", async ({
       json: contract(suggestion, route.request().postDataJSON()),
     }),
   );
+  await page.getByLabel("Search hint", {exact:true}).fill("Exact manufacturer datasheet");
   await page.getByRole("button", { name: "Find with AI", exact: true }).click();
   await expect(
     page.getByRole("button", {
@@ -546,6 +559,7 @@ test("lookup can fill all template terms even when empty project-use fields are 
       ),
     });
   });
+  await page.getByLabel("Search hint", {exact:true}).fill("Exact manufacturer datasheet");
   await page.getByRole("button", { name: "Find with AI", exact: true }).click();
   await page
     .getByRole("button", { name: "Apply selected suggestions", exact: true })
@@ -565,6 +579,7 @@ test("applied numeric evidence is visible after reload and identity stays requir
     ).conditions = "70°C";
     return route.fulfill({ json: value });
   });
+  await page.getByLabel("Search hint", {exact:true}).fill("Exact manufacturer datasheet");
   await page.getByRole("button", { name: "Find with AI", exact: true }).click();
   await page
     .getByRole("button", { name: "Apply selected suggestions", exact: true })
@@ -713,9 +728,7 @@ test("an uploaded document can finish a pending save after reload without resele
     .getByRole("button", { name: "Edit product", exact: true })
     .first()
     .click();
-  await page
-    .getByLabel("Use saved technical document", { exact: true })
-    .selectOption(id);
+  await expect(page.getByLabel("Use saved technical document", {exact:true})).toHaveCount(0);
   await page.getByRole("button", { name: "Save product", exact: true }).click();
   await expect(page.locator("#workshop-status")).toHaveText("Saved.");
   expect(uploads).toBe(1);

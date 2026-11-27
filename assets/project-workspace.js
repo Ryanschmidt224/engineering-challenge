@@ -344,6 +344,7 @@ export function initProjectWorkspace(root = document) {
           ? "Assembly details · " + item.part_number
           : "Part details",
         role: "details",
+        open: summary,
       }),
       duplicate = button("Duplicate part", () =>
         action(
@@ -635,6 +636,7 @@ export function initProjectWorkspace(root = document) {
         const assembly = window.BSUI.section({
           title: "Top assembly · " + rootAssembly.item.part_number,
           role: "summary-assembly",
+          open: true,
         });
         main.append(assembly.root);
         await renderPart(assembly.body, rootAssembly.item.id, {
