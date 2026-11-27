@@ -741,11 +741,17 @@ function renderDetail() {
   else renderInstanceRead(entity, record, selected, product);
 }
 function renderFamilyRead(record) {
+  const familyDetails = window.BSUI.section({
+    title: "Family and fields",
+    role: "family-fields",
+    count: familyFields().filter((f) => !f.hidden).length,
+    countLabel: ["field", "fields"],
+  });
   const intro = panel("About this family");
   appendRead(intro, "Kind", record.kind);
   appendRead(intro, "Description", record.description);
   appendRead(intro, "Notes", record.notes);
-  detail.append(intro);
+  familyDetails.body.append(intro);
   const fields = panel("Fields", "fieldValues");
   const table = dataTable("Family fields", ["Field", "Unit", "Type"]);
   for (const definition of familyFields().filter((f) => !f.hidden))
@@ -756,7 +762,8 @@ function renderFamilyRead(record) {
       definition.type,
     ]);
   fields.append(table.root);
-  detail.append(fields);
+  familyDetails.body.append(fields);
+  detail.append(familyDetails.root);
   const related = panel("Products");
   const list = node("div", "", "product-list");
   for (const product of data.products.filter(
@@ -864,15 +871,22 @@ function renderInstanceRead(entity, record, selected) {
 }
 
 async function archive(entity, record) {
-  if (
-    !window.confirm(
-      (record.archived ? "Restore" : "Archive") +
-        " this " +
-        entity +
-        "? Existing project records and stored files are kept.",
-    )
-  )
-    return;
+  const confirmed =
+    entity === "family" && !record.archived
+      ? await window.BSDialogs.confirm(
+          "This hides the family and all products within it from the active Workshop. Their data, attached files, and existing project records are kept.\n\nTo bring them back, enable Show archived, select the family, and choose Restore family. Products archived separately will remain archived.\n\nNothing is permanently deleted.",
+          {
+            title: "Archive “" + record.name + "”?",
+            confirmLabel: "Archive family",
+          },
+        )
+      : window.confirm(
+          (record.archived ? "Restore" : "Archive") +
+            " this " +
+            entity +
+            "? Existing project records and stored files are kept.",
+        );
+  if (!confirmed) return;
   await run(async () => {
     await requestWorkshop("/api/workshop", "PATCH", {
       entity,
