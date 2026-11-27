@@ -79,7 +79,7 @@ for(const width of [390,1440])test("shared product confirmation is centered and 
 for(const width of [390,1440])test("compact product values keep source evidence accessible at "+width,async({page},testInfo)=>{
  await page.setViewportSize({width,height:950});
  const longValue="Through-hole precision package with a long manufacturer description ".repeat(4);
- const product=await post(page,"product",{...productRecord(),field_values:{"f-resistor-resistance":10000,"f-resistor-power-rating":0.25,"f-resistor-package":longValue},lookup_provenance:{version:1,identityRequired:false,fields:{"f-resistor-resistance":{value:10000,label:"Resistance",unit:"Ω",conditions:"25°C",sourceUrl:"https://example.com/datasheet",document:{name:"resistor.pdf",sha256:"a".repeat(64)}}}}});
+ const product=await post(page,"product",{...productRecord(),field_values:{"f-resistor-resistance":10000,"f-resistor-power-rating":0.25,"f-resistor-package":longValue},supplier_links:[{supplier:"Example",part_number:"EX-10K",url:"https://example.com/product"}],lookup_provenance:{version:1,identityRequired:true,appliedAt:"2026-11-27T21:00:00Z",fields:{"f-resistor-resistance":{value:10000,label:"Resistance",unit:"Ω",conditions:"25°C",sourceUrl:"https://example.com/datasheet",document:{name:"resistor.pdf",sha256:"a".repeat(64)}}}}});
  await page.goto("/workshop.html?family=f-resistor&product="+product.id);
  const panels=detail(page).locator(".workshop-product-read");await expect(panels).toHaveCount(2);
  const value=panels.locator(".workshop-sourced-value"),source=value.locator("summary");
