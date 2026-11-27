@@ -28,6 +28,9 @@ test("scheduled Worker records durable success, skips duplicate events, and chec
   assert.equal(status.lastSuccess.scheduledFor, at(27).toISOString());
   assert.equal(archives(f.env).length, 1);
   assert.equal((await readAutomaticBackupStatus(f.env, new Date("2026-11-29T00:00:00Z"))).health, "stale");
+  // A delayed event still protects current data when it actually completes.
+  await runScheduledProjectBackups(f.env, at(28), clock(30));
+  assert.equal((await readAutomaticBackupStatus(f.env, at(30))).health, "ok");
 });
 
 test("a damaged unchanged archive cannot turn a failed nightly job green", async t => {

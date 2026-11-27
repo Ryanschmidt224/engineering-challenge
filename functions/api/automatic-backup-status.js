@@ -76,10 +76,7 @@ export async function readAutomaticBackupStatus(env, date = new Date()) {
     health = run.state === "success" ? "ok" : run.state;
     if (run.state === "running" && date - new Date(run.startedAt) > 2 * HOUR)
       health = "interrupted";
-    if (
-      run.state === "success" &&
-      date - new Date(run.scheduledFor) > 36 * HOUR
-    )
+    if (run.state === "success" && date - new Date(run.finishedAt) > 36 * HOUR)
       health = "stale";
   }
   return {
