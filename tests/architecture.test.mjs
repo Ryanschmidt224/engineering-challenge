@@ -18,7 +18,7 @@ test("Worker imports resolve and the declared API registry covers the current ro
  for(const match of worker.matchAll(/from\s+["'](\.\/[^"']+)["']/g))
   assert.ok(existsSync(resolve(root,match[1])),"Missing Worker import: "+match[1]);
  const { apiRoutes, apiDispatch, createApiDispatch } = await import("../functions/api/api-routes.js");
- const expected=["/api/site-data-backup","/api/accounts","/api/workshop","/api/workshop/file","/api/workshop/export","/api/workshop-lookup","/api/lessons-learned","/api/lessons-learned/photo","/api/auth"];
+ const expected=["/api/backup-status","/api/site-data-backup","/api/accounts","/api/workshop","/api/workshop/file","/api/workshop/export","/api/workshop-lookup","/api/lessons-learned","/api/lessons-learned/photo","/api/auth"];
  assert.deepEqual([...apiDispatch.keys()].sort(),expected.sort());
  assert.equal(apiRoutes.length,expected.length);
  assert.match(worker,/apiDispatch.get\(path\)/);

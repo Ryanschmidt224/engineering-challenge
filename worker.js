@@ -1,5 +1,5 @@
 import { handleProjectEngine } from "./functions/api/project-engine.js";
-import { backupEngineProjects } from "./functions/api/project-auto-backups.js";
+import { runScheduledProjectBackups } from "./functions/api/automatic-backup-status.js";
 import { isAdmin } from "./functions/api/auth.js";
 import { guardPrivateApi } from "./functions/api/private-access.js";
 import { apiDispatch } from "./functions/api/api-routes.js";
@@ -111,14 +111,12 @@ export default {
   },
   async scheduled(event, env, ctx) {
     ctx.waitUntil(
-      backupEngineProjects(env, new Date(event.scheduledTime)).then(
+      runScheduledProjectBackups(env, new Date(event.scheduledTime)).then(
         (result) => {
           console.log(
             "Building Schmidt scheduled backup result",
             JSON.stringify(result),
           );
-          if (result.some((item) => item.status === "failed"))
-            throw Error("One or more scheduled project backups failed");
         },
       ),
     );

@@ -1227,6 +1227,7 @@ document.addEventListener("click", (event) => {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") $("#category-menu").hidden = true;
 });
+$("#export-workshop").after(help("Workshop export", "workshopExport"));
 $("#export-workshop").onclick = () => {
   location.href = "/api/workshop/export";
 };

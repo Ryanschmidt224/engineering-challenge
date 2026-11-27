@@ -1,5 +1,6 @@
 // Shared guidance keys. Errors, status and saved engineering text stay visible.
 export const interfaceHelp=Object.freeze({
+ workshopExport:"Exports Workshop families, products and attached files. Projects and Lessons Learned are not included. For a complete backup, open Website settings → Data backup → Backup all data.",
  helpfulTools:"Link calculators and tools. Existing Workshop references remain visible and removable.",
  familyFields:"Define a field once. Products and project uses may both have a value. Units do not convert existing numbers.",
  projectUse:"This form changes only this project use. It never edits the family or selected product.",

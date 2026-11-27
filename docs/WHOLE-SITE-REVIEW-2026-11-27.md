@@ -90,3 +90,12 @@ Current implementation and release checkpoint: [STATUS.md](STATUS.md). Code owne
 - Project summary: open the top assembly and its details by default.
 - Full-screen photos: previous/next arrows and keyboard cycling within the current gallery. The small shared viewer is now formatted and maintained under the owned-module guard.
 - Deferred CAD direction: use Dropbox file links instead of uploading CAD bytes to the website. Flow and access design are undecided; finish later. Existing CAD files and upload behavior are unchanged in this batch.
+
+
+## Backup monitoring reliability batch — November 27
+
+M1 is implemented by durable status for the existing nightly Project job: last attempt, last successful check, failed/skipped/interrupted runs, and checks overdue by more than 36 hours. Status is one bounded R2 object with conditional writes; overlapping or repeated scheduled events cannot replace a newer result. A run with no completion record becomes unconfirmed after two hours. An unavailable start-status write does not block the backup itself; an unrecordable completion still fails the cron task. Reads fail visibly rather than reporting OK. Unchanged archives are reread for the existing size/manifest/completion checks before being counted as successful; this is not a fresh full restore or full byte-integrity test.
+
+M2 is addressed by scope guidance in Website settings and the Workshop export tooltip. Workshop export retains its Workshop scope; the manual whole-site format remains the complete archive. No production files are purged and the daily schedule is unchanged. The release PR records candidate and live verification; fixture execution is not evidence that the production cron fired.
+
+Automatic whole-site recovery remains next. Its acceptance boundary is still lesson-only and Workshop-only changes, original files, nonrecursive inventory, bounded growth, interruption/restart, consistency under edits, and a complete independent restore. An R2 copy in the same account is not an independent recovery copy. Keep the current manual format/reader and immutable source data while designing that writer.

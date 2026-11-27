@@ -27,7 +27,7 @@ async function fixture(role = "admin") {
 }
 
 const protectedRoutes = [
-  "projects", "numbering", "proposals", "my-build", "build-confusion", "project-tasks",
+  "backup-status", "projects", "numbering", "proposals", "my-build", "build-confusion", "project-tasks",
   "tree", "wires", "commonparts", "purchased-parts", "personal-workshop", "workshop-photo",
   "workshop-reference", "workshop-templates", "workshop-lookup", "workshop-image-import",
   "part-files", "part-pages", "harness", "workspace", "unstructured-notes", "investigations",

@@ -158,11 +158,20 @@ const server = createServer(async (req, res) => {
     active.set(bound, (active.get(bound) || 0) + 1);
     try {
       const response =
-        url.pathname === "/__test__/command-proof"
-          ? await commandProof(request, bound)
-          : await worker.fetch(request, bound, {
-              waitUntil: (promise) => promise.catch(console.error),
-            });
+        url.pathname === "/__test__/nightly-backup" && request.method === "POST"
+          ? await (async () => {
+              const tasks = [];
+              await worker.scheduled({ scheduledTime: Date.now() }, bound, {
+                waitUntil: (promise) => tasks.push(promise),
+              });
+              await Promise.all(tasks);
+              return Response.json({ completed: true });
+            })()
+          : url.pathname === "/__test__/command-proof"
+            ? await commandProof(request, bound)
+            : await worker.fetch(request, bound, {
+                waitUntil: (promise) => promise.catch(console.error),
+              });
       res.writeHead(response.status, Object.fromEntries(response.headers));
       res.end(Buffer.from(await response.arrayBuffer()));
     } finally {

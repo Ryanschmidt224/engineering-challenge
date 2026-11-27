@@ -24,7 +24,7 @@ test(
     const root = await mkdtemp(join(tmpdir(), "bs-whole-site-recovery-"));
     // The extra route exists only in this disposable test bundle; production
     // worker.js is unchanged. It invokes the real nightly backup implementation.
-    const entry = `import worker from ${JSON.stringify(resolve("worker.js"))};import {backupEngineProjects} from ${JSON.stringify(resolve("functions/api/project-auto-backups.js"))};export default {async fetch(request,env,ctx){if(new URL(request.url).pathname==='/__recovery_test__/nightly')return Response.json(await backupEngineProjects(env,new Date('2026-11-26T09:17:00Z')));return worker.fetch(request,env,ctx);}};`;
+    const entry = `import worker from ${JSON.stringify(resolve("worker.js"))};import {runScheduledProjectBackups} from ${JSON.stringify(resolve("functions/api/automatic-backup-status.js"))};export default {async fetch(request,env,ctx){if(new URL(request.url).pathname==='/__recovery_test__/nightly')return Response.json(await runScheduledProjectBackups(env,new Date(new URL(request.url).searchParams.get('date')||'2026-11-26T09:17:00Z')));return worker.fetch(request,env,ctx);}};`;
     const bundled = await build({
       stdin: { contents: entry, resolveDir: resolve(".") },
       bundle: true,
@@ -279,10 +279,12 @@ test(
         "POST",
         {},
       );
-      assert.equal(nightly[0].status, "saved");
+      assert.equal(nightly.state, "success");
+      assert.equal(nightly.counts.saved, 1);
       const paths = [
         "/api/accounts",
         "/api/workshop",
+        "/api/backup-status",
         "/api/lessons-learned",
         "/api/project-engine/settings",
         "/api/project-engine/projects",
@@ -375,7 +377,7 @@ test(
       // Workshop collections have explicit sort_order fields, but its API does
       // not promise physical insertion order. Compare those collections by ID.
       const comparable = (path, value) =>
-        path === "/api/workshop"
+        path === "/api/backup-status" ? {...value, observedAt: undefined} : path === "/api/workshop"
           ? Object.fromEntries(
               Object.entries(value).map(([key, rows]) => [
                 key,
@@ -489,11 +491,13 @@ test(
       );
       const nextNight = await json(
         target,
-        "/__recovery_test__/nightly",
+        "/__recovery_test__/nightly?date=2026-11-27T09:17:00Z",
         "POST",
         {},
       );
-      assert.equal(nextNight[0].status, "unchanged");
+      assert.equal(nextNight.state, "success");
+      assert.equal(nextNight.counts.unchanged, 1);
+      assert.equal((await json(target, "/api/backup-status")).lastSuccess.scheduledFor, "2026-11-27T09:17:00.000Z");
       const account = await json(target, "/api/accounts", "POST", {
         action: "login",
         email: "owner@recovery.example.test",
