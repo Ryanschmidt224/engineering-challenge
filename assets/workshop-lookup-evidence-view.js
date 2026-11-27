@@ -1,9 +1,16 @@
 import { isWebUrl } from "./family-model.js";
 // Shared presentation for current Workshop values and frozen project sources.
-export function lookupEvidenceView(evidence, { documentUrl } = {}) {
+export function lookupEvidenceView(
+  evidence,
+  { documentUrl, compact = false } = {},
+) {
   const details = document.createElement("details"),
     summary = document.createElement("summary");
-  summary.textContent = "AI source and conditions";
+  summary.textContent = compact ? "AI source" : "AI source and conditions";
+  if (compact) {
+    details.className = "workshop-source";
+    summary.title = "AI source and test conditions";
+  }
   details.append(summary);
   const add = (text) => {
     const p = document.createElement("p");

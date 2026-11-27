@@ -588,7 +588,7 @@ test("applied numeric evidence is visible after reload and identity stays requir
   await expect(page.locator("#workshop-status")).toHaveText("Saved.");
   await page.reload();
   const evidence = page
-    .getByText("AI source and conditions", { exact: true })
+    .getByText("AI source", { exact: true })
     .last();
   await evidence.click();
   await expect(
