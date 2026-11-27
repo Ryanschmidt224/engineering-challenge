@@ -17,5 +17,11 @@
     "esbuild": "0.25.12",
     "miniflare": "4.20260730.0",
     "prettier": "3.6.2"
+  },
+  "overrides": {
+    "miniflare@4.20260730.0": {
+      "sharp": "0.35.5",
+      "undici": "7.30.2"
+    }
   }
 }

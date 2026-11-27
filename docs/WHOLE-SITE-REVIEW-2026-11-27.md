@@ -72,6 +72,11 @@ These are approved follow-ups, with no required order or immediate implementatio
 
 The supplied screenshot illustrates the last two issues. These additions stay on the plan while Batch 1 validation completes; this candidate does not claim their UI has changed.
 
+## Implementation checkpoints
+
+- Cleanup #143 is merged and deployed: compressed project browser modules, retired tile/proof runtime, obsolete Projects flag, unused helpers, declared route guard and current documentation. Stored legacy data remains. All 289 code checks and 133 browser workflows passed on the final candidate.
+- The [toolchain maintenance change](TOOLCHAIN-MAINTENANCE-2026-11-27.md) keeps stable Miniflare with narrowly scoped patched library versions, maintained pinned CI actions and weekly dependency PRs. Full npm audit remains held pending explicit authorization; targeted primary advisory checks and native recovery tests are separate evidence.
+
 ## Work that stays out of this cycle
 
 No new frontend framework, community/multi-user infrastructure or independent hosted project URLs. Preserve the bulky delete/restore safety mechanisms. Do not merge old draft #91 automatically, reinterpret stored prices/quantities, or delete historical file bytes as a side effect of removing code.
