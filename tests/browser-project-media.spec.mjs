@@ -39,7 +39,7 @@ test("project photos upload, caption, reorder and remove; a part gets one pictur
  await page.locator('input[aria-label="Part picture"]').setInputFiles({name:"front.png",mimeType:"image/png",buffer:PNG});
  await expect(page.locator(".project-picture-holder img.project-picture")).toHaveCount(1);await expect(page.getByRole("button",{name:"Replace picture",exact:true})).toBeVisible();
  await page.locator('input[aria-label="Part picture"]').setInputFiles({name:"side.png",mimeType:"image/png",buffer:PNG});
- await expect(page.getByRole("status").or(page.locator("[data-notice]"))).toContainText("Picture saved");
+ await expect(page.locator("[data-notice]")).toContainText("Picture saved");
  s=await f.state();expect(s.media.filter(row=>row.role==="picture").length).toBe(2);expect(s.media.filter(row=>row.role==="picture"&&row.active).length).toBe(1);
  const firstPhoto=s.media.filter(row=>row.active&&row.role==='photo'&&!row.item_id).sort((a,b)=>a.sort_order-b.sort_order||a.id.localeCompare(b.id))[0];
  await page.getByRole('button',{name:'All projects',exact:true}).click();
@@ -71,4 +71,19 @@ for(const width of [390,1440])test('main part picture chooser, paste and drop sh
  await page.getByRole('button',{name:'Edit photo',exact:true}).click();await expect(page.getByRole('textbox',{name:'Paste an additional photo',exact:true})).toBeVisible();
  const before=await f.state();await page.getByRole('textbox',{name:'Paste a copied photo',exact:true}).evaluate(el=>{const data=new DataTransfer();data.items.add(new File(['gif'],'invalid.gif',{type:'image/gif'}));el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}));});
  await expect(page.locator('[data-notice]')).toContainText('A part picture must be');expect(await f.state()).toEqual(before);
+});
+
+for(const width of [390,1440])test('picture paste shows immediate pending preview, saved state and honest failure at '+width,async({page,request,context})=>{
+ await page.setViewportSize({width,height:1000});const f=await setup(page,request,context);
+ await page.goto('/project.html?project='+f.id+'&item='+f.itemId);await page.getByRole('button',{name:'Edit photo',exact:true}).click();
+ const original=(await f.state()).files.length;
+ let releaseUpload;const paused=new Promise(resolve=>releaseUpload=resolve);
+ await page.route('**/files/prepare',async route=>{await paused;await route.continue();});
+ const paste=async(name)=>page.getByRole('textbox',{name:'Paste a copied photo',exact:true}).evaluate((el,{name,bytes})=>{const data=new DataTransfer();data.items.add(new File([Uint8Array.from(bytes)],name,{type:'image/png'}));el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}));},{name,bytes:[...PNG]});
+ await paste('pending.png');
+ const preview=page.getByRole('img',{name:'Uploading picture — not saved yet',exact:true});await expect(preview).toBeVisible();await expect(preview).toHaveAttribute('src',/^blob:/);await expect(page.locator('.project-upload-feedback:visible')).toContainText('Uploading photo');await expect(page.getByRole('progressbar',{name:'Photo upload in progress'})).toBeVisible();expect((await f.state()).files).toHaveLength(original);
+ releaseUpload();await expect(preview).toHaveCount(0);await expect(page.locator('.project-picture-holder img.project-picture')).toHaveAttribute('src',/\/files\/.+inline=1/);const before=await f.state(),savedSrc=await page.locator('.project-picture-holder img.project-picture').getAttribute('src');
+ await page.unroute('**/files/prepare');
+ await page.route('**/media',route=>route.request().method()==='POST'?route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Photo save temporarily unavailable'})}):route.continue());
+ await paste('failed.png');await expect(page.locator('.project-upload-feedback:visible')).toContainText('Photo save temporarily unavailable');await expect(preview).toHaveCount(0);await expect(page.locator('.project-picture-holder img.project-picture')).toHaveAttribute('src',savedSrc);expect((await f.state()).media).toEqual(before.media);
 });
