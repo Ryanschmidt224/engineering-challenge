@@ -1,24 +1,11 @@
-import { handleSiteDataBackup } from "./functions/api/site-data-backup.js";
-import {
-  handleProjectEngine,
-  projectEngineEnabled,
-} from "./functions/api/project-engine.js";
-import { handleAccounts } from "./functions/api/accounts.js";
-import { onRequest as workshopLookupApi } from "./functions/api/workshop-lookup.js";
+import { handleProjectEngine } from "./functions/api/project-engine.js";
 import { backupEngineProjects } from "./functions/api/project-auto-backups.js";
-import { isAdmin, auth } from "./functions/api/auth.js";
+import { isAdmin } from "./functions/api/auth.js";
 import { guardPrivateApi } from "./functions/api/private-access.js";
-import { handleFamilyWorkshop } from "./functions/api/workshop-db.js";
-import {
-  handleFamilyWorkshopFile,
-  handleWorkshopExport,
-} from "./functions/api/family-workshop-files.js";
-import { handleKnowledge } from "./functions/api/knowledge.js";
-import {
-  handleLessons,
-  handleLessonPhoto,
-} from "./functions/api/lessons-learned.js";
+import { apiDispatch } from "./functions/api/api-routes.js";
 const retired = new Set([
+  "/api/knowledge",
+  "/api/project-engine/proof",
   "/api/projects",
   "/api/numbering",
   "/api/tree",
@@ -64,16 +51,6 @@ export default {
         "/project.html",
         "/website-settings.html",
       ].includes(path);
-      const engineRoute =
-        enginePage ||
-        path.startsWith("/api/project-engine/") ||
-        path === "/api/project-engine" ||
-        path.startsWith("/project-engine-proof");
-      if (engineRoute && !projectEngineEnabled(env))
-        return Response.json(
-          { error: "Projects are unavailable" },
-          { status: 503, headers: { "cache-control": "no-store" } },
-        );
       if (enginePage && !(await isAdmin(request, env))) {
         const url = new URL(request.url);
         url.pathname = "/project-signin.html";
@@ -89,20 +66,6 @@ export default {
           },
         });
       }
-      if (
-        path.startsWith("/project-engine-proof") &&
-        !(await isAdmin(request, env))
-      )
-        return new Response(
-          '<a href="/project.html">Sign in with the owner account, then return here.</a>',
-          {
-            status: 401,
-            headers: {
-              "content-type": "text/html",
-              "cache-control": "no-store",
-            },
-          },
-        );
       const denied = await guardPrivateApi(request, env);
       if (denied) return denied;
       if (retired.has(path))
@@ -115,21 +78,8 @@ export default {
         );
       if (path.startsWith("/api/project-engine/"))
         return handleProjectEngine(request, env);
-      if (path === "/api/site-data-backup")
-        return handleSiteDataBackup(request, env);
-      if (path === "/api/accounts") return handleAccounts(request, env);
-      if (path === "/api/workshop") return handleFamilyWorkshop(request, env);
-      if (path === "/api/workshop/file")
-        return handleFamilyWorkshopFile(request, env);
-      if (path === "/api/workshop/export")
-        return handleWorkshopExport(request, env);
-      if (path === "/api/workshop-lookup")
-        return workshopLookupApi({ request, env, ctx });
-      if (path === "/api/knowledge") return handleKnowledge(request, env);
-      if (path === "/api/lessons-learned") return handleLessons(request, env);
-      if (path === "/api/lessons-learned/photo")
-        return handleLessonPhoto(request, env);
-      if (path === "/api/auth") return auth(request, env);
+      const handler = apiDispatch.get(path);
+      if (handler) return handler(request, env, ctx);
       if (path.startsWith("/api/"))
         return Response.json(
           { error: "API route not found" },

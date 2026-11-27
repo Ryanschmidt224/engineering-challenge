@@ -4,6 +4,10 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { resolve, extname, sep } from "node:path";
 import worker from "../worker.js";
+import { accountUser } from "../functions/api/accounts.js";
+import { initializeProjectEngine } from "../functions/api/project-engine-migrations.js";
+import { commandBody } from "../functions/api/project-workspace-api.js";
+import { proveProjectCommands } from "../tests/helpers/project-command-proof.mjs";
 import { TestD1 } from "../tests/helpers/d1.mjs";
 import { TestR2 } from "../tests/helpers/r2.mjs";
 import { provisionTestAccount } from "../tests/helpers/accounts.mjs";
@@ -28,7 +32,15 @@ async function asset(request) {
     return new Response("Not found", { status: 404 });
   }
   if (name === "/") name = "/index.html";
-  const path = resolve(root, "." + name);
+  // Fixed test-only prefix, never included in the production asset upload.
+  const proof =
+    /^\/__test__\/proof\/project-(?:engine|recovery|assembly)-proof\.(?:html|js)$/.test(
+      name,
+    );
+  const path = resolve(
+    root,
+    proof ? "tests/proof/" + name.split("/").at(-1) : "." + name,
+  );
   if (
     !path.startsWith(root + sep) ||
     !mime[extname(path)] ||
@@ -46,10 +58,30 @@ async function asset(request) {
     return new Response("Not found", { status: 404 });
   }
 }
+async function commandProof(request, bound) {
+  const owner = await accountUser(request, bound);
+  if (owner?.role !== "admin")
+    return new Response("Owner required", { status: 401 });
+  if (
+    request.method !== "POST" ||
+    request.headers.get("origin") !== new URL(request.url).origin
+  )
+    return new Response("Invalid origin or method", { status: 403 });
+  try {
+    const body = await commandBody(request, 2048);
+    if (body.expectedRevision !== null) throw Error("Use a new proof ID");
+    await initializeProjectEngine(bound.WORKSHOP_DB);
+    return Response.json(
+      await proveProjectCommands(bound.WORKSHOP_DB, owner.id, body.operationId),
+    );
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 400 });
+  }
+}
 let env, cookie;
 const active = new Map(),
   retired = new Set();
-async function reset(role = "admin", engine = true) {
+async function reset(role = "admin") {
   const previous = env;
   if (previous) {
     if (active.get(previous)) retired.add(previous);
@@ -61,7 +93,6 @@ async function reset(role = "admin", engine = true) {
     admin_password: "disposable-test-server-secret",
     ASSETS: { fetch: asset },
   };
-  if (engine) env.NEW_PROJECT_ENGINE = "1";
   const origin = "http://127.0.0.1:" + port;
   const login = await provisionTestAccount(
     new Request(origin + "/api/accounts", {
@@ -92,8 +123,6 @@ const server = createServer(async (req, res) => {
     if (url.pathname === "/__test__/reset" && req.method === "POST") {
       const token = await reset(
         url.searchParams.get("role") === "member" ? "member" : "admin",
-        !url.searchParams.has("engine") ||
-          url.searchParams.get("engine") === "1",
       );
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ cookie: token }));
@@ -128,9 +157,12 @@ const server = createServer(async (req, res) => {
     const bound = env;
     active.set(bound, (active.get(bound) || 0) + 1);
     try {
-      const response = await worker.fetch(request, bound, {
-        waitUntil: (promise) => promise.catch(console.error),
-      });
+      const response =
+        url.pathname === "/__test__/command-proof"
+          ? await commandProof(request, bound)
+          : await worker.fetch(request, bound, {
+              waitUntil: (promise) => promise.catch(console.error),
+            });
       res.writeHead(response.status, Object.fromEntries(response.headers));
       res.end(Buffer.from(await response.arrayBuffer()));
     } finally {

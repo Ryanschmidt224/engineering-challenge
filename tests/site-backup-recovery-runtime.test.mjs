@@ -39,7 +39,7 @@ test(
       modules: true,
       script: bundled.outputFiles[0].text,
       compatibilityDate: "2026-07-30",
-      bindings: { NEW_PROJECT_ENGINE: "1", admin_password: secret },
+      bindings: { admin_password: secret },
       d1Databases: { WORKSHOP_DB: "recovery-" + side },
       r2Buckets: { PHOTOS: "recovery-" + side },
       d1Persist: join(root, side, "d1"),
@@ -165,19 +165,11 @@ test(
       );
       assert.equal(document.status, 201, await document.clone().text());
       const documentId = (await document.json()).id;
-      await json(source, "/api/knowledge", "POST", {
-        entity: "tile",
-        expectedRevision: null,
-        record: {
-          id: crypto.randomUUID(),
-          type: "concept",
-          status: "draft",
-          title: "Recovery note",
-          summary: "Keep supply current limited.",
-          body: "Use a fixture; keep the board level.\nRecord Ω and measurements.",
-          sources: [],
-        },
-      });
+      // Seed retained pre-notebook data directly: the retired API is no writer.
+      const historicalTileId = crypto.randomUUID();
+      await sourceDB.prepare("INSERT INTO knowledge_tiles(id,type,status,title,summary,body,sources,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)")
+        .bind(historicalTileId,"concept","draft","Recovery note","Keep supply current limited.","Use a fixture; record Ω and measurements.","[]","2026-11-26","2026-11-26").run();
+      assert.equal((await raw(source,"/api/knowledge")).status,410);
       const lessonId=crypto.randomUUID(),lessonPhotoId=crypto.randomUUID();
       const lesson={id:lessonId,happened:"Recovery lesson",steps:[],resolution:{text:"Verified recovery",quality:"yes"}};
       await json(source,"/api/lessons-learned","POST",{record:lesson,expectedRevision:null,operationId:crypto.randomUUID()});
@@ -291,7 +283,6 @@ test(
       const paths = [
         "/api/accounts",
         "/api/workshop",
-        "/api/knowledge",
         "/api/lessons-learned",
         "/api/project-engine/settings",
         "/api/project-engine/projects",
@@ -400,6 +391,12 @@ test(
           comparable(path, value),
           path,
         );
+      assert.deepEqual(
+        await targetDB.prepare("SELECT * FROM knowledge_tiles WHERE id=?").bind(historicalTileId).first(),
+        await sourceDB.prepare("SELECT * FROM knowledge_tiles WHERE id=?").bind(historicalTileId).first(),
+        "retired tile evidence survives restart and independent reconstruction",
+      );
+      assert.equal((await raw(target,"/api/knowledge")).status,410);
       const restoredLessonPhoto=await raw(target,"/api/lessons-learned/photo?id="+lessonPhotoId);
       assert.equal(restoredLessonPhoto.status,200);
       assert.deepEqual(new Uint8Array(await restoredLessonPhoto.arrayBuffer()),lessonBytes);

@@ -1,3 +1,5 @@
+> Historical checkpoint. See [current status](../STATUS.md) and the [combined review plan](../WHOLE-SITE-REVIEW-2026-11-27.md). Earlier rollout gates and retired feature instructions do not apply.
+
 # Preview acceptance and review
 
 New project functionality belongs to the project engine. The production legacy pages receive bug fixes only. The owner approved early switch-over and accepted the 100-placement Archive limit; STATUS.md records the reduced readiness gates. Keep the production `NEW_PROJECT_ENGINE` flag absent until those gates pass. A disabled engine returns 404 before authentication or migration. Gated integration into main is distinct from production activation.

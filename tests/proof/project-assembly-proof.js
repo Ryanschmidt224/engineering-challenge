@@ -1,5 +1,5 @@
-import {createProjectClient} from "./project-client.js";
-import {projectBOM} from "./project-tree-model.js";
+import {createProjectClient} from "/assets/project-client.js";
+import {projectBOM} from "/assets/project-tree-model.js";
 import {backupAt,manifestOf,verifyFiles,digest} from "./project-recovery-proof.js";
 const assert=(value,message)=>{if(!value)throw Error(message);};
 const designFor=(snapshot,itemId)=>{if(snapshot?.item?.id===itemId)return snapshot;for(const child of snapshot?.composition||[]){const found=designFor(child.design||child.snapshot,itemId);if(found)return found;}return null;};

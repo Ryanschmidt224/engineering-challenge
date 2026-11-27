@@ -12,16 +12,17 @@ const origin="https://preview.example.test",id=()=>crypto.randomUUID();
 
 test("only the validated engine entry invokes schema initialization; Workshop reads remain read-only before setup",async()=>{
  const callers=readdirSync("functions/api").filter(path=>path.endsWith(".js")&&path!=="project-engine-migrations.js"&&/\binitializeProjectEngine\s*\(/.test(readFileSync("functions/api/"+path,"utf8")));assert.deepEqual(callers,["project-workspace-api.js"]);
- const env={NEW_PROJECT_ENGINE:"1",WORKSHOP_DB:new TestD1(),PHOTOS:new TestR2(),admin_password:"synthetic-owner-secret"};try{
+ const env={WORKSHOP_DB:new TestD1(),PHOTOS:new TestR2(),admin_password:"synthetic-owner-secret"};try{
   const login=await provisionTestAccount(new Request(origin+"/api/accounts",{method:"POST",headers:{origin},body:JSON.stringify({action:"register",email:"migration-owner@example.test",password:"synthetic-password"})}),env,{role:"admin"}),cookie=login.headers.get("set-cookie").split(";")[0],request=(path,method="GET",body)=>new Request(origin+path,{method,headers:{origin,cookie},...(body?{body:JSON.stringify(body)}:{})});
   assert.deepEqual(await projectSelectionUses(request("/api/workshop"),env),[]);assert.equal(await projectEngineSchemaReady(env.WORKSHOP_DB),false);assert.equal((await env.WORKSHOP_DB.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE 'engine_%' OR name='project_engine_migrations'").first()).n,0);
-  for(const [path,method,body,status]of [["/api/project-engine/proof","GET",null,405],["/api/project-engine/proof","POST",{operationId:id(),expectedRevision:id()},400],["/api/project-engine/projects/invalid","GET",null,404],["/api/project-engine/projects","DELETE",null,405],["/api/project-engine/unknown","GET",null,404],["/api/project-engine/maintenance/orphans","POST",{},405],["/api/project-engine/maintenance/orphans?kind=delete","GET",null,400]])assert.equal((await handleProjectEngine(request(path,method,body),env)).status,status);
+  for(const [path,method,body,status]of [["/api/project-engine/proof","GET",null,404],["/api/project-engine/proof","POST",{operationId:id(),expectedRevision:id()},404],["/api/project-engine/projects/invalid","GET",null,404],["/api/project-engine/projects","DELETE",null,405],["/api/project-engine/unknown","GET",null,404],["/api/project-engine/maintenance/orphans","POST",{},405],["/api/project-engine/maintenance/orphans?kind=delete","GET",null,400]])assert.equal((await handleProjectEngine(request(path,method,body),env)).status,status);
   assert.equal((await env.WORKSHOP_DB.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name='project_engine_migrations'").first()).n,0);
   assert.equal((await handleProjectEngine(request("/api/project-engine/projects"),env)).status,200);assert.equal(await projectEngineSchemaReady(env.WORKSHOP_DB),true);
   const inventory=await handleProjectEngine(request("/api/project-engine/maintenance/orphans?kind=objects"),env);assert.equal(inventory.status,200);assert.equal((await inventory.json()).dryRun,true);
   const versions=(await env.WORKSHOP_DB.prepare("SELECT * FROM project_engine_migrations ORDER BY version").all()).results;assert.equal(versions.length,PROJECT_ENGINE_SCHEMA_VERSION);
   assert.deepEqual(await projectSelectionUses(request("/api/workshop"),env),[]);assert.deepEqual((await env.WORKSHOP_DB.prepare("SELECT * FROM project_engine_migrations ORDER BY version").all()).results,versions);
-  const proof=await handleProjectEngine(request("/api/project-engine/proof","POST",{operationId:id(),expectedRevision:null}),env);assert.equal(proof.status,200,await proof.clone().text());assert.equal((await proof.json()).ok,true);
+  const created=await handleProjectEngine(request("/api/project-engine/projects/"+id(),"POST",{operationId:id(),expectedRevision:null,name:"Entry validation fixture",prefix:"NR",digits:3}),env);assert.equal(created.status,200,await created.clone().text());assert.ok((await created.json()).revision);
+
  }finally{env.WORKSHOP_DB.close();}
 });
 

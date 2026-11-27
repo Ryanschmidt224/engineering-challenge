@@ -1,7 +1,7 @@
 // Owner-only preview acceptance test. No R2 writes, no legacy readers, no purge.
 // The shared engine entry validates the request and initializes the schema first.
 import {normalizeCustomItem,normalizeOccurrence,allocatePartNumber,diffCustomItems} from "../../assets/project-item-model.js";
-import {commitProjectCommand,canonicalJSON,sha256,CommandConflict} from "./project-command.js";
+import {commitProjectCommand,canonicalJSON,sha256,CommandConflict} from "../../functions/api/project-command.js";
 const tables=["engine_projects","engine_items","engine_occurrences","engine_configurations","engine_events","engine_operations"];
 const check=(condition,message)=>{if(!condition)throw Error("Preview transaction proof failed: "+message);};
 async function stableId(run,label){const hash=await sha256(run+"/"+label);return hash.slice(0,8)+"-"+hash.slice(8,12)+"-4"+hash.slice(13,16)+"-a"+hash.slice(17,20)+"-"+hash.slice(20,32);}

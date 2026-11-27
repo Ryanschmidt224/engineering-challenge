@@ -1,5 +1,5 @@
-// Shared Knowledge rules for the browser page and the Worker API.
-import {isWebUrl, validId} from "./family-model.js";
+// Validation for historical Workshop backup formats; no current tile UI/API.
+import {isWebUrl, validId} from "../assets/family-model.js";
 
 // A tile type is only a label. Adding or renaming one must not need new
 // fields, screens or rules (owner decision, Nov 22).
@@ -96,32 +96,3 @@ export function validateLink(record) {
   };
 }
 
-// Plain text only: split into paragraphs on blank lines. Callers set
-// textContent, never innerHTML.
-export const paragraphs = (body) =>
-  String(body || "")
-    .split(/\n\s*\n/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-// Where a link target opens in the app.
-export function targetHref(link) {
-  const id = encodeURIComponent(link.target_id);
-  const project = encodeURIComponent(link.target_project_id || "");
-  switch (link.target_type) {
-    case "tile":
-      return "knowledge.html?tile=" + id;
-    case "family":
-      return "workshop.html?family=" + id;
-    case "product":
-      return "workshop.html?product=" + id;
-    case "use":
-      return project ? "project.html?"+new URLSearchParams({project:link.target_project_id,item:link.target_id}) : "";
-    case "project":
-      return "project.html?project="+id;
-    case "record":
-      return project ? "project.html?"+new URLSearchParams({project:link.target_project_id,...(link.target_item_id?{item:link.target_item_id}:{}),record:link.target_id}) : "";
-    default:
-      return "";
-  }
-}

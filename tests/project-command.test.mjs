@@ -5,7 +5,7 @@ import {TestR2} from "./helpers/r2.mjs";
 import {provisionTestAccount} from "./helpers/accounts.mjs";
 import {initializeProjectEngine} from "../functions/api/project-engine-migrations.js";
 import {commitProjectCommand,canonicalJSON,CommandConflict} from "../functions/api/project-command.js";
-import {proveProjectCommands} from "../functions/api/project-engine-proof.js";
+import {proveProjectCommands} from "./helpers/project-command-proof.mjs";
 import {handleProjectEngine} from "../functions/api/project-engine.js";
 import worker from "../worker.js";
 import {readFileSync} from "node:fs";
@@ -92,41 +92,28 @@ async function environment(role="admin"){
  const response=await provisionTestAccount(req("/api/accounts","POST",null,{action:"register",email:role+"@example.test",password:"synthetic-preview-password"}),env,{role});
  return {env,cookie:response.headers.get("set-cookie").split(";")[0]};
 }
-test("a disabled engine flag denies routes before auth, migrations and static assets",async()=>{
- const unavailable={get(){throw Error("Production storage must not be accessed");}};
- const env={PHOTOS:unavailable,WORKSHOP_DB:unavailable,ASSETS:{fetch(){throw Error("Static proof page must not be served");}}};
- for(const path of ["/api/project-engine","/api/project-engine/proof","/api/project-engine/files/1","/api/project-engine/maintenance/orphans","/project-engine-proof","/project-engine-proof.html","/project-engine-proof/","/project","/project/","/project.html"]){
-  assert.equal((await worker.fetch(req(path),env,{})).status,503);
- }
- assert.equal((await handleProjectEngine(req("/api/project-engine/proof","POST"),env)).status,404);
+test("Projects require owner sign-in even with no rollout variable configured",async()=>{
+ const env={PHOTOS:new TestR2(),admin_password:"synthetic-secret",WORKSHOP_DB:{prepare(){throw Error("No schema access before owner sign-in");}},ASSETS:{fetch:async()=>new Response("Sign in")}};
+ for(const path of ["/api/project-engine/projects","/api/project-engine/settings","/project.html","/website-settings.html"])
+  assert.equal((await worker.fetch(req(path),env,{})).status,401);
+ assert.equal((await handleProjectEngine(req("/api/project-engine/projects"),env)).status,401);
 });
-test("cutover configuration enables the engine while retaining isolated preview storage and runtime identity",()=>{
- const config=JSON.parse(readFileSync("wrangler.jsonc","utf8"));assert.equal(config.vars.NEW_PROJECT_ENGINE,"1");assert.equal(config.limits.cpu_ms,30000);assert.equal(config.previews.limits.cpu_ms,30000);assert.equal(config.previews.vars.NEW_PROJECT_ENGINE,"1");
+test("current configuration needs no rollout flag and retains isolated storage and runtime identity",()=>{
+ const config=JSON.parse(readFileSync("wrangler.jsonc","utf8"));assert.equal(config.vars.NEW_PROJECT_ENGINE,undefined);assert.equal(config.limits.cpu_ms,30000);assert.equal(config.previews.limits.cpu_ms,30000);assert.equal(config.previews.vars?.NEW_PROJECT_ENGINE,undefined);
  assert.deepEqual(config.version_metadata,{binding:"CF_VERSION_METADATA"});assert.deepEqual(config.previews.version_metadata,{binding:"CF_VERSION_METADATA"});
  assert.equal(config.d1_databases[0].database_name,"building-schmidt-workshop");assert.equal(config.r2_buckets[0].bucket_name,"building-schmidt-photos");
  assert.match(config.previews.d1_databases[0].database_id,/^[a-f0-9-]{36}$/);assert.equal(config.previews.r2_buckets[0].bucket_name,"building-schmidt-photos-preview");
  assert.notEqual(config.previews.d1_databases[0].database_name,config.d1_databases[0].database_name);
- assert.ok(config.assets.run_worker_first.includes("/project-engine-proof*"));
+ assert.ok(!config.assets.run_worker_first.includes("/project-engine-proof*"));
 });
-test("preview proof needs owner, same origin and valid write tokens; no R2 objects change",async()=>{
+test("retired proof API is owner-protected and never creates project tables",async()=>{
  const {env,cookie}=await environment();try{
-  const payload={expectedRevision:null,operationId:id()};
-  for(const path of ["/api/project-engine/proof","/api/project-engine/files/1","/api/project-engine/maintenance/orphans","/project-engine-proof.html"])assert.equal((await worker.fetch(req(path),env,{})).status,401);
+  delete env.NEW_PROJECT_ENGINE;
+  const payload={expectedRevision:null,operationId:id()},before=[...env.PHOTOS.objects.keys()];
+  assert.equal((await worker.fetch(req("/api/project-engine/proof","POST",null,payload),env,{})).status,401);
   assert.equal((await worker.fetch(req("/api/project-engine/proof","POST",cookie,payload,"https://other.example.test"),env,{})).status,403);
-  assert.equal((await worker.fetch(req("/api/project-engine/proof","POST",cookie,{}),env,{})).status,400);
+  assert.equal((await worker.fetch(req("/api/project-engine/proof","POST",cookie,payload),env,{})).status,410);
   assert.equal((await env.WORKSHOP_DB.prepare("SELECT COUNT(*) AS count FROM sqlite_master WHERE name='engine_projects'").first()).count,0);
-  const keys=[...env.PHOTOS.objects.keys()],response=await worker.fetch(req("/api/project-engine/proof","POST",cookie,payload),env,{});
-  assert.equal(response.status,200);assert.equal((await response.json()).ok,true);assert.deepEqual([...env.PHOTOS.objects.keys()],keys);
- }finally{env.WORKSHOP_DB.close();}
- const member=await environment("member");try{assert.equal((await worker.fetch(req("/api/project-engine/proof","POST",member.cookie,{expectedRevision:null,operationId:id()}),member.env,{})).status,401);}finally{member.env.WORKSHOP_DB.close();}
-});
-
-test("malformed preview proof input returns 400 before any migration",async()=>{
- const {env,cookie}=await environment();try{
-  for(const raw of ["null","[]","false","42",'"text"',"{",JSON.stringify({expectedRevision:null,operationId:"invalid"})]){
-   const request=new Request(origin+"/api/project-engine/proof",{method:"POST",headers:{origin,cookie,"content-type":"application/json"},body:raw});
-   assert.equal((await worker.fetch(request,env,{})).status,400,raw);
-  }
-  assert.equal((await env.WORKSHOP_DB.prepare("SELECT COUNT(*) AS count FROM sqlite_master WHERE name='project_engine_migrations'").first()).count,0);
+  assert.deepEqual([...env.PHOTOS.objects.keys()],before);
  }finally{env.WORKSHOP_DB.close();}
 });

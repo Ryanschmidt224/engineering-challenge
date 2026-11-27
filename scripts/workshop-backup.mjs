@@ -14,7 +14,7 @@ import {
   validateFamilyValues,
   isWebUrl,
 } from "../assets/family-model.js";
-import { validateTile, validateLink } from "../assets/knowledge-model.js";
+import { validateTile, validateLink } from "./knowledge-archive-model.mjs";
 
 const names = [
   "categories",

@@ -1,3 +1,5 @@
+> Historical checkpoint. See [current status](../STATUS.md) and the [combined review plan](../WHOLE-SITE-REVIEW-2026-11-27.md). Earlier rollout gates and retired feature instructions do not apply.
+
 # Early project-engine switch-over
 
 This is the held activation package, not evidence that production is enabled. The owner already approved activation and accepted the 100-placement Archive limit. Complete the remaining platform checks before merging; do not request those decisions again.

@@ -1,3 +1,5 @@
+> Historical checkpoint. See [current status](../STATUS.md) and the [combined review plan](../WHOLE-SITE-REVIEW-2026-11-27.md). Earlier rollout gates and retired feature instructions do not apply.
+
 # Project engine command foundation
 
 Status: **Batch 1 real Cloudflare D1 proof passed**, November 22, 2026 (Arizona). The initial run and same-proof replay passed all seven checks with unchanged counts. Exact source, binding, build ID and reports are recorded in `proofs/PROJECT_ENGINE_D1_PROOF.json`. Batch 2 dependent preview flows may now begin. This is not the completed custom-part application or production cutover.

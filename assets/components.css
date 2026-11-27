@@ -239,11 +239,6 @@ textarea.field {
   white-space: pre-wrap;
 }
 
-.ui-preformatted {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
 /* Native file inputs share the same button treatment as custom uploaders. */
 input[type="file"]::file-selector-button {
   font: inherit;

@@ -1,3 +1,5 @@
+> Historical checkpoint. See [current status](../STATUS.md) and the [combined review plan](../WHOLE-SITE-REVIEW-2026-11-27.md). Earlier rollout gates and retired feature instructions do not apply.
+
 # Assemblies and Workshop preview
 
 Status: Batch 3 implemented; its actual Cloudflare source, independent restore and unchanged-source proofs passed on November 23, 2026 (America/Phoenix). This branch extends the isolated preview. Production still has no `NEW_PROJECT_ENGINE` flag. No production migration, project deletion, account change or storage reseed is included.

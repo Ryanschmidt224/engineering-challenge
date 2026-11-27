@@ -1,3 +1,5 @@
+> Historical checkpoint. See [current status](../STATUS.md) and the [combined review plan](../WHOLE-SITE-REVIEW-2026-11-27.md). Earlier rollout gates and retired feature instructions do not apply.
+
 # BuildingSchmidt feature inventory (main page)
 
 Status: owner decisions recorded 2026-11-22 (baseline from `main` at `f73e021`). Lines with a blank Decision are **Keep**.

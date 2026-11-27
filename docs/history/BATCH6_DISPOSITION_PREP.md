@@ -1,3 +1,5 @@
+> Historical checkpoint. See [current status](../STATUS.md) and the [combined review plan](../WHOLE-SITE-REVIEW-2026-11-27.md). Earlier rollout gates and retired feature instructions do not apply.
+
 > Retained Claude source analysis. The owner's later early-live plan in STATUS.md and HISTORY_REWRITE_PLAN.md controls scope and sequencing; this source's commit/status/disposition recommendations are historical, not deployment authorization.
 
 # Batch 6 disposition prep: read-only source mapping

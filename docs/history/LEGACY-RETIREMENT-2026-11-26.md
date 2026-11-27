@@ -1,3 +1,5 @@
+> Historical checkpoint. See [current status](../STATUS.md) and the [combined review plan](../WHOLE-SITE-REVIEW-2026-11-27.md). Earlier rollout gates and retired feature instructions do not apply.
+
 # Legacy application retirement — November 26, 2026
 
 The owner waived the backup/trial gate and authorized removal of all retired application work, accepting data loss if needed. The implementation removes the runtime dependencies; it does not require a production data reset or storage sweep.

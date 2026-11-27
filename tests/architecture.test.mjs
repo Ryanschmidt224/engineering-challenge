@@ -13,14 +13,17 @@ test("current entry pages reference existing local scripts and stylesheets",()=>
  }
 });
 
-test("Worker imports resolve to real files and have no duplicate API dispatch paths",()=>{
+test("Worker imports resolve and the declared API registry covers the current routes", async () => {
  const worker=source("worker.js");
- for(const match of worker.matchAll(/from\s+["'](\.\/[^"']+)["']/g)){
+ for(const match of worker.matchAll(/from\s+["'](\.\/[^"']+)["']/g))
   assert.ok(existsSync(resolve(root,match[1])),"Missing Worker import: "+match[1]);
- }
- const dispatch=worker.slice(0,worker.indexOf("}catch(error){"));
- const paths=[...dispatch.matchAll(/if\(path===["'](\/api\/[^"']+)["']\)/g)].map(match=>match[1]);
- assert.equal(new Set(paths).size,paths.length,"Duplicate API route dispatch");
+ const { apiRoutes, apiDispatch, createApiDispatch } = await import("../functions/api/api-routes.js");
+ const expected=["/api/site-data-backup","/api/accounts","/api/workshop","/api/workshop/file","/api/workshop/export","/api/workshop-lookup","/api/lessons-learned","/api/lessons-learned/photo","/api/auth"];
+ assert.deepEqual([...apiDispatch.keys()].sort(),expected.sort());
+ assert.equal(apiRoutes.length,expected.length);
+ assert.match(worker,/apiDispatch.get\(path\)/);
+ assert.throws(()=>createApiDispatch([...apiRoutes,apiRoutes[0]]),/Duplicate API route/);
+ assert.throws(()=>createApiDispatch([["/api/broken",null]]),/Invalid API route/);
 });
 
 test("retired browser application is absent from the deployed source",()=>{
@@ -30,12 +33,14 @@ test("retired browser application is absent from the deployed source",()=>{
 
 test('every shipped JavaScript module belongs to a current browser entry or the Worker',async()=>{
  const {build}=await import('esbuild'),{readdirSync}=await import('node:fs'),entries=['worker.js'];
- for(const page of ['project.html','project-signin.html','website-settings.html','workshop.html','knowledge.html','calculators.html','project-engine-proof.html']){
+ for(const page of ['project.html','project-signin.html','website-settings.html','workshop.html','knowledge.html','calculators.html']){
   const html=source(page);
   for(const match of html.matchAll(/<script[^>]*src="([^"]+)"/g))entries.push(match[1].replace(/^\//,'').split('?')[0]);
   for(const match of html.matchAll(/(?:from\s*|import\s*)["'](\.?\/?assets\/[^"']+)["']/g))entries.push(match[1].replace(/^\.\//,'').replace(/^\//,'').split('?')[0]);
  }
  const result=await build({entryPoints:[...new Set(entries)],bundle:true,write:false,outdir:'unused-build-output',metafile:true,format:'esm',platform:'browser',logLevel:'silent'}),used=new Set(Object.keys(result.metafile.inputs));
+ assert.ok(![...used].some(file=>file.startsWith('tests/')||file.includes('-proof.')), 'Acceptance tools must not enter the production import graph');
+ assert.match(source('.assetsignore'),/^tests\/\*\*$/m);
  const files=['assets','functions/api'].flatMap(dir=>readdirSync(resolve(root,dir)).filter(name=>name.endsWith('.js')).map(name=>dir+'/'+name));
  assert.deepEqual(files.filter(file=>!used.has(file)),[],'Unreferenced application module: wire it to its owner or remove it.');
 });
