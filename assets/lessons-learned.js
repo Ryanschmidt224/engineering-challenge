@@ -768,6 +768,11 @@ export function initLessons(root) {
       renderMain();
     };
     const parts = [
+      h("h2", {
+        class: "ib-form__title",
+        text:
+          state.draft.expectedRevision === null ? "New lesson" : "Edit lesson",
+      }),
       h(
         "section",
         { class: "ui-editor-group", "aria-label": "Lesson introduction" },

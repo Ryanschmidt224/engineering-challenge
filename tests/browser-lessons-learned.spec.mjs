@@ -189,6 +189,7 @@ for(const width of [390,1440])test('lesson introduction belongs to the form and 
  await page.setViewportSize({width,height:1000});await page.goto('/knowledge.html');await page.getByRole('button',{name:'+ Add lesson',exact:true}).click();
  const introduction=page.getByRole('region',{name:'Lesson introduction',exact:true}),step=page.getByRole('region',{name:'Step 1',exact:true}),status=page.locator('.ib-status');
  await expect(status).toBeHidden();await expect(introduction.getByLabel('What happened?',{exact:true})).toBeVisible();
+ const form=page.locator('.ib-form');await expect(form.getByRole('heading',{name:'New lesson',exact:true})).toBeVisible();expect(await form.evaluate(el=>getComputedStyle(el).borderTopStyle)).toBe('solid');const frame=await form.boundingBox(),footer=await form.locator('.ib-form__footer').boundingBox();expect(footer.x).toBeGreaterThan(frame.x);expect(footer.x+footer.width).toBeLessThan(frame.x+frame.width);
  const introBox=await introduction.boundingBox(),stepBox=await step.boundingBox();expect(Math.abs(introBox.x-stepBox.x)).toBeLessThan(1);expect(Math.abs(introBox.width-stepBox.width)).toBeLessThan(1);
  await expect(introduction.getByRole('heading',{name:'Lesson details',exact:true})).toBeVisible();
  const row=introduction.locator('.field-row'),label=await row.locator('label').boundingBox(),control=await row.locator('textarea').boundingBox();
