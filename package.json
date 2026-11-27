@@ -10,12 +10,19 @@
     "format:css": "prettier --write \"assets/*.css\"",
     "check:css": "prettier --check \"assets/*.css\" && node scripts/check-css.mjs && node scripts/prune-retired-css.mjs --check && node scripts/check-css-producers.mjs",
     "format:js": "node scripts/format-owned.mjs --write",
-    "check:js-format": "node scripts/format-owned.mjs"
+    "check:js-format": "node scripts/format-owned.mjs",
+    "check:dependencies": "npm audit --audit-level=high"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",
     "esbuild": "0.25.12",
     "miniflare": "4.20260730.0",
     "prettier": "3.6.2"
+  },
+  "overrides": {
+    "miniflare@4.20260730.0": {
+      "sharp": "0.35.5",
+      "undici": "7.30.2"
+    }
   }
 }
