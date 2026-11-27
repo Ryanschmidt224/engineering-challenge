@@ -12,7 +12,7 @@ import * as commands from "./project-workspace-commands.js";
 import {historyPage,eventDetail} from "./project-history.js";
 import {placeExisting,editPlacement,lifePreview,changePlacementLife,reorderPlacements} from "./project-placements.js";
 import {workshopChoices,createWorkshopItem,selectWorkshopProduct} from "./project-workshop.js";
-import {addMedia,editMedia,removeMedia,reorderMedia} from "./project-media.js";
+import {addMedia,editMedia,removeMedia,reorderMedia,selectMainPicture} from "./project-media.js";
 import {projectBOM} from "../../assets/project-tree-model.js";
 import {deleteProjectStep} from "./project-delete.js";
 import {deletionJob} from "./project-delete-status.js";
@@ -108,9 +108,10 @@ export async function handleProjectWorkspace(request,env,owner){
    if(area==="records"&&path.length===3&&method==="PATCH")return engineJSON(await commands.editRecord(db,input,project,id,body));
    if(area==="media"){
     if(path.length===2&&method==="POST")return engineJSON(await addMedia(db,input,project,body));
+    if(path.length===3&&method==="POST"&&id==="main-picture")return engineJSON(await selectMainPicture(db,input,project,body));
     if(path.length===3&&method==="POST"&&id==="reorder")return engineJSON(await reorderMedia(db,input,project,body));
     if(path.length===3&&method==="PATCH")return engineJSON(await editMedia(db,input,project,id,body));
-    if(path.length===4&&method==="POST"&&action==="remove")return engineJSON(await removeMedia(db,input,project,id));
+    if(path.length===4&&method==="POST"&&action==="remove")return engineJSON(await removeMedia(db,input,project,id,body));
    }
   }
   return engineJSON({error:"Not found"},404);
