@@ -51,7 +51,7 @@ export const buildFor = (occ) =>
   });
 const button = (...args) => window.BSUI.button(...args);
 function editorGroup(title, ...rows) {
-  const group = node("fieldset", "", "project-editor-group");
+  const group = node("fieldset", "", "ui-editor-group");
   group.append(node("legend", title), ...rows);
   return group;
 }
@@ -138,7 +138,7 @@ export function editable(
   footer.classList.add("project-editor-actions");
   scroll.append(fields, error, reload, reviewArea);
   form.append(scroll, footer);
-  form.classList.add("project-editor-form");
+  form.classList.add("project-editor-form", "ui-editor-fields");
   form.onsubmit = async (event) => {
     event.preventDefault();
     if (busy || uploading) return;

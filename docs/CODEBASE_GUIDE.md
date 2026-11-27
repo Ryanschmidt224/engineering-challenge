@@ -16,7 +16,7 @@ Private owner application on Cloudflare Workers with D1 metadata and immutable R
 | Project commands | `project-workspace-api.js`, `project-command.js`, `project-*-commands.js` | Owner checks, revision/operation IDs, atomic admission and data changes |
 | Project files and recovery | `project-engine-files.js`, `project-backup*.js`, `project-restore-*.js` | Immutable uploads, full metadata/files and independent restores |
 | Whole-site recovery | `site-data-backup.js`, `scripts/verify-site-backup.py` | Consistency-checked D1/R2 archive and offline validation/reconstruction |
-| Shared visual rules | `theme.css`, `ui-kit.css`, `components.css` | Tokens, controls, field rows, section headers and cards |
+| Shared visual rules | `theme.css`, `ui-kit.css`, `components.css` | Tokens, controls, field rows, section headers and cards; shared `.ui-editor-group` / `.ui-editor-fields` styling for project and lesson editors |
 
 Browser modules should declare dependencies and initialize explicitly. DOM helpers remain safe to import into pure model/export checks; importing a helper must not bootstrap the UI or require `window` before use. `window.BSUI` is the current UI-kit bridge; current photo/clipboard helpers are named ES-module exports, not a retired global service.
 

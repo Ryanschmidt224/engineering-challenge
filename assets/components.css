@@ -41,6 +41,35 @@ textarea.field {
   padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--color-border);
 }
+/* Shared dense editors: Projects and Lessons Learned use the same fields and bands. */
+.ui-editor-fields .field-row {
+  margin-block: var(--space-2);
+}
+.ui-editor-group {
+  min-width: 0;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2) 0 var(--space-3);
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.ui-editor-group > legend,
+.ui-editor-group > .ui-editor-group__heading {
+  width: 100%;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-small);
+  background: var(--color-surface-muted);
+  font-size: var(--text-body);
+  font-weight: var(--font-semibold);
+}
+.ui-editor-group__title {
+  margin: 0;
+  font: inherit;
+}
+.ui-editor-group .checkbox {
+  min-height: var(--control-height-small);
+  margin-block: var(--space-2);
+}
 .checkbox {
   display: inline-flex;
   align-items: center;

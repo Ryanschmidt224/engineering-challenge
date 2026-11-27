@@ -233,8 +233,10 @@
   color: var(--color-danger);
 }
 .ib-icon-button {
-  width: 2.75rem;
-  height: 2.75rem;
+  width: var(--control-height-small);
+  height: var(--control-height-small);
+  min-height: var(--control-height-small);
+  padding: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
   background: var(--color-surface);
@@ -246,51 +248,14 @@
   cursor: default;
 }
 
-/* Edit form */
+/* Editing shares Projects' bordered controls, paired rows and section bands. */
 .ib-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6, 2.25rem);
-}
-.ib-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  font-weight: var(--font-semibold);
-  font-size: var(--text-small);
-}
-.ib-field__control {
-  border: 0;
-  border-bottom: 1px solid var(--color-border);
-  border-radius: 0;
-  padding: 0.5rem 0;
-  font: inherit;
-  font-size: 1rem;
-  font-weight: var(--font-normal);
-  line-height: 1.55;
-  color: var(--color-text);
-  background: transparent;
-  resize: vertical;
-}
-.ib-field__control:focus {
-  outline: none;
-  border-bottom-color: var(--color-accent);
-}
-.ib-field__control--lead {
-  font-size: 1.35rem;
-  line-height: 1.4;
-  resize: none;
-}
-.ib-step--edit {
-  gap: var(--space-4, 1.1rem);
+  display: block;
 }
 .ib-step__tools {
   display: flex;
   align-items: center;
   gap: var(--space-2, 0.5rem);
-}
-.ib-step__tools .ib-step__label {
-  margin-right: var(--space-2, 0.5rem);
 }
 .ib-add-photo {
   position: relative;
@@ -303,27 +268,9 @@
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
-.ib-divider {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3, 0.75rem);
-  margin-block: calc(-1 * var(--space-4, 1.25rem));
-}
-.ib-divider::before,
-.ib-divider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--color-border);
-}
-.ib-resolution--edit {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: 0;
-  gap: var(--space-4, 1.1rem);
-}
+.ib-divider,
 .ib-add-resolution {
-  align-self: flex-start;
+  margin-block: var(--space-3);
 }
 .ib-choice {
   border: 0;
