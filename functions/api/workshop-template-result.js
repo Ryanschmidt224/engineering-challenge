@@ -22,7 +22,12 @@ const url = (v) => {
 export async function templateLookupResult(
   data,
   template,
-  { partNumber, manufacturer, document },
+  {
+    partNumber,
+    manufacturer,
+    document,
+    documents = document ? [document] : [],
+  },
   lookupUsage,
 ) {
   const identity = {
@@ -53,16 +58,17 @@ export async function templateLookupResult(
       manufacturer.toLowerCase().replace(/[^a-z0-9]/g, "")
   )
     throw Error("The requested manufacturer could not be confirmed.");
-  let documentSource = null;
-  if (document) {
+  const documentSources = [];
+  for (const document of documents) {
     const bytes = Uint8Array.from(atob(document.data), (c) => c.charCodeAt(0)),
       digest = await crypto.subtle.digest("SHA-256", bytes);
-    documentSource = {
+    documentSources.push({
+      id: document.id,
       name: document.name,
       sha256: Array.from(new Uint8Array(digest), (v) =>
         v.toString(16).padStart(2, "0"),
       ).join(""),
-    };
+    });
   }
   const values = [];
   for (const row of (Array.isArray(data.specs) ? data.specs : []).slice(
@@ -81,6 +87,14 @@ export async function templateLookupResult(
       conditions: text(row.conditions, 240),
       sourceUrl: url(row.sourceUrl),
     };
+    const documentSource =
+      documentSources.find((d) => row.documentId && d.id === row.documentId) ||
+      (documentSources.filter((d) => d.name === row.documentName).length === 1
+        ? documentSources.find((d) => d.name === row.documentName)
+        : null) ||
+      (documentSources.length === 1 && !row.documentId && !row.documentName
+        ? documentSources[0]
+        : null);
     const value = lookupValue(field, spec);
     if (
       value === undefined ||

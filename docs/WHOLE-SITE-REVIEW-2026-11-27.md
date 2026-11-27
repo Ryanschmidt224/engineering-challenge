@@ -83,3 +83,10 @@ The supplied screenshot illustrates the last two issues. The [photo/lesson feedb
 No new frontend framework, community/multi-user infrastructure or independent hosted project URLs. Preserve the bulky delete/restore safety mechanisms. Do not merge old draft #91 automatically, reinterpret stored prices/quantities, or delete historical file bytes as a side effect of removing code.
 
 Current implementation and release checkpoint: [STATUS.md](STATUS.md). Code ownership: [CODEBASE_GUIDE.md](CODEBASE_GUIDE.md). Earlier audit history: [November 26 follow-ups](history/AUDIT-FOLLOWUPS-2026-11-26.md).
+
+## Owner additions — November 27
+
+- AI product lookup: match the shared form layout, require Search hint without displaying “required”, and automatically use this product’s supported existing attachments. Keep source evidence and explicit apply/save.
+- Project summary: open the top assembly and its details by default.
+- Full-screen photos: previous/next arrows and keyboard cycling within the current gallery. The small shared viewer is now formatted and maintained under the owned-module guard.
+- Deferred CAD direction: use Dropbox file links instead of uploading CAD bytes to the website. Flow and access design are undecided; finish later. Existing CAD files and upload behavior are unchanged in this batch.

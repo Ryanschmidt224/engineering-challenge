@@ -22,15 +22,24 @@ export function workshopProductLookup({
   onDocumentChange = () => {},
   documents = [],
 }) {
-  const root = panel("Product lookup"),
+  const root = panel("Find product specs with AI"),
     message = node("p", "", "muted"),
     results = node("div");
+  root.classList.add("workshop-lookup");
+  root
+    .querySelector(".panel-heading")
+    .append(
+      window.BSDialogs.helpButton(
+        "About AI product lookup",
+        "AI searches this product’s existing attachments automatically, along with its name, manufacturer and part number. Add a document below to include another source. Enter a search hint to guide the search. PDF, text, CSV and images are supported, up to 5 MB each (10 documents and 20 MB total). Review suggestions before applying them.",
+      ),
+    );
   message.setAttribute("role", "status");
   let hint = "",
     searching = false;
   const visible = fields.filter((f) => !f.hidden);
   const search = button("Find with AI", async () => {
-    if (searching) return;
+    if (searching || !hint.trim()) return;
     if (!record.mpn.trim() && !record.name.trim()) {
       message.textContent =
         "Enter a product name or manufacturer part number first.";
@@ -98,23 +107,38 @@ export function workshopProductLookup({
       if (root.isConnected) message.textContent = error.message;
     } finally {
       searching = false;
-      search.disabled = false;
+      search.disabled = !hint.trim();
     }
   });
   root.append(
     node(
       "p",
-      "Fill the specification fields in this template. Apply changes to this draft, then Save product. Sources and conditions stay with each applied value.",
+      "Uses product details and existing attachments automatically.",
       "muted",
     ),
-    field("Search hint (optional)", "", (value) => (hint = value), {
-      placeholder: "Manufacturer product page or datasheet link",
-    }),
+    field(
+      "Search hint",
+      "",
+      (value) => {
+        hint = value;
+        search.disabled = searching || !hint.trim();
+      },
+      {
+        placeholder: "Product page or datasheet URL",
+      },
+    ),
     lookupDocumentField(record.id, onDocumentChange, documents, record),
     actions(search),
+    node(
+      "p",
+      "Review suggestions before applying them to this draft.",
+      "muted",
+    ),
     message,
     results,
   );
+  search.disabled = true;
+  root.querySelector(".field-row input").setAttribute("aria-required", "true");
   function review(data, stamp, documentTag) {
     const proposed = data.identity,
       identity = [];
@@ -254,6 +278,7 @@ export function workshopProductLookup({
             ? {
                 ...spec.document,
                 id:
+                  spec.document.id ||
                   lookupDocument(record.id)?.savedId ||
                   lookupDocument(record.id)?.uploadId,
               }

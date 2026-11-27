@@ -7,6 +7,11 @@ function walk(node,visit){
  // Section count nouns are labels, never class producers. Keep this narrow;
  // ordinary string literals and actual class assignments remain conservative.
  if(node.type==="ObjectProperty"&&node.key?.name==="countLabel")return;
+ // The first argument to the shared field helper is display text, never CSS.
+ if(node.type==="CallExpression"&&node.callee?.type==="Identifier"&&node.callee.name==="field"){
+  for(const arg of node.arguments.slice(1))walk(arg,visit);
+  return;
+ }
  visit(node);
  for(const [key,value] of Object.entries(node))if(!["comments","tokens","loc","source","inputs"].includes(key)){
   if(Array.isArray(value))for(const child of value)walk(child,visit);

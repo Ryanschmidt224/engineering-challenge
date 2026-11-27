@@ -96,14 +96,16 @@ export function lookupDocumentField(
   record = {},
 ) {
   const root = node("div"),
-    label = node("strong", "Datasheet or technical document (optional)"),
+    label = node("span", "Add document (optional)"),
     input = node("input"),
     status = node("p", "", "muted");
   input.type = "file";
   input.hidden = true;
   input.accept = ".pdf,.txt,.csv,image/png,image/jpeg,image/webp";
   input.setAttribute("aria-label", "Datasheet or technical document");
+  let remove;
   const describe = () => {
+    if (remove) remove.hidden = !pending.has(id);
     const entry = pending.get(id),
       prior = record.lookup_provenance?.documentUpload;
     status.textContent = entry?.savedId
@@ -115,7 +117,7 @@ export function lookupDocumentField(
           ? "Product saved; document upload is unconfirmed. Reselect " +
             prior.name +
             " to retry with the same upload identity."
-          : "Optional PDF, text, CSV or image; up to 5 MB. Used as a source for template fields.";
+          : "PDF, text, CSV or image · up to 5 MB.";
   };
   const choose = (files) => {
     const file = files[0];
@@ -137,32 +139,16 @@ export function lookupDocumentField(
     describe();
     onChange();
   };
-  if (saved.length) {
-    const select = node("select", "", "field");
-    select.setAttribute("aria-label", "Use saved technical document");
-    for (const file of [
-      { id: "", title: "No saved document selected" },
-      ...saved,
-    ]) {
-      const option = node("option", file.title);
-      option.value = file.id;
-      select.append(option);
-    }
-    select.value = pending.get(id)?.savedId || "";
-    select.onchange = () => {
-      const file = saved.find((v) => v.id === select.value);
-      if (file)
-        pending.set(id, {
-          savedId: file.id,
-          title: file.title,
-          tag: crypto.randomUUID(),
-        });
-      else pending.delete(id);
-      describe();
-      onChange();
-    };
-    root.append(select);
-  }
+  const prior = record.lookup_provenance?.documentUpload;
+  const recovered = saved.find(
+    (f) => prior?.status === "pending" && f.id === prior.id,
+  );
+  if (recovered && !pending.has(id))
+    pending.set(id, {
+      savedId: recovered.id,
+      title: recovered.title,
+      tag: crypto.randomUUID(),
+    });
   input.onchange = () => {
     choose([...input.files]);
     input.value = "";
@@ -175,7 +161,7 @@ export function lookupDocumentField(
   const controls = actions(
     button("Add document", () => input.click()),
     drop,
-    button(
+    (remove = button(
       "Remove selected document",
       () => {
         pending.delete(id);
@@ -183,7 +169,7 @@ export function lookupDocumentField(
         onChange();
       },
       "button--quiet",
-    ),
+    )),
   );
   if (record.lookup_provenance?.documentUpload?.status === "pending") {
     const forget = button(
@@ -208,7 +194,10 @@ export function lookupDocumentField(
     );
   }
   controls.classList.add("bs-photo-upload-row");
-  root.append(label, controls, input, status);
+  root.className = "field-row";
+  const content = node("div");
+  content.append(controls, input, status);
+  root.append(label, content);
   describe();
   return root;
 }
