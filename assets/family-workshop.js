@@ -74,8 +74,14 @@ const familyFields = () =>
 const copy = (value) => structuredClone(value);
 const editLabel = (entity) =>
   entity === "family" ? "Edit template" : "Edit " + entity;
-function mayLeave() {
-  return !dirty || window.confirm("Discard the unsaved changes to this form?");
+async function mayLeave() {
+  return (
+    !dirty ||
+    (await window.BSDialogs.confirm(
+      "Discard the unsaved changes to this form?",
+      { title: "Discard unsaved changes?", confirmLabel: "Discard changes" },
+    ))
+  );
 }
 async function run(operation) {
   if (busy) return;
@@ -108,12 +114,12 @@ function updateLocation() {
     value ? url.searchParams.set(key, value) : url.searchParams.delete(key);
   history.replaceState(null, "", url);
 }
-function changeSelection({
+async function changeSelection({
   category = selectedCategory,
   familyId = "",
   productId = "",
 } = {}) {
-  if (!mayLeave()) return;
+  if (!(await mayLeave())) return;
   if (draft?.entity === "product") clearLookupDocuments(draft.record.id);
   selectedCategory = category;
   selectedFamily = familyId;
@@ -248,8 +254,8 @@ function renderNavigation() {
       node("p", "No matching families. Add one or change the search.", "empty"),
     );
 }
-function begin(entity, record) {
-  if (!mayLeave()) return;
+async function begin(entity, record) {
+  if (!(await mayLeave())) return;
   if (draft?.entity === "product" && draft.record.id !== record.id)
     clearLookupDocuments(draft.record.id);
   editing = true;
@@ -263,8 +269,8 @@ function begin(entity, record) {
   };
   renderDetail();
 }
-function newFamily() {
-  if (!mayLeave()) return;
+async function newFamily() {
+  if (!(await mayLeave())) return;
   dirty = false;
   selectedFamily = "";
   selectedProduct = "";
@@ -400,8 +406,8 @@ function editor(entity, title, record) {
       () => form.requestSubmit(),
       "button--primary",
     ),
-    button("Cancel", () => {
-      if (!mayLeave()) return;
+    button("Cancel", async () => {
+      if (!(await mayLeave())) return;
       if (draft?.entity === "product") clearLookupDocuments(draft.record.id);
       dirty = false;
       editing = false;
@@ -880,11 +886,22 @@ async function archive(entity, record) {
             confirmLabel: "Archive family",
           },
         )
-      : window.confirm(
-          (record.archived ? "Restore" : "Archive") +
-            " this " +
-            entity +
-            "? Existing project records and stored files are kept.",
+      : await window.BSDialogs.confirm(
+          record.archived
+            ? "Restore this " +
+                entity +
+                " to the active Workshop? Products archived separately will remain archived."
+            : entity === "category"
+              ? "This hides the category from the active Workshop. Move or archive its active child categories and families first. Existing records and stored files are kept. Use Show archived to restore it."
+              : "This hides this product from the active Workshop. Its specifications, attached files, and existing project records are kept.\n\nTo bring it back, enable Show archived, select the product, and choose Restore product.\n\nNothing is permanently deleted.",
+          {
+            title:
+              (record.archived ? "Restore" : "Archive") +
+              " “" +
+              record.name +
+              "”?",
+            confirmLabel: (record.archived ? "Restore " : "Archive ") + entity,
+          },
         );
   if (!confirmed) return;
   await run(async () => {

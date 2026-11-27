@@ -1,0 +1,67 @@
+/* One visual template for action confirmations; editor and photo dialogs keep their layouts. */
+dialog.bs-confirmation:modal {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(32.5rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  padding: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-dialog);
+}
+.bs-confirmation::backdrop {
+  background: rgb(17 29 24 / 52%);
+}
+.bs-confirmation .bs-confirmation-header {
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface-muted);
+}
+.bs-confirmation .bs-confirmation-title {
+  margin: 0;
+  font-size: var(--text-title);
+  line-height: 1.35;
+}
+.bs-confirmation .bs-confirmation-body {
+  padding: var(--space-5);
+}
+.bs-confirmation .bs-confirmation-body p {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+.bs-confirmation .bs-confirmation-body p:empty {
+  margin: 0;
+}
+.bs-confirmation .bs-confirmation-body p:first-child {
+  margin-top: 0;
+}
+.bs-confirmation .bs-confirmation-body p:last-child {
+  margin-bottom: 0;
+}
+.bs-confirmation .bs-confirmation-actions {
+  position: static;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.bs-confirmation .bs-confirmation-field {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+.bs-confirmation form {
+  margin: 0;
+}
+.bs-confirmation .project-editor-scroll {
+  padding: 0;
+  overflow: visible;
+}

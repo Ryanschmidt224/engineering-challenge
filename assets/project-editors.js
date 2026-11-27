@@ -80,6 +80,7 @@ export function editable(
   collect,
   save,
   {
+    confirmation = false,
     review = null,
     mount = null,
     initialRevision = ctx.client.state?.project.revision ?? null,
@@ -169,15 +170,27 @@ export function editable(
     if (!dialog.open) dialog.replaceChildren();
     mount.replaceChildren(node("h2", title), form);
   } else {
+    dialog.classList.remove("bs-confirmation");
+    dialog.removeAttribute("aria-labelledby");
     dialog.classList.add("project-editor-dialog");
     dialog.oncancel = (event) => {
       if (busy || uploading) event.preventDefault();
     };
     dialog.replaceChildren(node("h2", title), form);
+    if (confirmation) {
+      footer.replaceChildren(cancel, saveButton);
+      window.BSConfirmation.frame(dialog, {
+        title,
+        content: scroll,
+        actions: footer,
+        form,
+      });
+    }
     dialog.setAttribute("aria-label", title);
     queueMicrotask(() => {
       dialog.showModal();
-      dialog.querySelector("input,textarea,select")?.focus();
+      if (confirmation) cancel.focus();
+      else dialog.querySelector("input,textarea,select")?.focus();
     });
   }
   return {
@@ -718,6 +731,7 @@ export function retireInstruction(ctx, step) {
         data,
         token,
       ),
+    { confirmation: true },
   );
   editor.fields.append(
     node(
@@ -862,6 +876,7 @@ export function confirmAction(ctx, title, message, label, save) {
     label,
     () => ({}),
     (data, token) => save(token),
+    { confirmation: true },
   );
   editor.fields.append(node("p", message));
 }

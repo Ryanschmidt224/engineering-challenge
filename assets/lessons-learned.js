@@ -381,9 +381,10 @@ export function initLessons(root) {
     run(async () => {
       const { record, expectedRevision } = state.draft;
       if (
-        !window.confirm(
+        !(await window.BSDialogs.confirm(
           "Archive this lesson? You can restore it from Archived.",
-        )
+          { title: "Archive lesson?", confirmLabel: "Archive lesson" },
+        ))
       )
         return;
       if (expectedRevision !== null) {
@@ -858,13 +859,19 @@ export function initLessons(root) {
               type: "button",
               class: "ib-text-button ib-text-button--quiet",
               text: "Remove",
-              onclick: () => {
+              onclick: async () => {
                 const written =
                   step.question ||
                   step.hypothesis ||
                   step.result ||
                   step.photos.length;
-                if (written && !window.confirm("Remove step " + (i + 1) + "?"))
+                if (
+                  written &&
+                  !(await window.BSDialogs.confirm(
+                    "Remove step " + (i + 1) + "?",
+                    { title: "Remove step?", confirmLabel: "Remove step" },
+                  ))
+                )
                   return;
                 restructure(
                   () => (record.steps = record.steps.filter((s) => s !== step)),
@@ -1018,9 +1025,13 @@ export function initLessons(root) {
             onclick: () =>
               run(async () => {
                 if (
-                  !window.confirm(
+                  !(await window.BSDialogs.confirm(
                     "Discard this draft and load the saved lesson?",
-                  )
+                    {
+                      title: "Load saved lesson?",
+                      confirmLabel: "Load saved lesson",
+                    },
+                  ))
                 )
                   return;
                 state.draft = null;
