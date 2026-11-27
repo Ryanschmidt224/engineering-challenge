@@ -574,6 +574,15 @@ export function initLessons(root) {
     });
   }
 
+  function readRow(label, value, className) {
+    return h(
+      "div",
+      { class: "field-row" },
+      h("span", { class: "ib-read-label", text: label }),
+      linkedText("p", className, value),
+    );
+  }
+
   function renderView(bit) {
     const shown = bit.steps.filter(
       (s) =>
@@ -593,7 +602,7 @@ export function initLessons(root) {
         linkedText("h2", "ib-view__title", titleOf(bit) || "New lesson"),
         h("button", {
           type: "button",
-          class: "ib-text-button",
+          class: "button",
           text: bit.archived ? "Restore" : "Edit",
           onclick: () => {
             if (bit.archived)
@@ -616,13 +625,12 @@ export function initLessons(root) {
           },
         }),
       ),
-      bit.happened.includes("\n")
-        ? linkedText(
-            "p",
-            "ib-step__result",
-            bit.happened.split("\n").slice(1).join("\n"),
-          )
-        : null,
+      h(
+        "section",
+        { class: "ui-editor-group", "aria-label": "Lesson details" },
+        h("h3", { class: "ui-editor-group__heading", text: "Lesson details" }),
+        readRow("What happened?", bit.happened, "ib-view__happened"),
+      ),
       shown.length
         ? h(
             "ol",
@@ -630,22 +638,23 @@ export function initLessons(root) {
             shown.map((s, i) =>
               h(
                 "li",
-                { class: "ib-step" },
-                h("span", { class: "ib-step__label", text: "Step " + (i + 1) }),
-                linkedText(
-                  "h2",
-                  "ib-step__question",
-                  s.question || "Step " + (i + 1),
-                ),
+                { class: "ib-step ui-editor-group" },
+                h("h3", {
+                  class: "ui-editor-group__heading",
+                  text: "Step " + (i + 1),
+                }),
+                s.question.trim()
+                  ? readRow("Question", s.question, "ib-step__question")
+                  : null,
                 s.hypothesis.trim()
-                  ? linkedText(
-                      "p",
-                      "ib-step__hypothesis",
-                      "Hypothesis: " + s.hypothesis,
-                    )
+                  ? readRow("Hypothesis", s.hypothesis, "ib-step__hypothesis")
                   : null,
                 s.result.trim()
-                  ? linkedText("p", "ib-step__result", s.result)
+                  ? readRow(
+                      "What did you test or learn?",
+                      s.result,
+                      "ib-step__result",
+                    )
                   : null,
                 s.photos.length
                   ? h(
@@ -677,10 +686,10 @@ export function initLessons(root) {
       bit.resolution && (bit.resolution.text.trim() || quality)
         ? h(
             "section",
-            { class: "ib-resolution" },
-            h("span", { class: "ib-step__label", text: "Resolution" }),
+            { class: "ib-resolution ui-editor-group" },
+            h("h3", { class: "ui-editor-group__heading", text: "Resolution" }),
             bit.resolution.text.trim()
-              ? linkedText("p", "ib-step__result", bit.resolution.text)
+              ? readRow("Resolution", bit.resolution.text, "ib-step__result")
               : null,
             quality
               ? h(

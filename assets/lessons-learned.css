@@ -18,7 +18,8 @@
   min-width: 0;
   max-width: 45rem;
 }
-.ib-main:has(.ib-form) {
+.ib-main:has(.ib-form),
+.ib-main:has(.ib-view) {
   max-width: none;
 }
 .ib-add {
@@ -106,7 +107,7 @@
   display: flex;
   gap: var(--space-4, 1rem);
   align-items: flex-start;
-  margin-bottom: var(--space-6, 2.5rem);
+  margin-bottom: var(--space-4);
 }
 .ib-view__title {
   flex: 1;
@@ -123,33 +124,18 @@
   flex-direction: column;
   gap: var(--space-3, 1rem);
 }
-.ib-step {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2, 0.5rem);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  padding: 1.25rem 1.4rem;
-}
-.ib-step__label {
+.ib-read-label {
+  padding-top: var(--space-2);
   font-size: var(--text-small);
-  font-weight: var(--font-bold);
-  color: var(--color-accent);
+  font-weight: var(--font-semibold);
 }
-.ib-step__question {
+.ib-view .field-row > p {
+  min-width: 0;
   margin: 0;
-  font-size: 1.15rem;
-  line-height: 1.4;
-}
-.ib-step__hypothesis {
-  margin: 0;
-  font-style: italic;
-  color: var(--color-text-muted);
-}
-.ib-step__result {
-  margin: 0;
+  padding-top: var(--space-2);
   line-height: 1.7;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .ib-photos {
   display: flex;
@@ -174,14 +160,6 @@
   background: none;
   border-radius: var(--radius-medium);
   cursor: pointer;
-}
-.ib-resolution {
-  margin-top: var(--space-6, 2.5rem);
-  padding-top: var(--space-5, 1.75rem);
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2, 0.5rem);
 }
 .ib-quality {
   display: flex;
@@ -252,7 +230,8 @@
 }
 
 /* Editing shares Projects' bordered controls, paired rows and section bands. */
-.ib-form {
+.ib-form,
+.ib-view {
   display: block;
   padding: var(--space-4);
   border: 2px solid var(--color-border-strong);
