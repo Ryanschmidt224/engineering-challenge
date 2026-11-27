@@ -312,8 +312,7 @@
   accent-color: var(--color-accent);
 }
 .ib-form__footer {
-  position: sticky;
-  bottom: 0;
+  position: static;
   background: var(--color-surface);
   padding-bottom: var(--space-3);
   z-index: 2;
