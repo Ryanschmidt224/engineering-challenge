@@ -1,6 +1,6 @@
 # BuildingSchmidt — current status
 
-November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. The latest deployed baseline is #142 (`b99fab06326e9e37f632af2eb5a3991899006344`): Lessons Learned and shared ordered project photos. Production Worker version at that release: `a93bf427-1b59-4ea7-96d4-f8f927745cf7`.
+November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. The deployed baseline for this cleanup is #142 (`b99fab06326e9e37f632af2eb5a3991899006344`): Lessons Learned and shared ordered project photos. Production Worker version at that release: `a93bf427-1b59-4ea7-96d4-f8f927745cf7`.
 
 ## Current behavior
 
@@ -14,7 +14,7 @@ November 27, 2026. One private owner application on Cloudflare Workers, D1 and R
 
 Ryan authorized combining the two whole-site reviews and starting implementation. See [the combined evaluation and work plan](WHOLE-SITE-REVIEW-2026-11-27.md) for every finding, agreed priority and acceptance boundary.
 
-Batch 1 candidate formats compressed project modules, retires the unused tile runtime and live proof tools, removes the obsolete Projects variable and unused helpers, replaces the empty route-regex guard with a declared dispatch registry, and reconciles documentation. Proof/recovery workflows remain in the disposable test environment. Release validation and deployment evidence belong on its PR; this page does not claim the unmerged candidate is live.
+Batch 1 in [PR #143](https://github.com/Ryanschmidt224/engineering-challenge/pull/143) formats compressed project modules, retires the unused tile runtime and live proof tools, removes the obsolete Projects variable and unused helpers, replaces the empty route-regex guard with a declared dispatch registry, and reconciles documentation. Proof/recovery workflows remain in the disposable test environment. The release PR records exact-head validation, merge and production deployment evidence; use that checkpoint to distinguish checked source from a confirmed live release. Local validation passed all 289 code checks and native D1/R2 recovery; the application source also passed all browser workflows and Cloudflare preview before this documentation reconciliation.
 
 Queued owner UI additions: faster photo reordering with immediate activity feedback, a visually grouped What happened field, and removal of the persistent idle Saved strip. Details and acceptance are in the combined plan. These do not interrupt the cleanup candidate.
 
