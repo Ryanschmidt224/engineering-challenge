@@ -47,3 +47,28 @@ test("project photos upload, caption, reorder and remove; a part gets one pictur
  await page.getByLabel('Project view',{exact:true}).selectOption('tiles');await expect(card.locator('img')).toHaveAttribute('src',f.base+'/files/'+firstPhoto.file_id+'?inline=1');
 
 });
+
+for(const width of [390,1440])test('main part picture chooser, paste and drop share destination at '+width,async({page,request,context})=>{
+ await page.setViewportSize({width,height:1000});const f=await setup(page,request,context);
+ await page.goto('/project.html?project='+f.id+'&item='+f.itemId);
+ await page.getByRole('button',{name:'Edit photo',exact:true}).click();
+ const image=page.locator('.project-picture-holder img.project-picture');
+ const transfer=async(kind,name)=>page.getByRole('textbox',{name:'Paste a copied photo',exact:true}).evaluate((el,{kind,name,bytes})=>{
+  const data=new DataTransfer();data.items.add(new File([Uint8Array.from(bytes)],name,{type:'image/png'}));
+  el.dispatchEvent(kind==='paste'?new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}):new DragEvent('drop',{dataTransfer:data,bubbles:true,cancelable:true}));
+ },{kind,name,bytes:[...PNG]});
+ const verify=async(name,count)=>{
+  await expect.poll(async()=>{const s=await f.state();return s.media.filter(r=>r.active&&r.role==='picture'&&r.item_id===f.itemId).map(r=>s.files.find(file=>file.id===r.file_id).name)}).toEqual([name]);
+  const s=await f.state(),active=s.media.find(r=>r.active&&r.role==='picture'&&r.item_id===f.itemId);
+  await expect(image).toHaveAttribute('src',f.base+'/files/'+active.file_id+'?inline=1');await expect(image).toHaveJSProperty('naturalWidth',1);
+  expect(s.files).toHaveLength(count);expect(s.media.filter(r=>r.role==='photo'&&r.item_id===f.itemId)).toHaveLength(0);
+ };
+ // Native context-menu paste delivers the same ClipboardEvent as keyboard paste.
+ await transfer('paste','pasted.png');await verify('pasted.png',1);
+ const chooser=page.waitForEvent('filechooser');await page.getByRole('button',{name:'Replace picture',exact:true}).click();await(await chooser).setFiles({name:'chosen.png',mimeType:'image/png',buffer:PNG});await verify('chosen.png',2);
+ await transfer('drop','dropped.png');await verify('dropped.png',3);
+ await page.reload();await expect(image).toHaveJSProperty('naturalWidth',1);
+ await page.getByRole('button',{name:'Edit photo',exact:true}).click();await expect(page.getByRole('textbox',{name:'Paste an additional photo',exact:true})).toBeVisible();
+ const before=await f.state();await page.getByRole('textbox',{name:'Paste a copied photo',exact:true}).evaluate(el=>{const data=new DataTransfer();data.items.add(new File(['gif'],'invalid.gif',{type:'image/gif'}));el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}));});
+ await expect(page.locator('[data-notice]')).toContainText('A part picture must be');expect(await f.state()).toEqual(before);
+});
