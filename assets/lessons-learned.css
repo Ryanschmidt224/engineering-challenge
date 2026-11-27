@@ -18,6 +18,9 @@
   min-width: 0;
   max-width: 45rem;
 }
+.ib-main:has(.ib-form) {
+  max-width: none;
+}
 .ib-add {
   margin-bottom: var(--space-3, 0.75rem);
 }
@@ -251,6 +254,16 @@
 /* Editing shares Projects' bordered controls, paired rows and section bands. */
 .ib-form {
   display: block;
+  padding: var(--space-4);
+  border: 2px solid var(--color-border-strong);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+  box-shadow: 0 0.25rem 1rem
+    color-mix(in srgb, var(--color-shadow) 8%, transparent);
+}
+.ib-form__title {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-title);
 }
 .ib-step__tools {
   display: flex;
