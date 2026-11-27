@@ -45,7 +45,7 @@ export function showProjectDeletion(ctx, project) {
     name,
     error,
     status,
-    actions(submit, cancel),
+    actions(cancel, submit),
   );
   form.onsubmit = async (event) => {
     event.preventDefault();
@@ -104,10 +104,19 @@ export function showProjectDeletion(ctx, project) {
   dialog.oncancel = (event) => {
     if (busy) event.preventDefault();
   };
-  dialog.replaceChildren(node("h2", "Delete project permanently"), form);
+  const footer = form.lastElementChild,
+    content = node("div");
+  content.append(...form.childNodes);
+  content.removeChild(footer);
+  window.BSConfirmation.frame(dialog, {
+    title: "Delete project permanently",
+    content,
+    actions: footer,
+    form,
+  });
   dialog.setAttribute("aria-label", "Delete project permanently");
   if (!dialog.open) dialog.showModal();
-  input.focus();
+  cancel.focus();
 }
 export function projectDeletionSection(ctx, project) {
   const section = window.BSUI.section({

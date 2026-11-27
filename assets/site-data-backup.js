@@ -10,6 +10,6 @@ export function backupAllDataButton(){
    if(!directSaveSupported())throw Error(browserHelp);
    const file=await window.showSaveFilePicker({suggestedName:name,types:[{description:'BuildingSchmidt data backup',accept:{'application/octet-stream':['.bsbackup']}}]});writable=await file.createWritable();button.textContent='Backing up…';
    for await(const bytes of backupDataLines(siteBackupReader()))await writable.write(bytes);await writable.close();writable=null;button.textContent='Backup saved';
-  }catch(error){if(writable)await writable.abort().catch(()=>{});if(error.name!=='AbortError')window.alert(error.message);}finally{button.disabled=!directSaveSupported();if(button.textContent!=='Backup saved')button.textContent=original;}
+  }catch(error){if(writable)await writable.abort().catch(()=>{});if(error.name!=='AbortError')await window.BSDialogs.alert(error.message,{title:"Backup could not be saved"});}finally{button.disabled=!directSaveSupported();if(button.textContent!=='Backup saved')button.textContent=original;}
  });button.disabled=!directSaveSupported();if(button.disabled)button.title=browserHelp;return button;
 }
