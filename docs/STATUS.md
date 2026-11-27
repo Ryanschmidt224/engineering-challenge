@@ -29,3 +29,9 @@ The approved mockup replaces competing custom/placement creation choices with Ne
 Specific-name and description rows hide when names are linked, preserving draft values and stored descriptions. Blank prompt/details rows use stable specification IDs without presets or panels; existing typed specification evidence and units remain compatible. Acceptance criteria is removed from the working editor, while stored historical data remains readable through archives. Ordered is supported by model, API, status controls, filters, backups and an atomic v16 occurrence-constraint migration preserving rows, foreign keys, indexes and triggers. Shared editors scroll their content above a persistent action bar. The four approved help controls use the shared tooltip owner.
 
 Validation and deployment evidence will be recorded on the release PR. No production data purge or paid AI lookup is part of this release.
+
+## Approved part photo layout
+
+Part pages now place the identity heading first, the photo component next, and compact Status, Quantity and Needs attention controls below it. The expanded component follows the approved mockup: a main-photo slot beside three-column library tiles, one upload/paste area, and a top-right Done control. Phone layouts stack the same regions. Caption editing and confirmed removal remain available through the simplified tiles.
+
+Previous/next buttons, a position counter and left/right keyboard navigation browse existing photos without issuing a command or changing the saved main picture. Explicit Use as main or library dragging selects that picture; clearing or replacing it keeps library files. The component handles zero/one-photo navigation and legacy main pictures that have no separate library row. Browser checks cover desktop/phone geometry, wraparound, read-only browsing, persistence after reload, captions/removal, existing uploads and failure feedback. Release checks and deployment evidence are recorded on the PR.
