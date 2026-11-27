@@ -181,6 +181,9 @@
 }
 
 .workshop-product-editor .panel-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   background: var(--color-surface-muted);
   border-radius: var(--radius-small);
@@ -199,4 +202,8 @@
   .workshop-lookup > .actions + .muted {
     margin-left: 0;
   }
+}
+
+.workshop-product-editor .panel-heading h3 {
+  margin: 0;
 }
