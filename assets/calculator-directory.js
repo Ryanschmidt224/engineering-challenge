@@ -1,5 +1,5 @@
 import {renderWireCalculator} from "./wire-resistance-ui.js";
-import {initDirectory} from "./project-directory.js";
+import {initDirectory} from "./project-directory.js?v=project-numbers-20261128";
 import {createDirectoryFilters} from "./directory-filters.js";
 const element=(tag,className,text)=>{const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node;};
 export function initCalculatorDirectory({root,calculators}) {

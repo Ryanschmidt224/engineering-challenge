@@ -1,6 +1,9 @@
 import { normalizeOverview } from "./project-overview-model.js?v=cad-links-20261128";
 import { node, field } from "./workshop-ui.js";
-import { editable, detailsFor } from "./project-editors.js";
+import {
+  editable,
+  detailsFor,
+} from "./project-editors.js?v=project-numbers-20261128";
 import { fileLink } from "./project-information.js?v=cad-links-20261128";
 import { normalizeCadLinks } from "./cad-link-model.js";
 import { cadLinkRows } from "./cad-link-view.js";

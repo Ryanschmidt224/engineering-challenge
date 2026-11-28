@@ -58,6 +58,7 @@ export function initDirectory({
           (term) =>
             ![
               project.name,
+              project.displayName,
               project.shortSummary,
               project.description,
               project.detail,
@@ -94,11 +95,15 @@ export function initDirectory({
       else link.dataset.project = project.id;
       link.setAttribute(
         "aria-label",
-        "Open " + project.name + (onOpen ? "" : " project"),
+        "Open " +
+          (project.displayName || project.name) +
+          (onOpen ? "" : " project"),
       );
       art.setAttribute("aria-hidden", "true");
       art.textContent = project.name.trim().charAt(0).toUpperCase();
-      copy.append(make("strong", "ui-project-name", project.name));
+      copy.append(
+        make("strong", "ui-project-name", project.displayName || project.name),
+      );
       const summary = project.shortSummary || project.description;
       if (summary) copy.append(make("span", "ui-project-caption", summary));
       const descriptors = make("span", "ui-project-tags");

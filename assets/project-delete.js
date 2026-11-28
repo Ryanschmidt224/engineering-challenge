@@ -1,3 +1,4 @@
+import { projectLabel } from "./project-identity.js";
 import { node, field, actions } from "./workshop-ui.js?v=save-upload-20261128";
 const button = (...args) => window.BSUI.button(...args);
 export function showProjectDeletion(ctx, project) {
@@ -34,7 +35,7 @@ export function showProjectDeletion(ctx, project) {
     node(
       "p",
       "Permanently delete “" +
-        project.name +
+        projectLabel(project) +
         "”? This removes its parts, files, instructions, history and project backups from this website. It cannot be undone. Whole-site and downloaded backups may retain earlier copies until those backups are replaced.",
     ),
     node(

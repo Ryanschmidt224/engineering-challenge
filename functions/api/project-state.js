@@ -10,7 +10,7 @@ export class ProjectNotFound extends Error {constructor(message="Project or item
 export const text=(value,max,label,required=false)=>{if(value===undefined)value="";if(typeof value!=="string"||value.length>max||value.includes("\0")||required&&!value.trim())throw Error(label+" must be valid text"+(required?" (required)":"")+" of at most "+max+" characters.");return value.trim();};
 export async function ownedProject(db,id,actor){
  if(!uuid(id))throw new ProjectNotFound();
- const project=await statement(db,"SELECT * FROM engine_projects WHERE id=? AND owner_id=? AND restore_job_id IS NULL AND NOT EXISTS(SELECT 1 FROM engine_project_deletions WHERE project_id=engine_projects.id)",id,actor).first();if(!project)throw new ProjectNotFound();return project;
+ const project=await statement(db,"SELECT p.*,n.project_number FROM engine_projects p JOIN engine_project_numbers n ON n.project_id=p.id WHERE p.id=? AND p.owner_id=? AND p.restore_job_id IS NULL AND NOT EXISTS(SELECT 1 FROM engine_project_deletions WHERE project_id=p.id)",id,actor).first();if(!project)throw new ProjectNotFound();return project;
 }
 export function expectedProject(project,input){if(project.revision!==input.expectedRevision)throw new CommandConflict();}
 export async function unchangedProject(db,project,input){const row=await statement(db,"SELECT revision FROM engine_projects WHERE id=? AND owner_id=?",project.id,input.actorId).first();if(row?.revision!==input.expectedRevision)throw new CommandConflict();return {ok:true,noop:true,revision:row.revision};}
@@ -89,6 +89,6 @@ export function addEvent(w,projectId,itemId,type,title,payload={},summary="",id=
 export function originalPath(project,item,step){return {root:{id:project.id,name:project.name},item:{id:item.id,name:item.name,part_number:item.part_number},...(step?{step:{id:step.id,title:step.title}}:{})};}
 export async function workspaceState(db,project){
  const tables=["engine_items","engine_occurrences","engine_steps","engine_records","engine_files","engine_file_links","engine_selections","engine_archive_groups","engine_media"];
- const result=await db.batch([statement(db,"SELECT * FROM engine_projects WHERE id=?",project.id),...tables.map(table=>statement(db,`SELECT * FROM ${table} WHERE project_id=? ORDER BY ${table==="engine_steps"||table==="engine_media"?"sort_order,id":"id"}`,project.id)),statement(db,"SELECT id,json_extract(payload,'$.record_id') AS record_id FROM engine_events WHERE project_id=? AND json_type(payload,'$.record_id')='text'",project.id)]);
+ const result=await db.batch([statement(db,"SELECT p.*,n.project_number FROM engine_projects p JOIN engine_project_numbers n ON n.project_id=p.id WHERE p.id=?",project.id),...tables.map(table=>statement(db,`SELECT * FROM ${table} WHERE project_id=? ORDER BY ${table==="engine_steps"||table==="engine_media"?"sort_order,id":"id"}`,project.id)),statement(db,"SELECT id,json_extract(payload,'$.record_id') AS record_id FROM engine_events WHERE project_id=? AND json_type(payload,'$.record_id')='text'",project.id)]);
  const {legacy_owner_name,...publicProject}=result[0].results[0];return {record_events:result.at(-1).results,project:publicProject,...Object.fromEntries(tables.map((name,index)=>[name.replace("engine_",""),result[index+1].results.map(decode)]))};
 }

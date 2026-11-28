@@ -6,7 +6,7 @@ import {
 } from "./project-item-model.js?v=cad-links-20261128";
 import { recordPrompts } from "./project-record-model.js";
 import { instructionTree } from "./project-instruction-model.js";
-import { detailsFor } from "./project-editors.js?v=save-upload-20261128";
+import { detailsFor } from "./project-editors.js?v=project-numbers-20261128";
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const side = (value) =>

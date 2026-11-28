@@ -1,7 +1,8 @@
+import { projectLabel } from "./project-identity.js";
 import { node } from "./workshop-ui.js?v=save-upload-20261128";
-import { initDirectory } from "./project-directory.js";
+import { initDirectory } from "./project-directory.js?v=project-numbers-20261128";
 import { ownerChoices } from "./website-settings-client.js?v=offsite-backup-20261128";
-import { showProjectDeletion } from "./project-delete.js";
+import { showProjectDeletion } from "./project-delete.js?v=project-numbers-20261128";
 
 export function projectCatalog(ctx, projects, create = null) {
   const projectOwners = ownerChoices(
@@ -64,7 +65,8 @@ export function projectCatalog(ctx, projects, create = null) {
       ...project,
       shortSummary: project.short_summary || "",
       description: project.description || "",
-      name: (project.deletion_state ? "Deleting — " : "") + project.name,
+      displayName:
+        (project.deletion_state ? "Deleting — " : "") + projectLabel(project),
       createdAt: project.created_at,
       tags: [project.owner_name || "Ryan"],
     })),
