@@ -242,6 +242,9 @@ test('partial lesson photo batches retain remaining files and retry final saves 
  });
  await page.getByRole('region',{name:'Step 1',exact:true}).locator('input[type="file"]').setInputFiles([
   {name:'first.png',mimeType:'image/png',buffer:png},{name:'second.png',mimeType:'image/png',buffer:png}]);
+ // The retry control is rendered while the batch is still running. Wait for
+ // the rejected second request before inspecting the batch or retrying it.
+ await expect(page.locator('.ib-status')).toContainText('Fixture upload rejected');
  await expect(page.getByRole('button',{name:'Retry photo upload',exact:true})).toBeEnabled();
  expect(names).toEqual(['first.png','second.png']);
  rejectSecond=false;await page.getByRole('button',{name:'Retry photo upload',exact:true}).click();

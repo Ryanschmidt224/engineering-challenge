@@ -21,7 +21,7 @@ export async function* backupBlocks(iterable) {
   let block = new Uint8Array(PART),
     used = 0;
   for await (const chunk of iterable) {
-    for (let at = 0; at < chunk.byteLength; ) {
+    for (let at = 0; at < chunk.byteLength;) {
       const size = Math.min(PART - used, chunk.byteLength - at);
       block.set(chunk.subarray(at, at + size), used);
       used += size;
