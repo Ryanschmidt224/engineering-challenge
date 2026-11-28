@@ -5,9 +5,9 @@ import { normalizeOverview } from "./project-overview-model.js?v=cad-links-20261
 import {
   editable,
   confirmAction,
-} from "./project-editors.js?v=project-numbers-20261128";
+} from "./project-editors.js?v=manufacturer-visibility-20261128";
 import { recordAttachments } from "./project-record-attachments.js";
-import { fileLink } from "./project-information.js?v=cad-links-20261128";
+import { fileLink } from "./project-information.js?v=manufacturer-visibility-20261128";
 const button = (...args) => window.BSUI.button(...args);
 const write = (ctx, data, token) =>
   ctx.client.write(ctx.projectId, "/overview", "PATCH", data, token);

@@ -15,7 +15,7 @@ import {
 import {
   editItem,
   placementEditor,
-} from "./project-editors.js?v=project-numbers-20261128";
+} from "./project-editors.js?v=manufacturer-visibility-20261128";
 import { partHistoryPrompt } from "./project-part-history.js";
 import { contextMenu } from "./context-menu.js";
 const button = (...args) => window.BSUI.button(...args);

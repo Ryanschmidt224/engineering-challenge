@@ -1,3 +1,4 @@
+import { hasManufacturerFields } from "./project-sourcing.js";
 import { projectLabel } from "./project-identity.js";
 import { projectCadLinks } from "./project-cad-links.js";
 import { projectStatusChoices } from "./project-item-model.js?v=cad-links-20261128";
@@ -15,14 +16,14 @@ import {
   editRecord,
   projectSettings,
   confirmAction,
-} from "./project-editors.js?v=project-numbers-20261128";
+} from "./project-editors.js?v=manufacturer-visibility-20261128";
 import { workInstructions as instructionView } from "./project-instructions.js";
 import {
   information,
   configurationView,
   recordVersionView,
   fileLink,
-} from "./project-information.js?v=cad-links-20261128";
+} from "./project-information.js?v=manufacturer-visibility-20261128";
 import { createHistoryView, latestHistory } from "./project-history-view.js";
 import { partRevisions, partHistoryPrompt } from "./project-part-history.js";
 import { renderProjectTree } from "./project-tree-view.js?v=project-numbers-20261128";
@@ -35,7 +36,7 @@ import {
 } from "./project-workshop-editor.js";
 import { projectCatalog } from "./project-catalog.js?v=project-numbers-20261128";
 import { projectSummary } from "./project-summary.js";
-import { renderProjectParts } from "./project-parts-view.js";
+import { renderProjectParts } from "./project-parts-view.js?v=manufacturer-visibility-20261128";
 import { downloadProjectHTML } from "./project-html-export.js?v=project-numbers-20261128";
 import { initProjectSignin } from "./project-signin.js?v=offsite-backup-20261128";
 const button = (...args) => window.BSUI.button(...args);
@@ -358,7 +359,14 @@ export function initProjectWorkspace(root = document) {
           },
         },
         "Part details",
-        { includeBuild: false, includeContainer: false },
+        {
+          includeBuild: false,
+          includeContainer: false,
+          includeManufacturer: hasManufacturerFields(
+            item,
+            state.selections.find((row) => row.id === item.id),
+          ),
+        },
       ),
       information("Display options", [
         ["Quantity", occ.quantity + " " + occ.unit],
