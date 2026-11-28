@@ -10,7 +10,7 @@ const valueCount=async f=>(await f.db.prepare("SELECT count(*) AS n FROM engine_
 
 for(const assembly of [false,true])test("1000 records can be revised, archived and recovered with exact earlier evidence on a "+(assembly?"parent assembly":"part"),async()=>{
  const f=await fixture();try{
-  const file=await upload(f,"retained-drawing.step",new TextEncoder().encode("Exact original engineering bytes"));
+  const file=await upload(f,"retained-drawing.dat",new TextEncoder().encode("Exact original engineering bytes"));
   let target=f.itemId;if(assembly){const added=await f.call("/items","POST",{details:{name:"Parent assembly",is_assembly:true}});assert.equal(added.status,200);target=added.result.itemId;const placement=(await f.call("/state")).result.occurrences.find(row=>row.item_id===f.itemId);assert.equal((await f.call("/occurrences/"+placement.id,"PATCH",{parentId:added.result.occurrenceId})).status,200);}
   const part=snapshot=>assembly?snapshot.parts.find(row=>row.item.id===f.itemId):snapshot;
   let firstRecord,early;

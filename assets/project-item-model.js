@@ -1,3 +1,4 @@
+import { normalizeCadLinks, cadLinkSummary } from "./cad-link-model.js";
 export const projectStatusChoices = [
   ["not_started", "Not started"],
   ["ordered", "Ordered"],
@@ -77,6 +78,7 @@ export function normalizeCustomItem(input) {
     fields,
     [
       ...Object.keys(textFields),
+      "cad_links",
       "specs",
       "name_linked",
       "individual_cost",
@@ -86,6 +88,8 @@ export function normalizeCustomItem(input) {
     "Engineering fields",
   );
   const normalized = {};
+  if (owns(fields, "cad_links"))
+    normalized.cad_links = normalizeCadLinks(fields.cad_links);
   if (owns(fields, "name_linked"))
     normalized.name_linked = boolean(fields.name_linked, "Linked part names");
   for (const [key, [label, max]] of Object.entries(textFields))
@@ -292,6 +296,18 @@ export function diffCustomItems(beforeInput, afterInput) {
       side(before.fields, key),
       side(after.fields, key),
     );
+  add(
+    "fields.cad_links",
+    "CAD links",
+    {
+      present: !!before.fields.cad_links?.length,
+      value: cadLinkSummary(before.fields.cad_links || []),
+    },
+    {
+      present: !!after.fields.cad_links?.length,
+      value: cadLinkSummary(after.fields.cad_links || []),
+    },
+  );
   const oldSpecs = before.fields.specs || [],
     newSpecs = after.fields.specs || [],
     oldMap = new Map(oldSpecs.map((row) => [row.field_id, row])),

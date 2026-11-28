@@ -6,14 +6,14 @@ import {
   savedPartView,
   buildContextView,
   recordVersionView,
-} from "./project-information.js";
+} from "./project-information.js?v=cad-links-20261128";
 import {
   node,
   field,
   actions,
   listCard,
 } from "./workshop-ui.js?v=save-upload-20261128";
-import { formatRevisionValue } from "./project-item-model.js";
+import { formatRevisionValue } from "./project-item-model.js?v=cad-links-20261128";
 import { recordPrompts } from "./project-record-model.js";
 import { projectHelp } from "./project-help.js";
 import { initSplitPanes } from "./split-panes.js";

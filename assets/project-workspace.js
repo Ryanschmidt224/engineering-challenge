@@ -1,4 +1,5 @@
-import { projectStatusChoices } from "./project-item-model.js";
+import { projectCadLinks } from "./project-cad-links.js";
+import { projectStatusChoices } from "./project-item-model.js?v=cad-links-20261128";
 import { loadWebsiteSettings } from "./website-settings-client.js";
 import { summaryAssembly } from "./project-root-view.js";
 import { containerName } from "./project-presentation.js";
@@ -20,7 +21,7 @@ import {
   configurationView,
   recordVersionView,
   fileLink,
-} from "./project-information.js";
+} from "./project-information.js?v=cad-links-20261128";
 import { createHistoryView, latestHistory } from "./project-history-view.js";
 import { partRevisions, partHistoryPrompt } from "./project-part-history.js";
 import { renderProjectTree } from "./project-tree-view.js";
@@ -184,48 +185,6 @@ export function initProjectWorkspace(root = document) {
   function workInstructions(current, context = ctx()) {
     return instructionView(context, current);
   }
-  function engineeringFile(current, context = ctx()) {
-    const state = client.state,
-      link = state.file_links.find(
-        (link) => link.item_id === current.id && link.active,
-      ),
-      file = state.files.find((file) => file.id === link?.file_id),
-      section = window.BSUI.section({
-        title: "CAD files",
-        count: file ? 1 : 0,
-        countLabel: ["file", "files"],
-        role: "engineering-file",
-      }),
-      input = node("input");
-    input.type = "file";
-    input.setAttribute("aria-label", "CAD file");
-    const upload = button(
-      file ? "Replace CAD file" : "Upload CAD file",
-      async () => {
-        if (!input.files.length) {
-          notify("Choose a file first.");
-          return;
-        }
-        upload.disabled = true;
-        try {
-          await client.upload(projectId, input.files[0], {
-            itemId: current.id,
-            occurrenceId: context.occurrenceId,
-          });
-          await refresh();
-          notify("CAD file saved. Earlier History keeps the earlier file.");
-        } catch (error) {
-          notify(error.message);
-        } finally {
-          upload.disabled = false;
-        }
-      },
-    );
-    window.BSUI.sectionActions(section.body, { primary: upload });
-    section.body.append(input);
-    if (file) section.body.append(fileLink(context, file));
-    return { root: section.root, file };
-  }
   function revisionsHistory() {
     return window.BSUI.section({
       title: "Revisions / History",
@@ -257,7 +216,7 @@ export function initProjectWorkspace(root = document) {
       return;
     }
     const context = { ...ctx(), itemId: item.id, occurrenceId: occ.id },
-      fileArea = engineeringFile(item, context);
+      fileArea = projectCadLinks(context, item, { summary });
     if (!summary) {
       const picture = partPicture(context, item);
       const overview = node("section", "", "project-part-overview"),
@@ -430,7 +389,7 @@ export function initProjectWorkspace(root = document) {
       );
       container.append(assembly.root);
     }
-    container.append(workInstructions(item, context), fileArea.root);
+    container.append(workInstructions(item, context), fileArea);
     const history = window.BSUI.section({
       title: summary ? "Assembly history" : "History",
       role: "item-history",
@@ -636,7 +595,7 @@ export function initProjectWorkspace(root = document) {
       );
       photos.root.classList.add("project-summary-overview");
       photos.body.append(picture);
-      main.append(photos.root, projectSummary(ctx()));
+      main.append(photos.root, projectSummary(ctx()), projectCadLinks(ctx()));
       const historyPanel = revisionsHistory();
       if (rootAssembly) {
         const assembly = window.BSUI.section({

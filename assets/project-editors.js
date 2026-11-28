@@ -25,7 +25,7 @@ import {
   diffCustomItems,
   formatRevisionValue,
   allocatePartNumber,
-} from "./project-item-model.js";
+} from "./project-item-model.js?v=cad-links-20261128";
 import {
   recordPrompts,
   normalizeProjectRecord,

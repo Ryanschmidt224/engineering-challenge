@@ -1,8 +1,8 @@
-import { projectStatusChoices } from "./project-item-model.js";
+import { projectStatusChoices } from "./project-item-model.js?v=cad-links-20261128";
 import { node, field, checkbox } from "./workshop-ui.js?v=save-upload-20261128";
 import { dataTable } from "./data-table.js";
 import { projectTree } from "./project-tree-model.js";
-import { projectNumberKey } from "./project-item-model.js";
+import { projectNumberKey } from "./project-item-model.js?v=cad-links-20261128";
 import { editItem } from "./project-editors.js?v=save-upload-20261128";
 const categories = [
   ["all", "All items"],

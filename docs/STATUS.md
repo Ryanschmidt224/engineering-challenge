@@ -1,6 +1,6 @@
 # BuildingSchmidt — current status
 
-November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. The confirmed release baseline is #158 (`2d261e8feaffda1ebb75bae480de42854e94b8da`): durable login-attempt protection, visible Workshop product photo uploads, automatic whole-site backups, backup monitoring, the compact Workshop product read view, shared confirmation template (#152), default-collapsed family fields (#151), and the earlier Lessons/photo/lookup updates. Its 327 code tests, 156 browser workflows and dependency check passed. Release PRs record exact source and Cloudflare deployment evidence.
+November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. The confirmed release baseline is #159 (`95e12c66efb9d942957496e2b0977dcdff76bf38`): durable login-attempt protection, visible Workshop product photo uploads, automatic whole-site backups, backup monitoring, the compact Workshop product read view, shared confirmation template (#152), default-collapsed family fields (#151), and the earlier Lessons/photo/lookup updates. Its 331 code tests, 160 browser workflows and dependency check passed. Release PRs record exact source and Cloudflare deployment evidence.
 
 ## Current behavior
 
@@ -24,7 +24,7 @@ Browser security headers (F3) now cover static assets and Worker responses throu
 
 The save/upload reliability batch shares response classification between Projects, Workshop and Lessons: lost/unreadable write replies remain unconfirmed, session expiry asks for sign-in, and revision conflicts ask for review. Project editors expose saving progress, coalesce identical in-flight commands, and acknowledge confirmed command bodies only after a successful UI refresh; uncertain commands keep their replay identity. Workshop family/product editors retain fields after a confirmed save with a failed refresh; unchanged retry refreshes only. Workshop photo retries retain bytes/IDs and cannot be replaced by another selection. Lessons retain partial photo batches in the current tab, retry the remaining uploads/final save without duplication, and prevent leaving or restructuring a lesson until its pending photo batch is resolved or explicitly discarded through Load saved lesson. Temporary upload previews are released; lesson photos use confirmed server URLs rather than accumulating local blobs. No stored rows, files or safety receipts are removed.
 
-Next: measure photo/collection performance before choosing optimizations, and verify the first hosted whole-site backup run in Website settings. The CAD Dropbox-link workflow remains deferred.
+Next: measure photo/collection performance before choosing optimizations, and verify the first hosted whole-site backup run in Website settings. CAD now uses named Dropbox file/folder links on parts and assemblies, plus an independent CAD files section on every project summary. Existing stored CAD remains downloadable, included in backups and readable in history. New recognized CAD uploads are rejected; existing bytes and completed upload replay remain intact. Links preserve their full sharing query parameters, open in a new tab, and use normal owner/revision/replay guards. Backups include URLs, not Dropbox contents; external file revisions and permissions stay in Dropbox.
 
 The complete finding/action list is in [the combined review and work plan](WHOLE-SITE-REVIEW-2026-11-27.md). Cleanup #143, toolchain maintenance #144 and photo/lesson feedback #145 are released. Dependency advisories are checked in CI; automatic dependency PRs require normal review and tests.
 
@@ -32,6 +32,6 @@ The complete finding/action list is in [the combined review and work plan](WHOLE
 
 Preserve owner/origin guards, project/Workshop isolation, immutable evidence, operation replay, deletion tombstones and restore fences. Applied migrations and current backup readers remain. No stored-data sweep, account change or paid AI test is part of this maintenance. Routine Claude reviews remain off. Historical draft PRs #32 and #91 are not active work and must not be merged automatically.
 
-CAD attachments are queued for a Dropbox-link workflow; access and editing behavior are undecided. Existing CAD files/upload behavior remain. Independent hosted project URLs stay a late priority.
+CAD links are metadata only; the application does not authenticate to Dropbox, fetch external bytes, manage sharing, or freeze external content. Independent hosted project URLs stay a late priority.
 
 [CODEBASE_GUIDE.md](CODEBASE_GUIDE.md) owns the code map; [UI_STANDARDS.md](UI_STANDARDS.md) owns current component behavior. Dated reports live in [history/](history/README.md).
