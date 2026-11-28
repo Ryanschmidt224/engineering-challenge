@@ -98,6 +98,15 @@ export const ownedModules = [
   "scripts/workshop-backup.mjs",
   "scripts/format-owned.mjs",
 ];
+ownedModules.push(
+  "assets/backup-reminder-model.js",
+  "assets/backup-reminder-client.js",
+  "assets/backup-reminder-banner.js",
+  "assets/backup-reminder-settings.js",
+  "assets/backup-file-save.js",
+  "assets/site-data-backup.js",
+  "functions/api/backup-reminder.js",
+);
 const write = process.argv.includes("--write"),
   failures = [];
 for (const file of ownedModules) {

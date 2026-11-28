@@ -1,3 +1,4 @@
+import {backupReminderResponse} from './backup-reminder.js';
 import {websiteSettingsBody,websiteSettingsResponse} from './website-settings.js';
 import {editOverview} from "./project-overview.js";
 import {exportProject,restoreProject} from "./project-backup.js";
@@ -25,17 +26,18 @@ export async function commandBody(request,max=256000){
 // A replay is resolved before domain reads (including number allocation). The
 // route and target are fingerprinted so another action cannot reuse a receipt.
 export async function handleProjectWorkspace(request,env,owner){
- const url=new URL(request.url),base="/api/project-engine/projects",settings=url.pathname==="/api/project-engine/settings",maintenance=url.pathname==="/api/project-engine/maintenance/orphans",path=settings||maintenance?[]:url.pathname.slice(base.length).split("/").filter(Boolean),method=request.method,db=env.WORKSHOP_DB;
- if(!settings&&!maintenance&&(!url.pathname.startsWith(base)||url.pathname!==base&&url.pathname[base.length]!=="/"))return engineJSON({error:"Not found"},404);
+ const url=new URL(request.url),base="/api/project-engine/projects",reminder=url.pathname==="/api/project-engine/backup-reminder",settings=url.pathname==="/api/project-engine/settings",maintenance=url.pathname==="/api/project-engine/maintenance/orphans",path=settings||reminder||maintenance?[]:url.pathname.slice(base.length).split("/").filter(Boolean),method=request.method,db=env.WORKSHOP_DB;
+ if(!settings&&!reminder&&!maintenance&&(!url.pathname.startsWith(base)||url.pathname!==base&&url.pathname[base.length]!=="/"))return engineJSON({error:"Not found"},404);
  let body;
  try{
   const importing=method==="POST"&&path.length===2&&["import","import-copy"].includes(path[1]);
-  if(settings? !["GET","PATCH"].includes(method):maintenance?method!=="GET":!["GET","POST","PATCH","PUT"].includes(method))return engineJSON({error:"Method not allowed"},405);
+  if(reminder?!["GET","POST"].includes(method):settings? !["GET","PATCH"].includes(method):maintenance?method!=="GET":!["GET","POST","PATCH","PUT"].includes(method))return engineJSON({error:"Method not allowed"},405);
   if(maintenance)validateOrphanInventory(url.searchParams);
   if(settings&&method==="PATCH")body=await websiteSettingsBody(request);
-  if(!settings&&!importing&&!["GET","PUT"].includes(method))body=await commandBody(request);
+  if(!settings&&!reminder&&!importing&&!["GET","PUT"].includes(method))body=await commandBody(request);
   if(path.length&&!uuid(path[0]))throw new ProjectNotFound();
   await initializeProjectEngine(db);
+  if(reminder)return engineJSON(await backupReminderResponse(db,request));
   if(settings)return engineJSON(await websiteSettingsResponse(db,body));
   if(maintenance)return engineJSON(await inventoryProjectOrphans(db,env.PHOTOS,owner.id,url.searchParams));
   if(!path.length){if(method!=="GET")return engineJSON({error:"Method not allowed"},405);return engineJSON({projects:await rows(db,"SELECT p.id,p.owner_id,p.owner_name,p.name,p.revision,p.prefix,p.digits,p.created_at,json_extract(p.overview,'$.shortSummary') AS short_summary,json_extract(p.overview,'$.description') AS description,(SELECT m.file_id FROM engine_media m WHERE m.project_id=p.id AND m.item_id IS NULL AND m.role='photo' AND m.active=1 ORDER BY m.sort_order,m.id LIMIT 1) AS cover_file_id,d.id AS deletion_operation_id,d.expected_revision AS deletion_expected_revision,d.state AS deletion_state FROM engine_projects p LEFT JOIN engine_project_deletions d ON d.project_id=p.id AND d.actor_id=p.owner_id WHERE p.owner_id=? AND p.restore_job_id IS NULL ORDER BY p.name,p.id",owner.id)});}

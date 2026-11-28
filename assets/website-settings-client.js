@@ -1,4 +1,4 @@
-import { defaultWebsiteSettings } from "./website-settings-model.js";
+import { defaultWebsiteSettings } from "./website-settings-model.js?v=offsite-backup-20261128";
 
 // Deduplicate only requests that are still running. A settled request must not
 // become a page-lifetime cache of the owner/tag choices.

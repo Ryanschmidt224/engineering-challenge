@@ -31,6 +31,7 @@ export function initProjectSignin(callbacks = {}) {
       await run(async () => {
         await account("DELETE");
         dialog.close();
+        window.dispatchEvent(new Event("bs:owner-session-changed"));
         handlers.onSignOut();
       });
     });
@@ -90,6 +91,7 @@ export function initProjectSignin(callbacks = {}) {
       });
       secret.value = "";
       dialog.close();
+      window.dispatchEvent(new Event("bs:owner-session-changed"));
       handlers.onSignIn();
     });
   };

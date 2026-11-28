@@ -1,0 +1,33 @@
+.ui-backup-reminder {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  padding: 0.5rem max(1rem, calc((100% - 1440px) / 2));
+  color: var(--ink, #263d36);
+  background: var(--highlight, #dcebe2);
+  border-bottom: 1px solid var(--line, #bdcec6);
+  font-size: 0.875rem;
+}
+.ui-backup-reminder[hidden] {
+  display: none;
+}
+.ui-backup-reminder .ui-button {
+  padding: 0.25rem 0.5rem;
+  min-height: 2rem;
+  font-size: inherit;
+}
+[data-backup-reminder-settings] input {
+  max-width: 7rem;
+}
+#data-backup {
+  scroll-margin-top: calc(var(--site-header-height, 5rem) + 1rem);
+}
+[data-newest-backup] {
+  background: var(--highlight, #dcebe2);
+}
+@media (max-width: 600px) {
+  .ui-backup-reminder > span:first-child {
+    flex-basis: 100%;
+  }
+}

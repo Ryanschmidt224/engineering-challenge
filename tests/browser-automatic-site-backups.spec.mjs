@@ -20,6 +20,7 @@ for (const width of [390, 1440])
     "nightly whole-site copies capture notebook-only edits and download valid backups at " +
       width,
     async ({ page }, testInfo) => {
+      await page.addInitScript(() => { window.showSaveFilePicker = undefined; });
       await page.setViewportSize({ width, height: 950 });
       const id = crypto.randomUUID();
       const post = async (body) => {
@@ -68,6 +69,9 @@ for (const width of [390, 1440])
         .click();
       const download = await downloadEvent,
         path = await download.path();
+      const reminder = await (await page.request.get("/api/project-engine/backup-reminder")).json();
+      expect(reminder.lastDownloaded).toBeNull();
+      expect(reminder.lastConfirmed).toBeNull();
       expect(download.suggestedFilename()).toMatch(/\.bsbackup$/);
       const verified = spawnSync(
         "python",

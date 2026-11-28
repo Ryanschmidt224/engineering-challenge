@@ -1,5 +1,6 @@
+import { initBackupReminder } from "./backup-reminder-banner.js";
 import "./ui-kit.js";
-import { initProjectSignin } from "./project-signin.js";
+import { initProjectSignin } from "./project-signin.js?v=offsite-backup-20261128";
 import { contextMenu } from "./context-menu.js";
 // One header structure for Projects, Workshop and Knowledge.
 export function initSiteHeader() {
@@ -96,4 +97,5 @@ export function initSiteHeader() {
   update();
   window.addEventListener("hashchange", update);
   initProjectSignin();
+  initBackupReminder(header);
 }

@@ -1,4 +1,4 @@
-import {initSiteHeader} from "./site-header.js";
+import {initSiteHeader} from "./site-header.js?v=offsite-backup-20261128";
 import {initCalculatorDirectory} from "./calculator-directory.js";
 import {calculators} from "./calculator-catalog.js";
 
