@@ -1,3 +1,4 @@
+import { requestResult } from "./request-result.js";
 // Lessons Learned page (browser). Mount with: initLessons(document.getElementById("lessons-learned")).
 //
 // One list on the left (Add lesson, search, quality filter), one lesson on
@@ -59,36 +60,33 @@ function h(tag, props = {}, ...children) {
 }
 
 async function request(path, method = "GET", payload) {
-  const response = await fetch(path, {
-    method,
-    credentials: "same-origin",
-    cache: "no-store",
-    ...(payload === undefined
+  return requestResult(
+    path,
+    {
+      method,
+      credentials: "same-origin",
+      cache: "no-store",
+      ...(payload === undefined
+        ? {}
+        : {
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(payload),
+          }),
+    },
+    method === "GET"
       ? {}
       : {
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(payload),
-        }),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const error = Error(
-      data.error ||
-        "Request failed (HTTP " +
-          response.status +
-          "). Your draft is preserved.",
-    );
-    error.status = response.status;
-    throw error;
-  }
-  return data;
+          valid: (value) =>
+            !!value?.record && Number.isInteger(value.record.revision),
+        },
+  );
 }
 
 async function uploadPhoto(bitId, file, id) {
   // Same upload ID on retry: the server treats a repeat as the same photo.
   for (let attempt = 1; ; attempt++) {
     try {
-      const response = await fetch(
+      const data = await requestResult(
         api + "/photo?bit=" + encodeURIComponent(bitId),
         {
           method: "POST",
@@ -99,15 +97,15 @@ async function uploadPhoto(bitId, file, id) {
           },
           body: file,
         },
+        { valid: (value) => value?.id === id },
       );
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok)
-        throw Object.assign(Error(data.error || "Upload failed"), {
-          status: response.status,
-        });
       return data;
     } catch (error) {
-      if (attempt >= 2 || (error.status && error.status < 500)) throw error;
+      if (
+        attempt >= 2 ||
+        (error.status && error.status < 500 && !error.uncertain)
+      )
+        throw error;
     }
   }
 }
@@ -116,7 +114,7 @@ export function initLessons(root) {
   const state = {
     bits: [],
     photos: new Map(), // id -> {id, bit_id, title}
-    previews: new Map(), // photo id -> object URL, for photos uploaded this session
+    pendingPhotos: null, // File objects stay in this tab until confirmed or explicitly discarded
     selected: new URLSearchParams(location.search).get("bit") || "",
     draft: null, // {record, expectedRevision, dirty}
     search: "",
@@ -225,6 +223,10 @@ export function initLessons(root) {
   function select(id, { edit = false } = {}) {
     if (state.busy || id === state.selected) return;
     return run(async () => {
+      if (state.pendingPhotos)
+        throw Error(
+          "Retry the pending photo upload before leaving this lesson.",
+        );
       await save();
       state.selected = id;
       state.draft = null;
@@ -255,6 +257,10 @@ export function initLessons(root) {
 
   function addBit(happened = "") {
     return run(async () => {
+      if (state.pendingPhotos)
+        throw Error(
+          "Retry the pending photo upload before adding another lesson.",
+        );
       await save();
       const record = {
         id: newId(),
@@ -312,7 +318,11 @@ export function initLessons(root) {
           });
           break;
         } catch (error) {
-          if (attempt || (error.status && error.status < 500)) throw error;
+          if (
+            attempt ||
+            (error.status && error.status < 500 && !error.uncertain)
+          )
+            throw error;
         }
       }
       remember(data.record);
@@ -350,6 +360,10 @@ export function initLessons(root) {
 
   const done = () =>
     run(async () => {
+      if (state.pendingPhotos)
+        throw Error(
+          "Retry the pending photo upload before closing this lesson.",
+        );
       const { record, expectedRevision } = state.draft;
       if (isBlank(record) && expectedRevision === null) {
         state.draft = null;
@@ -379,6 +393,10 @@ export function initLessons(root) {
 
   const removeBit = () =>
     run(async () => {
+      if (state.pendingPhotos)
+        throw Error(
+          "Retry the pending photo upload before archiving this lesson.",
+        );
       const { record, expectedRevision } = state.draft;
       if (
         !(await window.BSDialogs.confirm(
@@ -402,7 +420,14 @@ export function initLessons(root) {
   const uploadFeedback = mediaUploadFeedback();
   const addPhotos = (step, incoming) =>
     run(async () => {
-      const files = [...incoming];
+      if (state.pendingPhotos && incoming)
+        throw Error(
+          "Retry the pending photo upload before choosing more photos.",
+        );
+      const files = incoming
+        ? [...incoming]
+        : state.pendingPhotos.jobs.map((job) => job.file);
+      if (!incoming) step = state.pendingPhotos.step;
       if (step.photos.length + files.length > limits.photosPerStep)
         throw Error(
           "A step can have at most " + limits.photosPerStep + " photos.",
@@ -415,29 +440,36 @@ export function initLessons(root) {
         )
       )
         throw Error("Choose JPG, PNG, GIF or WebP photos of at most 10 MB.");
+      state.paused = false;
+      state.pendingPhotos ||= {
+        step,
+        jobs: files.map((file) => ({ file, id: newId() })),
+      };
       await save({ force: true });
       uploadFeedback.update({ phase: "uploading", images: files });
       renderMain();
       try {
-        for (const file of files) {
-          const id = newId();
+        while (state.pendingPhotos.jobs.length) {
+          const { file, id } = state.pendingPhotos.jobs[0];
           say("Uploading " + file.name + "…");
           await uploadPhoto(state.draft.record.id, file, id);
-          state.previews.set(id, URL.createObjectURL(file));
           state.photos.set(id, {
             id,
             bit_id: state.draft.record.id,
             title: file.name,
           });
-          step.photos.push(id);
+          if (!step.photos.includes(id)) step.photos.push(id);
+          state.pendingPhotos.jobs.shift();
           mark();
           renderMain();
         }
         uploadFeedback.update({ phase: "saving" });
         await save();
+        state.pendingPhotos = null;
         uploadFeedback.update({ phase: "complete" });
         uploadFeedback.root.hidden = true;
         say("");
+        renderMain();
       } catch (error) {
         uploadFeedback.update({ phase: "error", message: error.message });
         throw error;
@@ -522,6 +554,10 @@ export function initLessons(root) {
         text: state.archiveView ? "Active lessons" : "Archived",
         onclick: () =>
           run(async () => {
+            if (state.pendingPhotos)
+              throw Error(
+                "Retry the pending photo upload before leaving this lesson.",
+              );
             await save();
             state.draft = null;
             state.archiveView = !state.archiveView;
@@ -569,7 +605,7 @@ export function initLessons(root) {
     const photo = state.photos.get(id);
     return h("img", {
       class: className,
-      src: state.previews.get(id) || photoUrl(id),
+      src: photoUrl(id),
       alt: photo?.title || "Photo",
       loading: "lazy",
     });
@@ -773,6 +809,10 @@ export function initLessons(root) {
   function renderForm() {
     const record = state.draft.record;
     const restructure = (change) => {
+      if (state.pendingPhotos) {
+        say("Retry the pending photo upload before changing steps.", true);
+        return;
+      }
       change();
       mark();
       renderMain();
@@ -993,6 +1033,15 @@ export function initLessons(root) {
     }
 
     parts.push(uploadFeedback.root);
+    if (state.pendingPhotos)
+      parts.push(
+        h("button", {
+          type: "button",
+          class: "button",
+          text: "Retry photo upload",
+          onclick: () => addPhotos(),
+        }),
+      );
     if (state.paused)
       parts.push(
         h(
@@ -1001,6 +1050,7 @@ export function initLessons(root) {
           h("button", {
             type: "button",
             class: "button",
+            hidden: !!state.pendingPhotos,
             text: "Retry saving",
             onclick: () =>
               run(async () => {
@@ -1034,6 +1084,9 @@ export function initLessons(root) {
                   ))
                 )
                   return;
+                state.pendingPhotos = null;
+                uploadFeedback.finish();
+                uploadFeedback.root.hidden = true;
                 state.draft = null;
                 state.paused = false;
                 persistDraft();

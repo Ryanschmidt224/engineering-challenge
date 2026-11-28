@@ -1,0 +1,44 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {normalizeCadLinks,isCadFileName} from '../assets/cad-link-model.js';
+import {detailsFor} from '../assets/project-editors.js';
+import {fixture,upload} from './helpers/project-workspace.mjs';
+import {handleProjectWorkspace} from '../functions/api/project-workspace-api.js';
+import {normalizeOverview} from '../assets/project-overview-model.js';
+const make=(kind='file')=>({id:crypto.randomUUID(),name:'Motor bracket',kind,url:'https://www.dropbox.com/scl/'+(kind==='file'?'fi':'fo')+'/example/bracket?rlkey=keep-this-key&dl=0'});
+test('CAD links accept files/folders and retain access query parameters; reject unsafe URLs, duplicate IDs and oversized lists',()=>{
+ const links=[make(),make('folder')];assert.deepEqual(normalizeCadLinks(links),links);
+ for(const url of ['javascript:alert(1)','http://www.dropbox.com/s/a/file','https://dropbox.com.evil.test/s/a/file','https://www.dropbox.com/home/private','https://user@www.dropbox.com/s/a/file','https://www.dropbox.com:8443/s/a/file','https://www.dropbox.com/scl/fo/id/folder'])assert.throws(()=>normalizeCadLinks([{...links[0],url}]));
+ assert.throws(()=>normalizeCadLinks([links[0],links[0]]));assert.throws(()=>normalizeCadLinks(Array.from({length:21},()=>make())));
+ for(const name of ['file.STEP','assembly.SLDASM','file.stl','file.f3d','file.dxf'])assert.equal(isCadFileName(name),true);
+ for(const name of ['photo.jpg','datasheet.pdf','notes.txt'])assert.equal(isCadFileName(name),false);
+});
+test('project and part CAD links stay separate, retain frozen evidence, reject stale edits and round-trip in a backup without copying Dropbox bytes',async t=>{
+ const f=await fixture();t.after(()=>f.db.close());const projectLinks=[make('folder')],partLinks=[make()];
+ assert.equal((await f.call('/overview','PATCH',{action:'cad-links',cadLinks:projectLinks})).status,200);
+ let state=(await f.call('/state')).result;const details=detailsFor(state.items[0]);details.fields.cad_links=partLinks;
+ assert.equal((await f.call('/items/'+f.itemId,'PATCH',{details})).status,200);
+ const rev=f.revision();const checkpoint=await f.call('/items/'+f.itemId+'/records','POST',{record:{type:'note',title:'CAD checkpoint',fields:{text:'Capture link'}}});assert.equal(checkpoint.status,200,JSON.stringify(checkpoint));
+ assert.equal((await f.call('/overview','PATCH',{action:'cad-links',cadLinks:[]},{revision:rev})).status,409);
+ const revised=structuredClone(details);revised.fields.cad_links[0].name='Revision B link';
+ assert.equal((await f.call('/items/'+f.itemId+'/revisions','POST',{details:revised,entryDetails:{whatChanged:'New CAD checkpoint',whyChanged:'Revised bracket'}})).status,200);
+ const base='https://preview.example.test/api/project-engine/projects/';
+ const backup=await(await handleProjectWorkspace(new Request(base+f.projectId+'/export'),f.env,f.owner)).text();
+ assert.match(backup,/keep-this-key/);const target=crypto.randomUUID();
+ const restored=await handleProjectWorkspace(new Request(base+target+'/import-copy?name=CAD-copy',{method:'POST',headers:{origin:'https://preview.example.test','x-operation-id':crypto.randomUUID(),'x-project-revision':'new'},body:backup}),f.env,f.owner);assert.equal(restored.status,200,await restored.clone().text());
+ state=await(await handleProjectWorkspace(new Request(base+target+'/state'),f.env,f.owner)).json();
+ assert.deepEqual(normalizeOverview(state.project.overview).cadLinks,projectLinks);assert.deepEqual(state.items[0].fields.cad_links,revised.fields.cad_links);assert.equal(state.files.length,0);
+ const old=(await f.call('/history/'+checkpoint.result.eventId)).result;assert.deepEqual(old.configurations[0].snapshot.item.fields.cad_links,partLinks);
+});
+test('new CAD bytes are refused before storage; an existing CAD file still downloads and exports',async t=>{
+ const f=await fixture();t.after(()=>f.db.close());
+ for(const name of ['part.step','part.STL','assembly.sldasm'])assert.equal((await f.call('/files/prepare','POST',{name,content_type:'application/octet-stream'})).status,400);
+ const existing=await upload(f,'old-file.dat','legacy CAD bytes');
+ await f.db.prepare('UPDATE engine_files SET name=? WHERE id=?').bind('original.step',existing.fileId).run();
+ const base='https://preview.example.test/api/project-engine/projects/'+f.projectId;
+ const response=await handleProjectWorkspace(new Request(base+'/files/'+existing.fileId),f.env,f.owner);assert.equal(response.status,200);assert.equal(await response.text(),'legacy CAD bytes');
+ const exported=await handleProjectWorkspace(new Request(base+'/export'),f.env,f.owner);assert.equal(exported.status,200);const backup=await exported.text();assert.match(backup,/original.step/);
+ const target=crypto.randomUUID(),targetBase='https://preview.example.test/api/project-engine/projects/'+target;
+ const restored=await handleProjectWorkspace(new Request(targetBase+'/import-copy?name=Old-CAD',{method:'POST',headers:{origin:'https://preview.example.test','x-operation-id':crypto.randomUUID(),'x-project-revision':'new'},body:backup}),f.env,f.owner);assert.equal(restored.status,200,await restored.clone().text());
+ const state=await(await handleProjectWorkspace(new Request(targetBase+'/state'),f.env,f.owner)).json();assert.equal(state.files[0].name,'original.step');assert.equal(await(await handleProjectWorkspace(new Request(targetBase+'/files/'+state.files[0].id),f.env,f.owner)).text(),'legacy CAD bytes');
+});

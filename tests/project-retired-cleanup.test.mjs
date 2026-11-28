@@ -15,7 +15,7 @@ function seed(f,{projectId=id(),operationId=id()}={}){
 }
 async function retire(f,scope){return claimInactiveRestore(f.db,{jobId:scope.jobId,actorId:f.owner.id,observedActivity:old});}
 async function pending(f){
- await upload(f,"drawing.step",new TextEncoder().encode("Exact engineering bytes"));
+ await upload(f,"drawing.dat",new TextEncoder().encode("Exact engineering bytes"));
  assert.equal((await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"note",title:"Frozen evidence",fields:{text:"Preserve this in the source"}}})).status,200);
  assert.equal((await f.call("/items/"+f.itemId+"/revisions","POST",{entryDetails:{whatChanged:"Saved evidence and drawing"}})).status,200);
  const backup=await exportOf(f),projectId=id(),operationId=id();
@@ -79,7 +79,7 @@ test("retired keys fence old file and restore-row admission even after their hid
 });
 test("a restore put already in flight can leave fenced bytes but cannot publish or report success",async()=>{
  const f=await fixture();try{
-  await upload(f,"source.step",new TextEncoder().encode("Source remains exact"));const backup=await exportOf(f),projectId=id(),operationId=id(),put=f.env.PHOTOS.put.bind(f.env.PHOTOS);let retired=false,key;
+  await upload(f,"source.dat",new TextEncoder().encode("Source remains exact"));const backup=await exportOf(f),projectId=id(),operationId=id(),put=f.env.PHOTOS.put.bind(f.env.PHOTOS);let retired=false,key;
   f.env.PHOTOS.put=async (storageKey,bytes,options)=>{
    if(storageKey.startsWith(`project-engine/restored/${projectId}/`)&&!retired){retired=true;key=storageKey;const {id:jobId}=query(f,"SELECT id FROM engine_restore_jobs WHERE project_id=? AND operation_id=?",projectId,operationId);run(f,"UPDATE engine_restore_jobs SET created_at=?,last_activity_at=? WHERE id=?",old,old,jobId);const receipt=await retire(f,{jobId});assert.equal((await cleanupRetiredRestore(f.db,{...receipt,actorId:f.owner.id},{batchBudget:1})).journaled,1);}
    return put(storageKey,bytes,options);

@@ -1,8 +1,15 @@
-import { node } from "./workshop-ui.js";
+import { node } from "./workshop-ui.js?v=save-upload-20261128";
 import { instructionTree, recordTree } from "./project-instruction-model.js";
-import { editStep, editRecord, retireInstruction } from "./project-editors.js";
+import {
+  editStep,
+  editRecord,
+  retireInstruction,
+} from "./project-editors.js?v=save-upload-20261128";
 import { partHistoryPrompt } from "./project-part-history.js";
-import { recordVersionView, savedPartView } from "./project-information.js";
+import {
+  recordVersionView,
+  savedPartView,
+} from "./project-information.js?v=cad-links-20261128";
 import { initSplitPanes } from "./split-panes.js";
 
 const button = (...args) => window.BSUI.button(...args);

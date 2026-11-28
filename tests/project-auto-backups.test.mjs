@@ -21,7 +21,7 @@ test("nightly backups work without a rollout flag and skip an uninitialized data
 
 test("a scheduled backup restores as an identical copy, and an unchanged project is not backed up again",async()=>{
  const f=await fixture();try{
-  await upload(f,"bracket.step",new TextEncoder().encode("solid bracket"));
+  await upload(f,"bracket.dat",new TextEncoder().encode("solid bracket"));
   ok(await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"note",fields:{text:"First fit check"}}}));
   const [first]=await backupEngineProjects(enabled(f),new Date("2026-11-25T09:17:00Z"));
   assert.equal(first.status,"saved",JSON.stringify(first));assert.equal(stored(f).length,1);
@@ -45,7 +45,7 @@ test("a scheduled backup restores as an identical copy, and an unchanged project
 test("a large backup is stored in parts; a failure part-way leaves nothing behind and later projects are still processed",async()=>{
  const f=await fixture();try{
   const second=await handleProjectWorkspace(new Request(base+crypto.randomUUID(),{method:"POST",headers:{origin,"content-type":"application/json"},body:JSON.stringify({name:"Other build",operationId:crypto.randomUUID(),expectedRevision:null})}),f.env,f.owner);assert.equal(second.status,200);
-  const a=await upload(f,"a.stl",pattern(7*1024*1024,1),"support"),b=await upload(f,"b.stl",pattern(7*1024*1024,2),"support");
+  const a=await upload(f,"a.mesh",pattern(7*1024*1024,1),"support"),b=await upload(f,"b.mesh",pattern(7*1024*1024,2),"support");
   const [big]=await backupEngineProjects(enabled(f));assert.equal(big.status,"saved",JSON.stringify(big));assert.ok(big.bytes>8*1024*1024,"spans more than one part");
   // Damage whichever file is exported second, after the first part is uploaded.
   const later=[a.fileId,b.fileId].sort()[1],row=await f.db.prepare("SELECT r2_key FROM engine_files WHERE id=?").bind(later).first();

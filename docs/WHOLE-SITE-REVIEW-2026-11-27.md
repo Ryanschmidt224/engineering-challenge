@@ -89,7 +89,7 @@ Current implementation and release checkpoint: [STATUS.md](STATUS.md). Code owne
 - AI product lookup: match the shared form layout, require Search hint without displaying “required”, and automatically use this product’s supported existing attachments. Keep source evidence and explicit apply/save.
 - Project summary: open the top assembly and its details by default.
 - Full-screen photos: previous/next arrows and keyboard cycling within the current gallery. The small shared viewer is now formatted and maintained under the owned-module guard.
-- Deferred CAD direction: use Dropbox file links instead of uploading CAD bytes to the website. Flow and access design are undecided; finish later. Existing CAD files and upload behavior are unchanged in this batch.
+- CAD Dropbox links: implemented named file/folder links for parts/assemblies and an independent CAD files section on project summaries. Existing uploads remain available; new recognized CAD uploads are rejected. Backups preserve link metadata, with external contents/versioning/access kept in Dropbox.
 
 
 ## Backup monitoring reliability batch — November 27

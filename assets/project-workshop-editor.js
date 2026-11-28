@@ -1,8 +1,16 @@
 import { lookupEvidenceView } from "./workshop-lookup-evidence-view.js";
-import { node, field, actions, valuesEditor } from "./workshop-ui.js";
-import { editable, parentPicker } from "./project-editors.js";
+import {
+  node,
+  field,
+  actions,
+  valuesEditor,
+} from "./workshop-ui.js?v=save-upload-20261128";
+import {
+  editable,
+  parentPicker,
+} from "./project-editors.js?v=save-upload-20261128";
 import { partHistoryPrompt } from "./project-part-history.js";
-import { information } from "./project-information.js";
+import { information } from "./project-information.js?v=cad-links-20261128";
 import { present } from "./family-model.js";
 import { isWebUrl } from "./family-model.js";
 const button = (...args) => window.BSUI.button(...args);

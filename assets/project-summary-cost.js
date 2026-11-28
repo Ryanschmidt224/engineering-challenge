@@ -1,7 +1,7 @@
 import { sectionEdit } from "./section-edit.js";
-import { node, field } from "./workshop-ui.js";
-import { normalizeOverview } from "./project-overview-model.js";
-import { editable } from "./project-editors.js";
+import { node, field } from "./workshop-ui.js?v=save-upload-20261128";
+import { normalizeOverview } from "./project-overview-model.js?v=cad-links-20261128";
+import { editable } from "./project-editors.js?v=save-upload-20261128";
 export function recordedPrice(item) {
   const f = item.fields || {};
   if (f.supply === "purchased") {

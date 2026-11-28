@@ -6,7 +6,7 @@ import {fixture,upload,counts} from "./helpers/project-workspace.mjs";
 const id=()=>crypto.randomUUID(),origin="https://preview.example.test";
 test("restore as a copy preserves source, scoped identities, audit and independent bytes with replay",async()=>{
  const f=await fixture();try{
-  const file=await upload(f,"bracket.step",new TextEncoder().encode("drawing"));
+  const file=await upload(f,"bracket.dat",new TextEncoder().encode("drawing"));
   const created=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"ok"},fileIds:[file.fileId]}});
   const edited=await f.call("/records/"+created.result.recordId,"PATCH",{record:{type:"test",fields:{result:"FAILED"}}});assert.equal(edited.status,200);
   await f.call("/items/"+f.itemId+"/archive","POST");
@@ -27,7 +27,7 @@ test("restore as a copy preserves source, scoped identities, audit and independe
 });
 test("copy recovery refuses source identity, invalid name and corrupt bytes",async()=>{
  const f=await fixture();try{
-  await upload(f,"drawing.step",new TextEncoder().encode("drawing"));const base=origin+"/api/project-engine/projects/",backup=await(await handleProjectWorkspace(new Request(base+f.projectId+"/export"),f.env,f.owner)).text(),before=await counts(f.db),objects=f.env.PHOTOS.objects.size;
+  await upload(f,"drawing.dat",new TextEncoder().encode("drawing"));const base=origin+"/api/project-engine/projects/",backup=await(await handleProjectWorkspace(new Request(base+f.projectId+"/export"),f.env,f.owner)).text(),before=await counts(f.db),objects=f.env.PHOTOS.objects.size;
   const request=(projectId,name,body=backup)=>new Request(base+projectId+"/import-copy?"+new URLSearchParams({name}),{method:"POST",headers:{origin,"x-operation-id":id(),"x-project-revision":"new"},body});
   assert.equal((await handleProjectWorkspace(request(f.projectId,"Copy"),f.env,f.owner)).status,409);
   assert.equal((await handleProjectWorkspace(request(id(),""),f.env,f.owner)).status,400);assert.equal((await handleProjectWorkspace(request(id(),"x".repeat(181)),f.env,f.owner)).status,400);assert.equal(f.env.PHOTOS.objects.size,objects);

@@ -204,3 +204,53 @@ for(const width of [390,1440])test('lesson introduction belongs to the form and 
  const view=page.locator('.ib-view');await expect(view.getByRole('heading',{name:'Lesson details',exact:true})).toBeVisible();await expect(view.locator('.ib-view__happened')).toHaveText('Clearly grouped lesson');expect(await view.evaluate(el=>getComputedStyle(el).borderTopStyle)).toBe('solid');await expect(view.locator('input,textarea')).toHaveCount(0);const panel=await view.boundingBox(),edit=await view.getByRole('button',{name:'Edit',exact:true}).boundingBox();expect(edit.x+edit.width).toBeLessThan(panel.x+panel.width);await page.screenshot({path:testInfo.outputPath('lesson-framed-view.png'),fullPage:true});
  const snapshot=await(await context.request.get('/api/lessons-learned')).json();expect(snapshot.bits[0].happened).toBe('Clearly grouped lesson');await page.reload();await page.getByRole('button',{name:'Edit',exact:true}).click();await expect(introduction.getByLabel('What happened?',{exact:true})).toHaveValue('Clearly grouped lesson');await expect(status).toBeHidden();
 });
+
+test('lesson photo bytes and retry ID survive repeated lost responses; failed response never claims saved',async({page,request})=>{
+ await page.goto('/knowledge.html');await page.getByRole('button',{name:'+ Add lesson',exact:true}).click();
+ await page.getByLabel('What happened?',{exact:true}).fill('Upload recovery fixture');
+ await expect(page.locator('.ib-status')).toBeHidden();
+ let failing=true;const ids=[];
+ await page.route('**/api/lessons-learned/photo?bit=*',async route=>{
+  ids.push(route.request().headers()['x-upload-id']);
+  if(failing){await route.fetch();await route.fulfill({status:201,body:'{',contentType:'application/json'});}else await route.continue();
+ });
+ await page.getByRole('region',{name:'Step 1',exact:true}).locator('input[type="file"]').setInputFiles({name:'recovery.png',mimeType:'image/png',buffer:png});
+ await expect(page.getByRole('button',{name:'Retry photo upload',exact:true})).toBeVisible();
+ await expect(page.locator('.ib-status')).toContainText('unconfirmed');
+ await expect(page.getByLabel('What happened?',{exact:true})).toHaveValue('Upload recovery fixture');
+ expect(ids).toHaveLength(2);expect(new Set(ids).size).toBe(1);
+ failing=false;await page.getByRole('button',{name:'Retry photo upload',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Retry photo upload',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('region',{name:'Step 1',exact:true}).locator('img')).toHaveCount(1);
+ await page.locator('.ib-form__footer').getByRole('button',{name:'Done',exact:true}).click();
+ await page.reload();await expect(page.locator('.ib-main img')).toHaveCount(1);
+ expect(new Set(ids).size).toBe(1);
+ const response=await page.request.get('/api/lessons-learned');const data=await response.json();expect(data.photos).toHaveLength(1);
+});
+
+test('partial lesson photo batches retain remaining files and retry final saves without uploading twice',async({page})=>{
+ await page.goto('/knowledge.html');await page.getByRole('button',{name:'+ Add lesson',exact:true}).click();
+ await page.getByLabel('What happened?',{exact:true}).fill('Partial upload fixture');await expect(page.locator('.ib-status')).toBeHidden();
+ let rejectSecond=true,loseSave=false;const names=[];
+ await page.route('**/api/lessons-learned/photo?bit=*',async route=>{
+  const name=decodeURIComponent(route.request().headers()['x-file-name']);names.push(name);
+  if(name==='second.png'&&rejectSecond) await route.fulfill({status:413,json:{error:'Fixture upload rejected'}});
+  else {await route.continue();if(name==='second.png')loseSave=true;}
+ });
+ await page.route('**/api/lessons-learned',async route=>{
+  if(loseSave&&route.request().method()==='POST'){await route.fetch();await route.fulfill({status:200,body:'{',contentType:'application/json'});}else await route.continue();
+ });
+ await page.getByRole('region',{name:'Step 1',exact:true}).locator('input[type="file"]').setInputFiles([
+  {name:'first.png',mimeType:'image/png',buffer:png},{name:'second.png',mimeType:'image/png',buffer:png}]);
+ await expect(page.getByRole('button',{name:'Retry photo upload',exact:true})).toBeEnabled();
+ expect(names).toEqual(['first.png','second.png']);
+ rejectSecond=false;await page.getByRole('button',{name:'Retry photo upload',exact:true}).click();
+ await expect(page.locator('.ib-status')).toContainText('unconfirmed');
+ expect(names).toEqual(['first.png','second.png','second.png']);
+ loseSave=false;await page.getByRole('button',{name:'Retry photo upload',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Retry photo upload',exact:true})).toHaveCount(0);
+ expect(names).toHaveLength(3);
+ await page.locator('.ib-form__footer').getByRole('button',{name:'Done',exact:true}).click();await page.reload();
+ await expect(page.locator('.ib-main img')).toHaveCount(2);
+ expect((await (await page.request.get('/api/lessons-learned')).json()).photos).toHaveLength(2);
+});

@@ -22,7 +22,7 @@ test("3000 revised records plus drawings export above the old row/metadata limit
   f.db.sqlite.prepare("INSERT INTO engine_restore_jobs(id,project_id,actor_id,operation_id,state,row_count,created_at,last_activity_at,cleanup_token,cleanup_claimed_at) VALUES(?,?,?,?,'staging',0,?,?,?,?)").run(retiredJob,retiredProject,f.owner.id,retiredOperation,old,old,token,old);
   f.db.sqlite.prepare("INSERT INTO engine_retired_file_keys(r2_key,job_id,project_id,actor_id,operation_id,cleanup_token,created_at) VALUES(?,?,?,?,?,?,?)").run(retiredKey,retiredJob,retiredProject,f.owner.id,retiredOperation,token,old);
   f.db.sqlite.prepare("INSERT INTO engine_retired_object_attempts(r2_key,etag,attempt_id,created_at) VALUES(?,'earlier-orphan',?,?)").run(retiredKey,id(),old);
-  const file=await upload(f,"source-drawing.step",new TextEncoder().encode("Original drawing bytes")),revisions=[];
+  const file=await upload(f,"source-drawing.dat",new TextEncoder().encode("Original drawing bytes")),revisions=[];
   for(let n=0;n<3000;n++){
    const response=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"note",title:"Observation "+n,fields:{text:"Observation "+n+" "+"s".repeat(2200)}}});assert.equal(response.status,200);
    if([9,999,2999].includes(n)){const revision=await f.call("/items/"+f.itemId+"/revisions","POST",{entryDetails:{whatChanged:"At "+(n+1)+" records"}});assert.equal(revision.status,200,JSON.stringify(revision));revisions.push({event:revision.result.eventId,snapshot:(await f.call("/history/"+revision.result.eventId)).result.event.payload.snapshot});}
@@ -59,7 +59,7 @@ test("interrupted phase-1 metadata staging reuses its rows; changed retry conten
 
 test("completed cleanup is scoped, bounded and retryable without changing the recovery receipt or engineering bytes",async()=>{
  const f=await fixture();try{
-  await upload(f,"drawing.step",new TextEncoder().encode("Exact drawing bytes"));const backup=await backupOf(f),project=id(),operation=id(),prepare=f.db.prepare.bind(f.db);let failed=false;
+  await upload(f,"drawing.dat",new TextEncoder().encode("Exact drawing bytes"));const backup=await backupOf(f),project=id(),operation=id(),prepare=f.db.prepare.bind(f.db);let failed=false;
   f.db.prepare=sql=>{if(sql.startsWith("DELETE FROM engine_restore_rows")){failed=true;throw Error("SQLITE synthetic cleanup interruption");}return prepare(sql);};
   const response=await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner);assert.equal(response.status,200,await response.clone().text());const result=await response.json();f.db.prepare=prepare;assert.equal(failed,true);
   const count=()=>f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_restore_rows r JOIN engine_restore_jobs j ON r.job_id=j.id WHERE j.project_id=?").get(project).n;assert.ok(count()>0);
@@ -72,7 +72,7 @@ test("completed cleanup is scoped, bounded and retryable without changing the re
 
 test("a racing exact recovery returns the committed receipt even when its peer has already cleaned staging",async()=>{
  const f=await fixture();try{
-  await upload(f,"drawing.step",new TextEncoder().encode("Shared exact request bytes"));const backup=await backupOf(f),project=id(),operation=id(),prepare=f.db.prepare.bind(f.db);let raced=false,peer;
+  await upload(f,"drawing.dat",new TextEncoder().encode("Shared exact request bytes"));const backup=await backupOf(f),project=id(),operation=id(),prepare=f.db.prepare.bind(f.db);let raced=false,peer;
   f.db.prepare=sql=>{const prepared=prepare(sql);if(!sql.startsWith("SELECT data FROM engine_restore_rows WHERE job_id=? AND table_name='files'"))return prepared;return {bind(...values){const bound=prepared.bind(...values);return {async first(){if(!raced){raced=true;const response=await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner);assert.equal(response.status,200,await response.clone().text());peer=await response.json();}return bound.first();}};}};};
   const response=await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner);assert.equal(response.status,200,await response.clone().text());assert.equal(raced,true);assert.deepEqual(await response.json(),peer);f.db.prepare=prepare;
   assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_operations WHERE project_id=?").get(project).n,1);assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_restore_rows").get().n,0);assert.equal(await backupOf(f),backup);
@@ -81,7 +81,7 @@ test("a racing exact recovery returns the committed receipt even when its peer h
 
 test("an older sealed job with different JSON property ordering resumes without replacing its historical values",async()=>{
  const f=await fixture();try{
-  await upload(f,"drawing.step",new TextEncoder().encode("Earlier preview bytes"));const backup=await backupOf(f),project=id(),operation=id();
+  await upload(f,"drawing.dat",new TextEncoder().encode("Earlier preview bytes"));const backup=await backupOf(f),project=id(),operation=id();
   f.db.sqlite.exec("CREATE TRIGGER pause_old_restore BEFORE UPDATE OF state ON engine_restore_jobs WHEN NEW.state='complete' BEGIN SELECT RAISE(ABORT,'SQLITE simulate earlier interrupted preview'); END");assert.notEqual((await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner)).status,200);f.db.sqlite.exec("DROP TRIGGER pause_old_restore");
   const job=f.db.sqlite.prepare("SELECT restore_job_id FROM engine_projects WHERE id=?").get(project).restore_job_id,trigger=f.db.sqlite.prepare("SELECT sql FROM sqlite_master WHERE name='engine_restore_rows_update'").get().sql;
   f.db.sqlite.exec("DROP TRIGGER engine_restore_rows_update");for(const row of f.db.sqlite.prepare("SELECT table_name,row_id,data FROM engine_restore_rows WHERE job_id=?").all(job))f.db.sqlite.prepare("UPDATE engine_restore_rows SET data=? WHERE job_id=? AND table_name=? AND row_id=?").run(JSON.stringify(Object.fromEntries(Object.entries(JSON.parse(row.data)).reverse())),job,row.table_name,row.row_id);f.db.sqlite.exec(trigger);
@@ -105,7 +105,7 @@ test("an interrupted materialization stays invisible and resumes with the origin
 
 test("a failed publication never exposes a fully loaded copy and a retry publishes exactly one receipt",async()=>{
  const f=await fixture();try{
-  await upload(f,"drawing.step",new TextEncoder().encode("Bytes"));const backup=await backupOf(f),project=id(),operation=id();
+  await upload(f,"drawing.dat",new TextEncoder().encode("Bytes"));const backup=await backupOf(f),project=id(),operation=id();
   f.db.sqlite.exec("CREATE TRIGGER fail_restore_publish BEFORE UPDATE OF state ON engine_restore_jobs WHEN NEW.state='complete' BEGIN SELECT RAISE(ABORT,'SQLITE synthetic publication failure'); END");
   const response=await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner);assert.notEqual(response.status,200);await assertHidden(f,project);assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_items WHERE project_id=?").get(project).n,1);assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_operations WHERE project_id=?").get(project).n,0);
   f.db.sqlite.exec("DROP TRIGGER fail_restore_publish");const recovered=await handleProjectWorkspace(request(backup,project,operation),f.env,f.owner);assert.equal(recovered.status,200,await recovered.clone().text());assert.equal(f.db.sqlite.prepare("SELECT count(*) AS n FROM engine_operations WHERE project_id=?").get(project).n,1);assert.equal(await backupOf(f),backup);

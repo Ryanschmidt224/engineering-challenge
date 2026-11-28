@@ -1,9 +1,9 @@
-import { node, field } from "./workshop-ui.js";
+import { node, field } from "./workshop-ui.js?v=save-upload-20261128";
 export const sourceChoices = [
   { value: "made", label: "Made in house" },
   { value: "purchased", label: "Purchased from outside vendor" },
 ];
-export { projectStatusChoices as statusChoices } from "./project-item-model.js";
+export { projectStatusChoices as statusChoices } from "./project-item-model.js?v=cad-links-20261128";
 export function fieldHelp(row, label, text) {
   const help = window.BSDialogs.helpButton("About " + label, text);
   help.setAttribute("aria-label", "About " + label);

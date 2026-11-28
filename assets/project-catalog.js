@@ -1,4 +1,4 @@
-import { node } from "./workshop-ui.js";
+import { node } from "./workshop-ui.js?v=save-upload-20261128";
 import { initDirectory } from "./project-directory.js";
 import { ownerChoices } from "./website-settings-client.js";
 import { showProjectDeletion } from "./project-delete.js";

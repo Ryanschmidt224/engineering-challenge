@@ -1,5 +1,5 @@
 import { fileDropTarget } from "./file-selection.js";
-import { node, field, actions } from "./workshop-ui.js";
+import { node, field, actions } from "./workshop-ui.js?v=save-upload-20261128";
 import { recordPrompts } from "./project-record-model.js";
 
 // One upload surface; saved prompt associations and immutable file IDs stay intact.

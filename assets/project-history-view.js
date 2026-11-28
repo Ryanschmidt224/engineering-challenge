@@ -6,13 +6,21 @@ import {
   savedPartView,
   buildContextView,
   recordVersionView,
-} from "./project-information.js";
-import { node, field, actions, listCard } from "./workshop-ui.js";
-import { formatRevisionValue } from "./project-item-model.js";
+} from "./project-information.js?v=cad-links-20261128";
+import {
+  node,
+  field,
+  actions,
+  listCard,
+} from "./workshop-ui.js?v=save-upload-20261128";
+import { formatRevisionValue } from "./project-item-model.js?v=cad-links-20261128";
 import { recordPrompts } from "./project-record-model.js";
 import { projectHelp } from "./project-help.js";
 import { initSplitPanes } from "./split-panes.js";
-import { editRecord, confirmAction } from "./project-editors.js";
+import {
+  editRecord,
+  confirmAction,
+} from "./project-editors.js?v=save-upload-20261128";
 import { instructionTree } from "./project-instruction-model.js";
 import { savedComparison } from "./project-history-comparison.js";
 const button = (...args) => window.BSUI.button(...args);

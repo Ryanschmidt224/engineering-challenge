@@ -6,7 +6,7 @@ import {
   field,
   checkbox,
   requestWorkshop,
-} from "./workshop-ui.js";
+} from "./workshop-ui.js?v=save-upload-20261128";
 
 // Only current project identity/specifications enter a reviewed catalog draft.
 // Project numbers, purpose, quantities, instructions and history stay separate.

@@ -1,3 +1,4 @@
+import { normalizeCadLinks } from "./cad-link-model.js";
 // Project-level content, independent of part definitions and numbered revisions.
 const text = (v, max, label) => {
   if (typeof v !== "string" || v.length > max || v.includes("\0"))
@@ -20,6 +21,8 @@ export function normalizeOverview(raw = {}) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw))
     throw Error("Invalid project overview.");
   const out = { ...emptyOverview(), ...raw };
+  if (Object.hasOwn(raw, "cadLinks"))
+    out.cadLinks = normalizeCadLinks(raw.cadLinks);
   if (out.version !== 1) throw Error("Unsupported project overview.");
   out.shortSummary = text(out.shortSummary, 40, "Short summary");
   out.description = text(out.description, 12000, "Summary");
@@ -128,6 +131,7 @@ export function normalizeOverview(raw = {}) {
   const result = Object.fromEntries(
     Object.keys(emptyOverview()).map((k) => [k, out[k]]),
   );
+  if (out.cadLinks !== undefined) result.cadLinks = out.cadLinks;
   if (new TextEncoder().encode(JSON.stringify(result)).length > 200000)
     throw Error("Project overview exceeds 200 KB.");
   return result;

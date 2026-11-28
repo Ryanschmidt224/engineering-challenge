@@ -13,14 +13,19 @@ import { projectTree } from "./project-tree-model.js";
 import { partHistoryPrompt } from "./project-part-history.js";
 import { partHelp } from "./part-help.js";
 import { projectHelp } from "./project-help.js";
-import { node, field, checkbox, actions } from "./workshop-ui.js";
+import {
+  node,
+  field,
+  checkbox,
+  actions,
+} from "./workshop-ui.js?v=save-upload-20261128";
 import {
   normalizeCustomItem,
   normalizeOccurrence,
   diffCustomItems,
   formatRevisionValue,
   allocatePartNumber,
-} from "./project-item-model.js";
+} from "./project-item-model.js?v=cad-links-20261128";
 import {
   recordPrompts,
   normalizeProjectRecord,
@@ -148,12 +153,15 @@ export function editable(
       const data = collect();
       busy = true;
       saveButton.disabled = true;
+      saveButton.textContent = "Saving…";
+      form.setAttribute("aria-busy", "true");
       cancel.disabled = true;
       await save(data, revision);
       if ((await ctx.refresh()) === false)
         throw Error(
           "Saved, but the part could not be reopened. Retry this same save.",
         );
+      ctx.client.acknowledge?.(ctx.projectId);
       if (!mount) dialog.close();
     } catch (problem) {
       error.textContent = problem.message;
@@ -162,6 +170,8 @@ export function editable(
       reload.hidden = problem.status !== 409;
     } finally {
       busy = false;
+      form.removeAttribute("aria-busy");
+      saveButton.textContent = saveLabel;
       saveButton.disabled = uploading;
       cancel.disabled = uploading;
     }

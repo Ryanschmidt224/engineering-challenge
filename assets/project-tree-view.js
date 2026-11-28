@@ -5,8 +5,16 @@ import {
 } from "./project-root-view.js";
 import { treeDropPlan } from "./project-tree-drag.js";
 import { projectTree, MAX_SUBTREE } from "./project-tree-model.js";
-import { node, checkbox, listCard, actions } from "./workshop-ui.js";
-import { editItem, placementEditor } from "./project-editors.js";
+import {
+  node,
+  checkbox,
+  listCard,
+  actions,
+} from "./workshop-ui.js?v=save-upload-20261128";
+import {
+  editItem,
+  placementEditor,
+} from "./project-editors.js?v=save-upload-20261128";
 import { partHistoryPrompt } from "./project-part-history.js";
 import { contextMenu } from "./context-menu.js";
 const button = (...args) => window.BSUI.button(...args);
