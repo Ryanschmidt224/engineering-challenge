@@ -1,3 +1,4 @@
+import { isCadFileName } from "../../assets/cad-link-model.js";
 import { isAdmin } from "./auth.js";
 import { initializeWorkshop, workshopSnapshot } from "./workshop-db.js";
 import { validId } from "../../assets/family-model.js";
@@ -140,6 +141,13 @@ export async function handleFamilyWorkshopFile(request, env) {
   }
   if (!name || name.length > 180 || /[\\/\x00-\x1f]/.test(name))
     return json({ error: "Invalid filename" }, 400);
+  if (isCadFileName(name))
+    return json(
+      {
+        error: "Keep CAD files in Dropbox and add a link in project CAD files.",
+      },
+      415,
+    );
   const extension = name.split(".").at(-1).toLowerCase();
   if (!extensions.has(extension))
     return json(

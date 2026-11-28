@@ -3,6 +3,10 @@
 import { readFile, writeFile } from "node:fs/promises";
 import * as prettier from "prettier";
 export const ownedModules = [
+  "assets/cad-link-model.js",
+  "assets/cad-link-view.js",
+  "assets/project-cad-links.js",
+  "functions/api/project-overview.js",
   "assets/request-result.js",
   "functions/security-headers.js",
   "scripts/check-security-headers.mjs",

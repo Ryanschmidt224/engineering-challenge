@@ -4,11 +4,14 @@ import {
   normalizeOccurrence,
   diffProjectItems,
   formatRevisionValue,
-} from "./project-item-model.js";
+} from "./project-item-model.js?v=cad-links-20261128";
 import { openHistoryEntryDialog } from "./history-entry-dialog.js";
 import { partHelp } from "./part-help.js";
 import { node } from "./workshop-ui.js?v=save-upload-20261128";
-import { savedPartView, configurationView } from "./project-information.js";
+import {
+  savedPartView,
+  configurationView,
+} from "./project-information.js?v=cad-links-20261128";
 
 export function partHistoryPrompt(
   ctx,

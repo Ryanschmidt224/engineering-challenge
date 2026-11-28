@@ -89,10 +89,10 @@ test("record validation requires substance, preserves explicit event date and re
 
 test("file replacement never overwrites old bytes and interrupted upload cannot publish a broken link",async()=>{
  const f=await fixture();try{
-  const first=await upload(f,"drawing-a.step",new TextEncoder().encode("3 mm drawing"));
+  const first=await upload(f,"drawing-a.dat",new TextEncoder().encode("3 mm drawing"));
   const record=await f.call("/items/"+f.itemId+"/records","POST",{record:{type:"test",fields:{result:"First drawing tested"}}});
-  const interrupted=await f.call("/files/prepare","POST",{name:"incomplete.step"});assert.equal((await f.call("/files/"+interrupted.result.fileId+"/admit","POST",{role:"engineering",itemId:f.itemId})).status,409);
-  const second=await upload(f,"drawing-b.step",new TextEncoder().encode("5 mm drawing"));
+  const interrupted=await f.call("/files/prepare","POST",{name:"incomplete.dat"});assert.equal((await f.call("/files/"+interrupted.result.fileId+"/admit","POST",{role:"engineering",itemId:f.itemId})).status,409);
+  const second=await upload(f,"drawing-b.dat",new TextEncoder().encode("5 mm drawing"));
   const detail=(await f.call("/history/"+record.result.eventId)).result;assert.equal(detail.configurations[0].snapshot.file.id,first.fileId);
   const get=async fileId=>handleProjectWorkspace(new Request(origin+"/api/project-engine/projects/"+f.projectId+"/files/"+fileId),f.env,f.owner);
   assert.equal(await(await get(first.fileId)).text(),"3 mm drawing");assert.equal(await(await get(second.fileId)).text(),"5 mm drawing");
@@ -104,11 +104,11 @@ test("file replacement never overwrites old bytes and interrupted upload cannot 
 });
 test("self-contained backup restores IDs, history, configuration values and independent file bytes into an empty target",async()=>{
  const f=await fixture(),target={WORKSHOP_DB:new TestD1(),PHOTOS:new TestR2()};try{
-  const first=await upload(f,"old.step",new TextEncoder().encode("old drawing")),attachment=await upload(f,"measurement.txt",new TextEncoder().encode("Measured 3.00 mm"),"support");
+  const first=await upload(f,"old.dat",new TextEncoder().encode("old drawing")),attachment=await upload(f,"measurement.txt",new TextEncoder().encode("Measured 3.00 mm"),"support");
   const step=await f.call("/items/"+f.itemId+"/steps","POST",{title:"Measure",body:"Use calipers"});
   await f.call("/items/"+f.itemId+"/records","POST",{stepId:step.result.stepId,record:{type:"test",fields:{result:"3 mm"},fileIds:[attachment.fileId]}});
   const next=structuredClone(f.details);next.part_number="NR100";next.fields.specs[0].value=5;await f.call("/items/"+f.itemId+"/revisions","POST",{details:next,reason:"Stiffen"});
-  await upload(f,"new.step",new TextEncoder().encode("new drawing"));await f.call("/steps/"+step.result.stepId+"/retire","POST");await f.call("/items/"+f.itemId+"/archive","POST");
+  await upload(f,"new.dat",new TextEncoder().encode("new drawing"));await f.call("/steps/"+step.result.stepId+"/retire","POST");await f.call("/items/"+f.itemId+"/archive","POST");
   const url=origin+"/api/project-engine/projects/"+f.projectId,backupResponse=await handleProjectWorkspace(new Request(url+"/export"),f.env,f.owner);assert.equal(backupResponse.status,200);const backup=await backupResponse.text();
   const operationId=id(),restore=()=>new Request(url+"/import",{method:"POST",headers:{origin,"x-operation-id":operationId,"x-project-revision":"new"},body:backup});
   const restored=await handleProjectWorkspace(restore(),target,f.owner);assert.equal(restored.status,200,await restored.clone().text());const result=await restored.json();assert.equal(result.verifiedFiles,3);assert.notEqual(result.revision,f.revision());
@@ -122,7 +122,7 @@ test("self-contained backup restores IDs, history, configuration values and inde
 });
 test("truncated or corrupt backup never admits project metadata",async()=>{
  const f=await fixture(),target={WORKSHOP_DB:new TestD1(),PHOTOS:new TestR2()};try{
-  await upload(f,"drawing.step",new TextEncoder().encode("drawing"));const url=origin+"/api/project-engine/projects/"+f.projectId,backup=await(await handleProjectWorkspace(new Request(url+"/export"),f.env,f.owner)).text();
+  await upload(f,"drawing.dat",new TextEncoder().encode("drawing"));const url=origin+"/api/project-engine/projects/"+f.projectId,backup=await(await handleProjectWorkspace(new Request(url+"/export"),f.env,f.owner)).text();
   for(const body of [backup.replace('{"type":"complete"}\n',""),backup.replace('"data":"ZHJhd2luZw=="','"data":"Y29ycnVwdA=="')]){
    const response=await handleProjectWorkspace(new Request(url+"/import",{method:"POST",headers:{origin,"x-operation-id":id(),"x-project-revision":"new"},body}),target,f.owner);assert.equal(response.status,400,await response.clone().text());assert.equal((await target.WORKSHOP_DB.prepare("SELECT COUNT(*) AS n FROM engine_projects").first()).n,0);assert.equal((await target.WORKSHOP_DB.prepare("SELECT COUNT(*) AS n FROM engine_operations").first()).n,0);
   }
@@ -246,7 +246,7 @@ test("record edit and attachment changes roll back when their audit write fails"
 test("numbered revisions preserve the complete previous part and standard Save keeps the working level",async()=>{
  const f=await fixture();try{
   const {call,itemId}=f,step=await call("/items/"+itemId+"/steps","POST",{title:"Load test",body:"Use the original fixture"}),record=await call("/items/"+itemId+"/records","POST",{stepId:step.result.stepId,record:{type:"test",title:"Original result",fields:{checked:"3 mm bracket",result:"Held 2 kg"}}});assert.equal(step.status,200);assert.equal(record.status,200);
-  const file=await upload(f,"original.step",new TextEncoder().encode("old immutable drawing"));
+  const file=await upload(f,"original.dat",new TextEncoder().encode("old immutable drawing"));
   const first=await call("/items/"+itemId+"/revisions","POST",{entryDetails:{whatChanged:"About to improve the bracket",whyChanged:"Reduce flex",notes:"Retest"}});assert.equal(first.status,200,JSON.stringify(first));
   let state=(await call("/state")).result;assert.equal(state.items[0].revision_level,2);assert.equal(state.items[0].fields.specs[0].value,3);
   const saved=(await call("/history/"+first.result.eventId)).result.event;assert.equal(saved.payload.level,1);assert.equal(saved.payload.snapshot.item.revision_level,1);assert.equal(saved.payload.snapshot.steps[0].body,"Use the original fixture");assert.equal(saved.payload.snapshot.records[0].fields.result,"Held 2 kg");assert.ok(saved.payload.snapshot.files.some(row=>row.id===file.fileId));
@@ -276,7 +276,7 @@ test("history images are owned by the project and invalid evidence cannot advanc
 
 test("forged staging metadata cannot substitute corrupt bytes during backup restore",async()=>{
  const f=await fixture(),target={WORKSHOP_DB:new TestD1(),PHOTOS:new TestR2()};try{
-  const uploaded=await upload(f,"drawing.step",new TextEncoder().encode("original bytes")),backup=await(await handleProjectWorkspace(new Request(origin+"/api/project-engine/projects/"+f.projectId+"/export"),f.env,f.owner)).text(),manifest=JSON.parse(backup.split("\n")[0]).manifest,operationId=id(),file=manifest.tables.files.find(row=>row.id===uploaded.fileId);
+  const uploaded=await upload(f,"drawing.dat",new TextEncoder().encode("original bytes")),backup=await(await handleProjectWorkspace(new Request(origin+"/api/project-engine/projects/"+f.projectId+"/export"),f.env,f.owner)).text(),manifest=JSON.parse(backup.split("\n")[0]).manifest,operationId=id(),file=manifest.tables.files.find(row=>row.id===uploaded.fileId);
   await target.PHOTOS.put("project-engine/restored/"+f.projectId+"/"+operationId+"/"+file.id,new TextEncoder().encode("corrupt! bytes"),{customMetadata:{sha256:file.sha256}});
   const response=await handleProjectWorkspace(new Request(origin+"/api/project-engine/projects/"+f.projectId+"/import",{method:"POST",headers:{origin,"x-operation-id":operationId,"x-project-revision":"new"},body:backup}),target,f.owner);assert.equal(response.status,400,await response.clone().text());assert.match((await response.json()).error,/byte verification/);assert.equal((await target.WORKSHOP_DB.prepare("SELECT COUNT(*) AS n FROM engine_projects").first()).n,0);assert.equal((await target.WORKSHOP_DB.prepare("SELECT COUNT(*) AS n FROM engine_operations").first()).n,0);
  }finally{f.db.close();target.WORKSHOP_DB.close();}

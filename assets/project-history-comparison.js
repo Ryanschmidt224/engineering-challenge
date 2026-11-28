@@ -1,6 +1,9 @@
 import { recordLabels } from "./project-presentation.js";
 import { node } from "./workshop-ui.js?v=save-upload-20261128";
-import { diffCustomItems, formatRevisionValue } from "./project-item-model.js";
+import {
+  diffCustomItems,
+  formatRevisionValue,
+} from "./project-item-model.js?v=cad-links-20261128";
 import { recordPrompts } from "./project-record-model.js";
 import { instructionTree } from "./project-instruction-model.js";
 import { detailsFor } from "./project-editors.js?v=save-upload-20261128";

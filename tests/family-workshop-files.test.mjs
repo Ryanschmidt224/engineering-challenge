@@ -28,7 +28,7 @@ test("Workshop attachments are private, immutable, validated and survive archive
 });
 test("export verifies all bytes including recoverable orphans and restores into an empty database",async t=>{
  const {env,call}=await fixture(t),bytes=Uint8Array.from({length:420000},(_,index)=>index%251);
- const uploaded=await call("/api/workshop/file?owner=family&id=f-resistor","POST",bytes,{"x-file-name":"part.step"});assert.equal(uploaded.status,201);
+ const uploaded=await call("/api/workshop/file?owner=family&id=f-resistor","POST",bytes,{"x-file-name":"part.txt"});assert.equal(uploaded.status,201);
  await env.PHOTOS.put("workshop-v2/files/"+crypto.randomUUID(),"recoverable orphan");
  const response=await call("/api/workshop/export");assert.equal(response.status,200);
  const text=await response.text(),restoredBytes=new Map();
@@ -49,4 +49,13 @@ test("export fails closed when referenced bytes are missing",async t=>{
  const {env,call}=await fixture(t);const response=await call("/api/workshop/file?owner=family&id=f-resistor","POST","fixture",{"x-file-name":"notes.txt"});assert.equal(response.status,201);
  for(const key of env.PHOTOS.objects.keys())if(key.startsWith("workshop-v2/"))await env.PHOTOS.delete(key);
  assert.equal((await call("/api/workshop/export")).status,409);
+});
+
+test('new Workshop CAD uploads point to Dropbox without writing stored bytes',async t=>{
+ const {env,call}=await fixture(t);const before=await env.PHOTOS.list();
+ for(const name of ['part.step','assembly.SLDASM','drawing.dxf']){
+  const response=await call('/api/workshop/file?owner=family&id=f-resistor','POST',new Uint8Array([1,2,3]),{'x-file-name':name});
+  assert.equal(response.status,415);assert.match((await response.json()).error,/Dropbox/);
+ }
+ assert.deepEqual(await env.PHOTOS.list(),before);
 });

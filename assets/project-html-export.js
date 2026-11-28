@@ -1,4 +1,4 @@
-import { normalizeOverview } from "./project-overview-model.js";
+import { normalizeOverview } from "./project-overview-model.js?v=cad-links-20261128";
 import { projectTree } from "./project-tree-model.js";
 import { summaryParts } from "./project-summary.js";
 

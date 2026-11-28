@@ -1,2 +1,2 @@
-import { initProjectWorkspace } from "./project-workspace.js?v=save-upload-20261128";
+import { initProjectWorkspace } from "./project-workspace.js?v=cad-links-20261128";
 initProjectWorkspace();

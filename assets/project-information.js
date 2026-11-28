@@ -1,8 +1,9 @@
+import { cadLinkRows } from "./cad-link-view.js";
 import { actionBar } from "./photo-editor.js";
 import { recordLabels, containerName } from "./project-presentation.js";
 import { legacyRecordContext } from "./project-record-context.js";
 import { node } from "./workshop-ui.js?v=save-upload-20261128";
-import { formatRevisionValue } from "./project-item-model.js";
+import { formatRevisionValue } from "./project-item-model.js?v=cad-links-20261128";
 import { recordPrompts } from "./project-record-model.js";
 import { projectHelp } from "./project-help.js";
 import { renderHistoryEntryDetails } from "./history-entry-dialog.js";
@@ -55,6 +56,11 @@ export function configurationView(
     ["Package quantity", fields.package_quantity],
   ]);
   body.append(panel);
+  if (fields.cad_links?.length) {
+    const cad = window.BSUI.informationPanel("CAD files");
+    cad.body.append(cadLinkRows(fields.cad_links));
+    body.append(cad.root);
+  }
   if (fields.specs?.length)
     for (const row of fields.specs)
       panel.querySelector(".ui-information-panel__body").append(

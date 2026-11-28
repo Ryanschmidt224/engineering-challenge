@@ -1,3 +1,4 @@
+import {requireNonCadUpload} from "../../assets/cad-link-model.js";
 import {unchanged} from "./project-workspace-commands.js";
 import {commitProjectCommand,CommandConflict} from "./project-command.js";
 import {assertStorageKeyWritable} from "./project-storage-fence.js";
@@ -16,6 +17,7 @@ async function fileRow(db,projectId,id){
 export async function prepareFile(db,input,project,data){
  const name=text(data.name,240,"File name",true),content_type=text(data.content_type===undefined?"application/octet-stream":data.content_type,120,"File type",true);
  if(!/^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/i.test(content_type))throw Error("Invalid file type.");
+ requireNonCadUpload(name);
  const fileId=crypto.randomUUID(),key="project-engine/files/"+project.id+"/"+fileId;
  return commitProjectCommand(db,input,w=>{w.insert("engine_files",{id:fileId,project_id:project.id,name,content_type,r2_key:key,state:"prepared",created_at:w.createdAt});return {fileId};});
 }
@@ -29,6 +31,7 @@ export async function uploadFile(request,env,owner,project,id){
  const previous=await env.PHOTOS.head(file.r2_key);
  const matches=object=>object?.customMetadata?.operation_id===operationId&&object.customMetadata.expected_revision===expectedRevision&&object.customMetadata.actor_id===owner.id&&object.customMetadata.sha256===hash&&object.size===bytes.length;
  if(previous){if(!matches(previous))throw new CommandConflict("This file already contains different bytes. Prepare a new file.");await assertStorageKeyWritable(env.WORKSHOP_DB,file.r2_key);return {fileId:id,size:bytes.length,sha256:hash};}
+ requireNonCadUpload(file.name);
  expectedProject(project,{expectedRevision});if(file.state!=="prepared")throw new CommandConflict("Prepare a new file before uploading.");
  const put=await env.PHOTOS.put(file.r2_key,bytes,{onlyIf:{etagDoesNotMatch:"*"},httpMetadata:{contentType:file.content_type},customMetadata:{operation_id:operationId,expected_revision:expectedRevision,actor_id:owner.id,sha256:hash}});
  try{await assertStorageKeyWritable(env.WORKSHOP_DB,file.r2_key);}catch(error){if(await deletionJob(env.WORKSHOP_DB,project.id))await env.PHOTOS.delete(file.r2_key);throw error;}

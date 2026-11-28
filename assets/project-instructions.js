@@ -6,7 +6,10 @@ import {
   retireInstruction,
 } from "./project-editors.js?v=save-upload-20261128";
 import { partHistoryPrompt } from "./project-part-history.js";
-import { recordVersionView, savedPartView } from "./project-information.js";
+import {
+  recordVersionView,
+  savedPartView,
+} from "./project-information.js?v=cad-links-20261128";
 import { initSplitPanes } from "./split-panes.js";
 
 const button = (...args) => window.BSUI.button(...args);
