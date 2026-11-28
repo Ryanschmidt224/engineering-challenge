@@ -1,5 +1,6 @@
+import { requestResult } from "./request-result.js";
 import { actionBar, uploadPanel } from "./photo-editor.js";
-import { node, button, panel } from "./workshop-ui.js";
+import { node, button, panel } from "./workshop-ui.js?v=save-upload-20261128";
 
 // Product photos use the existing Workshop attachment storage and shared upload
 // controls. Stable upload IDs make a retry after a lost response safe.
@@ -67,6 +68,13 @@ export function workshopProductPhotos({
         return;
       }
       if (!files.length) return;
+      if (pending.length) {
+        message(
+          "Finish the pending photo upload with Retry upload before choosing more photos.",
+          true,
+        );
+        return;
+      }
     }
     await run(async () => {
       if (files)
@@ -77,7 +85,7 @@ export function workshopProductPhotos({
         while (pending.length) {
           const { file, id } = pending[0];
           message("Uploading " + file.name + "…");
-          const response = await fetch(
+          await requestResult(
             "/api/workshop/file?owner=product&id=" +
               encodeURIComponent(product.id),
             {
@@ -89,14 +97,15 @@ export function workshopProductPhotos({
               },
               body: file,
             },
+            { valid: (value) => value?.id === id },
           );
-          const value = await response.json().catch(() => ({}));
-          if (!response.ok) throw Error(value.error || "Upload failed.");
           pending.shift();
         }
       } catch (error) {
         message(
-          "Photo upload is unconfirmed. Retry to finish. " + error.message,
+          (error.uncertain === false
+            ? "Photo upload was rejected. "
+            : "Photo upload is unconfirmed. Retry to finish. ") + error.message,
           true,
         );
         retry.textContent = "Retry upload";

@@ -1,4 +1,4 @@
-import { node, actions, button } from "./workshop-ui.js";
+import { node, actions, button } from "./workshop-ui.js?v=save-upload-20261128";
 import { fileDropTarget } from "./file-selection.js";
 export { requireLookupIdentity } from "./workshop-lookup-provenance.js";
 const pending = new Map();

@@ -39,3 +39,29 @@ test("an unreadable successful response retains the loaded revision and exact re
  await client.write("project","/items","POST",{name:"Draft"});
  assert.deepEqual(bodies[0],bodies[1]);assert.equal(client.state.project.revision,"saved");
 });
+
+test('concurrent identical writes share one request and acknowledgment clears only confirmed commands in that project',async()=>{
+ const bodies=[],gate=deferred();let block=true,fail=false;
+ const client=createProjectClient({fetcher:async(url,options)=>{bodies.push({url,body:JSON.parse(options.body)});if(fail)throw Error('lost');if(block)await gate.promise;return Response.json({revision:'saved'});}});
+ const first=client.write('one','/items','POST',{name:'A'},'old');
+ const second=client.write('one','/items','POST',{name:'A'},'old');
+ assert.equal(bodies.length,1);gate.resolve();await Promise.all([first,second]);block=false;
+ await client.write('two','/items','POST',{name:'B'},'old');
+ fail=true;await assert.rejects(client.write('one','/items','POST',{name:'C'},'old'));fail=false;
+ const uncertain=bodies.at(-1).body.operationId,other=bodies[1].body.operationId;
+ client.acknowledge('one');
+ await client.write('one','/items','POST',{name:'C'},'old');assert.equal(bodies.at(-1).body.operationId,uncertain);
+ await client.write('two','/items','POST',{name:'B'},'old');assert.equal(bodies.at(-1).body.operationId,other);
+ await client.write('one','/items','POST',{name:'A'},'old');assert.notEqual(bodies.at(-1).body.operationId,bodies[0].body.operationId);
+});
+
+test('a success without a revision is uncertain and cannot advance or discard the retry',async()=>{
+ let broken=true;const bodies=[];
+ const client=createProjectClient({fetcher:async(url,options)=>{
+  if(!options.method)return Response.json({project:{id:'one',revision:'old'}});
+  bodies.push(JSON.parse(options.body));return Response.json(broken?{}:{revision:'new'});
+ }});
+ await client.load('one');await assert.rejects(client.write('one','/items','POST',{name:'draft'}),error=>error.uncertain===true);
+ client.acknowledge('one');assert.equal(client.state.project.revision,'old');broken=false;
+ await client.write('one','/items','POST',{name:'draft'});assert.deepEqual(bodies[0],bodies[1]);assert.equal(client.state.project.revision,'new');
+});

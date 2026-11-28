@@ -1,9 +1,9 @@
 import { projectRestorePicker } from "./project-restore-controls.js";
-import { createProjectClient } from "./project-client.js";
+import { createProjectClient } from "./project-client.js?v=save-upload-20261128";
 import { automaticSiteBackupStatus } from "./automatic-site-backups.js";
 import { automaticBackupStatus } from "./automatic-backup-status.js";
 import { backupAllDataButton } from "./site-data-backup.js";
-import { node, field, actions } from "./workshop-ui.js";
+import { node, field, actions } from "./workshop-ui.js?v=save-upload-20261128";
 import { initSiteHeader } from "./site-header.js";
 import { settingsSaved } from "./website-settings-client.js";
 import { normalizeWebsiteSettings } from "./website-settings-model.js";

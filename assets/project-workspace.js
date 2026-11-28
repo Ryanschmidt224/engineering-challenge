@@ -3,8 +3,8 @@ import { loadWebsiteSettings } from "./website-settings-client.js";
 import { summaryAssembly } from "./project-root-view.js";
 import { containerName } from "./project-presentation.js";
 import { initSiteHeader } from "./site-header.js";
-import { createProjectClient } from "./project-client.js";
-import { node, field, checkbox } from "./workshop-ui.js";
+import { createProjectClient } from "./project-client.js?v=save-upload-20261128";
+import { node, field, checkbox } from "./workshop-ui.js?v=save-upload-20261128";
 import { initSplitPanes } from "./split-panes.js";
 import {
   detailsFor,
@@ -13,7 +13,7 @@ import {
   editRecord,
   projectSettings,
   confirmAction,
-} from "./project-editors.js";
+} from "./project-editors.js?v=save-upload-20261128";
 import { workInstructions as instructionView } from "./project-instructions.js";
 import {
   information,
@@ -169,7 +169,13 @@ export function initProjectWorkspace(root = document) {
   ) {
     try {
       await client.write(projectId, path, method, data);
-      await refresh();
+      if ((await refresh()) === false) {
+        notify(
+          "Saved, but the page could not refresh. Retry the same action to reload it.",
+        );
+        return;
+      }
+      client.acknowledge(projectId);
       notify(message, after);
     } catch (error) {
       notify(error.message);

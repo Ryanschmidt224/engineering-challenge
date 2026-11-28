@@ -1,4 +1,4 @@
-import { node } from "./workshop-ui.js";
+import { node } from "./workshop-ui.js?v=save-upload-20261128";
 import { dataTable } from "./data-table.js";
 
 const fileSize = (bytes) =>

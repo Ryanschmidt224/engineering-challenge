@@ -1,6 +1,6 @@
 import { overviewSections } from "./project-summary-content.js";
 import { costSection } from "./project-summary-cost.js";
-import { node } from "./workshop-ui.js";
+import { node } from "./workshop-ui.js?v=save-upload-20261128";
 import { dataTable } from "./data-table.js";
 import { projectTree, projectBOM } from "./project-tree-model.js";
 

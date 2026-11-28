@@ -1,3 +1,4 @@
+import {requestResult} from "./request-result.js";
 import {interfaceHelp} from "./interface-help.js";
 import {present,isWebUrl} from "./family-model.js";
 
@@ -48,8 +49,5 @@ export function valuesEditor(fields,values,change,{product=false,productValues={
  return area;
 }
 export async function requestWorkshop(path="/api/workshop",method="GET",payload) {
- const response=await fetch(path,{method,credentials:"same-origin",cache:"no-store",...(payload===undefined?{}:{headers:{"content-type":"application/json"},body:JSON.stringify(payload)})});
- const data=await response.json().catch(()=>({}));
- if(!response.ok){const error=Error(data.error||"Request failed (HTTP "+response.status+"). Your draft is preserved.");error.status=response.status;error.code=data.code;throw error;}
- return data;
+ return requestResult(path,{method,credentials:"same-origin",cache:"no-store",...(payload===undefined?{}:{headers:{"content-type":"application/json"},body:JSON.stringify(payload)})});
 }

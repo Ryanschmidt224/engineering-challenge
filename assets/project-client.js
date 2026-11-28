@@ -1,3 +1,4 @@
+import { requestResult } from "./request-result.js";
 // One preview API client. A transport retry keeps the exact operation and token;
 // edited content receives a new operation. Conflicts never retry automatically.
 export function createProjectClient({ fetcher = fetch } = {}) {
@@ -5,32 +6,18 @@ export function createProjectClient({ fetcher = fetch } = {}) {
     loadSequence = 0;
   const pending = new Map(),
     uploads = new WeakMap();
-  async function request(path, options = {}) {
-    const response = await fetcher("/api/project-engine/projects" + path, {
-      credentials: "same-origin",
-      cache: "no-store",
-      ...options,
-    });
-    let result;
-    try {
-      result = await response.json();
-    } catch {
-      const error = Error(
-        "The server response could not be read. Your draft is retained; retry the same save.",
-      );
-      error.status = response.status;
-      error.code = "PROJECT_RESPONSE_UNREADABLE";
-      throw error;
-    }
-    if (!response.ok) {
-      const error = Error(
-        result.error || "Request failed. Your draft is retained.",
-      );
-      error.status = response.status;
-      throw error;
-    }
-    return result;
+  async function request(path, options = {}, valid) {
+    return requestResult(
+      "/api/project-engine/projects" + path,
+      {
+        credentials: "same-origin",
+        cache: "no-store",
+        ...options,
+      },
+      { fetcher, ...(valid ? { valid } : {}) },
+    );
   }
+
   async function load(projectId) {
     const sequence = ++loadSequence,
       result = await request("/" + projectId + "/state");
@@ -51,24 +38,47 @@ export function createProjectClient({ fetcher = fetch } = {}) {
       data,
       expectedRevision,
     ]);
-    let body = pending.get(key);
+    let entry = pending.get(key);
+    let body = entry?.body;
     if (!body) {
       body = { ...data, expectedRevision, operationId: crypto.randomUUID() };
-      pending.set(key, body);
+      entry = { body, confirmed: false, running: null };
+      pending.set(key, entry);
     }
-    const result = await request("/" + projectId + path, {
-      method,
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    loadSequence++;
-    if (
-      state?.project.id === projectId &&
-      (state.project.revision === expectedRevision ||
-        state.project.revision === result.revision)
-    )
-      state.project.revision = result.revision;
-    return result;
+    if (entry.running) return entry.running;
+    const task = async () => {
+      const result = await request(
+        "/" + projectId + path,
+        {
+          method,
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        },
+        (value) => typeof value?.revision === "string" && !!value.revision,
+      );
+      entry.confirmed = true;
+      loadSequence++;
+      if (
+        state?.project.id === projectId &&
+        (state.project.revision === expectedRevision ||
+          state.project.revision === result.revision)
+      )
+        state.project.revision = result.revision;
+      return result;
+    };
+    entry.running = task();
+    try {
+      return await entry.running;
+    } finally {
+      entry.running = null;
+    }
+  }
+  // Only call after the UI has successfully consumed the saved state. Uncertain
+  // operations remain replayable; a failed refresh must not acknowledge them.
+  function acknowledge(projectId) {
+    for (const [key, entry] of pending)
+      if (JSON.parse(key)[0] === projectId && entry.confirmed && !entry.running)
+        pending.delete(key);
   }
   async function upload(
     projectId,
@@ -161,6 +171,7 @@ export function createProjectClient({ fetcher = fetch } = {}) {
     load,
     write,
     upload,
+    acknowledge,
     get state() {
       return state;
     },

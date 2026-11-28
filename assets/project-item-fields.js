@@ -1,4 +1,4 @@
-import { node, field } from "./workshop-ui.js";
+import { node, field } from "./workshop-ui.js?v=save-upload-20261128";
 export const sourceChoices = [
   { value: "made", label: "Made in house" },
   { value: "purchased", label: "Purchased from outside vendor" },

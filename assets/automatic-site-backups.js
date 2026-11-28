@@ -1,4 +1,8 @@
-import { node, readValue, actions } from "./workshop-ui.js";
+import {
+  node,
+  readValue,
+  actions,
+} from "./workshop-ui.js?v=save-upload-20261128";
 import { backupDateLabel } from "./automatic-backup-status.js";
 const messages = {
   never: "No whole-site backup recorded yet",

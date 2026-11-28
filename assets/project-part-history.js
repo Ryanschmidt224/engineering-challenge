@@ -7,7 +7,7 @@ import {
 } from "./project-item-model.js";
 import { openHistoryEntryDialog } from "./history-entry-dialog.js";
 import { partHelp } from "./part-help.js";
-import { node } from "./workshop-ui.js";
+import { node } from "./workshop-ui.js?v=save-upload-20261128";
 import { savedPartView, configurationView } from "./project-information.js";
 
 export function partHistoryPrompt(

@@ -1,5 +1,5 @@
 import { fieldHelp } from "./project-item-fields.js";
-import { checkbox, node } from "./workshop-ui.js";
+import { checkbox, node } from "./workshop-ui.js?v=save-upload-20261128";
 // Persist the user's choice; equal names alone do not imply linked fields.
 export function identityNameLink(
   details,

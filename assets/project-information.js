@@ -1,7 +1,7 @@
 import { actionBar } from "./photo-editor.js";
 import { recordLabels, containerName } from "./project-presentation.js";
 import { legacyRecordContext } from "./project-record-context.js";
-import { node } from "./workshop-ui.js";
+import { node } from "./workshop-ui.js?v=save-upload-20261128";
 import { formatRevisionValue } from "./project-item-model.js";
 import { recordPrompts } from "./project-record-model.js";
 import { projectHelp } from "./project-help.js";
