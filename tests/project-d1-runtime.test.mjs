@@ -45,11 +45,19 @@ test('D1 upgrades v14, preserves projects and retains new projects across Worker
   assert.equal((await db.prepare('SELECT build_status FROM engine_occurrences WHERE id=?').bind(occurrenceId).first()).build_status,'ordered');
   assert.deepEqual((await db.prepare('PRAGMA foreign_key_check').all()).results,[]);
   const afterObjects=(await db.prepare("SELECT name FROM sqlite_master WHERE type='trigger' OR type='index' AND tbl_name='engine_occurrences' ORDER BY name").all()).results;
-  assert.deepEqual(afterObjects,beforeObjects);
+  assert.deepEqual(afterObjects,[...beforeObjects,...['engine_project_number_assign','engine_project_number_immutable_delete','engine_project_number_immutable_update'].map(name=>({name}))].sort((a,b)=>a.name.localeCompare(b.name)));
+  assert.equal((await db.prepare('SELECT project_number FROM engine_project_numbers WHERE project_id=?').bind(oldId).first()).project_number,1001);
+  assert.equal((await db.prepare('SELECT project_number FROM engine_project_numbers WHERE project_id=?').bind(newId).first()).project_number,1002);
+  const concurrent = Array.from({length:8},()=>({id:crypto.randomUUID(),operationId:crypto.randomUUID()}));
+  const created = await Promise.all(concurrent.map(p=>runtime.dispatchFetch('https://fixture.test/api/project-engine/projects/'+p.id,{method:'POST',body:JSON.stringify({operationId:p.operationId,expectedRevision:null,name:'Same name'})})));
+  for(const result of created)assert.equal(result.status,200,await result.clone().text());
+  const numbers=(await db.prepare('SELECT project_number FROM engine_project_numbers ORDER BY project_number').all()).results.map(row=>row.project_number);
+  assert.deepEqual(numbers,Array.from({length:10},(_,i)=>1001+i));
+  const first=concurrent[0];const replay=await runtime.dispatchFetch('https://fixture.test/api/project-engine/projects/'+first.id,{method:'POST',body:JSON.stringify({operationId:first.operationId,expectedRevision:null,name:'Same name'})});assert.equal(replay.status,200);assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM engine_project_numbers').first()).n,10);
   await assert.rejects(db.prepare("UPDATE engine_occurrences SET build_status='invented' WHERE id=?").bind(occurrenceId).run());
-  assert.equal((await db.prepare('SELECT MAX(version) AS version FROM project_engine_migrations').first()).version,16);
+  assert.equal((await db.prepare('SELECT MAX(version) AS version FROM project_engine_migrations').first()).version,17);
   assert.equal((await db.prepare('SELECT owner_name FROM engine_projects WHERE id=?').bind(oldId).first()).owner_name,'Wes');
   await runtime.dispose();runtime=new Miniflare(options);
-  response=await list();assert.equal(response.status,200,await response.clone().text());assert.deepEqual((await response.json()).projects.map(project=>project.id).sort(),[oldId,newId].sort());
+  response=await list();assert.equal(response.status,200,await response.clone().text());assert.deepEqual((await response.json()).projects.map(project=>project.id).sort(),[oldId,newId,...concurrent.map(p=>p.id)].sort());
  }finally{await runtime.dispose();await rm(directory,{recursive:true,force:true});}
 });

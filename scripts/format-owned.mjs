@@ -99,6 +99,9 @@ export const ownedModules = [
   "scripts/format-owned.mjs",
 ];
 ownedModules.push(
+  "assets/project-identity.js",
+  "assets/project-name-confirmation.js",
+  "functions/api/project-number-schema.js",
   "assets/backup-reminder-model.js",
   "assets/backup-reminder-client.js",
   "assets/backup-reminder-banner.js",

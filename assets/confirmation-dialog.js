@@ -30,6 +30,7 @@
     title = "Confirm action",
     message = "",
     confirmLabel = "Confirm",
+    cancelLabel = "Cancel",
     danger = false,
     notice = false,
     input = false,
@@ -58,7 +59,7 @@
         content.append(holder);
       }
       const actions = document.createElement("div"),
-        cancel = window.BSUI.button("Cancel"),
+        cancel = window.BSUI.button(cancelLabel),
         confirm = window.BSUI.button(confirmLabel, undefined, {
           variant: danger ? "danger" : "primary",
         });

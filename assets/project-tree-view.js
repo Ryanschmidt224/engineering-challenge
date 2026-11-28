@@ -1,3 +1,4 @@
+import { projectLabel } from "./project-identity.js";
 import {
   summaryAssembly,
   showAssemblyRow,
@@ -14,7 +15,7 @@ import {
 import {
   editItem,
   placementEditor,
-} from "./project-editors.js?v=save-upload-20261128";
+} from "./project-editors.js?v=project-numbers-20261128";
 import { partHistoryPrompt } from "./project-part-history.js";
 import { contextMenu } from "./context-menu.js";
 const button = (...args) => window.BSUI.button(...args);
@@ -308,7 +309,7 @@ export function renderProjectTree(
     ),
   );
   root.append(
-    node("strong", state.project.name),
+    node("strong", projectLabel(state.project)),
     node("span", "Project summary", "project-tree-root-caption"),
   );
   rootMore.setAttribute("aria-label", "Project tree actions");

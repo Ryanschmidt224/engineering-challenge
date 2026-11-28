@@ -1,3 +1,4 @@
+import { projectLabel } from "./project-identity.js";
 import { normalizeOverview } from "./project-overview-model.js?v=cad-links-20261128";
 import { projectTree } from "./project-tree-model.js";
 import { summaryParts } from "./project-summary.js";
@@ -165,7 +166,7 @@ export function htmlArchive({ manifest, bytes }) {
     tree = projectTree(tables.items, tables.occurrences),
     summary = summaryParts(tables);
   add("project-profile/summary.json", {
-    name: manifest.project.name,
+    name: projectLabel(manifest.project),
     ...normalizeOverview(manifest.project.overview || {}),
     note: "Readable notebook copy. Keep the .bsproject export for restoring a project.",
     numbering: {
@@ -245,13 +246,17 @@ export async function downloadProjectHTML(projectId) {
     ),
     source = await readableArchive(response),
     archive = htmlArchive(source),
-    html = window.BSReadableBackup.build(archive, source.manifest.project.name),
+    html = window.BSReadableBackup.build(
+      archive,
+      projectLabel(source.manifest.project),
+    ),
     blob = new Blob([html], { type: "text/html;charset=utf-8" }),
     url = URL.createObjectURL(blob),
     link = document.createElement("a");
   link.href = url;
   link.download =
-    source.manifest.project.name.replace(/[^a-z0-9_-]/gi, "_") + ".html";
+    projectLabel(source.manifest.project).replace(/[^a-z0-9_-]/gi, "_") +
+    ".html";
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }

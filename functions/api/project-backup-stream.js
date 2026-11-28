@@ -20,7 +20,7 @@ export async function smallBackup(db,projectId){
  return stats.reduce((sum,row)=>sum+row.results[0].bytes*6+row.results[0].n*1024,0)<2*1024*1024;
 }
 export async function streamedExport(env,project,validateManifest){
- const db=env.WORKSHOP_DB,savedProject=Object.fromEntries(["id","owner_id","owner_name","overview","name","revision","prefix","digits","created_at"].map(key=>[key,key==="owner_name"?project[key]??"Ryan":project[key]])),outline=backupOutline(savedProject);
+ const db=env.WORKSHOP_DB,savedProject=Object.fromEntries(["id","owner_id","owner_name","overview","name","project_number","revision","prefix","digits","created_at"].map(key=>[key,key==="owner_name"?project[key]??"Ryan":project[key]])),outline=backupOutline(savedProject);
  const counts=await db.batch(Object.keys(backupColumns).map(table=>statement(db,`SELECT COUNT(*) AS n FROM engine_${table} WHERE project_id=?`,project.id)));
  if(counts.reduce((sum,result)=>sum+result.results[0].n,0)>100000)throw Error("This preview recovery supports at most 100,000 metadata rows.");
  // The topology/number/selection contract stays validated. Large evidence/value

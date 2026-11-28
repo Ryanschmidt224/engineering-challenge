@@ -334,6 +334,15 @@ for (const automaticMode of [false, true])
         reminderSettings.backupReminder.lastConfirmed.at = "2026-08-01T09:17:00.000Z";
         reminderSettings.backupReminder.snoozedUntil = "2026-08-04T09:17:00.000Z";
         await sourceDB.prepare("UPDATE website_settings SET value=? WHERE id='global'").bind(JSON.stringify(Object.fromEntries(Object.entries(reminderSettings).filter(([key]) => key !== "revision")))).run();
+        const retiredNumberId = crypto.randomUUID();
+        await json(source, "/api/project-engine/projects/" + retiredNumberId, "POST", { operationId: crypto.randomUUID(), expectedRevision: null, name: "Retired reservation fixture" });
+        const retiredState = await json(source, "/api/project-engine/projects/" + retiredNumberId + "/state");
+        const retiredNumber = retiredState.project.project_number;
+        const deletionOperation = crypto.randomUUID();
+        for (let step = 0; step < 10; step++) {
+          const result = await json(source, "/api/project-engine/projects/" + retiredNumberId + "/delete", "POST", { operationId: deletionOperation, expectedRevision: retiredState.project.revision, name: "Retired reservation fixture" });
+          if (result.deleted) break;
+        }
         const nightly = await json(
           source,
           "/__recovery_test__/nightly",
@@ -690,6 +699,11 @@ for (const automaticMode of [false, true])
             /10024|upload.*(exist|abort)/i,
           );
         }
+        assert.equal((await json(target, base + "/state")).project.project_number, snapshot.project.project_number);
+        assert.equal((await targetDB.prepare("SELECT project_number FROM engine_project_numbers WHERE project_id=?").bind(retiredNumberId).first()).project_number, retiredNumber);
+        const nextProjectId = crypto.randomUUID();
+        await json(target, "/api/project-engine/projects/" + nextProjectId, "POST", { operationId: crypto.randomUUID(), expectedRevision: null, name: "After whole-site recovery" });
+        assert.ok((await json(target, "/api/project-engine/projects/" + nextProjectId + "/state")).project.project_number > retiredNumber);
         const recoveredReminder = await json(target, reminderPath);
         assert.deepEqual({ intervalDays: recoveredReminder.intervalDays, lastDownloaded: recoveredReminder.lastDownloaded, lastConfirmed: recoveredReminder.lastConfirmed, snoozedUntil: recoveredReminder.snoozedUntil }, reminderSettings.backupReminder);
         assert.equal(recoveredReminder.due, true);

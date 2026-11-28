@@ -1,3 +1,5 @@
+import { projectNumber } from "./project-identity.js";
+import { projectNameConfirmation } from "./project-name-confirmation.js";
 import { workshopPartEditor } from "./project-workshop-editor.js";
 import {
   customFields,
@@ -7,7 +9,7 @@ import {
   statusChoices,
 } from "./project-item-fields.js";
 import { identityNameLink } from "./project-identity-link.js";
-import { projectDeletionSection } from "./project-delete.js";
+import { projectDeletionSection } from "./project-delete.js?v=project-numbers-20261128";
 import { recordLabels } from "./project-presentation.js";
 import { projectTree } from "./project-tree-model.js";
 import { partHistoryPrompt } from "./project-part-history.js";
@@ -89,6 +91,7 @@ export function editable(
   save,
   {
     confirmation = false,
+    beforeSave = null,
     review = null,
     mount = null,
     initialRevision = ctx.client.state?.project.revision ?? null,
@@ -159,6 +162,7 @@ export function editable(
       saveButton.textContent = "Saving…";
       form.setAttribute("aria-busy", "true");
       cancel.disabled = true;
+      if (beforeSave && !(await beforeSave(data))) return;
       await save(data, revision);
       if ((await ctx.refresh()) === false)
         throw Error(
@@ -799,6 +803,12 @@ export function projectSettings(ctx, { create = false, mount = null } = {}) {
     },
     {
       mount,
+      beforeSave: projectNameConfirmation(
+        ctx,
+        newProjectId || ctx.projectId,
+        () => name.querySelector("input"),
+        create ? null : project.name,
+      ),
       initialRevision: mount
         ? saved.revision
         : (ctx.client.state?.project.revision ?? null),
@@ -831,6 +841,15 @@ export function projectSettings(ctx, { create = false, mount = null } = {}) {
     };
   preview.dataset.numberPreview = "";
   preview.setAttribute("aria-live", "polite");
+  editor.fields.append(
+    node(
+      "p",
+      create
+        ? "Project number is assigned automatically when saved."
+        : "Project number: " + projectNumber(project),
+      "muted",
+    ),
+  );
   const name = field(
       "Project name",
       draft.name,

@@ -1,3 +1,4 @@
+import {projectNumberSchema} from "./project-number-schema.js";
 import {occurrenceStatusUpgrade} from './project-status-upgrade.js';
 import {projectDeleteSchema} from "./project-delete-schema.js";
 // Separate from Workshop's migration ledger. Only the enabled, authenticated
@@ -190,7 +191,7 @@ const migrations=[{version:1,statements:[
  `UPDATE engine_projects SET owner_name=legacy_owner_name WHERE NOT EXISTS(SELECT 1 FROM engine_project_deletions d WHERE d.project_id=engine_projects.id) AND NOT EXISTS(SELECT 1 FROM engine_restore_jobs j JOIN engine_restore_jobs closed ON closed.project_id=j.project_id AND closed.actor_id=j.actor_id AND closed.operation_id=j.operation_id WHERE j.id=engine_projects.restore_job_id AND closed.cleanup_token IS NOT NULL)`,
  `CREATE TABLE website_settings(id TEXT PRIMARY KEY CHECK(id='global'),revision TEXT NOT NULL,value TEXT NOT NULL CHECK(json_valid(value)))`,
  `INSERT INTO website_settings(id,revision,value) SELECT 'global',lower(hex(randomblob(16))),json_object('tags',json((SELECT json_group_array(tag) FROM(SELECT min(trim(tag)) tag FROM(SELECT value tag FROM json_each('["Electronics","PCB Design","3D Printing","Mechanical","Software"]') UNION SELECT trim(value) tag FROM engine_projects,json_each(engine_projects.overview,'$.tags') WHERE type='text' AND length(trim(value)) BETWEEN 1 AND 60 AND value NOT GLOB '*['||char(1)||'-'||char(31)||char(127)||']*') GROUP BY lower(trim(tag)) ORDER BY lower(trim(tag)) LIMIT 100))),'owners',json((SELECT json_group_array(name) FROM(SELECT 'Ryan' name UNION SELECT 'Wes' UNION SELECT 'Wyatt' UNION SELECT owner_name FROM engine_projects))),'defaultOwner','Ryan')`
-]},{version:16,statements:null}];
+]},{version:16,statements:null},{version:17,statements:projectNumberSchema}];
 export const PROJECT_ENGINE_SCHEMA_VERSION=migrations.at(-1).version;
 // Read-only consumers never bootstrap/upgrade engineering storage. Do not cache
 // false: the normal owner engine entry may initialize it later in this isolate.

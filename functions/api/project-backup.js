@@ -16,7 +16,7 @@ import {assertStorageKeyWritable} from "./project-storage-fence.js";
 // Explicit export schema: receipts and concurrency tokens are operational, not
 // engineering history. Restore issues a new token and a new import receipt.
 export async function projectManifest(db,project){
- const names=Object.keys(columns),result=await db.batch([statement(db,"SELECT id,owner_id,owner_name,overview,name,revision,prefix,digits,created_at FROM engine_projects WHERE id=? AND restore_job_id IS NULL",project.id),...names.map(name=>statement(db,`SELECT * FROM engine_${name} WHERE project_id=? ORDER BY id`,project.id))]);
+ const names=Object.keys(columns),result=await db.batch([statement(db,"SELECT p.id,p.owner_id,p.owner_name,p.overview,p.name,p.revision,p.prefix,p.digits,p.created_at,n.project_number FROM engine_projects p JOIN engine_project_numbers n ON n.project_id=p.id WHERE p.id=? AND p.restore_job_id IS NULL",project.id),...names.map(name=>statement(db,`SELECT * FROM engine_${name} WHERE project_id=? ORDER BY id`,project.id))]);
  return {format:"building-schmidt-project",version:1,project:result[0].results[0],tables:Object.fromEntries(names.map((name,index)=>[name,result[index+1].results]))};
 }
 function base64(bytes){let text="";for(let start=0;start<bytes.length;start+=8192)text+=String.fromCharCode(...bytes.subarray(start,start+8192));return btoa(text);}
