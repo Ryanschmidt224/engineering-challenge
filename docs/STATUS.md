@@ -1,10 +1,10 @@
 # BuildingSchmidt — current status
 
-November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. The confirmed release baseline is #155 (`66a613b2fe75f02a286b8437d2d117a75fdb85f3`): automatic whole-site backups, backup monitoring, the compact Workshop product read view, shared confirmation template (#152), default-collapsed family fields (#151), and the earlier Lessons/photo/lookup updates. Its 313 code tests, 148 browser workflows and dependency check passed. Release PRs record exact source and Cloudflare deployment evidence.
+November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. The confirmed release baseline is #156 (`e108c973097405b6ebe20abeeaa5abb1189bf66e`): visible Workshop product photo uploads, automatic whole-site backups, backup monitoring, the compact Workshop product read view, shared confirmation template (#152), default-collapsed family fields (#151), and the earlier Lessons/photo/lookup updates. Its 313 code tests, 152 browser workflows and dependency check passed. Release PRs record exact source and Cloudflare deployment evidence.
 
 ## Current behavior
 
-- Projects uses guarded commands, stable identities, immutable history/files, revision checks, independent Workshop copies and tested export/restore. The retired application and availability flag are gone; stored historical data remains.
+- Projects uses guarded commands, stable identities, immutable history/files, revision checks, independent Workshop copies and tested export/restore. The retired application and availability flag are gone. The owner removed 30 retired R2 folder prefixes after downloading Nov 26/27 whole-site backups and checking current file/history references; current project history, account files, Workshop files and automatic backups remain. The original 85 MB estimate was not independently remeasured.
 - Workshop uses families and products. Family fields start collapsed; products remain prominent in the existing navigation. AI lookup requires a search hint, searches supported product attachments, and keeps source evidence with applied values. Read specifications use compact rows and quiet source disclosures.
 - Saved Workshop products expose a Photos section in view and edit mode, with the shared choose/drop/paste controls and immediate photo saves. Upload retries reuse their identity; failed list refreshes do not reupload saved photos. Other product edits remain unsaved until Save product.
 - Lessons Learned supports autosave, rename-safe links, archive/restore and step photos. Its editor and read view share the framed field layout. The old Info Bits runtime is retired, with old rows retained in exports.
@@ -18,7 +18,9 @@ Backup monitoring (#154) adds a bounded, conditionally written status record for
 
 The [automatic whole-site backup implementation](AUTOMATIC-SITE-BACKUPS.md) follows: verified download list, seven-copy retention, consistency checks, bounded streaming, recovery from terminated multipart uploads, and an independent native restore after Workshop-only/notebook-only changes. Its release PR owns validation/deployment evidence. Owner-independent storage and hosted production-snapshot recovery have not been performed.
 
-Next: durable login-attempt limiting. Then consistent save/upload/error lifecycle rules and tested browser security headers. Optimize photos and larger collection reads after measurement.
+Login-attempt limiting now reserves checks durably before credential reads: ten attempts per normalized email or Cloudflare client address and sixty overall per 15-minute window, with automatic expiry and clear retry guidance. One bounded R2 object stores keyed hashes rather than raw emails or addresses; no database migration or credential change is needed. Failed storage admission prevents a new password check, while existing sessions and sign-out remain usable.
+
+Next: tested browser security headers (F3), then consistent save/upload/error lifecycle rules. Optimize photos and larger collection reads after measurement.
 
 The complete finding/action list is in [the combined review and work plan](WHOLE-SITE-REVIEW-2026-11-27.md). Cleanup #143, toolchain maintenance #144 and photo/lesson feedback #145 are released. Dependency advisories are checked in CI; automatic dependency PRs require normal review and tests.
 

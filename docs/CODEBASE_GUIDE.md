@@ -39,3 +39,15 @@ Browser modules should declare dependencies and initialize explicitly. DOM helpe
 Use `npm run format:js` for owned modules. Keep the 40,000-byte module limit and existing classic-helper budgets. Split by responsibility when a module outgrows its owner; do not raise a budget to hide growth. New CSS belongs with its shared component or feature, uses theme tokens and removes replaced selectors. The old override cascade has been deleted.
 
 Deployment checks validate source and preview builds. Production data deletion, a real paid lookup, hosted disaster recovery and account changes require their own explicit scope; fixture evidence is not proof those operations occurred.
+
+## Login protection
+
+`functions/api/login-attempt-limits.js` owns admission to the account password check. Valid login requests reserve an attempt before account lookup or PBKDF2. Normalized emails and the Cloudflare-supplied client IP each allow ten attempts per 15-minute window; sixty total attempts bound guesses that rotate both. All attempts, including successful ones, count. Public registration remains closed, `/api/auth` cannot accept a password, and account reads/sign-out do not consume this budget.
+
+One R2 object, `login-protection/v1.json`, holds the complete bounded window. Email and client identifiers use domain-separated HMAC-SHA256 with the existing server secret; raw emails, IP addresses and passwords are not stored in the counter or logged. Only `CF-Connecting-IP` identifies a client; forwarded headers are ignored, and missing IPs share a conservative fallback. Keep this new current-storage prefix during cleanup.
+
+R2 conditional creation/ETag updates reserve all budgets together across Worker instances. Rejected attempts do not extend the cooldown. Successful sign-ins do not clear concurrent reservations. State expires automatically when the window ends, with an HTTP 429, `Retry-After`, and readable guidance while blocked. The existing sign-in form preserves input and permits cancellation.
+
+Corrupt/oversized state, missing ETags, exhausted bounded retries, storage errors and uncertain write replies return a generic HTTP 503 with a short retry interval before any password check. R2 can also throttle concurrent writes to a single key, so a burst may be refused earlier than the policy threshold. Existing sessions continue to work. This is a deliberately small private-owner control, not a general edge flood-defense service.
+
+The limiter is included by existing whole-site backups and needs no binding, database migration, account reset or dashboard rule. Native local R2 tests cover conditional admission and restart; production cooldowns are not intentionally exercised during release verification.

@@ -13,13 +13,14 @@ test('global choices require owner/origin, reject duplicates and stale writes, a
  const env={NEW_PROJECT_ENGINE:'1',WORKSHOP_DB:new TestD1(),PHOTOS:new TestR2(),admin_password:'synthetic-settings-secret'};t.after(()=>env.WORKSHOP_DB.close());
  assert.equal((await handleProjectEngine(settingsRequest(),env)).status,401);
  const login=await provisionTestAccount(new Request(origin+'/api/accounts',{method:'POST',headers:{origin},body:JSON.stringify({action:'register',email:'settings-owner@example.test',password:'synthetic-password'})}),env,{role:'admin'}),cookie=login.headers.get('set-cookie').split(';')[0],call=(method,data,headers={})=>handleProjectEngine(settingsRequest(method,data,{cookie,...headers}),env);
+ const r2Before=[...env.PHOTOS.objects].map(([key,record])=>[key,[...record.bytes]]);
  const initial=await(await call('GET')).json(),value={tags:['Electronics','Custom tag'],owners:['Ryan','Wes','Wyatt','Alex'],defaultOwner:'Alex'},body={expectedRevision:initial.revision,value};
  assert.equal((await call('PATCH',body,{origin:'https://outside.test'})).status,403);
  assert.equal((await call('PATCH',{...body,value:{...value,tags:['Same','same']}})).status,400);
  const saved=await(await call('PATCH',body)).json();assert.equal(saved.defaultOwner,'Alex');assert.notEqual(saved.revision,initial.revision);assert.deepEqual(await(await call('PATCH',body)).json(),saved);
  assert.equal((await call('PATCH',{...body,value:{...value,tags:[]}})).status,409);
  assert.equal((await call('PATCH',{...body,value:{...value,owners:[]}})).status,400);
- const keys=[...env.PHOTOS.objects.keys()];assert.ok(keys.every(key=>key.startsWith('users/')||key.startsWith('user-email/')||key.startsWith('sessions/')));
+ assert.deepEqual([...env.PHOTOS.objects].map(([key,record])=>[key,[...record.bytes]]),r2Before);
 });
 test('configured owners and tags apply to projects, preserve removed choices and round trip backups',async t=>{
  const f=await fixture();t.after(()=>f.db.close());const call=(method,data)=>handleProjectWorkspace(settingsRequest(method,data),f.env,f.owner),initial=await(await call('GET')).json();let value={tags:['Electronics','Custom'],owners:['Ryan','Wes','Wyatt','Alex'],defaultOwner:'Alex'};
