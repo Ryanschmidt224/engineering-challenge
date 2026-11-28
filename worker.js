@@ -3,6 +3,7 @@ import { runNightlyBackups } from "./functions/api/scheduled-backups.js";
 import { isAdmin } from "./functions/api/auth.js";
 import { guardPrivateApi } from "./functions/api/private-access.js";
 import { apiDispatch } from "./functions/api/api-routes.js";
+import { secureResponse } from "./functions/security-headers.js";
 const retired = new Set([
   "/api/knowledge",
   "/api/project-engine/proof",
@@ -39,7 +40,7 @@ const retired = new Set([
   "/api/workshop-templates",
   "/api/workshop-image-import",
 ]);
-export default {
+const application = {
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
     try {
@@ -77,15 +78,15 @@ export default {
           { status: 410, headers: { "cache-control": "private, no-store" } },
         );
       if (path.startsWith("/api/project-engine/"))
-        return handleProjectEngine(request, env);
+        return await handleProjectEngine(request, env);
       const handler = apiDispatch.get(path);
-      if (handler) return handler(request, env, ctx);
+      if (handler) return await handler(request, env, ctx);
       if (path.startsWith("/api/"))
         return Response.json(
           { error: "API route not found" },
           { status: 404, headers: { "cache-control": "no-store" } },
         );
-      return env.ASSETS.fetch(request);
+      return await env.ASSETS.fetch(request);
     } catch (error) {
       // Return a structured, non-sensitive error for account failures.
       const diagnosticId = crypto.randomUUID();
@@ -112,4 +113,11 @@ export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(runNightlyBackups(env, new Date(event.scheduledTime)));
   },
+};
+
+export default {
+  async fetch(request, env, ctx) {
+    return secureResponse(await application.fetch(request, env, ctx));
+  },
+  scheduled: application.scheduled,
 };
