@@ -583,7 +583,7 @@ export function initProjectWorkspace(root = document) {
         photos = window.BSUI.section({
           title: "Project photos",
           role: "summary-photos",
-          open: summaryPhotoState.get(projectId) || false,
+          open: summaryPhotoState.get(projectId) ?? true,
         }),
         picture = projectPicture(ctx(), {
           assembly: rootAssembly?.item,
