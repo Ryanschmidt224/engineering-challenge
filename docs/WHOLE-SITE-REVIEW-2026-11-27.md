@@ -22,7 +22,7 @@ The supplied “297 passing / 4 failing” describes the other workspace, not fo
 
 | Supplied finding | Evaluation and action | Sequence |
 | --- | --- | --- |
-| F1: wrong-password attempts have no limit | Agree. Prefer a deliberate edge limit when configured; otherwise use a durable bounded limiter. A counter in a Worker isolate alone does not protect distributed requests. Verify both account and legacy password entry paths before implementing. | Next reliability batch |
+| F1: wrong-password attempts have no limit | Implemented by durable, conditional R2 admission before credential checks: per-email/client and global temporary limits, bounded state, automatic expiry, generic retry guidance and closed legacy password entry. Existing sessions remain usable. | Implemented |
 | F2: obsolete Projects switch | Agree. Remove the gate at the Worker, direct project entry, scheduled backups and Workshop project-use projection. Keep owner/origin checks and read-only schema readiness. | Batch 1 |
 | F3: browser security headers | Agree. Add headers with a tested policy compatible with existing inline module startup, photos, downloads and calculators. Do not blindly apply a CSP that breaks current pages. | Following batch |
 | S1: compressed project modules | Agree. Format current modules and enroll them in the maintained formatter. Compare normalized code to prove formatting-only files keep behavior. Existing 40 KB limits stay. | Batch 1 |
@@ -30,7 +30,7 @@ The supplied “297 passing / 4 failing” describes the other workspace, not fo
 | S3: live switch-over proofs | Agree with adjustment: move tools and synthetic command proof into tests, outside the asset deployment and Worker import graph. Keep browser source/independent-target recovery coverage. Retain real import/export/restore logic. | Batch 1 |
 | S4: stale STATUS and dated documents | Agree. Replace STATUS with one current page; move dated batch/rollout/release evidence into history and fix relative Markdown links. | Batch 1 |
 | S5: unused helpers | Agree. Remove `attachmentPicker`, `containerHelp` and `decodeBytes`. Keep used binary encoding/digest helpers. | Batch 1 |
-| S6: about 85 MB of retired stored files | Plausible operational estimate, not independently remeasured in this pass. Leave stored objects in place. A future purge needs an exact inventory, reference check, verified independent backup and explicit deletion scope; source retirement does not require it. | Deferred |
+| S6: about 85 MB of retired stored files | The owner authorized deletion, downloaded Nov 26/27 whole-site backups, ran current file/history reference checks, and manually removed 30 classified retired root prefixes. Final root screenshots retain the seven active prefixes. Actual bytes removed and the downloaded backup checksum were not independently measured/verified; retained backup copies still contain the earlier data. | Completed manual cleanup |
 | M1: nightly backup failure visibility | Agree. Show the last attempt and success time with stale/failure state and explicit coverage. A green project backup must not imply Lessons/Workshop protection. | Next reliability batch |
 | M2: Workshop export omits Lessons | Accurate, but a Workshop-scoped archive need not become a second whole-site format. Clarify the scope and direct users to whole-site backup. Design automatic whole-site coverage separately. | Next reliability batch |
 

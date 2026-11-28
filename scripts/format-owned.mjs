@@ -3,6 +3,8 @@
 import { readFile, writeFile } from "node:fs/promises";
 import * as prettier from "prettier";
 export const ownedModules = [
+  "functions/api/accounts.js",
+  "functions/api/login-attempt-limits.js",
   "assets/workshop-product-photos.js",
   "assets/automatic-site-backups.js",
   "functions/api/site-data-backup.js",
