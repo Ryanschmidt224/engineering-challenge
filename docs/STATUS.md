@@ -14,6 +14,10 @@ November 27, 2026. One private owner application on Cloudflare Workers, D1 and R
 
 ## Reliability work
 
+The owner-approved copy-outside-Cloudflare reminder uses the existing website-settings row with separate download and explicit confirmation records. All signed-in pages show a slim inline reminder after the configured interval (30 days by default, 7–90 allowed), or if no confirmation exists. A server-held three-day snooze applies across devices. Completed direct saves record a download only after the file closes; cancellation, failed writes and truncated nightly transfers never count. A second confirmation records an outside copy. Ordinary download-link browsers retain manual confirmation. Whole-site backup/restore preserves dates without marking a restored copy as new. This release does not perform a production download or claim an owner off-site copy exists.
+
+Development tooling PR #146 is merged: Playwright 1.65.1, esbuild 0.28.2 and Prettier 3.10.1 passed 335 code checks and 163 browser tests in GitHub before merge; its production build succeeded. The one formatter adjustment has identical normalized executable output, and the photo-batch test now waits for its rejected request before retry assertions.
+
 Backup monitoring (#154) adds a bounded, conditionally written status record for the existing nightly job. Website settings shows the last attempt, last successful check, failures, interrupted runs and overdue checks. Unchanged project archives are checked for completeness before being reported successful. The page and Workshop export help explicitly distinguish project-only, Workshop-only and whole-site coverage. Its release PR records publication evidence; it does not claim that a production cron has already fired.
 
 The [automatic whole-site backup implementation](AUTOMATIC-SITE-BACKUPS.md) follows: verified download list, seven-copy retention, consistency checks, bounded streaming, recovery from terminated multipart uploads, and an independent native restore after Workshop-only/notebook-only changes. Its release PR owns validation/deployment evidence. Owner-independent storage and hosted production-snapshot recovery have not been performed.
@@ -30,7 +34,7 @@ The complete finding/action list is in [the combined review and work plan](WHOLE
 
 ## Working boundaries
 
-Preserve owner/origin guards, project/Workshop isolation, immutable evidence, operation replay, deletion tombstones and restore fences. Applied migrations and current backup readers remain. No stored-data sweep, account change or paid AI test is part of this maintenance. Routine Claude reviews remain off. Historical draft PRs #32 and #91 are not active work and must not be merged automatically.
+Preserve owner/origin guards, project/Workshop isolation, immutable evidence, operation replay, deletion tombstones and restore fences. Applied migrations and current backup readers remain. No stored-data sweep, account change or paid AI test is part of this maintenance. Routine Claude reviews remain off. Historical draft PRs #32 and #91 were closed without merging on November 28; their discussions and commits remain available. Reconsider any useful idea in a fresh change against current main.
 
 CAD links are metadata only; the application does not authenticate to Dropbox, fetch external bytes, manage sharing, or freeze external content. Independent hosted project URLs stay a late priority.
 

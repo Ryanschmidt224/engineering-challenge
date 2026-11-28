@@ -324,6 +324,16 @@ for (const automaticMode of [false, true])
             defaultOwner: "Alex",
           },
         });
+        const reminderPath = "/api/project-engine/backup-reminder";
+        await json(source, reminderPath, "POST", { action: "downloaded", source: "manual", backupCreatedAt: "2026-11-01T09:17:00.000Z" });
+        await json(source, reminderPath, "POST", { action: "confirm", confirmed: true, backupCreatedAt: "2026-11-01T09:17:00.000Z" });
+        await json(source, reminderPath, "POST", { action: "interval", intervalDays: 14 });
+        await json(source, reminderPath, "POST", { action: "snooze" });
+        // Recover an old acknowledgement as-is; restoring must not make it current.
+        const reminderSettings = await json(source, "/api/project-engine/settings");
+        reminderSettings.backupReminder.lastConfirmed.at = "2026-08-01T09:17:00.000Z";
+        reminderSettings.backupReminder.snoozedUntil = "2026-08-04T09:17:00.000Z";
+        await sourceDB.prepare("UPDATE website_settings SET value=? WHERE id='global'").bind(JSON.stringify(Object.fromEntries(Object.entries(reminderSettings).filter(([key]) => key !== "revision")))).run();
         const nightly = await json(
           source,
           "/__recovery_test__/nightly",
@@ -680,6 +690,9 @@ for (const automaticMode of [false, true])
             /10024|upload.*(exist|abort)/i,
           );
         }
+        const recoveredReminder = await json(target, reminderPath);
+        assert.deepEqual({ intervalDays: recoveredReminder.intervalDays, lastDownloaded: recoveredReminder.lastDownloaded, lastConfirmed: recoveredReminder.lastConfirmed, snoozedUntil: recoveredReminder.snoozedUntil }, reminderSettings.backupReminder);
+        assert.equal(recoveredReminder.due, true);
         const account = await json(target, "/api/accounts", "POST", {
           action: "login",
           email: "owner@recovery.example.test",

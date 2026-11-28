@@ -1,4 +1,4 @@
-import { initSiteHeader } from "./site-header.js?v=save-upload-20261128";
+import { initSiteHeader } from "./site-header.js?v=offsite-backup-20261128";
 import { initSplitPanes } from "./split-panes.js?v=save-upload-20261128";
 initSiteHeader();
 initSplitPanes(document.querySelector(".workshop-layout"), {

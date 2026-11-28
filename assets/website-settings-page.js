@@ -1,16 +1,20 @@
+import { backupReminderSettings } from "./backup-reminder-settings.js";
 import { projectRestorePicker } from "./project-restore-controls.js";
 import { createProjectClient } from "./project-client.js?v=save-upload-20261128";
-import { automaticSiteBackupStatus } from "./automatic-site-backups.js";
+import { automaticSiteBackupStatus } from "./automatic-site-backups.js?v=offsite-backup-20261128";
 import { automaticBackupStatus } from "./automatic-backup-status.js";
-import { backupAllDataButton } from "./site-data-backup.js";
+import { backupAllDataButton } from "./site-data-backup.js?v=offsite-backup-20261128";
 import { node, field, actions } from "./workshop-ui.js?v=save-upload-20261128";
-import { initSiteHeader } from "./site-header.js";
-import { settingsSaved } from "./website-settings-client.js";
-import { normalizeWebsiteSettings } from "./website-settings-model.js";
+import { initSiteHeader } from "./site-header.js?v=offsite-backup-20261128";
+import { settingsSaved } from "./website-settings-client.js?v=offsite-backup-20261128";
+import { normalizeWebsiteSettings } from "./website-settings-model.js?v=offsite-backup-20261128";
 initSiteHeader();
 const root = document.querySelector("[data-website-settings]"),
   notice = document.querySelector("[data-notice]"),
   button = (...args) => window.BSUI.button(...args);
+const choicesKey = ({ tags, owners, defaultOwner }) =>
+  JSON.stringify({ tags, owners, defaultOwner });
+let baselineChoices;
 let draft,
   revision,
   dirty = false;
@@ -19,6 +23,7 @@ const backup = window.BSUI.section({
   role: "website-backup",
   open: true,
 });
+backup.root.id = "data-backup";
 const backupButton = backupAllDataButton();
 const projectChecks = window.BSUI.section({
   title: "Project backup checks",
@@ -38,6 +43,7 @@ backup.body.append(
     "Nightly backups run daily at 2:17 am Arizona time and cover Projects, Workshop, Lessons Learned, account data and stored files. The seven latest verified copies are kept in the same Cloudflare account. Backup copies are excluded to prevent recursive growth.",
     "muted",
   ),
+  backupReminderSettings(),
   automaticSiteBackupStatus(),
   projectChecks.root,
   node(
@@ -50,6 +56,13 @@ backup.body.append(
 if (backupButton.disabled)
   backup.body.append(node("p", backupButton.title, "muted"));
 root.after(backup.root);
+function locateBackup() {
+  if (location.hash === "#data-backup") {
+    backup.root.open = true;
+    requestAnimationFrame(() => backup.root.scrollIntoView());
+  }
+}
+window.addEventListener("hashchange", locateBackup);
 const report = (message) => {
   notice.textContent = message;
 };
@@ -90,6 +103,7 @@ async function read() {
   if (!response.ok) throw Error(data.error || "Settings could not be loaded.");
   draft = normalizeWebsiteSettings(data);
   revision = data.revision;
+  baselineChoices = choicesKey(data);
   dirty = false;
   render();
 }
@@ -214,6 +228,20 @@ function render() {
     if (!form.reportValidity()) return;
     save.disabled = true;
     try {
+      // Reminder actions share the settings row. Refresh only the revision if
+      // the saved owner/tag choices are unchanged; a real edit still conflicts.
+      const latestResponse = await fetch("/api/project-engine/settings", {
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const latest = await latestResponse.json();
+      if (!latestResponse.ok)
+        throw Error(latest.error || "Settings could not be loaded.");
+      if (
+        latest.revision !== revision &&
+        choicesKey(latest) === baselineChoices
+      )
+        revision = latest.revision;
       const value = normalizeWebsiteSettings(draft),
         response = await fetch("/api/project-engine/settings", {
           method: "PATCH",
@@ -227,6 +255,7 @@ function render() {
       settingsSaved(data);
       draft = normalizeWebsiteSettings(data);
       revision = data.revision;
+      baselineChoices = choicesKey(data);
       dirty = false;
       render();
       report("Website settings saved.");
@@ -237,6 +266,7 @@ function render() {
     }
   };
   root.append(form);
+  locateBackup();
 }
 addEventListener("beforeunload", (event) => {
   if (dirty) {

@@ -1,9 +1,9 @@
 import { projectCadLinks } from "./project-cad-links.js";
 import { projectStatusChoices } from "./project-item-model.js?v=cad-links-20261128";
-import { loadWebsiteSettings } from "./website-settings-client.js";
+import { loadWebsiteSettings } from "./website-settings-client.js?v=offsite-backup-20261128";
 import { summaryAssembly } from "./project-root-view.js";
 import { containerName } from "./project-presentation.js";
-import { initSiteHeader } from "./site-header.js";
+import { initSiteHeader } from "./site-header.js?v=offsite-backup-20261128";
 import { createProjectClient } from "./project-client.js?v=save-upload-20261128";
 import { node, field, checkbox } from "./workshop-ui.js?v=save-upload-20261128";
 import { initSplitPanes } from "./split-panes.js";
@@ -36,7 +36,7 @@ import { projectCatalog } from "./project-catalog.js";
 import { projectSummary } from "./project-summary.js";
 import { renderProjectParts } from "./project-parts-view.js";
 import { downloadProjectHTML } from "./project-html-export.js";
-import { initProjectSignin } from "./project-signin.js";
+import { initProjectSignin } from "./project-signin.js?v=offsite-backup-20261128";
 const button = (...args) => window.BSUI.button(...args);
 export function initProjectWorkspace(root = document) {
   const environment = root.querySelector("[data-project-environment]");

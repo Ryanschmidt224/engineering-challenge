@@ -1,2 +1,2 @@
-import { initProjectWorkspace } from "./project-workspace.js?v=summary-photos-open-20261128";
+import { initProjectWorkspace } from "./project-workspace.js?v=offsite-backup-20261128";
 initProjectWorkspace();

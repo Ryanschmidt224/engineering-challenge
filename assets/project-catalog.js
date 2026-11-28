@@ -1,6 +1,6 @@
 import { node } from "./workshop-ui.js?v=save-upload-20261128";
 import { initDirectory } from "./project-directory.js";
-import { ownerChoices } from "./website-settings-client.js";
+import { ownerChoices } from "./website-settings-client.js?v=offsite-backup-20261128";
 import { showProjectDeletion } from "./project-delete.js";
 
 export function projectCatalog(ctx, projects, create = null) {

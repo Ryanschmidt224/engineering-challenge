@@ -1,5 +1,5 @@
 import { sectionEdit } from "./section-edit.js";
-import { websiteSettings } from "./website-settings-client.js";
+import { websiteSettings } from "./website-settings-client.js?v=offsite-backup-20261128";
 import { node, field, actions } from "./workshop-ui.js?v=save-upload-20261128";
 import { normalizeOverview } from "./project-overview-model.js?v=cad-links-20261128";
 import {

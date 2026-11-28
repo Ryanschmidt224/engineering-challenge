@@ -1,4 +1,9 @@
 import {
+  saveBackupFile,
+  verifiedNightlyBytes,
+  directBackupSaveSupported,
+} from "./backup-file-save.js";
+import {
   node,
   readValue,
   actions,
@@ -78,23 +83,73 @@ export function automaticSiteBackupStatus() {
       if (data.snapshots.length) {
         content.append(node("h3", "Verified copies"));
         const list = node("dl");
-        for (const snapshot of data.snapshots) {
+        for (const [index, snapshot] of data.snapshots.entries()) {
           const row = readValue(
-              backupDateLabel(snapshot.createdAt),
-              sizeLabel(snapshot.bytes),
-            ),
-            link = node("a", "Download");
-          link.href =
-            "/api/automatic-site-backups?id=" + encodeURIComponent(snapshot.id);
-          link.setAttribute(
-            "aria-label",
-            "Download whole-site backup from " +
-              backupDateLabel(snapshot.createdAt),
+            backupDateLabel(snapshot.createdAt),
+            sizeLabel(snapshot.bytes),
           );
-          row.lastChild.append(document.createTextNode(" · "), link);
+          if (index === 0) {
+            row.dataset.newestBackup = "";
+            row.lastChild.append(
+              document.createTextNode(" · Newest verified copy"),
+            );
+          }
+          let download;
+          const label =
+            "Download whole-site backup from " +
+            backupDateLabel(snapshot.createdAt);
+          if (directBackupSaveSupported()) {
+            download = window.BSUI.button(
+              "Download",
+              async () => {
+                download.disabled = true;
+                try {
+                  await saveBackupFile({
+                    name:
+                      "BuildingSchmidt-Automatic-" + snapshot.id + ".bsbackup",
+                    chunks: () => verifiedNightlyBytes(snapshot),
+                    metadata: () => ({
+                      source: "nightly",
+                      backupCreatedAt: snapshot.createdAt,
+                    }),
+                    onSaving: () => {
+                      download.textContent = "Downloading…";
+                    },
+                  });
+                } catch (error) {
+                  await window.BSDialogs.alert(error.message, {
+                    title: "Backup could not be saved",
+                  });
+                } finally {
+                  download.disabled = false;
+                  download.textContent = "Download";
+                }
+              },
+              { small: true },
+            );
+          } else {
+            download = node("a", "Download");
+            download.href =
+              "/api/automatic-site-backups?id=" +
+              encodeURIComponent(snapshot.id);
+          }
+          download.setAttribute("aria-label", label);
+          row.lastChild.append(document.createTextNode(" · "), download);
           list.append(row);
         }
         content.append(list);
+        if (!directBackupSaveSupported())
+          content.append(
+            node(
+              "p",
+              "This browser cannot report whether a download finished. After saving, use I saved a copy outside Cloudflare to confirm your copy.",
+              "muted",
+            ),
+          );
+        if (location.hash === "#data-backup" && !root.dataset.backupLocated) {
+          root.dataset.backupLocated = "1";
+          document.getElementById("data-backup")?.scrollIntoView();
+        }
       }
     } catch {
       content.replaceChildren(

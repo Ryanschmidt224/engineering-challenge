@@ -33,7 +33,10 @@ import {
 import { instructionTree, recordTree } from "./project-instruction-model.js";
 import { recordAttachments } from "./project-record-attachments.js";
 import { automaticBackupSection } from "./project-backup-settings.js";
-import { websiteSettings, ownerChoices } from "./website-settings-client.js";
+import {
+  websiteSettings,
+  ownerChoices,
+} from "./website-settings-client.js?v=offsite-backup-20261128";
 export const detailsFor = (item) =>
   normalizeCustomItem({
     name: item.name,
