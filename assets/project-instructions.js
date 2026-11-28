@@ -4,12 +4,12 @@ import {
   editStep,
   editRecord,
   retireInstruction,
-} from "./project-editors.js?v=project-numbers-20261128";
+} from "./project-editors.js?v=manufacturer-visibility-20261128";
 import { partHistoryPrompt } from "./project-part-history.js";
 import {
   recordVersionView,
   savedPartView,
-} from "./project-information.js?v=cad-links-20261128";
+} from "./project-information.js?v=manufacturer-visibility-20261128";
 import { initSplitPanes } from "./split-panes.js";
 
 const button = (...args) => window.BSUI.button(...args);

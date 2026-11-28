@@ -11,7 +11,7 @@ import { node } from "./workshop-ui.js?v=save-upload-20261128";
 import {
   savedPartView,
   configurationView,
-} from "./project-information.js?v=cad-links-20261128";
+} from "./project-information.js?v=manufacturer-visibility-20261128";
 
 export function partHistoryPrompt(
   ctx,

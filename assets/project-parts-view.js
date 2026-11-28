@@ -1,9 +1,10 @@
+import { hasManufacturerFields } from "./project-sourcing.js";
 import { projectStatusChoices } from "./project-item-model.js?v=cad-links-20261128";
 import { node, field, checkbox } from "./workshop-ui.js?v=save-upload-20261128";
 import { dataTable } from "./data-table.js";
 import { projectTree } from "./project-tree-model.js";
 import { projectNumberKey } from "./project-item-model.js?v=cad-links-20261128";
-import { editItem } from "./project-editors.js?v=project-numbers-20261128";
+import { editItem } from "./project-editors.js?v=manufacturer-visibility-20261128";
 const categories = [
   ["all", "All items"],
   ["assembly", "Subassemblies"],
@@ -306,8 +307,18 @@ export function renderProjectParts(ctx) {
                 .map((x) => x.name)
                 .join(" / "),
               categories.find(([key]) => key === category(item))?.[1],
-              item.fields?.manufacturer,
-              item.fields?.mpn,
+              hasManufacturerFields(
+                item,
+                state.selections.find((row) => row.id === item.id),
+              )
+                ? item.fields?.manufacturer
+                : null,
+              hasManufacturerFields(
+                item,
+                state.selections.find((row) => row.id === item.id),
+              )
+                ? item.fields?.mpn
+                : null,
               placement.attention ? placement.attention_note || "Yes" : "No",
               placement.hidden ? "Yes" : "No",
             ]

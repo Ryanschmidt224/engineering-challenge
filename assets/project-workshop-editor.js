@@ -8,9 +8,9 @@ import {
 import {
   editable,
   parentPicker,
-} from "./project-editors.js?v=project-numbers-20261128";
+} from "./project-editors.js?v=manufacturer-visibility-20261128";
 import { partHistoryPrompt } from "./project-part-history.js";
-import { information } from "./project-information.js?v=cad-links-20261128";
+import { information } from "./project-information.js?v=manufacturer-visibility-20261128";
 import { present } from "./family-model.js";
 import { isWebUrl } from "./family-model.js";
 const button = (...args) => window.BSUI.button(...args);

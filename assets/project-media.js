@@ -1,7 +1,7 @@
 import { mediaUploadFeedback } from "./media-upload-feedback.js";
 import { fileDropTarget } from "./file-selection.js";
 import { node, field, actions } from "./workshop-ui.js?v=save-upload-20261128";
-import { confirmAction } from "./project-editors.js?v=project-numbers-20261128";
+import { confirmAction } from "./project-editors.js?v=manufacturer-visibility-20261128";
 
 // Project/part photo galleries and the part picture. Removing a photo hides it;
 // the stored file and its row are kept. Double-click a photo for full size.

@@ -18,7 +18,11 @@ export function information(title, values) {
 export function configurationView(
   configuration,
   title = "Saved configuration",
-  { includeBuild = true, includeContainer = true } = {},
+  {
+    includeBuild = true,
+    includeContainer = true,
+    includeManufacturer = true,
+  } = {},
 ) {
   const snapshot = configuration?.snapshot;
   if (!snapshot?.item)
@@ -38,8 +42,12 @@ export function configurationView(
     ["Description", fields.description],
     ...(includeContainer ? [["Purpose", fields.purpose]] : []),
 
-    ["Manufacturer", fields.manufacturer],
-    ["Mfg part number", fields.mpn],
+    ...(includeManufacturer
+      ? [
+          ["Manufacturer", fields.manufacturer],
+          ["Mfg part number", fields.mpn],
+        ]
+      : []),
     [
       "Part source",
       fields.supply === "purchased"

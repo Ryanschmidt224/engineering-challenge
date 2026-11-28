@@ -1,3 +1,4 @@
+import { itemSupply, hasManufacturerFields } from "./project-sourcing.js";
 import { projectNumber } from "./project-identity.js";
 import { projectNameConfirmation } from "./project-name-confirmation.js";
 import { workshopPartEditor } from "./project-workshop-editor.js";
@@ -325,9 +326,12 @@ export function editItem(
     container.append(
       parentPicker(ctx, parentId, (value) => (parentId = value)),
     );
+  const manufacturerRows = [],
+    selection =
+      item && ctx.client.state.selections?.find((row) => row.id === item.id);
   const source = field(
     "Part source",
-    details.fields.supply || "made",
+    itemSupply(details, selection),
     (value) => {
       details.fields.supply = value;
       updateSource();
@@ -345,7 +349,11 @@ export function editItem(
     const physical = details.kind === "part" && !details.is_assembly;
     source.hidden = !physical;
     purchase.hidden =
-      !physical || (details.fields.supply || "made") !== "purchased";
+      !physical || itemSupply(details, selection) !== "purchased";
+    for (const row of manufacturerRows) {
+      row.hidden = !hasManufacturerFields(details, selection);
+      row.querySelector("input").disabled = row.hidden;
+    }
     for (const input of purchase.querySelectorAll("input"))
       input.disabled = purchase.hidden;
   };
@@ -430,14 +438,15 @@ export function editItem(
   for (const [key, title] of [
     ["manufacturer", "Manufacturer"],
     ["mpn", "Mfg part number"],
-  ])
-    part.append(
-      field(
-        title,
-        details.fields[key] || "",
-        (value) => (details.fields[key] = value),
-      ),
+  ]) {
+    const row = field(
+      title,
+      details.fields[key] || "",
+      (value) => (details.fields[key] = value),
     );
+    manufacturerRows.push(row);
+    part.append(row);
+  }
   part.append(customFields(details.fields.specs));
   const attentionNote = field(
     "Attention note",

@@ -3,8 +3,8 @@ import { node, field } from "./workshop-ui.js";
 import {
   editable,
   detailsFor,
-} from "./project-editors.js?v=project-numbers-20261128";
-import { fileLink } from "./project-information.js?v=cad-links-20261128";
+} from "./project-editors.js?v=manufacturer-visibility-20261128";
+import { fileLink } from "./project-information.js?v=manufacturer-visibility-20261128";
 import { normalizeCadLinks } from "./cad-link-model.js";
 import { cadLinkRows } from "./cad-link-view.js";
 const button = (...args) => window.BSUI.button(...args);

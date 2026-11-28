@@ -6,7 +6,7 @@ import {
   savedPartView,
   buildContextView,
   recordVersionView,
-} from "./project-information.js?v=cad-links-20261128";
+} from "./project-information.js?v=manufacturer-visibility-20261128";
 import {
   node,
   field,
@@ -20,7 +20,7 @@ import { initSplitPanes } from "./split-panes.js";
 import {
   editRecord,
   confirmAction,
-} from "./project-editors.js?v=project-numbers-20261128";
+} from "./project-editors.js?v=manufacturer-visibility-20261128";
 import { instructionTree } from "./project-instruction-model.js";
 import { savedComparison } from "./project-history-comparison.js";
 const button = (...args) => window.BSUI.button(...args);
