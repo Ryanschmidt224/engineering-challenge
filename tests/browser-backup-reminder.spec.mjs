@@ -61,7 +61,7 @@ test('completed manual save records download only, until outside-copy confirmati
 for(const mode of ['cancel','close-fails'])test('a '+mode+' save does not record a download or an outside copy',async({page})=>{
  await installSavePicker(page,mode);await page.goto('/website-settings.html');await expect(banner(page)).toBeVisible();await page.getByRole('button',{name:'Backup all data',exact:true}).click();
  if(mode==='close-fails'){
-  const alert=page.getByRole('dialog',{name:'Backup could not be saved'});await expect(alert).toContainText('Fixture disk full');await alert.getByRole('button',{name:'OK',exact:true}).click();expect(await page.evaluate(()=>window.backupSave.aborted)).toBe(true);
+  const alert=page.getByRole('dialog',{name:'Backup could not be saved'});await expect(alert).toContainText('Fixture disk full');await alert.getByRole('button',{name:'Close',exact:true}).click();expect(await page.evaluate(()=>window.backupSave.aborted)).toBe(true);
  }
  await expect(page.getByRole('button',{name:'Backup all data',exact:true})).toBeEnabled();
  const data=await(await page.request.get(endpoint)).json();expect(data.lastDownloaded).toBeNull();expect(data.lastConfirmed).toBeNull();await expect(banner(page)).toBeVisible();
@@ -71,7 +71,7 @@ test('nightly save highlights newest verified copy, validates bytes and does not
  await installSavePicker(page);await page.goto('/website-settings.html#data-backup');const latest=page.locator('[data-newest-backup]');
  await expect(latest).toContainText('Newest verified copy');const download=latest.getByRole('button',{name:/Download whole-site backup from/});
  await page.route('**/api/automatic-site-backups?id=*',route=>route.fulfill({body:'truncated backup'}));
- await download.click();let alert=page.getByRole('dialog',{name:'Backup could not be saved'});await expect(alert).toContainText('incomplete');await alert.getByRole('button',{name:'OK',exact:true}).click();
+ await download.click();let alert=page.getByRole('dialog',{name:'Backup could not be saved'});await expect(alert).toContainText('incomplete');await alert.getByRole('button',{name:'Close',exact:true}).click();
  expect((await(await page.request.get(endpoint)).json()).lastDownloaded).toBeNull();expect(await page.evaluate(()=>window.backupSave.aborted)).toBe(true);
  await page.unroute('**/api/automatic-site-backups?id=*');await download.click();const confirm=page.getByRole('dialog',{name:'Copy saved outside Cloudflare?'});await expect(confirm).toBeVisible();
  const data=await(await page.request.get(endpoint)).json();expect(data.lastDownloaded.source).toBe('nightly');expect(data.lastConfirmed).toBeNull();

@@ -84,6 +84,8 @@ for(const width of [390,1440])test("compact product values keep source evidence 
  const panels=detail(page).locator(".workshop-product-read");await expect(panels).toHaveCount(2);
  const value=panels.locator(".workshop-sourced-value"),source=value.locator("summary");
  await expect(source).toHaveText("AI source");await expect(value.locator("details")).not.toHaveAttribute("open");await expect(value.getByText("Conditions: 25°C",{exact:true})).not.toBeVisible();
+ // Owner-only reminders load asynchronously; measure after header flow settles.
+ await expect(page.getByRole("complementary",{name:"Backup copy reminder"})).toBeVisible();
  const textBox=await value.locator(":scope > span").boundingBox(),sourceBox=await source.boundingBox();expect(sourceBox.x).toBeGreaterThan(textBox.x+textBox.width);expect(Math.abs(sourceBox.y-textBox.y)).toBeLessThan(8);
  if(width===1440)expect((await value.boundingBox()).height).toBeLessThan(32);
  await source.focus();await source.press("Enter");await expect(value.getByText("Conditions: 25°C",{exact:true})).toBeVisible();if(width>640)expect(Math.abs((await value.locator("..").locator("dt").boundingBox()).y-(await value.boundingBox()).y)).toBeLessThan(3);await expect(value.getByRole("link",{name:"Source",exact:true})).toHaveAttribute("href","https://example.com/datasheet");await expect(value.getByText("Technical document: resistor.pdf",{exact:true})).toBeVisible();
