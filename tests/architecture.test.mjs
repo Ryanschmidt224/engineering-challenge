@@ -38,7 +38,7 @@ test('every shipped JavaScript module belongs to a current browser entry or the 
   for(const match of html.matchAll(/<script[^>]*src="([^"]+)"/g))entries.push(match[1].replace(/^\//,'').split('?')[0]);
   for(const match of html.matchAll(/(?:from\s*|import\s*)["'](\.?\/?assets\/[^"']+)["']/g))entries.push(match[1].replace(/^\.\//,'').replace(/^\//,'').split('?')[0]);
  }
- const result=await build({entryPoints:[...new Set(entries)],bundle:true,write:false,outdir:'unused-build-output',metafile:true,format:'esm',platform:'browser',logLevel:'silent'}),used=new Set(Object.keys(result.metafile.inputs));
+ const result=await build({entryPoints:[...new Set(entries)],bundle:true,write:false,outdir:'unused-build-output',metafile:true,format:'esm',platform:'browser',logLevel:'silent'}),used=new Set(Object.keys(result.metafile.inputs).map(file=>file.split('?')[0]));
  assert.ok(![...used].some(file=>file.startsWith('tests/')||file.includes('-proof.')), 'Acceptance tools must not enter the production import graph');
  assert.match(source('.assetsignore'),/^tests\/\*\*$/m);
  const files=['assets','functions/api'].flatMap(dir=>readdirSync(resolve(root,dir)).filter(name=>name.endsWith('.js')).map(name=>dir+'/'+name));

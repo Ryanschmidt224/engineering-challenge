@@ -1,6 +1,6 @@
 # BuildingSchmidt — current status
 
-November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. The confirmed release baseline is #156 (`e108c973097405b6ebe20abeeaa5abb1189bf66e`): visible Workshop product photo uploads, automatic whole-site backups, backup monitoring, the compact Workshop product read view, shared confirmation template (#152), default-collapsed family fields (#151), and the earlier Lessons/photo/lookup updates. Its 313 code tests, 152 browser workflows and dependency check passed. Release PRs record exact source and Cloudflare deployment evidence.
+November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. The confirmed release baseline is #157 (`f939cf405d3763daece6f6c45c3cfb1a6c48d44d`): durable login-attempt protection, visible Workshop product photo uploads, automatic whole-site backups, backup monitoring, the compact Workshop product read view, shared confirmation template (#152), default-collapsed family fields (#151), and the earlier Lessons/photo/lookup updates. Its 323 code tests, 154 browser workflows and dependency check passed. Release PRs record exact source and Cloudflare deployment evidence.
 
 ## Current behavior
 
@@ -20,7 +20,9 @@ The [automatic whole-site backup implementation](AUTOMATIC-SITE-BACKUPS.md) foll
 
 Login-attempt limiting now reserves checks durably before credential reads: ten attempts per normalized email or Cloudflare client address and sixty overall per 15-minute window, with automatic expiry and clear retry guidance. One bounded R2 object stores keyed hashes rather than raw emails or addresses; no database migration or credential change is needed. Failed storage admission prevents a new password check, while existing sessions and sign-out remain usable.
 
-Next: tested browser security headers (F3), then consistent save/upload/error lifecycle rules. Optimize photos and larger collection reads after measurement.
+Browser security headers (F3) now cover static assets and Worker responses through one maintained policy. Page startup scripts are external modules; the enforced script allowlist blocks inline/evaluated scripts and cross-site frames, while shared photo controls, same-origin calculators and file sandboxes retain their behavior. Header copying preserves streamed files, cookies and cache validators.
+
+Next: consistent save/upload/error lifecycle rules and preview/command memory cleanup. Optimize photos and larger collection reads after measurement.
 
 The complete finding/action list is in [the combined review and work plan](WHOLE-SITE-REVIEW-2026-11-27.md). Cleanup #143, toolchain maintenance #144 and photo/lesson feedback #145 are released. Dependency advisories are checked in CI; automatic dependency PRs require normal review and tests.
 

@@ -34,7 +34,7 @@ async function asset(request) {
   if (name === "/") name = "/index.html";
   // Fixed test-only prefix, never included in the production asset upload.
   const proof =
-    /^\/__test__\/proof\/project-(?:engine|recovery|assembly)-proof\.(?:html|js)$/.test(
+    /^\/__test__\/proof\/project-(?:engine|recovery|assembly)-proof(?:-page)?\.(?:html|js)$/.test(
       name,
     );
   const path = resolve(

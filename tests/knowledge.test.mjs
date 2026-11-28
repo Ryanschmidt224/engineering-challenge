@@ -122,6 +122,7 @@ test("Knowledge pages render text safely and use the shared components", () => {
   const page = readFileSync("knowledge.html", "utf8");
   assert.ok(page.includes("assets/components.css") && page.includes("assets/theme.css"));
   assert.ok(!/site-polish|site-controls|site-workspaces/.test(page), "no legacy override stylesheets");
-  assert.ok(readFileSync("workshop.html", "utf8").includes("assets/site-header.js"));
+  assert.match(readFileSync("workshop.html", "utf8"), /assets\/workshop-page\.js/);
+  assert.match(readFileSync("assets/workshop-page.js", "utf8"), /site-header\.js/);
   assert.ok(readFileSync("assets/site-header.js", "utf8").includes('"knowledge.html"'));
 });

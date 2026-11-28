@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="assets/confirmation-dialog.css"></head>
 <body class="workshop-app">
  <header class="ui-site-header" data-site-header="commonparts"></header>
-<script type="module">import {initSiteHeader} from "/assets/site-header.js?v=css-foundation-20261122"; initSiteHeader();</script>
+<script type="module" src="assets/workshop-page.js?v=security-headers-20261127"></script>
  <div class="workshop-heading ui-page"><div><h1>The Workshop</h1></div><div class="actions"><a id="return-project" hidden>Back to project</a><button id="export-workshop" class="button">Export Workshop</button></div></div>
  <div class="workshop-layout ui-page">
   <aside class="category-panel" aria-label="Workshop categories"><div class="section-header"><h2>Categories</h2><button id="category-actions" class="button button--quiet">Category actions</button></div><div id="category-tree"></div></aside>
@@ -19,6 +19,6 @@
  <div id="workshop-status" class="status" role="status" aria-live="polite"></div>
  <dialog id="workshop-dialog" class="dialog"></dialog>
  <div id="category-menu" class="context-menu" role="menu" hidden></div>
-<script type="module">import {initSplitPanes} from "/assets/split-panes.js?v=split-panes-20261122"; initSplitPanes(document.querySelector(".workshop-layout"),{key:"workshop",panes:[{key:"categories",name:"categories",selector:".category-panel",wideOnly:true},{key:"families",name:"families",selector:".family-panel"}]});</script>
+
 </body>
 </html>
