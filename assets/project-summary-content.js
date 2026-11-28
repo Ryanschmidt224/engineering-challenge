@@ -1,8 +1,11 @@
 import { sectionEdit } from "./section-edit.js";
 import { websiteSettings } from "./website-settings-client.js";
-import { node, field, actions } from "./workshop-ui.js";
+import { node, field, actions } from "./workshop-ui.js?v=save-upload-20261128";
 import { normalizeOverview } from "./project-overview-model.js";
-import { editable, confirmAction } from "./project-editors.js";
+import {
+  editable,
+  confirmAction,
+} from "./project-editors.js?v=save-upload-20261128";
 import { recordAttachments } from "./project-record-attachments.js";
 import { fileLink } from "./project-information.js";
 const button = (...args) => window.BSUI.button(...args);

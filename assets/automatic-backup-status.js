@@ -1,4 +1,8 @@
-import { node, readValue, actions } from "./workshop-ui.js";
+import {
+  node,
+  readValue,
+  actions,
+} from "./workshop-ui.js?v=save-upload-20261128";
 
 const messages = {
   never: "No nightly run recorded yet",

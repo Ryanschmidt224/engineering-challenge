@@ -1,4 +1,4 @@
-import { node, field, actions } from "./workshop-ui.js";
+import { node, field, actions } from "./workshop-ui.js?v=save-upload-20261128";
 
 let controller;
 // Uses the existing owner-account endpoints. No registration or credentials

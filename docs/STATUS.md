@@ -1,6 +1,6 @@
 # BuildingSchmidt — current status
 
-November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. The confirmed release baseline is #157 (`f939cf405d3763daece6f6c45c3cfb1a6c48d44d`): durable login-attempt protection, visible Workshop product photo uploads, automatic whole-site backups, backup monitoring, the compact Workshop product read view, shared confirmation template (#152), default-collapsed family fields (#151), and the earlier Lessons/photo/lookup updates. Its 323 code tests, 154 browser workflows and dependency check passed. Release PRs record exact source and Cloudflare deployment evidence.
+November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. The confirmed release baseline is #158 (`2d261e8feaffda1ebb75bae480de42854e94b8da`): durable login-attempt protection, visible Workshop product photo uploads, automatic whole-site backups, backup monitoring, the compact Workshop product read view, shared confirmation template (#152), default-collapsed family fields (#151), and the earlier Lessons/photo/lookup updates. Its 327 code tests, 156 browser workflows and dependency check passed. Release PRs record exact source and Cloudflare deployment evidence.
 
 ## Current behavior
 
@@ -22,7 +22,9 @@ Login-attempt limiting now reserves checks durably before credential reads: ten 
 
 Browser security headers (F3) now cover static assets and Worker responses through one maintained policy. Page startup scripts are external modules; the enforced script allowlist blocks inline/evaluated scripts and cross-site frames, while shared photo controls, same-origin calculators and file sandboxes retain their behavior. Header copying preserves streamed files, cookies and cache validators.
 
-Next: consistent save/upload/error lifecycle rules and preview/command memory cleanup. Optimize photos and larger collection reads after measurement.
+The save/upload reliability batch shares response classification between Projects, Workshop and Lessons: lost/unreadable write replies remain unconfirmed, session expiry asks for sign-in, and revision conflicts ask for review. Project editors expose saving progress, coalesce identical in-flight commands, and acknowledge confirmed command bodies only after a successful UI refresh; uncertain commands keep their replay identity. Workshop family/product editors retain fields after a confirmed save with a failed refresh; unchanged retry refreshes only. Workshop photo retries retain bytes/IDs and cannot be replaced by another selection. Lessons retain partial photo batches in the current tab, retry the remaining uploads/final save without duplication, and prevent leaving or restructuring a lesson until its pending photo batch is resolved or explicitly discarded through Load saved lesson. Temporary upload previews are released; lesson photos use confirmed server URLs rather than accumulating local blobs. No stored rows, files or safety receipts are removed.
+
+Next: measure photo/collection performance before choosing optimizations, and verify the first hosted whole-site backup run in Website settings. The CAD Dropbox-link workflow remains deferred.
 
 The complete finding/action list is in [the combined review and work plan](WHOLE-SITE-REVIEW-2026-11-27.md). Cleanup #143, toolchain maintenance #144 and photo/lesson feedback #145 are released. Dependency advisories are checked in CI; automatic dependency PRs require normal review and tests.
 

@@ -11,7 +11,7 @@ import {
   panel,
   field,
   checkbox,
-} from "./workshop-ui.js";
+} from "./workshop-ui.js?v=save-upload-20261128";
 import { present, isWebUrl, validateFamilyValues } from "./family-model.js";
 import { dataTable } from "./data-table.js";
 export function workshopProductLookup({

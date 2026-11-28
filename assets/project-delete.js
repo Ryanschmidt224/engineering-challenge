@@ -1,4 +1,4 @@
-import { node, field, actions } from "./workshop-ui.js";
+import { node, field, actions } from "./workshop-ui.js?v=save-upload-20261128";
 const button = (...args) => window.BSUI.button(...args);
 export function showProjectDeletion(ctx, project) {
   const dialog = ctx.dialog,

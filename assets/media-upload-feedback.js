@@ -1,4 +1,4 @@
-import {node} from './workshop-ui.js';
+import {node} from './workshop-ui.js?v=save-upload-20261128';
 // Temporary browser feedback only: never publish a local preview as saved data.
 export function mediaUploadFeedback(cover=null){
  const root=node('div','','project-upload-feedback'),progress=node('progress'),message=node('span');

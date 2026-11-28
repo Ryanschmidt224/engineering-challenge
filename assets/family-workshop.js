@@ -22,7 +22,7 @@ import {
   valuesEditor,
   help,
   requestWorkshop,
-} from "./workshop-ui.js";
+} from "./workshop-ui.js?v=save-upload-20261128";
 import {
   present,
   resolveFamilyValues,
@@ -36,7 +36,7 @@ import {
   projectReturnLink,
 } from "./workshop-project-uses.js";
 import { workshopProductLookup } from "./workshop-product-lookup.js";
-import { workshopProductPhotos } from "./workshop-product-photos.js";
+import { workshopProductPhotos } from "./workshop-product-photos.js?v=save-upload-20261128";
 
 const $ = (selector) => document.querySelector(selector),
   detail = $("#workshop-detail"),
@@ -297,15 +297,47 @@ function newProduct() {
     notes: "",
   });
 }
+async function finishDraft(entity, result) {
+  try {
+    await refresh();
+  } catch (error) {
+    throw Error(
+      "Saved, but the page could not refresh. Your fields are retained. Press Save again to refresh without repeating the save. " +
+        error.message,
+    );
+  }
+  dirty = false;
+  editing = false;
+  draft = null;
+  if (entity === "family") {
+    selectedFamily = result.record.id;
+    selectedProduct = "";
+  } else selectedProduct = result.record.id;
+  updateLocation();
+  renderNavigation();
+  renderDetail();
+  status(
+    result.record.lookup_provenance?.documentUpload?.status === "pending"
+      ? "Product saved; document upload remains unconfirmed. Reselect the document in Edit product to finish."
+      : "Saved.",
+  );
+}
 async function saveDraft(form) {
   if (!form.reportValidity()) return;
+  if (draft.refreshRetry?.stamp === JSON.stringify(draft.record))
+    return finishDraft(draft.entity, draft.refreshRetry.result);
   if (draft.entity === "family") validateFamilyFields(draft.record.fields);
   if (draft.entity === "product")
     validateFamilyValues(familyFields(), draft.record.field_values);
   if (draft.entity === "product" && identityRequired(draft.record))
     requireLookupIdentity(draft.record);
   if (draft.entity === "product") await prepareLookupDocument(draft.record);
-  const payload = copy(draft);
+  const payload = {
+    entity: draft.entity,
+    record: copy(draft.record),
+    expectedRevision: draft.expectedRevision,
+    expectedFamilyRevision: draft.expectedFamilyRevision,
+  };
   status("Saving…");
   let result;
   if (
@@ -363,26 +395,10 @@ async function saveDraft(form) {
       );
     }
   }
-  dirty = false;
-  editing = false;
-  draft = null;
-  await refresh();
-  if (payload.entity === "family") {
-    selectedFamily = result.record.id;
-    selectedProduct = "";
-  }
-  if (payload.entity === "product") {
-    selectedProduct = result.record.id;
-  }
-  draft = null;
-  updateLocation();
-  renderNavigation();
-  renderDetail();
-  status(
-    result.record.lookup_provenance?.documentUpload?.status === "pending"
-      ? "Product saved; document upload remains unconfirmed. Reselect the document in Edit product to finish."
-      : "Saved.",
-  );
+  draft.expectedRevision = result.record.revision;
+  Object.assign(draft.record, result.record);
+  draft.refreshRetry = { stamp: JSON.stringify(draft.record), result };
+  await finishDraft(payload.entity, result);
 }
 function editor(entity, title, record) {
   const header = node("div", "", "panel-heading");

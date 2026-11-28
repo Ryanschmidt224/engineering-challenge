@@ -130,3 +130,37 @@ test("product photo paste and drop work; a failed refresh retries only the list"
  await photos.getByRole("button",{name:"Edit photo",exact:true}).first().click();await photos.getByRole("button",{name:"Archive photo",exact:true}).click();await page.getByRole("dialog").getByRole("button",{name:"Cancel",exact:true}).click();await expect(photos.getByRole("img")).toHaveCount(2);
  await photos.getByRole("button",{name:"Archive photo",exact:true}).click();await page.getByRole("dialog").getByRole("button",{name:"Archive photo",exact:true}).click();await expect(photos.getByRole("img")).toHaveCount(1);
 });
+
+test('unreadable photo success retains the original upload when another selection arrives',async({page})=>{
+ const product=await post(page,'product',productRecord());await page.goto('/workshop.html?product='+product.id);
+ const photos=page.getByRole('region',{name:'Product photos',exact:true});let fail=true;const ids=[];
+ await page.route('**/api/workshop/file?owner=product&*',async route=>{
+  ids.push(route.request().headers()['x-upload-id']);
+  if(fail){await route.fetch();await route.fulfill({status:201,body:'{',contentType:'application/json'});}else await route.continue();
+ });
+ await photos.getByRole('button',{name:'+ Add photo',exact:true}).click();await photos.locator('input[type="file"]').setInputFiles(workshopPhoto);
+ await expect(photos.getByRole('button',{name:'Retry upload',exact:true})).toBeVisible();
+ await expect(photos.getByRole('status')).toContainText('unconfirmed');
+ await photos.locator('input[type="file"]').setInputFiles({...workshopPhoto,name:'replacement.webp'});
+ await expect(photos.getByRole('status')).toContainText('Finish the pending photo upload');expect(ids).toHaveLength(1);
+ fail=false;await photos.getByRole('button',{name:'Retry upload',exact:true}).click();
+ await expect(page.locator('#workshop-status')).toHaveText('Photos saved.');expect(new Set(ids).size).toBe(1);
+ expect((await snapshot(page)).attachments).toHaveLength(1);
+});
+
+test('confirmed Workshop save with a failed refresh keeps fields and retries only the refresh',async({page})=>{
+ const product=await post(page,'product',productRecord());await page.goto('/workshop.html?product='+product.id);
+ await page.getByRole('button',{name:'Edit product',exact:true}).click();await page.getByLabel('Product name',{exact:true}).fill('Confirmed saved name');
+ let writes=0,failRefresh=false;
+ await page.route('**/api/workshop',async route=>{
+  if(route.request().method()==='POST'){writes++;failRefresh=true;await route.continue();}
+  else if(failRefresh){failRefresh=false;await route.fulfill({status:503,json:{error:'Fixture refresh unavailable'}});}
+  else await route.continue();
+ });
+ await page.getByRole('button',{name:'Save product',exact:true}).click();
+ await expect(page.locator('#workshop-status')).toContainText('Saved, but the page could not refresh');
+ await expect(page.getByLabel('Product name',{exact:true})).toHaveValue('Confirmed saved name');
+ await page.getByRole('button',{name:'Save product',exact:true}).click();
+ await expect(page.locator('#workshop-status')).toHaveText('Saved.');expect(writes).toBe(1);
+ expect((await snapshot(page)).products[0].name).toBe('Confirmed saved name');
+});

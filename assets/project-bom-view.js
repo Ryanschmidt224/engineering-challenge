@@ -1,6 +1,6 @@
 import { projectBOM } from "./project-tree-model.js";
 import { dataTable } from "./data-table.js";
-import { node, field } from "./workshop-ui.js";
+import { node, field } from "./workshop-ui.js?v=save-upload-20261128";
 export function renderProjectBOM(ctx, scope = null) {
   const { items, occurrences } = ctx.client.state,
     rows = projectBOM(items, occurrences, scope),
