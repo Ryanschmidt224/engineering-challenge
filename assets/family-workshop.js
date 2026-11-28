@@ -36,6 +36,7 @@ import {
   projectReturnLink,
 } from "./workshop-project-uses.js";
 import { workshopProductLookup } from "./workshop-product-lookup.js";
+import { workshopProductPhotos } from "./workshop-product-photos.js";
 
 const $ = (selector) => document.querySelector(selector),
   detail = $("#workshop-detail"),
@@ -586,8 +587,9 @@ function renderProductEditor(form, record, set) {
     ),
     field("Manufacturer part number", record.mpn, (value) => set("mpn", value)),
   );
+  form.append(identity);
+  if (record.revision) form.append(productPhotos(record));
   form.append(
-    identity,
     workshopProductLookup({
       record,
       family: family(),
@@ -827,6 +829,7 @@ function renderInstanceRead(entity, record, selected) {
   appendRead(identity, "Manufacturer", record.manufacturer);
   appendRead(identity, "Manufacturer part number", record.mpn);
   detail.append(identity);
+  detail.append(productPhotos(record));
   if (product.lookup_provenance?.documentUpload?.status === "pending")
     detail.append(
       node(
@@ -1039,9 +1042,50 @@ function editOwner(entity, record) {
   if (entity === "family") next.fields = copy(familyFields());
   begin(entity, next);
 }
+function productPhotos(record) {
+  return workshopProductPhotos({
+    product: record,
+    attachments: data.attachments,
+    canEdit: !!record.revision && !record.archived && !family()?.archived,
+    run,
+    status,
+    onChanged: async () => {
+      await refresh();
+      renderDetail();
+      status(
+        dirty
+          ? "Photos saved. Your other edits are still unsaved."
+          : "Photos saved.",
+      );
+    },
+    onArchive: async (file) => {
+      if (
+        !(await window.BSDialogs.confirm(
+          "Hide this photo from the Workshop product? Stored files and existing project copies are kept.",
+          { title: "Archive photo?", confirmLabel: "Archive photo" },
+        ))
+      )
+        return;
+      await run(async () => {
+        await requestWorkshop("/api/workshop", "PATCH", {
+          entity: "attachment",
+          id: file.id,
+          expectedRevision: file.revision,
+          archived: true,
+        });
+        await refresh();
+        renderDetail();
+        status("Photo archived.");
+      });
+    },
+  });
+}
 function renderAttachments(host, ownerType, ownerId, canEdit) {
   const files = data.attachments.filter(
-    (file) => !file.archived && file[ownerType + "_id"] === ownerId,
+    (file) =>
+      !file.archived &&
+      file[ownerType + "_id"] === ownerId &&
+      !(ownerType === "product" && file.kind === "photo"),
   );
   if (!files.length && !canEdit) return;
   const section = panel("Files & links"),

@@ -1,6 +1,6 @@
 // Real Worker/D1/R2 handlers with disposable fixtures. No production credentials.
 import {test,expect} from "@playwright/test";
-import {createReadStream} from "node:fs";
+import {createReadStream,readFileSync} from "node:fs";
 import {createInterface} from "node:readline";
 import {verifyWorkshopBackup} from "../scripts/workshop-backup.mjs";
 
@@ -91,4 +91,42 @@ for(const width of [390,1440])test("compact product values keep source evidence 
  await source.press("Enter");await expect(value.locator("details")).not.toHaveAttribute("open");await expect(panels.getByText(longValue.trim(),{exact:true})).toBeVisible();
  const before=await snapshot(page);expect(before.products[0].field_values["f-resistor-package"]).toBe(longValue.trim());
  await panels.first().scrollIntoViewIfNeeded();await page.screenshot({path:testInfo.outputPath("compact-product-read.png"),fullPage:true});
+});
+
+const workshopPhoto={name:"bench.webp",mimeType:"image/webp",buffer:readFileSync(new URL("../assets/default-code-photo.webp",import.meta.url))};
+for(const width of [390,1440])test("product photos are visible, save independently and survive reload at "+width,async({page},testInfo)=>{
+ await page.setViewportSize({width,height:950});const product=await post(page,"product",productRecord());
+ await page.goto("/workshop.html?product="+product.id);let photos=page.getByRole("region",{name:"Product photos",exact:true});
+ await expect(photos.getByRole("button",{name:"+ Add photo",exact:true})).toBeVisible();
+ await photos.getByRole("button",{name:"+ Add photo",exact:true}).click();await photos.locator('input[type="file"]').setInputFiles(workshopPhoto);
+ await expect(page.locator("#workshop-status")).toHaveText("Photos saved.");await expect(photos.getByRole("img",{name:"bench.webp",exact:true})).toBeVisible();
+ let state=await snapshot(page);expect(state.attachments).toHaveLength(1);expect(state.attachments[0]).toMatchObject({product_id:product.id,family_id:null,kind:"photo"});expect(state.products[0].revision).toBe(product.revision);
+ await page.reload();await expect(photos.getByRole("img",{name:"bench.webp",exact:true})).toBeVisible();expect(await photos.locator("img").evaluate(image=>image.naturalWidth)).toBeGreaterThan(0);
+ await page.getByRole("button",{name:"Edit product",exact:true}).click();await page.getByLabel("Product name",{exact:true}).fill("Still an unsaved draft");
+ await photos.getByRole("button",{name:"+ Add photo",exact:true}).click();await photos.locator('input[type="file"]').setInputFiles({...workshopPhoto,name:"second.webp"});
+ await expect(page.locator("#workshop-status")).toHaveText("Photos saved. Your other edits are still unsaved.");await expect(page.getByLabel("Product name",{exact:true})).toHaveValue("Still an unsaved draft");
+ state=await snapshot(page);expect(state.products[0].name).toBe(product.name);expect(state.attachments).toHaveLength(2);
+ await page.getByRole("button",{name:"Cancel",exact:true}).click();await page.getByRole("dialog").getByRole("button",{name:"Discard changes",exact:true}).click();
+ await expect(photos.getByRole("img")).toHaveCount(2);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:testInfo.outputPath("workshop-product-photos.png"),fullPage:true});
+});
+test("product photo retry after a committed lost response does not duplicate bytes or attachments",async({page})=>{
+ const product=await post(page,"product",productRecord());await page.goto("/workshop.html?product="+product.id);const photos=page.getByRole("region",{name:"Product photos",exact:true});let uploads=0;const ids=[];
+ await page.route("**/api/workshop/file?owner=product&*",async route=>{uploads++;ids.push(route.request().headers()["x-upload-id"]);if(uploads===1){await route.fetch();await route.abort("failed");}else await route.continue();});
+ await photos.getByRole("button",{name:"+ Add photo",exact:true}).click();await photos.locator('input[type="file"]').setInputFiles(workshopPhoto);
+ await expect(photos.getByRole("button",{name:"Retry upload",exact:true})).toBeVisible();expect((await snapshot(page)).attachments).toHaveLength(1);
+ await photos.getByRole("button",{name:"Retry upload",exact:true}).click();await expect(page.locator("#workshop-status")).toHaveText("Photos saved.");expect((await snapshot(page)).attachments).toHaveLength(1);expect(uploads).toBe(2);expect(ids[0]).toBe(ids[1]);
+});
+test("product photo paste and drop work; a failed refresh retries only the list",async({page})=>{
+ const product=await post(page,"product",productRecord());await page.goto("/workshop.html?product="+product.id);const photos=page.getByRole("region",{name:"Product photos",exact:true});let uploads=0,failRefresh=false;
+ await page.route("**/api/workshop/file?owner=product&*",async route=>{uploads++;await route.continue();});
+ await page.route("**/api/workshop",route=>route.request().method()==="GET"&&failRefresh?(failRefresh=false,route.fulfill({status:503,json:{error:"Temporary refresh failure"}})):route.continue());
+ for(const [event,name] of [["drop","dropped.webp"],["paste","pasted.webp"]]){
+  await photos.getByRole("button",{name:"+ Add photo",exact:true}).click();failRefresh=event==="drop";
+  await photos.getByRole("textbox",{name:"Paste a copied photo",exact:true}).evaluate((box,{event,name,bytes})=>{const transfer=new DataTransfer();transfer.items.add(new File([new Uint8Array(bytes)],name,{type:"image/webp"}));box.dispatchEvent(event==="drop"?new DragEvent("drop",{bubbles:true,cancelable:true,dataTransfer:transfer}):new ClipboardEvent("paste",{bubbles:true,cancelable:true,clipboardData:transfer}));},{event,name,bytes:[...workshopPhoto.buffer]});
+  if(event==="drop"){await expect(photos.getByRole("status")).toContainText("Photos saved, but the list could not refresh.");await photos.getByRole("button",{name:"Refresh photos",exact:true}).click();}
+  await expect(photos.getByRole("img",{name,exact:true})).toBeVisible();
+ }
+ expect(uploads).toBe(2);expect((await snapshot(page)).attachments).toHaveLength(2);
+ await photos.getByRole("button",{name:"Edit photo",exact:true}).first().click();await photos.getByRole("button",{name:"Archive photo",exact:true}).click();await page.getByRole("dialog").getByRole("button",{name:"Cancel",exact:true}).click();await expect(photos.getByRole("img")).toHaveCount(2);
+ await photos.getByRole("button",{name:"Archive photo",exact:true}).click();await page.getByRole("dialog").getByRole("button",{name:"Archive photo",exact:true}).click();await expect(photos.getByRole("img")).toHaveCount(1);
 });

@@ -1,11 +1,12 @@
 # BuildingSchmidt — current status
 
-November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. The confirmed release baseline is #154 (`550d3fb12c48c9947ee0e63435b6ee33002c21bc`): the compact Workshop product read view, shared confirmation template (#152), default-collapsed family fields (#151), and the earlier Lessons/photo/lookup updates. Its 299 code tests, 146 browser workflows and dependency check passed. Release PRs record exact source and Cloudflare deployment evidence.
+November 27, 2026. One private owner application on Cloudflare Workers, D1 and R2. The confirmed release baseline is #155 (`66a613b2fe75f02a286b8437d2d117a75fdb85f3`): automatic whole-site backups, backup monitoring, the compact Workshop product read view, shared confirmation template (#152), default-collapsed family fields (#151), and the earlier Lessons/photo/lookup updates. Its 313 code tests, 148 browser workflows and dependency check passed. Release PRs record exact source and Cloudflare deployment evidence.
 
 ## Current behavior
 
 - Projects uses guarded commands, stable identities, immutable history/files, revision checks, independent Workshop copies and tested export/restore. The retired application and availability flag are gone; stored historical data remains.
 - Workshop uses families and products. Family fields start collapsed; products remain prominent in the existing navigation. AI lookup requires a search hint, searches supported product attachments, and keeps source evidence with applied values. Read specifications use compact rows and quiet source disclosures.
+- Saved Workshop products expose a Photos section in view and edit mode, with the shared choose/drop/paste controls and immediate photo saves. Upload retries reuse their identity; failed list refreshes do not reupload saved photos. Other product edits remain unsaved until Save product.
 - Lessons Learned supports autosave, rename-safe links, archive/restore and step photos. Its editor and read view share the framed field layout. The old Info Bits runtime is retired, with old rows retained in exports.
 - Projects use ordered photo galleries with immediate reorder feedback and full-screen cycling. Workshop keeps a single cover, and lesson steps have no cover slot.
 - Archive, restore, discard, guarded save and permanent-delete confirmations share the centered template. Existing revision, retry and typed-name safeguards remain.
